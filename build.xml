@@ -43,6 +43,10 @@ $Date$
         <istrue value="${skipExamples}"/>
     </condition>
 
+    <condition property="_skipDocs_">
+        <istrue value="${skipDocs}"/>
+    </condition>
+
     <condition property="_skipOsgi_">
         <istrue value="${skipOsgi}"/>
     </condition>
@@ -53,6 +57,10 @@ $Date$
 
     <condition property="_skipEmbeddable_">
         <istrue value="${skipEmbeddable}"/>
+    </condition>
+
+    <condition property="_forceServerSettings_">
+        <istrue value="${forceServerSettings}"/>
     </condition>
 
     <condition property="groovy.build.vm4">
@@ -167,7 +175,8 @@ $Date$
     </target>
 
     <target name="-stagedcompile-groovy" depends="-initGroovyc">
-        <groovyc srcdir="${mainSourceDirectory}" destdir="${mainClassesDirectory}" fork="true" memorymaximumsize="${groovycMain_mx}">
+        <groovyc srcdir="${mainSourceDirectory}" destdir="${mainClassesDirectory}" fork="true"
+                 memorymaximumsize="${groovycMain_mx}">
             <classpath>
                 <pathelement path="${mainClassesDirectory}"/>
                 <path refid="compilePath"/>
@@ -232,7 +241,8 @@ $Date$
         </groovyc>
     </target>
 
-    <target name="compileExamples" depends="-init,-initGroovyc,compileMain,-includeExamplesResources" unless="_skipExamples_"
+    <target name="compileExamples" depends="-init,-initGroovyc,compileMain,-includeExamplesResources"
+            unless="_skipExamples_"
             description="Compile the Java and Groovy code in the examples source directory.">
         <mkdir dir="${examplesClassesDirectory}"/>
         <echo message="Compiling example code."/>
@@ -248,10 +258,10 @@ $Date$
             </classpath>
         </groovyc>
         <javac srcdir="${examplesSourceDirectory}"
-                destdir="${examplesClassesDirectory}"
-                source="1.5"
-                target="1.5"
-                fork="true">
+               destdir="${examplesClassesDirectory}"
+               source="1.5"
+               target="1.5"
+               fork="true">
             <classpath>
                 <pathelement path="${mainClassesDirectory}"/>
                 <pathelement path="${examplesClassesDirectory}"/>
@@ -260,7 +270,7 @@ $Date$
             </classpath>
         </javac>
         <groovyc srcdir="${examplesSourceDirectory}"
-                destdir="${examplesClassesDirectory}"
+                 destdir="${examplesClassesDirectory}"
                  fork="true"
                  memorymaximumsize="${groovycExamples_mx}"
                  excludes="webapps/groovlet-examples/WEB-INF/groovy/**/*.groovy,org/codehaus/groovy/grails/compiler/injection/**/*.java">
@@ -315,7 +325,8 @@ $Date$
 
     <target name="-testOne" if="_testOne_" depends="-initGroovyc">
         <mkdir dir="${junitRawDirectory}"/>
-        <junit printsummary="true" fork="true" includeantruntime="false" failureproperty="testFailed" maxmemory="${groovyJUnit_mx}" dir="${basedir}">
+        <junit printsummary="true" fork="true" includeantruntime="false" failureproperty="testFailed"
+               maxmemory="${groovyJUnit_mx}" dir="${basedir}">
             <sysproperty key="apple.awt.UIElement" value="true"/>
             <!-- keeps the dock from showing the AWT startup -->
             <jvmarg line="${junitJvmArgs}"/>
@@ -354,16 +365,19 @@ $Date$
     </target>
 
     <target name="-collect15tests" unless="groovy.build.vm6">
-        <fileset id="ubertests.fileset" dir="${testClassesDirectory}" includes="UberTest*.class" excludes="Uber*VM6.class,groovy/grape/*Test.class"/>
+        <fileset id="ubertests.fileset" dir="${testClassesDirectory}" includes="UberTest*.class"
+                 excludes="Uber*VM6.class,groovy/grape/*Test.class"/>
     </target>
 
     <target name="-collect16tests" if="groovy.build.vm6">
-        <fileset id="ubertests.fileset" dir="${testClassesDirectory}" includes="UberTest*.class" excludes="groovy/grape/*Test.class"/>
+        <fileset id="ubertests.fileset" dir="${testClassesDirectory}" includes="UberTest*.class"
+                 excludes="groovy/grape/*Test.class"/>
     </target>
 
     <target name="-testAll" if="_testAll_" depends="-collect15tests,-collect16tests,-collectOptionalTests,-initGroovyc">
         <mkdir dir="${junitRawDirectory}"/>
-        <junit printsummary="true" fork="true" includeantruntime="false" failureproperty="testFailed" maxmemory="${groovyJUnit_mx}" dir="${basedir}">
+        <junit printsummary="true" fork="true" includeantruntime="false" failureproperty="testFailed"
+               maxmemory="${groovyJUnit_mx}" dir="${basedir}">
             <jvmarg line="${junitJvmArgs}"/>
             <sysproperty key="apple.awt.UIElement" value="true"/>
             <!-- keeps the dock from showing the AWT startup -->
@@ -412,12 +426,12 @@ $Date$
     <target name="-makeManifest">
         <mkdir dir="${mainClassesDirectory}/META-INF"/>
         <copy todir="${mainClassesDirectory}/META-INF" file="LICENSE.txt"/>
-    	<makeManifest file="${mainClassesDirectory}/META-INF/MANIFEST.MF"/>
-	</target>
+        <makeManifest file="${mainClassesDirectory}/META-INF/MANIFEST.MF"/>
+    </target>
 
     <macrodef name="makeManifest">
-    	<attribute name="file"/>
-    	<attribute name="bundleEnvironment" default="J2SE-1.5"/>
+        <attribute name="file"/>
+        <attribute name="bundleEnvironment" default="J2SE-1.5"/>
         <sequential>
             <manifest file="@{file}">
                 <attribute name="Built-By" value="${user.name}"/>
@@ -428,13 +442,13 @@ $Date$
                 <attribute name="Implementation-Title" value="Groovy: a powerful, dynamic language for the JVM"/>
                 <attribute name="Implementation-Version" value="${groovyVersion}"/>
                 <attribute name="Implementation-Vendor" value="The Codehaus"/>
-                <attribute name="Bundle-ManifestVersion" value="2" />
-                <attribute name="Bundle-Name" value="Groovy Runtime" />
-                <attribute name="Bundle-Description" value="Groovy Runtime" />
-                <attribute name="Bundle-Version" value="${groovyBundleVersion}" />
-                <attribute name="Bundle-Vendor" value="The Codehaus" />
-                <attribute name="Bundle-ClassPath" value="." />
-                <attribute name="Bundle-RequiredExecutionEnvironment" value="@{bundleEnvironment}" />
+                <attribute name="Bundle-ManifestVersion" value="2"/>
+                <attribute name="Bundle-Name" value="Groovy Runtime"/>
+                <attribute name="Bundle-Description" value="Groovy Runtime"/>
+                <attribute name="Bundle-Version" value="${groovyBundleVersion}"/>
+                <attribute name="Bundle-Vendor" value="The Codehaus"/>
+                <attribute name="Bundle-ClassPath" value="."/>
+                <attribute name="Bundle-RequiredExecutionEnvironment" value="@{bundleEnvironment}"/>
                 <attribute name="Eclipse-BuddyPolicy" value="dependent"/>
                 <attribute name="Eclipse-LazyStart" value="true"/>
                 <attribute name="DynamicImport-Package" value="*"/>
@@ -456,22 +470,22 @@ $Date$
                 <include name="org/codehaus/groovy/antlib.xml"/>
             </fileset>
         </copy>
-    	<antcall target="-includeReleaseInfo"/>
+        <antcall target="-includeReleaseInfo"/>
     </target>
 
     <target name="-includeReleaseInfo">
-        <copy file="${mainSourceDirectory}/META-INF/groovy-release-info.properties" 
-            todir="${mainClassesDirectory}/META-INF" overwrite="true">
+        <copy file="${mainSourceDirectory}/META-INF/groovy-release-info.properties"
+              todir="${mainClassesDirectory}/META-INF" overwrite="true">
         </copy>
-    	<tstamp>
-    	    <format property="release.date" pattern="dd-MMM-yyyy"/>
-    	    <format property="release.time" pattern="hh:mm aa"/>
-    	</tstamp>
+        <tstamp>
+            <format property="release.date" pattern="dd-MMM-yyyy"/>
+            <format property="release.time" pattern="hh:mm aa"/>
+        </tstamp>
         <replace file="${mainClassesDirectory}/META-INF/groovy-release-info.properties">
-          <replacefilter token="##ImplementationVersion##" value="${groovyVersion}"/>   
-          <replacefilter token="##BundleVersion##" value="${groovyBundleVersion}"/>
-          <replacefilter token="##BuildDate##" value="${release.date}"/>
-          <replacefilter token="##BuildTime##" value="${release.time}"/>
+            <replacefilter token="##ImplementationVersion##" value="${groovyVersion}"/>
+            <replacefilter token="##BundleVersion##" value="${groovyBundleVersion}"/>
+            <replacefilter token="##BuildDate##" value="${release.date}"/>
+            <replacefilter token="##BuildTime##" value="${release.time}"/>
         </replace>
     </target>
 
@@ -494,7 +508,7 @@ $Date$
         </copy>
     </target>
 
-    <target name="-initializeJars" depends="test">
+    <target name="-initializeJars" depends="test" unless="_skipDocs_">
         <delete dir="${targetDistDirectory}" quiet="true"/>
         <mkdir dir="${targetDistDirectory}"/>
     </target>
@@ -544,23 +558,25 @@ $Date$
                 <include name="commons-cli-*.jar"/>
             </fileset>
         </unzip>
-        <makeManifest file="${stagingDirectory}/META-INF/MANIFEST.MF" />
+        <makeManifest file="${stagingDirectory}/META-INF/MANIFEST.MF"/>
         <!-- TODO try to make use of jarjar keep ability -->
         <jarjar jarfile="${targetDistDirectory}/groovy-all.jar"
                 manifest="${stagingDirectory}/META-INF/MANIFEST.MF">
-            <fileset dir="${stagingDirectory}" excludes="groovy/util/CliBuilder*.class,groovy/util/OptionAccessor*.class,org/codehaus/groovy/tools/shell/util/HelpFormatter*.class"/>
+            <fileset dir="${stagingDirectory}"
+                     excludes="groovy/util/CliBuilder*.class,groovy/util/OptionAccessor*.class,org/codehaus/groovy/tools/shell/util/HelpFormatter*.class"/>
             <rule pattern="antlr.**" result="groovyjarjarantlr.@1"/>
             <rule pattern="org.objectweb.**" result="groovyjarjarasm.@1"/>
             <rule pattern="org.apache.commons.cli.**" result="groovyjarjarcommonscli.@1"/>
         </jarjar>
         <jar destfile="${targetDistDirectory}/groovy-all.jar" update="true"
-             basedir="${stagingDirectory}" includes="groovy/util/CliBuilder*.class,groovy/util/OptionAccessor*.class,org/codehaus/groovy/tools/shell/util/HelpFormatter*.class"/>
+             basedir="${stagingDirectory}"
+             includes="groovy/util/CliBuilder*.class,groovy/util/OptionAccessor*.class,org/codehaus/groovy/tools/shell/util/HelpFormatter*.class"/>
 
         <copy file="${targetDistDirectory}/groovy-${groovyVersion}-sources.jar"
               tofile="${targetDistDirectory}/groovy-all-${groovyVersion}-sources.jar"/>
         <delete dir="${stagingDirectory}" quiet="true"/>
     </target>
-    
+
     <target name="createJars" depends="-checkAntVersion,test,-actuallyCreateJars"
             description="Build Groovy and create the jarfiles."/>
 
@@ -572,7 +588,7 @@ $Date$
                 <filter token="GROOVY_BUNDLE_VERSION" value="${groovyBundleVersion}"/>
             </filterset>
         </copy>
-        <property name="jarsToWrap" value="groovy.jar,groovy-all.jar" />
+        <property name="jarsToWrap" value="groovy.jar,groovy-all.jar"/>
         <property name="runtimeJars" refid="runtimePath"/>
         <bndwrap definitions="${targetDistDirectory}" output="${targetDistDirectory}" failok="true"
                  classpath="${runtimeJars}">
@@ -713,15 +729,15 @@ $Date$
 
     <target name="doc" depends="javadoc, groovydoc" description="Create the documentation."/>
 
-   <target name="javadoc" depends="-fetchDependencies,-docInit,-jvm14BuildWarning,ensureGrammars"
-            description="Create the javadoc documentation.">
+    <target name="javadoc" depends="-fetchDependencies,-docInit,-jvm14BuildWarning,ensureGrammars"
+            unless="_skipDocs_" description="Create the javadoc documentation.">
         <javadoc destdir="${docsDirectory}/api" author="true" version="true"
                  windowtitle="${title}" doctitle="${title}"
                  encoding="ISO-8859-1" useexternalfile="true" source="1.5"
                  footer="${docFooter}"
-                 overview="src/main/overviewj.html"                 
+                 overview="src/main/overviewj.html"
                  maxmemory="${javaDoc_mx}"
-                 >
+                >
             <classpath>
                 <path path="${mainClassesDirectory}"/>
                 <path refid="compilePath"/>
@@ -741,7 +757,7 @@ $Date$
         </copy>
     </target>
 
-    <target name="groovydoc" depends="-fetchDependencies">
+    <target name="groovydoc" depends="-fetchDependencies" unless="_skipDocs_">
         <path id="groovydocpath">
             <path path="${mainClassesDirectory}"/>
             <path refid="runtimePath"/>
@@ -802,14 +818,30 @@ $Date$
         <delete quiet="true">
             <fileset dir="." includes="**/*~"/>
             <fileset dir="${groovyParserDirectory}" includes="Groovy*.*"/>
-            <fileset dir="${javaParserDirectory}" includes="JavaLexer.java,JavaRecognizer.java,JavaTokenTypes.java,JavaTokenTypes.txt,*.smap"/>
+            <fileset dir="${javaParserDirectory}"
+                     includes="JavaLexer.java,JavaRecognizer.java,JavaTokenTypes.java,JavaTokenTypes.txt,*.smap"/>
         </delete>
     </target>
 
-    <target name="deploy" depends="-mavenDeployInit,install,doc"
-            description="Deploy jars to maven repository.">
+    <target name="deploy" depends="-mavenDeployInit,install,doc,-deployDefault,-deployFromServer"
+            description="Deploy jars to maven repository."/>
+
+    <target name="-deployDefault" unless="_forceServerSettings_">
         <mavenDeploy version="${groovyVersion}" prefix="groovy"/>
         <mavenDeploy version="${groovyVersion}" prefix="groovy-all"/>
+    </target>
+
+    <target name="-deployFromServer" if="_forceServerSettings_">
+        <copy tofile="target/settings.xml">
+            <fileset file="config/maven/settings.xml"/>
+            <filterset>
+                <filter token="groovy.deploy.username" value="${groovy.deploy.username}"/>
+                <filter token="groovy.deploy.password" value="${groovy.deploy.password}"/>
+            </filterset>
+        </copy>
+        <mavenDeploySettings version="${groovyVersion}" prefix="groovy" settings="target/settings.xml"/>
+        <mavenDeploySettings version="${groovyVersion}" prefix="groovy-all" settings="target/settings.xml"/>
+        <delete file="target/settings.xml"/>
     </target>
 
     <target name="installRepo" depends="-mavenInit,install,doc"
