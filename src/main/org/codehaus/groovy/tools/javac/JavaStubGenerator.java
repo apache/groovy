@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.codehaus.groovy.tools.javac;
 
 import org.codehaus.groovy.ast.*;
@@ -26,7 +25,6 @@ import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.classgen.Verifier;
-import org.codehaus.groovy.control.ResolveVisitor;
 import org.codehaus.groovy.tools.Utilities;
 import org.objectweb.asm.Opcodes;
 
@@ -36,11 +34,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Set;
 
 public class JavaStubGenerator
 {
@@ -193,12 +188,12 @@ public class JavaStubGenerator
             }
             out.println(" {");
 
-            genFields(classNode, out, isEnum);
+            genFields(classNode, out);
             genMethods(classNode, out, isEnum);
 
-            for (Iterator<InnerClassNode> inner = classNode.getInnerClasses(); inner.hasNext(); ) {
-            	// GROOVY-4004: Clear the property methods from the outer class so that they don't get duplicated in inner ones
-            	propertyMethods.clear();
+            for (Iterator<InnerClassNode> inner = classNode.getInnerClasses(); inner.hasNext();) {
+                // GROOVY-4004: Clear the methods from the outer class so that they don't get duplicated in inner ones
+                propertyMethods.clear();
                 constructors.clear();
                 genClassInner(inner.next(), out);
             }
@@ -214,71 +209,64 @@ public class JavaStubGenerator
     private void genMethods(ClassNode classNode, PrintWriter out, boolean isEnum) {
         if (!isEnum) getConstructors(classNode, out);
 
-        List methods = (List) propertyMethods.clone();
+        @SuppressWarnings("unchecked")
+        List<MethodNode> methods = (List)propertyMethods.clone();
         methods.addAll(classNode.getMethods());
-        if (methods != null)
-            for (Iterator it = methods.iterator(); it.hasNext();) {
-                MethodNode methodNode = (MethodNode) it.next();
-                if(isEnum && methodNode.isSynthetic()) {
-                    // skip values() method and valueOf(String)
-                    String name = methodNode.getName();
-                    Parameter[] params = methodNode.getParameters();
-                    if (name.equals("values") && params.length==0) continue;
-                    if (name.equals("valueOf") &&
-                        params.length==1 &&
-                        params[0].getType().equals(ClassHelper.STRING_TYPE))
-                    {
-                        continue;
-                    }
+        for (MethodNode method : methods) {
+            if (isEnum && method.isSynthetic()) {
+                // skip values() method and valueOf(String)
+                String name = method.getName();
+                Parameter[] params = method.getParameters();
+                if (name.equals("values") && params.length == 0) continue;
+                if (name.equals("valueOf") &&
+                        params.length == 1 &&
+                        params[0].getType().equals(ClassHelper.STRING_TYPE)) {
+                    continue;
                 }
-                genMethod(classNode, methodNode, out);
             }
+            genMethod(classNode, method, out);
+        }
     }
 
     private void getConstructors(ClassNode classNode, PrintWriter out) {
         List<ConstructorNode> constrs = (List<ConstructorNode>) constructors.clone();
         constrs.addAll(classNode.getDeclaredConstructors());
         if (constrs != null)
-            for (Iterator it = constrs.iterator(); it.hasNext();) {
-                ConstructorNode constrNode = (ConstructorNode) it.next();
-                genConstructor(classNode, constrNode, out);
+            for (ConstructorNode constr : constrs) {
+                genConstructor(classNode, constr, out);
             }
     }
 
-    private void genFields(ClassNode classNode, PrintWriter out, boolean isEnum) {
-        List fields = classNode.getFields();
+    private void genFields(ClassNode classNode, PrintWriter out) {
+        List<FieldNode> fields = classNode.getFields();
         if (fields == null) return;
-        ArrayList enumFields = new ArrayList(fields.size());
-        ArrayList normalFields = new ArrayList(fields.size());
-        for (Iterator it = fields.iterator(); it.hasNext();) {
-            FieldNode fieldNode = (FieldNode) it.next();
-            boolean isEnumField = (fieldNode.getModifiers() & Opcodes.ACC_ENUM) !=0;
-            boolean isSynthetic = (fieldNode.getModifiers() & Opcodes.ACC_SYNTHETIC) !=0;
-            if (isEnumField) {
-                enumFields.add(fieldNode);
+        List<FieldNode> enumFields = new ArrayList<FieldNode>(fields.size());
+        List<FieldNode> normalFields = new ArrayList<FieldNode>(fields.size());
+        for (FieldNode field : fields) {
+            boolean isSynthetic = (field.getModifiers() & Opcodes.ACC_SYNTHETIC) != 0;
+            if (field.isEnum()) {
+                enumFields.add(field);
             } else if (!isSynthetic) {
-                normalFields.add(fieldNode);
+                normalFields.add(field);
             }
         }
         genEnumFields(enumFields, out);
-        for (Iterator iterator = normalFields.iterator(); iterator.hasNext();) {
-            FieldNode fieldNode = (FieldNode) iterator.next();
-            genField(fieldNode, out);
+        for (FieldNode normalField : normalFields) {
+            genField(normalField, out);
         }
     }
 
 
-    private void genEnumFields(List fields, PrintWriter out) {
+    private void genEnumFields(List<FieldNode> fields, PrintWriter out) {
         if (fields.size()==0) return;
         boolean first = true;
-        for (Iterator iterator = fields.iterator(); iterator.hasNext();) {
-            FieldNode fieldNode = (FieldNode) iterator.next();
+        for (FieldNode field : fields) {
             if (!first) {
                 out.print(", ");
             } else {
                 first = false;
             }
-            out.print(fieldNode.getName());
+            out.print(field.getName());
         }
         out.println(";");
     }
@@ -341,10 +329,7 @@ public class JavaStubGenerator
         ClassNode type = node.getDeclaringClass();
         ClassNode superType = type.getSuperClass();
 
-        boolean hadPrivateConstructor = false;
-        for (Iterator iter = superType.getDeclaredConstructors().iterator(); iter.hasNext();) {
-            ConstructorNode c = (ConstructorNode)iter.next();
-
+        for (ConstructorNode c : superType.getDeclaredConstructors()) {
             // Only look at things we can actually call
             if (c.isPublic() || c.isProtected()) {
                 return c.getParameters();
@@ -391,11 +376,9 @@ public class JavaStubGenerator
         // Else try to render some arguments
         if (arguments instanceof ArgumentListExpression) {
             ArgumentListExpression argumentListExpression = (ArgumentListExpression) arguments;
-            List args = argumentListExpression.getExpressions();
+            List<Expression> args = argumentListExpression.getExpressions();
 
-            for (Iterator it = args.iterator(); it.hasNext();) {
-                Expression arg = (Expression) it.next();
-
+            for (Expression arg : args) {
                 if (arg instanceof ConstantExpression) {
                     ConstantExpression expression = (ConstantExpression) arg;
                     Object o = expression.getValue();
@@ -423,10 +406,9 @@ public class JavaStubGenerator
         if (!(arg instanceof VariableExpression)) return arg.getType();
         VariableExpression vexp = (VariableExpression) arg;
         String name = vexp.getName();
-        Parameter[] params = node.getParameters();
-        for (int i=0; i<params.length; i++) {
-            if (params[i].getName().equals(name)) {
-                return params[i].getType();
+        for (Parameter param : node.getParameters()) {
+            if (param.getName().equals(name)) {
+                return param.getType();
             }
         }
         return vexp.getType();
@@ -501,7 +483,7 @@ public class JavaStubGenerator
             printType(type.getComponentType(),out);
             out.print("[]");
         } else if (java5 && type.isGenericsPlaceHolder()) {
-        	out.print(type.getGenericsTypes()[0].getName());
+            out.print(type.getGenericsTypes()[0].getName());
         } else {
             writeGenericsBounds(out,type,false);
         }
@@ -614,11 +596,13 @@ public class JavaStubGenerator
     }
 
     private void genImports(ClassNode classNode, PrintWriter out) {
-        Set<String> imports = new HashSet<String>();
+        List<String> imports = new ArrayList<String>();
+
         //
         // HACK: Add the default imports... since things like Closure and GroovyObject seem to parse out w/o fully qualified classnames.
         //
-        imports.addAll(Arrays.asList(ResolveVisitor.DEFAULT_IMPORTS));
+        // paulk: disabled below, doesn't seem to be needed any more (28 May 2010)
+//        imports.addAll(Arrays.asList(ResolveVisitor.DEFAULT_IMPORTS));
 
         ModuleNode moduleNode = classNode.getModule();
         for (ImportNode importNode : moduleNode.getStarImports()) {
@@ -626,23 +610,24 @@ public class JavaStubGenerator
         }
 
         for (ImportNode imp : moduleNode.getImports()) {
-            String name = imp.getType().getName();
-            int lastDot = name.lastIndexOf('.');
-            if (lastDot != -1)
-                imports.add(name.substring(0, lastDot + 1));
+            imports.add(imp.getType().getName());
         }
 
         for (String imp : imports) {
-            out.print("import ");
-            out.print(imp);
-            out.println("*;");
+            String s = new StringBuilder()
+                .append("import ")
+                .append(imp)
+                .append((imp.charAt(imp.length() - 1) == '.') ? "*;" : ";")
+                .toString()
+                .replace('$', '.');
+
+            out.println(s);
         }
         out.println();
     }
 
     public void clean() {
-        for (Iterator it = toCompile.iterator(); it.hasNext();) {
-            String path = (String) it.next();
+        for (String path : toCompile) {
             new File(outputPath, path + ".java").delete();
         }
     }
