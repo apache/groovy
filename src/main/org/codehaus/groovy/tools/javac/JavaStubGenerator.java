@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,8 +30,17 @@ import org.codehaus.groovy.control.ResolveVisitor;
 import org.codehaus.groovy.tools.Utilities;
 import org.objectweb.asm.Opcodes;
 
-import java.io.*;
-import java.util.*;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
 
 public class JavaStubGenerator
 {
@@ -106,10 +115,10 @@ public class JavaStubGenerator
     }
 
     private void genClassInner(ClassNode classNode, PrintWriter out) throws FileNotFoundException {
-    	if(classNode instanceof InnerClassNode && ((InnerClassNode) classNode).isAnonymous()) {
-    		// if it is an anonymous inner class, don't generate the stub code for it.
-    		return;
-    	}
+        if (classNode instanceof InnerClassNode && ((InnerClassNode) classNode).isAnonymous()) {
+            // if it is an anonymous inner class, don't generate the stub code for it.
+            return;
+        }
         try {
             Verifier verifier = new Verifier() {
                 public void addCovariantMethods(ClassNode cn) {}
@@ -191,7 +200,7 @@ public class JavaStubGenerator
             	// GROOVY-4004: Clear the property methods from the outer class so that they don't get duplicated in inner ones
             	propertyMethods.clear();
                 constructors.clear();
-            	genClassInner(inner.next(), out);
+                genClassInner(inner.next(), out);
             }
 
             out.println("}");
@@ -352,7 +361,7 @@ public class JavaStubGenerator
 
     private void genSpecialConstructorArgs(PrintWriter out, ConstructorNode node, ConstructorCallExpression constrCall) {
         // Select a constructor from our class, or super-class which is legal to call,
-        // then write out an invoke w/nulls using casts to avoid abigous crapo
+        // then write out an invoke w/nulls using casts to avoid ambiguous crapo
 
         Parameter[] params = selectAccessibleConstructorFromSuper(node);
         if (params != null) {
@@ -606,7 +615,6 @@ public class JavaStubGenerator
 
     private void genImports(ClassNode classNode, PrintWriter out) {
         Set<String> imports = new HashSet<String>();
-
         //
         // HACK: Add the default imports... since things like Closure and GroovyObject seem to parse out w/o fully qualified classnames.
         //
