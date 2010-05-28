@@ -33,6 +33,7 @@ public class PluginStaticGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self              Placeholder variable used by Groovy categories; ignored for default static methods
      * @param languageShortName The short name of the scripting engine of interest
      * @return the ScriptEngine corresponding to the supplied short name or null if no engine was found
+     * @since 1.8.0
      */
     public static ScriptEngine $static_propertyMissing(ScriptEngineManager self, String languageShortName) {
         ScriptEngineManager manager = new ScriptEngineManager();
