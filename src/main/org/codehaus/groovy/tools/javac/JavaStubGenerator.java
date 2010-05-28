@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.codehaus.groovy.tools.javac;
 
 import org.codehaus.groovy.ast.*;
@@ -26,7 +25,6 @@ import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.classgen.Verifier;
-import org.codehaus.groovy.control.ResolveVisitor;
 import org.codehaus.groovy.tools.Utilities;
 import org.objectweb.asm.Opcodes;
 
@@ -36,11 +34,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Set;
 
 public class JavaStubGenerator
 {
@@ -601,11 +596,13 @@ public class JavaStubGenerator
     }
 
     private void genImports(ClassNode classNode, PrintWriter out) {
-        Set<String> imports = new HashSet<String>();
+        List<String> imports = new ArrayList<String>();
+
         //
         // HACK: Add the default imports... since things like Closure and GroovyObject seem to parse out w/o fully qualified classnames.
         //
-        imports.addAll(Arrays.asList(ResolveVisitor.DEFAULT_IMPORTS));
+        // paulk: disabled below, doesn't seem to be needed any more (28 May 2010)
+//        imports.addAll(Arrays.asList(ResolveVisitor.DEFAULT_IMPORTS));
 
         ModuleNode moduleNode = classNode.getModule();
         for (ImportNode importNode : moduleNode.getStarImports()) {
@@ -613,16 +610,18 @@ public class JavaStubGenerator
         }
 
         for (ImportNode imp : moduleNode.getImports()) {
-            String name = imp.getType().getName();
-            int lastDot = name.lastIndexOf('.');
-            if (lastDot != -1)
-                imports.add(name.substring(0, lastDot + 1));
+            imports.add(imp.getType().getName());
         }
 
         for (String imp : imports) {
-            out.print("import ");
-            out.print(imp);
-            out.println("*;");
+            String s = new StringBuilder()
+                .append("import ")
+                .append(imp)
+                .append((imp.charAt(imp.length() - 1) == '.') ? "*;" : ";")
+                .toString()
+                .replace('$', '.');
+                
+            out.println(s);
         }
         out.println();
     }
