@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,7 +47,7 @@ public class Parameter extends AnnotatedNode implements Variable {
     public Parameter(ClassNode type, String name, Expression defaultValue) {
         this(type,name);
         this.defaultValue = defaultValue;
-        this.hasDefaultValue = true;
+        this.hasDefaultValue = defaultValue != null;
     }
 
     public String toString() {
@@ -104,7 +104,7 @@ public class Parameter extends AnnotatedNode implements Variable {
         closureShare = inClosure;        
     }
 
-	public ClassNode getOriginType() {
-		return getType();
-	}
+    public ClassNode getOriginType() {
+        return getType();
+    }
 }
