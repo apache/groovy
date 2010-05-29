@@ -137,6 +137,19 @@ $Date$
         </sequential>
     </macrodef>
 
+    <macrodef name="mavenDeploySettings">
+        <attribute name="version"/>
+        <attribute name="prefix"/>
+        <attribute name="settings"/>
+        <sequential>
+            <artifact:deploy file="${targetDistDirectory}/@{prefix}-@{version}.jar" settingsFile="@{settings}">
+                <pom refid="@{prefix}.pom"/>
+                <attach file="${targetDistDirectory}/@{prefix}-@{version}-sources.jar" classifier="sources"/>
+                <attach file="${targetDistDirectory}/@{prefix}-@{version}-javadoc.jar" classifier="javadoc"/>
+            </artifact:deploy>
+        </sequential>
+    </macrodef>
+
     <macrodef name="mavenInstallRepo">
         <attribute name="version"/>
         <attribute name="prefix"/>

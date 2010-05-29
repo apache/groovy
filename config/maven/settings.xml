@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<settings>
+  <servers>
+    <server>
+      <id>codehaus.org</id>
+      <username>@groovy.deploy.username@</username>
+      <password>@groovy.deploy.password@</password>
+    </server>
+  </servers>
+</settings>
