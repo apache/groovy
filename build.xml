@@ -850,6 +850,10 @@ $Date$
         <mavenInstallRepo version="${groovyVersion}" prefix="groovy-all"/>
     </target>
 
+    <target name="quality" depends="install,checkstyle" description="install plus checkstyle"/>
+
+    <target name="release" depends="deploy,compileExamples" description="deploy plus compileExamples"/>
+
     <target name="fulldist" depends="dist,compileExamples,checkstyle" description="dist plus examples plus checkstyle"/>
 
     <target name="dist" depends="install,doc" description="Create everything needed for a distribution.">
