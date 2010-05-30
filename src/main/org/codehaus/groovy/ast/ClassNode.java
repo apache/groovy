@@ -645,8 +645,8 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         // let's check if it already implements an interface
         boolean skip = false;
         ClassNode[] interfaces = redirect().interfaces;
-        for (int i = 0; i < interfaces.length; i++) {
-            if (type.equals(interfaces[i])) {
+        for (ClassNode existing : interfaces) {
+            if (type.equals(existing)) {
                 skip = true;
             }
         }
@@ -673,8 +673,8 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         // let's check if it already uses a mixin
         MixinNode[] mixins = redirect().mixins;
         boolean skip = false;
-        for (int i = 0; i < mixins.length; i++) {
-            if (mixin.equals(mixins[i])) {
+        for (MixinNode existing : mixins) {
+            if (mixin.equals(existing)) {
                 skip = true;
             }
         }
