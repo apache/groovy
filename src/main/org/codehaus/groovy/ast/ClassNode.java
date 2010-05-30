@@ -214,8 +214,8 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     /**
      * @return true if this instance is a primary ClassNode
      */
-    public boolean isPrimaryClassNode(){
-    	return redirect().isPrimaryNode || (componentType!= null && componentType.isPrimaryClassNode());
+    public boolean isPrimaryClassNode() {
+        return redirect().isPrimaryNode || (componentType != null && componentType.isPrimaryClassNode());
     }
 
     /*
@@ -546,14 +546,14 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     }
 
     public boolean hasProperty(String name) {
-    	return getProperty(name)!=null;
+        return getProperty(name) != null;
     }
-    
+
     public PropertyNode getProperty(String name) {
-    	for (PropertyNode pn : getProperties()) {
+        for (PropertyNode pn : getProperties()) {
             if (pn.getName().equals(name)) return pn;
         }
-        return null;   	
+        return null;
     }
 
     public void addConstructor(ConstructorNode node) {
@@ -642,7 +642,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     }
 
     public void addInterface(ClassNode type) {
-        // lets check if it already implements an interface
+        // let's check if it already implements an interface
         boolean skip = false;
         ClassNode[] interfaces = redirect().interfaces;
         for (int i = 0; i < interfaces.length; i++) {
@@ -670,7 +670,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     }
 
     public void addMixin(MixinNode mixin) {
-        // lets check if it already uses a mixin
+        // let's check if it already uses a mixin
         MixinNode[] mixins = redirect().mixins;
         boolean skip = false;
         for (int i = 0; i < mixins.length; i++) {
@@ -792,29 +792,29 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         MethodNode method = getOrAddStaticConstructorNode();
         Statement statement = method.getCode();
         if (statement instanceof BlockStatement) {
-        	BlockStatement block = (BlockStatement) statement;
-        	// add given statements for explicitly declared static fields just after enum-special fields
-        	// are found - the $VALUES binary expression marks the end of such fields.
-        	List<Statement> blockStatements = block.getStatements();
-        	ListIterator<Statement> litr = blockStatements.listIterator();
-        	while(litr.hasNext()) {
-        		Statement stmt = litr.next();
-        		if(stmt instanceof ExpressionStatement && 
-        				((ExpressionStatement)stmt).getExpression() instanceof BinaryExpression) {
-        			BinaryExpression bExp = (BinaryExpression) ((ExpressionStatement)stmt).getExpression();
-        			if (bExp.getLeftExpression() instanceof FieldExpression) {
-        				FieldExpression fExp = (FieldExpression) bExp.getLeftExpression();
-        				if(fExp.getFieldName().equals("$VALUES")) {
-        					for(Statement tmpStmt : staticFieldStatements) {
-        						litr.add(tmpStmt);
-        					}
-        				}
-        			}
-        		}
-        	}
+            BlockStatement block = (BlockStatement) statement;
+            // add given statements for explicitly declared static fields just after enum-special fields
+            // are found - the $VALUES binary expression marks the end of such fields.
+            List<Statement> blockStatements = block.getStatements();
+            ListIterator<Statement> litr = blockStatements.listIterator();
+            while (litr.hasNext()) {
+                Statement stmt = litr.next();
+                if (stmt instanceof ExpressionStatement &&
+                        ((ExpressionStatement) stmt).getExpression() instanceof BinaryExpression) {
+                    BinaryExpression bExp = (BinaryExpression) ((ExpressionStatement) stmt).getExpression();
+                    if (bExp.getLeftExpression() instanceof FieldExpression) {
+                        FieldExpression fExp = (FieldExpression) bExp.getLeftExpression();
+                        if (fExp.getFieldName().equals("$VALUES")) {
+                            for (Statement tmpStmt : staticFieldStatements) {
+                                litr.add(tmpStmt);
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
-    
+
     /**
      * This methods returns a list of all methods of the given name
      * defined in the current class
@@ -877,9 +877,9 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
      * @return true if this node is derived from the given ClassNode
      */
     public boolean isDerivedFrom(ClassNode type) {
-    	if(this.equals(ClassHelper.VOID_TYPE)) {
-    		return type.equals(ClassHelper.VOID_TYPE) ? true : false;
-    	}
+        if (this.equals(ClassHelper.VOID_TYPE)) {
+            return type.equals(ClassHelper.VOID_TYPE);
+        }
         if (type.equals(ClassHelper.OBJECT_TYPE)) return true;
         ClassNode node = this;
         while (node != null) {
@@ -1067,7 +1067,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     }
 
     /**
-     * Is this class delcared in a static method (such as a closure / inner class declared in a static method)
+     * Is this class declared in a static method (such as a closure / inner class declared in a static method)
      */
     public boolean isStaticClass() {
         return redirect().staticClass;
@@ -1206,7 +1206,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
             // TODO this won't strictly be true when using list expansion in argument calls
             count = tuple.getExpressions().size();
         } else if (arguments instanceof MapExpression) {
-        	count = 1;
+            count = 1;
         }
         
         for (MethodNode method : getMethods(name)) {
@@ -1221,15 +1221,15 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
                 
                 // handle parameters with default values
                 int nonDefaultParameters = 0;
-                for(int i = 0; i < parameters.length; i++) {
-                	if(parameters[i].hasInitialExpression() == false) {
-                		nonDefaultParameters++;
-                	}
+                for (Parameter parameter : parameters) {
+                    if (!parameter.hasInitialExpression()) {
+                        nonDefaultParameters++;
+                    }
                 }
-                
-            	if(count < parameters.length && nonDefaultParameters <= count) {
-            		return true;
-            	}
+
+                if (count < parameters.length && nonDefaultParameters <= count) {
+                    return true;
+                }
             }
         }
         return false;
