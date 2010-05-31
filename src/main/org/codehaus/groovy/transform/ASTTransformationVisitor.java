@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 the original author or authors.
+ * Copyright 2008-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -120,7 +120,7 @@ public final class ASTTransformationVisitor extends ClassCodeVisitorSupport {
 
             targetNodes = new LinkedList<ASTNode[]>();
 
-            // fist pass, collect nodes
+            // first pass, collect nodes
             super.visitClass(classNode);
 
             // second pass, call visit on all of the collected nodes
@@ -139,8 +139,7 @@ public final class ASTTransformationVisitor extends ClassCodeVisitorSupport {
      */
     public void visitAnnotations(AnnotatedNode node) {
         super.visitAnnotations(node);
-        //noinspection unchecked
-        for (AnnotationNode annotation : (Collection<AnnotationNode>) node.getAnnotations()) {
+        for (AnnotationNode annotation : node.getAnnotations()) {
             if (transforms.containsKey(annotation)) {
                 targetNodes.add(new ASTNode[]{annotation, node});
             }
