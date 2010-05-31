@@ -1,4 +1,4 @@
-package groovy.util;
+package groovy.util.logging;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

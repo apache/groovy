@@ -1,7 +1,6 @@
 package org.codehaus.groovy.transform;
 
 import java.util.Arrays;
-import java.util.logging.Logger;
 
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ASTNode;
@@ -75,7 +74,7 @@ public class LogASTTransformation implements ASTTransformation {
                     addError("Class annotated with Log annotation cannot have log field declared",
                             logField);
                 } else {
-                    ClassNode loggerClassNode = new ClassNode(Logger.class);
+                    ClassNode loggerClassNode = new ClassNode("java.util.logging.Logger", Opcodes.ACC_PUBLIC, new ClassNode(Object.class));
                     logNode = node.addField("log",
                             Opcodes.ACC_FINAL | Opcodes.ACC_TRANSIENT | Opcodes.ACC_STATIC | Opcodes.ACC_PRIVATE,
                             loggerClassNode,
