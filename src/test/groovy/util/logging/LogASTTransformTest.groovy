@@ -15,7 +15,7 @@ import org.codehaus.groovy.transform.*
  * @author Raffaele Cigni
  * @author Alberto Vilches Raton
  */
-class LogTest extends GroovyTestCase {
+class LogASTTransformTest extends GroovyTestCase {
 
     def logObserver = new LoggingObserver()
 
@@ -38,7 +38,7 @@ class LogTest extends GroovyTestCase {
     public void testPrivateFinalStaticLogFieldAppears() {
 
         Class clazz = createAndTransformClass("""
-            @Log
+            @groovy.util.logging.Log
             class MyClass {
             } """)
 
@@ -56,7 +56,7 @@ class LogTest extends GroovyTestCase {
         shouldFail {
 
             Class clazz = createAndTransformClass("""
-                @Log
+                @groovy.util.logging.Log
                 class MyClass {
                     String log
                 } """)
@@ -69,7 +69,7 @@ class LogTest extends GroovyTestCase {
     public void testLogInfo() {
 
         Class clazz = createAndTransformClass("""
-            @Log
+            @groovy.util.logging.Log
             class MyClass {
                 
                 def loggingMethod() {
