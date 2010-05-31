@@ -22,6 +22,7 @@ class IndexedPropertyTransformTest extends GroovyShellTestCase {
 
     void testStandardCase() {
         assertScript """
+            import groovy.transform.IndexedProperty
             class Demo {
                 @IndexedProperty List<Integer> foo
                 @IndexedProperty String[] bar

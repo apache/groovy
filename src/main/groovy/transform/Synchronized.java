@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package groovy.lang;
+package groovy.transform;
 
 import org.codehaus.groovy.transform.GroovyASTTransformationClass;
 
