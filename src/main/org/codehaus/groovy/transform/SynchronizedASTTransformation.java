@@ -15,7 +15,7 @@
  */
 package org.codehaus.groovy.transform;
 
-import groovy.lang.*;
+import groovy.transform.Synchronized;
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.ArrayExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;

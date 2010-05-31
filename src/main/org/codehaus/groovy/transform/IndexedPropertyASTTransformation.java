@@ -15,7 +15,7 @@
  */
 package org.codehaus.groovy.transform;
 
-import groovy.lang.IndexedProperty;
+import groovy.transform.IndexedProperty;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;

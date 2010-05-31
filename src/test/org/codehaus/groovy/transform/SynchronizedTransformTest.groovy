@@ -24,7 +24,7 @@ class SynchronizedTransformTest extends GroovyShellTestCase {
         assertScript """
             class Count {
               private val = 0
-              @Synchronized
+              @groovy.transform.Synchronized
               void incDec() {
                 assert val == 0; val++; assert val == 1
                 sleep 500

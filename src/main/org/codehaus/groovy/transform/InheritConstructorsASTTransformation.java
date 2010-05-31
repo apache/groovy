@@ -15,7 +15,7 @@
  */
 package org.codehaus.groovy.transform;
 
-import groovy.lang.InheritConstructors;
+import groovy.transform.InheritConstructors;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;

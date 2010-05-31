@@ -22,6 +22,7 @@ class InheritConstructorsTransformTest extends GroovyShellTestCase {
 
     void testStandardCase() {
         assertScript """
+            import groovy.transform.InheritConstructors
             @InheritConstructors class CustomException extends RuntimeException { }
             def ce = new CustomException('foo')
             assert ce.message == 'foo'
@@ -30,6 +31,7 @@ class InheritConstructorsTransformTest extends GroovyShellTestCase {
 
     void testOverrideCase() {
         assertScript """
+            import groovy.transform.InheritConstructors
             @InheritConstructors
             class CustomException2 extends RuntimeException {
                 CustomException2() { super('bar') }
