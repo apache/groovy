@@ -377,6 +377,16 @@ public class SwingGroovyMethods {
     }
 
     /**
+     * Removes all items from the model.
+     *
+     * @param self a DefaultComboBoxModel
+     * @since 1.7.3
+     */
+    public static void clear(DefaultComboBoxModel self) {
+        self.removeAllElements();
+    }
+
+    /**
      * Provide the standard Groovy <code>size()</code> method for <code>TableModel</code>.
      *
      * @param self a TableModel
