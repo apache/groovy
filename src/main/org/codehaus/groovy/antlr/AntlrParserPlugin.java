@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2009 the original author or authors.
+ * Copyright 2003-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1319,9 +1319,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
                 throw new ASTRuntimeException(modifierNode, "Variable definition has an incorrect modifier 'static'.");
             }
             String name = identifier(node);
-            VariableExpression ve = new VariableExpression(name, type);
-            ve.addAnnotations(annotations);
-            leftExpression = ve;
+            leftExpression = new VariableExpression(name, type);
 
             right = node.getNextSibling();
             if (right != null) {
@@ -1334,6 +1332,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
 
         Token token = makeToken(Types.ASSIGN, variableDef);
         DeclarationExpression expression = new DeclarationExpression(leftExpression, token, rightExpression);
+        expression.addAnnotations(annotations);
         configureAST(expression, variableDef);
         ExpressionStatement expressionStatement = new ExpressionStatement(expression);
         configureAST(expressionStatement, variableDef);

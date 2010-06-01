@@ -70,6 +70,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     private Set<FieldNode> fieldTypesChecked = new HashSet<FieldNode>();
     private boolean checkingVariableTypeInDeclaration = false;
     private ImportNode currImportNode = null;
+    private MethodNode currentMethod;
 
     /**
      * we use ConstructedClassWithPackage to limit the resolving the compiler
@@ -168,7 +169,10 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         }
         resolveOrFail(node.getReturnType(), node);
 
+        MethodNode oldCurrentMethod = currentMethod;
+        currentMethod = node;
         super.visitConstructorOrMethod(node, isConstructor);
+        currentMethod = oldCurrentMethod;
 
         genericParameterNames = oldPNames;
         currentScope = oldScope;
@@ -1082,6 +1086,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     }
     
     protected Expression transformDeclarationExpression(DeclarationExpression de) {
+        visitAnnotations(de);
         Expression oldLeft = de.getLeftExpression();
         checkingVariableTypeInDeclaration = true;
         Expression left = transform(oldLeft);
@@ -1094,7 +1099,13 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         Expression right = transform(de.getRightExpression());
         if (right == de.getRightExpression()) return de;
         DeclarationExpression newDeclExpr = new DeclarationExpression(left, de.getOperation(), right);
+        newDeclExpr.setDeclaringClass(de.getDeclaringClass());
+        // TODO get normal resolving to set declaring class
+        if (newDeclExpr.getDeclaringClass() == null && currentMethod != null) {
+            newDeclExpr.setDeclaringClass(currentMethod.getDeclaringClass());
+        }
         newDeclExpr.setSourcePosition(de);
+        newDeclExpr.addAnnotations(de.getAnnotations());
         return newDeclExpr;
     }
 

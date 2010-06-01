@@ -68,10 +68,12 @@ public class DeclarationExpression extends BinaryExpression {
     }
     
     public Expression transformExpression(ExpressionTransformer transformer) {
-        Expression left = getLeftExpression();
-        Expression ret = new DeclarationExpression(transformer.transform(getLeftExpression()), getOperation(), transformer.transform(getRightExpression()));
+        Expression ret = new DeclarationExpression(transformer.transform(getLeftExpression()),
+                getOperation(), transformer.transform(getRightExpression()));
         ret.setSourcePosition(this);
-        return ret;        
+        ret.addAnnotations(getAnnotations());
+        ret.setDeclaringClass(getDeclaringClass());
+        return ret;
     }
     
     public boolean isMultipleAssignmentDeclaration() {

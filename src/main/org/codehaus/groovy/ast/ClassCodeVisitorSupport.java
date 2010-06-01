@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,8 @@ package org.codehaus.groovy.ast;
 import java.util.List;
 import java.util.Map;
 
+import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.expr.Expression;
-import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.AssertStatement;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.BreakStatement;
@@ -102,9 +102,9 @@ public abstract class ClassCodeVisitorSupport extends CodeVisitorSupport impleme
     }
 
     @Override
-    public void visitVariableExpression(VariableExpression expression) {
+    public void visitDeclarationExpression(DeclarationExpression expression) {
         visitAnnotations(expression);
-        super.visitVariableExpression(expression);
+        super.visitDeclarationExpression(expression);
     }
 
     protected void visitConstructorOrMethod(MethodNode node, boolean isConstructor) {
