@@ -120,6 +120,8 @@ class SwingMetaMethodsTest extends GroovySwingTestCase {
             model[2] = 42
             assert model.size() == 6
             assert 42 == model[2]
+            model.clear()
+            assert !model.size()
         }
     }
 
