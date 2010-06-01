@@ -38,7 +38,7 @@ class LookAndFeelHelper {
         // stuff built into various JDKs
         metal   : 'javax.swing.plaf.metal.MetalLookAndFeel',
         nimbus  : getNimbusLAFName(),
-        mac     : 'apple.laf.AquaLookAndFeel',
+        mac     : getAquaLAFName(),
         motif   : 'com.sun.java.swing.plaf.motif.MotifLookAndFeel',
         windows : 'com.sun.java.swing.plaf.windows.WindowsLookAndFeel',
         win2k   : 'com.sun.java.swing.plaf.windows.WindowsClassicLookAndFeel',
@@ -55,7 +55,7 @@ class LookAndFeelHelper {
         plasticXP : 'com.jgoodies.looks.plastic.PlasticXPLookAndFeel',
 
         // substance, requires external library
-        substance : 'org.jvnet.substance.SubstanceLookAndFeel',
+        substance : getSubstanceLAFName(),
 
         // napkin, requires external library
         napkin : 'net.sourceforge.napkinlaf.NapkinLookAndFeel'
@@ -162,4 +162,32 @@ class LookAndFeelHelper {
         }
         return null;
     }
+
+    static String getAquaLAFName() {
+        for (klass in [
+            'com.apple.laf.AquaLookAndFeel',
+            'apple.laf.AquaLookAndFeel'
+        ]) {
+            try {
+                return Class.forName(klass).getName()
+            } catch (Throwable t) {
+                // ignore it, try the next on the list
+            }
+        }
+        return null;
+    }
+
+    static String getSubstanceLAFName() {
+        for (klass in [
+            'org.pushingpixels.substance.api.SubstanceLookAndFeel',
+            'org.jvnet.substance.SubstanceLookAndFeel'
+        ]) {
+            try {
+                return Class.forName(klass).getName()
+            } catch (Throwable t) {
+                // ignore it, try the next on the list
+            }
+        }
+        return null;
+   }
 }
