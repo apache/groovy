@@ -274,29 +274,31 @@ public class GroovyClassLoader extends URLClassLoader {
         synchronized (sourceCache) {
             Class answer = (Class) sourceCache.get(codeSource.getName());
             if (answer != null) return answer;
+        }
+        
+        // Was neither already loaded nor compiling, so compile and add to
+        // cache.
+        CompilationUnit unit = createCompilationUnit(config, codeSource.getCodeSource());
+        SourceUnit su = null;
+        if (codeSource.getFile() == null) {
+            su = unit.addSource(codeSource.getName(), codeSource.getScriptText());
+        } else {
+            su = unit.addSource(codeSource.getFile());
+        }
 
-            // Was neither already loaded nor compiling, so compile and add to
-            // cache.
-            CompilationUnit unit = createCompilationUnit(config, codeSource.getCodeSource());
-            SourceUnit su = null;
-            if (codeSource.getFile() == null) {
-                su = unit.addSource(codeSource.getName(), codeSource.getScriptText());
-            } else {
-                su = unit.addSource(codeSource.getFile());
-            }
+        ClassCollector collector = createCollector(unit, su);
+        unit.setClassgenCallback(collector);
+        int goalPhase = Phases.CLASS_GENERATION;
+        if (config != null && config.getTargetDirectory() != null) goalPhase = Phases.OUTPUT;
+        unit.compile(goalPhase);
 
-            ClassCollector collector = createCollector(unit, su);
-            unit.setClassgenCallback(collector);
-            int goalPhase = Phases.CLASS_GENERATION;
-            if (config != null && config.getTargetDirectory() != null) goalPhase = Phases.OUTPUT;
-            unit.compile(goalPhase);
-
-            answer = collector.generatedClass;
-            for (Iterator iter = collector.getLoadedClasses().iterator(); iter.hasNext();) {
-                Class clazz = (Class) iter.next();
-                definePackage(clazz.getName());
-                setClassCacheEntry(clazz);
-            }
+        Class answer = collector.generatedClass;
+        for (Iterator iter = collector.getLoadedClasses().iterator(); iter.hasNext();) {
+            Class clazz = (Class) iter.next();
+            definePackage(clazz.getName());
+            setClassCacheEntry(clazz);
+        }
+        synchronized (sourceCache) {
             if (shouldCacheSource) sourceCache.put(codeSource.getName(), answer);
             return answer;
         }
