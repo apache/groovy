@@ -370,7 +370,10 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             node = node.getNextSibling();
         }
 
+        boolean syntheticPublic = ((modifiers & Opcodes.ACC_SYNTHETIC) != 0);
+        modifiers &= ~Opcodes.ACC_SYNTHETIC;
         classNode = new ClassNode(dot(getPackageName(), name), modifiers, superClass, interfaces, null);
+        classNode.setSyntheticPublic(syntheticPublic);
         classNode.addAnnotations(annotations);
         classNode.setGenericsTypes(genericsType);
         classNode.addInterface(ClassHelper.Annotation_TYPE);
@@ -410,7 +413,10 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             node = node.getNextSibling();
         }
 
+        boolean syntheticPublic = ((modifiers & Opcodes.ACC_SYNTHETIC) != 0);
+        modifiers &= ~Opcodes.ACC_SYNTHETIC;
         classNode = new ClassNode(dot(getPackageName(), name), modifiers, superClass, interfaces, null);
+        classNode.setSyntheticPublic(syntheticPublic);
         classNode.addAnnotations(annotations);
         classNode.setGenericsTypes(genericsType);
         configureAST(classNode, classDef);
@@ -490,6 +496,8 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         // TODO read mixins
         MixinNode[] mixins = {};
         ClassNode outerClass = classNode;
+        boolean syntheticPublic = ((modifiers & Opcodes.ACC_SYNTHETIC) != 0);
+        modifiers &= ~Opcodes.ACC_SYNTHETIC;
         if (classNode != null) {
             name = classNode.getNameWithoutPackage() + "$" + name;
             String fullName = dot(classNode.getPackageName(), name);
@@ -499,6 +507,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         }
         classNode.addAnnotations(annotations);
         classNode.setGenericsTypes(genericsType);
+        classNode.setSyntheticPublic(syntheticPublic);
         configureAST(classNode, classDef);
 
         // we put the class already in output to avoid the most inner classes
@@ -580,8 +589,11 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         ClassNode[] interfaces = interfaces(node);
         node = node.getNextSibling();
 
+        boolean syntheticPublic = ((modifiers & Opcodes.ACC_SYNTHETIC) != 0);
+        modifiers &= ~Opcodes.ACC_SYNTHETIC;
         String enumName = (classNode != null ? name : dot(getPackageName(), name));
         ClassNode enumClass = EnumHelper.makeEnumNode(enumName, modifiers, interfaces, classNode);
+        enumClass.setSyntheticPublic(syntheticPublic);
         ClassNode oldNode = classNode;
         classNode = enumClass;
         assertNodeType(OBJBLOCK, node);
@@ -717,10 +729,13 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             }
         }
 
+        boolean syntheticPublic = ((modifiers & Opcodes.ACC_SYNTHETIC) != 0);
+        modifiers &= ~Opcodes.ACC_SYNTHETIC;
         MethodNode methodNode = new MethodNode(name, modifiers, returnType, parameters, exceptions, code);
         methodNode.addAnnotations(annotations);
         methodNode.setGenericsTypes(generics);
         methodNode.setAnnotationDefault(hasAnnotationDefault);
+        methodNode.setSyntheticPublic(syntheticPublic);
         configureAST(methodNode, methodDef);
 
         if (classNode != null) {
@@ -776,7 +791,10 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         assertNodeType(SLIST, node);
         Statement code = statementList(node);
 
+        boolean syntheticPublic = ((modifiers & Opcodes.ACC_SYNTHETIC) != 0);
+        modifiers &= ~Opcodes.ACC_SYNTHETIC;
         ConstructorNode constructorNode = classNode.addConstructor(modifiers, parameters, exceptions, code);
+        constructorNode.setSyntheticPublic(syntheticPublic);
         constructorNode.addAnnotations(annotations);
         configureAST(constructorNode, constructorDef);
     }
@@ -1027,6 +1045,8 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         }
         if (!access) {
             answer |= defaultModifiers;
+            // ACC_SYNTHETIC isn't used here, use it as a special flag
+            if (defaultModifiers == Opcodes.ACC_PUBLIC) answer |= Opcodes.ACC_SYNTHETIC;
         }
         return answer;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 the original author or authors.
+ * Copyright 2008-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,12 +29,14 @@ import java.lang.annotation.Target;
  * of interest or on the class to apply for all package-scoped fields.
  *
  * This transformation is normally only used in conjunction with a third-party
- * library or framework which already uses package scoping.
+ * library or framework which requires package scoping.
  *
  * @author Paul King
+ * @deprecated use groovy.transform.PackageScope
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE, ElementType.FIELD})
 @GroovyASTTransformationClass("org.codehaus.groovy.transform.PackageScopeASTTransformation")
+@Deprecated
 public @interface PackageScope {
 }

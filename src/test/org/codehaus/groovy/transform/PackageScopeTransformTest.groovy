@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 the original author or authors.
+ * Copyright 2008-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,20 +24,29 @@ class PackageScopeTransformTest extends GroovyShellTestCase {
 
     void testImmutable() {
         def objects = evaluate("""
+            import groovy.transform.PackageScope
+            import static groovy.transform.PackageScopeTarget.FIELDS
             class Control {
                 String x
+                def method() {}
             }
-            @PackageScope class Foo {
+            @PackageScope(FIELDS) class Foo {
                 String x
+                def method() {}
             }
             class Bar {
                 @PackageScope String x
+                @PackageScope def method() {}
             }
-            [new Control(), new Foo(), new Bar()]
+            @PackageScope class Baz {
+                String x
+                def method() {}
+            }
+            [new Control(), new Foo(), new Bar(), new Baz()]
         """)
         objects*.class.each { c ->
             def methodNames = c.methods.name
-            if (c.name == 'Control') {
+            if (c.name == 'Control' || c.name == 'Baz') {
                 assert methodNames.contains('getX')
                 assert methodNames.contains('setX')
             } else {
@@ -46,12 +55,28 @@ class PackageScopeTransformTest extends GroovyShellTestCase {
             }
             def xField = c.declaredFields.find{ it.name == 'x' }
             assert xField
-            if (c.name == 'Control') {
+            if (c.name == 'Control' || c.name == 'Baz') {
                 assert Modifier.isPrivate(xField.modifiers)
             } else {
                 assert !Modifier.isPrivate(xField.modifiers)
                 assert !Modifier.isPublic(xField.modifiers)
                 assert !Modifier.isProtected(xField.modifiers)
+            }
+            def method = c.declaredMethods.find{ it.name == 'method' }
+            assert method
+            if (c.name == 'Bar') {
+                assert !Modifier.isPrivate(method.modifiers)
+                assert !Modifier.isPublic(method.modifiers)
+                assert !Modifier.isProtected(method.modifiers)
+            } else {
+                assert Modifier.isPublic(method.modifiers)
+            }
+            if (c.name == 'Baz') {
+                assert !Modifier.isPrivate(c.modifiers)
+                assert !Modifier.isPublic(c.modifiers)
+                assert !Modifier.isProtected(c.modifiers)
+            } else {
+                assert Modifier.isPublic(c.modifiers)
             }
         }
     }

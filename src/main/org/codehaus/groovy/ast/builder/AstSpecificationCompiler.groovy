@@ -15,6 +15,7 @@
  */
 package org.codehaus.groovy.ast.builder
 
+import groovy.transform.PackageScope
 import org.codehaus.groovy.ast.ASTNode
 import org.codehaus.groovy.ast.AnnotationNode
 import org.codehaus.groovy.ast.ClassNode
@@ -86,7 +87,6 @@ import org.codehaus.groovy.control.CompilePhase
 import org.codehaus.groovy.runtime.MethodClosure
 import org.codehaus.groovy.syntax.Token
 import org.codehaus.groovy.syntax.Types
-import org.codehaus.groovy.ast.expr.Expression
 import org.codehaus.groovy.ast.stmt.Statement
 import org.codehaus.groovy.ast.ClassHelper
 

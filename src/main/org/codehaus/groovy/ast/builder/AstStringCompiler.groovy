@@ -15,6 +15,7 @@
  */
 package org.codehaus.groovy.ast.builder
 
+import groovy.transform.PackageScope
 import org.codehaus.groovy.ast.ASTNode
 import org.codehaus.groovy.control.CompilePhase
 import org.codehaus.groovy.control.CompilationUnit

@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ public class MethodNode extends AnnotatedNode implements Opcodes {
 
     private final String name;
     private int modifiers;
+    private boolean syntheticPublic;
     private ClassNode returnType;
     private Parameter[] parameters;
     private boolean hasDefaultValue = false;
@@ -224,5 +225,22 @@ public class MethodNode extends AnnotatedNode implements Opcodes {
 
     public boolean isStaticConstructor() {
         return staticConstructor;
+    }
+
+    /**
+     * Indicates that this method has been "promoted" to public by
+     * Groovy when in fact there was no public modifier explicitly
+     * in the source code. I.e. it remembers that it has applied
+     * Groovy's "public methods by default" rule. This property is
+     * typically only of interest to AST transform writers.
+     *
+     * @return true if this class is public but had no explicit public modifier
+     */
+    public boolean isSyntheticPublic() {
+        return syntheticPublic;
+    }
+
+    public void setSyntheticPublic(boolean syntheticPublic) {
+        this.syntheticPublic = syntheticPublic;
     }
 }
