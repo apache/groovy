@@ -1,7 +1,5 @@
 package org.codehaus.groovy.ast.builder
 
-import org.codehaus.groovy.ast.builder.AstAssert
-import org.codehaus.groovy.ast.builder.AstBuilder
 import org.codehaus.groovy.syntax.Token
 import org.codehaus.groovy.syntax.Types
 import org.codehaus.groovy.ast.*
