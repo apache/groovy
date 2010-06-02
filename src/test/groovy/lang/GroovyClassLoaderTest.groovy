@@ -20,6 +20,7 @@ import org.codehaus.groovy.control.*
 import org.codehaus.groovy.ast.*
 import org.codehaus.groovy.classgen.*
 import org.objectweb.asm.Opcodes
+import java.util.concurrent.atomic.AtomicInteger
 
 public class GroovyClassLoaderTest extends GroovyTestCase implements Opcodes {
 
@@ -222,11 +223,10 @@ class GroovyClassLoaderTestCustomGCL extends GroovyClassLoader {
     def GroovyClassLoaderTestCustomGCL(config) {
         super(null, config);
     }
-    def counter = 0
+    def counter = new AtomicInteger(0)
     protected Class recompile(URL source, String name, Class oldClass) {
         if (name == "Foox") {
-            if (counter < 100) {
-                counter++
+            if (counter.getAndIncrement() < 100) {
                 return GroovyClassLoaderTestFoo1
             } else {
                 return GroovyClassLoaderTestFoo2
