@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,12 +24,12 @@ public class DynamicVariable implements Variable {
     private String name;
     private boolean closureShare = false;
     private boolean staticContext = false;
-    
+
     public DynamicVariable(String name, boolean context) {
         this.name = name;
         staticContext = context;
     }
-    
+
     public ClassNode getType() {
         return ClassHelper.DYNAMIC_TYPE;
     }
@@ -59,11 +59,15 @@ public class DynamicVariable implements Variable {
     }
 
     public void setClosureSharedVariable(boolean inClosure) {
-        closureShare = inClosure;        
+        closureShare = inClosure;
     }
 
-	public ClassNode getOriginType() {
-		return getType();
-	}
+    public int getModifiers() {
+        return 0;
+    }
+
+    public ClassNode getOriginType() {
+        return getType();
+    }
 
 }

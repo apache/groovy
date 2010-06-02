@@ -402,6 +402,15 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
         }
     }
 
+    @Override
+    public void visitDeclarationExpression(DeclarationExpression expression) {
+        super.visitDeclarationExpression(expression);
+        if (expression.isMultipleAssignmentDeclaration()) return;
+        if ((expression.getVariableExpression().getModifiers() & Opcodes.ACC_STATIC) != 0) {
+            addError("Variable definition has an incorrect modifier 'static'.", expression);
+        }
+    }
+
     private void checkForInvalidDeclaration(Expression exp) {
         if (!(exp instanceof DeclarationExpression)) return;
         addError("Invalid use of declaration inside method call.", exp);

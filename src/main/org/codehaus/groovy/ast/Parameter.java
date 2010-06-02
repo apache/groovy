@@ -37,6 +37,7 @@ public class Parameter extends AnnotatedNode implements Variable {
     private boolean hasDefaultValue;
     private boolean inStaticContext;
     private boolean closureShare=false;
+    private int modifiers;
 
     public Parameter(ClassNode type, String name) {
         this.name = name;
@@ -104,7 +105,15 @@ public class Parameter extends AnnotatedNode implements Variable {
         closureShare = inClosure;        
     }
 
+    public int getModifiers() {
+        return modifiers;
+    }
+
     public ClassNode getOriginType() {
         return getType();
+    }
+
+    public void setModifiers(int modifiers) {
+        this.modifiers = modifiers;
     }
 }

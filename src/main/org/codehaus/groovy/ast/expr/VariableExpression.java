@@ -34,6 +34,7 @@ public class VariableExpression extends Expression implements Variable {
     public static final VariableExpression SUPER_EXPRESSION = new VariableExpression("super", ClassHelper.DYNAMIC_TYPE);
 
     private String variable;
+    private int modifiers;
     private boolean inStaticContext;
     private boolean isDynamicTyped=false;
     private Variable accessedVariable;
@@ -62,6 +63,7 @@ public class VariableExpression extends Expression implements Variable {
     public VariableExpression(Variable variable) {
         this(variable.getName(), variable.getOriginType());
         setAccessedVariable(variable);
+        setModifiers(variable.getModifiers());
     }
 
     public void visit(GroovyCodeVisitor visitor) {
@@ -119,7 +121,11 @@ public class VariableExpression extends Expression implements Variable {
     public void setClosureSharedVariable(boolean inClosure) {
         closureShare = inClosure;        
     }
-    
+
+    public int getModifiers() {
+        return modifiers;
+    }
+
     public void setUseReferenceDirectly(boolean useRef) {
         this.useRef = useRef;        
     }
@@ -132,9 +138,9 @@ public class VariableExpression extends Expression implements Variable {
         if (accessedVariable!=null && accessedVariable!=this) return accessedVariable.getType();
         return super.getType();
     }
-    
+
     public ClassNode getOriginType() {
-    	return originType;
+        return originType;
     }
 
     public boolean isThisExpression() {
@@ -143,5 +149,9 @@ public class VariableExpression extends Expression implements Variable {
 
     public boolean isSuperExpression() {
         return "super".equals(variable);
+    }
+
+    public void setModifiers(int modifiers) {
+        this.modifiers = modifiers;
     }
 }

@@ -56,7 +56,7 @@ public class ClassScopeASTTransformation extends ClassCodeExpressionTransformer 
             DeclarationExpression de = (DeclarationExpression) parent;
             ClassNode cNode = de.getDeclaringClass();
             VariableExpression ve = de.getVariableExpression();
-            cNode.addField(ve.getName(), ACC_PRIVATE, ve.getType(), null);
+            cNode.addField(ve.getName(), ve.getModifiers(), ve.getType(), null);
             candidate = de;
             super.visitClass(cNode);
         }

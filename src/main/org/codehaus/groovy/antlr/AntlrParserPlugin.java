@@ -34,7 +34,11 @@ import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.syntax.*;
 import org.objectweb.asm.Opcodes;
 
-import java.io.*;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.PrintStream;
+import java.io.Reader;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
@@ -954,6 +958,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         node = node.getNextSibling();
 
         VariableExpression leftExpression = new VariableExpression(name, type);
+        leftExpression.setModifiers(modifiers);
         configureAST(leftExpression, paramNode);
 
         Parameter parameter = null;
@@ -1302,15 +1307,10 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         AST node = variableDef.getFirstChild();
         ClassNode type = null;
         List<AnnotationNode> annotations = new ArrayList<AnnotationNode>();
-        boolean staticVariable = false;
-        AST modifierNode = null;
+        int modifiers = 0;
         if (isType(MODIFIERS, node)) {
             // force check of modifier conflicts
-            int modifiers = modifiers(node, annotations, 0);
-            if ((modifiers & Opcodes.ACC_STATIC) != 0) {
-                modifierNode = node;
-                staticVariable = true;
-            }
+            modifiers = modifiers(node, annotations, 0);
             node = node.getNextSibling();
         }
         if (isType(TYPE, node)) {
@@ -1335,11 +1335,10 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             right = node.getNextSibling();
             if (right != null) rightExpression = expression(right);
         } else {
-            if (staticVariable) {
-                throw new ASTRuntimeException(modifierNode, "Variable definition has an incorrect modifier 'static'.");
-            }
             String name = identifier(node);
-            leftExpression = new VariableExpression(name, type);
+            VariableExpression ve = new VariableExpression(name, type);
+            ve.setModifiers(modifiers);
+            leftExpression = ve;
 
             right = node.getNextSibling();
             if (right != null) {
