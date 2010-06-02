@@ -18,11 +18,11 @@ package org.codehaus.groovy.transform
 /**
  * @author Paul King
  */
-class ClassScopeTransformTest extends GroovyShellTestCase {
+class ScriptFieldTransformTest extends GroovyShellTestCase {
 
     void testStandardCase() {
         assertScript """
-            @groovy.transform.ClassScope List awe = [1, 2, 3]
+            @groovy.transform.ScriptField List awe = [1, 2, 3]
             def awesum() { awe.sum() }
             assert awesum() == 6
             assert this.awe instanceof List

@@ -30,7 +30,7 @@ import java.lang.annotation.Target;
  * The annotated variable will become a private field of the script class.
  * The type of the field will be the same as the type of the variable. Example usage:
  * <pre>
- * {@code @ClassScope} List awe = [1, 2, 3]
+ * {@code @ScriptField} List awe = [1, 2, 3]
  * def awesum() { awe.sum() }
  * assert awesum() == 6
  * </pre>
@@ -45,6 +45,6 @@ import java.lang.annotation.Target;
  */
 @Retention(RetentionPolicy.SOURCE)
 @Target({ElementType.LOCAL_VARIABLE})
-@GroovyASTTransformationClass("org.codehaus.groovy.transform.ClassScopeASTTransformation")
-public @interface ClassScope {
+@GroovyASTTransformationClass("org.codehaus.groovy.transform.ScriptFieldASTTransformation")
+public @interface ScriptField {
 }

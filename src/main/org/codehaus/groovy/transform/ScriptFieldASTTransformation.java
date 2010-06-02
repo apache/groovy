@@ -16,9 +16,11 @@
 
 package org.codehaus.groovy.transform;
 
+import groovy.lang.Script;
+import groovy.transform.ScriptField;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.*;
-import org.codehaus.groovy.ast.expr.BinaryExpression;
+import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
@@ -29,16 +31,18 @@ import org.objectweb.asm.Opcodes;
 import java.util.Arrays;
 
 /**
- * Handles transformation for the @ClassScope annotation.
+ * Handles transformation for the @ScriptField annotation.
  * This is experimental, use at your own risk.
  *
  * @author Paul King
  */
-@GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
-public class ClassScopeASTTransformation extends ClassCodeExpressionTransformer implements ASTTransformation, Opcodes {
+@GroovyASTTransformation(phase = CompilePhase.SEMANTIC_ANALYSIS)
+public class ScriptFieldASTTransformation extends ClassCodeExpressionTransformer implements ASTTransformation, Opcodes {
 
-    private static final Class MY_CLASS = groovy.transform.ClassScope.class;
+    private static final Class MY_CLASS = ScriptField.class;
     private static final ClassNode MY_TYPE = new ClassNode(MY_CLASS);
+    private static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
+    private static final ClassNode SCRIPT_TYPE = new ClassNode(Script.class);
     private SourceUnit sourceUnit;
     private DeclarationExpression candidate;
 
@@ -55,8 +59,11 @@ public class ClassScopeASTTransformation extends ClassCodeExpressionTransformer 
         if (parent instanceof DeclarationExpression) {
             DeclarationExpression de = (DeclarationExpression) parent;
             ClassNode cNode = de.getDeclaringClass();
+            if (!cNode.isDerivedFrom(SCRIPT_TYPE)) {
+                addError("Error: annotation " + MY_TYPE_NAME + " can only be used within a Script.", parent);
+            }
             VariableExpression ve = de.getVariableExpression();
-            cNode.addField(ve.getName(), ve.getModifiers(), ve.getType(), null);
+            cNode.addField(ve.getName(), ve.getModifiers(), ve.getType(), de.getRightExpression());
             candidate = de;
             super.visitClass(cNode);
         }
@@ -65,8 +72,7 @@ public class ClassScopeASTTransformation extends ClassCodeExpressionTransformer 
     public Expression transform(Expression expr) {
         if (expr == null) return null;
         if (expr instanceof DeclarationExpression && expr == candidate) {
-            return new BinaryExpression(candidate.getLeftExpression(),
-                    candidate.getOperation(), candidate.getRightExpression());
+            return new ConstantExpression(null);
         }
         return expr.transformExpression(this);
     }
