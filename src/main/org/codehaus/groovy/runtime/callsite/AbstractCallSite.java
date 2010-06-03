@@ -269,7 +269,11 @@ public class AbstractCallSite implements CallSite {
         } catch (NoSuchMethodException e) {
             // fall threw
         }
-        return createPogoGetPropertySite (aClass);
+        if (receiver instanceof Class) {
+        	return createClassMetaClassGetPropertySite ((Class) receiver);
+        } else {
+            return createPogoGetPropertySite (aClass);
+        }
     }
 
     public Object getProperty(Object receiver) throws Throwable {
