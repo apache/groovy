@@ -308,6 +308,40 @@ public class GroovyScriptEngine implements ResourceConnector {
     }
 
     /**
+     * This method closes a {@link URLConnection} by getting its {@link InputStream} and calling the
+     * {@link InputStream#close()} method on it. The {@link URLConnection} doesn't have a close() method
+     * and relies on garbage collection to close the underlying connection to the file.
+     * Relying on garbage collection could lead to the application exhausting the number of files the
+     * user is allowed to have open at any one point in time and cause the application to crash
+     * ({@link FileNotFoundException} (Too many open files)).
+     * Hence the need for this method to explicitly close the underlying connection to the file.
+     *
+     * @param urlConnection the {@link URLConnection} to be "closed" to close the underlying file descriptors.
+     */
+    private void forceClose(URLConnection urlConnection) {
+        if (urlConnection != null) {
+            // We need to get the input stream and close it to force the open
+            // file descriptor to be released. Otherwise, we will reach the limit
+            // for number of files open at one time.
+
+            InputStream in = null;
+            try {
+                in = urlConnection.getInputStream();
+            } catch (Exception e) {
+                // Do nothing: We were not going to use it anyway.
+            } finally {
+                if (in != null) {
+                    try {
+                        in.close();
+                    } catch (IOException e) {
+                        // Do nothing: Just want to make sure it is closed.
+                    }
+                }
+            }
+        }
+    }
+
+    /**
      * The groovy script engine will run groovy scripts and reload them and
      * their dependencies when they are modified. This is useful for embedding
      * groovy in other containers like games and application servers.
@@ -408,14 +442,18 @@ public class GroovyScriptEngine implements ResourceConnector {
         String path = conn.getURL().getPath();
         ScriptCacheEntry entry = scriptCache.get(path);
         Class clazz = null;
-        if (entry!=null) clazz=entry.scriptClass;
-        if (isSourceNewer(entry)) {
-            try {
-                String encoding = conn.getContentEncoding() != null ? conn.getContentEncoding() : "UTF-8";
-                clazz = groovyLoader.parseClass(DefaultGroovyMethods.getText(conn.getInputStream(), encoding), conn.getURL().getPath());
-            } catch (IOException e) {
-                throw new ResourceException(e);
+        if (entry != null) clazz=entry.scriptClass;
+        try {
+            if (isSourceNewer(entry)) {
+                try {
+                    String encoding = conn.getContentEncoding() != null ? conn.getContentEncoding() : "UTF-8";
+                    clazz = groovyLoader.parseClass(DefaultGroovyMethods.getText(conn.getInputStream(), encoding), conn.getURL().getPath());
+                } catch (IOException e) {
+                    throw new ResourceException(e);
+                }
             }
+        } finally {
+            forceClose(conn);
         }
         return clazz;
     }
@@ -482,23 +520,26 @@ public class GroovyScriptEngine implements ResourceConnector {
     }
 
     protected boolean isSourceNewer(ScriptCacheEntry entry) throws ResourceException  {
-        if (entry==null) return true;
+        if (entry == null) return true;
         long time = System.currentTimeMillis();
         
         for (String scriptName:entry.dependencies) {
             ScriptCacheEntry depEntry = scriptCache.get(scriptName);
             long entryChangeTime = depEntry.lastModified + config.getMinimumRecompilationInterval();
-            if (entryChangeTime>time) continue;
+            if (entryChangeTime > time) continue;
 
             URLConnection conn = rc.getResourceConnection(scriptName);
+            // getResourceConnection() opening the inputstream, let's ensure all streams are closed
+            forceClose(conn);
+
             URL source = conn.getURL();
             String path = source.getPath().replace('/', File.separatorChar).replace('|', ':');
             File file = new File(path);
             long lastMod = file.lastModified();
 
             if (entryChangeTime > lastMod) {
-                ScriptCacheEntry newEntry = new ScriptCacheEntry(depEntry.scriptClass,time,depEntry.dependencies);
-                scriptCache.put(scriptName,newEntry);
+                ScriptCacheEntry newEntry = new ScriptCacheEntry(depEntry.scriptClass, time, depEntry.dependencies);
+                scriptCache.put(scriptName, newEntry);
                 continue;
             }
             return true;
