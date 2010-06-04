@@ -16,12 +16,11 @@
 
 package org.codehaus.groovy.transform;
 
-import groovy.lang.Script;
 import groovy.transform.ScriptField;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.*;
-import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.DeclarationExpression;
+import org.codehaus.groovy.ast.expr.EmptyExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.control.CompilePhase;
@@ -42,9 +41,9 @@ public class ScriptFieldASTTransformation extends ClassCodeExpressionTransformer
     private static final Class MY_CLASS = ScriptField.class;
     private static final ClassNode MY_TYPE = new ClassNode(MY_CLASS);
     private static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
-    private static final ClassNode SCRIPT_TYPE = new ClassNode(Script.class);
     private SourceUnit sourceUnit;
     private DeclarationExpression candidate;
+    private boolean insideScriptBody;
 
     public void visit(ASTNode[] nodes, SourceUnit source) {
         sourceUnit = source;
@@ -59,22 +58,39 @@ public class ScriptFieldASTTransformation extends ClassCodeExpressionTransformer
         if (parent instanceof DeclarationExpression) {
             DeclarationExpression de = (DeclarationExpression) parent;
             ClassNode cNode = de.getDeclaringClass();
-            if (!cNode.isDerivedFrom(SCRIPT_TYPE)) {
+            if (!cNode.isScript()) {
                 addError("Error: annotation " + MY_TYPE_NAME + " can only be used within a Script.", parent);
             }
-            VariableExpression ve = de.getVariableExpression();
-            cNode.addField(ve.getName(), ve.getModifiers(), ve.getType(), de.getRightExpression());
             candidate = de;
             super.visitClass(cNode);
+            VariableExpression ve = de.getVariableExpression();
+            // set owner null here, it will be updated by addField
+            FieldNode fNode = new FieldNode(ve.getName(), ve.getModifiers(), ve.getType(), null, de.getRightExpression());
+            fNode.setSourcePosition(de);
+            cNode.addField(fNode);
         }
     }
 
     public Expression transform(Expression expr) {
         if (expr == null) return null;
-        if (expr instanceof DeclarationExpression && expr == candidate) {
-            return new ConstantExpression(null);
+        if (expr instanceof DeclarationExpression) {
+            DeclarationExpression de = (DeclarationExpression) expr;
+            if (de.getVariableExpression() == candidate.getVariableExpression()) {
+                if (insideScriptBody) {
+                    return EmptyExpression.INSTANCE;
+                }
+                addError("Error: annotation " + MY_TYPE_NAME + " can only be used within a Script body.", expr);
+            }
         }
         return expr.transformExpression(this);
+    }
+
+    @Override
+    public void visitMethod(MethodNode node) {
+        Boolean oldInsideScriptBody = insideScriptBody;
+        if (node.isScriptBody()) insideScriptBody = true;
+        super.visitMethod(node);
+        insideScriptBody = oldInsideScriptBody;
     }
 
     protected SourceUnit getSourceUnit() {

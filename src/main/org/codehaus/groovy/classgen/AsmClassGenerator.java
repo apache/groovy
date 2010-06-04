@@ -1424,6 +1424,7 @@ public class AsmClassGenerator extends ClassGenerator {
         visitStatement(statement);
 
         Expression expression = statement.getExpression();
+        if (expression == EmptyExpression.INSTANCE) return;
 
         visitAndAutoboxBoolean(expression);
 

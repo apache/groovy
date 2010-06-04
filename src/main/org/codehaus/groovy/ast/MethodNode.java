@@ -178,6 +178,16 @@ public class MethodNode extends AnnotatedNode implements Opcodes {
         return this.hasDefaultValue;
     }
 
+    /**
+     * @return true if this method is the run method from a script
+     */
+    public boolean isScriptBody() {
+        return getDeclaringClass() != null &&
+                getDeclaringClass().isScript() &&
+                getName().equals("run") &&
+                getColumnNumber() == -1;
+    }
+
     public String toString() {
         return "MethodNode@" + hashCode() + "[" + getTypeDescriptor() + "]";
     }
