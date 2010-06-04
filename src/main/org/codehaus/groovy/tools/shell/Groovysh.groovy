@@ -27,6 +27,8 @@ import org.codehaus.groovy.tools.shell.util.Preferences
 import org.codehaus.groovy.tools.shell.Parser
 import org.codehaus.groovy.tools.shell.ParseCode
 import org.fusesource.jansi.AnsiRenderer
+import org.fusesource.jansi.Ansi
+import org.fusesource.jansi.AnsiConsole
 
 /**
  * An interactive shell for evaluating Groovy code from the command-line (aka. groovysh).
@@ -37,6 +39,14 @@ import org.fusesource.jansi.AnsiRenderer
 class Groovysh
     extends Shell
 {
+    static {
+        // Install the system adapters
+        AnsiConsole.systemInstall()
+
+        // Register jline ansi detector
+        Ansi.setDetector(new AnsiDetector())
+    }
+
     private static final MessageSource messages = new MessageSource(Groovysh.class)
 
     final BufferManager buffers = new BufferManager()
