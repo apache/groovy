@@ -216,7 +216,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     private boolean resolveToInnerEnum (ClassNode type) {
         // GROOVY-3110: It may be an inner enum defined by this class itself, in which case it does not need to be
         // explicitly qualified by the currentClass name
-    	String name = type.getName();
+        String name = type.getName();
         if(currentClass != type && !name.contains(".") && type.getClass().equals(ClassNode.class)) {
             type.setName(currentClass.getName() + "$" + name);
             if (resolve(type)) return true;
@@ -288,24 +288,24 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         // and there is a nested class A$X. we want to be able 
         // to access that class directly, so A becomes a valid
         // name in X.
-    	// GROOVY-4043: Do this check up the hierarchy, if needed
-    	Map<String, ClassNode> hierClasses = new LinkedHashMap<String, ClassNode>();
-    	ClassNode val;
+        // GROOVY-4043: Do this check up the hierarchy, if needed
+        Map<String, ClassNode> hierClasses = new LinkedHashMap<String, ClassNode>();
+        ClassNode val;
         String name;
-    	for(ClassNode classToCheck = currentClass; classToCheck != ClassHelper.OBJECT_TYPE; 
-    		classToCheck = classToCheck.getSuperClass()) {
-    		if(classToCheck == null || hierClasses.containsKey(classToCheck.getName())) break;
+        for(ClassNode classToCheck = currentClass; classToCheck != ClassHelper.OBJECT_TYPE; 
+            classToCheck = classToCheck.getSuperClass()) {
+            if(classToCheck == null || hierClasses.containsKey(classToCheck.getName())) break;
             hierClasses.put(classToCheck.getName(), classToCheck);
-    	}
-    	
-    	for (ClassNode classToCheck : hierClasses.values()) {
+        }
+        
+        for (ClassNode classToCheck : hierClasses.values()) {
             name = classToCheck.getName()+"$"+type.getName();
             val = ClassHelper.make(name);
             if (resolveFromCompileUnit(val)) {
                 type.setRedirect(val);
                 return true;
             }
-    	}
+        }
         
         // another case we want to check here is if we are in a
         // nested class A$B$C and want to access B without
@@ -922,11 +922,11 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         Variable v = ve.getAccessedVariable();
         
         if(!(v instanceof DynamicVariable) && !checkingVariableTypeInDeclaration) {
-        	/*
-        	 *  GROOVY-4009: when a normal variable is simply being used, there is no need to try to 
-        	 *  resolve its type. Variable type resolve should proceed only if the variable is being declared. 
-        	 */
-        	return ve;
+            /*
+             *  GROOVY-4009: when a normal variable is simply being used, there is no need to try to 
+             *  resolve its type. Variable type resolve should proceed only if the variable is being declared. 
+             */
+            return ve;
         }
         if (v instanceof DynamicVariable){
             String name = ve.getName();
@@ -1041,7 +1041,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                 if (para.hasInitialExpression()) {
                     Object initialVal = para.getInitialExpression();
                     if (initialVal instanceof Expression) {
-                    	para.setInitialExpression(transform((Expression) initialVal));
+                        para.setInitialExpression(transform((Expression) initialVal));
                     }
                 }
                 visitAnnotations(para);
@@ -1097,16 +1097,23 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             return de;
         }
         Expression right = transform(de.getRightExpression());
-        if (right == de.getRightExpression()) return de;
+        if (right == de.getRightExpression()) {
+            fixDeclaringClass(de);
+            return de;
+        }
         DeclarationExpression newDeclExpr = new DeclarationExpression(left, de.getOperation(), right);
         newDeclExpr.setDeclaringClass(de.getDeclaringClass());
-        // TODO get normal resolving to set declaring class
-        if (newDeclExpr.getDeclaringClass() == null && currentMethod != null) {
-            newDeclExpr.setDeclaringClass(currentMethod.getDeclaringClass());
-        }
+        fixDeclaringClass(newDeclExpr);
         newDeclExpr.setSourcePosition(de);
         newDeclExpr.addAnnotations(de.getAnnotations());
         return newDeclExpr;
+    }
+
+    // TODO get normal resolving to set declaring class
+    private void fixDeclaringClass(DeclarationExpression newDeclExpr) {
+        if (newDeclExpr.getDeclaringClass() == null && currentMethod != null) {
+            newDeclExpr.setDeclaringClass(currentMethod.getDeclaringClass());
+        }
     }
 
     protected Expression transformAnnotationConstantExpression(AnnotationConstantExpression ace) {
@@ -1136,14 +1143,14 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                 checkAnnotationMemberValue(newValue);
             }
             if(annType.isResolved()) {
-            	Class annTypeClass = annType.getTypeClass();
-            	Retention retAnn = (Retention) annTypeClass.getAnnotation(Retention.class);
-            	if (retAnn != null && retAnn.value().equals(RetentionPolicy.RUNTIME)) {
-            		AnnotationNode anyPrevAnnNode = tmpAnnotations.put(annTypeClass.getName(), an);
-            		if(anyPrevAnnNode != null) {
-            			addError("Cannot specify duplicate annotation on the same member : " + annType.getName(), an);
-            		}
-            	}
+                Class annTypeClass = annType.getTypeClass();
+                Retention retAnn = (Retention) annTypeClass.getAnnotation(Retention.class);
+                if (retAnn != null && retAnn.value().equals(RetentionPolicy.RUNTIME)) {
+                    AnnotationNode anyPrevAnnNode = tmpAnnotations.put(annTypeClass.getName(), an);
+                    if(anyPrevAnnNode != null) {
+                        addError("Cannot specify duplicate annotation on the same member : " + annType.getName(), an);
+                    }
+                }
             }
         }
     }
@@ -1211,11 +1218,11 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         if (!module.hasImportsResolved()) {
             List l = module.getImports();
             for (ImportNode importNode : module.getImports()) {
-            	currImportNode = importNode;
+                currImportNode = importNode;
                 ClassNode type = importNode.getType();
                 if (resolve(type, false, false, true)) {
-                	currImportNode = null;
-                	continue;
+                    currImportNode = null;
+                    continue;
                 }
                 currImportNode = null;
                 addError("unable to resolve class " + type.getName(), type);
@@ -1227,10 +1234,10 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                 // static import. In that case, the package may not have been explicitly specified.
                 // Try with the node's package too. If still not found, revert to original type name.
                 if (type.getPackageName() == null && node.getPackageName() != null) {
-                	String oldTypeName = type.getName();
-                	type.setName(node.getPackageName() + "." + oldTypeName);
-                	if (resolve(type, false, false, true)) continue;
-                	type.setName(oldTypeName);
+                    String oldTypeName = type.getName();
+                    type.setName(node.getPackageName() + "." + oldTypeName);
+                    if (resolve(type, false, false, true)) continue;
+                    type.setName(oldTypeName);
                 }
                 addError("unable to resolve class " + type.getName(), type);
             }

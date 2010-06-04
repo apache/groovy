@@ -19,8 +19,8 @@ package org.codehaus.groovy.transform;
 import groovy.transform.ScriptField;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.*;
+import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.DeclarationExpression;
-import org.codehaus.groovy.ast.expr.EmptyExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.control.CompilePhase;
@@ -77,7 +77,10 @@ public class ScriptFieldASTTransformation extends ClassCodeExpressionTransformer
             DeclarationExpression de = (DeclarationExpression) expr;
             if (de.getVariableExpression() == candidate.getVariableExpression()) {
                 if (insideScriptBody) {
-                    return EmptyExpression.INSTANCE;
+                    // TODO make EmptyExpression work
+                    // partially works but not if only thing in script
+                    // return EmptyExpression.INSTANCE;
+                    return new ConstantExpression(null);
                 }
                 addError("Error: annotation " + MY_TYPE_NAME + " can only be used within a Script body.", expr);
             }

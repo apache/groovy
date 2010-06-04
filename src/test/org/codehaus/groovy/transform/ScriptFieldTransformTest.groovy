@@ -20,13 +20,68 @@ package org.codehaus.groovy.transform
  */
 class ScriptFieldTransformTest extends GroovyShellTestCase {
 
-    void testStandardCase() {
+    void testInstanceField() {
         assertScript """
             @groovy.transform.ScriptField List awe = [1, 2, 3]
             def awesum() { awe.sum() }
             assert awesum() == 6
             assert this.awe instanceof List
             assert this.class.getDeclaredField('awe').type.name == 'java.util.List'
+        """
+    }
+
+    void testStaticFieldFromScript() {
+        assertScript """
+            import groovy.transform.*
+            @ScriptField static List awe = [1, 2, 3]
+            def awesum() { awe.sum() + this.class.awe.sum() }
+            assert awesum() == 12
+            assert this.class.awe instanceof List
+        """
+    }
+
+    void testStaticFieldFromMethod() {
+        assertScript """
+            import groovy.transform.*
+            @ScriptField static String exer = 'exercise'
+            static exersize() { exer.size() }
+            assert exersize() == 8
+        """
+    }
+
+    void testFieldInitialization() {
+        assertScript """
+            def scriptText = '''
+                import groovy.transform.*
+                @ScriptField public pepsi = [1, 2, 3]
+            '''
+            def gcs = new GroovyCodeSource(scriptText, 'foo', 'bar')
+            def klass = new GroovyShell().parseClass(gcs)
+            assert klass.newInstance().pepsi.max() == 3
+        """
+    }
+
+    void testStaticFieldInitialization() {
+        assertScript """
+            def scriptText = '''
+                import groovy.transform.*
+                @ScriptField public static ad = [1, 2, 3]
+                assert ad.min() == 1
+            '''
+            def gcs = new GroovyCodeSource(scriptText, 'foo', 'bar')
+            def klass = new GroovyShell().parseClass(gcs)
+            assert klass.ad.min() == 1
+        """
+    }
+
+    void testFieldTypes() {
+        assertScript """
+            import groovy.transform.*
+            @ScriptField int one
+            @ScriptField int two = 2
+            @ScriptField Integer three = 3
+            this.one = 1
+            assert this.one + this.two + this.three == 6
         """
     }
 
