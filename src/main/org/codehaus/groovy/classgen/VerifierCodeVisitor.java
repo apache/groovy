@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,28 +15,24 @@
  */
 package org.codehaus.groovy.classgen;
 
-import java.util.Iterator;
-import java.util.List;
-
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.CodeVisitorSupport;
 import org.codehaus.groovy.ast.stmt.ForStatement;
-import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.ListExpression;
 import org.codehaus.groovy.ast.expr.MapEntryExpression;
-import org.codehaus.groovy.ast.expr.MethodCallExpression;
-import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.FieldExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.syntax.RuntimeParserException;
 import org.objectweb.asm.Opcodes;
 
 /**
- * Verifies the method code
- * 
+ * Performs various checks on code inside methods and constructors
+ * including checking for valid field, variables names etc. that
+ * would otherwise lead to invalid code.
+ *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
@@ -48,18 +44,9 @@ public class VerifierCodeVisitor extends CodeVisitorSupport implements Opcodes {
         this.verifier = verifier;
     }
 
-    public void visitMethodCallExpression(MethodCallExpression call) {
-        super.visitMethodCallExpression(call);
-    }
-
     public void visitForLoop(ForStatement expression) {
         assertValidIdentifier(expression.getVariable().getName(), "for loop variable name", expression);
         super.visitForLoop(expression);
-    }
-
-    public void visitPropertyExpression(PropertyExpression expression) {
-        // assertValidIdentifier(expression.getProperty(), "property name", expression);  // This has been commented out to fix the issue Groovy-843
-        super.visitPropertyExpression(expression);
     }
 
     public void visitFieldExpression(FieldExpression expression) {
@@ -74,23 +61,20 @@ public class VerifierCodeVisitor extends CodeVisitorSupport implements Opcodes {
         super.visitVariableExpression(expression);
     }
 
-    public void visitBinaryExpression(BinaryExpression expression) {
-        /*
-        if (verifier.getClassNode().isScript() && expression.getOperation().getType() == Token.EQUAL) {
-            // lets turn variable assignments into property assignments
-            Expression left = expression.getLeftExpression();
-            if (left instanceof VariableExpression) {
-                VariableExpression varExp = (VariableExpression) left;
-
-                //System.out.println("Converting variable expression: " + varExp.getVariable());
-
-                PropertyExpression propExp =
-                    new PropertyExpression(VariableExpression.THIS_EXPRESSION, varExp.getVariable());
-                expression.setLeftExpression(propExp);
+    public void visitListExpression(ListExpression expression) {
+        for (Expression element : expression.getExpressions()) {
+            if (element instanceof MapEntryExpression) {
+                throw new RuntimeParserException("No map entry allowed at this place", element);
             }
         }
-        */
-        super.visitBinaryExpression(expression);
+        super.visitListExpression(expression);
+    }
+
+    public void visitConstructorCallExpression(ConstructorCallExpression call) {
+        ClassNode callType = call.getType();
+        if (callType.isEnum() && !callType.equals(verifier.getClassNode())) {
+            throw new RuntimeParserException("Enum constructor calls are only allowed inside the enum class", call);
+        }
     }
 
     public static void assertValidIdentifier(String name, String message, ASTNode node) {
@@ -112,23 +96,5 @@ public class VerifierCodeVisitor extends CodeVisitorSupport implements Opcodes {
                 throw new RuntimeParserException("Invalid " + message + ". Invalid character at position: " + (i + 1) + " of value:  " + ch + " in name: " + name, node);
             }
         }
-    }
-    
-    public void visitListExpression(ListExpression expression) {
-        List expressions = expression.getExpressions();
-        for (Iterator iter = expressions.iterator(); iter.hasNext();) {
-            Object element = iter.next();
-            if (element instanceof MapEntryExpression) {
-                throw new RuntimeParserException ("no map entry allowed at this place",(Expression) element);
-            }
-        }
-        super.visitListExpression(expression);
-    }
-
-    public void visitConstructorCallExpression(ConstructorCallExpression call) {
-    	ClassNode callType = call.getType(); 
-    	if(callType.isEnum() && !callType.equals(verifier.getClassNode())) {
-    		throw new RuntimeParserException ("Enum constructor calls are only allowed inside the enum class",(Expression) call);
-    	}
     }
 }
