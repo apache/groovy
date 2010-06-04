@@ -15,10 +15,12 @@
  */
 package org.codehaus.groovy.transform
 
+import gls.CompilableTestSupport
+
 /**
  * @author Paul King
  */
-class ScriptFieldTransformTest extends GroovyShellTestCase {
+class ScriptFieldTransformTest extends CompilableTestSupport {
 
     void testInstanceField() {
         assertScript """
@@ -82,6 +84,59 @@ class ScriptFieldTransformTest extends GroovyShellTestCase {
             @ScriptField Integer three = 3
             this.one = 1
             assert this.one + this.two + this.three == 6
+        """
+    }
+
+    void testNotAllowedInScriptMethods() {
+        shouldNotCompile """
+            import groovy.transform.*
+            def method() {
+                @ScriptField int one
+            }
+        """
+    }
+
+    void testNotAllowedForClassFields() {
+        shouldNotCompile """
+            import groovy.transform.*
+            class Inner {
+                @ScriptField int one
+            }
+        """
+    }
+
+    void testNotAllowedForScriptInnerClassFields() {
+        shouldNotCompile """
+            import groovy.transform.*
+            class Inner {
+                @ScriptField int one
+            }
+            println Inner.class.name
+        """
+    }
+
+    void testNotAllowedInClassMethods() {
+        // currently two error messages!
+        shouldNotCompile """
+            import groovy.transform.*
+            class Inner {
+                def bar() {
+                    @ScriptField int one
+                }
+            }
+        """
+    }
+
+    void testNotAllowedInScriptInnerClassMethods() {
+        // currently two error messages!
+        shouldNotCompile """
+            import groovy.transform.*
+            class Inner {
+                def bar() {
+                    @ScriptField int one
+                }
+            }
+            println Inner.class.name
         """
     }
 
