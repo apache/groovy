@@ -145,7 +145,7 @@ public class CompilationUnit extends ProcessingUnit {
 
         this.verifier = new Verifier();
         this.resolveVisitor = new ResolveVisitor(this);
-        this.staticImportVisitor = new StaticImportVisitor(this);
+        this.staticImportVisitor = new StaticImportVisitor();
         this.optimizer = new OptimizerVisitor(this);
 
         phaseOperations = new LinkedList[Phases.ALL + 1];
@@ -182,6 +182,14 @@ public class CompilationUnit extends ProcessingUnit {
         addPhaseOperation(output);
 
         ASTTransformationVisitor.addPhaseOperations(this);
+        addPhaseOperation(new PrimaryClassNodeOperation() {
+            @Override
+            public void call(SourceUnit source, GeneratorContext context,
+                             ClassNode classNode) throws CompilationFailedException {
+                StaticVerifier sv = new StaticVerifier();
+                sv.visitClass(classNode, source);
+            }
+        }, Phases.SEMANTIC_ANALYSIS);
 
         this.classgenCallback = null;
     }

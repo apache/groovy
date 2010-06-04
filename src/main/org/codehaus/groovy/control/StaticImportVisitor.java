@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2009 the original author or authors.
+ * Copyright 2003-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,11 @@
 package org.codehaus.groovy.control;
 
 import static org.codehaus.groovy.runtime.MetaClassHelper.capitalize;
+
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.syntax.Types;
-import org.objectweb.asm.Opcodes;
 
 import java.util.*;
 
@@ -34,8 +34,6 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
     private ClassNode currentClass;
     private MethodNode currentMethod;
     private SourceUnit source;
-    private CompilationUnit compilationUnit; // TODO use it or lose it
-    private boolean stillResolving;
     private boolean inSpecialConstructorCall;
     private boolean inClosure;
     private boolean inPropertyExpression;
@@ -43,10 +41,6 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
     private Expression foundArgs;
     private boolean inAnnotation;
     private boolean inLeftExpression;
-
-    public StaticImportVisitor(CompilationUnit cu) {
-        compilationUnit = cu;
-    }
 
     public void visitClass(ClassNode node, SourceUnit source) {
         this.currentClass = node;
@@ -108,8 +102,8 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
                     // because we can't wait until later to do this
                     AnnotationNode an = (AnnotationNode) ce.getValue();
                     Map<String, Expression> attributes = an.getMembers();
-                    for (Map.Entry entry : attributes.entrySet()) {
-                        Expression attrExpr = transform((Expression) entry.getValue());
+                    for (Map.Entry<String, Expression> entry : attributes.entrySet()) {
+                        Expression attrExpr = transform(entry.getValue());
                         entry.setValue(attrExpr);
                     }
 
@@ -126,6 +120,7 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
     //   new Bar(baz:1)
     // will become:
     //   new Bar(foo:1)
+
     private Expression transformMapEntryExpression(MapEntryExpression me, ClassNode constructorCallType) {
         Expression key = me.getKeyExpression();
         Expression value = me.getValueExpression();
@@ -176,18 +171,18 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
         if (v != null && v instanceof DynamicVariable) {
             Expression result = findStaticFieldOrPropAccessorImportFromModule(v.getName());
             if (result != null) {
-            	result.setSourcePosition(ve);
+                result.setSourcePosition(ve);
                 if (inAnnotation) {
                     result = transformInlineConstants(result);
                 }
-            	return result;
+                return result;
             }
-            if (!inPropertyExpression || inSpecialConstructorCall) addStaticVariableError(ve);
         }
         return ve;
     }
 
     // resolve constant-looking expressions statically (do here as gets transformed away later)
+
     private Expression transformInlineConstants(Expression exp) {
         if (exp instanceof PropertyExpression) {
             PropertyExpression pe = (PropertyExpression) exp;
@@ -228,15 +223,9 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
         Expression method = transform(mce.getMethod());
         Expression object = transform(mce.getObjectExpression());
         boolean isExplicitThisOrSuper = false;
-        boolean isExplicitSuper;
         if (object instanceof VariableExpression) {
             VariableExpression ve = (VariableExpression) object;
             isExplicitThisOrSuper = !mce.isImplicitThis() && (ve.getName().equals("this") || ve.getName().equals("super"));
-            isExplicitSuper = ve.getName().equals("super");
-            if (isExplicitSuper && currentMethod != null && currentMethod.isStatic()) {
-                addError("'super' cannot be used in a static context, use the explicit class instead.", mce);
-                return mce;
-            }
         }
 
         if (mce.isImplicitThis() || isExplicitThisOrSuper) {
@@ -246,15 +235,15 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
                     ret.setSourcePosition(mce);
                     return ret;
                 }
-                if (method instanceof ConstantExpression && !inLeftExpression){
+                if (method instanceof ConstantExpression && !inLeftExpression) {
                     // could be a closure field
-                	String methodName = (String)((ConstantExpression) method).getValue(); 
-                	ret = findStaticFieldOrPropAccessorImportFromModule(methodName);
-                	if (ret != null) {
-                		ret = new MethodCallExpression(ret, "call", args);
+                    String methodName = (String) ((ConstantExpression) method).getValue();
+                    ret = findStaticFieldOrPropAccessorImportFromModule(methodName);
+                    if (ret != null) {
+                        ret = new MethodCallExpression(ret, "call", args);
                         ret.setSourcePosition(mce);
                         return ret;
-                	}
+                    }
                 }
             }
 
@@ -271,9 +260,9 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
                     }
                     if (inSpecialConstructorCall ||
                             (lookForPossibleStaticMethod && currentClass.hasPossibleStaticMethod(methodName, args))) {
-                    	StaticMethodCallExpression smce = new StaticMethodCallExpression(currentClass, methodName, args);
-                    	smce.setSourcePosition(mce);
-                    	return smce;
+                        StaticMethodCallExpression smce = new StaticMethodCallExpression(currentClass, methodName, args);
+                        smce.setSourcePosition(mce);
+                        return smce;
                     }
                 }
             }
@@ -339,16 +328,6 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
             }
         }
 
-        // some super validation
-        if (objectExpression instanceof VariableExpression) {
-            VariableExpression ve = (VariableExpression) objectExpression;
-            boolean isExplicitSuper = ve.getName().equals("super");
-            if (isExplicitSuper && currentMethod != null && currentMethod.isStatic()) {
-                addError("'super' cannot be used in a static context, use the explicit class instead.", pe);
-                return null;
-            }
-        }
-
         if (foundArgs != null && foundConstant != null) {
             Expression result = findStaticMethodImportFromModule(foundConstant, foundArgs);
             if (result != null) {
@@ -359,42 +338,13 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
         foundArgs = oldFoundArgs;
         foundConstant = oldFoundConstant;
         pe.setObjectExpression(objectExpression);
-        if (!inSpecialConstructorCall) checkStaticScope(pe);
         return pe;
-    }
-
-    private void checkStaticScope(PropertyExpression pe) {
-        if (inClosure) return;
-        for (Expression it = pe; it != null; it = ((PropertyExpression) it).getObjectExpression()) {
-            if (it instanceof PropertyExpression) continue;
-            if (it instanceof VariableExpression) {
-                addStaticVariableError((VariableExpression) it);
-            }
-            return;
-        }
-    }
-
-    private void addStaticVariableError(VariableExpression ve) {
-        // closures are always dynamic
-        // propertyExpressions will handle the error a bit differently
-        if (!inSpecialConstructorCall && (inClosure || !ve.isInStaticContext())) return;
-        if (stillResolving) return;
-        if (ve.isThisExpression() || ve.isSuperExpression()) return;
-        Variable v = ve.getAccessedVariable();
-        if (v != null && !(v instanceof DynamicVariable) && v.isInStaticContext()) return;
-        addError("Apparent variable '" + ve.getName() + "' was found in a static scope but doesn't refer" +
-                " to a local variable, static field or class. Possible causes:\n" +
-                "You attempted to reference a variable in the binding or an instance variable from a static context.\n" +
-                "You misspelled a classname or statically imported field. Please check the spelling.\n" +
-                "You attempted to use a method '" + ve.getName() +
-                "' but left out brackets in a place not allowed by the grammar.", ve);
     }
 
     private Expression findStaticFieldOrPropAccessorImportFromModule(String name) {
         ModuleNode module = currentClass.getModule();
         if (module == null) return null;
         Map<String, ImportNode> importNodes = module.getStaticImports();
-        stillResolving = false;
         Expression expression;
         String accessorName = getAccessorName(name);
         // look for one of these:
@@ -470,7 +420,7 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
         }
         Map<String, ImportNode> starImports = module.getStaticStarImports();
         ClassNode starImportType;
-        if(isEnum(currentClass) && starImports.containsKey(currentClass.getName())) {
+        if (currentClass.isEnum() && starImports.containsKey(currentClass.getName())) {
             ImportNode importNode = starImports.get(currentClass.getName());
             starImportType = importNode == null ? null : importNode.getType();
             expression = findStaticMethod(starImportType, name, args);
@@ -512,7 +462,8 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
         Expression accessor = findStaticPropertyAccessorByFullName(staticImportType, getAccessorName(propName));
         if (accessor == null && hasStaticProperty(staticImportType, propName)) {
             // args will be replaced
-            if (inLeftExpression) accessor = new StaticMethodCallExpression(staticImportType, getAccessorName(propName), ArgumentListExpression.EMPTY_ARGUMENTS);
+            if (inLeftExpression)
+                accessor = new StaticMethodCallExpression(staticImportType, getAccessorName(propName), ArgumentListExpression.EMPTY_ARGUMENTS);
             else accessor = new PropertyExpression(new ClassExpression(staticImportType), propName);
         }
         return accessor;
@@ -540,10 +491,9 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
         if (staticImportType.isPrimaryClassNode() || staticImportType.isResolved()) {
             staticImportType.getFields(); // force init
             FieldNode field = staticImportType.getField(fieldName);
-            if (field != null && field.isStatic() && field.isEnum()) return new PropertyExpression(new ClassExpression(staticImportType), fieldName);
+            if (field != null && field.isStatic() && field.isEnum())
+                return new PropertyExpression(new ClassExpression(staticImportType), fieldName);
             if (field != null && field.isStatic()) return new FieldExpression(field);
-        } else {
-            stillResolving = true;
         }
         return null;
     }
@@ -559,9 +509,5 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
 
     protected SourceUnit getSourceUnit() {
         return source;
-    }
-
-    private boolean isEnum(ClassNode node) {
-        return (node.getModifiers() & Opcodes.ACC_ENUM) != 0;
     }
 }
