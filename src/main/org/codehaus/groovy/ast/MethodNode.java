@@ -39,11 +39,11 @@ public class MethodNode extends AnnotatedNode implements Opcodes {
     private VariableScope variableScope;
     private final ClassNode[] exceptions;
     private final boolean staticConstructor;
-    
+
     // type spec for generics
-    private GenericsType[] genericsTypes=null;
+    private GenericsType[] genericsTypes = null;
     private boolean hasDefault;
-    
+
     // cached data
     String typeDescriptor;
 
@@ -51,23 +51,25 @@ public class MethodNode extends AnnotatedNode implements Opcodes {
         this.name = name;
         this.modifiers = modifiers;
         this.code = code;
-        setReturnType(returnType); 
+        setReturnType(returnType);
         VariableScope scope = new VariableScope();
         setVariableScope(scope);
         setParameters(parameters);
-        this.hasDefault = false;       
+        this.hasDefault = false;
         this.exceptions = exceptions;
-        this.staticConstructor = (name != null && name.equals("<clinit>")) ? true : false;
+        this.staticConstructor = (name != null && name.equals("<clinit>"));
     }
 
     /**
      * The type descriptor for a method node is a string containing the name of the method, its return type,
      * and its parameter types in a canonical form. For simplicity, I'm using the format of a Java declaration
      * without parameter names.
+     *
+     * @return the type descriptor
      */
     public String getTypeDescriptor() {
-        if (typeDescriptor==null) { 
-            StringBuffer buf = new StringBuffer(name.length()+parameters.length*10);
+        if (typeDescriptor == null) {
+            StringBuffer buf = new StringBuffer(name.length() + parameters.length * 10);
             buf.append(returnType.getName());
             buf.append(' ');
             buf.append(name);
@@ -84,13 +86,13 @@ public class MethodNode extends AnnotatedNode implements Opcodes {
         }
         return typeDescriptor;
     }
-    
+
     private void invalidateCachedData() {
         typeDescriptor = null;
     }
- 
+
     public boolean isVoidMethod() {
-        return returnType==ClassHelper.VOID_TYPE;
+        return returnType == ClassHelper.VOID_TYPE;
     }
 
     public Statement getCode() {
@@ -123,8 +125,7 @@ public class MethodNode extends AnnotatedNode implements Opcodes {
         VariableScope scope = new VariableScope();
         this.parameters = parameters;
         if (parameters != null && parameters.length > 0) {
-            for (int i = 0; i < parameters.length; i++) {
-                Parameter para = parameters[i];
+            for (Parameter para : parameters) {
                 if (para.hasInitialExpression()) {
                     this.hasDefaultValue = true;
                 }
@@ -134,7 +135,7 @@ public class MethodNode extends AnnotatedNode implements Opcodes {
         }
         setVariableScope(scope);
     }
-    
+
     public ClassNode getReturnType() {
         return returnType;
     }
@@ -177,34 +178,34 @@ public class MethodNode extends AnnotatedNode implements Opcodes {
     }
 
     public String toString() {
-        return "MethodNode@"+hashCode()+"[" + getTypeDescriptor() + "]";
+        return "MethodNode@" + hashCode() + "[" + getTypeDescriptor() + "]";
     }
 
     public void setReturnType(ClassNode returnType) {
         invalidateCachedData();
-    	dynamicReturnType |= ClassHelper.DYNAMIC_TYPE==returnType;
+        dynamicReturnType |= ClassHelper.DYNAMIC_TYPE == returnType;
         this.returnType = returnType;
-        if (returnType==null) this.returnType = ClassHelper.OBJECT_TYPE;
+        if (returnType == null) this.returnType = ClassHelper.OBJECT_TYPE;
     }
 
     public ClassNode[] getExceptions() {
         return exceptions;
     }
-    
-    public Statement getFirstStatement(){
+
+    public Statement getFirstStatement() {
         if (code == null) return null;
         Statement first = code;
         while (first instanceof BlockStatement) {
             List<Statement> list = ((BlockStatement) first).getStatements();
             if (list.isEmpty()) {
-                first=null;
+                first = null;
             } else {
                 first = list.get(0);
             }
         }
         return first;
     }
-    
+
     public GenericsType[] getGenericsTypes() {
         return genericsTypes;
     }
