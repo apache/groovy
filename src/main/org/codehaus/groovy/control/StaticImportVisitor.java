@@ -358,6 +358,17 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
             expression = findStaticPropertyAccessor(importNode.getType(), getPropNameForAccessor(importNode.getFieldName()));
             if (expression != null) return expression;
         }
+        if (accessorName.startsWith("get")) {
+            accessorName = "is" + accessorName.substring(3);
+            if (importNodes.containsKey(accessorName)) {
+                ImportNode importNode = importNodes.get(accessorName);
+                expression = findStaticPropertyAccessorByFullName(importNode.getType(), importNode.getFieldName());
+                if (expression != null) return expression;
+                expression = findStaticPropertyAccessor(importNode.getType(), getPropNameForAccessor(importNode.getFieldName()));
+                if (expression != null) return expression;
+            }
+        }
+        
         // look for one of these:
         //   import static MyClass.prop [as otherProp]
         // when resolving prop or field reference
@@ -410,11 +421,11 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
             String propName = getPropNameForAccessor(name);
             if (importNodes.containsKey(propName)) {
                 ImportNode importNode = importNodes.get(propName);
-                expression = findStaticMethod(importNode.getType(), name.substring(0, 3) + capitalize(importNode.getFieldName()), args);
+                expression = findStaticMethod(importNode.getType(), prefix(name) + capitalize(importNode.getFieldName()), args);
                 if (expression != null) return expression;
                 expression = findStaticPropertyAccessorGivenArgs(importNode.getType(), importNode.getFieldName(), args);
                 if (expression != null) {
-                    return new StaticMethodCallExpression(importNode.getType(), name.substring(0, 3) + capitalize(importNode.getFieldName()), args);
+                    return new StaticMethodCallExpression(importNode.getType(), prefix(name) + capitalize(importNode.getFieldName()), args);
                 }
             }
         }
@@ -439,14 +450,19 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
         return null;
     }
 
-    private String getPropNameForAccessor(String fieldName) {
-        if (fieldName.length() < 4) return fieldName;
-        if (!validPropName(fieldName)) return fieldName;
-        return String.valueOf(fieldName.charAt(3)).toLowerCase() + fieldName.substring(4);
+    private String prefix(String name) {
+        return name.startsWith("is") ? "is" : name.substring(0, 3);
     }
 
-    private boolean validPropName(String fieldName) {
-        return fieldName.startsWith("get") || fieldName.startsWith("set");
+    private String getPropNameForAccessor(String fieldName) {
+        int prefixLength = fieldName.startsWith("is") ? 2 : 3;
+        if (fieldName.length() < prefixLength + 1) return fieldName;
+        if (!validPropName(fieldName)) return fieldName;
+        return String.valueOf(fieldName.charAt(prefixLength)).toLowerCase() + fieldName.substring(prefixLength + 1);
+    }
+
+    private boolean validPropName(String propName) {
+        return propName.startsWith("get") || propName.startsWith("is") || propName.startsWith("set");
     }
 
     private String getAccessorName(String name) {
@@ -459,12 +475,17 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
     }
 
     private Expression findStaticPropertyAccessor(ClassNode staticImportType, String propName) {
-        Expression accessor = findStaticPropertyAccessorByFullName(staticImportType, getAccessorName(propName));
+        String accessorName = getAccessorName(propName);
+        Expression accessor = findStaticPropertyAccessorByFullName(staticImportType, accessorName);
+        if (accessor == null && accessorName.startsWith("get")) {
+            accessor = findStaticPropertyAccessorByFullName(staticImportType, "is" + accessorName.substring(3));
+        }
         if (accessor == null && hasStaticProperty(staticImportType, propName)) {
             // args will be replaced
             if (inLeftExpression)
-                accessor = new StaticMethodCallExpression(staticImportType, getAccessorName(propName), ArgumentListExpression.EMPTY_ARGUMENTS);
-            else accessor = new PropertyExpression(new ClassExpression(staticImportType), propName);
+                accessor = new StaticMethodCallExpression(staticImportType, accessorName, ArgumentListExpression.EMPTY_ARGUMENTS);
+            else
+                accessor = new PropertyExpression(new ClassExpression(staticImportType), propName);
         }
         return accessor;
     }
