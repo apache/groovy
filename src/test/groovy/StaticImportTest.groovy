@@ -134,6 +134,25 @@ class StaticImportTest extends GroovyTestCase {
         }
     }
 
+    void testStaticImportPropertyBooleanAlternative() {
+        def sources = [
+            "class Foo { static x = null" + "; static boolean isX() { x } }",
+            "class Foo { static x = null" + "; static boolean isX() { x }; static void setX(newx) { x = newx } }"
+        ]
+        def imports = [
+            "import static Foo.*",
+            "import static Foo.x",
+            "import static Foo.isX; import static Foo.setX"
+        ]
+        def results = [
+            "assert !x; x = true ; assert  isX(); setX(false); assert !x",
+            "assert !x; x = false; assert !isX(); setX(true);  assert  x"
+        ]
+        [0..<sources.size(), 0..<imports.size()].combinations().each { i, j ->
+            assertScript sources[i] + "\n" + imports[j] + "\n" + results[i]
+        }
+    }
+
     void testStaticImportPropertyWithPublicField() {
         def sources = [
             "class Foo { public static x = 'foo'" + " }",
