@@ -181,12 +181,15 @@ public class GroovyScriptEngine implements ResourceConnector {
             StringSetMap cache = localCache.get();
             cache.makeTransitiveHull();
             long time = System.currentTimeMillis();
+            Set<String> entryNames = new HashSet<String>();
             for (Map.Entry<String,Set<String>> entry: cache.entrySet()) {
                 String className = entry.getKey();
                 Class clazz = getClassCacheEntry(className);
                 if (clazz==null) continue;
                 
                 String entryName = getPath(clazz);
+                if(entryNames.contains(entryName)) continue;
+                entryNames.add(entryName);
                 Set<String> value = convertToPaths(entry.getValue()); 
                 ScriptCacheEntry cacheEntry = new ScriptCacheEntry(clazz,time,value);
                 scriptCache.put(entryName,cacheEntry);

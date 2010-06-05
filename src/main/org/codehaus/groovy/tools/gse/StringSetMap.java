@@ -15,12 +15,12 @@
  */
 package org.codehaus.groovy.tools.gse;
 
-import java.util.HashMap;
-import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.TreeSet;
 
-public class StringSetMap extends HashMap<String,Set<String>> {
+public class StringSetMap extends LinkedHashMap<String,Set<String>> {
     
     public StringSetMap() {
         super();
@@ -36,7 +36,7 @@ public class StringSetMap extends HashMap<String,Set<String>> {
         String name = (String) o;
         Set<String> set = super.get(name);
         if (set==null) {
-            set = new HashSet();
+            set = new LinkedHashSet<String>();
             put(name,set);
         }
         return set;
