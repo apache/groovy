@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,11 +18,9 @@ package org.codehaus.groovy.runtime.wrappers;
 
 /**
  * @author John Wilson
- *
  */
-
 public class FloatWrapper extends PojoWrapper {
-  public FloatWrapper(final float wrapped) {
-    super(new Float(wrapped), float.class);
-  }
+    public FloatWrapper(final float wrapped) {
+        super(wrapped, float.class);
+    }
 }
