@@ -21,58 +21,52 @@ import groovy.lang.MetaClass;
 
 /**
  * @author John Wilson
- *
  */
-
 public class GroovyObjectWrapper extends Wrapper {
-  protected final GroovyObject wrapped;
-  
-  public GroovyObjectWrapper(final GroovyObject wrapped, final Class constrainedType) {
-    super(constrainedType);
-    this.wrapped = wrapped;
-  }
-  
-  public Object unwrap() {
-    return this.wrapped;
-  }
-  
-  /**
-   * Note the rest of these method will only be used post 1.0
-   */
+    protected final GroovyObject wrapped;
 
-  /* (non-Javadoc)
-   * @see groovy.lang.GroovyObject#getProperty(java.lang.String)
-   */
-  public Object getProperty(final String property) {
-    return this.wrapped.getProperty(property);
-  }
+    public GroovyObjectWrapper(final GroovyObject wrapped, final Class constrainedType) {
+        super(constrainedType);
+        this.wrapped = wrapped;
+    }
 
-  /* (non-Javadoc)
-   * @see groovy.lang.GroovyObject#invokeMethod(java.lang.String, java.lang.Object)
-   */
-  public Object invokeMethod(final String name, final Object args) {
-    return this.wrapped.invokeMethod(name, args);
-  }
+    public Object unwrap() {
+        return this.wrapped;
+    }
 
-  /* (non-Javadoc)
-   * @see groovy.lang.GroovyObject#setMetaClass(groovy.lang.MetaClass)
-   */
-  public void setMetaClass(final MetaClass metaClass) {
-    this.wrapped.setMetaClass(metaClass);
-  }
+    /* (non-Javadoc)
+    * @see groovy.lang.GroovyObject#getProperty(java.lang.String)
+    */
+    public Object getProperty(final String property) {
+        return this.wrapped.getProperty(property);
+    }
 
-  /* (non-Javadoc)
-   * @see groovy.lang.GroovyObject#setProperty(java.lang.String, java.lang.Object)
-   */
-  public void setProperty(final String property, final Object newValue) {
-    this.wrapped.setProperty(property, newValue);
-  }
+    /* (non-Javadoc)
+    * @see groovy.lang.GroovyObject#invokeMethod(java.lang.String, java.lang.Object)
+    */
+    public Object invokeMethod(final String name, final Object args) {
+        return this.wrapped.invokeMethod(name, args);
+    }
 
-  protected Object getWrapped() {
-    return this.wrapped;
-  }
+    /* (non-Javadoc)
+    * @see groovy.lang.GroovyObject#setMetaClass(groovy.lang.MetaClass)
+    */
+    public void setMetaClass(final MetaClass metaClass) {
+        this.wrapped.setMetaClass(metaClass);
+    }
 
-  protected MetaClass getDelegatedMetaClass() {
-    return this.wrapped.getMetaClass();
-  }
+    /* (non-Javadoc)
+    * @see groovy.lang.GroovyObject#setProperty(java.lang.String, java.lang.Object)
+    */
+    public void setProperty(final String property, final Object newValue) {
+        this.wrapped.setProperty(property, newValue);
+    }
+
+    protected Object getWrapped() {
+        return this.wrapped;
+    }
+
+    protected MetaClass getDelegatedMetaClass() {
+        return this.wrapped.getMetaClass();
+    }
 }

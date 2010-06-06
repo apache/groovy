@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,10 +20,9 @@ package org.codehaus.groovy.runtime.wrappers;
  * @author John Wilson
  *
  */
-
 public class ShortWrapper extends PojoWrapper {
   public ShortWrapper(final short wrapped) {
-    super(new Short(wrapped), short.class);
+    super(wrapped, short.class);
   }
 
 }

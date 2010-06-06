@@ -18,62 +18,55 @@ package org.codehaus.groovy.runtime.wrappers;
 
 import groovy.lang.MetaClass;
 
-
 /**
  * @author John Wilson
- *
  */
-
 public class PojoWrapper extends Wrapper {
-  protected MetaClass delegate;
-  protected final Object wrapped;
-  
-  public PojoWrapper(final Object wrapped, final Class constrainedType) {
-    super(constrainedType);
-    this.wrapped = wrapped;
-  }
-  
-  public Object unwrap() {
-    return this.wrapped;
-  }
-  
-  /**
-   * Note the rest of these method will only be used post 1.0
-   */
+    protected MetaClass delegate;
+    protected final Object wrapped;
 
-  /* (non-Javadoc)
-   * @see groovy.lang.GroovyObject#getProperty(java.lang.String)
-   */
-  public Object getProperty(final String property) {
-    return this.delegate.getProperty(this.wrapped, property);
-  }
+    public PojoWrapper(final Object wrapped, final Class constrainedType) {
+        super(constrainedType);
+        this.wrapped = wrapped;
+    }
 
-  /* (non-Javadoc)
-   * @see groovy.lang.GroovyObject#invokeMethod(java.lang.String, java.lang.Object)
-   */
-  public Object invokeMethod(final String methodName, final Object arguments) {
-    return this.delegate.invokeMethod(this.wrapped, methodName, arguments);
-  }
+    public Object unwrap() {
+        return this.wrapped;
+    }
 
-  /* (non-Javadoc)
-   * @see groovy.lang.GroovyObject#setMetaClass(groovy.lang.MetaClass)
-   */
-  public void setMetaClass(final MetaClass metaClass) {
-    this.delegate = metaClass;
-  }
+    /* (non-Javadoc)
+    * @see groovy.lang.GroovyObject#getProperty(java.lang.String)
+    */
+    public Object getProperty(final String property) {
+        return this.delegate.getProperty(this.wrapped, property);
+    }
 
-  /* (non-Javadoc)
-   * @see groovy.lang.GroovyObject#setProperty(java.lang.String, java.lang.Object)
-   */
-  public void setProperty(final String property, final Object newValue) {
-    this.delegate.setProperty(this.wrapped, property, newValue);
-  }
+    /* (non-Javadoc)
+    * @see groovy.lang.GroovyObject#invokeMethod(java.lang.String, java.lang.Object)
+    */
+    public Object invokeMethod(final String methodName, final Object arguments) {
+        return this.delegate.invokeMethod(this.wrapped, methodName, arguments);
+    }
 
-  protected Object getWrapped() {
-    return this.wrapped;
-  }
+    /* (non-Javadoc)
+    * @see groovy.lang.GroovyObject#setMetaClass(groovy.lang.MetaClass)
+    */
+    public void setMetaClass(final MetaClass metaClass) {
+        this.delegate = metaClass;
+    }
 
-  protected MetaClass getDelegatedMetaClass() {
-    return this.delegate;
-  }
+    /* (non-Javadoc)
+    * @see groovy.lang.GroovyObject#setProperty(java.lang.String, java.lang.Object)
+    */
+    public void setProperty(final String property, final Object newValue) {
+        this.delegate.setProperty(this.wrapped, property, newValue);
+    }
+
+    protected Object getWrapped() {
+        return this.wrapped;
+    }
+
+    protected MetaClass getDelegatedMetaClass() {
+        return this.delegate;
+    }
 }
