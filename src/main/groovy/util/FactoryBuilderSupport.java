@@ -212,11 +212,6 @@ public abstract class FactoryBuilderSupport extends Binding {
         }
     }
 
-    @Deprecated
-    public FactoryBuilderSupport(Closure nameMappingClosure) {
-        this.nameMappingClosure = nameMappingClosure;
-    }
-
     /**
      * @param name the name of the variable to lookup
      * @return the variable value
