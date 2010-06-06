@@ -35,7 +35,7 @@ public abstract class Wrapper implements GroovyObject {
     * @see groovy.lang.GroovyObject#getMetaClass()
     */
     public MetaClass getMetaClass() {
-        return this.delegatingMetaClass;
+        return getDelegatedMetaClass();
     }
 
     public Class getType() {
