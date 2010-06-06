@@ -23,6 +23,7 @@ import groovy.lang.MetaClass;
  * @author John Wilson
  */
 public abstract class Wrapper implements GroovyObject {
+    @Deprecated
     protected MetaClass delegatingMetaClass;
 
     protected final Class constrainedType;
