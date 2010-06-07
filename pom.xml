@@ -75,6 +75,35 @@
             </roles>
         </developer>
         <developer>
+            <name>Jochen Theodorou</name>
+            <id>blackdrag</id>
+            <email>blackdrag@gmx.org</email>
+            <organization>SpringSource</organization>
+            <roles>
+                <role>Developer</role>
+                <role>Despot</role>
+            </roles>
+        </developer>
+        <developer>
+            <name>Paul King</name>
+            <id>paulk</id>
+            <email>paulk@asert.com.au</email>
+            <organization>ASERT, Australia</organization>
+            <roles>
+                <role>Developer</role>
+                <role>Despot</role>
+            </roles>
+        </developer>
+        <developer>
+            <name>Roshan Dawrani</name>
+            <id>roshandawrani</id>
+            <email></email>
+            <organization></organization>
+            <roles>
+                <role>Developer</role>
+            </roles>
+        </developer>
+        <developer>
             <name>bob mcwhirter</name>
             <id>bob</id>
             <email>bob@werken.com</email>
@@ -228,15 +257,6 @@
             </roles>
         </developer>
         <developer>
-            <name>Jochen Theodorou</name>
-            <id>blackdrag</id>
-            <email>blackdrag@gmx.org</email>
-            <organization></organization>
-            <roles>
-                <role>Developer</role>
-            </roles>
-        </developer>
-        <developer>
             <name>Russel Winder</name>
             <id>russel</id>
             <email>russel@russel.org.uk</email>
@@ -269,15 +289,6 @@
             <id>mittie</id>
             <email>dierk.koenig@canoo.com</email>
             <organization>Canoo Engineering AG</organization>
-            <roles>
-                <role>Developer</role>
-            </roles>
-        </developer>
-        <developer>
-            <name>Paul King</name>
-            <id>paulk</id>
-            <email>paulk@asert.com.au</email>
-            <organization>ASERT, Australia</organization>
             <roles>
                 <role>Developer</role>
             </roles>
