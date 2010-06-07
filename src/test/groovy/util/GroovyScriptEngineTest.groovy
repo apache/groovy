@@ -18,8 +18,9 @@ class GroovyScriptEngineTest extends GroovyTestCase {
 	private File helperIntf
 	private File helper
     private File bug4013
+    private File bug4234
 
-    private List allFiles = [currentDir, srcDir, script, company, util, makeMeSuper, makeMe, helperIntf, helper, bug4013]
+    private List allFiles = [currentDir, srcDir, script, company, util, makeMeSuper, makeMe, helperIntf, helper, bug4013, bug4234]
 
     /**
     * Here we have inheritance and delegation-- where the delegate implements an
@@ -108,6 +109,18 @@ class GroovyScriptEngineTest extends GroovyTestCase {
                }
             }
          """
+
+        bug4234 = new File(srcDir, "Groovy4234Helper.groovy")
+        bug4234.delete()
+        bug4234 << """
+            class Foo4234 {
+                static main(args){
+                    println "Running Foo4234 -> main()"
+                }
+            }
+            
+            class Bar4234 { }
+         """
     }
 	
 	public void tearDown(){
@@ -182,6 +195,22 @@ class GroovyScriptEngineTest extends GroovyTestCase {
         
         klazz = gse.loadScriptByName('Groovy4013Helper.groovy')
         assert klazz.name == 'Groovy4013Helper' // we should still get the outer class, not inner one
+    }
+    
+    //GROOVY-4234
+    void testGSERunningAScriptThatHasMultipleClasses() {
+        def klazz, gse
+        
+        String[] roots = new String[1]
+        roots[0] = srcDir.getAbsolutePath()
+
+        gse = new GroovyScriptEngine(roots)
+        
+        println "testGSELoadingAScriptThatHasMultipleClasses - Run 1"
+        gse.run("Groovy4234Helper.groovy", new Binding())
+        
+        println "testGSELoadingAScriptThatHasMultipleClasses - Run 2"
+        gse.run("Groovy4234Helper.groovy", new Binding())
     }
     
 	/*
