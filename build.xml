@@ -365,13 +365,11 @@ $Date$
     </target>
 
     <target name="-collect15tests" unless="groovy.build.vm6">
-        <fileset id="ubertests.fileset" dir="${testClassesDirectory}" includes="UberTest*.class"
-                 excludes="Uber*VM6.class,groovy/grape/*Test.class"/>
+        <fileset id="ubertests.fileset" dir="${testClassesDirectory}" includes="UberTest*.class" excludes="Uber*VM6.class"/>
     </target>
 
     <target name="-collect16tests" if="groovy.build.vm6">
-        <fileset id="ubertests.fileset" dir="${testClassesDirectory}" includes="UberTest*.class"
-                 excludes="groovy/grape/*Test.class"/>
+        <fileset id="ubertests.fileset" dir="${testClassesDirectory}" includes="UberTest*.class"/>
     </target>
 
     <target name="-testAll" if="_testAll_" depends="-collect15tests,-collect16tests,-collectOptionalTests,-initGroovyc">

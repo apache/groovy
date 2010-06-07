@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2009 the original author or authors.
+ * Copyright 2003-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,15 +28,16 @@ import junit.framework.TestSuite;
  * @version $Revision$
  */
 public class UberTestCaseGroovySourceSubPackages extends TestCase {
-    private static final String EXCLUDES = "groovy/*/**/vm6/*Test.groovy";
+    private static final String EXCLUDES = "groovy/*/**/vm6/*Test.groovy,groovy/grape/*Test.groovy";
     private static final String CODE_BASE = "src/main";
     private static final String TEST_BASE = "src/test";
+
     public static Test suite() {
         TestSuite suite = new TestSuite();
         String excludes = "true".equals(System.getProperty("java.awt.headless"))
                 ? EXCLUDES + ",groovy/*/**/SwingBuilderTest.groovy" : EXCLUDES;
         suite.addTest(AllTestSuite.suite(TEST_BASE, "groovy/*/**/*Test.groovy", excludes));
-		suite.addTest(JavadocAssertionTestSuite.suite(CODE_BASE));
+        suite.addTest(JavadocAssertionTestSuite.suite(CODE_BASE));
         return suite;
     }
 }
