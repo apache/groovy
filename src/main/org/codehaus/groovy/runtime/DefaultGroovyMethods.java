@@ -5334,6 +5334,23 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Returns the last item from the Object array.
+     * <pre class="groovyTestCase">def array = [3, 4, 2].toArray()
+     * assert array.last() == 2</pre>
+     *
+     * @param self an ObjectArray
+     * @return the last item from the Object array
+     * @throws NoSuchElementException if the array is empty and you try to access the last() item.
+     * @since 1.7.3
+     */
+    public static <T> T last(T[] self) {
+        if (self.length == 0) {
+            throw new NoSuchElementException("Cannot access last() element from an empty Array");
+        }
+        return self[self.length - 1];
+    }
+
+    /**
      * Returns the first item from the List.
      * <pre class="groovyTestCase">def list = [3, 4, 2]
      * assert list.first() == 3
@@ -5352,6 +5369,23 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Returns the first item from the Object array.
+     * <pre class="groovyTestCase">def array = [3, 4, 2].toArray()
+     * assert array.first() == 3</pre>
+     *
+     * @param self an Object array
+     * @return the first item from the Object array
+     * @throws NoSuchElementException if the array is empty and you try to access the first() item.
+     * @since 1.7.3
+     */
+    public static <T> T first(T[] self) {
+        if (self.length == 0) {
+            throw new NoSuchElementException("Cannot access first() element from an empty List");
+        }
+        return self[0];
+    }
+
+    /**
      * Returns the first item from the List.
      * <pre class="groovyTestCase">def list = [3, 4, 2]
      * assert list.head() == 3
@@ -5363,6 +5397,20 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.5.5
      */
     public static <T> T head(List<T> self) {
+        return first(self);
+    }
+
+    /**
+     * Returns the first item from the Object array.
+     * <pre class="groovyTestCase">def array = [3, 4, 2].toArray()
+     * assert array.head() == 3</pre>
+     *
+     * @param self an Object array
+     * @return the first item from the Object array
+     * @throws NoSuchElementException if the array is empty and you try to access the head() item.
+     * @since 1.7.3
+     */
+    public static <T> T head(T[] self) {
         return first(self);
     }
 
@@ -5383,6 +5431,29 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         }
         List<T> result = new ArrayList<T>(self);
         result.remove(0);
+        return result;
+    }
+
+    /**
+     * Returns the items from the Object array excluding the first item.
+     * <pre class="groovyTestCase">
+     *     String[] strings = ["a", "b", "c"]
+     *     def result = strings.tail()
+     *     assert strings.class.componentType == String
+     * </pre>
+     *
+     * @param self an Object array
+     * @return an Object array without its first element
+     * @throws NoSuchElementException if the list is empty and you try to access the tail() item.
+     * @since 1.7.3
+     */
+    public static <T> T[] tail(T[] self) {
+        if (self.length == 0) {
+            throw new NoSuchElementException("Cannot access tail() for an empty Object array");
+        }
+        Class<T> componentType = (Class<T>) self.getClass().getComponentType();
+        T[] result = (T[]) Array.newInstance(componentType, self.length - 1);
+        System.arraycopy(self, 1, result, 0, self.length - 1);
         return result;
     }
 
