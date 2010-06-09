@@ -147,6 +147,20 @@ class DelegateTransformTest extends GroovyShellTestCase {
             assert b2.foo() == 'foo'
         }
     }
+
+    /** GROOVY-4244 */
+    void testSetPropertiesThroughDelegate() {
+        def foo = new Foo4244()
+
+        assert foo.nonFinalBaz == 'Initial value - nonFinalBaz'
+        foo.nonFinalBaz = 'New value - nonFinalBaz'
+        assert foo.nonFinalBaz == 'New value - nonFinalBaz'
+
+        assert foo.finalBaz == 'Initial value - finalBaz'
+        shouldFail(ReadOnlyPropertyException) {
+            foo.finalBaz = 'New value - finalBaz'
+        }
+    }
 }
 
 interface DelegateFoo {
@@ -180,4 +194,13 @@ class DelegateBarWithoutDeprecated {
 
 class DelegateBarForcingDeprecated {
     @Delegate(deprecated=true) BazWithDeprecatedFoo baz
+}
+
+class Foo4244 {
+    @Delegate Bar4244 bar = new Bar4244()
+}
+
+class Bar4244 {
+    String nonFinalBaz = "Initial value - nonFinalBaz"
+    final String finalBaz = "Initial value - finalBaz"
 }
