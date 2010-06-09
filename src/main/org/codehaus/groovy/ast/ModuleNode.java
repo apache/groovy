@@ -236,7 +236,10 @@ public class ModuleNode extends ASTNode implements Opcodes {
     }
 
     public ClassNode getScriptClassDummy() {
-        if (scriptDummy!=null) return scriptDummy;
+        if (scriptDummy!=null) {
+        	setScriptBaseClassFromConfig(scriptDummy);
+        	return scriptDummy;
+        }
         
         String name = getPackageName();
         if (name == null) {
@@ -248,26 +251,30 @@ public class ModuleNode extends ASTNode implements Opcodes {
         }
         name += extractClassFromFileDescription();
 
-        String baseClassName = null;
-        if (unit != null) baseClassName = unit.getConfig().getScriptBaseClass();
-        ClassNode baseClass = null;
-        if (baseClassName!=null) {
-            baseClass = ClassHelper.make(baseClassName);
-        }
-        if (baseClass == null) {
-            baseClass = ClassHelper.SCRIPT_TYPE;
-        }
         ClassNode classNode;
         if (isPackageInfo()) {
             classNode = new ClassNode(name, ACC_ABSTRACT | ACC_INTERFACE, ClassHelper.OBJECT_TYPE);
         } else {
-            classNode = new ClassNode(name, ACC_PUBLIC, baseClass);
+            classNode = new ClassNode(name, ACC_PUBLIC, ClassHelper.SCRIPT_TYPE);
+            setScriptBaseClassFromConfig(classNode);
             classNode.setScript(true);
             classNode.setScriptBody(true);
         }
 
         scriptDummy = classNode;
         return classNode;
+    }
+    
+    private void setScriptBaseClassFromConfig(ClassNode cn) {
+        if (unit != null) {
+            String baseClassName = null;
+        	baseClassName = unit.getConfig().getScriptBaseClass();
+        	if(baseClassName != null) {
+            	if(!cn.getSuperClass().getName().equals(baseClassName)) {
+            		cn.setSuperClass(ClassHelper.make(baseClassName));
+            	}
+        	}
+        }
     }
     
     protected ClassNode createStatementsClass() {
