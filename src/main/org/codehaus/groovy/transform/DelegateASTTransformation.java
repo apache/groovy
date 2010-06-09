@@ -91,7 +91,7 @@ public class DelegateASTTransformation implements ASTTransformation, Opcodes {
 
     private void addSetterIfNeeded(FieldNode fieldNode, ClassNode owner, PropertyNode prop, String name) {
         String setterName = "set" + Verifier.capitalize(name);
-        if ((prop.getModifiers() & ACC_FINAL) != 0 && owner.getSetterMethod(setterName) == null) {
+        if ((prop.getModifiers() & ACC_FINAL) == 0 && owner.getSetterMethod(setterName) == null) {
             owner.addMethod(setterName,
                     ACC_PUBLIC,
                     ClassHelper.VOID_TYPE,
