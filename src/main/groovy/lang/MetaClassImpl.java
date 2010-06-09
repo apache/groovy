@@ -2650,7 +2650,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         } else if (MetaClassHelper.isGenericSetMethod(method) && genericSetMethod == null) {
             genericSetMethod = method;
         }
-        if (propertyMissingGet == null && method.getName().equals(PROPERTY_MISSING)) {
+        if (method.getName().equals(PROPERTY_MISSING)) {
             CachedClass[] parameterTypes = method.getParameterTypes();
             if (parameterTypes.length == 1) {
                 propertyMissingGet = method;
