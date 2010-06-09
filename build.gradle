@@ -69,6 +69,7 @@ dependencies {
     testCompile "jmock:jmock-cglib:1.2.0"
     testCompile "xmlunit:xmlunit:1.3"
     testCompile "hsqldb:hsqldb:1.8.0.10"
+    testCompile "ch.qos.logback:logback-classic:0.9.21"
 
     // todo this was provided
     compile "org.livetribe:livetribe-jsr223:2.0.6"

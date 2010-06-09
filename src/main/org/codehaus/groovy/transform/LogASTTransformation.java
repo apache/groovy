@@ -1,33 +1,19 @@
 package org.codehaus.groovy.transform;
 
-import java.util.Arrays;
-
 import org.codehaus.groovy.GroovyBugError;
-import org.codehaus.groovy.ast.ASTNode;
-import org.codehaus.groovy.ast.AnnotatedNode;
-import org.codehaus.groovy.ast.AnnotationNode;
-import org.codehaus.groovy.ast.ClassCodeExpressionTransformer;
-import org.codehaus.groovy.ast.ClassHelper;
-import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.DynamicVariable;
-import org.codehaus.groovy.ast.FieldNode;
-import org.codehaus.groovy.ast.expr.ArgumentListExpression;
-import org.codehaus.groovy.ast.expr.AttributeExpression;
-import org.codehaus.groovy.ast.expr.BooleanExpression;
-import org.codehaus.groovy.ast.expr.ClassExpression;
-import org.codehaus.groovy.ast.expr.ConstantExpression;
-import org.codehaus.groovy.ast.expr.Expression;
-import org.codehaus.groovy.ast.expr.MethodCallExpression;
-import org.codehaus.groovy.ast.expr.TernaryExpression;
-import org.codehaus.groovy.ast.expr.TupleExpression;
-import org.codehaus.groovy.ast.expr.VariableExpression;
+import org.codehaus.groovy.ast.*;
+import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.objectweb.asm.Opcodes;
 
+import java.util.Arrays;
+
 /**
+ * This class provides an AST Transformation to add a log field to a class.
+ *
  * @author Guillaume Laforge
  * @author Jochen Theodorou
  * @author Dinko Srkoc
@@ -44,7 +30,10 @@ public class LogASTTransformation implements ASTTransformation {
         }
 
         AnnotatedNode targetClass = (AnnotatedNode) nodes[1];
-//        AnnotationNode logAnnotation = (AnnotationNode) nodes[0];
+        AnnotationNode logAnnotation = (AnnotationNode) nodes[0];
+
+        final boolean isJUL = "groovy.util.logging.Log".equals(logAnnotation.getClassNode().getName());
+        final boolean isLogBack = "groovy.util.logging.LogBack".equals(logAnnotation.getClassNode().getName());
 
         if (!(targetClass instanceof ClassNode))
             throw new GroovyBugError("Class annotation @Log annotated no Class, this must not happen.");
@@ -74,14 +63,24 @@ public class LogASTTransformation implements ASTTransformation {
                     addError("Class annotated with Log annotation cannot have log field declared",
                             logField);
                 } else {
-                    ClassNode loggerClassNode = new ClassNode("java.util.logging.Logger", Opcodes.ACC_PUBLIC, new ClassNode(Object.class));
-                    logNode = node.addField("log",
-                            Opcodes.ACC_FINAL | Opcodes.ACC_TRANSIENT | Opcodes.ACC_STATIC | Opcodes.ACC_PRIVATE,
-                            loggerClassNode,
-                            new MethodCallExpression(
-                                    new ClassExpression(loggerClassNode),
-                                    "getLogger",
-                                    new ConstantExpression(node.getName())));
+
+                    if (isJUL) {
+                        logNode = node.addField("log",
+                                Opcodes.ACC_FINAL | Opcodes.ACC_TRANSIENT | Opcodes.ACC_STATIC | Opcodes.ACC_PRIVATE,
+                                new ClassNode("java.util.logging.Logger", Opcodes.ACC_PUBLIC, new ClassNode(Object.class)),
+                                new MethodCallExpression(
+                                        new ClassExpression(new ClassNode("java.util.logging.Logger", Opcodes.ACC_PUBLIC, new ClassNode(Object.class))),
+                                        "getLogger",
+                                        new ConstantExpression(node.getName())));
+                    } else if (isLogBack) {
+                        logNode = node.addField("log",
+                                Opcodes.ACC_FINAL | Opcodes.ACC_TRANSIENT | Opcodes.ACC_STATIC | Opcodes.ACC_PRIVATE,
+                                new ClassNode("org.slf4j.Logger", Opcodes.ACC_PUBLIC, new ClassNode(Object.class)),
+                                new MethodCallExpression(
+                                        new ClassExpression(new ClassNode("org.slf4j.LoggerFactory", Opcodes.ACC_PUBLIC, new ClassNode(Object.class))),
+                                        "getLogger",
+                                        new ClassExpression(node)));
+                    }
                 }
                 super.visitClass(node);
             }
@@ -103,18 +102,32 @@ public class LogASTTransformation implements ASTTransformation {
                 variableExpression.setAccessedVariable(logNode);
 
                 ArgumentListExpression args = new ArgumentListExpression();
-                ClassNode levelClass = new ClassNode("java.util.logging.Level", 0, ClassHelper.OBJECT_TYPE);
-                AttributeExpression logLevelExpression = new AttributeExpression(
-                        new ClassExpression(levelClass),
-                        new ConstantExpression(methodName.toUpperCase()));
-                args.addExpression(logLevelExpression);
-                MethodCallExpression condition = new MethodCallExpression(variableExpression, "isLoggable", args);
-                BooleanExpression booleanExpression = new BooleanExpression(condition);
 
-                TernaryExpression isLoggableExpr = new TernaryExpression(booleanExpression,
-                        exp, ConstantExpression.NULL);
+                if (isLogBack) {
+                    
+                    MethodCallExpression condition = new MethodCallExpression(
+                            variableExpression, 
+                            "is" + methodName.substring(0, 1).toUpperCase() + methodName.substring(1, methodName.length()) + "Enabled",  
+                            ArgumentListExpression.EMPTY_ARGUMENTS);
 
-                return isLoggableExpr;
+                    return new TernaryExpression(
+                            new BooleanExpression(condition),
+                            exp,
+                            ConstantExpression.NULL);
+                } else if (isJUL) {
+                    ClassNode levelClass = new ClassNode("java.util.logging.Level", 0, ClassHelper.OBJECT_TYPE);
+                    AttributeExpression logLevelExpression = new AttributeExpression(
+                            new ClassExpression(levelClass),
+                            new ConstantExpression(methodName.toUpperCase()));
+                    args.addExpression(logLevelExpression);
+                    MethodCallExpression condition = new MethodCallExpression(variableExpression, "isLoggable", args);
+
+                    return new TernaryExpression(
+                            new BooleanExpression(condition),
+                            exp,
+                            ConstantExpression.NULL);
+                }
+                return exp;
             }
 
             private boolean usesSimpleMethodArgumentsOnly(MethodCallExpression mce) {

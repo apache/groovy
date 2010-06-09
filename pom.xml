@@ -785,6 +785,15 @@
                 </exclusion>
             </exclusions>
         </dependency>
+        
+        <!-- Used for testing @Log annotations -->
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <version>0.9.21</version>
+            <scope>test</scope>
+        </dependency>
+       
     </dependencies>
     
     <!--

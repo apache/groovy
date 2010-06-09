@@ -8,6 +8,8 @@ import org.codehaus.groovy.tools.ast.*
 import org.codehaus.groovy.transform.*
 
 /**
+ * Test to make sure the @Log annotation is working correctly. 
+ * 
  * @author Guillaume Laforge
  * @author Jochen Theodorou
  * @author Dinko Srkoc
@@ -15,7 +17,7 @@ import org.codehaus.groovy.transform.*
  * @author Raffaele Cigni
  * @author Alberto Vilches Raton
  */
-class LogASTTransformTest extends GroovyTestCase {
+class LogTest extends GroovyTestCase {
 
     def logObserver = new LoggingObserver()
 
@@ -37,7 +39,7 @@ class LogASTTransformTest extends GroovyTestCase {
 
     public void testPrivateFinalStaticLogFieldAppears() {
 
-        Class clazz = createAndTransformClass("""
+        Class clazz = new GroovyClassLoader().parseClass("""
             @groovy.util.logging.Log
             class MyClass {
             } """)
@@ -55,7 +57,7 @@ class LogASTTransformTest extends GroovyTestCase {
 
         shouldFail {
 
-            Class clazz = createAndTransformClass("""
+            Class clazz = new GroovyClassLoader().parseClass("""
                 @groovy.util.logging.Log
                 class MyClass {
                     String log
@@ -68,7 +70,7 @@ class LogASTTransformTest extends GroovyTestCase {
 
     public void testLogInfo() {
 
-        Class clazz = createAndTransformClass("""
+        Class clazz = new GroovyClassLoader().parseClass("""
             @groovy.util.logging.Log
             class MyClass {
                 
@@ -101,18 +103,6 @@ class LogASTTransformTest extends GroovyTestCase {
         assert logObserver.entries[3].level == Level.FINE
         assert logObserver.entries[4].level == Level.FINER 
         assert logObserver.entries[5].level == Level.FINEST
-    }
-
-    private Class createAndTransformClass(String code) {
-
-        def transform = new ASTTransformation() {
-            void visit(ASTNode[] astNodes, SourceUnit sourceUnit) {
-            }
-        }
-        def phase = CompilePhase.CANONICALIZATION
-        def invoker = new TransformTestHelper(transform, phase)
-        Class clazz = invoker.parse(code)
-        clazz
     }
 
     class LoggingObserver extends Handler {
