@@ -22,7 +22,10 @@ import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.ClassInfo;
@@ -46,6 +49,16 @@ public class MethodRankHelper{
     public static final int MAX_METHOD_SCORE = 50;
     public static final int MAX_CONSTRUCTOR_SCORE = 20;
     public static final int MAX_FIELD_SCORE = 30;
+    
+    private final static class Pair<U,V> {
+        private U u;
+        private V v;
+        public Pair(U u, V v){
+            this.u = u;
+            this.v = v;
+        }
+    }
+    
     /**
      * Returns a string detailing possible solutions to a missing method
      * if no good solutions can be found a empty string is returned.
@@ -60,21 +73,70 @@ public class MethodRankHelper{
         List<MetaMethod> methods = new ArrayList(ci.getMetaClass().getMethods());
         methods.addAll(ci.getMetaClass().getMetaMethods());
         List<MetaMethod> sugg = rankMethods(methodName,arguments,methods);
+        StringBuffer sb = new StringBuffer();
         if (!sugg.isEmpty()){
-            StringBuffer sb = new StringBuffer();
             sb.append("\nPossible solutions: ");
-            for(int i = 0; i < sugg.size(); i++){
+            for(int i = 0; i < sugg.size(); i++) {
                 if(i != 0) sb.append(", ");
                 sb.append(sugg.get(i).getName() + "(");
                 sb.append(listParameterNames(sugg.get(i).getParameterTypes()));
                 sb.append(")");
             }
-            return sb.toString();
-        } else{
-            return "";
         }
+        Class[] argumentClasses = getArgumentClasses(arguments);
+        List<Pair<Class,Class>> conflictClasses = getConflictClasses(sugg,argumentClasses);
+        if (!conflictClasses.isEmpty()){
+            sb.append("\nThe following classes appear as argument class and as parameter class, ");
+            sb.append("but are defined by different class loader:\n");
+            boolean first = true;
+            for(Pair<Class,Class> pair: conflictClasses) {
+                if (!first) {
+                    sb.append(", ");
+                } else {
+                    first = false;
+                }
+                sb.append(pair.u.getName() + " (defined by '");
+                sb.append(pair.u.getClassLoader());
+                sb.append("' and '");
+                sb.append(pair.v.getClassLoader());
+                sb.append("')");
+            }
+            sb.append("\nIf one of the method suggestions matches the method you wanted to call, ");
+            sb.append("\nthen check your class loader setup.");
+        }
+        return sb.toString();
     }
     
+    private static List<Pair<Class,Class>> getConflictClasses(List<MetaMethod> sugg, Class[] argumentClasses) {
+        LinkedList<Pair<Class,Class>> ret = new LinkedList();
+        Set<Class> recordedClasses = new HashSet<Class>();
+        for (MetaMethod method : sugg) {
+            Class[] para = method.getNativeParameterTypes();
+            for (int pi=0; pi<para.length; pi++) {
+                if (recordedClasses.contains(para[pi])) continue;
+                for (int ai=0; ai<argumentClasses.length; ai++) {
+                    if (argumentClasses[ai]==null) continue;
+                    if (argumentClasses[ai]==para[pi]) continue;
+                    if (argumentClasses[ai].getName().equals(para[pi].getName())) {
+                        ret.add(new Pair(argumentClasses[ai],para[pi]));
+                    }
+                }
+                recordedClasses.add(para[pi]);
+            }
+        }
+        return ret;
+    }
+
+    private static Class[] getArgumentClasses(Object[] arguments) {
+        Class[] argumentClasses = new Class[arguments.length];
+        for (int i=0; i<argumentClasses.length; i++) {
+            Object arg = arguments[i];
+            if (arg==null) continue;
+            argumentClasses[i] = arg.getClass();
+        }
+        return argumentClasses;
+    }
+
     /**
      * Returns a string detailing possible solutions to a missing constructor
      * if no good solutions can be found a empty string is returned.
@@ -84,8 +146,6 @@ public class MethodRankHelper{
      * @return a string with probable solutions to the exception
      */
     public static String getConstructorSuggestionString(Class type, Object[] arguments){
-        ClassInfo ci = ClassInfo.getClassInfo(type);
-
         Constructor[] sugg = rankConstructors(arguments, type.getConstructors());
         if(sugg.length >0){
             StringBuffer sb = new StringBuffer();
