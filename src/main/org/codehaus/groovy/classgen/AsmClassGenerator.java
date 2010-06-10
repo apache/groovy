@@ -1317,8 +1317,13 @@ public class AsmClassGenerator extends ClassGenerator {
         BlockRecorder fb = new BlockRecorder(finallyPart);
         fb.startRange(synchronizedStart);
         compileStack.pushBlockRecorder(fb);
+        
         statement.getCode().visit(this);
 
+        fb.closeRange(catchAll);
+        compileStack.writeExceptionTable(fb, catchAll, null);
+        compileStack.pop(); //pop fb
+        
         finallyPart.run();
         mv.visitJumpInsn(GOTO, synchronizedEnd);
         mv.visitLabel(catchAll);
@@ -1326,9 +1331,6 @@ public class AsmClassGenerator extends ClassGenerator {
         mv.visitInsn(ATHROW);
 
         mv.visitLabel(synchronizedEnd);
-        fb.closeRange(synchronizedEnd);
-        compileStack.writeExceptionTable(fb, catchAll, null);
-        compileStack.pop(); //pop fb
     }
 
     public void visitThrowStatement(ThrowStatement statement) {

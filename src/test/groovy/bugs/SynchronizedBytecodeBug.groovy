@@ -99,6 +99,20 @@ class SynchronizedBytecodeBug extends GroovyTestCase {
     c()
     checkNotHavingAMonitor(lock)
   }
+
+  // GROOVY-4159
+  void testExceptionInSynchronized() {
+    def obj = 1
+    try {
+      synchronized(obj) {
+        obj.e
+      }
+      assert false
+    } catch (MissingPropertyException e) {
+      assert true
+    }
+    checkNotHavingAMonitor(obj) 
+  }
   
   def checkNotHavingAMonitor(Object lock){
     // if we call notify* or wait without having the
