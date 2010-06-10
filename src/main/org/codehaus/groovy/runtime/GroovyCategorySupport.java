@@ -84,6 +84,9 @@ public class GroovyCategorySupport {
             }
             level--;
             categoriesInUse.getAndDecrement();
+            if (level == 0) {
+                threadInfo.remove();
+            }
         }
 
         private Object use(Class categoryClass, Closure closure) {
@@ -213,7 +216,11 @@ public class GroovyCategorySupport {
     }
 
     public static boolean hasCategoryInCurrentThread() {
-        return categoriesInUse.get() != 0 && threadInfo.getInfo().level != 0;
+        if (categoriesInUse.get() == 0) {
+            return false;
+        }
+        final ThreadCategoryInfo infoNullable = threadInfo.getInfoNullable();
+        return infoNullable != null && infoNullable.level != 0;
     }
 
     public static boolean hasCategoryInAnyThread() {
@@ -227,24 +234,34 @@ public class GroovyCategorySupport {
      * @return the list of methods
      */
     public static CategoryMethodList getCategoryMethods(String name) {
-        return threadInfo.getInfo().getCategoryMethods(name);
+        final ThreadCategoryInfo categoryInfo = threadInfo.getInfoNullable();
+        return categoryInfo == null ? null : categoryInfo.getCategoryMethods(name);
     }
 
     private static class MyThreadLocal extends ThreadLocal<SoftReference> {
 
         ConcurrentHashMap<String,AtomicInteger> usage = new ConcurrentHashMap<String,AtomicInteger> ();
 
-        protected SoftReference initialValue() {
-            return new SoftReference(new ThreadCategoryInfo());
-        }
-
         public ThreadCategoryInfo getInfo() {
-            ThreadCategoryInfo tcinfo = (ThreadCategoryInfo)get().get();
-            if( tcinfo == null ) {
+            final SoftReference reference = get();
+            ThreadCategoryInfo tcinfo;
+            if (reference != null) {
+                tcinfo = (ThreadCategoryInfo) reference.get();
+                if( tcinfo == null ) {
+                    tcinfo = new ThreadCategoryInfo();
+                    set(new SoftReference(tcinfo));
+                }
+            }
+            else {
                 tcinfo = new ThreadCategoryInfo();
                 set(new SoftReference(tcinfo));
             }
             return tcinfo;
+        }
+
+        public ThreadCategoryInfo getInfoNullable() {
+            final SoftReference reference = get();
+            return reference == null ? null : (ThreadCategoryInfo) reference.get();
         }
 
         public AtomicInteger getUsage (String name) {
