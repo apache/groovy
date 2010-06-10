@@ -2922,8 +2922,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     protected void unknownAST(AST node) {
         if (node.getType() == CLASS_DEF) {
             throw new ASTRuntimeException(node,
-                    "Class definition not expected here. Possible attempt to use inner class. " +
-                            "Inner classes not supported, perhaps try using a closure instead.");
+            	"Class definition not expected here. Perhaps try using a closure instead.");
         }
         throw new ASTRuntimeException(node, "Unknown type: " + getTokenName(node));
     }
