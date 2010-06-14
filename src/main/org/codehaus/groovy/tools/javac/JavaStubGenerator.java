@@ -21,6 +21,7 @@ import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
+import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
@@ -36,6 +37,7 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 public class JavaStubGenerator
 {
@@ -45,6 +47,7 @@ public class JavaStubGenerator
     private List<String> toCompile = new ArrayList<String>();
     private ArrayList<MethodNode> propertyMethods = new ArrayList<MethodNode>();
     private ArrayList<ConstructorNode> constructors = new ArrayList<ConstructorNode>();
+    private ModuleNode currentModule;
 
     public JavaStubGenerator(final File outputPath, final boolean requireSuperResolved, final boolean java5) {
         this.outputPath = outputPath;
@@ -144,9 +147,11 @@ public class JavaStubGenerator
                 }
             };
             verifier.visitClass(classNode);
+            currentModule = classNode.getModule();
 
             boolean isInterface = classNode.isInterface();
             boolean isEnum = (classNode.getModifiers() & Opcodes.ACC_ENUM) !=0;
+            printAnnotations(out, classNode);
             printModifiers(out, classNode.getModifiers()
                     & ~(isInterface ? Opcodes.ACC_ABSTRACT : 0));
 
@@ -203,6 +208,7 @@ public class JavaStubGenerator
         finally {
             propertyMethods.clear();
             constructors.clear();
+            currentModule = null;
         }
     }
 
@@ -273,6 +279,7 @@ public class JavaStubGenerator
 
     private void genField(FieldNode fieldNode, PrintWriter out) {
         if ((fieldNode.getModifiers()&Opcodes.ACC_PRIVATE)!=0) return;
+        printAnnotations(out, fieldNode);
         printModifiers(out, fieldNode.getModifiers());
 
         printType(fieldNode.getType(), out);
@@ -305,6 +312,7 @@ public class JavaStubGenerator
     }
 
     private void genConstructor(ClassNode clazz, ConstructorNode constructorNode, PrintWriter out) {
+        printAnnotations(out, constructorNode);
         // printModifiers(out, constructorNode.getModifiers());
 
         out.print("public "); // temporary hack
@@ -418,6 +426,7 @@ public class JavaStubGenerator
         if (methodNode.getName().equals("<clinit>")) return;
         if (methodNode.isPrivate() || !Utilities.isJavaIdentifier(methodNode.getName())) return;
 
+        printAnnotations(out, methodNode);
         if (!clazz.isInterface()) printModifiers(out, methodNode.getModifiers());
 
         writeGenericsBounds(out, methodNode.getGenericsTypes());
@@ -511,7 +520,11 @@ public class JavaStubGenerator
                 out.print("void");
             }
         } else {
-            out.print(type.redirect().getName().replace('$', '.'));
+            String name = type.getName();
+            // check for an alias
+            ClassNode alias = currentModule.getImportType(name);
+            if (alias != null) name = alias.getName();
+            out.print(name.replace('$', '.'));
         }
     }
 
@@ -575,6 +588,37 @@ public class JavaStubGenerator
         out.print(")");
     }
 
+    private void printAnnotations(PrintWriter out, AnnotatedNode annotated) {
+        if (!java5) return;
+        for (AnnotationNode annotation : annotated.getAnnotations()) {
+            out.print("@" + annotation.getClassNode().getName() + "(");
+            boolean first = true;
+            Map<String, Expression> members = annotation.getMembers();
+            for (String key : members.keySet()) {
+                String val = "null";
+                Object memberValue = members.get(key);
+                if (memberValue instanceof ConstantExpression) {
+                    ConstantExpression ce = (ConstantExpression) memberValue;
+                    Object constValue = ce.getValue();
+                    if (constValue instanceof Number || constValue instanceof Boolean)
+                        val = constValue.toString();
+                    else
+                        val = "\"" + constValue + "\"";
+                } else if (memberValue instanceof PropertyExpression || memberValue instanceof VariableExpression) {
+                    // assume must be static class field or enum value or class that Java can resolve
+                    val = ((Expression) memberValue).getText();
+                }
+                if (first) {
+                    first = false;
+                } else {
+                    out.print(", ");
+                }
+                out.print(key + "=" + val);
+            }
+            out.print(") ");
+        }
+    }
+
     private void printModifiers(PrintWriter out, int modifiers) {
         if ((modifiers & Opcodes.ACC_PUBLIC) != 0)
             out.print("public ");
@@ -597,12 +641,6 @@ public class JavaStubGenerator
 
     private void genImports(ClassNode classNode, PrintWriter out) {
         List<String> imports = new ArrayList<String>();
-
-        //
-        // HACK: Add the default imports... since things like Closure and GroovyObject seem to parse out w/o fully qualified classnames.
-        //
-        // paulk: disabled below, doesn't seem to be needed any more (28 May 2010)
-//        imports.addAll(Arrays.asList(ResolveVisitor.DEFAULT_IMPORTS));
 
         ModuleNode moduleNode = classNode.getModule();
         for (ImportNode importNode : moduleNode.getStarImports()) {
