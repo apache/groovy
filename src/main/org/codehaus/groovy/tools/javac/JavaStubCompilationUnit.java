@@ -66,7 +66,7 @@ public class JavaStubCompilationUnit
                     source.addException(e);
                 }
             }
-        },Phases.CONVERSION);
+        },Phases.SEMANTIC_ANALYSIS);
     }
 
     public JavaStubCompilationUnit(final CompilerConfiguration config, final GroovyClassLoader gcl) {
