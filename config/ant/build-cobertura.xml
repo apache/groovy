@@ -22,7 +22,7 @@ $Date: 2007-03-11 19:14:07 +1000 (Sun, 11 Mar 2007) $
 
     <import file="build-setup.xml"/>
 
-    <target name="-coberturaInit">
+    <target name="-coberturaInit" if="_forceCoverage_">
         <taskdef resource="tasks.properties" classpathref="toolsPath"/>
         <path id="coberturaPath">
             <fileset dir="${toolsLibDirectory}" includes="cobertura-*.jar,asm*.jar"/>
