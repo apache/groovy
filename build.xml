@@ -680,7 +680,7 @@ Not found: ${groovyJar14path}
         </unzip>
         <makeManifest file="${stagingDirectory}/META-INF/MANIFEST.MF" bundleEnvironment="J2SE-1.4" />
         <jarjar jarfile="${targetDistDirectory}/groovy-all-jdk14.jar"
-                manifest="${stagingDirectory}/META-INF/MANIFEST.MF">
+                manifest="${stagingDirectory}/META-INF/MANIFEST.MF" duplicate="preserve">
             <fileset dir="${stagingDirectory}"/>
             <rule pattern="net.sf.retrotranslator.runtime.**" result="groovyjarjarretroruntime.@1"/>
             <rule pattern="edu.emory.mathcs.backport.**" result="groovyjarjarbackport.@1"/>
