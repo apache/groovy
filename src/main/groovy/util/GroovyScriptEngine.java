@@ -103,13 +103,7 @@ public class GroovyScriptEngine implements ResourceConnector {
             } catch (IOException e3) {
                 throw new ClassNotFoundException("Problem reading " + className + ": " + e3);
             } finally {
-                try {
-                    if (dependentScriptConn != null && dependentScriptConn.getInputStream() != null) {
-                        dependentScriptConn.getInputStream().close();
-                    }
-                } catch (IOException e) {
-                    // IGNORE
-                }
+                forceClose(dependentScriptConn);
             }
         }
     }
