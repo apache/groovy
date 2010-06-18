@@ -146,7 +146,7 @@ public class AssertionRenderer {
         // if the value has no string representation, produce something like Object.toString()
         if (str == null || str.equals("")) {
             String hash = Integer.toHexString(System.identityHashCode(value));
-            if(errorMsg.isEmpty()) {
+            if(errorMsg.equals("")) {
             	errorMsg = (str == null) ? " (toString() == null)" : " (toString() == \"\")";
             }
             return value.getClass().getName() + "@" + hash + errorMsg;
