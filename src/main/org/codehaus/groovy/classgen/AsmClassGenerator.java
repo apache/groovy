@@ -3370,8 +3370,15 @@ public class AsmClassGenerator extends ClassGenerator {
             // stack: closure,type,type,closure
 
             // so we can create the curried closure
-            helper.pushConstant(i);
-            mv.visitMethodInsn(INVOKESPECIAL, "org/codehaus/groovy/runtime/CurriedClosure", "<init>", "(Lgroovy/lang/Closure;I)V");
+            mv.visitInsn(ICONST_1);
+            mv.visitTypeInsn(ANEWARRAY, "java/lang/Object");
+            mv.visitInsn(DUP);
+            mv.visitInsn(ICONST_0);
+            mv.visitLdcInsn(i);
+            mv.visitMethodInsn(INVOKESTATIC, "java/lang/Integer", "valueOf", "(I)Ljava/lang/Integer;");
+            mv.visitInsn(AASTORE);
+            
+            mv.visitMethodInsn(INVOKESPECIAL, "org/codehaus/groovy/runtime/CurriedClosure", "<init>", "(Lgroovy/lang/Closure;[Ljava/lang/Object;)V");
             // stack: closure,curriedClosure
 
             // we need to save the result
