@@ -132,6 +132,7 @@ public final class AssertionRenderer {
      */
     private static String valueToString(Object value) {
         if (value == null) return "null";
+        if (isEmptyStr(value)) return "\"\"";
 
         String str;
         String errorMsg = "";
@@ -145,12 +146,24 @@ public final class AssertionRenderer {
         // if the value has no string representation, produce something like Object.toString()
         if (str == null || str.equals("")) {
             String hash = Integer.toHexString(System.identityHashCode(value));
+            if(errorMsg.equals("")) {
+            	errorMsg = (str == null) ? " (toString() == null)" : " (toString() == \"\")";
+            }
             return value.getClass().getName() + "@" + hash + errorMsg;
         }
 
         return str;
     }
 
+    private static boolean isEmptyStr(Object value) {
+    	Class<?> clazz = value.getClass();
+    	if((clazz == String.class || clazz == StringBuffer.class || 
+    			clazz == StringBuilder.class) && value.toString().equals("")) {
+    		return true;
+    	}
+    	return false;
+    }
+    
     private static String arrayToString(Object array) {
         Class<?> clazz = array.getClass();
 
