@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-package org.codehaus.groovy.transform.powerassert
+package org.codehaus.groovy.runtime.powerassert
 
 import static java.lang.Math.max
 import static java.lang.Math.min
-import static org.codehaus.groovy.transform.powerassert.AssertionTestUtil.*
+import static AssertionTestUtil.*
 
 /**
  * Checks that:

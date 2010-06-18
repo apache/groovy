@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-package org.codehaus.groovy.transform.powerassert
+package org.codehaus.groovy.runtime.powerassert
 
-import static org.codehaus.groovy.transform.powerassert.AssertionTestUtil.*
-import org.codehaus.groovy.runtime.powerassert.PowerAssertionError
+import static AssertionTestUtil.*
 
 /**
  * Defines assertions in different locations and checks if they are transformed.

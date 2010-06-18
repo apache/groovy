@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-package org.codehaus.groovy.transform.powerassert
+package org.codehaus.groovy.runtime.powerassert
 
-import static org.codehaus.groovy.transform.powerassert.AssertionTestUtil.*
+import static AssertionTestUtil.*
 import static java.lang.Math.min
 
 /**

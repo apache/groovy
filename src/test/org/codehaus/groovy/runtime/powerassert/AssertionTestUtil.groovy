@@ -14,9 +14,7 @@
  * limitations under the License.
  */
 
-package org.codehaus.groovy.transform.powerassert
-
-import org.codehaus.groovy.runtime.powerassert.PowerAssertionError
+package org.codehaus.groovy.runtime.powerassert
 
 import junit.framework.Assert
 
