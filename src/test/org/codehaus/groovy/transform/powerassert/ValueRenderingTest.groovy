@@ -127,27 +127,29 @@ assert x == null
 
     void testNullToString() {
         def x = new NullToString()
-
-        isRendered """
-assert x == null
-       | |
-       | false
-       ${x.objectToString()}
-        """, {
-            assert x == null
+        try {
+            def cl = {assert x == "zzz"} 
+            cl()
+            Assert.fail("assertion should have failed but didn't")
+        } catch (PowerAssertionError e) {
+            def emsg = e.message
+            if (!emsg.contains(x.objectToString()) || !emsg.contains("(toString() == null)")) {
+                fail("assertion should have been rendered with message '${x.objectToString()} (toString() == null)'")
+            }
         }
     }
 
     void testEmptyToString() {
         def x = new EmptyToString()
-
-        isRendered """
-assert x == null
-       | |
-       | false
-       ${x.objectToString()}
-        """, {
-            assert x == null
+        try {
+            def cl = {assert x == "zzz"} 
+            cl()
+            Assert.fail("assertion should have failed but didn't")
+        } catch (PowerAssertionError e) {
+            def emsg = e.message
+            if (!emsg.contains(x.objectToString()) || !emsg.contains("(toString() == \"\")")) {
+                fail("assertion should have been rendered with message '${x.objectToString()} (toString() == \"\")'")
+            }
         }
     }
 
@@ -164,6 +166,38 @@ assert x == null
         }
     }
 
+    void testRenderingEmptyString() {
+        verifyEmptyStringRendering "java.lang.String",  {
+            def val = new String() 
+            assert val == "xxx"
+        }
+    }
+    
+    void testRenderingEmptyStringBuilder() {
+        verifyEmptyStringRendering "java.lang.StringBuilder",  {
+            def val = new StringBuilder() 
+            assert val == "xxx"
+        }
+    }
+    
+    void testRenderingEmptyStringBuffer() {
+        verifyEmptyStringRendering "java.lang.StringBuffer",  {
+            def val = new StringBuffer() 
+            assert val == "xxx"
+        }
+    }
+    
+    void verifyEmptyStringRendering(className, cl) {
+        try {
+            cl()
+            Assert.fail("assertion should have failed but didn't")
+        } catch (PowerAssertionError e) {
+            def emsg = e.message
+            if (emsg.contains("$className@") || !emsg.contains("\"\"")) {
+                fail("($className) - assertion should have rendered empty string as \"\"")
+            }
+        }
+    }
 }
 
 private class SingleLineToString {
