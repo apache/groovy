@@ -36,7 +36,7 @@ public class SecurityTestSupport extends GroovyTestCase {
             securityDisabled = false;
             if (new File(POLICY_FILE).exists()) {
                 securityAvailable = true;
-                System.setProperty("java.security.policy", "=security/groovy.policy");
+                resetSecurityPolicy("=" + POLICY_FILE);
             } else {
                 securityAvailable = false;
             }
@@ -150,9 +150,9 @@ public class SecurityTestSupport extends GroovyTestCase {
     }
 
     /*
-	 * Parse the Groovy code contained in the GroovyCodeSource as a privileged operation (i.e. do not
-	 * require the code source to have specific compile time permissions) and return the resulting class.
-	 */
+     * Parse the Groovy code contained in the GroovyCodeSource as a privileged operation (i.e. do not
+     * require the code source to have specific compile time permissions) and return the resulting class.
+     */
     protected Class parseClass(final GroovyCodeSource gcs) {
         Class clazz = null;
         try {
