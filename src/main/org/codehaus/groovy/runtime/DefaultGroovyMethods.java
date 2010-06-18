@@ -12098,6 +12098,19 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Renames the file. It's a shortcut for {@link java.io.File#renameTo(File)} 
+     *
+     * @param self a File
+     * @param newPathName The new pathname for the named file
+     * @return  <code>true</code> if and only if the renaming succeeded;
+     * 			<code>false</code> otherwise
+     * @since 1.7.4
+     */
+    public static boolean renameTo(final File self, String newPathName) {
+        return self.renameTo(new File(newPathName));
+    }
+    
+    /**
      * Allows a simple syntax for using timers.  This timer will execute the
      * given closure after the given delay.
      *
