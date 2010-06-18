@@ -16,6 +16,7 @@ import org.codehaus.groovy.transform.*
  * @author Hamlet D'Arcy
  * @author Raffaele Cigni
  * @author Alberto Vilches Raton
+ * @author Tomasz Bujok
  */
 class LogTest extends GroovyTestCase {
 
@@ -73,7 +74,7 @@ class LogTest extends GroovyTestCase {
         Class clazz = new GroovyClassLoader().parseClass("""
             @groovy.util.logging.Log
             class MyClass {
-                
+
                 def loggingMethod() {
                   log.severe ("severe  called")
                   log.warning("warning called")
@@ -101,13 +102,53 @@ class LogTest extends GroovyTestCase {
         assert logObserver.entries[1].level == Level.WARNING
         assert logObserver.entries[2].level == Level.INFO
         assert logObserver.entries[3].level == Level.FINE
-        assert logObserver.entries[4].level == Level.FINER 
+        assert logObserver.entries[4].level == Level.FINER
         assert logObserver.entries[5].level == Level.FINEST
+    }
+
+    public void testLogGuard() {
+       Class clazz = new GroovyClassLoader().parseClass("""
+               @groovy.util.logging.Log
+               class MyClass {
+                   def loggingMethod() {
+                       log.setLevel(java.util.logging.Level.SEVERE)
+                       log.info (prepareLogMessage())
+                   }
+
+                   def prepareLogMessage() {
+                     getObserver()?.isLogGuarded = false
+                     return "formatted log message"
+                   }
+
+                   def getObserver() {
+                      for(def handler : log.handlers) {
+                        if(handler.hasProperty("isLogGuarded")) {
+                          return handler
+                        }
+                      }
+                  }
+               }
+               new MyClass().loggingMethod() """)
+
+       Script s = (Script) clazz.newInstance()
+       s.run()
+
+       assert logObserver.isLogGuarded == true
+     }
+
+
+    def getObserver() {
+        for(def handler : log.handlers) {
+          if(handler.hasProperty("isLogGuarded")) {
+            return handler
+          }
+        }
     }
 
     class LoggingObserver extends Handler {
 
         def entries = []
+        boolean isLogGuarded = true
 
         void publish(LogRecord record) {
             entries << record

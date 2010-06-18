@@ -20,6 +20,7 @@ import java.util.Arrays;
  * @author Hamlet D'Arcy
  * @author Raffaele Cigni
  * @author Alberto Vilches Raton
+ * @author Tomasz Bujok
  */
 @GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
 public class LogASTTransformation implements ASTTransformation {
@@ -34,6 +35,7 @@ public class LogASTTransformation implements ASTTransformation {
 
         final boolean isJUL = "groovy.util.logging.Log".equals(logAnnotation.getClassNode().getName());
         final boolean isLogBack = "groovy.util.logging.LogBack".equals(logAnnotation.getClassNode().getName());
+        final boolean isLog4j = "groovy.util.logging.Log4j".equals(logAnnotation.getClassNode().getName());
 
         if (!(targetClass instanceof ClassNode))
             throw new GroovyBugError("Class annotation @Log annotated no Class, this must not happen.");
@@ -80,6 +82,14 @@ public class LogASTTransformation implements ASTTransformation {
                                         new ClassExpression(new ClassNode("org.slf4j.LoggerFactory", Opcodes.ACC_PUBLIC, new ClassNode(Object.class))),
                                         "getLogger",
                                         new ClassExpression(node)));
+                    } else if (isLog4j) {
+                        logNode = node.addField("log",
+                                Opcodes.ACC_FINAL | Opcodes.ACC_TRANSIENT | Opcodes.ACC_STATIC | Opcodes.ACC_PRIVATE,
+                                new ClassNode("org.apache.log4j.Logger", Opcodes.ACC_PUBLIC, new ClassNode(Object.class)),
+                                new MethodCallExpression(
+                                        new ClassExpression(new ClassNode("org.apache.log4j.Logger", Opcodes.ACC_PUBLIC, new ClassNode(Object.class))),
+                                        "getLogger",
+                                        new ClassExpression(node)));
                     }
                 }
                 super.visitClass(node);
@@ -103,11 +113,39 @@ public class LogASTTransformation implements ASTTransformation {
 
                 ArgumentListExpression args = new ArgumentListExpression();
 
-                if (isLogBack) {
-                    
+                if (isLog4j) {
+                    if (!methodName.matches("fatal|error|warn|info|debug|trace")) {
+                        return exp;
+                    }
+
+                    final MethodCallExpression condition;
+                    if (!"trace".equals(methodName)) {
+                        ClassNode levelClass = new ClassNode("org.apache.log4j.Priority", 0, ClassHelper.OBJECT_TYPE);
+                        AttributeExpression logLevelExpression = new AttributeExpression(
+                                new ClassExpression(levelClass),
+                                new ConstantExpression(methodName.toUpperCase()));
+                        args.addExpression(logLevelExpression);
+                        condition = new MethodCallExpression(variableExpression, "isEnabledFor", args);
+                    } else {
+                        // log4j api is inconsistent, so trace requires special handling
+                        condition = new MethodCallExpression(
+                                variableExpression,
+                                "is" + methodName.substring(0, 1).toUpperCase() + methodName.substring(1, methodName.length()) + "Enabled",
+                                ArgumentListExpression.EMPTY_ARGUMENTS);
+                    }
+
+                    return new TernaryExpression(
+                            new BooleanExpression(condition),
+                            exp,
+                            ConstantExpression.NULL);
+                } else if (isLogBack) {
+                    if (!methodName.matches("error|warn|info|debug|trace")) {
+                        return exp;
+                    }
+
                     MethodCallExpression condition = new MethodCallExpression(
-                            variableExpression, 
-                            "is" + methodName.substring(0, 1).toUpperCase() + methodName.substring(1, methodName.length()) + "Enabled",  
+                            variableExpression,
+                            "is" + methodName.substring(0, 1).toUpperCase() + methodName.substring(1, methodName.length()) + "Enabled",
                             ArgumentListExpression.EMPTY_ARGUMENTS);
 
                     return new TernaryExpression(
@@ -115,6 +153,10 @@ public class LogASTTransformation implements ASTTransformation {
                             exp,
                             ConstantExpression.NULL);
                 } else if (isJUL) {
+                    if (!methodName.matches("severe|warning|info|fine|finer|finest")) {
+                        return exp;
+                    }
+
                     ClassNode levelClass = new ClassNode("java.util.logging.Level", 0, ClassHelper.OBJECT_TYPE);
                     AttributeExpression logLevelExpression = new AttributeExpression(
                             new ClassExpression(levelClass),
