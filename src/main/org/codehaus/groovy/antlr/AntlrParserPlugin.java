@@ -65,6 +65,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     private String[] tokenNames;
     private int innerClassCounter = 1;
     private boolean enumConstantBeingDef = false;
+    private boolean forStatementBeingDef = false;
 
     public /*final*/ Reduction parseCST(final SourceUnit sourceUnit, Reader reader) throws CompilationFailedException {
         final SourceBuffer sourceBuffer = new SourceBuffer();
@@ -1199,7 +1200,9 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         Expression collectionExpression;
         Parameter forParameter;
         if (isType(CLOSURE_LIST, inNode)) {
+        	forStatementBeingDef = true;
             ClosureListExpression clist = closureListExpression(inNode);
+            forStatementBeingDef = false;
             int size = clist.getExpressions().size();
             if (size != 3) {
                 throw new ASTRuntimeException(inNode, "3 expressions are required for the classic for loop, you gave " + size);
@@ -1855,6 +1858,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     }
 
     private ClosureListExpression closureListExpression(AST node) {
+    	isClosureListExpressionAllowedHere(node);
         AST exprNode = node.getFirstChild();
         List<Expression> list = new LinkedList<Expression>();
         while (exprNode != null) {
@@ -1872,6 +1876,13 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         ClosureListExpression cle = new ClosureListExpression(list);
         configureAST(cle, node);
         return cle;
+    }
+    
+    private void isClosureListExpressionAllowedHere(AST node) {
+    	if(!forStatementBeingDef) {
+    		throw new ASTRuntimeException(node, 
+    				"Expression list of the form (a; b; c) is not supported in this context.");
+    	}
     }
 
     protected Expression dynamicMemberExpression(AST dynamicMemberNode) {
