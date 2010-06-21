@@ -629,9 +629,13 @@ options:
         }
     }
 
-    def finishException(Throwable t) {
-        statusLabel.text = 'Execution terminated with exception.'
-        history[-1].exception = t
+    def finishException(Throwable t, boolean executing) {
+        if(executing) {
+            statusLabel.text = 'Execution terminated with exception.'
+            history[-1].exception = t
+        } else {
+            statusLabel.text = 'Compilation failed.'
+        }
 
         if (t instanceof MultipleCompilationErrorsException) {
             MultipleCompilationErrorsException mcee = t
@@ -656,7 +660,7 @@ options:
                     style.addAttribute(HTML.Tag.A, hrefAttr);
 
                     doc.insertString(doc.length, message + " at ", stacktraceStyle)
-                    doc.insertString(doc.length, "line: ${se.line}, column: ${se.column}\n\n", style)
+                    doc.insertString(doc.length, "line: ${se.line}, column: ${se.startColumn}\n\n", style)
                 } else if (error instanceof Throwable) {
                     reportException(error)
                 } else if (error instanceof ExceptionMessage) {
@@ -666,7 +670,11 @@ options:
         } else {
             reportException(t)
         }
-        bindResults()
+
+        if(!executing) {
+            bindResults()
+        }
+
         if (detachedOutput) {
             prepareOutputWindow()
             showOutputWindow()
@@ -705,6 +713,10 @@ options:
             prepareOutputWindow()
             showOutputWindow()
         }
+    }
+
+    def compileFinishNormal() {
+        statusLabel.text = 'Compilation complete.'
     }
 
     private def prepareOutputWindow() {
@@ -886,7 +898,7 @@ options:
                     stackOverFlowError = true
                     clearOutput()
                 } 
-                SwingUtilities.invokeLater { finishException(t) }
+                SwingUtilities.invokeLater { finishException(t, true) }
             } finally {
                 runThread = null
                 scriptRunning = false
@@ -895,6 +907,42 @@ options:
         }
     }
 
+    void compileScript(EventObject evt = null) {
+        if(scriptRunning) {
+            statusLabel.text = 'Cannot compile script now as a script is already running. Please wait or use "Interrupt Script" option.'
+            return
+        }
+        stackOverFlowError = false // reset this flag before running a script
+        def endLine = System.getProperty('line.separator')
+        def record = new HistoryRecord( allText: inputArea.getText().replaceAll(endLine, '\n'),
+            selectionStart: textSelectionStart, selectionEnd: textSelectionEnd)
+
+        if (prefs.getBoolean("autoClearOutput", false)) clearOutput()
+
+        // Print the input text
+        if (showScriptInOutput) {
+            for (line in record.allText.tokenize("\n")) {
+                appendOutputNl('groovy> ', promptStyle)
+                appendOutput(line, commandStyle)
+            }
+            appendOutputNl(" \n", promptStyle)
+        }
+
+        // Kick off a new thread to do the compilation
+        // Run in a thread outside of EDT, this method is usually called inside the EDT
+        runThread = Thread.start {
+            try {
+                SwingUtilities.invokeLater { showCompilingMessage() }
+                shell.parse(record.allText)
+                SwingUtilities.invokeLater { compileFinishNormal() }
+            } catch (Throwable t) {
+                SwingUtilities.invokeLater { finishException(t, false) }
+            } finally {
+                runThread = null
+            }
+        }
+    }
+    
     def selectFilename(name = "Open") {
         def fc = new JFileChooser(currentFileChooserDir)
         fc.fileSelectionMode = JFileChooser.FILES_ONLY
@@ -985,6 +1033,10 @@ options:
         statusLabel.text = 'Script executing now. Please wait or use "Interrupt Script" option.'
     }
 
+    void showCompilingMessage() {
+        statusLabel.text = 'Script compiling now. Please wait.'
+    }
+    
     // Shows the detached 'outputArea' dialog
     void showOutputWindow(EventObject evt = null) {
         if (detachedOutput) {

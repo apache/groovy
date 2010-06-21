@@ -107,6 +107,7 @@ menuBar {
         menuItem(runAction, icon:null)
         menuItem(runSelectionAction, icon:null)
         menuItem(interruptAction, icon:null)
+        menuItem(compileAction, icon:null)
         separator()
         menuItem(addClasspathJar)
         menuItem(addClasspathDir)

@@ -70,6 +70,7 @@ menuBar {
         menuItem(runAction)
         menuItem(runSelectionAction)
         menuItem(interruptAction)
+        menuItem(compileAction)
         separator()
         menuItem(addClasspathJar)
         menuItem(addClasspathDir)

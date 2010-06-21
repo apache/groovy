@@ -347,3 +347,11 @@ interruptAction = action(
     shortDescription: 'Interrupt Running Script',
     enabled: false // controller will enable as needed
 )
+
+compileAction = action(
+    name: 'Compile',
+    closure: controller.&compileScript,
+    mnemonic: 'L',
+    accelerator: shortcut('L'),
+    shortDescription: 'Compile Groovy Script'
+)
