@@ -985,11 +985,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         if (self instanceof Set)
             return self;
         List<T> answer = new ArrayList<T>();
-        NumberAwareComparator<T> numberAwareComparator = new NumberAwareComparator<T>();
         for (T t : self) {
             boolean duplicated = false;
             for (T t2 : answer) {
-                if (numberAwareComparator.compare(t, t2) == 0) {
+                if (coercedEquals(t, t2)) {
                     duplicated = true;
                     break;
                 }
@@ -5981,24 +5980,26 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         if (left.length != right.size()) {
             return false;
         }
-        final NumberAwareComparator numberAwareComparator = new NumberAwareComparator();
         for (int i = left.length - 1; i >= 0; i--) {
             final Object o1 = left[i];
             final Object o2 = right.get(i);
             if (o1 == null) {
                 if (o2 != null) return false;
-            } else {
-                if (o1 instanceof Number) {
-                    if (!(o2 instanceof Number && numberAwareComparator.compare(o1, o2) == 0)) {
+            } else if (!coercedEquals(o1, o2)) {
                 return false;
             }
-                } else {
-                    if (!DefaultTypeTransformation.compareEqual(o1, o2)) return false;
         }
-    }
-            }
         return true;
+    }
+
+    private static boolean coercedEquals(Object o1, Object o2) {
+        if (o1 instanceof Number && o1 instanceof Comparable) {
+            if (!(o2 instanceof Number && o2 instanceof Comparable && numberAwareCompareTo((Comparable)o1, (Comparable)o2) == 0)) {
+                return false;
+            }
         }
+        return DefaultTypeTransformation.compareEqual(o1, o2);
+    }
 
     /**
      * Compare the contents of two Lists.  Order matters.
@@ -6026,21 +6027,14 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         if (left.size() != right.size()) {
             return false;
         }
-        final NumberAwareComparator numberAwareComparator = new NumberAwareComparator();
         final Iterator it1 = left.iterator(), it2 = right.iterator();
         while (it1.hasNext()) {
             final Object o1 = it1.next();
             final Object o2 = it2.next();
             if (o1 == null) {
                 if (o2 != null) return false;
-            } else {
-                if (o1 instanceof Number) {
-                    if (!(o2 instanceof Number && numberAwareComparator.compare(o1, o2) == 0)) {
+            } else if (!coercedEquals(o1, o2)) {
                 return false;
-            }
-                } else {
-                    if (!DefaultTypeTransformation.compareEqual(o1, o2)) return false;
-        }
             }
         }
         return true;
@@ -6056,7 +6050,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * for example 2 == 2L.  If both sets are <code>null</code>, the result
      * is true; otherwise if either set is <code>null</code>, the result
      * is <code>false</code>. Example usage:
-     * <pre class="_REMOVE_groovyTestCase">Set s1 = ["a", 2]
+     * <pre class="groovyTestCase">Set s1 = ["a", 2]
      * def s2 = [2, 'a'] as Set
      * Set s3 = [3, 'a']
      * def s4 = [2.0, 'a'] as Set
@@ -6069,9 +6063,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self  this Set
      * @param other the Set being compared to
      * @return <tt>true</tt> if the contents of both sets are identical
+     * @since 1.8.0
      */
-    /*
-    public static boolean coercedEquals(Set self, Set other) {
+    public static boolean equals(Set self, Set other) {
         if (self == null) {
             return other == null;
         }
@@ -6081,28 +6075,16 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         if (self.size() != other.size()) {
             return false;
         }
-        final NumberAwareComparator numberAwareComparator = new NumberAwareComparator();
         final Iterator it1 = self.iterator();
         Collection otherItems = new HashSet(other);
         while (it1.hasNext()) {
             final Object o1 = it1.next();
-            if (o1 == null && !other.contains(null)) return false;
             final Iterator it2 = otherItems.iterator();
             Object foundItem = null;
             while (it2.hasNext() && foundItem == null) {
                 final Object o2 = it2.next();
-                if (o1 instanceof Number) {
-                    if (o2 instanceof Number && numberAwareComparator.compare(o1, o2) == 0) {
+                if (coercedEquals(o1, o2)) {
                     foundItem = o2;
-                }
-                } else {
-                    try {
-                        if (DefaultTypeTransformation.compareEqual(o1, o2)) {
-                            foundItem = o2;
-            }
-                    } catch (ClassCastException e) {
-                        // ignore
-                    }
                 }
             }
             if (foundItem == null) return false;
@@ -6110,13 +6092,45 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         }
         return otherItems.size() == 0;
     }
-*/
+
+    /**
+     * Compares two Maps treating coerced numerical values as identical.
+     * <p>
+     * Example usage:
+     * <pre class="groovyTestCase">assert [a:2, b:3] == [a:2L, b:3.0]</pre>
+     *
+     * @param self  this Map
+     * @param other the Map being compared to
+     * @return <tt>true</tt> if the contents of both maps are identical
+     * @since 1.8.0
+     */
+    public static boolean equals(Map self, Map other) {
+        if (self == null) {
+            return other == null;
+        }
+        if (other == null) {
+            return false;
+        }
+        if (self.size() != other.size()) {
+            return false;
+        }
+        if (!self.keySet().equals(other.keySet())) {
+            return false;
+        }
+        final Iterator it = self.keySet().iterator();
+        while (it.hasNext()) {
+            final Object key = it.next();
+            if (!coercedEquals(self.get(key), other.get(key))) {
+                return false;
+            }
+        }
+        return true;
+    }
 
     /**
      * Create a Set composed of the elements of the first set minus the
      * elements of the given collection.
      * <p/>
-     * TODO: remove using number comparator?
      *
      * @param self     a set object
      * @param operands the items to remove from the set
@@ -6126,9 +6140,19 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static <T> Set<T> minus(Set<T> self, Collection operands) {
         final Set<T> ansSet = createSimilarSet(self);
         ansSet.addAll(self);
-        if (self.size() > 0) {
-            ansSet.removeAll(operands);
+        if (operands != null && operands.size() > 0) {
+            final Iterator it1 = self.iterator();
+            while (it1.hasNext()) {
+                final Object o1 = it1.next();
+                final Iterator it2 = operands.iterator();
+                while (it2.hasNext()) {
+                    final Object o2 = it2.next();
+                    if (coercedEquals(o1, o2)) {
+                        ansSet.remove(o1);
                     }
+                }
+            }
+        }
         return ansSet;
     }
 
@@ -6142,9 +6166,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <T> Set<T> minus(Set<T> self, Object operand) {
         final Set<T> ansSet = createSimilarSet(self);
-        Comparator numberComparator = new NumberAwareComparator();
         for (T t : self) {
-            if (numberComparator.compare(t, operand) != 0) ansSet.add(t);
+            if (!coercedEquals(t, operand)) ansSet.add(t);
         }
         return ansSet;
     }
@@ -6263,10 +6286,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static <T> List<T> minus(List<T> self, Object operand) {
-        Comparator numberComparator = new NumberAwareComparator();
         List<T> ansList = new ArrayList<T>();
         for (T t : self) {
-            if (numberComparator.compare(t, operand) != 0) ansList.add(t);
+            if (!coercedEquals(t, operand)) ansList.add(t);
         }
         return ansList;
     }
