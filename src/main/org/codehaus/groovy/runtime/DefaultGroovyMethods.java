@@ -1621,7 +1621,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Convert a collection to a List.
+     * Convert a Collection to a List. Always returns a new List
+     * even if the Collection is already a List.
+     * <p>
+     * Examples usage:
      * <pre class="groovyTestCase">def x = [1,2,3] as HashSet
      * assert x.class == HashSet
      * assert x.toList() instanceof List</pre>
@@ -5458,7 +5461,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Converts this collection to a List.
+     * Converts this Collection to a List. Returns the original Collection
+     * if it is already a List.
+     * <p>
+     * Example usage:
      * <pre class="groovyTestCase">assert new HashSet().asList() instanceof List</pre>
      *
      * @param self a collection to be converted into a List
@@ -5469,7 +5475,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         if (self instanceof List) {
             return (List<T>) self;
         } else {
-            return new ArrayList<T>(self);
+            return toList(self);
         }
     }
 
@@ -5997,7 +6003,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Compare the contents of two Lists.  Order matters.
      * If numbers exist in the Lists, then they are compared as numbers,
-     * for example 2 == 2L.  If either list is <code>null</code>, the result
+     * for example 2 == 2L. If both lists are <code>null</code>, the result
+     * is true; otherwise if either list is <code>null</code>, the result
      * is <code>false</code>.
      * <pre class="groovyTestCase">assert ["a", 2].equals(["a", 2])
      * assert ![2, "a"].equals("a", 2)
@@ -6041,18 +6048,18 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Compare the contents of two Sets for equality using Groovy's coercion rules.
-     * WARNING: may not be included in 1.1
      * <p/>
      * Returns <tt>true</tt> if the two sets have the same size, and every member
      * of the specified set is contained in this set (or equivalently, every member
      * of this set is contained in the specified set).
-     * If numbers exist in the Lists, then they are compared as numbers,
-     * for example 2 == 2L.  If either list is <code>null</code>, the result
+     * If numbers exist in the Sets, then they are compared as numbers,
+     * for example 2 == 2L.  If both sets are <code>null</code>, the result
+     * is true; otherwise if either set is <code>null</code>, the result
      * is <code>false</code>.
      *
-     * @param self  this List
-     * @param other the List being compared to
-     * @return <tt>true</tt> if the contents of both lists are identical
+     * @param self  this Set
+     * @param other the Set being compared to
+     * @return <tt>true</tt> if the contents of both sets are identical
      */
     /*
     public static boolean coercedEquals(Set self, Set other) {
