@@ -6056,7 +6056,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * for example 2 == 2L.  If both sets are <code>null</code>, the result
      * is true; otherwise if either set is <code>null</code>, the result
      * is <code>false</code>. Example usage:
-     * <pre class="groovyTestCase">Set s1 = ["a", 2]
+     * <pre class="_REMOVE_groovyTestCase">Set s1 = ["a", 2]
      * def s2 = [2, 'a'] as Set
      * Set s3 = [3, 'a']
      * def s4 = [2.0, 'a'] as Set
