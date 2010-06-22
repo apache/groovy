@@ -1621,7 +1621,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Convert a collection to a List.
+     * Convert a Collection to a List. Always returns a new List
+     * even if the Collection is already a List.
+     * <p>
+     * Examples usage:
      * <pre class="groovyTestCase">def x = [1,2,3] as HashSet
      * assert x.class == HashSet
      * assert x.toList() instanceof List</pre>
@@ -5458,7 +5461,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Converts this collection to a List.
+     * Converts this Collection to a List. Returns the original Collection
+     * if it is already a List.
+     * <p>
+     * Example usage:
      * <pre class="groovyTestCase">assert new HashSet().asList() instanceof List</pre>
      *
      * @param self a collection to be converted into a List
@@ -5469,7 +5475,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         if (self instanceof List) {
             return (List<T>) self;
         } else {
-            return new ArrayList<T>(self);
+            return toList(self);
         }
     }
 
@@ -5984,20 +5990,21 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             } else {
                 if (o1 instanceof Number) {
                     if (!(o2 instanceof Number && numberAwareComparator.compare(o1, o2) == 0)) {
-                        return false;
-                    }
+                return false;
+            }
                 } else {
                     if (!DefaultTypeTransformation.compareEqual(o1, o2)) return false;
-                }
-            }
         }
-        return true;
     }
+            }
+        return true;
+        }
 
     /**
      * Compare the contents of two Lists.  Order matters.
      * If numbers exist in the Lists, then they are compared as numbers,
-     * for example 2 == 2L.  If either list is <code>null</code>, the result
+     * for example 2 == 2L. If both lists are <code>null</code>, the result
+     * is true; otherwise if either list is <code>null</code>, the result
      * is <code>false</code>.
      * <pre class="groovyTestCase">assert ["a", 2].equals(["a", 2])
      * assert ![2, "a"].equals("a", 2)
@@ -6029,11 +6036,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             } else {
                 if (o1 instanceof Number) {
                     if (!(o2 instanceof Number && numberAwareComparator.compare(o1, o2) == 0)) {
-                        return false;
-                    }
+                return false;
+            }
                 } else {
                     if (!DefaultTypeTransformation.compareEqual(o1, o2)) return false;
-                }
+        }
             }
         }
         return true;
@@ -6041,18 +6048,27 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Compare the contents of two Sets for equality using Groovy's coercion rules.
-     * WARNING: may not be included in 1.1
      * <p/>
      * Returns <tt>true</tt> if the two sets have the same size, and every member
      * of the specified set is contained in this set (or equivalently, every member
      * of this set is contained in the specified set).
-     * If numbers exist in the Lists, then they are compared as numbers,
-     * for example 2 == 2L.  If either list is <code>null</code>, the result
-     * is <code>false</code>.
+     * If numbers exist in the sets, then they are compared as numbers,
+     * for example 2 == 2L.  If both sets are <code>null</code>, the result
+     * is true; otherwise if either set is <code>null</code>, the result
+     * is <code>false</code>. Example usage:
+     * <pre class="_REMOVE_groovyTestCase">Set s1 = ["a", 2]
+     * def s2 = [2, 'a'] as Set
+     * Set s3 = [3, 'a']
+     * def s4 = [2.0, 'a'] as Set
+     * def s5 = [2L, 'a'] as Set
+     * assert s1.equals(s2)
+     * assert !s1.equals(s3)
+     * assert s1.equals(s4)
+     * assert s1.equals(s5)</pre>
      *
-     * @param self  this List
-     * @param other the List being compared to
-     * @return <tt>true</tt> if the contents of both lists are identical
+     * @param self  this Set
+     * @param other the Set being compared to
+     * @return <tt>true</tt> if the contents of both sets are identical
      */
     /*
     public static boolean coercedEquals(Set self, Set other) {
@@ -6077,13 +6093,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                 final Object o2 = it2.next();
                 if (o1 instanceof Number) {
                     if (o2 instanceof Number && numberAwareComparator.compare(o1, o2) == 0) {
-                        foundItem = o2;
-                    }
+                    foundItem = o2;
+                }
                 } else {
                     try {
                         if (DefaultTypeTransformation.compareEqual(o1, o2)) {
                             foundItem = o2;
-                        }
+            }
                     } catch (ClassCastException e) {
                         // ignore
                     }
@@ -6112,7 +6128,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         ansSet.addAll(self);
         if (self.size() > 0) {
             ansSet.removeAll(operands);
-        }
+                    }
         return ansSet;
     }
 
@@ -12099,7 +12115,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Renames the file. It's a shortcut for {@link java.io.File#renameTo(File)} 
+     * Renames the file. It's a shortcut for {@link java.io.File#renameTo(File)}
      *
      * @param self a File
      * @param newPathName The new pathname for the named file
@@ -12110,7 +12126,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static boolean renameTo(final File self, String newPathName) {
         return self.renameTo(new File(newPathName));
     }
-    
+
     /**
      * Allows a simple syntax for using timers.  This timer will execute the
      * given closure after the given delay.
