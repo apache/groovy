@@ -474,7 +474,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             System.out.print(InvokerHelper.toString(value));
         }
     }
-    
+
     /**
      * Print a value formatted Groovy style to the print writer.
      *
@@ -485,7 +485,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static void print(PrintWriter self, Object value) {
         self.print(InvokerHelper.toString(value));
     }
-    
+
     /**
      * Print a value formatted Groovy style to the print stream.
      *
@@ -496,7 +496,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static void print(PrintStream self, Object value) {
         self.print(InvokerHelper.toString(value));
     }
-    
+
     /**
      * Print a value to the standard output stream.
      * This method delegates to the owner to execute the method.
@@ -563,7 +563,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             System.out.println(InvokerHelper.toString(value));
         }
     }
-    
+
     /**
      * Print a value formatted Groovy style (followed by a newline) to the print writer.
      *
@@ -574,7 +574,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static void println(PrintWriter self, Object value) {
         self.println(InvokerHelper.toString(value));
     }
-    
+
     /**
      * Print a value formatted Groovy style (followed by a newline) to the print stream.
      *
@@ -585,7 +585,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static void println(PrintStream self, Object value) {
         self.println(InvokerHelper.toString(value));
     }
-    
+
     /**
      * Print a value (followed by a newline) to the standard output stream.
      * This method delegates to the owner to execute the method.
@@ -1055,7 +1055,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self    a Collection
      * @param closure a 1 or 2 arg Closure used to determine unique items
      * @return self   without any duplicates
-     * @since 1.0 
+     * @since 1.0
      */
     public static <T> Collection<T> unique(Collection<T> self, Closure closure) {
         // use a comparator of one item or two
@@ -1096,7 +1096,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *             return fname + " " + lname
      *         }
      *     }
-     * 
+     *
      *     class PersonComparator implements Comparator {
      *         public int compare(Object o1, Object o2) {
      *             Person p1 = (Person) o1
@@ -1106,17 +1106,17 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *             else
      *                 return p1.fname.compareTo(p2.fname)
      *         }
-     * 
+     *
      *         public boolean equals(Object obj) {
      *             return this.equals(obj)
      *         }
      *     }
-     * 
+     *
      *     Person a = new Person(fname:"John", lname:"Taylor")
      *     Person b = new Person(fname:"Clark", lname:"Taylor")
      *     Person c = new Person(fname:"Tom", lname:"Cruz")
      *     Person d = new Person(fname:"Clark", lname:"Taylor")
-     * 
+     *
      *     def list = [a, b, c, d]
      *     List list2 = list.unique(new PersonComparator())
      *     assert( list2 == list && list == [a, b, c] )
@@ -2297,7 +2297,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             answer.put(value, groupedElements);
         }
     }
-    
+
     // internal helper method
     protected static Object callClosureForMapEntry(Closure closure, Map.Entry entry) {
         if (closure.getMaximumNumberOfParameters() == 2) {
@@ -3488,7 +3488,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Hyphens at the start or end of sourceSet or replacementSet are treated as normal hyphens and are not
      * considered to be part of a range specification. Similarly, a hyphen immediately after an earlier range
      * is treated as a normal hyphen. So, '-x', 'x-' have no ranges while 'a-c-e' has the range 'a-c' plus
-     * the '-' character plus the 'e' character. 
+     * the '-' character plus the 'e' character.
      * <p/>
      * Unlike the unix tr command, Groovy's tr command supports reverse ranges, e.g.:
      * <pre>
@@ -3501,7 +3501,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * If sourceSet contains repeated characters, the last specified replacement is used as shown here:
      * <pre>
      * assert 'Hello World!'.tr('lloo', '1234') == 'He224 W4r2d!'
-     * </pre> 
+     * </pre>
      * The functionality provided by tr can be achieved using regular expressions but tr provides a much more compact
      * notation and efficient implementation for certain scenarios.
      *
@@ -5674,7 +5674,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             stack.addAll(col);
             return stack;
         }
-        
+
         Object[] args = {col};
         try {
             return InvokerHelper.invokeConstructorOf(clazz, args);
@@ -5990,15 +5990,15 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             } else {
                 if (o1 instanceof Number) {
                     if (!(o2 instanceof Number && numberAwareComparator.compare(o1, o2) == 0)) {
-                        return false;
-                    }
+                return false;
+            }
                 } else {
                     if (!DefaultTypeTransformation.compareEqual(o1, o2)) return false;
-                }
-            }
         }
-        return true;
     }
+            }
+        return true;
+        }
 
     /**
      * Compare the contents of two Lists.  Order matters.
@@ -6036,11 +6036,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             } else {
                 if (o1 instanceof Number) {
                     if (!(o2 instanceof Number && numberAwareComparator.compare(o1, o2) == 0)) {
-                        return false;
-                    }
+                return false;
+            }
                 } else {
                     if (!DefaultTypeTransformation.compareEqual(o1, o2)) return false;
-                }
+        }
             }
         }
         return true;
@@ -6052,10 +6052,19 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Returns <tt>true</tt> if the two sets have the same size, and every member
      * of the specified set is contained in this set (or equivalently, every member
      * of this set is contained in the specified set).
-     * If numbers exist in the Sets, then they are compared as numbers,
+     * If numbers exist in the sets, then they are compared as numbers,
      * for example 2 == 2L.  If both sets are <code>null</code>, the result
      * is true; otherwise if either set is <code>null</code>, the result
-     * is <code>false</code>.
+     * is <code>false</code>. Example usage:
+     * <pre class="groovyTestCase">Set s1 = ["a", 2]
+     * def s2 = [2, 'a'] as Set
+     * Set s3 = [3, 'a']
+     * def s4 = [2.0, 'a'] as Set
+     * def s5 = [2L, 'a'] as Set
+     * assert s1.equals(s2)
+     * assert !s1.equals(s3)
+     * assert s1.equals(s4)
+     * assert s1.equals(s5)</pre>
      *
      * @param self  this Set
      * @param other the Set being compared to
@@ -6084,13 +6093,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                 final Object o2 = it2.next();
                 if (o1 instanceof Number) {
                     if (o2 instanceof Number && numberAwareComparator.compare(o1, o2) == 0) {
-                        foundItem = o2;
-                    }
+                    foundItem = o2;
+                }
                 } else {
                     try {
                         if (DefaultTypeTransformation.compareEqual(o1, o2)) {
                             foundItem = o2;
-                        }
+            }
                     } catch (ClassCastException e) {
                         // ignore
                     }
@@ -6119,7 +6128,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         ansSet.addAll(self);
         if (self.size() > 0) {
             ansSet.removeAll(operands);
-        }
+                    }
         return ansSet;
     }
 
@@ -8143,10 +8152,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         }
         return answer.toString();
     }
-    
+
     /**
      * Returns the string representation of the given array.
-     * 
+     *
      * @param self an array
      * @return the string representation
      * @since 1.6.0
@@ -8157,7 +8166,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the string representation of the given array.
-     * 
+     *
      * @param self an array
      * @return the string representation
      * @since 1.6.0
@@ -8168,7 +8177,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the string representation of the given array.
-     * 
+     *
      * @param self an array
      * @return the string representation
      * @since 1.6.0
@@ -8179,7 +8188,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the string representation of the given array.
-     * 
+     *
      * @param self an array
      * @return the string representation
      * @since 1.6.0
@@ -8190,7 +8199,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the string representation of the given array.
-     * 
+     *
      * @param self an array
      * @return the string representation
      * @since 1.6.0
@@ -8201,7 +8210,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the string representation of the given array.
-     * 
+     *
      * @param self an array
      * @return the string representation
      * @since 1.6.0
@@ -8212,7 +8221,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the string representation of the given array.
-     * 
+     *
      * @param self an array
      * @return the string representation
      * @since 1.6.0
@@ -8223,7 +8232,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the string representation of the given array.
-     * 
+     *
      * @param self an array
      * @return the string representation
      * @since 1.6.0
@@ -9372,7 +9381,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                 for (int i = self1; i > to1; i += stepNumber1) {
                     closure.call(i);
                 }
-            } else if(self1 != to1) 
+            } else if(self1 != to1)
             	throw new GroovyRuntimeException("Infinite loop in " + self1 + ".step(" + to1 + ", " + stepNumber1 + ")");
         }
     }
@@ -9433,7 +9442,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static int round(Float number) {
         return Math.round(number.floatValue());
     }
-    
+
     /**
      * Round the value
      *
@@ -9445,7 +9454,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static float round(Float number, int precision) {
         return (float)(Math.floor(number.doubleValue()*Math.pow(10,precision)+0.5)/Math.pow(10,precision));
     }
-    
+
     /**
      * Truncate the value
      *
@@ -9457,7 +9466,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static float trunc(Float number, int precision) {
         return (float)(Math.floor(number.doubleValue()*Math.pow(10,precision))/Math.pow(10,precision));
     }
-    
+
     /**
      * Truncate the value
      *
@@ -9479,7 +9488,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static long round(Double number) {
         return Math.round(number);
     }
-    
+
     /**
      * Round the value
      *
@@ -9491,7 +9500,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static double round(Double number, int precision) {
         return Math.floor(number *Math.pow(10,precision)+0.5)/Math.pow(10,precision);
     }
-    
+
     /**
      * Truncate the value
      *
@@ -9502,7 +9511,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static double trunc(Double number) {
         return Math.floor(number);
     }
-    
+
     /**
      * Truncate the value
      *
@@ -9852,21 +9861,21 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static Double toDouble(Number self) {
         // Conversions in which all decimal digits are known to be good.
         if ((self instanceof Double)
-            || (self instanceof Long) 
+            || (self instanceof Long)
             || (self instanceof Integer)
             || (self instanceof Short)
-            || (self instanceof Byte)) 
+            || (self instanceof Byte))
         {
             return self.doubleValue();
         }
-        
+
         // Chances are this is a Float or a Big.
         // With Float we're extending binary precision and that gets ugly in decimal.
         // If we used Float.doubleValue() on 0.1f we get 0.10000000149011612.
         // Note that this is different than casting '(double) 0.1f' which will do the
         // binary extension just like in Java.
         // With Bigs and other unkowns, this is likely to be the same.
-        
+
         return Double.valueOf(self.toString());
     }
 
@@ -9879,14 +9888,14 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static BigDecimal toBigDecimal(Number self) {
         // Quick method for scalars.
-        if ((self instanceof Long) 
+        if ((self instanceof Long)
             || (self instanceof Integer)
             || (self instanceof Short)
-            || (self instanceof Byte)) 
+            || (self instanceof Byte))
         {
             return BigDecimal.valueOf(self.longValue());
         }
-        
+
         return new BigDecimal(self.toString());
     }
 
@@ -10991,10 +11000,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     static String lineSeparator = null;
-    
+
     /**
      * Return a String with lines (separated by LF, CR/LF, or CR)
-     * terminated by the platform specific line separator. 
+     * terminated by the platform specific line separator.
      *
      * @param self a String object
      * @return the denormalized string
@@ -11018,29 +11027,29 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                 lineSeparator = "\n";
             }
         }
-        
+
         final int len = self.length();
-        
+
         if (len < 1) {
             return self;
         }
-        
+
         final StringBuilder sb = new StringBuilder((110 * len) / 100);
 
         int i = 0;
-        
+
         while (i < len) {
             final char ch = self.charAt(i++);
 
             switch (ch) {
                 case '\r':
                     sb.append(lineSeparator);
-                    
+
                     // Eat the following LF if any.
                     if ((i < len) && (self.charAt(i) == '\n')) {
                         ++i;
                     }
-                    
+
                     break;
 
                 case '\n':
@@ -11065,30 +11074,30 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static String normalize(final String self) {
         int nx = self.indexOf('\r');
-        
+
         if (nx < 0) {
             return self;
         }
-      
+
         final int len = self.length();
         final StringBuilder sb = new StringBuilder(len);
 
         int i = 0;
-        
+
         do {
             sb.append(self, i, nx);
             sb.append('\n');
-            
+
             if ((i = nx + 1) >= len) break;
-            
+
             if (self.charAt(i) == '\n') {
                 // skip the LF in CR LF
                 if (++i >= len) break;
             }
-            
+
             nx = self.indexOf('\r', i);
         } while (nx > 0);
-        
+
         sb.append(self, i, len);
 
         return sb.toString();
@@ -11351,7 +11360,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static byte[] getBytes(URL url) throws IOException {
         return getBytes(url.openConnection().getInputStream());
-    }    
+    }
 
     /**
      * Read the content of this InputStream and return it as a byte[].
@@ -11375,7 +11384,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         } finally {
             closeWithWarning(is);
         }
-        return answer.toByteArray();        
+        return answer.toByteArray();
     }
 
     /**
@@ -11590,10 +11599,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Append binary data to the file.  It <strong>will not</strong> be 
+     * Append binary data to the file.  It <strong>will not</strong> be
      * interpreted as text.
      * @param self a File
-     * @param stream stream to read data from.  
+     * @param stream stream to read data from.
      * @throws IOException if an IOException occurs.
      * @since 1.5.0
      */
@@ -11603,7 +11612,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     		leftShift( out, stream );
     	}
     	finally {
-    		closeWithWarning( out ); 
+    		closeWithWarning( out );
     	}
     }
 
@@ -12105,7 +12114,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Renames the file. It's a shortcut for {@link java.io.File#renameTo(File)} 
+     * Renames the file. It's a shortcut for {@link java.io.File#renameTo(File)}
      *
      * @param self a File
      * @param newPathName The new pathname for the named file
@@ -12116,7 +12125,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static boolean renameTo(final File self, String newPathName) {
         return self.renameTo(new File(newPathName));
     }
-    
+
     /**
      * Allows a simple syntax for using timers.  This timer will execute the
      * given closure after the given delay.
@@ -12639,7 +12648,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static Object withReader(URL url, Closure closure) throws IOException {
         return withReader(url.openConnection().getInputStream(), closure);
     }
-    
+
     /**
      * Helper method to create a new Reader for a URL and then
      * passes it to the closure.  The reader is closed after the closure returns.
@@ -12654,10 +12663,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static Object withReader(URL url, String charset, Closure closure) throws IOException {
         return withReader(url.openConnection().getInputStream(), charset, closure);
     }
-    
+
     /**
      * Helper method to create a new Reader for a stream and then
-     * passes it into the closure.  The reader (and this stream) is closed after 
+     * passes it into the closure.  The reader (and this stream) is closed after
      * the closure returns.
      *
      * @see java.io.InputStreamReader
@@ -12673,7 +12682,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Helper method to create a new Reader for a stream and then
-     * passes it into the closure.  The reader (and this stream) is closed after 
+     * passes it into the closure.  The reader (and this stream) is closed after
      * the closure returns.
      *
      * @see java.io.InputStreamReader
@@ -14120,7 +14129,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             if(current.getName().equals(RootLoader.class.getName())) return true;
             current = current.getSuperclass();
         }
-        
+
         return false;
     }
 
@@ -14138,7 +14147,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         if (String.class == type) {
             return InvokerHelper.toString(obj);
         }
-        
+
         try {
           return DefaultTypeTransformation.castToType(obj, type);
         }
@@ -14395,7 +14404,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         public ProcessRunner(Process process) {
             this.process = process;
         }
-        
+
         private void doProcessWait() {
             try {
                 process.waitFor();
