@@ -17,6 +17,7 @@ package groovy.util;
 
 import groovy.lang.Closure;
 import org.codehaus.groovy.runtime.NumberAwareComparator;
+import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -32,6 +33,7 @@ import java.util.List;
 public class OrderBy<T> implements Comparator<T> {
 
     private final List<Closure> closures;
+    private boolean equalityCheck;
     private final NumberAwareComparator<Object> numberAwareComparator = new NumberAwareComparator<Object>();
 
     public OrderBy() {
@@ -55,10 +57,23 @@ public class OrderBy<T> implements Comparator<T> {
         for (Closure closure : closures) {
             Object value1 = closure.call(object1);
             Object value2 = closure.call(object2);
-            int result = numberAwareComparator.compare(value1, value2);
+            int result;
+            if (!equalityCheck || (value1 instanceof Comparable && value2 instanceof Comparable)) {
+                result = numberAwareComparator.compare(value1, value2);
+            } else {
+                result = DefaultTypeTransformation.compareEqual(value1, value2) ? 0 : -1;
+            }
             if (result == 0) continue;
             return result;
         }
         return 0;
+    }
+
+    public boolean isEqualityCheck() {
+        return equalityCheck;
+    }
+
+    public void setEqualityCheck(boolean equalityCheck) {
+        this.equalityCheck = equalityCheck;
     }
 }

@@ -982,8 +982,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static <T> Collection<T> unique(Collection<T> self) {
-        if (self instanceof Set)
-            return self;
         List<T> answer = new ArrayList<T>();
         for (T t : self) {
             boolean duplicated = false;
@@ -1060,7 +1058,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         // use a comparator of one item or two
         int params = closure.getMaximumNumberOfParameters();
         if (params == 1) {
-            unique(self, new OrderBy<T>(closure));
+            OrderBy<T> by = new OrderBy<T>(closure);
+            by.setEqualityCheck(true);
+            unique(self, by);
         } else {
             unique(self, new ClosureComparator<T>(closure));
         }
@@ -5993,8 +5993,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     private static boolean coercedEquals(Object o1, Object o2) {
-        if (o1 instanceof Number && o1 instanceof Comparable) {
-            if (!(o2 instanceof Number && o2 instanceof Comparable && numberAwareCompareTo((Comparable)o1, (Comparable)o2) == 0)) {
+        if (o1 instanceof Comparable) {
+            if (!(o2 instanceof Comparable && numberAwareCompareTo((Comparable) o1, (Comparable) o2) == 0)) {
                 return false;
             }
         }
