@@ -4076,9 +4076,14 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     private void execMethodAndStoreForSubscriptOperator(String method, Expression expression) {
+    	execMethodAndStoreForSubscriptOperator(method, expression, null);
+    }
+    
+    private void execMethodAndStoreForSubscriptOperator(String method, Expression expression,
+    		Expression getAtResultExp) {
         // execute method
         makeCallSite(
-                expression,
+        		(getAtResultExp == null ? expression : getAtResultExp),
                 method,
                 MethodCallExpression.NO_ARGUMENTS,
                 false, false, false, false);
@@ -4124,20 +4129,54 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     protected void evaluatePostfixMethod(String method, Expression expression) {
+    	// GROOVY-4246: arr[rand()]++ should evaulate rand() only once and reuse its result
+    	boolean getAtOp = false;
+    	BinaryExpression be = null;
+    	Expression getAtResultExp = null;
+    	String varName = "tmp_postfix_" + method;
+    	final int idx = compileStack.defineTemporaryVariable(varName, false);
+    	
+    	if(expression instanceof BinaryExpression) {
+    		be = (BinaryExpression) expression;
+    		if (be.getOperation().getType() == Types.LEFT_SQUARE_BRACKET) {
+    			getAtOp = true;
+    			be.getRightExpression().visit(this); // execute subscript exp
+    			mv.visitVarInsn(ASTORE, idx); // store the exp result in a local var
+    			BytecodeExpression newRightExp = new BytecodeExpression() {
+    				public void visit(MethodVisitor mv) {
+    					mv.visitVarInsn(ALOAD, idx);
+    				}
+    			};
+    			// change the subscript exp to pick up the local var so that the orig exp is not re-executed
+    			be.setRightExpression(newRightExp);
+    		}
+    		
+    	}
         // load
         expression.visit(this);
 
         // save value for later
-        int tempIdx = compileStack.defineTemporaryVariable("postfix_" + method, true);
+        final int tempIdx = compileStack.defineTemporaryVariable("postfix_" + method, true);
 
+        if(getAtOp) {
+       	 // exp to allow reuse of binary exp already evaluated so that following putAt does not
+       	//  execute the getAt() again
+       	getAtResultExp = new BytecodeExpression() {
+       		public void visit(MethodVisitor mv) {
+       			mv.visitVarInsn(ALOAD, tempIdx);
+       		}
+       	};
+       }
+       
         // execute Method
-        execMethodAndStoreForSubscriptOperator(method, expression);
+        execMethodAndStoreForSubscriptOperator(method, expression, getAtResultExp);
         // remove the result of the method call
         mv.visitInsn(POP);
 
         //reload saved value
         mv.visitVarInsn(ALOAD, tempIdx);
         compileStack.removeVar(tempIdx);
+        compileStack.removeVar(idx);
     }
 
     protected void evaluateInstanceof(BinaryExpression expression) {
