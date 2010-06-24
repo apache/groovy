@@ -100,6 +100,7 @@ public class Groovyc extends MatchingTask {
     private File forkJDK;
     private String memoryInitialSize;
     private String memoryMaximumSize;
+    private String scriptExtension = "*.groovy";
 
     protected boolean failOnError = true;
     protected boolean listFiles = false;
@@ -163,6 +164,31 @@ public class Groovyc extends MatchingTask {
         return src;
     }
 
+    /**
+     * Set the extension to use when searching for Groovy source files. 
+     * Accepts extensions in the form *.groovy, .groovy or groovy
+     *
+     * @param scriptExtension the extension of Groovy source files
+     */
+    public void setScriptExtension(String scriptExtension) {
+    	if(scriptExtension.startsWith("*.")) {
+    		this.scriptExtension = scriptExtension;
+    	} else if(scriptExtension.startsWith(".")) {
+    		this.scriptExtension = "*" + scriptExtension;
+    	} else {
+    		this.scriptExtension = "*." + scriptExtension;
+    	}
+    }
+    
+    /**
+     * Get the extension to use when searching for Groovy source files.
+     *
+     * @return the extension of Groovy source files
+     */
+    public String getScriptExtension() {
+    	return scriptExtension;
+    }
+    
     /**
      * Set the destination directory into which the Java source
      * files should be compiled.
@@ -574,7 +600,7 @@ public class Groovyc extends MatchingTask {
      */
     protected void scanDir(File srcDir, File destDir, String[] files) {
         GlobPatternMapper m = new GlobPatternMapper();
-        m.setFrom("*.groovy");
+        m.setFrom(scriptExtension);
         m.setTo("*.class");
         SourceFileScanner sfs = new SourceFileScanner(this);
         File[] newFiles = sfs.restrictAsFiles(files, srcDir, destDir, m);
