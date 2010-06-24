@@ -307,18 +307,26 @@ public class DefaultTypeTransformation {
             args = new Object[1];
             args[0] = object;
         }
+        Exception nested = null;
         if (args != null) {
             try {
                 return InvokerHelper.invokeConstructorOf(type, args);
             } catch (InvokerInvocationException iie){
                 throw iie;
             } catch (Exception e) {
+                nested = e;
                 // let's ignore exception and return the original object
                 // as the caller has more context to be able to throw a more
                 // meaningful exception
             }
         }
-        throw new GroovyCastException(object,type);
+        GroovyCastException gce;
+        if (nested != null) {
+            gce = new GroovyCastException(object, type, nested);
+        } else {
+            gce = new GroovyCastException(object, type);
+        }
+        throw gce;
     }
 
     private static Class castToClass(Object object) {

@@ -17,6 +17,10 @@ package org.codehaus.groovy.runtime.typehandling;
 
 public class GroovyCastException extends ClassCastException {
 
+    public GroovyCastException(Object objectToCast, Class classToCastTo, Exception cause) {
+        super(makeMessage(objectToCast,classToCastTo) + " due to: " + cause.getMessage());
+    }
+
     public GroovyCastException(Object objectToCast, Class classToCastTo) {
         super(makeMessage(objectToCast,classToCastTo));
     }
