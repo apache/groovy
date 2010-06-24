@@ -77,6 +77,14 @@ class GroovyMethodsTest extends GroovySwingTestCase {
         assert d0 == [width: 100, height: 200] as Dimension
     }
 
+    void testAsCoercionPropogatesCauseMessage() {
+        try {
+            ['one hundred', 200] as Dimension
+        } catch (Exception e) {
+            assert e.message.contains("java.lang.String")
+        }
+    }
+
     void testAsCoercionInterface() {
         def letters = ['a', 'b', 'c']
         def ol = new ObserverLike()
