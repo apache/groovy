@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2008 the original author or authors.
+ * Copyright 2003-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -117,8 +117,8 @@ public class DefaultTypeTransformation {
     }
     
     public static Number castToNumber(Object object) {
-    	// default to Number class in exception details, else use the specified Number subtype.
-    	return castToNumber(object, Number.class);
+        // default to Number class in exception details, else use the specified Number subtype.
+        return castToNumber(object, Number.class);
     }
     
     public static Number castToNumber(Object object, Class type) {
@@ -314,10 +314,10 @@ public class DefaultTypeTransformation {
             } catch (InvokerInvocationException iie){
                 throw iie;
             } catch (Exception e) {
-                nested = e;
                 // let's ignore exception and return the original object
                 // as the caller has more context to be able to throw a more
-                // meaningful exception
+                // meaningful exception (but stash to get message later)
+                nested = e;
             }
         }
         GroovyCastException gce;
@@ -331,9 +331,9 @@ public class DefaultTypeTransformation {
 
     private static Class castToClass(Object object) {
         try {
-            return Class.forName (object.toString());
+            return Class.forName(object.toString());
         } catch (Exception e) {
-            throw new GroovyCastException(object,Class.class);
+            throw new GroovyCastException(object, Class.class, e);
         }
     }
 
@@ -813,14 +813,14 @@ public class DefaultTypeTransformation {
     }
     
     public static Character getCharFromSizeOneString(Object value) {
-    	if (value instanceof GString) value = value.toString();
+        if (value instanceof GString) value = value.toString();
         if (value instanceof String) {
             String s = (String) value;
             if (s.length() != 1) throw new IllegalArgumentException("String of length 1 expected but got a bigger one");
             return new Character(s.charAt(0));
         } else {
             return ((Character) value);
-        }    	
+        }
     }
 
 }
