@@ -217,7 +217,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         );        
     }
 
-    private void addGroovyObjectInterfaceAndMethods(ClassNode node, final String classInternalName) {
+    protected void addGroovyObjectInterfaceAndMethods(ClassNode node, final String classInternalName) {
         if (!node.isDerivedFromGroovyObject()) node.addInterface(ClassHelper.make(GroovyObject.class));
         FieldNode metaClassField = getMetaClassField(node);
 

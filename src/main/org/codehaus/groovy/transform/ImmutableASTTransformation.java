@@ -641,8 +641,8 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
         throw new RuntimeException(createErrorMessage(className, fieldName, typeName, "constructing"));
     }
 
-    public static void checkPropNames(GroovyObject instance, Map<String, Object> args) {
-        final MetaClass metaClass = instance.getMetaClass();
+    public static void checkPropNames(Object instance, Map<String, Object> args) {
+        final MetaClass metaClass = InvokerHelper.getMetaClass(instance);
         for (String k : args.keySet()) {
             if (metaClass.hasProperty(instance, k) == null)
                 throw new MissingPropertyException(k, instance.getClass());
