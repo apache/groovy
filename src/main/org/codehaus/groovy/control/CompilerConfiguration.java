@@ -150,7 +150,18 @@ public class CompilerConfiguration {
         setScriptBaseClass(null);
         setRecompileGroovySource(false);
         setMinimumRecompilationInterval(100);
-        setTargetBytecode(getVMVersion());
+        // Target bytecode
+        String targetByteCode = null;
+        try {
+        	targetByteCode = System.getProperty("groovy.target.bytecode", targetByteCode);
+        } catch (Exception e) {
+            // IGNORE
+        }
+        if(targetByteCode != null) {
+            setTargetBytecode(targetByteCode);
+        } else {
+            setTargetBytecode(getVMVersion());
+        }
         setDefaultScriptExtension(".groovy");
 
         //

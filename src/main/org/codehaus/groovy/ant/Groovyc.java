@@ -98,6 +98,7 @@ public class Groovyc extends MatchingTask {
     private File forkJDK;
     private String memoryInitialSize;
     private String memoryMaximumSize;
+    private String targetBytecode = null;
 
     protected boolean failOnError = true;
     protected boolean listFiles = false;
@@ -159,6 +160,26 @@ public class Groovyc extends MatchingTask {
         return src;
     }
 
+    /**
+     * Sets the bytecode compatibility mode
+     * 
+     * @param version the bytecode compatibility mode
+     */
+    public void setTargetBytecode(String version) {
+        if(CompilerConfiguration.PRE_JDK5.equals(version) || CompilerConfiguration.POST_JDK5.equals(version)) {
+            this.targetBytecode = version;
+        }
+    }
+
+    /**
+     * Retrieves the compiler bytecode compatibility mode.
+     * 
+     * @return bytecode compatibility mode. Can be either <tt>1.5</tt> or <tt>1.4</tt>.
+     */
+    public String getTargetBytecode() {
+        return this.targetBytecode;
+    }
+    
     /**
      * Set the destination directory into which the Java source
      * files should be compiled.
@@ -710,6 +731,9 @@ public class Groovyc extends MatchingTask {
                     commandLineList.add(javaHome + separator + "bin" + separator + "java");
                     commandLineList.add("-classpath");
                     commandLineList.add(classpath.toString());
+                    if ((targetBytecode != null)) {
+                        commandLineList.add("-Dgroovy.target.bytecode=" + targetBytecode);
+                    }
                     if ((memoryInitialSize != null) && !memoryInitialSize.equals("")) {
                         commandLineList.add("-Xms" + memoryInitialSize);
                     }
@@ -812,6 +836,10 @@ public class Groovyc extends MatchingTask {
 
                         fileNameErrors = fileNameErrors && !FileSystemCompiler.validateFiles(filenames);
 
+                        if(targetBytecode != null) {
+                        	configuration.setTargetBytecode(targetBytecode);
+                        }
+                        
                         if (!fileNameErrors) {
                             FileSystemCompiler.doCompilation(configuration, makeCompileUnit(), filenames);
                         }
