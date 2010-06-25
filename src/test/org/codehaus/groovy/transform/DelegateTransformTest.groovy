@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2009 the original author or authors.
+ * Copyright 2003-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -146,6 +146,21 @@ class DelegateTransformTest extends GroovyShellTestCase {
         shouldFail(MissingMethodException) {
             assert b2.foo() == 'foo'
         }
+    }
+
+    /** GROOVY-4163   */
+    void testDelegateTransformAllowsInterfacesAndDelegation() {
+        assertScript """
+            class Temp implements Runnable {
+                @Delegate
+                private Thread runnable
+
+                static main(args) {
+                    def thread = Thread.currentThread()
+                    def temp = new Temp(runnable: thread)
+                }
+            }
+        """
     }
 
     /** GROOVY-4244 */

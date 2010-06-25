@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 the original author or authors.
+ * Copyright 2008-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,9 +24,9 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Field annotation to automatically delegate part of the functionality of a class to the annotated field.
+ * Field annotation to automatically delegate part of the functionality of an owner class to the annotated field.
  * <p/>
- * All non-private methods present in the type of annotated field and not present in the owner class
+ * All public instance methods present in the type of the annotated field and not present in the owner class
  * will be added to owner class at compile time. The implementation of such automatically added
  * methods is code which calls through to the delegate as per the normal delegate pattern.
  * <p/>
@@ -101,6 +101,16 @@ import java.lang.annotation.Target;
  * Otherwise these lines produce a groovy.lang.MissingPropertyException
  * or groovy.lang.MissingMethodException respectively as those two methods are
  * {@code @Deprecated} in {@code Date}.
+ *
+ * Technical notes:
+ * <ul>
+ * <li>Static methods, synthetic methods or methods from the <code>GroovyObject</code> interface
+ * are not candidates for delegation
+ * <li>Non-abstract methods defined in the owner class or its superclasses take
+ * precedence over methods with identical signatures from a {@code @Delegate} field
+ * <li>Abstract methods defined in the owner class take
+ * precedence over methods with identical signatures from a {@code @Delegate} field
+ * </ul>
  *
  * @author Alex Tkachman
  * @author Paul King
