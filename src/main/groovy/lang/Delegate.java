@@ -101,15 +101,16 @@ import java.lang.annotation.Target;
  * Otherwise these lines produce a groovy.lang.MissingPropertyException
  * or groovy.lang.MissingMethodException respectively as those two methods are
  * {@code @Deprecated} in {@code Date}.
- *
- * Technical notes:
+ * <p>
+ * <b>Technical notes</b>:
  * <ul>
  * <li>Static methods, synthetic methods or methods from the <code>GroovyObject</code> interface
  * are not candidates for delegation
- * <li>Non-abstract methods defined in the owner class or its superclasses take
+ * <li>Non-abstract non-static methods defined in the owner class or its superclasses take
  * precedence over methods with identical signatures from a {@code @Delegate} field
- * <li>Abstract methods defined in the owner class take
- * precedence over methods with identical signatures from a {@code @Delegate} field
+ * <li>All methods defined in the owner class (including static, abstract or private etc.)
+ * take precedence over methods with identical signatures from a {@code @Delegate} field
+ * <li>Recursive delegation to your own class is not allowed
  * </ul>
  *
  * @author Alex Tkachman
