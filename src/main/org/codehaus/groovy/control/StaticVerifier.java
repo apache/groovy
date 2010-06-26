@@ -116,6 +116,10 @@ public class StaticVerifier extends ClassCodeVisitorSupport {
         if (!inSpecialConstructorCall && (inClosure || !ve.isInStaticContext())) return;
         if (ve.isThisExpression() || ve.isSuperExpression()) return;
         Variable v = ve.getAccessedVariable();
+        if (currentMethod != null && currentMethod.isStatic()) {
+            FieldNode fieldNode = currentMethod.getDeclaringClass().getField(ve.getName());
+            if (fieldNode != null && fieldNode.isStatic()) return;
+        }
         if (v != null && !(v instanceof DynamicVariable) && v.isInStaticContext()) return;
         addError("Apparent variable '" + ve.getName() + "' was found in a static scope but doesn't refer" +
                 " to a local variable, static field or class. Possible causes:\n" +
