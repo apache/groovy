@@ -15,12 +15,14 @@
  */
 package org.codehaus.groovy.transform
 
+import gls.CompilableTestSupport
+
 /**
  * @author Alex Tkachman
  * @author Guillaume Laforge
  * @author Paul King
  */
-class DelegateTransformTest extends GroovyShellTestCase {
+class DelegateTransformTest extends CompilableTestSupport {
 
     /** fix for GROOVY-3380   */
     void testDelegateImplementingANonPublicInterface() {
@@ -50,7 +52,7 @@ class DelegateTransformTest extends GroovyShellTestCase {
     }
 
     void testLock() {
-        def res = evaluate("""
+        def res = new GroovyShell().evaluate("""
               import java.util.concurrent.locks.*
 
               class LockableMap {
@@ -85,7 +87,7 @@ class DelegateTransformTest extends GroovyShellTestCase {
     }
 
     void testMultiple() {
-        def res = evaluate("""
+        def res = new GroovyShell().evaluate("""
         class X {
           def value = 10
         }
@@ -159,6 +161,25 @@ class DelegateTransformTest extends GroovyShellTestCase {
                     def thread = Thread.currentThread()
                     def temp = new Temp(runnable: thread)
                 }
+            }
+        """
+    }
+
+    void testDelegateToSelfTypeShouldFail() {
+        shouldNotCompile """
+            class B {
+                @Delegate B b = new B()
+                static main(args){
+                    new B()
+                }
+            }
+        """
+    }
+
+    void testDelegateToObjectShouldFail() {
+        shouldNotCompile """
+            class B {
+                @Delegate b = new Object()
             }
         """
     }
