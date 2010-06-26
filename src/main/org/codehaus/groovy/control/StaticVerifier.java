@@ -72,6 +72,7 @@ public class StaticVerifier extends ClassCodeVisitorSupport {
     @Override
     public void visitMethodCallExpression(MethodCallExpression mce) {
         checkSuperAccess(mce, mce.getObjectExpression());
+        super.visitMethodCallExpression(mce);
     }
 
     @Override
