@@ -177,16 +177,16 @@ class DelegateTransformTest extends CompilableTestSupport {
     }
 
     // GROOVY-4265
-    void testShouldPreferDelegatedOverStaticMethod() {
+    void testShouldPreferDelegatedOverStaticSuperMethod() {
         assertScript """
             class A {
-                 static foo(){"A->foo()"}
+                static foo(){"A->foo()"}
             }
             class B extends A {
-                 @Delegate C c = new C()
+                @Delegate C c = new C()
             }
             class C {
-                 def foo(){"C->foo()"}
+                def foo(){"C->foo()"}
             }
             assert new B().foo() == 'C->foo()'
         """
