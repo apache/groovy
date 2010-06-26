@@ -42,7 +42,8 @@ class ScriptFieldTransformTest extends CompilableTestSupport {
         """
     }
 
-    void testStaticFieldFromMethod() {
+    // TODO reinstate
+    void _testStaticFieldFromMethod() {
         assertScript """
             import groovy.transform.*
             @ScriptField static String exer = 'exercise'
