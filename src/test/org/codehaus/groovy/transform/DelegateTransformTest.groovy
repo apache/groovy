@@ -176,6 +176,22 @@ class DelegateTransformTest extends CompilableTestSupport {
         """
     }
 
+    // GROOVY-4265
+    void testShouldPreferDelegatedOverStaticMethod() {
+        assertScript """
+            class A {
+                 static foo(){"A->foo()"}
+            }
+            class B extends A {
+                 @Delegate C c = new C()
+            }
+            class C {
+                 def foo(){"C->foo()"}
+            }
+            assert new B().foo() == 'C->foo()'
+        """
+    }
+
     void testDelegateToObjectShouldFail() {
         shouldNotCompile """
             class B {
