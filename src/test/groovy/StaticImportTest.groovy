@@ -14,8 +14,9 @@ import static java.util.Calendar.getInstance as now
 import static groovy.API.*
 import static groovy.StaticImportChild.*
 import static groovy.bugs.Groovy4145.foo4145
+import gls.CompilableTestSupport
 
-class StaticImportTest extends GroovyTestCase {
+class StaticImportTest extends CompilableTestSupport {
     void testFieldWithAliasInExpression() {
         assert !F
     }
@@ -232,9 +233,20 @@ class StaticImportTest extends GroovyTestCase {
     void testStaticImportOfAClosureField() { //GROOVY-3945
         assert cl() == 'StaticImportTarget#static closure called'
     }
-    
+
     void testStaticPropertyImportedImplementedAsGetter() { //GROOVY-4145
         assert foo4145 == 3
+    }
+
+    void testMethodCallExpressionInStaticContextWithInstanceVariableShouldFail() { //GROOVY-4228
+        shouldNotCompile '''
+            class B {
+                def c = new Object()
+                static main(args) {
+                    c.foo()
+                }
+            }
+        '''
     }
 }
 
