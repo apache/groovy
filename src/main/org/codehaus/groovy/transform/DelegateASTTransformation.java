@@ -59,13 +59,18 @@ public class DelegateASTTransformation implements ASTTransformation, Opcodes {
         if (parent instanceof FieldNode) {
             FieldNode fieldNode = (FieldNode) parent;
             final ClassNode type = fieldNode.getType();
+            final ClassNode owner = fieldNode.getOwner();
             if (type.equals(ClassHelper.OBJECT_TYPE) || type.equals(GROOVYOBJECT_TYPE)) {
-                addError("@Delegate field '" + fieldNode.getName() + "' has an inappropriate type: " +
-                        type.getName() + ". Please add an explicit type but not java.lang.Object or groovy.lang.GroovyObject", parent, source);
+                addError("@Delegate field '" + fieldNode.getName() + "' has an inappropriate type: " + type.getName() +
+                        ". Please add an explicit type but not java.lang.Object or groovy.lang.GroovyObject.", parent, source);
+                return;
+            }
+            if (type.equals(owner)) {
+                addError("@Delegate field '" + fieldNode.getName() + "' has an inappropriate type: " + type.getName() +
+                        ". Delegation to own type not supported. Please use a different type.", parent, source);
                 return;
             }
             final List<MethodNode> fieldMethods = getAllMethods(type);
-            final ClassNode owner = fieldNode.getOwner();
             final Expression deprecatedElement = node.getMember("deprecated");
             final boolean deprecated = hasBooleanValue(deprecatedElement, true);
 
