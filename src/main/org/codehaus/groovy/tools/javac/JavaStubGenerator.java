@@ -26,6 +26,7 @@ import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.classgen.Verifier;
+import org.codehaus.groovy.control.ResolveVisitor;
 import org.codehaus.groovy.tools.Utilities;
 import org.objectweb.asm.Opcodes;
 
@@ -35,6 +36,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -244,6 +246,7 @@ public class JavaStubGenerator
     }
 
     private void genFields(ClassNode classNode, PrintWriter out) {
+        boolean isInterface = classNode.isInterface();
         List<FieldNode> fields = classNode.getFields();
         if (fields == null) return;
         List<FieldNode> enumFields = new ArrayList<FieldNode>(fields.size());
@@ -258,7 +261,7 @@ public class JavaStubGenerator
         }
         genEnumFields(enumFields, out);
         for (FieldNode normalField : normalFields) {
-            genField(normalField, out);
+            genField(normalField, out, isInterface);
         }
     }
 
@@ -277,15 +280,20 @@ public class JavaStubGenerator
         out.println(";");
     }
 
-    private void genField(FieldNode fieldNode, PrintWriter out) {
+    private void genField(FieldNode fieldNode, PrintWriter out, boolean isInterface) {
         if ((fieldNode.getModifiers()&Opcodes.ACC_PRIVATE)!=0) return;
         printAnnotations(out, fieldNode);
-        printModifiers(out, fieldNode.getModifiers());
+        if (!isInterface) {
+            printModifiers(out, fieldNode.getModifiers());
+        }
 
         printType(fieldNode.getType(), out);
 
         out.print(" ");
         out.print(fieldNode.getName());
+        if (isInterface) {
+            out.print(" = null");
+        }
         out.println(";");
     }
 
@@ -650,6 +658,9 @@ public class JavaStubGenerator
         for (ImportNode imp : moduleNode.getImports()) {
             imports.add(imp.getType().getName());
         }
+
+        // TODO: find out why everything isn't fully resolved by now then delete next line
+        imports.addAll(Arrays.asList(ResolveVisitor.DEFAULT_IMPORTS));
 
         for (String imp : imports) {
             String s = new StringBuilder()
