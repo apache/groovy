@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2009 the original author or authors.
+ * Copyright 2003-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -446,21 +446,21 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             if (type instanceof ConstructedClassWithPackage) {
                 // we replace '.' only in the className part
                 // with '$' to find an inner class. The case that
-                // the package is really a class is handled else where
+                // the package is really a class is handled elsewhere
                 ConstructedClassWithPackage tmp = (ConstructedClassWithPackage) type;
-                String name = ((ConstructedClassWithPackage) type).className;
-                tmp.className = replaceLastPoint(name);
+                String savedName = tmp.className;
+                tmp.className = replaceLastPoint(savedName);
                 if (resolve(tmp, false, true, true)) {
                     type.setRedirect(tmp.redirect());
                     return true;
                 }
-                tmp.className = name;
+                tmp.className = savedName;
             }   else {
-                String name = type.getName();
-                String replacedPointType = replaceLastPoint(name);
+                String savedName = type.getName();
+                String replacedPointType = replaceLastPoint(savedName);
                 type.setName(replacedPointType);
                 if (resolve(type, false, true, true)) return true;
-                type.setName(name);
+                type.setName(savedName);
             }
         }
         return false;
@@ -470,7 +470,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         // test default imports
         testDefaultImports &= !type.hasPackageName();
         // we do not resolve a vanilla name starting with a lower case letter
-        // try to resolve against adefault import, because we know that the
+        // try to resolve against a default import, because we know that the
         // default packages do not contain classes like these
         testDefaultImports &= !(type instanceof LowerCaseClass);
         if (testDefaultImports) {
@@ -480,8 +480,8 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                 // We limit the inner class lookups here by using ConstructedClassWithPackage.
                 // This way only the name will change, the packagePrefix will
                 // not be included in the lookup. The case where the
-                // packagePrefix is really a class is handled else where.
-                // WARNING: This code does not expect a class that has an static
+                // packagePrefix is really a class is handled elsewhere.
+                // WARNING: This code does not expect a class that has a static
                 //          inner class in DEFAULT_IMPORTS
                 ConstructedClassWithPackage tmp =  new ConstructedClassWithPackage(packagePrefix,name);
                 if (resolve(tmp, false, false, false)) {
@@ -524,7 +524,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     private boolean resolveAliasFromModule(ClassNode type) {
         // In case of getting a ConstructedClassWithPackage here we do not do checks for partial
         // matches with imported classes. The ConstructedClassWithPackage is already a constructed
-        // node and any subclass resolving will then take elsewhere place
+        // node and any subclass resolving will then take place elsewhere
         if (type instanceof ConstructedClassWithPackage) return false;
 
         ModuleNode module = currentClass.getModule();
@@ -545,16 +545,22 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             pname = name.substring(0, index);
             ClassNode aliasedNode = null;
             ImportNode importNode = module.getImport(pname);
-            if(importNode != null && importNode != currImportNode) {
+            if (importNode != null && importNode != currImportNode) {
                 aliasedNode = importNode.getType();
+            }
+            if (aliasedNode == null) {
+                importNode = module.getStaticImports().get(pname);
+                if (importNode != null && importNode != currImportNode && importNode.isStatic()) {
+                    aliasedNode = importNode.getType();
+                }
             }
 
             if (aliasedNode != null) {
-                if (pname.length() == name.length()) {
+                if (pname.length() == name.length() && !importNode.isStatic()) {
                     // full match
 
                     // We can compare here by length, because pname is always
-                    // a sbustring of name, so same length means they are equal.
+                    // a substring of name, so same length means they are equal.
                     type.setRedirect(aliasedNode);
                     return true;
                 } else {
@@ -567,7 +573,8 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                     // Since we do not want to have useless lookups we create the name
                     // completely and use a ConstructedClassWithPackage to prevent lookups against the package.
                     String className = aliasedNode.getNameWithoutPackage() + '$' +
-                                       name.substring(pname.length()+1).replace('.', '$');
+                            (importNode.isStatic() ? pname :
+                                       name.substring(pname.length()+1).replace('.', '$'));
                     ConstructedClassWithPackage tmp = new ConstructedClassWithPackage(aliasedNode.getPackageName()+".", className);
                     if (resolve(tmp, true, true, false)) {
                         type.setRedirect(tmp.redirect());
@@ -631,19 +638,30 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                 }
             }
 
-            // check module node imports packages
+            // check module node import packages
             for (ImportNode importNode : module.getStarImports()) {
                 String packagePrefix = importNode.getPackageName();
                 // We limit the inner class lookups here by using ConstructedClassWithPackage.
                 // This way only the name will change, the packagePrefix will
                 // not be included in the lookup. The case where the
-                // packagePrefix is really a class is handled else where.
+                // packagePrefix is really a class is handled elsewhere.
                 ConstructedClassWithPackage tmp = new ConstructedClassWithPackage(packagePrefix, name);
                 if (resolve(tmp, false, false, true)) {
                     ambiguousClass(type, tmp, name);
                     type.setRedirect(tmp.redirect());
                     return true;
                 }
+            }
+            // check for star imports (import static pkg.Outer.*) matching static inner classes
+            for (ImportNode importNode : module.getStaticStarImports().values()) {
+                ClassNode node = ClassHelper.make(importNode.getType().getName() + "$" + name);
+                if (resolve(node, false, false, false)) {
+                    if ((node.getModifiers() & ~Opcodes.ACC_STATIC) != 0) {
+                        type.setRedirect(node.redirect());
+                        return true;
+                    }
+                }
+
             }
         }
         return false;

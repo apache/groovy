@@ -1,3 +1,18 @@
+/*
+ * Copyright 2003-2010 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package groovy
 
 import static java.lang.Boolean.FALSE as F
@@ -14,6 +29,8 @@ import static java.util.Calendar.getInstance as now
 import static groovy.API.*
 import static groovy.StaticImportChild.*
 import static groovy.bugs.Groovy4145.foo4145
+import static Outer1.*
+import static Outer2.Inner2
 import gls.CompilableTestSupport
 
 class StaticImportTest extends CompilableTestSupport {
@@ -248,6 +265,14 @@ class StaticImportTest extends CompilableTestSupport {
             }
         '''
     }
+
+    void testStaticStarImportOfStaticInnerClasses() {
+        assert Inner1.class.name == 'groovy.Outer1$Inner1'
+    }
+
+    void testStaticImportOfStaticInnerClasses() {
+        assert Inner2.class.name == 'groovy.Outer2$Inner2'
+    }
 }
 
 class API {
@@ -268,4 +293,12 @@ class StaticImportParent {
 class StaticImportChild extends StaticImportParent {
   static cfield = 21
   static cmethod() { 'hello from child' }
+}
+
+class Outer1 {
+    static class Inner1 {}
+}
+
+class Outer2 {
+    static class Inner2 {}
 }
