@@ -1053,12 +1053,12 @@ public class Sql {
         AbstractQueryCommand command = createQueryCommand(sql);
         ResultSet rs = null;
         try {
-        	rs = command.execute();
-        	List<GroovyRowResult> result = asList(sql, rs, metaClosure);
-        	rs = null;
-        	return result;
+            rs = command.execute();
+            List<GroovyRowResult> result = asList(sql, rs, metaClosure);
+            rs = null;
+            return result;
         } finally {
-        	command.closeResources(rs);
+            command.closeResources(rs);
         }
     }
 
@@ -1082,7 +1082,7 @@ public class Sql {
     public List<GroovyRowResult> rows(String sql, List<Object> params)
             throws SQLException {
         return rows(sql, params, null);
-	}
+    }
 
     /**
      * Performs the given SQL query and return the rows of the result set.
@@ -1097,7 +1097,7 @@ public class Sql {
     public List<GroovyRowResult> rows(String sql, Object[] params)
             throws SQLException {
         return rows(sql, Arrays.asList(params), null);
-	}
+    }
 
     /**
      * Performs the given SQL query and return the rows of the result set.
@@ -1112,7 +1112,21 @@ public class Sql {
      * println "Found ${ans.size()} rows"
      * </pre>
      *
-     * This method supports named and named ordinal parameters.
+     * This method supports named and named ordinal parameters by supplying such
+     * parameters in the <code>params</code> list. Here is an example:
+     * <pre>
+     * def printNumCols = { meta -> println "Found $meta.columnCount columns" }
+     *
+     * def mapParam = [foo: 'Smith']
+     * def domainParam = new MyDomainClass(bar: 'John')
+     * def qry = 'select * from PERSON where lastname=?1.foo and firstname=?2.bar'
+     * def ans = sql.rows(qry, [mapParam, domainParam], printNumCols)
+     * println "Found ${ans.size()} rows"
+     *
+     * def qry2 = 'select * from PERSON where firstname=:first and lastname=:last'
+     * def ans2 = sql.rows(qry2, [[last:'Smith', first:'John']], printNumCols)
+     * println "Found ${ans2.size()} rows"
+     * </pre>
      * See the class Javadoc for more details.
      * <p/>
      * Resource handling is performed automatically where appropriate.
@@ -1185,7 +1199,7 @@ public class Sql {
         return rows(sql, params, metaClosure);
     }
 
-	/**
+    /**
      * Performs the given SQL query and return the first row of the result set.
      * <p/>
      * Example usage:
@@ -2249,9 +2263,9 @@ public class Sql {
         AbstractQueryCommand command = createQueryCommand(sql);
         ResultSet rs = null;
         try {
-        	rs = command.execute();
+            rs = command.execute();
         } finally {
-        	command.closeResources();
+            command.closeResources();
         }
         return rs;
     }
@@ -2264,17 +2278,17 @@ public class Sql {
      * @return the resulting ResultSet
      * @throws SQLException if a database error occurs
      */
-	protected final ResultSet executePreparedQuery(String sql, List<Object> params)
-			throws SQLException {
+    protected final ResultSet executePreparedQuery(String sql, List<Object> params)
+            throws SQLException {
         AbstractQueryCommand command = createPreparedQueryCommand(sql, params);
         ResultSet rs = null;
         try {
-        	rs = command.execute();
+            rs = command.execute();
         } finally {
-        	command.closeResources();
+            command.closeResources();
         }
         return rs;
-	}
+    }
 
     /**
      * Hook to allow derived classes to override list of result collection behavior.
@@ -2888,19 +2902,19 @@ public class Sql {
         @Override
         Statement execute(Connection conn, String sql) throws SQLException {
             return createStatement(conn);
-		}
+        }
 
-	}
+    }
 
     protected abstract class AbstractQueryCommand {
-    	protected final String sql;
-    	protected Statement statement;
-		private Connection connection;
+        protected final String sql;
+        protected Statement statement;
+        private Connection connection;
 
-    	AbstractQueryCommand(String sql) {
-    		// Don't create statement in subclass constructors to avoid throw in constructors
-    		this.sql = sql;
-    	}
+        AbstractQueryCommand(String sql) {
+            // Don't create statement in subclass constructors to avoid throw in constructors
+            this.sql = sql;
+        }
 
         /**
          * Execute the command that's defined by the subclass following
@@ -2910,21 +2924,21 @@ public class Sql {
          * @throws SQLException if a database error occurs
          */
          final ResultSet execute() throws SQLException {
-     		connection = createConnection();
-     		setInternalConnection(connection);
-    		statement = null;
-    		try {
-    			// The variation in the pattern is isolated
-    			ResultSet result = runQuery(connection);
-    			assert (null != statement);
-    			return result;
-    		} catch (SQLException e) {
-    			LOG.warning("Failed to execute: " + sql + " because: " + e.getMessage());
-    			closeResources();
-    			connection = null;
-    			statement = null;
-    			throw e;
-    		}
+             connection = createConnection();
+             setInternalConnection(connection);
+            statement = null;
+            try {
+                // The variation in the pattern is isolated
+                ResultSet result = runQuery(connection);
+                assert (null != statement);
+                return result;
+            } catch (SQLException e) {
+                LOG.warning("Failed to execute: " + sql + " because: " + e.getMessage());
+                closeResources();
+                connection = null;
+                statement = null;
+                throw e;
+            }
          }
 
          /**
@@ -2932,7 +2946,7 @@ public class Sql {
           * to free the resources allocated for the statement.
           */
          public final void closeResources(){
-        	 Sql.this.closeResources(connection, statement);
+             Sql.this.closeResources(connection, statement);
          }
 
          /**
@@ -2942,7 +2956,7 @@ public class Sql {
           * @param rs allows the caller to conveniently close its resource as well
           */
          public final void closeResources(ResultSet rs) {
-        	 Sql.this.closeResources(connection, statement, rs);
+             Sql.this.closeResources(connection, statement, rs);
          }
 
          /**
@@ -2956,32 +2970,32 @@ public class Sql {
     }
 
     protected final class PreparedQueryCommand extends AbstractQueryCommand {
-    	private List<Object> params;
+        private List<Object> params;
 
-		PreparedQueryCommand(String sql, List<Object> queryParams) {
-			super(sql);
-			params = queryParams;
-		}
+        PreparedQueryCommand(String sql, List<Object> queryParams) {
+            super(sql);
+            params = queryParams;
+        }
 
-		@Override
-		protected ResultSet runQuery(Connection connection) throws SQLException {
-			PreparedStatement s = getPreparedStatement(connection, sql, params);
-			statement = s;
-			return s.executeQuery();
-		}
+        @Override
+        protected ResultSet runQuery(Connection connection) throws SQLException {
+            PreparedStatement s = getPreparedStatement(connection, sql, params);
+            statement = s;
+            return s.executeQuery();
+        }
     }
 
     protected final class QueryCommand extends AbstractQueryCommand {
 
-    	QueryCommand(String sql) {
-    		super(sql);
-    	}
+        QueryCommand(String sql) {
+            super(sql);
+        }
 
-    	@Override
-    	protected ResultSet runQuery(Connection connection) throws SQLException {
-    		statement = getStatement(connection, sql);
-    		return statement.executeQuery(sql);
-    	}
+        @Override
+        protected ResultSet runQuery(Connection connection) throws SQLException {
+            statement = getStatement(connection, sql);
+            return statement.executeQuery(sql);
+        }
     }
 
     /**
@@ -2991,7 +3005,7 @@ public class Sql {
      *  <pre>
      * AbstractQueryCommand q = createQueryCommand("update TABLE set count = 0) where count is null");
      * try {
-     * 	   ResultSet rs = q.execute();
+     *        ResultSet rs = q.execute();
      *     return asList(rs);
      * } finally {
      *     q.closeResources();
@@ -3001,7 +3015,7 @@ public class Sql {
      * @return a command - invoke its execute() and closeResource() methods
      */
     protected AbstractQueryCommand createQueryCommand(String sql) {
-    	return new QueryCommand(sql);
+        return new QueryCommand(sql);
     }
 
     /**
@@ -3013,7 +3027,7 @@ public class Sql {
      * @return a command - invoke its execute() and closeResource() methods
      */
     protected AbstractQueryCommand createPreparedQueryCommand(String sql, List<Object> queryParams) {
-    	return new PreparedQueryCommand(sql, queryParams);
+        return new PreparedQueryCommand(sql, queryParams);
     }
 
     /**
