@@ -641,7 +641,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                 // check package this class is defined in. The usage of ConstructedClassWithPackage here
                 // means, that the module package will not be involved when the
                 // compiler tries to find an inner class.
-                ConstructedClassWithPackage tmp =  new ConstructedClassWithPackage(module.getPackageName(),name);
+                ConstructedClassWithPackage tmp =  new ConstructedClassWithPackage(module.getPackageName(), name);
                 if (resolve(tmp, false, false, false)) {
                     ambiguousClass(type, tmp, name);
                     type.setRedirect(tmp.redirect());
@@ -651,12 +651,13 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
 
             // check module static imports (for static inner classes)
             for (ImportNode importNode : module.getStaticImports().values()) {
-                ClassNode tmp = ClassHelper.make(importNode.getType().getName() + "$" + name);
-                if (resolve(tmp, false, false, false)) {
-                    if ((tmp.getModifiers() & Opcodes.ACC_STATIC) != 0) {
-                        ambiguousClass(type, tmp, name);
-                        type.setRedirect(tmp.redirect());
-                        return true;
+                if (importNode.getFieldName().equals(name)) {
+                    ClassNode tmp = ClassHelper.make(importNode.getType().getName() + "$" + name);
+                    if (resolve(tmp, false, false, true)) {
+                        if ((tmp.getModifiers() & Opcodes.ACC_STATIC) != 0) {
+                            type.setRedirect(tmp.redirect());
+                            return true;
+                        }
                     }
                 }
             }
@@ -678,8 +679,8 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
 
             // check for star imports (import static pkg.Outer.*) matching static inner classes
             for (ImportNode importNode : module.getStaticStarImports().values()) {
-                ClassNode tmp = ClassHelper.make(importNode.getType().getName() + "$" + name);
-                if (resolve(tmp, false, false, false)) {
+                ClassNode tmp = ClassHelper.make(importNode.getClassName() + "$" + name);
+                if (resolve(tmp, false, false, true)) {
                     if ((tmp.getModifiers() & Opcodes.ACC_STATIC) != 0) {
                         ambiguousClass(type, tmp, name);
                         type.setRedirect(tmp.redirect());
