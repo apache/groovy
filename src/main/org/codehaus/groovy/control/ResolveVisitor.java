@@ -554,13 +554,20 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             }
             if (aliasedNode == null) {
                 importNode = module.getStaticImports().get(pname);
-                if (importNode != null && importNode != currImportNode && importNode.isStatic()) {
-                    aliasedNode = importNode.getType();
+                if (importNode != null && importNode != currImportNode) {
+                    // static alias only for inner classes and must be at end of chain
+                    ClassNode tmp = ClassHelper.make(importNode.getType().getName() + "$" + importNode.getFieldName());
+                    if (resolve(tmp, false, false, true)) {
+                        if ((tmp.getModifiers() & Opcodes.ACC_STATIC) != 0) {
+                            type.setRedirect(tmp.redirect());
+                            return true;
+                        }
+                    }
                 }
             }
 
             if (aliasedNode != null) {
-                if (pname.length() == name.length() && !importNode.isStatic()) {
+                if (pname.length() == name.length()) {
                     // full match
 
                     // We can compare here by length, because pname is always
@@ -577,8 +584,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                     // Since we do not want to have useless lookups we create the name
                     // completely and use a ConstructedClassWithPackage to prevent lookups against the package.
                     String className = aliasedNode.getNameWithoutPackage() + '$' +
-                            (importNode.isStatic() ? pname :
-                                       name.substring(pname.length()+1).replace('.', '$'));
+                            name.substring(pname.length() + 1).replace('.', '$');
                     ConstructedClassWithPackage tmp = new ConstructedClassWithPackage(aliasedNode.getPackageName()+".", className);
                     if (resolve(tmp, true, true, false)) {
                         type.setRedirect(tmp.redirect());
@@ -637,8 +643,21 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                 // compiler tries to find an inner class.
                 ConstructedClassWithPackage tmp =  new ConstructedClassWithPackage(module.getPackageName(),name);
                 if (resolve(tmp, false, false, false)) {
+                    ambiguousClass(type, tmp, name);
                     type.setRedirect(tmp.redirect());
                     return true;
+                }
+            }
+
+            // check module static imports (for static inner classes)
+            for (ImportNode importNode : module.getStaticImports().values()) {
+                ClassNode tmp = ClassHelper.make(importNode.getType().getName() + "$" + name);
+                if (resolve(tmp, false, false, false)) {
+                    if ((tmp.getModifiers() & Opcodes.ACC_STATIC) != 0) {
+                        ambiguousClass(type, tmp, name);
+                        type.setRedirect(tmp.redirect());
+                        return true;
+                    }
                 }
             }
 
@@ -656,12 +675,14 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                     return true;
                 }
             }
+
             // check for star imports (import static pkg.Outer.*) matching static inner classes
             for (ImportNode importNode : module.getStaticStarImports().values()) {
-                ClassNode node = ClassHelper.make(importNode.getType().getName() + "$" + name);
-                if (resolve(node, false, false, false)) {
-                    if ((node.getModifiers() & ~Opcodes.ACC_STATIC) != 0) {
-                        type.setRedirect(node.redirect());
+                ClassNode tmp = ClassHelper.make(importNode.getType().getName() + "$" + name);
+                if (resolve(tmp, false, false, false)) {
+                    if ((tmp.getModifiers() & Opcodes.ACC_STATIC) != 0) {
+                        ambiguousClass(type, tmp, name);
+                        type.setRedirect(tmp.redirect());
                         return true;
                     }
                 }
@@ -713,7 +734,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         //TODO: the case of a NoClassDefFoundError needs a bit more research
         // a simple recompilation is not possible it seems. The current class
         // we are searching for is there, so we should mark that somehow.
-        // Basically the missing class needs to be completly compiled before
+        // Basically the missing class needs to be completely compiled before
         // we can again search for the current name.
         /*catch (NoClassDefFoundError ncdfe) {
             cachedClasses.put(name,SCRIPT);
