@@ -594,7 +594,11 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     void visitAnnotationDefaultExpression(AnnotationVisitor av, ClassNode type, Expression exp) {
-        if (type.isArray()) {
+		if (exp instanceof ClosureExpression) {
+			ClassNode closureClass = getOrAddClosureClass((ClosureExpression) exp);
+			Type t = Type.getType(BytecodeHelper.getTypeDescription(closureClass));
+			av.visit(null, t);
+		} else if (type.isArray()) {
             ListExpression list = (ListExpression) exp;
             AnnotationVisitor avl = av.visitArray(null);
             ClassNode componentType = type.getComponentType();
@@ -1717,22 +1721,15 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     public void visitClosureExpression(ClosureExpression expression) {
-        ClassNode innerClass = closureClassMap.get(expression);
-        if (innerClass == null) {
-            innerClass = createClosureClass(expression);
-            closureClassMap.put(expression, innerClass);
-            addInnerClass(innerClass);
-            innerClass.addInterface(ClassHelper.GENERATED_CLOSURE_Type);
-        }
-
-        String innerClassinternalName = BytecodeHelper.getClassInternalName(innerClass);
+        ClassNode closureClass = getOrAddClosureClass(expression);
+        String closureClassInternalName = BytecodeHelper.getClassInternalName(closureClass);
         passingParams = true;
-        List constructors = innerClass.getDeclaredConstructors();
+        List constructors = closureClass.getDeclaredConstructors();
         ConstructorNode node = (ConstructorNode) constructors.get(0);
 
         Parameter[] localVariableParams = node.getParameters();
 
-        mv.visitTypeInsn(NEW, innerClassinternalName);
+        mv.visitTypeInsn(NEW, closureClassInternalName);
         mv.visitInsn(DUP);
         if ((isStaticMethod() || specialCallWithinConstructor) && !classNode.declaresInterface(ClassHelper.GENERATED_CLOSURE_Type)) {
             visitClassExpression(new ClassExpression(classNode));
@@ -1785,7 +1782,7 @@ public class AsmClassGenerator extends ClassGenerator {
         //cv.visitMethodInsn(INVOKESPECIAL, innerClassinternalName, "<init>", prototype + ")V");
         mv.visitMethodInsn(
                 INVOKESPECIAL,
-                innerClassinternalName,
+				closureClassInternalName,
                 "<init>",
                 BytecodeHelper.getMethodDescriptor(ClassHelper.VOID_TYPE, localVariableParams));
     }
@@ -3542,6 +3539,10 @@ public class AsmClassGenerator extends ClassGenerator {
                 enumAttrs.put(name, (PropertyExpression) expr);
             } else if (expr instanceof ListExpression) {
                 arrayAttrs.put(name, (ListExpression) expr);
+            } else if (expr instanceof ClosureExpression) {
+				ClassNode closureClass = getOrAddClosureClass((ClosureExpression) expr);
+                constantAttrs.put(name,
+                        Type.getType(BytecodeHelper.getTypeDescription(closureClass)));
             }
         }
 
@@ -3624,6 +3625,17 @@ public class AsmClassGenerator extends ClassGenerator {
         innerClass.setModule(classNode.getModule());
         return innerClasses.add(innerClass);
     }
+
+	private ClassNode getOrAddClosureClass(ClosureExpression expression) {
+		ClassNode closureClass = closureClassMap.get(expression);
+		if (closureClass == null) {
+			closureClass = createClosureClass(expression);
+			closureClassMap.put(expression, closureClass);
+			addInnerClass(closureClass);
+			closureClass.addInterface(ClassHelper.GENERATED_CLOSURE_Type);
+		}
+		return closureClass;
+	}
 
     protected ClassNode createClosureClass(ClosureExpression expression) {
         ClassNode outerClass = getOutermostClass();

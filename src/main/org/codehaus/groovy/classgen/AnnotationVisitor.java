@@ -162,8 +162,8 @@ public class AnnotationVisitor {
         } else if (ClassHelper.STRING_TYPE.equals(attrType)) {
             visitConstantExpression(attrName, getConstantExpression(attrExp, attrType), ClassHelper.STRING_TYPE);
         } else if (ClassHelper.CLASS_Type.equals(attrType)) {
-            if (!(attrExp instanceof ClassExpression)) {
-                addError("Only classes can be used for attribute '" + attrName + "'", attrExp);
+            if (!(attrExp instanceof ClassExpression || attrExp instanceof ClosureExpression)) {
+                addError("Only classes and closures can be used for attribute '" + attrName + "'", attrExp);
             }
         } else if (attrType.isDerivedFrom(ClassHelper.Enum_Type)) {
             if (attrExp instanceof PropertyExpression) {
