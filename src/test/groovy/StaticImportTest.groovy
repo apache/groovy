@@ -29,8 +29,9 @@ import static java.util.Calendar.getInstance as now
 import static groovy.API.*
 import static groovy.StaticImportChild.*
 import static groovy.bugs.Groovy4145.foo4145
-import static Outer1.*
-import static Outer2.Inner2
+import static groovy.Outer1.*
+import static groovy.Outer2.Inner2
+import static Outer3.*
 import gls.CompilableTestSupport
 
 class StaticImportTest extends CompilableTestSupport {
@@ -272,6 +273,10 @@ class StaticImportTest extends CompilableTestSupport {
 
     void testStaticImportOfStaticInnerClasses() {
         assert Inner2.class.name == 'groovy.Outer2$Inner2'
+    }
+
+    void testStaticStarImportOfStaticInnerClassesExternalClass() {
+        assert Inner3.class.name == 'Outer3$Inner3'
     }
 }
 
