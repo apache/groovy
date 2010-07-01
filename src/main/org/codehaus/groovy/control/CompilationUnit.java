@@ -589,7 +589,6 @@ public class CompilationUnit extends ProcessingUnit {
     private PrimaryClassNodeOperation staticImport = new PrimaryClassNodeOperation() {
         public void call(SourceUnit source, GeneratorContext context, ClassNode classNode) throws CompilationFailedException {
             staticImportVisitor.visitClass(classNode, source);
-            optimizer.visitClass(classNode, source);
         }
     };
 
@@ -697,6 +696,8 @@ public class CompilationUnit extends ProcessingUnit {
 
         public void call(SourceUnit source, GeneratorContext context, ClassNode classNode) throws CompilationFailedException {
 
+        	optimizer.visitClass(classNode, source); // GROOVY-4272: repositioned it here from staticImport
+        	
             if(!classNode.isSynthetic()) {
                 GenericsVisitor genericsVisitor = new GenericsVisitor(source);
                 genericsVisitor.visitClass(classNode);
