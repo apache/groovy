@@ -15,6 +15,7 @@
  */
 package groovy
 
+import gls.CompilableTestSupport
 import static java.lang.Boolean.FALSE as F
 import static java.text.DateFormat.MEDIUM as M
 import static java.util.regex.Pattern.*
@@ -32,10 +33,11 @@ import static groovy.bugs.Groovy4145.foo4145
 import static groovy.Outer1.*
 import static groovy.Outer2.Inner2
 import static groovy.Outer2.Inner2 as InnerAlias2
-// TODO: reinstate
+import static java.util.jar.Attributes.*
+import static java.util.jar.Attributes.Name as AttrName
+// TODO GROOVY-4287: reinstate next two imports
 //import static Outer3.*
 //import static Outer4.Inner4
-import gls.CompilableTestSupport
 
 class StaticImportTest extends CompilableTestSupport {
     void testFieldWithAliasInExpression() {
@@ -282,7 +284,15 @@ class StaticImportTest extends CompilableTestSupport {
         assert InnerAlias2.class.name == 'groovy.Outer2$Inner2'
     }
 
-    // TODO: reinstate
+    void testStaticImportOfStaticInnerClassExistingExternalJar() {
+        assert Name.class.name == 'java.util.jar.Attributes$Name'
+    }
+
+    void testStaticImportOfStaticInnerClassExistingExternalJarWithAlias() {
+        assert AttrName.class.name == 'java.util.jar.Attributes$Name'
+    }
+
+    // TODO GROOVY-4287: reinstate next two tests
 //    void testStaticStarImportOfStaticInnerClassExternalClass() {
 //        assert Inner3.class.name == 'Outer3$Inner3'
 //    }
