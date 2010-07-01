@@ -1044,7 +1044,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                     if (map) {
                         final MapExpression me = new MapExpression();
                         for (Expression expression : list.getExpressions()) {
-                            me.addMapEntryExpression((MapEntryExpression) expression);
+                            me.addMapEntryExpression((MapEntryExpression) transform(expression));
                         }
                         me.setSourcePosition(list);
                         final CastExpression ce = new CastExpression(left.getType(), me);
@@ -1057,7 +1057,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             if (be.getRightExpression() instanceof MapEntryExpression) {
                 // may be we have C[k1:v1] -> should become (C)([k1:v1])
                 final MapExpression me = new MapExpression();
-                me.addMapEntryExpression((MapEntryExpression) be.getRightExpression());
+                me.addMapEntryExpression((MapEntryExpression) transform(be.getRightExpression()));
                 me.setSourcePosition(be.getRightExpression());
                 final CastExpression ce = new CastExpression(left.getType(), me);
                 ce.setSourcePosition(be);
