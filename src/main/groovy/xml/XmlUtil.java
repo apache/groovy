@@ -212,6 +212,10 @@ public class XmlUtil {
 
     // TODO: replace with stream-based version
     private static String asString(Writable writable) {
+    	if(writable instanceof GPathResult) {
+    		return asString((GPathResult) writable); //GROOVY-4285
+    	}
+    	
         Writer sw = new StringWriter();
         try {
             writable.writeTo(sw);
