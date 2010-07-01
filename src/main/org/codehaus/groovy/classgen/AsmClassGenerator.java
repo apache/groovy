@@ -594,11 +594,11 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     void visitAnnotationDefaultExpression(AnnotationVisitor av, ClassNode type, Expression exp) {
-		if (exp instanceof ClosureExpression) {
-			ClassNode closureClass = getOrAddClosureClass((ClosureExpression) exp);
-			Type t = Type.getType(BytecodeHelper.getTypeDescription(closureClass));
-			av.visit(null, t);
-		} else if (type.isArray()) {
+        if (exp instanceof ClosureExpression) {
+            ClassNode closureClass = getOrAddClosureClass((ClosureExpression) exp);
+            Type t = Type.getType(BytecodeHelper.getTypeDescription(closureClass));
+            av.visit(null, t);
+        } else if (type.isArray()) {
             ListExpression list = (ListExpression) exp;
             AnnotationVisitor avl = av.visitArray(null);
             ClassNode componentType = type.getComponentType();
@@ -1321,13 +1321,13 @@ public class AsmClassGenerator extends ClassGenerator {
         BlockRecorder fb = new BlockRecorder(finallyPart);
         fb.startRange(synchronizedStart);
         compileStack.pushBlockRecorder(fb);
-        
+
         statement.getCode().visit(this);
 
         fb.closeRange(catchAll);
         compileStack.writeExceptionTable(fb, catchAll, null);
         compileStack.pop(); //pop fb
-        
+
         finallyPart.run();
         mv.visitJumpInsn(GOTO, synchronizedEnd);
         mv.visitLabel(catchAll);
@@ -1782,7 +1782,7 @@ public class AsmClassGenerator extends ClassGenerator {
         //cv.visitMethodInsn(INVOKESPECIAL, innerClassinternalName, "<init>", prototype + ")V");
         mv.visitMethodInsn(
                 INVOKESPECIAL,
-				closureClassInternalName,
+                closureClassInternalName,
                 "<init>",
                 BytecodeHelper.getMethodDescriptor(ClassHelper.VOID_TYPE, localVariableParams));
     }
@@ -3374,7 +3374,7 @@ public class AsmClassGenerator extends ClassGenerator {
             mv.visitLdcInsn(i);
             mv.visitMethodInsn(INVOKESTATIC, "java/lang/Integer", "valueOf", "(I)Ljava/lang/Integer;");
             mv.visitInsn(AASTORE);
-            
+
             mv.visitMethodInsn(INVOKESPECIAL, "org/codehaus/groovy/runtime/CurriedClosure", "<init>", "(Lgroovy/lang/Closure;[Ljava/lang/Object;)V");
             // stack: closure,curriedClosure
 
@@ -3540,7 +3540,7 @@ public class AsmClassGenerator extends ClassGenerator {
             } else if (expr instanceof ListExpression) {
                 arrayAttrs.put(name, (ListExpression) expr);
             } else if (expr instanceof ClosureExpression) {
-				ClassNode closureClass = getOrAddClosureClass((ClosureExpression) expr);
+                ClassNode closureClass = getOrAddClosureClass((ClosureExpression) expr);
                 constantAttrs.put(name,
                         Type.getType(BytecodeHelper.getTypeDescription(closureClass)));
             }
@@ -3626,16 +3626,16 @@ public class AsmClassGenerator extends ClassGenerator {
         return innerClasses.add(innerClass);
     }
 
-	private ClassNode getOrAddClosureClass(ClosureExpression expression) {
-		ClassNode closureClass = closureClassMap.get(expression);
-		if (closureClass == null) {
-			closureClass = createClosureClass(expression);
-			closureClassMap.put(expression, closureClass);
-			addInnerClass(closureClass);
-			closureClass.addInterface(ClassHelper.GENERATED_CLOSURE_Type);
-		}
-		return closureClass;
-	}
+    private ClassNode getOrAddClosureClass(ClosureExpression expression) {
+        ClassNode closureClass = closureClassMap.get(expression);
+        if (closureClass == null) {
+            closureClass = createClosureClass(expression);
+            closureClassMap.put(expression, closureClass);
+            addInnerClass(closureClass);
+            closureClass.addInterface(ClassHelper.GENERATED_CLOSURE_Type);
+        }
+        return closureClass;
+    }
 
     protected ClassNode createClosureClass(ClosureExpression expression) {
         ClassNode outerClass = getOutermostClass();
@@ -4096,14 +4096,14 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     private void execMethodAndStoreForSubscriptOperator(String method, Expression expression) {
-    	execMethodAndStoreForSubscriptOperator(method, expression, null);
+        execMethodAndStoreForSubscriptOperator(method, expression, null);
     }
-    
+
     private void execMethodAndStoreForSubscriptOperator(String method, Expression expression,
-    		Expression getAtResultExp) {
+            Expression getAtResultExp) {
         // execute method
         makeCallSite(
-        		(getAtResultExp == null ? expression : getAtResultExp),
+                (getAtResultExp == null ? expression : getAtResultExp),
                 method,
                 MethodCallExpression.NO_ARGUMENTS,
                 false, false, false, false);
@@ -4149,29 +4149,29 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     protected void evaluatePostfixMethod(String method, Expression expression) {
-    	// GROOVY-4246: arr[rand()]++ should evaulate rand() only once and reuse its result
-    	boolean getAtOp = false;
-    	BinaryExpression be = null;
-    	Expression getAtResultExp = null;
-    	String varName = "tmp_postfix_" + method;
-    	final int idx = compileStack.defineTemporaryVariable(varName, false);
-    	
-    	if(expression instanceof BinaryExpression) {
-    		be = (BinaryExpression) expression;
-    		if (be.getOperation().getType() == Types.LEFT_SQUARE_BRACKET) {
-    			getAtOp = true;
-    			be.getRightExpression().visit(this); // execute subscript exp
-    			mv.visitVarInsn(ASTORE, idx); // store the exp result in a local var
-    			BytecodeExpression newRightExp = new BytecodeExpression() {
-    				public void visit(MethodVisitor mv) {
-    					mv.visitVarInsn(ALOAD, idx);
-    				}
-    			};
-    			// change the subscript exp to pick up the local var so that the orig exp is not re-executed
-    			be.setRightExpression(newRightExp);
-    		}
-    		
-    	}
+        // GROOVY-4246: arr[rand()]++ should evaulate rand() only once and reuse its result
+        boolean getAtOp = false;
+        BinaryExpression be = null;
+        Expression getAtResultExp = null;
+        String varName = "tmp_postfix_" + method;
+        final int idx = compileStack.defineTemporaryVariable(varName, false);
+
+        if(expression instanceof BinaryExpression) {
+            be = (BinaryExpression) expression;
+            if (be.getOperation().getType() == Types.LEFT_SQUARE_BRACKET) {
+                getAtOp = true;
+                be.getRightExpression().visit(this); // execute subscript exp
+                mv.visitVarInsn(ASTORE, idx); // store the exp result in a local var
+                BytecodeExpression newRightExp = new BytecodeExpression() {
+                    public void visit(MethodVisitor mv) {
+                        mv.visitVarInsn(ALOAD, idx);
+                    }
+                };
+                // change the subscript exp to pick up the local var so that the orig exp is not re-executed
+                be.setRightExpression(newRightExp);
+            }
+
+        }
         // load
         expression.visit(this);
 
@@ -4179,15 +4179,15 @@ public class AsmClassGenerator extends ClassGenerator {
         final int tempIdx = compileStack.defineTemporaryVariable("postfix_" + method, true);
 
         if(getAtOp) {
-        	 // exp to allow reuse of binary exp already evaluated so that following putAt does not
-        	//  execute the getAt() again
-        	getAtResultExp = new BytecodeExpression() {
-        		public void visit(MethodVisitor mv) {
-        			mv.visitVarInsn(ALOAD, tempIdx);
-        		}
-        	};
+            // exp to allow reuse of binary exp already evaluated so that following putAt does not
+            //  execute the getAt() again
+            getAtResultExp = new BytecodeExpression() {
+                public void visit(MethodVisitor mv) {
+                    mv.visitVarInsn(ALOAD, tempIdx);
+                }
+            };
         }
-        
+
         // execute Method
         execMethodAndStoreForSubscriptOperator(method, expression, getAtResultExp);
         // remove the result of the method call
