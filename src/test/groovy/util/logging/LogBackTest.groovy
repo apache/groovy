@@ -1,16 +1,11 @@
 package groovy.util.logging
 
 import java.lang.reflect.*
-import org.codehaus.groovy.ast.*
-import org.codehaus.groovy.control.*
-import org.codehaus.groovy.tools.ast.*
-import org.codehaus.groovy.transform.*
 import org.slf4j.LoggerFactory;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.core.OutputStreamAppender;
 import ch.qos.logback.classic.Level
 import ch.qos.logback.classic.LoggerContext
-import ch.qos.logback.core.LayoutBase
 import ch.qos.logback.classic.spi.LoggingEvent
 import ch.qos.logback.core.layout.EchoLayout
 
@@ -134,7 +129,7 @@ class LogBackTest extends GroovyTestCase {
 
 }
 
-class LogbackInterceptingAppender<E> extends OutputStreamAppender {
+class LogbackInterceptingAppender<E> extends OutputStreamAppender<E> {
 
     List<LoggingEvent> events = new ArrayList<LoggingEvent>()
 
