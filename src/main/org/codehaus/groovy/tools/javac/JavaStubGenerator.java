@@ -617,8 +617,9 @@ public class JavaStubGenerator
                     // assume must be static class field or enum value or class that Java can resolve
                     val = ((Expression) memberValue).getText();
                 } else if (memberValue instanceof ClosureExpression) {
-                    // annotation closure; replace it with a class literal (as groovyc will do in bytecode)
-                    val = "Object.class";
+                    // annotation closure; replaced with this specific class literal to cover the
+                    // case where annotation type uses Class<? extends Closure> for the closure's type
+                    val = "groovy.lang.Closure.class";
                 }
                 if (first) {
                     first = false;
