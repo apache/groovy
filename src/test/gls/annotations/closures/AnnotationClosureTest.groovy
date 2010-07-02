@@ -3,6 +3,7 @@ package gls.annotations.closures
 import gls.CompilableTestSupport
 import java.lang.annotation.RetentionPolicy
 import java.lang.annotation.Retention
+import java.lang.reflect.Modifier
 
 class AnnotationClosureTest extends CompilableTestSupport {
     def answer = new Object() {
@@ -27,6 +28,16 @@ import gls.annotations.closures.AnnWithStringElement
 @AnnWithStringElement(elem = { 1 + 2 })
 class Foo {}
 		"""
+    }
+
+    void testIsCompiledToPublicClass() {
+        def closureClass = ClassWithAnnClosure.class.getAnnotation(AnnWithClassElement).elem()
+        assert Modifier.isPublic(closureClass.modifiers)
+    }
+
+    void testDefaultValueIsCompiledToPublicClass() {
+        def closureClass = ClosureAsDefaultValue.class.getAnnotation(AnnWithDefaultValue).elem()
+        assert Modifier.isPublic(closureClass.modifiers)
     }
 
     void testWorksForAnnotationTypeDeclaredInGroovy() {

@@ -595,7 +595,7 @@ public class AsmClassGenerator extends ClassGenerator {
 
     void visitAnnotationDefaultExpression(AnnotationVisitor av, ClassNode type, Expression exp) {
         if (exp instanceof ClosureExpression) {
-            ClassNode closureClass = getOrAddClosureClass((ClosureExpression) exp);
+            ClassNode closureClass = getOrAddClosureClass((ClosureExpression) exp, ACC_PUBLIC);
             Type t = Type.getType(BytecodeHelper.getTypeDescription(closureClass));
             av.visit(null, t);
         } else if (type.isArray()) {
@@ -1721,7 +1721,7 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     public void visitClosureExpression(ClosureExpression expression) {
-        ClassNode closureClass = getOrAddClosureClass(expression);
+        ClassNode closureClass = getOrAddClosureClass(expression, 0);
         String closureClassInternalName = BytecodeHelper.getClassInternalName(closureClass);
         passingParams = true;
         List constructors = closureClass.getDeclaredConstructors();
@@ -3540,7 +3540,7 @@ public class AsmClassGenerator extends ClassGenerator {
             } else if (expr instanceof ListExpression) {
                 arrayAttrs.put(name, (ListExpression) expr);
             } else if (expr instanceof ClosureExpression) {
-                ClassNode closureClass = getOrAddClosureClass((ClosureExpression) expr);
+                ClassNode closureClass = getOrAddClosureClass((ClosureExpression) expr, ACC_PUBLIC);
                 constantAttrs.put(name,
                         Type.getType(BytecodeHelper.getTypeDescription(closureClass)));
             }
@@ -3626,10 +3626,10 @@ public class AsmClassGenerator extends ClassGenerator {
         return innerClasses.add(innerClass);
     }
 
-    private ClassNode getOrAddClosureClass(ClosureExpression expression) {
+    private ClassNode getOrAddClosureClass(ClosureExpression expression, int modifiers) {
         ClassNode closureClass = closureClassMap.get(expression);
         if (closureClass == null) {
-            closureClass = createClosureClass(expression);
+            closureClass = createClosureClass(expression, modifiers);
             closureClassMap.put(expression, closureClass);
             addInnerClass(closureClass);
             closureClass.addInterface(ClassHelper.GENERATED_CLOSURE_Type);
@@ -3638,6 +3638,12 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     protected ClassNode createClosureClass(ClosureExpression expression) {
+        return createClosureClass(expression, 0);
+    }
+
+    // regular closure classes are package-private (and hence have no modifiers),
+    // but annotation closure classes are public to simplify their reflective use
+    private ClassNode createClosureClass(ClosureExpression expression, int modifiers) {
         ClassNode outerClass = getOutermostClass();
         String name = outerClass.getName() + "$"
                 + context.getNextClosureInnerName(outerClass, classNode, methodNode); // add a more informative name
@@ -3657,7 +3663,7 @@ public class AsmClassGenerator extends ClassGenerator {
         Parameter[] localVariableParams = getClosureSharedVariables(expression);
         removeInitialValues(localVariableParams);
 
-        InnerClassNode answer = new InnerClassNode(outerClass, name, 0, ClassHelper.CLOSURE_TYPE); // closures are local inners and not public
+        InnerClassNode answer = new InnerClassNode(outerClass, name, modifiers, ClassHelper.CLOSURE_TYPE); 
         answer.setEnclosingMethod(this.methodNode);
         answer.setSynthetic(true);
         answer.setUsingGenerics(outerClass.isUsingGenerics());
