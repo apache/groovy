@@ -22,6 +22,7 @@ import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
+import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
@@ -615,6 +616,9 @@ public class JavaStubGenerator
                 } else if (memberValue instanceof PropertyExpression || memberValue instanceof VariableExpression) {
                     // assume must be static class field or enum value or class that Java can resolve
                     val = ((Expression) memberValue).getText();
+                } else if (memberValue instanceof ClosureExpression) {
+                    // annotation closure; replace it with a class literal (as groovyc will do in bytecode)
+                    val = "Object.class";
                 }
                 if (first) {
                     first = false;

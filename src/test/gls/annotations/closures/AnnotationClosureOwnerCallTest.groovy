@@ -1,11 +1,11 @@
 package gls.annotations.closures
 
 class AnnotationClosureOwnerCallTest extends AnnotationClosureExhaustiveTestSupport {
-    def getAnnotationClass() { AnnWithClassElement }
+    Class getAnnotationClass() { AnnWithClassElement }
 
-    def getAnnotatedClass() { CallOnOwner }
+    Class getAnnotatedClass() { CallOnOwner }
 
-    def verify(Object closureClass) {
+    void verify(Class closureClass) {
         def closure = closureClass.newInstance(this, null)
         closure.resolveStrategy = Closure.OWNER_ONLY
         assert closure.call() == 42

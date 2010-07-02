@@ -40,20 +40,6 @@ class Foo {}
         assert Modifier.isPublic(closureClass.modifiers)
     }
 
-    void testWorksForAnnotationTypeDeclaredInGroovy() {
-        def closureClass = ClassWithAnnClosure.class.getAnnotation(AnnWithClassElement).elem()
-        def closure = closureClass.newInstance(null, null)
-
-        assert closure.call() == 3
-    }
-
-    void testWorksForAnnotationTypeDeclaredInJava() {
-        def closureClass = ClassWithJavaAnnClosure.class.getAnnotation(JavaAnnotationWithClassElement).elem()
-        def closure = closureClass.newInstance(null, null)
-
-        assert closure.call() == 3
-    }
-
     void testCanBeUsedAsDefaultValue() {
         def closureClass = ClosureAsDefaultValue.class.getAnnotation(AnnWithDefaultValue).elem()
         def closure = closureClass.newInstance(null, null)

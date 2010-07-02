@@ -1,11 +1,11 @@
 package gls.annotations.closures
 
 abstract class AnnotationClosureExhaustiveTestSupport extends GroovyTestCase {
-    abstract getAnnotationClass()
+    abstract Class getAnnotationClass()
 
-    abstract getAnnotatedClass()
+    abstract Class getAnnotatedClass()
 
-    abstract verify(closureClass)
+    abstract void verify(Class closureClass)
 
     void testWorksOnClassLevel() {
         worksOn(annotatedClass)

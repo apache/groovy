@@ -1,11 +1,11 @@
 package gls.annotations.closures
 
 class AnnotationClosureWithParametersTest extends AnnotationClosureExhaustiveTestSupport {
-    def getAnnotationClass() { AnnWithClassElement }
+    Class getAnnotationClass() { AnnWithClassElement }
 
-    def getAnnotatedClass() { ClosureWithParameters }
+    Class getAnnotatedClass() { ClosureWithParameters }
 
-    def verify(Object closureClass) {
+    void verify(Class closureClass) {
         def closure = closureClass.newInstance(null, null)
         assert closure.call(1, 2) == 3
     }

@@ -1,11 +1,11 @@
 package gls.annotations.closures
 
 class AnnotationClosureUnqualifiedCallTest extends AnnotationClosureExhaustiveTestSupport {
-    def getAnnotationClass() { AnnWithClassElement }
+    Class getAnnotationClass() { AnnWithClassElement }
 
-    def getAnnotatedClass() { UnqualifiedCall }
+    Class getAnnotatedClass() { UnqualifiedCall }
 
-    def verify(Object closureClass) {
+    void verify(Class closureClass) {
         def closure = closureClass.newInstance(this, this)
         assert closure.call() == 42
     }

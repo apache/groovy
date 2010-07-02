@@ -1,11 +1,11 @@
 package gls.annotations.closures
 
 class AnnotationClosureThisObjectCallTest extends AnnotationClosureExhaustiveTestSupport {
-    def getAnnotationClass() { AnnWithClassElement }
+    Class getAnnotationClass() { AnnWithClassElement }
 
-    def getAnnotatedClass() { CallOnThisObject }
+    Class getAnnotatedClass() { CallOnThisObject }
 
-    def verify(Object closureClass) {
+    void verify(Class closureClass) {
         def closure = closureClass.newInstance(null, this)
         assert closure.call() == 42
     }
