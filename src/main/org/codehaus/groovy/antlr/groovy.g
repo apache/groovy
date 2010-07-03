@@ -1160,7 +1160,7 @@ enumBlock  {Token first = LT(1);}
 
 /** Guard for enumConstants.  */
 enumConstantsStart
-    :   annotationsOpt IDENT (LCURLY | LPAREN | nls (SEMI | COMMA | modifiersOpt | RCURLY))
+    :   annotationsOpt IDENT (LCURLY | LPAREN | nls (SEMI | COMMA | declarationStart | RCURLY))
     ;
 
 /** Comma-separated list of one or more enum constant definitions.  */
