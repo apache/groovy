@@ -55,6 +55,7 @@ public class ModuleNode extends ASTNode implements Opcodes {
     private transient SourceUnit context;
     private boolean importsResolved = false;
     private ClassNode scriptDummy;
+    private String mainClassName = null;
 
     public ModuleNode (SourceUnit context ) {
         this.context = context;
@@ -75,6 +76,7 @@ public class ModuleNode extends ASTNode implements Opcodes {
     public List<ClassNode> getClasses() {
         if (createClassForStatements && (!statementBlock.isEmpty() || !methods.isEmpty() || isPackageInfo())) {
             ClassNode mainClass = createStatementsClass();
+            mainClassName = mainClass.getName(); 
             createClassForStatements = false;
             classes.add(0, mainClass);
             mainClass.setModule(this);
@@ -158,6 +160,7 @@ public class ModuleNode extends ASTNode implements Opcodes {
     }
 
     public void addClass(ClassNode node) {
+    	if(classes.isEmpty()) mainClassName = node.getName();
         classes.add(node);
         node.setModule(this);
         addToCompileUnit(node);
@@ -498,5 +501,9 @@ public class ModuleNode extends ASTNode implements Opcodes {
         ImportNode node = new ImportNode(type);
         node.addAnnotations(annotations);
         staticStarImports.put(name, node);
+    }
+
+    public String getMainClassName() {
+    	return mainClassName;
     }
 }

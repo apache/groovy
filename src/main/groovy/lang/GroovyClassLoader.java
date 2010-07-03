@@ -297,10 +297,13 @@ public class GroovyClassLoader extends URLClassLoader {
         unit.compile(goalPhase);
 
         answer = collector.generatedClass;
+        String mainClass = su.getAST().getMainClassName();
         for (Object o : collector.getLoadedClasses()) {
             Class clazz = (Class) o;
-            definePackage(clazz.getName());
+        	String clazzName = clazz.getName();
+            definePackage(clazzName);
             setClassCacheEntry(clazz);
+            if(clazzName.equals(mainClass)) answer = clazz; 
         }
         return answer;
     }
