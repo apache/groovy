@@ -181,11 +181,11 @@ class EnumTest extends CompilableTestSupport {
 
     // the fix for GROOVY-3161
     def void testStaticEnumFieldWithEnumValues() {
-    	def allColors = GroovyColors3161.ALL_COLORS
-    	assert allColors.size == 3
-    	assert allColors[0] == GroovyColors3161.red
-    	assert allColors[1] == GroovyColors3161.blue
-    	assert allColors[2] == GroovyColors3161.green
+        def allColors = GroovyColors3161.ALL_COLORS
+        assert allColors.size == 3
+        assert allColors[0] == GroovyColors3161.red
+        assert allColors[1] == GroovyColors3161.blue
+        assert allColors[2] == GroovyColors3161.green
     }
 
     // the fix for GROOVY-3283
@@ -199,13 +199,13 @@ class EnumTest extends CompilableTestSupport {
             
             a = A
             x = X
-	    """
+        """
     }
 
     void testCallBehaviorOnEnumForGROOVY3284() {
-    	// test the usage in a non-script class first
+        // test the usage in a non-script class first
         for (f in Foo3284) {
-        	assert f() == "A"
+            assert f() == "A"
         }
         assert Foo3284.A.call() == "A"
         assert Foo3284.A() == "A"
@@ -214,22 +214,22 @@ class EnumTest extends CompilableTestSupport {
 
         // now test the usage in a script but this time type Closure not specified explicitly
         assertScript """
-			enum Foo32842 {
-			    B({ "B" })
-			    Foo32842(c) {
-			      call = c
-			    }
-			    def call
-			}
-	        for (f in Foo32842) {
-	            assert f() == "B"
-	        }
-	
-	        assert Foo32842.B.call() == "B"
-	
-	        assert Foo32842.B() == "B"
-			b = Foo32842.B
-			assert b() == "B"
+            enum Foo32842 {
+                B({ "B" })
+                Foo32842(c) {
+                  call = c
+                }
+                def call
+            }
+            for (f in Foo32842) {
+                assert f() == "B"
+            }
+    
+            assert Foo32842.B.call() == "B"
+    
+            assert Foo32842.B() == "B"
+            b = Foo32842.B
+            assert b() == "B"
         """
     }
 
@@ -367,6 +367,16 @@ class EnumTest extends CompilableTestSupport {
             }
         """
     }
+
+    void testEnumWithSingleValueAndClassField() {
+        // GROOVY-4268
+        shouldCompile """
+            private enum EnumWithSingleValueAndClassField {
+                VALUE
+                String toString() { "I'm a value" }
+            }
+        """
+    }
 }
 
 
@@ -380,13 +390,13 @@ enum UsCoin {
 enum EmptyEnum{}
 
 enum GroovyColors3161 {
-	red, blue, green
-	static def ALL_COLORS = [red, blue, green]
+    red, blue, green
+    static def ALL_COLORS = [red, blue, green]
 }
 
 enum GroovyColors3161B {
-	red, blue, green,
-	static def ALL_COLORS = [red, blue, green]
+    red, blue, green,
+    static def ALL_COLORS = [red, blue, green]
 }
 
 enum Foo3284 {
