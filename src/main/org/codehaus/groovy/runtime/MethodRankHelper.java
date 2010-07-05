@@ -50,7 +50,7 @@ public class MethodRankHelper{
     public static final int MAX_CONSTRUCTOR_SCORE = 20;
     public static final int MAX_FIELD_SCORE = 30;
     
-    private final static class Pair<U,V> {
+    private static final class Pair<U,V> {
         private U u;
         private V v;
         public Pair(U u, V v){
