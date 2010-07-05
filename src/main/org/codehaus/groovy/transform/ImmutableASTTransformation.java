@@ -15,7 +15,6 @@
  */
 package org.codehaus.groovy.transform;
 
-import groovy.lang.GroovyObject;
 import groovy.lang.Immutable;
 import groovy.lang.MetaClass;
 import groovy.lang.MissingPropertyException;
