@@ -80,7 +80,7 @@ public class JavaStubCompilationUnit
     @Override
     public void compile() throws CompilationFailedException {
         stubCount = 0;
-        super.compile(Phases.CONVERSION);
+        super.compile(Phases.SEMANTIC_ANALYSIS);
     }
 
     @Override
