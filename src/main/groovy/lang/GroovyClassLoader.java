@@ -281,6 +281,7 @@ public class GroovyClassLoader extends URLClassLoader {
     }
 
     private Class doParseClass(GroovyCodeSource codeSource) {
+    	validate(codeSource);
         Class answer;  // Was neither already loaded nor compiling, so compile and add to cache.
         CompilationUnit unit = createCompilationUnit(config, codeSource.getCodeSource());
         SourceUnit su = null;
@@ -308,6 +309,14 @@ public class GroovyClassLoader extends URLClassLoader {
         return answer;
     }
 
+    private void validate(GroovyCodeSource codeSource) {
+        if (codeSource.getFile() == null) {
+            if(codeSource.getScriptText() == null) {
+            	throw new IllegalArgumentException("Script text to compile cannot be null!");
+            }
+        }
+    }
+    
     private void definePackage(String className) {
         int i = className.lastIndexOf('.');
         if (i != -1) {
