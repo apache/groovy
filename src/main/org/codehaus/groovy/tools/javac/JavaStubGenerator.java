@@ -288,12 +288,19 @@ public class JavaStubGenerator
             printModifiers(out, fieldNode.getModifiers());
         }
 
-        printType(fieldNode.getType(), out);
+        ClassNode type = fieldNode.getType();
+        printType(type, out);
 
         out.print(" ");
         out.print(fieldNode.getName());
         if (isInterface) {
-            out.print(" = null");
+            out.print(" = ");
+            if (ClassHelper.isPrimitiveType(type)) {
+                String val = type == ClassHelper.boolean_TYPE ? "false" : "0";
+                out.print("new " + ClassHelper.getWrapper(type) + "((" + type + ")" + val + ")");
+            } else {
+                out.print("null");
+            }
         }
         out.println(";");
     }
