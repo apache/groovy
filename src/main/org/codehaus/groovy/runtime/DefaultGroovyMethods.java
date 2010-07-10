@@ -1623,7 +1623,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Convert a Collection to a List. Always returns a new List
      * even if the Collection is already a List.
      * <p>
-     * Examples usage:
+     * Example usage:
      * <pre class="groovyTestCase">def x = [1,2,3] as HashSet
      * assert x.class == HashSet
      * assert x.toList() instanceof List</pre>
@@ -1821,6 +1821,118 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static List collect(Map self, Closure closure) {
         return (List) collect(self, new ArrayList(self.size()), closure);
+    }
+
+    /**
+     * Iterates through this Map transforming each entry using the closure
+     * as a transformer, returning a map of the transformed entries.
+     * <pre class="groovyTestCase">
+     * assert [a:1, b:2].collectEntries( [:] ) { k, v -> [v, k] } == [1:'a', 2:'b']
+     * assert [a:1, b:2].collectEntries( [30:'C'] ) { key, value ->
+     *     [(value*10): key.toUpperCase()] } == [10:'A', 20:'B', 30:'C']
+     * </pre>
+     *
+     * @param self    a Map
+     * @param result  the Map into which the mapped entries are put
+     * @param closure the closure used for mapping, which can take one (Map.Entry) or two (key, value) parameters and
+     *                should return a Map.Entry, a Map or a two-element list containing the resulting key and value
+     * @return a Map of the transformed entries
+     * @see #collect(Map, Collection, Closure)
+     * @since 1.8.0
+     */
+    public static <K, V> Map<K, V> collectEntries(Map<K, V> self, Map<K, V> result, Closure closure) {
+        boolean isTwoParams = (closure.getParameterTypes().length == 2);
+        for (Iterator iter = self.entrySet().iterator(); iter.hasNext();) {
+            Map.Entry entry = (Map.Entry) iter.next();
+            if (isTwoParams) {
+                addEntry(result, closure.call(new Object[]{entry.getKey(), entry.getValue()}));
+            } else {
+                addEntry(result, closure.call(entry));
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Iterates through this Map transforming each entry using the closure
+     * as a transformer, returning a map of the transformed entries.
+     * <pre class="groovyTestCase">
+     * assert [a:1, b:2].collectEntries { key, value -> [value, key] } == [1:'a', 2:'b']
+     * assert [a:1, b:2].collectEntries { key, value ->
+     *     [(value*10): key.toUpperCase()] } == [10:'A', 20:'B']
+     * </pre>
+     *
+     * @param self    a Map
+     * @param closure the closure used for mapping, which can take one (Map.Entry) or two (key, value) parameters and
+     *                should return a Map.Entry, a Map or a two-element list containing the resulting key and value
+     * @return a Map of the transformed entries
+     * @see #collect(Map, Collection, Closure)
+     * @since 1.8.0
+     */
+    public static <K, V> Map<K, V> collectEntries(Map<K, V> self, Closure closure) {
+        return collectEntries(self, createSimilarMap(self), closure);
+    }
+
+    /**
+     * Iterates through this Collection transforming each item using the closure
+     * as a transformer into a map entry, returning a map of the transformed entries.
+     * <pre class="groovyTestCase">
+     * def letters = "abc"
+     * // collect letters with index
+     * assert (0..2).collectEntries( [:] ) { index -> [index, letters[index]] } == [0:'a', 1:'b', 2:'c']
+     * assert (0..2).collectEntries( [4:'d'] ) { index ->
+     *     [(index+1): letters[index]] } == [1:'a', 2:'b', 3:'c', 4:'d']
+     * </pre>
+     *
+     * @param self    a Collection
+     * @param result  the Map into which the collected entries are put
+     * @param closure the closure used for mapping, which has an item from self as the parameter and
+     *                should return a Map.Entry, a Map or a two-element list containing the resulting key and value
+     * @return a Map of the transformed entries
+     * @see #collect(Map, Collection, Closure)
+     * @since 1.8.0
+     */
+    public static <K, V> Map<K, V> collectEntries(Collection self, Map<K, V> result, Closure closure) {
+        for (Iterator iter = self.iterator(); iter.hasNext();) {
+            addEntry(result, closure.call(iter.next()));
+        }
+        return result;
+    }
+
+    /**
+     * Iterates through this Collection transforming each item using the closure
+     * as a transformer into a map entry, returning a map of the transformed entries.
+     * <pre class="groovyTestCase">
+     * def letters = "abc"
+     * // collect letters with index using list style
+     * assert (0..2).collectEntries { index -> [index, letters[index]] } == [0:'a', 1:'b', 2:'c']
+     * // collect letters with index using map style
+     * assert (0..2).collectEntries { index -> [(index): letters[index]] } == [0:'a', 1:'b', 2:'c']
+     * </pre>
+     *
+     * @param self    a Collection
+     * @param closure the closure used for mapping, which has an item from self as the parameter and
+     *                should return a Map.Entry, a Map or a two-element list containing the resulting key and value
+     * @return a Map of the transformed entries
+     * @see #collect(Collection, Map, Closure)
+     * @since 1.8.0
+     */
+    public static <K, V> Map<K, V> collectEntries(Collection self, Closure closure) {
+        return collectEntries(self, new LinkedHashMap<K, V>(), closure);
+    }
+
+    private static <K, V> void addEntry(Map<K, V> result, Object newEntry) {
+        if (newEntry instanceof Map) {
+            leftShift(result, (Map)newEntry);
+        } else if (newEntry instanceof List && ((List)newEntry).size() == 2) {
+            List list = (List) newEntry;
+            leftShift(result, new MapEntry(list.get(0), list.get(1)));
+        } else {
+            // TODO: enforce stricter behavior?
+            // given Map.Entry is an interface, we get a proxy which gives us lots
+            // of flexibility but sometimes the error messages might be unexpected
+            leftShift(result, (Map.Entry)asType(newEntry, Map.Entry.class));
+        }
     }
 
     /**
@@ -2206,7 +2318,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * items for that group.
      * <pre class="groovyTestCase">assert [0:[2,4,6], 1:[1,3,5]] == [1,2,3,4,5,6].groupBy { it % 2 }</pre>
      *
-     * @param self    a collection to group (no map)
+     * @param self    a collection to group
      * @param closure a closure mapping entries on keys
      * @return a new Map grouped by keys
      * @since 1.0
@@ -2221,14 +2333,37 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Sorts all collection members into groups determined by the supplied mapping
+     * closure and counts the group size.  The closure should return the key that each
+     * item should be grouped by.  The returned Map will have an entry for each
+     * distinct key returned from the closure, with each value being the frequency of
+     * items occurring for that group.
+     * <pre class="groovyTestCase">assert [0:2, 1:3] == [1,2,3,4,5].countBy { it % 2 }</pre>
+     *
+     * @param self    a collection to group and count
+     * @param closure a closure mapping items to the frequency keys
+     * @return a new Map grouped by keys with frequency counts
+     * @since 1.8.0
+     */
+    public static Map<Object, Integer> countBy(Collection self, Closure closure) {
+        Map<Object, Integer> answer = new LinkedHashMap<Object, Integer>();
+        for (Object element : self) {
+            Object value = closure.call(element);
+            countAnswer(answer, value);
+        }
+        return answer;
+    }
+
+    /**
      * Groups all map entries into groups determined by the
      * supplied mapping closure. The closure will be passed a Map.Entry or
      * key and value (depending on the number of parameters the closure accepts)
      * and should return the key that each item should be grouped under.  The
      * resulting map will have an entry for each 'group' key returned by the
      * closure, with values being the list of map entries that belong to each
-     * group.
-     * <pre class="groovyTestCase">def result = [a:1,b:2,c:3,d:4,e:5,f:6].groupBy { it.value % 2 }
+     * group. (If instead of a list of map entries, you want an actual map
+     * use {code}groupBy{code}.)
+     * <pre class="groovyTestCase">def result = [a:1,b:2,c:3,d:4,e:5,f:6].groupEntriesBy { it.value % 2 }
      * assert result[0]*.key == ["b", "d", "f"]
      * assert result[1]*.value == [1, 3, 5]</pre>
      *
@@ -2253,10 +2388,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * and should return the key that each item should be grouped under.  The
      * resulting map will have an entry for each 'group' key returned by the
      * closure, with values being the map members from the original map that
-     * belong to each group.
+     * belong to each group. (If instead of a map, you want a list of map entries
+     * use {code}groupEntriesBy{code}.)
      * <p>
-     * If the <code>self</code> map is one of TreeMap, LinkedHashMap, Hashtable
-     * or Properties, the returned Map will preserve that type, otherwise a HashMap will
+     * If the <code>self</code> map is one of TreeMap, Hashtable or Properties,
+     * the returned Map will preserve that type, otherwise a LinkedHashMap will
      * be returned.
      * <pre class="groovyTestCase">def result = [a:1,b:2,c:3,d:4,e:5,f:6].groupBy { it.value % 2 }
      * assert result == [0:[b:2, d:4, f:6], 1:[a:1, c:3, e:5]]</pre>
@@ -2280,6 +2416,37 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Groups the members of a map into groups determined by the
+     * supplied mapping closure and counts the frequency of the created groups.
+     * The closure will be passed a Map.Entry or
+     * key and value (depending on the number of parameters the closure accepts)
+     * and should return the key that each item should be grouped under.  The
+     * resulting map will have an entry for each 'group' key returned by the
+     * closure, with values being the frequency counts for that 'group'.
+     * <p>
+     * <pre class="groovyTestCase">def result = [a:1,b:2,c:3,d:4,e:5].countBy { it.value % 2 }
+     * assert result == [0:2, 1:3]</pre>
+     *
+     * @param self    a map to group and count
+     * @param closure a closure mapping entries to frequency count keys
+     * @return a new Map grouped by keys with frequency counts
+     * @since 1.8.0
+     */
+    public static Map<Object, Integer> countBy(Map self, Closure closure) {
+        boolean isTwoParams = (closure.getParameterTypes().length == 2);
+        Map<Object, Integer> answer = new LinkedHashMap<Object, Integer>();
+        for (Iterator iter = self.entrySet().iterator(); iter.hasNext();) {
+            Map.Entry entry = (Map.Entry) iter.next();
+            if (isTwoParams) {
+                countAnswer(answer, closure.call(new Object[]{entry.getKey(), entry.getValue()}));
+            } else {
+                countAnswer(answer, closure.call(entry));
+            }
+        }
+        return answer;
+    }
+
+    /**
      * Groups the current element according to the value
      *
      * @param answer  the map containing the results
@@ -2295,6 +2462,14 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             groupedElements.add(element);
             answer.put(value, groupedElements);
         }
+    }
+
+    private static void countAnswer(final Map<Object, Integer> answer, Object mappedKey) {
+        if (!answer.containsKey(mappedKey)) {
+            answer.put(mappedKey, 0);
+        }
+        int current = answer.get(mappedKey);
+        answer.put(mappedKey, current + 1);
     }
 
     // internal helper method
@@ -7377,7 +7552,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Converts this array to a List of the same size, with each element
      * added to the list.
      *
-     * @param array an array
+     * @param array a byte array
      * @return a list containing the contents of this array.
      * @since 1.0
      */
@@ -7475,6 +7650,162 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     @SuppressWarnings("unchecked")
     public static List<Double> toList(double[] array) {
         return DefaultTypeTransformation.primitiveArrayToList(array);
+    }
+
+    /**
+     * Converts this array to a Set, with each unique element
+     * added to the set.
+     *
+     * @param array a byte array
+     * @return a set containing the unique contents of this array.
+     * @since 1.8.0
+     */
+    @SuppressWarnings("unchecked")
+    public static Set<Byte> toSet(byte[] array) {
+        return toSet(DefaultTypeTransformation.primitiveArrayToList(array));
+    }
+
+    /**
+     * Converts this array to a Set, with each unique element
+     * added to the set.
+     *
+     * @param array a boolean array
+     * @return a set containing the unique contents of this array.
+     * @since 1.8.0
+     */
+    @SuppressWarnings("unchecked")
+    public static Set<Boolean> toSet(boolean[] array) {
+        return toSet(DefaultTypeTransformation.primitiveArrayToList(array));
+    }
+
+    /**
+     * Converts this array to a Set, with each unique element
+     * added to the set.
+     *
+     * @param array a char array
+     * @return a set containing the unique contents of this array.
+     * @since 1.8.0
+     */
+    @SuppressWarnings("unchecked")
+    public static Set<Character> toSet(char[] array) {
+        return toSet(DefaultTypeTransformation.primitiveArrayToList(array));
+    }
+
+    /**
+     * Converts this array to a Set, with each unique element
+     * added to the set.
+     *
+     * @param array a short array
+     * @return a set containing the unique contents of this array.
+     * @since 1.8.0
+     */
+    @SuppressWarnings("unchecked")
+    public static Set<Short> toSet(short[] array) {
+        return toSet(DefaultTypeTransformation.primitiveArrayToList(array));
+    }
+
+    /**
+     * Converts this array to a Set, with each unique element
+     * added to the set.
+     *
+     * @param array an int array
+     * @return a set containing the unique contents of this array.
+     * @since 1.8.0
+     */
+    @SuppressWarnings("unchecked")
+    public static Set<Integer> toSet(int[] array) {
+        return toSet(DefaultTypeTransformation.primitiveArrayToList(array));
+    }
+
+    /**
+     * Converts this array to a Set, with each unique element
+     * added to the set.
+     *
+     * @param array a long array
+     * @return a set containing the unique contents of this array.
+     * @since 1.8.0
+     */
+    @SuppressWarnings("unchecked")
+    public static Set<Long> toSet(long[] array) {
+        return toSet(DefaultTypeTransformation.primitiveArrayToList(array));
+    }
+
+    /**
+     * Converts this array to a Set, with each unique element
+     * added to the set.
+     *
+     * @param array a float array
+     * @return a set containing the unique contents of this array.
+     * @since 1.8.0
+     */
+    @SuppressWarnings("unchecked")
+    public static Set<Float> toSet(float[] array) {
+        return toSet(DefaultTypeTransformation.primitiveArrayToList(array));
+    }
+
+    /**
+     * Converts this array to a Set, with each unique element
+     * added to the set.
+     *
+     * @param array a double array
+     * @return a set containing the unique contents of this array.
+     * @since 1.8.0
+     */
+    @SuppressWarnings("unchecked")
+    public static Set<Double> toSet(double[] array) {
+        return toSet(DefaultTypeTransformation.primitiveArrayToList(array));
+    }
+
+    /**
+     * Convert a Collection to a Set. Always returns a new Set
+     * even if the Collection is already a Set.
+     * <p>
+     * Example usage:
+     * <pre class="groovyTestCase">
+     * def result = [1, 2, 2, 2, 3].toSet()
+     * assert result instanceof Set
+     * assert result == [1, 2, 3] as Set
+     * </pre>
+     *
+     * @param self a collection
+     * @return a Set
+     * @since 1.8.0
+     */
+    public static <T> Set<T> toSet(Collection<T> self) {
+        Set<T> answer = new HashSet<T>(self.size());
+        answer.addAll(self);
+        return answer;
+    }
+
+    /**
+     * Convert an iterator to a Set. The iterator will become
+     * exhausted of elements after making this conversion.
+     *
+     * @param self an iterator
+     * @return a Set
+     * @since 1.8.0
+     */
+    public static <T> Set<T> toSet(Iterator<T> self) {
+        Set<T> answer = new HashSet<T>();
+        while (self.hasNext()) {
+            answer.add(self.next());
+        }
+        return answer;
+    }
+
+    /**
+     * Convert an enumeration to a Set.
+     *
+     * @param self an enumeration
+     * @return a Set
+     * @since 1.8.0
+     */
+    public static <T> Set<T> toSet(Enumeration<T> self) {
+        Set<T> answer = new HashSet<T>();
+        while (self.hasMoreElements()) {
+            answer.add(self.nextElement());
+        }
+        return answer;
     }
 
     /**
@@ -9404,7 +9735,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                     closure.call(i);
                 }
             } else if(self1 != to1)
-            	throw new GroovyRuntimeException("Infinite loop in " + self1 + ".step(" + to1 + ", " + stepNumber1 + ")");
+                throw new GroovyRuntimeException("Infinite loop in " + self1 + ".step(" + to1 + ", " + stepNumber1 + ")");
         }
     }
 
@@ -11546,8 +11877,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.5.0
      */
     public static File leftShift(File file, InputStream data) throws IOException {
-    	append(file, data);
-    	return file;
+        append(file, data);
+        return file;
     }
 
     /**
@@ -11629,13 +11960,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.5.0
      */
     public static void append(File self, InputStream stream ) throws IOException {
-    	OutputStream out = new FileOutputStream( self, true );
-    	try {
-    		leftShift( out, stream );
-    	}
-    	finally {
-    		closeWithWarning( out );
-    	}
+        OutputStream out = new FileOutputStream( self, true );
+        try {
+            leftShift( out, stream );
+        }
+        finally {
+            closeWithWarning( out );
+        }
     }
 
     /**
@@ -12141,7 +12472,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self a File
      * @param newPathName The new pathname for the named file
      * @return  <code>true</code> if and only if the renaming succeeded;
-     * 			<code>false</code> otherwise
+     *             <code>false</code> otherwise
      * @since 1.7.4
      */
     public static boolean renameTo(final File self, String newPathName) {
@@ -13492,6 +13823,23 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             answer.add(self.substring(i, i + 1));
         }
         return answer;
+    }
+
+    /**
+     * Converts the given String into a Set of unique strings of one character.
+     * <p>
+     * Example usage:
+     * <pre class="groovyTestCase">
+     * assert 'groovy'.toSet() == ['v', 'g', 'r', 'o', 'y'] as Set
+     * assert "abc".toSet().iterator()[0] instanceof String
+     * </pre>
+     *
+     * @param self a String
+     * @return a Set of unique character Strings (each a 1-character String)
+     * @since 1.8.0
+     */
+    public static Set<String> toSet(String self) {
+        return new HashSet<String>(toList(self));
     }
 
     /**
