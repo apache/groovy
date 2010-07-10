@@ -1479,9 +1479,36 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Counts the number of occurrences which satisfy the given closure from the
+     * items within this Iterator.
+     * The iterator will become exhausted of elements after determining the count value.
+     * <p>
+     * Example usage:
+     * <pre class="groovyTestCase">assert [2,4,2,1,3,5,2,4,3].toSet().iterator().count{ it % 2 == 0 } == 2</pre>
+     *
+     * @param self  the Iterator from which we count the number of matching occurrences
+     * @param closure a closure condition
+     * @return the number of occurrences
+     * @since 1.8.0
+     */
+    public static Number count(Iterator self, Closure closure) {
+        long answer = 0;
+        while (self.hasNext()) {
+            if (DefaultTypeTransformation.castToBoolean(closure.call(self.next()))) {
+                ++answer;
+            }
+        }
+        // for b/c with Java return an int if we can
+        if (answer <= Integer.MAX_VALUE) return new Long(answer).intValue();
+        return answer;
+    }
+
+    /**
      * Counts the number of occurrences of the given value inside this collection.
      * Comparison is done using Groovy's == operator (using
      * <code>compareTo(value) == 0</code> or <code>equals(value)</code> ).
+     * <p>
+     * Example usage:
      * <pre class="groovyTestCase">assert [2,4,2,1,3,5,2,4,3].count(4) == 2</pre>
      *
      * @param self  the collection within which we count the number of occurrences
@@ -1492,6 +1519,47 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static Number count(Collection self, Object value) {
         return count(self.iterator(), value);
     }
+
+    /**
+     * Counts the number of occurrences which satisfy the given closure from inside this collection.
+     * <p>
+     * Example usage:
+     * <pre class="groovyTestCase">assert [2,4,2,1,3,5,2,4,3].count{ it % 2 == 0 } == 5</pre>
+     *
+     * @param self  the collection within which we count the number of occurrences
+     * @param closure a closure condition
+     * @return the number of occurrences
+     * @since 1.8.0
+     */
+    public static Number count(Collection self, Closure closure) {
+        return count(self.iterator(), closure);
+    }
+
+    /**
+     * Counts the number of occurrences which satisfy the given closure from inside this map.
+     * If the closure takes one parameter then it will be passed the Map.Entry.
+     * Otherwise, the closure should take two parameters and will be passed the key and value.
+     * <p>
+     * Example usage:
+     * <pre class="groovyTestCase">assert [a:1, b:1, c:2, d:2].count{ k,v -> k == 'a' || v == 2 } == 3</pre>
+     *
+     * @param self  the map within which we count the number of occurrences
+     * @param closure a 1 or 2 arg Closure condition applying on the entries
+     * @return the number of occurrences
+     * @since 1.8.0
+     */
+    public static Number count(Map self, Closure closure) {
+        long answer = 0;
+        for (Object entry : self.entrySet()) {
+            if (DefaultTypeTransformation.castToBoolean(callClosureForMapEntry(closure, (Map.Entry) entry))) {
+                ++answer;
+            }
+        }
+        // for b/c with Java return an int if we can
+        if (answer <= Integer.MAX_VALUE) return new Long(answer).intValue();
+        return answer;
+    }
+
 
     /**
      * Counts the number of occurrences of the given value inside this array.
@@ -1505,6 +1573,18 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static Number count(Object[] self, Object value) {
         return count(Arrays.asList(self), value);
+    }
+
+    /**
+     * Counts the number of occurrences which satisfy the given closure from inside this array.
+     *
+     * @param self  the array within which we count the number of occurrences
+     * @param closure a closure condition
+     * @return the number of occurrences
+     * @since 1.8.0
+     */
+    public static Number count(Object[] self, Closure closure) {
+        return count(Arrays.asList(self), closure);
     }
 
     /**
