@@ -1876,14 +1876,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static Collection collect(Map self, Collection collection, Closure closure) {
-        boolean isTwoParams = (closure.getParameterTypes().length == 2);
-        for (Iterator iter = self.entrySet().iterator(); iter.hasNext();) {
-            if (isTwoParams) {
-                Map.Entry entry = (Map.Entry) iter.next();
-                collection.add(closure.call(new Object[]{entry.getKey(), entry.getValue()}));
-            } else {
-                collection.add(closure.call(iter.next()));
-            }
+        for (Object entry : self.entrySet()) {
+            collection.add(callClosureForMapEntry(closure, (Map.Entry) entry));
         }
         return collection;
     }
@@ -1921,14 +1915,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.8.0
      */
     public static <K, V> Map<K, V> collectEntries(Map<K, V> self, Map<K, V> result, Closure closure) {
-        boolean isTwoParams = (closure.getParameterTypes().length == 2);
-        for (Iterator iter = self.entrySet().iterator(); iter.hasNext();) {
-            Map.Entry entry = (Map.Entry) iter.next();
-            if (isTwoParams) {
-                addEntry(result, closure.call(new Object[]{entry.getKey(), entry.getValue()}));
-            } else {
-                addEntry(result, closure.call(entry));
-            }
+        for (Object entry : self.entrySet()) {
+            addEntry(result, callClosureForMapEntry(closure, (Map.Entry) entry));
         }
         return result;
     }
@@ -2118,7 +2106,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param  items array to be checked for containment in this collection
      * @return <tt>true</tt> if this collection contains all of the elements
-     *	       in the specified array
+     *           in the specified array
      * @see    Collection#containsAll(Collection)
      * @since 1.7.2
      */
@@ -2513,15 +2501,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.8.0
      */
     public static Map<Object, Integer> countBy(Map self, Closure closure) {
-        boolean isTwoParams = (closure.getParameterTypes().length == 2);
         Map<Object, Integer> answer = new LinkedHashMap<Object, Integer>();
-        for (Iterator iter = self.entrySet().iterator(); iter.hasNext();) {
-            Map.Entry entry = (Map.Entry) iter.next();
-            if (isTwoParams) {
-                countAnswer(answer, closure.call(new Object[]{entry.getKey(), entry.getValue()}));
-            } else {
-                countAnswer(answer, closure.call(entry));
-            }
+        for (Object entry : self.entrySet()) {
+            countAnswer(answer, callClosureForMapEntry(closure, (Map.Entry) entry));
         }
         return answer;
     }
@@ -4821,7 +4803,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #putAt(java.util.List, groovy.lang.EmptyRange, java.lang.Object)
      */
     public static void putAt(List self, EmptyRange range, Collection value) {
-    	putAt(self, range, (Object)value);
+        putAt(self, range, (Object)value);
     }
 
     private static <T> List<T> resizeListWithRangeAndGetSublist(List<T> self, IntRange range) {
