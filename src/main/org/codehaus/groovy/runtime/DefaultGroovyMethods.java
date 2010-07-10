@@ -1624,7 +1624,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Convert a Collection to a List. Always returns a new List
      * even if the Collection is already a List.
      * <p>
-     * Examples usage:
+     * Example usage:
      * <pre class="groovyTestCase">def x = [1,2,3] as HashSet
      * assert x.class == HashSet
      * assert x.toList() instanceof List</pre>
@@ -2207,7 +2207,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * items for that group.
      * <pre class="groovyTestCase">assert [0:[2,4,6], 1:[1,3,5]] == [1,2,3,4,5,6].groupBy { it % 2 }</pre>
      *
-     * @param self    a collection to group (no map)
+     * @param self    a collection to group
      * @param closure a closure mapping entries on keys
      * @return a new Map grouped by keys
      * @since 1.0
@@ -2228,8 +2228,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * and should return the key that each item should be grouped under.  The
      * resulting map will have an entry for each 'group' key returned by the
      * closure, with values being the list of map entries that belong to each
-     * group.
-     * <pre class="groovyTestCase">def result = [a:1,b:2,c:3,d:4,e:5,f:6].groupBy { it.value % 2 }
+     * group. (If instead of a list of map entries, you want an actual map
+     * use {code}groupBy{code}.)
+     * <pre class="groovyTestCase">def result = [a:1,b:2,c:3,d:4,e:5,f:6].groupEntriesBy { it.value % 2 }
      * assert result[0]*.key == ["b", "d", "f"]
      * assert result[1]*.value == [1, 3, 5]</pre>
      *
@@ -2254,10 +2255,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * and should return the key that each item should be grouped under.  The
      * resulting map will have an entry for each 'group' key returned by the
      * closure, with values being the map members from the original map that
-     * belong to each group.
+     * belong to each group. (If instead of a map, you want a list of map entries
+     * use {code}groupEntriesBy{code}.)
      * <p>
-     * If the <code>self</code> map is one of TreeMap, LinkedHashMap, Hashtable
-     * or Properties, the returned Map will preserve that type, otherwise a HashMap will
+     * If the <code>self</code> map is one of TreeMap, Hashtable or Properties,
+     * the returned Map will preserve that type, otherwise a LinkedHashMap will
      * be returned.
      * <pre class="groovyTestCase">def result = [a:1,b:2,c:3,d:4,e:5,f:6].groupBy { it.value % 2 }
      * assert result == [0:[b:2, d:4, f:6], 1:[a:1, c:3, e:5]]</pre>
@@ -7355,7 +7357,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Converts this array to a List of the same size, with each element
      * added to the list.
      *
-     * @param array an array
+     * @param array a byte array
      * @return a list containing the contents of this array.
      * @since 1.0
      */
@@ -11525,8 +11527,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.5.0
      */
     public static File leftShift(File file, InputStream data) throws IOException {
-    	append(file, data);
-    	return file;
+        append(file, data);
+        return file;
     }
 
     /**
@@ -11608,13 +11610,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.5.0
      */
     public static void append(File self, InputStream stream ) throws IOException {
-    	OutputStream out = new FileOutputStream( self, true );
-    	try {
-    		leftShift( out, stream );
-    	}
-    	finally {
-    		closeWithWarning( out );
-    	}
+        OutputStream out = new FileOutputStream( self, true );
+        try {
+            leftShift( out, stream );
+        }
+        finally {
+            closeWithWarning( out );
+        }
     }
 
     /**
@@ -12120,7 +12122,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self a File
      * @param newPathName The new pathname for the named file
      * @return  <code>true</code> if and only if the renaming succeeded;
-     * 			<code>false</code> otherwise
+     *             <code>false</code> otherwise
      * @since 1.7.4
      */
     public static boolean renameTo(final File self, String newPathName) {
