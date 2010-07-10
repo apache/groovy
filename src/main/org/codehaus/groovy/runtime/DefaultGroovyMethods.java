@@ -2243,6 +2243,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Splits all items into two collections based on the closure condition.
      * The first list contains all items which match the closure expression.
      * The second list all those that don't.
+     * <p>
+     * Example usage:
      * <pre class="groovyTestCase">assert [[2,4],[1,3]] == [1,2,3,4].split { it % 2 == 0 }</pre>
      *
      * @param self    a Collection of values
@@ -2274,6 +2276,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Adds GroovyCollections#combinations(Collection) as a method on collections.
+     * <p>
+     * Example usage:
      * <pre class="groovyTestCase">assert [['a', 'b'],[1, 2, 3]].combinations() == [['a', 1], ['b', 1], ['a', 2], ['b', 2], ['a', 3], ['b', 3]]</pre>
      *
      * @param self a Collection of lists
@@ -2287,7 +2291,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Finds all non-null subsequences of a list.
-     * E.g. <pre class="groovyTestCase">def result = [1, 2, 3].subsequences()
+     * <p>
+     * Example usage:
+     * <pre class="groovyTestCase">def result = [1, 2, 3].subsequences()
      * assert result == [[1, 2, 3], [1, 3], [2, 3], [1, 2], [1], [2], [3]] as Set</pre>
      *
      * @param self the List of items
@@ -2300,7 +2306,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Finds all permutations of a collection.
-     * E.g. <pre class="groovyTestCase">def result = [1, 2, 3].permutations()
+     * <p>
+     * Example usage:
+     * <pre class="groovyTestCase">def result = [1, 2, 3].permutations()
      * assert result == [[3, 2, 1], [3, 1, 2], [1, 3, 2], [2, 3, 1], [2, 1, 3], [1, 2, 3]] as Set</pre>
      *
      * @param self the Collection of items
@@ -2318,6 +2326,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Iterates over all permutations of a collection, running a closure for each iteration.
+     * <p>
+     * Example usage:
      * <pre class="groovyTestCase">def permutations = []
      * [1, 2, 3].eachPermutation{ permutations << it }
      * assert permutations == [[1, 2, 3], [1, 3, 2], [2, 1, 3], [2, 3, 1], [3, 1, 2], [3, 2, 1]]</pre>
@@ -2337,6 +2347,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Adds GroovyCollections#transpose(List) as a method on lists.
+     * <p>
+     * Example usage:
      * <pre class="groovyTestCase">def result = [['a', 'b'], [1, 2]].transpose()
      * assert result == [['a', 1], ['b', 2]]</pre>
      *
@@ -2358,6 +2370,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * If the <code>self</code> map is one of TreeMap, LinkedHashMap, Hashtable
      * or Properties, the returned Map will preserve that type, otherwise a HashMap will
      * be returned.
+     * <p>
+     * Example usage:
      * <pre class="groovyTestCase">def result = [a:1, b:2, c:4, d:5].findAll { it.value % 2 == 0 }
      * assert result.every { it instanceof Map.Entry }
      * assert result*.key == ["b", "c"]
@@ -2384,6 +2398,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * item should be grouped by.  The returned LinkedHashMap will have an entry for each
      * distinct key returned from the closure, with each value being a list of
      * items for that group.
+     * <p>
+     * Example usage:
      * <pre class="groovyTestCase">assert [0:[2,4,6], 1:[1,3,5]] == [1,2,3,4,5,6].groupBy { it % 2 }</pre>
      *
      * @param self    a collection to group
@@ -2406,6 +2422,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * item should be grouped by.  The returned Map will have an entry for each
      * distinct key returned from the closure, with each value being the frequency of
      * items occurring for that group.
+     * <p>
+     * Example usage:
      * <pre class="groovyTestCase">assert [0:2, 1:3] == [1,2,3,4,5].countBy { it % 2 }</pre>
      *
      * @param self    a collection to group and count
@@ -2414,9 +2432,49 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.8.0
      */
     public static Map<Object, Integer> countBy(Collection self, Closure closure) {
+        return countBy(self.iterator(), closure);
+    }
+
+    /**
+     * Sorts all array members into groups determined by the supplied mapping
+     * closure and counts the group size.  The closure should return the key that each
+     * item should be grouped by.  The returned Map will have an entry for each
+     * distinct key returned from the closure, with each value being the frequency of
+     * items occurring for that group.
+     * <p>
+     * Example usage:
+     * <pre class="groovyTestCase">assert ([1,2,2,2,3] as Object[]).countBy{ it % 2 } == [1:2, 0:3]</pre>
+     *
+     * @param self    an object array to group and count
+     * @param closure a closure mapping items to the frequency keys
+     * @return a new Map grouped by keys with frequency counts
+     * @see #countBy(Collection, Closure)
+     * @since 1.8.0
+     */
+    public static Map<Object, Integer> countBy(Object[] self, Closure closure) {
+        return countBy(Arrays.asList(self), closure);
+    }
+
+    /**
+     * Sorts all iterator items into groups determined by the supplied mapping
+     * closure and counts the group size.  The closure should return the key that each
+     * item should be grouped by.  The returned Map will have an entry for each
+     * distinct key returned from the closure, with each value being the frequency of
+     * items occurring for that group.
+     * <p>
+     * Example usage:
+     * <pre class="groovyTestCase">assert [1,2,2,2,3].toSet().iterator().countBy{ it % 2 } == [1:2, 0:1]</pre>
+     *
+     * @param self    an iterator to group and count
+     * @param closure a closure mapping items to the frequency keys
+     * @return a new Map grouped by keys with frequency counts
+     * @see #countBy(Collection, Closure)
+     * @since 1.8.0
+     */
+    public static Map<Object, Integer> countBy(Iterator self, Closure closure) {
         Map<Object, Integer> answer = new LinkedHashMap<Object, Integer>();
-        for (Object element : self) {
-            Object value = closure.call(element);
+        while (self.hasNext()) {
+            Object value = closure.call(self.next());
             countAnswer(answer, value);
         }
         return answer;
