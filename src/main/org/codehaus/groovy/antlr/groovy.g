@@ -3274,7 +3274,7 @@ options {
     protected int parenLevel = 0;
     protected int suppressNewline = 0;  // be really mean to newlines inside strings
     protected static final int SCS_TYPE = 3, SCS_VAL = 4, SCS_LIT = 8, SCS_LIMIT = 16;
-    protected static final int SCS_SQ_TYPE = 0, SCS_TQ_TYPE = 1, SCS_RE_TYPE = 2;
+    protected static final int SCS_SQ_TYPE = 0, SCS_TQ_TYPE = 1, SCS_RE_TYPE = 2, SCS_DRE_TYPE = 3;
     protected int stringCtorState = 0;  // hack string and regexp constructor boundaries
     /** Push parenLevel here and reset whenever inside '{x}'. */
     protected ArrayList parenLevelStack = new ArrayList();
@@ -3400,7 +3400,7 @@ options {
         if (check && suppressNewline > 0) {
             require(suppressNewline == 0,
                 "end of line reached within a simple string 'x' or \"x\" or /x/",
-                "for multi-line literals, use triple quotes '''x''' or \"\"\"x\"\"\"");
+                "for multi-line literals, use triple quotes '''x''' or \"\"\"x\"\"\" or /x/ or $/x/$");
             suppressNewline = 0;  // shut down any flood of errors
         }
         newline();
@@ -3414,6 +3414,14 @@ options {
         lc = LA(k++);
         if (lc == '*')  lc = LA(k++);
         return (lc == '{' || (lc != '$' && Character.isJavaIdentifierStart(lc)));
+    }
+
+    protected boolean atDollarDollarEscape() throws CharStreamException {
+        return LA(1) == '$' && LA(2) == '$';
+    }
+
+    protected boolean atDollarSlashEscape() throws CharStreamException {
+        return LA(1) == '$' && LA(2) == '/';
     }
 
     /** This is a bit of plumbing which resumes collection of string constructor bodies,
@@ -3436,6 +3444,8 @@ options {
                             mSTRING_CTOR_END(true, /*fromStart:*/false, true); break;
                         case SCS_RE_TYPE:
                             mREGEXP_CTOR_END(true, /*fromStart:*/false); break;
+                        case SCS_DRE_TYPE:
+                            mDOLLAR_REGEXP_CTOR_END(true, /*fromStart:*/false); break;
                         default:  throw new AssertionError(false);
                         }
                         lastSigTokenType = _returnToken.getType();
@@ -3765,7 +3775,7 @@ options {
 
 REGEXP_LITERAL
 options {
-    paraphrase="a regular expression literal";
+    paraphrase="a multiline regular expression literal";
 }
         {int tt=0;}
     :   {allowRegexpLiteral()}?
@@ -3792,11 +3802,34 @@ options {
     |   DIV_ASSIGN          {$setType(DIV_ASSIGN);}
     ;
 
+DOLLAR_REGEXP_LITERAL
+options {
+    paraphrase="a multiline dollar escaping regular expression literal";
+}
+        {int tt=0;}
+    :   {allowRegexpLiteral()}? "$/"!
+        // Do this, but require it to be non-trivial:  DOLLAR_REGEXP_CTOR_END[true]
+        // There must be at least one symbol or $ escape, otherwise the regexp collapses.
+        (
+            DOLLAR_REGEXP_SYMBOL
+            tt=DOLLAR_REGEXP_CTOR_END[true]
+        | {!atValidDollarEscape()}? '$'
+            tt=DOLLAR_REGEXP_CTOR_END[true]
+        | '$'!
+            {
+                // Yes, it's a regexp constructor, and we've got a value part.
+                tt = STRING_CTOR_START;
+                stringCtorState = SCS_VAL + SCS_DRE_TYPE;
+            }
+        )
+        {$setType(tt);}
+    ;
+
 protected
 REGEXP_CTOR_END[boolean fromStart]
 returns [int tt=STRING_CTOR_END]
 options {
-    paraphrase="a regular expression literal end";
+    paraphrase="a multiline regular expression literal end";
 }
     :
         (
@@ -3823,18 +3856,70 @@ options {
     ;
 
 protected
+DOLLAR_REGEXP_CTOR_END[boolean fromStart]
+returns [int tt=STRING_CTOR_END]
+options {
+    paraphrase="a multiline dollar escaping regular expression literal end";
+}
+    :
+        (
+            options {  greedy = true;  }:
+            { !(LA(1) == '/' && LA(2) == '$') }? DOLLAR_REGEXP_SYMBOL
+        |
+            ('$' '/') => ESCAPED_SLASH
+        |
+            ('$' '$') => ESCAPED_DOLLAR
+        |
+            {!atValidDollarEscape() && !atDollarSlashEscape() && !atDollarDollarEscape()}? '$'
+        )*
+        (
+            "/$"!
+            {
+                if (fromStart)      tt = STRING_LITERAL;  // plain regexp literal!
+            }
+        |   '$'!
+            {
+                // Yes, it's a regexp constructor, and we've got a value part.
+                tt = (fromStart ? STRING_CTOR_START : STRING_CTOR_MIDDLE);
+                stringCtorState = SCS_VAL + SCS_DRE_TYPE;
+            }
+        )
+        {   $setType(tt);  }
+    ;
+
+protected ESCAPED_SLASH  : '$' '/' { $setText('/'); };
+
+protected ESCAPED_DOLLAR : '$' '$' { $setText('$'); };
+
+protected
 REGEXP_SYMBOL
 options {
-    paraphrase="a regular expression character";
+    paraphrase="a multiline regular expression character";
 }
     :
         (
             ~('*'|'/'|'$'|'\\'|'\n'|'\r'|'\uffff')
         |   { LA(2)!='/' && LA(2)!='\n' && LA(2)!='\r' }? '\\' // backslash only escapes '/' and EOL
         |   '\\' '/'                   { $setText('/'); }
-        |!  '\\' ONE_NL[false]         { $setText('\n'); }     // always normalize to newline
+        |   STRING_NL[true]
+        |!  '\\' ONE_NL[false]
         )
         ('*')*      // stars handled specially to avoid ambig. on /**/
+    ;
+
+protected
+DOLLAR_REGEXP_SYMBOL
+options {
+    paraphrase="a multiline dollar escaping regular expression character";
+}
+    :
+        (
+            ~('$' | '\\' | '/' | '\n' | '\r' | '\uffff')
+        |   { LA(2)!='\n' && LA(2)!='\r' }? '\\'               // backslash only escapes EOL
+        |   ('/' ~'$') => '/'                                  // allow a slash if not followed by a $
+        |   STRING_NL[true]
+        |!  '\\' ONE_NL[false]
+        )
     ;
 
 // escape sequence -- note that this is protected; it can only be called
@@ -3887,7 +3972,6 @@ options {
             {char ch = (char)Integer.parseInt($getText,8); $setText(ch);}
         )
     |!  '\\' ONE_NL[false]
-    //|!  ONE_NL[true]          { $setText('\n'); }             // always normalize to newline
     ;
 
 protected

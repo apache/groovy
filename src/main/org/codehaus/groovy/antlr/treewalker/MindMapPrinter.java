@@ -254,6 +254,7 @@ public class MindMapPrinter extends VisitorAdapter {
 
             case GroovyTokenTypes.STRING_LITERAL                :
             case GroovyTokenTypes.REGEXP_LITERAL                :
+            case GroovyTokenTypes.DOLLAR_REGEXP_LITERAL         :
                 colour = green;
                 break;
 

@@ -128,8 +128,70 @@ y''', 3, 'x\ny');
         assert '\\$$' == /\$$/
         // Backslash before newline or slash disappears (all others are preserved):
         assert "/\\*" == /\/\*/
-        assert "\n" == /\
+        def path = /C:\Windows\System32\//.replaceAll(/\\${''}/, '/')
+        assert path == 'C:/Windows/System32/'
+        assert "" == /\
 /
+    }
+
+    void testMultilineRegexpStringContainingNormalRegexp() {
+        def script = /
+        'foo' ==~ \/f.o\/
+        /
+        assert new GroovyShell().evaluate(script)
+    }
+
+    void testMultilineRegexpXml() {
+        def xml = /
+<xml>
+foo
+<\/xml>
+/
+        assert "\n<xml>\nfoo\n</xml>\n" == xml
+    }
+
+    void testMultilineSlashyRegexpEscaping() {
+        def str = 'groovy.codehaus.org and www.aboutgroovy.com'
+        def re = /(?x)  # to enable whitespace and comments
+        (                 # capture the hostname in $1
+          (?:             # these parens for grouping only
+            (?! [-_])     # lookahead for neither underscore nor dash
+            [\w-]+        # hostname component
+            \.            # and the domain dot
+          )+              # now repeat that whole thing a bunch of times
+          [A-Za-z]        # next must be a letter
+          [\w-]+          # now trailing domain part
+        )                 # end of $1 capture
+        /
+        def finder = (str =~ re)
+        def out = str
+        (0..<finder.count).each{
+            def adr = finder[it][0]
+            out = out.replaceAll(adr, "$adr[${adr.size()}]")
+        }
+        assert out == 'groovy.codehaus.org[19] and www.aboutgroovy.com[19]'
+    }
+
+    void testMultilineDollarSlashyRegexpEscaping() {
+        def str = 'groovy.codehaus.org and www.aboutgroovy.com'
+        def re = $/(?x)  # to enable whitespace and comments
+        (                 # capture the hostname in $1
+          (?:             # these parens for grouping only
+            (?! [-_])     # lookahead for neither underscore nor dash
+            [\w-]+        # hostname component
+            \.            # and the domain dot
+          )+              # now repeat that whole thing a bunch of times
+          [A-Za-z]        # next must be a letter
+          [\w-]+          # now trailing domain part
+        )                 # end of $1 capture
+        /$
+        def finder = (str =~ re)
+        def out = str
+        (0..<finder.count).each{
+            def adr = finder[it][0]
+            out = out.replaceAll(adr, "$adr[${adr.size()}]")
+        }
+        assert out == 'groovy.codehaus.org[19] and www.aboutgroovy.com[19]'
     }
 
     void testBoolCoerce() {
@@ -151,6 +213,11 @@ y''', 3, 'x\ny');
             fail("'something' should have evaluated to false, but didn't")
         }
         
+    }
+
+    void testDollarEscaping() {
+        def text = $/a/b\c$$ $//$
+        assert text == 'a/b\\c$ /'
     }
 
     void testSplit() {

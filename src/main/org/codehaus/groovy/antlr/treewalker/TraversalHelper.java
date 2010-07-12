@@ -93,6 +93,9 @@ public abstract class TraversalHelper implements AntlrASTProcessor {
                 case GroovyTokenTypes.DIV                           :   v.visitDiv(ast,n);                          break;
                 case GroovyTokenTypes.DIV_ASSIGN                    :   v.visitDivAssign(ast,n);                    break;
                 case GroovyTokenTypes.DOLLAR                        :   v.visitDollar(ast,n);                       break;
+                case GroovyTokenTypes.DOLLAR_REGEXP_CTOR_END        :   v.visitRegexpCtorEnd(ast,n);                break;
+                case GroovyTokenTypes.DOLLAR_REGEXP_LITERAL         :   v.visitRegexpLiteral(ast,n);                break;
+                case GroovyTokenTypes.DOLLAR_REGEXP_SYMBOL          :   v.visitRegexpSymbol(ast,n);                 break;
                 case GroovyTokenTypes.DOT                           :   v.visitDot(ast,n);                          break;
                 case GroovyTokenTypes.DYNAMIC_MEMBER                :   v.visitDynamicMember(ast,n);                break;
                 case GroovyTokenTypes.ELIST                         :   v.visitElist(ast,n);                        break;
