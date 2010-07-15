@@ -937,7 +937,7 @@ public class CompilationUnit extends ProcessingUnit {
             try {
                 ClassNode classNode = (ClassNode) classNodes.next();
                 context = classNode.getModule().getContext();
-                if (context == null || context.phase <= phase) {
+                if (context == null || context.phase < phase || (context.phase == phase && !context.phaseComplete)) {
                     body.call(context, new GeneratorContext(this.ast), classNode);
                 }
             } catch (CompilationFailedException e) {
