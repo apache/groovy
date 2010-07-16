@@ -21,7 +21,7 @@ class Groovy4121Bug extends GroovyTestCase {
     void testAssignmentToAFieldMadeFinalByImmutable() {
         try {
             new GroovyShell().parse """
-                @Immutable
+                @groovy.transform.Immutable
                 class Account4121 {
                     BigDecimal balance
                     String customer

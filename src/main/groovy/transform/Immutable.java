@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 the original author or authors.
+ * Copyright 2008-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package groovy.lang;
+package groovy.transform;
 
 import org.codehaus.groovy.transform.GroovyASTTransformationClass;
 
@@ -24,8 +24,6 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Note: This class is Deprecated, please use groovy.transform.Immutable.
- * <p/>
  * Class annotation used to assist in the creation of immutable classes.
  * <p/>
  * It allows you to write classes in this shortened form:
@@ -115,11 +113,9 @@ import java.lang.annotation.Target;
  * </ul>
  *
  * @author Paul King
- * @deprecated use groovy.transform.Immutable
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE})
 @GroovyASTTransformationClass("org.codehaus.groovy.transform.ImmutableASTTransformation")
-@Deprecated
 public @interface Immutable {
 }

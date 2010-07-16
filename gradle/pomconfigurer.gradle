@@ -433,6 +433,9 @@ project.pomConfigureClosure = {
             contributor {
                 name 'Alberto Vilches Raton'
             }
+            contributor {
+                name 'Paulo Poiati'
+            }
         }
         mailingLists {
             mailingList {

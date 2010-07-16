@@ -39,7 +39,7 @@ class TransformsAndCustomClassLoadersTest extends GroovyTestCase {
         def transformLoader = new GroovyClassLoader(TransformsAndCustomClassLoadersTest.classLoader)
         checkIsIsolated(resolvingLoader)
 
-        def clazz = compileAndLoadClass("@Immutable class Foo { String bar }", resolvingLoader, transformLoader)
+        def clazz = compileAndLoadClass("@groovy.transform.Immutable class Foo { String bar }", resolvingLoader, transformLoader)
         checkIsImmutable(clazz)
     }
 

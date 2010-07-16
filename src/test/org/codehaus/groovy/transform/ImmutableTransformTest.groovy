@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2009 the original author or authors.
+ * Copyright 2008-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,31 +22,47 @@ class ImmutableTransformTest extends GroovyShellTestCase {
 
     void testImmutable() {
         def objects = evaluate("""
-              enum Coin { HEAD, TAIL }
-              @Immutable class Bar {
-                  String x, y
-                  Coin c
-                  Collection nums
-              }
-              [new Bar(x:'x', y:'y', c:Coin.HEAD, nums:[1,2]),
-               new Bar('x', 'y', Coin.HEAD, [1,2])]
+            import groovy.transform.Immutable
+            enum Coin { HEAD, TAIL }
+            @Immutable class Bar {
+                String x, y
+                Coin c
+                Collection nums
+            }
+            [new Bar(x:'x', y:'y', c:Coin.HEAD, nums:[1,2]),
+             new Bar('x', 'y', Coin.HEAD, [1,2])]
         """)
 
         assertEquals objects[0].hashCode(), objects[1].hashCode()
         assertEquals objects[0], objects[1]
         assertTrue objects[0].nums.class.name.contains("Unmodifiable")
     }
+    
+    void testImmutableCantAlsoBeMutable() {
+        def msg = shouldFail(RuntimeException) {
+            assertScript """
+                import groovy.transform.*
+                @Immutable
+                @Canonical
+                class Foo {
+                    String bar
+                }
+            """
+        }
+        assert msg.contains("@Canonical class 'Foo' can't also be @Immutable")
+    }
 
     void testImmutableListProp() {
         def objects = evaluate("""
-              @Immutable class HasList {
-                  String[] letters
-                  List nums
-              }
-              def letters = 'A,B,C'.split(',')
-              def nums = [1, 2]
-              [new HasList(letters:letters, nums:nums),
-               new HasList(letters, nums)]
+            import groovy.transform.Immutable
+            @Immutable class HasList {
+                String[] letters
+                List nums
+            }
+            def letters = 'A,B,C'.split(',')
+            def nums = [1, 2]
+            [new HasList(letters:letters, nums:nums),
+             new HasList(letters, nums)]
         """)
 
         assertEquals objects[0].hashCode(), objects[1].hashCode()
@@ -57,6 +73,7 @@ class ImmutableTransformTest extends GroovyShellTestCase {
 
     void testImmutableAsMapKey() {
         assertScript """
+            import groovy.transform.Immutable
             @Immutable final class HasString {
                 String s
             }
@@ -69,6 +86,7 @@ class ImmutableTransformTest extends GroovyShellTestCase {
 
     void testImmutableWithOnlyMap() {
         assertScript """
+            import groovy.transform.Immutable
             @Immutable final class HasMap {
                 Map map
             }
@@ -79,6 +97,7 @@ class ImmutableTransformTest extends GroovyShellTestCase {
     void testImmutableWithInvalidPropertyName() {
         def msg = shouldFail(MissingPropertyException) {
             assertScript """
+                import groovy.transform.Immutable
                 @Immutable class Simple { }
                 new Simple(missing:'Name')
             """
@@ -88,6 +107,7 @@ class ImmutableTransformTest extends GroovyShellTestCase {
 
     void testImmutableWithHashMap() {
         assertScript """
+            import groovy.transform.Immutable
             @Immutable final class HasHashMap {
                 HashMap map = [d:4]
             }
@@ -105,6 +125,7 @@ class ImmutableTransformTest extends GroovyShellTestCase {
 
     void testImmutableEquals() {
         assertScript """
+            import groovy.transform.Immutable
             @Immutable class This { String value }
             @Immutable class That { String value }
             class Other { }
@@ -121,6 +142,7 @@ class ImmutableTransformTest extends GroovyShellTestCase {
 
     void testExistingToString() {
         assertScript """
+            import groovy.transform.Immutable
             @Immutable class Foo {
                 String value
             }
@@ -143,6 +165,7 @@ class ImmutableTransformTest extends GroovyShellTestCase {
 
     void testExistingEquals() {
         assertScript """
+            import groovy.transform.Immutable
             @Immutable class Foo {
                 String value
             }
@@ -184,6 +207,7 @@ class ImmutableTransformTest extends GroovyShellTestCase {
 
     void testExistingHashCode() {
         assertScript """
+            import groovy.transform.Immutable
             @Immutable class Foo {
                 String value
             }
@@ -218,6 +242,7 @@ class ImmutableTransformTest extends GroovyShellTestCase {
     void testStaticsAllowed_ThoughUsuallyBadDesign() {
         // design here is questionable as getDescription() method is not idempotent
         assertScript '''
+            import groovy.transform.Immutable
             @Immutable class Person {
                String first, last
                static species = 'Human'
