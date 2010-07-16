@@ -68,7 +68,7 @@ public class SingletonASTTransformation implements ASTTransformation, Opcodes {
         createConstructor(classNode, fieldNode);
 
         final BlockStatement body = new BlockStatement();
-        body.addStatement(new ReturnStatement(new FieldExpression(fieldNode)));
+        body.addStatement(new ReturnStatement(new VariableExpression(fieldNode)));
         classNode.addMethod("getInstance", ACC_STATIC|ACC_PUBLIC, classNode, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, body);
     }
 
@@ -77,7 +77,7 @@ public class SingletonASTTransformation implements ASTTransformation, Opcodes {
         createConstructor(classNode, fieldNode);
 
         final BlockStatement body = new BlockStatement();
-        final FieldExpression instanceExpression = new FieldExpression(fieldNode);
+        final Expression instanceExpression = new VariableExpression(fieldNode);
         body.addStatement(new IfStatement(
             new BooleanExpression(new BinaryExpression(instanceExpression, Token.newSymbol("!=",-1,-1), ConstantExpression.NULL)),
             new ReturnStatement(instanceExpression),
@@ -109,7 +109,7 @@ public class SingletonASTTransformation implements ASTTransformation, Opcodes {
         if (found == null) {
             final BlockStatement body = new BlockStatement();
             body.addStatement(new IfStatement(
-                    new BooleanExpression(new BinaryExpression(new FieldExpression(field), Token.newSymbol("!=",-1,-1), ConstantExpression.NULL)),
+                    new BooleanExpression(new BinaryExpression(new VariableExpression(field), Token.newSymbol("!=",-1,-1), ConstantExpression.NULL)),
                 new ThrowStatement(
                         new ConstructorCallExpression(ClassHelper.make(RuntimeException.class),
                                 new ArgumentListExpression(

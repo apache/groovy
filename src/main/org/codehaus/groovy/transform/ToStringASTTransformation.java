@@ -29,7 +29,6 @@ import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.expr.Expression;
-import org.codehaus.groovy.ast.expr.FieldExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.StaticMethodCallExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
@@ -108,7 +107,7 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
         for (FieldNode fNode : list) {
             if (excludes.contains(fNode.getName()) || fNode.getName().contains("$")) continue;
             first = appendPrefix(cNode, body, result, first, fNode.getName());
-            body.addStatement(append(result, new StaticMethodCallExpression(INVOKER_TYPE, "toString", new FieldExpression(fNode))));
+            body.addStatement(append(result, new StaticMethodCallExpression(INVOKER_TYPE, "toString", new VariableExpression(fNode))));
         }
         if (includeSuper) {
             appendPrefix(cNode, body, result, first, "super");
@@ -128,7 +127,7 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
             body.addStatement(append(result, new ConstantExpression(", ")));
         }
         body.addStatement(new IfStatement(
-                new BooleanExpression(new FieldExpression(cNode.getField("$print$names"))),
+                new BooleanExpression(new VariableExpression(cNode.getField("$print$names"))),
                 toStringPropertyName(result, name),
                 new EmptyStatement()
         ));

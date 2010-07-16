@@ -25,7 +25,6 @@ import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.Expression;
-import org.codehaus.groovy.ast.expr.FieldExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
@@ -86,7 +85,7 @@ public class AutoExternalizeASTTransformation extends AbstractASTTransformation 
         for (FieldNode fNode : list) {
             if (excludes.contains(fNode.getName())) continue;
             if ((fNode.getModifiers() & ACC_TRANSIENT) != 0) continue;
-            body.addStatement(new ExpressionStatement(new MethodCallExpression(out, "write" + suffixForField(fNode), new FieldExpression(fNode))));
+            body.addStatement(new ExpressionStatement(new MethodCallExpression(out, "write" + suffixForField(fNode), new VariableExpression(fNode))));
         }
         ClassNode[] exceptions = {ClassHelper.make(IOException.class)};
         cNode.addMethod("writeExternal", ACC_PUBLIC, ClassHelper.VOID_TYPE, new Parameter[]{new Parameter(OBJECTOUTPUT_TYPE, "out")}, exceptions, body);
@@ -99,7 +98,7 @@ public class AutoExternalizeASTTransformation extends AbstractASTTransformation 
             if (excludes.contains(fNode.getName())) continue;
             if ((fNode.getModifiers() & ACC_TRANSIENT) != 0) continue;
             Expression readObject = new MethodCallExpression(oin, "read" + suffixForField(fNode), MethodCallExpression.NO_ARGUMENTS);
-            body.addStatement(new ExpressionStatement(new BinaryExpression(new FieldExpression(fNode), ASSIGN, readObject)));
+            body.addStatement(new ExpressionStatement(new BinaryExpression(new VariableExpression(fNode), ASSIGN, readObject)));
         }
         cNode.addMethod("readExternal", ACC_PUBLIC, ClassHelper.VOID_TYPE, new Parameter[]{new Parameter(OBJECTINPUT_TYPE, "oin")}, ClassNode.EMPTY_ARRAY, body);
     }

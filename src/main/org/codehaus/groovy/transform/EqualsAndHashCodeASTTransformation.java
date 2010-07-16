@@ -82,7 +82,7 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
         }
         if (cacheResult) {
             final FieldNode hashField = cNode.addField("$hash$code", ACC_PRIVATE | ACC_SYNTHETIC, ClassHelper.int_TYPE, null);
-            final Expression hash = new FieldExpression(hashField);
+            final Expression hash = new VariableExpression(hashField);
             body.addStatement(new IfStatement(
                     isZeroExpr(hash),
                     calculateHashStatements(hash, list, callSuper),
@@ -107,7 +107,7 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
         for (FieldNode fNode : list) {
             if (fNode.getName().contains("$")) continue;
             // _result = HashCodeHelper.updateHash(_result, field)
-            final Expression fieldExpr = new FieldExpression(fNode);
+            final Expression fieldExpr = new VariableExpression(fNode);
             final Expression args = new TupleExpression(result, fieldExpr);
             final Expression current = new StaticMethodCallExpression(HASHUTIL_TYPE, "updateHash", args);
             body.addStatement(assignStatement(result, current));

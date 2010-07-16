@@ -97,7 +97,7 @@ public class LazyASTTransformation implements ASTTransformation, Opcodes {
     }
 
     private void addDoubleCheckedLockingBody(BlockStatement body, FieldNode fieldNode, Expression initExpr) {
-        final Expression fieldExpr = new FieldExpression(fieldNode);
+        final Expression fieldExpr = new VariableExpression(fieldNode);
         final VariableExpression localVar = new VariableExpression(fieldNode.getName() + "_local", fieldNode.getType());
         body.addStatement(new ExpressionStatement(new DeclarationExpression(localVar, ASSIGN, fieldExpr)));
         body.addStatement(new IfStatement(
@@ -115,7 +115,7 @@ public class LazyASTTransformation implements ASTTransformation, Opcodes {
     }
 
     private void addNonThreadSafeBody(BlockStatement body, FieldNode fieldNode, Expression initExpr) {
-        final Expression fieldExpr = new FieldExpression(fieldNode);
+        final Expression fieldExpr = new VariableExpression(fieldNode);
         body.addStatement(new IfStatement(
                 new BooleanExpression(new BinaryExpression(fieldExpr, COMPARE_NOT_EQUAL, NULL_EXPR)),
                 new ExpressionStatement(fieldExpr),
@@ -139,9 +139,9 @@ public class LazyASTTransformation implements ASTTransformation, Opcodes {
 
     private void createSoftGetter(FieldNode fieldNode, Expression initExpr, ClassNode type) {
         final BlockStatement body = new BlockStatement();
-        final Expression fieldExpr = new FieldExpression(fieldNode);
+        final Expression fieldExpr = new VariableExpression(fieldNode);
         final Expression resExpr = new VariableExpression("res", type);
-        final MethodCallExpression callExpression = new MethodCallExpression(new FieldExpression(fieldNode), "get", new ArgumentListExpression());
+        final MethodCallExpression callExpression = new MethodCallExpression(fieldExpr, "get", new ArgumentListExpression());
         callExpression.setSafe(true);
         body.addStatement(new ExpressionStatement(new DeclarationExpression(resExpr, ASSIGN, callExpression)));
 
@@ -170,7 +170,7 @@ public class LazyASTTransformation implements ASTTransformation, Opcodes {
 
     private void createSoftSetter(FieldNode fieldNode, ClassNode type) {
         final BlockStatement body = new BlockStatement();
-        final Expression fieldExpr = new FieldExpression(fieldNode);
+        final Expression fieldExpr = new VariableExpression(fieldNode);
         final String name = "set" + MetaClassHelper.capitalize(fieldNode.getName().substring(1));
         final Parameter parameter = new Parameter(type, "value");
         final Expression paramExpr = new VariableExpression(parameter);

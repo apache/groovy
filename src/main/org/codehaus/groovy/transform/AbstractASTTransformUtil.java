@@ -164,7 +164,7 @@ public abstract class AbstractASTTransformUtil implements Opcodes {
     }
 
     private static BooleanExpression notEqualsExpr(FieldNode fNode, Expression other) {
-        final Expression fieldExpr = new FieldExpression(fNode);
+        final Expression fieldExpr = new VariableExpression(fNode);
         final Expression otherExpr = new PropertyExpression(other, fNode.getName());
         return new BooleanExpression(new BinaryExpression(fieldExpr, COMPARE_NOT_EQUAL, otherExpr));
     }
@@ -198,7 +198,7 @@ public abstract class AbstractASTTransformUtil implements Opcodes {
     }
 
     public static Statement createConstructorStatementDefault(FieldNode fNode) {
-        final FieldExpression fieldExpr = new FieldExpression(fNode);
+        final Expression fieldExpr = new FieldExpression(fNode);
         Expression initExpr = fNode.getInitialValueExpression();
         if (initExpr == null) initExpr = ConstantExpression.NULL;
         Expression value = findArg(fNode.getName());
