@@ -21,7 +21,15 @@ import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
-import org.codehaus.groovy.ast.expr.*;
+import org.codehaus.groovy.ast.expr.ArgumentListExpression;
+import org.codehaus.groovy.ast.expr.BinaryExpression;
+import org.codehaus.groovy.ast.expr.BooleanExpression;
+import org.codehaus.groovy.ast.expr.ClassExpression;
+import org.codehaus.groovy.ast.expr.ConstantExpression;
+import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.MethodCallExpression;
+import org.codehaus.groovy.ast.expr.PropertyExpression;
+import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.EmptyStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.IfStatement;
@@ -198,10 +206,11 @@ public abstract class AbstractASTTransformUtil implements Opcodes {
     }
 
     public static Statement createConstructorStatementDefault(FieldNode fNode) {
-        final Expression fieldExpr = new FieldExpression(fNode);
+        final String name = fNode.getName();
+        final Expression fieldExpr = new PropertyExpression(VariableExpression.THIS_EXPRESSION, name);
         Expression initExpr = fNode.getInitialValueExpression();
         if (initExpr == null) initExpr = ConstantExpression.NULL;
-        Expression value = findArg(fNode.getName());
+        Expression value = findArg(name);
         return new IfStatement(
                 equalsNullExpr(value),
                 new IfStatement(

@@ -28,7 +28,6 @@ import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.Expression;
-import org.codehaus.groovy.ast.expr.FieldExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
@@ -135,7 +134,7 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
             String name = fNode.getName();
             if (excludes.contains(name) || name.contains("$")) continue;
             params.add(createParam(fNode, name));
-            body.addStatement(assignStatement(new FieldExpression(fNode), new VariableExpression(name)));
+            body.addStatement(assignStatement(new PropertyExpression(VariableExpression.THIS_EXPRESSION, name), new VariableExpression(name)));
         }
         cNode.addConstructor(new ConstructorNode(ACC_PUBLIC, params.toArray(new Parameter[params.size()]), ClassNode.EMPTY_ARRAY, body));
     }

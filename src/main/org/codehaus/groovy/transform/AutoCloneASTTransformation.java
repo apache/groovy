@@ -141,10 +141,11 @@ public class AutoCloneASTTransformation extends AbstractASTTransformation {
             initBody.addStatement(new ExpressionStatement(new ConstructorCallExpression(ClassNode.SUPER, other)));
         }
         for (FieldNode fieldNode : list) {
-            if (excludes.contains(fieldNode.getName())) continue;
-            PropertyExpression direct = new PropertyExpression(other, fieldNode.getName());
+            String name = fieldNode.getName();
+            if (excludes.contains(name)) continue;
+            PropertyExpression direct = new PropertyExpression(other, name);
             Expression cloned = new MethodCallExpression(direct, "clone", MethodCallExpression.NO_ARGUMENTS);
-            Expression to = new FieldExpression(fieldNode);
+            Expression to = new PropertyExpression(VariableExpression.THIS_EXPRESSION, name);
             Statement assignCloned = assignStatement(to, cloned);
             Statement assignDirect = assignStatement(to, direct);
             initBody.addStatement(new IfStatement(isInstanceOf(direct, CLONEABLE_TYPE), assignCloned, assignDirect));
@@ -163,11 +164,12 @@ public class AutoCloneASTTransformation extends AbstractASTTransformation {
         body.addStatement(new ExpressionStatement(new DeclarationExpression(result, ASSIGN, clone)));
         for (FieldNode fieldNode : list) {
             if (excludes.contains(fieldNode.getName())) continue;
-            Expression from = new MethodCallExpression(new FieldExpression(fieldNode), "clone", MethodCallExpression.NO_ARGUMENTS);
+            Expression fieldExpr = new VariableExpression(fieldNode);
+            Expression from = new MethodCallExpression(fieldExpr, "clone", MethodCallExpression.NO_ARGUMENTS);
             Expression to = new PropertyExpression(result, fieldNode.getName());
             Statement doClone = assignStatement(to, from);
             Statement doNothing = new EmptyStatement();
-            body.addStatement(new IfStatement(isInstanceOf(new FieldExpression(fieldNode), CLONEABLE_TYPE), doClone, doNothing));
+            body.addStatement(new IfStatement(isInstanceOf(fieldExpr, CLONEABLE_TYPE), doClone, doNothing));
         }
         body.addStatement(new ReturnStatement(result));
         ClassNode[] exceptions = {ClassHelper.make(CloneNotSupportedException.class)};
