@@ -394,18 +394,18 @@ String s = i as String
 String s = i as java.lang.String
 :::[ClassNode,(1:17),(1:33)]
 
-###FieldExpression:::
-class FieldExpression {
+###PropertyExpressionStaticField:::
+class PropertyExpression {
     static field
     static method() {
-        FieldExpression.field = 42
+        PropertyExpression.field = 42
     }
 }
-:::[FieldExpression,(4:9),(4:31)]
+:::[PropertyExpression,(4:9),(4:34)]
 
 ###PropertyExpressionNormal:::
 class TestClass {
-	TestClass prop
+    TestClass prop
 }
 TestClass.prop.prop = 42
 :::[PropertyExpression,(4:1),(4:21)][PropertyExpression,(4:1),(4:15)]
@@ -442,7 +442,7 @@ def vlaue = bean.@value
 
 ###AttributeExpression2:::
 class Bean {
-	public value
+    public value
 }
 Bean bean = new Bean(value:42)
 def attr = attributeAccess.@'value'

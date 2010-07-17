@@ -148,10 +148,11 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
         boolean oldInLeftExpression;
         Expression right = transform(be.getRightExpression());
         be.setRightExpression(right);
+        Expression left;
         if (type == Types.EQUAL) {
             oldInLeftExpression = inLeftExpression;
             inLeftExpression = true;
-            Expression left = transform(be.getLeftExpression());
+            left = transform(be.getLeftExpression());
             inLeftExpression = oldInLeftExpression;
             if (left instanceof StaticMethodCallExpression) {
                 StaticMethodCallExpression smce = (StaticMethodCallExpression) left;
@@ -159,14 +160,9 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
                 result.setSourcePosition(be);
                 return result;
             }
-            if (left instanceof FieldExpression) {
-                FieldExpression fe = (FieldExpression) left;
-                fe.setSourcePosition(left);
-                be.setLeftExpression(left);
-                return be;
-            }
+        } else {
+            left = transform(be.getLeftExpression());
         }
-        Expression left = transform(be.getLeftExpression());
         be.setLeftExpression(left);
         return be;
     }
@@ -198,10 +194,6 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
                 Expression constant = findConstant(type.getField(pe.getPropertyAsString()));
                 if (constant != null) return constant;
             }
-        } else if (exp instanceof FieldExpression) {
-            FieldExpression fe = (FieldExpression) exp;
-            Expression constant = findConstant(fe.getField());
-            if (constant != null) return constant;
         } else if (exp instanceof ListExpression) {
             ListExpression le = (ListExpression) exp;
             ListExpression result = new ListExpression();
@@ -325,19 +317,6 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
         foundArgs = null;
         foundConstant = null;
         Expression objectExpression = transform(pe.getObjectExpression());
-
-        // check for static field access in a static method in the class containing the field
-        if (objectExpression instanceof ClassExpression && currentMethod != null && currentMethod.isStatic()) {
-            ClassExpression ce = (ClassExpression) objectExpression;
-            if (ce.getType().getName().equals(currentClass.getName())) {
-                FieldNode field = currentClass.getDeclaredField(pe.getPropertyAsString());
-                if (field != null && field.isStatic()) {
-                    Expression expression = new FieldExpression(field);
-                    expression.setSourcePosition(pe);
-                    return expression;
-                }
-            }
-        }
 
         // some super validation
         if (objectExpression instanceof VariableExpression) {
@@ -562,8 +541,8 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
         if (staticImportType.isPrimaryClassNode() || staticImportType.isResolved()) {
             staticImportType.getFields(); // force init
             FieldNode field = staticImportType.getField(fieldName);
-            if (field != null && field.isStatic() && field.isEnum()) return new PropertyExpression(new ClassExpression(staticImportType), fieldName);
-            if (field != null && field.isStatic()) return new FieldExpression(field);
+            if (field != null && field.isStatic())
+                return new PropertyExpression(new ClassExpression(staticImportType), fieldName);
         } else {
             stillResolving = true;
         }
