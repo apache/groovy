@@ -128,7 +128,7 @@ public class DelegateASTTransformation implements ASTTransformation, Opcodes {
                     new ExpressionStatement(
                             new BinaryExpression(
                                     new PropertyExpression(
-                                            new FieldExpression(fieldNode),
+                                            new VariableExpression(fieldNode),
                                             name),
                                     Token.newSymbol(Types.EQUAL, -1, -1),
                                     new VariableExpression("value"))));
@@ -145,7 +145,7 @@ public class DelegateASTTransformation implements ASTTransformation, Opcodes {
                     null,
                     new ReturnStatement(
                             new PropertyExpression(
-                                    new FieldExpression(fieldNode),
+                                    new VariableExpression(fieldNode),
                                     name)));
         }
     }
@@ -190,7 +190,7 @@ public class DelegateASTTransformation implements ASTTransformation, Opcodes {
                     candidate.getExceptions(),
                     new ExpressionStatement(
                             new MethodCallExpression(
-                                    new FieldExpression(fieldNode),
+                                    new VariableExpression(fieldNode),
                                     candidate.getName(),
                                     args)));
         }

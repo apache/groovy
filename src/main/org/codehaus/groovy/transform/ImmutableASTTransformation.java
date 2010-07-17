@@ -145,7 +145,7 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
 
         final FieldNode hashField = cNode.addField("$hash$code", ACC_PRIVATE | ACC_SYNTHETIC, ClassHelper.int_TYPE, null);
         final BlockStatement body = new BlockStatement();
-        final Expression hash = new FieldExpression(hashField);
+        final Expression hash = new VariableExpression(hashField);
         final List<PropertyNode> list = getInstanceProperties(cNode);
 
         body.addStatement(new IfStatement(
@@ -182,11 +182,11 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
                 body.addStatement(append(result, new ConstantExpression(", ")));
             }
             body.addStatement(new IfStatement(
-                    new BooleanExpression(new FieldExpression(cNode.getField("$map$constructor"))),
+                    new BooleanExpression(new VariableExpression(cNode.getField("$map$constructor"))),
                     toStringPropertyName(result, pNode.getName()),
                     new EmptyStatement()
             ));
-            final FieldExpression fieldExpr = new FieldExpression(pNode.getField());
+            final Expression fieldExpr = new VariableExpression(pNode.getField());
             body.addStatement(append(result, new StaticMethodCallExpression(INVOKER_TYPE, "toString", fieldExpr)));
         }
         body.addStatement(append(result, new ConstantExpression(")")));
@@ -216,7 +216,7 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
         // fields
         for (PropertyNode pNode : list) {
             // _result = HashCodeHelper.updateHash(_result, field)
-            final Expression fieldExpr = new FieldExpression(pNode.getField());
+            final Expression fieldExpr = new VariableExpression(pNode.getField());
             final Expression args = new TupleExpression(result, fieldExpr);
             final Expression current = new StaticMethodCallExpression(HASHUTIL_TYPE, "updateHash", args);
             body.addStatement(assignStatement(result, current));
@@ -300,7 +300,7 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
     private void createConstructor(ClassNode cNode) {
         // pretty toString will remember how the user declared the params and print accordingly
         final FieldNode constructorField = cNode.addField("$map$constructor", ACC_PRIVATE | ACC_SYNTHETIC, ClassHelper.boolean_TYPE, null);
-        final FieldExpression constructorStyle = new FieldExpression(constructorField);
+        final Expression constructorStyle = new VariableExpression(constructorField);
         if (cNode.getDeclaredConstructors().size() != 0) {
             // TODO: allow constructors which call provided constructor?
             throw new RuntimeException("Explicit constructors not allowed for " + MY_TYPE_NAME + " class: " + cNode.getNameWithoutPackage());
@@ -326,13 +326,13 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
         return result;
     }
 
-    private void createConstructorMapSpecial(ClassNode cNode, FieldExpression constructorStyle, List<PropertyNode> list) {
+    private void createConstructorMapSpecial(ClassNode cNode, Expression constructorStyle, List<PropertyNode> list) {
         final BlockStatement body = new BlockStatement();
         body.addStatement(createConstructorStatementMapSpecial(list.get(0).getField()));
         createConstructorMapCommon(cNode, constructorStyle, body);
     }
 
-    private void createConstructorMap(ClassNode cNode, FieldExpression constructorStyle, List<PropertyNode> list) {
+    private void createConstructorMap(ClassNode cNode, Expression constructorStyle, List<PropertyNode> list) {
         final BlockStatement body = new BlockStatement();
         for (PropertyNode pNode : list) {
             body.addStatement(createConstructorStatement(cNode, pNode));
@@ -343,7 +343,7 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
         createConstructorMapCommon(cNode, constructorStyle, body);
     }
 
-    private void createConstructorMapCommon(ClassNode cNode, FieldExpression constructorStyle, BlockStatement body) {
+    private void createConstructorMapCommon(ClassNode cNode, Expression constructorStyle, BlockStatement body) {
         final List<FieldNode> fList = cNode.getFields();
         for (FieldNode fNode : fList) {
             if (!fNode.isPublic() && !fNode.getName().contains("$") && (cNode.getProperty(fNode.getName()) == null)) {
@@ -358,7 +358,7 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
                 body)));
     }
 
-    private void createConstructorOrdered(ClassNode cNode, FieldExpression constructorStyle, List<PropertyNode> list) {
+    private void createConstructorOrdered(ClassNode cNode, Expression constructorStyle, List<PropertyNode> list) {
         final MapExpression argMap = new MapExpression();
         final Parameter[] orderedParams = new Parameter[list.size()];
         int index = 0;
@@ -399,7 +399,7 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
     }
 
     private Statement createConstructorStatementGuarded(ClassNode cNode, FieldNode fNode) {
-        final FieldExpression fieldExpr = new FieldExpression(fNode);
+        final Expression fieldExpr = new VariableExpression(fNode);
         Expression initExpr = fNode.getInitialValueExpression();
         if (initExpr == null) initExpr = ConstantExpression.NULL;
         Expression unknown = findArg(fNode.getName());
@@ -418,7 +418,7 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
     }
 
     private Statement createConstructorStatementCollection(FieldNode fNode) {
-        final FieldExpression fieldExpr = new FieldExpression(fNode);
+        final Expression fieldExpr = new VariableExpression(fNode);
         Expression initExpr = fNode.getInitialValueExpression();
         if (initExpr == null) initExpr = ConstantExpression.NULL;
         Expression collection = findArg(fNode.getName());
@@ -432,7 +432,7 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
     }
 
     private Statement createConstructorStatementMapSpecial(FieldNode fNode) {
-        final FieldExpression fieldExpr = new FieldExpression(fNode);
+        final Expression fieldExpr = new VariableExpression(fNode);
         Expression initExpr = fNode.getInitialValueExpression();
         if (initExpr == null) initExpr = ConstantExpression.NULL;
         Expression namedArgs = findArg(fNode.getName());
@@ -469,7 +469,7 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
     }
 
     private Statement createConstructorStatementDefault(FieldNode fNode) {
-        final FieldExpression fieldExpr = new FieldExpression(fNode);
+        final Expression fieldExpr = new VariableExpression(fNode);
         Expression initExpr = fNode.getInitialValueExpression();
         if (initExpr == null) initExpr = ConstantExpression.NULL;
         Expression value = findArg(fNode.getName());
@@ -483,7 +483,7 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
     }
 
     private Statement createConstructorStatementArrayOrCloneable(FieldNode fNode) {
-        final FieldExpression fieldExpr = new FieldExpression(fNode);
+        final Expression fieldExpr = new VariableExpression(fNode);
         Expression initExpr = fNode.getInitialValueExpression();
         if (initExpr == null) initExpr = ConstantExpression.NULL;
         final Expression array = findArg(fNode.getName());
@@ -497,7 +497,7 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
     }
 
     private Statement createConstructorStatementDate(FieldNode fNode) {
-        final FieldExpression fieldExpr = new FieldExpression(fNode);
+        final Expression fieldExpr = new VariableExpression(fNode);
         Expression initExpr = fNode.getInitialValueExpression();
         if (initExpr == null) initExpr = ConstantExpression.NULL;
         final Expression date = findArg(fNode.getName());
@@ -540,7 +540,7 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
     }
 
     private BooleanExpression notEqualsExpr(PropertyNode pNode, Expression other) {
-        final Expression fieldExpr = new FieldExpression(pNode.getField());
+        final Expression fieldExpr = new VariableExpression(pNode.getField());
         final Expression otherExpr = new PropertyExpression(other, pNode.getField().getName());
         return new BooleanExpression(new BinaryExpression(fieldExpr, COMPARE_NOT_EQUAL, otherExpr));
     }
@@ -586,7 +586,7 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
     }
 
     private Statement createGetterBodyDefault(FieldNode fNode) {
-        final Expression fieldExpr = new FieldExpression(fNode);
+        final Expression fieldExpr = new VariableExpression(fNode);
         return new ExpressionStatement(fieldExpr);
     }
 
@@ -606,7 +606,7 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
     }
 
     private Statement createGetterBodyArrayOrCloneable(FieldNode fNode) {
-        final Expression fieldExpr = new FieldExpression(fNode);
+        final Expression fieldExpr = new VariableExpression(fNode);
         final Expression expression = cloneArrayOrCloneableExpr(fieldExpr);
         return safeExpression(fieldExpr, expression);
     }
@@ -620,7 +620,7 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
     }
 
     private Statement createGetterBodyDate(FieldNode fNode) {
-        final Expression fieldExpr = new FieldExpression(fNode);
+        final Expression fieldExpr = new VariableExpression(fNode);
         final Expression expression = cloneDateExpr(fieldExpr);
         return safeExpression(fieldExpr, expression);
     }
