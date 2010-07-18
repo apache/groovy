@@ -42,10 +42,12 @@ $Date: 2007-03-11 19:14:07 +1000 (Sun, 11 Mar 2007) $
 
     <macrodef name="coberturaReport">
         <attribute name="reportDirectory"/>
-        <attribute name="sourceDirectory"/>
         <sequential>
             <cobertura-report destdir="${reportsDirectory}/cobertura">
+                <!-- TODO: fix hack below when modules added -->
                 <fileset dir="${mainSourceDirectory}"/>
+                <fileset dir="${jmxSourceDirectory}/main/java"/>
+                <fileset dir="${jmxSourceDirectory}/main/groovy"/>
             </cobertura-report>
         </sequential>
     </macrodef>

@@ -420,12 +420,7 @@ $Date$
     </target>
 
     <target name="-coverageReport" depends="-initCoverage" if="_forceCoverage_">
-        <coberturaReport reportDirectory="${reportsDirectory}/cobertura">
-            <fileset dir="${mainSourceDirectory}"/>
-            <!-- TODO temp hack - remove once modules are in place -->
-            <fileset dir="${jmxSourceDirectory}/main/java"/>
-            <fileset dir="${jmxSourceDirectory}/main/groovy"/>
-        </coberturaReport>
+        <coberturaReport reportDirectory="${reportsDirectory}/cobertura"/>
     </target>
 
     <target name="-actuallyCreateJars"
