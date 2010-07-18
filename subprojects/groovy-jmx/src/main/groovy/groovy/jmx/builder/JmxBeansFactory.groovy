@@ -63,7 +63,7 @@ class JmxBeansFactory extends AbstractFactory {
             def registeredBean = JmxBuilderTools.registerMBeanFromMap(regPolicy, metaMap)
 
             // if replace, remove from parent node and re add.
-            if (parentNode && registeredBean && regPolicy == "replace") {
+            if (parentNode != null && registeredBean && regPolicy == "replace") {
                 for (Iterator i = parentNode.iterator(); i.hasNext();) {
                     def exportedBean = i.next()
                     if (exportedBean.name().equals(metaMap.jmxName)) {
@@ -73,7 +73,7 @@ class JmxBeansFactory extends AbstractFactory {
             }
 
             // only add if bean was successfully registered.
-            if (parentNode && registeredBean) {
+            if (parentNode != null && registeredBean) {
                 parentNode.add(registeredBean)
             }
         }
