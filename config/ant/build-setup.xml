@@ -25,6 +25,10 @@ $Date: 2007-03-11 19:14:07 +1000 (Sun, 11 Mar 2007) $
     <property name="wikiPdfDirectory" value="src"/>
     <property name="mainSourceDirectory" location="${sourceDirectory}/main"/>
     <property name="testSourceDirectory" value="${sourceDirectory}/test"/>
+    <!-- TODO temp hack - remove once modules are in place -->
+    <property name="jmxSourceDirectory" location="subprojects/groovy-jmx/src"/>
+    <property name="mainSourcePath" value="${sourceDirectory}/main:${jmxSourceDirectory}/main/java:${jmxSourceDirectory}/main/groovy"/>
+    <property name="testSourcePath" value="${sourceDirectory}/test:${jmxSourceDirectory}/test/java:${jmxSourceDirectory}/test/groovy"/>
     <property name="toolsSourceDirectory" location="${sourceDirectory}/tools"/>
     <property name="examplesSourceDirectory" location="${sourceDirectory}/examples"/>
     

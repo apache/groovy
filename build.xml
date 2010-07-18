@@ -160,7 +160,7 @@ $Date$
         <mkdir dir="${toolsClassesDirectory}"/>
         <mkdir dir="${mainClassesDirectory}/META-INF"/>
 
-        <javac srcdir="${mainSourceDirectory}" includeantruntime="false" destdir="${mainClassesDirectory}"
+        <javac srcdir="${mainSourcePath}" includeantruntime="false" destdir="${mainClassesDirectory}"
                deprecation="on" debug="yes" source="1.5" target="1.5" fork="true" classpathref="compilePath">
             <exclude name="groovy/ui/**/*.java"/>
         </javac>
@@ -175,7 +175,7 @@ $Date$
     </target>
 
     <target name="-stagedcompile-groovy" depends="-initGroovyc">
-        <groovyc srcdir="${mainSourceDirectory}" destdir="${mainClassesDirectory}" fork="true"
+        <groovyc srcdir="${mainSourcePath}" destdir="${mainClassesDirectory}" fork="true"
                  memorymaximumsize="${groovycMain_mx}">
             <classpath>
                 <pathelement path="${mainClassesDirectory}"/>
@@ -210,7 +210,7 @@ $Date$
     </target>
 
     <target name="-compileTest" depends="-initGroovyc,-compileTest_vm6">
-        <groovyc srcdir="${testSourceDirectory}"
+        <groovyc srcdir="${testSourcePath}"
                  destdir="${testClassesDirectory}"
                  includes="${vm5GroovySourceFiles},${vm5JavaSourceFiles}"
                  excludes="${vm6GroovySourceFiles}"
@@ -226,7 +226,7 @@ $Date$
     </target>
 
     <target name="-compileTest_vm6" if="groovy.build.vm6">
-        <groovyc srcdir="${testSourceDirectory}"
+        <groovyc srcdir="${testSourcePath}"
                  destdir="${testClassesDirectory}"
                  includes="${vm6GroovySourceFiles}"
                  fork="true"
@@ -335,6 +335,9 @@ $Date$
             <classpath>
                 <pathelement path="${instrumentedClassesDirectory}"/>
                 <pathelement path="src/test"/>
+                <!-- TODO temp hack - remove once modules are in place -->
+                <pathelement path="${jmxSourceDirectory}/test/groovy"/>
+                <pathelement path="${jmxSourceDirectory}/test/java"/>
                 <path refid="groovyMainClasses"/>
                 <path refid="testLibPath"/>
                 <pathelement path="${testClassesDirectory}"/>
@@ -388,6 +391,9 @@ $Date$
             <classpath>
                 <pathelement path="${instrumentedClassesDirectory}"/>
                 <pathelement path="src/test"/>
+                <!-- TODO temp hack - remove once modules are in place -->
+                <pathelement path="${jmxSourceDirectory}/test/groovy"/>
+                <pathelement path="${jmxSourceDirectory}/test/java"/>
                 <path refid="groovyMainClasses"/>
                 <path refid="testLibPath"/>
                 <pathelement path="${testClassesDirectory}"/>
@@ -414,7 +420,12 @@ $Date$
     </target>
 
     <target name="-coverageReport" depends="-initCoverage" if="_forceCoverage_">
-        <coberturaReport reportDirectory="${reportsDirectory}/cobertura" sourceDirectory="${mainSourceDirectory}"/>
+        <coberturaReport reportDirectory="${reportsDirectory}/cobertura">
+            <fileset dir="${mainSourceDirectory}"/>
+            <!-- TODO temp hack - remove once modules are in place -->
+            <fileset dir="${jmxSourceDirectory}/main/java"/>
+            <fileset dir="${jmxSourceDirectory}/main/groovy"/>
+        </coberturaReport>
     </target>
 
     <target name="-actuallyCreateJars"
@@ -514,7 +525,12 @@ $Date$
     <target name="-createBaseJar" unless="testFailed">
         <jar destfile="${targetDistDirectory}/groovy.jar" basedir="${mainClassesDirectory}"
              excludes="*.groovy" manifest="${mainClassesDirectory}/META-INF/MANIFEST.MF"/>
-        <jar destfile="${targetDistDirectory}/groovy-${groovyVersion}-sources.jar" basedir="${mainSourceDirectory}"/>
+        <jar destfile="${targetDistDirectory}/groovy-${groovyVersion}-sources.jar" basedir="${mainSourceDirectory}">
+            <!-- TODO temp hack - remove once modules are in place -->
+            <fileset dir="${mainSourceDirectory}"/>
+            <fileset dir="${jmxSourceDirectory}/main/java"/>
+            <fileset dir="${jmxSourceDirectory}/main/groovy"/>
+        </jar>
     </target>
 
     <target name="-jarjarInit" unless="_skipEmbeddable_">
@@ -677,6 +693,7 @@ $Date$
 
     <target name="checkstyle" depends="-init,-initializeReports,-checkstyleInit"
             description="Create the code style reports.">
+        <!-- TODO extend checkstyle to mainSourcePath -->
         <checkAndReport
                 reportDirectory="${reportsDirectory}/checkstyle"
                 sourceDirectory="${mainSourceDirectory}"
@@ -741,6 +758,8 @@ $Date$
                 <path refid="compilePath"/>
             </classpath>
             <fileset dir="${mainSourceDirectory}" includes="**/*.java"/>
+            <!-- TODO temp hack - remove once modules are in place -->
+            <fileset dir="${jmxSourceDirectory}/main/java" includes="**/*.java"/>
             <link href="http://java.sun.com/javase/6/docs/api"/>
             <link href="http://www.dpml.net/api/ant/1.7.0"/>
             <link href="http://junit.sourceforge.net/junit3.8.1/javadoc"/>
@@ -772,7 +791,7 @@ $Date$
         </taskdef>
         <groovydoc
                 destdir="${docsDirectory}/gapi"
-                sourcepath="${mainSourceDirectory}"
+                sourcepath="${mainSourcePath}"
                 packagenames="**.*"
                 use="true"
                 windowtitle="${title}"

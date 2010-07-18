@@ -37,6 +37,8 @@ public class UberTestCaseGroovySourceSubPackages extends TestCase {
         String excludes = "true".equals(System.getProperty("java.awt.headless"))
                 ? EXCLUDES + ",groovy/*/**/SwingBuilderTest.groovy" : EXCLUDES;
         suite.addTest(AllTestSuite.suite(TEST_BASE, "groovy/*/**/*Test.groovy", excludes));
+        // TODO temp hack - remove once modules are in place
+        suite.addTest(AllTestSuite.suite("subprojects/groovy-jmx/src/test/groovy", "groovy/*/**/*Test.groovy"));
         suite.addTest(JavadocAssertionTestSuite.suite(CODE_BASE));
         return suite;
     }
