@@ -29,66 +29,66 @@ import javax.management.modelmbean.ModelMBeanInfo
  *
  * <p>The following shows all of the different syntax forms supported by the node.</p>
  *
- * <per>
- *bean(instance)
- *bean(target:instance, name:ObjectName|"...", desc|description:"...")
- *bean(target:instance,
- *    server:MBeanServerConnection
- *    name:ObjectName()|"...",
- *    desc|description:"...",
- *    attribs|attributes:"*",
- *    attribs|attributes:[]
- *    attribs|attributes:["attribName1","attribName2",..."attribNameN"]
- *    attribs|attributes:[
- *        "attribName0":"*",
- *        "attribName1":[desc|description:"...", default:value, writable|editable:true|false,...]
- *         "attribName2":[onChange:{event->
- *             // onChange event callback code here.
- *         ]
- *     ],
+ * <pre><code>
+ * bean(instance)
+ * bean(target:instance, name:ObjectName|"...", desc|description:"...")
+ * bean(target:instance,
+ *     server:MBeanServerConnection
+ *     name:ObjectName()|"...",
+ *     desc|description:"...",
+ *     attribs|attributes:"*",
+ *     attribs|attributes:[]
+ *     attribs|attributes:["attribName1","attribName2",..."attribNameN"]
+ *     attribs|attributes:[
+ *         "attribName0":"*",
+ *         "attribName1":[desc|description:"...", default:value, writable|editable:true|false,...]
+ *          "attribName2":[onChange:{event->
+ *              // onChange event callback code here.
+ *          ]
+ *      ],
  *
  *     ctors|constructors:"*",
  *     ctors|constructors:[
- *        "CtorName0":[],
- *        "CtorName1":["paramType1","paramType2"],
- *        "CtorName2":[
- *            desc|description:"...",
- *            params:[
- *                 "type0":"*"
- *                 "type1":[desc|description:"...", name:"...", ]
- *            ]
- *        ]
+ *         "CtorName0":[],
+ *         "CtorName1":["paramType1","paramType2"],
+ *         "CtorName2":[
+ *             desc|description:"...",
+ *             params:[
+ *                  "type0":"*"
+ *                  "type1":[desc|description:"...", name:"...", ]
+ *             ]
+ *         ]
  *     ],
  *
- *    ops|operations:"*",
- *    ops|operations:["opName1", "opName2", "opName3",...,"opNameN"],
- *    ops|operations:[
- *        "opName0":"*",
- *        "opName1":["type1","type2,"type3"]
- *        "opName2":[
- *            desc:"description",
- *            params:[
- *                "type0":"*"
- *                "type1":[desc|description:"...", name:"...", ],
- *                "typeN":[desc|description:"...", name:"...", ],
- *            ],
- *        ],
- *        "opName3":[
- *            onCall:{event->
- *                // onCall event callaback code here.
- *            }]
- *        ],
+ *     ops|operations:"*",
+ *     ops|operations:["opName1", "opName2", "opName3",...,"opNameN"],
+ *     ops|operations:[
+ *         "opName0":"*",
+ *         "opName1":["type1","type2,"type3"]
+ *         "opName2":[
+ *             desc:"description",
+ *             params:[
+ *                 "type0":"*"
+ *                 "type1":[desc|description:"...", name:"...", ],
+ *                 "typeN":[desc|description:"...", name:"...", ],
+ *             ],
+ *         ],
+ *         "opName3":[
+ *             onCall:{event->
+ *                 // onCall event callaback code here.
+ *             }]
+ *         ],
  *
- *    listeners:[
- *        ListenerName:[
- *            event: "eventType", from:"object name"|ObjectName(),
- *            call:{event->
- *                // handler code for event
- *            }],
- *    ]
- *)
- *</pre>
- * 
+ *     listeners:[
+ *         ListenerName:[
+ *             event: "eventType", from:"object name"|ObjectName(),
+ *             call:{event->
+ *                 // handler code for event
+ *             }],
+ *     ]
+ * )
+ * </code></pre>
+ *
  * @author Vladimir Vivien
  */
 class JmxBeanFactory extends AbstractFactory {
