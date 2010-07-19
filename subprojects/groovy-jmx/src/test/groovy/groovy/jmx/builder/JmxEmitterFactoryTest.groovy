@@ -59,7 +59,7 @@ public class JmxEmitterFactoryTest extends GroovyTestCase {
         }
     }
 
-    void _TODO_reinstate_testEmitterWithExplicitListeners() {
+    void testEmitterWithExplicitListeners() {
         def count = 0
         def data
         def emitter = builder.emitter(name: "jmx.builder:type=Emitter")

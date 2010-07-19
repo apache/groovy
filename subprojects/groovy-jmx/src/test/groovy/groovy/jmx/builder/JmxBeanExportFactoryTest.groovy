@@ -245,7 +245,7 @@ class JmxBeanExportFactoryTest extends GroovyTestCase {
         assert !bean.info().getAttribute("Available").descriptor.getFieldValue("writable")
     }
 
-    void _TODO_reinstate_testExplicitConstructorDeclaration() {
+    void testExplicitConstructorDeclaration() {
         def objName = "jmx.builder:type=ExplicitDescriptor"
         def beans
         GroovyMBean gbean
@@ -308,7 +308,7 @@ class JmxBeanExportFactoryTest extends GroovyTestCase {
         assert gbean.info().getConstructors()[0].signature[1].type == "int"
     }
 
-    void _TODO_reinstate_testExplicitOperationDeclaration() {
+    void testExplicitOperationDeclaration() {
         def objName = "jmx.builder:type=ExplicitDescriptor"
         def beans
         GroovyMBean gbean
@@ -383,7 +383,7 @@ class JmxBeanExportFactoryTest extends GroovyTestCase {
 
     }
 
-    void _TODO_reinstate_testExplicitEmbeddedOperations() {
+    void testExplicitEmbeddedOperations() {
         def object = new EmbeddedAllOps()
         def beans = builder.export {
             bean(object)
@@ -439,7 +439,7 @@ class JmxBeanExportFactoryTest extends GroovyTestCase {
     }
 
 
-    void _TODO_reinstate_testOperationCallListener() {
+    void testOperationCallListener() {
         def object = new MockManagedObject()
         def testFlag1 = "0"
         def testFlag2 = 1
