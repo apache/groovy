@@ -54,6 +54,7 @@ import java.lang.annotation.Target;
  * Limitations: currently not designed to support inner classes.
  *
  * @author Paul King
+ * @since 1.8.0
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE})

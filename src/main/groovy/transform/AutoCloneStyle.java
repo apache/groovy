@@ -5,6 +5,7 @@ package groovy.transform;
  *
  * @author Paul King
  * @since 1.8.0
+ * @see groovy.transform.AutoClone
  */
 public enum AutoCloneStyle {
     /**

@@ -177,7 +177,9 @@ import java.lang.annotation.Target;
  * </ul>
  *
  * @author Paul King
+ * @see groovy.transform.AutoCloneStyle
  * @see groovy.transform.AutoExternalize
+ * @since 1.8.0
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE})

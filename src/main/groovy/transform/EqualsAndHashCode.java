@@ -50,6 +50,7 @@ import java.lang.annotation.Target;
  *
  * @see org.codehaus.groovy.util.HashCodeHelper
  * @author Paul King
+ * @since 1.8.0
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE})

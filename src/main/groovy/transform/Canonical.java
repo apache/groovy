@@ -52,7 +52,11 @@ import java.lang.annotation.Target;
  * </pre>
  * The {@code @Canonical} annotation instructs the compiler to execute an
  * AST transformation which adds positional constructors,
- * equals, hashCode and a pretty print toString.
+ * equals, hashCode and a pretty print toString to your class. There are additional
+ * annotations if you only need some of the functionality: {@code @EqualsAndHashCode},
+ * {@code @ToString} and {@code @TupleConstructor}. In addition, you can add one of
+ * the other annotations if you need to further customize the behavior of the
+ * AST transformation.
  * <p/>
  * A class created in this way has the following characteristics:
  * <ul>
@@ -81,6 +85,10 @@ import java.lang.annotation.Target;
  *
  * @author Paulo Poiati
  * @author Paul King
+ * @see groovy.transform.EqualsAndHashCode
+ * @see groovy.transform.ToString
+ * @see groovy.transform.TupleConstructor
+ * @since 1.8.0
  */
 @Retention(RetentionPolicy.SOURCE)
 @Target({ElementType.TYPE})

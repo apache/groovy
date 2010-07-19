@@ -65,6 +65,7 @@ import java.lang.annotation.Target;
  * </pre>
  *
  * @author Paul King
+ * @since 1.8.0
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE})
