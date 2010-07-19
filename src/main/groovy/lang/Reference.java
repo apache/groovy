@@ -17,13 +17,15 @@ package groovy.lang;
 
 import org.codehaus.groovy.runtime.InvokerHelper;
 
+import java.io.Serializable;
+
 /**
  * Represents a reference to a value
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class Reference<T> extends GroovyObjectSupport {
+public class Reference<T> extends GroovyObjectSupport implements Serializable {
 
     private T value;
 
