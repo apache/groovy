@@ -3,3 +3,6 @@ groovy.grape.GrabAnnotationTransformation
 
 #global transformation for AST Builder
 org.codehaus.groovy.ast.builder.AstBuilderTransformation
+
+#comma separated list of file extensions to be treated as groovy files
+#files:groovy

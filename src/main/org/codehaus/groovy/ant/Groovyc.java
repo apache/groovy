@@ -52,6 +52,7 @@ import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.StringTokenizer;
 
 /**
@@ -120,6 +121,7 @@ public class Groovyc extends MatchingTask {
     private File stubDir;
     private boolean keepStubs;
 
+    private Set<String> fileExtensions;
 
     /**
      * Adds a path for source compilation.
@@ -609,6 +611,7 @@ public class Groovyc extends MatchingTask {
      */
     protected void resetFileLists() {
         compileList = new File[0];
+        fileExtensions = null;
     }
 
     /**
@@ -621,11 +624,16 @@ public class Groovyc extends MatchingTask {
      */
     protected void scanDir(File srcDir, File destDir, String[] files) {
         GlobPatternMapper m = new GlobPatternMapper();
-        m.setFrom(scriptExtension);
+        m.setFrom("*.groovy");
         m.setTo("*.class");
         SourceFileScanner sfs = new SourceFileScanner(this);
-        File[] newFiles = sfs.restrictAsFiles(files, srcDir, destDir, m);
-        addToCompileList(newFiles);
+        File[] newFiles;
+        for (String extension : getFileExtensions()) {
+            m.setFrom(extension);
+            m.setTo("*.class");
+            newFiles = sfs.restrictAsFiles(files, srcDir, destDir, m);
+            addToCompileList(newFiles);
+        }
 
         if (jointCompilation) {
             m.setFrom("*.java");
@@ -1011,5 +1019,18 @@ public class Groovyc extends MatchingTask {
      */
     public boolean getKeepStubs() {
         return keepStubs;
+    }
+
+    private Set<String> getFileExtensions() {
+        if (fileExtensions == null) {
+            Path classpath = getClasspath() != null ? getClasspath() : new Path(getProject());
+            final String[] pe = classpath.list();
+            final GroovyClassLoader loader = new GroovyClassLoader(getClass().getClassLoader());
+            for (String file : pe) {
+                loader.addClasspath(file);
+            }
+            fileExtensions = loader.getFileExtensionsForGlobalTransforms();
+        }
+        return fileExtensions;
     }
 }
