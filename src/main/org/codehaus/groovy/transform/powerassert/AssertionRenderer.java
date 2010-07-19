@@ -18,6 +18,8 @@ package org.codehaus.groovy.transform.powerassert;
 
 import java.util.*;
 
+import org.codehaus.groovy.runtime.DefaultGroovyMethods;
+
 /**
  * Creates a string representation of an assertion and its recorded values.
  *
@@ -131,50 +133,34 @@ public class AssertionRenderer {
      * @return a string representation of the given value
      */
     private static String valueToString(Object value) {
-        if (value == null) return "null";
-        if (isEmptyStr(value)) return "\"\"";
+        String toString;
 
-        String str;
-        String errorMsg = "";
         try {
-            str = value.getClass().isArray() ? arrayToString(value) : value.toString();
+            toString = DefaultGroovyMethods.toString(value);
         } catch (Exception e) {
-            str = null;
-            errorMsg = " (toString() threw " + e.getClass().getName() + ")";
+            return String.format("%s (toString() threw %s)",
+                    javaLangObjectToString(value), e.getClass().getName());
         }
 
-        // if the value has no string representation, produce something like Object.toString()
-        if (str == null || str.equals("")) {
-            String hash = Integer.toHexString(System.identityHashCode(value));
-            if(errorMsg.equals("")) {
-            	errorMsg = (str == null) ? " (toString() == null)" : " (toString() == \"\")";
-            }
-            return value.getClass().getName() + "@" + hash + errorMsg;
+        if (toString == null) {
+            return String.format("%s (toString() == null)", javaLangObjectToString(value));
         }
 
-        return str;
+        if (toString.equals("")) {
+            if (hasStringLikeType(value)) return "\"\"";
+            return String.format("%s (toString() == \"\")", javaLangObjectToString(value));
+        }
+
+        return toString;
     }
 
-    private static boolean isEmptyStr(Object value) {
-    	Class<?> clazz = value.getClass();
-    	if((clazz == String.class || clazz == StringBuffer.class || 
-    			clazz == StringBuilder.class) && value.toString().equals("")) {
-    		return true;
-    	}
-    	return false;
+    private static boolean hasStringLikeType(Object value) {
+        Class<?> clazz = value.getClass();
+    	return clazz == String.class || clazz == StringBuffer.class || clazz == StringBuilder.class;
     }
-    
-    private static String arrayToString(Object array) {
-        Class<?> clazz = array.getClass();
 
-        if (clazz == byte[].class) return Arrays.toString((byte[]) array);
-        if (clazz == short[].class) return Arrays.toString((short[]) array);
-        if (clazz == int[].class) return Arrays.toString((int[]) array);
-        if (clazz == long[].class) return Arrays.toString((long[]) array);
-        if (clazz == char[].class) return Arrays.toString((char[]) array);
-        if (clazz == float[].class) return Arrays.toString((float[]) array);
-        if (clazz == double[].class) return Arrays.toString((double[]) array);
-        if (clazz == boolean[].class) return Arrays.toString((boolean[]) array);
-        return Arrays.deepToString((Object[]) array);
+    private static String javaLangObjectToString(Object value) {
+        String hash = Integer.toHexString(System.identityHashCode(value));
+        return value.getClass().getName() + "@" + hash;
     }
 }
