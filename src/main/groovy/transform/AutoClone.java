@@ -28,7 +28,10 @@ import java.lang.annotation.Target;
  * Class annotation used to assist in the creation of {@code Cloneable} classes.
  * The {@code @AutoClone} annotation instructs the compiler to execute an
  * AST transformation which adds a public {@code clone()} method and adds
- * {@code Cloneable} to the interfaces which the class implements. The {@code clone()}
+ * {@code Cloneable} to the interfaces which the class implements.
+ * <p/>
+ * Because the JVM doesn't have a one-size fits all cloning strategy, several
+ * customizations exist for the cloning implementation. By default, the {@code clone()}
  * method will call {@code super.clone()} before calling {@code clone()} on each
  * {@code Cloneable} property of the class.
  * <p/>
@@ -86,6 +89,7 @@ import java.lang.annotation.Target;
  * doesn't support cloning, then a {@code CloneNotSupportedException} may occur
  * at runtime.
  * <p/>
+ * Another popular cloning strategy is known as the copy constructor pattern.
  * If any of your fields are {@code final} and {@code Cloneable} you should set
  * {@code useCopyConstructor=true} which will then use the copy constructor pattern.
  * Here is an example making use of the copy constructor pattern:
@@ -131,9 +135,9 @@ import java.lang.annotation.Target;
  * }
  * </pre>
  * If you use this style on a child class, the parent class must
- * also have a copy constructor. This approach is slightly slower than
- * the traditional cloning approach but the {@code Cloneable} fields
- * of your class can be final.
+ * also have a copy constructor (created using this annotation or by hand).
+ * This approach can be slightly slower than the traditional cloning approach
+ * but the {@code Cloneable} fields of your class can be final.
  * <p/>
  * As a final example, if your class already implements the {@code Serializable}
  * or {@code Externalizable} interface, you can choose the following cloning style:
@@ -163,8 +167,17 @@ import java.lang.annotation.Target;
  * allow fields to be final, will take up more memory as even immutable classes
  * like String will be cloned but does have the advantage that it performs
  * deep cloning automatically.
+ * <p/>
+ * Further references on cloning:
+ * <ul>
+ * <li><a href="http://www.codeguru.com/java/tij/tij0128.shtml">http://www.codeguru.com/java/tij/tij0128.shtml</a>
+ * <li><a href="http://www.artima.com/objectsandjava/webuscript/ClonCollInner1.html">http://www.artima.com/objectsandjava/webuscript/ClonCollInner1.html</a>
+ * <li><a href="http://courses.dce.harvard.edu/~cscie160/JDCTipsCloning">http://courses.dce.harvard.edu/~cscie160/JDCTipsCloning</a>
+ * <li><a href="http://www.agiledeveloper.com/articles/cloning072002.htm">http://www.agiledeveloper.com/articles/cloning072002.htm</a>
+ * </ul>
  *
  * @author Paul King
+ * @see groovy.transform.AutoExternalize
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE})

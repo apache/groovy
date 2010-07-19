@@ -21,7 +21,7 @@ package groovy.jmx.builder;
  * JmxBuilder to broadcast events to registered listeners of the underlying MBeanServer.
  *
  * @author Vladimir Vivien
- * @see groovy.jmx.builder.JmxEventEmitterMBean
+ * @see groovy.jmx.builder.JmxEventEmitter
  */
 public interface JmxEventEmitterMBean {
     /**
