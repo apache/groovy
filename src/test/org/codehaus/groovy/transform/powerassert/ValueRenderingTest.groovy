@@ -130,7 +130,7 @@ assert x == null
         try {
             def cl = {assert x == "zzz"} 
             cl()
-            Assert.fail("assertion should have failed but didn't")
+            fail("assertion should have failed but didn't")
         } catch (PowerAssertionError e) {
             def emsg = e.message
             if (!emsg.contains(x.objectToString()) || !emsg.contains("(toString() == null)")) {
@@ -144,7 +144,7 @@ assert x == null
         try {
             def cl = {assert x == "zzz"} 
             cl()
-            Assert.fail("assertion should have failed but didn't")
+            fail("assertion should have failed but didn't")
         } catch (PowerAssertionError e) {
             def emsg = e.message
             if (!emsg.contains(x.objectToString()) || !emsg.contains("(toString() == \"\")")) {
@@ -190,7 +190,7 @@ assert x == null
     void verifyEmptyStringRendering(className, cl) {
         try {
             cl()
-            Assert.fail("assertion should have failed but didn't")
+            fail("assertion should have failed but didn't")
         } catch (PowerAssertionError e) {
             def emsg = e.message
             if (emsg.contains("$className@") || !emsg.contains("\"\"")) {
