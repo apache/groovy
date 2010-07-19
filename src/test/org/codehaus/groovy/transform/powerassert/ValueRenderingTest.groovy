@@ -70,8 +70,8 @@ assert null == x
             |  four
             false
         """, {
-          def x = "one\ntwo\rthree\r\nfour"
-          assert null == x
+            def x = "one\ntwo\rthree\r\nfour"
+            assert null == x
         }
     }
 
@@ -95,6 +95,45 @@ assert x == null
        [one, two]
         """, {
             def x = ["one", "two"] as String[]
+            assert x == null
+        }
+    }
+
+    void testEmptyStringValue() {
+        def x = new String()
+
+        isRendered '''
+assert x == null
+       | |
+       | false
+       ""
+        ''', {
+            assert x == null
+        }
+    }
+
+    void testEmptyStringBuilderValue() {
+        def x = new StringBuilder()
+
+        isRendered '''
+assert x == null
+       | |
+       | false
+       ""
+        ''', {
+            assert x == null
+        }
+    }
+
+    void testEmptyStringBufferValue() {
+        def x = new StringBuffer()
+
+        isRendered '''
+assert x == null
+       | |
+       | false
+       ""
+        ''', {
             assert x == null
         }
     }
@@ -127,29 +166,27 @@ assert x == null
 
     void testNullToString() {
         def x = new NullToString()
-        try {
-            def cl = {assert x == "zzz"} 
-            cl()
-            fail("assertion should have failed but didn't")
-        } catch (PowerAssertionError e) {
-            def emsg = e.message
-            if (!emsg.contains(x.objectToString()) || !emsg.contains("(toString() == null)")) {
-                fail("assertion should have been rendered with message '${x.objectToString()} (toString() == null)'")
-            }
+
+        isRendered """
+assert x == null
+       | |
+       | false
+       ${x.objectToString()} (toString() == null)
+        """, {
+            assert x == null
         }
     }
 
     void testEmptyToString() {
         def x = new EmptyToString()
-        try {
-            def cl = {assert x == "zzz"} 
-            cl()
-            fail("assertion should have failed but didn't")
-        } catch (PowerAssertionError e) {
-            def emsg = e.message
-            if (!emsg.contains(x.objectToString()) || !emsg.contains("(toString() == \"\")")) {
-                fail("assertion should have been rendered with message '${x.objectToString()} (toString() == \"\")'")
-            }
+
+        isRendered """
+assert x == null
+       | |
+       | false
+       ${x.objectToString()} (toString() == \"\")
+        """, {
+            assert x == null
         }
     }
 
@@ -163,39 +200,6 @@ assert x == null
        ${x.objectToString()} (toString() threw java.lang.UnsupportedOperationException)
         """, {
             assert x == null
-        }
-    }
-
-    void testRenderingEmptyString() {
-        verifyEmptyStringRendering "java.lang.String",  {
-            def val = new String() 
-            assert val == "xxx"
-        }
-    }
-    
-    void testRenderingEmptyStringBuilder() {
-        verifyEmptyStringRendering "java.lang.StringBuilder",  {
-            def val = new StringBuilder() 
-            assert val == "xxx"
-        }
-    }
-    
-    void testRenderingEmptyStringBuffer() {
-        verifyEmptyStringRendering "java.lang.StringBuffer",  {
-            def val = new StringBuffer() 
-            assert val == "xxx"
-        }
-    }
-    
-    void verifyEmptyStringRendering(className, cl) {
-        try {
-            cl()
-            fail("assertion should have failed but didn't")
-        } catch (PowerAssertionError e) {
-            def emsg = e.message
-            if (emsg.contains("$className@") || !emsg.contains("\"\"")) {
-                fail("($className) - assertion should have rendered empty string as \"\"")
-            }
         }
     }
 }
