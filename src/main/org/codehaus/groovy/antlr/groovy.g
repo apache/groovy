@@ -94,7 +94,7 @@ import antlr.TokenStreamRecognitionException;
  *              o  add an examples directory with some nasty 1.3 cases
  *              o  made Main.java use buffered IO and a Reader for Unicode support
  *              o  supports UNICODE?
- *                 Using Unicode charVocabulay makes code file big, but only
+ *                 Using Unicode charVocabulary makes code file big, but only
  *                 in the bitsets at the end. I need to make ANTLR generate
  *                 unicode bitsets more efficiently.
  * Version 1.19 (April 25, 2002)
@@ -134,7 +134,7 @@ import antlr.TokenStreamRecognitionException;
  *        Changes by Matt Quail to support generics (as per JDK1.5/JSR14)
  *        Notes:
  *        o We only allow the "extends" keyword and not the "implements"
- *              keyword, since thats what JSR14 seems to imply.
+ *              keyword, since that's what JSR14 seems to imply.
  *        o Thanks to Monty Zukowski for his help on the antlr-interest
  *              mail list.
  *        o Thanks to Alan Eliasen for testing the grammar over his
@@ -1023,7 +1023,7 @@ if (modifiers != null) {
 }}
     :   "class" IDENT nls!
        { currentClass = #IDENT; }
-        // it _might_ have type paramaters
+        // it _might_ have type parameters
         (tp:typeParameters nls!)?
         // it _might_ have a superclass...
         sc:superClassClause
@@ -1045,7 +1045,7 @@ interfaceDefinition![AST modifiers]  {Token first = cloneToken(LT(1));
                                           first.setColumn(modifiers.getColumn());
                                       }}
     :   "interface" IDENT nls!
-        // it _might_ have type paramaters
+        // it _might_ have type parameters
         (tp:typeParameters nls!)?
         // it might extend some other interfaces
         ie:interfaceExtends
@@ -2194,25 +2194,26 @@ commandArgument
 //                 (OPERATOR nextHigherPrecedenceExpression)*
 // which is a standard recursive definition for a parsing an expression.
 // The operators in java have the following precedences:
-//      lowest  (15)  = **= *= /= %= += -= <<= >>= >>>= &= ^= |=
-//                      (14)  ?:
-//                      (13)  ||
-//                      (12)  &&
-//                      (11)  |
-//                      (10)  ^
-//                      ( 9)  &
-//                      ( 8)  == != <=>
-//                      ( 7)  < <= > >= instanceof as
-//                      ( 6)  << >> .. ...
-//                      ( 5)  +(binary) -(binary)
-//                      ( 4)  * / %
-//                      ( 3)  ++(pre/post) --(pre/post) +(unary) -(unary)
-//                      ( 2)  **(power)
-//                      ( 1)  ~  ! $ (type)
-//                            . ?. *. (dot -- identifier qualification)
-//                            []   () (method call)  {} (closableBlock)  [] (list/map)
-//                            new  () (explicit parenthesis)
-//                            $x (scope escape)
+//      lowest  ( 15)  = **= *= /= %= += -= <<= >>= >>>= &= ^= |=
+//              ( 14)  ?: (conditional expression and elvis)
+//              ( 13)  ||
+//              ( 12)  &&
+//              ( 11)  |
+//              ( 10)  ^
+//              (  9)  &
+//              (8.5)  =~ ==~
+//              (  8)  == != <=> === !==
+//              (  7)  < <= > >= instanceof as in
+//              (  6)  << >> .. ..<
+//              (  5)  +(binary) -(binary)
+//              (  4)  * / %
+//              (  3)  **(power)
+//              (  2)  ++(pre) --(pre) +(unary) -(unary)
+//              (  1)  ~  ! $ (type) ++(post) --(post)
+//                     . ?. *. (dot -- identifier qualification)
+//                     []   () (method call)  {} (closableBlock)  [] (list/map)
+//                     new  () (explicit parenthesis)
+//                     $x (scope escape)
 //
 // the last two are not usually on a precedence chart; I put them in
 // to point out that new has a higher precedence than '.', so you
@@ -2221,7 +2222,7 @@ commandArgument
 //
 // Note that the above precedence levels map to the rules below...
 // Once you have a precedence chart, writing the appropriate rules as below
-//   is usually very straightfoward
+// is usually very straightforward
 
 
 // the mother of all expressions
@@ -2378,10 +2379,10 @@ namePart  {Token first = LT(1);}
             // Definition:  a.{foo} === {with(a) {foo}}
             // May cover some path expression use-cases previously handled by dynamic scoping (closure delegates).
 
-                                                                    // lets allow common keywords as property names
+            // let's allow common keywords as property names
         |   keywordPropertyNames
 
-/* lets allow some common keywords for properties like 'in', 'class', 'def' etc
+/* let's allow some common keywords for properties like 'in', 'class', 'def' etc
  * TODO: Reinstate this logic if we change or remove keywordPropertyNames.
  * See also LITERAL_in logic in the lexer.
         // Recover with a good diagnostic from a common error:
