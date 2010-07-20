@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,7 +56,7 @@ import java.io.Writer;
  *
  * @version $Revision$
  */
-public abstract class Closure extends GroovyObjectSupport implements Cloneable, Runnable, Serializable  {
+public abstract class Closure<V> extends GroovyObjectSupport implements Cloneable, Runnable, GroovyCallable<V>, Serializable {
 
     /**
      * With this resolveStrategy set the closure will attempt to resolve property references to the
@@ -151,7 +151,7 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
         } else if ("owner".equals(property)) {
             return getOwner();
         } else if ("maximumNumberOfParameters".equals(property)) {
-            return Integer.valueOf(getMaximumNumberOfParameters());
+            return getMaximumNumberOfParameters();
         } else if ("parameterTypes".equals(property)) {
             return getParameterTypes();
         } else if ("metaClass".equals(property)) {
@@ -159,7 +159,7 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
         } else if ("class".equals(property)) {
             return getClass();
         } else if ("directive".equals(property)) {
-            return Integer.valueOf(getDirective());
+            return getDirective();
         } else {
             switch(resolveStrategy) {
                 case DELEGATE_FIRST:
@@ -266,26 +266,27 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
      *
      * @return the value if applicable or null if there is no return statement in the closure
      */
-    public Object call() {
+    public V call() {
         final Object[] NOARGS = EMPTY_OBJECT_ARRAY;
         return call(NOARGS);
     }
-    
-    public Object call(Object[] args) {
+
+    @SuppressWarnings("unchecked")
+    public V call(Object[] args) {
         try {
-            return getMetaClass().invokeMethod(this,"doCall",args);
+            return (V) getMetaClass().invokeMethod(this,"doCall",args);
         } catch (Exception e) {
-            return throwRuntimeException(e);
+            return (V) throwRuntimeException(e);
         }
     }
-    
+
     /**
      * Invokes the closure, returning any value if applicable.
      *
      * @param arguments could be a single value or a List of values
      * @return the value if applicable or null if there is no return statement in the closure
      */
-    public Object call(final Object arguments) {
+    public V call(final Object arguments) {
         return call(new Object[]{arguments});
     }
     
