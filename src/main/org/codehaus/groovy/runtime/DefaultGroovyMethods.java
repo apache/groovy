@@ -1982,7 +1982,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure the closure used for mapping, which has an item from self as the parameter and
      *                should return a Map.Entry, a Map or a two-element list containing the resulting key and value
      * @return a Map of the transformed entries
-     * @see #collect(Collection, Map, Closure)
+     * @see #collectEntries(Collection, Map, Closure)
      * @since 1.8.0
      */
     public static <K, V> Map<K, V> collectEntries(Collection self, Closure closure) {
