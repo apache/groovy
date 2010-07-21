@@ -12990,6 +12990,21 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Traverse through the bytes of this File, bufferLen bytes at a time.
+     *
+     * @param self      a File
+     * @param bufferLen the length of the buffer to use.
+     * @param closure   a 2 parameter closure which is passed the byte[] and a number of bytes successfully read.
+     * @throws IOException if an IOException occurs.
+     * @see #eachByte(java.io.InputStream, int, groovy.lang.Closure)
+     * @since 1.8
+     */
+    public static void eachByte(File self, int bufferLen, Closure closure) throws IOException {
+        BufferedInputStream is = newInputStream(self);
+        eachByte(is, bufferLen, closure);
+    }
+
+    /**
      * Traverse through each byte of this Byte array. Alias for each.
      *
      * @param self    a Byte array
@@ -13042,6 +13057,32 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Traverse through each the specified stream reading bytes into a buffer
+     * and calling the 2 parameter closure with this buffer and the number of bytes.
+     *
+     * @param is        stream to iterate over, closed after the method call.
+     * @param bufferLen the length of the buffer to use.
+     * @param closure   a 2 parameter closure which is passed the byte[] and a number of bytes successfully read.
+     * @throws IOException if an IOException occurs.
+     * @since 1.7.4
+     */
+    public static void eachByte(InputStream is, int bufferLen, Closure closure) throws IOException {
+        byte[] buffer = new byte[ bufferLen ] ;
+        int bytesRead = 0 ;
+        try {
+            while ( ( bytesRead = is.read( buffer, 0, bufferLen ) ) > 0 ) {
+                closure.call( new Object[]{ buffer, bytesRead } ) ;
+            }
+
+            InputStream temp = is;
+            is = null;
+            temp.close();
+        } finally {
+            closeWithWarning(is);
+        }
+    }
+	
+    /**
      * Reads the InputStream from this URL, passing each byte to the given
      * closure.  The URL stream will be closed before this method returns.
      *
@@ -13054,6 +13095,22 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static void eachByte(URL url, Closure closure) throws IOException {
         InputStream is = url.openConnection().getInputStream();
         eachByte(is, closure);
+    }
+
+    /**
+     * Reads the InputStream from this URL, passing a byte[] and a number of bytes
+     * to the given closure.  The URL stream will be closed before this method returns.
+     *
+     * @param url       url to iterate over
+     * @param bufferLen the length of the buffer to use.
+     * @param closure   a 2 parameter closure which is passed the byte[] and a number of bytes successfully read.
+     * @throws IOException if an IOException occurs.
+     * @see #eachByte(java.io.InputStream, int, groovy.lang.Closure)
+     * @since 1.7.4
+     */
+    public static void eachByte(URL url, int bufferLen, Closure closure) throws IOException {
+        InputStream is = url.openConnection().getInputStream();
+        eachByte(is, bufferLen, closure);
     }
 
     /**
