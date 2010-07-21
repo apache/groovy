@@ -6294,6 +6294,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Create a Map composed of the intersection of both maps.
      * Any entries that exist in both maps are added to the resultant map.
      * <pre class="groovyTestCase">assert [4:4,5:5] == [1:1,2:2,3:3,4:4,5:5].intersect([4:4,5:5,6:6,7:7,8:8])</pre>
+     * <pre class="groovyTestCase">assert [1: 1, 2: 2, 3: 3, 4: 4].intersect( [1: 1.0, 2: 2, 5: 5] ) == [1:1, 2:2]</pre>
      *
      * @param left     a map
      * @param right    a map
