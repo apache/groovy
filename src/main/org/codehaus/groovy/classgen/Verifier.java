@@ -942,23 +942,22 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             addPropertyMethod(method);
         }
     }
-    
-    private void collectSuperInterfaceMethods(ClassNode cn, Map allInterfaceMethods) {
-    	List cnInterfaces = Arrays.asList(cn.getInterfaces());
-    	ClassNode sn = cn.getSuperClass(); 
-    	while(!sn.equals(ClassHelper.OBJECT_TYPE)) {
+
+    private void collectSuperInterfaceMethods(ClassNode cn, Map<String, MethodNode> allInterfaceMethods) {
+        List cnInterfaces = Arrays.asList(cn.getInterfaces());
+        ClassNode sn = cn.getSuperClass();
+        while (sn != null && !sn.equals(ClassHelper.OBJECT_TYPE)) {
             ClassNode[] interfaces = sn.getInterfaces();
-            for (int i = 0; i < interfaces.length; i++) {
-                ClassNode iface = interfaces[i];
-                if(!cnInterfaces.contains(iface)) {
-                    Map ifaceMethodsMap = iface.getDeclaredMethodsMap();
+            for (ClassNode iface : interfaces) {
+                if (!cnInterfaces.contains(iface)) {
+                    Map<String, MethodNode> ifaceMethodsMap = iface.getDeclaredMethodsMap();
                     allInterfaceMethods.putAll(ifaceMethodsMap);
                 }
             }
             sn = sn.getSuperClass();
-    	}
+        }
     }
-    
+
     private void addCovariantMethods(ClassNode classNode, List declaredMethods, Map abstractMethods, Map methodsToAdd, Map oldGenericsSpec) {
         ClassNode sn = classNode.getUnresolvedSuperClass(false);
         
