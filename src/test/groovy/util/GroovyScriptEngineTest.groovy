@@ -212,16 +212,52 @@ class GroovyScriptEngineTest extends GroovyTestCase {
         println "testGSELoadingAScriptThatHasMultipleClasses - Run 2"
         gse.run("Groovy4234Helper.groovy", new Binding())
     }
-    
-	/*
-	 * The script passes the className of the class it's supposed to
-	 * instantiate to this method, expecting a newly instantiated object
-	 * in return.  The reason this is not done in the script is that
-	 * we want to ensure that no unforeseen problems occur if 
-	 * the instantiation is not actually done inside the script,
-	 * since real-world usages will likely require delegating that
-	 * job.
-	 */
+
+    // GROOVY-2811 and GROOVY-4286
+    void testReloadingInterval() {
+        def f = File.createTempFile("gse", ".groovy", new File("./target"))
+        try {
+            def scriptName = f.name
+
+            def gse = new GroovyScriptEngine(f.parentFile.name)
+            gse.config.minimumRecompilationInterval = 500
+
+            def binding = new Binding([:])
+
+            f << "1"
+            sleep 200
+            // first time, the script is compiled and cached
+            assert gse.run(scriptName, binding) == 1
+
+            f.delete()
+            f << "2"
+            sleep 1000
+            // the file was updated, and we waited for more than the minRecompilationInterval
+            assert gse.run(scriptName, binding) == 2
+
+            f.delete()
+            f << "3"
+            sleep 100
+            // still the old result, as we didn't wait more than the minRecompilationInterval
+            assert gse.run(scriptName, binding) == 2
+
+            sleep 1000
+            // we've waited enough, so we get the new output
+            assert gse.run(scriptName, binding) == 3
+        } finally {
+            f.delete()
+        }
+    }
+
+    /*
+      * The script passes the className of the class it's supposed to
+      * instantiate to this method, expecting a newly instantiated object
+      * in return.  The reason this is not done in the script is that
+      * we want to ensure that no unforeseen problems occur if
+      * the instantiation is not actually done inside the script,
+      * since real-world usages will likely require delegating that
+      * job.
+      */
 	public Object instantiate(String className, ClassLoader classLoader){
 		Class clazz = null;
 		try {

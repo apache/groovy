@@ -180,18 +180,18 @@ public class GroovyScriptEngine implements ResourceConnector {
             
             StringSetMap cache = localCache.get();
             cache.makeTransitiveHull();
-            long time = System.currentTimeMillis();
+            long now = System.currentTimeMillis();
             Set<String> entryNames = new HashSet<String>();
-            for (Map.Entry<String,Set<String>> entry: cache.entrySet()) {
+            for (Map.Entry<String, Set<String>> entry: cache.entrySet()) {
                 String className = entry.getKey();
                 Class clazz = getClassCacheEntry(className);
-                if (clazz==null) continue;
-                
+                if (clazz == null) continue;
+
                 String entryName = getPath(clazz);
                 if(entryNames.contains(entryName)) continue;
                 entryNames.add(entryName);
-                Set<String> value = convertToPaths(entry.getValue()); 
-                ScriptCacheEntry cacheEntry = new ScriptCacheEntry(clazz,time,value);
+                Set<String> value = convertToPaths(entry.getValue());
+                ScriptCacheEntry cacheEntry = new ScriptCacheEntry(clazz, now, value);
                 scriptCache.put(entryName,cacheEntry);
             }
             cache.clear();
@@ -211,7 +211,7 @@ public class GroovyScriptEngine implements ResourceConnector {
             Set<String> ret = new HashSet<String>();
             for (String className : orig) {
                 Class clazz = getClassCacheEntry(className);
-                if (clazz==null) continue;
+                if (clazz == null) continue;
                 ret.add(getPath(clazz));
             }
             return ret;
@@ -445,7 +445,7 @@ public class GroovyScriptEngine implements ResourceConnector {
         String path = conn.getURL().getPath();
         ScriptCacheEntry entry = scriptCache.get(path);
         Class clazz = null;
-        if (entry != null) clazz=entry.scriptClass;
+        if (entry != null) clazz = entry.scriptClass;
         try {
             if (isSourceNewer(entry)) {
                 try {
@@ -524,20 +524,20 @@ public class GroovyScriptEngine implements ResourceConnector {
 
     protected boolean isSourceNewer(ScriptCacheEntry entry) throws ResourceException  {
         if (entry == null) return true;
-        long time = System.currentTimeMillis();
-        
-        for (String scriptName:entry.dependencies) {
+        long now = System.currentTimeMillis();
+
+        for (String scriptName: entry.dependencies) {
             ScriptCacheEntry depEntry = scriptCache.get(scriptName);
-            long entryChangeTime = depEntry.lastModified + config.getMinimumRecompilationInterval();
-            if (entryChangeTime > time) continue;
+            long nextPossibleRecompilationTime = depEntry.lastModified + config.getMinimumRecompilationInterval();
+            if (nextPossibleRecompilationTime > now) continue;
 
             URLConnection conn = rc.getResourceConnection(scriptName);
             long lastMod = conn.getLastModified();
             // getResourceConnection() opening the inputstream, let's ensure all streams are closed
             forceClose(conn);
 
-            if (entryChangeTime > lastMod) {
-                ScriptCacheEntry newEntry = new ScriptCacheEntry(depEntry.scriptClass, time, depEntry.dependencies);
+            if (nextPossibleRecompilationTime < lastMod) {
+                ScriptCacheEntry newEntry = new ScriptCacheEntry(depEntry.scriptClass, lastMod, depEntry.dependencies);
                 scriptCache.put(scriptName, newEntry);
                 continue;
             }
