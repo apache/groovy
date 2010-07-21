@@ -36,6 +36,26 @@ class GroovyTruthTest extends GroovyTestCase {
         testFalse new Character((char) 0)
     }
 
+    void testPrimitiveArrayTruth() {
+        testTrue([1] as byte[])
+        testTrue([1] as short[])
+        testTrue([1] as int[])
+        testTrue([1] as long[])
+        testTrue([1] as float[])
+        testTrue([1] as double[])
+        testTrue([true] as boolean[])
+        testTrue([1] as char[])
+
+        testFalse([] as byte[])
+        testFalse([] as short[])
+        testFalse([] as int[])
+        testFalse([] as long[])
+        testFalse([] as float[])
+        testFalse([] as double[])
+        testFalse([] as boolean[])
+        testFalse([] as char[])
+    }
+
     void testIteratorTruth() {
         testFalse([].iterator())
         testTrue([1].iterator())

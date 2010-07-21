@@ -5591,6 +5591,110 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Coerces a byte array to a boolean value.
+     * A byte array is false if the array is of length 0,
+     * and true otherwise.
+     *
+     * @param array an array
+     * @return the array's boolean value
+     * @since 1.7.4
+     */
+    public static boolean asBoolean(byte[] array) {
+        return array.length > 0;
+    }
+
+    /**
+     * Coerces a short array to a boolean value.
+     * A short array is false if the array is of length 0,
+     * and true otherwise.
+     *
+     * @param array an array
+     * @return the array's boolean value
+     * @since 1.7.4
+     */
+    public static boolean asBoolean(short[] array) {
+        return array.length > 0;
+    }
+
+    /**
+     * Coerces an int array to a boolean value.
+     * An int array is false if the array is of length 0,
+     * and true otherwise.
+     *
+     * @param array an array
+     * @return the array's boolean value
+     * @since 1.7.4
+     */
+    public static boolean asBoolean(int[] array) {
+        return array.length > 0;
+    }
+
+    /**
+     * Coerces a long array to a boolean value.
+     * A long array is false if the array is of length 0,
+     * and true otherwise.
+     *
+     * @param array an array
+     * @return the array's boolean value
+     * @since 1.7.4
+     */
+    public static boolean asBoolean(long[] array) {
+        return array.length > 0;
+    }
+
+    /**
+     * Coerces a float array to a boolean value.
+     * A float array is false if the array is of length 0,
+     * and true otherwise.
+     *
+     * @param array an array
+     * @return the array's boolean value
+     * @since 1.7.4
+     */
+    public static boolean asBoolean(float[] array) {
+        return array.length > 0;
+    }
+
+    /**
+     * Coerces a double array to a boolean value.
+     * A double array is false if the array is of length 0,
+     * and true otherwise.
+     *
+     * @param array an array
+     * @return the array's boolean value
+     * @since 1.7.4
+     */
+    public static boolean asBoolean(double[] array) {
+        return array.length > 0;
+    }
+
+    /**
+     * Coerces a boolean array to a boolean value.
+     * A boolean array is false if the array is of length 0,
+     * and true otherwise.
+     *
+     * @param array an array
+     * @return the array's boolean value
+     * @since 1.7.4
+     */
+    public static boolean asBoolean(boolean[] array) {
+        return array.length > 0;
+    }
+
+    /**
+     * Coerces a char array to a boolean value.
+     * A char array is false if the array is of length 0,
+     * and true otherwise.
+     *
+     * @param array an array
+     * @return the array's boolean value
+     * @since 1.7.4
+     */
+    public static boolean asBoolean(char[] array) {
+        return array.length > 0;
+    }
+
+    /**
      * Coerce a character to a boolean value.
      * A character is coerced to false if it's character value is equal to 0,
      * and to true otherwise.
