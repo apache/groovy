@@ -601,6 +601,17 @@ public class DefaultTypeTransformation {
         if (left instanceof List && right instanceof List) {
             return DefaultGroovyMethods.equals((List) left, (List) right);
         }
+        if (left instanceof Map.Entry && right instanceof Map.Entry) {
+            Object k1 = ((Map.Entry)left).getKey();
+            Object k2 = ((Map.Entry)right).getKey();
+            if (k1 == k2 || (k1 != null && k1.equals(k2))) {
+                Object v1 = ((Map.Entry)left).getValue();
+                Object v2 = ((Map.Entry)right).getValue();
+                if (v1 == v2 || (v1 != null && DefaultTypeTransformation.compareEqual(v1, v2)))
+                    return true;
+            }
+            return false;
+        }
         return ((Boolean) InvokerHelper.invokeMethod(left, "equals", right)).booleanValue();
     }
 

@@ -5993,6 +5993,34 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Create a Map composed of the intersection of both maps.
+     * Any entries that exist in both maps are added to the resultant map.
+     * <pre class="groovyTestCase">assert [4:4,5:5] == [1:1,2:2,3:3,4:4,5:5].intersect([4:4,5:5,6:6,7:7,8:8])</pre>
+     *
+     * @param left     a map
+     * @param right    a map
+     * @return a Map as an intersection of both maps
+     * @since 1.7.4
+     */
+    public static <K,V> Map<K,V> intersect(Map<K,V> left, Map<K,V> right) {
+        final Map<K,V> ansMap = createSimilarMap(left);
+        if (right != null && right.size() > 0) {
+            final Iterator<Map.Entry<K,V>> it1 = left.entrySet().iterator();
+            while (it1.hasNext()) {
+                final Map.Entry<K,V> e1 = it1.next();
+                final Iterator<Map.Entry<K,V>> it2 = right.entrySet().iterator();
+                while (it2.hasNext()) {
+                    final Map.Entry<K,V> e2 = it2.next();
+                    if (DefaultTypeTransformation.compareEqual(e1, e2)) {
+                        ansMap.put(e1.getKey(), e1.getValue());
+                    }
+                }
+            }
+        }
+        return ansMap;
+    }
+
+    /**
      * Returns <code>true</code> if the intersection of two collections is empty.
      * <pre class="groovyTestCase">assert [1,2,3].disjoint([3,4,5]) == false</pre>
      * <pre class="groovyTestCase">assert [1,2].disjoint([3,4]) == true</pre>
@@ -6382,6 +6410,34 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <T> T[] minus(T[] self, Object operand) {
         return (T[]) minus(toList(self), operand).toArray();
+    }
+
+    /**
+     * Create a Map composed of the entries of the first map minus the
+     * entries of the given map.
+     *
+     * @param self     a map object
+     * @param operands the entries to remove from the map
+     * @return the resulting map
+     * @since 1.7.4
+     */
+    public static <K,V> Map<K,V> minus(Map<K,V> self, Map<K,V> operands) {
+        final Map<K,V> ansMap = createSimilarMap(self);
+        ansMap.putAll(self);
+        if (operands != null && operands.size() > 0) {
+            final Iterator<Map.Entry<K,V>> it1 = self.entrySet().iterator();
+            while (it1.hasNext()) {
+                final Map.Entry<K,V> e1 = it1.next();
+                final Iterator<Map.Entry<K,V>> it2 = operands.entrySet().iterator();
+                while (it2.hasNext()) {
+                    final Map.Entry<K,V> e2 = it2.next();
+                    if (DefaultTypeTransformation.compareEqual(e1, e2)) {
+                        ansMap.remove(e1.getKey());
+                    }
+                }
+            }
+        }
+        return ansMap;
     }
 
     /**
