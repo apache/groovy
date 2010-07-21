@@ -142,8 +142,8 @@ public class GroovyScriptEngine implements ResourceConnector {
             // recollected later during compilation
             for (String depSourcePath : cache.get(".")) {
                 try {
-                    cu.addSource(new URL("file","",depSourcePath));
-                } catch (MalformedURLException e) {}
+                    cu.addSource(getResourceConnection(depSourcePath).getURL());
+                } catch (ResourceException e) {}
             }
             
             // remove all old entries including the "." entry
@@ -532,13 +532,9 @@ public class GroovyScriptEngine implements ResourceConnector {
             if (entryChangeTime > time) continue;
 
             URLConnection conn = rc.getResourceConnection(scriptName);
+            long lastMod = conn.getLastModified();
             // getResourceConnection() opening the inputstream, let's ensure all streams are closed
             forceClose(conn);
-
-            URL source = conn.getURL();
-            String path = source.getPath().replace('/', File.separatorChar).replace('|', ':');
-            File file = new File(path);
-            long lastMod = file.lastModified();
 
             if (entryChangeTime > lastMod) {
                 ScriptCacheEntry newEntry = new ScriptCacheEntry(depEntry.scriptClass, time, depEntry.dependencies);
