@@ -2441,6 +2441,7 @@ keywordPropertyNames
         | "static"
         | "strictfp"
         | "switch"
+        | "super"
         | "synchronized"
         | "threadsafe"
         | "throw"
