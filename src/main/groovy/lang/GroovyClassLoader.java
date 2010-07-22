@@ -73,24 +73,11 @@ public class GroovyClassLoader extends URLClassLoader {
         public URL loadGroovySource(final String filename) throws MalformedURLException {
             return AccessController.doPrivileged(new PrivilegedAction<URL>() {
                 public URL run() {
-                    for (String extension : getFileExtensionsForGlobalTransforms()) {
-                        String fname = filename.replace('.', '/') + extension.substring(1);
-                        try {
-                            URL ret = getResource(fname);
-                            if (!isFile(ret) || getFileForUrl(ret, fname) == null)
-                                continue;
-                            return ret;
-                        }
-                        catch (Throwable t) { //
-                        }
-                    }
-                    return null;
+                    return getSourceFile(filename);
                 }
             });
         }
     };
-    private Set<String> fileExtensions;
-    private static final String FILES = "#files:";
 
     /**
      * creates a GroovyClassLoader using the current Thread's context
@@ -949,44 +936,5 @@ public class GroovyClassLoader extends URLClassLoader {
         synchronized (sourceCache) {
             sourceCache.clear();
         }
-    }
-
-    public Set<String> getFileExtensionsForGlobalTransforms() {
-        if (fileExtensions != null)
-            return fileExtensions;
-
-        Set<String> res = new LinkedHashSet<String>();
-        res.add("*.groovy");
-        try {
-            Enumeration<URL> globalServices = getResources("META-INF/services/org.codehaus.groovy.transform.ASTTransformation");
-            while (globalServices.hasMoreElements()) {
-                URL service = globalServices.nextElement();
-                String line;
-                BufferedReader svcIn = new BufferedReader(new InputStreamReader(service.openStream()));
-                try {
-                    line = svcIn.readLine();
-                } catch (IOException ioe) {
-                    continue;
-                }
-                while (line != null) {
-                    if (line.startsWith(FILES)) {
-                        line = line.substring(FILES.length());
-                        line = line.trim();
-                        final String[] exts = line.split(",");
-                        for (String ext : exts) {
-                            res.add("*." + ext.trim().toLowerCase());
-                        }
-                    }
-                    try {
-                        line = svcIn.readLine();
-                    } catch (IOException ioe) {
-                        break;
-                    }
-                }
-            }
-        } catch (IOException e) { //
-        }
-        fileExtensions = res;
-        return fileExtensions;
     }
 }
