@@ -160,6 +160,44 @@ public abstract class Script extends GroovyObjectSupport {
     }
 
     /**
+     * Prints a formatted string using the specified format string and argument.
+     *
+     * @param format the format to follow
+     * @param value the value to be formatted
+     */
+    public void printf(String format, Object value) {
+        Object object;
+
+        try {
+            object = getProperty("out");
+        } catch (MissingPropertyException e) {
+            DefaultGroovyMethods.printf(System.out, format, value);
+            return;
+        }
+
+        InvokerHelper.invokeMethod(object, "printf", new Object[] { format, value });
+    }
+
+    /**
+     * Prints a formatted string using the specified format string and arguments.
+     *
+     * @param format the format to follow
+     * @param values an array of values to be formatted
+     */
+    public void printf(String format, Object[] values) {
+        Object object;
+
+        try {
+            object = getProperty("out");
+        } catch (MissingPropertyException e) {
+            DefaultGroovyMethods.printf(System.out, format, values);
+            return;
+        }
+
+        InvokerHelper.invokeMethod(object, "printf", new Object[] { format, values });
+    }
+
+    /**
      * A helper method to allow the dynamic evaluation of groovy expressions using this
      * scripts binding as the variable scope
      *

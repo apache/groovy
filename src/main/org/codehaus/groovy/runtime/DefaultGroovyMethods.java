@@ -661,12 +661,22 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static void printf(Object self, String format, Object arg) {
         if (self instanceof PrintStream)
             printf((PrintStream) self, format, arg);
+        else if (self instanceof Writer)
+            printf((Writer) self, format, arg);
         else
             printf(System.out, format, arg);
     }
 
     private static void printf(PrintStream self, String format, Object arg) {
         self.print(sprintf(self, format, arg));
+    }
+
+    private static void printf(Writer self, String format, Object arg) {
+        try {
+            self.write(sprintf(self, format, arg));
+        } catch (IOException e) {
+            printf(System.out, format, arg);
+        }
     }
 
     /**
