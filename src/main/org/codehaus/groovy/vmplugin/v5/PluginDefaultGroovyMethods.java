@@ -94,8 +94,10 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the StringBuilder on which this operation was invoked
      */
     public static StringBuilder leftShift(StringBuilder self, Object value) {
-        self.append(value);
-        return self;
+        if (value instanceof CharSequence)
+            return self.append((CharSequence)value);
+        else
+            return self.append(value);
     }
 
     /**
