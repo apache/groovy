@@ -1,6 +1,8 @@
 package groovy
 
-class KeywordsInPropertyNamesTest extends GroovyTestCase {
+import gls.CompilableTestSupport
+
+class KeywordsInPropertyNamesTest extends CompilableTestSupport {
 
     void testKeywords() {
         def value = "returnValue"
@@ -117,6 +119,12 @@ class KeywordsInPropertyNamesTest extends GroovyTestCase {
         assert map.while == 'u were sleeping'
     }
 
+    void testCantUseSuperAsPropertyName() {
+        shouldNotCompile """
+            def m = [super: "cool"]
+            assert m.super == "cool"
+        """.stripIndent()
+    }
 }
 
 class StaticAndDefaultClass {}

@@ -2433,7 +2433,6 @@ keywordPropertyNames
         | "package"
         | "return"
         | "switch"
-        | "super"
         | "throw"
         | "throws"
         | "true"
