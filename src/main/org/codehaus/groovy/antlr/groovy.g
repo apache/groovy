@@ -2400,18 +2400,17 @@ namePart  {Token first = LT(1);}
         // (No, x.&@y is not needed; just say x.&y as Slot or some such.)
     ;
 
-/** Allowed keywords after dot (as a member name) and before colon (as a label).
- *  TODO: What's the rationale for these?
+/* Allowed keywords after dot (as a member name) and before colon (as a label).
  */
 keywordPropertyNames
     :   (
-          "abstract"
-        | "as"
+          "as"
         | "assert"
         | "break"
         | "case"
         | "catch"
         | "class"
+        | "const"
         | "continue"
         | "def"
         | "default"
@@ -2420,7 +2419,6 @@ keywordPropertyNames
         | "enum"
         | "extends"
         | "false"
-        | "final"
         | "finally"
         | "for"
         | "goto"
@@ -2430,28 +2428,19 @@ keywordPropertyNames
         | "in"
         | "instanceof"
         | "interface"
-        | "native"
         | "new"
         | "null"
         | "package"
-        | "private"
-        | "protected"
-        | "public"
         | "return"
-        | "static"
-        | "strictfp"
         | "switch"
         | "super"
-        | "synchronized"
-        | "threadsafe"
         | "throw"
         | "throws"
-        | "transient"
         | "true"
         | "try"
-        | "volatile"
         | "while"
-        |   builtInType
+        | modifier
+        | builtInType
         )
         { #keywordPropertyNames.setType(IDENT); }
     ;
