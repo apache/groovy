@@ -618,7 +618,7 @@
             <version>1.2.0</version>
             <scope>test</scope>
         </dependency>
-        <!-- used for the JavaDoc generator script -->
+        <!-- used for the stub generator tests -->
         <dependency>
             <groupId>com.thoughtworks.qdox</groupId>
             <artifactId>qdox</artifactId>
