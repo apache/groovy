@@ -2331,8 +2331,8 @@ pathElement[AST prefix] {Token operator = LT(1);}
         // since the bracket operator is transformed into a method call.
         ipa:indexPropertyArgs[prefix]!
         {   #pathElement = #ipa;  }
-    |
-        DOT! nls! thisPart:"this"!
+/*    |
+        (DOT nls "this") => DOT! nls! thisPart:"this"!
         { #pathElement = #(create(operator.getType(),operator.getText(),prefix,LT(1)),prefix,thisPart); }
 /*NYI*
     |   DOT^ nls! "this"
@@ -2381,26 +2381,14 @@ namePart  {Token first = LT(1);}
 
             // let's allow common keywords as property names
         |   keywordPropertyNames
-
-/* let's allow some common keywords for properties like 'in', 'class', 'def' etc
- * TODO: Reinstate this logic if we change or remove keywordPropertyNames.
- * See also LITERAL_in logic in the lexer.
-        // Recover with a good diagnostic from a common error:
-        |   "in"  // poster child; the lexer makes all keywords after dot look like "in"
-            {   String kwd = LT(1).getText();
-                require(false,
-                    "illegal keyword after dot in x."+kwd,
-                    "put the keyword in quotes, as in x.'"+kwd+"'");
-                // This helps the user recover from ruined Java identifiers, as in System.'in'.
-                // DECIDE: Shall we just define foo.in to DTRT automagically, or do we want the syntax check?
-            }
-*/
         )
 
         // (No, x.&@y is not needed; just say x.&y as Slot or some such.)
     ;
 
-/* Allowed keywords after dot (as a member name) and before colon (as a label).
+/*
+ * Allowed keywords after dot (as a member name) and before colon (as a label).
+ * Includes all Java keywords plus "in" and "as".
  */
 keywordPropertyNames
     :   (
@@ -2432,7 +2420,9 @@ keywordPropertyNames
         | "null"
         | "package"
         | "return"
+        | "super"
         | "switch"
+        | "this"
         | "throw"
         | "throws"
         | "true"

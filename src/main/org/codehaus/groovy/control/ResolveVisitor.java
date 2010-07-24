@@ -917,45 +917,33 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         if (isTopLevelProperty) ret = correctClassClassChain(pe);
         return ret;
     }
-    
-    
+
     private void checkThisAndSuperAsPropertyAccess(PropertyExpression expression) {
         if (expression.isImplicitThis()) return;
         String prop = expression.getPropertyAsString();
-        if (prop==null) return;
+        if (prop == null) return;
         if (!prop.equals("this") && !prop.equals("super")) return;
-        
-        //TODO: add support for super
-        if (prop.equals("super")) {
-            addError("Inner classes referencing outer classes using super is not supported yet.",expression);
-        }
-        
-        if (!(expression.getObjectExpression() instanceof ClassExpression)) {
-            addError("The usage of '.this' or '.super' requires an explicit class in front.",expression);
-            return;
-        }
-            
-        if (!(currentClass instanceof InnerClassNode)) {
-            addError("The usage of '.this' and '.super' is only allowed in a inner class",expression);
-            return;
-        }
 
-        
-        ClassNode type  = expression.getObjectExpression().getType();
-        ClassNode iterType = currentClass;
-        while (iterType!=null) {
-            if (iterType.equals(type)) break;
-            iterType = iterType.getOuterClass();
+        if (expression.getObjectExpression() instanceof ClassExpression) {
+            if (!(currentClass instanceof InnerClassNode)) {
+                addError("The usage of 'Class.this' and 'Class.super' is only allowed in nested/inner classes.", expression);
+                return;
+            }
+            ClassNode type = expression.getObjectExpression().getType();
+            ClassNode iterType = currentClass;
+            while (iterType != null) {
+                if (iterType.equals(type)) break;
+                iterType = iterType.getOuterClass();
+            }
+            if (iterType == null) {
+                addError("The class '" + type.getName() + "' needs to be an outer class of '" +
+                        currentClass.getName() + "' when using '.this' or '.super'.", expression);
+            }
+            if ((currentClass.getModifiers() & Opcodes.ACC_STATIC) == 0) return;
+            if (!currentScope.isInStaticContext()) return;
+            addError("The usage of 'Class.this' and 'Class.super' within static nested class '" +
+                    currentClass.getName() + "' is not allowed in a static context.", expression);
         }
-        if (iterType==null) {
-            addError("The class '"+type.getName()+"' needs to be an "+
-                     "outer class of '"+currentClass.getName()+"'.",expression);
-        }
-
-        
-        if ((currentClass.getModifiers() & Opcodes.ACC_STATIC)==0) return;
-        if (!currentScope.isInStaticContext()) return;
-        addError("The usage of '.this' and '.super' is only in nonstatic context",expression);
     }
 
     protected Expression transformVariableExpression(VariableExpression ve) {

@@ -1,8 +1,21 @@
+/*
+ * Copyright 2003-2010 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package groovy
 
-import gls.CompilableTestSupport
-
-class KeywordsInPropertyNamesTest extends CompilableTestSupport {
+class KeywordsInPropertyNamesTest extends GroovyTestCase {
 
     void testKeywords() {
         def value = "returnValue"
@@ -47,6 +60,7 @@ class KeywordsInPropertyNamesTest extends CompilableTestSupport {
                 (d): 'foo',
                 null: 'bar',
                 (null): 'baz',
+
                 as: 'shown',
                 assert: 'true',
                 break: 'free',
@@ -55,7 +69,7 @@ class KeywordsInPropertyNamesTest extends CompilableTestSupport {
                 class: 'action',
                 const: 'flux',
                 continue: 'on',
-                def: 'ault',
+                def: 'leppard',
                 default: 'loan',
                 do: 'nothing',
                 else: 'where',
@@ -66,24 +80,27 @@ class KeywordsInPropertyNamesTest extends CompilableTestSupport {
                 for: 'ever',
                 goto: 'jail',
                 if: 'then',
-                implements: '',
+                implements: 'interface',
                 import: 'tax',
                 in: 'trouble',
-                instanceof: 'kindof',
+                instanceof: 'abuse',
                 interface: 'with',
                 new: 'car',
                 package: 'wrapped',
                 return: 'home',
+                super: 'duper',
                 switch: 'off',
+                this: 'time',
                 throw: 'away',
-                throws: 'like a g...',
+                throws: 'up',
                 true: 'love',
                 try: 'again',
-                while: 'u were sleeping',
+                while: 'away',
         ]
         assert map[d] == 'foo'
         assert map.null == 'bar'
         assert map[null] == 'baz'
+
         assert map.as == 'shown'
         assert map.assert == 'true'
         assert map.break == 'free'
@@ -92,7 +109,7 @@ class KeywordsInPropertyNamesTest extends CompilableTestSupport {
         assert map.class == 'action'
         assert map.const == 'flux'
         assert map.continue == 'on'
-        assert map.def == 'ault'
+        assert map.def == 'leppard'
         assert map.default == 'loan'
         assert map.do == 'nothing'
         assert map.else == 'where'
@@ -103,27 +120,22 @@ class KeywordsInPropertyNamesTest extends CompilableTestSupport {
         assert map.for == 'ever'
         assert map.goto == 'jail'
         assert map.if == 'then'
-        assert map.implements == ''
+        assert map.implements == 'interface'
         assert map.import == 'tax'
         assert map.in == 'trouble'
-        assert map.instanceof == 'kindof'
+        assert map.instanceof == 'abuse'
         assert map.interface == 'with'
         assert map.new == 'car'
         assert map.package == 'wrapped'
         assert map.return == 'home'
+        assert map.super == 'duper'
         assert map.switch == 'off'
+        assert map.this == 'time'
         assert map.throw == 'away'
-        assert map.throws == 'like a g...'
+        assert map.throws == 'up'
         assert map.true == 'love'
         assert map.try == 'again'
-        assert map.while == 'u were sleeping'
-    }
-
-    void testCantUseSuperAsPropertyName() {
-        shouldNotCompile """
-            def m = [super: "cool"]
-            assert m.super == "cool"
-        """.stripIndent()
+        assert map.while == 'away'
     }
 }
 
