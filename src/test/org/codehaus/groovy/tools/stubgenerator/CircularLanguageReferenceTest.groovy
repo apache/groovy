@@ -31,7 +31,7 @@ class CircularLanguageReferenceTest extends BaseStubTest {
             assert methods['area'     ].signature == "public double area()"
             assert methods['Rectangle'].signature == "public Rectangle(double x, double y)"
             assert !annotations
-            assert interfaces.each { it in ['groovy.lang.GroovyObject', 'Shape'] }
+            assert interfaces.every { it in ['groovy.lang.GroovyObject', 'Shape'] }
             assert baseClass == 'java.lang.Object'
             assert imports == ['java.lang.*', 'java.io.*', 'java.net.*', 'java.util.*', 'groovy.lang.*', 'groovy.util.*']
         }
