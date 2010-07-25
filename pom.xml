@@ -635,10 +635,11 @@
             <scope>test</scope>
         </dependency>
         <!-- used for the stub generator tests -->
+        <!-- also used for JavaDoc generator tests: consider keeping both versions in sync -->
         <dependency>
             <groupId>com.thoughtworks.qdox</groupId>
             <artifactId>qdox</artifactId>
-            <version>1.9.2</version>
+            <version>1.12</version>
             <scope>test</scope>
         </dependency>
 

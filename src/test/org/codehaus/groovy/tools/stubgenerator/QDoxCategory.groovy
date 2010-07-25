@@ -27,7 +27,7 @@ class QDoxCategory {
 
     /**
      * Given <code>JavaClass[]</code> array,
-     * like provided by the <code>getClasses()</code> method (or <code>classes</code> property) in <code>BaseStubTest</code>,
+     * like provided by the <code>getClasses()</code> method (or <code>classes</code> property) in <code>StubTestCase</code>,
      * you can access a specific class by its fully qualified name, using the subscript notation:
      *
      * <pre><code>

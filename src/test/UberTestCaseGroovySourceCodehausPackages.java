@@ -26,7 +26,7 @@ import junit.framework.TestCase;
  * @version $Revision: 6546 $
  */
 public class UberTestCaseGroovySourceCodehausPackages extends TestCase {
-    private static final String EXCLUDES = "org/codehaus/**/vm6/*Test.groovy,**/BaseStubTest.groovy";
+    private static final String EXCLUDES = "org/codehaus/**/vm6/*Test.groovy";
     /**
      * Add all groovy tests from the codehaus subdirs
      * @return testsuite

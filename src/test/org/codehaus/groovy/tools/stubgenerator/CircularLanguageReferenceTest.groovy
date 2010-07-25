@@ -24,14 +24,14 @@ package org.codehaus.groovy.tools.stubgenerator
  *
  * @author Guillaume Laforge
  */
-class CircularLanguageReferenceTest extends BaseStubTest {
+class CircularLanguageReferenceTest extends StubTestCase {
 
     void verifyStubs() {
         classes['Rectangle'].with {
             assert methods['area'     ].signature == "public double area()"
             assert methods['Rectangle'].signature == "public Rectangle(double x, double y)"
             assert !annotations
-            assert interfaces.every { it in ['groovy.lang.GroovyObject', 'Shape'] }
+            assert interfaces.toSet() == ['groovy.lang.GroovyObject', 'Shape'] as Set
             assert baseClass == 'java.lang.Object'
             assert imports == ['java.lang.*', 'java.io.*', 'java.net.*', 'java.util.*', 'groovy.lang.*', 'groovy.util.*']
         }
