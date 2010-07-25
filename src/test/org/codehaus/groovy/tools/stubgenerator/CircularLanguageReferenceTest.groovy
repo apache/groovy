@@ -31,7 +31,7 @@ class CircularLanguageReferenceTest extends StubTestCase {
             assert methods['area'     ].signature == "public double area()"
             assert methods['Rectangle'].signature == "public Rectangle(double x, double y)"
             assert !annotations
-            assert interfaces.toSet() == ['groovy.lang.GroovyObject', 'Shape'] as Set
+            assert interfaces as Set == ['groovy.lang.GroovyObject', 'Shape'] as Set
             assert baseClass == 'java.lang.Object'
             assert imports == ['java.lang.*', 'java.io.*', 'java.net.*', 'java.util.*', 'groovy.lang.*', 'groovy.util.*']
         }
