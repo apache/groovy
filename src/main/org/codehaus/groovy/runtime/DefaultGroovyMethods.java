@@ -5437,6 +5437,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Sorts the Collection using the given comparator.  The elements are
      * sorted into a new list, and the existing collection is unchanged.
      * <pre class="groovyTestCase">assert ["hi","hey","hello"] == ["hello","hi","hey"].sort( { a, b -> a.length() <=> b.length() } as Comparator )</pre>
+     * <pre class="groovyTestCase">assert ["hello","Hey","hi"] == ["hello","hi","Hey"].sort(String.CASE_INSENSITIVE_ORDER)</pre>
      *
      * @param self       a collection to be sorted
      * @param comparator a Comparator used for the comparison
