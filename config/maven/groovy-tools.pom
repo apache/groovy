@@ -57,6 +57,7 @@
         </dependency>
 
         <!-- used for the JavaDoc generator script -->
+        <!-- also used for stub generator tests: consider keeping both versions in sync -->
         <dependency>
             <groupId>com.thoughtworks.qdox</groupId>
             <artifactId>qdox</artifactId>

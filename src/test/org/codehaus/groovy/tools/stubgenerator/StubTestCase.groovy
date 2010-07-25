@@ -27,31 +27,31 @@ import com.thoughtworks.qdox.model.JavaClass
  * Base class for all the stub generator test samples.
  * <br><br>
  *
- * If you want to create a new test, you have to create a class extending <code>BaseStubTest</code>.
+ * If you want to create a new test, you have to create a class extending <code>StubTestCase</code>.
  * Your subclass has to implement <code>void verifyStubs()</code>.
- * <br><br>
+ * <p/>
  *
  * All the sample Java and Groovy sources to be joint-compiled must be put in <code>src/test-resources/stubgenerator</code>,
  * under a directory whose name is the name of the subclass you created, with the first letter lowercase,
  * and the suffix Test removed.
- * <br><br>
+ * <p/>
  *
  * Example: for the test <code>CircularLanguageReferenceTest</code>,
  * you should put your resources in <code>src/test-resources/stubgenerator/circularLanguageReference</code>.
- * <br><br>
+ * <p/>
  *
  * From within the <code>verifyStubs()</code> method, you can make various assertions on the stubs.
- * QDox is used for parsing the Java sources (both the generated stub Java sources, as well as the orinal Java source,
+ * QDox is used for parsing the Java sources (both the generated stub Java sources, as well as the original Java source,
  * but not the Groovy sources).
  * The execution of the <code>verifyStubs()</code> method is done with the <code>QDoxCategory</code> applied,
  * which provides various useful shortcuts for quickly checking the structure of your stubs.
- * <br><br>
+ * <p/>
  *
  * Please have a look at the existing samples to see what kind of asserts can be done.
  *
  * @author Guillaume Laforge
  */
-abstract class BaseStubTest extends GroovyTestCase {
+abstract class StubTestCase extends GroovyTestCase {
 
     protected final File targetDir = createTempDirectory()
     protected final File stubDir   = createTempDirectory()
@@ -91,13 +91,13 @@ abstract class BaseStubTest extends GroovyTestCase {
         def nameWithoutTest = this.class.simpleName - 'Test'
         def folder = nameWithoutTest[0].toLowerCase() + nameWithoutTest[1..-1]
 
-        def testDirectory = new File(BaseStubTest.class.classLoader.getResource('.').toURI())
+        def testDirectory = new File(StubTestCase.class.classLoader.getResource('.').toURI())
         return new File(testDirectory, "../test-resources/stubgenerator/${folder}")
     }
 
     /**
      * Sole JUnit test method which will delegate to the <code>verifyStubs()</code> method
-     * in the subclasses of <code>BaseStubTest</code>.
+     * in the subclasses of <code>StubTestCase</code>.
      */
     void testRun() {
         // create a compiler configuration to define a place to store the stubs and compiled classes
@@ -134,7 +134,7 @@ abstract class BaseStubTest extends GroovyTestCase {
             fail "Compilation failed for stub generator test: ${path}"
         }
 
-        // instanciates QDox for parsing the Java stubs and Java sources
+        // instantiates QDox for parsing the Java stubs and Java sources
         qdox.addSourceTree path
         qdox.addSourceTree stubDir
 
