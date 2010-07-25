@@ -92,7 +92,7 @@ abstract class StubTestCase extends GroovyTestCase {
         def folder = nameWithoutTest[0].toLowerCase() + nameWithoutTest[1..-1]
 
         def testDirectory = new File(StubTestCase.class.classLoader.getResource('.').toURI())
-        return new File(testDirectory, "../test-resources/stubgenerator/${folder}")
+        return new File(testDirectory, "../../src/test-resources/stubgenerator/${folder}")
     }
 
     /**
