@@ -39,7 +39,7 @@ class QDoxCategory {
      * @return a <code>JavaClass</code>
      */
     static JavaClass getAt(JavaClass[] self, String className) {
-        def clazz = self.find { JavaClass jc -> jc.name == className }
+        def clazz = self.find { JavaClass jc -> jc.fullyQualifiedName == className }
         assert clazz, "No stub class found for name $className"
         return clazz
     }
