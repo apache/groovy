@@ -22,6 +22,7 @@ import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit
 
 import com.thoughtworks.qdox.JavaDocBuilder
 import com.thoughtworks.qdox.model.JavaClass
+import org.codehaus.groovy.control.CompilationFailedException
 
 /**
  * Base class for all the stub generator test samples.
@@ -56,8 +57,13 @@ abstract class StubTestCase extends GroovyTestCase {
     protected final File targetDir = createTempDirectory()
     protected final File stubDir   = createTempDirectory()
 
+    protected File sourceRootPath
+
     protected JavaDocBuilder qdox = new JavaDocBuilder()
 
+    protected CompilerConfiguration config = new CompilerConfiguration()
+
+    protected boolean debug = false;
 
     /**
      * Prepare the target and stub directories.
@@ -65,11 +71,13 @@ abstract class StubTestCase extends GroovyTestCase {
     protected void setUp() {
         // TODO: commented super.setUp() as it generates a stackoverflow, for some reason?!
         // super.setUp()
-        println """\
-            Stub generator test [${this.class.name}]
-              target directory: ${targetDir.absolutePath}
-                stub directory: ${stubDir.absolutePath}
-        """.stripIndent()
+        if (debug) {
+            println """\
+                Stub generator test [${this.class.name}]
+                  target directory: ${targetDir.absolutePath}
+                    stub directory: ${stubDir.absolutePath}
+            """.stripIndent()
+        }
         assert targetDir.exists()
         assert stubDir.exists()
     }
@@ -78,16 +86,32 @@ abstract class StubTestCase extends GroovyTestCase {
      * Delete the temporary directories.
      */
     protected void tearDown() {
-        println "Deleting temporary folders"
+        if (debug) println "Deleting temporary folders"
         targetDir.deleteDir()
         stubDir.deleteDir()
         super.tearDown()
     }
 
     /**
+     * Called before a test run, for initialization purpose.
+     * For instance, a subclass could override <code>init()</code>
+     * to set the <code>debug</code> flag to true,
+     * to see the content of the sources and stubs.
+     * <br><br>
+     * Add the following method to your test to enable printing of debug information
+     * and output of sources and stubs:
+     * <pre><code>
+     *     protected void init() {
+     *         debug = true
+     *     }
+     * </code></pre>
+     */
+    protected void init() {}
+
+    /**
      * @return the folder containing the sample Groovy and Java sources for the test
      */
-    private File sourcesRelativePath() {
+    protected File sourcesRootPath() {
         def nameWithoutTest = this.class.simpleName - 'Test'
         def folder = nameWithoutTest[0].toLowerCase() + nameWithoutTest[1..-1]
 
@@ -100,47 +124,105 @@ abstract class StubTestCase extends GroovyTestCase {
      * in the subclasses of <code>StubTestCase</code>.
      */
     void testRun() {
-        // create a compiler configuration to define a place to store the stubs and compiled classes
-        def config = new CompilerConfiguration()
-        config.with {
-            targetDirectory = targetDir
-            jointCompilationOptions = [stubDir: stubDir, keepStubs: true]
-        }
-        def loader = new GroovyClassLoader(this.class.classLoader)
+        init()
+        configure()
 
+        sourceRootPath = sourcesRootPath()
+        if (!sourceRootPath && !sourceRootPath.exists()) {
+            fail "Path doesn't exist: ${sourceRootPath}"
+        }
+
+        def sources = collectSources(sourceRootPath)
+
+        if (debug) {
+            println ">>> Sources to be compiled:"
+            sources.each { File sourceFile ->
+                println " -> " + sourceFile.name
+                println sourceFile.text
+            }
+        }
+
+        compile(sources)
+
+        // use QDox for parsing the Java stubs and Java sources
+        qdox.addSourceTree sourceRootPath
+        qdox.addSourceTree stubDir
+
+        if (debug) {
+            println ">>> Stubs generated"
+            stubDir.eachFileRecurse(FILES) { File stubFile ->
+                if (stubFile.name ==~ /.*(\.groovy|\.java)/) {
+                    println " -> " + stubFile.name
+                    println stubFile.text
+                }
+            }
+
+            println ">>> QDox canonical sources"
+            qdox.classes.each { JavaClass jc ->
+                println " -> " + jc.fullyQualifiedName
+                println jc.source
+            }
+
+            println "Verifying the stubs"
+        }
+
+        use (QDoxCategory) {
+            verifyStubs()
+        }
+    }
+
+    /**
+     * Collect all the Groovy and Java sources to be joint compiled.
+     *
+     * @param path the root path where to find the sources
+     * @return a list of files
+     */
+    protected List<File> collectSources(File path) {
         def sources = []
-        def path = sourcesRelativePath()
-
-        if (!path && !path.exists()) {
-            fail "Path doesn't exist: ${path}"
-        }
-
-        println "Sources to be compiled:"
         path.eachFileRecurse(FILES) { sourceFile ->
             if (sourceFile.name ==~ /.*(\.groovy|\.java)/) {
                 // add all the source files for the compiler to compile
                 sources << sourceFile
-                println " -> " + sourceFile.name
             }
         }
+        return sources
+    }
 
+    /**
+     * Launch the actual compilation -- hence launching the stub generator as well.
+     *
+     * @param sources the sources to be compiled
+     */
+    protected void compile(List<File> sources) {
+        def loader = new GroovyClassLoader(this.class.classLoader)
         def cu = new JavaAwareCompilationUnit(config, loader)
         cu.addSources(sources as File[])
         try {
             cu.compile()
-            println "Sources compiled successfully"
-        } catch (any) {
-            any.printStackTrace()
-            fail "Compilation failed for stub generator test: ${path}"
+            if (debug) println "Sources compiled successfully"
+        } catch (CompilationFailedException any) {
+            handleCompilationFailure(any)
         }
+    }
 
-        // instantiates QDox for parsing the Java stubs and Java sources
-        qdox.addSourceTree path
-        qdox.addSourceTree stubDir
+    /**
+     * Handle any compilation error that may have happened.
+     *
+     * @param any the compilation exception
+     */
+    protected void handleCompilationFailure(CompilationFailedException any) {
+        any.printStackTrace()
+        fail "Compilation failed for stub generator test"
+    }
 
-        println "Verifying the stubs"
-        use (QDoxCategory) {
-            verifyStubs()
+    /**
+     * Create a compiler configuration to define a place to store the stubs and compiled classes
+     */
+    protected void configure() {
+        config = new CompilerConfiguration()
+        config.with {
+            targetDirectory = targetDir
+            jointCompilationOptions = [stubDir: stubDir, keepStubs: true]
         }
     }
 
