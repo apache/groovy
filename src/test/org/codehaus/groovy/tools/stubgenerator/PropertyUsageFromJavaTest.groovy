@@ -22,10 +22,6 @@ package org.codehaus.groovy.tools.stubgenerator
  */
 class PropertyUsageFromJavaTest extends StubTestCase {
 
-    protected void init() {
-        debug = true
-    }
-
     void verifyStubs() {
         classes['somepackage.GroovyPogo'].with {
             assert methods['getAge'].signature == "public int getAge()"
