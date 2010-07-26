@@ -42,8 +42,7 @@ class GroovyScriptEngineTest extends GroovyTestCase {
      * interface-- all used by a dynamically instantiated class named 'MakeMe'.
      */
     public void setUp() {
-        locateCurrentDir();
-        srcDir = new File(currentDir, 'dynamicSrcRootToBeDeleted')
+        srcDir = new File(new File('./target'), 'dynamicSrcRootToBeDeleted')
         srcDir.mkdir();
 
         script = new File(srcDir, 'script.groovy')
@@ -139,11 +138,7 @@ class GroovyScriptEngineTest extends GroovyTestCase {
     }
 
     public void tearDown() {
-        try {
-            allFiles*.delete()
-        } catch (Exception ex) {
-            throw new RuntimeException("Could not delete entire dynamic tree inside " + currentDir, ex)
-        }
+        srcDir.deleteDir()
     }
 
     public void testDynamicInstantiation() throws Exception {
@@ -287,15 +282,6 @@ class GroovyScriptEngineTest extends GroovyTestCase {
         }
 
     }
-
-    private void locateCurrentDir() {
-        String bogusFile = "bogusFile";
-        File f = new File(bogusFile);
-        String path = f.getAbsolutePath();
-        path = path.substring(0, path.length() - bogusFile.length());
-        currentDir = new File(path);
-    }
-
 }
 
 class MyDimension {
