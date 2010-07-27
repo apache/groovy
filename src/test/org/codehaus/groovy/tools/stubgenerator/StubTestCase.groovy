@@ -211,8 +211,9 @@ abstract class StubTestCase extends GroovyTestCase {
      * @param any the compilation exception
      */
     protected void handleCompilationFailure(CompilationFailedException any) {
-        any.printStackTrace()
-        fail "Compilation failed for stub generator test"
+        def stringWriter = new StringWriter()
+        any.printStackTrace(new PrintWriter(stringWriter))
+        fail "Compilation failed for stub generator test:\n${stringWriter.toString()}"
     }
 
     /**
@@ -248,7 +249,7 @@ abstract class StubTestCase extends GroovyTestCase {
      * @return the created temporary directory
      * @throws IOException if a temporary directory could not be created
      */
-    private static File createTempDirectory() throws IOException {
+    protected static File createTempDirectory() throws IOException {
         File tempDirectory = File.createTempFile("stubgentests", Long.toString(System.currentTimeMillis()))
         if (!(tempDirectory.delete())) {
             throw new IOException("Impossible to delete temporary file: ${tempDirectory.absolutePath}")

@@ -40,7 +40,7 @@ class QDoxCategory {
      */
     static JavaClass getAt(JavaClass[] self, String className) {
         def clazz = self.find { JavaClass jc -> jc.fullyQualifiedName == className }
-        assert clazz, "No stub class found for name $className"
+        assert clazz, "No stub class found for name $className, among ${self.collect { it.fullyQualifiedName }}"
         return clazz
     }
 
@@ -59,7 +59,6 @@ class QDoxCategory {
      */
     static getAt(JavaMethod[] self, String methodName) {
         def methods = self.findAll { JavaMethod jc -> jc.name == methodName }
-        assert methods, "No method found for name $methodName"
         if (methods.size() == 1)
             return methods[0]
         else
