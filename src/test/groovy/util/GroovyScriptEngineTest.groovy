@@ -234,26 +234,24 @@ class GroovyScriptEngineTest extends GroovyTestCase {
 
             def binding = new Binding([:])
 
-            f << "1\n"
+            f << "1"
             sleep 200
             // first time, the script is compiled and cached
             assert gse.run(scriptName, binding) == 1
 
-            f.delete()
-            f << "2\n"
+            f << "2"
             sleep 1000
             // the file was updated, and we waited for more than the minRecompilationInterval
-            assert gse.run(scriptName, binding) == 2
+            assert gse.run(scriptName, binding) == 12
 
-            f.delete()
-            f << "3\n"
+            f << "3"
             sleep 100
             // still the old result, as we didn't wait more than the minRecompilationInterval
-            assert gse.run(scriptName, binding) == 2
+            assert gse.run(scriptName, binding) == 12
 
             sleep 1000
             // we've waited enough, so we get the new output
-            assert gse.run(scriptName, binding) == 3
+            assert gse.run(scriptName, binding) == 123
         } finally {
             f.delete()
         }
