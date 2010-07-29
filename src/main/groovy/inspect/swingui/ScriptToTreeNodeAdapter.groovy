@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -138,18 +138,18 @@ class ScriptToTreeNodeAdapter {
      * Handles the property file templating for node types.
      */
     private String getStringForm(node) {
-		if (classNameToStringForm[node.class.name]) {
-			GStringTemplateEngine engine = new GStringTemplateEngine()
-			def script = classNameToStringForm[node.class.name]
-			Template template = engine.createTemplate(script)
-			Writable writable = template.make([expression: node])
-			StringWriter result = new StringWriter()
-			writable.writeTo(result)
-			result.toString()
-		} else {
-			node.class.simpleName
-		}
-	}
+        if (classNameToStringForm[node.class.name]) {
+            GStringTemplateEngine engine = new GStringTemplateEngine()
+            def script = classNameToStringForm[node.class.name]
+            Template template = engine.createTemplate(script)
+            Writable writable = template.make([expression: node])
+            StringWriter result = new StringWriter()
+            writable.writeTo(result)
+            result.toString()
+        } else {
+            node.class.simpleName
+        }
+    }
 }
 
 /**
@@ -302,7 +302,7 @@ private class TreeNodeBuildingVisitor extends CodeVisitorSupport {
      * Creates the visitor. A file named AstBrowserProperties.groovy is located which is
      * a property files the describes how to represent ASTNode types as Strings.
      */
-	private TreeNodeBuildingVisitor(adapter) {
+    private TreeNodeBuildingVisitor(adapter) {
         if (!adapter) throw new IllegalArgumentException("Null: adapter")
         this.adapter = adapter;
     }

@@ -1,3 +1,18 @@
+/*
+ * Copyright 2003-2010 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package groovy.util
 
 import org.apache.tools.ant.BuildEvent
@@ -8,76 +23,76 @@ import org.apache.tools.ant.UnknownElement
 import org.junit.Assert
 
 /**
-Tests for the <groovy> task.
-@author Unknown
-@author Marc Guillemot
-*/
+ * Tests for the <groovy> task.
+ *
+ * @author Marc Guillemot
+ */
 class AntTest extends GroovyTestCase {
-    
-    void testAnt() {
-    	def ant = new AntBuilder()
 
-        // lets just call one task
+    void testAnt() {
+        def ant = new AntBuilder()
+
+        // let's just call one task
         ant.echo("hello")
-        
-        // here"s an example of a block of Ant inside GroovyMarkup
+
+        // here's an example of a block of Ant inside GroovyMarkup
         ant.sequential {
             echo("inside sequential")
-            
+
             def myDir = "target/AntTest/"
-            
-            mkdir(dir:myDir) 
-            copy(todir:myDir) {
-                fileset(dir:"src/test") {
-                    include(name:"**/*.groovy")
+
+            mkdir(dir: myDir)
+            copy(todir: myDir) {
+                fileset(dir: "src/test") {
+                    include(name: "**/*.groovy")
                 }
             }
-            
+
             echo("done")
         }
-        
-        // now lets do some normal Groovy again
+
+        // now let's do some normal Groovy again
         def file = new File("target/AntTest/groovy/util/AntTest.groovy")
         assert file.exists()
     }
-    
+
     void testFileIteration() {
         def ant = new AntBuilder()
-        
-        // lets create a scanner of filesets
+
+        // let's create a scanner of filesets
         def scanner = ant.fileScanner {
-            fileset(dir:"src/test") {
-                include(name:"**/Ant*.groovy")
+            fileset(dir: "src/test") {
+                include(name: "**/Ant*.groovy")
             }
         }
-        
-        // now lets iterate over 
+
+        // now let's iterate over
         def found = false
         for (f in scanner) {
             println("Found file ${f}")
-            
+
             found = true
-            
+
             assert f instanceof File
             assert f.name.endsWith(".groovy")
         }
         assert found
     }
-    
+
     void testJunitTask() {
         def ant = new AntBuilder()
-        
+
         ant.junit {
-            test(name:'groovy.util.SomethingThatDoesNotExist')
+            test(name: 'groovy.util.SomethingThatDoesNotExist')
         }
     }
-    
+
     void testPathBuilding() {
         def ant = new AntBuilder()
-        
+
         def value = ant.path {
-            fileset(dir:"xdocs") {
-                include(name:"*.wiki")
+            fileset(dir: "xdocs") {
+                include(name: "*.wiki")
             }
         }
 
@@ -91,14 +106,14 @@ class AntTest extends GroovyTestCase {
         def antFile = new File("src/test/groovy/util/AntTest.xml")
         assertTrue "Couldn't find ant test script", antFile.exists()
 
-		// run it with ant, to be sure that our assumptions are correct
-		def project = new Project()
-		project.init()
-		ProjectHelper.projectHelper.parse(project, antFile)
-		project.executeTarget(project.defaultTarget);
-		
+        // run it with ant, to be sure that our assumptions are correct
+        def project = new Project()
+        project.init()
+        ProjectHelper.projectHelper.parse(project, antFile)
+        project.executeTarget(project.defaultTarget);
+
         def expectedSpoof =
-"""SpoofTaskContainer ctor
+        """SpoofTaskContainer ctor
 in addTask
 configuring UnknownElement
 SpoofTask ctor
@@ -110,46 +125,46 @@ param foo: 123
 end SpoofTask execute
 end SpoofTaskContainer execute
 """
-		println SpoofTaskContainer.getSpoof().toString()
+        println SpoofTaskContainer.getSpoof().toString()
         assertEquals expectedSpoof, SpoofTaskContainer.getSpoof().toString()
         SpoofTaskContainer.spoof.length = 0
 
         def ant = new AntBuilder()
         def PATH = 'task.path'
 
-		// and now run it with the AntBuilder        
-        ant.path(id:PATH) {ant.pathelement(location:'classes')}
-        ['spoofcontainer': SpoofTaskContainer, 'spoof': SpoofTask].each{ pair ->
-            ant.taskdef(name:pair.key, classname: pair.value.name, classpathref: PATH)
+        // and now run it with the AntBuilder        
+        ant.path(id: PATH) {ant.pathelement(location: 'classes')}
+        ['spoofcontainer': SpoofTaskContainer, 'spoof': SpoofTask].each { pair ->
+            ant.taskdef(name: pair.key, classname: pair.value.name, classpathref: PATH)
         }
-        ant.spoofcontainer(){
+        ant.spoofcontainer() {
             ant.spoof(foo: 123)
         }
         assertEquals expectedSpoof, SpoofTaskContainer.getSpoof().toString()
-        
+
         // now run it with AntBuilder using Namespaces (test for GROOVY-1070)
         def antNS = new AntBuilder()
         SpoofTaskContainer.resetSpoof()
 
-		// and now run it with the AntBuilder        
-        antNS.path(id:PATH) {antNS.pathelement(location:'classes')}
-        ['spoofcontainer': SpoofTaskContainer, 'spoof': SpoofTask].each{ pair ->
-            antNS.taskdef(name:pair.key, classname: pair.value.name, classpathref: PATH, 
-                          uri: 'testNS')
+        // and now run it with the AntBuilder        
+        antNS.path(id: PATH) {antNS.pathelement(location: 'classes')}
+        ['spoofcontainer': SpoofTaskContainer, 'spoof': SpoofTask].each { pair ->
+            antNS.taskdef(name: pair.key, classname: pair.value.name, classpathref: PATH,
+                    uri: 'testNS')
         }
-		def testNS = NamespaceBuilder.newInstance(antNS,"testNS","testNSprefix");
-        testNS.spoofcontainer(){
+        def testNS = NamespaceBuilder.newInstance(antNS, "testNS", "testNSprefix");
+        testNS.spoofcontainer() {
             testNS.spoof(foo: 123)
         }
         assertEquals expectedSpoof, SpoofTaskContainer.getSpoof().toString()
     }
 
-    /** Checks that we can access dynamically (through Ant's property task) defined properties in Groovy scriptlets */
+    /** Checks that we can access dynamically (through Ant's property task) defined properties in Groovy scriptlets  */
     void testDynamicProperties() {
         def antBuilder = new AntBuilder()
 
         antBuilder.property(name: "testProp1", value: "TEST 1")
-        antBuilder.taskdef(name:"groovy", classname:"org.codehaus.groovy.ant.Groovy")
+        antBuilder.taskdef(name: "groovy", classname: "org.codehaus.groovy.ant.Groovy")
         antBuilder.groovy("""
             ant.property(name: "testProp2", value: "TEST 2")
 
@@ -157,31 +172,31 @@ end SpoofTaskContainer execute
             assert properties.testProp2 == project.properties.testProp2
         """)
     }
-    
+
     /**
-    * Test access to AntBuilder properties
-    */
+     * Test access to AntBuilder properties
+     */
     void testAntBuilderProperties() {
         def ant = new AntBuilder()
-        
+
         assertNull ant.project.properties.'myProp'
         ant.property(name: 'myProp', value: 'blabla')
         assertEquals 'blabla', ant.project.properties.'myProp'
     }
-    
+
     /**
-    * Tests that the AntBuilder can handle conditions (conditions aren't tasks)
-    * (test for GROOVY-824)
-    */
+     * Tests that the AntBuilder can handle conditions (conditions aren't tasks)
+     * (test for GROOVY-824)
+     */
     void testCondition() {
         def ant = new AntBuilder()
         ant.condition(property: "containsHi") {
-        	contains([string: "hi", substring: "hi"])
+            contains([string: "hi", substring: "hi"])
         }
         assertEquals "true", ant.project.properties["containsHi"]
 
         ant.condition(property: "equalsHi", else: "false") {
-        	Equals([arg1: "hi", arg2: "bye"])
+            Equals([arg1: "hi", arg2: "bye"])
         }
         assertEquals "false", ant.project.properties["equalsHi"]
     }
@@ -190,21 +205,21 @@ end SpoofTaskContainer execute
      * Tests that using the AntBuilder within the <groovy> task doesn't cause double execution
      * (test for GROOVY-1602)
      */
-     void testAntBuilderWithinGroovyTask() {
+    void testAntBuilderWithinGroovyTask() {
         def antFile = new File("src/test/groovy/util/AntTest.xml")
         assertTrue "Couldn't find ant test script", antFile.exists()
 
         def project = new Project()
-		project.init()
-		ProjectHelper.projectHelper.parse(project, antFile)
-		
-		def customListener = new SimpleListener()
- 		project.addBuildListener customListener
-		
-		project.executeTarget("testAntBuilderWithinGroovyTask");
- 		
-		def expectedSpoof =
-"""started: taskdef[name:groovy, classname:org.codehaus.groovy.ant.Groovy]
+        project.init()
+        ProjectHelper.projectHelper.parse(project, antFile)
+
+        def customListener = new SimpleListener()
+        project.addBuildListener customListener
+
+        project.executeTarget("testAntBuilderWithinGroovyTask");
+
+        def expectedSpoof =
+        """started: taskdef[name:groovy, classname:org.codehaus.groovy.ant.Groovy]
 finished: taskdef[name:groovy, classname:org.codehaus.groovy.ant.Groovy]
 started: echo[message:before groovy task]
 finished: echo[message:before groovy task]
@@ -216,72 +231,69 @@ started: echo[message:after groovy task]
 finished: echo[message:after groovy task]
 """
 
-         assertEquals expectedSpoof, customListener.spoof.toString()
-     }
-     
+        assertEquals expectedSpoof, customListener.spoof.toString()
+    }
+
     /**
      * Test usage of import
      */
-    void testImport()
-    {
+    void testImport() {
         def antFile = new File("src/test/groovy/util/AntTest_import.xml")
         assertTrue "Couldn't find ant test script", antFile.exists()
 
         def ant = new AntBuilder()
-		def customListener = new SimpleListener()
- 		ant.project.addBuildListener customListener
+        def customListener = new SimpleListener()
+        ant.project.addBuildListener customListener
 
- 		ant.'import'(file: antFile.absolutePath)
- 		def expectedSpoof =
-"""started: import[file:${antFile.absolutePath}]
+        ant.'import'(file: antFile.absolutePath)
+        def expectedSpoof = """\
+started: import[file:${antFile.absolutePath}]
 started: echo[message:outside targets, at the top]
 finished: echo[message:outside targets, at the top]
 finished: import[file:${antFile.absolutePath}]
 """
-		assertEquals expectedSpoof, customListener.spoof.toString()
+        assertEquals expectedSpoof, customListener.spoof.toString()
 
-		customListener.spoof.length = 0
-		ant.project.executeTarget('firstTarget')
- 		expectedSpoof =
-"""started: echo[message:inside firstTarget]
+        customListener.spoof.length = 0
+        ant.project.executeTarget('firstTarget')
+        expectedSpoof = """\
+started: echo[message:inside firstTarget]
 finished: echo[message:inside firstTarget]
 """
-		assertEquals expectedSpoof, customListener.spoof.toString()
+        assertEquals expectedSpoof, customListener.spoof.toString()
 
-		customListener.spoof.length = 0
-		ant.target(name: "myTestTarget", depends: "2ndTarget") {
-        	echo(message: "echo from AntBuilder's target foo")
+        customListener.spoof.length = 0
+        ant.target(name: "myTestTarget", depends: "2ndTarget") {
+            echo(message: "echo from AntBuilder's target foo")
         }
- 		expectedSpoof =
-"""started: echo[message:inside 2ndTarget]
+        expectedSpoof = """\
+started: echo[message:inside 2ndTarget]
 finished: echo[message:inside 2ndTarget]
 started: echo[message:echo from AntBuilder's target foo]
 finished: echo[message:echo from AntBuilder's target foo]
 """
-		assertEquals expectedSpoof, customListener.spoof.toString()
-		
-		// test that the previously created target can be called
-		customListener.spoof.length = 0
-		ant.project.executeTarget('myTestTarget')
-		assertEquals expectedSpoof, customListener.spoof.toString()
+        assertEquals expectedSpoof, customListener.spoof.toString()
+
+        // test that the previously created target can be called
+        customListener.spoof.length = 0
+        ant.project.executeTarget('myTestTarget')
+        assertEquals expectedSpoof, customListener.spoof.toString()
     }
 }
 
+class SimpleListener extends org.apache.tools.ant.DefaultLogger {
+    def spoof = new StringBuffer()
 
-class SimpleListener extends org.apache.tools.ant.DefaultLogger
-{
-	def spoof = new StringBuffer()
-	void taskStarted(BuildEvent event)
-	{
-		if (!(event.task instanceof UnknownElement)) Assert.fail("Task is already configured. Listeners won't have a chance to alter UnknownElement for additional configuration");
-		spoof << "started: " + logTask(event.task) + "\n"
-	}
-	void taskFinished(BuildEvent event)
-	{
-		spoof << "finished: " + logTask(event.task) + "\n"
-	}
-	private String logTask(task)
-	{
-		task.taskName + task.wrapper.attributeMap
-	}
+    void taskStarted(BuildEvent event) {
+        if (!(event.task instanceof UnknownElement)) Assert.fail("Task is already configured. Listeners won't have a chance to alter UnknownElement for additional configuration");
+        spoof << "started: " + logTask(event.task) + "\n"
+    }
+
+    void taskFinished(BuildEvent event) {
+        spoof << "finished: " + logTask(event.task) + "\n"
+    }
+
+    private String logTask(task) {
+        task.taskName + task.wrapper.attributeMap
+    }
 }

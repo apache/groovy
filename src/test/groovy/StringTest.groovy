@@ -26,12 +26,12 @@ class StringTest extends GroovyTestCase {
         def s = "abcd"
         assert s.length() == 4
         assert 4 == s.length()
-        
+
         // test polymorphic size() method like collections
         assert s.size() == 4
-        
+
         s = s + "efg" + "hijk"
-        
+
         assert s.size() == 11
         assert "abcdef".size() == 6
     }
@@ -41,37 +41,37 @@ class StringTest extends GroovyTestCase {
         def x = "hello " + y
         assert x == "hello null"
     }
-    
+
     void testNextPrevious() {
-    	def x = 'a'
-    	def y = x.next()
-    	assert y == 'b'
-    
-    	def z = 'z'.previous()
-    	assert z == 'y'
-    	
-    	z = 'z'
-    	def b = z.next()
-    	assert b != 'z'
+        def x = 'a'
+        def y = x.next()
+        assert y == 'b'
+
+        def z = 'z'.previous()
+        assert z == 'y'
+
+        z = 'z'
+        def b = z.next()
+        assert b != 'z'
 
         assert b > z
         assert z.charAt(0) == 'z'
         assert b.charAt(0) == '{'
     }
-    
+
     void testApppendToString() {
         def name = "Gromit"
         def result = "hello " << name << "!"
-        
+
         assert result.toString() == "hello Gromit!"
     }
-    
+
     void testApppendToStringBuffer() {
         def buffer = new StringBuffer()
-        
+
         def name = "Gromit"
-        buffer << "hello " << name << "!" 
-        
+        buffer << "hello " << name << "!"
+
         assert buffer.toString() == "hello Gromit!"
     }
 
@@ -212,7 +212,7 @@ foo
         if (!s) {
             fail("'something' should have evaluated to false, but didn't")
         }
-        
+
     }
 
     void testDollarEscaping() {
@@ -238,7 +238,7 @@ foo
         assert "a\r\nb".readLines() == ['a', 'b']
         assert "a\n\nb".readLines() == ['a', '', 'b']
     }
-    
+
     void testReplace() {
         assert "".replace("", "") == ""
         assert "".replace("", "r") == "r"
@@ -296,17 +296,17 @@ foo
         assert "a\n\r\nb".denormalize() == "a${LS}${LS}b"
         assert 'a\nb\r\nc\n\rd'.denormalize() == "a${LS}b${LS}c${LS}${LS}d"
     }
-    
+
     void innerNormalizationFileRoundTrip(String s) {
         def f = File.createTempFile("groovy.StringTest", ".txt")
-        
+
         def sd = s.denormalize()
         f.write(sd)
         assert sd == f.text
-        
-        f.write(s); 
+
+        f.write(s);
         assert s == f.text
-        
+
         def rt = (s.denormalize()).normalize()
         assert s.normalize() == rt
 
@@ -330,7 +330,7 @@ foo
         doNormalizationFileRoundTrip("a\n")
         doNormalizationFileRoundTrip("abcdef\n")
     }
-    
+
     void testSplitEqualsTokenize() {
         def text = """
         A text with different words and

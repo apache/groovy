@@ -67,6 +67,6 @@ class LooseExpectation {
 
     /** verify all calls are in expected range */ 
     void verify() {
-    	fDemand.verify(fCalls)
+        fDemand.verify(fCalls)
     }
 }
