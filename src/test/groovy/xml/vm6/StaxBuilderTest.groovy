@@ -31,10 +31,10 @@ import org.custommonkey.xmlunit.Diff
  */
 class StaxBuilderTest extends GroovyTestCase {
 
-	void testJava6() {
-		def factory = XMLOutputFactory.newInstance()
+    void testJava6() {
+        def factory = XMLOutputFactory.newInstance()
         def writer = new StringWriter()
-		def builder = new StaxBuilder(factory.createXMLStreamWriter(writer))
+        def builder = new StaxBuilder(factory.createXMLStreamWriter(writer))
         builder.root1(a:5, b:7) {
             elem1('hello1')
             elem2('hello2')
@@ -44,7 +44,7 @@ class StaxBuilderTest extends GroovyTestCase {
         XMLUnit.ignoreWhitespace = true
         def xmlDiff = new Diff(writer.toString(), expected)
         assert xmlDiff.similar(), xmlDiff.toString()
-	}
+    }
 
 //    @Grab('org.codehaus.jettison:jettison:1.2')
 //    void testJettison() {

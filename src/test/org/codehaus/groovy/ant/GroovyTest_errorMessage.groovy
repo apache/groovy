@@ -1,7 +1,6 @@
 // should produce an error message
-
 def f = {
-	t.notExisting()
+    t.notExisting()
 }
 
 f()

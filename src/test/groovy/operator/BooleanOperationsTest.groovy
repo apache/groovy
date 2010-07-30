@@ -1,3 +1,18 @@
+/*
+ * Copyright 2003-2010 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package groovy.operator
 
 class BooleanOperationsTest extends GroovyTestCase {
@@ -5,113 +20,104 @@ class BooleanOperationsTest extends GroovyTestCase {
     void testComparisons() {
         assert true
         assert true != false
-        
+
         def x = true
-        
         assert x
         assert x == true
         assert x != false
-        
+
         x = false
-        
         assert x == false
         assert x != true
-        
         assert !x
-        
-        def y = false        
+
+        def y = false
         assert x == y
-        
+
         y = true
         assert x != y
     }
-    
-    
+
     void testIfBranch() {
         def x = false
         def r = false
-        
-        if ( x ) {
+        if (x) {
             // ignore
         }
         else {
             r = true
         }
-
         assert r
-        
+
         x = true
         r = false
-        
-        if ( x ) {
+        if (x) {
             r = true
         }
         else {
             // ignore
         }
         assert r
-        
-        if ( !x ) {
+
+        if (!x) {
             r = false
         }
         else {
             r = true
         }
-        
         assert r
     }
 
+    void testBooleanExpression() {
+        def x = 5
+        def value = x > 2
+        assert value
 
-	void testBooleanExpression() {
-	    def x = 5
-	    def value = x > 2
-	    assert value
-	    
-	    value = x < 2
-	    assert value == false
-	}
-	
-	
-	void testBooleanOps() {
-	    boolean x = true
-	    boolean y = false
-	    assert (x & x) == true
-	    assert (x & y) == false
-	    assert (y & x) == false
-	    assert (y & y) == false
-
-	    assert (x | x) == true
-	    assert (x | y) == true
-	    assert (y | x) == true
-	    assert (y | y) == false
-
-	    assert (x ^ x) == false
-	    assert (x ^ y) == true
-	    assert (y ^ x) == true
-	    assert (y ^ y) == false
-
-	    assert (!x) == false
-	    assert (!y) == true
-	}
+        value = x < 2
+        assert value == false
+    }
 
 
-	void testBooleanAssignOps() {
-	    boolean z = true
-	    z &= true
-	    assert z == true
-	    z &= false
-	    assert z == false
+    void testBooleanOps() {
+        boolean x = true
+        boolean y = false
+        assert (x & x) == true
+        assert (x & y) == false
+        assert (y & x) == false
+        assert (y & y) == false
 
-	    z = true
-	    z |= true
-	    assert z == true
-	    z |= false
-	    assert z == true
-	    z = false
-	    z |= false
-	    assert z == false
-	    z |= true
-	    assert z == true
+        assert (x | x) == true
+        assert (x | y) == true
+        assert (y | x) == true
+        assert (y | y) == false
+
+        assert (x ^ x) == false
+        assert (x ^ y) == true
+        assert (y ^ x) == true
+        assert (y ^ y) == false
+
+        assert (!x) == false
+        assert (!y) == true
+    }
+
+
+    void testBooleanAssignOps() {
+        boolean z = true
+        z &= true
+        assert z == true
+        z &= false
+        assert z == false
+
+        z = true
+        z |= true
+        assert z == true
+        z |= false
+        assert z == true
+        z = false
+        z |= false
+        assert z == false
+        z |= true
+        assert z == true
 
         z = true
         z ^= true
@@ -124,6 +130,6 @@ class BooleanOperationsTest extends GroovyTestCase {
         assert z == false
         z ^= false
         assert z == false
-	}
+    }
 
 }

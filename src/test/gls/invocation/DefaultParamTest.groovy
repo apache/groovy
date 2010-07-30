@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2009 the original author or authors.
+ * Copyright 2003-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,17 +43,17 @@ class DefaultParamTest extends CompilableTestSupport {
                 return a + "-" + b + "-" + c
             }
             assert "X-Y-Z" == doSomething("X", "Y", "Z")
-           	assert "X-Y-defC" == doSomething("X", "Y")
-    	    assert "X-defB-defC" == doSomething("X")
+            assert "X-Y-defC" == doSomething("X", "Y")
+            assert "X-defB-defC" == doSomething("X")
         '''
         shouldFail {
             assertScript '''
                 def doSomething(a, b = 'defB', c = 'defC') {
                     return a + "-" + b + "-" + c
                 }
-                doSomething()    	
-    	    '''
-    	}
+                doSomething()        
+            '''
+        }
     }
 
     void testDefaultTypedParameters() {
@@ -83,8 +83,8 @@ class DefaultParamTest extends CompilableTestSupport {
                     return a + "-" + b + "-" + c
                 }
                 doTypedSomethingAnother()
-    	    """
-    	}
+            """
+        }
     }
     
     void testConstructor() {
@@ -112,11 +112,12 @@ class DefaultParamTest extends CompilableTestSupport {
             def meth(Closure cl = null) {
               return '1' +meth([:], cl)
             }
+
             def meth(Map args, Closure cl = null) {
                 if(args==null) return "2" 
                 return '2'+args.size()
             }
-            
+
             assert meth() == "120"
             assert meth(null) == "2"
             assert meth {} == "120"

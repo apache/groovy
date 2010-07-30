@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2009 the original author or authors.
+ * Copyright 2003-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,9 +52,9 @@ class CategoryAnnotationTest extends GroovyTestCase {
                 }
                 // 2nd test case of JIRA
                 String getSuperName2() { 
-			        String myname = this.getName() 
-			        for(int i = 0; i < 5; i++) myname += i 
-			        return myname + "-Post"
+                    String myname = this.getName() 
+                    for(int i = 0; i < 5; i++) myname += i 
+                    return myname + "-Post"
                 }
                 // 3rd test case of JIRA
                 String getSuperName3() { 
@@ -84,37 +84,37 @@ class CategoryAnnotationTest extends GroovyTestCase {
     }
     
     void testPropertyNameExpandingToGetterInsideCategoryMethod() {
-    	//GROOVY-3543: Inside the category method, this.getType().name was failng but this.getType().getName() was not.
-    	assertScript """
-			@Category(Guy)
-			class Naming {
-			    String getTypeName() {
-			        if(this.getType() != null)
-			            this.getType().name
-			        else
-			            ""
-			    }
-			}
-			
-			interface Guy {
-			    Type getType()
-			}
-			
-			class Type {
-			    String name
-			}
-			
-			class MyGuyver implements Guy {
-			    Type type
-			}
-			
-			def atype = new Type(name: 'String')
-			def onetest = new MyGuyver(type:atype)
-			
-			use(Naming) {
-			    assert onetest.getTypeName() == onetest.getType().getName()
-			}
-    	"""
+        //GROOVY-3543: Inside the category method, this.getType().name was failing but this.getType().getName() was not.
+        assertScript """
+            @Category(Guy)
+            class Naming {
+                String getTypeName() {
+                    if(this.getType() != null)
+                        this.getType().name
+                    else
+                        ""
+                }
+            }
+            
+            interface Guy {
+                Type getType()
+            }
+            
+            class Type {
+                String name
+            }
+            
+            class MyGuyver implements Guy {
+                Type type
+            }
+            
+            def atype = new Type(name: 'String')
+            def onetest = new MyGuyver(type:atype)
+            
+            use(Naming) {
+                assert onetest.getTypeName() == onetest.getType().getName()
+            }
+        """
     }
     
     void testClosureUsingThis() {

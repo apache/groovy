@@ -25,16 +25,16 @@ import com.apple.mrj.*
 
 class ConsoleMacOsSupport implements MRJQuitHandler, MRJAboutHandler {
 
-	def quitHandler
-	def aboutHandler
+    def quitHandler
+    def aboutHandler
 
-	public void handleAbout() {
-		aboutHandler()
-	}
+    public void handleAbout() {
+        aboutHandler()
+    }
 
-	public void handleQuit() {
-		quitHandler()
-	}
+    public void handleQuit() {
+        quitHandler()
+    }
 
 }
 

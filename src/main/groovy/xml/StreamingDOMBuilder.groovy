@@ -99,13 +99,13 @@ class StreamingDOMBuilder extends AbstractStreamingBuilder {
         def hiddenNamespaces = [:]
 
         pendingNamespaces.each {key, value ->
-	        if (key == ':') {
+            if (key == ':') {
                 defaultNamespace = "$value"
-	            nsAttributes.add(["http://www.w3.org/2000/xmlns/", "xmlns", defaultNamespace])
+                nsAttributes.add(["http://www.w3.org/2000/xmlns/", "xmlns", defaultNamespace])
             } else {
-	            hiddenNamespaces[key] = namespaces[key]
-	            namespaces[key] = value
-	            nsAttributes.add(["http://www.w3.org/2000/xmlns/", "xmlns:${key}", "$value"])
+                hiddenNamespaces[key] = namespaces[key]
+                namespaces[key] = value
+                nsAttributes.add(["http://www.w3.org/2000/xmlns/", "xmlns:${key}", "$value"])
             }
         }
 
@@ -200,8 +200,8 @@ class StreamingDOMBuilder extends AbstractStreamingBuilder {
                 boundClosure.trigger = ['document' : document, 'element' : it]
                 return document
             } else {
-            	def dBuilder = DocumentBuilderFactory.newInstance()
-            	dBuilder.namespaceAware = true
+                def dBuilder = DocumentBuilderFactory.newInstance()
+                dBuilder.namespaceAware = true
                 def newDocument = dBuilder.newDocumentBuilder().newDocument()
                 boundClosure.trigger = ['document' : newDocument, 'element' : newDocument]
                 return newDocument

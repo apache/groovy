@@ -26,10 +26,10 @@ class GpathSyntaxTestSupport {
     private static sampleXml = '''
 <characters>
     <character id="1" name="Wallace">
-    	<likes>cheese</likes>
+        <likes>cheese</likes>
     </character>
     <character id="2" name="Gromit">
-	    <likes>sleep</likes>
+        <likes>sleep</likes>
     </character>
     <numericValue>1</numericValue>
     <booleanValue>y</booleanValue>
