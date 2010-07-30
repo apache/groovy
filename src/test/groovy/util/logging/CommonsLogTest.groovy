@@ -28,6 +28,22 @@ class CommonsLogTest extends GroovyTestCase {
         }
     }
 
+    public void testPrivateFinalStaticNamedLogFieldAppears() {
+
+        Class clazz = new GroovyClassLoader().parseClass('''
+              @groovy.util.logging.CommonsLog('logger')
+              class MyClass {
+              } ''')
+
+        assert clazz.declaredFields.find { Field field ->
+            field.name == "logger" &&
+                    Modifier.isPrivate(field.getModifiers()) &&
+                    Modifier.isStatic(field.getModifiers()) &&
+                    Modifier.isTransient(field.getModifiers()) &&
+                    Modifier.isFinal(field.getModifiers())
+        }
+    }
+
     public void testClassAlreadyHasLogField() {
 
         shouldFail {
@@ -42,9 +58,23 @@ class CommonsLogTest extends GroovyTestCase {
         }
     }
 
+    public void testClassAlreadyHasNamedLogField() {
+
+        shouldFail {
+
+            Class clazz = new GroovyClassLoader().parseClass('''
+                @groovy.util.logging.CommonsLog('logger')
+                class MyClass {
+                    String logger
+                } ''')
+
+            assert clazz.newInstance()
+        }
+    }
+
     /**
      * This test output must be observed manually.
-     * There is unfortunately no good way to add an appender to Commons Logging. 
+     * There is unfortunately no good way to add an appender to Commons Logging.
      */
     public void testLogInfo_IntegrationTest() {
 
@@ -57,6 +87,29 @@ class CommonsLogTest extends GroovyTestCase {
                     log.warn  ("warn called")
                     log.info  ("info called")
                     log.debug ("debug called")
+                }
+            }
+            new MyClass().loggingMethod() ''')
+
+        Script s = (Script) clazz.newInstance()
+        s.run()
+    }
+
+    /**
+     * This test output must be observed manually.
+     * There is unfortunately no good way to add an appender to Commons Logging.
+     */
+    public void testNamedLogInfo_IntegrationTest() {
+
+        Class clazz = new GroovyClassLoader().parseClass('''
+            @groovy.util.logging.CommonsLog('logger')
+            class MyClass {
+
+                def loggingMethod() {
+                    logger.error ("error called")
+                    logger.warn  ("warn called")
+                    logger.info  ("info called")
+                    logger.debug ("debug called")
                 }
             }
             new MyClass().loggingMethod() ''')

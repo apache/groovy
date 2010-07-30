@@ -38,5 +38,5 @@ import org.codehaus.groovy.transform.GroovyASTTransformationClass;
 @Target({ElementType.TYPE})
 @GroovyASTTransformationClass("org.codehaus.groovy.transform.LogASTTransformation")
 public @interface Log {
-
+    String value() default "log";                  
 }

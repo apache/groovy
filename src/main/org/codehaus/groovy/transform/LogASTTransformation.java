@@ -40,6 +40,8 @@ public class LogASTTransformation implements ASTTransformation {
         final boolean isLog4j = "groovy.util.logging.Log4j".equals(logAnnotation.getClassNode().getName());
         final boolean isCommonsLog = "groovy.util.logging.CommonsLog".equals(logAnnotation.getClassNode().getName());
 
+        final String logFieldName = lookupLogFieldName(logAnnotation);
+
         if (!(targetClass instanceof ClassNode))
             throw new GroovyBugError("Class annotation @Log annotated no Class, this must not happen.");
 
@@ -63,14 +65,14 @@ public class LogASTTransformation implements ASTTransformation {
 
             @Override
             public void visitClass(ClassNode node) {
-                FieldNode logField = node.getField("log");
+                FieldNode logField = node.getField(logFieldName);
                 if (logField != null) {
                     addError("Class annotated with Log annotation cannot have log field declared",
                             logField);
                 } else {
 
                     if (isJUL) {
-                        logNode = node.addField("log",
+                        logNode = node.addField(logFieldName,
                                 Opcodes.ACC_FINAL | Opcodes.ACC_TRANSIENT | Opcodes.ACC_STATIC | Opcodes.ACC_PRIVATE,
                                 new ClassNode("java.util.logging.Logger", Opcodes.ACC_PUBLIC, new ClassNode(Object.class)),
                                 new MethodCallExpression(
@@ -78,7 +80,7 @@ public class LogASTTransformation implements ASTTransformation {
                                         "getLogger",
                                         new ConstantExpression(node.getName())));
                     } else if (isLogBack) {
-                        logNode = node.addField("log",
+                        logNode = node.addField(logFieldName,
                                 Opcodes.ACC_FINAL | Opcodes.ACC_TRANSIENT | Opcodes.ACC_STATIC | Opcodes.ACC_PRIVATE,
                                 new ClassNode("org.slf4j.Logger", Opcodes.ACC_PUBLIC, new ClassNode(Object.class)),
                                 new MethodCallExpression(
@@ -86,7 +88,7 @@ public class LogASTTransformation implements ASTTransformation {
                                         "getLogger",
                                         new ClassExpression(node)));
                     } else if (isLog4j) {
-                        logNode = node.addField("log",
+                        logNode = node.addField(logFieldName,
                                 Opcodes.ACC_FINAL | Opcodes.ACC_TRANSIENT | Opcodes.ACC_STATIC | Opcodes.ACC_PRIVATE,
                                 new ClassNode("org.apache.log4j.Logger", Opcodes.ACC_PUBLIC, new ClassNode(Object.class)),
                                 new MethodCallExpression(
@@ -94,7 +96,7 @@ public class LogASTTransformation implements ASTTransformation {
                                         "getLogger",
                                         new ClassExpression(node)));
                     } else if (isCommonsLog) {
-                        logNode = node.addField("log",
+                        logNode = node.addField(logFieldName,
                                 Opcodes.ACC_FINAL | Opcodes.ACC_TRANSIENT | Opcodes.ACC_STATIC | Opcodes.ACC_PRIVATE,
                                 new ClassNode("org.apache.commons.logging.Log", Opcodes.ACC_PUBLIC, new ClassNode(Object.class)),
                                 new MethodCallExpression(
@@ -112,7 +114,7 @@ public class LogASTTransformation implements ASTTransformation {
                     return exp;
                 }
                 VariableExpression variableExpression = (VariableExpression) mce.getObjectExpression();
-                if (!variableExpression.getName().equals("log")
+                if (!variableExpression.getName().equals(logFieldName)
                         || !(variableExpression.getAccessedVariable() instanceof DynamicVariable)) {
                     return exp;
                 }
@@ -211,6 +213,15 @@ public class LogASTTransformation implements ASTTransformation {
         };
         transformer.visitClass(classNode);
 
+    }
+
+    private String lookupLogFieldName(AnnotationNode logAnnotation) {
+        Expression member = logAnnotation.getMember("value");
+        if (member != null && member.getText() != null) {
+            return member.getText();
+        } else {
+            return "log";
+        }
     }
 
     public void addError(String msg, ASTNode expr, SourceUnit source) {

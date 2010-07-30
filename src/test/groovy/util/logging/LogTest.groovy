@@ -38,73 +38,140 @@ class LogTest extends GroovyTestCase {
     }
 
 
-    public void testPrivateFinalStaticLogFieldAppears() {
+  public void testPrivateFinalStaticLogFieldAppears() {
 
-        Class clazz = new GroovyClassLoader().parseClass("""
-            @groovy.util.logging.Log
-            class MyClass {
-            } """)
+      Class clazz = new GroovyClassLoader().parseClass("""
+          @groovy.util.logging.Log
+          class MyClass {
+          } """)
 
-        assert clazz.declaredFields.find { Field field ->
-            field.name == "log" &&
-                    Modifier.isPrivate(field.getModifiers()) &&
-                    Modifier.isStatic(field.getModifiers()) &&
-                    Modifier.isTransient(field.getModifiers()) &&
-                    Modifier.isFinal(field.getModifiers())
-        }
-    }
+      assert clazz.declaredFields.find { Field field ->
+          field.name == "log" &&
+                  Modifier.isPrivate(field.getModifiers()) &&
+                  Modifier.isStatic(field.getModifiers()) &&
+                  Modifier.isTransient(field.getModifiers()) &&
+                  Modifier.isFinal(field.getModifiers())
+      }
+  }
 
-    public void testClassAlreadyHasLogField() {
+  public void testPrivateFinalStaticNamedLogFieldAppears() {
 
-        shouldFail {
+      Class clazz = new GroovyClassLoader().parseClass("""
+          @groovy.util.logging.Log('logger')
+          class MyClass {
+          } """)
 
-            Class clazz = new GroovyClassLoader().parseClass("""
-                @groovy.util.logging.Log
-                class MyClass {
-                    String log
-                } """)
+      assert clazz.declaredFields.find { Field field ->
+          field.name == "logger" &&
+                  Modifier.isPrivate(field.getModifiers()) &&
+                  Modifier.isStatic(field.getModifiers()) &&
+                  Modifier.isTransient(field.getModifiers()) &&
+                  Modifier.isFinal(field.getModifiers())
+      }
+  }
 
-            assert clazz.newInstance()
-        }
-    }
+  public void testClassAlreadyHasLogField() {
+
+      shouldFail {
+
+          Class clazz = new GroovyClassLoader().parseClass("""
+              @groovy.util.logging.Log
+              class MyClass {
+                  String log
+              } """)
+
+          assert clazz.newInstance()
+      }
+  }
+
+  public void testClassAlreadyHasNamedLogField() {
+
+      shouldFail {
+
+          Class clazz = new GroovyClassLoader().parseClass("""
+              @groovy.util.logging.Log('logger')
+              class MyClass {
+                  String logger
+              } """)
+
+          assert clazz.newInstance()
+      }
+  }
 
 
-    public void testLogInfo() {
+  public void testLogInfo() {
 
-        Class clazz = new GroovyClassLoader().parseClass("""
-            @groovy.util.logging.Log
-            class MyClass {
+      Class clazz = new GroovyClassLoader().parseClass("""
+          @groovy.util.logging.Log
+          class MyClass {
 
-                def loggingMethod() {
-                  log.severe ("severe  called")
-                  log.warning("warning called")
-                  log.info   ("info    called")
-                  log.fine   ("fine    called")
-                  log.finer  ("finer   called")
-                  log.finest ("finest  called")
-                }
-            }
-            new MyClass().loggingMethod() """)
+              def loggingMethod() {
+                log.severe ("severe  called")
+                log.warning("warning called")
+                log.info   ("info    called")
+                log.fine   ("fine    called")
+                log.finer  ("finer   called")
+                log.finest ("finest  called")
+              }
+          }
+          new MyClass().loggingMethod() """)
 
-        Script s = (Script) clazz.newInstance()
-        s.run()
+      Script s = (Script) clazz.newInstance()
+      s.run()
 
-        assert logObserver.entries.size() == 6
+      assert logObserver.entries.size() == 6
 
-        assert logObserver.entries[0].message == "severe  called"
-        assert logObserver.entries[1].message == "warning called"
-        assert logObserver.entries[2].message == "info    called"
-        assert logObserver.entries[3].message == "fine    called"
-        assert logObserver.entries[4].message == "finer   called"
-        assert logObserver.entries[5].message == "finest  called"
+      assert logObserver.entries[0].message == "severe  called"
+      assert logObserver.entries[1].message == "warning called"
+      assert logObserver.entries[2].message == "info    called"
+      assert logObserver.entries[3].message == "fine    called"
+      assert logObserver.entries[4].message == "finer   called"
+      assert logObserver.entries[5].message == "finest  called"
 
-        assert logObserver.entries[0].level == Level.SEVERE
-        assert logObserver.entries[1].level == Level.WARNING
-        assert logObserver.entries[2].level == Level.INFO
-        assert logObserver.entries[3].level == Level.FINE
-        assert logObserver.entries[4].level == Level.FINER
-        assert logObserver.entries[5].level == Level.FINEST
-    }
+      assert logObserver.entries[0].level == Level.SEVERE
+      assert logObserver.entries[1].level == Level.WARNING
+      assert logObserver.entries[2].level == Level.INFO
+      assert logObserver.entries[3].level == Level.FINE
+      assert logObserver.entries[4].level == Level.FINER
+      assert logObserver.entries[5].level == Level.FINEST
+  }
+
+  public void testLogInfoWithName() {
+
+      Class clazz = new GroovyClassLoader().parseClass("""
+          @groovy.util.logging.Log('logger')
+          class MyClass {
+
+              def loggingMethod() {
+                logger.severe ("severe  called")
+                logger.warning("warning called")
+                logger.info   ("info    called")
+                logger.fine   ("fine    called")
+                logger.finer  ("finer   called")
+                logger.finest ("finest  called")
+              }
+          }
+          new MyClass().loggingMethod() """)
+
+      Script s = (Script) clazz.newInstance()
+      s.run()
+
+      assert logObserver.entries.size() == 6
+
+      assert logObserver.entries[0].message == "severe  called"
+      assert logObserver.entries[1].message == "warning called"
+      assert logObserver.entries[2].message == "info    called"
+      assert logObserver.entries[3].message == "fine    called"
+      assert logObserver.entries[4].message == "finer   called"
+      assert logObserver.entries[5].message == "finest  called"
+
+      assert logObserver.entries[0].level == Level.SEVERE
+      assert logObserver.entries[1].level == Level.WARNING
+      assert logObserver.entries[2].level == Level.INFO
+      assert logObserver.entries[3].level == Level.FINE
+      assert logObserver.entries[4].level == Level.FINER
+      assert logObserver.entries[5].level == Level.FINEST
+  }
 
     public void testLogGuard() {
        Class clazz = new GroovyClassLoader().parseClass("""

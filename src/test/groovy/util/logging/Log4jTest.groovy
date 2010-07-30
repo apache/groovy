@@ -13,7 +13,6 @@ import org.apache.log4j.Logger
 /**
  * @author Tomasz Bujok
  */
-
 class Log4jTest extends GroovyTestCase {
 
   Log4jInterceptingAppender appender
@@ -54,9 +53,23 @@ class Log4jTest extends GroovyTestCase {
     shouldFail {
 
       Class clazz = new GroovyClassLoader().parseClass('''
-                @groovy.util.logging.Log4j
+                @groovy.util.logging.Log4j()
                 class MyClass {
                     String log
+                } ''')
+
+      assert clazz.newInstance()
+    }
+  }
+
+  public void testClassAlreadyHasNamedLogField() {
+
+    shouldFail {
+
+      Class clazz = new GroovyClassLoader().parseClass('''
+                @groovy.util.logging.Log4j('logger')
+                class MyClass {
+                    String logger
                 } ''')
 
       assert clazz.newInstance()
@@ -76,6 +89,43 @@ class Log4jTest extends GroovyTestCase {
                     log.info  ("info called")
                     log.debug ("debug called")
                     log.trace ("trace called")
+                }
+            }
+            new MyClass().loggingMethod() ''')
+
+    Script s = (Script) clazz.newInstance()
+    s.run()
+
+    int ind = 0
+    def events = appender.getEvents()
+    assert events.size() == 6
+    assert events[ind].level == Level.FATAL
+    assert events[ind].message == "fatal called"
+    assert events[++ind].level == Level.ERROR
+    assert events[ind].message == "error called"
+    assert events[++ind].level == Level.WARN
+    assert events[ind].message == "warn called"
+    assert events[++ind].level == Level.INFO
+    assert events[ind].message == "info called"
+    assert events[++ind].level == Level.DEBUG
+    assert events[ind].message == "debug called"
+    assert events[++ind].level == Level.TRACE
+    assert events[ind].message == "trace called"
+  }
+
+  public void testLogInfoForNamedLogger() {
+
+    Class clazz = new GroovyClassLoader().parseClass('''
+            @groovy.util.logging.Log4j('logger')
+            class MyClass {
+
+                def loggingMethod() {
+                    logger.fatal ("fatal called")
+                    logger.error ("error called")
+                    logger.warn  ("warn called")
+                    logger.info  ("info called")
+                    logger.debug ("debug called")
+                    logger.trace ("trace called")
                 }
             }
             new MyClass().loggingMethod() ''')

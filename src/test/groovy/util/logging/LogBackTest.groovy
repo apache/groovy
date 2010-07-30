@@ -41,21 +41,37 @@ class LogBackTest extends GroovyTestCase {
         logger.detachAppender(appender)
     }
 
-    public void testPrivateFinalStaticLogFieldAppears() {
+      public void testPrivateFinalStaticLogFieldAppears() {
 
-        Class clazz = new GroovyClassLoader().parseClass('''
-              @groovy.util.logging.LogBack
-              class MyClass {
-              } ''')
+          Class clazz = new GroovyClassLoader().parseClass('''
+                @groovy.util.logging.LogBack
+                class MyClass {
+                } ''')
 
-        assert clazz.declaredFields.find { Field field ->
-            field.name == "log" &&
-                    Modifier.isPrivate(field.getModifiers()) &&
-                    Modifier.isStatic(field.getModifiers()) &&
-                    Modifier.isTransient(field.getModifiers()) &&
-                    Modifier.isFinal(field.getModifiers())
-        }
-    }
+          assert clazz.declaredFields.find { Field field ->
+              field.name == "log" &&
+                      Modifier.isPrivate(field.getModifiers()) &&
+                      Modifier.isStatic(field.getModifiers()) &&
+                      Modifier.isTransient(field.getModifiers()) &&
+                      Modifier.isFinal(field.getModifiers())
+          }
+      }
+
+      public void testPrivateFinalStaticNamedLogFieldAppears() {
+
+          Class clazz = new GroovyClassLoader().parseClass('''
+                @groovy.util.logging.LogBack('logger')
+                class MyClass {
+                } ''')
+
+          assert clazz.declaredFields.find { Field field ->
+              field.name == "logger" &&
+                      Modifier.isPrivate(field.getModifiers()) &&
+                      Modifier.isStatic(field.getModifiers()) &&
+                      Modifier.isTransient(field.getModifiers()) &&
+                      Modifier.isFinal(field.getModifiers())
+          }
+      }
 
     public void testClassAlreadyHasLogField() {
 
@@ -71,39 +87,87 @@ class LogBackTest extends GroovyTestCase {
         }
     }
 
-    public void testLogInfo() {
+    public void testClassAlreadyHasNamedLogField() {
 
-        Class clazz = new GroovyClassLoader().parseClass('''
-            @groovy.util.logging.LogBack
-            class MyClass {
+        shouldFail {
 
-                def loggingMethod() {
-                    log.error ("error called")
-                    log.warn  ("warn called")
-                    log.info  ("info called")
-                    log.debug ("debug called")
-                    log.trace ("trace called")
-                }
-            }
-            new MyClass().loggingMethod() ''')
+            Class clazz = new GroovyClassLoader().parseClass('''
+                @groovy.util.logging.LogBack('logger')
+                class MyClass {
+                    String logger
+                } ''')
 
-        Script s = (Script) clazz.newInstance()
-        s.run()
-
-        def events = appender.getEvents()
-        int ind = 0
-        assert events.size() == 5
-        assert events[ind].level == Level.ERROR
-        assert events[ind].message == "error called"
-        assert events[++ind].level == Level.WARN
-        assert events[ind].message == "warn called"
-        assert events[++ind].level == Level.INFO
-        assert events[ind].message == "info called"
-        assert events[++ind].level == Level.DEBUG
-        assert events[ind].message == "debug called"
-        assert events[++ind].level == Level.TRACE
-        assert events[ind].message == "trace called"
+            assert clazz.newInstance()
+        }
     }
+
+  public void testLogInfo() {
+
+      Class clazz = new GroovyClassLoader().parseClass('''
+          @groovy.util.logging.LogBack
+          class MyClass {
+
+              def loggingMethod() {
+                  log.error ("error called")
+                  log.warn  ("warn called")
+                  log.info  ("info called")
+                  log.debug ("debug called")
+                  log.trace ("trace called")
+              }
+          }
+          new MyClass().loggingMethod() ''')
+
+      Script s = (Script) clazz.newInstance()
+      s.run()
+
+      def events = appender.getEvents()
+      int ind = 0
+      assert events.size() == 5
+      assert events[ind].level == Level.ERROR
+      assert events[ind].message == "error called"
+      assert events[++ind].level == Level.WARN
+      assert events[ind].message == "warn called"
+      assert events[++ind].level == Level.INFO
+      assert events[ind].message == "info called"
+      assert events[++ind].level == Level.DEBUG
+      assert events[ind].message == "debug called"
+      assert events[++ind].level == Level.TRACE
+      assert events[ind].message == "trace called"
+  }
+
+  public void testLogInfoWithNamedLogger() {
+
+      Class clazz = new GroovyClassLoader().parseClass('''
+          @groovy.util.logging.LogBack('logger')
+          class MyClass {
+
+              def loggingMethod() {
+                  logger.error ("error called")
+                  logger.warn  ("warn called")
+                  logger.info  ("info called")
+                  logger.debug ("debug called")
+                  logger.trace ("trace called")
+              }
+          }
+          new MyClass().loggingMethod() ''')
+
+      Script s = (Script) clazz.newInstance()
+      s.run()
+
+      def events = appender.getEvents()
+      int ind = 0
+      assert events.size() == 5
+      assert events[ind].level == Level.ERROR
+      assert events[ind].message == "error called"
+      assert events[++ind].level == Level.WARN
+      assert events[ind].message == "warn called"
+      assert events[++ind].level == Level.INFO
+      assert events[ind].message == "info called"
+      assert events[++ind].level == Level.DEBUG
+      assert events[ind].message == "debug called"
+      assert events[++ind].level == Level.TRACE
+      assert events[ind].message == "trace called"
+  }
 
     public void testLogGuard() {
         Class clazz = new GroovyClassLoader().parseClass('''
