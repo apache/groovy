@@ -19,10 +19,10 @@ import org.codehaus.groovy.ast.ImportNode
 
 class Groovy4193Bug extends GroovyTestCase {
     void testNPEOnImportNode() {
-		def imp = new ImportNode(null, "GROOVY-4193")
-		
-		assertNull imp.className // no NPE
-		
-		assertNotNull imp.text // no NPE
+        def imp = new ImportNode(null, "GROOVY-4193")
+        
+        assertNull imp.className // no NPE
+        
+        assertNotNull imp.text // no NPE
     }
 }

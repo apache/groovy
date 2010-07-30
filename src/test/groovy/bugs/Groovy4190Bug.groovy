@@ -20,29 +20,29 @@ import gls.CompilableTestSupport
 class Groovy4190Bug extends CompilableTestSupport {
     void testGenericsUsageInMethodCall() {
         shouldCompile """
-			class Test4190<E> {
-				E someVariable;
-				
-				protected Test4190() { }
-				
-				public static <E> Test4190<E> create() {
-					return new Test4190<E>();
-				}
-				
-				public static void main(String[] args) {
-					Test4190<Integer> t = Test4190.<Integer>create();
-				}
-			}
+            class Test4190<E> {
+                E someVariable;
+                
+                protected Test4190() { }
+                
+                public static <E> Test4190<E> create() {
+                    return new Test4190<E>();
+                }
+                
+                public static void main(String[] args) {
+                    Test4190<Integer> t = Test4190.<Integer>create();
+                }
+            }
         """
     }
     
     void testGenericsUsageInMethodCall2() {
         shouldCompile """
-			class Test4190V2<E> {
-				public static void main(String[] args) {
-					Test4190V2<Integer, String> t = Test4190V2.<Integer, String>create();
-				}
-			}
+            class Test4190V2<E> {
+                public static void main(String[] args) {
+                    Test4190V2<Integer, String> t = Test4190V2.<Integer, String>create();
+                }
+            }
         """
     }
 }
