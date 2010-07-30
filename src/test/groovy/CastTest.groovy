@@ -1,3 +1,18 @@
+/*
+ * Copyright 2003-2010 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package groovy
 
 class CastTest extends GroovyTestCase {
@@ -21,7 +36,7 @@ class CastTest extends GroovyTestCase {
         
         assert x.class == Short , "Type is ${x.class}"
         
-		methodWithShort(x)
+        methodWithShort(x)
         
         x = 7
         
@@ -56,8 +71,8 @@ class CastTest extends GroovyTestCase {
         assert i == c
         assert i =='x'
         assert c == 'x'
-		assert i == i
-		assert c == c
+        assert i == i
+        assert c == c
 
         assert 'x' == 'x'
         assert 'x' == c
@@ -104,19 +119,19 @@ class CastTest extends GroovyTestCase {
     }
 
     void testAsSet() {
-    	def mySet = [2, 3, 4, 3] as SortedSet
-    	assert mySet instanceof SortedSet
-    	
-    	// identity test
-    	mySet = {} as SortedSet
-    	assert mySet.is ( mySet as SortedSet )
-    	
-    	mySet = [2, 3, 4, 3] as Set
-    	assert mySet instanceof HashSet
-    	
+        def mySet = [2, 3, 4, 3] as SortedSet
+        assert mySet instanceof SortedSet
+        
+        // identity test
+        mySet = {} as SortedSet
+        assert mySet.is ( mySet as SortedSet )
+        
+        mySet = [2, 3, 4, 3] as Set
+        assert mySet instanceof HashSet
+        
         // identitiy test
-    	mySet = {} as Set
-    	assert mySet.is ( mySet as Set )
+        mySet = {} as Set
+        assert mySet.is ( mySet as Set )
 
         // array test
         mySet = new String[2] as Set // Array of 2 null Strings

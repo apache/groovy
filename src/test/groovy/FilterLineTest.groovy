@@ -1,3 +1,18 @@
+/*
+ * Copyright 2003-2010 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package groovy
 
 /**
@@ -10,35 +25,35 @@ package groovy
  */
 
 class FilterLineTest extends GroovyTestCase {
-	def myFile
-	def myInput
-	def myOutput
+    def myFile
+    def myInput
+    def myOutput
 
-	void setUp() {
-	    myFile = new File("src/test/groovy/FilterLineTest.groovy")
-		myInput = new FileInputStream(myFile)
-		myOutput = new CharArrayWriter()
-	}
+    void setUp() {
+        myFile = new File("src/test/groovy/FilterLineTest.groovy")
+        myInput = new FileInputStream(myFile)
+        myOutput = new CharArrayWriter()
+    }
 
-	void testFilterLineOnFileReturningAWritable() {
-		def writable = myFile.filterLine() {it.contains("testFilterLineOnFileReturningAWritable")}
-		writable.writeTo(myOutput)
-		assert 3 == myOutput.toString().count("testFilterLineOnFileReturningAWritable")
-	}
+    void testFilterLineOnFileReturningAWritable() {
+        def writable = myFile.filterLine() {it.contains("testFilterLineOnFileReturningAWritable")}
+        writable.writeTo(myOutput)
+        assert 3 == myOutput.toString().count("testFilterLineOnFileReturningAWritable")
+    }
 
-	void testFilterLineOnFileUsingAnOutputStream() {
-		myFile.filterLine(myOutput) {it.contains("testFilterLineOnFileUsingAnOutputStream")}
-		assert 3 == myOutput.toString().count("testFilterLineOnFileUsingAnOutputStream")
-	}
+    void testFilterLineOnFileUsingAnOutputStream() {
+        myFile.filterLine(myOutput) {it.contains("testFilterLineOnFileUsingAnOutputStream")}
+        assert 3 == myOutput.toString().count("testFilterLineOnFileUsingAnOutputStream")
+    }
 
-	void testFilterLineOnInputStreamReturningAWritable() {
-		def writable = myInput.filterLine() {it.contains("testFilterLineOnInputStreamReturningAWritable")}
-		writable.writeTo(myOutput)
-		assert 3 == myOutput.toString().count("testFilterLineOnInputStreamReturningAWritable")
-	}
+    void testFilterLineOnInputStreamReturningAWritable() {
+        def writable = myInput.filterLine() {it.contains("testFilterLineOnInputStreamReturningAWritable")}
+        writable.writeTo(myOutput)
+        assert 3 == myOutput.toString().count("testFilterLineOnInputStreamReturningAWritable")
+    }
 
-	void testFilterLineOnInputStreamUsingAnOutputStream() {
-		myInput.filterLine(myOutput) {it.contains("testFilterLineOnInputStreamUsingAnOutputStream")}
-		assert 3 == myOutput.toString().count("testFilterLineOnInputStreamUsingAnOutputStream")
-	}
+    void testFilterLineOnInputStreamUsingAnOutputStream() {
+        myInput.filterLine(myOutput) {it.contains("testFilterLineOnInputStreamUsingAnOutputStream")}
+        assert 3 == myOutput.toString().count("testFilterLineOnInputStreamUsingAnOutputStream")
+    }
 }

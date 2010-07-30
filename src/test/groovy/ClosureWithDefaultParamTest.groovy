@@ -1,3 +1,18 @@
+/*
+ * Copyright 2003-2010 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package groovy
 
 /** 
@@ -25,10 +40,10 @@ class ClosureWithDefaultParamTest extends GroovyTestCase {
     void testMapCollect() {
         def map = [1:2, 2:4, 3:6, 4:8]
         def answer = map.collect { it.key + it.value }
-		
-		// lest sort the results since maps are in hash code order
-		answer = answer.sort()
-		
+        
+        // lest sort the results since maps are in hash code order
+        answer = answer.sort()
+        
         assert answer.size() == 4
         assert answer == [3, 6, 9, 12]
         assert answer.get(0) == 3
@@ -75,7 +90,7 @@ class ClosureWithDefaultParamTest extends GroovyTestCase {
         def values = answer.collect {it.value }
 
         System.out.println("keys " + keys + " values " + values)
-		
+        
         // maps are in hash order so lets sort the results       
         keys.sort() 
         values.sort() 
@@ -89,11 +104,11 @@ class ClosureWithDefaultParamTest extends GroovyTestCase {
 
         def list = [1, 2, 3, 4]
         list.each { count = count + it }
-		
+        
         assert count == 10
 
         list.each { count = count + it }
-		
+        
         assert count == 20
     }
 
@@ -140,10 +155,10 @@ class ClosureWithDefaultParamTest extends GroovyTestCase {
     void testReadLines() {
         def file = new File("src/test/groovy/Bar.groovy")
 
-		def lines = file.readLines()
-		
-		assert lines != null
-		assert lines.size() > 0
+        def lines = file.readLines()
+        
+        assert lines != null
+        assert lines.size() > 0
 
         System.out.println("File has number of lines: " + lines.size())
     }
