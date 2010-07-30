@@ -21,6 +21,8 @@ import java.util.Arrays;
  * @author Raffaele Cigni
  * @author Alberto Vilches Raton
  * @author Tomasz Bujok
+ * @author Martin Ghados
+ * @author Matthias Cullmann
  */
 @GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
 public class LogASTTransformation implements ASTTransformation {
@@ -36,6 +38,7 @@ public class LogASTTransformation implements ASTTransformation {
         final boolean isJUL = "groovy.util.logging.Log".equals(logAnnotation.getClassNode().getName());
         final boolean isLogBack = "groovy.util.logging.LogBack".equals(logAnnotation.getClassNode().getName());
         final boolean isLog4j = "groovy.util.logging.Log4j".equals(logAnnotation.getClassNode().getName());
+        final boolean isCommonsLog = "groovy.util.logging.CommonsLog".equals(logAnnotation.getClassNode().getName());
 
         if (!(targetClass instanceof ClassNode))
             throw new GroovyBugError("Class annotation @Log annotated no Class, this must not happen.");
@@ -90,6 +93,14 @@ public class LogASTTransformation implements ASTTransformation {
                                         new ClassExpression(new ClassNode("org.apache.log4j.Logger", Opcodes.ACC_PUBLIC, new ClassNode(Object.class))),
                                         "getLogger",
                                         new ClassExpression(node)));
+                    } else if (isCommonsLog) {
+                        logNode = node.addField("log",
+                                Opcodes.ACC_FINAL | Opcodes.ACC_TRANSIENT | Opcodes.ACC_STATIC | Opcodes.ACC_PRIVATE,
+                                new ClassNode("org.apache.commons.logging.Log", Opcodes.ACC_PUBLIC, new ClassNode(Object.class)),
+                                new MethodCallExpression(
+                                        new ClassExpression(new ClassNode("org.apache.commons.logging.LogFactory", Opcodes.ACC_PUBLIC, new ClassNode(Object.class))),
+                                        "getLog",
+                                        new ClassExpression(node)));
                     }
                 }
                 super.visitClass(node);
@@ -113,7 +124,15 @@ public class LogASTTransformation implements ASTTransformation {
 
                 ArgumentListExpression args = new ArgumentListExpression();
 
-                if (isLog4j) {
+                if (isCommonsLog) {
+                    if (methodName.matches("fatal|error|warn|info|debug|trace")) {
+                        return commonMethodCallExpression(variableExpression, methodName, exp);
+                    }
+                }else if (isLogBack) {
+                    if (methodName.matches("error|warn|info|debug|trace")) {
+                        return commonMethodCallExpression(variableExpression, methodName, exp);
+                    }
+                } else if (isLog4j) {
                     if (!methodName.matches("fatal|error|warn|info|debug|trace")) {
                         return exp;
                     }
@@ -138,20 +157,6 @@ public class LogASTTransformation implements ASTTransformation {
                             new BooleanExpression(condition),
                             exp,
                             ConstantExpression.NULL);
-                } else if (isLogBack) {
-                    if (!methodName.matches("error|warn|info|debug|trace")) {
-                        return exp;
-                    }
-
-                    MethodCallExpression condition = new MethodCallExpression(
-                            variableExpression,
-                            "is" + methodName.substring(0, 1).toUpperCase() + methodName.substring(1, methodName.length()) + "Enabled",
-                            ArgumentListExpression.EMPTY_ARGUMENTS);
-
-                    return new TernaryExpression(
-                            new BooleanExpression(condition),
-                            exp,
-                            ConstantExpression.NULL);
                 } else if (isJUL) {
                     if (!methodName.matches("severe|warning|info|fine|finer|finest")) {
                         return exp;
@@ -170,6 +175,19 @@ public class LogASTTransformation implements ASTTransformation {
                             ConstantExpression.NULL);
                 }
                 return exp;
+            }
+
+            private Expression commonMethodCallExpression(Expression variableExpression, String methodName, Expression exp) {
+
+                MethodCallExpression condition = new MethodCallExpression(
+                        variableExpression,
+                        "is" + methodName.substring(0, 1).toUpperCase() + methodName.substring(1, methodName.length()) + "Enabled",
+                        ArgumentListExpression.EMPTY_ARGUMENTS);
+
+                return new TernaryExpression(
+                        new BooleanExpression(condition),
+                        exp,
+                        ConstantExpression.NULL);
             }
 
             private boolean usesSimpleMethodArgumentsOnly(MethodCallExpression mce) {

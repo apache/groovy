@@ -110,21 +110,16 @@ class LogBackTest extends GroovyTestCase {
            @groovy.util.logging.LogBack
             class MyClass {
                 def loggingMethod() {
+                    def isSet = false
                     log.setLevel(ch.qos.logback.classic.Level.ERROR)
-                    log.trace (prepareLogMessage())
-                }
-
-                def prepareLogMessage() {
-                  log.getAppender("MyAppender")?.isLogGuarded = false
-                  return "formatted log message"
+                    log.trace (isSet = true)
+                    return isSet
                 }
             }
             new MyClass().loggingMethod() ''')
 
         Script s = (Script) clazz.newInstance()
-        s.run()
-
-        assert appender.isLogGuarded == true
+        assert s.run() == false
     }
 
 }
@@ -132,8 +127,6 @@ class LogBackTest extends GroovyTestCase {
 class LogbackInterceptingAppender<E> extends OutputStreamAppender<E> {
 
     List<LoggingEvent> events = new ArrayList<LoggingEvent>()
-
-    boolean isLogGuarded = true
 
     public List<LoggingEvent> getEvents() {
         return events
