@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2009 the original author or authors.
+ * Copyright 2003-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,7 +57,7 @@ class GrapeIvy implements GrapeEngine {
     Map<ClassLoader, Set<IvyGrabRecord>> loadedDeps = new WeakHashMap<ClassLoader, Set<IvyGrabRecord>>()
     // set that stores the IvyGrabRecord(s) for all the dependencies in each grab() call 
     Set<IvyGrabRecord> grabRecordsForCurrDepdendencies = new LinkedHashSet<IvyGrabRecord>()
-	// we keep the settings so that addResolver can add to the resolver chain
+    // we keep the settings so that addResolver can add to the resolver chain
     IvySettings settings
 
     public GrapeIvy() {
@@ -274,7 +274,7 @@ class GrapeIvy implements GrapeEngine {
             md.addDependency(dd)
         }
 
-       // resolve grab and dependencies
+        // resolve grab and dependencies
         ResolveOptions resolveOptions = new ResolveOptions()\
             .setConfs(['default'] as String[])\
             .setOutputReport(false)\
@@ -452,7 +452,7 @@ class GrapeIvy implements GrapeEngine {
               m2compatible:(args.m2Compatible ?: true), settings:settings)
 
         chainResolver.add(resolver)
-    	
+        
         ivyInstance = Ivy.newInstance(settings)
     }
 }

@@ -17,12 +17,12 @@ package groovy.bugs
 
 class Groovy4191Bug extends GroovyTestCase {
     void testPutIntoArray() {
-		recreateProblem()    
-		recreateProblem()    
+        recreateProblem()    
+        recreateProblem()    
     }
 
-	def recreateProblem() {
-	    def val = "a;2".split(";");
-	    val[1] = 1;
-	}
+    def recreateProblem() {
+        def val = "a;2".split(";");
+        val[1] = 1;
+    }
 }

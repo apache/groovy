@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2009 the original author or authors.
+ * Copyright 2003-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -280,7 +280,7 @@ class RegularExpressionsTest extends GroovyTestCase {
         def compiledPattern = ~/.at/
         def result = []
         "The cat sat on the hat".eachMatch(compiledPattern) { result << it }
-	    assert "cat sat hat" == result.join(" ")
+        assert "cat sat hat" == result.join(" ")
     }
 
     void testPatternVersionsOfStringRegexMethods() {
@@ -485,9 +485,9 @@ class RegularExpressionsTest extends GroovyTestCase {
 
         def closureSingleVar = { matchArray -> 
             return "(${matchArray[1]}) ${matchArray[2]}-${matchArray[3]}" 
-	    }
-	
-	    assert "(888) 555-1212" == "bar 888-555-1212 foo".find (compiledPhonePattern, closureSingleVar)
+        }
+    
+        assert "(888) 555-1212" == "bar 888-555-1212 foo".find (compiledPhonePattern, closureSingleVar)
     }    
 
     void testFindAll() {

@@ -20,16 +20,16 @@ import org.codehaus.groovy.control.MultipleCompilationErrorsException
 class Groovy4119Bug extends GroovyTestCase {
     void testThis$0PassingInSuperCallWithinInnerClasses() {
         assertScript """
-			class Test4119 {
-			    static main(args) {
-			        new Test4119().foo()
-			    }
-			    void foo() {
-			        new B4119()
-			    }
-			    class A4119 {}
-			    class B4119 extends A4119 {}
-			}
+            class Test4119 {
+                static main(args) {
+                    new Test4119().foo()
+                }
+                void foo() {
+                    new B4119()
+                }
+                class A4119 {}
+                class B4119 extends A4119 {}
+            }
         """
     }
 }

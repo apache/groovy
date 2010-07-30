@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -71,29 +71,29 @@ class ObjectBrowser {
                 }
                 tabbedPane(constraints:CENTER){
                     if (inspector.object instanceof Collection) {
-	                    scrollPane(name: ' Collection data ') {
-	                        itemTable = table() {
-	                        	int i = 0
-	                            def data = inspector.object.collect { val -> [i++, val] }
-	                            tableModel(list:data) {
-	                                closureColumn(header:'Index', read:{it[0]})
-	                                closureColumn(header:'Value', read:{it[1]})
-	                            }
-	                        }
-	                    }
+                        scrollPane(name: ' Collection data ') {
+                            itemTable = table() {
+                                int i = 0
+                                def data = inspector.object.collect { val -> [i++, val] }
+                                tableModel(list:data) {
+                                    closureColumn(header:'Index', read:{it[0]})
+                                    closureColumn(header:'Value', read:{it[1]})
+                                }
+                            }
+                        }
                     }
                     if (inspector.object instanceof Map) {
-	                    scrollPane(name: ' Map data ') {
-	                        itemTable = table() {
-	                        	int i = 0
-	                            def data = inspector.object.collect { key, val -> [i++, key, val] }
-	                            tableModel(list:data) {
-	                                closureColumn(header:'Index', read:{it[0]})
-	                                closureColumn(header:'Key',   read:{it[1]})
-	                                closureColumn(header:'Value', read:{it[2]})
-	                            }
-	                        }
-	                    }
+                        scrollPane(name: ' Map data ') {
+                            itemTable = table() {
+                                int i = 0
+                                def data = inspector.object.collect { key, val -> [i++, key, val] }
+                                tableModel(list:data) {
+                                    closureColumn(header:'Index', read:{it[0]})
+                                    closureColumn(header:'Key',   read:{it[1]})
+                                    closureColumn(header:'Value', read:{it[2]})
+                                }
+                            }
+                        }
                     }
                     scrollPane(name: ' Public Fields and Properties ') {
                         fieldTable = table() {
@@ -139,11 +139,11 @@ class ObjectBrowser {
     }
     
     void addSorter(table) {
-    	if (table != null) {
-	    	def sorter = new TableSorter(table.model)
-    		table.model = sorter
-    		sorter.addMouseListenerToHeaderInTable(table)
-    	}
+        if (table != null) {
+            def sorter = new TableSorter(table.model)
+            table.model = sorter
+            sorter.addMouseListenerToHeaderInTable(table)
+        }
     }
     
     void showAbout(EventObject evt) {
