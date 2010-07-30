@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,33 +16,33 @@
 package groovy.util
 /**
  * Tests for the ConfigSlurper class
- 
+
  * @author Graeme Rocher
  * @author Guillaume Laforge
  * @since 0.6
-  *
+ *
  * Created: Jun 19, 2007
  * Time: 6:29:33 PM
- * 
+ *
  */
 
-class  ConfigSlurperTest extends GroovyTestCase {
+class ConfigSlurperTest extends GroovyTestCase {
     void testConsecutiveSlurperValues() {
-      def config = new ConfigSlurper().parse('''
+        def config = new ConfigSlurper().parse('''
 grails.views.default.codec="none"
 grails {
-	mail {
-		host = "smtp.foo.com"
-     	port = 25
-     	username = "foo"
-     	password = "bar"
-  }
+    mail {
+        host = "smtp.foo.com"
+        port = 25
+        username = "foo"
+        password = "bar"
+    }
 }
 ''')
 
 
-      assertEquals "none", config.grails.views.default.codec
-      assertEquals "smtp.foo.com", config.grails.mail.host
+        assertEquals "none", config.grails.views.default.codec
+        assertEquals "smtp.foo.com", config.grails.mail.host
     }
 
     void testConfigSlurperNestedValues() {
@@ -70,43 +70,43 @@ foo {
     }
 
     void testConfigBinding() {
-		def slurper = new ConfigSlurper()
-		slurper.binding = [foo:"bar"]
-		def config = slurper.parse('''
-test=foo + 1		
-		''')
-		assertEquals "bar1", config.test
+        def slurper = new ConfigSlurper()
+        slurper.binding = [foo: "bar"]
+        def config = slurper.parse('''
+test=foo + 1        
+        ''')
+        assertEquals "bar1", config.test
 
-	}
+    }
 
     void testEnvironmentProperties2() {
         def config = new ConfigSlurper("production").parse('''
 dataSource {
-	pooling = false
-	driverClassName = "org.hsqldb.jdbcDriver"
-	username = "sa"
-	password = ""
+    pooling = false
+    driverClassName = "org.hsqldb.jdbcDriver"
+    username = "sa"
+    password = ""
 }
 environments {
-	development {
-		dataSource {
-			dbCreate = "create-drop"
-			url = "jdbc:hsqldb:mem:devDB"
-		}
-	}
-	test {
-		dataSource {
-			dbCreate = "update"
-			url = "jdbc:hsqldb:mem:testDb"
-		}
-	}
-	production {
-		dataSource {
-		    password = "secret"
-			dbCreate = "update"
-			url = "jdbc:hsqldb:file:prodDb;shutdown=true"
-		}
-	}
+    development {
+        dataSource {
+            dbCreate = "create-drop"
+            url = "jdbc:hsqldb:mem:devDB"
+        }
+    }
+    test {
+        dataSource {
+            dbCreate = "update"
+            url = "jdbc:hsqldb:mem:testDb"
+        }
+    }
+    production {
+        dataSource {
+            password = "secret"
+            dbCreate = "update"
+            url = "jdbc:hsqldb:file:prodDb;shutdown=true"
+        }
+    }
 }''')
 
         assertEquals false, config.dataSource.pooling
@@ -120,13 +120,13 @@ environments {
     void testParseProperties() {
         Properties props = new Properties()
         props['foo'] = 'bar'
-        props['log4j.appender.NULL']='org.apache.log4j.varia.NullAppender'
-        props['log4j.rootLogger']='error, NULL'
-        props['log4j.logger.org.codehaus.groovy.grails.plugins']='info,NULL'
-        props['log4j.additivity.org.codehaus.groovy.grails.plugins']='false'
-        props['log4j.additivity.org.springframework']='false'
-        props['log4j.logger.grails.spring']='info,NULL'
-        props['log4j.appender.NULL.layout']='org.apache.log4j.PatternLayout'
+        props['log4j.appender.NULL'] = 'org.apache.log4j.varia.NullAppender'
+        props['log4j.rootLogger'] = 'error, NULL'
+        props['log4j.logger.org.codehaus.groovy.grails.plugins'] = 'info,NULL'
+        props['log4j.additivity.org.codehaus.groovy.grails.plugins'] = 'false'
+        props['log4j.additivity.org.springframework'] = 'false'
+        props['log4j.logger.grails.spring'] = 'info,NULL'
+        props['log4j.appender.NULL.layout'] = 'org.apache.log4j.PatternLayout'
 
         def config = new ConfigSlurper().parse(props)
 
@@ -137,7 +137,7 @@ environments {
         assertEquals 'false', config.log4j.additivity.org.springframework
         assertEquals 'bar', config.foo
     }
-    
+
     void testSimpleProperties() {
         def slurper = new ConfigSlurper()
 
@@ -166,7 +166,7 @@ smtp.dummy = null
         assert config
         assertEquals "smtp.myisp.com", config.smtp.mail.host
         assertEquals "server", config.smtp.mail.auth.user
-        assertEquals "http://localhost:80/resources", config.resources.URL                
+        assertEquals "http://localhost:80/resources", config.resources.URL
     }
 
     void testScopedPropertiesWithNesting() {
@@ -186,7 +186,7 @@ smtp.dummy = null
         assertEquals "server", config.smtp.mail.auth.user
         assertEquals "http://localhost:80/resources", config.resources.URL
     }
-    
+
     void testScopedVariableReusage() {
         def conf = '''
           a0 = "Goofy"
@@ -194,17 +194,17 @@ smtp.dummy = null
           a2."$a0" = "Mickey Mouse and " + "$a0"
           group1 { a0 = "Donald Duck" }
           group2 { 
-            a0 = a0
-            a1 = "$group1.a0" 
-            group3 {
-              a0 = "inner$a0" 
-              group4 {
-                a0 = "inner$a0"
-                a1 = a1
-                a3 = "Dagobert Duck"
+              a0 = a0
+              a1 = "$group1.a0"
+              group3 {
+                  a0 = "inner$a0"
+                  group4 {
+                      a0 = "inner$a0"
+                      a1 = a1
+                      a3 = "Dagobert Duck"
+                  }
               }
-            }
-            a3 = a3 
+              a3 = a3
           }
           a3 = "$group1.a0"
         '''
@@ -249,7 +249,7 @@ log4j {
         assertEquals "org.apache.log4j.PatternLayout", config.log4j.appender."stdout.layout"
         assertEquals "error,stdout", config.log4j.rootLogger
         assertEquals "info,stdout", config.log4j.logger.org.codehaus.groovy.grails
-        assertEquals false, config.log4j.additivity.org.codehaus.groovy.grails              
+        assertEquals false, config.log4j.additivity.org.codehaus.groovy.grails
     }
 
     void testEnvironmentSpecificConfig() {
@@ -351,7 +351,7 @@ log4j {
         assertEquals "org.apache.log4j.PatternLayout", config."log4j.appender.stdout.layout"
         assertEquals "error,stdout", config."log4j.rootLogger"
         assertEquals "info,stdout", config."log4j.logger.org.codehaus.groovy.grails"
-        assertEquals false, config."log4j.additivity.org.codehaus.groovy.grails"              
+        assertEquals false, config."log4j.additivity.org.codehaus.groovy.grails"
     }
 
 
@@ -394,37 +394,37 @@ log4j {
         assertEquals "info,stdout", props."log4j.logger.org.codehaus.groovy.grails"
         assertEquals "false", props."log4j.additivity.org.codehaus.groovy.grails"
         assertFalse props.containsKey('smtp.dummy')
-    }     
-      
-	void testConfigTokensAsStrings() {
+    }
+
+    void testConfigTokensAsStrings() {
         def slurper = new ConfigSlurper()
         def config = slurper.parse('''
 log4j {
     appender.stdout = "org.apache.log4j.ConsoleAppender"
-	appender."stdout.layout"="org.apache.log4j.PatternLayout"
-	rootLogger="error,stdout"	
+    appender."stdout.layout"="org.apache.log4j.PatternLayout"
+    rootLogger="error,stdout"    
 }
         ''')
 
-		assert config   
+        assert config
         assertEquals "org.apache.log4j.ConsoleAppender", config.log4j.appender.stdout
         assertEquals "org.apache.log4j.PatternLayout", config.log4j.appender."stdout.layout"
-        assertEquals "error,stdout", config.log4j.rootLogger		
-	}
-	
-	void testConfigInterReferencing() {
+        assertEquals "error,stdout", config.log4j.rootLogger
+    }
+
+    void testConfigInterReferencing() {
         def slurper = new ConfigSlurper()
         def config = slurper.parse('''
-			var.one=5
-			var.two=var.one*2
+            var.one=5
+            var.two=var.one*2
         ''')
-		                     
-		assertEquals 5, config.var.one
-		assertEquals 10, config.var.two
-	}
 
-	void testSerializeConfig() {   
-		def text = '''
+        assertEquals 5, config.var.one
+        assertEquals 10, config.var.two
+    }
+
+    void testSerializeConfig() {
+        def text = '''
 log4j {
     appender.stdout="org.apache.log4j.ConsoleAppender"
     appender.'stdout.layout'="org.apache.log4j.PatternLayout"        
@@ -441,26 +441,26 @@ log4j {
         def slurper = new ConfigSlurper()
         def config = slurper.parse(text)
 
-		assert config                  
-		                                   
-		def sw = new StringWriter()
+        assert config
 
-		config.writeTo(sw)
+        def sw = new StringWriter()
 
-		def newText = sw.toString()
+        config.writeTo(sw)
 
-		//println newText
+        def newText = sw.toString()
 
-		config = slurper.parse(newText)
+        //println newText
+
+        config = slurper.parse(newText)
 
         assertEquals "org.apache.log4j.ConsoleAppender", config.log4j.appender.stdout
         assertEquals "org.apache.log4j.PatternLayout", config.log4j.appender."stdout.layout"
         assertEquals "error,stdout", config.log4j.rootLogger
         assertEquals "info,stdout", config.log4j.logger.org.codehaus.groovy.grails
         assertEquals false, config.log4j.additivity.org.codehaus.groovy.grails
-	}
+    }
 
-    void testNotProperlyNestedPropertiesArePreserved() throws IOException{
+    void testNotProperlyNestedPropertiesArePreserved() throws IOException {
         Properties props = new Properties()
         props.load(ConfigSlurperTest.class.getResourceAsStream("system.properties"))
         assertEquals("false", props.get("catalog.prov"))
@@ -473,7 +473,7 @@ log4j {
         assertEquals("false", props.get("catalog.prov"))
         assertEquals("sa", props.get("catalog.prov.db.user"))
     }
-    
+
     void testSameElementNestingWithoutDuplication() {
         def cfg = """ 
             a { b { a { foo = 1 } } } 

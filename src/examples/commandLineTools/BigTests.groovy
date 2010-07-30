@@ -6,15 +6,12 @@
 //
 // usage:   groovy BigTests.groovy <TEST.xml> <time in secs>
 
-import groovy.util.XmlParser
-import java.io.File
-
 fileName = ""  // default
 timeCutOff = new Float("1.0")
 
 if (args.length > 1) {
-	fileName = args[0]
-        timeCutOff = new Float(args[1])
+    fileName = args[0]
+    timeCutOff = new Float(args[1])
 } else {
     println "usage: groovy BigTests.groovy <TEST.xml> <time in secs>"
 }

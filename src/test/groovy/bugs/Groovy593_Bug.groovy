@@ -1,27 +1,38 @@
+/*
+ * Copyright 2003-2010 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package groovy.bugs
 
-import java.io.StringWriter
 import groovy.xml.MarkupBuilder
 
-/** 
- * Tests that special XML chars are entitized by MarkupBuilder.
+/**
+ * Tests that special XML chars are made into entities by MarkupBuilder.
  *
  * @author <a href="mailto:scottstirling@rcn.com">Scott Stirling</a>
+ * @author Pilho Kim
  *
  * @version $Revision: 1.4 $
- *
- *   Fix the cr lf handling of multiline stringon both of linux and Windows XP.
- *   This test should success on Windows XP.
- *
- *   @author Pilho Kim
  */
 class Groovy593_Bug extends GroovyTestCase {
-    
+
     StringWriter writer = new StringWriter()
     MarkupBuilder chars = new MarkupBuilder(writer)
     XmlParser parser = new XmlParser()
-    String expectedXML = 
-"""<chars>
+    String expectedXML =
+    """\
+<chars>
   <ampersand a='&amp;'>&amp;</ampersand>
   <quote attr='"'>"</quote>
   <apostrophe attr='&apos;'>'</apostrophe>
@@ -36,23 +47,21 @@ class Groovy593_Bug extends GroovyTestCase {
             ampersand(a: "&", "&")
             quote(attr: "\"", "\"")
             apostrophe(attr: "'", "'")
-            lessthan(attr: "value", "chars: & < > '") 
+            lessthan(attr: "value", "chars: & < > '")
             element(attr: "value 1 & 2", "chars: & < > \" in middle")
             greaterthan(">")
         }
-        //DEBUG
-        //println writer
 
         // Test MarkupBuilder state with expectedXML
-  	    // Handling the cr lf characters, depending on operating system. 
+        // Handling the cr lf characters, depending on operating system.
         def outputValue = writer.toString()
-        if (expectedXML.indexOf("\r\n") >= 0)  expectedXML = expectedXML.replaceAll("\r\n", "\n");
-        if (outputValue.indexOf("\r\n") >= 0)  outputValue = outputValue.replaceAll("\r\n", "\n");
+        if (expectedXML.indexOf("\r\n") >= 0) expectedXML = expectedXML.replaceAll("\r\n", "\n");
+        if (outputValue.indexOf("\r\n") >= 0) outputValue = outputValue.replaceAll("\r\n", "\n");
         assertEquals(expectedXML.replaceAll("\r\n", "\n"), outputValue)
-        
+
         // parser will throw a SAXParseException if XML is not valid
         parser.parseText(writer.toString())
     }
-    
+
 }
 

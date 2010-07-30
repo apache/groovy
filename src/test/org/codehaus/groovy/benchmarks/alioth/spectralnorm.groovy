@@ -1,16 +1,16 @@
 /*
-	The Computer Language Shootout
-	http://shootout.alioth.debian.org/
+    The Computer Language Shootout
+    http://shootout.alioth.debian.org/
 
-	contributed by Jochen Hinrichsen
+    contributed by Jochen Hinrichsen
 */
 
 private def approximate(n) {
     // create unit vector
-	def u = [1.0D] * n as Double []
+    def u = [1.0D] * n as Double []
 
     // 20 steps of the power method
-	def v = [0.0D] * n as Double []
+    def v = [0.0D] * n as Double []
 
     for (i in 1..10) {
         MultiplyAtAv(n,u,v)

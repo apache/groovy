@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2009 the original author or authors.
+ * Copyright 2003-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,7 @@
  */
 package groovy.sql
 
-import groovy.sql.GroovyResultSetProxy;
-import java.sql.Connection;
+import java.sql.Connection
 
 /**
  * This is more of a sample program than a unit test and is here as an easy
@@ -87,11 +86,11 @@ class SqlTest extends GroovyTestCase {
         food.findAll { it.type == "cheese" }.each { println("Cheese ${it.name}") }
     }
 
-    void testExecuteUpdate(){
-        def foo='food-drink'
-        def bar='guinness'
-        def nRows = sql.executeUpdate("update FOOD set type=? where name=?",[foo,bar]);
-        if (nRows == 0){
+    void testExecuteUpdate() {
+        def foo = 'food-drink'
+        def bar = 'guinness'
+        def nRows = sql.executeUpdate("update FOOD set type=? where name=?", [foo, bar]);
+        if (nRows == 0) {
             sql.executeUpdate("insert into FOOD (type,name) values (${foo},${bar})");
         }
     }
@@ -100,45 +99,45 @@ class SqlTest extends GroovyTestCase {
         def foo = 'food-drink'
         def bar = 'guiness'
         if (sql.dataSource.connection.metaData.supportsGetGeneratedKeys()) {
-            def keys = sql.executeInsert('insert into FOOD (type,name) values (?,?)', [foo,bar])
+            def keys = sql.executeInsert('insert into FOOD (type,name) values (?,?)', [foo, bar])
             assert 1 == keys.size()
         } else {
-            def count = sql.executeUpdate('insert into FOOD (type,name) values (?,?)', [foo,bar])
+            def count = sql.executeUpdate('insert into FOOD (type,name) values (?,?)', [foo, bar])
             assert 1 == count
         }
     }
 
     void testMetaData() {
-      sql.eachRow('select * from PERSON') {
-	       assert it[0] != null
-	       assert it.getMetaData() != null
-	  }
+        sql.eachRow('select * from PERSON') {
+            assert it[0] != null
+            assert it.getMetaData() != null
+        }
     }
 
     void testSubClass() {
-    	def sub = new SqlSubclass(sql)
-    	def res = null
-    	def data  = []
-    	sql.eachRow('select firstname from PERSON') {
-    		data << it.firstname
-    	}
-    	try {
-    		res = sub.rowsCursor('select * from PERSON')
-    		while (res.next()) {
-    			assert data.remove(res.firstname)
-    		}
-    		assert data.isEmpty()
-    	} finally {
-    		if (res)
-    			res.close()
-    	}
-    	res = sub.rows('select * from PERSON') { metaData ->
-    		assert sub.connection && !sub.connection.isClosed()
-    		data = (1..metaData.columnCount).collect {
-        		metaData.getColumnName(it).toLowerCase()
-        	}
-    	}
-    	assert data.size == 2 && !(data - ['firstname', 'lastname'])
+        def sub = new SqlSubclass(sql)
+        def res = null
+        def data = []
+        sql.eachRow('select firstname from PERSON') {
+            data << it.firstname
+        }
+        try {
+            res = sub.rowsCursor('select * from PERSON')
+            while (res.next()) {
+                assert data.remove(res.firstname)
+            }
+            assert data.isEmpty()
+        } finally {
+            if (res)
+                res.close()
+        }
+        res = sub.rows('select * from PERSON') { metaData ->
+            assert sub.connection && !sub.connection.isClosed()
+            data = (1..metaData.columnCount).collect {
+                metaData.getColumnName(it).toLowerCase()
+            }
+        }
+        assert data.size == 2 && !(data - ['firstname', 'lastname'])
     }
 
     private createSql() {
@@ -153,23 +152,24 @@ class SqlTest extends GroovyTestCase {
 
         // now let's populate the datasets
         def people = sql.dataSet("PERSON")
-        people.add( firstname:"James", lastname:"Strachan" )
-        people.add( firstname:"Bob", lastname:"Mcwhirter" )
-        people.add( firstname:"Sam", lastname:"Pullara" )
+        people.add(firstname: "James", lastname: "Strachan")
+        people.add(firstname: "Bob", lastname: "Mcwhirter")
+        people.add(firstname: "Sam", lastname: "Pullara")
 
         def food = sql.dataSet("FOOD")
-        food.add( type:"cheese", name:"edam" )
-        food.add( type:"cheese", name:"brie" )
-        food.add( type:"cheese", name:"cheddar" )
-        food.add( type:"drink", name:"beer" )
-        food.add( type:"drink", name:"coffee" )
+        food.add(type: "cheese", name: "edam")
+        food.add(type: "cheese", name: "brie")
+        food.add(type: "cheese", name: "cheddar")
+        food.add(type: "drink", name: "beer")
+        food.add(type: "drink", name: "coffee")
 
         return sql
     }
 }
 
 class SqlSubclass extends Sql {
-	def connection
+    def connection
+
     SqlSubclass(Sql base) {
         super(base)
     }
@@ -181,6 +181,6 @@ class SqlSubclass extends Sql {
 
     @Override
     void setInternalConnection(Connection conn) {
-    	connection = conn
+        connection = conn
     }
 }

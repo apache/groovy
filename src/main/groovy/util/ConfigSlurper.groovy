@@ -167,9 +167,9 @@ class ConfigSlurper {
             stack << [config:co,scope:stack.last.scope.clone()]
         }
         def assignName = { name, co ->
-        	def current = stack.last
-        	current.config[name] = co
-        	current.scope[name] = co
+            def current = stack.last
+            current.config[name] = co
+            current.scope[name] = co
         }
         def getPropertyClosure = { String name ->
             def current = stack.last

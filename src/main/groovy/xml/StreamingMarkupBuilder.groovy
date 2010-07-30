@@ -112,8 +112,8 @@ class StreamingMarkupBuilder extends AbstractStreamingBuilder {
     
     /**
      * Invoked by calling <code>mkp.yieldUnescaped</code>.  Used to render 
-	 * literal text or markup to the output stream.  No escaping is done on the
-	 * output.
+     * literal text or markup to the output stream.  No escaping is done on the
+     * output.
      */
     def unescapedClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, out ->
         out.unescaped() << body
@@ -224,7 +224,7 @@ class StreamingMarkupBuilder extends AbstractStreamingBuilder {
      * 
      * // send the output directly to a file:
      * new StreamingMarkupBuilder().bind { div { out << "hello world" } } \
-     * 	 .writeTo( new File('myFile.xml').newWriter() )
+     *      .writeTo( new File('myFile.xml').newWriter() )
      * </pre>
      * @return a {@link Writable} to render the markup
      */

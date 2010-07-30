@@ -222,15 +222,15 @@ class SamplePropertyChangeListener implements PropertyChangeListener {
    private final boolean skip
 
    SamplePropertyChangeListener() {
-       this(true)	
+       this(true)    
    }
 
    SamplePropertyChangeListener(boolean skip) {
-      this.skip = skip;	
+      this.skip = skip;    
    }
 
    public void propertyChange( PropertyChangeEvent evt ) {
-	  if(skip && evt.propertyName in [ObservableMap.SIZE_PROPERTY]) return
+      if(skip && evt.propertyName in [ObservableMap.SIZE_PROPERTY]) return
       event = evt
    }
 }
