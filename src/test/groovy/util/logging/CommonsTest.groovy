@@ -10,12 +10,12 @@ import java.lang.reflect.Modifier
  * @author Matthias Cullmann
  * 
  */
-class CommonsLogTest extends GroovyTestCase {
+class CommonsTest extends GroovyTestCase {
 
     public void testPrivateFinalStaticLogFieldAppears() {
 
         Class clazz = new GroovyClassLoader().parseClass('''
-              @groovy.util.logging.CommonsLog
+              @groovy.util.logging.Commons
               class MyClass {
               } ''')
 
@@ -31,7 +31,7 @@ class CommonsLogTest extends GroovyTestCase {
     public void testPrivateFinalStaticNamedLogFieldAppears() {
 
         Class clazz = new GroovyClassLoader().parseClass('''
-              @groovy.util.logging.CommonsLog('logger')
+              @groovy.util.logging.Commons('logger')
               class MyClass {
               } ''')
 
@@ -49,7 +49,7 @@ class CommonsLogTest extends GroovyTestCase {
         shouldFail {
 
             Class clazz = new GroovyClassLoader().parseClass('''
-                @groovy.util.logging.CommonsLog
+                @groovy.util.logging.Commons
                 class MyClass {
                     String log
                 } ''')
@@ -63,7 +63,7 @@ class CommonsLogTest extends GroovyTestCase {
         shouldFail {
 
             Class clazz = new GroovyClassLoader().parseClass('''
-                @groovy.util.logging.CommonsLog('logger')
+                @groovy.util.logging.Commons('logger')
                 class MyClass {
                     String logger
                 } ''')
@@ -79,7 +79,7 @@ class CommonsLogTest extends GroovyTestCase {
     public void testLogInfo_IntegrationTest() {
 
         Class clazz = new GroovyClassLoader().parseClass('''
-            @groovy.util.logging.CommonsLog
+            @groovy.util.logging.Commons
             class MyClass {
 
                 def loggingMethod() {
@@ -102,7 +102,7 @@ class CommonsLogTest extends GroovyTestCase {
     public void testNamedLogInfo_IntegrationTest() {
 
         Class clazz = new GroovyClassLoader().parseClass('''
-            @groovy.util.logging.CommonsLog('logger')
+            @groovy.util.logging.Commons('logger')
             class MyClass {
 
                 def loggingMethod() {
@@ -121,7 +121,7 @@ class CommonsLogTest extends GroovyTestCase {
     public void testLogGuards() {
         Class clazz = new GroovyClassLoader().parseClass('''
             def traceCalled = false
-            @groovy.util.logging.CommonsLog
+            @groovy.util.logging.Commons
             class MyClass {
 
                 def loggingMethod() {

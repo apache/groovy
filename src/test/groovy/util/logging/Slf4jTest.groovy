@@ -15,7 +15,7 @@ import ch.qos.logback.core.layout.EchoLayout
  * @author Tomasz Bujok
  */
 
-class LogBackTest extends GroovyTestCase {
+class Slf4jTest extends GroovyTestCase {
 
     LogbackInterceptingAppender appender
     Logger logger
@@ -44,7 +44,7 @@ class LogBackTest extends GroovyTestCase {
       public void testPrivateFinalStaticLogFieldAppears() {
 
           Class clazz = new GroovyClassLoader().parseClass('''
-                @groovy.util.logging.LogBack
+                @groovy.util.logging.Slf4j
                 class MyClass {
                 } ''')
 
@@ -60,7 +60,7 @@ class LogBackTest extends GroovyTestCase {
       public void testPrivateFinalStaticNamedLogFieldAppears() {
 
           Class clazz = new GroovyClassLoader().parseClass('''
-                @groovy.util.logging.LogBack('logger')
+                @groovy.util.logging.Slf4j('logger')
                 class MyClass {
                 } ''')
 
@@ -78,7 +78,7 @@ class LogBackTest extends GroovyTestCase {
         shouldFail {
 
             Class clazz = new GroovyClassLoader().parseClass('''
-                @groovy.util.logging.LogBack
+                @groovy.util.logging.Slf4j
                 class MyClass {
                     String log
                 } ''')
@@ -92,7 +92,7 @@ class LogBackTest extends GroovyTestCase {
         shouldFail {
 
             Class clazz = new GroovyClassLoader().parseClass('''
-                @groovy.util.logging.LogBack('logger')
+                @groovy.util.logging.Slf4j('logger')
                 class MyClass {
                     String logger
                 } ''')
@@ -104,7 +104,7 @@ class LogBackTest extends GroovyTestCase {
   public void testLogInfo() {
 
       Class clazz = new GroovyClassLoader().parseClass('''
-          @groovy.util.logging.LogBack
+          @groovy.util.logging.Slf4j
           class MyClass {
 
               def loggingMethod() {
@@ -138,7 +138,7 @@ class LogBackTest extends GroovyTestCase {
   public void testLogInfoWithNamedLogger() {
 
       Class clazz = new GroovyClassLoader().parseClass('''
-          @groovy.util.logging.LogBack('logger')
+          @groovy.util.logging.Slf4j('logger')
           class MyClass {
 
               def loggingMethod() {
@@ -171,7 +171,7 @@ class LogBackTest extends GroovyTestCase {
 
     public void testLogGuard() {
         Class clazz = new GroovyClassLoader().parseClass('''
-           @groovy.util.logging.LogBack
+           @groovy.util.logging.Slf4j
             class MyClass {
                 def loggingMethod() {
                     def isSet = false

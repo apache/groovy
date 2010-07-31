@@ -46,6 +46,6 @@ import org.codehaus.groovy.transform.GroovyASTTransformationClass;
 @Retention(RetentionPolicy.SOURCE)
 @Target({ElementType.TYPE})
 @GroovyASTTransformationClass("org.codehaus.groovy.transform.LogASTTransformation")
-public @interface LogBack {
+public @interface Slf4j {
     String value() default "log";
 }

@@ -51,9 +51,9 @@ public class LogASTTransformation implements ASTTransformation {
         AnnotationNode logAnnotation = (AnnotationNode) nodes[0];
 
         final boolean isJUL = "groovy.util.logging.Log".equals(logAnnotation.getClassNode().getName());
-        final boolean isLogBack = "groovy.util.logging.LogBack".equals(logAnnotation.getClassNode().getName());
+        final boolean isLogBack = "groovy.util.logging.Slf4j".equals(logAnnotation.getClassNode().getName());
         final boolean isLog4j = "groovy.util.logging.Log4j".equals(logAnnotation.getClassNode().getName());
-        final boolean isCommonsLog = "groovy.util.logging.CommonsLog".equals(logAnnotation.getClassNode().getName());
+        final boolean isCommonsLog = "groovy.util.logging.Commons".equals(logAnnotation.getClassNode().getName());
 
         final String logFieldName = lookupLogFieldName(logAnnotation);
 

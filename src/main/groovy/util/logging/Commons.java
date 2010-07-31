@@ -46,6 +46,6 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.SOURCE)
 @Target({ElementType.TYPE})
 @GroovyASTTransformationClass("org.codehaus.groovy.transform.LogASTTransformation")
-public @interface CommonsLog {
+public @interface Commons {
     String value() default "log";
 }
