@@ -112,7 +112,7 @@ public class XmlUtil {
      * Write a pretty version of the GPathResult to the OutputStream.
      *
      * @param node a GPathResult to serialize
-     * @param os       the OutputStream to write to
+     * @param os   the OutputStream to write to
      */
     public static void serialize(GPathResult node, OutputStream os) {
         serialize(asString(node), os);
@@ -211,10 +211,11 @@ public class XmlUtil {
     }
 
     // TODO: replace with stream-based version
+
     private static String asString(Writable writable) {
-    	if(writable instanceof GPathResult) {
-    		return asString((GPathResult) writable); //GROOVY-4285
-    	}
+        if (writable instanceof GPathResult) {
+            return asString((GPathResult) writable); //GROOVY-4285
+        }
     	
         Writer sw = new StringWriter();
         try {

@@ -37,13 +37,13 @@ import javax.servlet.http.HttpServletResponse;
 
 /**
  * A generic servlet for serving (mostly HTML) templates.
- * 
+ *
  * <p>
- * It delegates work to a <code>groovy.text.TemplateEngine</code> implementation 
+ * It delegates work to a <code>groovy.text.TemplateEngine</code> implementation
  * processing HTTP requests.
  *
  * <h4>Usage</h4>
- * 
+ *
  * <code>helloworld.html</code> is a headless HTML-like template
  * <pre><code>
  *  &lt;html&gt;
@@ -53,9 +53,9 @@ import javax.servlet.http.HttpServletResponse;
  *      &lt;% } %&gt;
  *      &lt;br&gt;
  *    &lt;/body&gt;
- *  &lt;/html&gt; 
+ *  &lt;/html&gt;
  * </code></pre>
- * 
+ *
  * Minimal <code>web.xml</code> example serving HTML-like templates
  * <pre><code>
  * &lt;web-app&gt;
@@ -69,9 +69,9 @@ import javax.servlet.http.HttpServletResponse;
  *   &lt;/servlet-mapping&gt;
  * &lt;/web-app&gt;
  * </code></pre>
- * 
+ *
  * <h4>Template engine configuration</h4>
- * 
+ *
  * <p>
  * By default, the TemplateServer uses the {@link groovy.text.SimpleTemplateEngine}
  * which interprets JSP-like templates. The init parameter <code>template.engine</code>
@@ -82,9 +82,9 @@ import javax.servlet.http.HttpServletResponse;
  *   template.engine = groovy.text.GStringTemplateEngine
  *   template.engine = groovy.text.XmlTemplateEngine
  * </pre>
- * 
+ *
  * <h3>Servlet Init Parameters</h3>
- * 
+ *
  * <h4>Logging and extra-output options</h4>
  *
  * <p>
@@ -102,9 +102,9 @@ import javax.servlet.http.HttpServletResponse;
  * <pre>
  *   groovy.source.encoding
  * </pre>
- * 
+ *
  * @see TemplateServlet#setVariables(ServletBinding)
- * 
+ *
  * @author Christian Stein
  * @author Guillaume Laforge
  * @version 2.0
@@ -113,7 +113,7 @@ public class TemplateServlet extends AbstractHttpServlet {
 
     /**
      * Simple cache entry that validates against last modified and length
-     * attributes of the specified file. 
+     * attributes of the specified file.
      *
      * @author Christian Stein
      */
@@ -148,7 +148,7 @@ public class TemplateServlet extends AbstractHttpServlet {
         }
 
         /**
-         * Checks the passed file attributes against those cached ones. 
+         * Checks the passed file attributes against those cached ones.
          *
          * @param file
          *  Other file handle to compare to the cached values.
@@ -193,7 +193,7 @@ public class TemplateServlet extends AbstractHttpServlet {
     private boolean generateBy;
 
     private String fileEncodingParamVal;
-    
+
     private static final String GROOVY_SOURCE_ENCODING = "groovy.source.encoding";
 
     /**
@@ -208,7 +208,7 @@ public class TemplateServlet extends AbstractHttpServlet {
 
     /**
      * Gets the template created by the underlying engine parsing the request.
-     * 
+     *
      * <p>
      * This method looks up a simple (weak) hash map for an existing template
      * object that matches the source file. If the source file didn't change in
@@ -218,12 +218,12 @@ public class TemplateServlet extends AbstractHttpServlet {
      * template engine. This new instance is put to the cache for consecutive
      * calls.
      * </p>
-     * 
+     *
      * @return The template that will produce the response text.
      * @param file
      *            The HttpServletRequest.
      * @throws ServletException
-     *            If the request specified an invalid template source file 
+     *            If the request specified an invalid template source file
      */
     protected Template getTemplate(File file) throws ServletException {
 
@@ -261,10 +261,10 @@ public class TemplateServlet extends AbstractHttpServlet {
             if (verbose) {
                 log("Creating new template from file " + file + "...");
             }
-            
-            String fileEncoding = (fileEncodingParamVal != null) ? fileEncodingParamVal : 
-            	System.getProperty(GROOVY_SOURCE_ENCODING);
-            
+
+            String fileEncoding = (fileEncodingParamVal != null) ? fileEncodingParamVal :
+                System.getProperty(GROOVY_SOURCE_ENCODING);
+
             Reader reader = null;
             try {
                 reader = fileEncoding == null ? new FileReader(file) : new InputStreamReader(new FileInputStream(file), fileEncoding);
@@ -309,8 +309,8 @@ public class TemplateServlet extends AbstractHttpServlet {
      * @param config
      *  Passed by the servlet container.
      * @throws ServletException
-     *  if this method encountered difficulties 
-     *  
+     *  if this method encountered difficulties
+     *
      * @see TemplateServlet#initTemplateEngine(ServletConfig)
      */
     public void init(ServletConfig config) throws ServletException {
@@ -332,14 +332,14 @@ public class TemplateServlet extends AbstractHttpServlet {
 
     /**
      * Creates the template engine.
-     * 
-     * Called by {@link TemplateServlet#init(ServletConfig)} and returns just 
+     *
+     * Called by {@link TemplateServlet#init(ServletConfig)} and returns just
      * <code>new groovy.text.SimpleTemplateEngine()</code> if the init parameter
      * <code>template.engine</code> is not set by the container configuration.
-     * 
-     * @param config 
+     *
+     * @param config
      *  Current serlvet configuration passed by the container.
-     * 
+     *
      * @return The underlying template engine or <code>null</code> on error.
      */
     protected TemplateEngine initTemplateEngine(ServletConfig config) {
@@ -364,13 +364,13 @@ public class TemplateServlet extends AbstractHttpServlet {
      * <p>
      * First the request is parsed for the source file uri. If the specified file
      * could not be found or can not be read an error message is sent as response.
-     * 
+     *
      * </p>
      * @param request
      *            The http request.
      * @param response
      *            The http response.
-     * @throws IOException 
+     * @throws IOException
      *            if an input or output error occurs while the servlet is
      *            handling the HTTP request
      * @throws ServletException

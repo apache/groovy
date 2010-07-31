@@ -17,8 +17,8 @@
 /*
  * @todo multi threaded compiling of the same class but with different roots
  * for compilation... T1 compiles A, which uses B, T2 compiles B... mark A and B
- * as parsed and then synchronize compilation. Problems: How to synchronize? 
- * How to get error messages?   
+ * as parsed and then synchronize compilation. Problems: How to synchronize?
+ * How to get error messages?
  *
  */
 package groovy.lang;
@@ -66,7 +66,7 @@ public class GroovyClassLoader extends URLClassLoader {
     protected final Map<String, Class> sourceCache = new HashMap<String, Class>();
     private final CompilerConfiguration config;
     private Boolean recompile;
-    // use 1000000 as offset to avoid conflicts with names form the GroovyShell 
+    // use 1000000 as offset to avoid conflicts with names form the GroovyShell
     private static int scriptNameCounter = 1000000;
 
     private GroovyResourceLoader resourceLoader = new GroovyResourceLoader() {
@@ -281,7 +281,7 @@ public class GroovyClassLoader extends URLClassLoader {
     }
 
     private Class doParseClass(GroovyCodeSource codeSource) {
-    	validate(codeSource);
+        validate(codeSource);
         Class answer;  // Was neither already loaded nor compiling, so compile and add to cache.
         CompilationUnit unit = createCompilationUnit(config, codeSource.getCodeSource());
         SourceUnit su = null;
@@ -301,10 +301,10 @@ public class GroovyClassLoader extends URLClassLoader {
         String mainClass = su.getAST().getMainClassName();
         for (Object o : collector.getLoadedClasses()) {
             Class clazz = (Class) o;
-        	String clazzName = clazz.getName();
+            String clazzName = clazz.getName();
             definePackage(clazzName);
             setClassCacheEntry(clazz);
-            if(clazzName.equals(mainClass)) answer = clazz; 
+            if(clazzName.equals(mainClass)) answer = clazz;
         }
         return answer;
     }
@@ -312,11 +312,11 @@ public class GroovyClassLoader extends URLClassLoader {
     private void validate(GroovyCodeSource codeSource) {
         if (codeSource.getFile() == null) {
             if(codeSource.getScriptText() == null) {
-            	throw new IllegalArgumentException("Script text to compile cannot be null!");
+                throw new IllegalArgumentException("Script text to compile cannot be null!");
             }
         }
     }
-    
+
     private void definePackage(String className) {
         int i = className.lastIndexOf('.');
         if (i != -1) {

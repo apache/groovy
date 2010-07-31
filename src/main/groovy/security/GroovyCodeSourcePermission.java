@@ -28,11 +28,11 @@ import java.security.BasicPermission;
  */
 public final class GroovyCodeSourcePermission extends BasicPermission {
 
-	public GroovyCodeSourcePermission(String name) {
-		super(name);
-	}
+    public GroovyCodeSourcePermission(String name) {
+        super(name);
+    }
 
-	public GroovyCodeSourcePermission(String name, String actions) {
-		super(name, actions);
-	}
+    public GroovyCodeSourcePermission(String name, String actions) {
+        super(name, actions);
+    }
 }

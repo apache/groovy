@@ -65,7 +65,7 @@ public class MetaBeanProperty extends MetaProperty {
      * @throws RuntimeException if the property could not be set
      */
     public void setProperty(Object object, Object newValue) {
-    	MetaMethod setter = getSetter();
+        MetaMethod setter = getSetter();
         if (setter == null) {
             if (field != null && !Modifier.isFinal(field.getModifiers())) {
                 field.setProperty(object, newValue);
@@ -106,8 +106,8 @@ public class MetaBeanProperty extends MetaProperty {
     }
 
     public int getModifiers() {
-    	MetaMethod getter = getGetter();
-    	MetaMethod setter = getSetter();
+        MetaMethod getter = getGetter();
+        MetaMethod setter = getSetter();
         if (setter != null && getter == null) return setter.getModifiers();
         if (getter != null && setter == null) return getter.getModifiers();
         int modifiers = getter.getModifiers() | setter.getModifiers();

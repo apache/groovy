@@ -32,119 +32,118 @@ import javax.swing.undo.UndoableEdit;
  * @author Evan "Hippy" Slatis
  */
 public class TextUndoManager extends UndoManager {
-	
+
     private SwingPropertyChangeSupport propChangeSupport =
-        new SwingPropertyChangeSupport(this);
+            new SwingPropertyChangeSupport(this);
 
     private StructuredEdit compoundEdit = new StructuredEdit();
 
     private long firstModified;
-    
+
     private UndoableEdit modificationMarker = editToBeUndone();
-    
+
     /**
      * Creates a new instance of TextUndoManager.
      */
     public TextUndoManager() {
     }
-    
+
     public void addPropertyChangeListener(PropertyChangeListener pcl) {
         propChangeSupport.addPropertyChangeListener(pcl);
     }
-    
+
     public void die() {
         boolean undoable = canUndo();
         super.die();
         firePropertyChangeEvent(UndoManager.UndoName, undoable, canUndo());
     }
-    
+
     public void discardAllEdits() {
         boolean undoable = canUndo();
         boolean redoable = canRedo();
-        
+
         boolean changed = hasChanged();
         super.discardAllEdits();
         modificationMarker = editToBeUndone();
-        
+
         firePropertyChangeEvent(UndoManager.UndoName, undoable, canUndo());
         firePropertyChangeEvent(UndoManager.UndoName, redoable, canRedo());
     }
-    
+
     protected void firePropertyChangeEvent(String name,
                                            boolean oldValue,
                                            boolean newValue) {
         propChangeSupport.firePropertyChange(name, oldValue, newValue);
     }
-    
+
     public boolean hasChanged() {
         return modificationMarker != editToBeUndone();
     }
-    
+
     public void redo() throws javax.swing.undo.CannotRedoException {
         compoundEdit.end();
-        
+
         if (firstModified == 0) {
-            firstModified = ((StructuredEdit)editToBeRedone()).editedTime();
+            firstModified = ((StructuredEdit) editToBeRedone()).editedTime();
         }
-        
+
         boolean undoable = canUndo();
-        
+
         boolean changed = hasChanged();
         super.redo();
-        
+
         firePropertyChangeEvent(UndoManager.UndoName, undoable, canUndo());
     }
-    
+
     protected void redoTo(UndoableEdit edit) {
         compoundEdit.end();
-        
+
         if (firstModified == 0) {
-            firstModified = ((StructuredEdit)editToBeRedone()).editedTime();
+            firstModified = ((StructuredEdit) editToBeRedone()).editedTime();
         }
-        
+
         boolean undoable = canUndo();
-        
+
         boolean changed = hasChanged();
         super.redoTo(edit);
-        
+
         firePropertyChangeEvent(UndoManager.UndoName, undoable, canUndo());
-        
+
     }
-    
+
     public void removePropertyChangeListener(PropertyChangeListener pcl) {
         propChangeSupport.removePropertyChangeListener(pcl);
     }
-    
+
     public void reset() {
         boolean changed = modificationMarker != editToBeUndone();
         if (changed) {
             modificationMarker = editToBeUndone();
         }
     }
-    
+
     protected void trimEdits(int from, int to) {
         boolean undoable = canUndo();
         boolean redoable = canRedo();
-        
+
         boolean changed = hasChanged();
         super.trimEdits(from, to);
-        
+
         firePropertyChangeEvent(UndoManager.UndoName, undoable, canUndo());
         firePropertyChangeEvent(UndoManager.RedoName, redoable, canRedo());
     }
 
     public void undo() throws javax.swing.undo.CannotUndoException {
         compoundEdit.end();
-        
+
         UndoableEdit edit = editToBeUndone();
-        if (((StructuredEdit)editToBeUndone()).editedTime() ==
-            firstModified) {
+        if (((StructuredEdit) editToBeUndone()).editedTime() ==
+                firstModified) {
             firstModified = 0;
+        } else if (firstModified == 0) {
+            firstModified = ((StructuredEdit) editToBeUndone()).editedTime();
         }
-        else if (firstModified == 0) {
-            firstModified = ((StructuredEdit)editToBeUndone()).editedTime();
-        }
-        
+
         boolean redoable = canRedo();
         boolean changed = hasChanged();
         super.undo();
@@ -157,15 +156,15 @@ public class TextUndoManager extends UndoManager {
 
         long editTime = System.currentTimeMillis();
 
-        if (firstModified == 0 || 
-            editTime - compoundEdit.editedTime() > 700) {
+        if (firstModified == 0 ||
+                editTime - compoundEdit.editedTime() > 700) {
             compoundEdit.end();
             compoundEdit = new StructuredEdit();
         }
         compoundEdit.addEdit(edit);
-        
+
         firstModified = firstModified == 0 ?
-            compoundEdit.editedTime() : firstModified;
+                compoundEdit.editedTime() : firstModified;
 
         if (lastEdit() != compoundEdit) {
             boolean changed = hasChanged();
@@ -174,11 +173,11 @@ public class TextUndoManager extends UndoManager {
         }
 
     }
-    
+
     private class StructuredEdit extends CompoundEdit {
-        
+
         private long editedTime;
-        
+
         public boolean addEdit(UndoableEdit edit) {
             boolean result = super.addEdit(edit);
             if (result && editedTime == 0) {
@@ -190,13 +189,13 @@ public class TextUndoManager extends UndoManager {
         public boolean canUndo() {
             return edits.size() > 0;
         }
-        
+
         protected long editedTime() {
             return editedTime;
         }
-        
+
         public boolean isInProgress() {
             return false;
         }
-    }    
+    }
 }

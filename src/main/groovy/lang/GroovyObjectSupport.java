@@ -19,38 +19,38 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 
 /**
  * A useful base class for Java objects wishing to be Groovy objects
- * 
+ *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
 public abstract class GroovyObjectSupport implements GroovyObject {
 
-	// never persist the MetaClass
+    // never persist the MetaClass
     private transient MetaClass metaClass;
 
     public GroovyObjectSupport() {
         this.metaClass = InvokerHelper.getMetaClass(this.getClass());
     }
-    
+
     public Object getProperty(String property) {
         return getMetaClass().getProperty(this, property);
     }
 
     public void setProperty(String property, Object newValue) {
-         getMetaClass().setProperty(this, property, newValue);
+        getMetaClass().setProperty(this, property, newValue);
     }
 
     public Object invokeMethod(String name, Object args) {
         return getMetaClass().invokeMethod(this, name, args);
     }
-    
+
     public MetaClass getMetaClass() {
-        if (metaClass==null) {
+        if (metaClass == null) {
             metaClass = InvokerHelper.getMetaClass(getClass());
         }
         return metaClass;
     }
-    
+
     public void setMetaClass(MetaClass metaClass) {
         this.metaClass = metaClass;
     }

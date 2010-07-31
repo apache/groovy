@@ -20,10 +20,10 @@ import org.codehaus.groovy.runtime.MethodRankHelper;
 
 /**
  * An exception occurred if a dynamic method dispatch fails with an unknown method.
- * 
+ * <p/>
  * Note that the Missing*Exception classes were named for consistency and
  * to avoid conflicts with JDK exceptions of the same name.
- * 
+ *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
@@ -37,31 +37,31 @@ public class MissingMethodException extends GroovyRuntimeException {
         return arguments;
     }
 
-    private final Object arguments [];
+    private final Object arguments[];
 
     public MissingMethodException(String method, Class type, Object[] arguments) {
-        this(method,type,arguments,false);
+        this(method, type, arguments, false);
     }
-    
+
     public MissingMethodException(String method, Class type, Object[] arguments, boolean isStatic) {
-	    super();
-	    this.method = method;
-	    this.type = type;
+        super();
+        this.method = method;
+        this.type = type;
         this.isStatic = isStatic;
         this.arguments = arguments;
     }
 
     public String getMessage() {
         return "No signature of method: "
-                    + (isStatic ? "static " : "")
-                    + type.getName()
-                    + "."
-                    + method
-                    + "() is applicable for argument types: ("
-                    + InvokerHelper.toTypeString(arguments)
-                    + ") values: "
-                    + InvokerHelper.toString(arguments)
-                    + MethodRankHelper.getMethodSuggestionString(method, type, arguments);
+                + (isStatic ? "static " : "")
+                + type.getName()
+                + "."
+                + method
+                + "() is applicable for argument types: ("
+                + InvokerHelper.toTypeString(arguments)
+                + ") values: "
+                + InvokerHelper.toString(arguments)
+                + MethodRankHelper.getMethodSuggestionString(method, type, arguments);
     }
 
     /**
@@ -77,10 +77,10 @@ public class MissingMethodException extends GroovyRuntimeException {
     public Class getType() {
         return type;
     }
-    
+
     /**
-     * @return Whether the method was called in a static way, 
-     * i.e. on a class rather than an object.
+     * @return Whether the method was called in a static way,
+     *         i.e. on a class rather than an object.
      */
     public boolean isStatic() {
         return isStatic;

@@ -17,31 +17,31 @@
 package groovy.lang;
 
 public class PropertyValue {
-	// the owner of the property
-	private Object bean;
-	
-	// the description of the property
-	private MetaProperty mp;
-	
-	public PropertyValue(Object bean, MetaProperty mp) {
-		this.bean = bean;
-		this.mp = mp;
-	}
-	
-	public String getName() {
-		return mp.getName();
-	}
-	
-	public Class getType() {
-		return mp.getType();
-	}
-	
-	public Object getValue() {
-		return mp.getProperty(bean);
-	}
-	
-	public void setValue(Object value)  {
-		mp.setProperty(bean, value);
-	}
+    // the owner of the property
+    private Object bean;
+
+    // the description of the property
+    private MetaProperty mp;
+
+    public PropertyValue(Object bean, MetaProperty mp) {
+        this.bean = bean;
+        this.mp = mp;
+    }
+
+    public String getName() {
+        return mp.getName();
+    }
+
+    public Class getType() {
+        return mp.getType();
+    }
+
+    public Object getValue() {
+        return mp.getProperty(bean);
+    }
+
+    public void setValue(Object value) {
+        mp.setProperty(bean, value);
+    }
 }
 

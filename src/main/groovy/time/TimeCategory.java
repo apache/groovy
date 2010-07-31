@@ -21,18 +21,18 @@ import java.util.TimeZone;
 
 /**
  * Apply a number of methods to allow convenient Date/Time manipulation,such as:
- * 
+ * <p/>
  * <pre>
  * use ( TimeCategory ) {
- * 	// application on numbers:
- * 	println 1.minute.from.now
- * 	println 10.hours.ago
- * 
- * 	// application on dates
- * 	def someDate = new Date()
- * 	println someDate - 3.months 
+ *     // application on numbers:
+ *     println 1.minute.from.now
+ *     println 10.hours.ago
+ * <p/>
+ *     // application on dates
+ *     def someDate = new Date()
+ *     println someDate - 3.months
  * }</pre>
- * 
+ *
  * @see BaseDuration
  */
 public class TimeCategory {
@@ -62,6 +62,7 @@ public class TimeCategory {
     /**
      * Retrieves the default TimeZone for a date by using the default Locale
      * settings.
+     *
      * @param self a Date
      * @return the TimeZone
      */
@@ -73,10 +74,11 @@ public class TimeCategory {
 
     /**
      * Get the DST offset (if any) for the default locale and the given date.
+     *
      * @param self a Date
      * @return the DST offset as a Duration.
      */
-    public static Duration getDaylightSavingsOffset( Date self ) {
+    public static Duration getDaylightSavingsOffset(Date self) {
         TimeZone timeZone = getTimeZone(self);
         int millis = (timeZone.useDaylightTime() && timeZone.inDaylightTime(self))
                 ? timeZone.getDSTSavings() : 0;
@@ -88,10 +90,11 @@ public class TimeCategory {
     }
 
     /**
-     * Return a Duration representing the DST difference (if any) between two 
-     * dates.  i.e. if one date is before the DST changeover, and the other 
+     * Return a Duration representing the DST difference (if any) between two
+     * dates.  i.e. if one date is before the DST changeover, and the other
      * date is after, the resulting duration will represent the DST offset.
-     * @param self a Date
+     *
+     * @param self  a Date
      * @param other another Date
      * @return a Duration
      */
@@ -103,6 +106,7 @@ public class TimeCategory {
 
     /**
      * Subtract one date from the other.
+     *
      * @param lhs a Date
      * @param rhs another Date
      * @return a Duration
@@ -126,7 +130,7 @@ public class TimeCategory {
     */
 
     public static DatumDependentDuration getMonths(final Integer self) {
-        return new DatumDependentDuration(0, self.intValue(), 0, 0, 0, 0, 0);
+        return new DatumDependentDuration(0, self, 0, 0, 0, 0, 0);
     }
 
     public static DatumDependentDuration getMonth(final Integer self) {
@@ -134,7 +138,7 @@ public class TimeCategory {
     }
 
     public static DatumDependentDuration getYears(final Integer self) {
-        return new DatumDependentDuration(self.intValue(), 0, 0, 0, 0, 0, 0);
+        return new DatumDependentDuration(self, 0, 0, 0, 0, 0, 0);
     }
 
     public static DatumDependentDuration getYear(final Integer self) {
@@ -146,7 +150,7 @@ public class TimeCategory {
     */
 
     public static Duration getWeeks(final Integer self) {
-        return new Duration(self.intValue() * 7, 0, 0, 0, 0);
+        return new Duration(self * 7, 0, 0, 0, 0);
     }
 
     public static Duration getWeek(final Integer self) {
@@ -154,7 +158,7 @@ public class TimeCategory {
     }
 
     public static Duration getDays(final Integer self) {
-        return new Duration(self.intValue(), 0, 0, 0, 0);
+        return new Duration(self, 0, 0, 0, 0);
     }
 
     public static Duration getDay(final Integer self) {
@@ -162,7 +166,7 @@ public class TimeCategory {
     }
 
     public static TimeDuration getHours(final Integer self) {
-        return new TimeDuration(0, self.intValue(), 0, 0, 0);
+        return new TimeDuration(0, self, 0, 0, 0);
     }
 
     public static TimeDuration getHour(final Integer self) {
@@ -170,7 +174,7 @@ public class TimeCategory {
     }
 
     public static TimeDuration getMinutes(final Integer self) {
-        return new TimeDuration(0, 0, self.intValue(), 0, 0);
+        return new TimeDuration(0, 0, self, 0, 0);
     }
 
     public static TimeDuration getMinute(final Integer self) {
@@ -178,7 +182,7 @@ public class TimeCategory {
     }
 
     public static TimeDuration getSeconds(final Integer self) {
-        return new TimeDuration(0, 0, 0, self.intValue(), 0);
+        return new TimeDuration(0, 0, 0, self, 0);
     }
 
     public static TimeDuration getSecond(final Integer self) {
@@ -186,7 +190,7 @@ public class TimeCategory {
     }
 
     public static TimeDuration getMilliseconds(final Integer self) {
-        return new TimeDuration(0, 0, 0, 0, self.intValue());
+        return new TimeDuration(0, 0, 0, 0, self);
     }
 
     public static TimeDuration getMillisecond(final Integer self) {

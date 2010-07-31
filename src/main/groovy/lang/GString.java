@@ -63,6 +63,7 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
     }
 
     // will be static in an instance
+
     public abstract String[] getStrings();
 
     /**
@@ -85,17 +86,17 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
     }
 
     public GString plus(GString that) {
-        List stringList = new ArrayList();
-        List valueList = new ArrayList();
+        List<String> stringList = new ArrayList<String>();
+        List<Object> valueList = new ArrayList<Object>();
 
         stringList.addAll(Arrays.asList(getStrings()));
         valueList.addAll(Arrays.asList(getValues()));
 
-        List thatStrings = Arrays.asList(that.getStrings());
+        List<String> thatStrings = Arrays.asList(that.getStrings());
         if (stringList.size() > valueList.size()) {
-            thatStrings = new ArrayList(thatStrings);
+            thatStrings = new ArrayList<String>(thatStrings);
             // merge onto end of previous GString to avoid an empty bridging value
-            String s = (String) stringList.get(stringList.size() - 1);
+            String s = stringList.get(stringList.size() - 1);
             s += thatStrings.get(0);
             thatStrings.remove(0);
             stringList.set(stringList.size() - 1, s);
@@ -117,8 +118,8 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
 
     public GString plus(String that) {
         String[] currentStrings = getStrings();
-        String[] newStrings = null;
-        Object[] newValues = null;
+        String[] newStrings;
+        Object[] newValues;
 
         boolean appendToLastString = currentStrings.length > getValues().length;
 
@@ -166,38 +167,39 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
     }
 
     public Writer writeTo(Writer out) throws IOException {
-    	String[] s = getStrings();
-    	int numberOfValues = values.length;
-    	for (int i = 0, size = s.length; i < size; i++) {
-    		out.write(s[i]);
-    		if (i < numberOfValues) {
-    			final Object value = values[i];
+        String[] s = getStrings();
+        int numberOfValues = values.length;
+        for (int i = 0, size = s.length; i < size; i++) {
+            out.write(s[i]);
+            if (i < numberOfValues) {
+                final Object value = values[i];
 
-    			if (value instanceof Closure) {
-    				final Closure c = (Closure)value;
+                if (value instanceof Closure) {
+                    final Closure c = (Closure) value;
 
-    				if (c.getMaximumNumberOfParameters() == 0) {
-    					InvokerHelper.write(out, c.call(null));
-    				} else if (c.getMaximumNumberOfParameters() == 1) {
-    					c.call(new Object[]{out});
-    				} else {
-    					throw new GroovyRuntimeException("Trying to evaluate a GString containing a Closure taking "
-    							+ c.getMaximumNumberOfParameters() + " parameters");
-    				}
-    			} else {
-    				InvokerHelper.write(out, value);
-    			}
-    		}
-    	}
-    	return out;
+                    if (c.getMaximumNumberOfParameters() == 0) {
+                        InvokerHelper.write(out, c.call(null));
+                    } else if (c.getMaximumNumberOfParameters() == 1) {
+                        c.call(new Object[]{out});
+                    } else {
+                        throw new GroovyRuntimeException("Trying to evaluate a GString containing a Closure taking "
+                                + c.getMaximumNumberOfParameters() + " parameters");
+                    }
+                } else {
+                    InvokerHelper.write(out, value);
+                }
+            }
+        }
+        return out;
     }
 
     /* (non-Javadoc)
      * @see groovy.lang.Buildable#build(groovy.lang.GroovyObject)
      */
+
     public void build(final GroovyObject builder) {
-    final String[] s = getStrings();
-    final int numberOfValues = values.length;
+        final String[] s = getStrings();
+        final int numberOfValues = values.length;
 
         for (int i = 0, size = s.length; i < size; i++) {
             builder.getProperty("mkp");

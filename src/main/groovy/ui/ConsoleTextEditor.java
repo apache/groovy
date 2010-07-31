@@ -42,7 +42,6 @@ import java.awt.print.PrinterJob;
 import java.awt.*;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-import java.io.File;
 import java.util.prefs.Preferences;
 
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
@@ -65,77 +64,75 @@ public class ConsoleTextEditor extends JScrollPane {
     }
 
     private class LineNumbersPanel extends JPanel {
-	
-	    public LineNumbersPanel() {
+
+        public LineNumbersPanel() {
             int initialSize = 3 * Preferences.userNodeForPackage(Console.class).getInt("fontSize", 12);
-            setMinimumSize  (new Dimension(initialSize, initialSize));
-			setPreferredSize(new Dimension(initialSize, initialSize));
-		}
+            setMinimumSize(new Dimension(initialSize, initialSize));
+            setPreferredSize(new Dimension(initialSize, initialSize));
+        }
 
         @Override
-		public void paintComponent(Graphics g) {
-		    super.paintComponent(g);
+        public void paintComponent(Graphics g) {
+            super.paintComponent(g);
 
             // starting position in document
-			int start = textEditor.viewToModel(getViewport().getViewPosition());
+            int start = textEditor.viewToModel(getViewport().getViewPosition());
             // end position in document
             int end = textEditor.viewToModel(new Point(10,
-                    getViewport().getViewPosition().y + 
-                    (int) textEditor.getVisibleRect().getHeight())
+                    getViewport().getViewPosition().y +
+                            (int) textEditor.getVisibleRect().getHeight())
             );
 
-			// translate offsets to lines
-			Document doc = textEditor.getDocument();
-			int startline = doc.getDefaultRootElement().getElementIndex(start) + 1;
-			int endline = doc.getDefaultRootElement().getElementIndex(end) + 1;
+            // translate offsets to lines
+            Document doc = textEditor.getDocument();
+            int startline = doc.getDefaultRootElement().getElementIndex(start) + 1;
+            int endline = doc.getDefaultRootElement().getElementIndex(end) + 1;
             Font f = textEditor.getFont();
-			int fontHeight = g.getFontMetrics(f).getHeight();
-			int fontDesc = g.getFontMetrics(f).getDescent();
-			int starting_y = -1 ;
+            int fontHeight = g.getFontMetrics(f).getHeight();
+            int fontDesc = g.getFontMetrics(f).getDescent();
+            int starting_y = -1;
 
-			try	{
-				starting_y = textEditor.modelToView(start).y + fontHeight - fontDesc;
-			} catch(BadLocationException e1) {
+            try {
+                starting_y = textEditor.modelToView(start).y + fontHeight - fontDesc;
+            } catch (BadLocationException e1) {
                 System.err.println(e1.getMessage());
-			}
-			g.setFont(f);
-			for(int line = startline, y = starting_y; line <= endline; y += fontHeight, line++) {
+            }
+            g.setFont(f);
+            for (int line = startline, y = starting_y; line <= endline; y += fontHeight, line++) {
                 String lineNumber = DefaultGroovyMethods.padLeft(Integer.toString(line), 4, " ");
                 g.drawString(lineNumber, 0, y);
-			}
-		}
+            }
+        }
     }
 
     private String defaultFamily = "Monospaced";
 
     private static final PrinterJob PRINTER_JOB = PrinterJob.getPrinterJob();
 
-	private LineNumbersPanel numbersPanel = new LineNumbersPanel();
+    private LineNumbersPanel numbersPanel = new LineNumbersPanel();
 
     private boolean documentChangedSinceLastRepaint = false;
 
-    private TextEditor textEditor = new TextEditor(true, true, true) { 
+    private TextEditor textEditor = new TextEditor(true, true, true) {
 
-		public void paintComponent(Graphics g) {
-			super.paintComponent(g);
+        public void paintComponent(Graphics g) {
+            super.paintComponent(g);
 
             // only repaint the line numbers in the gutter when the document has changed
             // in case lines (hence line numbers) have been added or removed from the document
             if (documentChangedSinceLastRepaint) {
-			    numbersPanel.repaint();
+                numbersPanel.repaint();
                 documentChangedSinceLastRepaint = false;
             }
-		}
-	};
+        }
+    };
 
     private UndoAction undoAction = new UndoAction();
     private RedoAction redoAction = new RedoAction();
     private PrintAction printAction = new PrintAction();
-    
+
     private boolean editable = true;
-    
-    private File textFile;
-    
+
     private TextUndoManager undoManager;
 
     /**
@@ -145,9 +142,9 @@ public class ConsoleTextEditor extends JScrollPane {
         textEditor.setFont(new Font(defaultFamily, Font.PLAIN, Preferences.userNodeForPackage(Console.class).getInt("fontSize", 12)));
 
         setViewportView(new JPanel(new BorderLayout()) {{
-			add(numbersPanel, BorderLayout.WEST);
-			add(textEditor, BorderLayout.CENTER);
-		}});
+            add(numbersPanel, BorderLayout.WEST);
+            add(textEditor, BorderLayout.CENTER);
+        }});
 
         textEditor.setDragEnabled(editable);
 
@@ -180,14 +177,14 @@ public class ConsoleTextEditor extends JScrollPane {
         // create and add the undo/redo manager
         this.undoManager = new TextUndoManager();
         doc.addUndoableEditListener(undoManager);
-        
+
         // add the undo actions
         undoManager.addPropertyChangeListener(undoAction);
         undoManager.addPropertyChangeListener(redoAction);
 
         doc.addDocumentListener(undoAction);
         doc.addDocumentListener(redoAction);
-        
+
         InputMap im = textEditor.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
         KeyStroke ks = KeyStroke.getKeyStroke(KeyEvent.VK_Z, InputEvent.CTRL_MASK, false);
         im.put(ks, StructuredSyntaxResources.UNDO);
@@ -202,32 +199,32 @@ public class ConsoleTextEditor extends JScrollPane {
         im.put(ks, StructuredSyntaxResources.PRINT);
         am.put(StructuredSyntaxResources.PRINT, printAction);
     }
-    
+
     public boolean clipBoardAvailable() {
         Transferable t = StructuredSyntaxResources.SYSTEM_CLIPBOARD.getContents(this);
         return t.isDataFlavorSupported(DataFlavor.stringFlavor);
     }
-    
+
     public TextEditor getTextEditor() {
         return textEditor;
     }
 
     protected void initActions() {
         ActionMap map = getActionMap();
-        
+
         PrintAction printAction = new PrintAction();
         map.put(StructuredSyntaxResources.PRINT, printAction);
     }
-        
+
     private class PrintAction extends AbstractAction {
-        
+
         public PrintAction() {
             setEnabled(true);
         }
-        
+
         public void actionPerformed(ActionEvent ae) {
             PRINTER_JOB.setPageable(textEditor);
-            
+
             try {
                 if (PRINTER_JOB.printDialog()) {
                     PRINTER_JOB.print();
@@ -238,58 +235,58 @@ public class ConsoleTextEditor extends JScrollPane {
             }
         }
     } // end ConsoleTextEditor.PrintAction
-    
+
     private class RedoAction extends UpdateCaretListener implements PropertyChangeListener {
 
         public RedoAction() {
             setEnabled(false);
         }
-        
+
         public void actionPerformed(ActionEvent ae) {
             undoManager.redo();
             setEnabled(undoManager.canRedo());
             undoAction.setEnabled(undoManager.canUndo());
             super.actionPerformed(ae);
         }
-        
+
         public void propertyChange(PropertyChangeEvent pce) {
             setEnabled(undoManager.canRedo());
         }
     } // end ConsoleTextEditor.RedoAction
-    
+
     private abstract class UpdateCaretListener extends AbstractAction implements DocumentListener {
-        
+
         protected int lastUpdate;
-        
+
         public void changedUpdate(DocumentEvent de) {
         }
-        
+
         public void insertUpdate(DocumentEvent de) {
             lastUpdate = de.getOffset() + de.getLength();
         }
-        
+
         public void removeUpdate(DocumentEvent de) {
             lastUpdate = de.getOffset();
         }
-        
+
         public void actionPerformed(ActionEvent ae) {
             textEditor.setCaretPosition(lastUpdate);
         }
     }
-    
-    private class UndoAction extends UpdateCaretListener  implements PropertyChangeListener {
+
+    private class UndoAction extends UpdateCaretListener implements PropertyChangeListener {
 
         public UndoAction() {
             setEnabled(false);
         }
-        
+
         public void actionPerformed(ActionEvent ae) {
             undoManager.undo();
             setEnabled(undoManager.canUndo());
             redoAction.setEnabled(undoManager.canRedo());
             super.actionPerformed(ae);
-        }        
-        
+        }
+
         public void propertyChange(PropertyChangeEvent pce) {
             setEnabled(undoManager.canUndo());
         }

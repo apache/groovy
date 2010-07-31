@@ -19,24 +19,25 @@ import java.util.EventObject;
 
 /**
  * An event used to propagate meta class updates
+ *
  * @author <a href="mailto:blackdrag@gmx.org">Jochen Theodorou</a>
  */
 public class MetaClassRegistryChangeEvent extends EventObject {
-	private Class clazz;
-	private MetaClass metaClass;
-	
-	public MetaClassRegistryChangeEvent(Object source, Class clazz, MetaClass metaClass ) {
-		super(source);
-		this.clazz = clazz;
-		this.metaClass = metaClass;
-	}
-	
-	public Class getClassToUpdate() {
-		return clazz;
-	}
-	
-	public MetaClass getNewMetaClass() {
-		return metaClass;
-	}
+    private Class clazz;
+    private MetaClass metaClass;
+
+    public MetaClassRegistryChangeEvent(Object source, Class clazz, MetaClass metaClass) {
+        super(source);
+        this.clazz = clazz;
+        this.metaClass = metaClass;
+    }
+
+    public Class getClassToUpdate() {
+        return clazz;
+    }
+
+    public MetaClass getNewMetaClass() {
+        return metaClass;
+    }
 
 }

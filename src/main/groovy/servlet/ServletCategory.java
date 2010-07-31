@@ -24,15 +24,15 @@ import javax.servlet.jsp.PageContext;
  * Servlet support.
  */
 public class ServletCategory {
-	
+
     public static Object get(ServletContext context, String key) {
         return context.getAttribute(key);
     }
-    
+
     public static Object get(HttpSession session, String key) {
         return session.getAttribute(key);
     }
-    
+
     public static Object get(ServletRequest request, String key) {
         return request.getAttribute(key);
     }
