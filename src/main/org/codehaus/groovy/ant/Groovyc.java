@@ -876,7 +876,7 @@ public class Groovyc extends MatchingTask {
                         fileNameErrors = fileNameErrors && !FileSystemCompiler.validateFiles(filenames);
 
                         if(targetBytecode != null) {
-                        	configuration.setTargetBytecode(targetBytecode);
+                            configuration.setTargetBytecode(targetBytecode);
                         }
                         
                         if (!fileNameErrors) {

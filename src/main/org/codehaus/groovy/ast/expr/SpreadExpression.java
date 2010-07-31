@@ -20,13 +20,13 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
 
 /**
  * Represents a spread expression *x in the list expression [1, *x, 2].
- * 
+ *
  * @version $Revision$
  */
 public class SpreadExpression extends Expression {
 
     private final Expression expression;
-	
+
     public SpreadExpression(Expression expression) {
         this.expression = expression;
     }
@@ -40,14 +40,14 @@ public class SpreadExpression extends Expression {
     }
 
     public Expression transformExpression(ExpressionTransformer transformer) {
-        Expression ret = new SpreadExpression(transformer.transform(expression)); 
+        Expression ret = new SpreadExpression(transformer.transform(expression));
         ret.setSourcePosition(this);
         return ret;
     }
 
     public String getText() {
-		return "*" + expression.getText();
-	}
+        return "*" + expression.getText();
+    }
 
     public ClassNode getType() {
         return expression.getType();

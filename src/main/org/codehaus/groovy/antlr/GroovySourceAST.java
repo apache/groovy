@@ -49,8 +49,8 @@ public class GroovySourceAST extends CommonAST implements Comparable, SourceInfo
         line = ast.getLine();
         col = ast.getColumn();
         if (ast instanceof GroovySourceAST) {
-        	GroovySourceAST node = (GroovySourceAST)ast;
-        	lineLast = node.getLineLast();
+            GroovySourceAST node = (GroovySourceAST)ast;
+            lineLast = node.getLineLast();
             colLast = node.getColumnLast();
         }
     }

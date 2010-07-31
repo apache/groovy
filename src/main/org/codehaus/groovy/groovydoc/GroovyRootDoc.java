@@ -20,12 +20,17 @@ import java.util.List;
 import java.util.Map;
 
 public interface GroovyRootDoc extends GroovyDoc, GroovyDocErrorReporter {
-	GroovyClassDoc classNamed(String arg0);
-	GroovyClassDoc[] classes();
-	String[][] options();
-	GroovyPackageDoc packageNamed(String arg0);
-	GroovyClassDoc[] specifiedClasses();
-	GroovyPackageDoc[] specifiedPackages();
+    GroovyClassDoc classNamed(String arg0);
+
+    GroovyClassDoc[] classes();
+
+    String[][] options();
+
+    GroovyPackageDoc packageNamed(String arg0);
+
+    GroovyClassDoc[] specifiedClasses();
+
+    GroovyPackageDoc[] specifiedPackages();
 
     Map<String, GroovyClassDoc> getVisibleClasses(List importedClassesAndPackages);
 }

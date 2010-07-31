@@ -85,9 +85,9 @@ public class InnerClassVisitor extends ClassCodeVisitorSupport implements Opcode
     }
     
     protected void visitObjectInitializerStatements(ClassNode node) {
-    	processingObjInitStatements = true;
-    	super.visitObjectInitializerStatements(node);
-    	processingObjInitStatements = false;
+        processingObjInitStatements = true;
+        super.visitObjectInitializerStatements(node);
+        processingObjInitStatements = false;
     }
     
     private boolean isStatic(InnerClassNode node) {
@@ -120,23 +120,23 @@ public class InnerClassVisitor extends ClassCodeVisitorSupport implements Opcode
 
         BlockStatement block = new BlockStatement();
         if (isStatic) {
-        	setMethodDispatcherCode(block, new ClassExpression(node.getOuterClass()), parameters);
+            setMethodDispatcherCode(block, new ClassExpression(node.getOuterClass()), parameters);
         } else {
-	        block.addStatement(
-	                new BytecodeSequence(new BytecodeInstruction() {
-	                    public void visit(MethodVisitor mv) {
-	                        mv.visitVarInsn(ALOAD, 0);
-	                        mv.visitFieldInsn(GETFIELD, classInternalName, "this$0", outerClassDescriptor);
-	                        mv.visitVarInsn(ALOAD, 1);
-	                        mv.visitVarInsn(ALOAD, 2);
-	                        mv.visitMethodInsn( INVOKEVIRTUAL, 
-	                                            outerClassInternalName, 
-	                                            "this$dist$invoke$"+objectDistance, 
-	                                            "(Ljava/lang/String;Ljava/lang/Object;)Ljava/lang/Object;");
-	                        mv.visitInsn(ARETURN);
-	                    }
-	                })
-	        );
+            block.addStatement(
+                    new BytecodeSequence(new BytecodeInstruction() {
+                        public void visit(MethodVisitor mv) {
+                            mv.visitVarInsn(ALOAD, 0);
+                            mv.visitFieldInsn(GETFIELD, classInternalName, "this$0", outerClassDescriptor);
+                            mv.visitVarInsn(ALOAD, 1);
+                            mv.visitVarInsn(ALOAD, 2);
+                            mv.visitMethodInsn( INVOKEVIRTUAL, 
+                                                outerClassInternalName, 
+                                                "this$dist$invoke$"+objectDistance, 
+                                                "(Ljava/lang/String;Ljava/lang/Object;)Ljava/lang/Object;");
+                            mv.visitInsn(ARETURN);
+                        }
+                    })
+            );
         }
         method.setCode(block);
         
@@ -156,24 +156,24 @@ public class InnerClassVisitor extends ClassCodeVisitorSupport implements Opcode
         
         block = new BlockStatement();
         if (isStatic) {
-        	setPropertySetDispatcher(block, new ClassExpression(node.getOuterClass()), parameters);
-	    } else {
-	        block.addStatement(
-	                new BytecodeSequence(new BytecodeInstruction() {
-	                    public void visit(MethodVisitor mv) {
-	                        mv.visitVarInsn(ALOAD, 0);
-	                        mv.visitFieldInsn(GETFIELD, classInternalName, "this$0", outerClassDescriptor);
-	                        mv.visitVarInsn(ALOAD, 1);
-	                        mv.visitVarInsn(ALOAD, 2);
-	                        mv.visitMethodInsn( INVOKEVIRTUAL, 
-	                                            outerClassInternalName, 
-	                                            "this$dist$set$"+objectDistance,
-	                                            "(Ljava/lang/String;Ljava/lang/Object;)V");
-	                        mv.visitInsn(RETURN);
-	                    }
-	                })
-	        );
-	    }
+            setPropertySetDispatcher(block, new ClassExpression(node.getOuterClass()), parameters);
+        } else {
+            block.addStatement(
+                    new BytecodeSequence(new BytecodeInstruction() {
+                        public void visit(MethodVisitor mv) {
+                            mv.visitVarInsn(ALOAD, 0);
+                            mv.visitFieldInsn(GETFIELD, classInternalName, "this$0", outerClassDescriptor);
+                            mv.visitVarInsn(ALOAD, 1);
+                            mv.visitVarInsn(ALOAD, 2);
+                            mv.visitMethodInsn( INVOKEVIRTUAL, 
+                                                outerClassInternalName, 
+                                                "this$dist$set$"+objectDistance,
+                                                "(Ljava/lang/String;Ljava/lang/Object;)V");
+                            mv.visitInsn(RETURN);
+                        }
+                    })
+            );
+        }
         method.setCode(block);
         
         // add property setter dispatcher
@@ -190,63 +190,63 @@ public class InnerClassVisitor extends ClassCodeVisitorSupport implements Opcode
         );
         
         block = new BlockStatement();
-	    if (isStatic) {
-	    	setPropertyGetterDispatcher(block, new ClassExpression(node.getOuterClass()), parameters);
-	    } else {
-	        block.addStatement(
-	                new BytecodeSequence(new BytecodeInstruction() {
-	                    public void visit(MethodVisitor mv) {
-	                        mv.visitVarInsn(ALOAD, 0);
-	                        mv.visitFieldInsn(GETFIELD, classInternalName, "this$0", outerClassDescriptor);
-	                        mv.visitVarInsn(ALOAD, 1);
-	                        mv.visitMethodInsn( INVOKEVIRTUAL, 
-	                                            outerClassInternalName, 
-	                                            "this$dist$get$"+objectDistance, 
-	                                            "(Ljava/lang/String;)Ljava/lang/Object;");
-	                        mv.visitInsn(ARETURN);
-	                    }
-	                })
-	        );
-	    }
+        if (isStatic) {
+            setPropertyGetterDispatcher(block, new ClassExpression(node.getOuterClass()), parameters);
+        } else {
+            block.addStatement(
+                    new BytecodeSequence(new BytecodeInstruction() {
+                        public void visit(MethodVisitor mv) {
+                            mv.visitVarInsn(ALOAD, 0);
+                            mv.visitFieldInsn(GETFIELD, classInternalName, "this$0", outerClassDescriptor);
+                            mv.visitVarInsn(ALOAD, 1);
+                            mv.visitMethodInsn( INVOKEVIRTUAL, 
+                                                outerClassInternalName, 
+                                                "this$dist$get$"+objectDistance, 
+                                                "(Ljava/lang/String;)Ljava/lang/Object;");
+                            mv.visitInsn(ARETURN);
+                        }
+                    })
+            );
+        }
         method.setCode(block);
     }
 
     private String getTypeDescriptor(ClassNode node, boolean isStatic) {
-    	return BytecodeHelper.getTypeDescription(getClassNode(node,isStatic));
-	}
+        return BytecodeHelper.getTypeDescription(getClassNode(node,isStatic));
+    }
 
-	private String getInternalName(ClassNode node, boolean isStatic) {
-    	return BytecodeHelper.getClassInternalName(getClassNode(node,isStatic));
-	}
-	
-	@Override
-	public void visitConstructor(ConstructorNode node) {
-	    addThisReference(node);
-	    super.visitConstructor(node);
-	}
-	
-	private boolean shouldHandleImplicitThisForInnerClass(ClassNode cn) {
-	    if (cn.isEnum() || cn.isInterface()) return false;
-	    if ((cn.getModifiers() & Opcodes.ACC_STATIC)!=0) return false;
+    private String getInternalName(ClassNode node, boolean isStatic) {
+        return BytecodeHelper.getClassInternalName(getClassNode(node,isStatic));
+    }
+    
+    @Override
+    public void visitConstructor(ConstructorNode node) {
+        addThisReference(node);
+        super.visitConstructor(node);
+    }
+    
+    private boolean shouldHandleImplicitThisForInnerClass(ClassNode cn) {
+        if (cn.isEnum() || cn.isInterface()) return false;
+        if ((cn.getModifiers() & Opcodes.ACC_STATIC)!=0) return false;
 
-	    if(!(cn instanceof InnerClassNode)) return false;
-	    InnerClassNode innerClass = (InnerClassNode) cn;
-	    // scope != null means aic, we don't handle that here
-	    if (innerClass.getVariableScope()!=null) return false;
-	    // static inner classes don't need this$0
-	    if ((innerClass.getModifiers() & ACC_STATIC)!=0) return false;
-	    
-	    return true;
-	}
-	
-	private void addThisReference(ConstructorNode node) {
-		if(!shouldHandleImplicitThisForInnerClass(classNode)) return;
-	    Statement code = node.getCode();
-	    
-	    // add "this$0" field init
-	    
-	    //add this parameter to node
-	    Parameter[] params = node.getParameters();
+        if(!(cn instanceof InnerClassNode)) return false;
+        InnerClassNode innerClass = (InnerClassNode) cn;
+        // scope != null means aic, we don't handle that here
+        if (innerClass.getVariableScope()!=null) return false;
+        // static inner classes don't need this$0
+        if ((innerClass.getModifiers() & ACC_STATIC)!=0) return false;
+        
+        return true;
+    }
+    
+    private void addThisReference(ConstructorNode node) {
+        if(!shouldHandleImplicitThisForInnerClass(classNode)) return;
+        Statement code = node.getCode();
+        
+        // add "this$0" field init
+        
+        //add this parameter to node
+        Parameter[] params = node.getParameters();
         Parameter[] newParams = new Parameter[params.length+1];
         System.arraycopy(params, 0, newParams, 1, params.length);
         Parameter thisPara = new Parameter(classNode.getOuterClass(),getUniqueName(params,node));
@@ -268,8 +268,8 @@ public class InnerClassVisitor extends ClassCodeVisitorSupport implements Opcode
         addFieldInit(thisPara,thisField,newCode);
         ConstructorCallExpression cce = getFirstIfSpecialConstructorCall(block);
         if (cce == null) {
-        	cce = new ConstructorCallExpression(ClassNode.SUPER, new TupleExpression());
-        	block.getStatements().add(0, new ExpressionStatement(cce));
+            cce = new ConstructorCallExpression(ClassNode.SUPER, new TupleExpression());
+            block.getStatements().add(0, new ExpressionStatement(cce));
         }
         if (shouldImplicitlyPassThisPara(cce)) {
             // add thisPara to this(...)
@@ -285,42 +285,42 @@ public class InnerClassVisitor extends ClassCodeVisitorSupport implements Opcode
             block.getStatements().add(1, newCode);
         }
         node.setCode(block);
-	}
-	
-	private boolean shouldImplicitlyPassThisPara(ConstructorCallExpression cce) {
-		boolean pass = false;
-		ClassNode superCN = classNode.getSuperClass();
-		if(cce.isThisCall()) {
-			pass = true;
-		}
-		else if(cce.isSuperCall()) {
-			// if the super class is another non-static inner class in the same outer class, implicit this
-			// needs to be passed
-			if(!superCN.isEnum() && !superCN.isInterface() && superCN instanceof InnerClassNode) {
-				InnerClassNode superInnerCN = (InnerClassNode) superCN;  
-				if(!isStatic(superInnerCN) && superCN.getOuterClass().equals(classNode.getOuterClass())) {
-					pass = true;
-				}
-			}
-		}
-		return pass;
-	}
-	
-	private String getUniqueName(Parameter[] params, ConstructorNode node) {
-	    String namePrefix = "$p";
-	    outer: 
-	    for (int i=0; i<100; i++) {
-	        namePrefix=namePrefix+"$";
-	        for (Parameter p:params) {
-	            if (p.getName().equals(namePrefix)) continue outer;
-	        }
-	        return namePrefix;
-	    }
-	    addError("unable to find a unique prefix name for synthetic this reference", node);
-	    return namePrefix;
-	}
-	
-	
+    }
+    
+    private boolean shouldImplicitlyPassThisPara(ConstructorCallExpression cce) {
+        boolean pass = false;
+        ClassNode superCN = classNode.getSuperClass();
+        if(cce.isThisCall()) {
+            pass = true;
+        }
+        else if(cce.isSuperCall()) {
+            // if the super class is another non-static inner class in the same outer class, implicit this
+            // needs to be passed
+            if(!superCN.isEnum() && !superCN.isInterface() && superCN instanceof InnerClassNode) {
+                InnerClassNode superInnerCN = (InnerClassNode) superCN;  
+                if(!isStatic(superInnerCN) && superCN.getOuterClass().equals(classNode.getOuterClass())) {
+                    pass = true;
+                }
+            }
+        }
+        return pass;
+    }
+    
+    private String getUniqueName(Parameter[] params, ConstructorNode node) {
+        String namePrefix = "$p";
+        outer: 
+        for (int i=0; i<100; i++) {
+            namePrefix=namePrefix+"$";
+            for (Parameter p:params) {
+                if (p.getName().equals(namePrefix)) continue outer;
+            }
+            return namePrefix;
+        }
+        addError("unable to find a unique prefix name for synthetic this reference", node);
+        return namePrefix;
+    }
+    
+    
     private ConstructorCallExpression getFirstIfSpecialConstructorCall(BlockStatement code) {
         if (code == null) return null;
 
@@ -344,9 +344,9 @@ public class InnerClassVisitor extends ClassCodeVisitorSupport implements Opcode
     }
 
     public void visitField(FieldNode node) {
-    	this.currentField = node;
-    	super.visitField(node);
-    	this.currentField = null;
+        this.currentField = node;
+        super.visitField(node);
+        this.currentField = null;
     }
 
     public void visitProperty(PropertyNode node) {
@@ -361,8 +361,8 @@ public class InnerClassVisitor extends ClassCodeVisitorSupport implements Opcode
     public void visitConstructorCallExpression(ConstructorCallExpression call) {
         super.visitConstructorCallExpression(call);
         if (!call.isUsingAnonymousInnerClass()) {
-        	passThisReference(call);
-        	return;
+            passThisReference(call);
+            return;
         }
         
         InnerClassNode innerClass = (InnerClassNode) call.getType();
@@ -437,29 +437,29 @@ public class InnerClassVisitor extends ClassCodeVisitorSupport implements Opcode
     }
     
     // this is the counterpart of addThisReference(). To non-static inner classes, outer this should be
-	// passed as the first argument implicitly.
-	private void passThisReference(ConstructorCallExpression call) {
-		ClassNode cn = call.getType().redirect();
-		if(!shouldHandleImplicitThisForInnerClass(cn)) return;
+    // passed as the first argument implicitly.
+    private void passThisReference(ConstructorCallExpression call) {
+        ClassNode cn = call.getType().redirect();
+        if(!shouldHandleImplicitThisForInnerClass(cn)) return;
 
-		boolean isInStaticContext = true;
-		if(currentMethod != null)
-			isInStaticContext = currentMethod.getVariableScope().isInStaticContext();
-		else if(currentField != null)
-			isInStaticContext = currentField.isStatic();
-		else if(processingObjInitStatements)
-			isInStaticContext = false;
-		
-		// if constructor call is not in static context, return
+        boolean isInStaticContext = true;
+        if(currentMethod != null)
+            isInStaticContext = currentMethod.getVariableScope().isInStaticContext();
+        else if(currentField != null)
+            isInStaticContext = currentField.isStatic();
+        else if(processingObjInitStatements)
+            isInStaticContext = false;
+        
+        // if constructor call is not in static context, return
         if(isInStaticContext) {
-        	// constructor call is in static context and the inner class is non-static - 1st arg is supposed to be 
-        	// passed as enclosing "this" instance
-        	//
-        	Expression args = call.getArguments();
-        	if(args instanceof TupleExpression && ((TupleExpression)args).getExpressions().isEmpty()) {
-        		addError("No enclosing instance passed in constructor call of a non-static inner class", call);
-        	}
-        	return;
+            // constructor call is in static context and the inner class is non-static - 1st arg is supposed to be 
+            // passed as enclosing "this" instance
+            //
+            Expression args = call.getArguments();
+            if(args instanceof TupleExpression && ((TupleExpression)args).getExpressions().isEmpty()) {
+                addError("No enclosing instance passed in constructor call of a non-static inner class", call);
+            }
+            return;
         }
 
         // calculate outer class which we need for this$0
@@ -473,20 +473,20 @@ public class InnerClassVisitor extends ClassCodeVisitorSupport implements Opcode
         //add this parameter to node
         Expression argsExp = call.getArguments();
         if(argsExp instanceof TupleExpression) {
-        	TupleExpression argsListExp = (TupleExpression) argsExp;
+            TupleExpression argsListExp = (TupleExpression) argsExp;
             Expression this0 = VariableExpression.THIS_EXPRESSION;
             for (int i = 0; i != level; ++i)
                 this0 = new PropertyExpression(this0, "this$0");
             argsListExp.getExpressions().add(0, this0);
         }
-	}
+    }
     
     private ClassNode getClassNode(ClassNode node, boolean isStatic) {
-    	if (isStatic) node = ClassHelper.CLASS_Type;
-    	return node;
-	}
+        if (isStatic) node = ClassHelper.CLASS_Type;
+        return node;
+    }
 
-	private void addDispatcherMethods() {
+    private void addDispatcherMethods() {
         final int objectDistance = getObjectDistance(classNode);
         
         // since we added an anonymous inner class we should also
@@ -547,7 +547,7 @@ public class InnerClassVisitor extends ClassCodeVisitorSupport implements Opcode
     }
 
     private void setPropertyGetterDispatcher(BlockStatement block, Expression thiz, Parameter[] parameters) {
-    	List gStringStrings = new ArrayList();
+        List gStringStrings = new ArrayList();
         gStringStrings.add(new ConstantExpression(""));
         gStringStrings.add(new ConstantExpression(""));
         List gStringValues = new ArrayList();
@@ -562,11 +562,11 @@ public class InnerClassVisitor extends ClassCodeVisitorSupport implements Opcode
                                 )
                         )
                 )
-        );		
-	}
+        );        
+    }
 
-	private void setPropertySetDispatcher(BlockStatement block, Expression thiz, Parameter[] parameters) {
-    	List gStringStrings = new ArrayList();
+    private void setPropertySetDispatcher(BlockStatement block, Expression thiz, Parameter[] parameters) {
+        List gStringStrings = new ArrayList();
         gStringStrings.add(new ConstantExpression(""));
         gStringStrings.add(new ConstantExpression(""));
         List gStringValues = new ArrayList();
@@ -586,9 +586,9 @@ public class InnerClassVisitor extends ClassCodeVisitorSupport implements Opcode
                         )
                 )
         );
-	}
+    }
 
-	private void setMethodDispatcherCode(BlockStatement block, Expression thiz, Parameter[] parameters) {
+    private void setMethodDispatcherCode(BlockStatement block, Expression thiz, Parameter[] parameters) {
         List gStringStrings = new ArrayList();
         gStringStrings.add(new ConstantExpression(""));
         gStringStrings.add(new ConstantExpression(""));
@@ -608,9 +608,9 @@ public class InnerClassVisitor extends ClassCodeVisitorSupport implements Opcode
                         )
                 )
         );
-	}
+    }
 
-	private static void addFieldInit(Parameter p, FieldNode fn, BlockStatement block) {
+    private static void addFieldInit(Parameter p, FieldNode fn, BlockStatement block) {
         VariableExpression ve = new VariableExpression(p);
         FieldExpression fe = new FieldExpression(fn);
         block.addStatement(new ExpressionStatement(

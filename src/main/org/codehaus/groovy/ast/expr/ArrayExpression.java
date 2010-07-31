@@ -24,7 +24,7 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
 /**
  * Represents an array object construction either using a fixed size
  * or an initializer expression
- * 
+ *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
@@ -33,45 +33,45 @@ public class ArrayExpression extends Expression {
     private List<Expression> sizeExpression;
 
     private ClassNode elementType;
-    
+
     private static ClassNode makeArray(ClassNode base, List<Expression> sizeExpression) {
-    	ClassNode ret = base.makeArray();
-    	if (sizeExpression==null) return ret;
-    	int size = sizeExpression.size();
-    	for (int i=1; i<size; i++) {
-    		ret = ret.makeArray();
-    	}
-    	return ret;
+        ClassNode ret = base.makeArray();
+        if (sizeExpression == null) return ret;
+        int size = sizeExpression.size();
+        for (int i = 1; i < size; i++) {
+            ret = ret.makeArray();
+        }
+        return ret;
     }
-    
+
     public ArrayExpression(ClassNode elementType, List<Expression> expressions, List<Expression> sizeExpression) {
         //expect to get the elementType
-        super.setType(makeArray(elementType,sizeExpression));
-        if (expressions==null) expressions=Collections.emptyList();
+        super.setType(makeArray(elementType, sizeExpression));
+        if (expressions == null) expressions = Collections.emptyList();
         this.elementType = elementType;
         this.expressions = expressions;
         this.sizeExpression = sizeExpression;
-        
+
         for (Object item : expressions) {
-            if (item!=null && !(item instanceof Expression)) {
+            if (item != null && !(item instanceof Expression)) {
                 throw new ClassCastException("Item: " + item + " is not an Expression");
             }
         }
-        if (sizeExpression!=null) {
-	        for (Object item : sizeExpression) {
-	            if (!(item instanceof Expression)) {
-	                throw new ClassCastException("Item: " + item + " is not an Expression");
-	            }
-	        }
+        if (sizeExpression != null) {
+            for (Object item : sizeExpression) {
+                if (!(item instanceof Expression)) {
+                    throw new ClassCastException("Item: " + item + " is not an Expression");
+                }
+            }
         }
     }
-    
-    
+
+
     /**
      * Creates an array using an initializer expression
      */
     public ArrayExpression(ClassNode elementType, List<Expression> expressions) {
-        this(elementType,expressions,null);
+        this(elementType, expressions, null);
     }
 
     public void addExpression(Expression expression) {
@@ -91,9 +91,9 @@ public class ArrayExpression extends Expression {
     }
 
     public Expression transformExpression(ExpressionTransformer transformer) {
-    	List<Expression> exprList = transformExpressions(expressions, transformer);
-    	List<Expression> sizes = null;
-    	if (sizeExpression!=null) sizes = transformExpressions(sizeExpression,transformer);
+        List<Expression> exprList = transformExpressions(expressions, transformer);
+        List<Expression> sizes = null;
+        if (sizeExpression != null) sizes = transformExpressions(sizeExpression, transformer);
         Expression ret = new ArrayExpression(elementType, exprList, sizes);
         ret.setSourcePosition(this);
         return ret;
@@ -106,15 +106,14 @@ public class ArrayExpression extends Expression {
     public ClassNode getElementType() {
         return elementType;
     }
-    
+
     public String getText() {
         StringBuffer buffer = new StringBuffer("[");
         boolean first = true;
         for (Expression expression : expressions) {
             if (first) {
                 first = false;
-            }
-            else {
+            } else {
                 buffer.append(", ");
             }
 

@@ -153,7 +153,7 @@ public class CompilerConfiguration {
         // Target bytecode
         String targetByteCode = null;
         try {
-        	targetByteCode = System.getProperty("groovy.target.bytecode", targetByteCode);
+            targetByteCode = System.getProperty("groovy.target.bytecode", targetByteCode);
         } catch (Exception e) {
             // IGNORE
         }

@@ -24,7 +24,7 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
 public class BitwiseNegationExpression extends Expression {
 
     private Expression expression;
-	
+
     public BitwiseNegationExpression(Expression expression) {
         this.expression = expression;
     }
@@ -44,8 +44,8 @@ public class BitwiseNegationExpression extends Expression {
     }
 
     public String getText() {
-		return expression.getText();
-	}
+        return expression.getText();
+    }
 
     public ClassNode getType() {
         return expression.getType();

@@ -15,10 +15,14 @@
  */
 package org.codehaus.groovy.groovydoc;
 
-public interface GroovyParameter{
+public interface GroovyParameter {
     GroovyAnnotationRef[] annotations();
-	String name();
-	GroovyType type();
-	String typeName();
+
+    String name();
+
+    GroovyType type();
+
+    String typeName();
+
     String defaultValue();
 }

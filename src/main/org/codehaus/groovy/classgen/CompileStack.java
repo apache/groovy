@@ -106,47 +106,47 @@ public class CompileStack implements Opcodes {
     private int localVariableOffset;
     // this is used to store the goals for a "break foo" call
     // in a loop where foo is a label.
-	private final Map namedLoopBreakLabel = new HashMap();
-	//this is used to store the goals for a "continue foo" call
+    private final Map namedLoopBreakLabel = new HashMap();
+    //this is used to store the goals for a "continue foo" call
     // in a loop where foo is a label.
-	private final Map namedLoopContinueLabel = new HashMap();
+    private final Map namedLoopContinueLabel = new HashMap();
     private String className;
     private LinkedList<ExceptionTableEntry> typedExceptions = new LinkedList<ExceptionTableEntry>();
     private LinkedList<ExceptionTableEntry> untypedExceptions = new LinkedList<ExceptionTableEntry>();
-	    
+        
     
     protected static class LabelRange {
-    	public Label start;
-    	public Label end;
+        public Label start;
+        public Label end;
     }
     
     protected static class BlockRecorder {
-    	private boolean isEmpty = true;
-    	public Runnable excludedStatement;
-    	public LinkedList<LabelRange> ranges;
-    	public BlockRecorder() {
-    		ranges = new LinkedList<LabelRange>();
-    	}
-    	public BlockRecorder(Runnable excludedStatement) {
-    		this();
-    		this.excludedStatement = excludedStatement;
-    	}
-    	public void startRange(Label start) {
-    		LabelRange range = new LabelRange();
-    		range.start = start;
-    		ranges.add(range);
-    		isEmpty = false;
-    	}
-    	public void closeRange(Label end) {
-    		ranges.getLast().end = end;
-    	}
+        private boolean isEmpty = true;
+        public Runnable excludedStatement;
+        public LinkedList<LabelRange> ranges;
+        public BlockRecorder() {
+            ranges = new LinkedList<LabelRange>();
+        }
+        public BlockRecorder(Runnable excludedStatement) {
+            this();
+            this.excludedStatement = excludedStatement;
+        }
+        public void startRange(Label start) {
+            LabelRange range = new LabelRange();
+            range.start = start;
+            ranges.add(range);
+            isEmpty = false;
+        }
+        public void closeRange(Label end) {
+            ranges.getLast().end = end;
+        }
     }
     
     private class ExceptionTableEntry {
-    	Label start,end,goal;
-    	String sig;
+        Label start,end,goal;
+        String sig;
     }
-	
+    
     private class StateStackElement {
         final VariableScope scope;
         final Label continueLabel;
@@ -334,11 +334,11 @@ public class CompileStack implements Opcodes {
         
         //exception table writing
         for (ExceptionTableEntry ep : typedExceptions) {
-        	mv.visitTryCatchBlock(ep.start, ep.end, ep.goal, ep.sig);
+            mv.visitTryCatchBlock(ep.start, ep.end, ep.goal, ep.sig);
         }
         //exception table writing
         for (ExceptionTableEntry ep : untypedExceptions) {
-        	mv.visitTryCatchBlock(ep.start, ep.end, ep.goal, ep.sig);
+            mv.visitTryCatchBlock(ep.start, ep.end, ep.goal, ep.sig);
         }
         
         
@@ -363,20 +363,20 @@ public class CompileStack implements Opcodes {
     }
     
     public void addExceptionBlock (Label start, Label end, Label goal, 
-    							   String sig) 
+                                   String sig) 
     { 
-		// this code is in an extra method to avoid
-		// lazy initialization issues
-    	ExceptionTableEntry ep = new ExceptionTableEntry();
-    	ep.start = start;
-    	ep.end = end;
-    	ep.sig = sig;
-    	ep.goal = goal;
-    	if (sig==null) {
-    		untypedExceptions.add(ep);
-    	} else {
-    		typedExceptions.add(ep);
-    	}
+        // this code is in an extra method to avoid
+        // lazy initialization issues
+        ExceptionTableEntry ep = new ExceptionTableEntry();
+        ep.start = start;
+        ep.end = end;
+        ep.sig = sig;
+        ep.goal = goal;
+        if (sig==null) {
+            untypedExceptions.add(ep);
+        } else {
+            typedExceptions.add(ep);
+        }
     }
     
     /**
@@ -424,8 +424,8 @@ public class CompileStack implements Opcodes {
         continueLabel = new Label();
         breakLabel = new Label();
         if (labelName!=null) {
-        	namedLoopBreakLabel.put(labelName,breakLabel);
-        	namedLoopContinueLabel.put(labelName,continueLabel);
+            namedLoopBreakLabel.put(labelName,breakLabel);
+            namedLoopContinueLabel.put(labelName,continueLabel);
         }
     }
     
@@ -446,10 +446,10 @@ public class CompileStack implements Opcodes {
      * If not, the current break label is returned.
      */
     protected Label getNamedBreakLabel(String name) {
-    	Label label = getBreakLabel();
-    	Label endLabel = null;
+        Label label = getBreakLabel();
+        Label endLabel = null;
         if (name!=null) endLabel = (Label) namedLoopBreakLabel.get(name);
-    	if (endLabel!=null) label = endLabel;
+        if (endLabel!=null) label = endLabel;
         return label;
     }
     
@@ -460,10 +460,10 @@ public class CompileStack implements Opcodes {
      * name. If not, getLabel is used.
      */
     protected Label getNamedContinueLabel(String name) {
-    	Label label = getLabel(name);
-    	Label endLabel = null;
+        Label label = getLabel(name);
+        Label endLabel = null;
         if (name!=null) endLabel = (Label) namedLoopContinueLabel.get(name);
-    	if (endLabel!=null) label = endLabel;
+        if (endLabel!=null) label = endLabel;
         return label;
     }    
     
@@ -650,27 +650,27 @@ public class CompileStack implements Opcodes {
     }
 
     private void applyBlockRecorder(List<BlockRecorder> blocks) {
-    	if (blocks.size()==0 || blocks.size()==visitedBlocks.size()) return;
-    	
-		Label end = new Label();
-		mv.visitInsn(NOP);
-		mv.visitLabel(end);
-		Label newStart = new Label();
+        if (blocks.size()==0 || blocks.size()==visitedBlocks.size()) return;
+        
+        Label end = new Label();
+        mv.visitInsn(NOP);
+        mv.visitLabel(end);
+        Label newStart = new Label();
 
-    	for (BlockRecorder fb : blocks) {
-    		if (visitedBlocks.contains(fb)) continue;
+        for (BlockRecorder fb : blocks) {
+            if (visitedBlocks.contains(fb)) continue;
 
-    		fb.closeRange(end);
-   		
-    		// we exclude the finally block from the exception table
-    		// here to avoid double visiting of finally statements
-    		fb.excludedStatement.run();
-    		
-    		fb.startRange(newStart);
-    	}
-    	
-		mv.visitInsn(NOP);
-		mv.visitLabel(newStart);
+            fb.closeRange(end);
+           
+            // we exclude the finally block from the exception table
+            // here to avoid double visiting of finally statements
+            fb.excludedStatement.run();
+            
+            fb.startRange(newStart);
+        }
+        
+        mv.visitInsn(NOP);
+        mv.visitLabel(newStart);
     }
 
     public void applyBlockRecorder() {
@@ -688,16 +688,16 @@ public class CompileStack implements Opcodes {
     
     public void pushBlockRecorderVisit(BlockRecorder finallyBlock) {
         visitedBlocks.add(finallyBlock);
-	}
-	
-	public void popBlockRecorderVisit(BlockRecorder finallyBlock) {
-	    visitedBlocks.remove(finallyBlock);
-	}
+    }
+    
+    public void popBlockRecorderVisit(BlockRecorder finallyBlock) {
+        visitedBlocks.remove(finallyBlock);
+    }
 
-	public void writeExceptionTable(BlockRecorder block, Label goal, String sig) {
-	    if (block.isEmpty) return;
-	    for (LabelRange range : block.ranges) {
-	        mv.visitTryCatchBlock(range.start, range.end, goal, sig);
-	    }
-	}
+    public void writeExceptionTable(BlockRecorder block, Label goal, String sig) {
+        if (block.isEmpty) return;
+        for (LabelRange range : block.ranges) {
+            mv.visitTryCatchBlock(range.start, range.end, goal, sig);
+        }
+    }
 }

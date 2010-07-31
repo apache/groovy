@@ -70,7 +70,7 @@ import java.util.Map;
  * @author Guillaume Laforge
  */
 public class GroovyScriptEngineImpl
-    extends AbstractScriptEngine implements Compilable, Invocable {
+        extends AbstractScriptEngine implements Compilable, Invocable {
 
     private static boolean DEBUG = false;
 
@@ -86,42 +86,42 @@ public class GroovyScriptEngineImpl
 
     // counter used to generate unique global Script class names
     private static int counter;
- 
+
     static {
         counter = 0;
     }
-    
+
     public GroovyScriptEngineImpl() {
         classMap = Collections.synchronizedMap(new HashMap<String, Class>());
         globalClosures = Collections.synchronizedMap(new HashMap<String, Closure>());
         loader = new GroovyClassLoader(getParentLoader(),
-                                       new CompilerConfiguration());
+                new CompilerConfiguration());
     }
 
-    public Object eval(Reader reader, ScriptContext ctx) 
-                       throws ScriptException {
+    public Object eval(Reader reader, ScriptContext ctx)
+            throws ScriptException {
         return eval(readFully(reader), ctx);
     }
-    
-    public Object eval(String script, ScriptContext ctx) 
-                       throws ScriptException {
+
+    public Object eval(String script, ScriptContext ctx)
+            throws ScriptException {
         try {
-        	Class clazz = getScriptClass(script);
-            if(clazz == null) throw new ScriptException("Script class is null");
+            Class clazz = getScriptClass(script);
+            if (clazz == null) throw new ScriptException("Script class is null");
             return eval(clazz, ctx);
         } catch (SyntaxException e) {
-            throw new ScriptException(e.getMessage(), 
-                                      e.getSourceLocator(), e.getLine());
+            throw new ScriptException(e.getMessage(),
+                    e.getSourceLocator(), e.getLine());
         } catch (Exception e) {
             if (DEBUG) e.printStackTrace();
             throw new ScriptException(e);
         }
     }
-    
+
     public Bindings createBindings() {
         return new SimpleBindings();
     }
-    
+
     public ScriptEngineFactory getFactory() {
         if (factory == null) {
             synchronized (this) {
@@ -132,40 +132,40 @@ public class GroovyScriptEngineImpl
         }
         return factory;
     }
-   
+
     // javax.script.Compilable methods 
     public CompiledScript compile(String scriptSource) throws ScriptException {
         try {
             return new GroovyCompiledScript(this,
-                                    getScriptClass(scriptSource));
+                    getScriptClass(scriptSource));
         } catch (SyntaxException e) {
             throw new ScriptException(e.getMessage(),
-                                      e.getSourceLocator(), e.getLine());
+                    e.getSourceLocator(), e.getLine());
         } catch (IOException e) {
             throw new ScriptException(e);
         } catch (CompilationFailedException ee) {
             throw new ScriptException(ee);
         }
-    }   
-    
+    }
+
     public CompiledScript compile(Reader reader) throws ScriptException {
         return compile(readFully(reader));
     }
-   
+
     // javax.script.Invocable methods.
     public Object invokeFunction(String name, Object... args)
-             throws ScriptException, NoSuchMethodException  {
+            throws ScriptException, NoSuchMethodException {
         return invokeImpl(null, name, args);
     }
-   
+
     public Object invokeMethod(Object thiz, String name, Object... args)
-             throws ScriptException, NoSuchMethodException  {
+            throws ScriptException, NoSuchMethodException {
         if (thiz == null) {
             throw new IllegalArgumentException("script object is null");
         }
         return invokeImpl(thiz, name, args);
     }
-	        
+
     public <T> T getInterface(Class<T> clasz) {
         return makeInterface(null, clasz);
     }
@@ -189,10 +189,10 @@ public class GroovyScriptEngineImpl
             // If we're wrapping with a PrintWriter here,
             // enable autoFlush because otherwise it might not get done!
             final Writer writer = ctx.getWriter();
-            ctx.setAttribute("out", (writer instanceof PrintWriter) ? 
-                                    writer :
-                                    new PrintWriter(writer, true),
-                                    ScriptContext.ENGINE_SCOPE);
+            ctx.setAttribute("out", (writer instanceof PrintWriter) ?
+                    writer :
+                    new PrintWriter(writer, true),
+                    ScriptContext.ENGINE_SCOPE);
 
 // Not going to do this after all (at least for now).
 // Scripts can use context.{reader, writer, errorWriter}.
@@ -226,27 +226,28 @@ public class GroovyScriptEngineImpl
          * will be done in the current ScriptContext instance.
          */
         Binding binding = new Binding(ctx.getBindings(ScriptContext.ENGINE_SCOPE)) {
-                              @Override
-                              public Object getVariable(String name) {
-                                  synchronized (ctx) {
-                                      int scope = ctx.getAttributesScope(name);
-                                      if (scope != -1) {
-                                          return ctx.getAttribute(name, scope);
-                                      }
-                                  }
-                                  throw new MissingPropertyException(name, getClass());
-                              }
-                              @Override
-                              public void setVariable(String name, Object value) {
-                                  synchronized (ctx) {
-                                      int scope = ctx.getAttributesScope(name);
-                                      if (scope == -1) {    
-                                          scope = ScriptContext.ENGINE_SCOPE;
-                                      } 
-                                      ctx.setAttribute(name, value, scope);
-                                  }
-                              }
-                          };
+            @Override
+            public Object getVariable(String name) {
+                synchronized (ctx) {
+                    int scope = ctx.getAttributesScope(name);
+                    if (scope != -1) {
+                        return ctx.getAttribute(name, scope);
+                    }
+                }
+                throw new MissingPropertyException(name, getClass());
+            }
+
+            @Override
+            public void setVariable(String name, Object value) {
+                synchronized (ctx) {
+                    int scope = ctx.getAttributesScope(name);
+                    if (scope == -1) {
+                        scope = ScriptContext.ENGINE_SCOPE;
+                    }
+                    ctx.setAttribute(name, value, scope);
+                }
+            }
+        };
 
         try {
             // if this class is not an instance of Script, it's a full-blown class
@@ -324,33 +325,33 @@ public class GroovyScriptEngineImpl
         }
     }
 
-    Class getScriptClass(String script) 
-                         throws SyntaxException, 
-                                CompilationFailedException, 
-                                IOException {
+    Class getScriptClass(String script)
+            throws SyntaxException,
+            CompilationFailedException,
+            IOException {
         Class clazz = classMap.get(script);
         if (clazz != null) {
             return clazz;
         }
-       
+
         clazz = loader.parseClass(script, generateScriptName());
         classMap.put(script, clazz);
         return clazz;
     }
 
     public void setClassLoader(final GroovyClassLoader classLoader) {
-      this.loader = classLoader;
+        this.loader = classLoader;
     }
 
     public GroovyClassLoader getClassLoader() {
-      return this.loader;
+        return this.loader;
     }
 
     //-- Internals only below this point
 
     // invokes the specified method/function on the given object.
-    private Object invokeImpl(Object thiz, String name, Object... args) 
-             throws ScriptException, NoSuchMethodException  {
+    private Object invokeImpl(Object thiz, String name, Object... args)
+            throws ScriptException, NoSuchMethodException {
         if (name == null) {
             throw new NullPointerException("method name is null");
         }
@@ -366,7 +367,7 @@ public class GroovyScriptEngineImpl
         } catch (Exception e) {
             throw new ScriptException(e);
         }
-    } 
+    }
 
     // call the script global function of the given name
     private Object callGlobal(String name, Object[] args) {
@@ -382,10 +383,10 @@ public class GroovyScriptEngineImpl
             // given ScriptContext. If available, call it.
             Object value = ctx.getAttribute(name);
             if (value instanceof Closure) {
-                return ((Closure)value).call(args);
+                return ((Closure) value).call(args);
             } // else fall thru..
         }
-        throw new MissingMethodException(name, getClass(), args);     
+        throw new MissingMethodException(name, getClass(), args);
     }
 
     // generate a unique name for top-level Script classes
@@ -399,14 +400,14 @@ public class GroovyScriptEngineImpl
             throw new IllegalArgumentException("interface Class expected");
         }
         return (T) Proxy.newProxyInstance(
-            clazz.getClassLoader(),
-            new Class[] { clazz },
-            new InvocationHandler() {
-                public Object invoke(Object proxy, Method m, Object[] args)
-                                     throws Throwable {
-                    return invokeImpl(thiz, m.getName(), args);
-                }
-            });
+                clazz.getClassLoader(),
+                new Class[]{clazz},
+                new InvocationHandler() {
+                    public Object invoke(Object proxy, Method m, Object[] args)
+                            throws Throwable {
+                        return invokeImpl(thiz, m.getName(), args);
+                    }
+                });
     }
 
     // determine appropriate class loader to serve as parent loader
@@ -426,7 +427,7 @@ public class GroovyScriptEngineImpl
     }
 
     private String readFully(Reader reader) throws ScriptException {
-        char[] arr = new char[8*1024]; // 8K at a time
+        char[] arr = new char[8 * 1024]; // 8K at a time
         StringBuilder buf = new StringBuilder();
         int numChars;
         try {

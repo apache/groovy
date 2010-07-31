@@ -23,29 +23,29 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
  */
 public class UnaryMinusExpression extends Expression {
 
-	private final Expression expression;
-	
-	public UnaryMinusExpression(Expression expression) {
-		this.expression = expression;
-	}
+    private final Expression expression;
 
-	public Expression getExpression() {
-		return expression;
-	}
+    public UnaryMinusExpression(Expression expression) {
+        this.expression = expression;
+    }
 
-	public void visit(GroovyCodeVisitor visitor) {
-		visitor.visitUnaryMinusExpression(this);
-	}
+    public Expression getExpression() {
+        return expression;
+    }
 
-	public Expression transformExpression(ExpressionTransformer transformer) {
+    public void visit(GroovyCodeVisitor visitor) {
+        visitor.visitUnaryMinusExpression(this);
+    }
+
+    public Expression transformExpression(ExpressionTransformer transformer) {
         Expression ret = new UnaryMinusExpression(transformer.transform(expression));
         ret.setSourcePosition(this);
         return ret;
-	}
+    }
 
     public String getText() {
-		return expression.getText();
-	}
+        return expression.getText();
+    }
 
     public ClassNode getType() {
         return expression.getType();

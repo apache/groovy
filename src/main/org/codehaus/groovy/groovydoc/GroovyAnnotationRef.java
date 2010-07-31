@@ -21,7 +21,7 @@ public interface GroovyAnnotationRef {
      *
      * @return the annotation being referenced
      */
-	GroovyClassDoc type();
+    GroovyClassDoc type();
 
     /**
      * Name of the annotation being referenced. Once resolved,
@@ -29,7 +29,7 @@ public interface GroovyAnnotationRef {
      *
      * @return the name of the annotation reference
      */
-	String name();
+    String name();
 
     /**
      * The string representation of the annotation reference.

@@ -57,53 +57,53 @@ public class DefaultGrailsDomainClassInjector implements ASTTransformation {
 
     public void performInjection(ClassNode classNode) {
         if(shouldInject(classNode)) {
-			injectIdProperty(classNode);
+            injectIdProperty(classNode);
 
-			injectVersionProperty(classNode);
+            injectVersionProperty(classNode);
 
-			injectToStringMethod(classNode);
+            injectToStringMethod(classNode);
 
-			injectAssociations(classNode);
+            injectAssociations(classNode);
 
         }
-	}
+    }
 
     public boolean shouldInject(URL url) {
         return true; //return GrailsResourceUtils.isDomainClass(url);
     }
 
     private boolean shouldInject(ClassNode classNode) {
-		//String fullName = GrailsASTUtils.getFullName(classNode);
-		//String mappingFile = GrailsDomainConfigurationUtil.getMappingFileName(fullName);
+        //String fullName = GrailsASTUtils.getFullName(classNode);
+        //String mappingFile = GrailsDomainConfigurationUtil.getMappingFileName(fullName);
 
-		//if(getClass().getResource(mappingFile)!=null) {
-			//if(LOG.isDebugEnabled()) {
-				//LOG.debug("[GrailsDomainInjector] Mapping file ["+mappingFile+"] found. Skipping property injection.");
-			//}
-			//return false;
-		//}
-		return true;
-	}
+        //if(getClass().getResource(mappingFile)!=null) {
+            //if(LOG.isDebugEnabled()) {
+                //LOG.debug("[GrailsDomainInjector] Mapping file ["+mappingFile+"] found. Skipping property injection.");
+            //}
+            //return false;
+        //}
+        return true;
+    }
 
-	private void injectAssociations(ClassNode classNode) {
+    private void injectAssociations(ClassNode classNode) {
 
-		List properties = classNode.getProperties();
-		List propertiesToAdd = new ArrayList();
-		for (Iterator p = properties.iterator(); p.hasNext();) {
-			PropertyNode pn = (PropertyNode) p.next();
-			final boolean isHasManyProperty = pn.getName().equals(/*GrailsDomainClassProperty.*/RELATES_TO_MANY) || pn.getName().equals(/*GrailsDomainClassProperty.*/HAS_MANY);
-			if(isHasManyProperty) {
-				Expression e = pn.getInitialExpression();
-				propertiesToAdd.addAll(createPropertiesForHasManyExpression(e,classNode));
-			}
+        List properties = classNode.getProperties();
+        List propertiesToAdd = new ArrayList();
+        for (Iterator p = properties.iterator(); p.hasNext();) {
+            PropertyNode pn = (PropertyNode) p.next();
+            final boolean isHasManyProperty = pn.getName().equals(/*GrailsDomainClassProperty.*/RELATES_TO_MANY) || pn.getName().equals(/*GrailsDomainClassProperty.*/HAS_MANY);
+            if(isHasManyProperty) {
+                Expression e = pn.getInitialExpression();
+                propertiesToAdd.addAll(createPropertiesForHasManyExpression(e,classNode));
+            }
             final boolean isBelongsTo = pn.getName().equals(/*GrailsDomainClassProperty.*/BELONGS_TO);
             if(isBelongsTo) {
                 Expression e = pn.getInitialExpression();
                 propertiesToAdd.addAll(createPropertiesForBelongsToExpression(e,classNode));
             }
         }
-		injectAssociationProperties(classNode,propertiesToAdd);
-	}
+        injectAssociationProperties(classNode,propertiesToAdd);
+    }
 
     private Collection createPropertiesForBelongsToExpression(Expression e, ClassNode classNode)
     {
@@ -125,108 +125,108 @@ public class DefaultGrailsDomainClassInjector implements ASTTransformation {
     }
 
     private void injectAssociationProperties(ClassNode classNode, List propertiesToAdd) {
-		for (Iterator i = propertiesToAdd.iterator(); i.hasNext();) {
-			PropertyNode pn = (PropertyNode) i.next();
-			if(!/*GrailsASTUtils.*/hasProperty(classNode, pn.getName())) {
-				//if(LOG.isDebugEnabled()) {
-				//	LOG.debug("[GrailsDomainInjector] Adding property [" + pn.getName() + "] to class [" + classNode.getName() + "]");
-				//}
-				classNode.addProperty(pn);
-			}
-		}
-	}
+        for (Iterator i = propertiesToAdd.iterator(); i.hasNext();) {
+            PropertyNode pn = (PropertyNode) i.next();
+            if(!/*GrailsASTUtils.*/hasProperty(classNode, pn.getName())) {
+                //if(LOG.isDebugEnabled()) {
+                //    LOG.debug("[GrailsDomainInjector] Adding property [" + pn.getName() + "] to class [" + classNode.getName() + "]");
+                //}
+                classNode.addProperty(pn);
+            }
+        }
+    }
 
-	private List createPropertiesForHasManyExpression(Expression e, ClassNode classNode) {
-		List properties = new ArrayList();
-		if(e instanceof MapExpression) {
-			MapExpression me = (MapExpression)e;
-			List mapEntries = me.getMapEntryExpressions();
-			for (Iterator j = mapEntries.iterator(); j.hasNext();) {
-				MapEntryExpression mee = (MapEntryExpression) j.next();
-				Expression keyExpression = mee.getKeyExpression();
-				String key = keyExpression.getText();
-				addAssociationForKey(key,properties,classNode);
-			}
-		}
-		return properties;
-	}
+    private List createPropertiesForHasManyExpression(Expression e, ClassNode classNode) {
+        List properties = new ArrayList();
+        if(e instanceof MapExpression) {
+            MapExpression me = (MapExpression)e;
+            List mapEntries = me.getMapEntryExpressions();
+            for (Iterator j = mapEntries.iterator(); j.hasNext();) {
+                MapEntryExpression mee = (MapEntryExpression) j.next();
+                Expression keyExpression = mee.getKeyExpression();
+                String key = keyExpression.getText();
+                addAssociationForKey(key,properties,classNode);
+            }
+        }
+        return properties;
+    }
 
-	private void addAssociationForKey(String key, List properties, ClassNode classNode) {
-			properties.add(new PropertyNode(key, Modifier.PUBLIC, new ClassNode(Set.class), classNode,null, null, null));
-	}
+    private void addAssociationForKey(String key, List properties, ClassNode classNode) {
+            properties.add(new PropertyNode(key, Modifier.PUBLIC, new ClassNode(Set.class), classNode,null, null, null));
+    }
 
-	private void injectToStringMethod(ClassNode classNode) {
-		final boolean hasToString = /*GrailsASTUtils.*/implementsZeroArgMethod(classNode, "toString");
+    private void injectToStringMethod(ClassNode classNode) {
+        final boolean hasToString = /*GrailsASTUtils.*/implementsZeroArgMethod(classNode, "toString");
 
-		if(!hasToString) {
-			GStringExpression ge = new GStringExpression(classNode.getName() + " : ${id}");
-			ge.addString(new ConstantExpression(classNode.getName()+" : "));
-			ge.addValue(new VariableExpression("id"));
-			Statement s = new ReturnStatement(ge);
-			MethodNode mn = new MethodNode("toString",Modifier.PUBLIC,new ClassNode(String.class), new Parameter[0],new ClassNode[0],s);
-			//if(LOG.isDebugEnabled()) {
-			//	LOG.debug("[GrailsDomainInjector] Adding method [toString()] to class [" + classNode.getName() + "]");
-			//}
-			classNode.addMethod(mn);
-		}
-	}
+        if(!hasToString) {
+            GStringExpression ge = new GStringExpression(classNode.getName() + " : ${id}");
+            ge.addString(new ConstantExpression(classNode.getName()+" : "));
+            ge.addValue(new VariableExpression("id"));
+            Statement s = new ReturnStatement(ge);
+            MethodNode mn = new MethodNode("toString",Modifier.PUBLIC,new ClassNode(String.class), new Parameter[0],new ClassNode[0],s);
+            //if(LOG.isDebugEnabled()) {
+            //    LOG.debug("[GrailsDomainInjector] Adding method [toString()] to class [" + classNode.getName() + "]");
+            //}
+            classNode.addMethod(mn);
+        }
+    }
 
-	private void injectVersionProperty(ClassNode classNode) {
-		final boolean hasVersion = /*GrailsASTUtils.*/hasProperty(classNode, /*GrailsDomainClassProperty.*/VERSION);
+    private void injectVersionProperty(ClassNode classNode) {
+        final boolean hasVersion = /*GrailsASTUtils.*/hasProperty(classNode, /*GrailsDomainClassProperty.*/VERSION);
 
-		if(!hasVersion) {
-			//if(LOG.isDebugEnabled()) {
-			//	LOG.debug("[GrailsDomainInjector] Adding property [" + GrailsDomainClassProperty.VERSION + "] to class [" + classNode.getName() + "]");
-			//}
-			classNode.addProperty( /*GrailsDomainClassProperty.*/VERSION, Modifier.PUBLIC, new ClassNode(Long.class), null, null, null);
-		}
-	}
+        if(!hasVersion) {
+            //if(LOG.isDebugEnabled()) {
+            //    LOG.debug("[GrailsDomainInjector] Adding property [" + GrailsDomainClassProperty.VERSION + "] to class [" + classNode.getName() + "]");
+            //}
+            classNode.addProperty( /*GrailsDomainClassProperty.*/VERSION, Modifier.PUBLIC, new ClassNode(Long.class), null, null, null);
+        }
+    }
 
-	private void injectIdProperty(ClassNode classNode) {
-		final boolean hasId = /*GrailsASTUtils.*/hasProperty(classNode,/*GrailsDomainClassProperty.*/IDENTITY);
+    private void injectIdProperty(ClassNode classNode) {
+        final boolean hasId = /*GrailsASTUtils.*/hasProperty(classNode,/*GrailsDomainClassProperty.*/IDENTITY);
 
-		if(!hasId) {
-			//if(LOG.isDebugEnabled()) {
-			//	LOG.debug("[GrailsDomainInjector] Adding property [" + GrailsDomainClassProperty.IDENTITY + "] to class [" + classNode.getName() + "]");
-			//}
-			classNode.addProperty( /*GrailsDomainClassProperty.*/IDENTITY, Modifier.PUBLIC, new ClassNode(Long.class), null, null, null);
-		}
-	}
+        if(!hasId) {
+            //if(LOG.isDebugEnabled()) {
+            //    LOG.debug("[GrailsDomainInjector] Adding property [" + GrailsDomainClassProperty.IDENTITY + "] to class [" + classNode.getName() + "]");
+            //}
+            classNode.addProperty( /*GrailsDomainClassProperty.*/IDENTITY, Modifier.PUBLIC, new ClassNode(Long.class), null, null, null);
+        }
+    }
 
 
     //***************************************************************
     // from GrailsASTUtils
     //***************************************************************
     /**
-	 * Returns whether a classNode has the specified property or not
-	 *
-	 * @param classNode The ClassNode
-	 * @param propertyName The name of the property
-	 * @return True if the property exists in the ClassNode
-	 */
-	public static boolean hasProperty(ClassNode classNode, String propertyName) {
-		if(classNode == null || propertyName == null || "".equals(propertyName.trim()))
-			return false;
+     * Returns whether a classNode has the specified property or not
+     *
+     * @param classNode The ClassNode
+     * @param propertyName The name of the property
+     * @return True if the property exists in the ClassNode
+     */
+    public static boolean hasProperty(ClassNode classNode, String propertyName) {
+        if(classNode == null || propertyName == null || "".equals(propertyName.trim()))
+            return false;
 
-		List properties = classNode.getProperties();
-		for (Iterator i = properties.iterator(); i.hasNext();) {
-			PropertyNode pn = (PropertyNode) i.next();
-			if(pn.getName().equals(propertyName))
-				return true;
-		}
-		return false;
-	}
+        List properties = classNode.getProperties();
+        for (Iterator i = properties.iterator(); i.hasNext();) {
+            PropertyNode pn = (PropertyNode) i.next();
+            if(pn.getName().equals(propertyName))
+                return true;
+        }
+        return false;
+    }
 
-	/**
-	 * Tests whether the ClasNode implements the specified method name
-	 *
-	 * @param classNode The ClassNode
-	 * @param methodName The method name
-	 * @return True if it does implement the method
-	 */
-	public static boolean implementsZeroArgMethod(ClassNode classNode, String methodName) {
-		return implementsMethod(classNode, methodName, new Class[0]);
-	}
+    /**
+     * Tests whether the ClasNode implements the specified method name
+     *
+     * @param classNode The ClassNode
+     * @param methodName The method name
+     * @return True if it does implement the method
+     */
+    public static boolean implementsZeroArgMethod(ClassNode classNode, String methodName) {
+        return implementsMethod(classNode, methodName, new Class[0]);
+    }
 
 
     /**

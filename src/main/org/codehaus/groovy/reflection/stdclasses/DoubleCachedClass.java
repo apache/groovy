@@ -24,10 +24,11 @@ import java.math.BigInteger;
  * @author Alex.Tkachman
  */
 public class DoubleCachedClass extends NumberCachedClass { // Double, double
-	private boolean allowNull;
+    private boolean allowNull;
+
     public DoubleCachedClass(Class klazz, ClassInfo classInfo, boolean allowNull) {
-        super(klazz,classInfo);
-        this.allowNull=allowNull;
+        super(klazz, classInfo);
+        this.allowNull = allowNull;
     }
 
     public boolean isDirectlyAssignable(Object argument) {
@@ -40,7 +41,7 @@ public class DoubleCachedClass extends NumberCachedClass { // Double, double
         }
 
         if (argument instanceof Number) {
-            Double res = new Double(((Number) argument).doubleValue());
+            Double res = ((Number) argument).doubleValue();
             if (argument instanceof BigDecimal && res.isInfinite()) {
                 throw new IllegalArgumentException(Double.class + " out of range while converting from BigDecimal");
             }
@@ -50,7 +51,7 @@ public class DoubleCachedClass extends NumberCachedClass { // Double, double
     }
 
     public boolean isAssignableFrom(Class classToTransformFrom) {
-        return  (allowNull && classToTransformFrom == null)
+        return (allowNull && classToTransformFrom == null)
                 || classToTransformFrom == Double.class
                 || classToTransformFrom == Integer.class
                 || classToTransformFrom == Long.class

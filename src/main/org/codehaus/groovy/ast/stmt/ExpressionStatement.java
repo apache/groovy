@@ -21,21 +21,21 @@ import org.codehaus.groovy.ast.expr.Expression;
 
 /**
  * A simple statement such as a method call where the return value is ignored
- * 
+ *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
 public class ExpressionStatement extends Statement {
 
     private Expression expression;
-    
+
     public ExpressionStatement(Expression expression) {
         if (expression == null) {
             throw new IllegalArgumentException("expression cannot be null");
         }
         this.expression = expression;
     }
-    
+
     public void visit(GroovyCodeVisitor visitor) {
         visitor.visitExpressionStatement(this);
     }
@@ -49,8 +49,9 @@ public class ExpressionStatement extends Statement {
     }
 
     public String getText() {
-    	return this.toString();
+        return this.toString();
     }
+
     public String toString() {
         return super.toString() + "[expression:" + expression + "]";
     }

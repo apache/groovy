@@ -15,35 +15,59 @@
  */
 package org.codehaus.groovy.groovydoc;
 
-public interface GroovyClassDoc extends GroovyType, GroovyProgramElementDoc{
+public interface GroovyClassDoc extends GroovyType, GroovyProgramElementDoc {
     GroovyConstructorDoc[] constructors();
+
     GroovyConstructorDoc[] constructors(boolean filter);
+
     boolean definesSerializableFields();
+
     GroovyFieldDoc[] enumConstants();
+
     GroovyFieldDoc[] fields();
+
     GroovyFieldDoc[] properties();
+
     GroovyFieldDoc[] fields(boolean filter);
+
     GroovyClassDoc findClass(String className);
+
     GroovyClassDoc[] importedClasses();
+
     GroovyPackageDoc[] importedPackages();
+
     GroovyClassDoc[] innerClasses();
+
     GroovyClassDoc[] innerClasses(boolean filter);
+
     GroovyClassDoc[] interfaces();
+
     GroovyType[] interfaceTypes();
+
     boolean isAbstract();
+
     boolean isExternalizable();
+
     boolean isSerializable();
+
     GroovyMethodDoc[] methods();
+
     GroovyMethodDoc[] methods(boolean filter);
+
     GroovyFieldDoc[] serializableFields();
+
     GroovyMethodDoc[] serializationMethods();
+
     boolean subclassOf(GroovyClassDoc gcd);
+
     GroovyClassDoc superclass();
+
     GroovyType superclassType();
 //    GroovyTypeVariable[] typeParameters(); // not supported in groovy
 //    GroovyParamTag[] typeParamTags(); // not supported in groovy
 
 
     String getFullPathName(); // not in Java Doclet API
-    String getRelativeRootPath(); // not in Java Doclet API	
+
+    String getRelativeRootPath(); // not in Java Doclet API
 }

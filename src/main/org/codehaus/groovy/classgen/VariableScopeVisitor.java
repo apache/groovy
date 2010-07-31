@@ -401,13 +401,13 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
     // ------------------------------
 
     public void visitClass(ClassNode node) {
-    	// AIC are already done, doing them here again will lead
-    	// to wrong scopes
-    	if (node instanceof InnerClassNode) {
-    		InnerClassNode in = (InnerClassNode) node;
-    		if (in.isAnonymous()) return;
-    	}
-    	
+        // AIC are already done, doing them here again will lead
+        // to wrong scopes
+        if (node instanceof InnerClassNode) {
+            InnerClassNode in = (InnerClassNode) node;
+            if (in.isAnonymous()) return;
+        }
+        
         pushState();
 
         currentClass = node;

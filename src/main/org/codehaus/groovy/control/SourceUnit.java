@@ -46,7 +46,6 @@ import antlr.NoViableAltForCharException;
 
 import com.thoughtworks.xstream.XStream;
 
-
 /**
  * Provides an anchor for a single source unit (usually a script file)
  * as it passes through the compiler system.
@@ -87,7 +86,6 @@ public class SourceUnit extends ProcessingUnit {
      */
     protected ModuleNode ast;
 
-
     /**
      * Initializes the SourceUnit from existing machinery.
      */
@@ -99,14 +97,12 @@ public class SourceUnit extends ProcessingUnit {
         this.source = source;
     }
 
-
     /**
      * Initializes the SourceUnit from the specified file.
      */
     public SourceUnit(File source, CompilerConfiguration configuration, GroovyClassLoader loader, ErrorCollector er) {
         this(source.getPath(), new FileReaderSource(source, configuration), configuration, loader, er);
     }
-
 
     /**
      * Initializes the SourceUnit from the specified URL.
@@ -115,7 +111,6 @@ public class SourceUnit extends ProcessingUnit {
         this(source.getPath(), new URLReaderSource(source, configuration), configuration, loader, er);
     }
 
-
     /**
      * Initializes the SourceUnit for a string of source.
      */
@@ -123,7 +118,6 @@ public class SourceUnit extends ProcessingUnit {
                       GroovyClassLoader loader, ErrorCollector er) {
         this(name, new StringReaderSource(source, configuration), configuration, loader, er);
     }
-
 
     /**
      * Returns the name for the SourceUnit. This name shouldn't
@@ -156,9 +150,9 @@ public class SourceUnit extends ProcessingUnit {
      * that returns true if parse() failed with an unexpected EOF.
      */
     public boolean failedWithUnexpectedEOF() {
-    	// Implementation note - there are several ways for the Groovy compiler
-    	// to report an unexpected EOF. Perhaps this implementation misses some.
-    	// If you find another way, please add it.
+        // Implementation note - there are several ways for the Groovy compiler
+        // to report an unexpected EOF. Perhaps this implementation misses some.
+        // If you find another way, please add it.
         if (getErrorCollector().hasErrors()) {
             Message last = (Message) getErrorCollector().getLastError();
             Throwable cause = null;
@@ -166,26 +160,25 @@ public class SourceUnit extends ProcessingUnit {
                 cause = ((SyntaxErrorMessage) last).getCause().getCause();
             }
             if (cause != null) {
-            	if (cause instanceof NoViableAltException) {
+                if (cause instanceof NoViableAltException) {
                     return isEofToken(((NoViableAltException) cause).token);
-            	} else if (cause instanceof NoViableAltForCharException) {
-            		char badChar = ((NoViableAltForCharException) cause).foundChar;
-            		return badChar == CharScanner.EOF_CHAR;
-            	} else if (cause instanceof MismatchedCharException) {
-            		char badChar = (char) ((MismatchedCharException) cause).foundChar;
-            		return badChar == CharScanner.EOF_CHAR;
+                } else if (cause instanceof NoViableAltForCharException) {
+                    char badChar = ((NoViableAltForCharException) cause).foundChar;
+                    return badChar == CharScanner.EOF_CHAR;
+                } else if (cause instanceof MismatchedCharException) {
+                    char badChar = (char) ((MismatchedCharException) cause).foundChar;
+                    return badChar == CharScanner.EOF_CHAR;
                 } else if (cause instanceof MismatchedTokenException) {
                     return isEofToken(((MismatchedTokenException) cause).token);
                 }
             }
         }
-        return false;    
+        return false;
     }
 
     protected boolean isEofToken(antlr.Token token) {
         return token.getType() == antlr.Token.EOF_TYPE;
     }
-
 
 
     //---------------------------------------------------------------------------
@@ -215,13 +208,8 @@ public class SourceUnit extends ProcessingUnit {
         return new SourceUnit(name, source, configuration, null, new ErrorCollector(configuration));
     }
 
-
-
-
-
     //---------------------------------------------------------------------------
     // PROCESSING
-
 
     /**
      * Parses the source to a CST.  You can retrieve it with getCST().
@@ -234,7 +222,6 @@ public class SourceUnit extends ProcessingUnit {
         if (this.phase == Phases.INITIALIZATION) {
             nextPhase();
         }
-
 
         //
         // Create a reader on the source and run the parser.
@@ -249,10 +236,10 @@ public class SourceUnit extends ProcessingUnit {
             cst = parserPlugin.parseCST(this, reader);
 
             reader.close();
-            
+
         }
         catch (IOException e) {
-            getErrorCollector().addFatalError(new SimpleMessage(e.getMessage(),this));
+            getErrorCollector().addFatalError(new SimpleMessage(e.getMessage(), this));
         }
         finally {
             if (reader != null) {
@@ -266,7 +253,6 @@ public class SourceUnit extends ProcessingUnit {
         }
     }
 
-
     /**
      * Generates an AST from the CST.  You can retrieve it with getAST().
      */
@@ -279,40 +265,40 @@ public class SourceUnit extends ProcessingUnit {
             throw new GroovyBugError("SourceUnit not ready for convert()");
         }
 
-        
         //
         // Build the AST
-        
+
         try {
             this.ast = parserPlugin.buildAST(this, this.classLoader, this.cst);
 
             this.ast.setDescription(this.name);
         }
         catch (SyntaxException e) {
-            getErrorCollector().addError(new SyntaxErrorMessage(e,this));
+            getErrorCollector().addError(new SyntaxErrorMessage(e, this));
         }
 
         String property = (String) AccessController.doPrivileged(new PrivilegedAction() {
-        	public Object run() {
-        		return System.getProperty("groovy.ast");
-        	}
+            public Object run() {
+                return System.getProperty("groovy.ast");
+            }
         });
-        
+
         if ("xml".equals(property)) {
-            saveAsXML(name,ast);
+            saveAsXML(name, ast);
         }
     }
 
     private void saveAsXML(String name, ModuleNode ast) {
         XStream xstream = new XStream();
         try {
-            xstream.toXML(ast,new FileWriter(name + ".xml"));
+            xstream.toXML(ast, new FileWriter(name + ".xml"));
             System.out.println("Written AST to " + name + ".xml");
         } catch (Exception e) {
             System.out.println("Couldn't write to " + name + ".xml");
             e.printStackTrace();
         }
     }
+
     //---------------------------------------------------------------------------    // SOURCE SAMPLING
 
     /**
@@ -332,24 +318,22 @@ public class SourceUnit extends ProcessingUnit {
                     int end = (column + 10 > text.length() ? text.length() : column + 10 - 1);
                     sample = "   " + text.substring(start, end) + Utilities.eol() + "   " +
                             marker.substring(start, marker.length());
-                }
-                else {
+                } else {
                     sample = "   " + text + Utilities.eol() + "   " + marker;
                 }
-            }
-            else {
+            } else {
                 sample = text;
             }
         }
 
         return sample;
     }
-    
+
     public void addException(Exception e) throws CompilationFailedException {
-        getErrorCollector().addException(e,this);
+        getErrorCollector().addException(e, this);
     }
-    
+
     public void addError(SyntaxException se) throws CompilationFailedException {
-        getErrorCollector().addError(se,this);
+        getErrorCollector().addError(se, this);
     }
 }

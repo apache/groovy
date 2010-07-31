@@ -93,13 +93,13 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
     private FieldNode getMetaClassField(ClassNode node) {
         FieldNode ret = node.getDeclaredField("metaClass");
         if (ret != null) {
-        	ClassNode mcFieldType = ret.getType();
-        	if (!mcFieldType.equals(ClassHelper.METACLASS_TYPE)) {
+            ClassNode mcFieldType = ret.getType();
+            if (!mcFieldType.equals(ClassHelper.METACLASS_TYPE)) {
                 throw new RuntimeParserException("The class " + node.getName() +
                         " cannot declare field 'metaClass' of type " + mcFieldType.getName() + " as it needs to be of " +
-                        		"the type " + ClassHelper.METACLASS_TYPE.getName() + " for internal groovy purposes", ret);
-        	}
-        	return ret;
+                                "the type " + ClassHelper.METACLASS_TYPE.getName() + " for internal groovy purposes", ret);
+            }
+            return ret;
         }
         ClassNode current = node;
         while (current != ClassHelper.OBJECT_TYPE) {
@@ -311,7 +311,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         }
 
         if (!node.hasMethod("getProperty", GET_PROPERTY_PARAMS)) {
-        	addMethod(node,!Modifier.isAbstract(node.getModifiers()),
+            addMethod(node,!Modifier.isAbstract(node.getModifiers()),
                     "getProperty",
                     ACC_PUBLIC,
                     ClassHelper.OBJECT_TYPE,
@@ -331,7 +331,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         }
 
         if (!node.hasMethod("setProperty", SET_PROPERTY_PARAMS)) {
-        	addMethod(node,!Modifier.isAbstract(node.getModifiers()),
+            addMethod(node,!Modifier.isAbstract(node.getModifiers()),
                     "setProperty",
                     ACC_PUBLIC,
                     ClassHelper.VOID_TYPE,
@@ -419,10 +419,10 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                 type=null;
             }
             public void visitConstructorCallExpression(ConstructorCallExpression call) {
-            	if (!call.isSpecialCall()) return;
-            	type=call.getText();
-            	call.getArguments().visit(this);
-            	type=null;
+                if (!call.isSpecialCall()) return;
+                type=call.getText();
+                call.getArguments().visit(this);
+                type=null;
             }
             public void visitVariableExpression(VariableExpression expression) {
                 if (type==null) return;
@@ -441,11 +441,11 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
     }
 
     public void visitMethod(MethodNode node) {
-    	//GROOVY-3712 - if it's an MOP method, it's an error as they aren't supposed to exist before ACG is invoked
-    	if(AsmClassGenerator.isMopMethod(node.getName())) {
-    		throw new RuntimeParserException("Found unexpected MOP methods in the class node for " + classNode.getName() +
-    				"(" + node.getName() + ")", classNode);
-    	}
+        //GROOVY-3712 - if it's an MOP method, it's an error as they aren't supposed to exist before ACG is invoked
+        if(AsmClassGenerator.isMopMethod(node.getName())) {
+            throw new RuntimeParserException("Found unexpected MOP methods in the class node for " + classNode.getName() +
+                    "(" + node.getName() + ")", classNode);
+        }
         this.methodNode = node;
         adjustTypesIfStaticMainMethod(node);
         addReturnIfNeeded(node);
@@ -497,18 +497,18 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
 
         // GROOVY-3726: clear volatile, transient modifiers so that they don't get applied to methods
         if((propNodeModifiers & Modifier.VOLATILE) != 0) {
-        	propNodeModifiers = propNodeModifiers - Modifier.VOLATILE; 
+            propNodeModifiers = propNodeModifiers - Modifier.VOLATILE; 
         }
         if((propNodeModifiers & Modifier.TRANSIENT) != 0) {
-        	propNodeModifiers = propNodeModifiers - Modifier.TRANSIENT; 
+            propNodeModifiers = propNodeModifiers - Modifier.TRANSIENT; 
         }
         
         Statement getterBlock = node.getGetterBlock();
         if (getterBlock == null) {
             MethodNode getter = classNode.getGetterMethod(getterName);
             if(getter == null && ClassHelper.boolean_TYPE==node.getType()) {
-            	String secondGetterName = "is" + capitalize(name);
-            	getter = classNode.getGetterMethod(secondGetterName);
+                String secondGetterName = "is" + capitalize(name);
+                getter = classNode.getGetterMethod(secondGetterName);
             }
             if (!node.isPrivate() && methodNeedsReplacement(getter)) {
                 getterBlock = createGetterBlock(node, field);
@@ -552,7 +552,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
     }
 
     protected void addPropertyMethod(MethodNode method) {
-    	classNode.addMethod(method);
+        classNode.addMethod(method);
     }
 
     // Implementation methods
@@ -713,22 +713,22 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         List<Statement> initStmtsAfterEnumValuesInit = new ArrayList();
         Set explicitStaticPropsInEnum = new HashSet();
         if(isEnum) {
-        	for (Iterator iter = node.getProperties().iterator(); iter.hasNext();) {
-        		PropertyNode propNode = (PropertyNode) iter.next();
-        		if(!propNode.isSynthetic() && propNode.getField().isStatic()) {
-        			explicitStaticPropsInEnum.add(propNode.getField().getName());
-        		}
-        	}
-        	for (FieldNode fieldNode : node.getFields()) {
-        		if(!fieldNode.isSynthetic() && fieldNode.isStatic() && fieldNode.getType() != node) {
-        			explicitStaticPropsInEnum.add(fieldNode.getName());
-        		}
-        	}
+            for (Iterator iter = node.getProperties().iterator(); iter.hasNext();) {
+                PropertyNode propNode = (PropertyNode) iter.next();
+                if(!propNode.isSynthetic() && propNode.getField().isStatic()) {
+                    explicitStaticPropsInEnum.add(propNode.getField().getName());
+                }
+            }
+            for (FieldNode fieldNode : node.getFields()) {
+                if(!fieldNode.isSynthetic() && fieldNode.isStatic() && fieldNode.getType() != node) {
+                    explicitStaticPropsInEnum.add(fieldNode.getName());
+                }
+            }
         }
         for (Iterator iter = node.getFields().iterator(); iter.hasNext();) {
-        	addFieldInitialization(statements, staticStatements, 
-        			(FieldNode) iter.next(), isEnum, 
-        			initStmtsAfterEnumValuesInit, explicitStaticPropsInEnum);
+            addFieldInitialization(statements, staticStatements, 
+                    (FieldNode) iter.next(), isEnum, 
+                    initStmtsAfterEnumValuesInit, explicitStaticPropsInEnum);
         }
         statements.addAll(node.getObjectInitializerStatements());
         if (!statements.isEmpty()) {
@@ -756,19 +756,19 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         }
 
         if (!staticStatements.isEmpty()) {
-        	if(isEnum) {
-        		/*
-        		 * GROOVY-3161: initialize statements for explicitly declared static fields 
-        		 * inside an enum should come after enum values are initialized
-        		 */
-        		staticStatements.removeAll(initStmtsAfterEnumValuesInit);
-        		node.addStaticInitializerStatements(staticStatements, true);
-        		if(!initStmtsAfterEnumValuesInit.isEmpty()) {
-        			node.positionStmtsAfterEnumInitStmts(initStmtsAfterEnumValuesInit);
-        		}
-        	} else {
-        		node.addStaticInitializerStatements(staticStatements, true);
-        	}
+            if(isEnum) {
+                /*
+                 * GROOVY-3161: initialize statements for explicitly declared static fields 
+                 * inside an enum should come after enum values are initialized
+                 */
+                staticStatements.removeAll(initStmtsAfterEnumValuesInit);
+                node.addStaticInitializerStatements(staticStatements, true);
+                if(!initStmtsAfterEnumValuesInit.isEmpty()) {
+                    node.positionStmtsAfterEnumInitStmts(initStmtsAfterEnumValuesInit);
+                }
+            } else {
+                node.addStaticInitializerStatements(staticStatements, true);
+            }
         }
     }
     
@@ -783,7 +783,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
     }
 
     protected void addFieldInitialization(List list, List staticList, FieldNode fieldNode,
-    		boolean isEnumClassNode, List initStmtsAfterEnumValuesInit, Set explicitStaticPropsInEnum) {
+            boolean isEnumClassNode, List initStmtsAfterEnumValuesInit, Set explicitStaticPropsInEnum) {
         Expression expression = fieldNode.getInitialExpression();
         if (expression != null) {
             final FieldExpression fe = new FieldExpression(fieldNode);
@@ -797,13 +797,13 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                         Token.newSymbol(Types.EQUAL, fieldNode.getLineNumber(), fieldNode.getColumnNumber()),
                         expression));
             if (fieldNode.isStatic()) {
-            	// GROOVY-3311: pre-defined constants added by groovy compiler for numbers/characters should be
-            	// initialized first so that code dependent on it does not see their values as empty
-            	if (expression instanceof ConstantExpression) {
+                // GROOVY-3311: pre-defined constants added by groovy compiler for numbers/characters should be
+                // initialized first so that code dependent on it does not see their values as empty
+                if (expression instanceof ConstantExpression) {
                     staticList.add(0, statement);
-            	} else {
+                } else {
                     staticList.add(statement);
-            	}
+                }
                 fieldNode.setInitialValueExpression(null); // to avoid double initialization in case of several constructors
                 /*
                  * If it is a statement for an explicitly declared static field inside an enum, store its
@@ -811,7 +811,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                  * come after the enum values have been initialized inside <clinit> block. GROOVY-3161.
                  */
                 if(isEnumClassNode && explicitStaticPropsInEnum.contains(fieldNode.getName())) {
-                	initStmtsAfterEnumValuesInit.add(statement);
+                    initStmtsAfterEnumValuesInit.add(statement);
                 }
             }
             else {
@@ -915,11 +915,11 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             }
             MethodNode intfMethod = allInterfaceMethods.get(m.getTypeDescriptor());
             if(intfMethod != null && ((m.getModifiers() & ACC_SYNTHETIC) == 0) 
-            		&& !m.isPublic() && !m.isStaticConstructor()) {
+                    && !m.isPublic() && !m.isStaticConstructor()) {
                 throw new RuntimeParserException("The method " + m.getName() +
                         " should be public as it implements the corresponding method from interface " + 
                         intfMethod.getDeclaringClass(), m);
-            	
+                
             }
         }
         
@@ -1079,11 +1079,11 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
 
     private boolean isAssignable(ClassNode node, ClassNode testNode) {
         if (testNode.isInterface()) {
-        	if(node.isInterface()) {
-        		if (node.isDerivedFrom(testNode)) return true;
-        	} else {
-        		if (node.implementsInterface(testNode)) return true;
-        	}
+            if(node.isInterface()) {
+                if (node.isDerivedFrom(testNode)) return true;
+            } else {
+                if (node.implementsInterface(testNode)) return true;
+            }
         } else {
             if (node.isDerivedFrom(testNode)) return true;
         }

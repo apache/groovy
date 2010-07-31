@@ -51,18 +51,18 @@ public class GenericsVisitor extends ClassCodeVisitorSupport {
     }
     
     public void visitField(FieldNode node) {
-    	ClassNode type = node.getType();
-    	checkGenericsUsage(type, type.redirect());
+        ClassNode type = node.getType();
+        checkGenericsUsage(type, type.redirect());
     }
     
     public void visitMethod(MethodNode node) {
-    	Parameter[] parameters = node.getParameters();
-    	for (Parameter param : parameters) {
-    		ClassNode paramType = param.getType();
-    		checkGenericsUsage(paramType, paramType.redirect());
-    	}
-    	ClassNode returnType = node.getReturnType();
-    	checkGenericsUsage(returnType, returnType.redirect());
+        Parameter[] parameters = node.getParameters();
+        for (Parameter param : parameters) {
+            ClassNode paramType = param.getType();
+            checkGenericsUsage(paramType, paramType.redirect());
+        }
+        ClassNode returnType = node.getReturnType();
+        checkGenericsUsage(returnType, returnType.redirect());
     }
     
     private boolean checkWildcard(ClassNode cn) {
@@ -81,7 +81,7 @@ public class GenericsVisitor extends ClassCodeVisitorSupport {
     }
 
     private void checkGenericsUsage(ClassNode n, ClassNode cn) {
-    	if(n.isGenericsPlaceHolder()) return;
+        if(n.isGenericsPlaceHolder()) return;
         GenericsType[] nTypes = n.getGenericsTypes();
         GenericsType[] cnTypes = cn.getGenericsTypes();
         // raw type usage is always allowed
