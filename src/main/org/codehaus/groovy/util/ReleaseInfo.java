@@ -27,7 +27,7 @@ import java.util.Properties;
  * @author Roshan Dawrani
  */
 public class ReleaseInfo {
-    private static final Properties releaseInfo = new Properties();
+    private static final Properties RELEASE_INFO = new Properties();
     private static final String RELEASE_INFO_FILE = "META-INF/groovy-release-info.properties";
     private static final String KEY_IMPLEMENTATION_VERSION = "ImplementationVersion";
     private static final String KEY_BUNDLE_VERSION = "BundleVersion";
@@ -42,7 +42,7 @@ public class ReleaseInfo {
         // in which case no security check will be done
         if (cl == null) cl = ClassLoader.getSystemClassLoader();
         if (cl instanceof URLClassLoader) {
-            // this avoids going through the parent classloaders/bootstarp
+            // this avoids going through the parent classloaders/bootstrap
             url = ((URLClassLoader) cl).findResource(RELEASE_INFO_FILE);
         } else {
             // fallback option as ClassLoader#findResource() is protected
@@ -52,7 +52,7 @@ public class ReleaseInfo {
             try {
                 InputStream is = url.openStream();
                 if(is != null) {
-                    releaseInfo.load(is);
+                    RELEASE_INFO.load(is);
                 }
             } catch(IOException ioex) {
                 // ignore. In case of some exception, release info is not available
@@ -65,11 +65,11 @@ public class ReleaseInfo {
     }
     
     public static Properties getAllProperties() {
-        return releaseInfo; 
+        return RELEASE_INFO;
     }
     
     private static String get(String propName) {
-        String propValue = releaseInfo.getProperty(propName);
+        String propValue = RELEASE_INFO.getProperty(propName);
         return (propValue == null ? "" : propValue);
     }
 }

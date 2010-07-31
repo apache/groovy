@@ -72,7 +72,7 @@ import java.util.Map;
 public class GroovyScriptEngineImpl
         extends AbstractScriptEngine implements Compilable, Invocable {
 
-    private static boolean DEBUG = false;
+    private static boolean debug = false;
 
     // script-string-to-generated Class map
     private Map<String, Class> classMap;
@@ -113,7 +113,7 @@ public class GroovyScriptEngineImpl
             throw new ScriptException(e.getMessage(),
                     e.getSourceLocator(), e.getLine());
         } catch (Exception e) {
-            if (DEBUG) e.printStackTrace();
+            if (debug) e.printStackTrace();
             throw new ScriptException(e);
         }
     }
@@ -421,6 +421,7 @@ public class GroovyScriptEngineImpl
                 return ctxtLoader;
             }
         } catch (ClassNotFoundException cnfe) {
+            /* ignore */
         }
         // exception was thrown or we get wrong class
         return Script.class.getClassLoader();

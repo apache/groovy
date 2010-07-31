@@ -51,7 +51,7 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
     public static final String CLASSNAME_RESOLVER_REFLECTION_ROOT = "root";
 
     // Regular expression pattern used to identify words ending in 'y' preceded by a consonant
-    private static final Pattern pluralIESPattern = Pattern.compile(".*[^aeiouy]y", Pattern.CASE_INSENSITIVE);
+    private static final Pattern PLURAL_IES_PATTERN = Pattern.compile(".*[^aeiouy]y", Pattern.CASE_INSENSITIVE);
 
     private ChildPropertySetter childPropertySetter;
     private ClassNameResolver classNameResolver;
@@ -497,7 +497,7 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
          */
         public String resolveChildRelationName(String parentName, Object parent, String childName,
                                                Object child) {
-            boolean matchesIESRule = pluralIESPattern.matcher(childName).matches();
+            boolean matchesIESRule = PLURAL_IES_PATTERN.matcher(childName).matches();
             String childNamePlural = matchesIESRule ? childName.substring(0, childName.length() - 1) + "ies" : childName + "s";
 
             MetaProperty metaProperty = InvokerHelper.getMetaClass(parent)

@@ -17,112 +17,123 @@ package org.codehaus.groovy.util;
 
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 
 /**
  * This class provides a very simple linked list of memory managed elements.
- * This class does not support concurrent modifications nor will it check 
+ * This class does not support concurrent modifications nor will it check
  * for them. This class is also not thread safe.
- * 
+ *
  * @author Jochen Theodorou
  * @since 1.6
  */
 public class ManagedLinkedList<T> {
-    
+
     private final class Element<V> extends ManagedReference<V> {
         Element next;
         Element previous;
+
         public Element(ReferenceBundle bundle, V value) {
-            super(bundle, value);            
+            super(bundle, value);
         }
+
         public void finalizeReference() {
-            if (previous!=null && previous.next!=null) {
+            if (previous != null && previous.next != null) {
                 previous.next = next;
             }
-            if (next!=null && next.previous!=null) {
+            if (next != null && next.previous != null) {
                 next.previous = previous;
             }
-            if (this==head) head = next;
-            next=null;
-            if (this==tail) tail = previous;
-            previous=null;
+            if (this == head) head = next;
+            next = null;
+            if (this == tail) tail = previous;
+            previous = null;
             super.finalizeReference();
         }
     }
-    
+
     private final class Iter implements Iterator<T> {
         private Element<T> current;
-        private boolean currentHandled=false;
+        private boolean currentHandled = false;
+
         Iter() {
             current = head;
         }
+
         public boolean hasNext() {
-            if (current==null) return false;
+            if (current == null) return false;
             if (currentHandled) {
-                return current.next!=null;
+                return current.next != null;
             } else {
-                return current!=null;
+                return current != null;
             }
         }
+
         public T next() {
             if (currentHandled) current = current.next;
-            currentHandled=true;
-            if (current==null)  return null;
+            currentHandled = true;
+            if (current == null) return null;
             return current.get();
         }
+
         public void remove() {
-            if (current!=null) current.finalizeReference();
+            if (current != null) current.finalizeReference();
         }
-        
     }
-    
+
     private Element<T> tail;
     private Element<T> head;
     private ReferenceBundle bundle;
-    
+
     public ManagedLinkedList(ReferenceBundle bundle) {
         this.bundle = bundle;
     }
-    
+
     /**
      * adds a value to the list
+     *
      * @param value the value
      */
     public void add(T value) {
-        Element<T> element = new Element<T>(bundle,value);
+        Element<T> element = new Element<T>(bundle, value);
         element.previous = tail;
-        if (tail!=null) tail.next = element;
+        if (tail != null) tail.next = element;
         tail = element;
-        if (head==null) head=element;
+        if (head == null) head = element;
     }
-    
+
     /**
      * returns an iterator, which allows the removal of elements.
      * The next() method of the iterator may return null values. This
-     * is especially the case if the value was removed
+     * is especially the case if the value was removed.
+     *
      * @return the Iterator
      */
     public Iterator<T> iterator() {
         return new Iter();
     }
-    
+
     /**
-     * this will return an array of non null elements of this list
+     * Returns an array of non null elements from the source array.
+     *
+     * @param tArray the source array
      * @return the array
      */
     public T[] toArray(T[] tArray) {
-        ArrayList<T> array = new ArrayList<T>(100);
+        List<T> array = new ArrayList<T>(100);
         for (Iterator<T> it = iterator(); it.hasNext();) {
             T val = it.next();
-            if (val!=null) array.add(val);
+            if (val != null) array.add(val);
         }
         return array.toArray(tArray);
     }
-    
+
     /**
      * returns if the list is empty
+     *
      * @return true if the list is empty
      */
     public boolean isEmpty() {
-        return head==null;
+        return head == null;
     }
 }

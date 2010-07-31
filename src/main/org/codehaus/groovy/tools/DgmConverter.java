@@ -34,6 +34,7 @@ import org.objectweb.asm.Opcodes;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 
 public class DgmConverter implements Opcodes{
     private static BytecodeHelper helper;
@@ -48,13 +49,13 @@ public class DgmConverter implements Opcodes{
             DateGroovyMethods.class
         };
 
-        ArrayList<CachedMethod> cachedMethodsList = new ArrayList<CachedMethod> ();
+        List<CachedMethod> cachedMethodsList = new ArrayList<CachedMethod> ();
         for (Class aClass : classes) {
             Collections.addAll(cachedMethodsList, ReflectionCache.getCachedClass(aClass).getMethods());
         }
         final CachedMethod[] cachedMethods = cachedMethodsList.toArray(new CachedMethod[cachedMethodsList.size()]);
 
-        ArrayList<GeneratedMetaMethod.DgmMethodRecord> records = new ArrayList<GeneratedMetaMethod.DgmMethodRecord> ();
+        List<GeneratedMetaMethod.DgmMethodRecord> records = new ArrayList<GeneratedMetaMethod.DgmMethodRecord> ();
 
         for (int i = 0, cur = 0; i < cachedMethods.length; i++) {
             CachedMethod method = cachedMethods[i];

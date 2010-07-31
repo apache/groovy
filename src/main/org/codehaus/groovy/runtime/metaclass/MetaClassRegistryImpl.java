@@ -201,8 +201,8 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
             }
             arr.add(method);
             instanceMethods.add(method);
-        } catch (InstantiationException e) {
-        } catch (IllegalAccessException e) {
+        } catch (InstantiationException e) { /* ignore */
+        } catch (IllegalAccessException e) { /* ignore */
         }
     }
 

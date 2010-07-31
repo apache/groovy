@@ -28,7 +28,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * This MetaBeanProperty will create a pseudo property whose value is bound to an object
- * using weak references. The values will go out of scope and be garabage collected when
+ * using weak references. The values will go out of scope and be garbage collected when
  * the the object is collected
  *
  * In fact, this class should be called ExpandoProperty.
@@ -38,8 +38,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @since 1.5
  */
 public class ThreadManagedMetaBeanProperty extends MetaBeanProperty {
-    private static final CachedClass[] ZERO_ARGUMENT_LIST = new CachedClass[0];
-    private static final ConcurrentHashMap<String,ManagedConcurrentMap> propName2Map = new ConcurrentHashMap<String, ManagedConcurrentMap>();
+    private static final ConcurrentHashMap<String,ManagedConcurrentMap> PROPNAME_TO_MAP = new ConcurrentHashMap<String, ManagedConcurrentMap>();
 
     private final ManagedConcurrentMap instance2Prop;
 
@@ -49,7 +48,7 @@ public class ThreadManagedMetaBeanProperty extends MetaBeanProperty {
     private Object initialValue;
     private Closure initialValueCreator;
     
-    private static final ReferenceBundle softBundle = ReferenceBundle.getSoftBundle();
+    private static final ReferenceBundle SOFT_BUNDLE = ReferenceBundle.getSoftBundle();
 
     /**
      * Retrieves the initial value of the ThreadBound property
@@ -118,10 +117,10 @@ public class ThreadManagedMetaBeanProperty extends MetaBeanProperty {
     }
 
     private static ManagedConcurrentMap getInstance2PropName(String name) {
-        ManagedConcurrentMap res = propName2Map.get(name);
+        ManagedConcurrentMap res = PROPNAME_TO_MAP.get(name);
         if (res == null) {
-            res = new ManagedConcurrentMap(softBundle);
-            ManagedConcurrentMap ores = propName2Map.putIfAbsent(name, res);
+            res = new ManagedConcurrentMap(SOFT_BUNDLE);
+            ManagedConcurrentMap ores = PROPNAME_TO_MAP.putIfAbsent(name, res);
             if (ores != null)
               return ores;
         }
@@ -178,7 +177,7 @@ public class ThreadManagedMetaBeanProperty extends MetaBeanProperty {
            * @see groovy.lang.MetaMethod#invoke(java.lang.Object, java.lang.Object[])
            */
         public Object invoke(Object object, Object[] arguments) {
-            return ((ManagedConcurrentMap.EntryWithValue)instance2Prop.getOrPut(object, getInitialValue())).getValue();
+            return instance2Prop.getOrPut(object, getInitialValue()).getValue();
         }
     }
 

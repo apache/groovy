@@ -29,23 +29,23 @@ public class CachedClosureClass extends CachedClass {
         CachedMethod methods [] = getMethods();
 
         // set it to -1 for starters so parameterTypes will always get a type
-        int _maximumNumberOfParameters = -1;
-        Class[] _parameterTypes = null;
+        int maximumNumberOfParameters = -1;
+        Class[] parameterTypes = null;
 
-        for (int j = 0; j < methods.length; j++) {
-            if ("doCall".equals(methods[j].getName())) {
-                final Class[] pt = methods[j].getNativeParameterTypes();
-                if (pt.length > _maximumNumberOfParameters) {
-                    _parameterTypes = pt;
-                    _maximumNumberOfParameters = _parameterTypes.length;
+        for (CachedMethod method : methods) {
+            if ("doCall".equals(method.getName())) {
+                final Class[] pt = method.getNativeParameterTypes();
+                if (pt.length > maximumNumberOfParameters) {
+                    parameterTypes = pt;
+                    maximumNumberOfParameters = parameterTypes.length;
                 }
             }
         }
         // this line should be useless, but well, just in case
-        _maximumNumberOfParameters = Math.max(_maximumNumberOfParameters,0);
+        maximumNumberOfParameters = Math.max(maximumNumberOfParameters,0);
 
-        maximumNumberOfParameters = _maximumNumberOfParameters;
-        parameterTypes = _parameterTypes;
+        this.maximumNumberOfParameters = maximumNumberOfParameters;
+        this.parameterTypes = parameterTypes;
     }
 
     public Class[] getParameterTypes() {
