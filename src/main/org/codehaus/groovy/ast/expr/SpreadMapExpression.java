@@ -20,15 +20,15 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
 
 /**
  * Represents a spread map expression *:m
- *         in the map expression [1, *:m, 2, "c":100]
- *      or in the method invoke expression func(1, *:m, 2, "c":100).
- * 
+ * in the map expression [1, *:m, 2, "c":100]
+ * or in the method invoke expression func(1, *:m, 2, "c":100).
+ *
  * @version $Revision$
  */
 public class SpreadMapExpression extends Expression {
 
     private Expression expression;
-	
+
     public SpreadMapExpression(Expression expression) {
         this.expression = expression;
     }
@@ -42,13 +42,13 @@ public class SpreadMapExpression extends Expression {
     }
 
     public Expression transformExpression(ExpressionTransformer transformer) {
-        Expression ret = new SpreadMapExpression(transformer.transform(expression)); 
+        Expression ret = new SpreadMapExpression(transformer.transform(expression));
         ret.setSourcePosition(this);
         return ret;
     }
 
     public String getText() {
-	return "*:" + expression.getText();
+        return "*:" + expression.getText();
     }
 
     public ClassNode getType() {

@@ -23,16 +23,16 @@ import org.codehaus.groovy.syntax.Types;
 
 /**
  * Represents two expressions and an operation
- * 
+ *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
 public class BinaryExpression extends Expression {
-    
+
     private Expression leftExpression;
     private Expression rightExpression;
     private final Token operation;
-    
+
     public BinaryExpression(Expression leftExpression,
                             Token operation,
                             Expression rightExpression) {
@@ -42,7 +42,7 @@ public class BinaryExpression extends Expression {
     }
 
     public String toString() {
-        return super.toString() +"[" + leftExpression + operation + rightExpression + "]";
+        return super.toString() + "[" + leftExpression + operation + rightExpression + "]";
     }
 
     public void visit(GroovyCodeVisitor visitor) {
@@ -81,36 +81,36 @@ public class BinaryExpression extends Expression {
         }
         return "(" + leftExpression.getText() + " " + operation.getText() + " " + rightExpression.getText() + ")";
     }
-    
-    
-   /**
-    *  Creates an assignment expression in which the specified expression
-    *  is written into the specified variable name.   
-    */
-    
-    public static BinaryExpression newAssignmentExpression( Variable variable, Expression rhs ) {
-    	VariableExpression lhs = new VariableExpression( variable );
-    	Token         operator = Token.newPlaceholder( Types.ASSIGN );
-    
-    	return new BinaryExpression( lhs, operator, rhs );
+
+
+    /**
+     * Creates an assignment expression in which the specified expression
+     * is written into the specified variable name.
+     */
+
+    public static BinaryExpression newAssignmentExpression(Variable variable, Expression rhs) {
+        VariableExpression lhs = new VariableExpression(variable);
+        Token operator = Token.newPlaceholder(Types.ASSIGN);
+
+        return new BinaryExpression(lhs, operator, rhs);
     }
 
 
     /**
-     *  Creates variable initialization expression in which the specified expression
-     *  is written into the specified variable name.   
+     * Creates variable initialization expression in which the specified expression
+     * is written into the specified variable name.
      */
-     
-     public static BinaryExpression newInitializationExpression( String variable, ClassNode type, Expression rhs ) {
-     	VariableExpression lhs = new VariableExpression( variable );
-     
-     	if( type != null ) {
-     	    lhs.setType(type);
-     	}
-     
-     	Token operator = Token.newPlaceholder( Types.ASSIGN );
-     
-        return new BinaryExpression( lhs, operator, rhs );
-     }
+
+    public static BinaryExpression newInitializationExpression(String variable, ClassNode type, Expression rhs) {
+        VariableExpression lhs = new VariableExpression(variable);
+
+        if (type != null) {
+            lhs.setType(type);
+        }
+
+        Token operator = Token.newPlaceholder(Types.ASSIGN);
+
+        return new BinaryExpression(lhs, operator, rhs);
+    }
 
 }

@@ -23,7 +23,7 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
 
 /**
  * Represents a list expression [1, 2, 3] which creates a mutable List
- * 
+ *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
@@ -34,28 +34,28 @@ public class ListExpression extends Expression {
     public ListExpression() {
         this(new ArrayList<Expression>());
     }
-    
+
     public ListExpression(List<Expression> expressions) {
         this.expressions = expressions;
         //TODO: get the type's of the expressions to specify the
         // list type to List<X> if possible.
         setType(ClassHelper.LIST_TYPE);
     }
-    
+
     public void addExpression(Expression expression) {
         expressions.add(expression);
     }
-    
+
     public List<Expression> getExpressions() {
         return expressions;
     }
-    
+
     public void setWrapped(boolean value) {
-    	wrapped = value;
+        wrapped = value;
     }
-    
+
     public boolean isWrapped() {
-    	return wrapped;
+        return wrapped;
     }
 
     public void visit(GroovyCodeVisitor visitor) {
@@ -65,7 +65,7 @@ public class ListExpression extends Expression {
     public Expression transformExpression(ExpressionTransformer transformer) {
         Expression ret = new ListExpression(transformExpressions(getExpressions(), transformer));
         ret.setSourcePosition(this);
-        return ret;       
+        return ret;
     }
 
     public Expression getExpression(int i) {
@@ -78,11 +78,10 @@ public class ListExpression extends Expression {
         for (Expression expression : expressions) {
             if (first) {
                 first = false;
-            }
-            else {
+            } else {
                 buffer.append(", ");
             }
-            
+
             buffer.append(expression.getText());
         }
         buffer.append("]");

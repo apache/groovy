@@ -21,7 +21,8 @@ import org.codehaus.groovy.reflection.ClassInfo;
  * @author Alex.Tkachman
  */
 public class LongCachedClass extends NumberCachedClass {
-	private boolean allowNull;
+    private boolean allowNull;
+
     public LongCachedClass(Class klazz, ClassInfo classInfo, boolean allowNull) {
         super(klazz, classInfo);
         this.allowNull = allowNull;
@@ -34,7 +35,7 @@ public class LongCachedClass extends NumberCachedClass {
         }
 
         if (argument instanceof Number) {
-            return new Long(((Number) argument).longValue());
+            return ((Number) argument).longValue();
         }
         return argument;
     }
@@ -44,7 +45,7 @@ public class LongCachedClass extends NumberCachedClass {
     }
 
     public boolean isAssignableFrom(Class classToTransformFrom) {
-        return  (allowNull && classToTransformFrom == null)
+        return (allowNull && classToTransformFrom == null)
                 || classToTransformFrom == Integer.class
                 || classToTransformFrom == Long.class
                 || classToTransformFrom == Short.class

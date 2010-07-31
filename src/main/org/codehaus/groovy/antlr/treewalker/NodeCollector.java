@@ -28,16 +28,16 @@ import org.codehaus.groovy.antlr.GroovySourceAST;
  */
 
 public class NodeCollector extends VisitorAdapter {
-	private List nodes;
-	public NodeCollector() {
-		nodes = new ArrayList();
-	}
-	public List getNodes() {
-		return nodes;
-	}
+    private List nodes;
+    public NodeCollector() {
+        nodes = new ArrayList();
+    }
+    public List getNodes() {
+        return nodes;
+    }
     public void visitDefault(GroovySourceAST t,int visit) {
         if (visit == OPENING_VISIT) {
-        	nodes.add(t);
+            nodes.add(t);
         }
     }
 }

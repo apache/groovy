@@ -22,7 +22,7 @@ import org.codehaus.groovy.reflection.ClassInfo;
  * @author Alex.Tkachman
  */
 public class BooleanCachedClass extends CachedClass {
-	private boolean allowNull;
+    private boolean allowNull;
     public BooleanCachedClass(Class klazz, ClassInfo classInfo, boolean allowNull) {
         super(klazz, classInfo);
         this.allowNull = allowNull;

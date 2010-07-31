@@ -21,7 +21,7 @@ import org.codehaus.groovy.reflection.ClassInfo;
  * @author Alex.Tkachman
  */
 public class ByteCachedClass extends NumberCachedClass {
-	private boolean allowNull;
+    private boolean allowNull;
     public ByteCachedClass(Class klazz, ClassInfo classInfo, boolean allowNull) {
         super(klazz, classInfo);
         this.allowNull = allowNull;
@@ -33,7 +33,7 @@ public class ByteCachedClass extends NumberCachedClass {
         }
 
         if (argument instanceof Number) {
-            return new Byte(((Number) argument).byteValue());
+            return ((Number) argument).byteValue();
         }
         return argument;
     }

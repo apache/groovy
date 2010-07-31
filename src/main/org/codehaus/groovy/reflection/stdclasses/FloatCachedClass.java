@@ -24,7 +24,8 @@ import java.math.BigInteger;
  * @author Alex.Tkachman
  */
 public class FloatCachedClass extends NumberCachedClass {
-	private boolean allowNull;
+    private boolean allowNull;
+
     public FloatCachedClass(Class klazz, ClassInfo classInfo, boolean allowNull) {
         super(klazz, classInfo);
         this.allowNull = allowNull;
@@ -36,7 +37,7 @@ public class FloatCachedClass extends NumberCachedClass {
         }
 
         if (argument instanceof Number) {
-            Float res = new Float(((Number) argument).floatValue());
+            Float res = ((Number) argument).floatValue();
             if (argument instanceof BigDecimal && res.isInfinite()) {
                 throw new IllegalArgumentException(Float.class + " out of range while converting from BigDecimal");
             }
@@ -50,7 +51,7 @@ public class FloatCachedClass extends NumberCachedClass {
     }
 
     public boolean isAssignableFrom(Class classToTransformFrom) {
-        return  (allowNull && classToTransformFrom == null)
+        return (allowNull && classToTransformFrom == null)
                 || classToTransformFrom == Float.class
                 || classToTransformFrom == Integer.class
                 || classToTransformFrom == Long.class

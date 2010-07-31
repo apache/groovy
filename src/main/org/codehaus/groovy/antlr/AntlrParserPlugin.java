@@ -15,7 +15,6 @@
  */
 package org.codehaus.groovy.antlr;
 
-
 import antlr.RecognitionException;
 import antlr.TokenStreamException;
 import antlr.TokenStreamRecognitionException;
@@ -1200,7 +1199,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         Expression collectionExpression;
         Parameter forParameter;
         if (isType(CLOSURE_LIST, inNode)) {
-        	forStatementBeingDef = true;
+            forStatementBeingDef = true;
             ClosureListExpression clist = closureListExpression(inNode);
             forStatementBeingDef = false;
             int size = clist.getExpressions().size();
@@ -1858,7 +1857,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     }
 
     private ClosureListExpression closureListExpression(AST node) {
-    	isClosureListExpressionAllowedHere(node);
+        isClosureListExpressionAllowedHere(node);
         AST exprNode = node.getFirstChild();
         List<Expression> list = new LinkedList<Expression>();
         while (exprNode != null) {
@@ -1877,12 +1876,12 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         configureAST(cle, node);
         return cle;
     }
-    
+
     private void isClosureListExpressionAllowedHere(AST node) {
-    	if(!forStatementBeingDef) {
-    		throw new ASTRuntimeException(node, 
-    				"Expression list of the form (a; b; c) is not supported in this context.");
-    	}
+        if(!forStatementBeingDef) {
+            throw new ASTRuntimeException(node,
+                    "Expression list of the form (a; b; c) is not supported in this context.");
+        }
     }
 
     protected Expression dynamicMemberExpression(AST dynamicMemberNode) {
@@ -2933,7 +2932,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     protected void unknownAST(AST node) {
         if (node.getType() == CLASS_DEF) {
             throw new ASTRuntimeException(node,
-            	"Class definition not expected here. Perhaps try using a closure instead.");
+                "Class definition not expected here. Perhaps try using a closure instead.");
         }
         throw new ASTRuntimeException(node, "Unknown type: " + getTokenName(node));
     }

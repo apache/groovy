@@ -27,7 +27,7 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
  * which is equivalent to
  * <code>
  * foo.metaClass.getMethodPointer(foo, "bar")
- * 
+ *
  * @version $Revision$
  */
 public class MethodPointerExpression extends Expression {
@@ -41,10 +41,10 @@ public class MethodPointerExpression extends Expression {
     }
 
     public Expression getExpression() {
-	if (expression == null)
-	    return VariableExpression.THIS_EXPRESSION;
-	else
-	    return expression;
+        if (expression == null)
+            return VariableExpression.THIS_EXPRESSION;
+        else
+            return expression;
     }
 
     public Expression getMethodName() {
@@ -59,12 +59,12 @@ public class MethodPointerExpression extends Expression {
         Expression ret;
         Expression mname = transformer.transform(methodName);
         if (expression == null) {
-	        ret = new MethodPointerExpression(VariableExpression.THIS_EXPRESSION, mname);
+            ret = new MethodPointerExpression(VariableExpression.THIS_EXPRESSION, mname);
         } else {
-	        ret = new MethodPointerExpression(transformer.transform(expression), mname);
+            ret = new MethodPointerExpression(transformer.transform(expression), mname);
         }
         ret.setSourcePosition(this);
-        return ret;        
+        return ret;
     }
 
     public String getText() {

@@ -48,15 +48,15 @@ public class FlatNodeListTraversal extends TraversalHelper {
         setUp(node);        
         Iterator itr = listOfAllNodesInThisAST.iterator();
         while (itr.hasNext()) {
-        	GroovySourceAST currentNode = (GroovySourceAST) itr.next();
-        	accept(currentNode);
+            GroovySourceAST currentNode = (GroovySourceAST) itr.next();
+            accept(currentNode);
         }
         tearDown(node);
         return null;
     }
 
-	protected void accept(GroovySourceAST currentNode) {
-    	openingVisit(currentNode);
-    	closingVisit(currentNode);
-	}    
+    protected void accept(GroovySourceAST currentNode) {
+        openingVisit(currentNode);
+        closingVisit(currentNode);
+    }    
 }

@@ -35,7 +35,7 @@ import java.util.List;
  * @author Guillaume Laforge
  */
 public class GroovyScriptEngineFactory implements ScriptEngineFactory {
-	
+
     private static final String VERSION = "2.0";
 
     private static final String SHORT_NAME = "groovy";
@@ -57,8 +57,8 @@ public class GroovyScriptEngineFactory implements ScriptEngineFactory {
     }
 
     /**
-     *   This is also different than scripting.dev.java.net which used an
-     *   initial lowercase.  But these are proper names and should be capitalized.
+     * This is also different than scripting.dev.java.net which used an
+     * initial lowercase.  But these are proper names and should be capitalized.
      */
     public String getLanguageName() {
         return LANGUAGE_NAME;
@@ -67,7 +67,7 @@ public class GroovyScriptEngineFactory implements ScriptEngineFactory {
     public String getLanguageVersion() {
         return GroovySystem.getVersion();
     }
-    
+
     public List<String> getExtensions() {
         return extensions;
     }
@@ -75,13 +75,13 @@ public class GroovyScriptEngineFactory implements ScriptEngineFactory {
     public List<String> getMimeTypes() {
         return mimeTypes;
     }
-    
+
     public List<String> getNames() {
         return names;
     }
-    
+
     public Object getParameter(String key) {
-       
+
         if (ScriptEngine.NAME.equals(key)) {
             return SHORT_NAME;
         } else if (ScriptEngine.ENGINE.equals(key)) {
@@ -97,23 +97,23 @@ public class GroovyScriptEngineFactory implements ScriptEngineFactory {
         } else {
             throw new IllegalArgumentException("Invalid key");
         }
-    
+
     }
-    
+
     public ScriptEngine getScriptEngine() {
         return new GroovyScriptEngineImpl();
     }
-    
+
     public String getMethodCallSyntax(String obj, String method,
-                                        String... args) {
-        
+                                      String... args) {
+
         String ret = obj + "." + method + "(";
         int len = args.length;
         if (len == 0) {
             ret += ")";
             return ret;
         }
-        
+
         for (int i = 0; i < len; i++) {
             ret += args[i];
             if (i != len - 1) {
@@ -123,8 +123,8 @@ public class GroovyScriptEngineFactory implements ScriptEngineFactory {
             }
         }
         return ret;
-    }    
-    
+    }
+
     public String getOutputStatement(String toDisplay) {
         StringBuilder buf = new StringBuilder();
         buf.append("println(\"");
@@ -132,21 +132,21 @@ public class GroovyScriptEngineFactory implements ScriptEngineFactory {
         for (int i = 0; i < len; i++) {
             char ch = toDisplay.charAt(i);
             switch (ch) {
-            case '"':
-                buf.append("\\\"");
-                break;
-            case '\\':
-                buf.append("\\\\");
-                break;
-            default:
-                buf.append(ch);
-                break;
+                case '"':
+                    buf.append("\\\"");
+                    break;
+                case '\\':
+                    buf.append("\\\\");
+                    break;
+                default:
+                    buf.append(ch);
+                    break;
             }
         }
         buf.append("\")");
         return buf.toString();
-    }    
-    
+    }
+
     public String getProgram(String... statements) {
         StringBuilder ret = new StringBuilder();
         int len = statements.length;
@@ -174,5 +174,5 @@ public class GroovyScriptEngineFactory implements ScriptEngineFactory {
         n = new ArrayList<String>(1);
         n.add("application/x-groovy");
         mimeTypes = Collections.unmodifiableList(n);
-    }    
+    }
 }

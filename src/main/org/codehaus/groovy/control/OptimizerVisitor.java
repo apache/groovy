@@ -36,7 +36,7 @@ public class OptimizerVisitor extends ClassCodeExpressionTransformer {
     private SourceUnit source;
 
     private Map const2Var = new HashMap();
-    private List missingFields = new LinkedList();
+    private List<FieldNode> missingFields = new LinkedList<FieldNode>();
 
     public OptimizerVisitor(CompilationUnit cu) {
     }
@@ -51,8 +51,8 @@ public class OptimizerVisitor extends ClassCodeExpressionTransformer {
     }
 
     private void addMissingFields() {
-        for (Iterator it = missingFields.iterator(); it.hasNext(); ) {
-            FieldNode f = (FieldNode) it.next();
+        for (Object missingField : missingFields) {
+            FieldNode f = (FieldNode) missingField;
             currentClass.addField(f);
         }
     }
@@ -96,8 +96,8 @@ public class OptimizerVisitor extends ClassCodeExpressionTransformer {
     }
 
     public void visitClosureExpression(ClosureExpression expression) {
-    	/*
-    	 * GROOVY-3339 - do nothing - so that numbers don't get replaced by cached constants in closure classes
-    	 */
+        /*
+         * GROOVY-3339 - do nothing - so that numbers don't get replaced by cached constants in closure classes
+         */
     }
 }

@@ -687,8 +687,8 @@ public class CompilationUnit extends ProcessingUnit {
 
         public void call(SourceUnit source, GeneratorContext context, ClassNode classNode) throws CompilationFailedException {
 
-        	optimizer.visitClass(classNode, source); // GROOVY-4272: repositioned it here from staticImport
-        	
+            optimizer.visitClass(classNode, source); // GROOVY-4272: repositioned it here from staticImport
+            
             if(!classNode.isSynthetic()) {
                 GenericsVisitor genericsVisitor = new GenericsVisitor(source);
                 genericsVisitor.visitClass(classNode);

@@ -20,7 +20,7 @@ import org.codehaus.groovy.ast.expr.BooleanExpression;
 
 /**
  * Represents a while (condition) { ... } loop in Groovy
- * 
+ *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
@@ -28,17 +28,17 @@ public class WhileStatement extends Statement {
 
     private BooleanExpression booleanExpression;
     private Statement loopBlock;
-    
+
 
     public WhileStatement(BooleanExpression booleanExpression, Statement loopBlock) {
         this.booleanExpression = booleanExpression;
         this.loopBlock = loopBlock;
     }
-    
+
     public void visit(GroovyCodeVisitor visitor) {
         visitor.visitWhileLoop(this);
     }
-    
+
     public BooleanExpression getBooleanExpression() {
         return booleanExpression;
     }
@@ -47,9 +47,9 @@ public class WhileStatement extends Statement {
         return loopBlock;
     }
 
-	public void setBooleanExpression(BooleanExpression booleanExpression) {
-		this.booleanExpression = booleanExpression;
-	}
+    public void setBooleanExpression(BooleanExpression booleanExpression) {
+        this.booleanExpression = booleanExpression;
+    }
 
     public void setLoopBlock(Statement loopBlock) {
         this.loopBlock = loopBlock;

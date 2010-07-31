@@ -168,7 +168,7 @@ public class SourceCodeTraversal extends TraversalHelper {
                 case GroovyTokenTypes.GT: // a > b
                 case GroovyTokenTypes.INTERFACE_DEF: // interface Foo...
                 case GroovyTokenTypes.LABELED_ARG: // myMethod(name:"Jez")
-                case GroovyTokenTypes.LABELED_STAT: // foo:x=1                    	
+                case GroovyTokenTypes.LABELED_STAT: // foo:x=1                        
                 case GroovyTokenTypes.LAND: // true && false
                 case GroovyTokenTypes.LE: // a <= b
                 case GroovyTokenTypes.LITERAL_as: // foo as Bar

@@ -22,7 +22,8 @@ import org.codehaus.groovy.reflection.ClassInfo;
  * @author Alex.Tkachman
  */
 public class CharacterCachedClass extends CachedClass {
-	private boolean allowNull;
+    private boolean allowNull;
+
     public CharacterCachedClass(Class klazz, ClassInfo classInfo, boolean allowNull) {
         super(klazz, classInfo);
         this.allowNull = allowNull;
@@ -30,11 +31,11 @@ public class CharacterCachedClass extends CachedClass {
 
     public boolean isDirectlyAssignable(Object argument) {
         return (allowNull && argument == null) || argument instanceof Character;
-     }
-    
+    }
+
     public boolean isAssignableFrom(Class classToTransformFrom) {
-        return  (allowNull &&classToTransformFrom == null)
-              ||classToTransformFrom == Character.class
-              ||classToTransformFrom == Character.TYPE;
+        return (allowNull && classToTransformFrom == null)
+                || classToTransformFrom == Character.class
+                || classToTransformFrom == Character.TYPE;
     }
 }
