@@ -32,19 +32,18 @@ import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
  * Utility methods removing internal lines from stack traces
  *
  * @author Graeme Rocher
- * @since 0.2
- *
  * @version $Revision: 5544 $
- * First Created: 02-Jun-2006
- * Last Updated: $Date: 2007-09-21 13:53:07 -0500 (Fri, 21 Sep 2007) $
+ * @since 1.5
  */
 public class StackTraceUtils {
 
     public static final String STACK_LOG_NAME = "StackTrace";
     private static final Logger STACK_LOG;
     // set log to consume traces by default, end user can override later
+
     static {
-        outer: do {
+        outer:
+        do {
             Enumeration existingLogs = LogManager.getLogManager().getLoggerNames();
             while (existingLogs.hasMoreElements()) {
                 if (STACK_LOG_NAME.equals(existingLogs.nextElement())) {
@@ -59,16 +58,16 @@ public class StackTraceUtils {
 
     private static final String[] GROOVY_PACKAGES =
             System.getProperty("groovy.sanitized.stacktraces",
-                "groovy.," +
-                "org.codehaus.groovy.," +
-                "java.," +
-                "javax.," +
-                "sun.," +
-                "gjdk.groovy.,"
+                    "groovy.," +
+                            "org.codehaus.groovy.," +
+                            "java.," +
+                            "javax.," +
+                            "sun.," +
+                            "gjdk.groovy.,"
             ).split("(\\s|,)+");
 
     private static List<Closure> tests = new ArrayList<Closure>();
-    
+
     /**
      * <p>Adds a groovy.lang.Closure to test whether the stack trace
      * element should be added or not.</p>
@@ -80,34 +79,34 @@ public class StackTraceUtils {
      * <li><b>null</b>  - continue with next test
      * </ul>
      * Groovy truth will be used to determine true and false, null is excluded from
-     * defaulting to false here. If all tests have been executed and all of them skipped, then 
+     * defaulting to false here. If all tests have been executed and all of them skipped, then
      * the groovy standard filtering will take place.</p>
-     * 
+     *
      * @param test the testing groovy.lang.Closure
      */
     public static void addClassTest(Closure test) {
-      tests.add(test);  
-    }    
-    
+        tests.add(test);
+    }
+
     /**
      * <p>Remove all apparently groovy-internal trace entries from the exception instance</p>
      * <p>This modifies the original instance and returns it, it does not clone</p>
-     * @param t
-     * @return The exception passed in, after cleaning the stack trace
+     *
+     * @param t the Throwable whose stack trace we want to sanitize
+     * @return The original Throwable but with a sanitized stack trace
      */
     public static Throwable sanitize(Throwable t) {
         // Note that this getBoolean access may well be synced...
         if (!Boolean.getBoolean("groovy.full.stacktrace")) {
             StackTraceElement[] trace = t.getStackTrace();
-            List newTrace = new ArrayList();
-            for (int i = 0; i < trace.length; i++) {
-                StackTraceElement stackTraceElement = trace[i];
+            List<StackTraceElement> newTrace = new ArrayList<StackTraceElement>();
+            for (StackTraceElement stackTraceElement : trace) {
                 if (isApplicationClass(stackTraceElement.getClassName())) {
-                    newTrace.add( stackTraceElement);
+                    newTrace.add(stackTraceElement);
                 }
             }
             // We don't want to lose anything, so log it
-  	        STACK_LOG.log(Level.WARNING, "Sanitizing stacktrace:", t);
+            STACK_LOG.log(Level.WARNING, "Sanitizing stacktrace:", t);
 
 
             StackTraceElement[] clean = new StackTraceElement[newTrace.size()];
@@ -121,11 +120,10 @@ public class StackTraceUtils {
         t = StackTraceUtils.sanitize(t);
 
         StackTraceElement[] trace = t.getStackTrace();
-        for (int i = 0; i < trace.length; i++) {
-            StackTraceElement stackTraceElement = trace[i];
-            p.println(  "at "+stackTraceElement.getClassName()
-                        +"("+stackTraceElement.getMethodName()
-                        +":"+stackTraceElement.getLineNumber()+")");
+        for (StackTraceElement stackTraceElement : trace) {
+            p.println("at " + stackTraceElement.getClassName()
+                    + "(" + stackTraceElement.getMethodName()
+                    + ":" + stackTraceElement.getLineNumber() + ")");
         }
     }
 
@@ -134,15 +132,14 @@ public class StackTraceUtils {
     }
 
     public static boolean isApplicationClass(String className) {
-        for(Closure test : tests) {
-          Object result = test.call(className);
-          if(result != null) {
-              return DefaultTypeTransformation.castToBoolean(result);
-          }
+        for (Closure test : tests) {
+            Object result = test.call(className);
+            if (result != null) {
+                return DefaultTypeTransformation.castToBoolean(result);
+            }
         }
-        
-        for (int i = 0; i < GROOVY_PACKAGES.length; i++) {
-            String groovyPackage = GROOVY_PACKAGES[i];
+
+        for (String groovyPackage : GROOVY_PACKAGES) {
             if (className.startsWith(groovyPackage)) {
                 return false;
             }
@@ -152,7 +149,8 @@ public class StackTraceUtils {
 
     /**
      * <p>Extracts the root cause of the exception, no matter how nested it is</p>
-     * @param t
+     *
+     * @param t a Throwable
      * @return The deepest cause of the exception that can be found
      */
     public static Throwable extractRootCause(Throwable t) {
@@ -166,7 +164,8 @@ public class StackTraceUtils {
     /**
      * <p>Get the root cause of an exception and sanitize it for display to the user</p>
      * <p>This will MODIFY the stacktrace of the root cause exception object and return it</p>
-     * @param t
+     *
+     * @param t a throwable
      * @return The root cause exception instance, with its stace trace modified to filter out groovy runtime classes
      */
     public static Throwable sanitizeRootCause(Throwable t) {
@@ -176,7 +175,8 @@ public class StackTraceUtils {
     /**
      * <p>Sanitize the exception and ALL nested causes</p>
      * <p>This will MODIFY the stacktrace of the exception instance and all its causes irreversibly</p>
-     * @param t
+     *
+     * @param t a throwable
      * @return The root cause exception instances, with stack trace modified to filter out groovy runtime classes
      */
     public static Throwable deepSanitize(Throwable t) {

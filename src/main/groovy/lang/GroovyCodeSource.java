@@ -33,54 +33,60 @@ import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 /**
  * CodeSource wrapper class that allows specific security policies to be associated with a class
  * compiled from groovy source.
- * 
+ *
  * @author Steve Goetze
  * @author Guillaume Laforge
  * @author Merlyn Albery-Speyer
  */
 public class GroovyCodeSource {
-	
-	/** 
-	 * The codeSource to be given the generated class.  This can be used by policy file
-	 * grants to administer security.
-	 */
-	private CodeSource codeSource;
 
-    /** The name given to the generated class */
-	private String name;
+    /**
+     * The codeSource to be given the generated class.  This can be used by policy file
+     * grants to administer security.
+     */
+    private CodeSource codeSource;
 
-    /** The groovy source to be compiled and turned into a class */
-	private String scriptText;
+    /**
+     * The name given to the generated class
+     */
+    private String name;
 
-    /** The certificates used to sign the items from the codesource */
-	Certificate[] certs;
+    /**
+     * The groovy source to be compiled and turned into a class
+     */
+    private String scriptText;
+
+    /**
+     * The certificates used to sign the items from the codesource
+     */
+    Certificate[] certs;
 
     private boolean cachable;
 
-	private File file;
+    private File file;
 
-	public GroovyCodeSource(String script, String name, String codeBase) {
-		this.name = name;
+    public GroovyCodeSource(String script, String name, String codeBase) {
+        this.name = name;
         this.scriptText = script;
         this.codeSource = createCodeSource(codeBase);
-		this.cachable = true;
-	}
+        this.cachable = true;
+    }
 
     /**
-	 * Construct a GroovyCodeSource for an inputStream of groovyCode that has an
-	 * unknown provenance -- meaning it didn't come from a File or a URL (e.g.&nbsp;a String).
-	 * The supplied codeBase will be used to construct a File URL that should match up
-	 * with a java Policy entry that determines the grants to be associated with the
-	 * class that will be built from the InputStream.
-	 *
-	 * The permission groovy.security.GroovyCodeSourcePermission will be used to determine if the given codeBase
-	 * may be specified.  That is, the current Policy set must have a GroovyCodeSourcePermission that implies
-	 * the codeBase, or an exception will be thrown.  This is to prevent callers from hijacking
-	 * existing codeBase policy entries unless explicitly authorized by the user.
-	 */
-	public GroovyCodeSource(Reader reader, String name, String codeBase) {
-		this.name = name;
-		this.codeSource = createCodeSource(codeBase);
+     * Construct a GroovyCodeSource for an inputStream of groovyCode that has an
+     * unknown provenance -- meaning it didn't come from a File or a URL (e.g.&nbsp;a String).
+     * The supplied codeBase will be used to construct a File URL that should match up
+     * with a java Policy entry that determines the grants to be associated with the
+     * class that will be built from the InputStream.
+     * <p/>
+     * The permission groovy.security.GroovyCodeSourcePermission will be used to determine if the given codeBase
+     * may be specified.  That is, the current Policy set must have a GroovyCodeSourcePermission that implies
+     * the codeBase, or an exception will be thrown.  This is to prevent callers from hijacking
+     * existing codeBase policy entries unless explicitly authorized by the user.
+     */
+    public GroovyCodeSource(Reader reader, String name, String codeBase) {
+        this.name = name;
+        this.codeSource = createCodeSource(codeBase);
 
         try {
             this.scriptText = DefaultGroovyMethods.getText(reader);
@@ -89,24 +95,24 @@ public class GroovyCodeSource {
         }
     }
 
-	/**
-	 * Construct a GroovyCodeSource for an inputStream of groovyCode that has an
-	 * unknown provenance -- meaning it didn't come from a File or a URL (e.g.&nbsp;a String).
-	 * The supplied codeBase will be used to construct a File URL that should match up
-	 * with a java Policy entry that determines the grants to be associated with the
-	 * class that will be built from the InputStream.
-	 * 
-	 * The permission groovy.security.GroovyCodeSourcePermission will be used to determine if the given codeBase
-	 * may be specified.  That is, the current Policy set must have a GroovyCodeSourcePermission that implies
-	 * the codeBase, or an exception will be thrown.  This is to prevent callers from hijacking
-	 * existing codeBase policy entries unless explicitly authorized by the user.
+    /**
+     * Construct a GroovyCodeSource for an inputStream of groovyCode that has an
+     * unknown provenance -- meaning it didn't come from a File or a URL (e.g.&nbsp;a String).
+     * The supplied codeBase will be used to construct a File URL that should match up
+     * with a java Policy entry that determines the grants to be associated with the
+     * class that will be built from the InputStream.
+     * <p/>
+     * The permission groovy.security.GroovyCodeSourcePermission will be used to determine if the given codeBase
+     * may be specified.  That is, the current Policy set must have a GroovyCodeSourcePermission that implies
+     * the codeBase, or an exception will be thrown.  This is to prevent callers from hijacking
+     * existing codeBase policy entries unless explicitly authorized by the user.
      *
      * @deprecated Prefer using methods taking a Reader rather than an InputStream to avoid wrong encoding issues.
-	 */
+     */
     @Deprecated
-	public GroovyCodeSource(InputStream inputStream, String name, String codeBase) {
-		this.name = name;
-		this.codeSource = createCodeSource(codeBase);
+    public GroovyCodeSource(InputStream inputStream, String name, String codeBase) {
+        this.name = name;
+        this.codeSource = createCodeSource(codeBase);
         try {
             this.scriptText = DefaultGroovyMethods.getText(inputStream);
         } catch (IOException e) {
@@ -159,7 +165,7 @@ public class GroovyCodeSource {
         } catch (PrivilegedActionException pae) {
             Throwable cause = pae.getCause();
             if (cause != null && cause instanceof IOException) {
-            	throw (IOException)cause;
+                throw (IOException) cause;
             }
             throw new RuntimeException("Could not construct CodeSource for file: " + file, cause);
         }
@@ -167,7 +173,6 @@ public class GroovyCodeSource {
 
     /**
      * @param infile the file to create a GroovyCodeSource for.
-     *
      * @throws IOException if an issue arises opening and reading the file.
      */
     public GroovyCodeSource(final File infile) throws IOException {
@@ -175,32 +180,32 @@ public class GroovyCodeSource {
     }
 
     public GroovyCodeSource(URL url) throws IOException {
-		if (url == null) {
-			throw new RuntimeException("Could not construct a GroovyCodeSource from a null URL");
-		}
-		this.name = url.toExternalForm();
-		this.codeSource = new CodeSource(url, (java.security.cert.Certificate[])null);
-		try {
-			String contentEncoding = url.openConnection().getContentEncoding();
-			if(contentEncoding != null) {
-				this.scriptText = DefaultGroovyMethods.getText(url, contentEncoding);
-			} else {
-				this.scriptText = DefaultGroovyMethods.getText(url); // falls-back on default encoding
-			}
-		} catch (IOException e) {
-			throw new RuntimeException("Impossible to read the text content from " + name, e);
-		}
-	}
-	
-	CodeSource getCodeSource() {
-		return codeSource;
-	}
-    
+        if (url == null) {
+            throw new RuntimeException("Could not construct a GroovyCodeSource from a null URL");
+        }
+        this.name = url.toExternalForm();
+        this.codeSource = new CodeSource(url, (java.security.cert.Certificate[]) null);
+        try {
+            String contentEncoding = url.openConnection().getContentEncoding();
+            if (contentEncoding != null) {
+                this.scriptText = DefaultGroovyMethods.getText(url, contentEncoding);
+            } else {
+                this.scriptText = DefaultGroovyMethods.getText(url); // falls-back on default encoding
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("Impossible to read the text content from " + name, e);
+        }
+    }
+
+    CodeSource getCodeSource() {
+        return codeSource;
+    }
+
     /**
      * @deprecated Prefer using methods taking a Reader rather than an InputStream to avoid wrong encoding issues.
      */
     @Deprecated
-	public InputStream getInputStream() {
+    public InputStream getInputStream() {
         IOException ioe;
         if (file == null) {
             try {
@@ -224,18 +229,18 @@ public class GroovyCodeSource {
         }
     }
 
-	public String getScriptText() {
+    public String getScriptText() {
         return scriptText;
     }
 
     public String getName() {
-		return name;
-	}
-    
+        return name;
+    }
+
     public File getFile() {
         return file;
     }
-    
+
     public void setCachable(boolean b) {
         cachable = b;
     }
@@ -246,14 +251,14 @@ public class GroovyCodeSource {
 
     private static CodeSource createCodeSource(final String codeBase) {
         SecurityManager sm = System.getSecurityManager();
-		if (sm != null) {
-		    sm.checkPermission(new GroovyCodeSourcePermission(codeBase));
-		}
+        if (sm != null) {
+            sm.checkPermission(new GroovyCodeSourcePermission(codeBase));
+        }
         try {
-			return new CodeSource(new URL("file", "", codeBase), (java.security.cert.Certificate[])null);
-		}
+            return new CodeSource(new URL("file", "", codeBase), (java.security.cert.Certificate[]) null);
+        }
         catch (MalformedURLException e) {
-			throw new RuntimeException("A CodeSource file URL cannot be constructed from the supplied codeBase: " + codeBase);
-		}
+            throw new RuntimeException("A CodeSource file URL cannot be constructed from the supplied codeBase: " + codeBase);
+        }
     }
 }

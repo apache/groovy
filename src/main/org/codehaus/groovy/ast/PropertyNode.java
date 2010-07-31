@@ -21,11 +21,11 @@ import org.objectweb.asm.Opcodes;
 
 /**
  * Represents a property (member variable, a getter and setter)
- * 
+ *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class PropertyNode extends AnnotatedNode implements Opcodes,Variable {
+public class PropertyNode extends AnnotatedNode implements Opcodes, Variable {
 
     private FieldNode field;
 
@@ -35,10 +35,9 @@ public class PropertyNode extends AnnotatedNode implements Opcodes,Variable {
     private boolean closureShare = false;
 
     public PropertyNode(
-        String name, int modifiers, ClassNode type, ClassNode owner,
-        Expression initialValueExpression, Statement getterBlock,
-        Statement setterBlock)
-    {
+            String name, int modifiers, ClassNode type, ClassNode owner,
+            Expression initialValueExpression, Statement getterBlock,
+            Statement setterBlock) {
         this(new FieldNode(name, modifiers & ACC_STATIC, type, owner, initialValueExpression), modifiers, getterBlock, setterBlock);
     }
 
@@ -84,19 +83,19 @@ public class PropertyNode extends AnnotatedNode implements Opcodes,Variable {
     public void setType(ClassNode t) {
         field.setType(t);
     }
-    
+
     public FieldNode getField() {
         return field;
     }
-    
+
     public void setField(FieldNode fn) {
-    	field = fn;
+        field = fn;
     }
 
     public boolean isPrivate() {
         return (modifiers & ACC_PRIVATE) != 0;
     }
-    
+
     public boolean isPublic() {
         return (modifiers & ACC_PUBLIC) != 0;
     }
@@ -120,12 +119,12 @@ public class PropertyNode extends AnnotatedNode implements Opcodes,Variable {
     public boolean isClosureSharedVariable() {
         return false;
     }
-    
+
     public void setClosureSharedVariable(boolean inClosure) {
-        closureShare = inClosure;        
+        closureShare = inClosure;
     }
 
-	public ClassNode getOriginType() {
-		return getType();
-	}
+    public ClassNode getOriginType() {
+        return getType();
+    }
 }

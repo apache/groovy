@@ -26,12 +26,11 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.List;
 import java.util.ArrayList;
-import java.util.Iterator;
 
 
 /**
  * Represents a dynamically expandable bean.
- * 
+ *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @author Hein Meling
  * @author Pilho Kim
@@ -61,19 +60,18 @@ public class Expando extends GroovyObjectSupport {
     public List getMetaPropertyValues() {
         // run through all our current properties and create MetaProperty objects
         List ret = new ArrayList();
-        Iterator itr = getProperties().entrySet().iterator();
-        while(itr.hasNext()) {
-            Entry entry = (Entry) itr.next();
+        for (Object o : getProperties().entrySet()) {
+            Entry entry = (Entry) o;
             ret.add(new MetaExpandoProperty(entry));
         }
-		
+
         return ret;
     }
 
     public Object getProperty(String property) {
         // always use the expando properties first
         Object result = getProperties().get(property);
-        if (result!=null) return result;
+        if (result != null) return result;
         try {
             return super.getProperty(property);
         }
@@ -100,21 +98,20 @@ public class Expando extends GroovyObjectSupport {
                 closure = (Closure) closure.clone();
                 closure.setDelegate(this);
                 return closure.call((Object[]) args);
-            }
-            else {
+            } else {
                 throw e;
             }
         }
-        
+
     }
-    
+
     /**
      * This allows toString to be overridden by a closure <i>field</i> method attached
      * to the expando object.
-     * 
+     *
      * @see java.lang.Object#toString()
      */
-     public String toString() {
+    public String toString() {
         Object method = getProperties().get("toString");
         if (method != null && method instanceof Closure) {
             // invoke overridden toString closure method
@@ -124,7 +121,7 @@ public class Expando extends GroovyObjectSupport {
         } else {
             return expandoProperties.toString();
         }
-     }
+    }
 
     /**
      * This allows equals to be overridden by a closure <i>field</i> method attached
@@ -166,6 +163,7 @@ public class Expando extends GroovyObjectSupport {
 
     /**
      * Factory method to create a new Map used to store the expando properties map
+     *
      * @return a newly created Map implementation
      */
     protected Map createMap() {

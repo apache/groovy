@@ -19,5 +19,5 @@ import java.io.IOException;
 import java.io.Reader;
 
 public interface ResourceManager {
-	Reader getReader(String resourceName) throws IOException;
+    Reader getReader(String resourceName) throws IOException;
 }

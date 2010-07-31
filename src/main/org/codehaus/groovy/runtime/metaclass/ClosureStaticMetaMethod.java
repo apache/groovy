@@ -32,8 +32,8 @@ import java.lang.reflect.Modifier;
  */
 public class ClosureStaticMetaMethod extends MetaMethod implements ClosureInvokingMethod {
 
-	private final Closure callable;
-	private final CachedClass declaringClass;
+    private final Closure callable;
+    private final CachedClass declaringClass;
     private final String name;
 
     /**
@@ -43,21 +43,21 @@ public class ClosureStaticMetaMethod extends MetaMethod implements ClosureInvoki
      * @param c The closure that this ClosureMetaMethod will invoke when called
      */
     public ClosureStaticMetaMethod(String name, Class declaringClass, Closure c) {
-    	this(name, declaringClass, c, c.getParameterTypes());
-	}
+        this(name, declaringClass, c, c.getParameterTypes());
+    }
 
     public ClosureStaticMetaMethod(String name, Class declaringClass, Closure c, Class[] paramTypes) {
         super(paramTypes);
         this.callable = c;
-		this.declaringClass = ReflectionCache.getCachedClass(declaringClass);
+        this.declaringClass = ReflectionCache.getCachedClass(declaringClass);
         this.name = name;
-	}
+    }
     
-	public Object invoke(Object object, Object[] arguments) {
-		Closure cloned = (Closure) callable.clone();
-		cloned.setDelegate(object);
-		return cloned.call(arguments);
-	}
+    public Object invoke(Object object, Object[] arguments) {
+        Closure cloned = (Closure) callable.clone();
+        cloned.setDelegate(object);
+        return cloned.call(arguments);
+    }
 
     public int getModifiers() {
         return Modifier.PUBLIC | Modifier.STATIC;
@@ -72,8 +72,8 @@ public class ClosureStaticMetaMethod extends MetaMethod implements ClosureInvoki
     }
 
     public CachedClass getDeclaringClass() {
-		return this.declaringClass;
-	}
+        return this.declaringClass;
+    }
 
     /**
      * Retrieves the closure that is invoked by this MetaMethod
@@ -81,6 +81,6 @@ public class ClosureStaticMetaMethod extends MetaMethod implements ClosureInvoki
      * @return The closure
      */
     public Closure getClosure() {
-		return this.callable;
-	}
+        return this.callable;
+    }
 }

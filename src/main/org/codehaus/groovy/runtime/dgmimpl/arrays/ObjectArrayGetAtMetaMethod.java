@@ -35,12 +35,12 @@ public class ObjectArrayGetAtMetaMethod extends ArrayGetAtMetaMethod {
 
     public Object invoke(Object object, Object[] arguments) {
         final Object[] objects = (Object[]) object;
-        return objects[normaliseIndex(((Integer) arguments[0]).intValue(), objects.length)];
+        return objects[normaliseIndex((Integer) arguments[0], objects.length)];
     }
 
     public CallSite createPojoCallSite(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object receiver, Object[] args) {
-        if (!(args [0] instanceof Integer))
-          return PojoMetaMethodSite.createNonAwareCallSite(site, metaClass, metaMethod, params, args);
+        if (!(args[0] instanceof Integer))
+            return PojoMetaMethodSite.createNonAwareCallSite(site, metaClass, metaMethod, params, args);
         else
             return new MyPojoMetaMethodSite(site, metaClass, metaMethod, params);
     }
@@ -54,14 +54,14 @@ public class ObjectArrayGetAtMetaMethod extends ArrayGetAtMetaMethod {
             if (checkPojoMetaClass()) {
                 try {
                     final Object[] objects = (Object[]) receiver;
-                    return objects[normaliseIndex(((Integer) arg).intValue(), objects.length)];
+                    return objects[normaliseIndex((Integer) arg, objects.length)];
                 }
                 catch (ClassCastException e) {
                     if ((receiver instanceof Object[]) && (arg instanceof Integer))
-                      throw e;
+                        throw e;
                 }
             }
-            return super.call(receiver,arg);
+            return super.call(receiver, arg);
         }
     }
 }

@@ -160,7 +160,7 @@ public class ModuleNode extends ASTNode implements Opcodes {
     }
 
     public void addClass(ClassNode node) {
-    	if(classes.isEmpty()) mainClassName = node.getName();
+        if(classes.isEmpty()) mainClassName = node.getName();
         classes.add(node);
         node.setModule(this);
         addToCompileUnit(node);
@@ -240,8 +240,8 @@ public class ModuleNode extends ASTNode implements Opcodes {
 
     public ClassNode getScriptClassDummy() {
         if (scriptDummy!=null) {
-        	setScriptBaseClassFromConfig(scriptDummy);
-        	return scriptDummy;
+            setScriptBaseClassFromConfig(scriptDummy);
+            return scriptDummy;
         }
         
         String name = getPackageName();
@@ -270,13 +270,12 @@ public class ModuleNode extends ASTNode implements Opcodes {
     
     private void setScriptBaseClassFromConfig(ClassNode cn) {
         if (unit != null) {
-            String baseClassName = null;
-        	baseClassName = unit.getConfig().getScriptBaseClass();
-        	if(baseClassName != null) {
-            	if(!cn.getSuperClass().getName().equals(baseClassName)) {
-            		cn.setSuperClass(ClassHelper.make(baseClassName));
-            	}
-        	}
+            String baseClassName = unit.getConfig().getScriptBaseClass();
+            if(baseClassName != null) {
+                if(!cn.getSuperClass().getName().equals(baseClassName)) {
+                    cn.setSuperClass(ClassHelper.make(baseClassName));
+                }
+            }
         }
     }
     
@@ -311,14 +310,14 @@ public class ModuleNode extends ASTNode implements Opcodes {
         Statement stmt = new ExpressionStatement(
                         new MethodCallExpression(
                             new VariableExpression("super"),
-            				"setBinding",
-            				new ArgumentListExpression(
+                            "setBinding",
+                            new ArgumentListExpression(
                                         new VariableExpression("context"))));
 
         classNode.addConstructor(
             ACC_PUBLIC,
             new Parameter[] { new Parameter(ClassHelper.make(Binding.class), "context")},
-			ClassNode.EMPTY_ARRAY,
+            ClassNode.EMPTY_ARRAY,
             stmt);
 
         for (MethodNode node : methods) {
@@ -341,7 +340,7 @@ public class ModuleNode extends ASTNode implements Opcodes {
      * If a main method is provided by user, account for it under run() as scripts generate their own 'main' so they can run.  
      */
     private void handleMainMethodIfPresent(List methods) {
-    	boolean found = false;
+        boolean found = false;
         for (Iterator iter = methods.iterator(); iter.hasNext();) {
             MethodNode node = (MethodNode) iter.next();
             if(node.getName().equals("main")) {
@@ -355,11 +354,11 @@ public class ModuleNode extends ASTNode implements Opcodes {
                     retTypeMatches = (retType == ClassHelper.VOID_TYPE || retType == ClassHelper.OBJECT_TYPE);
                     
                     if(retTypeMatches && argTypeMatches) {
-                    	if(found) {
-                    		throw new RuntimeException("Repetitive main method found.");
-                    	} else {
-                    		found = true;
-                    	}
+                        if(found) {
+                            throw new RuntimeException("Repetitive main method found.");
+                        } else {
+                            found = true;
+                        }
                         // if script has both loose statements as well as main(), then main() is ignored
                         if(statementBlock.isEmpty()) {
                             addStatement(node.getCode());
@@ -397,22 +396,22 @@ public class ModuleNode extends ASTNode implements Opcodes {
     }
     
     public void sortClasses(){
-    	if (isEmpty()) return;
-    	List<ClassNode> classes = getClasses();
-    	LinkedList<ClassNode> sorted = new LinkedList<ClassNode>();
-    	int level=1;
-    	while (!classes.isEmpty()) {
-	    	for (Iterator<ClassNode> cni = classes.iterator(); cni.hasNext();) {
-				ClassNode cn = cni.next();
-				ClassNode sn = cn;
-				for (int i=0; sn!=null && i<level; i++) sn = sn.getSuperClass();
-				if (sn!=null && sn.isPrimaryClassNode()) continue;
-				cni.remove();
-				sorted.addLast(cn);
-			}
-	    	level++;
-    	}
-    	this.classes = sorted;
+        if (isEmpty()) return;
+        List<ClassNode> classes = getClasses();
+        LinkedList<ClassNode> sorted = new LinkedList<ClassNode>();
+        int level=1;
+        while (!classes.isEmpty()) {
+            for (Iterator<ClassNode> cni = classes.iterator(); cni.hasNext();) {
+                ClassNode cn = cni.next();
+                ClassNode sn = cn;
+                for (int i=0; sn!=null && i<level; i++) sn = sn.getSuperClass();
+                if (sn!=null && sn.isPrimaryClassNode()) continue;
+                cni.remove();
+                sorted.addLast(cn);
+            }
+            level++;
+        }
+        this.classes = sorted;
     }
 
     public boolean hasImportsResolved() {
@@ -504,6 +503,6 @@ public class ModuleNode extends ASTNode implements Opcodes {
     }
 
     public String getMainClassName() {
-    	return mainClassName;
+        return mainClassName;
     }
 }

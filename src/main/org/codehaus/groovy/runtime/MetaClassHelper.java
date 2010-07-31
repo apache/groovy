@@ -33,7 +33,6 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.logging.Level;
@@ -49,17 +48,17 @@ public class MetaClassHelper {
     public static final Class[] EMPTY_TYPE_ARRAY = {};
     public static final Object[] ARRAY_WITH_NULL = {null};
     protected static final Logger LOG = Logger.getLogger(MetaClassHelper.class.getName());
-    private static final int  MAX_ARG_LEN = 12;
-    private static final int  
-        OBJECT_SHIFT = 23,    INTERFACE_SHIFT = 0, 
-        PRIMITIVE_SHIFT = 21, VARGS_SHIFT=44; 
+    private static final int MAX_ARG_LEN = 12;
+    private static final int
+            OBJECT_SHIFT = 23, INTERFACE_SHIFT = 0,
+            PRIMITIVE_SHIFT = 21, VARGS_SHIFT = 44;
     /* dist binary layout:
-     * 0-20: interface
-     * 21-22: primitive dist
-     * 23-43: object dist
-     * 44-48: vargs penalty
-     */
-    
+    * 0-20: interface
+    * 21-22: primitive dist
+    * 23-43: object dist
+    * 44-48: vargs penalty
+    */
+
     public static final Class[] EMPTY_CLASS_ARRAY = new Class[0];
 
     public static boolean accessibleToConstructor(final Class at, final Constructor constructor) {
@@ -72,7 +71,7 @@ public class MetaClassHelper {
         } else if (Modifier.isProtected(modifiers)) {
             Boolean isAccessible = checkCompatiblePackages(at, constructor);
             if (isAccessible != null) {
-                accessible = isAccessible.booleanValue();
+                accessible = isAccessible;
             } else {
                 boolean flag = false;
                 Class clazz = at;
@@ -91,7 +90,7 @@ public class MetaClassHelper {
         } else {
             Boolean isAccessible = checkCompatiblePackages(at, constructor);
             if (isAccessible != null) {
-                accessible = isAccessible.booleanValue();
+                accessible = isAccessible;
             }
         }
         return accessible;
@@ -119,49 +118,49 @@ public class MetaClassHelper {
             boolean[] array = (boolean[]) parameters;
             ret = new Object[array.length];
             for (int i = 0; i < array.length; i++) {
-                ret[i] = new Boolean(array[i]);
+                ret[i] = array[i];
             }
         } else if (componentType == char.class) {
             char[] array = (char[]) parameters;
             ret = new Object[array.length];
             for (int i = 0; i < array.length; i++) {
-                ret[i] = new Character(array[i]);
+                ret[i] = array[i];
             }
         } else if (componentType == byte.class) {
             byte[] array = (byte[]) parameters;
             ret = new Object[array.length];
             for (int i = 0; i < array.length; i++) {
-                ret[i] = new Byte(array[i]);
+                ret[i] = array[i];
             }
         } else if (componentType == int.class) {
             int[] array = (int[]) parameters;
             ret = new Object[array.length];
             for (int i = 0; i < array.length; i++) {
-                ret[i] = Integer.valueOf(array[i]);
+                ret[i] = array[i];
             }
         } else if (componentType == short.class) {
             short[] array = (short[]) parameters;
             ret = new Object[array.length];
             for (int i = 0; i < array.length; i++) {
-                ret[i] = new Short(array[i]);
+                ret[i] = array[i];
             }
         } else if (componentType == long.class) {
             long[] array = (long[]) parameters;
             ret = new Object[array.length];
             for (int i = 0; i < array.length; i++) {
-                ret[i] = new Long(array[i]);
+                ret[i] = array[i];
             }
         } else if (componentType == double.class) {
             double[] array = (double[]) parameters;
             ret = new Object[array.length];
             for (int i = 0; i < array.length; i++) {
-                ret[i] = new Double(array[i]);
+                ret[i] = array[i];
             }
         } else if (componentType == float.class) {
             float[] array = (float[]) parameters;
             ret = new Object[array.length];
             for (int i = 0; i < array.length; i++) {
-                ret[i] = new Float(array[i]);
+                ret[i] = array[i];
             }
         }
 
@@ -181,21 +180,21 @@ public class MetaClassHelper {
             Object obj = list.get(i);
             if (arrayType.isPrimitive()) {
                 if (obj instanceof Integer) {
-                    Array.setInt(objArray, i, ((Integer) obj).intValue());
+                    Array.setInt(objArray, i, (Integer) obj);
                 } else if (obj instanceof Double) {
-                    Array.setDouble(objArray, i, ((Double) obj).doubleValue());
+                    Array.setDouble(objArray, i, (Double) obj);
                 } else if (obj instanceof Boolean) {
-                    Array.setBoolean(objArray, i, ((Boolean) obj).booleanValue());
+                    Array.setBoolean(objArray, i, (Boolean) obj);
                 } else if (obj instanceof Long) {
-                    Array.setLong(objArray, i, ((Long) obj).longValue());
+                    Array.setLong(objArray, i, (Long) obj);
                 } else if (obj instanceof Float) {
-                    Array.setFloat(objArray, i, ((Float) obj).floatValue());
+                    Array.setFloat(objArray, i, (Float) obj);
                 } else if (obj instanceof Character) {
-                    Array.setChar(objArray, i, ((Character) obj).charValue());
+                    Array.setChar(objArray, i, (Character) obj);
                 } else if (obj instanceof Byte) {
-                    Array.setByte(objArray, i, ((Byte) obj).byteValue());
+                    Array.setByte(objArray, i, (Byte) obj);
                 } else if (obj instanceof Short) {
-                    Array.setShort(objArray, i, ((Short) obj).shortValue());
+                    Array.setShort(objArray, i, (Short) obj);
                 }
             } else {
                 Array.set(objArray, i, obj);
@@ -227,7 +226,7 @@ public class MetaClassHelper {
             /*double*/{14, 15, 12, 13, 10, 11, 8, 9, 7, 5, 6, 0, 1, 2, 3, 4,},
             /*Double*/{14, 15, 12, 13, 10, 11, 8, 9, 7, 5, 6, 1, 0, 2, 3, 4,},
             /*BigDecimal*/{14, 15, 12, 13, 10, 11, 8, 9, 7, 5, 6, 3, 4, 0, 1, 2,},
-            /*Numer*/{14, 15, 12, 13, 10, 11, 8, 9, 7, 5, 6, 3, 4, 2, 0, 1,},
+            /*Number*/{14, 15, 12, 13, 10, 11, 8, 9, 7, 5, 6, 3, 4, 2, 0, 1,},
             /*Object*/{14, 15, 12, 13, 10, 11, 8, 9, 7, 5, 6, 3, 4, 2, 1, 0,},
     };
 
@@ -254,13 +253,13 @@ public class MetaClassHelper {
         if (c == interfaceClass) return 0;
         Class[] interfaces = c.getInterfaces();
         int max = -1;
-        for (int i = 0; i < interfaces.length; i++) {
-            int sub = getMaximumInterfaceDistance(interfaces[i], interfaceClass);
+        for (Class anInterface : interfaces) {
+            int sub = getMaximumInterfaceDistance(anInterface, interfaceClass);
             // we need to keep the -1 to track the mismatch, a +1
             // by any means could let it look like a direct match
             // we want to add one, because there is an interface between
             // the interface we search for and the interface we are in.
-            if (sub!=-1) sub++;
+            if (sub != -1) sub++;
             // we are interested in the longest path only
             max = Math.max(max, sub);
         }
@@ -279,7 +278,7 @@ public class MetaClassHelper {
         if (parameter.getTheClass() == argument) return 0;
 
         if (parameter.isInterface()) {
-            return getMaximumInterfaceDistance(argument, parameter.getTheClass())<<INTERFACE_SHIFT;
+            return getMaximumInterfaceDistance(argument, parameter.getTheClass()) << INTERFACE_SHIFT;
         }
 
         long objectDistance = 0;
@@ -317,12 +316,12 @@ public class MetaClassHelper {
     }
 
     public static long calculateParameterDistance(Class[] arguments, ParameterTypes pt) {
-        CachedClass [] parameters = pt.getParameterTypes();
+        CachedClass[] parameters = pt.getParameterTypes();
         if (parameters.length == 0) return 0;
 
-        long ret = 0;        
-        int noVargsLength = parameters.length-1;
-        
+        long ret = 0;
+        int noVargsLength = parameters.length - 1;
+
         // if the number of parameters does not match we have 
         // a vargs usage
         //
@@ -370,63 +369,63 @@ public class MetaClassHelper {
          * as less arguments for the vargs part as possible. That means the
          * longer signature usually wins if both signatures are vargs, while
          * vargs looses always against a signature without vargs.
-         * 
+         *
          *  A vs B :
          *      def foo(Object[] a) {1}     -> case B
          *      def foo(a,b,Object[] c) {2} -> case A
          *      assert foo(new Object(),new Object()) == 2
          *  --> A preferred over B
-         *  
+         *
          *  A vs C :
          *      def foo(Object[] a) {1}     -> case B
          *      def foo(a,b)        {2}     -> case C
          *      assert foo(new Object(),new Object()) == 2
          *  --> C preferred over A
-         *  
+         *
          *  A vs D :
          *      def foo(Object[] a) {1}     -> case D
          *      def foo(a,Object[] b) {2}   -> case A
          *      assert foo(new Object()) == 2
          *  --> A preferred over D
-         *  
+         *
          *  This gives C<A<B,D
-         *  
+         *
          *  B vs C :
          *      def foo(Object[] a) {1}     -> case B
          *      def foo(a,b) {2}            -> case C
          *      assert foo(new Object(),new Object()) == 2
          *  --> C preferred over B, matches C<A<B,D
-         *  
+         *
          *  B vs D :
          *      def foo(Object[] a)   {1}   -> case B
          *      def foo(a,Object[] b) {2}   -> case D
          *      assert foo(new Object(),new Object()) == 2
          *  --> D preferred over B
-         *  
+         *
          *  This gives C<A<D<B 
-         */              
-        
+         */
+
         // first we calculate all arguments, that are for sure not part
         // of vargs.  Since the minimum for arguments is noVargsLength
         // we can safely iterate to this point
         for (int i = 0; i < noVargsLength; i++) {
             ret += calculateParameterDistance(arguments[i], parameters[i]);
         }
-        
-        if (arguments.length==parameters.length) {
+
+        if (arguments.length == parameters.length) {
             // case C&D, we use baseType to calculate and set it
             // to the value we need according to case C and D
             CachedClass baseType = parameters[noVargsLength]; // case C
             if (!parameters[noVargsLength].isAssignableFrom(arguments[noVargsLength])) {
-                baseType= ReflectionCache.getCachedClass(baseType.getTheClass().getComponentType()); // case D
-                ret+=2l<<VARGS_SHIFT; // penalty for vargs
+                baseType = ReflectionCache.getCachedClass(baseType.getTheClass().getComponentType()); // case D
+                ret += 2l << VARGS_SHIFT; // penalty for vargs
             }
             ret += calculateParameterDistance(arguments[noVargsLength], baseType);
-        } else if (arguments.length>parameters.length) {
+        } else if (arguments.length > parameters.length) {
             // case B
             // we give our a vargs penalty for each exceeding argument and iterate
             // by using parameters[noVargsLength].getComponentType()
-            ret += (2l+arguments.length-parameters.length)<<VARGS_SHIFT; // penalty for vargs
+            ret += (2l + arguments.length - parameters.length) << VARGS_SHIFT; // penalty for vargs
             CachedClass vargsType = ReflectionCache.getCachedClass(parameters[noVargsLength].getTheClass().getComponentType());
             for (int i = noVargsLength; i < arguments.length; i++) {
                 ret += calculateParameterDistance(arguments[i], vargsType);
@@ -435,8 +434,8 @@ public class MetaClassHelper {
             // case A
             // we give a penalty for vargs, since we have no direct
             // match for the last argument
-            ret += 1l<<VARGS_SHIFT;
-        }  
+            ret += 1l << VARGS_SHIFT;
+        }
 
         return ret;
     }
@@ -446,17 +445,18 @@ public class MetaClassHelper {
      * We handle names that begin with an initial lowerCase followed by upperCase specially
      * (which is to make no change).
      * See GROOVY-3211.
+     *
      * @param property the property name to capitalize
      * @return the name capitalized, except when we don't
      */
     public static String capitalize(final String property) {
         final String rest = property.substring(1);
-        
+
         // Funky rule so that names like 'pNAME' will still work.
         if (Character.isLowerCase(property.charAt(0)) && (rest.length() > 0) && Character.isUpperCase(rest.charAt(0))) {
-           return property;
+            return property;
         }
-        
+
         return property.substring(0, 1).toUpperCase() + rest;
     }
 
@@ -516,7 +516,7 @@ public class MetaClassHelper {
                 } else if (closestClass.getTheClass() == theType.getTheClass()) {
                     if (closestVargsClass == null) continue;
                     CachedClass newVargsClass = paramTypes[1];
-                    if (closestVargsClass == null || isAssignableFrom(newVargsClass.getTheClass(), closestVargsClass.getTheClass())) {
+                    if (isAssignableFrom(newVargsClass.getTheClass(), closestVargsClass.getTheClass())) {
                         closestVargsClass = newVargsClass;
                         answer = method;
                     }
@@ -549,6 +549,7 @@ public class MetaClassHelper {
     }
 
     // 
+
     private static int calculateSimplifiedClassDistanceToObject(Class clazz) {
         int objectDistance = 0;
         while (clazz != null) {
@@ -566,8 +567,8 @@ public class MetaClassHelper {
      *         list
      */
     public static boolean containsMatchingMethod(List list, MetaMethod method) {
-        for (Iterator iter = list.iterator(); iter.hasNext();) {
-            MetaMethod aMethod = (MetaMethod) iter.next();
+        for (Object aList : list) {
+            MetaMethod aMethod = (MetaMethod) aList;
             CachedClass[] params1 = aMethod.getParameterTypes();
             CachedClass[] params2 = method.getParameterTypes();
             if (params1.length == params2.length) {
@@ -611,7 +612,7 @@ public class MetaClassHelper {
     }
 
     public static Object makeCommonArray(Object[] arguments, int offset, Class fallback) {
-        // arguments.leght>0 && !=null
+        // arguments.length>0 && !=null
         Class baseClass = null;
         for (int i = offset; i < arguments.length; i++) {
             if (arguments[i] == null) continue;
@@ -632,25 +633,25 @@ public class MetaClassHelper {
          * If no specific super class has been found and type fallback is an interface, check if all arg classes 
          * implement it. If yes, then that interface is the common type across arguments.
          */
-        if(baseClass == Object.class && fallback.isInterface()) {
-        	int tmpCount = 0;
-        	for (int i = offset; i < arguments.length; i++) {
-        		if(arguments[i] != null) {
+        if (baseClass == Object.class && fallback.isInterface()) {
+            int tmpCount = 0;
+            for (int i = offset; i < arguments.length; i++) {
+                if (arguments[i] != null) {
                     Class argClass, tmpClass;
-        		    Set<Class> intfs = new HashSet<Class>();
+                    Set<Class> intfs = new HashSet<Class>();
                     tmpClass = argClass = arguments[i].getClass();
                     for (; tmpClass != Object.class; tmpClass = tmpClass.getSuperclass()) {
                         intfs.addAll(Arrays.asList(tmpClass.getInterfaces()));
                     }
-    				if(intfs.contains(fallback)) {
-    					tmpCount++;
-    				}
-        		}
-        	}
-        	// all arg classes implement interface fallback, so use that as the array component type
-        	if(tmpCount == arguments.length - offset) {
-        		baseClass = fallback;
-        	}
+                    if (intfs.contains(fallback)) {
+                        tmpCount++;
+                    }
+                }
+            }
+            // all arg classes implement interface fallback, so use that as the array component type
+            if (tmpCount == arguments.length - offset) {
+                baseClass = fallback;
+            }
         }
         Object result = makeArray(null, baseClass, arguments.length - offset);
         System.arraycopy(arguments, offset, result, 0, arguments.length - offset);
@@ -691,7 +692,7 @@ public class MetaClassHelper {
      * The object acts like a Closure in that it can be called, like a closure
      * and passed around - though really its a method pointer, not a closure per se.
      *
-     * @param object the object containing the method
+     * @param object     the object containing the method
      * @param methodName the method of interest
      * @return the resulting closure-like method pointer
      */
@@ -781,7 +782,7 @@ public class MetaClassHelper {
         }
         return false;
     }
-    
+
     public static boolean parametersAreCompatible(Class[] arguments, Class[] parameters) {
         if (arguments.length != parameters.length) return false;
         for (int i = 0; i < arguments.length; i++) {
@@ -861,17 +862,17 @@ public class MetaClassHelper {
 
     public static boolean sameClasses(Class[] params, Object[] arguments, boolean weakNullCheck) {
         if (params.length != arguments.length)
-          return false;
+            return false;
 
-        for (int i = params.length-1; i >= 0; i--) {
+        for (int i = params.length - 1; i >= 0; i--) {
             Object arg = arguments[i];
             if (arg == null) {
                 if (!weakNullCheck)
-                  return false;
+                    return false;
             } else {
                 if (params[i] != arg.getClass()
-                     &&(!(arg instanceof Wrapper) || params[i] != ((Wrapper)arg).getType()))
-                      return false;
+                        && (!(arg instanceof Wrapper) || params[i] != ((Wrapper) arg).getType()))
+                    return false;
             }
         }
 
@@ -880,17 +881,16 @@ public class MetaClassHelper {
 
     public static boolean sameClasses(Class[] params, Object[] arguments) {
         if (params.length != arguments.length)
-          return false;
+            return false;
 
-        for (int i = params.length-1; i >= 0; i--) {
+        for (int i = params.length - 1; i >= 0; i--) {
             Object arg = arguments[i];
             if (arg == null) {
-               if (params [i] != null)
-                 return false;
-            }
-            else {
-               if(params[i] != arg.getClass() && !(arg instanceof Wrapper && params[i] == ((Wrapper)arg).getType()))
-                 return false;
+                if (params[i] != null)
+                    return false;
+            } else {
+                if (params[i] != arg.getClass() && !(arg instanceof Wrapper && params[i] == ((Wrapper) arg).getType()))
+                    return false;
             }
         }
 
@@ -899,95 +899,95 @@ public class MetaClassHelper {
 
     public static boolean sameClasses(Class[] params) {
         if (params.length != 0)
-          return false;
+            return false;
 
         return true;
     }
 
     public static boolean sameClasses(Class[] params, Object arg1) {
         if (params.length != 1)
-          return false;
+            return false;
 
         if (arg1 == null
                 || (params[0] != arg1.getClass()
-                   &&(    !(arg1 instanceof Wrapper)
-                       || params[0] != ((Wrapper) arg1).getType())))
-          return false;
+                && (!(arg1 instanceof Wrapper)
+                || params[0] != ((Wrapper) arg1).getType())))
+            return false;
 
         return true;
     }
 
     public static boolean sameClasses(Class[] params, Object arg1, Object arg2) {
         if (params.length != 2)
-          return false;
+            return false;
 
         if (arg1 == null
                 || (params[0] != arg1.getClass()
-                   &&(    !(arg1 instanceof Wrapper)
-                       || params[0] != ((Wrapper)arg1).getType())))
-          return false;
+                && (!(arg1 instanceof Wrapper)
+                || params[0] != ((Wrapper) arg1).getType())))
+            return false;
 
         if (arg2 == null
                 || (params[1] != arg2.getClass()
-                   &&(    !(arg2 instanceof Wrapper)
-                       || params[1] != ((Wrapper)arg2).getType())))
-          return false;
+                && (!(arg2 instanceof Wrapper)
+                || params[1] != ((Wrapper) arg2).getType())))
+            return false;
 
         return true;
     }
 
     public static boolean sameClasses(Class[] params, Object arg1, Object arg2, Object arg3) {
         if (params.length != 3)
-          return false;
+            return false;
 
         if (arg1 == null
                 || (params[0] != arg1.getClass()
-                   &&(    !(arg1 instanceof Wrapper)
-                       || params[0] != ((Wrapper)arg1).getType())))
-          return false;
+                && (!(arg1 instanceof Wrapper)
+                || params[0] != ((Wrapper) arg1).getType())))
+            return false;
 
         if (arg2 == null
                 || (params[1] != arg2.getClass()
-                   &&(    !(arg2 instanceof Wrapper)
-                       || params[1] != ((Wrapper)arg2).getType())))
-          return false;
+                && (!(arg2 instanceof Wrapper)
+                || params[1] != ((Wrapper) arg2).getType())))
+            return false;
 
         if (arg3 == null
                 || (params[2] != arg3.getClass()
-                   &&(    !(arg3 instanceof Wrapper)
-                       || params[2] != ((Wrapper)arg3).getType())))
-          return false;
+                && (!(arg3 instanceof Wrapper)
+                || params[2] != ((Wrapper) arg3).getType())))
+            return false;
 
         return true;
     }
 
     public static boolean sameClasses(Class[] params, Object arg1, Object arg2, Object arg3, Object arg4) {
         if (params.length != 4)
-          return false;
+            return false;
 
         if (arg1 == null
                 || (params[0] != arg1.getClass()
-                   &&(    !(arg1 instanceof Wrapper)
-                       || params[0] != ((Wrapper)arg1).getType())))
-          return false;
+                && (!(arg1 instanceof Wrapper)
+                || params[0] != ((Wrapper) arg1).getType())))
+            return false;
 
         if (arg2 == null
                 || (params[1] != arg2.getClass()
-                   &&(    !(arg2 instanceof Wrapper)
-                       || params[1] != ((Wrapper)arg2).getType())))
-          return false;
+                && (!(arg2 instanceof Wrapper)
+                || params[1] != ((Wrapper) arg2).getType())))
+            return false;
 
         if (arg3 == null
                 || (params[2] != arg3.getClass()
-                   &&(    !(arg3 instanceof Wrapper)
-                       || params[2] != ((Wrapper)arg3).getType())))
-          return false;
+                && (!(arg3 instanceof Wrapper)
+                || params[2] != ((Wrapper) arg3).getType())))
+            return false;
 
         if (arg4 == null
                 || (params[3] != arg4.getClass()
-                   &&(    !(arg4 instanceof Wrapper)
-                       || params[3] != ((Wrapper)arg4).getType())))
-          return false;
+                && (!(arg4 instanceof Wrapper)
+                || params[3] != ((Wrapper) arg4).getType())))
+            return false;
 
         return true;
     }

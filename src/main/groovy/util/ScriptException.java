@@ -21,33 +21,33 @@ package groovy.util;
  */
 public class ScriptException extends Exception {
 
-	/**
-	 * 
-	 */
-	public ScriptException() {
-		super();
-	}
+    /**
+     *
+     */
+    public ScriptException() {
+        super();
+    }
 
-	/**
-	 * @param message
-	 */
-	public ScriptException(String message) {
-		super(message);
-	}
+    /**
+     * @param message
+     */
+    public ScriptException(String message) {
+        super(message);
+    }
 
-	/**
-	 * @param message
-	 * @param cause
-	 */
-	public ScriptException(String message, Throwable cause) {
-		super(message, cause);
-	}
+    /**
+     * @param message
+     * @param cause
+     */
+    public ScriptException(String message, Throwable cause) {
+        super(message, cause);
+    }
 
-	/**
-	 * @param cause
-	 */
-	public ScriptException(Throwable cause) {
-		super(cause);
-	}
+    /**
+     * @param cause
+     */
+    public ScriptException(Throwable cause) {
+        super(cause);
+    }
 
 }

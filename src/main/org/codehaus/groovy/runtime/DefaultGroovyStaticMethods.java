@@ -23,6 +23,7 @@ import java.util.Date;
 import java.util.ResourceBundle;
 import java.util.Locale;
 import java.util.regex.Matcher;
+
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import org.codehaus.groovy.reflection.ReflectionUtils;
 
@@ -160,24 +161,24 @@ public class DefaultGroovyStaticMethods {
     public static void sleep(Object self, long milliseconds, Closure onInterrupt) {
         sleepImpl(milliseconds, onInterrupt);
     }
-    
+
     /**
      * Parse a String into a Date instance using the given pattern.
-     * This convenience method acts as a wrapper for {@link java.text.SimpleDateFormat}.  
-     * 
-     * <p>Note that a new SimpleDateFormat instance is created for every 
+     * This convenience method acts as a wrapper for {@link java.text.SimpleDateFormat}.
+     * <p/>
+     * <p>Note that a new SimpleDateFormat instance is created for every
      * invocation of this method (for thread safety).</p>
-     * 
-     * @see java.text.SimpleDateFormat#parse(java.lang.String)
-     * @param self         placeholder variable used by Groovy categories; ignored for default static methods
-     * @param format       pattern used to parse the input string.
-     * @param input        String to be parsed to create the date instance
-     * @return             a new Date instance representing the parsed input string 
+     *
+     * @param self   placeholder variable used by Groovy categories; ignored for default static methods
+     * @param format pattern used to parse the input string.
+     * @param input  String to be parsed to create the date instance
+     * @return a new Date instance representing the parsed input string
      * @throws ParseException if there is a parse error
+     * @see java.text.SimpleDateFormat#parse(java.lang.String)
      * @since 1.5.7
      */
-    public static Date parse( Date self, String format, String input ) throws ParseException {
-    	return new SimpleDateFormat( format ).parse( input );
+    public static Date parse(Date self, String format, String input) throws ParseException {
+        return new SimpleDateFormat(format).parse(input);
     }
 
     /**
@@ -185,14 +186,14 @@ public class DefaultGroovyStaticMethods {
      * because the java method depends on a particular stack configuration that
      * is not guaranteed in Groovy when calling the Java method.
      *
-     * @see java.util.ResourceBundle#getBundle(java.lang.String)
-     * @param self         placeholder variable used by Groovy categories; ignored for default static methods
-     * @param bundleName   the name of the bundle.
+     * @param self       placeholder variable used by Groovy categories; ignored for default static methods
+     * @param bundleName the name of the bundle.
      * @return the resource bundle
+     * @see java.util.ResourceBundle#getBundle(java.lang.String)
      * @since 1.6.0
      */
     public static ResourceBundle getBundle(ResourceBundle self, String bundleName) {
-        return getBundle(self,bundleName,Locale.getDefault());
+        return getBundle(self, bundleName, Locale.getDefault());
     }
 
     /**
@@ -200,17 +201,17 @@ public class DefaultGroovyStaticMethods {
      * because the java method depends on a particular stack configuration that
      * is not guaranteed in Groovy when calling the Java method.
      *
-     * @see java.util.ResourceBundle#getBundle(java.lang.String, java.util.Locale)
-     * @param self         placeholder variable used by Groovy categories; ignored for default static methods
-     * @param bundleName   the name of the bundle.
-     * @param locale       the specific locale
+     * @param self       placeholder variable used by Groovy categories; ignored for default static methods
+     * @param bundleName the name of the bundle.
+     * @param locale     the specific locale
      * @return the resource bundle
+     * @see java.util.ResourceBundle#getBundle(java.lang.String, java.util.Locale)
      * @since 1.6.0
      */
     public static ResourceBundle getBundle(ResourceBundle self, String bundleName, Locale locale) {
         ClassLoader targetCL = ReflectionUtils.getCallingClass().getClassLoader();
         if (targetCL == null) targetCL = ClassLoader.getSystemClassLoader();
-        return ResourceBundle.getBundle(bundleName, locale, targetCL);        
+        return ResourceBundle.getBundle(bundleName, locale, targetCL);
     }
 
 }

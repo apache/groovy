@@ -25,7 +25,7 @@ import java.util.Map;
 
 public class ConstructorSite extends MetaClassSite {
     final CachedConstructor constructor;
-    final Class [] params;
+    final Class[] params;
     private final int version;
 
     public ConstructorSite(CallSite site, MetaClassImpl metaClass, CachedConstructor constructor, Class params[]) {
@@ -36,29 +36,27 @@ public class ConstructorSite extends MetaClassSite {
     }
 
     public Object callConstructor(Object receiver, Object[] args) throws Throwable {
-        if (checkCall(receiver, args)) 
-        {   
+        if (checkCall(receiver, args)) {
             MetaClassHelper.unwrap(args);
             try {
                 return constructor.doConstructorInvoke(args);
             } catch (GroovyRuntimeException gre) {
                 throw ScriptBytecodeAdapter.unwrap(gre);
             }
-        }
-        else
-          return CallSiteArray.defaultCallConstructor(this, receiver, args);
+        } else
+            return CallSiteArray.defaultCallConstructor(this, receiver, args);
     }
 
     protected final boolean checkCall(Object receiver, Object[] args) {
-    	return receiver == metaClass.getTheClass() // meta class match receiver
-            && ((MetaClassImpl)metaClass).getVersion() == version // metaClass still be valid
-            && MetaClassHelper.sameClasses(params, args);
+        return receiver == metaClass.getTheClass() // meta class match receiver
+                && ((MetaClassImpl) metaClass).getVersion() == version // metaClass still be valid
+                && MetaClassHelper.sameClasses(params, args);
     }
 
     public static ConstructorSite createConstructorSite(CallSite site, MetaClassImpl metaClass, CachedConstructor constructor, Class[] params, Object[] args) {
         if (constructor.correctArguments(args) == args) {
             if (noWrappers(args)) {
-                if (noCoerce(constructor,args))
+                if (noCoerce(constructor, args))
                     return new ConstructorSiteNoUnwrap(site, metaClass, constructor, params);
                 else
                     return new ConstructorSiteNoUnwrapNoCoerce(site, metaClass, constructor, params);
@@ -78,16 +76,14 @@ public class ConstructorSite extends MetaClassSite {
         }
 
         public final Object callConstructor(Object receiver, Object[] args) throws Throwable {
-            if (checkCall(receiver, args)) 
-            {
+            if (checkCall(receiver, args)) {
                 try {
                     return constructor.doConstructorInvoke(args);
                 } catch (GroovyRuntimeException gre) {
                     throw ScriptBytecodeAdapter.unwrap(gre);
                 }
-            }
-            else
-              return CallSiteArray.defaultCallConstructor(this, receiver, args);
+            } else
+                return CallSiteArray.defaultCallConstructor(this, receiver, args);
         }
     }
 
@@ -101,16 +97,14 @@ public class ConstructorSite extends MetaClassSite {
         }
 
         public Object callConstructor(Object receiver, Object[] args) throws Throwable {
-            if (checkCall(receiver, args)) 
-            {
+            if (checkCall(receiver, args)) {
                 try {
                     return constructor.invoke(args);
                 } catch (GroovyRuntimeException gre) {
                     throw ScriptBytecodeAdapter.unwrap(gre);
                 }
-            }
-            else
-              return CallSiteArray.defaultCallConstructor(this, receiver, args);
+            } else
+                return CallSiteArray.defaultCallConstructor(this, receiver, args);
         }
     }
 
@@ -122,18 +116,16 @@ public class ConstructorSite extends MetaClassSite {
         }
 
         public final Object callConstructor(Object receiver, Object[] args) throws Throwable {
-            if (checkCall(receiver, args)) 
-            {
+            if (checkCall(receiver, args)) {
                 final Object bean = constructor.invoke(NO_ARGS);
                 try {
-                    ((MetaClassImpl)metaClass).setProperties(bean, (Map) args[0]);
+                    ((MetaClassImpl) metaClass).setProperties(bean, (Map) args[0]);
                 } catch (GroovyRuntimeException gre) {
                     throw ScriptBytecodeAdapter.unwrap(gre);
                 }
                 return bean;
-            }
-            else
-              return CallSiteArray.defaultCallConstructor(this, receiver, args);
+            } else
+                return CallSiteArray.defaultCallConstructor(this, receiver, args);
         }
     }
 }

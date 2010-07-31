@@ -13092,7 +13092,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             closeWithWarning(is);
         }
     }
-	
+
     /**
      * Reads the InputStream from this URL, passing each byte to the given
      * closure.  The URL stream will be closed before this method returns.

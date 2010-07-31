@@ -20,45 +20,44 @@ import groovy.lang.GString;
 
 /**
  * Default implementation of a GString used by the compiler. A GString
- * consist of a list of values and strings which can be combined to 
+ * consist of a list of values and strings which can be combined to
  * create a new String.
- * 
- * @see groovy.lang.GString
- *  
+ *
  * @author Jochen Theodorou
+ * @see groovy.lang.GString
  */
 public class GStringImpl extends GString {
-  private String[] strings;
-	
-   /**
-    * Create a new GString with values and strings.
-    * <p>
-    * Each value is prefixed by a string, after the last value 
-    * an additional String might be used. This means 
-    * <code>strings.length==values.length  || strings.length==values.length+1</code>.
-    * </p><p>
-    * <b>NOTE:</b> The lengths are <b>not</b> checked. Using different lengths might result 
-    * in unpredictable behaviour.
-    * </p>
-    *   
-    * @param values the value parts
-    * @param strings the string parts
-    */
-	public GStringImpl(Object[] values, String[] strings) {
-		super(values);
-		this.strings = strings;
-	}
-	
-	/**
-	 * Get the strings of this GString.
-	 * <p>
-	 * This methods returns the same array as used in the constructor. Changing
-	 * the values will result in changes of the GString. It is not recommended 
-	 * to do so.
-	 * </p>
-	 */
-	public String[] getStrings() {
-		return strings;
-	}
-	
+    private String[] strings;
+
+    /**
+     * Create a new GString with values and strings.
+     * <p>
+     * Each value is prefixed by a string, after the last value
+     * an additional String might be used. This means
+     * <code>strings.length == values.length  ||  strings.length == values.length + 1</code>.
+     * </p><p>
+     * <b>NOTE:</b> The lengths are <b>not</b> checked. Using different lengths might result
+     * in unpredictable behaviour.
+     * </p>
+     *
+     * @param values  the value parts
+     * @param strings the string parts
+     */
+    public GStringImpl(Object[] values, String[] strings) {
+        super(values);
+        this.strings = strings;
+    }
+
+    /**
+     * Get the strings of this GString.
+     * <p>
+     * This methods returns the same array as used in the constructor. Changing
+     * the values will result in changes of the GString. It is not recommended
+     * to do so.
+     * </p>
+     */
+    public String[] getStrings() {
+        return strings;
+    }
+
 }

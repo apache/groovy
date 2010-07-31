@@ -25,82 +25,82 @@ import java.nio.charset.Charset;
 import java.nio.charset.CharsetEncoder;
 
 public class StreamingMarkupWriter extends Writer {
-	protected final Writer writer;
-  protected final String encoding;
-  protected boolean encodingKnown;
-  protected final CharsetEncoder encoder;
-  protected boolean writingAttribute = false;
-  protected boolean haveHighSurrogate = false;
-  protected StringBuffer surrogatePair = new StringBuffer(2);
-	private final Writer escapedWriter =  new Writer() {
-											/* (non-Javadoc)
-											 * @see java.io.Writer#close()
-											 */
-											public void close() throws IOException {
-												StreamingMarkupWriter.this.close();
-											}
-											
-											/* (non-Javadoc)
-											 * @see java.io.Writer#flush()
-											 */
-											public void flush() throws IOException {
-												StreamingMarkupWriter.this.flush();
-											}
-		
-											/* (non-Javadoc)
-											 * @see java.io.Writer#write(int)
-											 */
-											public void write(final int c) throws IOException {
-												if (c == '<') {
-													StreamingMarkupWriter.this.writer.write("&lt;");
-												} else if (c == '>') {
-													StreamingMarkupWriter.this.writer.write("&gt;");
-                                                   } else if (c == '&') {
-                                                       StreamingMarkupWriter.this.writer.write("&amp;");
-                                                   } else {
-													StreamingMarkupWriter.this.write(c);
-												}
-											}
-											
-											/* (non-Javadoc)
-											 * @see java.io.Writer#write(char[], int, int)
-											 */
-											public void write(final char[] cbuf, int off, int len) throws IOException {
-												while (len-- > 0){
-													write(cbuf[off++]);
-												}
-											}
-                                            
-                                               public void setWritingAttribute(final boolean writingAttribute) {
-                                                   StreamingMarkupWriter.this.writingAttribute = writingAttribute;
-                                               }
-											
-											public Writer excaped() {
-												return escapedWriter;
-											}
-											
-											public Writer unescaped() {
-												return StreamingMarkupWriter.this;
-											}
-										};
+    protected final Writer writer;
+    protected final String encoding;
+    protected boolean encodingKnown;
+    protected final CharsetEncoder encoder;
+    protected boolean writingAttribute = false;
+    protected boolean haveHighSurrogate = false;
+    protected StringBuffer surrogatePair = new StringBuffer(2);
+    private final Writer escapedWriter = new Writer() {
+        /* (non-Javadoc)
+        * @see java.io.Writer#close()
+        */
+        public void close() throws IOException {
+            StreamingMarkupWriter.this.close();
+        }
+
+        /* (non-Javadoc)
+        * @see java.io.Writer#flush()
+        */
+        public void flush() throws IOException {
+            StreamingMarkupWriter.this.flush();
+        }
+
+        /* (non-Javadoc)
+        * @see java.io.Writer#write(int)
+        */
+        public void write(final int c) throws IOException {
+            if (c == '<') {
+                StreamingMarkupWriter.this.writer.write("&lt;");
+            } else if (c == '>') {
+                StreamingMarkupWriter.this.writer.write("&gt;");
+            } else if (c == '&') {
+                StreamingMarkupWriter.this.writer.write("&amp;");
+            } else {
+                StreamingMarkupWriter.this.write(c);
+            }
+        }
+
+        /* (non-Javadoc)
+        * @see java.io.Writer#write(char[], int, int)
+        */
+        public void write(final char[] cbuf, int off, int len) throws IOException {
+            while (len-- > 0) {
+                write(cbuf[off++]);
+            }
+        }
+
+        public void setWritingAttribute(final boolean writingAttribute) {
+            StreamingMarkupWriter.this.writingAttribute = writingAttribute;
+        }
+
+        public Writer excaped() {
+            return escapedWriter;
+        }
+
+        public Writer unescaped() {
+            return StreamingMarkupWriter.this;
+        }
+    };
 
     public StreamingMarkupWriter(final Writer writer, final String encoding) {
         this.writer = writer;
-        
+
         if (encoding != null) {
             this.encoding = encoding;
             this.encodingKnown = true;
         } else if (writer instanceof OutputStreamWriter) {
-            this.encoding = getNormalizedEncoding(((OutputStreamWriter)writer).getEncoding());
+            this.encoding = getNormalizedEncoding(((OutputStreamWriter) writer).getEncoding());
             this.encodingKnown = true;
         } else if (writer instanceof EncodingAwareBufferedWriter) {
-            this.encoding = getNormalizedEncoding(((EncodingAwareBufferedWriter)writer).getEncoding());
+            this.encoding = getNormalizedEncoding(((EncodingAwareBufferedWriter) writer).getEncoding());
             this.encodingKnown = true;
         } else {
             this.encoding = "US-ASCII";
             this.encodingKnown = false;
         }
-        
+
         this.encoder = Charset.forName(this.encoding).newEncoder();
     }
 
@@ -111,29 +111,29 @@ public class StreamingMarkupWriter extends Writer {
     public StreamingMarkupWriter(final Writer writer) {
         this(writer, null);
     }
-    
+
     /* (non-Javadoc)
-     * @see java.io.Writer#close()
-     */
+    * @see java.io.Writer#close()
+    */
     public void close() throws IOException {
         this.writer.close();
     }
-    
+
     /* (non-Javadoc)
-     * @see java.io.Writer#flush()
-     */
+    * @see java.io.Writer#flush()
+    */
     public void flush() throws IOException {
         this.writer.flush();
     }
-    
+
     /* (non-Javadoc)
-     * @see java.io.Writer#write(int)
-     */
+    * @see java.io.Writer#write(int)
+    */
     public void write(final int c) throws IOException {
         if (c >= 0XDC00 && c <= 0XDFFF) {
             // Low surrogate
-            this.surrogatePair.append((char)c);
-            
+            this.surrogatePair.append((char) c);
+
             if (this.encoder.canEncode(this.surrogatePair)) {
                 this.writer.write(this.surrogatePair.toString());
             } else {
@@ -141,7 +141,7 @@ public class StreamingMarkupWriter extends Writer {
                 this.writer.write(Integer.toHexString(0X10000 + ((this.surrogatePair.charAt(0) & 0X3FF) << 10) + (c & 0X3FF)));
                 this.writer.write(';');
             }
-            
+
             this.haveHighSurrogate = false;
             this.surrogatePair.setLength(0);
         } else {
@@ -150,13 +150,13 @@ public class StreamingMarkupWriter extends Writer {
                 this.surrogatePair.setLength(0);
                 throw new IOException("High Surrogate not followed by Low Surrogate");
             }
-            
+
             if (c >= 0XD800 && c <= 0XDBFF) {
                 // High surrogate
-                this.surrogatePair.append((char)c);
+                this.surrogatePair.append((char) c);
                 this.haveHighSurrogate = true;
-            
-            } else if (!this.encoder.canEncode((char)c)) {
+
+            } else if (!this.encoder.canEncode((char) c)) {
                 this.writer.write("&#x");
                 this.writer.write(Integer.toHexString(c));
                 this.writer.write(';');
@@ -167,33 +167,33 @@ public class StreamingMarkupWriter extends Writer {
             }
         }
     }
-    
+
     /* (non-Javadoc)
-     * @see java.io.Writer#write(char[], int, int)
-     */
+    * @see java.io.Writer#write(char[], int, int)
+    */
     public void write(final char[] cbuf, int off, int len) throws IOException {
-        while (len-- > 0){
+        while (len-- > 0) {
             write(cbuf[off++]);
         }
     }
-    
+
     public void setWritingAttribute(final boolean writingAttribute) {
         this.writingAttribute = writingAttribute;
     }
-    
+
     public Writer escaped() {
         return this.escapedWriter;
     }
-    
+
     public Writer unescaped() {
         return this;
     }
-    
+
     public String getEncoding() {
         return this.encoding;
     }
-    
+
     public boolean getEncodingKnown() {
-      return this.encodingKnown;
+        return this.encodingKnown;
     }
 }

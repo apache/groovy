@@ -59,12 +59,14 @@ import org.codehaus.groovy.tools.gse.StringSetMap;
  */
 public class GroovyScriptEngine implements ResourceConnector {
 
-    private static final ClassLoader CL_STUB = new ClassLoader(){};
-    
+    private static final ClassLoader CL_STUB = new ClassLoader() {
+    };
+
     private static WeakReference<ThreadLocal<StringSetMap>> dependencyCache = new WeakReference<ThreadLocal<StringSetMap>>(null);
+
     private static synchronized ThreadLocal<StringSetMap> getDepCache() {
         ThreadLocal<StringSetMap> local = dependencyCache.get();
-        if (local!=null) return local;
+        if (local != null) return local;
         local = new ThreadLocal<StringSetMap>() {
             @Override
             protected StringSetMap initialValue() {
@@ -74,11 +76,12 @@ public class GroovyScriptEngine implements ResourceConnector {
         dependencyCache = new WeakReference<ThreadLocal<StringSetMap>>(local);
         return local;
     }
-    
+
     private static WeakReference<ThreadLocal<CompilationUnit>> localCu = new WeakReference<ThreadLocal<CompilationUnit>>(null);
+
     private static synchronized ThreadLocal<CompilationUnit> getLocalCompilationUnit() {
         ThreadLocal<CompilationUnit> local = localCu.get();
-        if (local!=null) return local;
+        if (local != null) return local;
         local = new ThreadLocal<CompilationUnit>();
         localCu = new WeakReference<ThreadLocal<CompilationUnit>>(local);
         return local;
@@ -92,11 +95,12 @@ public class GroovyScriptEngine implements ResourceConnector {
     private CompilerConfiguration config = new CompilerConfiguration(CompilerConfiguration.DEFAULT);
 
     //TODO: more finals?
+
     private static class ScriptCacheEntry {
         private final Class scriptClass;
         private final long lastModified;
         private final Set<String> dependencies;
-        
+
         public ScriptCacheEntry(Class clazz, long modified, Set<String> depend) {
             this.scriptClass = clazz;
             this.lastModified = modified;
@@ -104,23 +108,23 @@ public class GroovyScriptEngine implements ResourceConnector {
         }
     }
 
-   private class ScriptClassLoader extends GroovyClassLoader {
-       public ScriptClassLoader(GroovyClassLoader loader) {
-           super(loader);
-           setResLoader();
-       }
-       
-       public ScriptClassLoader(ClassLoader loader) {
-           super(loader);
-           setResLoader();
-       }
-       
-       private void setResLoader(){
+    private class ScriptClassLoader extends GroovyClassLoader {
+        public ScriptClassLoader(GroovyClassLoader loader) {
+            super(loader);
+            setResLoader();
+        }
+
+        public ScriptClassLoader(ClassLoader loader) {
+            super(loader);
+            setResLoader();
+        }
+
+        private void setResLoader() {
             final GroovyResourceLoader rl = getResourceLoader();
-            setResourceLoader(new GroovyResourceLoader(){
+            setResourceLoader(new GroovyResourceLoader() {
                 public URL loadGroovySource(String className) throws MalformedURLException {
-                    String filename =   className.replace('.', File.separatorChar) + 
-                                        config.getDefaultScriptExtension();
+                    String filename = className.replace('.', File.separatorChar) +
+                            config.getDefaultScriptExtension();
                     try {
                         URLConnection dependentScriptConn = rc.getResourceConnection(filename);
                         return dependentScriptConn.getURL();
@@ -130,83 +134,82 @@ public class GroovyScriptEngine implements ResourceConnector {
                     return rl.loadGroovySource(className);
                 }
             });
-       }
-       
+        }
+
         @Override
         protected CompilationUnit createCompilationUnit(CompilerConfiguration config, CodeSource source) {
             CompilationUnit cu = super.createCompilationUnit(config, source);
             getLocalCompilationUnit().set(cu);
             final StringSetMap cache = getDepCache().get();
-            
+
             // "." is used to transfer compilation dependencies, which will be
             // recollected later during compilation
             for (String depSourcePath : cache.get(".")) {
                 try {
                     cu.addSource(getResourceConnection(depSourcePath).getURL());
-                } catch (ResourceException e) {}
+                } catch (ResourceException e) {
+                }
             }
-            
+
             // remove all old entries including the "." entry
             cache.clear();
             cu.addPhaseOperation(new CompilationUnit.PrimaryClassNodeOperation() {
                 @Override
-                public void call(final SourceUnit source, GeneratorContext context, ClassNode classNode) 
-                    throws CompilationFailedException 
-                {   
-                	// GROOVY-4013: If it is an inner class, tracking its dependencies doesn't really
-                	// serve any purpose and also interferes with the caching done to track dependencies
-                	if(classNode instanceof InnerClassNode) return;
-                    DependencyTracker dt = new DependencyTracker(source,cache);
+                public void call(final SourceUnit source, GeneratorContext context, ClassNode classNode)
+                        throws CompilationFailedException {
+                    // GROOVY-4013: If it is an inner class, tracking its dependencies doesn't really
+                    // serve any purpose and also interferes with the caching done to track dependencies
+                    if (classNode instanceof InnerClassNode) return;
+                    DependencyTracker dt = new DependencyTracker(source, cache);
                     dt.visitClass(classNode);
                 }
             }, Phases.CLASS_GENERATION);
             return cu;
         }
-        
+
         @Override
         public Class parseClass(GroovyCodeSource codeSource, boolean shouldCacheSource) throws CompilationFailedException {
             // local is kept as hard reference to avoid garbage collection
             ThreadLocal<CompilationUnit> localCu = getLocalCompilationUnit();
             ThreadLocal<StringSetMap> localCache = getDepCache();
-            
+
             // we put the old dependencies into local cache so createCompilationUnit 
             // can pick it up. We put that entry under the name "."
             ScriptCacheEntry origEntry = scriptCache.get(codeSource.getName());
             Set<String> origDep = null;
             if (origEntry != null) origDep = origEntry.dependencies;
-            if (origDep != null) localCache.get().put(".",origDep);
-            
+            if (origDep != null) localCache.get().put(".", origDep);
+
             Class answer = super.parseClass(codeSource, false);
-            
+
             StringSetMap cache = localCache.get();
             cache.makeTransitiveHull();
             long now = System.currentTimeMillis();
             Set<String> entryNames = new HashSet<String>();
-            for (Map.Entry<String, Set<String>> entry: cache.entrySet()) {
+            for (Map.Entry<String, Set<String>> entry : cache.entrySet()) {
                 String className = entry.getKey();
                 Class clazz = getClassCacheEntry(className);
                 if (clazz == null) continue;
 
                 String entryName = getPath(clazz);
-                if(entryNames.contains(entryName)) continue;
+                if (entryNames.contains(entryName)) continue;
                 entryNames.add(entryName);
                 Set<String> value = convertToPaths(entry.getValue());
                 ScriptCacheEntry cacheEntry = new ScriptCacheEntry(clazz, now, value);
-                scriptCache.put(entryName,cacheEntry);
+                scriptCache.put(entryName, cacheEntry);
             }
             cache.clear();
             localCu.set(null);
             return answer;
         }
-        
+
         private String getPath(Class clazz) {
             ThreadLocal<CompilationUnit> localCu = getLocalCompilationUnit();
-            
+
             ClassNode classNode = localCu.get().getClassNode(clazz.getCanonicalName());
-            String entryName = classNode.getModule().getContext().getName();
-            return entryName;
+            return classNode.getModule().getContext().getName();
         }
-        
+
         private Set<String> convertToPaths(Set<String> orig) {
             Set<String> ret = new HashSet<String>();
             for (String className : orig) {
@@ -216,42 +219,42 @@ public class GroovyScriptEngine implements ResourceConnector {
             }
             return ret;
         }
-   }
-   
-   /**
-    * Simple testing harness for the GSE. Enter script roots as arguments and
-    * then input script names to run them.
-    *
-    * @param urls an array of URLs
-    * @throws Exception if something goes wrong
-    */
-   public static void main(String[] urls) throws Exception {
-       GroovyScriptEngine gse = new GroovyScriptEngine(urls);
-       BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-       String line;
-       while (true) {
-           System.out.print("groovy> ");
-           if ((line = br.readLine()) == null || line.equals("quit"))
-               break;
-           try {
-               System.out.println(gse.run(line, new Binding()));
-           } catch (Exception e) {
-               e.printStackTrace();
-           }
-       }
-   }
+    }
+
+    /**
+     * Simple testing harness for the GSE. Enter script roots as arguments and
+     * then input script names to run them.
+     *
+     * @param urls an array of URLs
+     * @throws Exception if something goes wrong
+     */
+    public static void main(String[] urls) throws Exception {
+        GroovyScriptEngine gse = new GroovyScriptEngine(urls);
+        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+        String line;
+        while (true) {
+            System.out.print("groovy> ");
+            if ((line = br.readLine()) == null || line.equals("quit"))
+                break;
+            try {
+                System.out.println(gse.run(line, new Binding()));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
 
     /**
      * Initialize a new GroovyClassLoader with a default or
      * constructor-supplied parentClassLoader.
-     * 
+     *
      * @return the parent classloader used to load scripts
      */
     private GroovyClassLoader initGroovyLoader() {
         return (GroovyClassLoader) AccessController.doPrivileged(new PrivilegedAction() {
             public Object run() {
                 if (parentLoader instanceof GroovyClassLoader) {
-                    return new ScriptClassLoader((GroovyClassLoader)parentLoader);
+                    return new ScriptClassLoader((GroovyClassLoader) parentLoader);
                 } else {
                     return new ScriptClassLoader(parentLoader);
                 }
@@ -303,8 +306,8 @@ public class GroovyScriptEngine implements ResourceConnector {
             }
         }
 
-        if(se == null) se = new ResourceException("No resource for " + resourceName + " was found");
-        
+        if (se == null) se = new ResourceException("No resource for " + resourceName + " was found");
+
         // If we didn't find anything, report on all the exceptions that occurred.
         if (groovyScriptConn == null) throw se;
         return groovyScriptConn;
@@ -353,33 +356,33 @@ public class GroovyScriptEngine implements ResourceConnector {
      *              be laid out using their package structure like Java classes
      */
     private GroovyScriptEngine(URL[] roots, ClassLoader parent, ResourceConnector rc) {
-        if (roots==null) roots = new URL[0]; 
+        if (roots == null) roots = new URL[0];
         this.roots = roots;
-        if (rc==null) rc = this;
+        if (rc == null) rc = this;
         this.rc = rc;
-        if (parent==CL_STUB) parent = this.getClass().getClassLoader();
+        if (parent == CL_STUB) parent = this.getClass().getClassLoader();
         this.parentLoader = parent;
         this.groovyLoader = initGroovyLoader();
-        for (URL root: roots) this.groovyLoader.addURL(root);
+        for (URL root : roots) this.groovyLoader.addURL(root);
     }
-    
+
     public GroovyScriptEngine(URL[] roots) {
-        this(roots,CL_STUB,null);
+        this(roots, CL_STUB, null);
     }
 
     public GroovyScriptEngine(URL[] roots, ClassLoader parentClassLoader) {
-        this(roots,parentClassLoader,null);
+        this(roots, parentClassLoader, null);
     }
 
     public GroovyScriptEngine(String[] urls) throws IOException {
-        this(createRoots(urls),CL_STUB, null);
+        this(createRoots(urls), CL_STUB, null);
     }
 
     private static URL[] createRoots(String[] urls) throws MalformedURLException {
-        if (urls==null) return null;
+        if (urls == null) return null;
         URL[] roots = new URL[urls.length];
         for (int i = 0; i < roots.length; i++) {
-            if(urls[i].indexOf("://") != -1) {
+            if (urls[i].indexOf("://") != -1) {
                 roots[i] = new URL(urls[i]);
             } else {
                 roots[i] = new File(urls[i]).toURI().toURL();
@@ -389,7 +392,7 @@ public class GroovyScriptEngine implements ResourceConnector {
     }
 
     public GroovyScriptEngine(String[] urls, ClassLoader parentClassLoader) throws IOException {
-        this(createRoots(urls),parentClassLoader, null);
+        this(createRoots(urls), parentClassLoader, null);
     }
 
     public GroovyScriptEngine(String url) throws IOException {
@@ -397,15 +400,15 @@ public class GroovyScriptEngine implements ResourceConnector {
     }
 
     public GroovyScriptEngine(String url, ClassLoader parentClassLoader) throws IOException {
-        this(new String[]{url},parentClassLoader);
+        this(new String[]{url}, parentClassLoader);
     }
 
     public GroovyScriptEngine(ResourceConnector rc) {
-        this(null,CL_STUB, rc);
+        this(null, CL_STUB, rc);
     }
 
     public GroovyScriptEngine(ResourceConnector rc, ClassLoader parentClassLoader) {
-        this(null,parentClassLoader, rc);
+        this(null, parentClassLoader, rc);
     }
 
     /**
@@ -421,24 +424,24 @@ public class GroovyScriptEngine implements ResourceConnector {
 
     /**
      * @param parentClassLoader ClassLoader to be used as the parent ClassLoader
-     *        for scripts executed by the engine
+     *                          for scripts executed by the engine
      * @deprecated
      */
     public void setParentClassLoader(ClassLoader parentClassLoader) {
         throw new DeprecationException(
                 "The method GroovyScriptEngine#setParentClassLoader(ClassLoader) " +
-                "is no longer supported. Specify a parentLoader in the constructor instead."
+                        "is no longer supported. Specify a parentLoader in the constructor instead."
         );
     }
 
     /**
-     * Get the class of the scriptName in question, so that you can instantiate 
+     * Get the class of the scriptName in question, so that you can instantiate
      * Groovy objects with caching and reloading.
      *
      * @param scriptName resource name pointing to the script
      * @return the loaded scriptName as a compiled class
      * @throws ResourceException if there is a problem accessing the script
-     * @throws ScriptException if there is a problem parsing the script
+     * @throws ScriptException   if there is a problem parsing the script
      */
     public Class loadScriptByName(String scriptName) throws ResourceException, ScriptException {
         URLConnection conn = rc.getResourceConnection(scriptName);
@@ -462,21 +465,21 @@ public class GroovyScriptEngine implements ResourceConnector {
     }
 
     /**
-     * Get the class of the scriptName in question, so that you can instantiate 
+     * Get the class of the scriptName in question, so that you can instantiate
      * Groovy objects with caching and reloading.
      *
-     * @param scriptName resource name pointing to the script
+     * @param scriptName        resource name pointing to the script
      * @param parentClassLoader the class loader to use when loading the script
      * @return the loaded scriptName as a compiled class
      * @throws ResourceException if there is a problem accessing the script
-     * @throws ScriptException if there is a problem parsing the script
+     * @throws ScriptException   if there is a problem parsing the script
      * @deprecated
      */
     public Class loadScriptByName(String scriptName, ClassLoader parentClassLoader)
             throws ResourceException, ScriptException {
         throw new DeprecationException(
-                "The method GroovyScriptEngine#loadScriptByName(String,ClassLoader) "+
-                "is no longer supported. Use GroovyScriptEngine#loadScriptByName(String) instead."
+                "The method GroovyScriptEngine#loadScriptByName(String,ClassLoader) " +
+                        "is no longer supported. Use GroovyScriptEngine#loadScriptByName(String) instead."
         );
     }
 
@@ -487,7 +490,7 @@ public class GroovyScriptEngine implements ResourceConnector {
      * @param argument   a single argument passed as a variable named <code>arg</code> in the binding
      * @return a <code>toString()</code> representation of the result of the execution of the script
      * @throws ResourceException if there is a problem accessing the script
-     * @throws ScriptException if there is a problem parsing the script
+     * @throws ScriptException   if there is a problem parsing the script
      */
     public String run(String scriptName, String argument) throws ResourceException, ScriptException {
         Binding binding = new Binding();
@@ -503,7 +506,7 @@ public class GroovyScriptEngine implements ResourceConnector {
      * @param binding    the binding to pass to the script
      * @return an object
      * @throws ResourceException if there is a problem accessing the script
-     * @throws ScriptException if there is a problem parsing the script
+     * @throws ScriptException   if there is a problem parsing the script
      */
     public Object run(String scriptName, Binding binding) throws ResourceException, ScriptException {
         return createScript(scriptName, binding).run();
@@ -516,17 +519,17 @@ public class GroovyScriptEngine implements ResourceConnector {
      * @param binding    the binding to pass to the script
      * @return the script object
      * @throws ResourceException if there is a problem accessing the script
-     * @throws ScriptException if there is a problem parsing the script
+     * @throws ScriptException   if there is a problem parsing the script
      */
     public Script createScript(String scriptName, Binding binding) throws ResourceException, ScriptException {
         return InvokerHelper.createScript(loadScriptByName(scriptName), binding);
     }
 
-    protected boolean isSourceNewer(ScriptCacheEntry entry) throws ResourceException  {
+    protected boolean isSourceNewer(ScriptCacheEntry entry) throws ResourceException {
         if (entry == null) return true;
         long now = System.currentTimeMillis();
 
-        for (String scriptName: entry.dependencies) {
+        for (String scriptName : entry.dependencies) {
             ScriptCacheEntry depEntry = scriptCache.get(scriptName);
             long nextPossibleRecompilationTime = depEntry.lastModified + config.getMinimumRecompilationInterval();
             if (nextPossibleRecompilationTime > now) continue;
@@ -543,7 +546,7 @@ public class GroovyScriptEngine implements ResourceConnector {
             }
             return true;
         }
-        
+
         return false;
     }
 
@@ -556,7 +559,7 @@ public class GroovyScriptEngine implements ResourceConnector {
     public GroovyClassLoader getGroovyClassLoader() {
         return groovyLoader;
     }
-    
+
     /**
      * @return a non null compiler configuration
      */
@@ -566,11 +569,12 @@ public class GroovyScriptEngine implements ResourceConnector {
 
     /**
      * sets a compiler configuration
+     *
      * @param config - the compiler configuration
      * @throws NullPointerException if config is null
      */
     public void setConfig(CompilerConfiguration config) {
-        if (config==null) throw new NullPointerException("configuration cannot be null");
+        if (config == null) throw new NullPointerException("configuration cannot be null");
         this.config = config;
     }
 }

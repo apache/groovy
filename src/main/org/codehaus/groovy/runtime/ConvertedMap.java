@@ -23,42 +23,44 @@ import groovy.lang.Closure;
 /**
  * This class is a general adapter to adapt a map of closures to
  * any Java interface.
- * <p>
+ * <p/>
+ *
  * @author <a href="mailto:blackdrag@gmx.org">Jochen Theodorou</a>
  */
 public class ConvertedMap extends ConversionHandler {
-        
+
     /**
      * to create a ConvertedMap object.
-     * @param closures the map of closres
+     *
+     * @param closures the map of closures
      */
     protected ConvertedMap(Map closures) {
         super(closures);
     }
-    
+
     public Object invokeCustom(Object proxy, Method method, Object[] args)
-    throws Throwable {
+            throws Throwable {
         Map m = (Map) getDelegate();
         Closure cl = (Closure) m.get(method.getName());
-        if(cl == null) {
+        if (cl == null) {
             throw new UnsupportedOperationException();
         }
         return cl.call(args);
     }
-    
+
     public String toString() {
-        return DefaultGroovyMethods.toString((Map) getDelegate());
+        return DefaultGroovyMethods.toString(getDelegate());
     }
 
     protected boolean checkMethod(Method method) {
-    	return isCoreObjectMethod(method);
+        return isCoreObjectMethod(method);
     }
 
     /**
      * Checks whether a method is a core method from java.lang.Object.
      * Such methods often receive special treatment because they are
      * deemed fundamental enough to not be tampered with.
-     * call toString() is an exception to allow overriding toString() by a closure specified in the map  
+     * call toString() is an exception to allow overriding toString() by a closure specified in the map
      *
      * @param method the method to check
      * @return true if the method is deemed to be a core method

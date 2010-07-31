@@ -62,7 +62,7 @@ public abstract class ConversionHandler implements InvocationHandler, Serializab
      * of the delegate because they are considered fundamental methods that should
      * not be overwritten. The toString() method gets special treatment as it is
      * deemed to be a method that you might wish to override when called from Groovy.
-     *
+     * <p/>
      * In many scenarios, it is better to overwrite the invokeCustom method where
      * the core Object related methods are filtered out.
      *
@@ -84,9 +84,9 @@ public abstract class ConversionHandler implements InvocationHandler, Serializab
             throw ite.getTargetException();
         }
     }
-    
+
     protected boolean checkMethod(Method method) {
-    	return isCoreObjectMethod(method);
+        return isCoreObjectMethod(method);
     }
 
     /**

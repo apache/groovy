@@ -24,7 +24,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class SimpleGroovyProgramElementDoc extends SimpleGroovyDoc implements GroovyProgramElementDoc {
-	private GroovyPackageDoc packageDoc;
+    private GroovyPackageDoc packageDoc;
     private boolean staticElement;
     private boolean finalElement;
     private boolean publicScope;
@@ -102,7 +102,7 @@ public class SimpleGroovyProgramElementDoc extends SimpleGroovyDoc implements Gr
         annotationRefs.add(ref);
     }
 
-	public GroovyClassDoc containingClass() {/*todo*/return null;}
+    public GroovyClassDoc containingClass() {/*todo*/return null;}
 
     public String modifiers() {/*todo*/return null;}
 

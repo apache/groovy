@@ -26,7 +26,7 @@ public class SimpleGroovyAnnotationRef implements GroovyAnnotationRef {
     public SimpleGroovyAnnotationRef(String name, String desc) {
         this.desc = desc;
         this.name = name;
-	}
+    }
 
     public void setType(GroovyClassDoc type) {
         this.type = type;

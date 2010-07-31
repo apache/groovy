@@ -199,8 +199,8 @@ public class ThreadManagedMetaBeanProperty extends MetaBeanProperty {
         }
 
         /* (non-Javadoc)
-		 * @see groovy.lang.MetaMethod#getName()
-		 */
+         * @see groovy.lang.MetaMethod#getName()
+         */
 
         public String getName() {
             return name;

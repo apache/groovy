@@ -20,31 +20,31 @@ import java.util.*;
 import org.codehaus.groovy.groovydoc.*;
 
 public class SimpleGroovyExecutableMemberDoc extends SimpleGroovyMemberDoc implements GroovyExecutableMemberDoc {
-	List parameters;
-	
-	public SimpleGroovyExecutableMemberDoc(String name, GroovyClassDoc belongsToClass) {
+    List parameters;
+    
+    public SimpleGroovyExecutableMemberDoc(String name, GroovyClassDoc belongsToClass) {
         super(name, belongsToClass);
-		parameters = new ArrayList();
-	}
+        parameters = new ArrayList();
+    }
 
-	public GroovyParameter[] parameters() {
-		return (GroovyParameter[]) parameters.toArray(new GroovyParameter[parameters.size()]);
-	}
+    public GroovyParameter[] parameters() {
+        return (GroovyParameter[]) parameters.toArray(new GroovyParameter[parameters.size()]);
+    }
 
-	public void add(GroovyParameter parameter) {
-		parameters.add(parameter);
-	}
+    public void add(GroovyParameter parameter) {
+        parameters.add(parameter);
+    }
 
-	
-	public String flatSignature() {/*todo*/return null;}
-	public boolean isNative() {/*todo*/return false;}
-	public boolean isSynchronized() {/*todo*/return false;}
-	public boolean isVarArgs() {/*todo*/return false;}
-//	public GroovyParamTag[] paramTags() {/*todo*/return null;}
-	public String signature() {/*todo*/return null;}
-	public GroovyClassDoc[] thrownExceptions() {/*todo*/return null;}
-	public GroovyType[] thrownExceptionTypes() {/*todo*/return null;}
-//	public GroovyThrowsTag[] throwsTags() {/*todo*/return null;}
-//	public GroovyTypeVariable[] typeParameters() {/*todo*/return null;}
-//	public GroovyParamTag[] typeParamTags() {/*todo*/return null;}
+    
+    public String flatSignature() {/*todo*/return null;}
+    public boolean isNative() {/*todo*/return false;}
+    public boolean isSynchronized() {/*todo*/return false;}
+    public boolean isVarArgs() {/*todo*/return false;}
+//    public GroovyParamTag[] paramTags() {/*todo*/return null;}
+    public String signature() {/*todo*/return null;}
+    public GroovyClassDoc[] thrownExceptions() {/*todo*/return null;}
+    public GroovyType[] thrownExceptionTypes() {/*todo*/return null;}
+//    public GroovyThrowsTag[] throwsTags() {/*todo*/return null;}
+//    public GroovyTypeVariable[] typeParameters() {/*todo*/return null;}
+//    public GroovyParamTag[] typeParamTags() {/*todo*/return null;}
 }

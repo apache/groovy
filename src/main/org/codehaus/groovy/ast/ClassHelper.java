@@ -133,12 +133,12 @@ public class ClassHelper {
      * @return an array of ClassNodes
      */
     public static ClassNode[] make(Class[] classes) {
-    	ClassNode[] cns = new ClassNode[classes.length];
-    	for (int i=0; i<cns.length; i++) {
-    		cns[i] = make(classes[i]);
-    	}
-    	
-    	return cns;
+        ClassNode[] cns = new ClassNode[classes.length];
+        for (int i=0; i<cns.length; i++) {
+            cns[i] = make(classes[i]);
+        }
+        
+        return cns;
     }
     
     /**
@@ -260,7 +260,7 @@ public class ClassHelper {
         } else if (cn==double_TYPE) {
             return Double_TYPE;
         } else if (cn==VOID_TYPE) {
-        	return void_WRAPPER_TYPE;
+            return void_WRAPPER_TYPE;
         }
         else {
             return cn;
@@ -335,8 +335,8 @@ public class ClassHelper {
     }
 
     public static boolean isCachedType(ClassNode type) {
-        for (int i=0;i<types.length; i++) {
-            if (types[i] == type) return true;
+        for (ClassNode cachedType : types) {
+            if (cachedType == type) return true;
         }
         return false;
     }

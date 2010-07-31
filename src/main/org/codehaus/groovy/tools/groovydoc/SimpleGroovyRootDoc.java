@@ -126,12 +126,12 @@ public class SimpleGroovyRootDoc extends SimpleGroovyDoc implements GroovyRootDo
     // GroovyDocErrorReporter interface
     public void printError(String arg0) {/*todo*/}
 
-    //	public void printError(GroovySourcePosition arg0, String arg1) {/*todo*/}
+    //    public void printError(GroovySourcePosition arg0, String arg1) {/*todo*/}
     public void printNotice(String arg0) {/*todo*/}
 
-    //	public void printNotice(GroovySourcePosition arg0, String arg1) {/*todo*/}
+    //    public void printNotice(GroovySourcePosition arg0, String arg1) {/*todo*/}
     public void printWarning(String arg0) {/*todo*/}
-//	public void printWarning(GroovySourcePosition arg0, String arg1) {/*todo*/}
+//    public void printWarning(GroovySourcePosition arg0, String arg1) {/*todo*/}
 
     public void resolve() {
         //resolve class names at the end of adding all files to the tree

@@ -34,7 +34,7 @@ import java.util.ListIterator;
  * will trigger an event (if the value indeed changed), otherwise it won't. The Closure may receive
  * 1 or 2 parameters, the single one being the value, the other one both the key and value, for
  * example:
- * 
+ *
  * <pre>
  * // skip all properties whose value is a closure
  * def map = new ObservableList( {!(it instanceof Closure)} )
@@ -42,7 +42,7 @@ import java.util.ListIterator;
  * // skip all properties whose name matches a regex
  * def map = new ObservableList( { name, value -&gt; !(name =&tilde; /[A-Z+]/) } )
  * </pre>
- * 
+ *
  * <p>
  * The current implementation will trigger specialized events in the following scenarios, you need
  * not register a different listener as those events extend from PropertyChangeEvent
@@ -57,7 +57,7 @@ import java.util.ListIterator;
  * list.removeAll()/list.retainAll()</li>
  * </ul>
  * </p>
- * 
+ *
  * @author <a href="mailto:aalmiray@users.sourceforge.net">Andres Almiray</a>
  */
 public class ObservableList implements List {
@@ -232,7 +232,7 @@ public class ObservableList implements List {
       if( c == null ) {
          return false;
       }
-      
+
       List values = new ArrayList();
       if( c != null ) {
          for( Iterator i = c.iterator(); i.hasNext(); ) {
@@ -255,7 +255,7 @@ public class ObservableList implements List {
       if( c == null ) {
          return false;
       }
-      
+
       List values = new ArrayList();
       if( c != null ) {
          for( Iterator i = delegate.iterator(); i.hasNext(); ) {
@@ -431,7 +431,7 @@ public class ObservableList implements List {
       public int getIndex() {
          return index;
       }
-      
+
       public int getType() {
          return type;
       }

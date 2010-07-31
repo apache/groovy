@@ -33,13 +33,13 @@ import org.codehaus.groovy.ast.stmt.ThrowStatement;
 import org.codehaus.groovy.ast.stmt.WhileStatement;
 
 /**
- * Visitor to transform expressions in a whole class. 
- * Transformed Expressions are usually not visited. 
+ * Visitor to transform expressions in a whole class.
+ * Transformed Expressions are usually not visited.
  *
  * @author Jochen Theodorou
  */
 public abstract class ClassCodeExpressionTransformer extends ClassCodeVisitorSupport implements ExpressionTransformer {
-    
+
     protected void visitConstructorOrMethod(MethodNode node, boolean isConstructor) {
         for (Parameter p : node.getParameters()) {
             if (p.hasInitialExpression()) {
@@ -64,16 +64,16 @@ public abstract class ClassCodeExpressionTransformer extends ClassCodeVisitorSup
         Expression init = node.getInitialExpression();
         node.setInitialValueExpression(transform(init));
     }
-    
+
     public void visitProperty(PropertyNode node) {
         visitAnnotations(node);
         Statement statement = node.getGetterBlock();
         visitClassCodeContainer(statement);
-        
+
         statement = node.getSetterBlock();
         visitClassCodeContainer(statement);
     }
-    
+
     public void visitIfElse(IfStatement ifElse) {
         ifElse.setBooleanExpression((BooleanExpression) (transform(ifElse.getBooleanExpression())));
         ifElse.getIfBlock().visit(this);
@@ -81,10 +81,10 @@ public abstract class ClassCodeExpressionTransformer extends ClassCodeVisitorSup
     }
 
     public Expression transform(Expression exp) {
-        if (exp==null) return null;
+        if (exp == null) return null;
         return exp.transformExpression(this);
     }
-        
+
     public void visitAnnotations(AnnotatedNode node) {
         List<AnnotationNode> annotations = node.getAnnotations();
         if (annotations.isEmpty()) return;
@@ -98,7 +98,7 @@ public abstract class ClassCodeExpressionTransformer extends ClassCodeVisitorSup
     }
 
     public void visitReturnStatement(ReturnStatement statement) {
-       statement.setExpression(transform(statement.getExpression()));
+        statement.setExpression(transform(statement.getExpression()));
     }
 
     public void visitAssertStatement(AssertStatement as) {
@@ -107,8 +107,8 @@ public abstract class ClassCodeExpressionTransformer extends ClassCodeVisitorSup
     }
 
     public void visitCaseStatement(CaseStatement statement) {
-    	statement.setExpression(transform(statement.getExpression()));
-    	statement.getCode().visit(this);
+        statement.setExpression(transform(statement.getExpression()));
+        statement.getCode().visit(this);
     }
 
     public void visitDoWhileLoop(DoWhileStatement loop) {
@@ -131,11 +131,11 @@ public abstract class ClassCodeExpressionTransformer extends ClassCodeVisitorSup
     }
 
     public void visitWhileLoop(WhileStatement loop) {
-    	loop.setBooleanExpression((BooleanExpression) transform(loop.getBooleanExpression()));
-    	super.visitWhileLoop(loop);
+        loop.setBooleanExpression((BooleanExpression) transform(loop.getBooleanExpression()));
+        super.visitWhileLoop(loop);
     }
 
     public void visitExpressionStatement(ExpressionStatement es) {
         es.setExpression(transform(es.getExpression()));
-    }    
+    }
 }

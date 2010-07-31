@@ -139,26 +139,26 @@ public class GroovyDocTemplateEngine {
     }
 
 /*
-	String applyClassTemplatesWithVelocity(GroovyClassDoc classDoc) {
-//		Iterator templates = classTemplates.iterator();
-//		while (templates.hasNext)
-		String templatePath = (String) classTemplates.get(0); // todo (iterate)
-			
-		String templateWithBindingApplied = "";
-		try {
-//			Template t = new GStringTemplateEngine().createTemplate(template);
-			VelocityTemplateEngine t = new VelocityTemplateEngine(new File(".").getAbsolutePath());
+    String applyClassTemplatesWithVelocity(GroovyClassDoc classDoc) {
+//        Iterator templates = classTemplates.iterator();
+//        while (templates.hasNext)
+        String templatePath = (String) classTemplates.get(0); // todo (iterate)
+            
+        String templateWithBindingApplied = "";
+        try {
+//            Template t = new GStringTemplateEngine().createTemplate(template);
+            VelocityTemplateEngine t = new VelocityTemplateEngine(new File(".").getAbsolutePath());
 
-			Map binding = new HashMap();
-	        binding.put("classDoc", classDoc);
-	        
-//	        templateWithBindingApplied = t.make(binding).toString();
-	        templateWithBindingApplied = t.apply(templatePath,binding);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		return templateWithBindingApplied;
-	}
+            Map binding = new HashMap();
+            binding.put("classDoc", classDoc);
+            
+//            templateWithBindingApplied = t.make(binding).toString();
+            templateWithBindingApplied = t.apply(templatePath,binding);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return templateWithBindingApplied;
+    }
 */
 
     public void copyBinaryResource(String template, String destFileName) {

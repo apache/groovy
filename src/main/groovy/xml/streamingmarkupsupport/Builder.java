@@ -25,50 +25,49 @@ import java.util.List;
 import java.util.Map;
 
 public abstract class Builder extends GroovyObjectSupport {
-	protected final Map namespaceMethodMap = new HashMap();
-	
-	public Builder(final Map namespaceMethodMap) {
-	final Iterator keyIterator = namespaceMethodMap.keySet().iterator();
-		
-		while (keyIterator.hasNext()) {
-		final Object key = keyIterator.next();
-		final List value = (List)namespaceMethodMap.get(key);
-		final Closure dg = ((Closure)value.get(1)).asWritable();
-		
-			this.namespaceMethodMap.put(key, new Object[]{value.get(0), dg, fettleMethodMap(dg, (Map)value.get(2))});
-		}
-	}
-	
-	private static Map fettleMethodMap(final Closure defaultGenerator, final Map methodMap) {
-	final Map newMethodMap = new HashMap();
-	final Iterator keyIterator = methodMap.keySet().iterator();
-		
-		while (keyIterator.hasNext()) {
-		final Object key = keyIterator.next();
-		final Object value = methodMap.get(key);
-		
-			if ((value instanceof Closure)) {
-				newMethodMap.put(key, value);
-			} else {
-				newMethodMap.put(key, defaultGenerator.curry((Object[])value));
-			}
-		}
-		
-		return newMethodMap;
-	}
-	
-	public abstract Object bind(Closure root);
-	
-	protected abstract static class Built extends GroovyObjectSupport {
-	protected final Closure root;
-	protected final Map namespaceSpecificTags = new HashMap();
-		
-		public Built(final Closure root, final Map namespaceTagMap) {
-			this.namespaceSpecificTags.putAll(namespaceTagMap);
-		
-			this.root = (Closure)root.clone();
-			
-			this.root.setDelegate(this);
-		}
-	}
+    protected final Map namespaceMethodMap = new HashMap();
+    
+    public Builder(final Map namespaceMethodMap) {
+    final Iterator keyIterator = namespaceMethodMap.keySet().iterator();
+        
+        while (keyIterator.hasNext()) {
+        final Object key = keyIterator.next();
+        final List value = (List)namespaceMethodMap.get(key);
+        final Closure dg = ((Closure)value.get(1)).asWritable();
+        
+            this.namespaceMethodMap.put(key, new Object[]{value.get(0), dg, fettleMethodMap(dg, (Map)value.get(2))});
+        }
+    }
+    
+    private static Map fettleMethodMap(final Closure defaultGenerator, final Map methodMap) {
+    final Map newMethodMap = new HashMap();
+
+        for (Object o : methodMap.keySet()) {
+            final Object key = o;
+            final Object value = methodMap.get(key);
+
+            if ((value instanceof Closure)) {
+                newMethodMap.put(key, value);
+            } else {
+                newMethodMap.put(key, defaultGenerator.curry((Object[]) value));
+            }
+        }
+        
+        return newMethodMap;
+    }
+    
+    public abstract Object bind(Closure root);
+    
+    protected abstract static class Built extends GroovyObjectSupport {
+    protected final Closure root;
+    protected final Map namespaceSpecificTags = new HashMap();
+        
+        public Built(final Closure root, final Map namespaceTagMap) {
+            this.namespaceSpecificTags.putAll(namespaceTagMap);
+        
+            this.root = (Closure)root.clone();
+            
+            this.root.setDelegate(this);
+        }
+    }
 }

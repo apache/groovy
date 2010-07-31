@@ -264,7 +264,7 @@ public class ObservableMap implements Map {
         public int getType() {
             return type;
         }
-        
+
         public String getTypeAsString() {
          switch( type ) {
             case ADDED:

@@ -25,42 +25,40 @@ import org.codehaus.groovy.runtime.callsite.PojoMetaMethodSite;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 public class DoubleArrayPutAtMetaMethod extends ArrayPutAtMetaMethod {
-        private static final CachedClass OBJECT_CLASS = ReflectionCache.OBJECT_CLASS;
-        private static final CachedClass ARR_CLASS = ReflectionCache.getCachedClass(double[].class);
-        private static final CachedClass [] PARAM_CLASS_ARR = new CachedClass[] {INTEGER_CLASS, OBJECT_CLASS};
+    private static final CachedClass OBJECT_CLASS = ReflectionCache.OBJECT_CLASS;
+    private static final CachedClass ARR_CLASS = ReflectionCache.getCachedClass(double[].class);
+    private static final CachedClass[] PARAM_CLASS_ARR = new CachedClass[]{INTEGER_CLASS, OBJECT_CLASS};
 
-        public DoubleArrayPutAtMetaMethod() {
-            parameterTypes = PARAM_CLASS_ARR;
-        }
+    public DoubleArrayPutAtMetaMethod() {
+        parameterTypes = PARAM_CLASS_ARR;
+    }
 
-        public final CachedClass getDeclaringClass() {
-            return ARR_CLASS;
-        }
+    public final CachedClass getDeclaringClass() {
+        return ARR_CLASS;
+    }
 
-        public Object invoke(Object object, Object[] args) {
-            final double[] objects = (double[]) object;
-            final int index = normaliseIndex(((Integer) args[0]).intValue(), objects.length);
-            Object newValue = args[1];
-            if (!(newValue instanceof Double)) {
-            	if(newValue instanceof Character || newValue instanceof String || newValue instanceof GString) {
-            		Character ch = DefaultTypeTransformation.getCharFromSizeOneString(newValue);
-            		objects[index] = ((Double)DefaultTypeTransformation.castToType(ch, Double.class)).doubleValue();
-            	} else {
-                    Number n = (Number) newValue;
-                    objects[index] = ((Number)newValue).doubleValue();
-            	}
+    public Object invoke(Object object, Object[] args) {
+        final double[] objects = (double[]) object;
+        final int index = normaliseIndex((Integer) args[0], objects.length);
+        Object newValue = args[1];
+        if (!(newValue instanceof Double)) {
+            if (newValue instanceof Character || newValue instanceof String || newValue instanceof GString) {
+                Character ch = DefaultTypeTransformation.getCharFromSizeOneString(newValue);
+                objects[index] = (Double) DefaultTypeTransformation.castToType(ch, Double.class);
+            } else {
+                objects[index] = ((Number) newValue).doubleValue();
             }
-            else
-              objects[index] = ((Double)args[1]).doubleValue();
-            return null;
-        }
+        } else
+            objects[index] = (Double) args[1];
+        return null;
+    }
 
-        public CallSite createPojoCallSite(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object receiver, Object[] args) {
-            if (!(args [0] instanceof Integer) || !(args [1] instanceof Double))
-              return PojoMetaMethodSite.createNonAwareCallSite(site, metaClass, metaMethod, params, args);
-            else
-                return new MyPojoMetaMethodSite(site, metaClass, metaMethod, params);
-        }
+    public CallSite createPojoCallSite(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object receiver, Object[] args) {
+        if (!(args[0] instanceof Integer) || !(args[1] instanceof Double))
+            return PojoMetaMethodSite.createNonAwareCallSite(site, metaClass, metaMethod, params, args);
+        else
+            return new MyPojoMetaMethodSite(site, metaClass, metaMethod, params);
+    }
 
     private static class MyPojoMetaMethodSite extends PojoMetaMethodSite {
         public MyPojoMetaMethodSite(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params) {
@@ -68,29 +66,28 @@ public class DoubleArrayPutAtMetaMethod extends ArrayPutAtMetaMethod {
         }
 
         public Object call(Object receiver, Object[] args) throws Throwable {
-            if ((receiver instanceof double[] && args[0] instanceof Integer && args[1] instanceof Double )
+            if ((receiver instanceof double[] && args[0] instanceof Integer && args[1] instanceof Double)
                     && checkPojoMetaClass()) {
                 final double[] objects = (double[]) receiver;
-                objects[normaliseIndex(((Integer) args[0]).intValue(), objects.length)] = ((Double)args[1]).doubleValue();
+                objects[normaliseIndex((Integer) args[0], objects.length)] = (Double) args[1];
                 return null;
-            }
-            else
-              return super.call(receiver,args);
+            } else
+                return super.call(receiver, args);
         }
 
         public Object call(Object receiver, Object arg1, Object arg2) throws Throwable {
             if (checkPojoMetaClass()) {
                 try {
-                    final double[] objects = (double []) receiver;
-                    objects[normaliseIndex(((Integer) arg1).intValue(), objects.length)] = ((Double)arg2).doubleValue();
+                    final double[] objects = (double[]) receiver;
+                    objects[normaliseIndex((Integer) arg1, objects.length)] = (Double) arg2;
                     return null;
                 }
                 catch (ClassCastException e) {
                     if ((receiver instanceof double[]) && (arg1 instanceof Integer))
-                      throw e;
+                        throw e;
                 }
             }
-            return super.call(receiver,arg1,arg2);
+            return super.call(receiver, arg1, arg2);
         }
     }
 }

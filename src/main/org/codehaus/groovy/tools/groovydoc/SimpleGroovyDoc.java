@@ -178,8 +178,8 @@ public class SimpleGroovyDoc implements GroovyDoc, GroovyTokenTypes {
 
     // Methods from GroovyDoc
 
-    //	public GroovyTag[] firstSentenceTags() {/*todo*/return null;}
-    //	public GroovyTag[] inlineTags() {/*todo*/return null;}
+    //    public GroovyTag[] firstSentenceTags() {/*todo*/return null;}
+    //    public GroovyTag[] inlineTags() {/*todo*/return null;}
 
     public boolean isAnnotationTypeElement() {/*todo*/
         return false;
@@ -220,14 +220,14 @@ public class SimpleGroovyDoc implements GroovyDoc, GroovyTokenTypes {
     public boolean isOrdinaryClass() {/*todo*/
         return false;
     }
-//	public GroovySourcePosition position() {/*todo*/return null;}
-//	public GroovySeeTag[] seeTags() {/*todo*/return null;}
+//    public GroovySourcePosition position() {/*todo*/return null;}
+//    public GroovySeeTag[] seeTags() {/*todo*/return null;}
 
-	public GroovyTag[] tags() {
+    public GroovyTag[] tags() {
         return tags;
     }
 
-//	public GroovyTag[] tags(String arg0) {/*todo*/return null;}
+//    public GroovyTag[] tags(String arg0) {/*todo*/return null;}
 
     public void setDeprecated(boolean deprecated) {
         this.deprecated = deprecated;
