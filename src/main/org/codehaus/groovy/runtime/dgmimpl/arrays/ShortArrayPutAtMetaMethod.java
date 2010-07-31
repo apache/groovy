@@ -25,42 +25,40 @@ import org.codehaus.groovy.runtime.callsite.PojoMetaMethodSite;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 public class ShortArrayPutAtMetaMethod extends ArrayPutAtMetaMethod {
-        private static final CachedClass OBJECT_CLASS = ReflectionCache.OBJECT_CLASS;
-        private static final CachedClass ARR_CLASS = ReflectionCache.getCachedClass(short[].class);
-        private static final CachedClass [] PARAM_CLASS_ARR = new CachedClass[] {INTEGER_CLASS, OBJECT_CLASS};
+    private static final CachedClass OBJECT_CLASS = ReflectionCache.OBJECT_CLASS;
+    private static final CachedClass ARR_CLASS = ReflectionCache.getCachedClass(short[].class);
+    private static final CachedClass[] PARAM_CLASS_ARR = new CachedClass[]{INTEGER_CLASS, OBJECT_CLASS};
 
-        public ShortArrayPutAtMetaMethod() {
-            parameterTypes = PARAM_CLASS_ARR;
-        }
+    public ShortArrayPutAtMetaMethod() {
+        parameterTypes = PARAM_CLASS_ARR;
+    }
 
-        public final CachedClass getDeclaringClass() {
-            return ARR_CLASS;
-        }
+    public final CachedClass getDeclaringClass() {
+        return ARR_CLASS;
+    }
 
-        public Object invoke(Object object, Object[] args) {
-            final short[] objects = (short[]) object;
-            final int index = normaliseIndex(((Integer) args[0]).intValue(), objects.length);
-            Object newValue = args[1];
-            if (!(newValue instanceof Short)) {
-            	if(newValue instanceof Character || newValue instanceof String || newValue instanceof GString) {
-            		Character ch = DefaultTypeTransformation.getCharFromSizeOneString(newValue);
-            		objects[index] = ((Short)DefaultTypeTransformation.castToType(ch, Short.class)).shortValue();
-            	} else {
-                    Number n = (Number) newValue;
-                    objects[index] = ((Number)newValue).shortValue();
-            	}
+    public Object invoke(Object object, Object[] args) {
+        final short[] objects = (short[]) object;
+        final int index = normaliseIndex((Integer) args[0], objects.length);
+        Object newValue = args[1];
+        if (!(newValue instanceof Short)) {
+            if (newValue instanceof Character || newValue instanceof String || newValue instanceof GString) {
+                Character ch = DefaultTypeTransformation.getCharFromSizeOneString(newValue);
+                objects[index] = (Short) DefaultTypeTransformation.castToType(ch, Short.class);
+            } else {
+                objects[index] = ((Number) newValue).shortValue();
             }
-            else
-              objects[index] = ((Short)args[1]).shortValue();
-            return null;
-        }
+        } else
+            objects[index] = (Short) args[1];
+        return null;
+    }
 
-        public CallSite createPojoCallSite(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object receiver, Object[] args) {
-            if (!(args [0] instanceof Integer) || !(args [1] instanceof Short))
-              return PojoMetaMethodSite.createNonAwareCallSite(site, metaClass, metaMethod, params, args);
-            else
-                return new MyPojoMetaMethodSite(site, metaClass, metaMethod, params);
-        }
+    public CallSite createPojoCallSite(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object receiver, Object[] args) {
+        if (!(args[0] instanceof Integer) || !(args[1] instanceof Short))
+            return PojoMetaMethodSite.createNonAwareCallSite(site, metaClass, metaMethod, params, args);
+        else
+            return new MyPojoMetaMethodSite(site, metaClass, metaMethod, params);
+    }
 
     private static class MyPojoMetaMethodSite extends PojoMetaMethodSite {
         public MyPojoMetaMethodSite(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params) {
@@ -68,29 +66,28 @@ public class ShortArrayPutAtMetaMethod extends ArrayPutAtMetaMethod {
         }
 
         public Object call(Object receiver, Object[] args) throws Throwable {
-            if ((receiver instanceof short[] && args[0] instanceof Integer && args[1] instanceof Short )
+            if ((receiver instanceof short[] && args[0] instanceof Integer && args[1] instanceof Short)
                     && checkPojoMetaClass()) {
                 final short[] objects = (short[]) receiver;
-                objects[normaliseIndex(((Integer) args[0]).intValue(), objects.length)] = ((Short)args[1]).shortValue();
+                objects[normaliseIndex((Integer) args[0], objects.length)] = (Short) args[1];
                 return null;
-            }
-            else
-              return super.call(receiver,args);
+            } else
+                return super.call(receiver, args);
         }
 
         public Object call(Object receiver, Object arg1, Object arg2) throws Throwable {
             if (checkPojoMetaClass()) {
                 try {
-                    final short [] objects = (short[]) receiver;
-                    objects[normaliseIndex(((Integer) arg1).intValue(), objects.length)] = ((Short)arg2).shortValue();
+                    final short[] objects = (short[]) receiver;
+                    objects[normaliseIndex((Integer) arg1, objects.length)] = (Short) arg2;
                     return null;
                 }
                 catch (ClassCastException e) {
                     if ((receiver instanceof short[]) && (arg1 instanceof Integer))
-                      throw e;
+                        throw e;
                 }
             }
-            return super.call(receiver,arg1,arg2);
+            return super.call(receiver, arg1, arg2);
         }
     }
 }

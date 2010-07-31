@@ -53,7 +53,7 @@ public final class NumberNumberPlus extends NumberNumberMetaMethod {
 
             if (args[0] instanceof Double)
                 return new IntegerDouble(site, metaClass, metaMethod, params, receiver, args);
-            }
+        }
 
         if (receiver instanceof Long) {
             if (args[0] instanceof Integer)
@@ -67,7 +67,7 @@ public final class NumberNumberPlus extends NumberNumberMetaMethod {
 
             if (args[0] instanceof Double)
                 return new LongDouble(site, metaClass, metaMethod, params, receiver, args);
-            }
+        }
 
         if (receiver instanceof Float) {
             if (args[0] instanceof Integer)
@@ -81,7 +81,7 @@ public final class NumberNumberPlus extends NumberNumberMetaMethod {
 
             if (args[0] instanceof Double)
                 return new FloatDouble(site, metaClass, metaMethod, params, receiver, args);
-            }
+        }
 
         if (receiver instanceof Double) {
             if (args[0] instanceof Integer)
@@ -95,15 +95,15 @@ public final class NumberNumberPlus extends NumberNumberMetaMethod {
 
             if (args[0] instanceof Double)
                 return new DoubleDouble(site, metaClass, metaMethod, params, receiver, args);
-            }
+        }
 
-        return new NumberNumberCallSite (site, metaClass, metaMethod, params, (Number)receiver, (Number)args[0]){
+        return new NumberNumberCallSite(site, metaClass, metaMethod, params, (Number) receiver, (Number) args[0]) {
             public Object invoke(Object receiver, Object[] args) {
-                return math.addImpl((Number)receiver,(Number)args[0]);
+                return math.addImpl((Number) receiver, (Number) args[0]);
             }
 
             public Object invoke(Object receiver, Object arg) {
-                return math.addImpl((Number)receiver,(Number)arg);
+                return math.addImpl((Number) receiver, (Number) arg);
             }
         };
     }
@@ -116,7 +116,7 @@ public final class NumberNumberPlus extends NumberNumberMetaMethod {
         public final Object call(Object receiver, Object arg) throws Throwable {
             try {
                 if (checkPojoMetaClass()) {
-                    return new Double(((Double) receiver).doubleValue() + ((Double) arg).doubleValue());
+                    return (Double) receiver + (Double) arg;
                 }
             }
             catch (ClassCastException e) {//
@@ -133,7 +133,7 @@ public final class NumberNumberPlus extends NumberNumberMetaMethod {
         public final Object call(Object receiver, Object arg) throws Throwable {
             try {
                 if (checkPojoMetaClass()) {
-                    return new Double(((Double) receiver).doubleValue() + ((Float) arg).doubleValue());
+                    return (Double) receiver + ((Float) arg).doubleValue();
                 }
             }
             catch (ClassCastException e) {//
@@ -150,7 +150,7 @@ public final class NumberNumberPlus extends NumberNumberMetaMethod {
         public final Object call(Object receiver, Object arg) throws Throwable {
             try {
                 if (checkPojoMetaClass()) {
-                    return new Double(((Double) receiver).doubleValue() + ((Long) arg).doubleValue());
+                    return (Double) receiver + ((Long) arg).doubleValue();
                 }
             }
             catch (ClassCastException e) {//
@@ -167,7 +167,7 @@ public final class NumberNumberPlus extends NumberNumberMetaMethod {
         public final Object call(Object receiver, Object arg) throws Throwable {
             try {
                 if (checkPojoMetaClass()) {
-                    return new Double(((Double) receiver).doubleValue() + ((Integer) arg).intValue());
+                    return (Double) receiver + (Integer) arg;
                 }
             }
             catch (ClassCastException e) {//
@@ -184,7 +184,7 @@ public final class NumberNumberPlus extends NumberNumberMetaMethod {
         public final Object call(Object receiver, Object arg) throws Throwable {
             try {
                 if (checkPojoMetaClass()) {
-                    return new Double(((Float) receiver).doubleValue() + ((Double) arg).doubleValue());
+                    return ((Float) receiver).doubleValue() + (Double) arg;
                 }
             }
             catch (ClassCastException e) {//
@@ -201,7 +201,7 @@ public final class NumberNumberPlus extends NumberNumberMetaMethod {
         public final Object call(Object receiver, Object arg) throws Throwable {
             try {
                 if (checkPojoMetaClass()) {
-                    return new Double(((Float) receiver).doubleValue() + ((Float) arg).doubleValue());
+                    return ((Float) receiver).doubleValue() + ((Float) arg).doubleValue();
                 }
             }
             catch (ClassCastException e) {//
@@ -218,7 +218,7 @@ public final class NumberNumberPlus extends NumberNumberMetaMethod {
         public final Object call(Object receiver, Object arg) throws Throwable {
             try {
                 if (checkPojoMetaClass()) {
-                    return new Double(((Float) receiver).doubleValue() + ((Long) arg).doubleValue());
+                    return ((Float) receiver).doubleValue() + ((Long) arg).doubleValue();
                 }
             }
             catch (ClassCastException e) {//
@@ -235,7 +235,7 @@ public final class NumberNumberPlus extends NumberNumberMetaMethod {
         public final Object call(Object receiver, Object arg) throws Throwable {
             try {
                 if (checkPojoMetaClass()) {
-                    return new Double(((Float) receiver).doubleValue() + ((Integer) arg).doubleValue());
+                    return ((Float) receiver).doubleValue() + ((Integer) arg).doubleValue();
                 }
             }
             catch (ClassCastException e) {//
@@ -252,7 +252,7 @@ public final class NumberNumberPlus extends NumberNumberMetaMethod {
         public final Object call(Object receiver, Object arg) throws Throwable {
             try {
                 if (checkPojoMetaClass()) {
-                    return new Double(((Long) receiver).doubleValue() + ((Double) arg).doubleValue());
+                    return ((Long) receiver).doubleValue() + (Double) arg;
                 }
             }
             catch (ClassCastException e) {//
@@ -269,7 +269,7 @@ public final class NumberNumberPlus extends NumberNumberMetaMethod {
         public final Object call(Object receiver, Object arg) throws Throwable {
             try {
                 if (checkPojoMetaClass()) {
-                    return new Double(((Long) receiver).doubleValue() + ((Float) arg).doubleValue());
+                    return ((Long) receiver).doubleValue() + ((Float) arg).doubleValue();
                 }
             }
             catch (ClassCastException e) {//
@@ -286,7 +286,7 @@ public final class NumberNumberPlus extends NumberNumberMetaMethod {
         public final Object call(Object receiver, Object arg) throws Throwable {
             try {
                 if (checkPojoMetaClass()) {
-                    return new Long(((Long) receiver).longValue() + ((Long) arg).longValue());
+                    return (Long) receiver + (Long) arg;
                 }
             }
             catch (ClassCastException e) {//
@@ -303,7 +303,7 @@ public final class NumberNumberPlus extends NumberNumberMetaMethod {
         public final Object call(Object receiver, Object arg) throws Throwable {
             try {
                 if (checkPojoMetaClass()) {
-                    return new Long(((Long) receiver).longValue() + ((Integer) arg).longValue());
+                    return (Long) receiver + ((Integer) arg).longValue();
                 }
             }
             catch (ClassCastException e) {//
@@ -320,7 +320,7 @@ public final class NumberNumberPlus extends NumberNumberMetaMethod {
         public final Object call(Object receiver, Object arg) throws Throwable {
             try {
                 if (checkPojoMetaClass()) {
-                    return new Double(((Integer) receiver).doubleValue() + ((Double) arg).doubleValue());
+                    return ((Integer) receiver).doubleValue() + (Double) arg;
                 }
             }
             catch (ClassCastException e) {//
@@ -337,7 +337,7 @@ public final class NumberNumberPlus extends NumberNumberMetaMethod {
         public final Object call(Object receiver, Object arg) throws Throwable {
             try {
                 if (checkPojoMetaClass()) {
-                    return new Double(((Integer) receiver).doubleValue() + ((Float) arg).doubleValue());
+                    return ((Integer) receiver).doubleValue() + ((Float) arg).doubleValue();
                 }
             }
             catch (ClassCastException e) {//
@@ -354,7 +354,7 @@ public final class NumberNumberPlus extends NumberNumberMetaMethod {
         public final Object call(Object receiver, Object arg) throws Throwable {
             try {
                 if (checkPojoMetaClass()) {
-                    return new Long(((Integer) receiver).longValue() + ((Long) arg).longValue());
+                    return ((Integer) receiver).longValue() + (Long) arg;
                 }
             }
             catch (ClassCastException e) {//
@@ -371,7 +371,7 @@ public final class NumberNumberPlus extends NumberNumberMetaMethod {
         public final Object call(Object receiver, Object arg) throws Throwable {
             try {
                 if (checkPojoMetaClass()) {
-                  return new Integer(((Integer) receiver).intValue() + ((Integer) arg).intValue());
+                    return (Integer) receiver + (Integer) arg;
                 }
             }
             catch (ClassCastException e) {//

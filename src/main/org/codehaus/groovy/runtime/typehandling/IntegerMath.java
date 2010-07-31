@@ -22,35 +22,35 @@ package org.codehaus.groovy.runtime.typehandling;
  */
 public final class IntegerMath extends NumberMath {
 
-	public static final IntegerMath INSTANCE = new IntegerMath();
+    public static final IntegerMath INSTANCE = new IntegerMath();
 
-	private IntegerMath() {}
-					
-	protected Number absImpl(Number number) {
-		return Integer.valueOf(Math.abs(number.intValue()));
-	}
-	
-	public Number addImpl(Number left, Number right) {
-		return Integer.valueOf(left.intValue() + right.intValue());
-	}
+    private IntegerMath() {}
+                    
+    protected Number absImpl(Number number) {
+        return Integer.valueOf(Math.abs(number.intValue()));
+    }
+    
+    public Number addImpl(Number left, Number right) {
+        return Integer.valueOf(left.intValue() + right.intValue());
+    }
 
-	public Number subtractImpl(Number left, Number right) {
-		return Integer.valueOf(left.intValue() - right.intValue());
-	}
+    public Number subtractImpl(Number left, Number right) {
+        return Integer.valueOf(left.intValue() - right.intValue());
+    }
 
-	public Number multiplyImpl(Number left, Number right) {
-		return Integer.valueOf(left.intValue() * right.intValue());
-	}
+    public Number multiplyImpl(Number left, Number right) {
+        return Integer.valueOf(left.intValue() * right.intValue());
+    }
 
-	public Number divideImpl(Number left, Number right) {
-		return BigDecimalMath.INSTANCE.divideImpl(left, right);
-	}
-	
-	public int compareToImpl(Number left, Number right) {
-		int leftVal = left.intValue();
-		int rightVal = right.intValue();
-		return (leftVal<rightVal ? -1 : (leftVal==rightVal ? 0 : 1));
-	}
+    public Number divideImpl(Number left, Number right) {
+        return BigDecimalMath.INSTANCE.divideImpl(left, right);
+    }
+    
+    public int compareToImpl(Number left, Number right) {
+        int leftVal = left.intValue();
+        int rightVal = right.intValue();
+        return (leftVal<rightVal ? -1 : (leftVal==rightVal ? 0 : 1));
+    }
 
     protected Number orImpl(Number left, Number right) {
         return Integer.valueOf(left.intValue() | right.intValue());
@@ -67,7 +67,7 @@ public final class IntegerMath extends NumberMath {
     protected Number intdivImpl(Number left, Number right) {
         return Integer.valueOf(left.intValue() / right.intValue());
     }
-	
+    
     protected Number modImpl(Number left, Number right) {
         return Integer.valueOf(left.intValue() % right.intValue());
     }

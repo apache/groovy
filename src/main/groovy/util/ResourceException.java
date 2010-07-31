@@ -20,34 +20,34 @@ package groovy.util;
  */
 public class ResourceException extends Exception {
 
-	/**
-	 * 
-	 */
-	public ResourceException() {
-		super();
-		// TODO Auto-generated constructor stub
-	}
+    /**
+     *
+     */
+    public ResourceException() {
+        super();
+        // TODO Auto-generated constructor stub
+    }
 
-	/**
-	 * @param message
-	 */
-	public ResourceException(String message) {
-		super(message);
-	}
+    /**
+     * @param message
+     */
+    public ResourceException(String message) {
+        super(message);
+    }
 
-	/**
-	 * @param message
-	 * @param cause
-	 */
-	public ResourceException(String message, Throwable cause) {
-		super(message, cause);
-	}
+    /**
+     * @param message
+     * @param cause
+     */
+    public ResourceException(String message, Throwable cause) {
+        super(message, cause);
+    }
 
-	/**
-	 * @param cause
-	 */
-	public ResourceException(Throwable cause) {
-		super(cause);
-	}
+    /**
+     * @param cause
+     */
+    public ResourceException(Throwable cause) {
+        super(cause);
+    }
 
 }

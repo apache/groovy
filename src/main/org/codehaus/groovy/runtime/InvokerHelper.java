@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2008 the original author or authors.
+ * Copyright 2003-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,11 +40,11 @@ import java.util.regex.Pattern;
  * @version $Revision$
  */
 public class InvokerHelper {
-    private   static final Object[] EMPTY_MAIN_ARGS = new Object[]{new String[0]};
+    private static final Object[] EMPTY_MAIN_ARGS = new Object[]{new String[0]};
 
-    public    static final Object[] EMPTY_ARGS = {};
+    public static final Object[] EMPTY_ARGS = {};
     protected static final Object[] EMPTY_ARGUMENTS = EMPTY_ARGS;
-    protected static final Class[]  EMPTY_TYPES = {};
+    protected static final Class[] EMPTY_TYPES = {};
 
     public static final MetaClassRegistry metaRegistry = GroovySystem.getMetaClassRegistry();
 
@@ -150,7 +150,7 @@ public class InvokerHelper {
         if (object == null) {
             object = NullObject.getNullObject();
         }
-        
+
         if (object instanceof GroovyObject) {
             GroovyObject pogo = (GroovyObject) object;
             return pogo.getProperty(property);
@@ -158,7 +158,7 @@ public class InvokerHelper {
             Class c = (Class) object;
             return metaRegistry.getMetaClass(c).getProperty(object, property);
         } else {
-            return ((MetaClassRegistryImpl)metaRegistry).getMetaClass(object).getProperty(object, property);
+            return ((MetaClassRegistryImpl) metaRegistry).getMetaClass(object).getProperty(object, property);
         }
     }
 
@@ -233,7 +233,7 @@ public class InvokerHelper {
         }
         if (value instanceof Long) {
             Long number = (Long) value;
-            return new Long(-number.longValue());
+            return -number;
         }
         if (value instanceof BigInteger) {
             return ((BigInteger) value).negate();
@@ -243,11 +243,11 @@ public class InvokerHelper {
         }
         if (value instanceof Double) {
             Double number = (Double) value;
-            return new Double(-number.doubleValue());
+            return -number;
         }
         if (value instanceof Float) {
             Float number = (Float) value;
-            return new Float(-number.floatValue());
+            return -number;
         }
         if (value instanceof ArrayList) {
             // value is an list.
@@ -271,7 +271,7 @@ public class InvokerHelper {
             return value;
         }
         if (value instanceof ArrayList) {
-            // value is an list.
+            // value is a list.
             List newlist = new ArrayList();
             Iterator it = ((ArrayList) value).iterator();
             for (; it.hasNext();) {
@@ -304,10 +304,8 @@ public class InvokerHelper {
         } else {
             regexToCompareTo = toString(right);
         }
-        Matcher matcher = Pattern.compile(regexToCompareTo).matcher(stringToCompare);
-        return matcher;
+        return Pattern.compile(regexToCompareTo).matcher(stringToCompare);
     }
-
 
     /**
      * Find the right hand regex within the left hand string and return a matcher.
@@ -316,7 +314,7 @@ public class InvokerHelper {
      * @param right regular expression to compare the string to
      */
     public static boolean matchRegex(Object left, Object right) {
-    	if(left == null || right == null) return false;
+        if (left == null || right == null) return false;
         Pattern pattern;
         if (right instanceof Pattern) {
             pattern = (Pattern) right;
@@ -409,7 +407,7 @@ public class InvokerHelper {
                         public Object run() {
                             Object args = getBinding().getVariables().get("args");
                             Object argsToPass = EMPTY_MAIN_ARGS;
-                            if(args != null && args instanceof String[]) {
+                            if (args != null && args instanceof String[]) {
                                 argsToPass = args;
                             }
                             object.invokeMethod("main", argsToPass);
@@ -433,8 +431,8 @@ public class InvokerHelper {
      */
     public static void setProperties(Object object, Map map) {
         MetaClass mc = getMetaClass(object);
-        for (Iterator iter = map.entrySet().iterator(); iter.hasNext();) {
-            Map.Entry entry = (Map.Entry) iter.next();
+        for (Object o : map.entrySet()) {
+            Map.Entry entry = (Map.Entry) o;
             String key = entry.getKey().toString();
 
             Object value = entry.getValue();
@@ -447,12 +445,12 @@ public class InvokerHelper {
     }
 
     /**
-     * @deprecated Use GroovySystem version instead. 
+     * @deprecated Use GroovySystem version instead.
      */
     public static String getVersion() {
         return ReleaseInfo.getVersion();
     }
-    
+
     /**
      * Writes the given object to the given stream
      */
@@ -631,7 +629,7 @@ public class InvokerHelper {
     /**
      * A helper method to return the string representation of a map with bracket boundaries "[" and "]".
      *
-     * @param arg the map to process
+     * @param arg     the map to process
      * @param maxSize stop after approximately this many characters and append '...'
      * @return the string representation of the map
      */
@@ -652,7 +650,7 @@ public class InvokerHelper {
     /**
      * A helper method to return the string representation of a list with bracket boundaries "[" and "]".
      *
-     * @param arg the collection to process
+     * @param arg     the collection to process
      * @param maxSize stop after approximately this many characters and append '...'
      * @return the string representation of the collection
      */
@@ -699,11 +697,11 @@ public class InvokerHelper {
     public static Object bitwiseNegate(Object value) {
         if (value instanceof Integer) {
             Integer number = (Integer) value;
-            return Integer.valueOf(~number.intValue());
+            return ~number;
         }
         if (value instanceof Long) {
             Long number = (Long) value;
-            return new Long(~number.longValue());
+            return ~number;
         }
         if (value instanceof BigInteger) {
             return ((BigInteger) value).not();
@@ -822,22 +820,22 @@ public class InvokerHelper {
      */
     public static Object[] asArray(Object arguments) {
 
-    	if (arguments == null) {
-    		return EMPTY_ARGUMENTS;
-    	}
-    	if (arguments instanceof Object[]) {
-    		return  (Object[]) arguments;
-    	}
-    	return new Object[]{arguments};
+        if (arguments == null) {
+            return EMPTY_ARGUMENTS;
+        }
+        if (arguments instanceof Object[]) {
+            return (Object[]) arguments;
+        }
+        return new Object[]{arguments};
     }
 
     public static Object[] asUnwrappedArray(Object arguments) {
 
         Object[] args = asArray(arguments);
 
-        for (int i=0; i<args.length; i++) {
+        for (int i = 0; i < args.length; i++) {
             if (args[i] instanceof PojoWrapper) {
-                args[i] = ((PojoWrapper)args[i]).unwrap();
+                args[i] = ((PojoWrapper) args[i]).unwrap();
             }
         }
 

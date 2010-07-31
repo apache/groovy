@@ -56,8 +56,7 @@ public class GroovyTestCase extends TestCase {
     public String getName() {
         if (useAgileDoxNaming) {
             return super.getName().substring(4).replaceAll("([A-Z])", " $1").toLowerCase();
-        }
-        else {
+        } else {
             return super.getName();
         }
     }
@@ -74,7 +73,7 @@ public class GroovyTestCase extends TestCase {
      */
     protected void assertArrayEquals(Object[] expected, Object[] value) {
         String message =
-            "expected array: " + InvokerHelper.toString(expected) + " value array: " + InvokerHelper.toString(value);
+                "expected array: " + InvokerHelper.toString(expected) + " value array: " + InvokerHelper.toString(value);
         assertNotNull(message + ": expected should not be null", expected);
         assertNotNull(message + ": value should not be null", value);
         assertEquals(message, expected.length, value.length);
@@ -87,7 +86,7 @@ public class GroovyTestCase extends TestCase {
      * Asserts that the array of characters has a given length
      *
      * @param length expected length
-     * @param array the array
+     * @param array  the array
      */
     protected void assertLength(int length, char[] array) {
         assertEquals(length, array.length);
@@ -97,7 +96,7 @@ public class GroovyTestCase extends TestCase {
      * Asserts that the array of ints has a given length
      *
      * @param length expected length
-     * @param array the array
+     * @param array  the array
      */
     protected void assertLength(int length, int[] array) {
         assertEquals(length, array.length);
@@ -107,7 +106,7 @@ public class GroovyTestCase extends TestCase {
      * Asserts that the array of objects has a given length
      *
      * @param length expected length
-     * @param array the array
+     * @param array  the array
      */
     protected void assertLength(int length, Object[] array) {
         assertEquals(length, array.length);
@@ -117,7 +116,7 @@ public class GroovyTestCase extends TestCase {
      * Asserts that the array of characters contains a given char
      *
      * @param expected expected character to be found
-     * @param array the array
+     * @param array    the array
      */
     protected void assertContains(char expected, char[] array) {
         for (int i = 0; i < array.length; ++i) {
@@ -147,11 +146,11 @@ public class GroovyTestCase extends TestCase {
      * Asserts that the array of ints contains a given int
      *
      * @param expected expected int
-     * @param array the array
+     * @param array    the array
      */
     protected void assertContains(int expected, int[] array) {
-        for (int i = 0; i < array.length; ++i) {
-            if (array[i] == expected) {
+        for (int anInt : array) {
+            if (anInt == expected) {
                 return;
             }
         }
@@ -177,7 +176,7 @@ public class GroovyTestCase extends TestCase {
      * Asserts that the value of toString() on the given object matches the
      * given text string
      *
-     * @param value the object to be output to the console
+     * @param value    the object to be output to the console
      * @param expected the expected String representation
      */
     protected void assertToString(Object value, String expected) {
@@ -189,7 +188,7 @@ public class GroovyTestCase extends TestCase {
      * Asserts that the value of inspect() on the given object matches the
      * given text string
      *
-     * @param value the object to be output to the console
+     * @param value    the object to be output to the console
      * @param expected the expected String representation
      */
     protected void assertInspect(Object value, String expected) {
@@ -228,8 +227,8 @@ public class GroovyTestCase extends TestCase {
             result = ScriptBytecodeAdapter.unwrap(gre).getMessage();
         }
         catch (Throwable e) {
-                failed = true;
-                result = e.getMessage();
+            failed = true;
+            result = e.getMessage();
         }
         assertTrue("Closure " + code + " should have failed", failed);
         return result;
@@ -240,7 +239,7 @@ public class GroovyTestCase extends TestCase {
      * and that a particular exception is thrown.
      *
      * @param clazz the class of the expected exception
-     * @param code the closure that should fail
+     * @param code  the closure that should fail
      * @return the message of the expected Throwable
      */
     protected String shouldFail(Class clazz, Closure code) {
@@ -267,12 +266,12 @@ public class GroovyTestCase extends TestCase {
      * The expected exception class is compared recursively with any nested
      * exceptions using getCause() until either a match is found or no more
      * nested exceptions exist.
-     * 
+     * <p/>
      * If a match is found the error message associated with the matching
      * exception is returned. If no match was found the method will fail.
      *
      * @param clazz the class of the expected exception
-     * @param code the closure that should fail
+     * @param code  the closure that should fail
      * @return the message of the expected Throwable
      */
     protected String shouldFailWithCause(Class clazz, Closure code) {
@@ -325,11 +324,10 @@ public class GroovyTestCase extends TestCase {
     }
 
     /**
-     *  Returns a copy of a string in which all EOLs are \n.
+     * Returns a copy of a string in which all EOLs are \n.
      */
-    protected String fixEOLs( String value )
-    {
-        return value.replaceAll( "(\\r\\n?)|\n", "\n" );
+    protected String fixEOLs(String value) {
+        return value.replaceAll("(\\r\\n?)|\n", "\n");
     }
 
     /**
@@ -347,6 +345,7 @@ public class GroovyTestCase extends TestCase {
      * Future versions maybe available in the JUnit distro.
      * The purpose of providing a 'static' version is such that you can use the
      * feature even if not subclassing GroovyTestCase.
+     *
      * @return <false> when not itself already in the call stack
      */
     public static boolean notYetImplemented(TestCase caller) {
@@ -358,7 +357,7 @@ public class GroovyTestCase extends TestCase {
         final Method testMethod = findRunningJUnitTestMethod(caller.getClass());
         try {
             log.info("Running " + testMethod.getName() + " as not yet implemented");
-            testMethod.invoke(caller, (Object[]) new Class[] {});
+            testMethod.invoke(caller, (Object[]) new Class[]{});
             fail(testMethod.getName() + " is marked as not yet implemented but passes unexpectedly");
         }
         catch (final Exception e) {
@@ -374,8 +373,9 @@ public class GroovyTestCase extends TestCase {
     /**
      * Convenience method for subclasses of GroovyTestCase, identical to
      * <pre> GroovyTestCase.notYetImplemented(this); </pre>.
+     *
+     * @return <false> when not itself already in the call stack
      * @see #notYetImplemented(junit.framework.TestCase)
-     * @return  <false> when not itself already in the call stack
      */
     public boolean notYetImplemented() {
         return notYetImplemented(this);
@@ -383,15 +383,16 @@ public class GroovyTestCase extends TestCase {
 
     /**
      * From JUnit. Finds from the call stack the active running JUnit test case
+     *
      * @return the test case method
      * @throws RuntimeException if no method could be found.
      */
     private static Method findRunningJUnitTestMethod(Class caller) {
-        final Class[] args = new Class[] {};
+        final Class[] args = new Class[]{};
 
-        // search the inial junit test
+        // search the initial junit test
         final Throwable t = new Exception();
-        for (int i=t.getStackTrace().length-1; i>=0; --i) {
+        for (int i = t.getStackTrace().length - 1; i >= 0; --i) {
             final StackTraceElement element = t.getStackTrace()[i];
             if (element.getClassName().equals(caller.getName())) {
                 try {
@@ -408,9 +409,9 @@ public class GroovyTestCase extends TestCase {
         throw new RuntimeException("No JUnit test case method found in call stack");
     }
 
-
     /**
      * From Junit. Test if the method is a junit test.
+     *
      * @param method the method
      * @return <code>true</code> if this is a junit test.
      */
@@ -420,25 +421,25 @@ public class GroovyTestCase extends TestCase {
         final Class returnType = method.getReturnType();
 
         return parameters.length == 0 && name.startsWith("test")
-            && returnType.equals(Void.TYPE)
-            && Modifier.isPublic(method.getModifiers());
+                && returnType.equals(Void.TYPE)
+                && Modifier.isPublic(method.getModifiers());
     }
 
     public static void assertEquals(String message, Object expected, Object actual) {
         if (expected == null && actual == null)
-			return;
-		if (expected != null && DefaultTypeTransformation.compareEqual(expected, actual))
-			return;
-		failNotEquals(message, expected, actual);
+            return;
+        if (expected != null && DefaultTypeTransformation.compareEqual(expected, actual))
+            return;
+        failNotEquals(message, expected, actual);
     }
 
     public static void assertEquals(Object expected, Object actual) {
-	    assertEquals(null, expected, actual);
-	}
+        assertEquals(null, expected, actual);
+    }
 
-	public static void assertEquals(String expected, String actual) {
-	    assertEquals(null, expected, actual);
-	}
+    public static void assertEquals(String expected, String actual) {
+        assertEquals(null, expected, actual);
+    }
 
     private static final ThreadLocal notYetImplementedFlag = new ThreadLocal();
 }

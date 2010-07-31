@@ -34,7 +34,7 @@ import java.util.ListIterator;
  * will trigger an event (if the value indeed changed), otherwise it won't. The Closure may receive
  * 1 or 2 parameters, the single one being the value, the other one both the key and value, for
  * example:
- * 
+ * <p/>
  * <pre>
  * // skip all properties whose value is a closure
  * def map = new ObservableList( {!(it instanceof Closure)} )
@@ -42,7 +42,7 @@ import java.util.ListIterator;
  * // skip all properties whose name matches a regex
  * def map = new ObservableList( { name, value -&gt; !(name =&tilde; /[A-Z+]/) } )
  * </pre>
- * 
+ * <p/>
  * <p>
  * The current implementation will trigger specialized events in the following scenarios, you need
  * not register a different listener as those events extend from PropertyChangeEvent
@@ -57,7 +57,7 @@ import java.util.ListIterator;
  * list.removeAll()/list.retainAll()</li>
  * </ul>
  * </p>
- *
+ * <p/>
  * <p>
  * <strong>Bound properties</strong>
  * <ul>
@@ -65,542 +65,557 @@ import java.util.ListIterator;
  * <li><tt>size</tt> - read-only.</li>
  * </ul>
  * </p>
- * 
+ *
  * @author <a href="mailto:aalmiray@users.sourceforge.net">Andres Almiray</a>
  */
 public class ObservableList implements List {
-   private List delegate;
-   private PropertyChangeSupport pcs;
-   private Closure test;
+    private List delegate;
+    private PropertyChangeSupport pcs;
+    private Closure test;
 
-   public static final String SIZE_PROPERTY = "size";
-   public static final String CONTENT_PROPERTY = "content";
+    public static final String SIZE_PROPERTY = "size";
+    public static final String CONTENT_PROPERTY = "content";
 
-   public ObservableList() {
-      this( new ArrayList(), null );
-   }
+    public ObservableList() {
+        this(new ArrayList(), null);
+    }
 
-   public ObservableList( List delegate ) {
-      this( delegate, null );
-   }
+    public ObservableList(List delegate) {
+        this(delegate, null);
+    }
 
-   public ObservableList( Closure test ) {
-      this( new ArrayList(), test );
-   }
+    public ObservableList(Closure test) {
+        this(new ArrayList(), test);
+    }
 
-   public ObservableList( List delegate, Closure test ) {
-      this.delegate = delegate;
-      this.test = test;
-      pcs = new PropertyChangeSupport( this );
-   }
+    public ObservableList(List delegate, Closure test) {
+        this.delegate = delegate;
+        this.test = test;
+        pcs = new PropertyChangeSupport(this);
+    }
 
-   public List getContent() {
-      return Collections.unmodifiableList(delegate);	
-   }
+    public List getContent() {
+        return Collections.unmodifiableList(delegate);
+    }
 
-   protected List getDelegateList() {
-      return delegate;
-   }
+    protected List getDelegateList() {
+        return delegate;
+    }
 
-   protected Closure getTest() {
-      return test;
-   }
+    protected Closure getTest() {
+        return test;
+    }
 
-   protected void fireElementAddedEvent(int index, Object element) {
-      fireElementEvent( new ElementAddedEvent( this, element, index ) );
-   }
+    protected void fireElementAddedEvent(int index, Object element) {
+        fireElementEvent(new ElementAddedEvent(this, element, index));
+    }
 
-   protected void fireMultiElementAddedEvent(int index, List values) {
-      fireElementEvent( new MultiElementAddedEvent( this, index, values ) );
-   }
+    protected void fireMultiElementAddedEvent(int index, List values) {
+        fireElementEvent(new MultiElementAddedEvent(this, index, values));
+    }
 
-   protected void fireElementClearedEvent(List values) {
-      fireElementEvent( new ElementClearedEvent( this, values ) );
-   }
+    protected void fireElementClearedEvent(List values) {
+        fireElementEvent(new ElementClearedEvent(this, values));
+    }
 
-   protected void fireElementRemovedEvent(int index, Object element) {
-      fireElementEvent( new ElementRemovedEvent( this, element, index ) );
-   }
+    protected void fireElementRemovedEvent(int index, Object element) {
+        fireElementEvent(new ElementRemovedEvent(this, element, index));
+    }
 
-   protected void fireMultiElementRemovedEvent(List values) {
-      fireElementEvent( new MultiElementRemovedEvent( this, values ) );
-   }
+    protected void fireMultiElementRemovedEvent(List values) {
+        fireElementEvent(new MultiElementRemovedEvent(this, values));
+    }
 
-   protected void fireElementUpdatedEvent(int index, Object oldValue, Object newValue) {
-      fireElementEvent( new ElementUpdatedEvent( this, oldValue, newValue, index ) );
-   }
+    protected void fireElementUpdatedEvent(int index, Object oldValue, Object newValue) {
+        fireElementEvent(new ElementUpdatedEvent(this, oldValue, newValue, index));
+    }
 
-   protected void fireElementEvent(ElementEvent event) {
-      pcs.firePropertyChange(event);
-   }
+    protected void fireElementEvent(ElementEvent event) {
+        pcs.firePropertyChange(event);
+    }
 
-   protected void fireSizeChangedEvent(int oldValue, int newValue) {
-      pcs.firePropertyChange( new PropertyChangeEvent(this, SIZE_PROPERTY, oldValue, newValue) );	
-   }
+    protected void fireSizeChangedEvent(int oldValue, int newValue) {
+        pcs.firePropertyChange(new PropertyChangeEvent(this, SIZE_PROPERTY, oldValue, newValue));
+    }
 
-   public void add( int index, Object element ) {
-	  int oldSize = size();
-      delegate.add( index, element );
-      if( test != null ) {
-         Object result = test.call( element );
-         if( result != null && result instanceof Boolean && ((Boolean) result).booleanValue() ) {
+    public void add(int index, Object element) {
+        int oldSize = size();
+        delegate.add(index, element);
+        if (test != null) {
+            Object result = test.call(element);
+            if (result != null && result instanceof Boolean && (Boolean) result) {
+                fireElementAddedEvent(index, element);
+                fireSizeChangedEvent(oldSize, size());
+            }
+        } else {
             fireElementAddedEvent(index, element);
             fireSizeChangedEvent(oldSize, size());
-         }
-      } else {
-         fireElementAddedEvent(index, element);
-         fireSizeChangedEvent(oldSize, size());
-      }
-   }
+        }
+    }
 
-   public boolean add( Object o ) {
-	  int oldSize = size();
-      boolean success = delegate.add( o );
-      if( success ) {
-         if( test != null ) {
-            Object result = test.call( o );
-            if( result != null && result instanceof Boolean && ((Boolean) result).booleanValue() ) {
-               fireElementAddedEvent(size() - 1, o);
-               fireSizeChangedEvent(oldSize, size());
-            }
-         } else {
-            fireElementAddedEvent(size() - 1, o);
-            fireSizeChangedEvent(oldSize, size());
-         }
-      }
-      return success;
-   }
-
-   public boolean addAll( Collection c ) {
-	  int oldSize = size();
-      int index = size() - 1;
-      index = index < 0 ? 0 : index;
-
-      boolean success = delegate.addAll( c );
-      if( success && c != null ) {
-         List values = new ArrayList();
-         for( Iterator i = c.iterator(); i.hasNext(); ) {
-            Object element = i.next();
-            if( test != null ) {
-               Object result = test.call( element );
-               if( result != null && result instanceof Boolean && ((Boolean) result).booleanValue() ) {
-                  values.add( element );
-               }
+    public boolean add(Object o) {
+        int oldSize = size();
+        boolean success = delegate.add(o);
+        if (success) {
+            if (test != null) {
+                Object result = test.call(o);
+                if (result != null && result instanceof Boolean && (Boolean) result) {
+                    fireElementAddedEvent(size() - 1, o);
+                    fireSizeChangedEvent(oldSize, size());
+                }
             } else {
-               values.add( element );
+                fireElementAddedEvent(size() - 1, o);
+                fireSizeChangedEvent(oldSize, size());
             }
-         }
-         if( values.size() > 0 ) {
-            fireMultiElementAddedEvent(index, values);
+        }
+        return success;
+    }
+
+    public boolean addAll(Collection c) {
+        int oldSize = size();
+        int index = size() - 1;
+        index = index < 0 ? 0 : index;
+
+        boolean success = delegate.addAll(c);
+        if (success && c != null) {
+            List values = new ArrayList();
+            for (Object element : c) {
+                if (test != null) {
+                    Object result = test.call(element);
+                    if (result != null && result instanceof Boolean && (Boolean) result) {
+                        values.add(element);
+                    }
+                } else {
+                    values.add(element);
+                }
+            }
+            if (values.size() > 0) {
+                fireMultiElementAddedEvent(index, values);
+                fireSizeChangedEvent(oldSize, size());
+            }
+        }
+
+        return success;
+    }
+
+    public boolean addAll(int index, Collection c) {
+        int oldSize = size();
+        boolean success = delegate.addAll(index, c);
+
+        if (success && c != null) {
+            List values = new ArrayList();
+            for (Object element : c) {
+                if (test != null) {
+                    Object result = test.call(element);
+                    if (result != null && result instanceof Boolean && (Boolean) result) {
+                        values.add(element);
+                    }
+                } else {
+                    values.add(element);
+                }
+            }
+            if (values.size() > 0) {
+                fireMultiElementAddedEvent(index, values);
+                fireSizeChangedEvent(oldSize, size());
+            }
+        }
+
+        return success;
+    }
+
+    public void clear() {
+        int oldSize = size();
+        List values = new ArrayList();
+        values.addAll(delegate);
+        delegate.clear();
+        if (!values.isEmpty()) {
+            fireElementClearedEvent(values);
+        }
+        fireSizeChangedEvent(oldSize, size());
+    }
+
+    public boolean contains(Object o) {
+        return delegate.contains(o);
+    }
+
+    public boolean containsAll(Collection c) {
+        return delegate.containsAll(c);
+    }
+
+    public boolean equals(Object o) {
+        return delegate.equals(o);
+    }
+
+    public Object get(int index) {
+        return delegate.get(index);
+    }
+
+    public int hashCode() {
+        return delegate.hashCode();
+    }
+
+    public int indexOf(Object o) {
+        return delegate.indexOf(o);
+    }
+
+    public boolean isEmpty() {
+        return delegate.isEmpty();
+    }
+
+    public Iterator iterator() {
+        return new ObservableIterator(delegate.iterator());
+    }
+
+    public int lastIndexOf(Object o) {
+        return delegate.lastIndexOf(o);
+    }
+
+    public ListIterator listIterator() {
+        return new ObservableListIterator(delegate.listIterator(), 0);
+    }
+
+    public ListIterator listIterator(int index) {
+        return new ObservableListIterator(delegate.listIterator(index), index);
+    }
+
+    public Object remove(int index) {
+        int oldSize = size();
+        Object element = delegate.remove(index);
+        fireElementRemovedEvent(index, element);
+        fireSizeChangedEvent(oldSize, size());
+        return element;
+    }
+
+    public boolean remove(Object o) {
+        int oldSize = size();
+        int index = delegate.indexOf(o);
+        boolean success = delegate.remove(o);
+        if (success) {
+            fireElementRemovedEvent(index, o);
             fireSizeChangedEvent(oldSize, size());
-         }
-      }
+        }
+        return success;
+    }
 
-      return success;
-   }
+    public boolean removeAll(Collection c) {
+        if (c == null) {
+            return false;
+        }
 
-   public boolean addAll( int index, Collection c ) {
-	  int oldSize = size();
-      boolean success = delegate.addAll( index, c );
-
-      if( success && c != null ) {
-         List values = new ArrayList();
-         for( Iterator i = c.iterator(); i.hasNext(); ) {
-            Object element = i.next();
-            if( test != null ) {
-               Object result = test.call( element );
-               if( result != null && result instanceof Boolean && ((Boolean) result).booleanValue() ) {
-                  values.add( element );
-               }
-            } else {
-               values.add( element );
+        List values = new ArrayList();
+        if (c != null) {
+            for (Object element : c) {
+                if (delegate.contains(element)) {
+                    values.add(element);
+                }
             }
-         }
-         if( values.size() > 0 ) {
-            fireMultiElementAddedEvent(index, values);
+        }
+
+        int oldSize = size();
+        boolean success = delegate.removeAll(c);
+        if (success && !values.isEmpty()) {
+            fireMultiElementRemovedEvent(values);
             fireSizeChangedEvent(oldSize, size());
-         }
-      }
+        }
 
-      return success;
-   }
+        return success;
+    }
 
-   public void clear() {
-	  int oldSize = size();
-      List values = new ArrayList();
-      values.addAll( delegate );
-      delegate.clear();
-      if( !values.isEmpty() ) {
-         fireElementClearedEvent(values);
-      }
-      fireSizeChangedEvent(oldSize, size());
-   }
+    public boolean retainAll(Collection c) {
+        if (c == null) {
+            return false;
+        }
 
-   public boolean contains( Object o ) {
-      return delegate.contains( o );
-   }
-
-   public boolean containsAll( Collection c ) {
-      return delegate.containsAll( c );
-   }
-
-   public boolean equals( Object o ) {
-      return delegate.equals( o );
-   }
-
-   public Object get( int index ) {
-      return delegate.get( index );
-   }
-
-   public int hashCode() {
-      return delegate.hashCode();
-   }
-
-   public int indexOf( Object o ) {
-      return delegate.indexOf( o );
-   }
-
-   public boolean isEmpty() {
-      return delegate.isEmpty();
-   }
-
-   public Iterator iterator() {
-      return new ObservableIterator( delegate.iterator() );
-   }
-
-   public int lastIndexOf( Object o ) {
-      return delegate.lastIndexOf( o );
-   }
-
-   public ListIterator listIterator() {
-      return new ObservableListIterator( delegate.listIterator(), 0 );
-   }
-
-   public ListIterator listIterator( int index ) {
-      return new ObservableListIterator( delegate.listIterator( index ), index );
-   }
-
-   public Object remove( int index ) {
-	  int oldSize = size();
-      Object element = delegate.remove( index );
-      fireElementRemovedEvent(index, element);
-      fireSizeChangedEvent(oldSize, size());
-      return element;
-   }
-
-   public boolean remove( Object o ) {
-	  int oldSize = size();
-      int index = delegate.indexOf( o );
-      boolean success = delegate.remove( o );
-      if( success ) {
-         fireElementRemovedEvent(index, o);
-         fireSizeChangedEvent(oldSize, size());
-      }
-      return success;
-   }
-
-   public boolean removeAll( Collection c ) {
-      if( c == null ) {
-         return false;
-      }
-      
-      List values = new ArrayList();
-      if( c != null ) {
-         for( Iterator i = c.iterator(); i.hasNext(); ) {
-            Object element = i.next();
-            if( delegate.contains( element ) ) {
-               values.add( element );
+        List values = new ArrayList();
+        if (c != null) {
+            for (Object element : delegate) {
+                if (!c.contains(element)) {
+                    values.add(element);
+                }
             }
-         }
-      }
+        }
 
-      int oldSize = size();
-      boolean success = delegate.removeAll( c );
-      if( success && !values.isEmpty() ) {
-         fireMultiElementRemovedEvent(values);
-         fireSizeChangedEvent(oldSize, size());
-      }
+        int oldSize = size();
+        boolean success = delegate.retainAll(c);
+        if (success && !values.isEmpty()) {
+            fireMultiElementRemovedEvent(values);
+            fireSizeChangedEvent(oldSize, size());
+        }
 
-      return success;
-   }
+        return success;
+    }
 
-   public boolean retainAll( Collection c ) {
-      if( c == null ) {
-         return false;
-      }
-      
-      List values = new ArrayList();
-      if( c != null ) {
-         for( Iterator i = delegate.iterator(); i.hasNext(); ) {
-            Object element = i.next();
-            if( !c.contains( element ) ) {
-               values.add( element );
+    public Object set(int index, Object element) {
+        Object oldValue = delegate.set(index, element);
+        if (test != null) {
+            Object result = test.call(element);
+            if (result != null && result instanceof Boolean && ((Boolean) result).booleanValue()) {
+                fireElementUpdatedEvent(index, oldValue, element);
             }
-         }
-      }
-
-      int oldSize = size();
-      boolean success = delegate.retainAll( c );
-      if( success && !values.isEmpty() ) {
-         fireMultiElementRemovedEvent(values);
-         fireSizeChangedEvent(oldSize, size());
-      }
-
-      return success;
-   }
-
-   public Object set( int index, Object element ) {
-      Object oldValue = delegate.set( index, element );
-      if( test != null ) {
-         Object result = test.call( element );
-         if( result != null && result instanceof Boolean && ((Boolean) result).booleanValue() ) {
+        } else {
             fireElementUpdatedEvent(index, oldValue, element);
-         }
-      } else {
-         fireElementUpdatedEvent(index, oldValue, element);
-      }
-      return oldValue;
-   }
+        }
+        return oldValue;
+    }
 
-   public int size() {
-      return delegate.size();
-   }
+    public int size() {
+        return delegate.size();
+    }
 
-   public int getSize() {
-      return size();	
-   }
+    public int getSize() {
+        return size();
+    }
 
-   public List subList( int fromIndex, int toIndex ) {
-      return delegate.subList( fromIndex, toIndex );
-   }
+    public List subList(int fromIndex, int toIndex) {
+        return delegate.subList(fromIndex, toIndex);
+    }
 
-   public Object[] toArray() {
-      return delegate.toArray();
-   }
+    public Object[] toArray() {
+        return delegate.toArray();
+    }
 
-   public Object[] toArray( Object[] a ) {
-      return delegate.toArray( a );
-   }
+    public Object[] toArray(Object[] a) {
+        return delegate.toArray(a);
+    }
 
-   protected class ObservableIterator implements Iterator {
-      private Iterator iterDelegate;
-      protected int cursor = 0;
+    protected class ObservableIterator implements Iterator {
+        private Iterator iterDelegate;
+        protected int cursor = 0;
 
-      public ObservableIterator( Iterator iterDelegate ) {
-         this.iterDelegate = iterDelegate;
-      }
+        public ObservableIterator(Iterator iterDelegate) {
+            this.iterDelegate = iterDelegate;
+        }
 
-      public Iterator getDelegate() {
-         return iterDelegate;
-      }
+        public Iterator getDelegate() {
+            return iterDelegate;
+        }
 
-      public boolean hasNext() {
-         return iterDelegate.hasNext();
-      }
+        public boolean hasNext() {
+            return iterDelegate.hasNext();
+        }
 
-      public Object next() {
-         cursor++;
-         return iterDelegate.next();
-      }
+        public Object next() {
+            cursor++;
+            return iterDelegate.next();
+        }
 
-      public void remove() {
-         ObservableList.this.remove( cursor-- );
-      }
-   }
+        public void remove() {
+            ObservableList.this.remove(cursor--);
+        }
+    }
 
-   protected class ObservableListIterator extends ObservableIterator implements ListIterator {
-      public ObservableListIterator( ListIterator iterDelegate, int index ) {
-         super( iterDelegate );
-         cursor = index;
-      }
+    protected class ObservableListIterator extends ObservableIterator implements ListIterator {
+        public ObservableListIterator(ListIterator iterDelegate, int index) {
+            super(iterDelegate);
+            cursor = index;
+        }
 
-      public ListIterator getListIterator() {
-         return (ListIterator) getDelegate();
-      }
+        public ListIterator getListIterator() {
+            return (ListIterator) getDelegate();
+        }
 
-      public void add( Object o ) {
-         ObservableList.this.add( o );
-         cursor++;
-      }
+        public void add(Object o) {
+            ObservableList.this.add(o);
+            cursor++;
+        }
 
-      public boolean hasPrevious() {
-         return getListIterator().hasPrevious();
-      }
+        public boolean hasPrevious() {
+            return getListIterator().hasPrevious();
+        }
 
-      public int nextIndex() {
-         return getListIterator().nextIndex();
-      }
+        public int nextIndex() {
+            return getListIterator().nextIndex();
+        }
 
-      public Object previous() {
-         return getListIterator().previous();
-      }
+        public Object previous() {
+            return getListIterator().previous();
+        }
 
-      public int previousIndex() {
-         return getListIterator().previousIndex();
-      }
+        public int previousIndex() {
+            return getListIterator().previousIndex();
+        }
 
-      public void set( Object o ) {
-         ObservableList.this.set( cursor, o );
-      }
-   }
+        public void set(Object o) {
+            ObservableList.this.set(cursor, o);
+        }
+    }
 
-   // observable interface
+    // observable interface
 
-   public void addPropertyChangeListener( PropertyChangeListener listener ) {
-      pcs.addPropertyChangeListener( listener );
-   }
+    public void addPropertyChangeListener(PropertyChangeListener listener) {
+        pcs.addPropertyChangeListener(listener);
+    }
 
-   public void addPropertyChangeListener( String propertyName, PropertyChangeListener listener ) {
-      pcs.addPropertyChangeListener( propertyName, listener );
-   }
+    public void addPropertyChangeListener(String propertyName, PropertyChangeListener listener) {
+        pcs.addPropertyChangeListener(propertyName, listener);
+    }
 
-   public PropertyChangeListener[] getPropertyChangeListeners() {
-      return pcs.getPropertyChangeListeners();
-   }
+    public PropertyChangeListener[] getPropertyChangeListeners() {
+        return pcs.getPropertyChangeListeners();
+    }
 
-   public PropertyChangeListener[] getPropertyChangeListeners( String propertyName ) {
-      return pcs.getPropertyChangeListeners( propertyName );
-   }
+    public PropertyChangeListener[] getPropertyChangeListeners(String propertyName) {
+        return pcs.getPropertyChangeListeners(propertyName);
+    }
 
-   public void removePropertyChangeListener( PropertyChangeListener listener ) {
-      pcs.removePropertyChangeListener( listener );
-   }
+    public void removePropertyChangeListener(PropertyChangeListener listener) {
+        pcs.removePropertyChangeListener(listener);
+    }
 
-   public void removePropertyChangeListener( String propertyName, PropertyChangeListener listener ) {
-      pcs.removePropertyChangeListener( propertyName, listener );
-   }
+    public void removePropertyChangeListener(String propertyName, PropertyChangeListener listener) {
+        pcs.removePropertyChangeListener(propertyName, listener);
+    }
 
-   public boolean hasListeners( String propertyName ) {
-      return pcs.hasListeners( propertyName );
-   }
+    public boolean hasListeners(String propertyName) {
+        return pcs.hasListeners(propertyName);
+    }
 
-   public enum ChangeType {
-	  ADDED, UPDATED, REMOVED, CLEARED, MULTI_ADD, MULTI_REMOVE, NONE;
-	
-	  public static final Object oldValue = new Object();
-	  public static final Object newValue = new Object();
-	
-      public static ChangeType resolve(int ordinal) {
-         switch( ordinal ) {
-            case 0: return ADDED;
-            case 2: return REMOVED;
-            case 3: return CLEARED;
-            case 4: return MULTI_ADD;
-            case 5: return MULTI_REMOVE;
-            case 6: return NONE;
-            case 1:
-            default: return UPDATED;
-         }	
-      }
-   }
+    public enum ChangeType {
+        ADDED, UPDATED, REMOVED, CLEARED, MULTI_ADD, MULTI_REMOVE, NONE;
 
-   public abstract static class ElementEvent extends PropertyChangeEvent {
-	  /** deprecated */
-      public static final int ADDED = ChangeType.ADDED.ordinal();
-	  /** deprecated */
-      public static final int UPDATED = ChangeType.UPDATED.ordinal();
-	  /** deprecated */
-      public static final int REMOVED = ChangeType.REMOVED.ordinal();
-	  /** deprecated */
-      public static final int CLEARED = ChangeType.CLEARED.ordinal();
-	  /** deprecated */
-      public static final int MULTI_ADD = ChangeType.MULTI_ADD.ordinal();
-	  /** deprecated */
-      public static final int MULTI_REMOVE = ChangeType.MULTI_REMOVE.ordinal();
+        public static final Object oldValue = new Object();
+        public static final Object newValue = new Object();
 
-      private final ChangeType type;
-      private final int index;
+        public static ChangeType resolve(int ordinal) {
+            switch (ordinal) {
+                case 0:
+                    return ADDED;
+                case 2:
+                    return REMOVED;
+                case 3:
+                    return CLEARED;
+                case 4:
+                    return MULTI_ADD;
+                case 5:
+                    return MULTI_REMOVE;
+                case 6:
+                    return NONE;
+                case 1:
+                default:
+                    return UPDATED;
+            }
+        }
+    }
 
-      /**
-       * @deprecated
-       */
-      public ElementEvent( Object source, Object oldValue, Object newValue, int index, int type ) {
-         this( source, oldValue, newValue, index, ChangeType.resolve(type) );
-      }
+    public abstract static class ElementEvent extends PropertyChangeEvent {
+        /**
+         * deprecated
+         */
+        public static final int ADDED = ChangeType.ADDED.ordinal();
+        /**
+         * deprecated
+         */
+        public static final int UPDATED = ChangeType.UPDATED.ordinal();
+        /**
+         * deprecated
+         */
+        public static final int REMOVED = ChangeType.REMOVED.ordinal();
+        /**
+         * deprecated
+         */
+        public static final int CLEARED = ChangeType.CLEARED.ordinal();
+        /**
+         * deprecated
+         */
+        public static final int MULTI_ADD = ChangeType.MULTI_ADD.ordinal();
+        /**
+         * deprecated
+         */
+        public static final int MULTI_REMOVE = ChangeType.MULTI_REMOVE.ordinal();
 
-      public ElementEvent( Object source, Object oldValue, Object newValue, int index, ChangeType type ) {
-         super( source, ObservableList.CONTENT_PROPERTY, oldValue, newValue );
-         this.type = type;
-         this.index = index;
-      }
+        private final ChangeType type;
+        private final int index;
 
-      public int getIndex() {
-         return index;
-      }
-      
-      public int getType() {
-         return type.ordinal();
-      }
+        /**
+         * @deprecated
+         */
+        public ElementEvent(Object source, Object oldValue, Object newValue, int index, int type) {
+            this(source, oldValue, newValue, index, ChangeType.resolve(type));
+        }
 
-      public ChangeType getChangeType() {
-         return type;
-      }
+        public ElementEvent(Object source, Object oldValue, Object newValue, int index, ChangeType type) {
+            super(source, ObservableList.CONTENT_PROPERTY, oldValue, newValue);
+            this.type = type;
+            this.index = index;
+        }
 
-      public String getTypeAsString() {
-         return type.name().toUpperCase();
-      }
-   }
+        public int getIndex() {
+            return index;
+        }
 
-   public static class ElementAddedEvent extends ElementEvent {
-      public ElementAddedEvent( Object source, Object newValue, int index ) {
-         super( source, null, newValue, index, ChangeType.ADDED );
-      }
-   }
+        public int getType() {
+            return type.ordinal();
+        }
 
-   public static class ElementUpdatedEvent extends ElementEvent {
-      public ElementUpdatedEvent( Object source, Object oldValue, Object newValue, int index ) {
-         super( source, oldValue, newValue, index, ChangeType.UPDATED );
-      }
-   }
+        public ChangeType getChangeType() {
+            return type;
+        }
 
-   public static class ElementRemovedEvent extends ElementEvent {
-      public ElementRemovedEvent( Object source, Object value, int index ) {
-         super( source, value, null, index, ChangeType.REMOVED );
-      }
-   }
+        public String getTypeAsString() {
+            return type.name().toUpperCase();
+        }
+    }
 
-   public static class ElementClearedEvent extends ElementEvent {
-      private List values = new ArrayList();
+    public static class ElementAddedEvent extends ElementEvent {
+        public ElementAddedEvent(Object source, Object newValue, int index) {
+            super(source, null, newValue, index, ChangeType.ADDED);
+        }
+    }
 
-      public ElementClearedEvent( Object source, List values ) {
-         super( source, ChangeType.oldValue, ChangeType.newValue, 0, ChangeType.CLEARED );
-         if( values != null ) {
-            this.values.addAll( values );
-         }
-      }
+    public static class ElementUpdatedEvent extends ElementEvent {
+        public ElementUpdatedEvent(Object source, Object oldValue, Object newValue, int index) {
+            super(source, oldValue, newValue, index, ChangeType.UPDATED);
+        }
+    }
 
-      public List getValues() {
-         return Collections.unmodifiableList( values );
-      }
-   }
+    public static class ElementRemovedEvent extends ElementEvent {
+        public ElementRemovedEvent(Object source, Object value, int index) {
+            super(source, value, null, index, ChangeType.REMOVED);
+        }
+    }
 
-   public static class MultiElementAddedEvent extends ElementEvent {
-      private List values = new ArrayList();
+    public static class ElementClearedEvent extends ElementEvent {
+        private List values = new ArrayList();
 
-      public MultiElementAddedEvent( Object source, int index, List values ) {
-         super( source, ChangeType.oldValue, ChangeType.newValue, index, ChangeType.MULTI_ADD );
-         if( values != null ) {
-            this.values.addAll( values );
-         }
-      }
+        public ElementClearedEvent(Object source, List values) {
+            super(source, ChangeType.oldValue, ChangeType.newValue, 0, ChangeType.CLEARED);
+            if (values != null) {
+                this.values.addAll(values);
+            }
+        }
 
-      public List getValues() {
-         return Collections.unmodifiableList( values );
-      }
-   }
+        public List getValues() {
+            return Collections.unmodifiableList(values);
+        }
+    }
 
-   public static class MultiElementRemovedEvent extends ElementEvent {
-      private List values = new ArrayList();
+    public static class MultiElementAddedEvent extends ElementEvent {
+        private List values = new ArrayList();
 
-      public MultiElementRemovedEvent( Object source, List values ) {
-         super( source, ChangeType.oldValue, ChangeType.newValue, 0, ChangeType.MULTI_ADD );
-         if( values != null ) {
-            this.values.addAll( values );
-         }
-      }
+        public MultiElementAddedEvent(Object source, int index, List values) {
+            super(source, ChangeType.oldValue, ChangeType.newValue, index, ChangeType.MULTI_ADD);
+            if (values != null) {
+                this.values.addAll(values);
+            }
+        }
 
-      public List getValues() {
-         return Collections.unmodifiableList( values );
-      }
-   }
+        public List getValues() {
+            return Collections.unmodifiableList(values);
+        }
+    }
+
+    public static class MultiElementRemovedEvent extends ElementEvent {
+        private List values = new ArrayList();
+
+        public MultiElementRemovedEvent(Object source, List values) {
+            super(source, ChangeType.oldValue, ChangeType.newValue, 0, ChangeType.MULTI_ADD);
+            if (values != null) {
+                this.values.addAll(values);
+            }
+        }
+
+        public List getValues() {
+            return Collections.unmodifiableList(values);
+        }
+    }
 }

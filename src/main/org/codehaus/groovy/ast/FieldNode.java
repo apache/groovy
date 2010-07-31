@@ -22,7 +22,7 @@ import org.objectweb.asm.Opcodes;
 
 /**
  * Represents a field (member variable)
- * 
+ *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
@@ -47,7 +47,8 @@ public class FieldNode extends AnnotatedNode implements Opcodes, Variable {
         this.name = name;
         this.modifiers = modifiers;
         this.type = type;
-        if (this.type==ClassHelper.DYNAMIC_TYPE && initialValueExpression!=null) this.setType(initialValueExpression.getType());
+        if (this.type == ClassHelper.DYNAMIC_TYPE && initialValueExpression != null)
+            this.setType(initialValueExpression.getType());
         this.setType(type);
         this.owner = owner;
         this.initialValueExpression = initialValueExpression;
@@ -71,9 +72,9 @@ public class FieldNode extends AnnotatedNode implements Opcodes, Variable {
 
     public void setType(ClassNode type) {
         this.type = type;
-        dynamicTyped |= type==ClassHelper.DYNAMIC_TYPE;
+        dynamicTyped |= type == ClassHelper.DYNAMIC_TYPE;
     }
-    
+
     public ClassNode getOwner() {
         return owner;
     }
@@ -122,23 +123,25 @@ public class FieldNode extends AnnotatedNode implements Opcodes, Variable {
         return (modifiers & ACC_PUBLIC) != 0;
     }
 
-	/**
-	 * @param owner The owner to set.
-	 */
-	public void setOwner(ClassNode owner) {
-		this.owner = owner;
-	}
+    /**
+     * @param owner The owner to set.
+     */
+    public void setOwner(ClassNode owner) {
+        this.owner = owner;
+    }
 
     public boolean hasInitialExpression() {
-        return initialValueExpression!=null;
+        return initialValueExpression != null;
     }
 
     public boolean isInStaticContext() {
         return isStatic();
     }
+
     public Expression getInitialValueExpression() {
         return initialValueExpression;
     }
+
     public void setInitialValueExpression(Expression initialValueExpression) {
         this.initialValueExpression = initialValueExpression;
     }
@@ -146,17 +149,17 @@ public class FieldNode extends AnnotatedNode implements Opcodes, Variable {
     public boolean isClosureSharedVariable() {
         return false;
     }
-    
+
     public void setClosureSharedVariable(boolean inClosure) {
-        closureShare = inClosure;        
+        closureShare = inClosure;
     }
 
-	public ClassNode getOriginType() {
-		return getType();
-	}
+    public ClassNode getOriginType() {
+        return getType();
+    }
 
     public void rename(String name) {
-        declaringClass.renameField(this.name,name);
+        declaringClass.renameField(this.name, name);
         this.name = name;
     }
 }

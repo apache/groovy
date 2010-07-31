@@ -156,7 +156,7 @@ public final class AssertionRenderer {
 
     private static boolean hasStringLikeType(Object value) {
         Class<?> clazz = value.getClass();
-    	return clazz == String.class || clazz == StringBuffer.class || clazz == StringBuilder.class;
+        return clazz == String.class || clazz == StringBuffer.class || clazz == StringBuilder.class;
     }
 
     private static String javaLangObjectToString(Object value) {

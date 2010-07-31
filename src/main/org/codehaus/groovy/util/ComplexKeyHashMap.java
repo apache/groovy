@@ -132,9 +132,9 @@ public class ComplexKeyHashMap
 
   public EntryIterator  getEntrySetIterator() {
         return new EntryIterator() {
-            Entry next;	// next entry to return
-            int index;		// current slot
-            Entry current;	// current entry
+            Entry next;       // next entry to return
+            int index;        // current slot
+            Entry current;    // current entry
 
             {
                 Entry[] t = table;

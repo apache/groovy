@@ -34,47 +34,47 @@ import junit.framework.TestSuite;
  */
 public class LineColumnCheckTestSuite extends TestSuite {
 
-	public static final String TEST_FILE_PATH = "./src/test/org/codehaus/groovy/ast/LineColumnCheck.txt";
+    public static final String TEST_FILE_PATH = "./src/test/org/codehaus/groovy/ast/LineColumnCheck.txt";
 
-	public static TestSuite suite() {
-		TestSuite ts = new TestSuite("LineColumnCheckTestSuite");
-		String content = "";
-		try {
-			content = getContent(new FileReader(TEST_FILE_PATH));
-		} catch (FileNotFoundException e) {
-			throw new RuntimeException(e);
-		}
-		String[] tests = content.split("###");
-		String testName = "";
-		String source = "";
-		String expected = "";
-		for (int i = 0; i < tests.length; i++) {
-			String[] slicedTests = tests[i].split(":::");
-			for (int ii = 0; ii < slicedTests.length; ii++) {
-				if (ii%3 == 0) {
-					testName = slicedTests[ii];
-				} else if (ii%3 == 1) {
-					source = slicedTests[ii].trim();
-				} else if (ii%3 == 2) {
-					expected = slicedTests[ii].trim();
-					ts.addTest(new LineColumnChecker(testName, source, expected));
-				}
-			}
-		}
-		return ts;
-	}
+    public static TestSuite suite() {
+        TestSuite ts = new TestSuite("LineColumnCheckTestSuite");
+        String content;
+        try {
+            content = getContent(new FileReader(TEST_FILE_PATH));
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+        String[] tests = content.split("###");
+        String testName = "";
+        String source = "";
+        String expected;
+        for (String test : tests) {
+            String[] slicedTests = test.split(":::");
+            for (int ii = 0; ii < slicedTests.length; ii++) {
+                if (ii % 3 == 0) {
+                    testName = slicedTests[ii];
+                } else if (ii % 3 == 1) {
+                    source = slicedTests[ii].trim();
+                } else if (ii % 3 == 2) {
+                    expected = slicedTests[ii].trim();
+                    ts.addTest(new LineColumnChecker(testName, source, expected));
+                }
+            }
+        }
+        return ts;
+    }
 
-	private static String getContent(Reader reader) {
-		int character;
-		StringBuffer content = new StringBuffer();
-		try {
-			while ((character = reader.read()) != -1) {
-				content.append((char) character);
-			}
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		return content.toString();
-	}
+    private static String getContent(Reader reader) {
+        int character;
+        StringBuffer content = new StringBuffer();
+        try {
+            while ((character = reader.read()) != -1) {
+                content.append((char) character);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return content.toString();
+    }
 
 }

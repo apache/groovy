@@ -23,27 +23,27 @@ import org.codehaus.groovy.runtime.callsite.CallSite;
 import org.codehaus.groovy.runtime.callsite.PojoMetaMethodSite;
 
 public class ShortArrayGetAtMetaMethod extends ArrayGetAtMetaMethod {
-        private static final CachedClass ARR_CLASS = ReflectionCache.getCachedClass(short[].class);
+    private static final CachedClass ARR_CLASS = ReflectionCache.getCachedClass(short[].class);
 
-        public Class getReturnType() {
-            return Short.class;
-        }
+    public Class getReturnType() {
+        return Short.class;
+    }
 
-        public final CachedClass getDeclaringClass() {
-            return ARR_CLASS;
-        }
+    public final CachedClass getDeclaringClass() {
+        return ARR_CLASS;
+    }
 
-        public Object invoke(Object object, Object[] args) {
-            final short[] objects = (short[]) object;
-            return objects[normaliseIndex(((Integer) args[0]).intValue(), objects.length)];
-        }
+    public Object invoke(Object object, Object[] args) {
+        final short[] objects = (short[]) object;
+        return objects[normaliseIndex((Integer) args[0], objects.length)];
+    }
 
-        public CallSite createPojoCallSite(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object receiver, Object[] args) {
-            if (!(args [0] instanceof Integer))
-              return PojoMetaMethodSite.createNonAwareCallSite(site, metaClass, metaMethod, params, args);
-            else
-                return new MyPojoMetaMethodSite(site, metaClass, metaMethod, params);
-        }
+    public CallSite createPojoCallSite(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object receiver, Object[] args) {
+        if (!(args[0] instanceof Integer))
+            return PojoMetaMethodSite.createNonAwareCallSite(site, metaClass, metaMethod, params, args);
+        else
+            return new MyPojoMetaMethodSite(site, metaClass, metaMethod, params);
+    }
 
     private static class MyPojoMetaMethodSite extends PojoMetaMethodSite {
         public MyPojoMetaMethodSite(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params) {
@@ -54,10 +54,9 @@ public class ShortArrayGetAtMetaMethod extends ArrayGetAtMetaMethod {
             if ((receiver instanceof short[] && arg instanceof Integer)
                     && checkPojoMetaClass()) {
                 final short[] objects = (short[]) receiver;
-                return objects[normaliseIndex(((Integer) arg).intValue(), objects.length)];
-            }
-            else
-              return super.call(receiver,arg);
+                return objects[normaliseIndex((Integer) arg, objects.length)];
+            } else
+                return super.call(receiver, arg);
         }
     }
 }

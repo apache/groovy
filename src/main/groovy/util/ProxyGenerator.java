@@ -43,8 +43,8 @@ public class ProxyGenerator {
     private ClassLoader override = null;
     private boolean debug = false;
     private boolean emptyMethods = false;
-    private List objectMethods = getInheritedMethods(Object.class, new ArrayList());
-    private List groovyObjectMethods = getInheritedMethods(GroovyObject.class, new ArrayList());
+    private List<Method> objectMethods = getInheritedMethods(Object.class, new ArrayList<Method>());
+    private List<Method> groovyObjectMethods = getInheritedMethods(GroovyObject.class, new ArrayList<Method>());
 
     public boolean getDebug() {
         return debug;
@@ -67,7 +67,7 @@ public class ProxyGenerator {
 
     /**
      * Changes generated methods to have empty implementations.
-     *
+     * <p/>
      * Methods in generated aggregates not supplied in a closures map or
      * base class are given 'default' implementations. The implementation
      * will normally throw an <code>UnsupportedOperationException</code>
@@ -88,7 +88,7 @@ public class ProxyGenerator {
     }
 
     public GroovyObject instantiateAggregateFromBaseClass(Class clazz) {
-        return instantiateAggregateFromBaseClass((Map)null, clazz);
+        return instantiateAggregateFromBaseClass((Map) null, clazz);
     }
 
     public GroovyObject instantiateAggregateFromBaseClass(Map map, Class clazz) {
@@ -96,15 +96,15 @@ public class ProxyGenerator {
     }
 
     public GroovyObject instantiateAggregateFromBaseClass(Closure cl, Class clazz) {
-        Map m = new HashMap();
+        Map<String, Closure> m = new HashMap<String, Closure>();
         m.put("*", cl);
         return instantiateAggregateFromBaseClass(m, clazz, null);
     }
 
     public GroovyObject instantiateAggregateFromBaseClass(Class clazz, Object[] constructorArgs) {
-    	return instantiateAggregate(null, null, clazz, constructorArgs);
+        return instantiateAggregate(null, null, clazz, constructorArgs);
     }
-    
+
     public GroovyObject instantiateAggregateFromBaseClass(Map map, Class clazz, Object[] constructorArgs) {
         return instantiateAggregate(map, null, clazz, constructorArgs);
     }
@@ -114,30 +114,32 @@ public class ProxyGenerator {
     }
 
     public GroovyObject instantiateAggregateFromInterface(Map map, Class clazz) {
-        List interfaces = new ArrayList();
+        List<Class> interfaces = new ArrayList<Class>();
         interfaces.add(clazz);
         return instantiateAggregate(map, interfaces);
     }
 
-    public GroovyObject instantiateAggregate(List interfaces) {
+    public GroovyObject instantiateAggregate(List<Class> interfaces) {
         return instantiateAggregate(null, interfaces);
     }
 
-    public GroovyObject instantiateAggregate(Map closureMap, List interfaces) {
+    public GroovyObject instantiateAggregate(Map closureMap, List<Class> interfaces) {
         return instantiateAggregate(closureMap, interfaces, null);
     }
 
-    public GroovyObject instantiateAggregate(Map closureMap, List interfaces, Class clazz) {
+    public GroovyObject instantiateAggregate(Map closureMap, List<Class> interfaces, Class clazz) {
         return instantiateAggregate(closureMap, interfaces, clazz, null);
     }
 
-    public GroovyObject instantiateAggregate(Map closureMap, List interfaces, Class clazz, Object[] constructorArgs) {
+    public GroovyObject instantiateAggregate(Map closureMap, List<Class> interfaces, Class clazz, Object[] constructorArgs) {
         Map map = new HashMap();
         if (closureMap != null) {
             map = closureMap;
         }
-        List interfacesToImplement = new ArrayList();
-        if (interfaces != null) {
+        List<Class> interfacesToImplement;
+        if (interfaces == null) {
+            interfacesToImplement = new ArrayList<Class>();
+        } else {
             interfacesToImplement = interfaces;
         }
         Class baseClass = GroovyObjectSupport.class;
@@ -154,7 +156,7 @@ public class ProxyGenerator {
             buffer.append(" extends ").append(baseClass.getName());
         }
         for (int i = 0; i < interfacesToImplement.size(); i++) {
-            Class thisInterface = (Class) interfacesToImplement.get(i);
+            Class thisInterface = interfacesToImplement.get(i);
             if (i == 0) {
                 buffer.append(" implements ");
             } else {
@@ -191,20 +193,18 @@ public class ProxyGenerator {
             if (map.containsKey(method.getName()) || closureIndicator) {
                 selectedMethods.put(method.getName(), method);
                 addOverridingMapCall(buffer, method, closureIndicator);
-            } else if(Modifier.isAbstract(method.getModifiers())) {
-            	selectedMethods.put(method.getName(), method);
-            	addMapOrDummyCall(map, buffer, method);
+            } else if (Modifier.isAbstract(method.getModifiers())) {
+                selectedMethods.put(method.getName(), method);
+                addMapOrDummyCall(map, buffer, method);
             }
         }
 
         // add interface methods
-        List interfaceMethods = new ArrayList();
-        for (int i = 0; i < interfacesToImplement.size(); i++) {
-            Class thisInterface = (Class) interfacesToImplement.get(i);
+        List<Method> interfaceMethods = new ArrayList<Method>();
+        for (Class thisInterface : interfacesToImplement) {
             getInheritedMethods(thisInterface, interfaceMethods);
         }
-        for (int i = 0; i < interfaceMethods.size(); i++) {
-            Method method = (Method) interfaceMethods.get(i);
+        for (Method method : interfaceMethods) {
             if (!containsEquivalentMethod(publicAndProtectedMethods, method)) {
                 selectedMethods.put(method.getName(), method);
                 addMapOrDummyCall(map, buffer, method);
@@ -212,8 +212,8 @@ public class ProxyGenerator {
         }
 
         // add leftover methods from the map
-        for (Iterator iterator = map.keySet().iterator(); iterator.hasNext();) {
-            String methodName = (String) iterator.next();
+        for (Object o : map.keySet()) {
+            String methodName = (String) o;
             if (methodName.indexOf('$') != -1 || methodName.indexOf('*') != -1)
                 continue;
             if (selectedMethods.keySet().contains(methodName)) continue;
@@ -234,7 +234,7 @@ public class ProxyGenerator {
         binding.setVariable("constructorArgs", constructorArgs);
         ClassLoader cl = override != null ? override : baseClass.getClassLoader();
         if (clazz == null && interfacesToImplement.size() > 0) {
-            Class c = (Class) interfacesToImplement.get(0);
+            Class c = interfacesToImplement.get(0);
             cl = c.getClassLoader();
         }
         GroovyShell shell = new GroovyShell(cl, binding);
@@ -251,31 +251,33 @@ public class ProxyGenerator {
         return instantiateDelegate(null, delegate);
     }
 
-    public GroovyObject instantiateDelegate(List interfaces, Object delegate) {
+    public GroovyObject instantiateDelegate(List<Class> interfaces, Object delegate) {
         return instantiateDelegate(null, interfaces, delegate);
     }
 
-    public GroovyObject instantiateDelegate(Map closureMap, List interfaces, Object delegate) {
+    public GroovyObject instantiateDelegate(Map closureMap, List<Class> interfaces, Object delegate) {
         return instantiateDelegateWithBaseClass(closureMap, interfaces, delegate, null);
     }
 
-    public GroovyObject instantiateDelegateWithBaseClass(Map closureMap, List interfaces, Object delegate) {
+    public GroovyObject instantiateDelegateWithBaseClass(Map closureMap, List<Class> interfaces, Object delegate) {
         return instantiateDelegateWithBaseClass(closureMap, interfaces, delegate, delegate.getClass());
     }
 
-    public GroovyObject instantiateDelegateWithBaseClass(Map closureMap, List interfaces, Object delegate, Class baseClass) {
+    public GroovyObject instantiateDelegateWithBaseClass(Map closureMap, List<Class> interfaces, Object delegate, Class baseClass) {
         String name = shortName(delegate.getClass().getName()) + "_delegateProxy";
         return instantiateDelegateWithBaseClass(closureMap, interfaces, delegate, baseClass, name);
     }
 
-    public GroovyObject instantiateDelegateWithBaseClass(Map closureMap, List interfaces, Object delegate, Class baseClass, String name) {
+    public GroovyObject instantiateDelegateWithBaseClass(Map closureMap, List<Class> interfaces, Object delegate, Class baseClass, String name) {
         Map map = new HashMap();
         if (closureMap != null) {
             map = closureMap;
         }
-        List selectedMethods = new ArrayList();
-        List interfacesToImplement = new ArrayList();
-        if (interfaces != null) {
+        List<String> selectedMethods = new ArrayList<String>();
+        List<Class> interfacesToImplement;
+        if (interfaces == null) {
+            interfacesToImplement = new ArrayList<Class>();
+        } else {
             interfacesToImplement = interfaces;
         }
         StringBuffer buffer = new StringBuffer();
@@ -287,7 +289,7 @@ public class ProxyGenerator {
         }
 
         for (int i = 0; i < interfacesToImplement.size(); i++) {
-            Class thisInterface = (Class) interfacesToImplement.get(i);
+            Class thisInterface = interfacesToImplement.get(i);
             if (i == 0) {
                 buffer.append(" implements ");
             } else {
@@ -304,22 +306,19 @@ public class ProxyGenerator {
         buffer.append("    }\n");
 
         // add interface methods
-        List interfaceMethods = new ArrayList();
-        for (int i = 0; i < interfacesToImplement.size(); i++) {
-            Class thisInterface = (Class) interfacesToImplement.get(i);
+        List<Method> interfaceMethods = new ArrayList<Method>();
+        for (Class thisInterface : interfacesToImplement) {
             getInheritedMethods(thisInterface, interfaceMethods);
         }
-        for (int i = 0; i < interfaceMethods.size(); i++) {
-            Method method = (Method) interfaceMethods.get(i);
+        for (Method method : interfaceMethods) {
             if (!containsEquivalentMethod(objectMethods, method) &&
                     !containsEquivalentMethod(groovyObjectMethods, method)) {
                 selectedMethods.add(method.getName());
                 addWrappedCall(buffer, method, map);
             }
         }
-        List additionalMethods = getInheritedMethods(delegate.getClass(), new ArrayList());
-        for (int i = 0; i < additionalMethods.size(); i++) {
-            Method method = (Method) additionalMethods.get(i);
+        List<Method> additionalMethods = getInheritedMethods(delegate.getClass(), new ArrayList<Method>());
+        for (Method method : additionalMethods) {
             if (method.getName().indexOf('$') != -1)
                 continue;
             if (!containsEquivalentMethod(interfaceMethods, method) &&
@@ -331,8 +330,8 @@ public class ProxyGenerator {
         }
 
         // add leftover methods from the map
-        for (Iterator iterator = map.keySet().iterator(); iterator.hasNext();) {
-            String methodName = (String) iterator.next();
+        for (Object o : map.keySet()) {
+            String methodName = (String) o;
             if (selectedMethods.contains(methodName)) continue;
             addNewMapCall(buffer, methodName);
         }
@@ -392,8 +391,7 @@ public class ProxyGenerator {
         Class currentClass = baseClass;
         while (currentClass != null) {
             Method[] protectedMethods = currentClass.getDeclaredMethods();
-            for (int i = 0; i < protectedMethods.length; i++) {
-                Method method = protectedMethods[i];
+            for (Method method : protectedMethods) {
                 if (method.getName().indexOf('$') != -1)
                     continue;
                 if (Modifier.isProtected(method.getModifiers()) && !containsEquivalentMethod(methods, method))
@@ -487,7 +485,7 @@ public class ProxyGenerator {
                 dimension++;
             }
             return componentClass.getName().replaceAll("\\$", "\\.") +
-                    DefaultGroovyMethods.multiply("[]", Integer.valueOf(dimension));
+                    DefaultGroovyMethods.multiply("[]", dimension);
         } else {
             return c.getName().replaceAll("\\$", "\\.");
         }

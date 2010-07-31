@@ -32,19 +32,18 @@ public final class NumberNumberDiv extends NumberNumberMetaMethod {
     /**
      * Divide two Numbers.
      *
+     * Note: Method name different from 'divide' to avoid collision with BigInteger method that has
+     * different semantics.  We want a BigDecimal result rather than a BigInteger.
+     *
      * @param left  a Number
      * @param right another Number
      * @return a Number resulting of the divide operation
      */
-    //Method name changed from 'divide' to avoid collision with BigInteger method that has
-    //different semantics.  We want a BigDecimal result rather than a BigInteger.
     public static Number div(Number left, Number right) {
         return NumberMath.divide(left, right);
     }
 
     public CallSite createPojoCallSite(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object receiver, Object[] args) {
-        NumberMath m = NumberMath.getMath((Number)receiver, (Number)args[0]);
-
         if (receiver instanceof Integer) {
             if (args[0] instanceof Float)
                 return new IntegerFloat(site, metaClass, metaMethod, params, receiver, args);

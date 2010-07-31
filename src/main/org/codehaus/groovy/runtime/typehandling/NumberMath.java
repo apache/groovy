@@ -44,31 +44,31 @@ import java.math.BigInteger;
  * @author Steve Goetze
  */
 public abstract class NumberMath {
-		
-	public static Number abs(Number number) {
-		return getMath(number).absImpl(number);
-	}
-	
-	public static Number add(Number left, Number right) {
-		return getMath(left, right).addImpl(left,right);
-	}
-	
-	public static Number subtract(Number left, Number right) {
-		return getMath(left,right).subtractImpl(left,right);
-	}
-	
-	public static Number multiply(Number left, Number right) {
-		return getMath(left,right).multiplyImpl(left,right);
-	}
-	
-	public static Number divide(Number left, Number right) {
-		return getMath(left,right).divideImpl(left,right);
- 	}
- 	 
-	public static int compareTo(Number left, Number right) {
-		return getMath(left,right).compareToImpl(left, right);
-	}
-	
+        
+    public static Number abs(Number number) {
+        return getMath(number).absImpl(number);
+    }
+    
+    public static Number add(Number left, Number right) {
+        return getMath(left, right).addImpl(left,right);
+    }
+    
+    public static Number subtract(Number left, Number right) {
+        return getMath(left,right).subtractImpl(left,right);
+    }
+    
+    public static Number multiply(Number left, Number right) {
+        return getMath(left,right).multiplyImpl(left,right);
+    }
+    
+    public static Number divide(Number left, Number right) {
+        return getMath(left,right).divideImpl(left,right);
+     }
+      
+    public static int compareTo(Number left, Number right) {
+        return getMath(left,right).compareToImpl(left, right);
+    }
+    
     public static Number or(Number left, Number right) {
         return getMath(left,right).orImpl(left, right);
     }
@@ -81,11 +81,11 @@ public abstract class NumberMath {
         return getMath(left,right).xorImpl(left, right);
     }
     
-	public static Number intdiv(Number left, Number right) {
-		return getMath(left,right).intdivImpl(left,right);
- 	}
+    public static Number intdiv(Number left, Number right) {
+        return getMath(left,right).intdivImpl(left,right);
+     }
 
-	public static Number mod(Number left, Number right) {
+    public static Number mod(Number left, Number right) {
         return getMath(left,right).modImpl(left, right);
     }
 
@@ -96,10 +96,10 @@ public abstract class NumberMath {
      * shift operators.
      */
     public static Number leftShift(Number left, Number right) {
-		if (isFloatingPoint(right) || isBigDecimal(right)) {
-	        throw new UnsupportedOperationException("Shift distance must be an integral type, but " +  right + " (" + right.getClass().getName() + ") was supplied");
-		}
-    	return getMath(left).leftShiftImpl(left,right);
+        if (isFloatingPoint(right) || isBigDecimal(right)) {
+            throw new UnsupportedOperationException("Shift distance must be an integral type, but " +  right + " (" + right.getClass().getName() + ") was supplied");
+        }
+        return getMath(left).leftShiftImpl(left,right);
     }
     
     /**
@@ -109,10 +109,10 @@ public abstract class NumberMath {
      * shift operators.
      */
     public static Number rightShift(Number left, Number right) {
-		if (isFloatingPoint(right) || isBigDecimal(right)) {
-	        throw new UnsupportedOperationException("Shift distance must be an integral type, but " +  right + " (" + right.getClass().getName() + ") was supplied");
-		}
-    	return getMath(left).rightShiftImpl(left,right);
+        if (isFloatingPoint(right) || isBigDecimal(right)) {
+            throw new UnsupportedOperationException("Shift distance must be an integral type, but " +  right + " (" + right.getClass().getName() + ") was supplied");
+        }
+        return getMath(left).rightShiftImpl(left,right);
     }
     
     /**
@@ -122,10 +122,10 @@ public abstract class NumberMath {
      * shift operators.
      */
     public static Number rightShiftUnsigned(Number left, Number right) {
-		if (isFloatingPoint(right) || isBigDecimal(right)) {
-	        throw new UnsupportedOperationException("Shift distance must be an integral type, but " +  right + " (" + right.getClass().getName() + ") was supplied");
-		}
-    	return getMath(left).rightShiftUnsignedImpl(left,right);
+        if (isFloatingPoint(right) || isBigDecimal(right)) {
+            throw new UnsupportedOperationException("Shift distance must be an integral type, but " +  right + " (" + right.getClass().getName() + ") was supplied");
+        }
+        return getMath(left).rightShiftUnsignedImpl(left,right);
     }
     
     public static Number unaryMinus(Number left) {
@@ -133,88 +133,88 @@ public abstract class NumberMath {
     }
     
     public static boolean isFloatingPoint(Number number) {
-		return number instanceof Double || number instanceof Float;
-	}
+        return number instanceof Double || number instanceof Float;
+    }
 
-	public static boolean isInteger(Number number) {
-		return number instanceof Integer;
-	}
+    public static boolean isInteger(Number number) {
+        return number instanceof Integer;
+    }
 
-	public static boolean isLong(Number number) {
-		return number instanceof Long;
-	}
+    public static boolean isLong(Number number) {
+        return number instanceof Long;
+    }
 
-	public static boolean isBigDecimal(Number number) {
-		return number instanceof BigDecimal;
-	}
+    public static boolean isBigDecimal(Number number) {
+        return number instanceof BigDecimal;
+    }
 
-	public static boolean isBigInteger(Number number) {
-		return number instanceof BigInteger;
-	}
+    public static boolean isBigInteger(Number number) {
+        return number instanceof BigInteger;
+    }
 
-	public static BigDecimal toBigDecimal(Number n) {
-		return (n instanceof BigDecimal ? (BigDecimal) n : new BigDecimal(n.toString()));
-	}
-				
-	public static BigInteger toBigInteger(Number n) {
-		return (n instanceof BigInteger ? (BigInteger) n : new BigInteger(n.toString()));
-	}
-					
-	/**
-	 * Determine which NumberMath instance to use, given the supplied operands.  This method implements
-	 * the type promotion rules discussed in the documentation.  Note that by the time this method is
-	 * called, any Byte, Character or Short operands will have been promoted to Integer.  For reference,
-	 * here is the promotion matrix:
-	 *    bD bI  D  F  L  I
-	 * bD bD bD  D  D bD bD
-	 * bI bD bI  D  D bI bI
-	 *  D  D  D  D  D  D  D
-	 *  F  D  D  D  D  D  D
-	 *  L bD bI  D  D  L  L
-	 *  I bD bI  D  D  L  I
-	 * 
-	 * Note that for division, if either operand isFloatingPoint, the result will be floating.  Otherwise,
-	 * the result is BigDecimal
-	 */
-	public static NumberMath getMath(Number left, Number right) {
-		if (isFloatingPoint(left) || isFloatingPoint(right)) {
-			return FloatingPointMath.INSTANCE;
-		}
-		if (isBigDecimal(left) || isBigDecimal(right)) {
-			return BigDecimalMath.INSTANCE;
-		}
-		if (isBigInteger(left) || isBigInteger(right)) {
-			return BigIntegerMath.INSTANCE;
-		}
-		if (isLong(left) || isLong(right)){
-			return LongMath.INSTANCE;
-		}
-		return IntegerMath.INSTANCE;
-	}
+    public static BigDecimal toBigDecimal(Number n) {
+        return (n instanceof BigDecimal ? (BigDecimal) n : new BigDecimal(n.toString()));
+    }
+                
+    public static BigInteger toBigInteger(Number n) {
+        return (n instanceof BigInteger ? (BigInteger) n : new BigInteger(n.toString()));
+    }
+                    
+    /**
+     * Determine which NumberMath instance to use, given the supplied operands.  This method implements
+     * the type promotion rules discussed in the documentation.  Note that by the time this method is
+     * called, any Byte, Character or Short operands will have been promoted to Integer.  For reference,
+     * here is the promotion matrix:
+     *    bD bI  D  F  L  I
+     * bD bD bD  D  D bD bD
+     * bI bD bI  D  D bI bI
+     *  D  D  D  D  D  D  D
+     *  F  D  D  D  D  D  D
+     *  L bD bI  D  D  L  L
+     *  I bD bI  D  D  L  I
+     * 
+     * Note that for division, if either operand isFloatingPoint, the result will be floating.  Otherwise,
+     * the result is BigDecimal
+     */
+    public static NumberMath getMath(Number left, Number right) {
+        if (isFloatingPoint(left) || isFloatingPoint(right)) {
+            return FloatingPointMath.INSTANCE;
+        }
+        if (isBigDecimal(left) || isBigDecimal(right)) {
+            return BigDecimalMath.INSTANCE;
+        }
+        if (isBigInteger(left) || isBigInteger(right)) {
+            return BigIntegerMath.INSTANCE;
+        }
+        if (isLong(left) || isLong(right)){
+            return LongMath.INSTANCE;
+        }
+        return IntegerMath.INSTANCE;
+    }
 
-	private static NumberMath getMath(Number number) {
-		if (isLong(number)) {
-			return LongMath.INSTANCE;
-		}
-		if (isFloatingPoint(number)) {
-			return FloatingPointMath.INSTANCE;
-		}			
-		if (isBigDecimal(number)) {
-			return BigDecimalMath.INSTANCE;
-		}
-		if (isBigInteger(number)) {
-			return BigIntegerMath.INSTANCE;
-		}
-		return IntegerMath.INSTANCE;
-	}
-	
-	//Subclasses implement according to the type promotion hierarchy rules
-	protected abstract Number absImpl(Number number);
-	public abstract Number addImpl(Number left, Number right);
-	public abstract Number subtractImpl(Number left, Number right);
-	public abstract Number multiplyImpl(Number left, Number right);
-	public abstract Number divideImpl(Number left, Number right);
-	public abstract int compareToImpl(Number left, Number right);
+    private static NumberMath getMath(Number number) {
+        if (isLong(number)) {
+            return LongMath.INSTANCE;
+        }
+        if (isFloatingPoint(number)) {
+            return FloatingPointMath.INSTANCE;
+        }            
+        if (isBigDecimal(number)) {
+            return BigDecimalMath.INSTANCE;
+        }
+        if (isBigInteger(number)) {
+            return BigIntegerMath.INSTANCE;
+        }
+        return IntegerMath.INSTANCE;
+    }
+    
+    //Subclasses implement according to the type promotion hierarchy rules
+    protected abstract Number absImpl(Number number);
+    public abstract Number addImpl(Number left, Number right);
+    public abstract Number subtractImpl(Number left, Number right);
+    public abstract Number multiplyImpl(Number left, Number right);
+    public abstract Number divideImpl(Number left, Number right);
+    public abstract int compareToImpl(Number left, Number right);
     protected abstract Number unaryMinusImpl(Number left);
 
 

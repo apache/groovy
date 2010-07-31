@@ -46,7 +46,7 @@ import java.util.logging.Logger;
  * <a href="http://ant.apache.org/manual/optionaltasklist.html">optional tasks</a>
  * you will need to add one or more additional jars from the ant distribution to
  * your classpath.
- * 
+ *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @author Dierk Koenig (dk)
  * @author Marc Guillemot
@@ -84,7 +84,7 @@ public class AntBuilder extends BuilderSupport {
         antXmlContext.setCurrentTarget(collectorTarget);
         antXmlContext.setLocator(new AntBuilderLocator());
         antXmlContext.setCurrentTargets(new HashMap());
-        
+
         implicitTarget = new Target();
         implicitTarget.setProject(project);
         implicitTarget.setName("");
@@ -95,11 +95,11 @@ public class AntBuilder extends BuilderSupport {
     }
 
     public AntBuilder(final Task parentTask) {
-    	this(parentTask.getProject(), parentTask.getOwningTarget());
-    	
-    	// define "owning" task as wrapper to avoid having tasks added to the target
-    	// but it needs to be an UnknownElement and no access is available from
-    	// task to its original UnknownElement 
+        this(parentTask.getProject(), parentTask.getOwningTarget());
+
+        // define "owning" task as wrapper to avoid having tasks added to the target
+        // but it needs to be an UnknownElement and no access is available from
+        // task to its original UnknownElement 
         final UnknownElement ue = new UnknownElement(parentTask.getTaskName());
         ue.setProject(parentTask.getProject());
         ue.setTaskType(parentTask.getTaskType());
@@ -108,11 +108,13 @@ public class AntBuilder extends BuilderSupport {
         ue.setOwningTarget(parentTask.getOwningTarget());
         ue.setRuntimeConfigurableWrapper(parentTask.getRuntimeConfigurableWrapper());
         parentTask.getRuntimeConfigurableWrapper().setProxy(ue);
-    	antXmlContext.pushWrapper(parentTask.getRuntimeConfigurableWrapper());
+        antXmlContext.pushWrapper(parentTask.getRuntimeConfigurableWrapper());
     }
 
-    /**#
+    /**
+     * #
      * Gets the Ant project in which the tasks are executed
+     *
      * @return the project
      */
     public Project getProject() {
@@ -121,6 +123,7 @@ public class AntBuilder extends BuilderSupport {
 
     /**
      * Gets the xml context of Ant used while creating tasks
+     *
      * @return the Ant xml context
      */
     public AntXMLContext getAntXmlContext() {
@@ -152,18 +155,19 @@ public class AntBuilder extends BuilderSupport {
 
     protected void setParent(Object parent, Object child) {
     }
-    
+
     /**
      * We don't want to return the node as created in {@link #createNode(Object, Map, Object)}
      * but the one made ready by {@link #nodeCompleted(Object, Object)}
+     *
      * @see groovy.util.BuilderSupport#doInvokeMethod(java.lang.String, java.lang.Object, java.lang.Object)
      */
     protected Object doInvokeMethod(String methodName, Object name, Object args) {
-    	super.doInvokeMethod(methodName, name, args);
-    	
+        super.doInvokeMethod(methodName, name, args);
 
-    	// return the completed node
-    	return lastCompletedNode;
+
+        // return the completed node
+        return lastCompletedNode;
     }
 
     /**
@@ -172,14 +176,15 @@ public class AntBuilder extends BuilderSupport {
      * If node is an ANT Task, it performs right after complete construction.
      * If node is nested in a TaskContainer, calling "perform" is delegated to that
      * TaskContainer.
+     *
      * @param parent note: null when node is root
-     * @param node the node that now has all its children applied
+     * @param node   the node that now has all its children applied
      */
     protected void nodeCompleted(final Object parent, final Object node) {
         if (parent == null) insideTask = false;
-    	antElementHandler.onEndElement(null, null, antXmlContext);
+        antElementHandler.onEndElement(null, null, antXmlContext);
 
-    	lastCompletedNode = node;
+        lastCompletedNode = node;
         if (parent != null && !(parent instanceof Target)) {
             log.finest("parent is not null: no perform on nodeCompleted");
             return; // parent will care about when children perform
@@ -215,18 +220,17 @@ public class AntBuilder extends BuilderSupport {
             if ("import".equals(taskName)) {
                 antXmlContext.setCurrentTarget(collectorTarget);
             }
-        }
-        else if (node instanceof Target) {
-        	// restore dummy collector target
-        	antXmlContext.setCurrentTarget(collectorTarget);
-        }
-        else {
+        } else if (node instanceof Target) {
+            // restore dummy collector target
+            antXmlContext.setCurrentTarget(collectorTarget);
+        } else {
             final RuntimeConfigurable r = (RuntimeConfigurable) node;
             r.maybeConfigure(project);
         }
     }
 
     // Copied from org.apache.tools.ant.Task, since we need to get a real thing before it gets nulled in DispatchUtils.execute
+
     private Object performTask(Task task) {
 
         Throwable reason = null;
@@ -293,22 +297,22 @@ public class AntBuilder extends BuilderSupport {
         setText(task, value.toString());
         return task;
     }
-    
+
     /**
      * Builds an {@link Attributes} from a {@link Map}
-     * 
+     *
      * @param attributes the attributes to wrap
      * @return the wrapped attributes
      */
     protected static Attributes buildAttributes(final Map attributes) {
-    	final AttributesImpl attr = new AttributesImpl();
-    	for (final Iterator iter=attributes.entrySet().iterator(); iter.hasNext(); ) {
-    		final Map.Entry entry = (Map.Entry) iter.next();
-    		final String attributeName = (String) entry.getKey();
-    		final String attributeValue = String.valueOf(entry.getValue());
-    		attr.addAttribute(null, attributeName, attributeName, "CDATA", attributeValue);
-    	}
-    	return attr;
+        final AttributesImpl attr = new AttributesImpl();
+        for (final Iterator iter = attributes.entrySet().iterator(); iter.hasNext();) {
+            final Map.Entry entry = (Map.Entry) iter.next();
+            final String attributeName = (String) entry.getKey();
+            final String attributeValue = String.valueOf(entry.getValue());
+            attr.addAttribute(null, attributeName, attributeName, "CDATA", attributeValue);
+        }
+        return attr;
     }
 
     protected Object createNode(final Object name, final Map attributes) {
@@ -318,63 +322,59 @@ public class AntBuilder extends BuilderSupport {
         String ns = "";
 
         if (name instanceof QName) {
-            QName q = (QName)name;
+            QName q = (QName) name;
             tagName = q.getLocalPart();
             ns = q.getNamespaceURI();
         }
 
         // import can be used only as top level element
-    	if ("import".equals(name)) {
-    		antXmlContext.setCurrentTarget(implicitTarget);
-    	}
-    	else if ("target".equals(name) && !insideTask) {
+        if ("import".equals(name)) {
+            antXmlContext.setCurrentTarget(implicitTarget);
+        } else if ("target".equals(name) && !insideTask) {
             return onStartTarget(attrs, tagName, ns);
-    	}
+        }
 
-        try
-		{
-			antElementHandler.onStartElement(ns, tagName, tagName, attrs, antXmlContext);
-		}
-		catch (final SAXParseException e)
-		{
+        try {
+            antElementHandler.onStartElement(ns, tagName, tagName, attrs, antXmlContext);
+        }
+        catch (final SAXParseException e) {
             log.log(Level.SEVERE, "Caught: " + e, e);
-		}
+        }
 
         insideTask = true;
-		final RuntimeConfigurable wrapper = (RuntimeConfigurable) antXmlContext.getWrapperStack().lastElement();
-    	return wrapper.getProxy();
+        final RuntimeConfigurable wrapper = (RuntimeConfigurable) antXmlContext.getWrapperStack().lastElement();
+        return wrapper.getProxy();
     }
 
-	private Target onStartTarget(final Attributes attrs, String tagName, String ns) {
-		final Target target = new Target();
-		target.setProject(project);
-		target.setLocation(new Location(antXmlContext.getLocator()));
-		try {
-			antTargetHandler.onStartElement(ns, tagName, tagName, attrs, antXmlContext);
-			final Target newTarget = (Target) getProject().getTargets().get(attrs.getValue("name"));
+    private Target onStartTarget(final Attributes attrs, String tagName, String ns) {
+        final Target target = new Target();
+        target.setProject(project);
+        target.setLocation(new Location(antXmlContext.getLocator()));
+        try {
+            antTargetHandler.onStartElement(ns, tagName, tagName, attrs, antXmlContext);
+            final Target newTarget = (Target) getProject().getTargets().get(attrs.getValue("name"));
 
-			// execute dependencies (if any)
-			final Vector targets = new Vector();
-			for (final Enumeration deps=newTarget.getDependencies(); deps.hasMoreElements();)
-			{
-				final String targetName = (String) deps.nextElement();
-				targets.add(project.getTargets().get(targetName));
-			}
-			getProject().executeSortedTargets(targets);
-			
-			antXmlContext.setCurrentTarget(newTarget);
-			return newTarget;
-		} 
-		catch (final SAXParseException e) {
-		    log.log(Level.SEVERE, "Caught: " + e, e);
-		}
-		return null;
-	}
+            // execute dependencies (if any)
+            final Vector targets = new Vector();
+            for (final Enumeration deps = newTarget.getDependencies(); deps.hasMoreElements();) {
+                final String targetName = (String) deps.nextElement();
+                targets.add(project.getTargets().get(targetName));
+            }
+            getProject().executeSortedTargets(targets);
+
+            antXmlContext.setCurrentTarget(newTarget);
+            return newTarget;
+        }
+        catch (final SAXParseException e) {
+            log.log(Level.SEVERE, "Caught: " + e, e);
+        }
+        return null;
+    }
 
     protected void setText(Object task, String text) {
-    	final char[] characters = text.toCharArray();
+        final char[] characters = text.toCharArray();
         try {
-          	antElementHandler.characters(characters, 0, characters.length, antXmlContext);
+            antElementHandler.characters(characters, 0, characters.length, antXmlContext);
         }
         catch (final SAXParseException e) {
             log.log(Level.WARNING, "SetText failed: " + task + ". Reason: " + e, e);
@@ -391,20 +391,19 @@ public class AntBuilder extends BuilderSupport {
  * In a first time, without info
  */
 class AntBuilderLocator implements Locator {
-	public int getColumnNumber()
-	{
-		return 0;
-	}
-	public int getLineNumber()
-	{
-		return 0;
-	}
-	public String getPublicId()
-	{
-		return "";
-	}
-	public String getSystemId()
-	{
-		return "";
-	}
+    public int getColumnNumber() {
+        return 0;
+    }
+
+    public int getLineNumber() {
+        return 0;
+    }
+
+    public String getPublicId() {
+        return "";
+    }
+
+    public String getSystemId() {
+        return "";
+    }
 }

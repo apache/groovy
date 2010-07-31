@@ -21,31 +21,31 @@ import java.util.Map;
 import java.util.Set;
 
 public class MockOutputTool implements OutputTool {
-	Set outputAreas; // dirs
-	Map output;
-	
-	public MockOutputTool() {
-		outputAreas = new HashSet();
-		output = new HashMap();
-	}
-	
-	public void makeOutputArea(String filename) {
-		outputAreas.add(filename);
-	}
+    Set outputAreas; // dirs
+    Map output;
+    
+    public MockOutputTool() {
+        outputAreas = new HashSet();
+        output = new HashMap();
+    }
+    
+    public void makeOutputArea(String filename) {
+        outputAreas.add(filename);
+    }
 
-	public void writeToOutput(String fileName, String text) throws Exception {
-		output.put(fileName, text);
-	}
-	
-	public boolean isValidOutputArea(String fileName) {
-		return outputAreas.contains(fileName);
-	}
+    public void writeToOutput(String fileName, String text) throws Exception {
+        output.put(fileName, text);
+    }
+    
+    public boolean isValidOutputArea(String fileName) {
+        return outputAreas.contains(fileName);
+    }
 
-	public String getText(String fileName) {
-		return (String) output.get(fileName);
-	}
-	
-	public String toString() {
-		return "dirs:" + outputAreas + ", files:" + output.keySet();
-	}
+    public String getText(String fileName) {
+        return (String) output.get(fileName);
+    }
+    
+    public String toString() {
+        return "dirs:" + outputAreas + ", files:" + output.keySet();
+    }
 }

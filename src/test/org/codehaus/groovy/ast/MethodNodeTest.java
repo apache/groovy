@@ -14,23 +14,23 @@ import junit.framework.TestCase;
 
 public class MethodNodeTest extends TestCase implements Opcodes {
 
-	public void testIsDynamicReturnTypeExplizitObject() {
-    	MethodNode methodNode = new MethodNode("foo", ACC_PUBLIC, new ClassNode(Object.class), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, new BlockStatement());
+    public void testIsDynamicReturnTypeExplizitObject() {
+        MethodNode methodNode = new MethodNode("foo", ACC_PUBLIC, new ClassNode(Object.class), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, new BlockStatement());
         assertFalse(methodNode.isDynamicReturnType());
     }
-	
-	public void testIsDynamicReturnTypeDYNAMIC_TYPE() {
-    	MethodNode methodNode = new MethodNode("foo", ACC_PUBLIC, ClassHelper.DYNAMIC_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, new BlockStatement());
+    
+    public void testIsDynamicReturnTypeDYNAMIC_TYPE() {
+        MethodNode methodNode = new MethodNode("foo", ACC_PUBLIC, ClassHelper.DYNAMIC_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, new BlockStatement());
         assertTrue(methodNode.isDynamicReturnType());
     }
-	
-	public void testIsDynamicReturnTypeVoid() {
-    	MethodNode methodNode = new MethodNode("foo", ACC_PUBLIC, ClassHelper.VOID_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, new BlockStatement());
+    
+    public void testIsDynamicReturnTypeVoid() {
+        MethodNode methodNode = new MethodNode("foo", ACC_PUBLIC, ClassHelper.VOID_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, new BlockStatement());
         assertFalse(methodNode.isDynamicReturnType());
     }
-	
-	public void testIsDynamicReturnTypNull() {
-    	MethodNode methodNode = new MethodNode("foo", ACC_PUBLIC, null, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, new BlockStatement());
+    
+    public void testIsDynamicReturnTypNull() {
+        MethodNode methodNode = new MethodNode("foo", ACC_PUBLIC, null, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, new BlockStatement());
         assertFalse(methodNode.isDynamicReturnType());
         assertNotNull(methodNode.getReturnType());
     }

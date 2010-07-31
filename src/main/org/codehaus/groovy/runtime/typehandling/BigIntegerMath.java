@@ -23,32 +23,32 @@ package org.codehaus.groovy.runtime.typehandling;
  */
 public final class BigIntegerMath extends NumberMath {
 
-	public static final BigIntegerMath INSTANCE = new BigIntegerMath();
-	
-	private BigIntegerMath() {}
+    public static final BigIntegerMath INSTANCE = new BigIntegerMath();
+    
+    private BigIntegerMath() {}
 
-	protected Number absImpl(Number number) {
-		return toBigInteger(number).abs();
-	}
-	
-	public Number addImpl(Number left, Number right) {
-		return toBigInteger(left).add(toBigInteger(right));
-	}
-	public Number subtractImpl(Number left, Number right) {
-		return toBigInteger(left).subtract(toBigInteger(right));
-	}
+    protected Number absImpl(Number number) {
+        return toBigInteger(number).abs();
+    }
+    
+    public Number addImpl(Number left, Number right) {
+        return toBigInteger(left).add(toBigInteger(right));
+    }
+    public Number subtractImpl(Number left, Number right) {
+        return toBigInteger(left).subtract(toBigInteger(right));
+    }
 
-	public Number multiplyImpl(Number left, Number right) {
-		return toBigInteger(left).multiply(toBigInteger(right));
-	}
+    public Number multiplyImpl(Number left, Number right) {
+        return toBigInteger(left).multiply(toBigInteger(right));
+    }
 
-	public Number divideImpl(Number left, Number right) {
-		return BigDecimalMath.INSTANCE.divideImpl(left, right);
-	}
-	
-	public int compareToImpl(Number left, Number right) {
-		return toBigInteger(left).compareTo(toBigInteger(right));
-	}
+    public Number divideImpl(Number left, Number right) {
+        return BigDecimalMath.INSTANCE.divideImpl(left, right);
+    }
+    
+    public int compareToImpl(Number left, Number right) {
+        return toBigInteger(left).compareTo(toBigInteger(right));
+    }
 
     protected Number intdivImpl(Number left, Number right) {
         return toBigInteger(left).divide(toBigInteger(right));

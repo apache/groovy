@@ -123,15 +123,15 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
      * @see groovy.lang.MetaClassRegistry.MetaClassCreationHandle
      */
     private void installMetaClassCreationHandle() {
-	       try {
-	           final Class customMetaClassHandle = Class.forName("groovy.runtime.metaclass.CustomMetaClassCreationHandle");
-	           final Constructor customMetaClassHandleConstructor = customMetaClassHandle.getConstructor(new Class[]{});
-				 this.metaClassCreationHandle = (MetaClassCreationHandle)customMetaClassHandleConstructor.newInstance();
-	       } catch (final ClassNotFoundException e) {
-	           this.metaClassCreationHandle = new MetaClassCreationHandle();
-	       } catch (final Exception e) {
-	           throw new GroovyRuntimeException("Could not instantiate custom Metaclass creation handle: "+ e, e);
-	       }
+           try {
+               final Class customMetaClassHandle = Class.forName("groovy.runtime.metaclass.CustomMetaClassCreationHandle");
+               final Constructor customMetaClassHandleConstructor = customMetaClassHandle.getConstructor(new Class[]{});
+                 this.metaClassCreationHandle = (MetaClassCreationHandle)customMetaClassHandleConstructor.newInstance();
+           } catch (final ClassNotFoundException e) {
+               this.metaClassCreationHandle = new MetaClassCreationHandle();
+           } catch (final Exception e) {
+               throw new GroovyRuntimeException("Could not instantiate custom Metaclass creation handle: "+ e, e);
+           }
     }
     
     private void registerMethods(final Class theClass, final boolean useMethodWrapper, final boolean useInstanceMethods, Map<CachedClass, List<MetaMethod>> map) {
@@ -228,11 +228,11 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
         
         MetaClass mc = null;
         info.lock();
-        try {        	
-        	if (oldMc!=null) mc=info.getStrongMetaClass();
-        	// mc==null means that mc will be null too, so the 
-        	// condition is always fulfilled. 
-        	if (mc==oldMc) info.setStrongMetaClass(newMc);
+        try {            
+            if (oldMc!=null) mc=info.getStrongMetaClass();
+            // mc==null means that mc will be null too, so the 
+            // condition is always fulfilled. 
+            if (mc==oldMc) info.setStrongMetaClass(newMc);
         } finally {
             info.unlock();
         }
@@ -241,7 +241,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
     }
     
     public void removeMetaClass(Class theClass) {
-    	setMetaClass(theClass, null, null);
+        setMetaClass(theClass, null, null);
     }
     
     /**
@@ -296,7 +296,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
      * @param handle the handle
      */
     public void setMetaClassCreationHandle(MetaClassCreationHandle handle) {
-		if(handle == null) throw new IllegalArgumentException("Cannot set MetaClassCreationHandle to null value!");
+        if(handle == null) throw new IllegalArgumentException("Cannot set MetaClassCreationHandle to null value!");
         ClassInfo.clearModifiedExpandos();
         handle.setDisableCustomMetaClassLookup(metaClassCreationHandle.isDisableCustomMetaClassLookup());
         metaClassCreationHandle = handle;
@@ -317,8 +317,8 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
      * @param listener the listener
      */
     public void removeMetaClassRegistryChangeEventListener(MetaClassRegistryChangeEventListener listener) {
-    	synchronized (changeListenerList) {
-        	Object first = changeListenerList.getFirst();
+        synchronized (changeListenerList) {
+            Object first = changeListenerList.getFirst();
             changeListenerList.remove(listener);
             // we want to keep the first entry!
             if (changeListenerList.size()==0) changeListenerList.addFirst(first); 
@@ -396,7 +396,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
         }
         
         return new Iterator() {
-        	// index in the ref array
+            // index in the ref array
             private int index=0;
             // the current meta class
             private MetaClass currentMeta;
@@ -406,33 +406,33 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
             private boolean hasNext=false;
 
             public boolean hasNext() {
-            	if (hasNextCalled) return hasNext;
-            	hasNextCalled = true;
-            	if(index < refs.length) {
-                	hasNext=true;
+                if (hasNextCalled) return hasNext;
+                hasNextCalled = true;
+                if(index < refs.length) {
+                    hasNext=true;
                     currentMeta= refs[index];
                     index++;
-            	} else {
-            		hasNext=false;
-            	}
+                } else {
+                    hasNext=false;
+                }
                 return hasNext;
             }
             
             private void ensureNext() {
-            	// we ensure that hasNext has been called before 
-            	// next is called
-            	hasNext();
-            	hasNextCalled=false;            	
+                // we ensure that hasNext has been called before 
+                // next is called
+                hasNext();
+                hasNextCalled=false;                
             }
             
             public Object next() {
-            	ensureNext();
+                ensureNext();
                 return currentMeta;
             }
             
             public void remove() {
-            	ensureNext();
-            	setMetaClass(currentMeta.getTheClass(),currentMeta,null);
+                ensureNext();
+                setMetaClass(currentMeta.getTheClass(),currentMeta,null);
                 currentMeta=null;
             }
         };

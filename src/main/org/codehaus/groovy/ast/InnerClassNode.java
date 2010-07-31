@@ -71,11 +71,11 @@ public class InnerClassNode extends ClassNode {
         this.scope = scope;
     }
 
-	public boolean isAnonymous() {
-		return anonymous;
-	}
+    public boolean isAnonymous() {
+        return anonymous;
+    }
 
-	public void setAnonymous(boolean anonymous) {
-		this.anonymous = anonymous;
-	}
+    public void setAnonymous(boolean anonymous) {
+        this.anonymous = anonymous;
+    }
 }

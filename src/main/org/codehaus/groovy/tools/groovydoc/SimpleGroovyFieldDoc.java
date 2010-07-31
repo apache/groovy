@@ -24,8 +24,8 @@ public class SimpleGroovyFieldDoc extends SimpleGroovyMemberDoc implements Groov
     private String constantValueExpression;
 
     public SimpleGroovyFieldDoc(String name, GroovyClassDoc belongsToClass) {
-		super(name, belongsToClass);
-	}
+        super(name, belongsToClass);
+    }
 
     public Object constantValue() {/*todo*/return null;}
 
@@ -37,11 +37,11 @@ public class SimpleGroovyFieldDoc extends SimpleGroovyMemberDoc implements Groov
         return constantValueExpression;
     }
 
-	public boolean isTransient() {/*todo*/return false;}
+    public boolean isTransient() {/*todo*/return false;}
 
-	public boolean isVolatile() {/*todo*/return false;}
+    public boolean isVolatile() {/*todo*/return false;}
 
-    //	public GroovySerialFieldTag[] serialFieldTags() {/*todo*/return null;}
+    //    public GroovySerialFieldTag[] serialFieldTags() {/*todo*/return null;}
 
     public GroovyType type() {
         return type;

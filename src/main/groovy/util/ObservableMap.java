@@ -35,7 +35,7 @@ import java.util.*;
  * // skip all properties whose name matches a regex
  * def map = new ObservableMap( { name, value -&gt; !(name =~ /[A-Z+]/) } )
  * </pre>
- *
+ * <p/>
  * <p>The current implementation will trigger specialized events in the following scenarios,
  * you need not register a different listener as those events extend from PropertyChangeEvent
  * <ul>
@@ -45,7 +45,7 @@ import java.util.*;
  * <li>ObservableMap.PropertyClearedEvent - all properties have been removed from the map</li>
  * <li>ObservableMap.MultiPropertyEvent - triggered by calling map.putAll(), contains Added|Updated events</li>
  * </ul></p>
- *
+ * <p/>
  * <p>
  * <strong>Bound properties</strong>
  * <ul>
@@ -91,32 +91,32 @@ public class ObservableMap implements Map {
         return test;
     }
 
-   public Map getContent() {
-      return Collections.unmodifiableMap(delegate);	
-   }
+    public Map getContent() {
+        return Collections.unmodifiableMap(delegate);
+    }
 
     protected void firePropertyClearedEvent(Map values) {
-        firePropertyEvent( new PropertyClearedEvent(this,values) );
+        firePropertyEvent(new PropertyClearedEvent(this, values));
     }
 
     protected void firePropertyAddedEvent(Object key, Object value) {
-        firePropertyEvent( new PropertyAddedEvent(this, String.valueOf(key), value ) );
+        firePropertyEvent(new PropertyAddedEvent(this, String.valueOf(key), value));
     }
 
     protected void firePropertyUpdatedEvent(Object key, Object oldValue, Object newValue) {
-        firePropertyEvent( new PropertyUpdatedEvent(this, String.valueOf(key), oldValue, newValue ) );
+        firePropertyEvent(new PropertyUpdatedEvent(this, String.valueOf(key), oldValue, newValue));
     }
 
     protected void fireMultiPropertyEvent(List<PropertyEvent> events) {
-        firePropertyEvent( new MultiPropertyEvent(this, (PropertyEvent[]) events.toArray(new PropertyEvent[events.size()]) ) );
+        firePropertyEvent(new MultiPropertyEvent(this, (PropertyEvent[]) events.toArray(new PropertyEvent[events.size()])));
     }
 
     protected void fireMultiPropertyEvent(PropertyEvent[] events) {
-        firePropertyEvent( new MultiPropertyEvent(this, events ) );
+        firePropertyEvent(new MultiPropertyEvent(this, events));
     }
 
     protected void firePropertyRemovedEvent(Object key, Object value) {
-        firePropertyEvent( new PropertyRemovedEvent(this, String.valueOf(key), value ) );
+        firePropertyEvent(new PropertyRemovedEvent(this, String.valueOf(key), value));
     }
 
     protected void firePropertyEvent(PropertyEvent event) {
@@ -124,22 +124,20 @@ public class ObservableMap implements Map {
     }
 
     protected void fireSizeChangedEvent(int oldValue, int newValue) {
-        pcs.firePropertyChange( new PropertyChangeEvent(this, SIZE_PROPERTY, oldValue, newValue) );	
+        pcs.firePropertyChange(new PropertyChangeEvent(this, SIZE_PROPERTY, oldValue, newValue));
     }
 
     // Map interface
 
     public void clear() {
-	    int oldSize = size();
+        int oldSize = size();
         Map values = new HashMap();
-        if( !delegate.isEmpty() ) {
-            values.putAll( delegate );
+        if (!delegate.isEmpty()) {
+            values.putAll(delegate);
         }
         delegate.clear();
-        if( values != null ) {
-            firePropertyClearedEvent(values);
-            fireSizeChangedEvent(oldSize, size());
-        }
+        firePropertyClearedEvent(values);
+        fireSizeChangedEvent(oldSize, size());
     }
 
     public boolean containsKey(Object key) {
@@ -175,31 +173,31 @@ public class ObservableMap implements Map {
     }
 
     public Object put(Object key, Object value) {
-	    int oldSize = size();
+        int oldSize = size();
         Object oldValue = null;
-        boolean newKey = !delegate.containsKey( key );
-        if( test != null ) {
+        boolean newKey = !delegate.containsKey(key);
+        if (test != null) {
             oldValue = delegate.put(key, value);
             Object result = null;
-            if( test.getMaximumNumberOfParameters() == 2 ) {
-                result = test.call(new Object[] {key, value});
+            if (test.getMaximumNumberOfParameters() == 2) {
+                result = test.call(new Object[]{key, value});
             } else {
                 result = test.call(value);
             }
-            if( result != null && result instanceof Boolean && ((Boolean) result).booleanValue() ) {
-                if( newKey ) {
+            if (result != null && result instanceof Boolean && (Boolean) result) {
+                if (newKey) {
                     firePropertyAddedEvent(key, value);
                     fireSizeChangedEvent(oldSize, size());
-                }else if (oldValue != value) {
+                } else if (oldValue != value) {
                     firePropertyUpdatedEvent(key, oldValue, value);
                 }
             }
         } else {
             oldValue = delegate.put(key, value);
-            if( newKey ) {
+            if (newKey) {
                 firePropertyAddedEvent(key, value);
                 fireSizeChangedEvent(oldSize, size());
-            }else if (oldValue != value) {
+            } else if (oldValue != value) {
                 firePropertyUpdatedEvent(key, oldValue, value);
             }
         }
@@ -207,43 +205,42 @@ public class ObservableMap implements Map {
     }
 
     public void putAll(Map map) {
-	    int oldSize = size();
-        if( map != null ) {
+        int oldSize = size();
+        if (map != null) {
             List<PropertyEvent> events = new ArrayList<PropertyEvent>();
-            for (Iterator entries = map.entrySet()
-                    .iterator(); entries.hasNext();) {
-                Map.Entry entry = (Map.Entry) entries.next();
+            for (Object o : map.entrySet()) {
+                Entry entry = (Entry) o;
 
                 String key = String.valueOf(entry.getKey());
                 Object newValue = entry.getValue();
                 Object oldValue = null;
 
-                boolean newKey = !delegate.containsKey( key );
-                if( test != null ) {
+                boolean newKey = !delegate.containsKey(key);
+                if (test != null) {
                     oldValue = delegate.put(key, newValue);
                     Object result = null;
-                    if( test.getMaximumNumberOfParameters() == 2 ) {
-                        result = test.call(new Object[] {key, newValue});
+                    if (test.getMaximumNumberOfParameters() == 2) {
+                        result = test.call(new Object[]{key, newValue});
                     } else {
                         result = test.call(newValue);
                     }
-                    if( result != null && result instanceof Boolean && ((Boolean) result).booleanValue() ) {
-                        if( newKey ) {
-                            events.add( new PropertyAddedEvent(this, key, newValue ) );
-                        }else if (oldValue != newValue) {
-                            events.add( new PropertyUpdatedEvent(this, key, oldValue, newValue) );
+                    if (result != null && result instanceof Boolean && (Boolean) result) {
+                        if (newKey) {
+                            events.add(new PropertyAddedEvent(this, key, newValue));
+                        } else if (oldValue != newValue) {
+                            events.add(new PropertyUpdatedEvent(this, key, oldValue, newValue));
                         }
                     }
                 } else {
                     oldValue = delegate.put(key, newValue);
-                    if( newKey ) {
-                        events.add( new PropertyAddedEvent(this, key, newValue ) );
-                    }else if (oldValue != newValue) {
-                        events.add( new PropertyUpdatedEvent(this, key, oldValue, newValue) );
+                    if (newKey) {
+                        events.add(new PropertyAddedEvent(this, key, newValue));
+                    } else if (oldValue != newValue) {
+                        events.add(new PropertyUpdatedEvent(this, key, oldValue, newValue));
                     }
                 }
             }
-            if( events.size() > 0 ) {
+            if (events.size() > 0) {
                 fireMultiPropertyEvent(events);
                 fireSizeChangedEvent(oldSize, size());
             }
@@ -251,9 +248,9 @@ public class ObservableMap implements Map {
     }
 
     public Object remove(Object key) {
-	    int oldSize = size();
-        Object result =  delegate.remove(key);
-        if( key != null ) {
+        int oldSize = size();
+        Object result = delegate.remove(key);
+        if (key != null) {
             firePropertyRemovedEvent(key, result);
             fireSizeChangedEvent(oldSize, size());
         }
@@ -265,7 +262,7 @@ public class ObservableMap implements Map {
     }
 
     public int getSize() {
-	    return size();
+        return size();
     }
 
     public Collection values() {
@@ -303,45 +300,63 @@ public class ObservableMap implements Map {
     }
 
     public enum ChangeType {
-	    ADDED, UPDATED, REMOVED, CLEARED, MULTI, NONE;
-	
-	    public static final Object oldValue = new Object();
-	    public static final Object newValue = new Object();
-	
+        ADDED, UPDATED, REMOVED, CLEARED, MULTI, NONE;
+
+        public static final Object oldValue = new Object();
+        public static final Object newValue = new Object();
+
         public static ChangeType resolve(int ordinal) {
-            switch( ordinal ) {
-                case 0: return ADDED;
-                case 2: return REMOVED;
-                case 3: return CLEARED;
-                case 4: return MULTI;
-                case 5: return NONE;
+            switch (ordinal) {
+                case 0:
+                    return ADDED;
+                case 2:
+                    return REMOVED;
+                case 3:
+                    return CLEARED;
+                case 4:
+                    return MULTI;
+                case 5:
+                    return NONE;
                 case 1:
-                default: return UPDATED;
-            }	
+                default:
+                    return UPDATED;
+            }
         }
     }
 
     public abstract static class PropertyEvent extends PropertyChangeEvent {
-	    /** deprecated */
+        /**
+         * deprecated
+         */
         public static final int ADDED = ChangeType.ADDED.ordinal();
-	    /** deprecated */
+        /**
+         * deprecated
+         */
         public static final int UPDATED = ChangeType.UPDATED.ordinal();
-	    /** deprecated */
+        /**
+         * deprecated
+         */
         public static final int REMOVED = ChangeType.REMOVED.ordinal();
-	    /** deprecated */
+        /**
+         * deprecated
+         */
         public static final int CLEARED = ChangeType.CLEARED.ordinal();
-	    /** deprecated */
+        /**
+         * deprecated
+         */
         public static final int MULTI = ChangeType.MULTI.ordinal();
 
         private ChangeType type;
 
-        /** @deprecated */
-        public PropertyEvent( Object source, String propertyName, Object oldValue, Object newValue, int type ) {
-            this( source, propertyName, oldValue, newValue, ChangeType.resolve(type) );
+        /**
+         * @deprecated
+         */
+        public PropertyEvent(Object source, String propertyName, Object oldValue, Object newValue, int type) {
+            this(source, propertyName, oldValue, newValue, ChangeType.resolve(type));
         }
 
-        public PropertyEvent( Object source, String propertyName, Object oldValue, Object newValue, ChangeType type ) {
-            super( source, propertyName, oldValue, newValue );
+        public PropertyEvent(Object source, String propertyName, Object oldValue, Object newValue, ChangeType type) {
+            super(source, propertyName, oldValue, newValue);
             this.type = type;
         }
 
@@ -350,7 +365,7 @@ public class ObservableMap implements Map {
         }
 
         public ChangeType getChangeType() {
-             return type;
+            return type;
         }
 
         public String getTypeAsString() {
@@ -359,37 +374,39 @@ public class ObservableMap implements Map {
     }
 
     public static class PropertyAddedEvent extends PropertyEvent {
-        public PropertyAddedEvent( Object source, String propertyName, Object newValue ) {
-            super( source, propertyName, null, newValue, ChangeType.ADDED );
+        public PropertyAddedEvent(Object source, String propertyName, Object newValue) {
+            super(source, propertyName, null, newValue, ChangeType.ADDED);
         }
     }
 
     public static class PropertyUpdatedEvent extends PropertyEvent {
-        public PropertyUpdatedEvent( Object source, String propertyName, Object oldValue, Object newValue ) {
-            super( source, propertyName, oldValue, newValue, ChangeType.UPDATED );
+        public PropertyUpdatedEvent(Object source, String propertyName, Object oldValue, Object newValue) {
+            super(source, propertyName, oldValue, newValue, ChangeType.UPDATED);
         }
     }
 
     public static class PropertyRemovedEvent extends PropertyEvent {
-        public PropertyRemovedEvent( Object source, String propertyName, Object oldValue ) {
-            super( source, propertyName, oldValue, null, ChangeType.REMOVED );
+        public PropertyRemovedEvent(Object source, String propertyName, Object oldValue) {
+            super(source, propertyName, oldValue, null, ChangeType.REMOVED);
         }
     }
 
     public static class PropertyClearedEvent extends PropertyEvent {
-	    /** @deprecated */
+        /**
+         * @deprecated
+         */
         public static final String CLEAR_PROPERTY = ObservableMap.CLEARED_PROPERTY;
         private Map values = new HashMap();
 
-        public PropertyClearedEvent( Object source, Map values ) {
-            super( source, ObservableMap.CLEARED_PROPERTY, values, null, ChangeType.CLEARED );
-            if( values != null ) {
-                this.values.putAll( values );
+        public PropertyClearedEvent(Object source, Map values) {
+            super(source, ObservableMap.CLEARED_PROPERTY, values, null, ChangeType.CLEARED);
+            if (values != null) {
+                this.values.putAll(values);
             }
         }
 
         public Map getValues() {
-            return Collections.unmodifiableMap( values );
+            return Collections.unmodifiableMap(values);
         }
     }
 
@@ -397,17 +414,17 @@ public class ObservableMap implements Map {
         public static final String MULTI_PROPERTY = "groovy_util_ObservableMap_MultiPropertyEvent_MULTI";
         private PropertyEvent[] events = new PropertyEvent[0];
 
-        public MultiPropertyEvent( Object source, PropertyEvent[] events ) {
-            super( source, MULTI_PROPERTY, ChangeType.oldValue, ChangeType.newValue, ChangeType.MULTI );
-            if( events != null && events.length > 0 ) {
+        public MultiPropertyEvent(Object source, PropertyEvent[] events) {
+            super(source, MULTI_PROPERTY, ChangeType.oldValue, ChangeType.newValue, ChangeType.MULTI);
+            if (events != null && events.length > 0) {
                 this.events = new PropertyEvent[events.length];
-                System.arraycopy(events, 0, this.events, 0, events.length );
+                System.arraycopy(events, 0, this.events, 0, events.length);
             }
         }
 
         public PropertyEvent[] getEvents() {
             PropertyEvent[] copy = new PropertyEvent[events.length];
-            System.arraycopy(events, 0, copy, 0, events.length );
+            System.arraycopy(events, 0, copy, 0, events.length);
             return copy;
         }
     }

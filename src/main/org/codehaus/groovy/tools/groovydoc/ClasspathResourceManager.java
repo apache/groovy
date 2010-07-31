@@ -21,21 +21,21 @@ import java.io.Reader;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 
 public class ClasspathResourceManager implements ResourceManager {
-	ClassLoader classLoader;
-	public ClasspathResourceManager() {
-		classLoader = getClass().getClassLoader();
-	}
-	
-	public ClasspathResourceManager(ClassLoader classLoader) {
-		this.classLoader = classLoader;
-	}
+    ClassLoader classLoader;
+    public ClasspathResourceManager() {
+        classLoader = getClass().getClassLoader();
+    }
+    
+    public ClasspathResourceManager(ClassLoader classLoader) {
+        this.classLoader = classLoader;
+    }
 
-	public InputStream getInputStream(String resourceName) throws IOException {
+    public InputStream getInputStream(String resourceName) throws IOException {
         return classLoader.getResourceAsStream(resourceName);
-	}
+    }
 
-	public Reader getReader(String resourceName) throws IOException {
+    public Reader getReader(String resourceName) throws IOException {
         return DefaultGroovyMethods.newReader(getInputStream(resourceName));
-	}
+    }
 
 }

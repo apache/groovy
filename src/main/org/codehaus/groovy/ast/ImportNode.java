@@ -19,9 +19,10 @@ import org.objectweb.asm.Opcodes;
 
 /**
  * Represents an import statement of a single class
- * 
+ * <p/>
  * author Jochen Theodorou
  * author Paul King
+ *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public class ImportNode extends AnnotatedNode implements Opcodes {
@@ -37,7 +38,7 @@ public class ImportNode extends AnnotatedNode implements Opcodes {
     /**
      * Represent an import of an entire package, i.e. import package.Classname
      *
-     * @param type the referenced class
+     * @param type  the referenced class
      * @param alias optional alias
      */
     public ImportNode(ClassNode type, String alias) {
@@ -80,9 +81,9 @@ public class ImportNode extends AnnotatedNode implements Opcodes {
     /**
      * Represent a static import of a field or method, i.e. import static package.Classname.name
      *
-     * @param type the referenced class
+     * @param type      the referenced class
      * @param fieldName the field name
-     * @param alias optional alias
+     * @param alias     optional alias
      */
     public ImportNode(ClassNode type, String fieldName, String alias) {
         this.type = type;
@@ -97,7 +98,7 @@ public class ImportNode extends AnnotatedNode implements Opcodes {
      * @return the text display of this import
      */
     public String getText() {
-    	String typeName = getClassName();
+        String typeName = getClassName();
         if (isStar && !isStatic) {
             return "import " + packageName + "*";
         }
@@ -115,7 +116,7 @@ public class ImportNode extends AnnotatedNode implements Opcodes {
         }
         return "import " + typeName + " as " + alias;
     }
-    
+
     public String getPackageName() {
         return packageName;
     }
@@ -139,9 +140,9 @@ public class ImportNode extends AnnotatedNode implements Opcodes {
     public ClassNode getType() {
         return type;
     }
-    
+
     public String getClassName() {
-    	return type == null ? null : type.getName();
+        return type == null ? null : type.getName();
     }
 
     public void visit(GroovyCodeVisitor visitor) {
