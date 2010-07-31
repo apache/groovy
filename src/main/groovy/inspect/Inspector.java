@@ -40,11 +40,11 @@ public class Inspector {
     protected Object objectUnderInspection;
 
     // Indexes to retrieve Class Property information
-    public static final int CLASS_PACKAGE_IDX       = 0;
-    public static final int CLASS_CLASS_IDX         = 1;
-    public static final int CLASS_INTERFACE_IDX     = 2;
-    public static final int CLASS_SUPERCLASS_IDX    = 3;
-    public static final int CLASS_OTHER_IDX         = 4;
+    public static final int CLASS_PACKAGE_IDX = 0;
+    public static final int CLASS_CLASS_IDX = 1;
+    public static final int CLASS_INTERFACE_IDX = 2;
+    public static final int CLASS_SUPERCLASS_IDX = 3;
+    public static final int CLASS_OTHER_IDX = 4;
 
     // Indexes to retrieve field and method information
     public static final int MEMBER_ORIGIN_IDX = 0;
@@ -64,7 +64,7 @@ public class Inspector {
      * @param objectUnderInspection must not be null
      */
     public Inspector(Object objectUnderInspection) {
-        if (null == objectUnderInspection){
+        if (null == objectUnderInspection) {
             throw new IllegalArgumentException("argument must not be null");
         }
         this.objectUnderInspection = objectUnderInspection;
@@ -72,23 +72,24 @@ public class Inspector {
 
     /**
      * Get the Class Properties of the object under inspection.
+     *
      * @return String array to be indexed by the CLASS_xxx_IDX constants
      */
     public String[] getClassProps() {
-        String[] result = new String[CLASS_OTHER_IDX+1];
+        String[] result = new String[CLASS_OTHER_IDX + 1];
         Package pack = getClassUnderInspection().getPackage();
-        result[CLASS_PACKAGE_IDX] = "package "+ ((pack == null) ? NOT_APPLICABLE : pack.getName());
+        result[CLASS_PACKAGE_IDX] = "package " + ((pack == null) ? NOT_APPLICABLE : pack.getName());
         String modifiers = Modifier.toString(getClassUnderInspection().getModifiers());
-        result[CLASS_CLASS_IDX] = modifiers + " class "+ shortName(getClassUnderInspection());
+        result[CLASS_CLASS_IDX] = modifiers + " class " + shortName(getClassUnderInspection());
         result[CLASS_INTERFACE_IDX] = "implements ";
         Class[] interfaces = getClassUnderInspection().getInterfaces();
         for (Class anInterface : interfaces) {
             result[CLASS_INTERFACE_IDX] += shortName(anInterface) + " ";
         }
         result[CLASS_SUPERCLASS_IDX] = "extends " + shortName(getClassUnderInspection().getSuperclass());
-        result[CLASS_OTHER_IDX] = "is Primitive: "+getClassUnderInspection().isPrimitive()
-                  +", is Array: "   +getClassUnderInspection().isArray()
-                  +", is Groovy: "  + isGroovy();
+        result[CLASS_OTHER_IDX] = "is Primitive: " + getClassUnderInspection().isPrimitive()
+                + ", is Array: " + getClassUnderInspection().isArray()
+                + ", is Groovy: " + isGroovy();
         return result;
     }
 
@@ -102,14 +103,15 @@ public class Inspector {
      * @return the object
      */
     public Object getObject() {
-    	return objectUnderInspection;
+        return objectUnderInspection;
     }
 
     /**
      * Get info about usual Java instance and class Methods as well as Constructors.
-     * @return  Array of StringArrays that can be indexed with the MEMBER_xxx_IDX constants
+     *
+     * @return Array of StringArrays that can be indexed with the MEMBER_xxx_IDX constants
      */
-    public Object[] getMethods(){
+    public Object[] getMethods() {
         Method[] methods = getClassUnderInspection().getMethods();
         Constructor[] ctors = getClassUnderInspection().getConstructors();
         Object[] result = new Object[methods.length + ctors.length];
@@ -124,15 +126,17 @@ public class Inspector {
         }
         return result;
     }
-     /**
+
+    /**
      * Get info about instance and class Methods that are dynamically added through Groovy.
-     * @return  Array of StringArrays that can be indexed with the MEMBER_xxx_IDX constants
+     *
+     * @return Array of StringArrays that can be indexed with the MEMBER_xxx_IDX constants
      */
-    public Object[] getMetaMethods(){
+    public Object[] getMetaMethods() {
         MetaClass metaClass = InvokerHelper.getMetaClass(objectUnderInspection);
         List metaMethods = metaClass.getMetaMethods();
         Object[] result = new Object[metaMethods.size()];
-        int i=0;
+        int i = 0;
         for (Iterator iter = metaMethods.iterator(); iter.hasNext(); i++) {
             MetaMethod metaMethod = (MetaMethod) iter.next();
             result[i] = methodInfo(metaMethod);
@@ -142,9 +146,10 @@ public class Inspector {
 
     /**
      * Get info about usual Java public fields incl. constants.
-     * @return  Array of StringArrays that can be indexed with the MEMBER_xxx_IDX constants
+     *
+     * @return Array of StringArrays that can be indexed with the MEMBER_xxx_IDX constants
      */
-    public Object[] getPublicFields(){
+    public Object[] getPublicFields() {
         Field[] fields = getClassUnderInspection().getFields();
         Object[] result = new Object[fields.length];
         for (int i = 0; i < fields.length; i++) {
@@ -153,14 +158,16 @@ public class Inspector {
         }
         return result;
     }
+
     /**
      * Get info about Properties (Java and Groovy alike).
-     * @return  Array of StringArrays that can be indexed with the MEMBER_xxx_IDX constants
+     *
+     * @return Array of StringArrays that can be indexed with the MEMBER_xxx_IDX constants
      */
-    public Object[] getPropertyInfo(){
+    public Object[] getPropertyInfo() {
         List props = DefaultGroovyMethods.getMetaPropertyValues(objectUnderInspection);
         Object[] result = new Object[props.size()];
-        int i=0;
+        int i = 0;
         for (Iterator iter = props.iterator(); iter.hasNext(); i++) {
             PropertyValue pv = (PropertyValue) iter.next();
             result[i] = fieldInfo(pv);
@@ -169,7 +176,7 @@ public class Inspector {
     }
 
     protected String[] fieldInfo(Field field) {
-        String[] result = new String[MEMBER_VALUE_IDX+1];
+        String[] result = new String[MEMBER_VALUE_IDX + 1];
         result[MEMBER_ORIGIN_IDX] = JAVA;
         result[MEMBER_MODIFIER_IDX] = Modifier.toString(field.getModifiers());
         result[MEMBER_DECLARER_IDX] = shortName(field.getDeclaringClass());
@@ -182,8 +189,9 @@ public class Inspector {
         }
         return withoutNulls(result);
     }
+
     protected String[] fieldInfo(PropertyValue pv) {
-        String[] result = new String[MEMBER_VALUE_IDX+1];
+        String[] result = new String[MEMBER_VALUE_IDX + 1];
         result[MEMBER_ORIGIN_IDX] = GROOVY;
         result[MEMBER_MODIFIER_IDX] = "public";
         result[MEMBER_DECLARER_IDX] = NOT_APPLICABLE;
@@ -201,7 +209,7 @@ public class Inspector {
         return objectUnderInspection.getClass();
     }
 
-    public static String shortName(Class clazz){
+    public static String shortName(Class clazz) {
         if (null == clazz) return NOT_APPLICABLE;
         String className = clazz.getName();
         if (null == clazz.getPackage()) return className;
@@ -212,75 +220,76 @@ public class Inspector {
         return className;
     }
 
-    protected String[] methodInfo(Method method){
-        String[] result = new String[MEMBER_EXCEPTIONS_IDX+1];
-	    int mod = method.getModifiers();
+    protected String[] methodInfo(Method method) {
+        String[] result = new String[MEMBER_EXCEPTIONS_IDX + 1];
+        int mod = method.getModifiers();
         result[MEMBER_ORIGIN_IDX] = JAVA;
         result[MEMBER_DECLARER_IDX] = shortName(method.getDeclaringClass());
         result[MEMBER_MODIFIER_IDX] = Modifier.toString(mod);
         result[MEMBER_NAME_IDX] = method.getName();
         result[MEMBER_TYPE_IDX] = shortName(method.getReturnType());
-	    Class[] params = method.getParameterTypes();
+        Class[] params = method.getParameterTypes();
         StringBuffer sb = new StringBuffer();
-	    for (int j = 0; j < params.length; j++) {
-		    sb.append(shortName(params[j]));
-		    if (j < (params.length - 1)) sb.append(", ");
-	    }
+        for (int j = 0; j < params.length; j++) {
+            sb.append(shortName(params[j]));
+            if (j < (params.length - 1)) sb.append(", ");
+        }
         result[MEMBER_PARAMS_IDX] = sb.toString();
-	    sb.setLength(0);
-	    Class[] exceptions = method.getExceptionTypes();
-		for (int k = 0; k < exceptions.length; k++) {
-		    sb.append(shortName(exceptions[k]));
-		    if (k < (exceptions.length - 1)) sb.append(", ");
-	    }
+        sb.setLength(0);
+        Class[] exceptions = method.getExceptionTypes();
+        for (int k = 0; k < exceptions.length; k++) {
+            sb.append(shortName(exceptions[k]));
+            if (k < (exceptions.length - 1)) sb.append(", ");
+        }
         result[MEMBER_EXCEPTIONS_IDX] = sb.toString();
-	    return withoutNulls(result);
+        return withoutNulls(result);
     }
 
-    protected String[] methodInfo(Constructor ctor){
-        String[] result = new String[MEMBER_EXCEPTIONS_IDX+1];
-	    int mod = ctor.getModifiers();
+    protected String[] methodInfo(Constructor ctor) {
+        String[] result = new String[MEMBER_EXCEPTIONS_IDX + 1];
+        int mod = ctor.getModifiers();
         result[MEMBER_ORIGIN_IDX] = JAVA;
         result[MEMBER_MODIFIER_IDX] = Modifier.toString(mod);
         result[MEMBER_DECLARER_IDX] = shortName(ctor.getDeclaringClass());
         result[MEMBER_TYPE_IDX] = shortName(ctor.getDeclaringClass());
         result[MEMBER_NAME_IDX] = ctor.getName();
-	    Class[] params = ctor.getParameterTypes();
+        Class[] params = ctor.getParameterTypes();
         StringBuffer sb = new StringBuffer();
-	    for (int j = 0; j < params.length; j++) {
-		    sb.append(shortName(params[j]));
-		    if (j < (params.length - 1)) sb.append(", ");
-	    }
+        for (int j = 0; j < params.length; j++) {
+            sb.append(shortName(params[j]));
+            if (j < (params.length - 1)) sb.append(", ");
+        }
         result[MEMBER_PARAMS_IDX] = sb.toString();
-	    sb.setLength(0);
-	    Class[] exceptions = ctor.getExceptionTypes();
-		for (int k = 0; k < exceptions.length; k++) {
-		    sb.append(shortName(exceptions[k]));
-		    if (k < (exceptions.length - 1)) sb.append(", ");
-	    }
+        sb.setLength(0);
+        Class[] exceptions = ctor.getExceptionTypes();
+        for (int k = 0; k < exceptions.length; k++) {
+            sb.append(shortName(exceptions[k]));
+            if (k < (exceptions.length - 1)) sb.append(", ");
+        }
         result[MEMBER_EXCEPTIONS_IDX] = sb.toString();
-	    return withoutNulls(result);
+        return withoutNulls(result);
     }
-    protected String[] methodInfo(MetaMethod method){
-        String[] result = new String[MEMBER_EXCEPTIONS_IDX+1];
-	    int mod = method.getModifiers();
+
+    protected String[] methodInfo(MetaMethod method) {
+        String[] result = new String[MEMBER_EXCEPTIONS_IDX + 1];
+        int mod = method.getModifiers();
         result[MEMBER_ORIGIN_IDX] = GROOVY;
         result[MEMBER_MODIFIER_IDX] = Modifier.toString(mod);
         result[MEMBER_DECLARER_IDX] = shortName(method.getDeclaringClass().getTheClass());
         result[MEMBER_TYPE_IDX] = shortName(method.getReturnType());
         result[MEMBER_NAME_IDX] = method.getName();
-	    CachedClass[] params = method.getParameterTypes();
+        CachedClass[] params = method.getParameterTypes();
         StringBuffer sb = new StringBuffer();
-	    for (int j = 0; j < params.length; j++) {
+        for (int j = 0; j < params.length; j++) {
             sb.append(shortName(params[j].getTheClass()));
-		    if (j < (params.length - 1)) sb.append(", ");
-	    }
+            if (j < (params.length - 1)) sb.append(", ");
+        }
         result[MEMBER_PARAMS_IDX] = sb.toString();
         result[MEMBER_EXCEPTIONS_IDX] = NOT_APPLICABLE; // no exception info for Groovy MetaMethods
         return withoutNulls(result);
     }
 
-    protected String[] withoutNulls(String[] toNormalize){
+    protected String[] withoutNulls(String[] toNormalize) {
         for (int i = 0; i < toNormalize.length; i++) {
             String s = toNormalize[i];
             if (null == s) toNormalize[i] = NOT_APPLICABLE;
@@ -295,7 +304,7 @@ public class Inspector {
     static void print(final PrintStream out, Object[] memberInfo) {
         for (int i = 0; i < memberInfo.length; i++) {
             String[] metaMethod = (String[]) memberInfo[i];
-            out.print(i+":\t");
+            out.print(i + ":\t");
             for (String s : metaMethod) {
                 out.print(s + " ");
             }

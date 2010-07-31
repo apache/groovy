@@ -105,6 +105,7 @@ import java.util.Map;
 public class XmlTemplateEngine extends TemplateEngine {
 
     private static int counter = 1;
+
     private static class GspPrinter extends XmlNodePrinter {
 
         public GspPrinter(PrintWriter out, String indent) {
@@ -181,12 +182,12 @@ public class XmlTemplateEngine extends TemplateEngine {
         }
 
         protected void printLineBegin() {
-        	out.print("out.print(\"\"\"");
+            out.print("out.print(\"\"\"");
             out.printIndent();
         }
 
         protected void printLineEnd(String comment) {
-        	out.print("\\n\"\"\");");
+            out.print("\\n\"\"\");");
             if (comment != null) {
                 out.print(" // ");
                 out.print(comment);
@@ -289,7 +290,7 @@ public class XmlTemplateEngine extends TemplateEngine {
     }
 
     public Template createTemplate(Reader reader) throws CompilationFailedException, ClassNotFoundException, IOException {
-        Node root = null;
+        Node root ;
         try {
             root = xmlParser.parse(reader);
         } catch (SAXException e) {

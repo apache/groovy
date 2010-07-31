@@ -601,9 +601,9 @@ public class GroovyShell extends GroovyObjectSupport {
      */
     public Object evaluate(final String scriptText, final String fileName, final String codeBase) throws CompilationFailedException {
         SecurityManager sm = System.getSecurityManager();
-		if (sm != null) {
-		    sm.checkPermission(new GroovyCodeSourcePermission(codeBase));
-		}
+        if (sm != null) {
+            sm.checkPermission(new GroovyCodeSourcePermission(codeBase));
+        }
 
         GroovyCodeSource gcs = AccessController.doPrivileged(new PrivilegedAction<GroovyCodeSource>() {
             public GroovyCodeSource run() {

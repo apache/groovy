@@ -194,7 +194,7 @@ public class InteractiveShell
      * @param err The error stream to use
      */    
     public InteractiveShell(final Binding binding, final InputStream in, final PrintStream out, final PrintStream err) throws IOException {
-    	this(null, binding, in, out, err);
+        this(null, binding, in, out, err);
     }
     
     /**
@@ -303,7 +303,7 @@ public class InteractiveShell
     }
 
     /**
-     * A closure that is executed before the exection of a given script
+     * A closure that is executed before the execution of a given script
      *
      * @param beforeExecution The closure to execute
      */
@@ -527,12 +527,12 @@ public class InteractiveShell
         // FIXME: Update this once we have joint compile happy in the core build?
         //
         // this should read: groovy.inspect.swingui.ObjectBrowser.inspect(lastResult)
-        // but this doesnt compile since ObjectBrowser.groovy is compiled after this class.
+        // but this doesn't compile since ObjectBrowser.groovy is compiled after this class.
         //
 
         //
         // FIXME: When launching this, if the user tries to "exit" and the window is still opened, the shell will
-        //        hang... not really nice user experence IMO.  Should try to fix this if we can.
+        //        hang... not really nice user experience IMO.  Should try to fix this if we can.
         //
         
         try {
@@ -661,19 +661,19 @@ public class InteractiveShell
         "inspect"
     };
 
-    private static final Map COMMAND_MAPPINGS = new HashMap();
+    private static final Map<String, Integer> COMMAND_MAPPINGS = new HashMap<String, Integer>();
 
     static {
         for (int i = 0; i <= LAST_COMMAND_ID; i++) {
-            COMMAND_MAPPINGS.put(COMMANDS[i], Integer.valueOf(i));
+            COMMAND_MAPPINGS.put(COMMANDS[i], i);
         }
 
         // A few synonyms
-        COMMAND_MAPPINGS.put("quit", Integer.valueOf(COMMAND_ID_EXIT));
-        COMMAND_MAPPINGS.put("go", Integer.valueOf(COMMAND_ID_EXECUTE));
+        COMMAND_MAPPINGS.put("quit", COMMAND_ID_EXIT);
+        COMMAND_MAPPINGS.put("go", COMMAND_ID_EXECUTE);
     }
 
-    private static final Map COMMAND_HELP = new HashMap();
+    private static final Map<String, String> COMMAND_HELP = new HashMap<String, String>();
 
     static {
         COMMAND_HELP.put(COMMANDS[COMMAND_ID_EXIT],    "exit/quit         - " + MESSAGES.getMessage("command.exit.descripion"));
@@ -724,7 +724,7 @@ public class InteractiveShell
             // Dump the current buffer with a line number prefix
             for (int i = 0; i < lines.length; i++) {
                 // Normalize the field size of the line number
-                String lineno = DefaultGroovyMethods.padLeft(String.valueOf(i + 1), Integer.valueOf(padsize), " ");
+                String lineno = DefaultGroovyMethods.padLeft(String.valueOf(i + 1), padsize, " ");
                 
                 out.print(lineno);
                 out.print("> ");
@@ -734,7 +734,7 @@ public class InteractiveShell
     }
 
     /**
-     * Displays the current binding used when instanciating the shell.
+     * Displays the current binding used when instantiating the shell.
      */
     private void displayBinding() {
         Binding context = shell.getContext();
@@ -747,10 +747,7 @@ public class InteractiveShell
         else {
             out.println(MESSAGES.getMessage("command.binding.available_variables"));
 
-            Iterator iter = set.iterator();
-            while (iter.hasNext()) {
-                Object key = iter.next();
-
+            for (Object key : set) {
                 out.print("    ");
                 out.print(key);
                 out.print(" = ");
@@ -779,7 +776,7 @@ public class InteractiveShell
     }
 
     //
-    // Custom JLine Completors to fancy up the user experence more.
+    // Custom JLine Completors to fancy up the user experience more.
     //
 
     private class CommandNameCompletor
@@ -802,7 +799,7 @@ public class InteractiveShell
     //
 
     //
-    // TODO: Add shell method complention?
+    // TODO: Add shell method completion?
     //
 
     /*

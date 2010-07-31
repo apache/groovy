@@ -19,32 +19,31 @@ package groovy.lang;
 
 /**
  * Represents a property on a bean which may have a getter and/or a setter
- * 
+ *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
 public class MetaArrayLengthProperty extends MetaProperty {
 
     public MetaArrayLengthProperty() {
-		super("length", int.class);
+        super("length", int.class);
     }
 
     /**
      * @return the property of the given object
-     * @throws Exception if the property could not be evaluated
      */
     public Object getProperty(Object object) {
-        return Integer.valueOf(java.lang.reflect.Array.getLength(object));
+        return java.lang.reflect.Array.getLength(object);
     }
 
     /**
      * Sets the property on the given object to the new value
-     * 
-     * @param object on which to set the property
+     *
+     * @param object   on which to set the property
      * @param newValue the new value of the property
      * @throws RuntimeException if the property could not be set
      */
     public void setProperty(Object object, Object newValue) {
-		throw new ReadOnlyPropertyException("length", object.getClass());
+        throw new ReadOnlyPropertyException("length", object.getClass());
     }
 }

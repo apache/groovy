@@ -24,13 +24,12 @@ import org.codehaus.groovy.antlr.parser.GroovyTokenTypes;
 
 import antlr.collections.AST;
 
-/**                                                  
+/**
  * Helper Class for Antlr AST traversal and visitation.
  *
  * @author <a href="mailto:groovy@ross-rayner.com">Jeremy Rayner</a>
  * @version $Revision$
  */
-
 public abstract class TraversalHelper implements AntlrASTProcessor {
     protected List<GroovySourceAST> unvisitedNodes;
     private final Visitor v;
@@ -43,6 +42,7 @@ public abstract class TraversalHelper implements AntlrASTProcessor {
     protected void setUp(GroovySourceAST ast) {
         v.setUp();
     }
+
     protected void tearDown(GroovySourceAST ast) {
         v.tearDown();
     }
@@ -50,6 +50,7 @@ public abstract class TraversalHelper implements AntlrASTProcessor {
     protected void push(GroovySourceAST ast) {
         v.push(ast);
     }
+
     protected GroovySourceAST pop() {
         return v.pop();
     }
@@ -284,6 +285,7 @@ public abstract class TraversalHelper implements AntlrASTProcessor {
             v.visitDefault(null,n);
         }
     }
+
     protected abstract void accept(GroovySourceAST currentNode);
 
     protected void accept_v_FirstChildsFirstChild_v_Child2_Child3_v_Child4_v___v_LastChild(GroovySourceAST t) {
@@ -293,7 +295,7 @@ public abstract class TraversalHelper implements AntlrASTProcessor {
         accept(expr2.childAt(0));
         closingVisit(t);
 
-        GroovySourceAST sibling = (GroovySourceAST)expr2.getNextSibling();
+        GroovySourceAST sibling = (GroovySourceAST) expr2.getNextSibling();
         boolean firstSList = true;
         while (sibling != null) {
             if (!firstSList) {
@@ -301,7 +303,7 @@ public abstract class TraversalHelper implements AntlrASTProcessor {
             }
             firstSList = false;
             accept(sibling);
-            sibling = (GroovySourceAST)sibling.getNextSibling();
+            sibling = (GroovySourceAST) sibling.getNextSibling();
         }
     }
 
@@ -319,14 +321,14 @@ public abstract class TraversalHelper implements AntlrASTProcessor {
         subsequentVisit(t);
         accept(t.childAt(1));
     }
-    
+
     protected void accept_FirstChild_v_SecondChild_v(GroovySourceAST t) {
         accept(t.childAt(0));
         openingVisit(t);
         accept(t.childAt(1));
         closingVisit(t);
     }
-    
+
     protected void accept_SecondChild_v_ThirdChild_v(GroovySourceAST t) {
         accept(t.childAt(1));
         openingVisit(t);
@@ -345,7 +347,7 @@ public abstract class TraversalHelper implements AntlrASTProcessor {
         closingVisit(t);
     }
 
-    
+
     protected void accept_v_FirstChild_SecondChild_v_ThirdChild_v(GroovySourceAST t) {
         openingVisit(t);
         accept(t.childAt(0));
@@ -363,58 +365,58 @@ public abstract class TraversalHelper implements AntlrASTProcessor {
         accept(t.childAt(2));
         closingVisit(t);
     }
-	
+
     protected void accept_FirstSecondAndThirdChild_v_v_ForthChild(GroovySourceAST t) {
-        GroovySourceAST child1 = (GroovySourceAST)t.getFirstChild();
-        if (child1 != null){
-        	accept(child1);
-            GroovySourceAST child2 = (GroovySourceAST)child1.getNextSibling();
+        GroovySourceAST child1 = (GroovySourceAST) t.getFirstChild();
+        if (child1 != null) {
+            accept(child1);
+            GroovySourceAST child2 = (GroovySourceAST) child1.getNextSibling();
             if (child2 != null) {
-            	accept(child2);
-                GroovySourceAST child3 = (GroovySourceAST)child2.getNextSibling();
+                accept(child2);
+                GroovySourceAST child3 = (GroovySourceAST) child2.getNextSibling();
                 if (child3 != null) {
-                	accept(child3);
-                	openingVisit(t);
-                	GroovySourceAST child4 = (GroovySourceAST)child3.getNextSibling();
+                    accept(child3);
+                    openingVisit(t);
+                    GroovySourceAST child4 = (GroovySourceAST) child3.getNextSibling();
                     if (child4 != null) {
-                    	subsequentVisit(t);
-                    	accept(child4);
+                        subsequentVisit(t);
+                        accept(child4);
                     }
                 }
             }
         }
-	}
+    }
 
-	protected void accept_v_FirstChild_2ndv_SecondChild_v___LastChild_v(GroovySourceAST t) {
+    protected void accept_v_FirstChild_2ndv_SecondChild_v___LastChild_v(GroovySourceAST t) {
         openingVisit(t);
-        GroovySourceAST child = (GroovySourceAST)t.getFirstChild();
-        if (child != null){
+        GroovySourceAST child = (GroovySourceAST) t.getFirstChild();
+        if (child != null) {
             accept(child);
-            GroovySourceAST sibling = (GroovySourceAST)child.getNextSibling();
+            GroovySourceAST sibling = (GroovySourceAST) child.getNextSibling();
             if (sibling != null) {
-            	secondVisit(t);
-            	accept(sibling);
-                sibling = (GroovySourceAST)sibling.getNextSibling();
+                secondVisit(t);
+                accept(sibling);
+                sibling = (GroovySourceAST) sibling.getNextSibling();
                 while (sibling != null) {
                     subsequentVisit(t);
                     accept(sibling);
-                    sibling = (GroovySourceAST)sibling.getNextSibling();
+                    sibling = (GroovySourceAST) sibling.getNextSibling();
                 }
             }
         }
         closingVisit(t);
     }
 
-	protected void accept_v_FirstChild_v_SecondChild_v___LastChild_v(GroovySourceAST t) {
+    protected void accept_v_FirstChild_v_SecondChild_v___LastChild_v(GroovySourceAST t) {
         openingVisit(t);
-        GroovySourceAST child = (GroovySourceAST)t.getFirstChild();
-        if (child != null){
+        GroovySourceAST child = (GroovySourceAST) t.getFirstChild();
+        if (child != null) {
             accept(child);
-            GroovySourceAST sibling = (GroovySourceAST)child.getNextSibling();
+            GroovySourceAST sibling = (GroovySourceAST) child.getNextSibling();
             while (sibling != null) {
                 subsequentVisit(t);
                 accept(sibling);
-                sibling = (GroovySourceAST)sibling.getNextSibling();
+                sibling = (GroovySourceAST) sibling.getNextSibling();
             }
         }
         closingVisit(t);
@@ -425,7 +427,7 @@ public abstract class TraversalHelper implements AntlrASTProcessor {
         accept(t.childAt(0));
         closingVisit(t);
     }
-    
+
     protected void accept_v_Siblings_v(GroovySourceAST t) {
         openingVisit(t);
         acceptSiblings(t);
@@ -451,29 +453,34 @@ public abstract class TraversalHelper implements AntlrASTProcessor {
         closingVisit(t);
         acceptSiblings(t.childAt(0));
     }
+
     protected void accept_FirstChild_v_RestOfTheChildren_v_LastChild(GroovySourceAST t) {
         int count = 0;
         accept(t.childAt(0));
         count++;
         openingVisit(t);
         if (t.childAt(0) != null) {
-            GroovySourceAST sibling = (GroovySourceAST)t.childAt(0).getNextSibling();
+            GroovySourceAST sibling = (GroovySourceAST) t.childAt(0).getNextSibling();
             while (sibling != null) {
-                if (count == t.getNumberOfChildren() - 1) {closingVisit(t);}
+                if (count == t.getNumberOfChildren() - 1) {
+                    closingVisit(t);
+                }
                 accept(sibling);
                 count++;
-                sibling = (GroovySourceAST)sibling.getNextSibling();
+                sibling = (GroovySourceAST) sibling.getNextSibling();
             }
         }
 
 
     }
+
     protected void accept_FirstChild_v_RestOfTheChildren_v(GroovySourceAST t) {
         accept(t.childAt(0));
         openingVisit(t);
         acceptSiblings(t.childAt(0));
         closingVisit(t);
     }
+
     protected void accept_v_FirstChild_v_RestOfTheChildren(GroovySourceAST t) {
         accept_v_FirstChild_v(t);
         acceptSiblings(t.childAt(0));
@@ -489,18 +496,18 @@ public abstract class TraversalHelper implements AntlrASTProcessor {
 
     protected void acceptSiblings(GroovySourceAST t) {
         if (t != null) {
-            GroovySourceAST sibling = (GroovySourceAST)t.getNextSibling();
+            GroovySourceAST sibling = (GroovySourceAST) t.getNextSibling();
             while (sibling != null) {
                 accept(sibling);
-                sibling = (GroovySourceAST)sibling.getNextSibling();
+                sibling = (GroovySourceAST) sibling.getNextSibling();
             }
         }
     }
 
     protected void acceptChildren(GroovySourceAST t) {
         if (t != null) {
-            GroovySourceAST child = (GroovySourceAST)t.getFirstChild();
-            if (child != null){
+            GroovySourceAST child = (GroovySourceAST) t.getFirstChild();
+            if (child != null) {
                 accept(child);
                 acceptSiblings(child);
             }
@@ -532,15 +539,15 @@ public abstract class TraversalHelper implements AntlrASTProcessor {
         int n = Visitor.CLOSING_VISIT;
         visitNode(t, n);
     }
-    
+
     public AST process(AST t) {
         GroovySourceAST node = (GroovySourceAST) t;
-        
+
         // process each node in turn
         setUp(node);
         accept(node);
         acceptSiblings(node);
         tearDown(node);
         return null;
-    }    
+    }
 }

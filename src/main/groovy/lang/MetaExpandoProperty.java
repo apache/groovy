@@ -20,18 +20,18 @@ import java.util.Map.Entry;
 
 /**
  * Represents a property in an Expando object
- * 
+ *
  * @author John Stump
  * @version $Revision$
  */
 public class MetaExpandoProperty extends MetaProperty {
 
-	Object value = null;
-	
+    Object value = null;
+
     public MetaExpandoProperty(Entry entry) {
-		super((String) entry.getKey(), Object.class);
-		
-		value = entry.getValue();
+        super((String) entry.getKey(), Object.class);
+
+        value = entry.getValue();
     }
 
     /**
@@ -39,16 +39,16 @@ public class MetaExpandoProperty extends MetaProperty {
      * @throws Exception if the property could not be evaluated
      */
     public Object getProperty(Object object) {
-		return value;
-	}
+        return value;
+    }
 
     /**
      * Sets the property on the given object to the new value
-     * 
-     * @param object on which to set the property
+     *
+     * @param object   on which to set the property
      * @param newValue the new value of the property
      */
     public void setProperty(Object object, Object newValue) {
-		value = newValue;
-	}
+        value = newValue;
+    }
 }

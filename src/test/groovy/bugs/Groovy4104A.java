@@ -24,6 +24,6 @@ public class Groovy4104A {
     }
 
     protected int someMethod(int someParameter) {
-    	return someParameter * 2;
+        return someParameter * 2;
     }
 }

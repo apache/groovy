@@ -281,7 +281,7 @@ public class GroovyClassLoader extends URLClassLoader {
     }
 
     private Class doParseClass(GroovyCodeSource codeSource) {
-    	validate(codeSource);
+        validate(codeSource);
         Class answer;  // Was neither already loaded nor compiling, so compile and add to cache.
         CompilationUnit unit = createCompilationUnit(config, codeSource.getCodeSource());
         SourceUnit su = null;
@@ -301,22 +301,22 @@ public class GroovyClassLoader extends URLClassLoader {
         String mainClass = su.getAST().getMainClassName();
         for (Object o : collector.getLoadedClasses()) {
             Class clazz = (Class) o;
-        	String clazzName = clazz.getName();
+            String clazzName = clazz.getName();
             definePackage(clazzName);
             setClassCacheEntry(clazz);
-            if(clazzName.equals(mainClass)) answer = clazz; 
+            if (clazzName.equals(mainClass)) answer = clazz;
         }
         return answer;
     }
 
     private void validate(GroovyCodeSource codeSource) {
-    	if (codeSource.getFile() == null) {
-    		if(codeSource.getScriptText() == null) {
-    			throw new IllegalArgumentException("Script text to compile cannot be null!");
-    		}
-    	}
+        if (codeSource.getFile() == null) {
+            if (codeSource.getScriptText() == null) {
+                throw new IllegalArgumentException("Script text to compile cannot be null!");
+            }
+        }
     }
-    
+
     private void definePackage(String className) {
         int i = className.lastIndexOf('.');
         if (i != -1) {

@@ -203,16 +203,16 @@ public class UnimplementedSyntaxTest extends GroovyTestCase {
     // -----------------------
     // TODO: move somewhere else
     public void test_StaticImport1() throws Exception {
-    	//GROOVY-3711: The following call now results in a valid script class node, so foo.Bar needs to get resolved.
-    	GroovyShell groovyShell = new GroovyShell();
-    	compile("package foo; class Bar{}", groovyShell);
+        //GROOVY-3711: The following call now results in a valid script class node, so foo.Bar needs to get resolved.
+        GroovyShell groovyShell = new GroovyShell();
+        compile("package foo; class Bar{}", groovyShell);
         assertNotNull(compile("import static foo.Bar.mooky", groovyShell));
     }
 
     public void test_StaticImport2() throws Exception {
-    	//GROOVY-3711: The following call now results in a valid script class node, so foo.Bar needs to get resolved.
-    	GroovyShell groovyShell = new GroovyShell();
-    	compile("package foo; class Bar{}", groovyShell);
+        //GROOVY-3711: The following call now results in a valid script class node, so foo.Bar needs to get resolved.
+        GroovyShell groovyShell = new GroovyShell();
+        compile("package foo; class Bar{}", groovyShell);
         assertNotNull(compile("import static foo.Bar.*", groovyShell));
     }
 
@@ -239,7 +239,7 @@ public class UnimplementedSyntaxTest extends GroovyTestCase {
     }
 
     private Script compile(String input) throws Exception {
-    	return compile(input, new GroovyShell());
+        return compile(input, new GroovyShell());
     }
 
     private Script compile(String input, GroovyShell groovyShell) throws Exception {

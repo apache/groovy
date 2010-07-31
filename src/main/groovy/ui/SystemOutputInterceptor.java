@@ -34,11 +34,10 @@ public class SystemOutputInterceptor extends FilterOutputStream {
 
     /**
      * Constructor
-     * 
-     * @param callback
-     *            accepts a string to be sent to std out and returns a Boolean.
-     *            If the return value is true, output will be sent to
-     *            System.out, otherwise it will not.
+     *
+     * @param callback accepts a string to be sent to std out and returns a Boolean.
+     *                 If the return value is true, output will be sent to
+     *                 System.out, otherwise it will not.
      */
     public SystemOutputInterceptor(final Closure callback) {
         this(callback, true);
@@ -46,19 +45,17 @@ public class SystemOutputInterceptor extends FilterOutputStream {
 
     /**
      * Constructor
-     * 
-     * @param callback
-     *            accepts a string to be sent to std out and returns a Boolean.
-     *            If the return value is true, output will be sent to
-     *            System.out/System.err, otherwise it will not.
-     * @param output
-     *            flag that tells whether System.out needs capturing ot System.err
+     *
+     * @param callback accepts a string to be sent to std out and returns a Boolean.
+     *                 If the return value is true, output will be sent to
+     *                 System.out/System.err, otherwise it will not.
+     * @param output   flag that tells whether System.out needs capturing ot System.err
      */
     public SystemOutputInterceptor(final Closure callback, boolean output) {
         super(output ? System.out : System.err);
-        
+
         assert callback != null;
-        
+
         this.callback = callback;
         this.output = output;
     }
@@ -67,11 +64,11 @@ public class SystemOutputInterceptor extends FilterOutputStream {
      * Starts intercepting System.out/System.err
      */
     public void start() {
-    	if(output) {
+        if (output) {
             System.setOut(new PrintStream(this));
-    	} else {
+        } else {
             System.setErr(new PrintStream(this));
-    	}
+        }
     }
 
     /**
@@ -79,11 +76,11 @@ public class SystemOutputInterceptor extends FilterOutputStream {
      * going when this interceptor was created.
      */
     public void stop() {
-    	if(output) {
+        if (output) {
             System.setOut((PrintStream) out);
-    	} else {
+        } else {
             System.setErr((PrintStream) out);
-    	}
+        }
     }
 
     /**
@@ -91,7 +88,7 @@ public class SystemOutputInterceptor extends FilterOutputStream {
      */
     public void write(byte[] b, int off, int len) throws IOException {
         Boolean result = (Boolean) callback.call(new String(b, off, len));
-        if (result.booleanValue()) {
+        if (result) {
             out.write(b, off, len);
         }
     }
@@ -101,7 +98,7 @@ public class SystemOutputInterceptor extends FilterOutputStream {
      */
     public void write(int b) throws IOException {
         Boolean result = (Boolean) callback.call(String.valueOf((char) b));
-        if (result.booleanValue()) {
+        if (result) {
             out.write(b);
         }
     }

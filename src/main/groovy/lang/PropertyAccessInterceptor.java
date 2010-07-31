@@ -22,27 +22,25 @@ package groovy.lang;
  * @author Graeme Rocher
  * @since Oct 24, 2005
  */
-public interface PropertyAccessInterceptor extends Interceptor  {
+public interface PropertyAccessInterceptor extends Interceptor {
 
-	/**
-	 * Intercepts a getXXX call and returns a result. The result is replaced by the
-	 * real value if doGet() return false
-	 *
-	 * @param object The target object
-	 * @param property The property to get
-	 *
-	 * @return A value supplied by the interceptor
-	 */
-	Object beforeGet(Object object, String property);
+    /**
+     * Intercepts a getXXX call and returns a result. The result is replaced by the
+     * real value if doGet() return false
+     *
+     * @param object   The target object
+     * @param property The property to get
+     * @return A value supplied by the interceptor
+     */
+    Object beforeGet(Object object, String property);
 
-	/**
-	 * Intercepts a setXXX call
-	 *
-	 * @param object The target object
-	 * @param property The property to set
-	 * @param newValue The new value
-	 *
-	 */
-	void beforeSet(Object object, String property, Object newValue);
+    /**
+     * Intercepts a setXXX call
+     *
+     * @param object   The target object
+     * @param property The property to set
+     * @param newValue The new value
+     */
+    void beforeSet(Object object, String property, Object newValue);
 
 }

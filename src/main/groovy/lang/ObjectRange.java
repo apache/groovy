@@ -94,14 +94,14 @@ public class ObjectRange extends AbstractList implements Range {
 
     private void constructorHelper(Comparable from, Comparable to) {
         if (from instanceof Short) {
-            from = Integer.valueOf(((Short) from).intValue());
+            from = ((Short) from).intValue();
         } else if (from instanceof Float) {
-            from = new Double(((Float) from).doubleValue());
+            from = ((Float) from).doubleValue();
         }
         if (to instanceof Short) {
-            to = Integer.valueOf(((Short) to).intValue());
+            to = ((Short) to).intValue();
         } else if (to instanceof Float) {
-            to = new Double(((Float) to).doubleValue());
+            to = ((Float) to).doubleValue();
         }
 
         // TODO: Should we align to like types?
@@ -267,11 +267,11 @@ public class ObjectRange extends AbstractList implements Range {
                 // let's fast calculate the size
                 long fromNum = ((Number) from).longValue();
                 long toNum = ((Number) to).longValue();
-                size = (int)(toNum - fromNum + 1);
+                size = (int) (toNum - fromNum + 1);
             } else if (from instanceof Character && to instanceof Character) {
                 // let's fast calculate the size
-                char fromNum = ((Character) from).charValue();
-                char toNum = ((Character) to).charValue();
+                char fromNum = (Character) from;
+                char toNum = (Character) to;
                 size = toNum - fromNum + 1;
             } else if (from instanceof BigDecimal || to instanceof BigDecimal) {
                 // let's fast calculate the size
@@ -347,14 +347,14 @@ public class ObjectRange extends AbstractList implements Range {
      * {@inheritDoc}
      */
     public void step(int step, Closure closure) {
-    	if(step == 0) {
-    		if(compareTo(from, to) != 0) {
-        		throw new GroovyRuntimeException("Infinite loop detected due to step size of 0");
-    		} else {
-    			return; // from == to and step == 0, nothing to do, so return
-    		}
-    	}
-    	
+        if (step == 0) {
+            if (compareTo(from, to) != 0) {
+                throw new GroovyRuntimeException("Infinite loop detected due to step size of 0");
+            } else {
+                return; // from == to and step == 0, nothing to do, so return
+            }
+        }
+
         if (reverse) {
             step = -step;
         }
@@ -413,12 +413,12 @@ public class ObjectRange extends AbstractList implements Range {
 
     private static Comparable normaliseStringType(final Comparable operand) {
         if (operand instanceof Character) {
-            return Integer.valueOf(((Character) operand).charValue());
+            return (int) ((Character) operand).charValue();
         } else if (operand instanceof String) {
             final String string = (String) operand;
 
             if (string.length() == 1)
-                return Integer.valueOf(string.charAt(0));
+                return (int) string.charAt(0);
             else
                 return string;
         } else {

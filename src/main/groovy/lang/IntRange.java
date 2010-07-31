@@ -83,7 +83,8 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer> {
         /**
          * Not supported.
          *
-         * @throws java.lang.UnsupportedOperationException always
+         * @throws java.lang.UnsupportedOperationException
+         *          always
          */
         public void remove() {
             IntRange.this.remove(index);
@@ -173,8 +174,8 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer> {
     /**
      * Compares an {@link IntRange} to another {@link IntRange}.
      *
-     * @return <code>true</code> if the ranges are equal
      * @param that the object to compare for equality
+     * @return <code>true</code> if the ranges are equal
      */
     public boolean equals(IntRange that) {
         return that != null && this.reverse == that.reverse && this.from == that.from && this.to == that.to;
@@ -318,13 +319,13 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer> {
      * {@inheritDoc}
      */
     public void step(int step, Closure closure) {
-    	if(step == 0) {
-    		if(from != to) {
-        		throw new GroovyRuntimeException("Infinite loop detected due to step size of 0");
-    		} else {
-    			return; // from == to and step == 0, nothing to do, so return
-    		}
-    	}
+        if (step == 0) {
+            if (from != to) {
+                throw new GroovyRuntimeException("Infinite loop detected due to step size of 0");
+            } else {
+                return; // from == to and step == 0, nothing to do, so return
+            }
+        }
 
         if (reverse) {
             step = -step;

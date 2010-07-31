@@ -25,15 +25,14 @@ import org.xml.sax.SAXParseException;
 import org.xml.sax.helpers.DefaultHandler;
 
 /**
- *
  * @author Evan "Hippy" Slatis
  */
 public class StructuredSyntaxHandler extends DefaultHandler {
-    
+
     //StyleConstants.
     public static final String REGEXP = "regexp";
     public static final String STYLE = "style";
-    
+
     public static final String ALIGN_CENTER = "ALIGN_CENTER";
     public static final String ALIGN_JUSTIFIED = "ALIGN_JUSTIFIED";
     public static final String ALIGN_LEFT = "ALIGN_LEFT";
@@ -67,71 +66,72 @@ public class StructuredSyntaxHandler extends DefaultHandler {
     public static final String SUPERSCRIPT = "superscript";
     public static final String TAB_SET = "tabSet";
     public static final String UNDERLINE = "underline";
-    
+
     private StructuredSyntaxDocumentFilter.LexerNode currentNode;
     private StructuredSyntaxDocumentFilter.LexerNode parentNode;
-    
+
     private final StructuredSyntaxDocumentFilter filter;
-    
+
     private Font font;
 
     /**
      * Creates a new instance of MasterFrameHandler
+     *
      * @param filter
      */
     public StructuredSyntaxHandler(StructuredSyntaxDocumentFilter filter) {
         this.filter = filter;
     }
-    
+
     /**
      * @param ch
      * @param start
      * @param length
-     */    
+     */
     public void characters(char[] ch, int start, int length) {
     }
-    
+
     /**
      * @throws SAXException
-     */    
+     */
     public void endDocument() throws SAXException {
         super.endDocument();
     }
-    
+
     /**
      * @param uri
      * @param localName
      * @param qName
      * @throws SAXException
-     */    
+     */
     public void endElement(String uri,
                            String localName,
                            String qName) throws SAXException {
     }
-    
+
     /**
      * @param e
      * @throws SAXException
-     */    
-    public void	error(SAXParseException e) throws SAXException {
+     */
+    public void error(SAXParseException e) throws SAXException {
         throw new SAXException("Line: " + e.getLineNumber() + " message: " + e.getMessage());
     }
-    
+
     /**
      * @throws SAXException
-     */    
+     */
     public void startDocument() throws SAXException {
         super.startDocument();
         currentNode = filter.getRootNode();
     }
-    
+
     /**
      * @param uri
      * @param localName
      * @param qName
      * @param attributes
      * @throws SAXException
-     */    
+     */
     public void startElement(String uri,
                              String localName,
                              String qName,

@@ -38,17 +38,17 @@ public class ExpandoMetaClassCreationHandle extends MetaClassCreationHandle {
 
     public static final ExpandoMetaClassCreationHandle instance = new ExpandoMetaClassCreationHandle();
 
-	/* (non-Javadoc)
-	 * @see groovy.lang.MetaClassRegistry.MetaClassCreationHandle#create(java.lang.Class, groovy.lang.MetaClassRegistry)
-	 */
-	protected MetaClass createNormalMetaClass(Class theClass, MetaClassRegistry registry) {
-		if(theClass != ExpandoMetaClass.class) {
-			return new ExpandoMetaClass(theClass, true, true);
-		}
-		else {
-			return super.createNormalMetaClass(theClass, registry);
-		}
-	}
+    /* (non-Javadoc)
+     * @see groovy.lang.MetaClassRegistry.MetaClassCreationHandle#create(java.lang.Class, groovy.lang.MetaClassRegistry)
+     */
+    protected MetaClass createNormalMetaClass(Class theClass, MetaClassRegistry registry) {
+        if(theClass != ExpandoMetaClass.class) {
+            return new ExpandoMetaClass(theClass, true, true);
+        }
+        else {
+            return super.createNormalMetaClass(theClass, registry);
+        }
+    }
 
     /**
      * Registers a modified ExpandoMetaClass with the creation handle
@@ -60,9 +60,9 @@ public class ExpandoMetaClassCreationHandle extends MetaClassCreationHandle {
         GroovySystem.getMetaClassRegistry().setMetaClass(klazz,emc);
     }
 
-	public boolean hasModifiedMetaClass(ExpandoMetaClass emc) {
-		return emc.getClassInfo().getModifiedExpando() != null;
-	}
+    public boolean hasModifiedMetaClass(ExpandoMetaClass emc) {
+        return emc.getClassInfo().getModifiedExpando() != null;
+    }
 
     /**
      * <p>Enables the ExpandoMetaClassCreationHandle with the registry

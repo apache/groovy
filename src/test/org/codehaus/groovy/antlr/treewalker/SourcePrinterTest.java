@@ -864,7 +864,7 @@ public class SourcePrinterTest extends GroovyTestCase {
         assertEquals("void myMethod(String param1, String... others) {}", pretty("void myMethod(String param1, String ... others) {}"));
         assertEquals("void myMethod(final int ... others) {}", pretty("void myMethod(final int ... others) {}"));
         assertEquals("void myMethod(def... others) {}", pretty("void myMethod(def ... others) {}"));
-	}
+    }
 
     public void testVariableDef_FAILS() throws Exception {
         if (notYetImplemented()) return;
