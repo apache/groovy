@@ -24,7 +24,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * This is an annotaton on a class, currently just {@link ASTTransformation}.
+ * This is an annotation on a class, currently just {@link ASTTransformation}.
  * This provides information about how and when to apply the transformation,
  * such as what phase it should be applied in.
  *
