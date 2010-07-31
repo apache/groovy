@@ -18,7 +18,6 @@ package org.codehaus.groovy.util;
 import java.lang.ref.ReferenceQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
-
 public class ReferenceManager {
     private static class ThreadedReferenceManager extends ReferenceManager {
         private final Thread thread;
@@ -111,7 +110,7 @@ public class ReferenceManager {
                 }
                 // we use the idle manager, so let us use the reference counter
                 // we change the manager once the threshold is reached. There is
-                // a small chance that the value will go beyond Integer.MAX_VALUe
+                // a small chance that the value will go beyond Integer.MAX_VALUE
                 // so we check for values below 0 too. If threshold is low, then
                 // this is unlikely to happen. If threshold is high, then we 
                 // have all negative values as fall back
@@ -146,20 +145,20 @@ public class ReferenceManager {
         return "ReferenceManager(idling)";
     }
     
-    private static final ReferenceBundle  softBundle, weakBundle;
+    private static final ReferenceBundle SOFT_BUNDLE, WEAK_BUNDLE;
     static {
         ReferenceQueue queue = new ReferenceQueue();
         ReferenceManager callBack = ReferenceManager.createCallBackedManager(queue);
         ReferenceManager manager  = ReferenceManager.createThresholdedIdlingManager(queue, callBack, 500);
-        softBundle = new ReferenceBundle(manager, ReferenceType.SOFT);
-        weakBundle = new ReferenceBundle(manager, ReferenceType.WEAK);
+        SOFT_BUNDLE = new ReferenceBundle(manager, ReferenceType.SOFT);
+        WEAK_BUNDLE = new ReferenceBundle(manager, ReferenceType.WEAK);
     }
     
     public static ReferenceBundle getDefaultSoftBundle() {
-        return softBundle;
+        return SOFT_BUNDLE;
     }
     
     public static ReferenceBundle getDefaultWeakBundle() {
-        return weakBundle;
+        return WEAK_BUNDLE;
     }
 }

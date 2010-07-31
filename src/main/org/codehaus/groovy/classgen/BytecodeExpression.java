@@ -22,26 +22,25 @@ import org.objectweb.asm.MethodVisitor;
 
 /**
  * Represents some custom bytecode generation by the compiler
- * 
+ *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
 public abstract class BytecodeExpression extends Expression {
-    public static BytecodeExpression NOP = new BytecodeExpression() {
+    public static final BytecodeExpression NOP = new BytecodeExpression() {
         public void visit(MethodVisitor visitor) {
             //do nothing             
         }
     };
-    
-    
+
     public BytecodeExpression() {
     }
-    
+
     public void visit(GroovyCodeVisitor visitor) {
         visitor.visitBytecodeExpression(this);
     }
 
-    public abstract void visit (MethodVisitor mv);
+    public abstract void visit(MethodVisitor mv);
 
     public Expression transformExpression(ExpressionTransformer transformer) {
         return this;

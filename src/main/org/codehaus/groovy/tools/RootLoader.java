@@ -69,7 +69,7 @@ import java.util.HashMap;
  */
 public class RootLoader extends URLClassLoader {
 
-    private Map customClasses = new HashMap();
+    private Map<String, Class> customClasses = new HashMap<String, Class>();
 
     /**
      * constructs a new RootLoader without classpath
@@ -89,7 +89,7 @@ public class RootLoader extends URLClassLoader {
         // major hack here...!
         try{
             customClasses.put("org.w3c.dom.Node",super.loadClass("org.w3c.dom.Node",false));
-        } catch (Exception e) {}
+        } catch (Exception e) { /* ignore */ }
     }
 
     private static ClassLoader chooseParent() {
@@ -106,8 +106,8 @@ public class RootLoader extends URLClassLoader {
         this(chooseParent());
         Thread.currentThread().setContextClassLoader(this);
         URL[] urls = lc.getClassPathUrls();
-        for (int i = 0; i < urls.length; i++) {
-            addURL(urls[i]);
+        for (URL url : urls) {
+            addURL(url);
         }
     }
 

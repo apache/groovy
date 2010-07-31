@@ -36,7 +36,7 @@ public class InnerClassVisitor extends ClassCodeVisitorSupport implements Opcode
 
     private final SourceUnit sourceUnit;
     private ClassNode classNode;
-    private static final int publicSynthetic = Opcodes.ACC_PUBLIC+Opcodes.ACC_SYNTHETIC;
+    private static final int PUBLIC_SYNTHETIC = Opcodes.ACC_PUBLIC+Opcodes.ACC_SYNTHETIC;
     private FieldNode thisField = null;
     private MethodNode currentMethod;
     private FieldNode currentField;
@@ -60,14 +60,14 @@ public class InnerClassVisitor extends ClassCodeVisitorSupport implements Opcode
         {
             innerClass = (InnerClassNode) node;
             if (!isStatic(innerClass) && innerClass.getVariableScope()==null) {
-                thisField = innerClass.addField("this$0", publicSynthetic, node.getOuterClass(), null);
+                thisField = innerClass.addField("this$0", PUBLIC_SYNTHETIC, node.getOuterClass(), null);
             }
             
             if (innerClass.getVariableScope()==null && 
                 innerClass.getDeclaredConstructors().isEmpty()) 
             {
                 // add dummy constructor
-                innerClass.addConstructor(publicSynthetic, new Parameter[0], null, null);
+                innerClass.addConstructor(PUBLIC_SYNTHETIC, new Parameter[0], null, null);
             }
         }
 
@@ -413,7 +413,7 @@ public class InnerClassVisitor extends ClassCodeVisitorSupport implements Opcode
         Parameter thisParameter = new Parameter(outerClassType,"p"+pCount);
         parameters.add(pCount, thisParameter);
         
-        thisField = innerClass.addField("this$0", publicSynthetic, outerClassType, null);
+        thisField = innerClass.addField("this$0", PUBLIC_SYNTHETIC, outerClassType, null);
         addFieldInit(thisParameter,thisField,block);
 
         // for each shared variable we add a reference and save it as field
@@ -429,7 +429,7 @@ public class InnerClassVisitor extends ClassCodeVisitorSupport implements Opcode
             parameters.add(pCount, p);
             final VariableExpression initial = new VariableExpression(p);
             initial.setUseReferenceDirectly(true);
-            final FieldNode pField = innerClass.addFieldFirst(ve.getName(), publicSynthetic, ClassHelper.REFERENCE_TYPE, initial);
+            final FieldNode pField = innerClass.addFieldFirst(ve.getName(), PUBLIC_SYNTHETIC, ClassHelper.REFERENCE_TYPE, initial);
             pField.setHolder(true);
         }
         

@@ -31,7 +31,7 @@ import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.ClassInfo;
 
 /**
- * Utility class for MissingMethodException, MissingProperyException etc.
+ * Utility class for MissingMethodException, MissingPropertyException etc.
  * This class contains methods assisting in ranking and listing probable intended
  * methods/fields when a exception is thrown.
  *
@@ -70,7 +70,7 @@ public class MethodRankHelper{
      */
     public static String getMethodSuggestionString(String methodName, Class type, Object[] arguments){
         ClassInfo ci = ClassInfo.getClassInfo(type);
-        List<MetaMethod> methods = new ArrayList(ci.getMetaClass().getMethods());
+        List<MetaMethod> methods = new ArrayList<MetaMethod>(ci.getMetaClass().getMethods());
         methods.addAll(ci.getMetaClass().getMetaMethods());
         List<MetaMethod> sugg = rankMethods(methodName,arguments,methods);
         StringBuffer sb = new StringBuffer();
@@ -78,7 +78,7 @@ public class MethodRankHelper{
             sb.append("\nPossible solutions: ");
             for(int i = 0; i < sugg.size(); i++) {
                 if(i != 0) sb.append(", ");
-                sb.append(sugg.get(i).getName() + "(");
+                sb.append(sugg.get(i).getName()).append("(");
                 sb.append(listParameterNames(sugg.get(i).getParameterTypes()));
                 sb.append(")");
             }
@@ -95,7 +95,7 @@ public class MethodRankHelper{
                 } else {
                     first = false;
                 }
-                sb.append(pair.u.getName() + " (defined by '");
+                sb.append(pair.u.getName()).append(" (defined by '");
                 sb.append(pair.u.getClassLoader());
                 sb.append("' and '");
                 sb.append(pair.v.getClassLoader());
@@ -108,20 +108,20 @@ public class MethodRankHelper{
     }
     
     private static List<Pair<Class,Class>> getConflictClasses(List<MetaMethod> sugg, Class[] argumentClasses) {
-        LinkedList<Pair<Class,Class>> ret = new LinkedList();
+        List<Pair<Class,Class>> ret = new LinkedList<Pair<Class,Class>>();
         Set<Class> recordedClasses = new HashSet<Class>();
         for (MetaMethod method : sugg) {
             Class[] para = method.getNativeParameterTypes();
-            for (int pi=0; pi<para.length; pi++) {
-                if (recordedClasses.contains(para[pi])) continue;
-                for (int ai=0; ai<argumentClasses.length; ai++) {
-                    if (argumentClasses[ai]==null) continue;
-                    if (argumentClasses[ai]==para[pi]) continue;
-                    if (argumentClasses[ai].getName().equals(para[pi].getName())) {
-                        ret.add(new Pair(argumentClasses[ai],para[pi]));
+            for (Class aPara : para) {
+                if (recordedClasses.contains(aPara)) continue;
+                for (Class argumentClass : argumentClasses) {
+                    if (argumentClass == null) continue;
+                    if (argumentClass == aPara) continue;
+                    if (argumentClass.getName().equals(aPara.getName())) {
+                        ret.add(new Pair<Class, Class>(argumentClass, aPara));
                     }
                 }
-                recordedClasses.add(para[pi]);
+                recordedClasses.add(aPara);
             }
         }
         return ret;
@@ -152,7 +152,7 @@ public class MethodRankHelper{
             sb.append("\nPossible solutions: ");
             for(int i = 0; i < sugg.length; i++){
                 if(i != 0) sb.append(", ");
-                sb.append(type.getName() + "(");
+                sb.append(type.getName()).append("(");
                 sb.append(listParameterNames(sugg[i].getParameterTypes()));
                 sb.append(")");
             }
@@ -163,7 +163,7 @@ public class MethodRankHelper{
     }
     
     /**
-     * Returns a string detailing possible solutions to a missning field or property
+     * Returns a string detailing possible solutions to a missing field or property
      * if no good solutions can be found a empty string is returned.
      *
      * @param fieldName the missing field
@@ -173,7 +173,7 @@ public class MethodRankHelper{
     public static String getPropertySuggestionString(String fieldName, Class type){
         ClassInfo ci = ClassInfo.getClassInfo(type);
         List<MetaProperty>  fi = ci.getMetaClass().getProperties();
-        List<RankableField> rf = new ArrayList(fi.size());
+        List<RankableField> rf = new ArrayList<RankableField>(fi.size());
         StringBuffer sb = new StringBuffer();
         sb.append("\nPossible solutions: ");
         
@@ -194,6 +194,8 @@ public class MethodRankHelper{
     /**
      * creates a comma separated list of each of the class names.
      *
+     * @param cachedClasses the array of Classes
+     * @return the Class names
      */
     private static String listParameterNames(Class[] cachedClasses){
       StringBuffer sb = new StringBuffer();
@@ -215,21 +217,23 @@ public class MethodRankHelper{
       }
     
     /**
-     * Returns a sorted(ranked) list of a selection of the methods among candidates who
-     * closest reasembles original.
+     * Returns a sorted(ranked) list of a selection of the methods among candidates which
+     * most closely resembles original.
+     *
+     * @param name
      * @param original
      * @param methods
      * @return a sorted lists of Methods
      */
-    private static List<MetaMethod> rankMethods(String name, Object[] arguments, List<MetaMethod> methods) {
-        ArrayList<RankableMethod> rm = new ArrayList(methods.size());
-        if (arguments==null) arguments = new Object[0];
-        Class[] ta = new Class[arguments.length];
+    private static List<MetaMethod> rankMethods(String name, Object[] original, List<MetaMethod> methods) {
+        List<RankableMethod> rm = new ArrayList<RankableMethod>(methods.size());
+        if (original==null) original = new Object[0];
+        Class[] ta = new Class[original.length];
     
         Class nullC =  NullObject.class;
-        for(int i = 0; i < arguments.length; i++){
+        for(int i = 0; i < original.length; i++){
             //All nulls have to be wrapped so that they can be compared
-            ta[i] = arguments[i] == null?nullC: arguments[i].getClass();
+            ta[i] = original[i] == null?nullC: original[i].getClass();
         }
 
         for (MetaMethod m:methods) {
@@ -237,7 +241,7 @@ public class MethodRankHelper{
         }
         Collections.sort(rm);
         
-        List<MetaMethod> l =  new ArrayList(rm.size());
+        List<MetaMethod> l =  new ArrayList<MetaMethod>(rm.size());
         for (RankableMethod m : rm) {
             if (l.size() > MAX_RECOMENDATIONS) break;
             if (m.score > MAX_METHOD_SCORE) break;
@@ -276,33 +280,34 @@ public class MethodRankHelper{
     }
 
     /**
-     * Returns a sorted(ranked) list of a selection of the methods among candidates who
-     * closest reasembles original.
+     * Returns a sorted(ranked) list of a selection of the constructors among candidates which
+     * most closely resembles original.
+     *
      * @param original
      * @param candidates
      * @return a sorted lists of Methods
      */
-    private static Constructor[] rankConstructors(Object[] arguments, Constructor[] candidates) {
+    private static Constructor[] rankConstructors(Object[] original, Constructor[] candidates) {
         RankableConstructor[] rc = new RankableConstructor[candidates.length];
-        Class[] ta = new Class[arguments.length];
+        Class[] ta = new Class[original.length];
 
-        Class nullC =  NullObject.class;
-        for(int i = 0; i < arguments.length; i++){
+        Class nullC = NullObject.class;
+        for (int i = 0; i < original.length; i++) {
             //All nulls have to be wrapped so that they can be compared
-            ta[i] = arguments[i] == null?nullC: arguments[i].getClass();
+            ta[i] = original[i] == null ? nullC : original[i].getClass();
         }
 
-        for(int i = 0; i < candidates.length; i++){
+        for (int i = 0; i < candidates.length; i++) {
             rc[i] = new RankableConstructor(ta, candidates[i]);
         }
         Arrays.sort(rc);
-        List l = new ArrayList();
+        List<Constructor> l = new ArrayList<Constructor>();
         int index = 0;
-        while(l.size() < MAX_RECOMENDATIONS && index < rc.length && rc[index].score < MAX_CONSTRUCTOR_SCORE){
+        while (l.size() < MAX_RECOMENDATIONS && index < rc.length && rc[index].score < MAX_CONSTRUCTOR_SCORE) {
             l.add(rc[index].c);
-            index ++;
+            index++;
         }
-        return (Constructor[]) l.toArray(new Constructor[0]);
+        return l.toArray(new Constructor[l.size()]);
     }
 
     /**
@@ -322,9 +327,8 @@ public class MethodRankHelper{
                 //All args have to be boxed since argumentTypes is always boxed
                 cArgs[i] = boxVar(c.getParameterTypes()[i]);
             }
-            int argDist = damerauLevenshteinDistance(argumentTypes,cArgs);
 
-            this.score = argDist;
+            this.score = damerauLevenshteinDistance(argumentTypes,cArgs);
         }
 
         public int compareTo(Object o) {
@@ -344,8 +348,7 @@ public class MethodRankHelper{
 
         public RankableField(String name, MetaProperty mp) {
             this.f = mp;
-            int argDist = delDistance(name,mp.getName());
-            this.score = argDist;
+            this.score = delDistance(name,mp.getName());
         }
 
         public int compareTo(Object o) {
@@ -445,7 +448,7 @@ public class MethodRankHelper{
             for (i = 1; i <= n; i++) {
                 s_i = s.charAt(i - 1);
                 if (Character.isLowerCase(s_i) ^ Character.isLowerCase(t_j)) {
-                    //if s_i and t_i dont have have the same case
+                    //if s_i and t_i don't have have the same case
                     cost = caselessCompare(s_i, t_j) ? DL_CASE : DL_SUBSTITUTION;
                 } else {
                     //if they share case check for substitution
@@ -492,7 +495,7 @@ public class MethodRankHelper{
      * This is a implementation of DL distance between two Object arrays instead
      * of character streams. The objects are compared using their equals method.
      * No objects may be null.
-     * This implementation is based on Chas Emerick's implementation of Lenenshtein Distance
+     * This implementation is based on Chas Emerick's implementation of Levenshtein Distance
      * for jakarta commons.
      * @param s a Object array
      * @param t this array is compared to s
@@ -542,7 +545,6 @@ public class MethodRankHelper{
                 if(i > 1 && j > 1 && s[i -1].equals(t[j -2]) && s[i- 2].equals(t_j)){
                     vals[0][i] = Math.min(vals[0][i], vals[2][i-2] + DL_TRANSPOSITION);
                 }
-
             }
 
             // rotate all value arrays upwards(older rows get a higher index)

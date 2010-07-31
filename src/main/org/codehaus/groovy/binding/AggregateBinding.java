@@ -16,6 +16,7 @@
 package org.codehaus.groovy.binding;
 
 import java.util.LinkedHashSet;
+import java.util.Set;
 
 /**
  * An aggregation of multiple bindings
@@ -27,7 +28,7 @@ public class AggregateBinding implements BindingUpdatable {
     protected  boolean bound;
 
     // use linked hash set so order is preserved
-    protected LinkedHashSet<BindingUpdatable> bindings = new LinkedHashSet();
+    protected Set<BindingUpdatable> bindings = new LinkedHashSet<BindingUpdatable>();
 
     public void addBinding(BindingUpdatable binding) {
         if (bound) binding.bind(); // bind is idempotent, so no state checking

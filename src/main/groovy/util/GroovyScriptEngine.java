@@ -148,6 +148,7 @@ public class GroovyScriptEngine implements ResourceConnector {
                 try {
                     cu.addSource(getResourceConnection(depSourcePath).getURL());
                 } catch (ResourceException e) {
+                    /* ignore */
                 }
             }
 

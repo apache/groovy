@@ -90,15 +90,15 @@ public class ConsoleTextEditor extends JScrollPane {
             Font f = textEditor.getFont();
             int fontHeight = g.getFontMetrics(f).getHeight();
             int fontDesc = g.getFontMetrics(f).getDescent();
-            int starting_y = -1;
+            int startingY = -1;
 
             try {
-                starting_y = textEditor.modelToView(start).y + fontHeight - fontDesc;
+                startingY = textEditor.modelToView(start).y + fontHeight - fontDesc;
             } catch (BadLocationException e1) {
                 System.err.println(e1.getMessage());
             }
             g.setFont(f);
-            for (int line = startline, y = starting_y; line <= endline; y += fontHeight, line++) {
+            for (int line = startline, y = startingY; line <= endline; y += fontHeight, line++) {
                 String lineNumber = DefaultGroovyMethods.padLeft(Integer.toString(line), 4, " ");
                 g.drawString(lineNumber, 0, y);
             }

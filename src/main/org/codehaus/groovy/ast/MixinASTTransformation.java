@@ -66,10 +66,10 @@ public class MixinASTTransformation implements ASTTransformation {
         if (parent instanceof ClassNode) {
             ClassNode annotatedClass = (ClassNode) parent;
 
-            final Parameter[] NOPARAMS = new Parameter[0];
-            MethodNode clinit = annotatedClass.getDeclaredMethod("<clinit>", NOPARAMS);
+            final Parameter[] noparams = new Parameter[0];
+            MethodNode clinit = annotatedClass.getDeclaredMethod("<clinit>", noparams);
             if (clinit == null) {
-                clinit = annotatedClass.addMethod("<clinit>", Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_SYNTHETIC, ClassHelper.VOID_TYPE, NOPARAMS, null, new BlockStatement());
+                clinit = annotatedClass.addMethod("<clinit>", Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_SYNTHETIC, ClassHelper.VOID_TYPE, noparams, null, new BlockStatement());
                 clinit.setSynthetic(true);
             }
 

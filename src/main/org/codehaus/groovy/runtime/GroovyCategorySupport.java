@@ -85,7 +85,7 @@ public class GroovyCategorySupport {
             level--;
             categoriesInUse.getAndDecrement();
             if (level == 0) {
-                threadInfo.remove();
+                THREAD_INFO.remove();
             }
         }
 
@@ -150,7 +150,7 @@ public class GroovyCategorySupport {
         }
     }
 
-    private static final MyThreadLocal threadInfo = new MyThreadLocal();
+    private static final MyThreadLocal THREAD_INFO = new MyThreadLocal();
 
     private static class CategoryMethod extends NewInstanceMetaMethod implements Comparable {
         private final Class metaClass;
@@ -190,7 +190,7 @@ public class GroovyCategorySupport {
     }
 
     public static AtomicInteger getCategoryNameUsage (String name) {
-        return threadInfo.getUsage (name);
+        return THREAD_INFO.getUsage (name);
     }
 
     /**
@@ -201,7 +201,7 @@ public class GroovyCategorySupport {
      * @return the value returned from the closure
      */
     public static Object use(Class categoryClass, Closure closure) {
-        return threadInfo.getInfo().use(categoryClass, closure);
+        return THREAD_INFO.getInfo().use(categoryClass, closure);
     }
 
     /**
@@ -212,14 +212,14 @@ public class GroovyCategorySupport {
      * @return the value returned from the closure
      */
     public static Object use(List<Class> categoryClasses, Closure closure) {
-        return threadInfo.getInfo().use(categoryClasses, closure);
+        return THREAD_INFO.getInfo().use(categoryClasses, closure);
     }
 
     public static boolean hasCategoryInCurrentThread() {
         if (categoriesInUse.get() == 0) {
             return false;
         }
-        final ThreadCategoryInfo infoNullable = threadInfo.getInfoNullable();
+        final ThreadCategoryInfo infoNullable = THREAD_INFO.getInfoNullable();
         return infoNullable != null && infoNullable.level != 0;
     }
 
@@ -234,7 +234,7 @@ public class GroovyCategorySupport {
      * @return the list of methods
      */
     public static CategoryMethodList getCategoryMethods(String name) {
-        final ThreadCategoryInfo categoryInfo = threadInfo.getInfoNullable();
+        final ThreadCategoryInfo categoryInfo = THREAD_INFO.getInfoNullable();
         return categoryInfo == null ? null : categoryInfo.getCategoryMethods(name);
     }
 

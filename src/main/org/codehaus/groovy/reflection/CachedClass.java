@@ -149,7 +149,7 @@ public class CachedClass {
 
     private final LazyReference<LinkedList<ClassInfo>> hierarchy = new LazyReference<LinkedList<ClassInfo>>(softBundle) {
         public LinkedList<ClassInfo> initValue() {
-            LinkedHashSet<ClassInfo> res = new LinkedHashSet<ClassInfo> ();
+            Set<ClassInfo> res = new LinkedHashSet<ClassInfo> ();
 
             res.add(classInfo);
 
@@ -176,7 +176,7 @@ public class CachedClass {
 
     private final LazyReference<Set<CachedClass>> declaredInterfaces = new LazyReference<Set<CachedClass>> (softBundle) {
         public Set<CachedClass> initValue() {
-            HashSet<CachedClass> res = new HashSet<CachedClass> (0);
+            Set<CachedClass> res = new HashSet<CachedClass> (0);
 
             Class[] classes = getTheClass().getInterfaces();
             for (Class cls : classes) {
@@ -188,7 +188,7 @@ public class CachedClass {
 
     private final LazyReference<Set<CachedClass>> interfaces = new LazyReference<Set<CachedClass>> (softBundle) {
         public Set<CachedClass> initValue() {
-            HashSet<CachedClass> res = new HashSet<CachedClass> (0);
+            Set<CachedClass> res = new HashSet<CachedClass> (0);
 
             if (getTheClass().isInterface())
               res.add(CachedClass.this);
@@ -330,7 +330,7 @@ public class CachedClass {
     }
 
     public MetaMethod[] getNewMetaMethods() {
-        ArrayList<MetaMethod> arr = new ArrayList<MetaMethod>();
+        List<MetaMethod> arr = new ArrayList<MetaMethod>();
         arr.addAll(Arrays.asList(classInfo.newMetaMethods));
 
         final MetaClass metaClass = classInfo.getStrongMetaClass();
@@ -357,7 +357,7 @@ public class CachedClass {
         return arr.toArray(new MetaMethod[arr.size()]);
     }
 
-    private void addSubclassExpandos(ArrayList<MetaMethod> arr, MetaClass mc) {
+    private void addSubclassExpandos(List<MetaMethod> arr, MetaClass mc) {
         if (mc != null && mc instanceof ExpandoMetaClass) {
             ExpandoMetaClass emc = (ExpandoMetaClass) mc;
             for (Object mm : emc.getExpandoSubclassMethods()) {

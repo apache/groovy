@@ -23,9 +23,9 @@ import java.util.Collections;
 
 public class CallSiteClassLoader extends ClassLoaderForClassArtifacts {
 
-    private static final Set<String> knownClasses = new HashSet<String>();
+    private static final Set<String> KNOWN_CLASSES = new HashSet<String>();
     static {
-        Collections.addAll(knownClasses
+        Collections.addAll(KNOWN_CLASSES
                 , "org.codehaus.groovy.runtime.callsite.PogoMetaMethodSite"
                 , "org.codehaus.groovy.runtime.callsite.PojoMetaMethodSite"
                 , "org.codehaus.groovy.runtime.callsite.StaticMetaMethodSite"
@@ -41,7 +41,7 @@ public class CallSiteClassLoader extends ClassLoaderForClassArtifacts {
     }
 
     protected synchronized Class loadClass(String name, boolean resolve) throws ClassNotFoundException {
-        if (knownClasses.contains(name))
+        if (KNOWN_CLASSES.contains(name))
           return getClass().getClassLoader().loadClass(name);
         else {
             try {

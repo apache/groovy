@@ -128,13 +128,13 @@ public abstract class FactoryBuilderSupport extends Binding {
         }
     }
 
-    private ThreadLocal<LinkedList<Map<String, Object>>> _contexts = new ThreadLocal<LinkedList<Map<String, Object>>>();
+    private ThreadLocal<LinkedList<Map<String, Object>>> contexts = new ThreadLocal<LinkedList<Map<String, Object>>>();
     protected LinkedList<Closure> attributeDelegates = new LinkedList<Closure>(); //
     private List<Closure> disposalClosures = new ArrayList<Closure>(); // because of reverse iteration use ArrayList
     private Map<String, Factory> factories = new HashMap<String, Factory>();
     private Closure nameMappingClosure;
-    private ThreadLocal<FactoryBuilderSupport> _localProxyBuilder = new ThreadLocal<FactoryBuilderSupport>();
-    private FactoryBuilderSupport _globalProxyBuilder;
+    private ThreadLocal<FactoryBuilderSupport> localProxyBuilder = new ThreadLocal<FactoryBuilderSupport>();
+    private FactoryBuilderSupport globalProxyBuilder;
     protected LinkedList<Closure> preInstantiateDelegates = new LinkedList<Closure>();
     protected LinkedList<Closure> postInstantiateDelegates = new LinkedList<Closure>();
     protected LinkedList<Closure> postNodeCompletionDelegates = new LinkedList<Closure>();
@@ -151,7 +151,7 @@ public abstract class FactoryBuilderSupport extends Binding {
     }
 
     public FactoryBuilderSupport(boolean init) {
-        _globalProxyBuilder = this;
+        globalProxyBuilder = this;
         registrationGroup.put(registrationGroupName, new TreeSet<String>());
         if (init) {
             autoRegisterNodes();
@@ -371,7 +371,7 @@ public abstract class FactoryBuilderSupport extends Binding {
      * @return the context of the current node.
      */
     public Map<String, Object> getContext() {
-        LinkedList<Map<String, Object>> contexts = getProxyBuilder()._contexts.get();
+        LinkedList<Map<String, Object>> contexts = getProxyBuilder().contexts.get();
         if (contexts != null && !contexts.isEmpty()) {
             return contexts.getFirst();
         }
@@ -874,9 +874,9 @@ public abstract class FactoryBuilderSupport extends Binding {
      * @return the current builder that serves as a proxy.<br>
      */
     protected FactoryBuilderSupport getProxyBuilder() {
-        FactoryBuilderSupport proxy = _localProxyBuilder.get();
+        FactoryBuilderSupport proxy = localProxyBuilder.get();
         if (proxy == null) {
-            return _globalProxyBuilder;
+            return globalProxyBuilder;
         } else {
             return proxy;
         }
@@ -888,7 +888,7 @@ public abstract class FactoryBuilderSupport extends Binding {
      * @param proxyBuilder the new proxy
      */
     protected void setProxyBuilder(FactoryBuilderSupport proxyBuilder) {
-        _globalProxyBuilder = proxyBuilder;
+        globalProxyBuilder = proxyBuilder;
     }
 
     public Closure getNameMappingClosure() {
@@ -1065,10 +1065,10 @@ public abstract class FactoryBuilderSupport extends Binding {
      * @return the stack of available contexts.
      */
     protected LinkedList<Map<String, Object>> getContexts() {
-        LinkedList<Map<String, Object>> contexts = getProxyBuilder()._contexts.get();
+        LinkedList<Map<String, Object>> contexts = getProxyBuilder().contexts.get();
         if (contexts == null) {
             contexts = new LinkedList<Map<String, Object>>();
-            getProxyBuilder()._contexts.set(contexts);
+            getProxyBuilder().contexts.set(contexts);
         }
         return contexts;
     }
@@ -1079,8 +1079,8 @@ public abstract class FactoryBuilderSupport extends Binding {
      */
     protected Map<String, Object> getContinuationData() {
         Map<String, Object> data = new HashMap<String, Object>();
-        data.put("proxyBuilder", _localProxyBuilder.get());
-        data.put("contexts", _contexts.get());
+        data.put("proxyBuilder", localProxyBuilder.get());
+        data.put("contexts", contexts.get());
         return data;
     }
 
@@ -1092,9 +1092,9 @@ public abstract class FactoryBuilderSupport extends Binding {
      */
     protected void restoreFromContinuationData(Map<String, Object> data) {
         //noinspection unchecked
-        _localProxyBuilder.set((FactoryBuilderSupport) data.get("proxyBuilder"));
+        localProxyBuilder.set((FactoryBuilderSupport) data.get("proxyBuilder"));
         //noinspection unchecked
-        _contexts.set((LinkedList<Map<String, Object>>) data.get("contexts"));
+        contexts.set((LinkedList<Map<String, Object>>) data.get("contexts"));
     }
 
     public Object build(Class viewClass) {
@@ -1141,15 +1141,15 @@ public abstract class FactoryBuilderSupport extends Binding {
 
         Object result = null;
         Object previousContext = getProxyBuilder().getContext();
-        FactoryBuilderSupport previousProxyBuilder = _localProxyBuilder.get();
+        FactoryBuilderSupport previousProxyBuilder = localProxyBuilder.get();
         try {
-            _localProxyBuilder.set(builder);
+            localProxyBuilder.set(builder);
             closure.setDelegate(builder);
             result = closure.call();
         }
         catch (RuntimeException e) {
             // remove contexts created after we started
-            _localProxyBuilder.set(previousProxyBuilder);
+            localProxyBuilder.set(previousProxyBuilder);
             if (getProxyBuilder().getContexts().contains(previousContext)) {
                 Map<String, Object> context = getProxyBuilder().getContext();
                 while (context != null && context != previousContext) {
@@ -1160,7 +1160,7 @@ public abstract class FactoryBuilderSupport extends Binding {
             throw e;
         }
         finally {
-            _localProxyBuilder.set(previousProxyBuilder);
+            localProxyBuilder.set(previousProxyBuilder);
         }
 
         return result;

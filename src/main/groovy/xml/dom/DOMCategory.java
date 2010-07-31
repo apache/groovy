@@ -205,7 +205,7 @@ public class DOMCategory {
         }
 
         // Copy the required nodes into a new list.
-        ArrayList<Node> nodes = new ArrayList<Node>(to - from + 1);
+        List<Node> nodes = new ArrayList<Node>(to - from + 1);
         if (r.isReverse()) {
             for (int i = to; i >= from; i--) nodes.add(nodeList.item(i));
         }
@@ -300,8 +300,8 @@ public class DOMCategory {
 
     public static Element appendNode(Element self, Object name, Map attributes, String value) {
         Element result = appendNode(self, name, value);
-        for (Iterator iterator = attributes.entrySet().iterator(); iterator.hasNext();) {
-            Map.Entry e = (Map.Entry) iterator.next();
+        for (Object o : attributes.entrySet()) {
+            Map.Entry e = (Map.Entry) o;
             putAt(result, "@" + e.getKey().toString(), e.getValue());
         }
         return result;

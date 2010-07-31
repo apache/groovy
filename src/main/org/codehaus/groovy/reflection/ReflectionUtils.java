@@ -29,18 +29,20 @@ import java.util.Collections;
 public class ReflectionUtils {
 
     // these are packages in the call stack that are only part of the groovy MOP
-    private static final Set<String> ignoredPackages = new HashSet<String>();
+    private static final Set<String> IGNORED_PACKAGES = new HashSet<String>();
+
     static {
-        //ignoredPackages.add("java.lang.reflect");
-        ignoredPackages.add("groovy.lang");
-        ignoredPackages.add("org.codehaus.groovy.reflection");
-        ignoredPackages.add("org.codehaus.groovy.runtime.callsite");
-        ignoredPackages.add("org.codehaus.groovy.runtime.metaclass");
-        ignoredPackages.add("org.codehaus.groovy.runtime");
-        ignoredPackages.add("sun.reflect");
+        //IGNORED_PACKAGES.add("java.lang.reflect");
+        IGNORED_PACKAGES.add("groovy.lang");
+        IGNORED_PACKAGES.add("org.codehaus.groovy.reflection");
+        IGNORED_PACKAGES.add("org.codehaus.groovy.runtime.callsite");
+        IGNORED_PACKAGES.add("org.codehaus.groovy.runtime.metaclass");
+        IGNORED_PACKAGES.add("org.codehaus.groovy.runtime");
+        IGNORED_PACKAGES.add("sun.reflect");
     }
 
-    private static final Method magicMethod;
+    private static final Method MAGIC_METHOD;
+
     static {
         Method meth;
         try {
@@ -49,7 +51,7 @@ public class ReflectionUtils {
         } catch (Throwable t) {
             meth = null;
         }
-        magicMethod = meth;
+        MAGIC_METHOD = meth;
     }
 
     /**
@@ -57,15 +59,17 @@ public class ReflectionUtils {
      * any sensible results.  On JVMs that are not Sun derived i.e.
      * (gcj, Harmony) this will likely return false.  When not available
      * all getCallingClass methods will return null.
+     *
      * @return true if getCallingClass can return anything but null, false if
-     *  it will only return null.
+     *         it will only return null.
      */
     public static boolean isCallingClassReflectionAvailable() {
-        return magicMethod != null;
+        return MAGIC_METHOD != null;
     }
 
     /**
      * Get the immediate calling class, ignoring MOP frames.
+     *
      * @return The Class of the caller
      */
     public static Class getCallingClass() {
@@ -75,10 +79,11 @@ public class ReflectionUtils {
     /**
      * Get the called that is matchLevel stack frames before the call,
      * ignoring MOP frames.
+     *
      * @param matchLevel how may call stacks down to look.
-     *      If it is less than 1 it is treated as though it was 1.
+     *                   If it is less than 1 it is treated as though it was 1.
      * @return The Class of the matched caller, or null if there aren't
-     *   enough stackframes to satisfy matchLevel
+     *         enough stackframes to satisfy matchLevel
      */
     public static Class getCallingClass(int matchLevel) {
         return getCallingClass(matchLevel, Collections.EMPTY_SET);
@@ -87,15 +92,16 @@ public class ReflectionUtils {
     /**
      * Get the called that is matchLevel stack frames before the call,
      * ignoring MOP frames and desired exclude packages.
-     * @param matchLevel how may call stacks down to look.
-     *      If it is less than 1 it is treated as though it was 1.
+     *
+     * @param matchLevel           how may call stacks down to look.
+     *                             If it is less than 1 it is treated as though it was 1.
      * @param extraIgnoredPackages A collection of string names of packages to exclude
-     *   in addition to the MOP packages when counting stack frames.
+     *                             in addition to the MOP packages when counting stack frames.
      * @return The Class of the matched caller, or null if there aren't
-     *   enough stackframes to satisfy matchLevel
+     *         enough stackframes to satisfy matchLevel
      */
     public static Class getCallingClass(int matchLevel, Collection<String> extraIgnoredPackages) {
-        if (magicMethod == null) {
+        if (MAGIC_METHOD == null) {
             return null;
         }
         int depth = 0;
@@ -106,14 +112,14 @@ public class ReflectionUtils {
             Class sc;
             do {
                 do {
-                    c = (Class) magicMethod.invoke(null, depth++);
+                    c = (Class) MAGIC_METHOD.invoke(null, depth++);
                     if (c != null) {
                         sc = c.getSuperclass();
                     } else {
                         sc = null;
                     }
                 } while (classShouldBeIgnored(c, extraIgnoredPackages)
-                    || superClassShouldBeIgnored(sc));
+                        || superClassShouldBeIgnored(sc));
             } while (c != null && matchLevel-- > 0);
             return c;
         } catch (Throwable t) {
@@ -129,7 +135,7 @@ public class ReflectionUtils {
         return ((c != null)
                 && (c.isSynthetic()
                     || (c.getPackage() != null
-                        && (ignoredPackages.contains(c.getPackage().getName())
+                        && (IGNORED_PACKAGES.contains(c.getPackage().getName())
                           || extraIgnoredPackages.contains(c.getPackage().getName())))));
     }
 }

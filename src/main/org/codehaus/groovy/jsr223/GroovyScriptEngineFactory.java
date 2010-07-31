@@ -69,15 +69,15 @@ public class GroovyScriptEngineFactory implements ScriptEngineFactory {
     }
 
     public List<String> getExtensions() {
-        return extensions;
+        return EXTENSIONS;
     }
 
     public List<String> getMimeTypes() {
-        return mimeTypes;
+        return MIME_TYPES;
     }
 
     public List<String> getNames() {
-        return names;
+        return NAMES;
     }
 
     public Object getParameter(String key) {
@@ -157,22 +157,22 @@ public class GroovyScriptEngineFactory implements ScriptEngineFactory {
         return ret.toString();
     }
 
-    private static final List<String> names;
-    private static final List<String> extensions;
-    private static final List<String> mimeTypes;
+    private static final List<String> NAMES;
+    private static final List<String> EXTENSIONS;
+    private static final List<String> MIME_TYPES;
 
     static {
-        ArrayList<String> n = new ArrayList<String>(2);
+        List<String> n = new ArrayList<String>(2);
         n.add(SHORT_NAME);
         n.add(LANGUAGE_NAME);
-        names = Collections.unmodifiableList(n);
+        NAMES = Collections.unmodifiableList(n);
 
         n = new ArrayList<String>(1);
         n.add("groovy");
-        extensions = Collections.unmodifiableList(n);
+        EXTENSIONS = Collections.unmodifiableList(n);
 
         n = new ArrayList<String>(1);
         n.add("application/x-groovy");
-        mimeTypes = Collections.unmodifiableList(n);
+        MIME_TYPES = Collections.unmodifiableList(n);
     }
 }
