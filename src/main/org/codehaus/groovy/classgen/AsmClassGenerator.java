@@ -2288,9 +2288,16 @@ public class AsmClassGenerator extends ClassGenerator {
     public void visitMethodCallExpression(MethodCallExpression call) {
         onLineNumber(call, "visitMethodCallExpression: \"" + call.getMethod() + "\":");
 
-        if (isClosureCall(call)) {
+        // Closure calls of the form "localVariable(args)" have already
+        // been rewritten to "localVariable.call(args)" by VariableScopeVisitor
+        // and can be treated like regular method calls here.
+        // Qualified closure calls such as "foo.bar(args)" (where foo.bar returns
+        // a closure) or even "this.someField(args)" are also treated like regular
+        // method calls here, and will be handled by the MOP.
+        if (isUnqualifiedClosureFieldCall(call)) {
             // let's invoke the closure method
             invokeClosure(call.getArguments(), call.getMethodAsString());
+            record(call.getObjectExpression());
         } else {
             boolean isSuperMethodCall = usesSuper(call);
             MethodCallerMultiAdapter adapter = invokeMethod;
@@ -2298,14 +2305,19 @@ public class AsmClassGenerator extends ClassGenerator {
             if (isSuperMethodCall) adapter = invokeMethodOnSuper;
             if (isStaticInvocation(call)) adapter = invokeStaticMethod;
             makeInvokeMethodCall(call, isSuperMethodCall, adapter);
+
+            record(call.getMethod());
         }
-        record(call.getMethod());
     }
 
-    private boolean isClosureCall(MethodCallExpression call) {
+    /**
+     * Tells if the specified MethodCallExpression represents a closure call
+     * of the form "someField(args)".
+     */
+    private boolean isUnqualifiedClosureFieldCall(MethodCallExpression call) {
         // are we a local variable?
         // it should not be an explicitly "this" qualified method call
-        // and the current class should have a possible method
+        // and the current class should not have a possible method
         String methodName = call.getMethodAsString();
         if (methodName == null) return false;
         if (!call.isImplicitThis()) return false;

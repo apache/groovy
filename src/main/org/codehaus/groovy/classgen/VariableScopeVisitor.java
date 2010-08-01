@@ -34,8 +34,6 @@ import java.util.LinkedList;
  */
 public class VariableScopeVisitor extends ClassCodeVisitorSupport {
 
-    private static final Expression CALL = new ConstantExpression("call");
-
     private VariableScope currentScope = null;
     private VariableScope headScope = new VariableScope();
     private ClassNode currentClass = null;
@@ -454,7 +452,9 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
                 VariableExpression object = new VariableExpression(v);
                 object.setSourcePosition(methodNameConstant);
                 call.setObjectExpression(object);
-                call.setMethod(CALL);
+                ConstantExpression method = new ConstantExpression("call");
+                method.setSourcePosition(methodNameConstant); // important for GROOVY-4344
+                call.setMethod(method);
             }
 
         }

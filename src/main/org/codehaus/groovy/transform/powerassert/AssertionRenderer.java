@@ -67,6 +67,8 @@ public class AssertionRenderer {
     }
 
     private void sortValues() {
+        // it's important to use a stable sort here, otherwise
+        // renderValues() will skip the wrong values
         Collections.sort(recorder.getValues(),
                 new Comparator<Value>() {
                     public int compare(Value v1, Value v2) {
@@ -77,28 +79,38 @@ public class AssertionRenderer {
     }
 
     private void renderValues() {
-        nextValue:
-        for (Value value : recorder.getValues()) {
-            String str = valueToString(value.getValue());
-            if (str == null) continue;
+        List<Value> values = recorder.getValues();
 
+        nextValue:
+        for (int i = 0; i < values.size(); i++) {
+            Value value = values.get(i);
             int startColumn = value.getColumn();
-            if (startColumn < 1) continue; // node with invalid source position
+            if (startColumn < 1) continue; // skip values with unknown source position
+
+            // if multiple values are associated with the same column, only
+            // render the value which was recorded last (i.e. the value
+            // corresponding to the outermost expression)
+            // important for GROOVY-4344
+            Value next = i + 1 < values.size() ? values.get(i + 1) : null;
+            if (next != null && next.getColumn() == value.getColumn()) continue;
+
+            String str = valueToString(value.getValue());
+            if (str == null) continue; // null signals the value shouldn't be rendered
 
             String[] strs = str.split("\r\n|\r|\n");
             int endColumn = strs.length == 1 ?
                     value.getColumn() + str.length() : // exclusive
                     Integer.MAX_VALUE; // multi-line strings are always placed on new lines
 
-            for (int i = 1; i < lines.size(); i++)
-                if (endColumn < startColumns.get(i)) {
-                    placeString(lines.get(i), str, startColumn);
-                    startColumns.set(i, startColumn);
+            for (int j = 1; j < lines.size(); j++)
+                if (endColumn < startColumns.get(j)) {
+                    placeString(lines.get(j), str, startColumn);
+                    startColumns.set(j, startColumn);
                     continue nextValue;
                 } else {
-                    placeString(lines.get(i), "|", startColumn);
-                    if (i > 1) // make sure that no values are ever placed on empty line
-                        startColumns.set(i, startColumn + 1); // + 1: no whitespace required between end of value and "|"
+                    placeString(lines.get(j), "|", startColumn);
+                    if (j > 1) // make sure that no values are ever placed on empty line
+                        startColumns.set(j, startColumn + 1); // + 1: no whitespace required between end of value and "|"
                 }
 
             // value could not be placed on existing lines, so place it on new line(s)

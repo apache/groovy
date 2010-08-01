@@ -94,6 +94,10 @@ public class AnnotatedNode extends ASTNode {
         this.declaringClass = declaringClass;
     }
 
+    /**
+     * Currently only ever returns true for default constructors
+     * added by the compiler. See GROOVY-4161.
+     */
     public boolean hasNoRealSourcePosition() {
         return hasNoRealSourcePositionFlag;
     }
