@@ -35,7 +35,7 @@ import java.lang.annotation.Target;
  * if it already has it explicitly).
  *
  * It is a compilation error to place this annotation on a field (that is
- * nota property, i.e. has scope visibility modifiers).
+ * not a property, i.e. has scope visibility modifiers).
  *
  * If a property with a user defined setter method is annotated the code
  * block is wrapped with the needed code to fire off the event.
