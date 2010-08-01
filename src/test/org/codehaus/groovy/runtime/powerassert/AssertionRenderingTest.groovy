@@ -237,7 +237,6 @@ assert ++x == null
 assert x++ == null
        ||  |
        |0  false
-       |
        0
         """, {
             def x = 0
@@ -568,6 +567,19 @@ assert three(a, b,c)
         }
     }
 
+    void testExplicitClosureCall() {
+        def func = { it }
+
+        isRendered """
+assert func.call(42) == null
+       |    |        |
+       |    42       false
+       ${func.toString()}
+        """, {
+            assert func.call(42) == null
+        }
+    }
+
     /*
     void testMapEntryExpression() {
         // tested as part of testMapExpression
@@ -593,8 +605,6 @@ assert three(a, b,c)
         // cannot occur in an assertion statement
     }
     */
-
-
 }
 
 private class Holder {
