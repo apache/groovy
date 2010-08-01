@@ -50,15 +50,12 @@ public class LogASTTransformation implements ASTTransformation {
         AnnotatedNode targetClass = (AnnotatedNode) nodes[1];
         AnnotationNode logAnnotation = (AnnotationNode) nodes[0];
 
-        final boolean isJUL = "groovy.util.logging.Log".equals(logAnnotation.getClassNode().getName());
-        final boolean isLogBack = "groovy.util.logging.Slf4j".equals(logAnnotation.getClassNode().getName());
-        final boolean isLog4j = "groovy.util.logging.Log4j".equals(logAnnotation.getClassNode().getName());
-        final boolean isCommonsLog = "groovy.util.logging.Commons".equals(logAnnotation.getClassNode().getName());
+        final LoggingStrategy loggingStrategy = createLoggingStrategy(logAnnotation); 
 
         final String logFieldName = lookupLogFieldName(logAnnotation);
 
         if (!(targetClass instanceof ClassNode))
-            throw new GroovyBugError("Class annotation @Log annotated no Class, this must not happen.");
+            throw new GroovyBugError("Class annotation " + logAnnotation.getClassNode().getName() + " annotated no Class, this must not happen.");
 
         final ClassNode classNode = (ClassNode) targetClass;
 
@@ -82,43 +79,9 @@ public class LogASTTransformation implements ASTTransformation {
             public void visitClass(ClassNode node) {
                 FieldNode logField = node.getField(logFieldName);
                 if (logField != null) {
-                    addError("Class annotated with Log annotation cannot have log field declared",
-                            logField);
+                    addError("Class annotated with Log annotation cannot have log field declared", logField);
                 } else {
-
-                    if (isJUL) {
-                        logNode = node.addField(logFieldName,
-                                Opcodes.ACC_FINAL | Opcodes.ACC_TRANSIENT | Opcodes.ACC_STATIC | Opcodes.ACC_PRIVATE,
-                                new ClassNode("java.util.logging.Logger", Opcodes.ACC_PUBLIC, new ClassNode(Object.class)),
-                                new MethodCallExpression(
-                                        new ClassExpression(new ClassNode("java.util.logging.Logger", Opcodes.ACC_PUBLIC, new ClassNode(Object.class))),
-                                        "getLogger",
-                                        new ConstantExpression(node.getName())));
-                    } else if (isLogBack) {
-                        logNode = node.addField(logFieldName,
-                                Opcodes.ACC_FINAL | Opcodes.ACC_TRANSIENT | Opcodes.ACC_STATIC | Opcodes.ACC_PRIVATE,
-                                new ClassNode("org.slf4j.Logger", Opcodes.ACC_PUBLIC, new ClassNode(Object.class)),
-                                new MethodCallExpression(
-                                        new ClassExpression(new ClassNode("org.slf4j.LoggerFactory", Opcodes.ACC_PUBLIC, new ClassNode(Object.class))),
-                                        "getLogger",
-                                        new ClassExpression(node)));
-                    } else if (isLog4j) {
-                        logNode = node.addField(logFieldName,
-                                Opcodes.ACC_FINAL | Opcodes.ACC_TRANSIENT | Opcodes.ACC_STATIC | Opcodes.ACC_PRIVATE,
-                                new ClassNode("org.apache.log4j.Logger", Opcodes.ACC_PUBLIC, new ClassNode(Object.class)),
-                                new MethodCallExpression(
-                                        new ClassExpression(new ClassNode("org.apache.log4j.Logger", Opcodes.ACC_PUBLIC, new ClassNode(Object.class))),
-                                        "getLogger",
-                                        new ClassExpression(node)));
-                    } else if (isCommonsLog) {
-                        logNode = node.addField(logFieldName,
-                                Opcodes.ACC_FINAL | Opcodes.ACC_TRANSIENT | Opcodes.ACC_STATIC | Opcodes.ACC_PRIVATE,
-                                new ClassNode("org.apache.commons.logging.Log", Opcodes.ACC_PUBLIC, new ClassNode(Object.class)),
-                                new MethodCallExpression(
-                                        new ClassExpression(new ClassNode("org.apache.commons.logging.LogFactory", Opcodes.ACC_PUBLIC, new ClassNode(Object.class))),
-                                        "getLog",
-                                        new ClassExpression(node)));
-                    }
+                    logNode = loggingStrategy.addLoggerFieldToClass(node, logFieldName);
                 }
                 super.visitClass(node);
             }
@@ -139,72 +102,9 @@ public class LogASTTransformation implements ASTTransformation {
 
                 variableExpression.setAccessedVariable(logNode);
 
-                ArgumentListExpression args = new ArgumentListExpression();
+                if (!loggingStrategy.isLoggingMethod(methodName)) return exp; 
 
-                if (isCommonsLog) {
-                    if (methodName.matches("fatal|error|warn|info|debug|trace")) {
-                        return commonMethodCallExpression(variableExpression, methodName, exp);
-                    }
-                }else if (isLogBack) {
-                    if (methodName.matches("error|warn|info|debug|trace")) {
-                        return commonMethodCallExpression(variableExpression, methodName, exp);
-                    }
-                } else if (isLog4j) {
-                    if (!methodName.matches("fatal|error|warn|info|debug|trace")) {
-                        return exp;
-                    }
-
-                    final MethodCallExpression condition;
-                    if (!"trace".equals(methodName)) {
-                        ClassNode levelClass = new ClassNode("org.apache.log4j.Priority", 0, ClassHelper.OBJECT_TYPE);
-                        AttributeExpression logLevelExpression = new AttributeExpression(
-                                new ClassExpression(levelClass),
-                                new ConstantExpression(methodName.toUpperCase()));
-                        args.addExpression(logLevelExpression);
-                        condition = new MethodCallExpression(variableExpression, "isEnabledFor", args);
-                    } else {
-                        // log4j api is inconsistent, so trace requires special handling
-                        condition = new MethodCallExpression(
-                                variableExpression,
-                                "is" + methodName.substring(0, 1).toUpperCase() + methodName.substring(1, methodName.length()) + "Enabled",
-                                ArgumentListExpression.EMPTY_ARGUMENTS);
-                    }
-
-                    return new TernaryExpression(
-                            new BooleanExpression(condition),
-                            exp,
-                            ConstantExpression.NULL);
-                } else if (isJUL) {
-                    if (!methodName.matches("severe|warning|info|fine|finer|finest")) {
-                        return exp;
-                    }
-
-                    ClassNode levelClass = new ClassNode("java.util.logging.Level", 0, ClassHelper.OBJECT_TYPE);
-                    AttributeExpression logLevelExpression = new AttributeExpression(
-                            new ClassExpression(levelClass),
-                            new ConstantExpression(methodName.toUpperCase()));
-                    args.addExpression(logLevelExpression);
-                    MethodCallExpression condition = new MethodCallExpression(variableExpression, "isLoggable", args);
-
-                    return new TernaryExpression(
-                            new BooleanExpression(condition),
-                            exp,
-                            ConstantExpression.NULL);
-                }
-                return exp;
-            }
-
-            private Expression commonMethodCallExpression(Expression variableExpression, String methodName, Expression exp) {
-
-                MethodCallExpression condition = new MethodCallExpression(
-                        variableExpression,
-                        "is" + methodName.substring(0, 1).toUpperCase() + methodName.substring(1, methodName.length()) + "Enabled",
-                        ArgumentListExpression.EMPTY_ARGUMENTS);
-
-                return new TernaryExpression(
-                        new BooleanExpression(condition),
-                        exp,
-                        ConstantExpression.NULL);
+                return loggingStrategy.wrapLoggingMethodCall(variableExpression, methodName, exp); 
             }
 
             private boolean usesSimpleMethodArgumentsOnly(MethodCallExpression mce) {
@@ -247,5 +147,152 @@ public class LogASTTransformation implements ASTTransformation {
         );
     }
 
+    private static Expression commonMethodCallExpression(Expression variableExpression, String methodName, Expression exp) {
 
+        MethodCallExpression condition = new MethodCallExpression(
+                variableExpression,
+                "is" + methodName.substring(0, 1).toUpperCase() + methodName.substring(1, methodName.length()) + "Enabled",
+                ArgumentListExpression.EMPTY_ARGUMENTS);
+
+        return new TernaryExpression(
+                new BooleanExpression(condition),
+                exp,
+                ConstantExpression.NULL);
+    }
+
+    private interface LoggingStrategy {
+        FieldNode addLoggerFieldToClass(ClassNode classNode, String fieldName); 
+        boolean isLoggingMethod(String methodName); 
+        Expression wrapLoggingMethodCall(Expression logVariable, String methodName, Expression originalExpression); 
+    }
+
+    private static LoggingStrategy createLoggingStrategy(AnnotationNode logAnnotation) {
+        if ("groovy.util.logging.Log".equals(logAnnotation.getClassNode().getName())) {
+            return new JavaUtilLoggingStrategy(); 
+        }
+        if ("groovy.util.logging.Slf4j".equals(logAnnotation.getClassNode().getName())) {
+            return new Slf4jLoggingStrategy(); 
+        }
+        if ("groovy.util.logging.Log4j".equals(logAnnotation.getClassNode().getName())) {
+            return new Log4jLoggingStrategy();         
+        }
+        if ("groovy.util.logging.Commons".equals(logAnnotation.getClassNode().getName())) {
+            return new CommonsLoggingStrategy(); 
+        }
+        throw new GroovyBugError("Class annotation " + logAnnotation.getClassNode().getName() + " must map to a logging strategy.");
+    }
+
+    private static class JavaUtilLoggingStrategy implements LoggingStrategy {
+        public FieldNode addLoggerFieldToClass(ClassNode classNode, String logFieldName) {
+            return classNode.addField(logFieldName,
+                        Opcodes.ACC_FINAL | Opcodes.ACC_TRANSIENT | Opcodes.ACC_STATIC | Opcodes.ACC_PRIVATE,
+                        new ClassNode("java.util.logging.Logger", Opcodes.ACC_PUBLIC, new ClassNode(Object.class)),
+                        new MethodCallExpression(
+                                new ClassExpression(new ClassNode("java.util.logging.Logger", Opcodes.ACC_PUBLIC, new ClassNode(Object.class))),
+                                "getLogger",
+                                new ConstantExpression(classNode.getName())));
+        }
+
+        public boolean isLoggingMethod(String methodName) {
+            return methodName.matches("severe|warning|info|fine|finer|finest"); 
+        }
+
+        public Expression wrapLoggingMethodCall(Expression logVariable, String methodName, Expression originalExpression) {
+            ClassNode levelClass = new ClassNode("java.util.logging.Level", 0, ClassHelper.OBJECT_TYPE);
+            AttributeExpression logLevelExpression = new AttributeExpression(
+                    new ClassExpression(levelClass),
+                    new ConstantExpression(methodName.toUpperCase()));
+
+            ArgumentListExpression args = new ArgumentListExpression();
+            args.addExpression(logLevelExpression);
+            MethodCallExpression condition = new MethodCallExpression(logVariable, "isLoggable", args);
+
+            return new TernaryExpression(
+                    new BooleanExpression(condition),
+                    originalExpression,
+                    ConstantExpression.NULL);
+
+        }
+    }
+
+    private static class Slf4jLoggingStrategy implements LoggingStrategy {
+        public FieldNode addLoggerFieldToClass(ClassNode classNode, String logFieldName) {
+            return classNode.addField(logFieldName,
+                    Opcodes.ACC_FINAL | Opcodes.ACC_TRANSIENT | Opcodes.ACC_STATIC | Opcodes.ACC_PRIVATE,
+                    new ClassNode("org.slf4j.Logger", Opcodes.ACC_PUBLIC, new ClassNode(Object.class)),
+                    new MethodCallExpression(
+                            new ClassExpression(new ClassNode("org.slf4j.LoggerFactory", Opcodes.ACC_PUBLIC, new ClassNode(Object.class))),
+                            "getLogger",
+                            new ClassExpression(classNode)));
+
+        }
+
+        public boolean isLoggingMethod(String methodName) {
+            return methodName.matches("error|warn|info|debug|trace"); 
+        }
+
+        public Expression wrapLoggingMethodCall(Expression logVariable, String methodName, Expression originalExpression) {
+            return commonMethodCallExpression(logVariable, methodName, originalExpression);
+        }
+    }
+
+    private static class Log4jLoggingStrategy implements LoggingStrategy {
+        public FieldNode addLoggerFieldToClass(ClassNode classNode, String logFieldName) {
+            return classNode.addField(logFieldName,
+                    Opcodes.ACC_FINAL | Opcodes.ACC_TRANSIENT | Opcodes.ACC_STATIC | Opcodes.ACC_PRIVATE,
+                    new ClassNode("org.apache.log4j.Logger", Opcodes.ACC_PUBLIC, new ClassNode(Object.class)),
+                    new MethodCallExpression(
+                            new ClassExpression(new ClassNode("org.apache.log4j.Logger", Opcodes.ACC_PUBLIC, new ClassNode(Object.class))),
+                            "getLogger",
+                            new ClassExpression(classNode)));
+        }
+
+        public boolean isLoggingMethod(String methodName) {
+            return methodName.matches("fatal|error|warn|info|debug|trace"); 
+        }
+
+        public Expression wrapLoggingMethodCall(Expression logVariable, String methodName, Expression originalExpression) {
+            final MethodCallExpression condition;
+            if (!"trace".equals(methodName)) {
+                ClassNode levelClass = new ClassNode("org.apache.log4j.Priority", 0, ClassHelper.OBJECT_TYPE);
+                AttributeExpression logLevelExpression = new AttributeExpression(
+                        new ClassExpression(levelClass),
+                        new ConstantExpression(methodName.toUpperCase()));
+                ArgumentListExpression args = new ArgumentListExpression();
+                args.addExpression(logLevelExpression);
+                condition = new MethodCallExpression(logVariable, "isEnabledFor", args);
+            } else {
+                // log4j api is inconsistent, so trace requires special handling
+                condition = new MethodCallExpression(
+                        logVariable,
+                        "is" + methodName.substring(0, 1).toUpperCase() + methodName.substring(1, methodName.length()) + "Enabled",
+                        ArgumentListExpression.EMPTY_ARGUMENTS);
+            }
+
+            return new TernaryExpression(
+                    new BooleanExpression(condition),
+                    originalExpression,
+                    ConstantExpression.NULL);
+        }
+    }
+
+    private static class CommonsLoggingStrategy implements LoggingStrategy {
+        public FieldNode addLoggerFieldToClass(ClassNode classNode, String logFieldName) {
+            return classNode.addField(logFieldName,
+                    Opcodes.ACC_FINAL | Opcodes.ACC_TRANSIENT | Opcodes.ACC_STATIC | Opcodes.ACC_PRIVATE,
+                    new ClassNode("org.apache.commons.logging.Log", Opcodes.ACC_PUBLIC, new ClassNode(Object.class)),
+                    new MethodCallExpression(
+                            new ClassExpression(new ClassNode("org.apache.commons.logging.LogFactory", Opcodes.ACC_PUBLIC, new ClassNode(Object.class))),
+                            "getLog",
+                            new ClassExpression(classNode)));
+        }
+ 
+        public boolean isLoggingMethod(String methodName) {
+            return methodName.matches("fatal|error|warn|info|debug|trace"); 
+        }
+
+        public Expression wrapLoggingMethodCall(Expression logVariable, String methodName, Expression originalExpression) {
+            return commonMethodCallExpression(logVariable, methodName, originalExpression);
+        }
+   }
 }
