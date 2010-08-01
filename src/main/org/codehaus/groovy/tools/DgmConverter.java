@@ -22,6 +22,7 @@ import org.codehaus.groovy.reflection.ReflectionCache;
 import org.codehaus.groovy.reflection.GeneratedMetaMethod;
 import org.codehaus.groovy.runtime.DateGroovyMethods;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
+import org.codehaus.groovy.runtime.ProcessGroovyMethods;
 import org.codehaus.groovy.runtime.SwingGroovyMethods;
 import org.codehaus.groovy.runtime.SqlGroovyMethods;
 import org.codehaus.groovy.runtime.XmlGroovyMethods;
@@ -46,7 +47,8 @@ public class DgmConverter implements Opcodes{
             SqlGroovyMethods.class,
             XmlGroovyMethods.class,
             EncodingGroovyMethods.class,
-            DateGroovyMethods.class
+            DateGroovyMethods.class,
+            ProcessGroovyMethods.class
         };
 
         List<CachedMethod> cachedMethodsList = new ArrayList<CachedMethod> ();
