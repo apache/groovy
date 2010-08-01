@@ -6031,17 +6031,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Coerce a GroovyResultSet to a boolean value.
-     * A GroovyResultSet is coerced to false if there are no more rows to iterate over,
-     * and to true otherwise.
-     *
-     * @param grs the GroovyResultSet
-     * @return the boolean value
-     * @since 1.7.0
+     * @deprecated use SqlGroovyMethods#asBoolean(GroovyResultSet)
      */
+    @Deprecated
     public static boolean asBoolean(GroovyResultSet grs) {
-        //TODO: check why this asBoolean() method is needed for SqlTest to pass with custom boolean coercion in place
-        return true;
+        return SqlGroovyMethods.asBoolean(grs);
     }
 
     /**
@@ -11627,23 +11621,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return c == '\n' || c == '\r';
     }
 
-    /**
-     * Just throws a DeprecationException.  DO NOT USE.  It used to read a single, whole line from the given InputStream.
-     *
-     * @param stream an InputStream
-     * @return a line
-     * @throws IOException if an IOException occurs.
-     * @deprecated use Reader#readLine instead please
-     * @since 1.0
-     */
-    public static String readLine(InputStream stream) throws IOException {
-        throw new DeprecationException(
-                "readLine() on InputStream is no longer supported. " +
-                        "Either use a Reader or encapsulate the InputStream" +
-                        " with a BufferedReader and an InputStreamReader."
-        );
-    }
-
     static String lineSeparator = null;
 
     /**
@@ -14278,395 +14255,191 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return asType((Object) self, c);
     }
 
-    // Process methods
+    // Process method stubs - will be removed
     //-------------------------------------------------------------------------
 
     /**
-     * An alias method so that a process appears similar to System.out, System.in, System.err;
-     * you can use process.in, process.out, process.err in a similar fashion.
-     *
-     * @param self a Process instance
-     * @return the InputStream for the process
-     * @since 1.0
+     * @deprecated use ProcessGroovyMethods#getIn(Process)
      */
+    @Deprecated
     public static InputStream getIn(Process self) {
-        return self.getInputStream();
+        return ProcessGroovyMethods.getIn(self);
     }
 
     /**
-     * Read the text of the output stream of the Process.
-     *
-     * @param self a Process instance
-     * @return the text of the output
-     * @throws IOException if an IOException occurs.
-     * @since 1.0
+     * @deprecated use ProcessGroovyMethods#getText(Process)
      */
+    @Deprecated
     public static String getText(Process self) throws IOException {
-        return getText(new BufferedReader(new InputStreamReader(self.getInputStream())));
+        return ProcessGroovyMethods.getText(self);
     }
 
     /**
-     * An alias method so that a process appears similar to System.out, System.in, System.err;
-     * you can use process.in, process.out, process.err in a similar fashion.
-     *
-     * @param self a Process instance
-     * @return the error InputStream for the process
-     * @since 1.0
+     * @deprecated use ProcessGroovyMethods#getErr(Process)
      */
+    @Deprecated
     public static InputStream getErr(Process self) {
-        return self.getErrorStream();
+        return ProcessGroovyMethods.getErr(self);
     }
 
     /**
-     * An alias method so that a process appears similar to System.out, System.in, System.err;
-     * you can use process.in, process.out, process.err in a similar fashion.
-     *
-     * @param self a Process instance
-     * @return the OutputStream for the process
-     * @since 1.0
+     * @deprecated use ProcessGroovyMethods#getOut(Process)
      */
+    @Deprecated
     public static OutputStream getOut(Process self) {
-        return self.getOutputStream();
+        return ProcessGroovyMethods.getOut(self);
     }
 
     /**
-     * Overloads the left shift operator (&lt;&lt;) to provide an append mechanism
-     * to pipe data to a Process.
-     *
-     * @param self  a Process instance
-     * @param value a value to append
-     * @return a Writer
-     * @throws IOException if an IOException occurs.
-     * @since 1.0
+     * @deprecated use ProcessGroovyMethods#leftShift(Process, Object)
      */
+    @Deprecated
     public static Writer leftShift(Process self, Object value) throws IOException {
-        return leftShift(self.getOutputStream(), value);
+        return ProcessGroovyMethods.leftShift(self, value);
     }
 
     /**
-     * Overloads the left shift operator to provide an append mechanism
-     * to pipe into a Process
-     *
-     * @param self  a Process instance
-     * @param value data to append
-     * @return an OutputStream
-     * @throws IOException if an IOException occurs.
-     * @since 1.0
+     * @deprecated use ProcessGroovyMethods#leftShift(Process, byte[])
      */
+    @Deprecated
     public static OutputStream leftShift(Process self, byte[] value) throws IOException {
-        return leftShift(self.getOutputStream(), value);
+        return ProcessGroovyMethods.leftShift(self, value);
     }
 
     /**
-     * Wait for the process to finish during a certain amount of time, otherwise stops the process.
-     *
-     * @param self           a Process
-     * @param numberOfMillis the number of milliseconds to wait before stopping the process
-     * @since 1.0
+     * @deprecated use ProcessGroovyMethods#waitForOrKill(Process, long)
      */
+    @Deprecated
     public static void waitForOrKill(Process self, long numberOfMillis) {
-        ProcessRunner runnable = new ProcessRunner(self);
-        Thread thread = new Thread(runnable);
-        thread.start();
-        runnable.waitForOrKill(numberOfMillis);
+        ProcessGroovyMethods.waitForOrKill(self, numberOfMillis);
     }
 
     /**
-     * Gets the output and error streams from a process and reads them
-     * to keep the process from blocking due to a full output buffer.
-     * The stream data is thrown away but blocking due to a full output buffer is avoided.
-     * Use this method if you don't care about the standard or error output and just
-     * want the process to run silently - use carefully however, because since the stream
-     * data is thrown away, it might be difficult to track down when something goes wrong.
-     * For this, two Threads are started, so this method will return immediately.
-     *
-     * @param self a Process
-     * @since 1.0
+     * @deprecated use ProcessGroovyMethods#consumeProcessOutput(Process)
      */
+    @Deprecated
     public static void consumeProcessOutput(Process self) {
-        consumeProcessOutput(self, (OutputStream)null, (OutputStream)null);
+        ProcessGroovyMethods.consumeProcessOutput(self);
     }
 
     /**
-     * Gets the output and error streams from a process and reads them
-     * to keep the process from blocking due to a full output buffer.
-     * The processed stream data is appended to the supplied StringBuffer.
-     * For this, two Threads are started, so this method will return immediately.
-     *
-     * @param self a Process
-     * @param output a StringBuffer to capture the process stdout
-     * @param error a StringBuffer to capture the process stderr
-     * @since 1.5.2
+     * @deprecated use ProcessGroovyMethods#consumeProcessOutput(Process, Appendable, Appendable)
      */
+    @Deprecated
     public static void consumeProcessOutput(Process self, StringBuffer output, StringBuffer error) {
-        consumeProcessOutputStream(self, output);
-        consumeProcessErrorStream(self, error);
+        ProcessGroovyMethods.consumeProcessOutput(self, output, error);
     }
 
     /**
-     * Gets the output and error streams from a process and reads them
-     * to keep the process from blocking due to a full output buffer.
-     * The processed stream data is appended to the supplied OutputStream.
-     * For this, two Threads are started, so this method will return immediately.
-     *
-     * @param self a Process
-     * @param output an OutputStream to capture the process stdout
-     * @param error an OutputStream to capture the process stderr
-     * @since 1.5.2
+     * @deprecated use ProcessGroovyMethods#consumeProcessOutput(Process, OutputStream, OutputStream)
      */
+    @Deprecated
     public static void consumeProcessOutput(Process self, OutputStream output, OutputStream error) {
-        consumeProcessOutputStream(self, output);
-        consumeProcessErrorStream(self, error);
+        ProcessGroovyMethods.consumeProcessOutput(self, output, error);
     }
 
     /**
-     * Gets the output and error streams from a process and reads them
-     * to keep the process from blocking due to a full output buffer.
-     * The stream data is thrown away but blocking due to a full output buffer is avoided.
-     * Use this method if you don't care about the standard or error output and just
-     * want the process to run silently - use carefully however, because since the stream
-     * data is thrown away, it might be difficult to track down when something goes wrong.
-     * For this, two Threads are started, but join()ed, so we wait.
-     * As implied by the waitFor... name, we also wait until we finish
-     * was well.
-     *
-     * @param self a Process
-     * @since 1.6.5
+     * @deprecated use ProcessGroovyMethods#waitForProcessOutput(Process)
      */
+    @Deprecated
     public static void waitForProcessOutput(Process self) {
-        waitForProcessOutput(self, (OutputStream)null, (OutputStream)null);
+        ProcessGroovyMethods.waitForProcessOutput(self);
     }
 
     /**
-     * Gets the output and error streams from a process and reads them
-     * to keep the process from blocking due to a full output buffer.
-     * The processed stream data is appended to the supplied StringBuffer.
-     * For this, two Threads are started, but join()ed, so we wait.
-     * As implied by the waitFor... name, we also wait until we finish
-     * was well.
-     *
-     * @param self a Process
-     * @param output a StringBuffer to capture the process stdout
-     * @param error a StringBuffer to capture the process stderr
-     * @since 1.6.5
+     * @deprecated use #waitForProcessOutput(Process, Appendable, Appendable)
      */
+    @Deprecated
     public static void waitForProcessOutput(Process self, StringBuffer output, StringBuffer error) {
-        Thread tout = consumeProcessOutputStream(self, output);
-        Thread terr = consumeProcessErrorStream(self, error);
-        try { tout.join(); } catch (InterruptedException ignore) {}
-        try { terr.join(); } catch (InterruptedException ignore) {}
-        try { self.waitFor(); } catch (InterruptedException ignore) {}
+        ProcessGroovyMethods.waitForProcessOutput(self, output, error);
     }
 
     /**
-     * Gets the output and error streams from a process and reads them
-     * to keep the process from blocking due to a full output buffer.
-     * The processed stream data is appended to the supplied OutputStream.
-     * For this, two Threads are started, but join()ed, so we wait.
-     * As implied by the waitFor... name, we also wait until we finish
-     * was well.
-     *
-     * @param self a Process
-     * @param output an OutputStream to capture the process stdout
-     * @param error an OutputStream to capture the process stderr
-     * @since 1.6.5
+     * @deprecated use ProcessGroovyMethods#waitForProcessOutput(Process, OutputStream, OutputStream)
      */
+    @Deprecated
     public static void waitForProcessOutput(Process self, OutputStream output, OutputStream error) {
-        Thread tout = consumeProcessOutputStream(self, output);
-        Thread terr = consumeProcessErrorStream(self, error);
-        try { tout.join(); } catch (InterruptedException ignore) {}
-        try { terr.join(); } catch (InterruptedException ignore) {}
-        try { self.waitFor(); } catch (InterruptedException ignore) {}
+        ProcessGroovyMethods.waitForProcessOutput(self, output, error);
     }
 
     /**
-     * Gets the error stream from a process and reads it
-     * to keep the process from blocking due to a full buffer.
-     * The processed stream data is appended to the supplied StringBuffer.
-     * A new Thread is started, so this method will return immediately.
-     *
-     * @param self a Process
-     * @param error a StringBuffer to capture the process stderr
-     * @return the Thread
-     * @since 1.5.2
+     * @deprecated use ProcessGroovyMethods#consumeProcessErrorStream(Process, OutputStream)
      */
-    public static Thread consumeProcessErrorStream(Process self, StringBuffer error) {
-        Thread thread = new Thread(new TextDumper(self.getErrorStream(), error));
-        thread.start();
-        return thread;
-    }
-
-    /**
-     * Gets the error stream from a process and reads it
-     * to keep the process from blocking due to a full buffer.
-     * The processed stream data is appended to the supplied OutputStream.
-     * A new Thread is started, so this method will return immediately.
-     *
-     * @param self a Process
-     * @param err an OutputStream to capture the process stderr
-     * @return the Thread
-     * @since 1.5.2
-     */
+    @Deprecated
     public static Thread consumeProcessErrorStream(Process self, OutputStream err) {
-        Thread thread = new Thread(new ByteDumper(self.getErrorStream(), err));
-        thread.start();
-        return thread;
+        return ProcessGroovyMethods.consumeProcessErrorStream(self, err);
     }
 
     /**
-     * Gets the error stream from a process and reads it
-     * to keep the process from blocking due to a full buffer.
-     * The processed stream data is appended to the supplied Writer.
-     * A new Thread is started, so this method will return immediately.
-     *
-     * @param self a Process
-     * @param err a Writer to capture the process stderr
-     * @return the Thread
-     * @since 1.5.2
+     * @deprecated use ProcessGroovyMethods#consumeProcessErrorStream(Process, Appendable)
      */
+    @Deprecated
+    public static Thread consumeProcessErrorStream(Process self, StringBuffer error) {
+        return ProcessGroovyMethods.consumeProcessErrorStream(self, error);
+    }
+
+    /**
+     * @deprecated use ProcessGroovyMethods#consumeProcessErrorStream(Process, Appendable)
+     */
+    @Deprecated
     public static Thread consumeProcessErrorStream(Process self, Writer err) {
-        Thread thread = new Thread(new TextDumper(self.getErrorStream(), err));
-        thread.start();
-        return thread;
+        return ProcessGroovyMethods.consumeProcessErrorStream(self, err);
     }
 
     /**
-     * Gets the output stream from a process and reads it
-     * to keep the process from blocking due to a full output buffer.
-     * The processed stream data is appended to the supplied StringBuffer.
-     * A new Thread is started, so this method will return immediately.
-     *
-     * @param self a Process
-     * @param output a StringBuffer to capture the process stdout
-     * @return the Thread
-     * @since 1.5.2
+     * @deprecated use ProcessGroovyMethods#consumeProcessOutputStream(Process, Appendable)
      */
+    @Deprecated
     public static Thread consumeProcessOutputStream(Process self, StringBuffer output) {
-        Thread thread = new Thread(new TextDumper(self.getInputStream(), output));
-        thread.start();
-        return thread;
+        return ProcessGroovyMethods.consumeProcessOutputStream(self, output);
     }
 
     /**
-     * Gets the output stream from a process and reads it
-     * to keep the process from blocking due to a full output buffer.
-     * The processed stream data is appended to the supplied OutputStream.
-     * A new Thread is started, so this method will return immediately.
-     *
-     * @param self a Process
-     * @param output an OutputStream to capture the process stdout
-     * @return the Thread
-     * @since 1.5.2
+     * @deprecated use ProcessGroovyMethods#consumeProcessOutputStream(Process, Appendable)
      */
-    public static Thread consumeProcessOutputStream(Process self, OutputStream output) {
-        Thread thread = new Thread(new ByteDumper(self.getInputStream(), output));
-        thread.start();
-        return thread;
-    }
-
-    /**
-     * Gets the output stream from a process and reads it
-     * to keep the process from blocking due to a full output buffer.
-     * The processed stream data is appended to the supplied Writer.
-     * A new Thread is started, so this method will return immediately.
-     *
-     * @param self a Process
-     * @param output a Writer to capture the process stdout
-     * @return the Thread
-     * @since 1.5.2
-     */
+    @Deprecated
     public static Thread consumeProcessOutputStream(Process self, Writer output) {
-        Thread thread = new Thread(new TextDumper(self.getInputStream(), output));
-        thread.start();
-        return thread;
+        return ProcessGroovyMethods.consumeProcessOutputStream(self, output);
     }
 
     /**
-     * Creates a new BufferedWriter as stdin for this process,
-     * passes it to the closure, and ensures the stream is flushed
-     * and closed after the closure returns.
-     * A new Thread is started, so this method will return immediately.
-     *
-     * @param self a Process
-     * @param closure a closure
-     * @since 1.5.2
+     * @deprecated use ProcessGroovyMethods#consumeProcessOutputStream(Process, OutputStream)
      */
+    @Deprecated
+    public static Thread consumeProcessOutputStream(Process self, OutputStream output) {
+        return ProcessGroovyMethods.consumeProcessOutputStream(self, output);
+    }
+
+    /**
+     * @deprecated use ProcessGroovyMethods#withWriter(Process, Closure)
+     */
+    @Deprecated
     public static void withWriter(final Process self, final Closure closure) {
-        new Thread(new Runnable() {
-            public void run() {
-                try {
-                    withWriter(new BufferedOutputStream(getOut(self)), closure);
-                } catch (IOException e) {
-                    throw new GroovyRuntimeException("exception while reading process stream", e);
-                }
-            }
-        }).start();
+        ProcessGroovyMethods.withWriter(self, closure);
     }
 
     /**
-     * Creates a new buffered OutputStream as stdin for this process,
-     * passes it to the closure, and ensures the stream is flushed
-     * and closed after the closure returns.
-     * A new Thread is started, so this method will return immediately.
-     *
-     * @param self a Process
-     * @param closure a closure
-     * @since 1.5.2
+     * @deprecated use ProcessGroovyMethods#withOutputStream(Process, Closure)
      */
+    @Deprecated
     public static void withOutputStream(final Process self, final Closure closure) {
-        new Thread(new Runnable() {
-            public void run() {
-                try {
-                    withStream(new BufferedOutputStream(getOut(self)), closure);
-                } catch (IOException e) {
-                    throw new GroovyRuntimeException("exception while reading process stream", e);
-                }
-            }
-        }).start();
+        ProcessGroovyMethods.withOutputStream(self, closure);
     }
 
     /**
-     * Allows one Process to asynchronously pipe data to another Process.
-     *
-     * @param left  a Process instance
-     * @param right a Process to pipe output to
-     * @return the second Process to allow chaining
-     * @throws IOException if an IOException occurs.
-     * @since 1.5.2
+     * @deprecated use ProcessGroovyMethods#pipeTo(Process, Process)
      */
+    @Deprecated
     public static Process pipeTo(final Process left, final Process right) throws IOException {
-        new Thread(new Runnable() {
-            public void run() {
-                InputStream in = new BufferedInputStream(getIn(left));
-                OutputStream out = new BufferedOutputStream(getOut(right));
-                byte[] buf = new byte[8192];
-                int next;
-                try {
-                    while ((next = in.read(buf)) != -1) {
-                        out.write(buf, 0, next);
-                    }
-                } catch (IOException e) {
-                    throw new GroovyRuntimeException("exception while reading process stream", e);
-                } finally {
-                    closeWithWarning(out);
-                }
-            }
-        }).start();
-        return right;
+        return ProcessGroovyMethods.pipeTo(left, right);
     }
 
     /**
-     * Overrides the or operator to allow one Process to asynchronously
-     * pipe data to another Process.
-     *
-     * @param left  a Process instance
-     * @param right a Process to pipe output to
-     * @return the second Process to allow chaining
-     * @throws IOException if an IOException occurs.
-     * @since 1.5.1
+     * @deprecated use ProcessGroovyMethods#or(Process, Process)
      */
+    @Deprecated
     public static Process or(final Process left, final Process right) throws IOException {
-        return pipeTo(left, right);
+        return ProcessGroovyMethods.or(left, right);
     }
 
     /**
@@ -15105,113 +14878,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             }
             finally {
                 info.unlock();
-            }
-        }
-    }
-
-    /**
-     * A Runnable which waits for a process to complete together with a notification scheme
-     * allowing another thread to wait a maximum number of seconds for the process to complete
-     * before killing it.
-     *
-     * @since 1.0
-     */
-    protected static class ProcessRunner implements Runnable {
-        Process process;
-        private boolean finished;
-
-        public ProcessRunner(Process process) {
-            this.process = process;
-        }
-
-        private void doProcessWait() {
-            try {
-                process.waitFor();
-            } catch (InterruptedException e) {
-                // Ignore
-            }
-        }
-
-        public void run() {
-            doProcessWait();
-            synchronized (this) {
-                notifyAll();
-                finished = true;
-            }
-        }
-
-        public synchronized void waitForOrKill(long millis) {
-            if (!finished) {
-                try {
-                    wait(millis);
-                } catch (InterruptedException e) {
-                    // Ignore
-                }
-                if (!finished) {
-                    process.destroy();
-                    doProcessWait();
-                }
-            }
-        }
-    }
-
-    private static class TextDumper implements Runnable {
-        InputStream in;
-        StringBuffer sb;
-        Writer w;
-
-        public TextDumper(InputStream in, StringBuffer sb) {
-            this.in = in;
-            this.sb = sb;
-        }
-
-        public TextDumper(InputStream in, Writer w) {
-            this.in = in;
-            this.w = w;
-        }
-
-        public void run() {
-            InputStreamReader isr = new InputStreamReader(in);
-            BufferedReader br = new BufferedReader(isr);
-            String next;
-            try {
-                while ((next = br.readLine()) != null) {
-                    if (sb != null) {
-                        sb.append(next);
-                        sb.append("\n");
-                    } else {
-                        w.write(next);
-                        w.write("\n");
-                    }
-                }
-            } catch (IOException e) {
-                throw new GroovyRuntimeException("exception while reading process stream", e);
-            }
-        }
-    }
-
-    private static class ByteDumper implements Runnable {
-        InputStream in;
-        OutputStream out;
-
-        public ByteDumper(InputStream in, OutputStream out) {
-            this.in = new BufferedInputStream(in);
-            this.out = out;
-        }
-
-        public ByteDumper(InputStream in) {
-            this.in = new BufferedInputStream(in);
-        }
-
-        public void run() {
-            byte[] buf = new byte[8192];
-            int next;
-            try {
-                while ((next = in.read(buf)) != -1) {
-                    if (out != null) out.write(buf, 0, next);
-                }
-            } catch (IOException e) {
-                throw new GroovyRuntimeException("exception while dumping process stream", e);
             }
         }
     }
