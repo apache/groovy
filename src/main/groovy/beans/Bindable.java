@@ -27,7 +27,7 @@ import java.lang.annotation.Target;
  * Annotates a groovy property or a class.
  *
  * When annotating a property it indicates that the property should be a
- * bound property according to the JavaBeans spec, announding to listeners
+ * bound property according to the JavaBeans spec, announcing to listeners
  * that the value has changed.
  *
  * When annotating a class it indicates that all groovy properties in that
@@ -35,7 +35,7 @@ import java.lang.annotation.Target;
  * if it already has it explicitly).
  *
  * It is a compilation error to place this annotation on a field (that is
- * nota property, i.e. has scope visibility modifiers).
+ * not a property, i.e. has scope visibility modifiers).
  *
  * If a property with a user defined setter method is annotated the code
  * block is wrapped with the needed code to fire off the event.
