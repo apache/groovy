@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -243,16 +243,16 @@ public final class ClosureMetaClass extends MetaClassImpl {
         final Class[] argClasses = MetaClassHelper.convertToTypeArray(arguments);
         unwrap(arguments);
 
-        MetaMethod method;
+        MetaMethod method = null;
         final Closure closure = (Closure) object;
 
         if (CLOSURE_DO_CALL_METHOD.equals(methodName) || CLOSURE_CALL_METHOD.equals(methodName)) {
             method = pickClosureMethod(argClasses);
-            if (method==null && arguments.length==1 && arguments[0] instanceof List) {
+            if (method == null && arguments.length == 1 && arguments[0] instanceof List) {
                 Object[] newArguments = ((List) arguments[0]).toArray();
                 Class[] newArgClasses = MetaClassHelper.convertToTypeArray(newArguments);
                 method = pickClosureMethod(newArgClasses);
-                if (method!=null) {
+                if (method != null) {
                     method = new TransformMetaMethod(method) {
                         public Object invoke(Object object, Object[] arguments) {
                             Object firstArgument = arguments[0];
@@ -263,13 +263,13 @@ public final class ClosureMetaClass extends MetaClassImpl {
                     };
                 }
             }
-            if (method==null) throw new MissingMethodException(methodName, theClass, arguments, false);
+            if (method == null) throw new MissingMethodException(methodName, theClass, arguments, false);
         } else if (CLOSURE_CURRY_METHOD.equals(methodName)) {
             return closure.curry(arguments);
         } else {
             method = CLOSURE_METACLASS.pickMethod(methodName, argClasses);
         }
- 
+
         if (method != null) return method.doMethodInvoke(object, arguments);
 
         MissingMethodException last = null;
@@ -355,12 +355,12 @@ public final class ClosureMetaClass extends MetaClassImpl {
         }
 
         if (method != null) {
-        	MetaClass metaClass = registry.getMetaClass(callObject.getClass());
-        	if(metaClass instanceof ProxyMetaClass) {
-        		return metaClass.invokeMethod(callObject, methodName, arguments);
-        	} else {
-        		return method.doMethodInvoke(callObject, arguments);
-        	}
+            MetaClass metaClass = registry.getMetaClass(callObject.getClass());
+            if (metaClass instanceof ProxyMetaClass) {
+                return metaClass.invokeMethod(callObject, methodName, arguments);
+            } else {
+                return method.doMethodInvoke(callObject, arguments);
+            }
         } else {
             // if no method was found, try to find a closure defined as a field of the class and run it
             Object value = null;
@@ -698,24 +698,24 @@ public final class ClosureMetaClass extends MetaClassImpl {
     }
 
     public List respondsTo(Object obj, String name, Object[] argTypes) {
-    	loadMetaInfo();
-    	return super.respondsTo(obj, name, argTypes);
+        loadMetaInfo();
+        return super.respondsTo(obj, name, argTypes);
     }
 
     public List respondsTo(final Object obj, final String name) {
-    	loadMetaInfo();
-    	return super.respondsTo(obj, name);
+        loadMetaInfo();
+        return super.respondsTo(obj, name);
     }
     
     private synchronized void loadMetaInfo() {
-    	if(metaMethodIndex.isEmpty()) {
-    		initialized = false;
-    		super.initialize();
-    		initialized = true;
-    	}
+        if(metaMethodIndex.isEmpty()) {
+            initialized = false;
+            super.initialize();
+            initialized = true;
+        }
     }
     
     protected void applyPropertyDescriptors(PropertyDescriptor[] propertyDescriptors) {
-    	// do nothing
+        // do nothing
     }
 }
