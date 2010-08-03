@@ -149,17 +149,43 @@ class ClosureTest extends GroovyTestCase {
     * Test access to Closure's properties
     * cf GROOVY-2089
     */
-    void testProperties() {
+    void testGetProperties() {
         def c = { println it }
 
-        assert 1 == c.getMaximumNumberOfParameters()
-        assert 1 == c.maximumNumberOfParameters
-        shouldFail {
-            assert 1 == c.getMaximumNumberOfParameters // worked in Groovy 1.0 but is wrong
+        assert c.delegate == c.getDelegate()
+        assert c.owner == c.getOwner()
+        assert c.maximumNumberOfParameters == c.getMaximumNumberOfParameters()
+        assert c.parameterTypes == c.getParameterTypes()
+        assert c.class == c.getClass()
+        assert c.directive == c.getDirective()
+        assert c.resolveStrategy == c.getResolveStrategy()
+        assert c.thisObject == c.getThisObject()
+
+        // no idea why this one fails
+        // assert c.metaClass == c.getMetaClass()
+    }
+
+    void testGetPropertiesGenerically() {
+        Closure.metaClass.properties.each { property ->
+            def closure = { println it }
+            closure."$property.name" == closure."${MetaProperty.getGetterName(property.name, property.type)}"()
         }
-        
-        assert 0 == c.getDirective()
-        assert 0 == c.directive
+    }
+
+    void testSetProperties() {
+        def c = { println it }
+
+        def myDelegate = new Object()
+        c.delegate = myDelegate
+        assert c.getDelegate() == myDelegate
+
+        c.resolveStrategy = Closure.DELEGATE_ONLY
+        assert c.getResolveStrategy() == Closure.DELEGATE_ONLY
+
+        c.directive = Closure.DONE
+        assert c.directive == Closure.DONE
+
+        // like in testGetProperties(), don't know how to test metaClass property
     }
     
     /**

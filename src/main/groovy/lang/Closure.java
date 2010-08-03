@@ -162,6 +162,10 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
             return getClass();
         } else if ("directive".equals(property)) {
             return getDirective();
+        } else if ("resolveStrategy".equals(property)) {
+            return getResolveStrategy();
+        } else if ("thisObject".equals(property)) {
+            return getThisObject();
         } else {
             switch(resolveStrategy) {
                 case DELEGATE_FIRST:
@@ -210,9 +214,10 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
         } else if ("metaClass".equals(property)) {
             setMetaClass((MetaClass) newValue);
         } else if ("resolveStrategy".equals(property)) {
-            setResolveStrategy(((Number)newValue).intValue());
-        }
-        else {
+            setResolveStrategy(((Number) newValue).intValue());
+        } else if ("directive".equals(property)) {
+            setDirective(((Number) newValue).intValue());
+        } else {
             switch(resolveStrategy) {
                 case DELEGATE_FIRST:
                     setPropertyDelegateFirst(property, newValue);
