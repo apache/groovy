@@ -772,9 +772,10 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
         final DefiningClosure definer = new DefiningClosure();
         Object delegate = closure.getDelegate();
         closure.setDelegate(definer);
-        closure.setResolveStrategy(Closure.DELEGATE_FIRST);
+        closure.setResolveStrategy(Closure.DELEGATE_ONLY);
         closure.call(null);
         closure.setDelegate(delegate);
+        closure.setResolveStrategy(Closure.DELEGATE_FIRST);
         definer.definition = false;
         return this;
     }

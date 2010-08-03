@@ -62,7 +62,6 @@ public final class ClosureMetaClass extends MetaClassImpl {
     private static final Object[] EMPTY_ARGUMENTS = {};
     private static final String CLOSURE_CALL_METHOD = "call";
     private static final String CLOSURE_DO_CALL_METHOD = "doCall";
-    private static final String CLOSURE_CURRY_METHOD = "curry";
 
     static {
         CLOSURE_METACLASS = new MetaClassImpl(Closure.class);
@@ -263,9 +262,10 @@ public final class ClosureMetaClass extends MetaClassImpl {
                 }
             }
             if (method == null) throw new MissingMethodException(methodName, theClass, arguments, false);
-        } else if (CLOSURE_CURRY_METHOD.equals(methodName)) {
-            return closure.curry(arguments);
-        } else {
+        }
+
+        boolean shouldDefer = closure.getResolveStrategy() == Closure.DELEGATE_ONLY && isInternalMethod(methodName);
+        if (method == null && !shouldDefer) {
             method = CLOSURE_METACLASS.pickMethod(methodName, argClasses);
         }
 
@@ -377,6 +377,11 @@ public final class ClosureMetaClass extends MetaClassImpl {
 
         if (last != null) throw last;
         throw new MissingMethodException(methodName, theClass, arguments, false);
+    }
+
+    private boolean isInternalMethod(String methodName) {
+        return methodName.equals("curry") || methodName.equals("ncurry") || methodName.equals("rcurry") ||
+                methodName.equals("leftShift") || methodName.equals("rightShift");
     }
 
     private Object[] makeArguments(Object[] arguments, String methodName) {

@@ -107,7 +107,6 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
     private static final String CLOSURE_CALL_METHOD = "call";
     private static final String CLOSURE_DO_CALL_METHOD = "doCall";
-    private static final String CLOSURE_CURRY_METHOD = "curry";
     protected static final String STATIC_METHOD_MISSING = "$static_methodMissing";
     protected static final String STATIC_PROPERTY_MISSING = "$static_propertyMissing";
     protected static final String METHOD_MISSING = "methodMissing";
@@ -930,8 +929,6 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                     return ownerMetaClass.invokeMethod(owner, methodName, curriedArguments);
                 }
                 if (method==null) invokeMissingMethod(object,methodName,arguments);
-            } else if (CLOSURE_CURRY_METHOD.equals(methodName)) {
-                return closure.curry(arguments);
             }
 
             final Object delegate = closure.getDelegate();

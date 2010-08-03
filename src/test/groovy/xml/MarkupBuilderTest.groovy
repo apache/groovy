@@ -226,6 +226,23 @@ class MarkupBuilderTest extends BuilderTestSupport {
         assertExpectedXmlDefault "<element />"
     }
 
+    void testDelegateOnlyToSkipInternalClosureMethods() {
+        def items = {
+          pizza(price: 8.5)
+          curry(price: 8)
+          burger(price: 7.5)
+        }
+        items.resolveStrategy = Closure.DELEGATE_ONLY
+        xml.menu(items)
+        assertExpectedXmlDefault '''
+            <menu>
+              <pizza price='8.5' />
+              <curry price='8' />
+              <burger price='7.5' />
+            </menu>
+        '''
+    }
+
     void testWithIndentPrinter() {
         xml = new MarkupBuilder(new IndentPrinter(new PrintWriter(writer), "", false))
         xml.element(att1:'attr') { subelement('foo') }

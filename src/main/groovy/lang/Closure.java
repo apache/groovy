@@ -17,6 +17,7 @@ package groovy.lang;
 
 import org.codehaus.groovy.reflection.ReflectionCache;
 import org.codehaus.groovy.reflection.stdclasses.CachedClosureClass;
+import org.codehaus.groovy.runtime.ComposedClosure;
 import org.codehaus.groovy.runtime.CurriedClosure;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
@@ -53,6 +54,7 @@ import java.io.Writer;
  * @author <a href="mailto:tug@wilson.co.uk">John Wilson</a>
  * @author <a href="mailto:blackdrag@gmx.org">Jochen Theodorou</a>
  * @author Graeme Rocher
+ * @author Paul King
  *
  * @version $Revision$
  */
@@ -421,6 +423,61 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      */
     public Closure ncurry(int n, final Object arguments[]) {
         return new CurriedClosure(n, this, arguments);
+    }
+
+    /**
+     * Support for Closure forward composition.
+     * <p/>
+     * Typical usage:
+     * <pre>
+     * def twice = { a -> a * 2 }
+     * def thrice = { a -> a * 3 }
+     * def times6 = twice >> thrice
+     * // equivalent: times6 = { a -> thrice(twice(a)) }
+     * assert times6(3) == 18
+     * </pre>
+     *
+     * @param other the Closure to compose with the current Closure
+     * @return the new composed Closure
+     */
+    public Closure rightShift(final Closure other) {
+        return new ComposedClosure(this, other);
+    }
+
+    /**
+     * Support for Closure reverse composition.
+     * <p/>
+     * Typical usage:
+     * <pre>
+     * def twice = { a -> a * 2 }
+     * def thrice = { a -> a * 3 }
+     * def times6 = thrice << twice
+     * // equivalent: times6 = { a -> thrice(twice(a)) }
+     * assert times6(3) == 18
+     * </pre>
+     *
+     * @param other the Closure to compose with the current Closure
+     * @return the new composed Closure
+     */
+    public Closure leftShift(final Closure other) {
+        return new ComposedClosure(other, this);
+    }
+
+    /* *
+     * Alias for calling a Closure for non-closure arguments.
+     * <p/>
+     * Typical usage:
+     * <pre>
+     * def twice = { a -> a * 2 }
+     * def thrice = { a -> a * 3 }
+     * assert thrice << twice << 3 == 18
+     * </pre>
+     *
+     * @param arg the argument to call the closure with
+     * @return the result of calling the Closure
+     */
+    public V leftShift(final Object arg) {
+        return call(arg);
     }
 
     /* (non-Javadoc)
