@@ -6,7 +6,7 @@ version = groovyVersion
 sourceCompatibility = 1.5
 targetCompatibility = 1.5
 
-buildDirName = 'target'
+buildDir = 'target'
 
 repositories {
     // todo Some repos are needed only for some configs. Declare them just for the configuration once Gradle allows this.
@@ -48,7 +48,7 @@ dependencies {
         exclude(group: 'junit', module: 'junit')
     }
     compile "org.fusesource.jansi:jansi:1.2.1"
-    compile("org.apache.ivy:ivy:2.1.0") {
+    compile("org.apache.ivy:ivy:2.2.0-rc1") {
         transitive = false
     }
     runtime "org.apache.ant:ant-junit:1.8.0"
@@ -70,6 +70,10 @@ dependencies {
     testCompile "xmlunit:xmlunit:1.3"
     testCompile "hsqldb:hsqldb:1.8.0.10"
     testCompile "ch.qos.logback:logback-classic:0.9.21"
+    testCompile "log4j:log4j:1.2.16"
+    testCompile "org.slf4j:jcl-over-slf4j:1.6.0"
+//    testCompile "commons-logging:commons-logging:1.1.1"
+    testCompile "com.thoughtworks.qdox:qdox:1.12"
 
     // todo this was provided
     compile "org.livetribe:livetribe-jsr223:2.0.6"
@@ -85,7 +89,7 @@ dependencies {
         exclude(module: 'ant')
     }
     tools "asm:asm:3.2"
-    tools "com.thoughtworks.qdox:qdox:1.10"
+    tools "com.thoughtworks.qdox:qdox:1.12"
     tools "biz.aQute:bnd:0.0.388"
 
     examplesCompile "lucene:lucene:1.4.3"
@@ -243,7 +247,7 @@ apply from: "$projectDir/gradle/upload.gradle"
 
 task wrapper(type: Wrapper) {
     jarPath = 'gradle/wrapper'
-    gradleVersion = '0.9-20100330132924+0200'
+    gradleVersion = '0.9-rc-1'
 }
 
 
