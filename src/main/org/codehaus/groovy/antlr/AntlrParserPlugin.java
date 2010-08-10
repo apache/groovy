@@ -1370,14 +1370,22 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
 
         List list = new ArrayList();
         for (node = node.getNextSibling(); isType(CASE_GROUP, node); node = node.getNextSibling()) {
+        	Statement tmpDefaultStatement;
             AST child = node.getFirstChild();
             if (isType(LITERAL_case, child)) {
                 List cases = new LinkedList();
                 // default statement can be grouped with previous case
-                defaultStatement = caseStatements(child, cases);
+                tmpDefaultStatement = caseStatements(child, cases);
                 list.addAll(cases);
             } else {
-                defaultStatement = statement(child.getNextSibling());
+            	tmpDefaultStatement = statement(child.getNextSibling());
+            }
+            if(tmpDefaultStatement != EmptyStatement.INSTANCE) {
+            	if(defaultStatement == EmptyStatement.INSTANCE) {
+            		defaultStatement = tmpDefaultStatement;
+            	} else {
+            		throw new ASTRuntimeException(switchNode, "The default case is already defined.");
+            	}
             }
         }
         if (node != null) {
