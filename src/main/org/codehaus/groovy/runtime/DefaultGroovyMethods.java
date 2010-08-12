@@ -144,7 +144,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return result of calling the closure
      * @since 1.0
      */
-    public static Object identity(Object self, Closure closure) {
+    public static <T> T identity(Object self, Closure<T> closure) {
         return DefaultGroovyMethods.with(self, closure);
     }
 
@@ -156,8 +156,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return result of calling the closure
      * @since 1.5.0
      */
-    public static Object with(Object self, Closure closure) {
-        final Closure clonedClosure = (Closure) closure.clone();
+    public static <T> T with(Object self, Closure<T> closure) {
+        @SuppressWarnings("unchecked")
+        final Closure<T> clonedClosure = (Closure<T>) closure.clone();
         clonedClosure.setResolveStrategy(Closure.DELEGATE_FIRST);
         clonedClosure.setDelegate(self);
         return clonedClosure.call(self);
@@ -324,7 +325,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the value returned from the closure
      * @since 1.0
      */
-    public static Object use(Object self, Class categoryClass, Closure closure) {
+    public static <T> T use(Object self, Class categoryClass, Closure<T> closure) {
         return GroovyCategorySupport.use(categoryClass, closure);
     }
 
@@ -405,7 +406,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the value returned from the closure
      * @since 1.0
      */
-    public static Object use(Object self, List<Class> categoryClassList, Closure closure) {
+    public static <T> T use(Object self, List<Class> categoryClassList, Closure<T> closure) {
         return GroovyCategorySupport.use(categoryClassList, closure);
     }
 
@@ -1180,7 +1181,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the self Object
      * @since 1.0
      */
-    public static Object eachWithIndex(Object self, Closure closure) {
+    public static <T> T eachWithIndex(T self, Closure closure) {
         int counter = 0;
         for (Iterator iter = InvokerHelper.asIterator(self); iter.hasNext();) {
             closure.call(new Object[]{iter.next(), counter++});
@@ -1410,8 +1411,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return true if any entry in the map matches the closure predicate
      * @since 1.5.0
      */
-    public static <K, V> boolean any(Map<K, V> self, Closure closure) {
-        for (Map.Entry entry : self.entrySet()) {
+    public static <K, V> boolean any(Map<K, V> self, Closure<?> closure) {
+        for (Map.Entry<K, V> entry : self.entrySet()) {
             if (DefaultTypeTransformation.castToBoolean(callClosureForMapEntry(closure, entry))) {
                 return true;
             }
@@ -1484,7 +1485,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             }
         }
         // for b/c with Java return an int if we can
-        if (answer <= Integer.MAX_VALUE) return new Long(answer).intValue();
+        if (answer <= Integer.MAX_VALUE) return (int) answer;
         return answer;
     }
 
@@ -1509,7 +1510,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             }
         }
         // for b/c with Java return an int if we can
-        if (answer <= Integer.MAX_VALUE) return new Long(answer).intValue();
+        if (answer <= Integer.MAX_VALUE) return (int) answer;
         return answer;
     }
 
@@ -1558,7 +1559,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the number of occurrences
      * @since 1.8.0
      */
-    public static Number count(Map self, Closure closure) {
+    public static Number count(Map self, Closure<?> closure) {
         long answer = 0;
         for (Object entry : self.entrySet()) {
             if (DefaultTypeTransformation.castToBoolean(callClosureForMapEntry(closure, (Map.Entry) entry))) {
@@ -1566,7 +1567,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             }
         }
         // for b/c with Java return an int if we can
-        if (answer <= Integer.MAX_VALUE) return new Long(answer).intValue();
+        if (answer <= Integer.MAX_VALUE) return (int) answer;
         return answer;
     }
 
@@ -1772,8 +1773,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return a List of the transformed values
      * @since 1.0
      */
-    public static List collect(Object self, Closure closure) {
-        return (List) collect(self, new ArrayList(), closure);
+    public static <T> List<T> collect(Object self, Closure<T> closure) {
+        return (List<T>) collect(self, new ArrayList<T>(), closure);
     }
 
     /**
@@ -1786,7 +1787,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the given collection after the transformed values are added
      * @since 1.0
      */
-    public static Collection collect(Object self, Collection collection, Closure closure) {
+    public static <T> Collection<T> collect(Object self, Collection<T> collection, Closure<? extends T> closure) {
         for (Iterator iter = InvokerHelper.asIterator(self); iter.hasNext();) {
             collection.add(closure.call(iter.next()));
         }
@@ -1803,8 +1804,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return a List of the transformed values
      * @since 1.0
      */
-    public static List collect(Collection self, Closure closure) {
-        return (List) collect(self, new ArrayList(self.size()), closure);
+    public static <T> List<T> collect(Collection<?> self, Closure<T> closure) {
+        return (List<T>) collect(self, new ArrayList<T>(self.size()), closure);
     }
 
     /**
@@ -1818,7 +1819,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the resulting collection of transformed values
      * @since 1.0
      */
-    public static Collection collect(Collection self, Collection collection, Closure closure) {
+    public static <T> Collection<T> collect(Collection<?> self, Collection<T> collection, Closure<? extends T> closure) {
         for (Iterator iter = self.iterator(); iter.hasNext();) {
             collection.add(closure.call(iter.next()));
             if (closure.getDirective() == Closure.DONE) {
@@ -1885,9 +1886,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return a List of the mapped values
      * @since 1.0
      */
-    public static Collection collect(Map self, Collection collection, Closure closure) {
-        for (Object entry : self.entrySet()) {
-            collection.add(callClosureForMapEntry(closure, (Map.Entry) entry));
+    public static <T> Collection<T> collect(Map<?, ?> self, Collection<T> collection, Closure<? extends T> closure) {
+        for (Map.Entry<?, ?> entry : self.entrySet()) {
+            collection.add(callClosureForMapEntry(closure, entry));
         }
         return collection;
     }
@@ -1903,8 +1904,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the resultant collection
      * @since 1.0
      */
-    public static List collect(Map self, Closure closure) {
-        return (List) collect(self, new ArrayList(self.size()), closure);
+    public static <T> List<T> collect(Map self, Closure<T> closure) {
+        return (List<T>) collect(self, new ArrayList<T>(self.size()), closure);
     }
 
     /**
@@ -1924,9 +1925,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #collect(Map, Collection, Closure)
      * @since 1.8.0
      */
-    public static <K, V> Map<K, V> collectEntries(Map<K, V> self, Map<K, V> result, Closure closure) {
-        for (Object entry : self.entrySet()) {
-            addEntry(result, callClosureForMapEntry(closure, (Map.Entry) entry));
+    public static <K, V> Map<K, V> collectEntries(Map<K, V> self, Map<K, V> result, Closure<?> closure) {
+        for (Map.Entry<K, V> entry : self.entrySet()) {
+            addEntry(result, callClosureForMapEntry(closure, entry));
         }
         return result;
     }
@@ -2009,7 +2010,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             // TODO: enforce stricter behavior?
             // given Map.Entry is an interface, we get a proxy which gives us lots
             // of flexibility but sometimes the error messages might be unexpected
-            leftShift(result, (Map.Entry)asType(newEntry, Map.Entry.class));
+            leftShift(result, asType(newEntry, Map.Entry.class));
         }
     }
 
@@ -2062,7 +2063,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the first Object found
      * @since 1.0
      */
-    public static <K, V> Map.Entry<K, V> find(Map<K, V> self, Closure closure) {
+    public static <K, V> Map.Entry<K, V> find(Map<K, V> self, Closure<?> closure) {
         for (Map.Entry<K, V> entry : self.entrySet()) {
             if (DefaultTypeTransformation.castToBoolean(callClosureForMapEntry(closure, entry))) {
                 return entry;
@@ -2100,7 +2101,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return findAll(closure, answer, iter);
     }
 
-    private static <T> Collection<T> findAll(Closure closure, Collection<T> answer, Iterator<T> iter) {
+    private static <T> Collection<T> findAll(Closure closure, Collection<T> answer, Iterator<? extends T> iter) {
         while (iter.hasNext()) {
             T value = iter.next();
             if (DefaultTypeTransformation.castToBoolean(closure.call(value))) {
@@ -2134,7 +2135,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see    Collection#removeAll(Collection)
      * @since 1.7.2
      */
-    public static <T> boolean removeAll(Collection<T> self, T[] items) {
+    public static boolean removeAll(Collection self, Object[] items) {
         return self.removeAll(Arrays.asList(items));
     }
 
@@ -2148,7 +2149,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see    Collection#retainAll(Collection)
      * @since 1.7.2
      */
-    public static <T> boolean retainAll(Collection<T> self, T[] items) {
+    public static boolean retainAll(Collection self, Object[] items) {
         return self.retainAll(Arrays.asList(items));
     }
 
@@ -2240,7 +2241,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self    an Object with an Iterator returning its values
      * @param closure a closure condition
-     * @return a List containing whose first item is the accepted values and whose second item is the rejected values
+     * @return a List whose first item is the accepted values and whose second item is the rejected values
      * @since 1.6.0
      */
     public static Collection split(Object self, Closure closure) {
@@ -2259,7 +2260,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self    a Collection of values
      * @param closure a closure condition
-     * @return a List containing whose first item is the accepted values and whose second item is the rejected values
+     * @return a List whose first item is the accepted values and whose second item is the rejected values
      * @since 1.6.0
      */
     public static <T> Collection<Collection<T>> split(Collection<T> self, Closure closure) {
@@ -2417,10 +2418,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return a new Map grouped by keys
      * @since 1.0
      */
-    public static <T> Map<Object, List<T>> groupBy(Collection<T> self, Closure closure) {
-        Map<Object, List<T>> answer = new LinkedHashMap<Object, List<T>>();
+    public static <K, T> Map<K, List<T>> groupBy(Collection<T> self, Closure<K> closure) {
+        Map<K, List<T>> answer = new LinkedHashMap<K, List<T>>();
         for (T element : self) {
-            Object value = closure.call(element);
+            K value = closure.call(element);
             groupAnswer(answer, element, value);
         }
         return answer;
@@ -2441,7 +2442,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return a new Map grouped by keys with frequency counts
      * @since 1.8.0
      */
-    public static Map<Object, Integer> countBy(Collection self, Closure closure) {
+    public static <K> Map<K, Integer> countBy(Collection self, Closure<K> closure) {
         return countBy(self.iterator(), closure);
     }
 
@@ -2461,7 +2462,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #countBy(Collection, Closure)
      * @since 1.8.0
      */
-    public static Map<Object, Integer> countBy(Object[] self, Closure closure) {
+    public static <K> Map<K, Integer> countBy(Object[] self, Closure<K> closure) {
         return countBy(Arrays.asList(self), closure);
     }
 
@@ -2481,10 +2482,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #countBy(Collection, Closure)
      * @since 1.8.0
      */
-    public static Map<Object, Integer> countBy(Iterator self, Closure closure) {
-        Map<Object, Integer> answer = new LinkedHashMap<Object, Integer>();
+    public static <K> Map<K, Integer> countBy(Iterator self, Closure<K> closure) {
+        Map<K, Integer> answer = new LinkedHashMap<K, Integer>();
         while (self.hasNext()) {
-            Object value = closure.call(self.next());
+            K value = closure.call(self.next());
             countAnswer(answer, value);
         }
         return answer;
@@ -2508,10 +2509,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return a new Map grouped by keys
      * @since 1.5.2
      */
-    public static <K, V> Map<Object, List<Map.Entry<K, V>>> groupEntriesBy(Map<K, V> self, Closure closure) {
-        final Map<Object, List<Map.Entry<K, V>>> answer = new LinkedHashMap<Object, List<Map.Entry<K, V>>>();
+    public static <G, K, V> Map<G, List<Map.Entry<K, V>>> groupEntriesBy(Map<K, V> self, Closure<G> closure) {
+        final Map<G, List<Map.Entry<K, V>>> answer = new LinkedHashMap<G, List<Map.Entry<K, V>>>();
         for (Map.Entry<K, V> entry : self.entrySet()) {
-            Object value = callClosureForMapEntry(closure, entry);
+            G value = callClosureForMapEntry(closure, entry);
             groupAnswer(answer, entry, value);
         }
         return answer;
@@ -2538,11 +2539,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return a new Map grouped by keys
      * @since 1.0
      */
-    public static <K, V> Map<Object, Map<K, V>> groupBy(Map<K, V> self, Closure closure) {
-        final Map<Object, List<Map.Entry<K, V>>> initial = groupEntriesBy(self, closure);
-        final Map<Object, Map<K, V>> answer = new LinkedHashMap<Object, Map<K, V>>();
-        for (Map.Entry<Object, List<Map.Entry<K, V>>> outer : initial.entrySet()) {
-            Object key = outer.getKey();
+    public static <G, K, V> Map<G, Map<K, V>> groupBy(Map<K, V> self, Closure<G> closure) {
+        final Map<G, List<Map.Entry<K, V>>> initial = groupEntriesBy(self, closure);
+        final Map<G, Map<K, V>> answer = new LinkedHashMap<G, Map<K, V>>();
+        for (Map.Entry<G, List<Map.Entry<K, V>>> outer : initial.entrySet()) {
+            G key = outer.getKey();
             List<Map.Entry<K, V>> entries = outer.getValue();
             Map<K, V> target = createSimilarMap(self);
             putAll(target, entries);
@@ -2568,8 +2569,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return a new Map grouped by keys with frequency counts
      * @since 1.8.0
      */
-    public static Map<Object, Integer> countBy(Map self, Closure closure) {
-        Map<Object, Integer> answer = new LinkedHashMap<Object, Integer>();
+    public static <K> Map<K, Integer> countBy(Map self, Closure<K> closure) {
+        Map<K, Integer> answer = new LinkedHashMap<K, Integer>();
         for (Object entry : self.entrySet()) {
             countAnswer(answer, callClosureForMapEntry(closure, (Map.Entry) entry));
         }
@@ -2584,7 +2585,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param value   the value according to which the element will be placed
      * @since 1.5.0
      */
-    protected static <T> void groupAnswer(final Map<Object, List<T>> answer, T element, Object value) {
+    protected static <K, T> void groupAnswer(final Map<K, List<T>> answer, T element, K value) {
         if (answer.containsKey(value)) {
             answer.get(value).add(element);
         } else {
@@ -2594,7 +2595,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         }
     }
 
-    private static void countAnswer(final Map<Object, Integer> answer, Object mappedKey) {
+    private static <T> void countAnswer(final Map<T, Integer> answer, T mappedKey) {
         if (!answer.containsKey(mappedKey)) {
             answer.put(mappedKey, 0);
         }
@@ -2603,7 +2604,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     // internal helper method
-    protected static Object callClosureForMapEntry(Closure closure, Map.Entry entry) {
+    protected static <T> T callClosureForMapEntry(Closure<T> closure, Map.Entry entry) {
         if (closure.getMaximumNumberOfParameters() == 2) {
             return closure.call(new Object[]{entry.getKey(), entry.getValue()});
         }
@@ -2611,7 +2612,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     // internal helper method
-    protected static Object callClosureForLine(Closure closure, String line, int counter) {
+    protected static <T> T callClosureForLine(Closure<T> closure, String line, int counter) {
         if (closure.getMaximumNumberOfParameters() == 2) {
             return closure.call(new Object[]{line, counter});
         }
@@ -2619,7 +2620,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     // internal helper method
-    protected static Object callClosureForMapEntryAndCounter(Closure closure, Map.Entry entry, int counter) {
+    protected static <T> T callClosureForMapEntryAndCounter(Closure<T> closure, Map.Entry entry, int counter) {
         if (closure.getMaximumNumberOfParameters() == 3) {
             return closure.call(new Object[]{entry.getKey(), entry.getValue(), counter});
         }
@@ -4973,7 +4974,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         if (splice.isEmpty()) {
             return;
         }
-        Object first = splice.iterator().next();
+        Object first = splice.get(0);
         if (first instanceof Integer) {
             for (Object index : splice) {
                 self.set((Integer) index, value);
@@ -5079,7 +5080,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static List getAt(Collection coll, String property) {
-        List answer = new ArrayList(coll.size());
+        List<Object> answer = new ArrayList<Object>(coll.size());
         for (Object item : coll) {
             if (item == null) continue;
             Object value;
@@ -5804,7 +5805,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.7.0
      */
     public static boolean asBoolean(Boolean bool) {
-        return bool.booleanValue();
+        return bool;
     }
 
     /**
@@ -6014,7 +6015,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
 
     public static boolean asBoolean(Character character) {
-        return character.charValue() != 0;
+        return character != 0;
     }
 
     /**
@@ -6052,35 +6053,36 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #asType(java.lang.Object, java.lang.Class)
      * @since 1.0
      */
-    public static Object asType(Collection col, Class clazz) {
+    @SuppressWarnings("unchecked")
+    public static <T> T asType(Collection col, Class<T> clazz) {
         if (col.getClass() == clazz) {
-            return col;
+            return (T) col;
         }
         if (clazz == List.class) {
-            return asList(col);
+            return (T) asList(col);
         }
         if (clazz == Set.class) {
-            if (col instanceof Set) return col;
-            return new HashSet(col);
+            if (col instanceof Set) return (T) col;
+            return (T) new HashSet(col);
         }
         if (clazz == SortedSet.class) {
-            if (col instanceof SortedSet) return col;
-            return new TreeSet(col);
+            if (col instanceof SortedSet) return (T) col;
+            return (T) new TreeSet(col);
         }
         if (clazz == Queue.class) {
-            if (col instanceof Queue) return col;
-            return new LinkedList(col);
+            if (col instanceof Queue) return (T) col;
+            return (T) new LinkedList(col);
         }
         if (clazz == Stack.class) {
-            if (col instanceof Stack) return col;
+            if (col instanceof Stack) return (T) col;
             final Stack stack = new Stack();
             stack.addAll(col);
-            return stack;
+            return (T) stack;
         }
 
         Object[] args = {col};
         try {
-            return InvokerHelper.invokeConstructorOf(clazz, args);
+            return (T) InvokerHelper.invokeConstructorOf(clazz, args);
         } catch (Exception e) {
             // ignore
         }
@@ -6098,15 +6100,16 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #asType(java.lang.Object, java.lang.Class)
      * @since 1.5.1
      */
-    public static Object asType(Object[] ary, Class clazz) {
+    @SuppressWarnings("unchecked")
+    public static <T> T asType(Object[] ary, Class<T> clazz) {
         if (clazz == List.class) {
-            return new ArrayList(Arrays.asList(ary));
+            return (T) new ArrayList(Arrays.asList(ary));
         }
         if (clazz == Set.class) {
-            return new HashSet(Arrays.asList(ary));
+            return (T) new HashSet(Arrays.asList(ary));
         }
         if (clazz == SortedSet.class) {
-            return new TreeSet(Arrays.asList(ary));
+            return (T) new TreeSet(Arrays.asList(ary));
         }
 
         return asType((Object) ary, clazz);
@@ -6122,9 +6125,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return a Proxy of the given type which wraps this closure.
      * @since 1.0
      */
-    public static Object asType(Closure cl, Class clazz) {
+    @SuppressWarnings("unchecked")
+    public static <T> T asType(Closure cl, Class<T> clazz) {
         if (clazz.isInterface() && !(clazz.isInstance(cl))) {
-            return Proxy.newProxyInstance(
+            return (T) Proxy.newProxyInstance(
                     clazz.getClassLoader(),
                     new Class[]{clazz},
                     new ConvertedClosure(cl));
@@ -6133,7 +6137,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             return asType((Object) cl, clazz);
         } catch (GroovyCastException ce) {
             try {
-                return ProxyGenerator.INSTANCE.instantiateAggregateFromBaseClass(cl, clazz);
+                return (T) ProxyGenerator.INSTANCE.instantiateAggregateFromBaseClass(cl, clazz);
             } catch (GroovyRuntimeException cause) {
                 throw new GroovyCastException("Error casting closure to " + clazz.getName() +
                         ", Reason: " + cause.getMessage());
@@ -6151,9 +6155,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return a Proxy of the given type, which defers calls to this map's elements.
      * @since 1.0
      */
-    public static Object asType(Map map, Class clazz) {
+    @SuppressWarnings("unchecked")
+    public static <T> T asType(Map map, Class<T> clazz) {
         if (!(clazz.isInstance(map)) && clazz.isInterface()) {
-            return Proxy.newProxyInstance(
+            return (T) Proxy.newProxyInstance(
                     clazz.getClassLoader(),
                     new Class[]{clazz},
                     new ConvertedMap(map));
@@ -6162,7 +6167,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             return asType((Object) map, clazz);
         } catch (GroovyCastException ce) {
             try {
-                return ProxyGenerator.INSTANCE.instantiateAggregateFromBaseClass(map, clazz);
+                return (T) ProxyGenerator.INSTANCE.instantiateAggregateFromBaseClass(map, clazz);
             } catch (GroovyRuntimeException cause) {
                 throw new GroovyCastException("Error casting map to " + clazz.getName() +
                         ", Reason: " + cause.getMessage());
@@ -6776,7 +6781,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return a flattened Collection
      * @since 1.6.0
      */
-    public static Collection flatten(Collection self) {
+    public static Collection<?> flatten(Collection<?> self) {
         return flatten(self, createSimilarCollection(self));
     }
 
@@ -6914,21 +6919,21 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return a flattened Collection
      * @since 1.6.0
      */
-    public static Collection flatten(Collection self, Closure flattenUsing) {
+    public static <T> Collection<T> flatten(Collection<T> self, Closure<? extends T> flattenUsing) {
         return flatten(self, createSimilarCollection(self), flattenUsing);
     }
 
-    private static Collection flatten(Collection elements, Collection addTo, Closure flattenUsing) {
+    private static <T> Collection<T> flatten(Collection elements, Collection<T> addTo, Closure<? extends T> flattenUsing) {
         for (Object element : elements) {
             if (element instanceof Collection) {
                 flatten((Collection) element, addTo, flattenUsing);
             } else if (element != null && element.getClass().isArray()) {
                 flatten(DefaultTypeTransformation.arrayAsCollection(element), addTo, flattenUsing);
             } else {
-                Object flattened = flattenUsing.call(new Object[]{element});
+                T flattened = flattenUsing.call(new Object[]{element});
                 boolean returnedSelf = flattened == element;
                 if (!returnedSelf && flattened instanceof Collection) {
-                    List list = toList((Collection)flattened);
+                    List<?> list = toList((Collection<?>) flattened);
                     if (list.size() == 1 && list.get(0) == element) {
                         returnedSelf = true;
                     }
@@ -8095,7 +8100,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Implements the getAt(int) method for primitve type arrays.
+     * Implements the getAt(int) method for primitive type arrays.
      *
      * @param self an array object
      * @param idx  the index of interest
@@ -8107,7 +8112,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Implements the getAt(Range) method for primitve type arrays.
+     * Implements the getAt(Range) method for primitive type arrays.
      *
      * @param self  an array object
      * @param range the range of indices of interest
@@ -8124,7 +8129,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Implements the getAt(Collection) method for primitve type arrays.  Each
+     * Implements the getAt(Collection) method for primitive type arrays.  Each
      * value in the collection argument is assumed to be a valid array index.
      * The value at each index is then added to a list which is returned.
      *
@@ -8149,7 +8154,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Implements the setAt(int idx) method for primitve type arrays.
+     * Implements the setAt(int idx) method for primitive type arrays.
      *
      * @param self     an object
      * @param idx      the index of interest
@@ -8381,7 +8386,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see java.util.StringTokenizer#StringTokenizer(java.lang.String, java.lang.String)
      * @since 1.0
      */
-    public static List tokenize(String self, String token) {
+    @SuppressWarnings("unchecked")
+    public static List<String> tokenize(String self, String token) {
         return InvokerHelper.asList(new StringTokenizer(self, token));
     }
 
@@ -8399,7 +8405,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see java.util.StringTokenizer#StringTokenizer(java.lang.String, java.lang.String)
      * @since 1.7.2
      */
-    public static List tokenize(String self, Character token) {
+    public static List<String> tokenize(String self, Character token) {
         return tokenize(self, token.toString());
     }
 
@@ -8411,7 +8417,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see java.util.StringTokenizer#StringTokenizer(java.lang.String)
      * @since 1.0
      */
-    public static List tokenize(String self) {
+    @SuppressWarnings("unchecked")
+    public static List<String> tokenize(String self) {
         return InvokerHelper.asList(new StringTokenizer(self));
     }
 
@@ -10553,15 +10560,16 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return an instance of the given type
      * @since 1.0
      */
-    public static Object asType(Number self, Class c) {
+    @SuppressWarnings("unchecked")
+    public static <T> T asType(Number self, Class<T> c) {
         if (c == BigDecimal.class) {
-            return toBigDecimal(self);
+            return (T) toBigDecimal(self);
         } else if (c == BigInteger.class) {
-            return toBigInteger(self);
+            return (T) toBigInteger(self);
         } else if (c == Double.class) {
-            return toDouble(self);
+            return (T) toDouble(self);
         } else if (c == Float.class) {
-            return toFloat(self);
+            return (T) toFloat(self);
         }
         return asType((Object) self, c);
     }
@@ -10670,7 +10678,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #withStream(java.io.OutputStream, groovy.lang.Closure)
      * @since 1.5.0
      */
-    public static Object withObjectOutputStream(File file, Closure closure) throws IOException {
+    public static <T> T withObjectOutputStream(File file, Closure<T> closure) throws IOException {
         return withStream(newObjectOutputStream(file), closure);
     }
 
@@ -10686,7 +10694,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #withStream(java.io.OutputStream, groovy.lang.Closure)
      * @since 1.5.0
      */
-    public static Object withObjectOutputStream(OutputStream outputStream, Closure closure) throws IOException {
+    public static <T> T withObjectOutputStream(OutputStream outputStream, Closure<T> closure) throws IOException {
         return withStream(newObjectOutputStream(outputStream), closure);
     }
 
@@ -10799,7 +10807,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #withStream(java.io.InputStream, groovy.lang.Closure)
      * @since 1.5.2
      */
-    public static Object withObjectInputStream(File file, Closure closure) throws IOException {
+    public static <T> T withObjectInputStream(File file, Closure<T> closure) throws IOException {
         return withStream(newObjectInputStream(file), closure);
     }
 
@@ -10815,7 +10823,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #withStream(java.io.InputStream, groovy.lang.Closure)
      * @since 1.5.2
      */
-    public static Object withObjectInputStream(File file, ClassLoader classLoader, Closure closure) throws IOException {
+    public static <T> T withObjectInputStream(File file, ClassLoader classLoader, Closure<T> closure) throws IOException {
         return withStream(newObjectInputStream(file, classLoader), closure);
     }
 
@@ -10830,7 +10838,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #withStream(java.io.InputStream, groovy.lang.Closure)
      * @since 1.5.0
      */
-    public static Object withObjectInputStream(InputStream inputStream, Closure closure) throws IOException {
+    public static <T> T withObjectInputStream(InputStream inputStream, Closure<T> closure) throws IOException {
         return withStream(newObjectInputStream(inputStream), closure);
     }
 
@@ -10846,7 +10854,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #withStream(java.io.InputStream, groovy.lang.Closure)
      * @since 1.5.0
      */
-    public static Object withObjectInputStream(InputStream inputStream, ClassLoader classLoader, Closure closure) throws IOException {
+    public static <T> T withObjectInputStream(InputStream inputStream, ClassLoader classLoader, Closure<T> closure) throws IOException {
         return withStream(newObjectInputStream(inputStream, classLoader), closure);
     }
 
@@ -10862,7 +10870,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #eachLine(java.lang.String, int, groovy.lang.Closure)
      * @since 1.5.5
      */
-    public static Object eachLine(String self, Closure closure) throws IOException {
+    public static <T> T eachLine(String self, Closure<T> closure) throws IOException {
         return eachLine(self, 0, closure);
     }
 
@@ -10878,15 +10886,14 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @throws java.io.IOException if an error occurs
      * @since 1.5.7
      */
-    public static Object eachLine(String self, int firstLine, Closure closure) throws IOException {
+    public static <T> T eachLine(String self, int firstLine, Closure<T> closure) throws IOException {
         int count = firstLine;
-        String line = null;
-        for (Object o : readLines(self)) {
-            line = (String) o;
-            callClosureForLine(closure, line, count);
+        T result = null;
+        for (String line : readLines(self)) {
+            result = callClosureForLine(closure, line, count);
             count++;
         }
-        return line;
+        return result;
     }
 
     /**
@@ -10901,7 +10908,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #eachLine(java.io.File, int, groovy.lang.Closure)
      * @since 1.5.5
      */
-    public static Object eachLine(File self, Closure closure) throws IOException {
+    public static <T> T eachLine(File self, Closure<T> closure) throws IOException {
         return eachLine(self, 1, closure);
     }
 
@@ -10918,7 +10925,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #eachLine(java.io.File, java.lang.String, int, groovy.lang.Closure)
      * @since 1.6.8
      */
-    public static Object eachLine(File self, String charset, Closure closure) throws IOException {
+    public static <T> T eachLine(File self, String charset, Closure<T> closure) throws IOException {
         return eachLine(self, charset, 1, closure);
     }
 
@@ -10935,7 +10942,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #eachLine(java.io.Reader, int, groovy.lang.Closure)
      * @since 1.5.7
      */
-    public static Object eachLine(File self, int firstLine, Closure closure) throws IOException {
+    public static <T> T eachLine(File self, int firstLine, Closure<T> closure) throws IOException {
         return eachLine(newReader(self), firstLine, closure);
     }
 
@@ -10953,7 +10960,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #eachLine(java.io.Reader, int, groovy.lang.Closure)
      * @since 1.6.8
      */
-    public static Object eachLine(File self, String charset, int firstLine, Closure closure) throws IOException {
+    public static <T> T eachLine(File self, String charset, int firstLine, Closure<T> closure) throws IOException {
         return eachLine(newReader(self, charset), firstLine, closure);
     }
 
@@ -10969,7 +10976,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #eachLine(java.io.InputStream, java.lang.String, int, groovy.lang.Closure)
      * @since 1.5.5
      */
-    public static Object eachLine(InputStream stream, String charset, Closure closure) throws IOException {
+    public static <T> T eachLine(InputStream stream, String charset, Closure<T> closure) throws IOException {
         return eachLine(stream, charset, 1, closure);
     }
 
@@ -10986,7 +10993,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #eachLine(java.io.Reader, int, groovy.lang.Closure)
      * @since 1.5.7
      */
-    public static Object eachLine(InputStream stream, String charset, int firstLine, Closure closure) throws IOException {
+    public static <T> T eachLine(InputStream stream, String charset, int firstLine, Closure<T> closure) throws IOException {
         return eachLine(new InputStreamReader(stream, charset), firstLine, closure);
     }
 
@@ -11001,7 +11008,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #eachLine(java.io.InputStream, int, groovy.lang.Closure)
      * @since 1.5.6
      */
-    public static Object eachLine(InputStream stream, Closure closure) throws IOException {
+    public static <T> T eachLine(InputStream stream, Closure<T> closure) throws IOException {
         return eachLine(stream, 1, closure);
     }
 
@@ -11017,7 +11024,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #eachLine(java.io.Reader, int, groovy.lang.Closure)
      * @since 1.5.7
      */
-    public static Object eachLine(InputStream stream, int firstLine, Closure closure) throws IOException {
+    public static <T> T eachLine(InputStream stream, int firstLine, Closure<T> closure) throws IOException {
         return eachLine(new InputStreamReader(stream), firstLine, closure);
     }
 
@@ -11032,7 +11039,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #eachLine(java.net.URL, int, groovy.lang.Closure)
      * @since 1.5.6
      */
-    public static Object eachLine(URL url, Closure closure) throws IOException {
+    public static <T> T eachLine(URL url, Closure<T> closure) throws IOException {
         return eachLine(url, 1, closure);
     }
 
@@ -11048,7 +11055,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #eachLine(java.io.InputStream, int, groovy.lang.Closure)
      * @since 1.5.7
      */
-    public static Object eachLine(URL url, int firstLine, Closure closure) throws IOException {
+    public static <T> T eachLine(URL url, int firstLine, Closure<T> closure) throws IOException {
         return eachLine(url.openConnection().getInputStream(), firstLine, closure);
     }
 
@@ -11064,7 +11071,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #eachLine(java.net.URL, java.lang.String, int, groovy.lang.Closure)
      * @since 1.5.6
      */
-    public static Object eachLine(URL url, String charset, Closure closure) throws IOException {
+    public static <T> T eachLine(URL url, String charset, Closure<T> closure) throws IOException {
         return eachLine(url, charset, 1, closure);
     }
 
@@ -11081,7 +11088,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #eachLine(java.io.Reader, int, groovy.lang.Closure)
      * @since 1.5.7
      */
-    public static Object eachLine(URL url, String charset, int firstLine, Closure closure) throws IOException {
+    public static <T> T eachLine(URL url, String charset, int firstLine, Closure<T> closure) throws IOException {
         return eachLine(newReader(url, charset), firstLine, closure);
     }
 
@@ -11097,7 +11104,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #eachLine(java.io.Reader, int, groovy.lang.Closure)
      * @since 1.5.6
      */
-    public static Object eachLine(Reader self, Closure closure) throws IOException {
+    public static <T> T eachLine(Reader self, Closure<T> closure) throws IOException {
         return eachLine(self, 1, closure);
     }
 
@@ -11113,10 +11120,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @throws IOException if an IOException occurs.
      * @since 1.5.7
      */
-    public static Object eachLine(Reader self, int firstLine, Closure closure) throws IOException {
+    public static <T> T eachLine(Reader self, int firstLine, Closure<T> closure) throws IOException {
         BufferedReader br;
         int count = firstLine;
-        Object result = null;
+        T result = null;
 
         if (self instanceof BufferedReader)
             br = (BufferedReader) self;
@@ -11159,7 +11166,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #splitEachLine(java.io.Reader, java.lang.String, groovy.lang.Closure)
      * @since 1.5.5
      */
-    public static Object splitEachLine(File self, String regex, Closure closure) throws IOException {
+    public static <T> T splitEachLine(File self, String regex, Closure<T> closure) throws IOException {
         return splitEachLine(newReader(self), regex, closure);
     }
 
@@ -11178,7 +11185,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #splitEachLine(java.io.Reader, java.util.regex.Pattern, groovy.lang.Closure)
      * @since 1.6.8
      */
-    public static Object splitEachLine(File self, Pattern pattern, Closure closure) throws IOException {
+    public static <T> T splitEachLine(File self, Pattern pattern, Closure<T> closure) throws IOException {
         return splitEachLine(newReader(self), pattern, closure);
     }
 
@@ -11199,7 +11206,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #splitEachLine(java.io.Reader, java.lang.String, groovy.lang.Closure)
      * @since 1.6.8
      */
-    public static Object splitEachLine(File self, String regex, String charset, Closure closure) throws IOException {
+    public static <T> T splitEachLine(File self, String regex, String charset, Closure<T> closure) throws IOException {
         return splitEachLine(newReader(self, charset), regex, closure);
     }
 
@@ -11219,7 +11226,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #splitEachLine(java.io.Reader, java.util.regex.Pattern, groovy.lang.Closure)
      * @since 1.6.8
      */
-    public static Object splitEachLine(File self, Pattern pattern, String charset, Closure closure) throws IOException {
+    public static <T> T splitEachLine(File self, Pattern pattern, String charset, Closure<T> closure) throws IOException {
         return splitEachLine(newReader(self, charset), pattern, closure);
     }
 
@@ -11239,7 +11246,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #splitEachLine(java.io.Reader, java.lang.String, groovy.lang.Closure)
      * @since 1.6.8
      */
-    public static Object splitEachLine(URL self, String regex, Closure closure) throws IOException {
+    public static <T> T splitEachLine(URL self, String regex, Closure<T> closure) throws IOException {
         return splitEachLine(newReader(self), regex, closure);
     }
 
@@ -11258,7 +11265,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #splitEachLine(java.io.Reader, java.util.regex.Pattern, groovy.lang.Closure)
      * @since 1.6.8
      */
-    public static Object splitEachLine(URL self, Pattern pattern, Closure closure) throws IOException {
+    public static <T> T splitEachLine(URL self, Pattern pattern, Closure<T> closure) throws IOException {
         return splitEachLine(newReader(self), pattern, closure);
     }
 
@@ -11279,7 +11286,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #splitEachLine(java.io.Reader, java.lang.String, groovy.lang.Closure)
      * @since 1.6.8
      */
-    public static Object splitEachLine(URL self, String regex, String charset, Closure closure) throws IOException {
+    public static <T> T splitEachLine(URL self, String regex, String charset, Closure<T> closure) throws IOException {
         return splitEachLine(newReader(self, charset), regex, closure);
     }
 
@@ -11299,7 +11306,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #splitEachLine(java.io.Reader, java.util.regex.Pattern, groovy.lang.Closure)
      * @since 1.6.8
      */
-    public static Object splitEachLine(URL self, Pattern pattern, String charset, Closure closure) throws IOException {
+    public static <T> T splitEachLine(URL self, Pattern pattern, String charset, Closure<T> closure) throws IOException {
         return splitEachLine(newReader(self, charset), pattern, closure);
     }
 
@@ -11328,7 +11335,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see java.lang.String#split(java.lang.String)
      * @since 1.5.5
      */
-    public static Object splitEachLine(Reader self, String regex, Closure closure) throws IOException {
+    public static <T> T splitEachLine(Reader self, String regex, Closure<T> closure) throws IOException {
         return splitEachLine(self, Pattern.compile(regex), closure);
     }
 
@@ -11357,9 +11364,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see java.lang.String#split(java.lang.String)
      * @since 1.6.8
      */
-    public static Object splitEachLine(Reader self, Pattern pattern, Closure closure) throws IOException {
+    public static <T> T splitEachLine(Reader self, Pattern pattern, Closure<T> closure) throws IOException {
         BufferedReader br;
-        Object result = null;
+        T result = null;
 
         if (self instanceof BufferedReader)
             br = (BufferedReader) self;
@@ -11402,7 +11409,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #splitEachLine(java.io.Reader, java.lang.String, groovy.lang.Closure)
      * @since 1.5.5
      */
-    public static Object splitEachLine(InputStream stream, String regex, String charset, Closure closure) throws IOException {
+    public static <T> T splitEachLine(InputStream stream, String regex, String charset, Closure<T> closure) throws IOException {
         return splitEachLine(new BufferedReader(new InputStreamReader(stream, charset)), regex, closure);
     }
 
@@ -11421,7 +11428,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #splitEachLine(java.io.Reader, java.util.regex.Pattern, groovy.lang.Closure)
      * @since 1.6.8
      */
-    public static Object splitEachLine(InputStream stream, Pattern pattern, String charset, Closure closure) throws IOException {
+    public static <T> T splitEachLine(InputStream stream, Pattern pattern, String charset, Closure<T> closure) throws IOException {
         return splitEachLine(new BufferedReader(new InputStreamReader(stream, charset)), pattern, closure);
     }
 
@@ -11439,7 +11446,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #splitEachLine(java.io.Reader, java.lang.String, groovy.lang.Closure)
      * @since 1.5.6
      */
-    public static Object splitEachLine(InputStream stream, String regex, Closure closure) throws IOException {
+    public static <T> T splitEachLine(InputStream stream, String regex, Closure<T> closure) throws IOException {
         return splitEachLine(new BufferedReader(new InputStreamReader(stream)), regex, closure);
     }
 
@@ -11456,7 +11463,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #splitEachLine(java.io.Reader, java.util.regex.Pattern, groovy.lang.Closure)
      * @since 1.6.8
      */
-    public static Object splitEachLine(InputStream stream, Pattern pattern, Closure closure) throws IOException {
+    public static <T> T splitEachLine(InputStream stream, Pattern pattern, Closure<T> closure) throws IOException {
         return splitEachLine(new BufferedReader(new InputStreamReader(stream)), pattern, closure);
     }
 
@@ -11474,7 +11481,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see java.lang.String#split(java.lang.String)
      * @since 1.5.5
      */
-    public static Object splitEachLine(String self, String regex, Closure closure) throws IOException {
+    public static <T> T splitEachLine(String self, String regex, Closure<T> closure) throws IOException {
         return splitEachLine(self, Pattern.compile(regex), closure);
     }
 
@@ -11491,9 +11498,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see java.util.regex.Pattern#split(java.lang.CharSequence)
      * @since 1.6.8
      */
-    public static Object splitEachLine(String self, Pattern pattern, Closure closure) throws IOException {
+    public static <T> T splitEachLine(String self, Pattern pattern, Closure<T> closure) throws IOException {
         final List<String> list = readLines(self);
-        Object result = null;
+        T result = null;
         for (String line : list) {
             List vals = Arrays.asList(pattern.split(line));
             result = closure.call(vals);
@@ -12423,11 +12430,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static void traverse(final File self, final Map<String, Object> options, final Closure closure)
             throws FileNotFoundException, IllegalArgumentException {
-        Number maxDepthNumber = (Number) asType(options.remove("maxDepth"), Number.class);
+        Number maxDepthNumber = asType(options.remove("maxDepth"), Number.class);
         int maxDepth = maxDepthNumber == null ? -1 : maxDepthNumber.intValue();
-        Boolean visitRoot = (Boolean) asType(get(options, "visitRoot", false), Boolean.class);
-        Boolean preRoot = (Boolean) asType(get(options, "preRoot", false), Boolean.class);
-        Boolean postRoot = (Boolean) asType(get(options, "postRoot", false), Boolean.class);
+        Boolean visitRoot = asType(get(options, "visitRoot", false), Boolean.class);
+        Boolean preRoot = asType(get(options, "preRoot", false), Boolean.class);
+        Boolean postRoot = asType(get(options, "postRoot", false), Boolean.class);
         final Closure pre = (Closure) options.get("preDir");
         final Closure post = (Closure) options.get("postDir");
         final FileType type = (FileType) options.get("type");
@@ -12478,7 +12485,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         }
         final MetaClass filterMC = filterToUse == null ? null : InvokerHelper.getMetaClass(filterToUse);
         final MetaClass excludeMC = excludeFilterToUse == null ? null : InvokerHelper.getMetaClass(excludeFilterToUse);
-        boolean included = filterToUse == null || (filterToUse != null && DefaultTypeTransformation.castToBoolean(filterMC.invokeMethod(filterToUse, "isCase", filterParam)));
+        boolean included = filterToUse == null || DefaultTypeTransformation.castToBoolean(filterMC.invokeMethod(filterToUse, "isCase", filterParam));
         boolean excluded = excludeFilterToUse != null && DefaultTypeTransformation.castToBoolean(excludeMC.invokeMethod(excludeFilterToUse, "isCase", excludeParam));
         return included && !excluded;
     }
@@ -12833,7 +12840,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @throws IOException if an IOException occurs.
      * @since 1.5.2
      */
-    public static Object withReader(File file, Closure closure) throws IOException {
+    public static <T> T withReader(File file, Closure<T> closure) throws IOException {
         return withReader(newReader(file), closure);
     }
 
@@ -12849,7 +12856,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @throws IOException if an IOException occurs.
      * @since 1.6.0
      */
-    public static Object withReader(File file, String charset, Closure closure) throws IOException {
+    public static <T> T withReader(File file, String charset, Closure<T> closure) throws IOException {
         return withReader(newReader(file, charset), closure);
     }
 
@@ -12918,7 +12925,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #withStream(java.io.InputStream, groovy.lang.Closure)
      * @since 1.5.2
      */
-    public static Object withInputStream(URL url, Closure closure) throws IOException {
+    public static <T> T withInputStream(URL url, Closure<T> closure) throws IOException {
         return withStream(newInputStream(url), closure);
     }
 
@@ -12933,7 +12940,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #withStream(java.io.OutputStream, groovy.lang.Closure)
      * @since 1.5.2
      */
-    public static Object withDataOutputStream(File file, Closure closure) throws IOException {
+    public static <T> T withDataOutputStream(File file, Closure<T> closure) throws IOException {
         return withStream(newDataOutputStream(file), closure);
     }
 
@@ -12948,7 +12955,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #withStream(java.io.InputStream, groovy.lang.Closure)
      * @since 1.5.2
      */
-    public static Object withDataInputStream(File file, Closure closure) throws IOException {
+    public static <T> T withDataInputStream(File file, Closure<T> closure) throws IOException {
         return withStream(newDataInputStream(file), closure);
     }
 
@@ -13047,7 +13054,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @throws IOException if an IOException occurs.
      * @since 1.5.2
      */
-    public static Object withWriter(File file, Closure closure) throws IOException {
+    public static <T> T withWriter(File file, Closure<T> closure) throws IOException {
         return withWriter(newWriter(file), closure);
     }
 
@@ -13063,7 +13070,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @throws IOException if an IOException occurs.
      * @since 1.5.2
      */
-    public static Object withWriter(File file, String charset, Closure closure) throws IOException {
+    public static <T> T withWriter(File file, String charset, Closure<T> closure) throws IOException {
         return withWriter(newWriter(file, charset), closure);
     }
 
@@ -13079,7 +13086,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @throws IOException if an IOException occurs.
      * @since 1.5.2
      */
-    public static Object withWriterAppend(File file, String charset, Closure closure) throws IOException {
+    public static <T> T withWriterAppend(File file, String charset, Closure<T> closure) throws IOException {
         return withWriter(newWriter(file, charset, true), closure);
     }
 
@@ -13093,7 +13100,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @throws IOException if an IOException occurs.
      * @since 1.5.2
      */
-    public static Object withWriterAppend(File file, Closure closure) throws IOException {
+    public static <T> T withWriterAppend(File file, Closure<T> closure) throws IOException {
         return withWriter(newWriter(file, true), closure);
     }
 
@@ -13146,7 +13153,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @throws IOException if an IOException occurs.
      * @since 1.5.2
      */
-    public static Object withPrintWriter(File file, Closure closure) throws IOException {
+    public static <T> T withPrintWriter(File file, Closure<T> closure) throws IOException {
         return withWriter(newPrintWriter(file), closure);
     }
 
@@ -13162,7 +13169,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @throws IOException if an IOException occurs.
      * @since 1.5.2
      */
-    public static Object withPrintWriter(File file, String charset, Closure closure) throws IOException {
+    public static <T> T withPrintWriter(File file, String charset, Closure<T> closure) throws IOException {
         return withWriter(newPrintWriter(file, charset), closure);
     }
 
@@ -13177,7 +13184,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @throws IOException if an IOException occurs.
      * @since 1.6.0
      */
-    public static Object withPrintWriter(Writer writer, Closure closure) throws IOException {
+    public static <T> T withPrintWriter(Writer writer, Closure<T> closure) throws IOException {
         return withWriter(newPrintWriter(writer), closure);
     }
 
@@ -13191,9 +13198,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @throws IOException if an IOException occurs.
      * @since 1.5.2
      */
-    public static Object withWriter(Writer writer, Closure closure) throws IOException {
+    public static <T> T withWriter(Writer writer, Closure<T> closure) throws IOException {
         try {
-            Object result = closure.call(writer);
+            T result = closure.call(writer);
 
             try {
                 writer.flush();
@@ -13219,9 +13226,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @throws IOException if an IOException occurs.
      * @since 1.5.2
      */
-    public static Object withReader(Reader reader, Closure closure) throws IOException {
+    public static <T> T withReader(Reader reader, Closure<T> closure) throws IOException {
         try {
-            Object result = closure.call(reader);
+            T result = closure.call(reader);
 
             Reader temp = reader;
             reader = null;
@@ -13243,9 +13250,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @throws IOException if an IOException occurs.
      * @since 1.5.2
      */
-    public static Object withStream(InputStream stream, Closure closure) throws IOException {
+    public static <T> T withStream(InputStream stream, Closure<T> closure) throws IOException {
         try {
-            Object result = closure.call(stream);
+            T result = closure.call(stream);
 
             InputStream temp = stream;
             stream = null;
@@ -13267,7 +13274,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @throws IOException if an IOException occurs.
      * @since 1.5.2
      */
-    public static Object withReader(URL url, Closure closure) throws IOException {
+    public static <T> T withReader(URL url, Closure<T> closure) throws IOException {
         return withReader(url.openConnection().getInputStream(), closure);
     }
 
@@ -13282,7 +13289,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @throws IOException if an IOException occurs.
      * @since 1.5.6
      */
-    public static Object withReader(URL url, String charset, Closure closure) throws IOException {
+    public static <T> T withReader(URL url, String charset, Closure<T> closure) throws IOException {
         return withReader(url.openConnection().getInputStream(), charset, closure);
     }
 
@@ -13298,7 +13305,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @throws IOException if an IOException occurs.
      * @since 1.5.2
      */
-    public static Object withReader(InputStream in, Closure closure) throws IOException {
+    public static <T> T withReader(InputStream in, Closure<T> closure) throws IOException {
         return withReader(new InputStreamReader(in), closure);
     }
 
@@ -13315,7 +13322,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @throws IOException if an IOException occurs.
      * @since 1.5.6
      */
-    public static Object withReader(InputStream in, String charset, Closure closure) throws IOException {
+    public static <T> T withReader(InputStream in, String charset, Closure<T> closure) throws IOException {
         return withReader(new InputStreamReader(in, charset), closure);
     }
 
@@ -13330,7 +13337,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #withWriter(java.io.Writer, groovy.lang.Closure)
      * @since 1.5.2
      */
-    public static Object withWriter(OutputStream stream, Closure closure) throws IOException {
+    public static <T> T withWriter(OutputStream stream, Closure<T> closure) throws IOException {
         return withWriter(new OutputStreamWriter(stream), closure);
     }
 
@@ -13346,7 +13353,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #withWriter(java.io.Writer, groovy.lang.Closure)
      * @since 1.5.2
      */
-    public static Object withWriter(OutputStream stream, String charset, Closure closure) throws IOException {
+    public static <T> T withWriter(OutputStream stream, String charset, Closure<T> closure) throws IOException {
         return withWriter(new OutputStreamWriter(stream, charset), closure);
     }
 
@@ -13360,9 +13367,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @throws IOException if an IOException occurs.
      * @since 1.5.2
      */
-    public static Object withStream(OutputStream os, Closure closure) throws IOException {
+    public static <T> T withStream(OutputStream os, Closure<T> closure) throws IOException {
         try {
-            Object result = closure.call(os);
+            T result = closure.call(os);
             os.flush();
 
             OutputStream temp = os;
@@ -13974,11 +13981,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @throws IOException if an IOException occurs.
      * @since 1.5.2
      */
-    public static Object withStreams(Socket socket, Closure closure) throws IOException {
+    public static <T> T withStreams(Socket socket, Closure<T> closure) throws IOException {
         InputStream input = socket.getInputStream();
         OutputStream output = socket.getOutputStream();
         try {
-            Object result = closure.call(new Object[]{input, output});
+            T result = closure.call(new Object[]{input, output});
 
             InputStream temp1 = input;
             input = null;
@@ -14005,13 +14012,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @throws IOException if an IOException occurs.
      * @since 1.5.0
      */
-    public static Object withObjectStreams(Socket socket, Closure closure) throws IOException {
+    public static <T> T withObjectStreams(Socket socket, Closure<T> closure) throws IOException {
         InputStream input = socket.getInputStream();
         OutputStream output = socket.getOutputStream();
         ObjectOutputStream oos = new ObjectOutputStream(output);
         ObjectInputStream ois = new ObjectInputStream(input);
         try {
-            Object result = closure.call(new Object[]{ois, oos});
+            T result = closure.call(new Object[]{ois, oos});
 
             InputStream temp1 = ois;
             ois = null;
@@ -14115,9 +14122,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the converted object
      * @since 1.0
      */
-    public static Object asType(File f, Class c) {
+    @SuppressWarnings("unchecked")
+    public static <T> T asType(File f, Class<T> c) {
         if (c == Writable.class) {
-            return asWritable(f);
+            return (T) asWritable(f);
         }
         return asType((Object) f, c);
     }
@@ -14190,9 +14198,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the converted object
      * @since 1.5.0
      */
-    public static Object asType(GString self, Class c) {
+    @SuppressWarnings("unchecked")
+    public static <T> T asType(GString self, Class<T> c) {
         if (c == File.class) {
-            return new File(self.toString());
+            return (T) new File(self.toString());
         } else if (Number.class.isAssignableFrom(c)) {
             return asType(self.toString(), c);
         }
@@ -14226,31 +14235,32 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the converted object
      * @since 1.0
      */
-    public static Object asType(String self, Class c) {
+    @SuppressWarnings("unchecked")
+    public static <T> T asType(String self, Class<T> c) {
         if (c == List.class) {
-            return toList(self);
+            return (T) toList(self);
         } else if (c == BigDecimal.class) {
-            return toBigDecimal(self);
+            return (T) toBigDecimal(self);
         } else if (c == BigInteger.class) {
-            return toBigInteger(self);
+            return (T) toBigInteger(self);
         } else if (c == Long.class || c == Long.TYPE) {
-            return toLong(self);
+            return (T) toLong(self);
         } else if (c == Integer.class || c == Integer.TYPE) {
-            return toInteger(self);
+            return (T) toInteger(self);
         } else if (c == Short.class || c == Short.TYPE) {
-            return toShort(self);
+            return (T) toShort(self);
         } else if (c == Byte.class || c == Byte.TYPE) {
-            return Byte.valueOf(self.trim());
+            return (T) Byte.valueOf(self.trim());
         } else if (c == Character.class || c == Character.TYPE) {
-            return toCharacter(self);
+            return (T) toCharacter(self);
         } else if (c == Double.class || c == Double.TYPE) {
-            return toDouble(self);
+            return (T) toDouble(self);
         } else if (c == Float.class || c == Float.TYPE) {
-            return toFloat(self);
+            return (T) toFloat(self);
         } else if (c == File.class) {
-            return new File(self);
+            return (T) new File(self);
         } else if (DefaultTypeTransformation.isEnumSubclass(c)) {
-            return InvokerHelper.invokeMethod(c, "valueOf", new Object[]{ self });
+            return (T) InvokerHelper.invokeMethod(c, "valueOf", new Object[]{ self });
         }
         return asType((Object) self, c);
     }
@@ -14635,13 +14645,14 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the resulting object
      * @since 1.0
      */
-    public static Object asType(Object obj, Class type) {
+    @SuppressWarnings("unchecked")
+    public static <T> T asType(Object obj, Class<T> type) {
         if (String.class == type) {
-            return InvokerHelper.toString(obj);
+            return (T) InvokerHelper.toString(obj);
         }
 
         try {
-          return DefaultTypeTransformation.castToType(obj, type);
+          return (T) DefaultTypeTransformation.castToType(obj, type);
         }
         catch (GroovyCastException e) {
             MetaClass mc = InvokerHelper.getMetaClass(obj);
@@ -14649,13 +14660,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                 ExpandoMetaClass emc = (ExpandoMetaClass) mc;
                 Object mixedIn = emc.castToMixedType(obj, type);
                 if (mixedIn != null)
-                  return mixedIn;
+                  return (T) mixedIn;
             }
             if (type.isInterface()) {
                 try {
                     List<Class> interfaces = new ArrayList<Class>();
                     interfaces.add(type);
-                    return ProxyGenerator.INSTANCE.instantiateDelegate(interfaces, obj);
+                    return (T) ProxyGenerator.INSTANCE.instantiateDelegate(interfaces, obj);
                 } catch (GroovyRuntimeException cause) {
                     // ignore
                 }
@@ -14672,8 +14683,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return a new instance of this class
      * @since 1.0
      */
+    @SuppressWarnings("unchecked")
     public static <T> T newInstance(Class<T> c) {
-        return (T)InvokerHelper.invokeConstructorOf(c, null);
+        return (T) InvokerHelper.invokeConstructorOf(c, null);
     }
 
     /**
@@ -14687,9 +14699,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return a new instance of this class.
      * @since 1.0
      */
+    @SuppressWarnings("unchecked")
     public static <T> T newInstance(Class<T> c, Object[] args) {
         if (args == null) args = new Object[]{null};
-        return (T)InvokerHelper.invokeConstructorOf(c, args);
+        return (T) InvokerHelper.invokeConstructorOf(c, args);
     }
 
 
@@ -14972,18 +14985,18 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                 found = false;
 
                 if (hasGroup(matcher)) {
-                   // are we using groups?
-                   // yes, so return the specified group as list
-                   List list = new ArrayList(matcher.groupCount());
-                   for (int i = 0; i <= matcher.groupCount(); i++) {
+                    // are we using groups?
+                    // yes, so return the specified group as list
+                    List<String> list = new ArrayList<String>(matcher.groupCount());
+                    for (int i = 0; i <= matcher.groupCount(); i++) {
                        list.add(matcher.group(i));
-                   }
-                   return list;
-               } else {
-                   // not using groups, so return the nth
-                   // occurrence of the pattern
-                return matcher.group();
-            }
+                    }
+                    return list;
+                } else {
+                    // not using groups, so return the nth
+                    // occurrence of the pattern
+                    return matcher.group();
+                 }
             }
 
             public void remove() {
@@ -15136,7 +15149,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see groovy.lang.MetaObjectProtocol#respondsTo(java.lang.Object, java.lang.String, java.lang.Object[])
      * @since 1.6.0
      */
-    public static List respondsTo(Object self, String name, Object[] argTypes) {
+    public static List<MetaMethod> respondsTo(Object self, String name, Object[] argTypes) {
         return InvokerHelper.getMetaClass(self).respondsTo(self, name, argTypes);
     }
 
@@ -15155,7 +15168,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see groovy.lang.MetaObjectProtocol#respondsTo(java.lang.Object, java.lang.String)
      * @since 1.6.1
      */
-    public static List respondsTo(Object self, String name) {
+    public static List<MetaMethod> respondsTo(Object self, String name) {
         return InvokerHelper.getMetaClass(self).respondsTo(self, name);
     }
 

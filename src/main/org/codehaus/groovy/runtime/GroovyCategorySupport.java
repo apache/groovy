@@ -89,7 +89,7 @@ public class GroovyCategorySupport {
             }
         }
 
-        private Object use(Class categoryClass, Closure closure) {
+        private <T> T use(Class categoryClass, Closure<T> closure) {
             newScope();
             try {
                 use(categoryClass);
@@ -99,7 +99,7 @@ public class GroovyCategorySupport {
             }
         }
 
-        public Object use(List<Class> categoryClasses, Closure closure) {
+        public <T> T use(List<Class> categoryClasses, Closure<T> closure) {
             newScope();
             try {
                 for (Class categoryClass : categoryClasses) {
@@ -200,7 +200,7 @@ public class GroovyCategorySupport {
      * @param closure the closure during which to make the category class methods available
      * @return the value returned from the closure
      */
-    public static Object use(Class categoryClass, Closure closure) {
+    public static <T> T use(Class categoryClass, Closure<T> closure) {
         return THREAD_INFO.getInfo().use(categoryClass, closure);
     }
 
@@ -211,7 +211,7 @@ public class GroovyCategorySupport {
      * @param closure the closure during which to make the category class methods available
      * @return the value returned from the closure
      */
-    public static Object use(List<Class> categoryClasses, Closure closure) {
+    public static <T> T use(List<Class> categoryClasses, Closure<T> closure) {
         return THREAD_INFO.getInfo().use(categoryClasses, closure);
     }
 

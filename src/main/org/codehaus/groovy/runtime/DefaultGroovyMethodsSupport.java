@@ -135,7 +135,7 @@ public class DefaultGroovyMethodsSupport {
 
     protected static Collection createSimilarOrDefaultCollection(Object object) {
         if (object instanceof Collection) {
-            return createSimilarCollection((Collection) object);
+            return createSimilarCollection((Collection<?>) object);
         }
         return new ArrayList();
     }
