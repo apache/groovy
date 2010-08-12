@@ -10404,13 +10404,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static Object eachLine(String self, int firstLine, Closure closure) throws IOException {
         int count = firstLine;
-        String line = null;
-        for (Object o : readLines(self)) {
-            line = (String) o;
-            callClosureForLine(closure, line, count);
+        Object result = null;
+        for (String line : readLines(self)) {
+            result = callClosureForLine(closure, line, count);
             count++;
         }
-        return line;
+        return result;
     }
 
     /**
