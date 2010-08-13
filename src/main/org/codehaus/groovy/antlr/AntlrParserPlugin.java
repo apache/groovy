@@ -2712,11 +2712,16 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         AST node = rootNode.getFirstChild();
         if (node == null || isType(INDEX_OP, node) || isType(ARRAY_DECLARATOR, node)) return basicType;
 
-        //TODO: recognize combinations of inner classes and generic types
-        if (isType(DOT, node)) return basicType;
-        node = node.getFirstChild();
-        if (node==null) return basicType;
-        return addTypeArguments(basicType, node);
+        if (!isType(DOT, node)) {
+        	node = node.getFirstChild();
+        	if (node == null) return basicType;
+        	return addTypeArguments(basicType, node);
+        } else {
+        	node = node.getFirstChild();
+        	while (node != null && !isType(TYPE_ARGUMENTS, node))
+        		node = node.getNextSibling();
+        	return node == null ? basicType : addTypeArguments(basicType, node);
+        }
     }
 
     private ClassNode addTypeArguments(ClassNode basicType, AST node) {
