@@ -329,6 +329,30 @@ class InnerClassTest extends CompilableTestSupport {
         def oc = new MyOuterClass4028()
         assert oc.foo().propMap.size() == 2
     }
+
+    void testThis0 () {
+        assertScript """
+class A {
+   static def field = 10
+   void main (a) {
+     new C ().r ()
+   }
+
+   class C {
+      def r () {
+        4.times {
+          new B(it).u (it)
+        }
+      }
+   }
+
+   class B {
+     def s
+     B (s) { this.s = s}
+     def u (i) { println i + s + field }
+   }}"""
+    }
+
 } 
 
 class MyOuterClass4028 {
