@@ -396,6 +396,11 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             public void visitReturnStatement(ReturnStatement statement) {
                 throw new RuntimeParserException("'return' is not allowed in object initializer",statement);
             }
+
+            @Override
+            public void visitClosureExpression(ClosureExpression expression) {
+                // retun is OK in closures even in initializers
+            }
         };
         for (Iterator iterator = init.iterator(); iterator.hasNext();) {
             Statement stm = (Statement) iterator.next();
