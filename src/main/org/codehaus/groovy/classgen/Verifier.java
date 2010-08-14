@@ -393,6 +393,11 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
 
     private void checkReturnInObjectInitializer(List init) {
         CodeVisitorSupport cvs = new CodeVisitorSupport() {
+            @Override
+            public void visitClosureExpression(ClosureExpression expression) {
+                // return is OK in closures in object initializers
+            }
+
             public void visitReturnStatement(ReturnStatement statement) {
                 throw new RuntimeParserException("'return' is not allowed in object initializer",statement);
             }
