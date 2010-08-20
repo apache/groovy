@@ -16,12 +16,9 @@
 
 package groovy.inspect.swingui
 
-import groovy.inspect.swingui.TreeNodeWithProperties
 import groovy.text.GStringTemplateEngine
 import groovy.text.Template
 import java.util.concurrent.atomic.AtomicBoolean
-import javax.swing.tree.DefaultMutableTreeNode
-import javax.swing.tree.TreeNode
 import org.codehaus.groovy.GroovyBugError
 import org.codehaus.groovy.classgen.BytecodeExpression
 import org.codehaus.groovy.classgen.GeneratorContext
@@ -36,44 +33,53 @@ import org.codehaus.groovy.control.CompilationFailedException
 
 /**
  * This class controls the conversion from a Groovy script as a String into
- * a Swing JTree representation of the AST in that script. The script itself
- * will be a TreeNode, and each class in the script will be a tree node. The
+ * a tree representation of the AST of that script. The script itself
+ * will be a tree node, and each class in the script will be a tree node. The
  * conversion creates tree nodes for any concrete class found within an AST
- * visitor. So, if a TreeNode should be shown once for each ASTNode and the parent
+ * visitor. So, if a tree node should be shown once for each ASTNode and the parent
  * types will not appear as nodes. Custom subclasses of expression types will
  * not appear in the tree.
  *
- * The String label of a TreeNode is defined by classname in AstBrowserProperties.properties.
+ * The String label of a tree node is defined by classname in AstBrowserProperties.properties.
  *
  * @author Hamlet D'Arcy 
+ * @author Roshan Dawrani
  */
 class ScriptToTreeNodeAdapter {
 
     def static Properties classNameToStringForm
     boolean showScriptFreeForm, showScriptClass
     final GroovyClassLoader classLoader
+    final AstBrowserNodeMaker nodeMaker
 
     static {
-        URL url =  ClassLoader.getSystemResource("groovy/inspect/swingui/AstBrowserProperties.groovy")
-
-        def config = new ConfigSlurper().parse(url)
-        classNameToStringForm = config.toProperties()
-
-        String home = System.getProperty("user.home")
-        if (home) {
-            File userFile = new File(home + File.separator + ".groovy/AstBrowserProperties.groovy")
-            if (userFile.exists()) {
-                def customConfig = new ConfigSlurper().parse(userFile.toURL())
-                // layer custom string forms onto defaults with putAll, do not replace them
-                classNameToStringForm.putAll(customConfig.toProperties())
+        try {
+            URL url =  ClassLoader.getSystemResource("groovy/inspect/swingui/AstBrowserProperties.groovy")
+    
+            def config = new ConfigSlurper().parse(url)
+            classNameToStringForm = config.toProperties()
+    
+            String home = System.getProperty("user.home")
+            if (home) {
+                File userFile = new File(home + File.separator + ".groovy/AstBrowserProperties.groovy")
+                if (userFile.exists()) {
+                    def customConfig = new ConfigSlurper().parse(userFile.toURL())
+                    // layer custom string forms onto defaults with putAll, do not replace them
+                    classNameToStringForm.putAll(customConfig.toProperties())
+                }
             }
+        }catch(ex) {
+            // on restricted environments like, such calls may fail, but that should not prevent the class
+            // from being loaded. Tree nodes can still get rendered with their simple names.
+            classNameToStringForm = new Properties()  
         }
     }
     
-    def ScriptToTreeNodeAdapter(classLoader, showScriptFreeForm, showScriptClass) {
-        this.classLoader = classLoader
+    def ScriptToTreeNodeAdapter(classLoader, showScriptFreeForm, showScriptClass, nodeMaker) {
+        this.classLoader = classLoader ?: new GroovyClassLoader(getClass().classLoader)
         this.showScriptFreeForm = showScriptFreeForm
         this.showScriptClass = showScriptClass
+        this.nodeMaker = nodeMaker
     }
 
     /**
@@ -84,7 +90,7 @@ class ScriptToTreeNodeAdapter {
      * @param compilePhase
      *      the int based CompilePhase to compile it to.
     */
-    public TreeNode compile(String script, int compilePhase) {
+    def compile(String script, int compilePhase) {
         def scriptName = "script" + System.currentTimeMillis() + ".groovy"
         GroovyCodeSource codeSource = new GroovyCodeSource(script, scriptName, "/groovy/script")
         CompilationUnit cu = new CompilationUnit(CompilerConfiguration.DEFAULT, codeSource.codeSource, classLoader)
@@ -94,21 +100,21 @@ class ScriptToTreeNodeAdapter {
         try {
             cu.compile(compilePhase)
         } catch (CompilationFailedException cfe) {
-            operation.root.add(new DefaultMutableTreeNode("Unable to produce AST for this phase due to earlier compilation error:"))
+            operation.root.add(nodeMaker.makeNode("Unable to produce AST for this phase due to earlier compilation error:"))
             cfe.message.eachLine {
-                operation.root.add(new DefaultMutableTreeNode(it))
+                operation.root.add(nodeMaker.makeNode(it))
             }
-            operation.root.add(new DefaultMutableTreeNode("Fix the above error(s) and then press Refresh"))
+            operation.root.add(nodeMaker.makeNode("Fix the above error(s) and then press Refresh"))
         } catch (Throwable t) {
-            operation.root.add(new DefaultMutableTreeNode("Unable to produce AST for this phase due to an error:"))
-            operation.root.add(new DefaultMutableTreeNode(t))
-            operation.root.add(new DefaultMutableTreeNode("Fix the above error(s) and then press Refresh"))
+            operation.root.add(nodeMaker.makeNode("Unable to produce AST for this phase due to an error:"))
+            operation.root.add(nodeMaker.makeNode(t))
+            operation.root.add(nodeMaker.makeNode("Fix the above error(s) and then press Refresh"))
         }
         return operation.root
     }
 
-    TreeNode make(node) {
-        new TreeNodeWithProperties(getStringForm(node), getPropertyTable(node))
+    def make(node) {
+        nodeMaker.makeNodeWithProperties(getStringForm(node), getPropertyTable(node))
     }
 
     /**
@@ -138,10 +144,10 @@ class ScriptToTreeNodeAdapter {
      * Handles the property file templating for node types.
      */
     private String getStringForm(node) {
-        if (classNameToStringForm[node.class.name]) {
+        def templateTextForNode = classNameToStringForm[node.class.name] 
+        if (templateTextForNode) {
             GStringTemplateEngine engine = new GStringTemplateEngine()
-            def script = classNameToStringForm[node.class.name]
-            Template template = engine.createTemplate(script)
+            Template template = engine.createTemplate(templateTextForNode)
             Writable writable = template.make([expression: node])
             StringWriter result = new StringWriter()
             writable.writeTo(result)
@@ -158,17 +164,20 @@ class ScriptToTreeNodeAdapter {
  */
 private class TreeNodeBuildingNodeOperation extends PrimaryClassNodeOperation {
 
-    final def root = new DefaultMutableTreeNode("root")
+    final def root
     final def sourceCollected = new AtomicBoolean(false)
     final ScriptToTreeNodeAdapter adapter
     final def showScriptFreeForm
     final def showScriptClass
+    final def nodeMaker
 
     def TreeNodeBuildingNodeOperation(ScriptToTreeNodeAdapter adapter, showScriptFreeForm, showScriptClass) {
         if (!adapter) throw new IllegalArgumentException("Null: adapter")
         this.adapter = adapter
         this.showScriptFreeForm = showScriptFreeForm
         this.showScriptClass = showScriptClass
+        nodeMaker = adapter.nodeMaker
+        root = nodeMaker.makeNode("root")
     }
 
     public void call(SourceUnit source, GeneratorContext context, ClassNode classNode) {
@@ -194,8 +203,8 @@ private class TreeNodeBuildingNodeOperation extends PrimaryClassNodeOperation {
         collectAnnotationData(child, "Annotations", classNode)
     }
 
-    private List collectAnnotationData(TreeNodeWithProperties parent, String name, ClassNode classNode) {
-        def allAnnotations = new DefaultMutableTreeNode(name)
+    private List collectAnnotationData(parent, String name, ClassNode classNode) {
+        def allAnnotations = nodeMaker.makeNode(name)
         if (classNode.annotations) parent.add(allAnnotations)
         classNode.annotations?.each {AnnotationNode annotationNode ->
             def ggrandchild = adapter.make(annotationNode)
@@ -203,8 +212,8 @@ private class TreeNodeBuildingNodeOperation extends PrimaryClassNodeOperation {
         }
     }
 
-    private def collectPropertyData(TreeNodeWithProperties parent, String name, ClassNode classNode) {
-        def allProperties = new DefaultMutableTreeNode(name)
+    private def collectPropertyData(parent, String name, ClassNode classNode) {
+        def allProperties = nodeMaker.makeNode(name)
         if (classNode.properties) parent.add(allProperties)
         classNode.properties?.each {PropertyNode propertyNode ->
             def ggrandchild = adapter.make(propertyNode)
@@ -217,8 +226,8 @@ private class TreeNodeBuildingNodeOperation extends PrimaryClassNodeOperation {
         }
     }
 
-    private def collectFieldData(TreeNodeWithProperties parent, String name, ClassNode classNode) {
-        def allFields = new DefaultMutableTreeNode(name)
+    private def collectFieldData(parent, String name, ClassNode classNode) {
+        def allFields = nodeMaker.makeNode(name)
         if (classNode.fields) parent.add(allFields)
         classNode.fields?.each {FieldNode fieldNode ->
             def ggrandchild = adapter.make(fieldNode)
@@ -231,8 +240,8 @@ private class TreeNodeBuildingNodeOperation extends PrimaryClassNodeOperation {
         }
     }
 
-    private def collectMethodData(TreeNodeWithProperties parent, String name, ClassNode classNode) {
-        def allMethods = new DefaultMutableTreeNode(name)
+    private def collectMethodData(parent, String name, ClassNode classNode) {
+        def allMethods = nodeMaker.makeNode(name)
         if (classNode.methods) parent.add(allMethods)
 
         doCollectMethodData(allMethods, classNode.methods)
@@ -240,13 +249,13 @@ private class TreeNodeBuildingNodeOperation extends PrimaryClassNodeOperation {
 
     private def collectModuleNodeMethodData(String name, List methods) {
         if(!methods) return
-        def allMethods = new DefaultMutableTreeNode(name)
+        def allMethods = nodeMaker.makeNode(name)
         root.add(allMethods)
 
         doCollectMethodData(allMethods, methods)
     }
     
-    private def doCollectMethodData(DefaultMutableTreeNode allMethods, List methods) {
+    private def doCollectMethodData(allMethods, List methods) {
         methods?.each {MethodNode methodNode ->
             def ggrandchild = adapter.make(methodNode)
             allMethods.add(ggrandchild)
@@ -271,8 +280,8 @@ private class TreeNodeBuildingNodeOperation extends PrimaryClassNodeOperation {
         }
     }
 
-    private def collectConstructorData(TreeNodeWithProperties parent, String name, ClassNode classNode) {
-        def allCtors = new DefaultMutableTreeNode(name)
+    private def collectConstructorData(parent, String name, ClassNode classNode) {
+        def allCtors = nodeMaker.makeNode(name)
         if (classNode.declaredConstructors) parent.add(allCtors)
         classNode.declaredConstructors?.each {ConstructorNode ctorNode ->
 
@@ -295,7 +304,7 @@ private class TreeNodeBuildingNodeOperation extends PrimaryClassNodeOperation {
 */
 private class TreeNodeBuildingVisitor extends CodeVisitorSupport {
 
-    DefaultMutableTreeNode currentNode
+    def currentNode
     private adapter
 
     /**
@@ -323,7 +332,7 @@ private class TreeNodeBuildingVisitor extends CodeVisitorSupport {
             } else {
                 // visitor works off void methods... so we have to
                 // perform a swap to get accumulation like behavior.
-                DefaultMutableTreeNode temp = currentNode;
+                def temp = currentNode;
                 currentNode = adapter.make(node)
 
                 temp.add(currentNode)

@@ -17,7 +17,6 @@
 package groovy.inspect.swingui
 
 
-import groovy.inspect.swingui.ScriptToTreeNodeAdapter
 import groovy.swing.SwingBuilder
 import java.awt.Cursor
 import static java.awt.GridBagConstraints.*
@@ -40,6 +39,7 @@ import java.util.prefs.Preferences
  * 
  * @author Hamlet D'Arcy (hamletdrc@gmail.com)
  * @author Guillaume Laforge, highlighting the code corresponding to a node selected in the tree view
+ * @author Roshan Dawrani - separated out the swing UI related code from the model part so model could be used for various UIs
  */
 
 public class AstBrowser {
@@ -199,7 +199,8 @@ public class AstBrowser {
 
     void compile(node, swing, String script, int compilePhase) {
         frame.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR))
-        def adapter = new ScriptToTreeNodeAdapter(classLoader, showScriptFreeForm, showScriptClass)
+        def nodeMaker = new SwingTreeNodeMaker() 
+        def adapter = new ScriptToTreeNodeAdapter(classLoader, showScriptFreeForm, showScriptClass, nodeMaker)
         node.setRoot(adapter.compile(script, compilePhase))
         frame.setCursor(Cursor.defaultCursor)
     }
@@ -289,5 +290,30 @@ class TreeNodeWithProperties extends DefaultMutableTreeNode {
     def TreeNodeWithProperties(userObject, List<List<String>> properties) {
         super(userObject)
         this.properties = properties
+    }
+}
+
+/**
+ * This interface is used to create tree nodes of various types 
+ *
+ * @author Roshan Dawrani
+ */
+interface AstBrowserNodeMaker<T> {
+    T makeNode(Object userObject)
+    T makeNodeWithProperties(Object userObject, List<List<String>> properties)
+}
+
+/**
+ * Creates tree nodes for swing UI  
+ *
+ * @author Roshan Dawrani
+ */
+class SwingTreeNodeMaker implements AstBrowserNodeMaker<DefaultMutableTreeNode> {
+    DefaultMutableTreeNode makeNode(Object userObject) {
+        new DefaultMutableTreeNode(userObject)
+    }
+
+    DefaultMutableTreeNode makeNodeWithProperties(Object userObject, List<List<String>> properties) {
+        new TreeNodeWithProperties(userObject, properties)
     }
 }
