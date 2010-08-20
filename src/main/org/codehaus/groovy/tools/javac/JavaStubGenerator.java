@@ -669,10 +669,10 @@ public class JavaStubGenerator
         }
 
         for (ImportNode imp : moduleNode.getImports()) {
-            imports.add(imp.getType().getName());
+            if (imp.getAlias() == null)
+                imports.add(imp.getType().getName());
         }
 
-        // TODO: find out why everything isn't fully resolved by now then delete next line
         imports.addAll(Arrays.asList(ResolveVisitor.DEFAULT_IMPORTS));
 
         for (String imp : imports) {
