@@ -37,7 +37,20 @@ class ImmutableTransformTest extends GroovyShellTestCase {
         assertEquals objects[0], objects[1]
         assertTrue objects[0].nums.class.name.contains("Unmodifiable")
     }
-    
+
+    void testImmutableField() {
+        def person = evaluate("""
+            import groovy.transform.Immutable
+            @Immutable class Person {
+                boolean married
+            }
+            new Person(married:false)
+        """)
+        shouldFail(ReadOnlyPropertyException) {
+            person.married = true
+        }
+    }
+
     void testImmutableCantAlsoBeMutable() {
         def msg = shouldFail(RuntimeException) {
             assertScript """
