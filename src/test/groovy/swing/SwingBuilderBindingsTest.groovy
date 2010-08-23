@@ -27,6 +27,8 @@ import java.text.SimpleDateFormat
 import groovy.beans.Bindable
 import groovy.beans.Vetoable
 import javax.swing.SpinnerNumberModel
+import javax.swing.ListSelectionModel
+import javax.swing.DefaultListModel
 
 public class SwingBuilderBindingsTest extends GroovySwingTestCase {
 
@@ -338,6 +340,106 @@ public class SwingBuilderBindingsTest extends GroovySwingTestCase {
         assert swing.t2e.text == '[Boston, Chicago, Denver, Easy]'
       }
     }
+
+    public void testListBindSyntheticProperties() {
+      testInEDT {
+        SwingBuilder swing = new SwingBuilder()
+        def listModel = new DefaultListModel()
+        ['Alpha', 'Bravo', 'Charlie', 'Delta'].each {listModel << it}
+        def map = [sis:null, ses: null, svs: null] as ObservableMap
+
+        swing.frame() {
+            list(id: 'list01', model: listModel, selectionMode: ListSelectionModel.SINGLE_SELECTION)
+
+            t1e  = label(text:bind {list01.elements})
+            t1sx = label(text:bind {list01.selectedIndex})
+            t1se = label(text:bind {list01.selectedElement})
+            t1si = label(text:bind {list01.selectedValue})
+            bean(map, sis:bind {list01.selectedIndices},
+                      ses:bind {list01.selectedElements},
+                      svs:bind {list01.selectedValues})
+        }
+
+        assert swing.t1e.text == '[Alpha, Bravo, Charlie, Delta]'
+        swing.list01.selectedIndex = -1
+        assert swing.t1sx.text == '-1'
+        assert swing.t1se.text == null
+        assert swing.t1si.text == null
+        assert map.sis == []
+        assert map.ses == []
+        assert map.svs == []
+
+        swing.list01.selectedIndex = 0
+        assert swing.t1e.text == '[Alpha, Bravo, Charlie, Delta]'
+        assert swing.t1sx.text == '0'
+        assert swing.t1se.text == 'Alpha'
+        assert swing.t1si.text == 'Alpha'
+        assert map.sis == [0]
+        assert map.ses == ['Alpha']
+        assert map.svs == ['Alpha']
+
+        swing.list01.selectedIndex = 1
+        assert swing.t1e.text == '[Alpha, Bravo, Charlie, Delta]'
+        assert swing.t1sx.text == '1'
+        assert swing.t1se.text == 'Bravo'
+        assert swing.t1si.text == 'Bravo'
+        assert map.sis == [1]
+        assert map.ses == ['Bravo']
+        assert map.svs == ['Bravo']
+
+        swing.list01.selectedValue = 'Charlie'
+        assert swing.t1e.text == '[Alpha, Bravo, Charlie, Delta]'
+        assert swing.t1sx.text == '2'
+        assert swing.t1se.text == 'Charlie'
+        assert swing.t1si.text == 'Charlie'
+        assert map.sis == [2]
+        assert map.ses == ['Charlie']
+        assert map.svs == ['Charlie']
+
+        swing.list01.selectedValue = 'Fox Trot'
+        assert swing.t1e.text == '[Alpha, Bravo, Charlie, Delta]'
+        assert swing.t1sx.text == '2'
+        assert swing.t1se.text == 'Charlie'
+        assert swing.t1si.text == 'Charlie'
+        assert map.sis == [2]
+        assert map.ses == ['Charlie']
+        assert map.svs == ['Charlie']
+
+        swing.list01.selectedElement = 'Delta'
+        assert swing.t1e.text == '[Alpha, Bravo, Charlie, Delta]'
+        assert swing.t1sx.text == '3'
+        assert swing.t1se.text == 'Delta'
+        assert swing.t1si.text == 'Delta'
+        assert map.sis == [3]
+        assert map.ses == ['Delta']
+        assert map.svs == ['Delta']
+
+        swing.list01.selectedElement = 'Golf'
+        assert swing.t1e.text == '[Alpha, Bravo, Charlie, Delta]'
+        assert swing.t1sx.text == '3'
+        assert swing.t1se.text == 'Delta'
+        assert swing.t1si.text == 'Delta'
+        assert map.sis == [3]
+        assert map.ses == ['Delta']
+        assert map.svs == ['Delta']
+
+        swing.list01.selectionMode = ListSelectionModel.MULTIPLE_INTERVAL_SELECTION
+        swing.list01.selectedIndices = ([1i, 3i] as int[])
+        assert swing.t1sx.text == '1'
+        assert swing.t1se.text == 'Bravo'
+        assert swing.t1si.text == 'Bravo'
+        assert map.sis == [1, 3]
+        assert map.ses == ['Bravo', 'Delta']
+        assert map.svs == ['Bravo', 'Delta']
+
+        swing.list01.model.addElement('Echo')
+        assert swing.t1e.text == '[Alpha, Bravo, Charlie, Delta, Echo]'
+
+        swing.list01.model.removeElement('Bravo')
+        assert swing.t1e.text == '[Alpha, Charlie, Delta, Echo]'
+      }
+    }
+
 
     public void testEventBinding() {
       testInEDT {

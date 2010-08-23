@@ -1030,7 +1030,7 @@ class SwingBuilderTest extends GroovySwingTestCase {
             "gridLayout",
             "internalFrame",
             "layeredPane",
-            "list",
+            // "list", // list acceps JList, Vector, Object[], List
             "menuBar",
             "optionPane",
             //"overlayLayout",

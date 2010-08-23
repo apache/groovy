@@ -57,10 +57,8 @@ public class BindFactory extends AbstractFactory {
         // JComboBox.selectedElement / selectedItem
         syntheticBindings.putAll(JComboBoxProperties.syntheticProperties)
 
-        // JList.elements
-        // JList.selectedElement
-        // JList.selectedElements
-        //syntheticBindings.putAll(JListProperties.syntheticProperties)
+        // JList.selectedElement / selectedItem / selectedElements / selectedItems / selectedIndex
+        syntheticBindings.putAll(JListProperties.syntheticProperties)
 
         // JSpinner.value
         syntheticBindings.putAll(JSpinnerProperties.syntheticProperties)
