@@ -17,6 +17,7 @@
 package groovy.swing.factory
 
 import javax.swing.JList
+import groovy.swing.binding.JListMetaMethods
 
 /**
  * Create a JList, and handle the optional items attribute.
@@ -26,21 +27,33 @@ import javax.swing.JList
 public class ListFactory extends AbstractFactory {
 
     public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
-        FactoryBuilderSupport.checkValueIsType(value, name, JList)
-        //TODO expand to allow the value arg to be items
+        // FactoryBuilderSupport.checkValueIsType(value, name, JList)
+
+        JList list
         Object items = attributes.get("items")
+
         if (items instanceof Vector) {
-            return new JList(attributes.remove("items"))
+            list = new JList(attributes.remove("items"))
         } else if (items instanceof List) {
-            List list = (List) attributes.remove("items")
-            return new JList(list.toArray())
+            List l = (List) attributes.remove("items")
+            list = new JList(l.toArray())
         } else if (items instanceof Object[]) {
-            return new JList(attributes.remove("items"))
+            list = new JList(attributes.remove("items"))
         } else if (value instanceof JList) {
-            return value
+            list = value
+        } else if (value instanceof Vector) {
+            list = new JList(value)
+        } else if (value instanceof List) {
+            List l = (List) value
+            list = new JList(l.toArray())
+        } else if (value instanceof Object[]) {
+            list = new JList(value)
         } else {
-            return new JList()
+            list = new JList()
         }
+
+        JListMetaMethods.enhanceMetaClass(list)
+        return list
     }
 
     public boolean onHandleNodeAttributes(FactoryBuilderSupport builder, Object node, Map attributes) {
