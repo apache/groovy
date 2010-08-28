@@ -227,7 +227,7 @@ public class XmlNodePrinter {
 
     protected void printSimpleItem(Object value) {
         if (!preserveWhitespace) printLineBegin();
-        printEscaped(InvokerHelper.toString(value));
+        printEscaped(InvokerHelper.toString(value), false);
         if (!preserveWhitespace) printLineEnd();
     }
 
@@ -297,9 +297,9 @@ public class XmlNodePrinter {
             Object value = entry.getValue();
             out.print(quote);
             if (value instanceof String) {
-                printEscaped((String) value);
+                printEscaped((String) value, true);
             } else {
-                printEscaped(InvokerHelper.toString(value));
+                printEscaped(InvokerHelper.toString(value), true);
             }
             out.print(quote);
             printNamespace(entry.getKey(), ctx);
@@ -340,7 +340,7 @@ public class XmlNodePrinter {
 
     // For ' and " we only escape if needed. As far as XML is concerned,
     // we could always escape if we wanted to.
-    private void printEscaped(String s) {
+    private void printEscaped(String s, boolean isAttributeValue) {
         for (int i = 0; i < s.length(); i++) {
             char c = s.charAt(i);
             switch (c) {
@@ -362,6 +362,18 @@ public class XmlNodePrinter {
                 case '"':
                     if (quote.equals("\""))
                         out.print("&quot;");
+                    else
+                        out.print(c);
+                    break;
+                case '\n':
+                    if (isAttributeValue)
+                        out.print("&#10;");
+                    else
+                        out.print(c);
+                    break;
+                case '\r':
+                    if (isAttributeValue)
+                        out.print("&#13;");
                     else
                         out.print(c);
                     break;
