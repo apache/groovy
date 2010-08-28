@@ -76,6 +76,15 @@ class ImmutableTransformTest extends GroovyShellTestCase {
         """
     }
 
+    void testImmutableWithPrivateStaticFinalField() {
+        assertScript """
+            @Immutable class Foo {
+              private static final String BAR = 'baz'
+            }
+            assert new Foo().BAR == 'baz'
+        """
+    }
+
     void testImmutableWithInvalidPropertyName() {
         def msg = shouldFail(MissingPropertyException) {
             assertScript """

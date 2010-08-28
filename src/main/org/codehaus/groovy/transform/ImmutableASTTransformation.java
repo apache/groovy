@@ -346,7 +346,7 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
     private void createConstructorMapCommon(ClassNode cNode, Expression constructorStyle, BlockStatement body) {
         final List<FieldNode> fList = cNode.getFields();
         for (FieldNode fNode : fList) {
-            if (!fNode.isPublic() && !fNode.getName().contains("$") && (cNode.getProperty(fNode.getName()) == null)) {
+            if (!fNode.isPublic() && !fNode.isFinal() && !fNode.getName().contains("$") && (cNode.getProperty(fNode.getName()) == null)) {
                 body.addStatement(createConstructorStatementDefault(fNode));
             }
         }
