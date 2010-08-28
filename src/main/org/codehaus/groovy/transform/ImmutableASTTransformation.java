@@ -91,7 +91,9 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
         init(nodes, source);
         AnnotatedNode parent = (AnnotatedNode) nodes[1];
         AnnotationNode node = (AnnotationNode) nodes[0];
-        if (!MY_TYPE.equals(node.getClassNode())) return;
+        // temporarily have weaker check which allows for old Deprecated Annotation
+//        if (!MY_TYPE.equals(node.getClassNode())) return;
+        if (!node.getClassNode().getName().endsWith(".Immutable")) return;
         List<PropertyNode> newProperties = new ArrayList<PropertyNode>();
 
         if (parent instanceof ClassNode) {

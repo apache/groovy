@@ -38,9 +38,40 @@ class ImmutableTransformTest extends GroovyShellTestCase {
         assertTrue objects[0].nums.class.name.contains("Unmodifiable")
     }
 
+    void testImmutableLegacy() {
+        def objects = evaluate("""
+            // note: uses legacy groovy.lang.Immutable
+            enum Coin { HEAD, TAIL }
+            @Immutable class Bar {
+                String x, y
+                Coin c
+                Collection nums
+            }
+            [new Bar(x:'x', y:'y', c:Coin.HEAD, nums:[1,2]),
+             new Bar('x', 'y', Coin.HEAD, [1,2])]
+        """)
+
+        assertEquals objects[0].hashCode(), objects[1].hashCode()
+        assertEquals objects[0], objects[1]
+        assertTrue objects[0].nums.class.name.contains("Unmodifiable")
+    }
+
     void testImmutableField() {
         def person = evaluate("""
             import groovy.transform.Immutable
+            @Immutable class Person {
+                boolean married
+            }
+            new Person(married:false)
+        """)
+        shouldFail(ReadOnlyPropertyException) {
+            person.married = true
+        }
+    }
+
+    void testImmutableFieldLegacy() {
+        def person = evaluate("""
+            // note: uses legacy groovy.lang.Immutable
             @Immutable class Person {
                 boolean married
             }
