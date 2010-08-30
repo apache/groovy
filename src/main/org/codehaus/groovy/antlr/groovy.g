@@ -2008,12 +2008,18 @@ expressionStatement[int prevToken]
         )?
         // Checks are now out of the way; here's the real rule:
         head:expression[LC_STMT]
-        {   isPathExpr = (#head == lastPathExpression);  }
+        {   isPathExpr = (#head == lastPathExpression);
+         	//System.out.println("#head: " + #head.toStringTree());
+         	//System.out.println("#latsPath " + #lastPathExpression.toStringTree());
+
+          }
         (
             // A path expression (e.g., System.out.print) can take arguments.
             {isPathExpr}?
-            cmd:commandArguments[#head]!
-            {#expressionStatement = #cmd;}
+            cmd:commandArgumentsGreedy[#head]!
+            {
+            	#expressionStatement = #cmd;
+            }
         )?
         {#expressionStatement = #(create(EXPR,"EXPR",first,LT(1)),#expressionStatement);}
     ;
@@ -2161,7 +2167,7 @@ commandArguments[AST head]
       int hls=0;
   }
     :
-        commandArgument ( COMMA! nls! commandArgument )*
+        commandArgument ( options {greedy=true;}: COMMA! nls! commandArgument )*
         // println 2+2 //OK
         // println(2+2) //OK
         // println (2)+2 //BAD
@@ -2178,6 +2184,27 @@ commandArguments[AST head]
             #commandArguments = #(headid, head, elist);
         }
     ;
+
+commandArgumentsGreedy[AST head]
+{ AST prev = null; }
+    :
+        commandArguments[head]
+        {
+        	prev = astFactory.dupTree((AST)returnAST);
+        	//prev = #(create(LPAREN,"(",prev),prev);
+        }
+        (
+        	(COMMA! nls!|)
+
+            current : expression[LC_STMT]
+			{
+         		AST chain = #(create(DOT,".",#prev),#prev, #current);
+         		commandArguments(chain);
+         		AST chained =astFactory.dupTree((AST)returnAST);
+         		prev = chained;
+            }
+		)*
+		{ #commandArgumentsGreedy = prev; } ;
 
 commandArgument
     :
