@@ -127,10 +127,6 @@ public class GroovyServlet extends AbstractHttpServlet {
 
             };
             GroovyCategorySupport.use(ServletCategory.class, closure);
-            /*
-             * Set reponse code 200.
-             */
-            response.setStatus(HttpServletResponse.SC_OK);
         } catch (RuntimeException runtimeException) {
             StringBuffer error = new StringBuffer("GroovyServlet Error: ");
             error.append(" script: '");
@@ -172,12 +168,6 @@ public class GroovyServlet extends AbstractHttpServlet {
             System.err.println(e.toString());
             runtimeException.printStackTrace(System.err);
             response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.toString());
-        } finally {
-            /*
-             * Finally, flush the response buffer.
-             */
-            response.flushBuffer();
-            // servletContext.log("Flushed response buffer.");
         }
     }
 
