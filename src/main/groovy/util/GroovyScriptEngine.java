@@ -454,7 +454,7 @@ public class GroovyScriptEngine implements ResourceConnector {
             if (isSourceNewer(entry)) {
                 try {
                     String encoding = conn.getContentEncoding() != null ? conn.getContentEncoding() : "UTF-8";
-                    clazz = groovyLoader.parseClass(DefaultGroovyMethods.getText(conn.getInputStream(), encoding), conn.getURL().getPath());
+                    clazz = groovyLoader.parseClass(DefaultGroovyMethods.getText(conn.getInputStream(), encoding), path);
                 } catch (IOException e) {
                     throw new ResourceException(e);
                 }
@@ -543,7 +543,6 @@ public class GroovyScriptEngine implements ResourceConnector {
             if (nextPossibleRecompilationTime < lastMod) {
                 ScriptCacheEntry newEntry = new ScriptCacheEntry(depEntry.scriptClass, lastMod, depEntry.dependencies);
                 scriptCache.put(scriptName, newEntry);
-                continue;
             }
             return true;
         }
