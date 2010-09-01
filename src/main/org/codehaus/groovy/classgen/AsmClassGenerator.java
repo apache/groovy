@@ -363,28 +363,56 @@ public class AsmClassGenerator extends ClassGenerator {
         mv.visitEnd();
     }
 
-    private void generateCreateCallSiteArray() {
-        mv = cv.visitMethod(ACC_PRIVATE + ACC_SYNTHETIC + ACC_STATIC, "$createCallSiteArray", "()Lorg/codehaus/groovy/runtime/callsite/CallSiteArray;", null, null);
-        mv.visitCode();
-        mv.visitTypeInsn(NEW, "org/codehaus/groovy/runtime/callsite/CallSiteArray");
-        mv.visitInsn(DUP);
-        visitClassExpression(new ClassExpression(classNode));
-
-        final int size = callSites.size();
-        mv.visitLdcInsn(size);
-        mv.visitTypeInsn(ANEWARRAY, "java/lang/String");
-        for (int i = 0; i < size; i++) {
-            mv.visitInsn(DUP);
-            mv.visitLdcInsn(i);
-            mv.visitLdcInsn(callSites.get(i));
-            mv.visitInsn(AASTORE);
+    private void generateCreateCallSiteArray() { 
+        List<String> callSiteInitMethods = new LinkedList<String>(); 
+        int index = 0; 
+        int methodIndex = 0; 
+        final int size = callSites.size(); 
+        final int maxArrayInit = 5000; 
+        // create array initialization methods
+        while (index < size) { 
+            methodIndex++; 
+            String methodName = "$createCallSiteArray_" + methodIndex; 
+            callSiteInitMethods.add(methodName); 
+            MethodVisitor mv = cv.visitMethod(ACC_PRIVATE+ACC_SYNTHETIC+ACC_STATIC, methodName, "([Ljava/lang/String;)V", null, null); 
+            mv.visitCode(); 
+            int methodLimit = size; 
+            // check if the next block is over the max allowed
+            if ((methodLimit - index) > maxArrayInit) { 
+                methodLimit = index + maxArrayInit; 
+            } 
+            for (; index < methodLimit; index++) { 
+                mv.visitVarInsn(ALOAD, 0); 
+                mv.visitLdcInsn(index); 
+                mv.visitLdcInsn(callSites.get(index)); 
+                mv.visitInsn(AASTORE); 
+            } 
+            mv.visitInsn(RETURN); 
+            mv.visitMaxs(2,1); 
+            mv.visitEnd(); 
         }
+        // create base createCallSiteArray method
+        mv = cv.visitMethod(ACC_PRIVATE+ACC_SYNTHETIC+ACC_STATIC,"$createCallSiteArray", "()Lorg/codehaus/groovy/runtime/callsite/CallSiteArray;", null, null); 
+        mv.visitCode(); 
+        mv.visitLdcInsn(size); 
+        mv.visitTypeInsn(ANEWARRAY, "java/lang/String"); 
+        mv.visitVarInsn(ASTORE, 0); 
+        for (String methodName : callSiteInitMethods) { 
+          mv.visitVarInsn(ALOAD, 0); 
+          mv.visitMethodInsn(INVOKESTATIC,internalClassName,methodName,"([Ljava/lang/String;)V"); 
+        } 
 
-        mv.visitMethodInsn(INVOKESPECIAL, "org/codehaus/groovy/runtime/callsite/CallSiteArray", "<init>", "(Ljava/lang/Class;[Ljava/lang/String;)V");
-        mv.visitInsn(ARETURN);
-        mv.visitMaxs(0, 0);
-        mv.visitEnd();
-    }
+        mv.visitTypeInsn(NEW, "org/codehaus/groovy/runtime/callsite/CallSiteArray"); 
+        mv.visitInsn(DUP); 
+        visitClassExpression(new ClassExpression(classNode)); 
+
+        mv.visitVarInsn(ALOAD, 0); 
+
+        mv.visitMethodInsn(INVOKESPECIAL, "org/codehaus/groovy/runtime/callsite/CallSiteArray", "<init>", "(Ljava/lang/Class;[Ljava/lang/String;)V"); 
+        mv.visitInsn(ARETURN); 
+        mv.visitMaxs(0,0); 
+        mv.visitEnd(); 
+    } 
 
     public void visitGenericType(GenericsType genericsType) {
         ClassNode type = genericsType.getType();
