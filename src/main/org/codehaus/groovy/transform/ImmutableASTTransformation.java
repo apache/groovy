@@ -469,10 +469,11 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
     }
 
     private Statement createConstructorStatementDefault(FieldNode fNode) {
-        final Expression fieldExpr = new VariableExpression(fNode);
+        final String name = fNode.getName();
+        final Expression fieldExpr = new PropertyExpression(VariableExpression.THIS_EXPRESSION, name);
         Expression initExpr = fNode.getInitialValueExpression();
         if (initExpr == null) initExpr = ConstantExpression.NULL;
-        Expression value = findArg(fNode.getName());
+        final Expression value = findArg(fNode.getName());
         return new IfStatement(
                 equalsNullExpr(value),
                 new IfStatement(
