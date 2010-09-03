@@ -220,8 +220,8 @@ public abstract class AbstractASTTransformUtil implements Opcodes {
                 assignStatement(fieldExpr, value));
     }
 
-    public static Expression findArg(String fName) {
-        return new PropertyExpression(new VariableExpression("args"), fName);
+    public static Expression findArg(String argName) {
+        return new PropertyExpression(new VariableExpression("args"), argName);
     }
 
 }
