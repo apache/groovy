@@ -15,6 +15,8 @@
  */
 package org.codehaus.groovy.transform
 
+import gls.CompilableTestSupport
+
 /**
  * @author Paul King
  */
@@ -222,6 +224,39 @@ class ImmutableTransformTest extends GroovyShellTestCase {
             assert baz1.hashCode() == -1
             assert baz2.hashCode() == -100
         """
+    }
+
+    void testPrivateFieldAssignedViaConstructor() {
+        assertScript '''
+            @Immutable class Numbers {
+                private int a1 = 1
+                private int b1 = -1
+                private int c1
+                private final int a2 = 2
+                private final int b2 = -2
+                private final int c2
+                private static int a3 = 3
+                private static int b3 = -3
+                private static int c3
+                private static final int a4 = 4
+                private static final int b4 = -4
+                private static final int c4
+            }
+            def n1 = new Numbers(b1:1, b3:3, c1:1, c2:2, c3:3, c4:4)
+            assert [1..4, 'a'..'c'].combinations().collect{ num, let -> n1."$let$num" } ==
+                       [1, 2, 3, 4, 1, -2, 3, -4, 1, 2, 3, 4]
+        '''
+    }
+
+    void testPrivateFinalFieldAssignedViaConstructorShouldCauseError() {
+        shouldFail(ReadOnlyPropertyException) {
+            evaluate '''
+                @Immutable class Numbers {
+                    private final int b2 = -2
+                }
+                def n1 = new Numbers(b2:2)
+            '''
+        }
     }
 
     void testStaticsAllowed_ThoughUsuallyBadDesign() {
