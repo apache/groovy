@@ -17,6 +17,7 @@ package org.codehaus.groovy.transform;
 
 import groovy.lang.MetaClass;
 import groovy.lang.MissingPropertyException;
+import groovy.lang.ReadOnlyPropertyException;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
@@ -32,6 +33,7 @@ import org.codehaus.groovy.ast.stmt.EmptyStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.IfStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
+import org.codehaus.groovy.ast.stmt.ThrowStatement;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
@@ -85,6 +87,8 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
     private static final ClassNode DATE_TYPE = new ClassNode(Date.class);
     private static final ClassNode CLONEABLE_TYPE = new ClassNode(Cloneable.class);
     private static final ClassNode COLLECTION_TYPE = new ClassNode(Collection.class);
+    private static final ClassNode READONLYEXCEPTION_TYPE = new ClassNode(ReadOnlyPropertyException.class);
+    private static final ClassNode CLASS_TYPE = new ClassNode(Class.class);
     private static final ClassNode DGM_TYPE = new ClassNode(DefaultGroovyMethods.class);
 
     public void visit(ASTNode[] nodes, SourceUnit source) {
@@ -193,9 +197,11 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
     private void createConstructorMapCommon(ClassNode cNode, Expression constructorStyle, BlockStatement body) {
         final List<FieldNode> fList = cNode.getFields();
         for (FieldNode fNode : fList) {
-            if (!fNode.isPublic() && !fNode.isFinal() && !fNode.getName().contains("$") && (cNode.getProperty(fNode.getName()) == null)) {
-                body.addStatement(createConstructorStatementDefault(fNode));
-            }
+            if (fNode.isPublic()) continue; // public fields will be rejected elsewhere
+            if (cNode.getProperty(fNode.getName()) != null) continue; // a property
+            if (fNode.getName().contains("$")) continue; // internal field
+            if (fNode.isFinal() && fNode.getInitialExpression() != null) body.addStatement(checkFinalArgNotOverridden(cNode, fNode));
+            body.addStatement(createConstructorStatementDefault(fNode));
         }
         body.addStatement(assignStatement(constructorStyle, ConstantExpression.TRUE));
         final Parameter[] params = new Parameter[]{new Parameter(HASHMAP_TYPE, "args")};
@@ -203,6 +209,17 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
                 equalsNullExpr(new VariableExpression("args")),
                 new EmptyStatement(),
                 body)));
+    }
+
+    private Statement checkFinalArgNotOverridden(ClassNode cNode, FieldNode fNode) {
+        final String name = fNode.getName();
+        Expression value = findArg(name);
+        return new IfStatement(
+                equalsNullExpr(value),
+                new EmptyStatement(),
+                new ThrowStatement(new ConstructorCallExpression(READONLYEXCEPTION_TYPE,
+                        new ArgumentListExpression(new ConstantExpression(name),
+                                new ConstantExpression(cNode.getName())))));
     }
 
     private Statement createConstructorStatementMapSpecial(FieldNode fNode) {
