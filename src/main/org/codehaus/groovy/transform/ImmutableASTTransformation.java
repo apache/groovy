@@ -88,7 +88,6 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
     private static final ClassNode CLONEABLE_TYPE = new ClassNode(Cloneable.class);
     private static final ClassNode COLLECTION_TYPE = new ClassNode(Collection.class);
     private static final ClassNode READONLYEXCEPTION_TYPE = new ClassNode(ReadOnlyPropertyException.class);
-    private static final ClassNode CLASS_TYPE = new ClassNode(Class.class);
     private static final ClassNode DGM_TYPE = new ClassNode(DefaultGroovyMethods.class);
 
     public void visit(ASTNode[] nodes, SourceUnit source) {
