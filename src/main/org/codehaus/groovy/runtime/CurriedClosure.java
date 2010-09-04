@@ -43,6 +43,8 @@ public final class CurriedClosure extends Closure {
 
     private Object[] curriedParams;
     private int index;
+    private int numTrailingArgs = 0;
+    private Class varargType = null;
 
     public CurriedClosure(int index, Closure uncurriedClosure, Object[] arguments) {
         super(uncurriedClosure.clone());
@@ -50,15 +52,33 @@ public final class CurriedClosure extends Closure {
         this.index = index;
         final int origMaxLen = uncurriedClosure.getMaximumNumberOfParameters();
         maximumNumberOfParameters = origMaxLen - arguments.length;
-        // normalise
-        if (index < 0) {
-            if (index < -origMaxLen || index > -arguments.length)
-                throw new IllegalArgumentException("To curry " + arguments.length + " argument(s) expect index range " +
-                        (-origMaxLen) + ".." + (-arguments.length) + " but found " + index);
-            this.index += origMaxLen;
-        } else if (index > maximumNumberOfParameters) {
-            throw new IllegalArgumentException("To curry " + arguments.length + " argument(s) expect index range 0.." +
-                    maximumNumberOfParameters + " but found " + index);
+        Class[] classes = uncurriedClosure.getParameterTypes();
+        Class lastType = classes.length == 0 ? null : classes[classes.length-1];
+        if (lastType != null && lastType.isArray()) {
+            varargType = lastType;
+        }
+
+        if (isVararg()) {
+            if (index < 0) {
+                numTrailingArgs = (-index) - arguments.length;
+            }
+        } else {
+            // perform some early param checking for non-vararg case
+            if (index < 0) {
+                // normalise
+                this.index += origMaxLen;
+            }
+            if (maximumNumberOfParameters < 0) {
+                throw new IllegalArgumentException("Can't curry " + arguments.length + " arguments for a closure with " + origMaxLen + " parameters.");
+            }
+            if (index < 0) {
+                if (index < -origMaxLen || index > -arguments.length)
+                    throw new IllegalArgumentException("To curry " + arguments.length + " argument(s) expect index range " +
+                            (-origMaxLen) + ".." + (-arguments.length) + " but found " + index);
+            } else if (index > maximumNumberOfParameters) {
+                throw new IllegalArgumentException("To curry " + arguments.length + " argument(s) expect index range 0.." +
+                        maximumNumberOfParameters + " but found " + index);
+            }
         }
     }
 
@@ -72,12 +92,26 @@ public final class CurriedClosure extends Closure {
     }
 
     public Object[] getUncurriedArguments(Object[] arguments) {
-        final Object newCurriedParams[] = new Object[curriedParams.length + arguments.length];
-        System.arraycopy(arguments, 0, newCurriedParams, 0, index);
-        System.arraycopy(curriedParams, 0, newCurriedParams, index, curriedParams.length);
-        if (arguments.length - index > 0)
-            System.arraycopy(arguments, index, newCurriedParams, curriedParams.length + index, arguments.length - index);
-        return newCurriedParams;
+        if (isVararg()) {
+            int normalizedIndex = index < 0 ? index + arguments.length + curriedParams.length : index;
+            if (normalizedIndex < 0 || normalizedIndex > arguments.length) {
+                throw new IllegalArgumentException("When currying expected index range between " +
+                        (-arguments.length - curriedParams.length) + ".." + (arguments.length + curriedParams.length) + " but found " + index);
+            }
+            final Object newCurriedParams[] = new Object[curriedParams.length + arguments.length];
+            System.arraycopy(arguments, 0, newCurriedParams, 0, normalizedIndex);
+            System.arraycopy(curriedParams, 0, newCurriedParams, normalizedIndex, curriedParams.length);
+            if (arguments.length - normalizedIndex > 0)
+                System.arraycopy(arguments, normalizedIndex, newCurriedParams, curriedParams.length + normalizedIndex, arguments.length - normalizedIndex);
+            return newCurriedParams;
+        } else {
+            final Object newCurriedParams[] = new Object[curriedParams.length + arguments.length];
+            System.arraycopy(arguments, 0, newCurriedParams, 0, index);
+            System.arraycopy(curriedParams, 0, newCurriedParams, index, curriedParams.length);
+            if (arguments.length - index > 0)
+                System.arraycopy(arguments, index, newCurriedParams, curriedParams.length + index, arguments.length - index);
+            return newCurriedParams;
+        }
     }
 
     public void setDelegate(Object delegate) {
@@ -103,10 +137,41 @@ public final class CurriedClosure extends Closure {
 
     public Class[] getParameterTypes() {
         Class[] oldParams = ((Closure) getOwner()).getParameterTypes();
-        Class[] newParams = new Class[oldParams.length - curriedParams.length];
+        int extraParams = 0;
+        int gobbledParams = curriedParams.length;
+        if (isVararg()) {
+            int numNonVarargs = oldParams.length - 1;
+            if (index < 0) {
+                int absIndex = index < 0 ? -index : index;
+                // do -ve indexes based on actual args, so can't accurately calculate type here
+                // so work out minimal type params and vararg on end will allow for other possibilities
+                if (absIndex > numNonVarargs) gobbledParams = numNonVarargs;
+                int newNumNonVarargs = numNonVarargs - gobbledParams;
+                if (absIndex - gobbledParams > numNonVarargs) extraParams = absIndex - gobbledParams - numNonVarargs;
+                int keptParams = Math.max(numNonVarargs - absIndex, 0);
+                Class[] newParams = new Class[keptParams + newNumNonVarargs + extraParams + 1];
+                System.arraycopy(oldParams, 0, newParams, 0, keptParams);
+                for (int i = 0; i < newNumNonVarargs; i++) newParams[keptParams + i] = Object.class;
+                for (int i = 0; i < extraParams; i++) newParams[keptParams + newNumNonVarargs + i] = varargType.getComponentType();
+                newParams[newParams.length - 1] = varargType;
+                return newParams;
+            }
+            int keptParams = Math.min(index, numNonVarargs);
+            if (index > numNonVarargs) extraParams = index - numNonVarargs;
+            Class[] newParams = new Class[keptParams + extraParams + 1];
+            System.arraycopy(oldParams, 0, newParams, 0, keptParams);
+            for (int i = 0; i < extraParams; i++) newParams[keptParams + i] = varargType.getComponentType();
+            newParams[newParams.length - 1] = varargType;
+            return newParams;
+        }
+        Class[] newParams = new Class[oldParams.length - gobbledParams + extraParams];
         System.arraycopy(oldParams, 0, newParams, 0, index);
         if (newParams.length - index > 0)
             System.arraycopy(oldParams, curriedParams.length + index, newParams, index, newParams.length - index);
         return newParams;
+    }
+
+    private boolean isVararg() {
+        return varargType != null;
     }
 }
