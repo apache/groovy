@@ -94,6 +94,29 @@ class ClosureCurryTest extends GroovyTestCase {
         assert [int] == cl2.getParameterTypes().toList()
     }
 
+    void testVarargParameterTypes() {
+        def a = { Object one, Object[] others -> }
+        def b = a.ncurry(2, 'x', 'y')
+        assert b.parameterTypes.name == ['java.lang.Object', 'java.lang.Object', '[Ljava.lang.Object;']
+        def c = a.ncurry(-3, 'x', 'y')
+        assert c.parameterTypes.name == ['java.lang.Object', '[Ljava.lang.Object;']
+        def d = a.curry('a')
+        assert d.parameterTypes.name == ['[Ljava.lang.Object;']
+        def g = { String s, Integer num, Date da, Object[] others ->  }
+        def h = g.ncurry(1, 4, new Date(), 'foo')
+        assert h.parameterTypes.name == ['java.lang.String', '[Ljava.lang.Object;']
+    }
+
+    void testVarargCurry() {
+        def c = { arg, Object[] extras -> arg + ', ' + extras.join(', ') }
+        def d = c.curry( 1 ) //curry first param only
+        assert d( 2, 3, 4 ) == '1, 2, 3, 4'
+        def e = c.curry( 1, 3 ) //curry part of Object[] also
+        assert e( 5 ) == '1, 3, 5'
+        def f = e.curry( 5, 7, 9, 11 ) //currying continues on Object
+        assert f( 13, 15 ) == '1, 3, 5, 7, 9, 11, 13, 15'
+    }
+
     void testDelegate() {
         def res = null
         def c = {a -> res = z}
