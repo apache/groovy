@@ -75,7 +75,6 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
     private static final ClassNode HASHUTIL_TYPE = new ClassNode(HashCodeHelper.class);
     private static final ClassNode STRINGBUFFER_TYPE = new ClassNode(StringBuffer.class);
     private static final ClassNode READONLYEXCEPTION_TYPE = new ClassNode(ReadOnlyPropertyException.class);
-    private static final ClassNode CLASS_TYPE = new ClassNode(Class.class);
     private static final ClassNode DGM_TYPE = new ClassNode(DefaultGroovyMethods.class);
     private static final ClassNode INVOKER_TYPE = new ClassNode(InvokerHelper.class);
     private static final ClassNode SELF_TYPE = new ClassNode(ImmutableASTTransformation.class);
