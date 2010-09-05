@@ -356,12 +356,35 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
 
     /**
      * Support for Closure currying.
+     * <p>
      * Typical usage:
-     * <pre>
+     * <pre class="groovyTestCase">
      * def multiply = { a, b -> a * b }
      * def doubler = multiply.curry(2)
      * assert doubler(4) == 8
      * </pre>
+     * Note: special treatment is given to Closure vararg-style capability.
+     * If you curry a vararg parameter, you don't consume the entire vararg array
+     * but instead the first parameter of the vararg array as the following example shows:
+     * <pre class="groovyTestCase">
+     * def a = { one, two, Object[] others -> one + two + others.sum() }
+     * assert a.parameterTypes.name == ['java.lang.Object', 'java.lang.Object', '[Ljava.lang.Object;']
+     * assert a(1,2,3,4) == 10
+     * def b = a.curry(1)
+     * assert b.parameterTypes.name == ['java.lang.Object', '[Ljava.lang.Object;']
+     * assert b(2,3,4) == 10
+     * def c = b.curry(2)
+     * assert c.parameterTypes.name == ['[Ljava.lang.Object;']
+     * assert c(3,4) == 10
+     * def d = c.curry(3)
+     * assert d.parameterTypes.name == ['[Ljava.lang.Object;']
+     * assert d(4) == 10
+     * def e = d.curry(4)
+     * assert e.parameterTypes.name == ['[Ljava.lang.Object;']
+     * assert e() == 10
+     * assert e(5) == 15
+     * </pre>
+     * 
      *
      * @param arguments the arguments to bind
      * @return the new closure with its arguments bound
