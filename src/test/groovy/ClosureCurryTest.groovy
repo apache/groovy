@@ -168,4 +168,40 @@ class ClosureCurryTest extends GroovyTestCase {
         assert 50 == halver(100)
     }
 
+    void testEquivalentsNormal() {
+        def a = {one, two, three, four, five -> "$one,$two,$three,$four,$five"}
+        def expected = '1,2,3,4,5'
+        checkEquivalents(a, expected)
+    }
+
+    void testEquivalentsVararg() {
+        def a = {one, two, Object[] others -> "one=$one, two=$two, others=${others.join(',')}"}
+        def expected = 'one=1, two=2, others=3,4,5'
+        checkEquivalents(a, expected)
+    }
+
+    private void checkEquivalents(a, expected) {
+        def examples = [
+            [a.curry(1), [2,3,4,5]],
+            [a.curry(1,2), [3,4,5]],
+            [a.curry(1,2,3), [4,5]],
+            [a.curry(1,2,3,4), [5]],
+            [a.curry(1,2,3,4,5), []],
+            [a.curry(1,2).curry(3,4), [5]],
+            [a.curry(1).curry(2).curry(3).curry(4), [5]],
+            [a.rcurry(5), [1,2,3,4]],
+            [a.rcurry(5).rcurry(3,4), [1,2]],
+            [a.rcurry(4,5).rcurry(3), [1,2]],
+            [a.rcurry(4,5), [1,2,3]],
+            [a.rcurry(2,3,4,5), [1]],
+            [a.rcurry(1,2,3,4,5), []],
+            [a.ncurry(2,3), [1,2,4,5]],
+            [a.ncurry(2,3,4), [1,2,5]],
+            [a.ncurry(-3,3,4), [1,2,5]],
+            [a.ncurry(-3,3), [1,2,4,5]]
+        ]
+        examples.each{ clos, args ->
+            assert clos(args as Object[]) == expected
+        }
+    }
 }
