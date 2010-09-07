@@ -12,4 +12,22 @@ class NamedParameterTest extends GroovyTestCase {
         assert args.times == 2
         assert args.size() == 3
     }
+
+    void testNamedParameterSpreadOnSeveralLines() {
+        someMethod( name:
+                    "gromit",
+            eating:
+                    "nice cheese",
+            times:
+                    2)
+    }
+
+    void testNamedParameterSpreadOnSeveralLinesWithCommandExpressions() {
+        someMethod name:
+                    "gromit",
+            eating:
+                    "nice cheese",
+            times:
+                    2
+    }
 }
