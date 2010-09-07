@@ -152,6 +152,20 @@ class Gep3Test extends GroovyTestCase {
             marinate 30.minutes at room_temperature
         }
     }
+
+    void testExtendedCommandExpressionSpanningTwoLinesWithNewlineAfterNamedArg() {
+        boolean success = false
+        def good = true
+        def margherita = [tastes: { boolean b -> success = true }]
+        def check = { Map m -> margherita }
+
+        check that:
+                margherita tastes good
+
+        assert success
+    }
+
+    def check(Map m) { m.that }
 }
 
 enum Container { medium_bowl }
