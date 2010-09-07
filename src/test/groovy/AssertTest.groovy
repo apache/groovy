@@ -68,7 +68,6 @@ class AssertTest extends GroovyTestCase {
         } catch (AssertionError ae) {
             assert ae.message.contains("true");
         }
-
     }
 
     // GROOVY-1769
