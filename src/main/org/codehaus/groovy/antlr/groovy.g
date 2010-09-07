@@ -1977,8 +1977,8 @@ branchStatement {Token first = LT(1);}
     // groovy assertion...
     |   "assert"! assertAle: assignmentLessExpression!
         (   options {greedy=true;} :
-            (   COMMA!  // TODO:  gratuitous change caused failures
-            |   COLON!  // standard Java syntax, but looks funny in Groovy
+            (   COMMA! nls! // TODO:  gratuitous change caused failures
+            |   COLON! nls! // standard Java syntax, but looks funny in Groovy
             )
             assertE:expression[0]!
         )?

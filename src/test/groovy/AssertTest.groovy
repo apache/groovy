@@ -68,6 +68,14 @@ class AssertTest extends GroovyTestCase {
         } catch (AssertionError ae) {
             assert ae.message.contains("true");
         }
+    }
 
+    // GROOVY-1769
+    void testAssertWithNewlineAfterColonOrComma() {
+        assert true:
+            "Assert on newline after colon"
+
+        assert true,
+            "Assert on newline after comma"
     }
 }
