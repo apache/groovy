@@ -2208,7 +2208,7 @@ commandArgumentsGreedy[AST head]
 
 commandArgument
     :
-        (argumentLabel COLON) => (
+        (argumentLabel COLON nls!) => (
             argumentLabel c:COLON^ nls! expression[0]  {#c.setType(LABELED_ARG);}
         )
         |  expression[0]
