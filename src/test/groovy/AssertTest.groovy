@@ -70,4 +70,13 @@ class AssertTest extends GroovyTestCase {
         }
 
     }
+
+    // GROOVY-1769
+    void testAssertWithNewlineAfterColonOrComma() {
+        assert true:
+            "Assert on newline after colon"
+
+        assert true,
+            "Assert on newline after comma"
+    }
 }
