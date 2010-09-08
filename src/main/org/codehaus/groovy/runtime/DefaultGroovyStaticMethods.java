@@ -209,7 +209,8 @@ public class DefaultGroovyStaticMethods {
      * @since 1.6.0
      */
     public static ResourceBundle getBundle(ResourceBundle self, String bundleName, Locale locale) {
-        ClassLoader targetCL = ReflectionUtils.getCallingClass().getClassLoader();
+        Class c = ReflectionUtils.getCallingClass();
+        ClassLoader targetCL = c != null ? c.getClassLoader() : null;
         if (targetCL == null) targetCL = ClassLoader.getSystemClassLoader();
         return ResourceBundle.getBundle(bundleName, locale, targetCL);
     }
