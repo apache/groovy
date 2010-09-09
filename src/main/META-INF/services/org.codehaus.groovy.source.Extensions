@@ -1,0 +1,7 @@
+# Format: one extension on each line without the leading "*."
+# Listed below are default groovy source file extensions.
+
+# NOTE: This implementation of supporting multiple file extensions is experimental and
+# the exact implementation details may vary when modularization gets introduced in
+# groovy 1.8. However, in terms of the behavior, this support will remain intact.
+groovy

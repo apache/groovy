@@ -187,6 +187,7 @@ $Date$
 
     <property name="vm5GroovySourceFiles" value="**/*.groovy"/>
     <property name="vm5JavaSourceFiles" value="**/*.java"/>
+	<property name="anotherGroovyExtTestFiles" value="**/*.roshan"/>
     <property name="vm6GroovySourceFiles" value="groovy/**/vm6/*Test.groovy,org/codehaus/groovy/**/vm6/*Test.groovy"/>
 
     <target name="-initGroovyc">
@@ -210,9 +211,14 @@ $Date$
     </target>
 
     <target name="-compileTest" depends="-initGroovyc,-compileTest_vm6">
+        <copy todir="${testClassesDirectory}">
+            <fileset dir="${testSourceDirectory}">
+                <include name="META-INF/services/*"/>
+            </fileset>
+        </copy>
         <groovyc srcdir="${testSourceDirectory}"
                  destdir="${testClassesDirectory}"
-                 includes="${vm5GroovySourceFiles},${vm5JavaSourceFiles}"
+                 includes="${vm5GroovySourceFiles},${vm5JavaSourceFiles},${anotherGroovyExtTestFiles}"
                  excludes="${vm6GroovySourceFiles}"
                  fork="true"
                  memorymaximumsize="${groovycTest_mx}">

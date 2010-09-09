@@ -73,7 +73,15 @@ public class GroovyClassLoader extends URLClassLoader {
         public URL loadGroovySource(final String filename) throws MalformedURLException {
             return AccessController.doPrivileged(new PrivilegedAction<URL>() {
                 public URL run() {
-                    return getSourceFile(filename);
+                	for (String extension : config.getScriptExtensions()) {
+                		try {
+                			URL ret = getSourceFile(filename, extension);
+                			if (ret != null)
+                				return ret;
+                		} catch (Throwable t) { //
+                		}
+                	}
+            		return null;
                 }
             });
         }
@@ -849,13 +857,17 @@ public class GroovyClassLoader extends URLClassLoader {
         return null;
     }
 
-    private URL getSourceFile(String name) {
-        String filename = name.replace('.', '/') + config.getDefaultScriptExtension();
+    private URL getSourceFile(String name, String extension) {
+        String filename = name.replace('.', '/') + "." + extension;
         URL ret = getResource(filename);
         if (isFile(ret) && getFileForUrl(ret, filename) == null) return null;
         return ret;
     }
 
+    private URL getSourceFile(String name) {
+        return getSourceFile(name, config.getDefaultScriptExtension());
+    }
+    
     /**
      * Decides if the given source is newer than a class.
      *
