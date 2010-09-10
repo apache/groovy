@@ -22,10 +22,12 @@ import org.codehaus.groovy.control.messages.WarningMessage;
 import java.io.File;
 import java.io.PrintWriter;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.StringTokenizer;
 
 /**
@@ -112,6 +114,11 @@ public class CompilerConfiguration {
      * extension used to find a groovy file
      */
     private String defaultScriptExtension;
+    
+    /**
+     * extensions used to find a groovy files
+     */
+    private Set<String> scriptExtensions = new LinkedHashSet<String>();
     
     /**
      * if set to true recompilation is enabled
@@ -231,6 +238,7 @@ public class CompilerConfiguration {
         }
         setJointCompilationOptions(jointCompilationOptions);
         setPluginFactory(configuration.getPluginFactory());
+        setScriptExtensions(configuration.getScriptExtensions());
     }
 
     /**
@@ -579,6 +587,25 @@ public class CompilerConfiguration {
         this.pluginFactory = pluginFactory;
     }
 
+    public void setScriptExtensions(Set<String> scriptExtensions) {
+    	if(scriptExtensions == null) scriptExtensions = new LinkedHashSet<String>();
+        this.scriptExtensions = scriptExtensions;
+    }
+    
+    public Set<String> getScriptExtensions() {
+    	if(scriptExtensions == null || scriptExtensions.isEmpty()) {
+    		/*
+    		 *  this happens 
+    		 *  *	when groovyc calls FileSystemCompiler in forked mode, or
+    		 *  *	when FileSystemCompiler is run from the command line directly, or
+    		 *  *	when groovy was not started using groovyc or FileSystemCompiler either
+    		 */
+    		scriptExtensions = SourceExtensionHandler.getRegisteredExtensions(
+    				this.getClass().getClassLoader());
+    	}
+        return scriptExtensions;
+    }
+    
     public String getDefaultScriptExtension() {
         return defaultScriptExtension;
     }

@@ -34,6 +34,7 @@ import org.apache.tools.ant.util.GlobPatternMapper;
 import org.apache.tools.ant.util.SourceFileScanner;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilerConfiguration;
+import org.codehaus.groovy.control.SourceExtensionHandler;
 import org.codehaus.groovy.tools.ErrorReporter;
 import org.codehaus.groovy.tools.FileSystemCompiler;
 import org.codehaus.groovy.tools.RootLoader;
@@ -50,8 +51,10 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.StringTokenizer;
 
 /**
@@ -120,6 +123,8 @@ public class Groovyc extends MatchingTask {
     private File stubDir;
     private boolean keepStubs;
 
+    private Set<String> scriptExtensions = new LinkedHashSet<String>();
+    
     /**
      * Adds a path for source compilation.
      *
@@ -579,6 +584,7 @@ public class Groovyc extends MatchingTask {
     public void execute() throws BuildException {
         checkParameters();
         resetFileLists();
+        loadRegisteredScriptExtensions();
 
         if (javac != null) jointCompilation = true;
 
@@ -608,6 +614,7 @@ public class Groovyc extends MatchingTask {
      */
     protected void resetFileLists() {
         compileList = new File[0];
+        scriptExtensions = new LinkedHashSet<String>();
     }
 
     /**
@@ -620,11 +627,14 @@ public class Groovyc extends MatchingTask {
      */
     protected void scanDir(File srcDir, File destDir, String[] files) {
         GlobPatternMapper m = new GlobPatternMapper();
-        m.setFrom(scriptExtension);
-        m.setTo("*.class");
         SourceFileScanner sfs = new SourceFileScanner(this);
-        File[] newFiles = sfs.restrictAsFiles(files, srcDir, destDir, m);
-        addToCompileList(newFiles);
+        File[] newFiles;
+        for (String extension : getScriptExtensions()) {
+        	m.setFrom("*." + extension);
+        	m.setTo("*.class");
+        	newFiles = sfs.restrictAsFiles(files, srcDir, destDir, m);
+        	addToCompileList(newFiles);
+        }
 
         if (jointCompilation) {
             m.setFrom("*.java");
@@ -769,7 +779,7 @@ public class Groovyc extends MatchingTask {
                     if ((fileEncodingProp != null) && !fileEncodingProp.equals("")) {
                         commandLineList.add("-Dfile.encoding=" + fileEncodingProp);
                     }
-                    if ((targetBytecode != null)) {
+                    if (targetBytecode != null) {
                         commandLineList.add("-Dgroovy.target.bytecode=" + targetBytecode);
                     }
 
@@ -868,6 +878,7 @@ public class Groovyc extends MatchingTask {
                         cli = cliParser.parse(options, commandLine);
 
                         configuration = FileSystemCompiler.generateCompilerConfigurationFromOptions(cli);
+                        configuration.setScriptExtensions(getScriptExtensions());
 
                         // Load the file name list
                         String[] filenames = FileSystemCompiler.generateFileNamesFromOptions(cli);
@@ -1010,5 +1021,24 @@ public class Groovyc extends MatchingTask {
      */
     public boolean getKeepStubs() {
         return keepStubs;
+    }
+
+    private Set<String> getScriptExtensions() {
+    	return scriptExtensions;
+    }
+
+    private void loadRegisteredScriptExtensions() {
+    	if (scriptExtensions.isEmpty()) {
+    		
+    		scriptExtensions.add(getScriptExtension().substring(2)); // first extension will be the one set explicitly on <groovyc>
+    		
+    		Path classpath = getClasspath() != null ? getClasspath() : new Path(getProject());
+    		final String[] pe = classpath.list();
+    		final GroovyClassLoader loader = new GroovyClassLoader(getClass().getClassLoader());
+    		for (String file : pe) {
+    			loader.addClasspath(file);
+    		}
+    		scriptExtensions.addAll(SourceExtensionHandler.getRegisteredExtensions(loader));
+    	}
     }
 }

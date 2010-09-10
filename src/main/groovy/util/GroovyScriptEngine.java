@@ -123,14 +123,16 @@ public class GroovyScriptEngine implements ResourceConnector {
             final GroovyResourceLoader rl = getResourceLoader();
             setResourceLoader(new GroovyResourceLoader() {
                 public URL loadGroovySource(String className) throws MalformedURLException {
-                    String filename = className.replace('.', File.separatorChar) +
-                            config.getDefaultScriptExtension();
-                    try {
-                        URLConnection dependentScriptConn = rc.getResourceConnection(filename);
-                        return dependentScriptConn.getURL();
-                    } catch (ResourceException e) {
-                        //TODO: maybe do something here?
-                    }
+                	String filename;
+                	for (String extension : getConfig().getScriptExtensions()) {
+                        filename = className.replace('.', File.separatorChar) + "." + extension;
+		                try {
+		                    URLConnection dependentScriptConn = rc.getResourceConnection(filename);
+		                    return dependentScriptConn.getURL();
+		                } catch (ResourceException e) {
+		                    //TODO: maybe do something here?
+		                }
+                	}
                     return rl.loadGroovySource(className);
                 }
             });
