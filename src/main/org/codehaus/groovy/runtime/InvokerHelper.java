@@ -249,6 +249,14 @@ public class InvokerHelper {
             Float number = (Float) value;
             return -number;
         }
+        if (value instanceof Short) {
+        	Short number = (Short) value;
+        	return Short.valueOf((short) -number.shortValue());
+        }
+        if (value instanceof Byte) {
+        	Byte number = (Byte) value;
+        	return Byte.valueOf((byte) -number.byteValue());
+        }
         if (value instanceof ArrayList) {
             // value is an list.
             List newlist = new ArrayList();
@@ -267,7 +275,9 @@ public class InvokerHelper {
                 value instanceof BigInteger ||
                 value instanceof BigDecimal ||
                 value instanceof Double ||
-                value instanceof Float) {
+                value instanceof Float || 
+                value instanceof Short || 
+                value instanceof Byte) {
             return value;
         }
         if (value instanceof ArrayList) {
