@@ -20,6 +20,7 @@ import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.ListExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
@@ -611,28 +612,43 @@ public class JavaStubGenerator
             boolean first = true;
             Map<String, Expression> members = annotation.getMembers();
             for (String key : members.keySet()) {
-                String val = "null";
-                Object memberValue = members.get(key);
-                if (memberValue instanceof ConstantExpression) {
-                    ConstantExpression ce = (ConstantExpression) memberValue;
-                    Object constValue = ce.getValue();
-                    if (constValue instanceof Number || constValue instanceof Boolean)
-                        val = constValue.toString();
-                    else
-                        val = "\"" + constValue + "\"";
-                } else if (memberValue instanceof PropertyExpression || memberValue instanceof VariableExpression) {
-                    // assume must be static class field or enum value or class that Java can resolve
-                    val = ((Expression) memberValue).getText();
-                }
-                if (first) {
-                    first = false;
-                } else {
-                    out.print(", ");
-                }
-                out.print(key + "=" + val);
+                if (first) first = false;
+                else out.print(", ");
+                out.print(key + "=" + getAnnotationValue(members.get(key)));
             }
             out.print(") ");
         }
+    }
+
+    private String getAnnotationValue(Object memberValue) {
+        String val = "null";
+        if (memberValue instanceof ListExpression) {
+            StringBuilder sb = new StringBuilder("{");
+            boolean first = true;
+            ListExpression le = (ListExpression) memberValue;
+            for (Expression e : le.getExpressions()) {
+                if (first) first = false;
+                else sb.append(",");
+                sb.append(getAnnotationValue(e));
+            }
+            sb.append("}");
+            val = sb.toString();
+        } else if (memberValue instanceof ConstantExpression) {
+            ConstantExpression ce = (ConstantExpression) memberValue;
+            Object constValue = ce.getValue();
+            if (constValue instanceof Number || constValue instanceof Boolean)
+                val = constValue.toString();
+            else
+                val = "\"" + constValue + "\"";
+        } else if (memberValue instanceof PropertyExpression || memberValue instanceof VariableExpression) {
+            // assume must be static class field or enum value or class that Java can resolve
+            val = ((Expression) memberValue).getText();
+        } else if (memberValue instanceof ClosureExpression) {
+            // annotation closure; replaced with this specific class literal to cover the
+            // case where annotation type uses Class<? extends Closure> for the closure's type
+            val = "groovy.lang.Closure.class";
+        }
+        return val;
     }
 
     private void printModifiers(PrintWriter out, int modifiers) {
