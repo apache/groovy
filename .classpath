@@ -11,7 +11,7 @@
 	<classpathentry kind="var" path="M2_REPO/antlr/antlr/2.7.6/antlr-2.7.6.jar"/>
 	<classpathentry kind="var" path="M2_REPO/jmock/jmock-cglib/1.2.0/jmock-cglib-1.2.0.jar"/>
 	<classpathentry kind="var" path="M2_REPO/org/apache/ant/ant-junit/1.7.1/ant-junit-1.7.1.jar"/>
-	<classpathentry kind="var" path="M2_REPO/junit/junit/4.7/junit-4.7.jar" sourcepath="M2_REPO/junit/junit/4.7/junit-4.7-sources.jar"/>
+	<classpathentry kind="var" path="M2_REPO/junit/junit/4.8.1/junit-4.8.1.jar"/>
 	<classpathentry kind="var" path="M2_REPO/commons-cli/commons-cli/1.0/commons-cli-1.0.jar"/>
 	<classpathentry kind="var" path="M2_REPO/hsqldb/hsqldb/1.8.0.7/hsqldb-1.8.0.7.jar"/>
 	<classpathentry kind="var" path="M2_REPO/xmlunit/xmlunit/1.2/xmlunit-1.2.jar"/>
