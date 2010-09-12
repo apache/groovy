@@ -643,10 +643,6 @@ public class JavaStubGenerator
         } else if (memberValue instanceof PropertyExpression || memberValue instanceof VariableExpression) {
             // assume must be static class field or enum value or class that Java can resolve
             val = ((Expression) memberValue).getText();
-        } else if (memberValue instanceof ClosureExpression) {
-            // annotation closure; replaced with this specific class literal to cover the
-            // case where annotation type uses Class<? extends Closure> for the closure's type
-            val = "groovy.lang.Closure.class";
         }
         return val;
     }
