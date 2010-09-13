@@ -164,6 +164,12 @@ class GpathSyntaxTestSupport {
         assert groupLikesByFirstLetter == [W:'cheese', G:'sleep']
     }
 
+    static void checkElementTruth(Closure getRoot) {
+        def root = getRoot(sampleXml)
+        assert root.character[0]
+        assert !root.doesnotexist[0]
+    }
+
     static void checkAttribute(Closure getRoot) {
         def root = getRoot(sampleXml)
         if (isSlurper(root)) {
@@ -214,6 +220,18 @@ class GpathSyntaxTestSupport {
         assert 'Wallace' == attributes['name']
         assert 'Wallace' == attributes.name
         assert       '1' == attributes.'id'
+    }
+
+    static void checkAttributeTruth(Closure getRoot) {
+        def root = getRoot(sampleXml)
+        if (isDom(root)) {
+            // no native attribute syntax for dom, so use quotes
+            assert root.character.findAll { it.'@id' == '2' }[0]
+            assert !root.character.findAll { it.'@id' == '3' }[0]
+        } else {
+            assert root.character.findAll { it.@id == '2' }[0]
+            assert !root.character.findAll { it.@id == '3' }[0]
+        }
     }
 
     static void checkChildren(Closure getRoot) {

@@ -48,6 +48,7 @@ class DOMCategoryTest extends GroovyTestCase {
             GpathSyntaxTestSupport.checkFindElement(getRoot)
             GpathSyntaxTestSupport.checkElementTypes(getRoot)
             GpathSyntaxTestSupport.checkElementClosureInteraction(getRoot)
+            GpathSyntaxTestSupport.checkElementTruth(getRoot)
         }
     }
 
@@ -55,6 +56,7 @@ class DOMCategoryTest extends GroovyTestCase {
         use(DOMCategory) {
             GpathSyntaxTestSupport.checkAttribute(getRoot)
             GpathSyntaxTestSupport.checkAttributes(getRoot)
+            GpathSyntaxTestSupport.checkAttributeTruth(getRoot)
         }
     }
 

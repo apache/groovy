@@ -57,11 +57,13 @@ class XmlSlurperTest extends GroovyTestCase {
         GpathSyntaxTestSupport.checkFindElement(getRoot)
         GpathSyntaxTestSupport.checkElementTypes(getRoot)
         GpathSyntaxTestSupport.checkElementClosureInteraction(getRoot)
+        GpathSyntaxTestSupport.checkElementTruth(getRoot)
     }
 
     void testAttribute() {
         GpathSyntaxTestSupport.checkAttribute(getRoot)
         GpathSyntaxTestSupport.checkAttributes(getRoot)
+        GpathSyntaxTestSupport.checkAttributeTruth(getRoot)
     }
 
     void testNavigation() {
