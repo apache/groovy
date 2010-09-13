@@ -753,6 +753,12 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                     otherStatements.remove(0);
                     statements.add(0, firstStatement);
                 } 
+                Statement stmtThis$0 = getImplicitThis$0StmtIfInnerClass(otherStatements);
+                if(stmtThis$0 != null) {
+                	// since there can be field init statements that depend on method/property dispatching
+                	// that uses this$0, it needs to bubble up just after the constructor call.
+                	statements.add(1, stmtThis$0);
+                }
                 statements.addAll(otherStatements);
             }
             BlockStatement newBlock = new BlockStatement(statements, block.getVariableScope());
@@ -775,6 +781,34 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                 node.addStaticInitializerStatements(staticStatements, true);
             }
         }
+    }
+    
+    /*
+     *  when InnerClassVisitor adds this.this$0 = $p$n, it adds it as a BlockStatement having that 
+     *  ExpressionStatemnt 
+     */
+    private Statement getImplicitThis$0StmtIfInnerClass(List<Statement> otherStatements) {
+    	if(!(classNode instanceof InnerClassNode)) return null;
+    	for(Statement stmt : otherStatements) {
+    		if(stmt instanceof BlockStatement) {
+    			List<Statement> stmts = ((BlockStatement) stmt).getStatements();
+    			for(Statement bstmt : stmts) {
+    				if(bstmt instanceof ExpressionStatement) {
+    					Expression expr = ((ExpressionStatement)bstmt).getExpression();
+    					if(expr instanceof BinaryExpression) {
+    						Expression lExpr = ((BinaryExpression)expr).getLeftExpression();
+    						if(lExpr instanceof FieldExpression) {
+    							if("this$0".equals(((FieldExpression) lExpr).getFieldName())) {
+    								stmts.remove(bstmt); // remove from here and let the caller reposition it
+    								return bstmt;
+    							}
+    						}
+    					}
+    				}
+    			}
+    		}
+    	}
+    	return null;
     }
     
     private ConstructorCallExpression getFirstIfSpecialConstructorCall(Statement code) {
