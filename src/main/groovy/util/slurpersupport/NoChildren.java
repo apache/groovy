@@ -30,106 +30,110 @@ import java.util.Map;
  * @author John Wilson
  */
 public class NoChildren extends GPathResult {
-  /**
-   * @param parent the GPathResult prior to the application of the expression creating this GPathResult
-   * @param name if the GPathResult corresponds to something with a name, e.g. a node
-   * @param namespaceTagHints the known tag to namespace mappings
-   */
-  public NoChildren(final GPathResult parent, final String name, final Map<String, String> namespaceTagHints) {
-    super(parent, name, "*", namespaceTagHints);
-  }
+    /**
+     * @param parent            the GPathResult prior to the application of the expression creating this GPathResult
+     * @param name              if the GPathResult corresponds to something with a name, e.g. a node
+     * @param namespaceTagHints the known tag to namespace mappings
+     */
+    public NoChildren(final GPathResult parent, final String name, final Map<String, String> namespaceTagHints) {
+        super(parent, name, "*", namespaceTagHints);
+    }
 
-  /* (non-Javadoc)
-   * @see org.codehaus.groovy.sandbox.util.slurpersupport.GPathResult#size()
-   */
-  public int size() {
-    return 0;
-  }
+    /* (non-Javadoc)
+    * @see org.codehaus.groovy.sandbox.util.slurpersupport.GPathResult#size()
+    */
+    public int size() {
+        return 0;
+    }
 
-  /* (non-Javadoc)
-   * @see org.codehaus.groovy.sandbox.util.slurpersupport.GPathResult#text()
-   */
-  public String text() {
-    return "";
-  }
+    /* (non-Javadoc)
+    * @see org.codehaus.groovy.sandbox.util.slurpersupport.GPathResult#text()
+    */
+    public String text() {
+        return "";
+    }
 
-  /* (non-Javadoc)
-   * @see org.codehaus.groovy.sandbox.util.slurpersupport.GPathResult#parents()
-   */
-  public GPathResult parents() {
-    // TODO Auto-generated method stub
-    throw new GroovyRuntimeException("parents() not implemented yet");
-  }
+    /* (non-Javadoc)
+    * @see org.codehaus.groovy.sandbox.util.slurpersupport.GPathResult#parents()
+    */
+    public GPathResult parents() {
+        // TODO Auto-generated method stub
+        throw new GroovyRuntimeException("parents() not implemented yet");
+    }
 
-  /* (non-Javadoc)
-   * @see org.codehaus.groovy.sandbox.util.slurpersupport.GPathResult#childNodes()
-   */
-  public Iterator childNodes() {
-    return iterator();
-  }
+    /* (non-Javadoc)
+    * @see org.codehaus.groovy.sandbox.util.slurpersupport.GPathResult#childNodes()
+    */
+    public Iterator childNodes() {
+        return iterator();
+    }
 
-  /* (non-Javadoc)
-   * @see org.codehaus.groovy.sandbox.util.slurpersupport.GPathResult#iterator()
-   */
-  public Iterator iterator() {
-    return new Iterator() {
-      public boolean hasNext() {
+    /* (non-Javadoc)
+    * @see org.codehaus.groovy.sandbox.util.slurpersupport.GPathResult#iterator()
+    */
+    public Iterator iterator() {
+        return new Iterator() {
+            public boolean hasNext() {
+                return false;
+            }
+
+            public Object next() {
+                return null;
+            }
+
+            public void remove() {
+                throw new UnsupportedOperationException();
+            }
+        };
+    }
+
+    /* (non-Javadoc)
+    * @see org.codehaus.groovy.sandbox.util.slurpersupport.GPathResult#find(groovy.lang.Closure)
+    */
+    public GPathResult find(final Closure closure) {
+        return this;
+    }
+
+    /* (non-Javadoc)
+    * @see org.codehaus.groovy.sandbox.util.slurpersupport.GPathResult#findAll(groovy.lang.Closure)
+    */
+    public GPathResult findAll(final Closure closure) {
+        return this;
+    }
+
+    /* (non-Javadoc)
+    * @see org.codehaus.groovy.sandbox.util.slurpersupport.GPathResult#nodeIterator()
+    */
+    public Iterator nodeIterator() {
+        return iterator();
+    }
+
+    /* (non-Javadoc)
+    * @see groovy.lang.Writable#writeTo(java.io.Writer)
+    */
+    public Writer writeTo(final Writer out) throws IOException {
+        return out;
+    }
+
+    /* (non-Javadoc)
+    * @see org.codehaus.groovy.sandbox.markup.Buildable#build(groovy.lang.GroovyObject)
+    */
+    public void build(final GroovyObject builder) {
+    }
+
+    protected void replaceNode(final Closure newValue) {
+        // No elements match GPath expression - do nothing
+    }
+
+    protected void replaceBody(final Object newValue) {
+        // No elements match GPath expression - do nothing
+    }
+
+    protected void appendNode(final Object newValue) {
+        // TODO consider creating an element for this
+    }
+
+    public boolean asBoolean() {
         return false;
-      }
-      
-      public Object next() {
-        return null;
-      }
-      
-      public void remove() {
-        throw new UnsupportedOperationException();
-      }
-    };
-  }
-
-  /* (non-Javadoc)
-   * @see org.codehaus.groovy.sandbox.util.slurpersupport.GPathResult#find(groovy.lang.Closure)
-   */
-  public GPathResult find(final Closure closure) {
-    return this;
-  }
-
-  /* (non-Javadoc)
-   * @see org.codehaus.groovy.sandbox.util.slurpersupport.GPathResult#findAll(groovy.lang.Closure)
-   */
-  public GPathResult findAll(final Closure closure) {
-    return this;
-  }
-
-  /* (non-Javadoc)
-   * @see org.codehaus.groovy.sandbox.util.slurpersupport.GPathResult#nodeIterator()
-   */
-  public Iterator nodeIterator() {
-    return iterator();
-  }
-
-  /* (non-Javadoc)
-   * @see groovy.lang.Writable#writeTo(java.io.Writer)
-   */
-  public Writer writeTo(final Writer out) throws IOException {
-    return out;
-  }
-
-  /* (non-Javadoc)
-   * @see org.codehaus.groovy.sandbox.markup.Buildable#build(groovy.lang.GroovyObject)
-   */
-  public void build(final GroovyObject builder) {
-  }
-
-  protected void replaceNode(final Closure newValue) {
-    // No elements match GPath expression - do nothing
-  }
-
-  protected void replaceBody(final Object newValue) {
-    // No elements match GPath expression - do nothing   
-  }
-
-  protected void appendNode(final Object newValue) {
-    // TODO consider creating an element for this
-  }
+    }
 }
