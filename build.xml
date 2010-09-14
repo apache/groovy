@@ -530,7 +530,6 @@ $Date$
              excludes="*.groovy" manifest="${mainClassesDirectory}/META-INF/MANIFEST.MF"/>
         <jar destfile="${targetDistDirectory}/groovy-${groovyVersion}-sources.jar" basedir="${mainSourceDirectory}">
             <!-- TODO temp hack - remove once modules are in place -->
-            <fileset dir="${mainSourceDirectory}"/>
             <fileset dir="${jmxSourceDirectory}/main/java"/>
             <fileset dir="${jmxSourceDirectory}/main/groovy"/>
             <fileset dir="${bsfSourceDirectory}/main/java"/>
