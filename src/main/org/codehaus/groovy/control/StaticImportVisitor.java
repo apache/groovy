@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2009 the original author or authors.
+ * Copyright 2003-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -359,6 +359,10 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
         if (!inSpecialConstructorCall && (inClosure || !ve.isInStaticContext())) return;
         if (stillResolving) return;
         if (ve.isThisExpression() || ve.isSuperExpression()) return;
+        if (currentMethod != null && currentMethod.isStatic()) {
+            FieldNode fieldNode = currentMethod.getDeclaringClass().getField(ve.getName());
+            if (fieldNode != null && fieldNode.isStatic()) return;
+        }
         Variable v = ve.getAccessedVariable();
         if (v != null && !(v instanceof DynamicVariable) && v.isInStaticContext()) return;
         addError("Apparent variable '" + ve.getName() + "' was found in a static scope but doesn't refer" +
