@@ -193,6 +193,19 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                 ClassNode.EMPTY_ARRAY,
                 new BytecodeSequence(new BytecodeInstruction(){
                     public void visit(MethodVisitor mv) {
+                        mv.visitVarInsn(ALOAD, 0);
+                        mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Object", "getClass", "()Ljava/lang/Class;");
+                        mv.visitMethodInsn(INVOKESTATIC, classInternalName, "$get$$class$" + classInternalName.replaceAll("\\/", "\\$"), "()Ljava/lang/Class;");
+
+                        Label l1 = new Label();
+                        mv.visitJumpInsn(IF_ACMPNE, l1);
+
+                        mv.visitVarInsn(ALOAD, 0);
+                        mv.visitMethodInsn(INVOKESTATIC, "org/codehaus/groovy/runtime/ScriptBytecodeAdapter", "initMetaClass", "(Ljava/lang/Object;)Lgroovy/lang/MetaClass;");
+                        mv.visitInsn(ARETURN);
+
+                        mv.visitLabel(l1);
+                        
                         mv.visitFieldInsn(GETSTATIC, classInternalName, staticMetaClassFieldName, "Lorg/codehaus/groovy/reflection/ClassInfo;");
                         mv.visitVarInsn(ASTORE, 1);
                         mv.visitVarInsn(ALOAD, 1);
