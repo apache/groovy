@@ -71,4 +71,24 @@ class PowerOperatorsTest extends GroovyTestCase {
         assert x**-y == 1/625
         assert x**-y == x**(-y)
     }
+
+    void testPowerConversions() {
+        assert (2**5).class == Integer
+        assert (2l**5).class == Long
+        assert (2.0d**5).class == Integer
+        assert (2.1d**5).class == Double
+        assert (new BigInteger("2")**5).class == BigInteger
+        assert (new BigDecimal("2")**5).class == BigDecimal
+
+        assert (2**-1).class == Double
+        assert (2l**-1).class == Double
+        assert (2.0d**-1).class == Double
+        assert (new BigInteger("2")**-1).class == Double
+        assert (new BigDecimal("2")**-1).class == Double
+
+        assert (2**31).class == BigInteger
+        assert (2l**63).class == BigInteger
+        assert (2**31) == new BigInteger("2").pow(31)
+        assert (2l**63) == new BigInteger("2").pow(63)
+    }
 }
