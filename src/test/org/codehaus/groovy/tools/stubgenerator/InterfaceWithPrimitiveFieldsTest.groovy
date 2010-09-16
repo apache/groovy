@@ -16,11 +16,7 @@
 package org.codehaus.groovy.tools.stubgenerator
 
 /**
- * Test circular reference between Java and Groovy, as well as inheritance:
- * a Shape Java interface is implemented by a Rectangle Groovy class,
- * which is then extended by a Square Java class.
- *
- * The test below looks at the characteristics of the stub generated in Java for the Rectangle class.
+ * Fixed wrong JavaDoc comment explaining the test case
  *
  * @author Guillaume Laforge
  */
