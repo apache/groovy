@@ -60,7 +60,10 @@ public class GroovyCategorySupport {
 
     public static class ThreadCategoryInfo extends HashMap<String, CategoryMethodList>{
         int level;
-
+        
+        private Map<String, String> propertyGetterMap;
+        private Map<String, String> propertySetterMap;
+        
         private void newScope () {
             categoriesInUse.incrementAndGet();
             level++;
@@ -127,9 +130,32 @@ public class GroovyCategorySupport {
                         }
                         list.add(mmethod);
                         Collections.sort(list);
+                        cachePropertyAccessor(mmethod);
                     }
                 }
             }
+        }
+        
+        private void cachePropertyAccessor(CategoryMethod method) {
+        	 String name = method.getName();             
+             int parameterLength = method.getParameterTypes().length;
+             
+             if (name.startsWith("get") && name.length() > 3 && parameterLength == 0) {            	 
+            	 propertyGetterMap = putPropertyAccessor(3, name, propertyGetterMap);
+             }             
+             else if (name.startsWith("set") && name.length() > 3 && parameterLength == 1) {
+            	 propertySetterMap = putPropertyAccessor(3, name, propertySetterMap);
+             }  
+        }
+        
+        // Precondition: accessorName.length() > prefixLength
+        private Map<String, String> putPropertyAccessor(int prefixLength, String accessorName, Map<String, String> map) {
+        	if (map == null) {
+       		  map = new HashMap<String, String>();
+       	    }	   
+        	String property = accessorName.substring(prefixLength, prefixLength+1).toLowerCase() + accessorName.substring(prefixLength+1);
+        	map.put(property, accessorName);
+        	return map;
         }
 
         private void use(Class categoryClass) {
@@ -147,6 +173,15 @@ public class GroovyCategorySupport {
 
         public CategoryMethodList getCategoryMethods(String name) {
             return level == 0 ? null : get(name);
+        }
+        
+        
+        String getPropertyCategoryGetterName(String propertyName){
+        	return propertyGetterMap != null ? propertyGetterMap.get(propertyName) : null; 
+        }
+        
+        String getPropertyCategorySetterName(String propertyName){
+        	return propertySetterMap != null ? propertySetterMap.get(propertyName) : null; 
         }
     }
 
@@ -238,6 +273,16 @@ public class GroovyCategorySupport {
         return categoryInfo == null ? null : categoryInfo.getCategoryMethods(name);
     }
 
+    public static String getPropertyCategoryGetterName(String propertyName) {
+    	 final ThreadCategoryInfo categoryInfo = THREAD_INFO.getInfoNullable();
+    	 return categoryInfo == null ? null : categoryInfo.getPropertyCategoryGetterName(propertyName);
+    }
+    
+    public static String getPropertyCategorySetterName(String propertyName) {
+   	     final ThreadCategoryInfo categoryInfo = THREAD_INFO.getInfoNullable();
+   	     return categoryInfo == null ? null : categoryInfo.getPropertyCategorySetterName(propertyName); 
+   }
+    
     private static class MyThreadLocal extends ThreadLocal<SoftReference> {
 
         ConcurrentHashMap<String,AtomicInteger> usage = new ConcurrentHashMap<String,AtomicInteger> ();
