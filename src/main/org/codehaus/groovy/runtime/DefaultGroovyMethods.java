@@ -94,6 +94,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     private static final Logger LOG = Logger.getLogger(DefaultGroovyMethods.class.getName());
     private static final Integer ONE = 1;
+	private static final BigInteger BI_INT_MAX = new BigInteger(new Integer(Integer.MAX_VALUE).toString());
+	private static final BigInteger BI_INT_MIN = new BigInteger(new Integer(Integer.MIN_VALUE).toString());
+	private static final BigInteger BI_LONG_MAX = new BigInteger(new Long(Long.MAX_VALUE).toString());
+	private static final BigInteger BI_LONG_MIN = new BigInteger(new Long(Long.MIN_VALUE).toString());
 
     public static final Class [] additionals = {
             NumberNumberPlus.class,
@@ -9295,6 +9299,86 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         }
     }
 
+    /**
+     * Power of a BigDecimal to an integer certain exponent.  If the
+     * exponent is positive, call the BigDecimal.pow(int) method to
+     * maintain precision. Called by the '**' operator.
+     * 
+     * @param self     a BigDecimal
+     * @param exponent an Integer exponent
+     * @return a Number to the power of a the exponent
+     */
+    public static Number power(BigDecimal self, Integer exponent) {
+    	if (exponent >= 0) {
+    		return self.pow(exponent);
+    	} else {
+    		return power(self, (double) exponent);
+    	}
+    }
+    
+    /**
+     * Power of a BigInteger to an integer certain exponent.  If the
+     * exponent is positive, call the BigInteger.pow(int) method to
+     * maintain precision. Called by the '**' operator.
+     * 
+     *  @param self     a BigInteger
+     *  @param exponent an Integer exponent
+     *  @return a Number to the power of a the exponent
+     */
+    public static Number power(BigInteger self, Integer exponent) {
+    	if (exponent >= 0) {
+    		return self.pow(exponent);
+    	} else {
+    		return power(self, (double) exponent);
+    	}
+    }
+    
+    /**
+     * Power of an integer to an integer certain exponent.  If the
+     * exponent is positive, convert to a BigInteger and call
+     * BigInteger.pow(int) method to maintain precision. Called by the
+     * '**' operator.
+     * 
+     *  @param self     an Integer
+     *  @param exponent an Integer exponent
+     *  @return a Number to the power of a the exponent
+     */
+    public static Number power(Integer self, Integer exponent) {
+    	if (exponent >= 0) {
+    		BigInteger answer = new BigInteger(self.toString()).pow(exponent);
+    		if(answer.compareTo(BI_INT_MIN) >= 0 && answer.compareTo(BI_INT_MAX) <= 0) {
+    			return answer.intValue();
+    		} else {
+    			return answer;
+    		}
+    	} else {
+    		return power(self, (double) exponent);
+    	}
+    }
+    
+    /**
+     * Power of a long to an integer certain exponent.  If the
+     * exponent is positive, convert to a BigInteger and call
+     * BigInteger.pow(int) method to maintain precision. Called by the
+     * '**' operator.
+     * 
+     * @param self     a Long
+     * @param exponent an Integer exponent
+     * @return a Number to the power of a the exponent
+     */
+    public static Number power(Long self, Integer exponent) {
+    	if (exponent >= 0) {
+    		BigInteger answer = new BigInteger(self.toString()).pow(exponent);
+    		if(answer.compareTo(BI_LONG_MIN) >= 0 && answer.compareTo(BI_LONG_MAX) <= 0) {
+    			return answer.longValue();
+    		} else {
+    			return answer;
+    		}
+    	} else {
+    		return power(self, (double) exponent);
+    	}
+    }
+    
     /**
      * Divide a Character by a Number. The ordinal value of the Character
      * is used in the division (the ordinal value is the unicode
