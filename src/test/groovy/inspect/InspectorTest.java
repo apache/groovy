@@ -85,7 +85,7 @@ public class InspectorTest extends MockObjectTestCase implements Serializable {
     public void testMetaMethods() {
         Inspector insp = new Inspector(new Object());
         Object[] metaMethods = insp.getMetaMethods();
-        String[] names = {"sleep", "sleep", "println", "println", "println", "find", "print", "print", "each", "invokeMethod", "asType",
+        String[] names = {"sleep", "sleep", "println", "println", "println", "find", "findResult", "findResult", "print", "print", "each", "invokeMethod", "asType",
                 "inspect", "is", "isCase", "identity", "getAt", "putAt", "dump", "getMetaPropertyValues", "getProperties",
                 "use", "use", "use", "printf", "printf", "eachWithIndex", "every", "every", "any", "any", "grep", "collect", "collect", "findAll",
                 "split", "findIndexOf", "findIndexOf", "findLastIndexOf", "findLastIndexOf", "findIndexValues", "findIndexValues",

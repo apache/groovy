@@ -2037,6 +2037,40 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Iterates through the object and returns the first non-null result from the closure, otherwise returns the defaultResult
+     *
+     * @param self    an Object with an iterator returning its values
+     * @param defaultResult an Object that should be returned if all closure results are null
+     * @param closure a closure that returns a non-null value when processing should stop
+     * @return the first non-null result of the closure, otherwise the default value
+     * @since 1.8
+     */
+    public static Object findResult(Object self, Object defaultResult, Closure closure) {
+        Object result = findResult(self, closure);
+        if (result == null) return defaultResult;
+        return result;
+    }
+
+    /**
+     * Iterates through the object and returns the first non-null result from the closure
+     *
+     * @param self    an Object with an iterator returning its values
+     * @param closure a closure that returns a non-null value when processing should stop
+     * @return the first non-null result of the closure
+     * @since 1.8
+     */
+    public static Object findResult(Object self, Closure closure) {
+        for (Iterator iter = InvokerHelper.asIterator(self); iter.hasNext();) {
+            Object value = iter.next();
+            Object result = closure.call(value);
+            if (result != null) {
+                return result;
+            }
+        }
+        return null;
+    }
+
+    /**
      * Finds the first value matching the closure condition.  Example:
      * <pre class="groovyTestCase">def list = [1,2,3]
      * assert 2 == list.find { it > 1 }
@@ -2057,6 +2091,47 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Iterates through the object and returns the first non-null result from the closure, if all are null, it returns the defaultResult.  Examples:
+     * <pre class="groovyTestCase">def list = [1,2,3]
+     * assert "Found 2" == list.findResult("default") { it > 1 ? "Found $it" : null }
+     *
+     * assert "default" == list.findResult("default") { it > 3 ? "Found $it" : null }
+     * </pre>
+     *
+     * @param self    a Collection
+     * @param defaultResult an Object that should be returned if all closure results are null
+     * @param closure a closure that returns a non-null value when processing should stop and a value should be returned
+     * @return the first non-null result of the closure
+     * @since 1.8
+     */
+    public static <T> Object findResult(Collection<T> self, Object defaultResult, Closure closure) {
+        Object result = findResult(self, closure);
+        if (result == null) return defaultResult;
+        return result;
+    }
+
+    /**
+     * Iterates through the object and returns the first non-null result from the closure.  Example:
+     * <pre class="groovyTestCase">def list = [1,2,3]
+     * assert "Found 2" == list.findResult { it > 1 ? "Found $it" : null }
+     * </pre>
+     *
+     * @param self    a Collection
+     * @param closure a closure that returns a non-null value when processing should stop and a value should be returned
+     * @return the first non-null result of the closure
+     * @since 1.8
+     */
+    public static <T> Object findResult(Collection<T> self, Closure closure) {
+        for (T value : self) {
+            Object result = closure.call(value);
+            if (result != null) {
+                return result;
+            }
+        }
+        return null;
+    }
+
+    /**
      * Finds the first entry matching the closure condition.  If the closure takes
      * two parameters, the entry key and value are passed.  If the closure takes
      * one parameter, the Map.Entry object is passed.
@@ -2071,6 +2146,51 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         for (Map.Entry<K, V> entry : self.entrySet()) {
             if (DefaultTypeTransformation.castToBoolean(callClosureForMapEntry(closure, entry))) {
                 return entry;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Returns the first non-null closure result by passing each map entry to the closure, otherwise it returns the defaultResult.  
+     * If the closure takes two parameters, the entry key and value are passed.  If the closure takes
+     * one parameter, the Map.Entry object is passed.
+     * <pre class="groovyTestCase">
+     *     assert "Found b:3" == [a:1, b:3].findResult("default") { if (it.value == 3) return "Found ${it.key}:${it.value}" }
+     *
+     *     assert "default" == [a:1, b:3].findResult("default") { if (it.value == 9) return "Found ${it.key}:${it.value}" }
+     * </pre>
+     *
+     * @param self    a Map
+     * @param defaultResult an Object that should be returned if all closure results are null
+     * @param closure a 1 or 2 arg Closure that returns a non-null value when processing should stop and a value should be returned
+     * @return a Map.Entry where the key is the key of the first non-null result of the closure and the value is that result
+     * @since 1.8
+     */
+    public static <K, V> Object findResult(Map<K, V> self, Object defaultResult, Closure closure) {
+        Object result = findResult(self, closure);
+        if (result == null) return defaultResult;
+        return result;
+    }
+
+    /**
+     * Returns the first non-null closure result by passing each map entry to the closure.  If the closure takes
+     * two parameters, the entry key and value are passed.  If the closure takes
+     * one parameter, the Map.Entry object is passed.
+     * <pre class="groovyTestCase">
+     *     assert "Found b:3" == [a:1, b:3].findResult { if (it.value == 3) return "Found ${it.key}:${it.value}" }
+     * </pre>
+     *
+     * @param self    a Map
+     * @param closure a 1 or 2 arg Closure that returns a non-null value when processing should stop and a value should be returned
+     * @return a Map.Entry where the key is the key of the first non-null result of the closure and the value is that result
+     * @since 1.8
+     */
+    public static <K, V> Object findResult(Map<K, V> self, Closure closure) {
+        for (Map.Entry<K, V> entry : self.entrySet()) {
+            Object result = callClosureForMapEntry(closure, entry);
+            if (result != null) {
+                return result;
             }
         }
         return null;

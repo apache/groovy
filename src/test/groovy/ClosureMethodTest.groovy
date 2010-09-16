@@ -44,12 +44,67 @@ class ClosureMethodTest extends GroovyTestCase {
         assert answer.get(3) == 12
     }
 
+    void testObjectFindResult() {
+        def oneToTenObjectIterator = {
+            def i = 1
+            [ hasNext: { i <= 10 }, next: { i++ } ] as Iterator
+        }
+
+        assert "Found 3" == oneToTenObjectIterator().findResult {
+            if (it > 2) return "Found $it"
+        }
+
+        assert false == oneToTenObjectIterator().findResult {
+            if (it > 2) return false
+        }
+
+        assert null == oneToTenObjectIterator().findResult {
+            if (false) return "won't get here, should return null"
+        }
+
+        assert "Found 3" == oneToTenObjectIterator().findResult("default") {
+            if (it > 2) return "Found $it"
+        }
+
+        assert "default" == oneToTenObjectIterator().findResult("default") {
+            if (false) return "won't get here, should return null"
+        }
+    }
+    
     void testListFind() {
         def list = ["a", "b", "c"]
         def answer = list.find{item-> item == "b" }
         assert answer == "b"
         answer = list.find{item-> item == "z" }
         assert answer == null
+    }
+
+    void testListFindResult() {
+        Collection<Integer> oneThroughFive = [1, 2, 3, 4, 5]
+        
+        assert "I found 4" == oneThroughFive.findResult { 
+            if (it > 3) return "I found $it"
+        }
+
+        assert null == oneThroughFive.findResult { 
+            if (it > 8) return "I found $it"
+        }
+
+        assert null == [].findResult {
+            if (it) return "I found $it"
+        }
+
+        assert false == oneThroughFive.findResult {
+            if (it > 3) return false  // a result of false is a valid result
+        }       
+
+        assert "I found 3" == oneThroughFive.findResult("default") { 
+            if (it > 2) return "I found $it"
+        }
+
+        assert "default" == oneThroughFive.findResult("default") { 
+            if (it > 8) return "I found $it"
+        }
     }
 
     void testMapFind() {
@@ -69,6 +124,30 @@ class ClosureMethodTest extends GroovyTestCase {
         assert answer instanceof Map.Entry
         assert answer.key == 2
         assert answer.value == 4
+    }
+
+    void testMapFindResult() {
+        def oneThroughFourMap = [a: 1, b: 2, c: 3, d: 4] 
+
+        assert "I found c:3" == oneThroughFourMap.findResult { entry ->
+            if (entry.value > 2) return "I found ${entry.key}:${entry.value}"
+        }
+
+        assert "I found c:3" == oneThroughFourMap.findResult { key, value ->
+            if (value > 2) return "I found ${key}:${value}"
+        }
+
+        assert false == oneThroughFourMap.findResult { 
+            if (it.value > 2) return false // a result of false is a valid result
+        }
+
+        assert "I found c:3" == oneThroughFourMap.findResult("default") { key, value ->
+            if (value > 2) return "I found ${key}:${value}"
+        }
+
+        assert "default" == oneThroughFourMap.findResult("default") { key, value ->
+            if (value > 10) return "I found ${key}:${value}"
+        }
     }
 
     void testListFindAll() {
