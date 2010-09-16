@@ -16,7 +16,7 @@
 package org.codehaus.groovy.tools.stubgenerator
 
 /**
- * Fixed wrong JavaDoc comment explaining the test case
+ * Checks the stub generator defines initialization expressions for primitive fields.
  *
  * @author Guillaume Laforge
  */
