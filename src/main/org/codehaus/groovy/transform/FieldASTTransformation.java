@@ -16,7 +16,7 @@
 
 package org.codehaus.groovy.transform;
 
-import groovy.transform.ScriptField;
+import groovy.transform.Field;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
@@ -30,15 +30,15 @@ import org.objectweb.asm.Opcodes;
 import java.util.Arrays;
 
 /**
- * Handles transformation for the @ScriptField annotation.
+ * Handles transformation for the @Field annotation.
  * This is experimental, use at your own risk.
  *
  * @author Paul King
  */
 @GroovyASTTransformation(phase = CompilePhase.SEMANTIC_ANALYSIS)
-public class ScriptFieldASTTransformation extends ClassCodeExpressionTransformer implements ASTTransformation, Opcodes {
+public class FieldASTTransformation extends ClassCodeExpressionTransformer implements ASTTransformation, Opcodes {
 
-    private static final Class MY_CLASS = ScriptField.class;
+    private static final Class MY_CLASS = Field.class;
     private static final ClassNode MY_TYPE = new ClassNode(MY_CLASS);
     private static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
     private SourceUnit sourceUnit;

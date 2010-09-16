@@ -20,11 +20,11 @@ import gls.CompilableTestSupport
 /**
  * @author Paul King
  */
-class ScriptFieldTransformTest extends CompilableTestSupport {
+class FieldTransformTest extends CompilableTestSupport {
 
     void testInstanceField() {
         assertScript """
-            @groovy.transform.ScriptField List awe = [1, 2, 3]
+            @groovy.transform.Field List awe = [1, 2, 3]
             def awesum() { awe.sum() }
             assert awesum() == 6
             assert this.awe instanceof List
@@ -35,7 +35,7 @@ class ScriptFieldTransformTest extends CompilableTestSupport {
     void testStaticFieldFromScript() {
         assertScript """
             import groovy.transform.*
-            @ScriptField static List awe = [1, 2, 3]
+            @Field static List awe = [1, 2, 3]
             def awesum() { awe.sum() + this.class.awe.sum() }
             assert awesum() == 12
             assert this.class.awe instanceof List
@@ -45,7 +45,7 @@ class ScriptFieldTransformTest extends CompilableTestSupport {
     void testStaticFieldFromMethod() {
         assertScript """
             import groovy.transform.*
-            @ScriptField static String exer = 'exercise'
+            @Field static String exer = 'exercise'
             static exersize() { exer.size() }
             assert exersize() == 8
         """
@@ -55,7 +55,7 @@ class ScriptFieldTransformTest extends CompilableTestSupport {
         assertScript """
             def scriptText = '''
                 import groovy.transform.*
-                @ScriptField public pepsi = [1, 2, 3]
+                @Field public pepsi = [1, 2, 3]
             '''
             def gcs = new GroovyCodeSource(scriptText, 'foo', 'bar')
             def klass = new GroovyShell().parseClass(gcs)
@@ -67,7 +67,7 @@ class ScriptFieldTransformTest extends CompilableTestSupport {
         assertScript """
             def scriptText = '''
                 import groovy.transform.*
-                @ScriptField public static ad = [1, 2, 3]
+                @Field public static ad = [1, 2, 3]
                 assert ad.min() == 1
             '''
             def gcs = new GroovyCodeSource(scriptText, 'foo', 'bar')
@@ -79,9 +79,9 @@ class ScriptFieldTransformTest extends CompilableTestSupport {
     void testFieldTypes() {
         assertScript """
             import groovy.transform.*
-            @ScriptField int one
-            @ScriptField int two = 2
-            @ScriptField Integer three = 3
+            @Field int one
+            @Field int two = 2
+            @Field Integer three = 3
             this.one = 1
             assert this.one + this.two + this.three == 6
         """
@@ -91,7 +91,7 @@ class ScriptFieldTransformTest extends CompilableTestSupport {
         shouldNotCompile """
             import groovy.transform.*
             def method() {
-                @ScriptField int one
+                @Field int one
             }
         """
     }
@@ -100,7 +100,7 @@ class ScriptFieldTransformTest extends CompilableTestSupport {
         shouldNotCompile """
             import groovy.transform.*
             class Inner {
-                @ScriptField int one
+                @Field int one
             }
         """
     }
@@ -109,7 +109,7 @@ class ScriptFieldTransformTest extends CompilableTestSupport {
         shouldNotCompile """
             import groovy.transform.*
             class Inner {
-                @ScriptField int one
+                @Field int one
             }
             println Inner.class.name
         """
@@ -121,7 +121,7 @@ class ScriptFieldTransformTest extends CompilableTestSupport {
             import groovy.transform.*
             class Inner {
                 def bar() {
-                    @ScriptField int one
+                    @Field int one
                 }
             }
         """
@@ -133,7 +133,7 @@ class ScriptFieldTransformTest extends CompilableTestSupport {
             import groovy.transform.*
             class Inner {
                 def bar() {
-                    @ScriptField int one
+                    @Field int one
                 }
             }
             println Inner.class.name
