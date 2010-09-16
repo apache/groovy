@@ -1537,9 +1537,11 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
         // check for a category method named like a getter
         if (!useSuper && !isStatic && GroovyCategorySupport.hasCategoryInCurrentThread()) {
-            String getterName = "get" + MetaClassHelper.capitalize(name);
-            MetaMethod categoryMethod = getCategoryMethodGetter(sender, getterName, false);
-            if (categoryMethod != null) method = categoryMethod;
+        	String getterName = GroovyCategorySupport.getPropertyCategoryGetterName(name);
+        	if (getterName != null) {
+	            MetaMethod categoryMethod = getCategoryMethodGetter(sender, getterName, false);
+	            if (categoryMethod != null) method = categoryMethod;
+        	}
         }
 
         //----------------------------------------------------------------------
@@ -1659,10 +1661,12 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
         // check for a category method named like a getter
         if (!useSuper && !isStatic && GroovyCategorySupport.hasCategoryInCurrentThread()) {
-            String getterName = "get" + MetaClassHelper.capitalize(name);
-            MetaMethod categoryMethod = getCategoryMethodGetter(sender, getterName, false);
-            if (categoryMethod != null)
-              method = categoryMethod;
+        	String getterName = GroovyCategorySupport.getPropertyCategoryGetterName(name);
+            if (getterName != null) {
+            	MetaMethod categoryMethod = getCategoryMethodGetter(sender, getterName, false);
+            	if (categoryMethod != null)
+            		method = categoryMethod;
+            }
         }
 
         //----------------------------------------------------------------------
@@ -2309,12 +2313,14 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         // check for a category method named like a setter
         if (!useSuper && !isStatic && GroovyCategorySupport.hasCategoryInCurrentThread()
                 && name.length() > 0) {
-            String getterName = "set" + MetaClassHelper.capitalize(name);
-            MetaMethod categoryMethod = getCategoryMethodSetter(sender, getterName, false);
-            if (categoryMethod != null) {
-                method = categoryMethod;
-                arguments = new Object[]{newValue};
-            }
+        	String getterName = GroovyCategorySupport.getPropertyCategorySetterName(name);
+        	if (getterName != null) {
+	            MetaMethod categoryMethod = getCategoryMethodSetter(sender, getterName, false);
+	            if (categoryMethod != null) {
+	                method = categoryMethod;
+	                arguments = new Object[]{newValue};
+	            }
+        	}
         }
 
         //----------------------------------------------------------------------
