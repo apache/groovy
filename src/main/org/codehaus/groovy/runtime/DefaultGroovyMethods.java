@@ -929,6 +929,27 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * 'Case' implementation for maps which tests the groovy truth
+     * value obtained using the 'switch' operand as key.
+     * For example:
+     * <pre class="groovyTestCase">switch( 'foo' ) {
+     *   case [foo:true, bar:false]:
+     *     assert true
+     *     break
+     *   default:
+     *     assert false
+     * }</pre>
+     *
+     * @param caseValue   the case value
+     * @param switchValue the switch value
+     * @return the groovy truth value from caseValue corresponding to the switchValue key
+     * @since 1.7.6
+     */
+    public static boolean isCase(Map caseValue, Object switchValue) {
+        return DefaultTypeTransformation.castToBoolean(caseValue.get(switchValue));
+    }
+
+    /**
      * 'Case' implementation for the {@link java.util.regex.Pattern} class, which allows
      * testing a String against a number of regular expressions.
      * For example:
