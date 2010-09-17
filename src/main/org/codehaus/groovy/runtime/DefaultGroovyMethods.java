@@ -94,10 +94,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     private static final Logger LOG = Logger.getLogger(DefaultGroovyMethods.class.getName());
     private static final Integer ONE = 1;
-	private static final BigInteger BI_INT_MAX = BigInteger.valueOf(Integer.MAX_VALUE);
-	private static final BigInteger BI_INT_MIN = BigInteger.valueOf(Integer.MIN_VALUE);
-	private static final BigInteger BI_LONG_MAX = BigInteger.valueOf(Long.MAX_VALUE);
-	private static final BigInteger BI_LONG_MIN = BigInteger.valueOf(Long.MIN_VALUE);
+    private static final BigInteger BI_INT_MAX = BigInteger.valueOf(Integer.MAX_VALUE);
+    private static final BigInteger BI_INT_MIN = BigInteger.valueOf(Integer.MIN_VALUE);
+    private static final BigInteger BI_LONG_MAX = BigInteger.valueOf(Long.MAX_VALUE);
+    private static final BigInteger BI_LONG_MIN = BigInteger.valueOf(Long.MIN_VALUE);
 
     public static final Class [] additionals = {
             NumberNumberPlus.class,
@@ -8966,13 +8966,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return a Number to the power of a the exponent
      */
     public static Number power(BigDecimal self, Integer exponent) {
-    	if (exponent >= 0) {
-    		return self.pow(exponent);
-    	} else {
-    		return power(self, (double) exponent);
-    	}
+        if (exponent >= 0) {
+            return self.pow(exponent);
+        } else {
+            return power(self, (double) exponent);
+        }
     }
-    
+
     /**
      * Power of a BigInteger to an integer certain exponent.  If the
      * exponent is positive, call the BigInteger.pow(int) method to
@@ -8983,13 +8983,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *  @return a Number to the power of a the exponent
      */
     public static Number power(BigInteger self, Integer exponent) {
-    	if (exponent >= 0) {
-    		return self.pow(exponent);
-    	} else {
-    		return power(self, (double) exponent);
-    	}
+        if (exponent >= 0) {
+            return self.pow(exponent);
+        } else {
+            return power(self, (double) exponent);
+        }
     }
-    
+
     /**
      * Power of an integer to an integer certain exponent.  If the
      * exponent is positive, convert to a BigInteger and call
@@ -9001,39 +9001,39 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *  @return a Number to the power of a the exponent
      */
     public static Number power(Integer self, Integer exponent) {
-    	if (exponent >= 0) {
-    		BigInteger answer = BigInteger.valueOf(self).pow(exponent);
-    		if(answer.compareTo(BI_INT_MIN) >= 0 && answer.compareTo(BI_INT_MAX) <= 0) {
-    			return answer.intValue();
-    		} else {
-    			return answer;
-    		}
-    	} else {
-    		return power(self, (double) exponent);
-    	}
+        if (exponent >= 0) {
+            BigInteger answer = BigInteger.valueOf(self).pow(exponent);
+            if (answer.compareTo(BI_INT_MIN) >= 0 && answer.compareTo(BI_INT_MAX) <= 0) {
+                return answer.intValue();
+            } else {
+                return answer;
+            }
+        } else {
+            return power(self, (double) exponent);
+        }
     }
-    
+
     /**
      * Power of a long to an integer certain exponent.  If the
      * exponent is positive, convert to a BigInteger and call
      * BigInteger.pow(int) method to maintain precision. Called by the
      * '**' operator.
-     * 
+     *
      * @param self     a Long
      * @param exponent an Integer exponent
      * @return a Number to the power of a the exponent
      */
     public static Number power(Long self, Integer exponent) {
-    	if (exponent >= 0) {
-    		BigInteger answer = BigInteger.valueOf(self).pow(exponent);
-    		if(answer.compareTo(BI_LONG_MIN) >= 0 && answer.compareTo(BI_LONG_MAX) <= 0) {
-    			return answer.longValue();
-    		} else {
-    			return answer;
-    		}
-    	} else {
-    		return power(self, (double) exponent);
-    	}
+        if (exponent >= 0) {
+            BigInteger answer = BigInteger.valueOf(self).pow(exponent);
+            if (answer.compareTo(BI_LONG_MIN) >= 0 && answer.compareTo(BI_LONG_MAX) <= 0) {
+                return answer.longValue();
+            } else {
+                return answer;
+            }
+        } else {
+            return power(self, (double) exponent);
+        }
     }
 
     /**
