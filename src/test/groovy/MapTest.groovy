@@ -201,4 +201,22 @@ class MapTest extends GroovyTestCase {
         assert [1: 3, 2: 4] == m
         assert m == [1: 3, 2: 4]
     }
+
+    void testMapIsCaseWithGrep() {
+        def predicate = [apple:true, banana:true, lemon:false, orange:false, pear:true]
+        def fruitList = ["apple", "apple", "pear", "orange", "pear", "lemon", "banana"]
+        def expected = ["apple", "apple", "pear", "pear", "banana"]
+        assert fruitList.grep(predicate) == expected
+    }
+
+    void testMapIsCaseWithSwitch() {
+        switch ('foo') {
+            case [foo: true, bar: false]: assert true; break
+            default: assert false
+        }
+        switch ('bar') {
+            case [foo: true, bar: false]: assert false; break
+            default: assert true
+        }
+    }
 }
