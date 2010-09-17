@@ -94,10 +94,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     private static final Logger LOG = Logger.getLogger(DefaultGroovyMethods.class.getName());
     private static final Integer ONE = 1;
-	private static final BigInteger BI_INT_MAX = new BigInteger(new Integer(Integer.MAX_VALUE).toString());
-	private static final BigInteger BI_INT_MIN = new BigInteger(new Integer(Integer.MIN_VALUE).toString());
-	private static final BigInteger BI_LONG_MAX = new BigInteger(new Long(Long.MAX_VALUE).toString());
-	private static final BigInteger BI_LONG_MIN = new BigInteger(new Long(Long.MIN_VALUE).toString());
+	private static final BigInteger BI_INT_MAX = BigInteger.valueOf(Integer.MAX_VALUE);
+	private static final BigInteger BI_INT_MIN = BigInteger.valueOf(Integer.MIN_VALUE);
+	private static final BigInteger BI_LONG_MAX = BigInteger.valueOf(Long.MAX_VALUE);
+	private static final BigInteger BI_LONG_MIN = BigInteger.valueOf(Long.MIN_VALUE);
 
     public static final Class [] additionals = {
             NumberNumberPlus.class,
@@ -8981,7 +8981,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static Number power(Integer self, Integer exponent) {
     	if (exponent >= 0) {
-    		BigInteger answer = new BigInteger(self.toString()).pow(exponent);
+    		BigInteger answer = BigInteger.valueOf(self).pow(exponent);
     		if(answer.compareTo(BI_INT_MIN) >= 0 && answer.compareTo(BI_INT_MAX) <= 0) {
     			return answer.intValue();
     		} else {
@@ -9004,7 +9004,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static Number power(Long self, Integer exponent) {
     	if (exponent >= 0) {
-    		BigInteger answer = new BigInteger(self.toString()).pow(exponent);
+    		BigInteger answer = BigInteger.valueOf(self).pow(exponent);
     		if(answer.compareTo(BI_LONG_MIN) >= 0 && answer.compareTo(BI_LONG_MAX) <= 0) {
     			return answer.longValue();
     		} else {
