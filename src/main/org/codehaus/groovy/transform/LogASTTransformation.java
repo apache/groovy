@@ -22,7 +22,6 @@ import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
 import org.codehaus.groovy.syntax.SyntaxException;
-import org.objectweb.asm.Opcodes;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
@@ -162,7 +161,7 @@ public class LogASTTransformation implements ASTTransformation {
 
         Method annotationMethod;
         try {
-            annotationMethod = annotationClass.getDeclaredMethod("loggingStrategy", null);
+            annotationMethod = annotationClass.getDeclaredMethod("loggingStrategy", (Class[])null);
         } catch (Throwable e) {
             throw new RuntimeException("Could not find method named loggingStrategy on class named " + annotationName);
         }
