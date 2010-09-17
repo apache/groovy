@@ -15,7 +15,12 @@
  */
 package groovy.util.logging;
 
+import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.FieldNode;
+import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.transform.GroovyASTTransformationClass;
+import org.codehaus.groovy.transform.LogASTTransformation;
+import org.objectweb.asm.Opcodes;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -48,4 +53,33 @@ import java.lang.annotation.Target;
 @GroovyASTTransformationClass("org.codehaus.groovy.transform.LogASTTransformation")
 public @interface Commons {
     String value() default "log";
+    Class<? extends LogASTTransformation.LoggingStrategy> loggingStrategy() default CommonsLoggingStrategy.class;
+
+    public  static class CommonsLoggingStrategy implements LogASTTransformation.LoggingStrategy {
+        public FieldNode addLoggerFieldToClass(ClassNode classNode, String logFieldName) {
+            return classNode.addField(logFieldName,
+                    Opcodes.ACC_FINAL | Opcodes.ACC_TRANSIENT | Opcodes.ACC_STATIC | Opcodes.ACC_PRIVATE,
+                    new ClassNode("org.apache.commons.logging.Log", Opcodes.ACC_PUBLIC, new ClassNode(Object.class)),
+                    new MethodCallExpression(
+                            new ClassExpression(new ClassNode("org.apache.commons.logging.LogFactory", Opcodes.ACC_PUBLIC, new ClassNode(Object.class))),
+                            "getLog",
+                            new ClassExpression(classNode)));
+        }
+
+        public boolean isLoggingMethod(String methodName) {
+            return methodName.matches("fatal|error|warn|info|debug|trace");
+        }
+
+        public Expression wrapLoggingMethodCall(Expression logVariable, String methodName, Expression originalExpression) {
+            MethodCallExpression condition = new MethodCallExpression(
+                    logVariable,
+                    "is" + methodName.substring(0, 1).toUpperCase() + methodName.substring(1, methodName.length()) + "Enabled",
+                    ArgumentListExpression.EMPTY_ARGUMENTS);
+
+            return new TernaryExpression(
+                    new BooleanExpression(condition),
+                    originalExpression,
+                    ConstantExpression.NULL);
+        }
+   }
 }

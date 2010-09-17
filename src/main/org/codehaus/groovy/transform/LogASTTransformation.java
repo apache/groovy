@@ -24,6 +24,7 @@ import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.objectweb.asm.Opcodes;
 
+import java.lang.reflect.Method;
 import java.util.Arrays;
 
 /**
@@ -51,7 +52,8 @@ public class LogASTTransformation implements ASTTransformation {
         AnnotationNode logAnnotation = (AnnotationNode) nodes[0];
 
         final LoggingStrategy loggingStrategy = createLoggingStrategy(logAnnotation); 
-
+        if (loggingStrategy == null) return;
+        
         final String logFieldName = lookupLogFieldName(logAnnotation);
 
         if (!(targetClass instanceof ClassNode))
@@ -147,152 +149,62 @@ public class LogASTTransformation implements ASTTransformation {
         );
     }
 
-    private static Expression commonMethodCallExpression(Expression variableExpression, String methodName, Expression exp) {
+    private LoggingStrategy createLoggingStrategy(AnnotationNode logAnnotation) {
 
-        MethodCallExpression condition = new MethodCallExpression(
-                variableExpression,
-                "is" + methodName.substring(0, 1).toUpperCase() + methodName.substring(1, methodName.length()) + "Enabled",
-                ArgumentListExpression.EMPTY_ARGUMENTS);
+        String annotationName = logAnnotation.getClassNode().getName();
 
-        return new TernaryExpression(
-                new BooleanExpression(condition),
-                exp,
-                ConstantExpression.NULL);
-    }
-
-    private interface LoggingStrategy {
-        FieldNode addLoggerFieldToClass(ClassNode classNode, String fieldName); 
-        boolean isLoggingMethod(String methodName); 
-        Expression wrapLoggingMethodCall(Expression logVariable, String methodName, Expression originalExpression); 
-    }
-
-    private static LoggingStrategy createLoggingStrategy(AnnotationNode logAnnotation) {
-        if ("groovy.util.logging.Log".equals(logAnnotation.getClassNode().getName())) {
-            return new JavaUtilLoggingStrategy(); 
-        }
-        if ("groovy.util.logging.Slf4j".equals(logAnnotation.getClassNode().getName())) {
-            return new Slf4jLoggingStrategy(); 
-        }
-        if ("groovy.util.logging.Log4j".equals(logAnnotation.getClassNode().getName())) {
-            return new Log4jLoggingStrategy();         
-        }
-        if ("groovy.util.logging.Commons".equals(logAnnotation.getClassNode().getName())) {
-            return new CommonsLoggingStrategy(); 
-        }
-        throw new GroovyBugError("Class annotation " + logAnnotation.getClassNode().getName() + " must map to a logging strategy.");
-    }
-
-    private static class JavaUtilLoggingStrategy implements LoggingStrategy {
-        public FieldNode addLoggerFieldToClass(ClassNode classNode, String logFieldName) {
-            return classNode.addField(logFieldName,
-                        Opcodes.ACC_FINAL | Opcodes.ACC_TRANSIENT | Opcodes.ACC_STATIC | Opcodes.ACC_PRIVATE,
-                        new ClassNode("java.util.logging.Logger", Opcodes.ACC_PUBLIC, new ClassNode(Object.class)),
-                        new MethodCallExpression(
-                                new ClassExpression(new ClassNode("java.util.logging.Logger", Opcodes.ACC_PUBLIC, new ClassNode(Object.class))),
-                                "getLogger",
-                                new ConstantExpression(classNode.getName())));
+        Class annotationClass;
+        try {
+            annotationClass = Class.forName(annotationName);
+        } catch (Throwable e) {
+            throw new RuntimeException("Could not resolve class named " + annotationName);
         }
 
-        public boolean isLoggingMethod(String methodName) {
-            return methodName.matches("severe|warning|info|fine|finer|finest"); 
+        Method annotationMethod;
+        try {
+            annotationMethod = annotationClass.getDeclaredMethod("loggingStrategy", null);
+        } catch (Throwable e) {
+            throw new RuntimeException("Could not find method named loggingStrategy on class named " + annotationName);
         }
 
-        public Expression wrapLoggingMethodCall(Expression logVariable, String methodName, Expression originalExpression) {
-            ClassNode levelClass = new ClassNode("java.util.logging.Level", 0, ClassHelper.OBJECT_TYPE);
-            AttributeExpression logLevelExpression = new AttributeExpression(
-                    new ClassExpression(levelClass),
-                    new ConstantExpression(methodName.toUpperCase()));
+        Object defaultValue;
+        try {
+            defaultValue = annotationMethod.getDefaultValue();
+        } catch (Throwable e) {
+            throw new RuntimeException("Could not find default value of method named loggingStrategy on class named " + annotationName);
+        }
 
-            ArgumentListExpression args = new ArgumentListExpression();
-            args.addExpression(logLevelExpression);
-            MethodCallExpression condition = new MethodCallExpression(logVariable, "isLoggable", args);
+        if (!LoggingStrategy.class.isAssignableFrom((Class)defaultValue)) {
+            throw new RuntimeException("Default loggingStrategy value on class named " + annotationName + " is not a LoggingStrategy");
+        }
 
-            return new TernaryExpression(
-                    new BooleanExpression(condition),
-                    originalExpression,
-                    ConstantExpression.NULL);
-
+        try {
+            Class<? extends LoggingStrategy> strategyClass = (Class<? extends LoggingStrategy>) defaultValue;
+            return strategyClass.newInstance();
+        } catch (Exception e) {
+            return null;
         }
     }
 
-    private static class Slf4jLoggingStrategy implements LoggingStrategy {
-        public FieldNode addLoggerFieldToClass(ClassNode classNode, String logFieldName) {
-            return classNode.addField(logFieldName,
-                    Opcodes.ACC_FINAL | Opcodes.ACC_TRANSIENT | Opcodes.ACC_STATIC | Opcodes.ACC_PRIVATE,
-                    new ClassNode("org.slf4j.Logger", Opcodes.ACC_PUBLIC, new ClassNode(Object.class)),
-                    new MethodCallExpression(
-                            new ClassExpression(new ClassNode("org.slf4j.LoggerFactory", Opcodes.ACC_PUBLIC, new ClassNode(Object.class))),
-                            "getLogger",
-                            new ClassExpression(classNode)));
 
-        }
-
-        public boolean isLoggingMethod(String methodName) {
-            return methodName.matches("error|warn|info|debug|trace"); 
-        }
-
-        public Expression wrapLoggingMethodCall(Expression logVariable, String methodName, Expression originalExpression) {
-            return commonMethodCallExpression(logVariable, methodName, originalExpression);
-        }
+    /**
+     * A LoggingStrategy defines how to wire a new logger instance into an existing class.
+     * It is meant to be used with the @Log family of annotations to allow you to
+     * write your own Log annotation provider.
+     */
+    public interface LoggingStrategy {
+        /**
+         * In this method, you are given a ClassNode and a field name, and you must add a new Field
+         *  onto the class. Return the result of the ClassNode.addField operations.
+         * @param classNode
+         *      the class that was originally annotated with the Log transformation.
+         * @param fieldName
+         *      the name of the logger field
+         * @return
+         *      the FieldNode instance that was created and added to the class
+         */
+        FieldNode addLoggerFieldToClass(ClassNode classNode, String fieldName);
+        boolean isLoggingMethod(String methodName);
+        Expression wrapLoggingMethodCall(Expression logVariable, String methodName, Expression originalExpression);
     }
-
-    private static class Log4jLoggingStrategy implements LoggingStrategy {
-        public FieldNode addLoggerFieldToClass(ClassNode classNode, String logFieldName) {
-            return classNode.addField(logFieldName,
-                    Opcodes.ACC_FINAL | Opcodes.ACC_TRANSIENT | Opcodes.ACC_STATIC | Opcodes.ACC_PRIVATE,
-                    new ClassNode("org.apache.log4j.Logger", Opcodes.ACC_PUBLIC, new ClassNode(Object.class)),
-                    new MethodCallExpression(
-                            new ClassExpression(new ClassNode("org.apache.log4j.Logger", Opcodes.ACC_PUBLIC, new ClassNode(Object.class))),
-                            "getLogger",
-                            new ClassExpression(classNode)));
-        }
-
-        public boolean isLoggingMethod(String methodName) {
-            return methodName.matches("fatal|error|warn|info|debug|trace"); 
-        }
-
-        public Expression wrapLoggingMethodCall(Expression logVariable, String methodName, Expression originalExpression) {
-            final MethodCallExpression condition;
-            if (!"trace".equals(methodName)) {
-                ClassNode levelClass = new ClassNode("org.apache.log4j.Priority", 0, ClassHelper.OBJECT_TYPE);
-                AttributeExpression logLevelExpression = new AttributeExpression(
-                        new ClassExpression(levelClass),
-                        new ConstantExpression(methodName.toUpperCase()));
-                ArgumentListExpression args = new ArgumentListExpression();
-                args.addExpression(logLevelExpression);
-                condition = new MethodCallExpression(logVariable, "isEnabledFor", args);
-            } else {
-                // log4j api is inconsistent, so trace requires special handling
-                condition = new MethodCallExpression(
-                        logVariable,
-                        "is" + methodName.substring(0, 1).toUpperCase() + methodName.substring(1, methodName.length()) + "Enabled",
-                        ArgumentListExpression.EMPTY_ARGUMENTS);
-            }
-
-            return new TernaryExpression(
-                    new BooleanExpression(condition),
-                    originalExpression,
-                    ConstantExpression.NULL);
-        }
-    }
-
-    private static class CommonsLoggingStrategy implements LoggingStrategy {
-        public FieldNode addLoggerFieldToClass(ClassNode classNode, String logFieldName) {
-            return classNode.addField(logFieldName,
-                    Opcodes.ACC_FINAL | Opcodes.ACC_TRANSIENT | Opcodes.ACC_STATIC | Opcodes.ACC_PRIVATE,
-                    new ClassNode("org.apache.commons.logging.Log", Opcodes.ACC_PUBLIC, new ClassNode(Object.class)),
-                    new MethodCallExpression(
-                            new ClassExpression(new ClassNode("org.apache.commons.logging.LogFactory", Opcodes.ACC_PUBLIC, new ClassNode(Object.class))),
-                            "getLog",
-                            new ClassExpression(classNode)));
-        }
- 
-        public boolean isLoggingMethod(String methodName) {
-            return methodName.matches("fatal|error|warn|info|debug|trace"); 
-        }
-
-        public Expression wrapLoggingMethodCall(Expression logVariable, String methodName, Expression originalExpression) {
-            return commonMethodCallExpression(logVariable, methodName, originalExpression);
-        }
-   }
 }

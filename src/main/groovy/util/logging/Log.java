@@ -15,12 +15,18 @@
  */
 package groovy.util.logging;
 
+import org.codehaus.groovy.ast.ClassHelper;
+import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.FieldNode;
+import org.codehaus.groovy.ast.expr.*;
+import org.codehaus.groovy.transform.GroovyASTTransformationClass;
+import org.codehaus.groovy.transform.LogASTTransformation.LoggingStrategy;
+import org.objectweb.asm.Opcodes;
+
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-
-import org.codehaus.groovy.transform.GroovyASTTransformationClass;
 
 /**
  * This local transform adds a logging ability to your program using
@@ -53,5 +59,42 @@ import org.codehaus.groovy.transform.GroovyASTTransformationClass;
 @Target({ElementType.TYPE})
 @GroovyASTTransformationClass("org.codehaus.groovy.transform.LogASTTransformation")
 public @interface Log {
-    String value() default "log";                  
+    String value() default "log";
+    Class<? extends LoggingStrategy> loggingStrategy() default JavaUtilLoggingStrategy.class;
+
+    /**
+     * This class contains the logic of how to weave a Java Util Logging logger into the host class.
+     */
+    public static class JavaUtilLoggingStrategy implements LoggingStrategy {
+        public FieldNode addLoggerFieldToClass(ClassNode classNode, String logFieldName) {
+            return classNode.addField(logFieldName,
+                        Opcodes.ACC_FINAL | Opcodes.ACC_TRANSIENT | Opcodes.ACC_STATIC | Opcodes.ACC_PRIVATE,
+                        new ClassNode("java.util.logging.Logger", Opcodes.ACC_PUBLIC, new ClassNode(Object.class)),
+                        new MethodCallExpression(
+                                new ClassExpression(new ClassNode("java.util.logging.Logger", Opcodes.ACC_PUBLIC, new ClassNode(Object.class))),
+                                "getLogger",
+                                new ConstantExpression(classNode.getName())));
+        }
+
+        public boolean isLoggingMethod(String methodName) {
+            return methodName.matches("severe|warning|info|fine|finer|finest");
+        }
+
+        public Expression wrapLoggingMethodCall(Expression logVariable, String methodName, Expression originalExpression) {
+            ClassNode levelClass = new ClassNode("java.util.logging.Level", 0, ClassHelper.OBJECT_TYPE);
+            AttributeExpression logLevelExpression = new AttributeExpression(
+                    new ClassExpression(levelClass),
+                    new ConstantExpression(methodName.toUpperCase()));
+
+            ArgumentListExpression args = new ArgumentListExpression();
+            args.addExpression(logLevelExpression);
+            MethodCallExpression condition = new MethodCallExpression(logVariable, "isLoggable", args);
+
+            return new TernaryExpression(
+                    new BooleanExpression(condition),
+                    originalExpression,
+                    ConstantExpression.NULL);
+
+        }
+    }
 }

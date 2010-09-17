@@ -20,7 +20,12 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.FieldNode;
+import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.transform.GroovyASTTransformationClass;
+import org.codehaus.groovy.transform.LogASTTransformation;
+import org.objectweb.asm.Opcodes;
 
 /**
  * This local transform adds a logging ability to your program using
@@ -48,4 +53,35 @@ import org.codehaus.groovy.transform.GroovyASTTransformationClass;
 @GroovyASTTransformationClass("org.codehaus.groovy.transform.LogASTTransformation")
 public @interface Slf4j {
     String value() default "log";
+    Class<? extends LogASTTransformation.LoggingStrategy> loggingStrategy() default Slf4jLoggingStrategy.class;
+
+    public static class Slf4jLoggingStrategy implements LogASTTransformation.LoggingStrategy {
+        public FieldNode addLoggerFieldToClass(ClassNode classNode, String logFieldName) {
+            return classNode.addField(logFieldName,
+                    Opcodes.ACC_FINAL | Opcodes.ACC_TRANSIENT | Opcodes.ACC_STATIC | Opcodes.ACC_PRIVATE,
+                    new ClassNode("org.slf4j.Logger", Opcodes.ACC_PUBLIC, new ClassNode(Object.class)),
+                    new MethodCallExpression(
+                            new ClassExpression(new ClassNode("org.slf4j.LoggerFactory", Opcodes.ACC_PUBLIC, new ClassNode(Object.class))),
+                            "getLogger",
+                            new ClassExpression(classNode)));
+
+        }
+
+        public boolean isLoggingMethod(String methodName) {
+            return methodName.matches("error|warn|info|debug|trace");
+        }
+
+        public Expression wrapLoggingMethodCall(Expression logVariable, String methodName, Expression originalExpression) {
+            MethodCallExpression condition = new MethodCallExpression(
+                    logVariable,
+                    "is" + methodName.substring(0, 1).toUpperCase() + methodName.substring(1, methodName.length()) + "Enabled",
+                    ArgumentListExpression.EMPTY_ARGUMENTS);
+
+            return new TernaryExpression(
+                    new BooleanExpression(condition),
+                    originalExpression,
+                    ConstantExpression.NULL);
+        }
+    }
+
 }

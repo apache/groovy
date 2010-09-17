@@ -15,7 +15,13 @@
  */
 package groovy.util.logging;
 
+import org.codehaus.groovy.ast.ClassHelper;
+import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.FieldNode;
+import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.transform.GroovyASTTransformationClass;
+import org.codehaus.groovy.transform.LogASTTransformation;
+import org.objectweb.asm.Opcodes;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -48,4 +54,45 @@ import java.lang.annotation.Target;
 @GroovyASTTransformationClass("org.codehaus.groovy.transform.LogASTTransformation")
 public @interface Log4j {
     String value() default "log";
+    Class<? extends LogASTTransformation.LoggingStrategy> loggingStrategy() default Log4jLoggingStrategy.class;
+
+    public static class Log4jLoggingStrategy implements LogASTTransformation.LoggingStrategy {
+        public FieldNode addLoggerFieldToClass(ClassNode classNode, String logFieldName) {
+            return classNode.addField(logFieldName,
+                    Opcodes.ACC_FINAL | Opcodes.ACC_TRANSIENT | Opcodes.ACC_STATIC | Opcodes.ACC_PRIVATE,
+                    new ClassNode("org.apache.log4j.Logger", Opcodes.ACC_PUBLIC, new ClassNode(Object.class)),
+                    new MethodCallExpression(
+                            new ClassExpression(new ClassNode("org.apache.log4j.Logger", Opcodes.ACC_PUBLIC, new ClassNode(Object.class))),
+                            "getLogger",
+                            new ClassExpression(classNode)));
+        }
+
+        public boolean isLoggingMethod(String methodName) {
+            return methodName.matches("fatal|error|warn|info|debug|trace");
+        }
+
+        public Expression wrapLoggingMethodCall(Expression logVariable, String methodName, Expression originalExpression) {
+            final MethodCallExpression condition;
+            if (!"trace".equals(methodName)) {
+                ClassNode levelClass = new ClassNode("org.apache.log4j.Priority", 0, ClassHelper.OBJECT_TYPE);
+                AttributeExpression logLevelExpression = new AttributeExpression(
+                        new ClassExpression(levelClass),
+                        new ConstantExpression(methodName.toUpperCase()));
+                ArgumentListExpression args = new ArgumentListExpression();
+                args.addExpression(logLevelExpression);
+                condition = new MethodCallExpression(logVariable, "isEnabledFor", args);
+            } else {
+                // log4j api is inconsistent, so trace requires special handling
+                condition = new MethodCallExpression(
+                        logVariable,
+                        "is" + methodName.substring(0, 1).toUpperCase() + methodName.substring(1, methodName.length()) + "Enabled",
+                        ArgumentListExpression.EMPTY_ARGUMENTS);
+            }
+
+            return new TernaryExpression(
+                    new BooleanExpression(condition),
+                    originalExpression,
+                    ConstantExpression.NULL);
+        }
+    }
 }
