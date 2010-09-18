@@ -280,7 +280,7 @@ class GrapeIvy implements GrapeEngine {
             .setOutputReport(false)\
             .setValidate(args.containsKey('validate') ? args.validate : false)
 
-        ivyInstance.getSettings().setDefaultResolver( args.autoDownload ? 'downloadGrapes' : 'cachedGrapes' )
+        ivyInstance.settings.defaultResolver = args.autoDownload ? 'downloadGrapes' : 'cachedGrapes'
 
         ResolveReport report = ivyInstance.resolve(md, resolveOptions)
         if (report.hasError()) {
