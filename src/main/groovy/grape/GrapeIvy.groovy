@@ -65,7 +65,7 @@ class GrapeIvy implements GrapeEngine {
         if (enableGrapes) return;
 
         // start ivy
-        Message.setDefaultLogger(new DefaultMessageLogger(-1))
+        Message.defaultLogger = new DefaultMessageLogger(System.getProperty("ivy.message.logger.level", "-1") as int)
         settings = new IvySettings()
 
         // configure settings
@@ -82,7 +82,7 @@ class GrapeIvy implements GrapeEngine {
         }
 
         // set up the cache dirs
-        settings.setDefaultCache(getGrapeCacheDir())
+        settings.defaultCache = getGrapeCacheDir()
 
         settings.setVariable("ivy.default.configuration.m2compatible", "true")
         ivyInstance = Ivy.newInstance(settings)
