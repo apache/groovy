@@ -56,13 +56,13 @@ class GrapeIvy implements GrapeEngine {
     // weak hash map so we don't leak loaders directly
     Map<ClassLoader, Set<IvyGrabRecord>> loadedDeps = new WeakHashMap<ClassLoader, Set<IvyGrabRecord>>()
     // set that stores the IvyGrabRecord(s) for all the dependencies in each grab() call 
-    Set<IvyGrabRecord> grabRecordsForCurrDepdendencies = new LinkedHashSet<IvyGrabRecord>()
+    Set<IvyGrabRecord> grabRecordsForCurrDependencies = new LinkedHashSet<IvyGrabRecord>()
     // we keep the settings so that addResolver can add to the resolver chain
     IvySettings settings
 
     public GrapeIvy() {
         // if we are already inited, quit
-        if (enableGrapes) return;
+        if (enableGrapes) return
 
         // start ivy
         Message.defaultLogger = new DefaultMessageLogger(System.getProperty("ivy.message.logger.level", "-1") as int)
@@ -93,19 +93,19 @@ class GrapeIvy implements GrapeEngine {
     }
 
     public File getGroovyRoot() {
-        String root = System.getProperty("groovy.root");
-        def groovyRoot;
+        String root = System.getProperty("groovy.root")
+        def groovyRoot
         if (root == null) {
-            groovyRoot = new File(System.getProperty("user.home"), ".groovy");
+            groovyRoot = new File(System.getProperty("user.home"), ".groovy")
         } else {
-            groovyRoot = new File(root);
+            groovyRoot = new File(root)
         }
         try {
-            groovyRoot = groovyRoot.getCanonicalFile();
+            groovyRoot = groovyRoot.canonicalFile
         } catch (IOException e) {
             // skip canonicalization then, it may not exist yet
         }
-        return groovyRoot;
+        return groovyRoot
     }
 
     public File getLocalGrapeConfig() {
@@ -126,7 +126,7 @@ class GrapeIvy implements GrapeEngine {
         else {
             File grapeRoot = new File(root)
             try {
-                grapeRoot = grapeRoot.getCanonicalFile()
+                grapeRoot = grapeRoot.canonicalFile
             } catch (IOException e) {
                 // skip canonicalization then, it may not exist yet
             }
@@ -208,7 +208,7 @@ class GrapeIvy implements GrapeEngine {
     }
 
     public grab(String endorsedModule) {
-        return grab(group:'groovy.endorsed', module:endorsedModule, version:InvokerHelper.getVersion())
+        return grab(group:'groovy.endorsed', module:endorsedModule, version:InvokerHelper.version)
     }
 
     public grab(Map args) {
@@ -218,7 +218,7 @@ class GrapeIvy implements GrapeEngine {
 
     public grab(Map args, Map... dependencies) {
         def loader
-        grabRecordsForCurrDepdendencies.clear()
+        grabRecordsForCurrDependencies.clear()
         try {
             // identify the target classloader early, so we fail before checking repositories
             loader = chooseClassLoader(
@@ -238,8 +238,8 @@ class GrapeIvy implements GrapeEngine {
         } catch (Exception e) {
             // clean-up the state first
             Set<IvyGrabRecord> grabRecordsForCurrLoader = getLoadedDepsForLoader(loader)
-            grabRecordsForCurrLoader.removeAll(grabRecordsForCurrDepdendencies)
-            grabRecordsForCurrDepdendencies.clear()
+            grabRecordsForCurrLoader.removeAll(grabRecordsForCurrDependencies)
+            grabRecordsForCurrDependencies.clear()
             
             if (args.noExceptions) {
                 return e
@@ -251,7 +251,7 @@ class GrapeIvy implements GrapeEngine {
     }
 
     public ResolveReport getDependencies(Map args, IvyGrabRecord... grabRecords) {
-        ResolutionCacheManager cacheManager = ivyInstance.getResolutionCacheManager()
+        ResolutionCacheManager cacheManager = ivyInstance.resolutionCacheManager
 
         def md = new DefaultModuleDescriptor(ModuleRevisionId
                 .newInstance("caller", "all-caller", "working"), "integration", null, true)
@@ -286,11 +286,11 @@ class GrapeIvy implements GrapeEngine {
         if (report.hasError()) {
             throw new RuntimeException("Error grabbing Grapes -- $report.allProblemMessages")
         }
-        md = report.getModuleDescriptor()
+        md = report.moduleDescriptor
 
         if (!args.preserveFiles) {
-            cacheManager.getResolvedIvyFileInCache(md.getModuleRevisionId()).delete()
-            cacheManager.getResolvedIvyPropertiesInCache(md.getModuleRevisionId()).delete()
+            cacheManager.getResolvedIvyFileInCache(md.moduleRevisionId).delete()
+            cacheManager.getResolvedIvyPropertiesInCache(md.moduleRevisionId).delete()
         }
 
         return report
@@ -347,7 +347,7 @@ class GrapeIvy implements GrapeEngine {
     }
 
     URI [] resolve(ClassLoader loader, Map args, Map... dependencies) {
-        return resolve(loader, args, null, dependencies);
+        return resolve(loader, args, null, dependencies)
     }
     
     URI [] resolve(ClassLoader loader, Map args, List depsInfo, Map... dependencies) {
@@ -363,13 +363,13 @@ class GrapeIvy implements GrapeEngine {
         // check the kill switch
         if (!enableGrapes) { return }
         
-        boolean populateDepsInfo = (depsInfo != null);
+        boolean populateDepsInfo = (depsInfo != null)
 
         Set<IvyGrabRecord> localDeps = getLoadedDepsForLoader(loader)
 
         dependencies.each {
             IvyGrabRecord igr = createGrabRecord(it)
-            grabRecordsForCurrDepdendencies.add(igr)
+            grabRecordsForCurrDependencies.add(igr)
             localDeps.add(igr) 
         }
         // the call to reverse ensures that the newest additions are in
@@ -379,20 +379,20 @@ class GrapeIvy implements GrapeEngine {
         // classloader rather than adding another jar of the same module
         // with a different version
         ResolveReport report = getDependencies(args, *localDeps.asList().reverse())
-        ModuleDescriptor md = report.getModuleDescriptor()
+        ModuleDescriptor md = report.moduleDescriptor
 
         List<URI> results = []
-        for (ArtifactDownloadReport adl in report.getAllArtifactsReports()) {
+        for (ArtifactDownloadReport adl in report.allArtifactsReports) {
             //TODO check artifact type, jar vs library, etc
             if (adl.localFile) {
                 results += adl.localFile.toURI()
             }
         }
         
-        if(populateDepsInfo) {
-            def deps = report.getDependencies()
+        if (populateDepsInfo) {
+            def deps = report.dependencies
             deps.each { depNode ->
-                def id = depNode.getId()
+                def id = depNode.id
                 depsInfo << ['group' : id.organisation, 'module' : id.name, 'revision' : id.revision]
             }
         }
