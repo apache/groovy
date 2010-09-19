@@ -18,22 +18,28 @@ package groovy.grape
 import java.util.regex.Pattern
 import org.apache.ivy.Ivy
 import org.apache.ivy.core.cache.ResolutionCacheManager
-import org.apache.ivy.core.module.descriptor.*
+import org.apache.ivy.core.event.IvyListener
+import org.apache.ivy.core.event.download.PrepareDownloadEvent
+import org.apache.ivy.core.event.resolve.StartResolveEvent
+import org.apache.ivy.core.module.descriptor.Configuration
+import org.apache.ivy.core.module.descriptor.DefaultDependencyArtifactDescriptor
+import org.apache.ivy.core.module.descriptor.DefaultDependencyDescriptor
+import org.apache.ivy.core.module.descriptor.DefaultExcludeRule
+import org.apache.ivy.core.module.descriptor.DefaultModuleDescriptor
+import org.apache.ivy.core.module.id.ArtifactId
+import org.apache.ivy.core.module.id.ModuleId
 import org.apache.ivy.core.module.id.ModuleRevisionId
 import org.apache.ivy.core.report.ArtifactDownloadReport
 import org.apache.ivy.core.report.ResolveReport
 import org.apache.ivy.core.resolve.ResolveOptions
 import org.apache.ivy.core.settings.IvySettings
+import org.apache.ivy.plugins.matcher.ExactPatternMatcher
+import org.apache.ivy.plugins.matcher.PatternMatcher
+import org.apache.ivy.plugins.resolver.ChainResolver
+import org.apache.ivy.plugins.resolver.IBiblioResolver
 import org.apache.ivy.util.DefaultMessageLogger
 import org.apache.ivy.util.Message
 import org.codehaus.groovy.reflection.ReflectionUtils
-import org.codehaus.groovy.runtime.InvokerHelper
-import org.apache.ivy.plugins.matcher.ExactPatternMatcher
-import org.apache.ivy.plugins.matcher.PatternMatcher
-import org.apache.ivy.core.module.id.ModuleId
-import org.apache.ivy.core.module.id.ArtifactId
-import org.apache.ivy.plugins.resolver.ChainResolver
-import org.apache.ivy.plugins.resolver.IBiblioResolver
 
 /**
  * @author Danno Ferrin
@@ -53,6 +59,8 @@ class GrapeIvy implements GrapeEngine {
 
     boolean enableGrapes
     Ivy ivyInstance
+    Set<String> resolvedDependencies
+    Set<String> downloadedArtifacts
     // weak hash map so we don't leak loaders directly
     Map<ClassLoader, Set<IvyGrabRecord>> loadedDeps = new WeakHashMap<ClassLoader, Set<IvyGrabRecord>>()
     // set that stores the IvyGrabRecord(s) for all the dependencies in each grab() call 
@@ -86,6 +94,8 @@ class GrapeIvy implements GrapeEngine {
 
         settings.setVariable("ivy.default.configuration.m2compatible", "true")
         ivyInstance = Ivy.newInstance(settings)
+        resolvedDependencies = []
+        downloadedArtifacts = []
 
         //TODO add grab to the DGM??
 
@@ -208,7 +218,7 @@ class GrapeIvy implements GrapeEngine {
     }
 
     public grab(String endorsedModule) {
-        return grab(group:'groovy.endorsed', module:endorsedModule, version:InvokerHelper.version)
+        return grab(group:'groovy.endorsed', module:endorsedModule, version:GroovySystem.version)
     }
 
     public grab(Map args) {
@@ -281,10 +291,35 @@ class GrapeIvy implements GrapeEngine {
             .setValidate(args.containsKey('validate') ? args.validate : false)
 
         ivyInstance.settings.defaultResolver = args.autoDownload ? 'downloadGrapes' : 'cachedGrapes'
-
+        boolean reportDownloads = System.getProperty('groovy.grape.report.downloads', 'false') == 'true'
+        if (reportDownloads) {
+            ivyInstance.eventManager.addIvyListener([progress:{ ivyEvent -> switch(ivyEvent) {
+                case StartResolveEvent:
+                    ivyEvent.moduleDescriptor.dependencies.each { it ->
+                        def name = it.toString()
+                        if (!resolvedDependencies.contains(name)) {
+                            resolvedDependencies << name
+                            System.err.println "Resolving " + name
+                        }
+                    }
+                    break
+                case PrepareDownloadEvent:
+                    ivyEvent.artifacts.each { it ->
+                        def name = it.toString()
+                        if (!downloadedArtifacts.contains(name)) {
+                            downloadedArtifacts << name
+                            System.err.println "Preparing to download artifact " + name
+                        }
+                    }
+                    break
+            } } ] as IvyListener)
+        }
         ResolveReport report = ivyInstance.resolve(md, resolveOptions)
         if (report.hasError()) {
             throw new RuntimeException("Error grabbing Grapes -- $report.allProblemMessages")
+        }
+        if (report.downloadSize && reportDownloads) {
+            System.err.println "Downloaded ${report.downloadSize >> 10} Kbytes in ${report.downloadTime}ms:\n  ${report.allArtifactsReports*.toString().join('\n  ')}"
         }
         md = report.moduleDescriptor
 
@@ -362,7 +397,7 @@ class GrapeIvy implements GrapeEngine {
 
         // check the kill switch
         if (!enableGrapes) { return }
-        
+
         boolean populateDepsInfo = (depsInfo != null)
 
         Set<IvyGrabRecord> localDeps = getLoadedDepsForLoader(loader)
@@ -379,7 +414,6 @@ class GrapeIvy implements GrapeEngine {
         // classloader rather than adding another jar of the same module
         // with a different version
         ResolveReport report = getDependencies(args, *localDeps.asList().reverse())
-        ModuleDescriptor md = report.moduleDescriptor
 
         List<URI> results = []
         for (ArtifactDownloadReport adl in report.allArtifactsReports) {
@@ -454,6 +488,8 @@ class GrapeIvy implements GrapeEngine {
         chainResolver.add(resolver)
         
         ivyInstance = Ivy.newInstance(settings)
+        resolvedDependencies = []
+        downloadedArtifacts = []
     }
 }
 
