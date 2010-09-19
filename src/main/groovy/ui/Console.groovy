@@ -113,7 +113,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
     int maxHistory = 10
 
     // Maximum number of characters to show on console at any time
-    int maxOutputChars = 20000
+    int maxOutputChars = System.getProperty('groovy.console.output.limit','20000') as int
 
     // UI
     SwingBuilder swing
