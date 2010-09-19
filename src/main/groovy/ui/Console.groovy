@@ -53,6 +53,11 @@ import org.codehaus.groovy.syntax.SyntaxException
 import org.codehaus.groovy.control.messages.ExceptionMessage
 import java.awt.Dimension
 import java.awt.BorderLayout
+import groovy.grape.GrapeIvy
+import groovy.grape.Grape
+import org.apache.ivy.core.event.resolve.StartResolveEvent
+import org.apache.ivy.core.event.download.PrepareDownloadEvent
+import org.apache.ivy.core.event.IvyListener
 
 /**
  * Groovy Swing console.
@@ -214,6 +219,32 @@ options:
             fullStackTracesAction.enabled = false;
         }
         consoleControllers += this
+
+        Set<String> resolvedDependencies = []
+        Set<String> downloadedArtifacts = []
+
+        ((GrapeIvy) Grape.instance).ivyInstance.eventManager.addIvyListener([progress: { ivyEvent ->
+            switch (ivyEvent) {
+                case StartResolveEvent:
+                    ivyEvent.moduleDescriptor.dependencies.each { it ->
+                        def name = it.toString()
+                        if (!resolvedDependencies.contains(name)) {
+                            resolvedDependencies << name
+                            statusLabel.text = "Resolving ${name} ..."
+                        }
+                    }
+                    break
+                case PrepareDownloadEvent:
+                    ivyEvent.artifacts.each { it ->
+                        def name = it.toString()
+                        if (!downloadedArtifacts.contains(name)) {
+                            downloadedArtifacts << name
+                            statusLabel.text = "Downloading artifact ${name} ..."
+                        }
+                    }
+                    break
+            }
+        }] as IvyListener)
 
         binding.variables._outputTransforms = OutputTransforms.loadOutputTransforms()
     }
