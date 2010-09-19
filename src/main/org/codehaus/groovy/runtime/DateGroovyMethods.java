@@ -44,6 +44,19 @@ public class DateGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Convert a Date to a Calendar.
+     *
+     * @param self a Date
+     * @return a Calendar corresponding to the given Date
+     * @since 1.7.6
+     */
+    public static Calendar toCalendar(Date self) {
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(self);
+        return cal;
+    }
+
+    /**
      * Support the subscript operator for a Calendar.
      *
      * @param self  a Calendar
