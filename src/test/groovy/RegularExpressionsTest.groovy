@@ -418,9 +418,7 @@ class RegularExpressionsTest extends GroovyTestCase {
         assert result == ['0:[abd, d]', '1:[abxyz, xyz]', '2:[abx, x]']
     }
     
-    void testReplaceAllClosure() {
-        def p = /([^z]*)(z)/
-        def c = { all, m, d -> m }
+    void replaceAllHelper(p, c) {
         assert 'x12345' == 'x123z45'.replaceAll(p, c)
         assert '12345' == '12345z'.replaceAll(p, c)
         assert '12345' == 'z12345z'.replaceAll(p, c)
@@ -436,6 +434,24 @@ class RegularExpressionsTest extends GroovyTestCase {
         assert '\\2345\\' == '\\23z45\\'.replaceAll(p, c)
         assert '\\23\\\\45\\' == '\\23\\\\45\\'.replaceAll(p, c)
         assert '$\\23\\$\\45\\' == '$\\23\\$\\45\\'.replaceAll(p, c)
+    }
+    
+    void testReplaceAllClosure() {
+        def p = /([^z]*)(z)/
+        def c = { all, m, d -> m }
+        replaceAllHelper(p, c)
+    }
+
+    void testReplaceAllClosureWithIt() {
+        def p = /([^z]*)(z)/
+        def c = { it[1] }
+        replaceAllHelper(p, c)
+    }
+
+    void testReplaceAllClosureWithObjectArray() {
+        def p = /([^z]*)(z)/
+        def c = { Object[] a -> a[1] }
+        replaceAllHelper(p, c)
     }
 
     void testFind() {

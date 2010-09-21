@@ -4332,10 +4332,49 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Get a replacement corresponds to the matched pattern for {@link org.codehaus.groovy.runtime.DefaultGroovyMethods#replaceAll(final String self, final Pattern pattern, final Closure closure)}.
+     * The closure take parameter:
+     * <ul>
+     * <li>Whole of match if the pattern include no capturing group</li>
+     * <li>Object[] of capturing groups if the closure takes Object[] as parameter</li>
+     * <li>List of capturing groups</li>
+     * </ul>
+     *
+     * @param    matcher the matcher object used for matching
+     * @param    closure specified with replaceAll() to get replacement
+     * @return   replacement correspond replacement for a match
+     */
+    private static String getReplacement(Matcher matcher, Closure closure) {
+        if (!hasGroup(matcher)) {
+            return InvokerHelper.toString(closure.call(matcher.group()));
+        }
+
+        int count = matcher.groupCount();
+        List<String> groups = new ArrayList<String>();
+        for (int i = 0; i <= count; i++) {
+            groups.add(matcher.group(i));
+        }
+
+        if (closure.getParameterTypes().length == 1
+            && closure.getParameterTypes()[0] == Object[].class) {
+            return InvokerHelper.toString(closure.call(groups.toArray()));
+        }
+        return InvokerHelper.toString(closure.call(groups));
+    }
+
+    /**
      * Replaces all occurrences of a captured group by the result of a closure on that text.
      * <p/>
      * <p> For examples,
      * <pre>
+     *     assert "FOOBAR-FOOBAR-" == "foobar-FooBar-".replaceAll(~"(([fF][oO]{2})[bB]ar)", { it[0].toUpperCase() })
+     * <p/>
+     *     Here,
+     *          it[0] is the global string of the matched group
+     *          it[1] is the first string in the matched group
+     *          it[2] is the second string in the matched group
+     * <p/>
+     * <p/>
      *     assert "FOOBAR-FOOBAR-" == "foobar-FooBar-".replaceAll(~"(([fF][oO]{2})[bB]ar)", { Object[] it -> it[0].toUpperCase() })
      * <p/>
      *     Here,
@@ -4367,12 +4406,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         if (matcher.find()) {
             final StringBuffer sb = new StringBuffer(self.length() + 16);
             do {
-                int count = matcher.groupCount();
-                List<String> groups = new ArrayList<String>();
-                for (int i = 0; i <= count; i++) {
-                    groups.add(matcher.group(i));
-                }
-                final String replacement = InvokerHelper.toString(closure.call(groups.toArray()));
+                String replacement = getReplacement(matcher, closure);
                 matcher.appendReplacement(sb, Matcher.quoteReplacement(replacement));
             } while (matcher.find());
             matcher.appendTail(sb);
