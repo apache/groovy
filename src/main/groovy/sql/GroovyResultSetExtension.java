@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ import org.codehaus.groovy.runtime.InvokerInvocationException;
  * the version incompatibility between java6 and java5 this methods are moved
  * here from the original GroovyResultSet class. The methods in this class are
  * used by the proxy GroovyResultSetProxy, which will try to invoke methods
- * on this class before invokeing it on ResultSet.
+ * on this class before invoking it on ResultSet.
  * <p/>
  * <p><b>This class is not intended to be used directly. Should be used through
  * GroovyResultSetProxy only!</b></p>
@@ -58,7 +58,7 @@ public class GroovyResultSetExtension extends GroovyObjectSupport {
     }
 
     /**
-     * Creats a GroovyResultSet implementation-
+     * Creates a GroovyResultSet implementation.
      *
      * @param set the result set
      */
