@@ -881,7 +881,10 @@ options:
     }
 
     void clearContext(EventObject evt = null) {
-        newScript(null, new Binding())
+        def binding = new Binding()
+        newScript(null, binding)
+        // reload output transforms
+        binding.variables._outputTransforms = OutputTransforms.loadOutputTransforms()
     }
 
     private void runScriptImpl(boolean selected) {
