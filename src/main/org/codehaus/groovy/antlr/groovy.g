@@ -1534,7 +1534,7 @@ declaratorBrackets[AST typ]
 
 /** An assignment operator '=' followed by an expression.  (Never empty.) */
 varInitializer
-    :   ASSIGN^ nls! expression[LC_INIT]
+    :   ASSIGN^ nls! expressionStatementNoCheck
         // In {T x = y}, the left-context of y is that of an initializer.
     ;
 
@@ -2001,27 +2001,29 @@ statementLabelPrefix
 // DECIDE: A later semantic pass can flag dumb expressions that don't occur in
 //         positions where their value is not used, e.g., <code>{1+1;println}</code>
 expressionStatement[int prevToken]
-        {Token first = LT(1);boolean isPathExpr = false;  }
+        { Token first = LT(1); }
     :
-        (   (suspiciousExpressionStatementStart)=>
+        ( (suspiciousExpressionStatementStart) =>
             checkSuspiciousExpressionStatement[prevToken]
         )?
+        esn:expressionStatementNoCheck
+        { #expressionStatement = #(create(EXPR, "EXPR", first, LT(1)), #esn); }
+    ;
+
+expressionStatementNoCheck
+        { boolean isPathExpr = false; }
+    :
         // Checks are now out of the way; here's the real rule:
         head:expression[LC_STMT]
-        {   isPathExpr = (#head == lastPathExpression);
-             //System.out.println("#head: " + #head.toStringTree());
-             //System.out.println("#latsPath " + #lastPathExpression.toStringTree());
-
-          }
+        { isPathExpr = (#head == lastPathExpression); }
         (
             // A path expression (e.g., System.out.print) can take arguments.
             {isPathExpr}?
             cmd:commandArgumentsGreedy[#head]!
             {
-                #expressionStatement = #cmd;
+                #expressionStatementNoCheck = #cmd;
             }
         )?
-        {#expressionStatement = #(create(EXPR,"EXPR",first,LT(1)),#expressionStatement);}
     ;
 
 /**
@@ -2194,13 +2196,14 @@ commandArgumentsGreedy[AST head]
             //prev = #(create(LPAREN,"(",prev),prev);
         }
         (
+            options { greedy = true; } :
             (COMMA! nls!|)
 
             current : expression[LC_STMT]
             {
-                 AST chain = #(create(DOT,".",#prev),#prev, #current);
+                 AST chain = #(create(DOT, ".", #prev), #prev, #current);
                  commandArguments(chain);
-                 AST chained =astFactory.dupTree((AST)returnAST);
+                 AST chained = astFactory.dupTree( (AST)returnAST );
                  prev = chained;
             }
         )*
@@ -2209,9 +2212,9 @@ commandArgumentsGreedy[AST head]
 commandArgument
     :
         (argumentLabel COLON nls!) => (
-            argumentLabel c:COLON^ nls! expression[0]  {#c.setType(LABELED_ARG);}
+            argumentLabel c:COLON^ nls! expression[0]  { #c.setType(LABELED_ARG); }
         )
-        |  expression[0]
+        | expression[0]
     ;
 
 // expressions
@@ -2575,7 +2578,7 @@ assignmentExpression[int lc_stmt]
             //|   USEROP_13^  //DECIDE: This is how user-define ops would show up.
             )
             nls!
-            assignmentExpression[lc_stmt == LC_STMT? LC_INIT: 0]
+            expressionStatementNoCheck
             // If left-context of {x = y} is a statement boundary,
             // define the left-context of y as an initializer.
         )?

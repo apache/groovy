@@ -166,6 +166,44 @@ class Gep3Test extends GroovyTestCase {
     }
 
     def check(Map m) { m.that }
+
+    void testExtendedCommandExpressionsOnTheRHS() {
+        def ( coffee,   sugar,   milk,   liquor ) =
+            ["coffee", "sugar", "milk", "liquor"]
+        def drink = Drink.&drink
+
+        def r1 = drink coffee
+        assert r1.beverage == coffee && !r1.ingredients
+
+        def r2 = drink coffee with sugar
+        assert r2.beverage == coffee && r2.ingredients == [sugar]
+
+        def r3 = drink coffee with sugar, milk
+        assert r3.beverage == coffee && r3.ingredients == [sugar, milk]
+
+        r3 = drink coffee with sugar, milk and liquor
+        assert r3.beverage == coffee && r3.ingredients == [sugar, milk, liquor]
+    }
+}
+
+
+class Drink {
+    String beverage
+    List<String> ingredients = []
+
+    static Drink drink(String beverage) {
+        new Drink(beverage: beverage)
+    }
+
+    def with(String... ingredients) {
+        this.ingredients = ingredients.toList()
+        return this
+    }
+
+    def and(String ingredient) {
+        this.ingredients << ingredient
+        return this
+    }
 }
 
 enum Container { medium_bowl }
