@@ -2969,8 +2969,8 @@ identPrimary
  *  new
  *   |
  *   T --  ELIST
- *                 |
- *                arg1 -- arg2 -- .. -- argn
+ *           |
+ *          arg1 -- arg2 -- .. -- argn
  *
  *  new int[]
  *
@@ -2983,31 +2983,31 @@ identPrimary
  *  new
  *   |
  *  int -- ARRAY_DECLARATOR -- ARRAY_INIT
- *                                                                |
- *                                                              EXPR -- EXPR
- *                                                                |   |
- *                                                                1       2
+ *                                  |
+ *                                EXPR -- EXPR
+ *                                  |       |
+ *                                  1       2
  *
  *  new int[3]
  *  new
  *   |
  *  int -- ARRAY_DECLARATOR
- *                              |
- *                        EXPR
- *                              |
- *                              3
+ *               |
+ *             EXPR
+ *               |
+ *               3
  *
  *  new int[1][2]
  *
  *  new
  *   |
  *  int -- ARRAY_DECLARATOR
- *                         |
- *               ARRAY_DECLARATOR -- EXPR
- *                         |                  |
- *                       EXPR                    1
- *                         |
- *                         2
+ *               |
+ *         ARRAY_DECLARATOR -- EXPR
+ *               |               |
+ *             EXPR              1
+ *               |
+ *               2
  *
  */
 newExpression {Token first = LT(1);}
