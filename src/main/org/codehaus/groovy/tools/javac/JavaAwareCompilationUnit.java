@@ -19,7 +19,7 @@ package org.codehaus.groovy.tools.javac;
 import groovy.lang.GroovyClassLoader;
 
 import java.util.LinkedList;
-import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -39,7 +39,7 @@ import org.codehaus.groovy.control.SourceUnit;
  * Date: May 31, 2007 Time: 6:48:28 PM 
  */
 public class JavaAwareCompilationUnit extends CompilationUnit {
-    private LinkedList javaSources; // java sources
+    private List<String> javaSources;
     private JavaStubGenerator stubGenerator;
     private JavaCompilerFactory compilerFactory = new JavacCompilerFactory();
     private File generationGoal;
@@ -51,7 +51,7 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
     
     public JavaAwareCompilationUnit(CompilerConfiguration configuration, GroovyClassLoader groovyClassLoader) {
         super(configuration,null,groovyClassLoader);
-        javaSources = new LinkedList();
+        javaSources = new LinkedList<String>();
         Map options = configuration.getJointCompilationOptions();
         generationGoal = (File) options.get("stubDir");
         boolean useJava5 = configuration.getTargetBytecode().equals(CompilerConfiguration.POST_JDK5);
@@ -78,10 +78,8 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
     public void gotoPhase(int phase) throws CompilationFailedException {
         super.gotoPhase(phase);
         // compile Java and clean up
-        if (phase==Phases.SEMANTIC_ANALYSIS && javaSources.size()>0) {
-            Iterator modules = getAST().getModules().iterator();
-            while (modules.hasNext()) {
-                ModuleNode module = (ModuleNode) modules.next();
+        if (phase == Phases.SEMANTIC_ANALYSIS && javaSources.size() > 0) {
+            for (ModuleNode module : getAST().getModules()) {
                 module.setImportsResolved(false);
             }
             try {
@@ -107,17 +105,16 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
 
     private void addJavaSource(File file) {
         String path = file.getAbsolutePath();
-        for (Iterator iter = javaSources.iterator(); iter.hasNext();) {
-            String su = (String) iter.next();
-            if (path.equals(su))
+        for (String source : javaSources) {
+            if (path.equals(source))
                 return;
         }
         javaSources.add(path);
     }
 
     public void addSources(String[] paths) {
-        for (int i = 0; i < paths.length; i++) {
-            File file = new File(paths[i]);
+        for (String path : paths) {
+            File file = new File(path);
             if (file.getName().endsWith(".java"))
                 addJavaSource(file);
             else
@@ -126,11 +123,11 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
     }
 
     public void addSources(File[] files) {
-        for (int i = 0; i < files.length; i++) {
-            if (files[i].getName().endsWith(".java"))
-                addJavaSource(files[i]);
+        for (File file : files) {
+            if (file.getName().endsWith(".java"))
+                addJavaSource(file);
             else
-                addSource(files[i]);
+                addSource(file);
         }
     }
 
