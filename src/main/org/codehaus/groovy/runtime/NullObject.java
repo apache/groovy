@@ -131,6 +131,15 @@ public class NullObject extends GroovyObjectSupport {
         return null;
     }
 
+    /**
+     * A null object always coerces to false.
+     * 
+     * @return false
+     */
+    public boolean asBoolean() {
+        return false;
+    }
+
     public String toString() {
         return "null";
     }
