@@ -198,6 +198,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
         for (FieldNode fNode : fList) {
             if (fNode.isPublic()) continue; // public fields will be rejected elsewhere
             if (cNode.getProperty(fNode.getName()) != null) continue; // a property
+            if (fNode.isFinal() && fNode.isStatic()) continue;
             if (fNode.getName().contains("$")) continue; // internal field
             if (fNode.isFinal() && fNode.getInitialExpression() != null) body.addStatement(checkFinalArgNotOverridden(cNode, fNode));
             body.addStatement(createConstructorStatementDefault(fNode));

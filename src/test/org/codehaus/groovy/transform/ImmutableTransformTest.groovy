@@ -308,9 +308,9 @@ class ImmutableTransformTest extends GroovyShellTestCase {
                 private static int c3
                 private static final int a4 = 4
                 private static final int b4 = -4
-                private static final int c4
+                private static final int c4 = 4
             }
-            def n1 = new Numbers(b1:1, b3:3, c1:1, c2:2, c3:3, c4:4)
+            def n1 = new Numbers(b1:1, b3:3, c1:1, c2:2, c3:3)
             assert [1..4, 'a'..'c'].combinations().collect{ num, let -> n1."$let$num" } ==
                        [1, 2, 3, 4, 1, -2, 3, -4, 1, 2, 3, 4]
         '''
