@@ -377,6 +377,37 @@ class EnumTest extends CompilableTestSupport {
             }
         """
     }
+
+    void testConstructorChainingInEnum() {
+        // GROOVY-4444
+        assertScript """
+            enum Foo4444 {
+                ONE(1), TWO(1, 2)
+              
+                int i
+                int j
+              
+                Foo4444(int i) {
+                    this(i, 0)
+                }
+            
+                Foo4444(int i, int j) {
+                    this.i = i
+                    this.j = j
+                }
+            }
+            
+            def foos = [Foo4444.ONE, Foo4444.TWO]
+            
+            assert foos.size() == 2
+            
+            assert foos[0].i == 1
+            assert foos[0].j == 0
+            
+            assert foos[1].i == 1
+            assert foos[1].j == 2
+        """
+    }
 }
 
 

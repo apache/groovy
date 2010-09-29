@@ -391,8 +391,18 @@ public class EnumVisitor extends ClassCodeVisitorSupport{
         // to get String,int parameters at beginning and add call super(String,int)  
         
         for (Iterator iterator = ctors.iterator(); iterator.hasNext();) {
+        	boolean chainedThisConstructorCall = false;
             ConstructorNode ctor = (ConstructorNode) iterator.next();
-            if (ctor.firstStatementIsSpecialConstructorCall()) continue;
+            ConstructorCallExpression cce = null;
+            if (ctor.firstStatementIsSpecialConstructorCall()) {
+                Statement code = ctor.getFirstStatement();
+                cce = (ConstructorCallExpression) ((ExpressionStatement) code).getExpression();
+                if(cce.isSuperCall()) {
+                	continue;
+                } else {
+                	chainedThisConstructorCall = true;
+                }
+            }
             // we need to add parameters
             Parameter[] oldP = ctor.getParameters();
             Parameter[] newP = new Parameter[oldP.length+2];
@@ -402,19 +412,26 @@ public class EnumVisitor extends ClassCodeVisitorSupport{
             newP[1] = new Parameter(ClassHelper.int_TYPE,intParameterName);
             System.arraycopy(oldP, 0, newP, 2, oldP.length);
             ctor.setParameters(newP);
-            // and a super call
-            ConstructorCallExpression cce = new ConstructorCallExpression(
-                    ClassNode.SUPER,
-                    new ArgumentListExpression(
-                           new VariableExpression(stringParameterName),
-                           new VariableExpression(intParameterName)
-                    )
-            );
-            BlockStatement code = new BlockStatement();
-            code.addStatement(new ExpressionStatement(cce));
-            Statement oldCode = ctor.getCode();
-            if (oldCode!=null) code.addStatement(oldCode);
-            ctor.setCode(code);
+            if(chainedThisConstructorCall) {
+            	TupleExpression args = (TupleExpression) cce.getArguments();
+            	List<Expression> argsExprs = args.getExpressions();
+            	argsExprs.add(0, new VariableExpression(stringParameterName));
+            	argsExprs.add(1, new VariableExpression(intParameterName));
+            } else {
+                // and a super call
+                cce = new ConstructorCallExpression(
+                        ClassNode.SUPER,
+                        new ArgumentListExpression(
+                               new VariableExpression(stringParameterName),
+                               new VariableExpression(intParameterName)
+                        )
+                );
+                BlockStatement code = new BlockStatement();
+                code.addStatement(new ExpressionStatement(cce));
+                Statement oldCode = ctor.getCode();
+                if (oldCode!=null) code.addStatement(oldCode);
+                ctor.setCode(code);
+            }
         }
     }
 
