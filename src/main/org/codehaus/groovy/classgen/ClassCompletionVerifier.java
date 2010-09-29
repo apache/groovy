@@ -30,6 +30,7 @@ import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.GStringExpression;
 import org.codehaus.groovy.ast.expr.MapEntryExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
+import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.CatchStatement;
@@ -356,9 +357,21 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
     }
 
     private void checkFinalFieldAccess(Expression expression) {
-        if (!(expression instanceof VariableExpression)) return;
-        VariableExpression ve = (VariableExpression) expression;
-        Variable v = ve.getAccessedVariable();
+        if (!(expression instanceof VariableExpression) && !(expression instanceof PropertyExpression)) return;
+        Variable v = null;
+        if (expression instanceof VariableExpression) {
+            VariableExpression ve = (VariableExpression) expression;
+            v = ve.getAccessedVariable();
+        } else {
+        	PropertyExpression propExp = ((PropertyExpression) expression);
+        	Expression objectExpression = propExp.getObjectExpression();
+        	if(objectExpression instanceof VariableExpression) {
+        		VariableExpression varExp = (VariableExpression) objectExpression;
+        		if(varExp.isThisExpression()) {
+        			v = currentClass.getDeclaredField(propExp.getPropertyAsString());
+        		}
+        	}
+        }
         if (v instanceof FieldNode) {
             FieldNode fn = (FieldNode) v;
             int modifiers = fn.getModifiers();

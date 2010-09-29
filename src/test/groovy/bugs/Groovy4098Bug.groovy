@@ -82,11 +82,9 @@ class Groovy4098Bug extends GroovyTestCase {
 
     void testFive() {
         assert propertyFive == "five normal"
-        this.@propertyFive = "five changed" // Can't set using property here but can still brute force with field access
-        assert propertyFive == "five changed"
 
         def metaProperty = this.metaClass.getMetaProperty("propertyFive")
-        assert metaProperty.getProperty(this) == "five changed"
+        assert metaProperty.getProperty(this) == "five normal"
         def msg = shouldFail {
             metaProperty.setProperty(this, "five mop")
         }
@@ -95,11 +93,9 @@ class Groovy4098Bug extends GroovyTestCase {
 
     void testSix() {
         assert propertySix == "six normal"
-        this.@propertySix = "six changed" // Can't set using property here but can still brute force with field access
-        assert propertySix == "six changed"
 
         def metaProperty = this.metaClass.getMetaProperty("propertySix")
-        assert metaProperty.getProperty(this) == "six changed"
+        assert metaProperty.getProperty(this) == "six normal"
         def msg = shouldFail {
             metaProperty.setProperty(this, "six mop")
         }
