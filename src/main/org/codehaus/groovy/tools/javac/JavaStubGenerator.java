@@ -156,11 +156,15 @@ public class JavaStubGenerator
 
             boolean isInterface = classNode.isInterface();
             boolean isEnum = (classNode.getModifiers() & Opcodes.ACC_ENUM) !=0;
+            boolean isAnnotationDefinition = classNode.isAnnotationDefinition();
             printAnnotations(out, classNode);
             printModifiers(out, classNode.getModifiers()
                     & ~(isInterface ? Opcodes.ACC_ABSTRACT : 0));
 
             if (isInterface) {
+            	if(isAnnotationDefinition) {
+            		out.print ("@");
+            	}
                 out.print ("interface ");
             } else if (isEnum) {
                 out.print ("enum ");
@@ -182,7 +186,7 @@ public class JavaStubGenerator
             }
 
             ClassNode[] interfaces = classNode.getInterfaces();
-            if (interfaces != null && interfaces.length > 0) {
+            if (interfaces != null && interfaces.length > 0 && !isAnnotationDefinition) {
                 if (isInterface) {
                     out.println("  extends");
                 } else {
