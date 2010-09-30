@@ -42,6 +42,7 @@ import java.lang.annotation.ElementType;
         ElementType.PARAMETER,
         ElementType.TYPE})
 public @interface GrabResolver {
+    String value() default "";
     String name();
     String root();
     boolean m2Compatible() default true;
