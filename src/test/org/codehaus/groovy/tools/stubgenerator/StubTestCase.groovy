@@ -64,6 +64,7 @@ abstract class StubTestCase extends GroovyTestCase {
     protected CompilerConfiguration config = new CompilerConfiguration()
 
     protected boolean debug = false;
+    protected boolean delete = true;
 
     /**
      * Prepare the target and stub directories.
@@ -86,9 +87,11 @@ abstract class StubTestCase extends GroovyTestCase {
      * Delete the temporary directories.
      */
     protected void tearDown() {
-        if (debug) println "Deleting temporary folders"
-        targetDir.deleteDir()
-        stubDir.deleteDir()
+        if(delete) {
+            if (debug) println "Deleting temporary folders"
+            targetDir.deleteDir()
+            stubDir.deleteDir()
+        }
         super.tearDown()
     }
 
@@ -258,6 +261,32 @@ abstract class StubTestCase extends GroovyTestCase {
             throw new IOException("Impossible to create temporary directory: ${tempDirectory.absolutePath}")
         }
         return tempDirectory
+    }
+
+    /**
+     * Create sub-folders used in relativeFilePath under the specified directory
+     *
+     * @throws IOException if a sub-directory could not be created
+     */
+    protected static void createNecessaryPackageDirs(File path, String relativeFilePath) {
+        def index = relativeFilePath.lastIndexOf('/')
+
+        if(index < 0) return
+
+        def relativeDirectories = relativeFilePath.substring(0, index)
+
+        def tmpPath = path.absolutePath
+
+        relativeDirectories.split('/').each {
+            if(!tmpPath.endsWith(File.separator)) {
+                tmpPath = tmpPath + File.separator
+            }
+            File newDir = new File(tmpPath + it)
+            if (!(newDir.mkdir())) {
+                throw new IOException("Impossible to create package directory: ${newDir.absolutePath}")
+            }
+            tmpPath = newDir.absolutePath
+        }
     }
 }
 
