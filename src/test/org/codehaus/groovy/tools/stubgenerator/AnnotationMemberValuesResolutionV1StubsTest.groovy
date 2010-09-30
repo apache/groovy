@@ -16,16 +16,17 @@
 package org.codehaus.groovy.tools.stubgenerator
 
 /**
- * Test that FQN appears fine in generated stub when ClassExpression.<Prop> is used as an annotation member value
+ * Test that FQN appears fine in generated stub when a enum ClassExpression.<EnumConstant> 
+ *  is used as an annotation member value
  *
  * @author Roshan Dawrani
  */
-class AnnotationMemberValuesResolutionStubsTestV3 extends StringSourcesStubTestCase {
+class AnnotationMemberValuesResolutionV1StubsTest extends StringSourcesStubTestCase {
 
     Map<String, String> provideSources() {
-        println 'AnnotationMemberValuesResolutionStubsTestV3'
+        println 'AnnotationMemberValuesResolutionStubsTestV1'
         [
-            'foo/Foo4434V3.java': '''
+            'foo/Foo4434V1.java': '''
                 package foo;
                 
                 import java.lang.annotation.ElementType;
@@ -33,32 +34,32 @@ class AnnotationMemberValuesResolutionStubsTestV3 extends StringSourcesStubTestC
                 import java.lang.annotation.RetentionPolicy;
                 import java.lang.annotation.Target;
                 
-                import baz.MyClass4434V3;
+                import baz.MyEnum4434V1;
                 
                 @Retention(RetentionPolicy.RUNTIME)
                 @Target( { ElementType.TYPE })
-                public @interface Foo4434V3 {
-                    String val() default "";
+                public @interface Foo4434V1 {
+                    MyEnum4434V1 val() default MyEnum4434V1.OTHER_VALUE;
                 }
             ''',
-            'baz/MyClass4434V3.java': '''
+            'baz/MyEnum4434V1.java': '''
                 package baz;
 
-                public class MyClass4434V3 {public static final String SOME_CONST = "some constant";}
+                public enum MyEnum4434V1 {SOME_VALUE, OTHER_VALUE}
             ''',
-            'Bar4434V3.groovy': '''
-                import foo.Foo4434V3
-                import baz.MyClass4434V3
+            'Bar4434V1.groovy': '''
+                import foo.Foo4434V1
+                import baz.MyEnum4434V1
                 
-                @Foo4434V3(val = MyClass4434V3.SOME_CONST)
-                class Bar4434V3 {}
+                @Foo4434V1(val = MyEnum4434V1.SOME_VALUE)
+                class Bar4434V1 {}
             '''
         ]
     }
 
     void verifyStubs() {
-        classes['Bar4434V3'].with {
-            assert annotations[0].getProperty('val').toString() == 'baz.MyClass4434V3.SOME_CONST'
+        classes['Bar4434V1'].with {
+            assert annotations[0].getProperty('val').toString() == 'baz.MyEnum4434V1.SOME_VALUE'
         }
     }
 }
