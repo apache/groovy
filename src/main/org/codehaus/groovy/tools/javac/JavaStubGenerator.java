@@ -17,6 +17,7 @@ package org.codehaus.groovy.tools.javac;
 
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
+import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.Expression;
@@ -642,6 +643,8 @@ public class JavaStubGenerator
                 val = "\"" + constValue + "\"";
         } else if (memberValue instanceof PropertyExpression || memberValue instanceof VariableExpression) {
             // assume must be static class field or enum value or class that Java can resolve
+            val = ((Expression) memberValue).getText();
+        } else if (memberValue instanceof ClassExpression) {
             val = ((Expression) memberValue).getText();
         }
         return val;

@@ -27,6 +27,7 @@ import java.io.FileNotFoundException;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ModuleNode;
 import org.codehaus.groovy.classgen.GeneratorContext;
+import org.codehaus.groovy.classgen.VariableScopeVisitor;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilerConfiguration;
@@ -60,7 +61,11 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
         
         addPhaseOperation(new PrimaryClassNodeOperation() {
             public void call(SourceUnit source, GeneratorContext context, ClassNode node) throws CompilationFailedException {
-                if (javaSources.size() != 0) new JavaAwareResolveVisitor(JavaAwareCompilationUnit.this).startResolving(node,source);
+                if (javaSources.size() != 0) {
+                	VariableScopeVisitor scopeVisitor = new VariableScopeVisitor(source);
+                	scopeVisitor.visitClass(node);
+                	new JavaAwareResolveVisitor(JavaAwareCompilationUnit.this).startResolving(node,source);
+                }
             }
         },Phases.CONVERSION);
 
