@@ -238,12 +238,25 @@ abstract class StubTestCase extends GroovyTestCase {
     /**
      * Method providing a useful shortcut for the subclasses, so that you can use <code>classes</code>
      * from within the <code>verifyStubs()</code> method, to access all the stubs.
-     * <br><br>
      *
      * @return an array of QDox' <code>JavaClass</code>es.
      */
     protected JavaClass[] getClasses() {
         qdox.classes
+    }
+
+    /**
+     * Retrieves the source code of the Java stub of the fully qualified name class in argument.
+     * Example:
+     * <pre><code>
+     * assert stubJavaSourceFor('com.foo.Bar').contains(...)
+     * </code></pre>
+     *
+     * @param fqn the fully qualified name of the class
+     * @return the source code of the class
+     */
+    protected String stubJavaSourceFor(String fqn) {
+        new File(stubDir, fqn.replaceAll(/\./, File.separator) + '.java').text
     }
 
     /**
