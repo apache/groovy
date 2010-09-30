@@ -26,6 +26,8 @@ import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.control.SourceUnit;
 
 import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
 /**
  * goes through an AST and initializes the scopes
@@ -504,4 +506,17 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         popState();
     }
 
+    public void visitAnnotations(AnnotatedNode node) {
+        List<AnnotationNode> annotations = node.getAnnotations();
+        if (annotations.isEmpty()) return;
+        ClassNode annType;
+        for (AnnotationNode an : annotations) {
+        	// skip built-in properties
+        	if (an.isBuiltIn()) continue;
+            for (Map.Entry<String, Expression> member : an.getMembers().entrySet()) {
+                Expression annMemberValue = member.getValue();
+                annMemberValue.visit(this);
+            }
+        }
+    }
 }

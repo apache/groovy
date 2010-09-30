@@ -17,6 +17,7 @@ package org.codehaus.groovy.tools.javac;
 
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
+import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.Expression;
@@ -648,7 +649,9 @@ public class JavaStubGenerator
             // annotation closure; replaced with this specific class literal to cover the
             // case where annotation type uses Class<? extends Closure> for the closure's type
             val = "groovy.lang.Closure.class";
-        }
+        } else if (memberValue instanceof ClassExpression) {
+            val = ((Expression) memberValue).getText();
+        } 
         return val;
     }
 
