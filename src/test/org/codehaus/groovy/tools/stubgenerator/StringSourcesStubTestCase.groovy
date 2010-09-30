@@ -53,6 +53,9 @@ abstract class StringSourcesStubTestCase extends StubTestCase {
 
         def sources = provideSources()
         sources.each { String relativeFilePath, String sourceCode ->
+            
+            createNecessaryPackageDirs(path, relativeFilePath)
+            
             def sourceFile = new File(path, relativeFilePath)
 
             if (debug) println " -> ${sourceFile}"
