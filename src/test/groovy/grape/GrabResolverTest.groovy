@@ -55,7 +55,7 @@ class GrabResolverTest extends GroovyTestCase {
                   import org.restlet.Application""")
         }
     }
-    
+
     public void testResolverDefinitionResolvesDependency() {
         GroovyShell shell = new GroovyShell(new GroovyClassLoader())
         shell.evaluate("""
@@ -64,4 +64,13 @@ class GrabResolverTest extends GroovyTestCase {
             class AnnotationHost {}
             assert org.restlet.Application.class.simpleName == 'Application'""")        
     }    
+
+    public void testResolverDefinitionResolvesDependencyWithShorthand() {
+        GroovyShell shell = new GroovyShell(new GroovyClassLoader())
+        shell.evaluate("""
+            @GrabResolver('http://maven.restlet.org')
+            @Grab('org.restlet:org.restlet:1.1.6')
+            class AnnotationHost {}
+            assert org.restlet.Application.class.simpleName == 'Application'""")
+    }
 }

@@ -166,16 +166,37 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
                 grabResolverAnnotationLoop:
                 for (AnnotationNode node : grabResolverAnnotations) {
                     Map<String, Object> grapeResolverMap = new HashMap<String, Object>();
-                    for (String s : GRAPERESOLVER_REQUIRED) {
-                        Expression member = node.getMember(s);
-                        if (member == null) {
-                            addError("The missing attribute \"" + s + "\" is required in @" + node.getClassNode().getNameWithoutPackage() + " annotations", node);
-                            continue grabResolverAnnotationLoop;
-                        } else if (member != null && !(member instanceof ConstantExpression)) {
-                            addError("Attribute \"" + s + "\" has value " + member.getText() + " but should be an inline constant in @" + node.getClassNode().getNameWithoutPackage() + " annotations", node);
-                            continue grabResolverAnnotationLoop;
+                    Expression value = node.getMember("value");
+                    ConstantExpression ce = null;
+                    if (value != null && value instanceof ConstantExpression) {
+                        ce = (ConstantExpression) value;
+                    }
+                    String sval = null;
+                    if (ce != null && ce.getValue() instanceof String) {
+                        sval = (String) ce.getValue();
+                    }
+                    if (sval != null && sval.length() > 0) {
+                        for (String s : GRAPERESOLVER_REQUIRED) {
+                            Expression member = node.getMember(s);
+                            if (member != null) {
+                                addError("The attribute \"" + s + "\" conflicts with attribute 'value' in @" + node.getClassNode().getNameWithoutPackage() + " annotations", node);
+                                continue grabResolverAnnotationLoop;
+                            }
                         }
-                        grapeResolverMap.put(s, ((ConstantExpression)member).getValue());
+                        grapeResolverMap.put("name", sval);
+                        grapeResolverMap.put("root", sval);
+                    } else {
+                        for (String s : GRAPERESOLVER_REQUIRED) {
+                            Expression member = node.getMember(s);
+                            if (member == null) {
+                                addError("The missing attribute \"" + s + "\" is required in @" + node.getClassNode().getNameWithoutPackage() + " annotations", node);
+                                continue grabResolverAnnotationLoop;
+                            } else if (member != null && !(member instanceof ConstantExpression)) {
+                                addError("Attribute \"" + s + "\" has value " + member.getText() + " but should be an inline constant in @" + node.getClassNode().getNameWithoutPackage() + " annotations", node);
+                                continue grabResolverAnnotationLoop;
+                            }
+                            grapeResolverMap.put(s, ((ConstantExpression) member).getValue());
+                        }
                     }
                     Grape.addResolver(grapeResolverMap);
                 }
