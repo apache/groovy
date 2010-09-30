@@ -12563,8 +12563,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         // null check because of http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4803836
         if (files == null) return;
         for (File file : files) {
-            if ((fileType != FileType.FILES && file.isDirectory()) ||
-                    (fileType != FileType.DIRECTORIES && file.isFile())){
+            if (fileType == FileType.ANY ||
+                    (fileType != FileType.FILES && file.isDirectory()) ||
+                    (fileType != FileType.DIRECTORIES && file.isFile())) {
                 closure.call(file);
             }
         }
