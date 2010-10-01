@@ -65,6 +65,8 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     private int innerClassCounter = 1;
     private boolean enumConstantBeingDef = false;
     private boolean forStatementBeingDef = false;
+    private boolean firstParamIsVarArg = false;
+    private boolean firstParam = false;
 
     public /*final*/ Reduction parseCST(final SourceUnit sourceUnit, Reader reader) throws CompilationFailedException {
         final SourceBuffer sourceBuffer = new SourceBuffer();
@@ -899,20 +901,37 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
 
     protected Parameter[] parameters(AST parametersNode) {
         AST node = parametersNode.getFirstChild();
+        firstParam = false;
+        firstParamIsVarArg = false;
         if (node == null) {
             if (isType(IMPLICIT_PARAMETERS, parametersNode)) return Parameter.EMPTY_ARRAY;
             return null;
         } else {
             List<Parameter> parameters = new ArrayList<Parameter>();
+            AST firstParameterNode = null;
             do {
+            	firstParam = (firstParameterNode == null);
+            	if(firstParameterNode == null) firstParameterNode = node;
                 parameters.add(parameter(node));
                 node = node.getNextSibling();
             }
             while (node != null);
+            
+            verifyParameters(parameters, firstParameterNode);
+            
             Parameter[] answer = new Parameter[parameters.size()];
             parameters.toArray(answer);
             return answer;
         }
+    }
+    
+    private void verifyParameters(List<Parameter> parameters, AST firstParameterNode) {
+    	if(parameters.size() <= 1) return;
+    	
+    	Parameter first = parameters.get(0);
+    	if(firstParamIsVarArg) {
+    		throw new ASTRuntimeException(firstParameterNode, "The var-arg parameter " + first.getName() + " must be the last parameter.");
+    	}
     }
 
     protected Parameter parameter(AST paramNode) {
@@ -950,6 +969,8 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         } else
             parameter = new Parameter(type, name);
 
+        if(firstParam) firstParamIsVarArg = variableParameterDef;
+        
         configureAST(parameter, paramNode);
         parameter.addAnnotations(annotations);
         return parameter;
