@@ -40,6 +40,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -51,6 +52,7 @@ public class JavaStubGenerator
     private File outputPath;
     private List<String> toCompile = new ArrayList<String>();
     private ArrayList<MethodNode> propertyMethods = new ArrayList<MethodNode>();
+    private Map<String, MethodNode> propertyMethodsWithSigs = new HashMap<String, MethodNode>();
     private ArrayList<ConstructorNode> constructors = new ArrayList<ConstructorNode>();
     private ModuleNode currentModule;
 
@@ -128,11 +130,11 @@ public class JavaStubGenerator
                 protected void addTimeStamp(ClassNode node) {}
                 protected void addInitialization(ClassNode node) {}
                 protected void addPropertyMethod(MethodNode method) {
-                    propertyMethods.add(method);
+                	doAddMethod(method);
                 }
                 protected void addReturnIfNeeded(MethodNode node) {}
                 protected void addMethod(ClassNode node, boolean shouldBeSynthetic, String name, int modifiers, ClassNode returnType, Parameter[] parameters, ClassNode[] exceptions, Statement code) {
-                    propertyMethods.add(new MethodNode(name, modifiers, returnType, parameters, exceptions, code));
+                	doAddMethod(new MethodNode(name, modifiers, returnType, parameters, exceptions, code));
                 }
                 protected void addConstructor(Parameter[] newParams, ConstructorNode ctor, Statement code, ClassNode node) {
                     constructors.add(new ConstructorNode(ctor.getModifiers(), newParams, ctor.getExceptions(), code));
@@ -149,6 +151,14 @@ public class JavaStubGenerator
                         if (saved[i] != null)
                             parameters[i].setInitialExpression(saved[i]);
                     }
+                }
+                private void doAddMethod(MethodNode method) {
+                	String sig = method.getTypeDescriptor();
+                	
+                	if(propertyMethodsWithSigs.containsKey(sig)) return;
+                	
+                	propertyMethods.add(method);
+                	propertyMethodsWithSigs.put(sig, method);
                 }
             };
             verifier.visitClass(classNode);
@@ -208,6 +218,7 @@ public class JavaStubGenerator
             for (Iterator<InnerClassNode> inner = classNode.getInnerClasses(); inner.hasNext();) {
                 // GROOVY-4004: Clear the methods from the outer class so that they don't get duplicated in inner ones
                 propertyMethods.clear();
+                propertyMethodsWithSigs.clear();
                 constructors.clear();
                 genClassInner(inner.next(), out);
             }
@@ -216,6 +227,7 @@ public class JavaStubGenerator
         }
         finally {
             propertyMethods.clear();
+            propertyMethodsWithSigs.clear();
             constructors.clear();
             currentModule = null;
         }
