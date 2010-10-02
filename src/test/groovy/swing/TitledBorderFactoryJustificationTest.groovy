@@ -23,7 +23,7 @@ import groovy.swing.factory.TitledBorderFactory
  * TitledBorderFactoryJustificationTest
  * Verifies that the justification attribute on the Factory gets passed through correctly to the TitledBorder
  */
-class TitledBorderFactoryJustificationTest extends GroovyTestCase{
+class TitledBorderFactoryJustificationTest extends GroovySwingTestCase {
     void "test justification is set to the left"() {
             testJustificationIsSet(TitledBorder.LEFT, 'left')
     }
@@ -45,13 +45,15 @@ class TitledBorderFactoryJustificationTest extends GroovyTestCase{
     }
 
     void testJustificationIsSet(int justification, justificationString) {
-        def swing = new SwingBuilder()
-            swing.frame{
-
-            def tbf = new TitledBorderFactory()
-            TitledBorder titledBorder = tbf.newInstance(swing, "TestBorder", "", [justification:justificationString])
-
-            assert justification == titledBorder.titleJustification:"justification should be -> ($justificationString)"
+        testInEDT {
+            def swing = new SwingBuilder()
+                swing.frame{
+    
+                def tbf = new TitledBorderFactory()
+                TitledBorder titledBorder = tbf.newInstance(swing, "TestBorder", "", [justification:justificationString])
+    
+                assert justification == titledBorder.titleJustification:"justification should be -> ($justificationString)"
+            }
         }
     }
 }
