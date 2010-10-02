@@ -295,8 +295,10 @@ abstract class StubTestCase extends GroovyTestCase {
                 tmpPath = tmpPath + File.separator
             }
             File newDir = new File(tmpPath + it)
-            if (!(newDir.mkdir())) {
-                throw new IOException("Impossible to create package directory: ${newDir.absolutePath}")
+            if(!newDir.exists()) {
+                if (!(newDir.mkdir())) {
+                    throw new IOException("Impossible to create package directory: ${newDir.absolutePath}")
+                }
             }
             tmpPath = newDir.absolutePath
         }
