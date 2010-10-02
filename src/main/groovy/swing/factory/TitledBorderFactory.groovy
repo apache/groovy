@@ -70,7 +70,7 @@ class TitledBorderFactory extends SwingBorderFactory {
         if (position instanceof Integer) { border.setTitlePosition(position) }
 
         def justification = attributes.remove("justification")
-        justification = positions[justification] ?: justification
+        justification = justifications[justification] ?: justification
         if (justification instanceof Integer) { border.setTitleJustification(justification) }
 
         Border otherBorder = attributes.remove("border")
