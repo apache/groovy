@@ -2004,6 +2004,30 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Iterates through this array transforming each item using the closure
+     * as a transformer into a map entry, returning a map of the transformed entries.
+     * <pre class="groovyTestCase">
+     * def letters = "abc"
+     * def nums = [0, 1, 2] as Integer[]
+     * // collect letters with index
+     * assert nums.collectEntries( [:] ) { index -> [index, letters[index]] } == [0:'a', 1:'b', 2:'c']
+     * assert nums.collectEntries( [4:'d'] ) { index ->
+     *     [(index+1): letters[index]] } == [1:'a', 2:'b', 3:'c', 4:'d']
+     * </pre>
+     *
+     * @param self    a Collection
+     * @param result  the Map into which the collected entries are put
+     * @param closure the closure used for mapping, which has an item from self as the parameter and
+     *                should return a Map.Entry, a Map or a two-element list containing the resulting key and value
+     * @return a Map of the transformed entries
+     * @see #collect(Map, Collection, Closure)
+     * @since 1.8.0
+     */
+    public static <K, V> Map<K, V> collectEntries(Object[] self, Map<K, V> result, Closure closure) {
+        return collectEntries(toList(self), result, closure);
+    }
+
+    /**
      * Iterates through this Collection transforming each item using the closure
      * as a transformer into a map entry, returning a map of the transformed entries.
      * <pre class="groovyTestCase">
@@ -2023,6 +2047,29 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <K, V> Map<K, V> collectEntries(Collection self, Closure closure) {
         return collectEntries(self, new LinkedHashMap<K, V>(), closure);
+    }
+
+    /**
+     * Iterates through this array transforming each item using the closure
+     * as a transformer into a map entry, returning a map of the transformed entries.
+     * <pre class="groovyTestCase">
+     * def letters = "abc"
+     * def nums = [0, 1, 2] as Integer[]
+     * // collect letters with index using list style
+     * assert nums.collectEntries { index -> [index, letters[index]] } == [0:'a', 1:'b', 2:'c']
+     * // collect letters with index using map style
+     * assert nums.collectEntries { index -> [(index): letters[index]] } == [0:'a', 1:'b', 2:'c']
+     * </pre>
+     *
+     * @param self    a Collection
+     * @param closure the closure used for mapping, which has an item from self as the parameter and
+     *                should return a Map.Entry, a Map or a two-element list containing the resulting key and value
+     * @return a Map of the transformed entries
+     * @see #collectEntries(Collection, Map, Closure)
+     * @since 1.8.0
+     */
+    public static <K, V> Map<K, V> collectEntries(Object[] self, Closure closure) {
+        return collectEntries(toList(self), new LinkedHashMap<K, V>(), closure);
     }
 
     private static <K, V> void addEntry(Map<K, V> result, Object newEntry) {
