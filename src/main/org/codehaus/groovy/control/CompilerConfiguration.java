@@ -169,7 +169,17 @@ public class CompilerConfiguration {
         } else {
             setTargetBytecode(getVMVersion());
         }
-        setDefaultScriptExtension(".groovy");
+        String tmpDefaultScriptExtension = null;
+        try {
+        	tmpDefaultScriptExtension = System.getProperty("groovy.default.scriptExtension");
+        } catch (Exception e) {
+        	// IGNORE
+        }
+        if(tmpDefaultScriptExtension != null) {
+        	setDefaultScriptExtension(tmpDefaultScriptExtension);
+        } else {
+        	setDefaultScriptExtension(".groovy");
+        }
 
         //
         // Source file encoding

@@ -789,6 +789,11 @@ public class Groovyc extends MatchingTask {
                     if ((memoryMaximumSize != null) && !memoryMaximumSize.equals("")) {
                         commandLineList.add("-Xmx" + memoryMaximumSize);
                     }
+                    if(!"*.groovy".equals(getScriptExtension())) {
+                    	String tmpExtension = getScriptExtension();
+                    	if(tmpExtension.startsWith("*.")) tmpExtension = tmpExtension.substring(1);
+                    	commandLineList.add("-Dgroovy.default.scriptExtension=" + tmpExtension);
+                    }
                     commandLineList.add("org.codehaus.groovy.tools.FileSystemCompiler");
                 }
                 commandLineList.add("--classpath");
@@ -879,6 +884,9 @@ public class Groovyc extends MatchingTask {
 
                         configuration = FileSystemCompiler.generateCompilerConfigurationFromOptions(cli);
                         configuration.setScriptExtensions(getScriptExtensions());
+                        String tmpExtension = getScriptExtension();
+                        if(tmpExtension.startsWith("*.")) tmpExtension = tmpExtension.substring(1);
+                        configuration.setDefaultScriptExtension(tmpExtension);
 
                         // Load the file name list
                         String[] filenames = FileSystemCompiler.generateFileNamesFromOptions(cli);
