@@ -156,4 +156,27 @@ class CastTest extends GroovyTestCase {
         assert myList[-1] == 42
         assert myList.size() == 42
     }
+
+    void testArrayCast() {
+        def a = '1' as Integer
+        assert [a, a.class] == [1, Integer]
+        def b = '2' as int
+        assert [b, b.class] == [2, Integer]
+        def c = '100' as Integer
+        assert [c, c.class] == [100, Integer]
+        def d = '200' as int
+        assert [d, d.class] == [200, Integer]
+        def e = ['1', '2'] as Integer[]
+        assert e == [1, 2]
+        assert e.class.componentType == Integer
+        def f = ['1', '2'] as int[]
+        assert f == [1, 2]
+        assert f.class.componentType == int
+        def g = ['100', '200'] as Integer[]
+        assert g == [100, 200]
+        assert g.class.componentType == Integer
+        def h = ['100', '200'] as int[]
+        assert h == [100, 200]
+        assert h.class.componentType == int
+    }
 }
