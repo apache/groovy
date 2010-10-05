@@ -24,6 +24,7 @@ import groovy.sql.GroovyResultSet;
 import groovy.util.*;
 import org.codehaus.groovy.reflection.ClassInfo;
 import org.codehaus.groovy.reflection.MixinInMetaClass;
+import org.codehaus.groovy.reflection.ReflectionCache;
 import org.codehaus.groovy.runtime.dgmimpl.NumberNumberDiv;
 import org.codehaus.groovy.runtime.dgmimpl.NumberNumberMinus;
 import org.codehaus.groovy.runtime.dgmimpl.NumberNumberMultiply;
@@ -14959,6 +14960,15 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         }
 
         try {
+            if (ReflectionCache.isArray(type)) {
+                return (T) asArrayType(obj, type);
+            }
+        }
+        catch (GroovyCastException e) {
+            /* ignore */
+        }
+        // fall back to cast
+        try {
           return (T) DefaultTypeTransformation.castToType(obj, type);
         }
         catch (GroovyCastException e) {
@@ -14980,6 +14990,63 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             }
             throw e;
         }
+    }
+
+    private static Object asArrayType(Object object, Class type) {
+        if (type.isAssignableFrom(object.getClass())) {
+            return object;
+        }
+        Collection list = DefaultTypeTransformation.asCollection(object);
+        int size = list.size();
+        Class elementType = type.getComponentType();
+        Object array = Array.newInstance(elementType, size);
+        int idx = 0;
+
+        if (boolean.class.equals(elementType)) {
+            for (Iterator iter = list.iterator(); iter.hasNext(); idx++) {
+                Object element = iter.next();
+                Array.setBoolean(array, idx, (Boolean) InvokerHelper.invokeStaticMethod(DefaultGroovyMethods.class, "asType", new Object[]{element, boolean.class}));
+            }
+        } else if (byte.class.equals(elementType)) {
+            for (Iterator iter = list.iterator(); iter.hasNext(); idx++) {
+                Object element = iter.next();
+                Array.setByte(array, idx, (Byte) InvokerHelper.invokeStaticMethod(DefaultGroovyMethods.class, "asType", new Object[]{element, byte.class}));
+            }
+        } else if (char.class.equals(elementType)) {
+            for (Iterator iter = list.iterator(); iter.hasNext(); idx++) {
+                Object element = iter.next();
+                Array.setChar(array, idx, (Character) InvokerHelper.invokeStaticMethod(DefaultGroovyMethods.class, "asType", new Object[]{element, char.class}));
+            }
+        } else if (double.class.equals(elementType)) {
+            for (Iterator iter = list.iterator(); iter.hasNext(); idx++) {
+                Object element = iter.next();
+                Array.setDouble(array, idx, (Double) InvokerHelper.invokeStaticMethod(DefaultGroovyMethods.class, "asType", new Object[]{element, double.class}));
+            }
+        } else if (float.class.equals(elementType)) {
+            for (Iterator iter = list.iterator(); iter.hasNext(); idx++) {
+                Object element = iter.next();
+                Array.setFloat(array, idx, (Float) InvokerHelper.invokeStaticMethod(DefaultGroovyMethods.class, "asType", new Object[]{element, float.class}));
+            }
+        } else if (int.class.equals(elementType)) {
+            for (Iterator iter = list.iterator(); iter.hasNext(); idx++) {
+                Object element = iter.next();
+                Array.setInt(array, idx, (Integer) InvokerHelper.invokeStaticMethod(DefaultGroovyMethods.class, "asType", new Object[]{element, int.class}));
+            }
+        } else if (long.class.equals(elementType)) {
+            for (Iterator iter = list.iterator(); iter.hasNext(); idx++) {
+                Object element = iter.next();
+                Array.setLong(array, idx, (Long) InvokerHelper.invokeStaticMethod(DefaultGroovyMethods.class, "asType", new Object[]{element, long.class}));
+            }
+        } else if (short.class.equals(elementType)) {
+            for (Iterator iter = list.iterator(); iter.hasNext(); idx++) {
+                Object element = iter.next();
+                Array.setShort(array, idx, (Short) InvokerHelper.invokeStaticMethod(DefaultGroovyMethods.class, "asType", new Object[]{element, short.class}));
+            }
+        } else for (Iterator iter = list.iterator(); iter.hasNext(); idx++) {
+            Object element = iter.next();
+            Array.set(array, idx, InvokerHelper.invokeStaticMethod(DefaultGroovyMethods.class, "asType", new Object[]{element, elementType}));
+        }
+        return array;
     }
 
     /**
