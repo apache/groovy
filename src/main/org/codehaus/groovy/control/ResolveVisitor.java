@@ -1238,6 +1238,8 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
 
     public void visitClass(ClassNode node) {
         ClassNode oldNode = currentClass;
+        Map<String, GenericsType> oldPNames = genericParameterNames;
+        genericParameterNames = new HashMap<String, GenericsType>(genericParameterNames);
         currentClass = node;
 
         resolveGenericsHeader(node.getGenericsTypes());
@@ -1292,6 +1294,8 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         checkCyclicInheritence(node, node.getUnresolvedSuperClass(), node.getInterfaces());
         
         super.visitClass(node);
+
+        genericParameterNames = oldPNames;
 
         currentClass = oldNode;
     }
