@@ -115,8 +115,6 @@ public interface GroovyCodeVisitor {
 
     void visitDeclarationExpression(DeclarationExpression expression);
 
-    void visitRegexExpression(RegexExpression expression);
-
     void visitGStringExpression(GStringExpression expression);
 
     void visitArrayExpression(ArrayExpression expression);

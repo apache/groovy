@@ -27,7 +27,6 @@ import org.codehaus.groovy.ast.expr.PostfixExpression;
 import org.codehaus.groovy.ast.expr.PrefixExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.RangeExpression;
-import org.codehaus.groovy.ast.expr.RegexExpression;
 import org.codehaus.groovy.ast.expr.SpreadExpression;
 import org.codehaus.groovy.ast.expr.SpreadMapExpression;
 import org.codehaus.groovy.ast.expr.StaticMethodCallExpression;
@@ -404,11 +403,6 @@ class LineCheckVisitor extends ClassCodeVisitorSupport {
     public void visitFieldExpression(FieldExpression expression) {
         visitNode(expression);
         super.visitFieldExpression(expression);
-    }
-
-    public void visitRegexExpression(RegexExpression expression) {
-        visitNode(expression);
-        super.visitRegexExpression(expression);
     }
 
     public void visitGStringExpression(GStringExpression expression) {

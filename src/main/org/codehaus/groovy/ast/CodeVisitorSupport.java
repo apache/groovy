@@ -258,9 +258,6 @@ public abstract class CodeVisitorSupport implements GroovyCodeVisitor {
     public void visitFieldExpression(FieldExpression expression) {
     }
 
-    public void visitRegexExpression(RegexExpression expression) {
-    }
-
     public void visitGStringExpression(GStringExpression expression) {
         visitListOfExpressions(expression.getStrings());
         visitListOfExpressions(expression.getValues());

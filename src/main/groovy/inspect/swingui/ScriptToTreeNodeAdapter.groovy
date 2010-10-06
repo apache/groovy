@@ -555,10 +555,6 @@ private class TreeNodeBuildingVisitor extends CodeVisitorSupport {
         addNode(node, FieldExpression, { super.visitFieldExpression(it) });
     }
 
-    public void visitRegexExpression(RegexExpression node) {
-        addNode(node, RegexExpression, { super.visitRegexExpression(it) });
-    }
-
     public void visitGStringExpression(GStringExpression node) {
         addNode(node, GStringExpression, { super.visitGStringExpression(it) });
     }

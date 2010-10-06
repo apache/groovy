@@ -59,7 +59,6 @@ import org.codehaus.groovy.ast.expr.PostfixExpression
 import org.codehaus.groovy.ast.expr.PrefixExpression
 import org.codehaus.groovy.ast.expr.PropertyExpression
 import org.codehaus.groovy.ast.expr.RangeExpression
-import org.codehaus.groovy.ast.expr.RegexExpression
 import org.codehaus.groovy.ast.expr.SpreadExpression
 import org.codehaus.groovy.ast.expr.SpreadMapExpression
 import org.codehaus.groovy.ast.expr.StaticMethodCallExpression
@@ -625,15 +624,6 @@ import org.codehaus.groovy.ast.ClassHelper
 
     private void spreadMap(Closure argBlock) {
         makeNode(SpreadMapExpression, 'spreadMap', [Expression], argBlock)
-    }
-
-
-    /**
-     * Creates a RegexExpression
-     */
-
-    private void regex(Closure argBlock) {
-        makeNode(RegexExpression, 'regex', [Expression], argBlock)
     }
 
 

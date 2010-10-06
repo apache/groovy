@@ -134,7 +134,6 @@ public class AsmClassGenerator extends ClassGenerator {
     //regexpr
     static final MethodCaller findRegexMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "findRegex");
     static final MethodCaller matchRegexMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "matchRegex");
-    static final MethodCaller regexPattern = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "regexPattern");
     // spread expressions
     static final MethodCaller spreadMap = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "spreadMap");
     static final MethodCaller despreadList = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "despreadList");
@@ -1834,11 +1833,6 @@ public class AsmClassGenerator extends ClassGenerator {
         } else {
             loadThis();
         }
-    }
-
-    public void visitRegexExpression(RegexExpression expression) {
-        expression.getRegex().visit(this);
-        regexPattern.call(mv);
     }
 
     /**
