@@ -281,6 +281,36 @@ class GenericsTest extends GenericsTestBase {
       """
     }
 
+    void testGenericsDiamondShortcutSimple() {
+        assertScript """
+            List<List<String>> list1 = new ArrayList<>()
+            assert list1.size() == 0
+        """
+    }
+
+    void testGenericsDiamondShortcutComplex() {
+        assertScript """
+            List<List<List<List<List<String>>>>> list2 = new ArrayList<>()
+            assert list2.size() == 0
+        """
+    }
+
+    void testGenericsDiamondShortcutMethodCall() {
+        assertScript """
+            def method(List<List<String>> list3) {
+              list3.size()
+            }
+
+            assert method(new ArrayList<>()) == 0
+        """
+    }
+
+    void testGenericsDiamondShortcutIllegalPosition() {
+        assertScriptAndVerifyCompilationError """
+            List<> list4 = []
+        """, 'unexpected token: <'
+    }
+
     void testGenericsInAsType() {
         // this is to ensure no regression to GROOVY-2725 will happen
         // "as ThreadLocal<Integer>\n" did not compile because the nls
@@ -348,12 +378,16 @@ import java.util.concurrent.atomic.AtomicInteger
     }
 
     private void assertScriptAndVerifyCompilationError(scriptText) {
+        assertScriptAndVerifyCompilationError(scriptText, "Missing closing bracket '>' for generics types")
+    }
+
+    private void assertScriptAndVerifyCompilationError(scriptText, errorMessage) {
         try {
             assertScript scriptText
             fail("The script compilation should have failed as it contains mis-matching generic brackets")
         } catch (MultipleCompilationErrorsException mcee) {
             def text = mcee.toString();
-            assert text.contains("Missing closing bracket '>' for generics types")
+            assert text.contains(errorMessage)
         }
     }
 

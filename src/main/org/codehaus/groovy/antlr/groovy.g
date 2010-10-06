@@ -710,7 +710,7 @@ classTypeSpec[boolean addImagNode]  {Token first = LT(1);}
 
 // A non-built in type name, with possible type parameters
 classOrInterfaceType[boolean addImagNode]  {Token first = LT(1);}
-    :   i1:IDENT^ (typeArguments)?
+    :   i1:IDENT^ (typeArguments|typeArgumentsDiamond)?
 
         (   options{greedy=true;}: // match as many as possible
             d:DOT!
@@ -744,6 +744,11 @@ wildcardType
     :   QUESTION
         (("extends" | "super")=> typeArgumentBounds)?
         {#wildcardType.setType(WILDCARD_TYPE);}
+    ;
+
+typeArgumentsDiamond
+{Token first = LT(1);}
+    :   LT! GT! nls!
     ;
 
 // Type arguments to a class or interface type
