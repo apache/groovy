@@ -546,6 +546,7 @@ private class TreeNodeBuildingVisitor extends CodeVisitorSupport {
         addNode(node, FieldExpression, { super.visitFieldExpression(it) });
     }
 
+    @Deprecated
     public void visitRegexExpression(RegexExpression node) {
         addNode(node, RegexExpression, { super.visitRegexExpression(it) });
     }

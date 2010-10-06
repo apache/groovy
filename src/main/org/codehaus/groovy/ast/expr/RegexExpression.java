@@ -25,6 +25,7 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
+@Deprecated
 public class RegexExpression extends Expression {
     
     private final Expression string;

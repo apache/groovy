@@ -144,6 +144,7 @@ public class TruthExpressionRewriter implements GroovyCodeVisitor {
         unsupported(); // cannot occur in an assertion statement
     }
 
+    @Deprecated
     public void visitRegexExpression(RegexExpression expr) {
         unsupported(); // class RegexExpression doesn't seem to be used
     }

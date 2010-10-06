@@ -631,6 +631,7 @@ import org.codehaus.groovy.ast.ClassHelper
      * Creates a RegexExpression
      */
 
+    @Deprecated
     private void regex(Closure argBlock) {
         makeNode(RegexExpression, 'regex', [Expression], argBlock)
     }

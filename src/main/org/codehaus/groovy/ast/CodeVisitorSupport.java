@@ -258,6 +258,7 @@ public abstract class CodeVisitorSupport implements GroovyCodeVisitor {
     public void visitFieldExpression(FieldExpression expression) {
     }
 
+    @Deprecated
     public void visitRegexExpression(RegexExpression expression) {
     }
 

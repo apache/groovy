@@ -115,6 +115,7 @@ public interface GroovyCodeVisitor {
 
     void visitDeclarationExpression(DeclarationExpression expression);
 
+    @Deprecated
     void visitRegexExpression(RegexExpression expression);
 
     void visitGStringExpression(GStringExpression expression);

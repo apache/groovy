@@ -1838,6 +1838,7 @@ public class AsmClassGenerator extends ClassGenerator {
         }
     }
 
+    @Deprecated
     public void visitRegexExpression(RegexExpression expression) {
         expression.getRegex().visit(this);
         regexPattern.call(mv);

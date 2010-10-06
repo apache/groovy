@@ -406,6 +406,7 @@ class LineCheckVisitor extends ClassCodeVisitorSupport {
         super.visitFieldExpression(expression);
     }
 
+    @Deprecated
     public void visitRegexExpression(RegexExpression expression) {
         visitNode(expression);
         super.visitRegexExpression(expression);

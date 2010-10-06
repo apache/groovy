@@ -1126,6 +1126,7 @@ public class AstBuilderFromSpecificationTest extends GroovyTestCase {
     }
 
 
+    // TODO remove in a future version
     public void testRegexExpression() {
         // what source code would generate this? Is this valid usage?
         def result = new AstBuilder().buildFromSpec {
