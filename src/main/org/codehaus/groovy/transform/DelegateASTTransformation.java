@@ -183,7 +183,7 @@ public class DelegateASTTransformation implements ASTTransformation, Opcodes {
                 args.addExpression(new VariableExpression(newParam));
             }
             // addMethod will ignore attempts to override abstract or static methods with same signature on self
-            owner.addMethod(candidate.getName(),
+            MethodNode newMethod = owner.addMethod(candidate.getName(),
                     candidate.getModifiers() & (~ACC_ABSTRACT) & (~ACC_NATIVE),
                     nonGeneric(candidate.getReturnType()),
                     newParams,
@@ -193,6 +193,7 @@ public class DelegateASTTransformation implements ASTTransformation, Opcodes {
                                     new VariableExpression(fieldNode),
                                     candidate.getName(),
                                     args)));
+            newMethod.setGenericsTypes(candidate.getGenericsTypes());
         }
     }
 

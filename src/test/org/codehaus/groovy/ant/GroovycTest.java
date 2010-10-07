@@ -15,6 +15,8 @@
 package org.codehaus.groovy.ant;
 
 import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.regex.Pattern;
 
 import org.apache.tools.ant.BuildException;
@@ -147,6 +149,7 @@ public class GroovycTest extends GroovyTestCase {
         ensurePresent("IncorrectGenericsUsage");
         
         String antOutput = allOutput.toString();
+        antOutput = adjustOutputToHandleOpenJDKJavacOutputDifference(antOutput);
         System.setOut(origOut);
 
         // verify if passing -Xlint in compilerarg had its effect
@@ -154,6 +157,29 @@ public class GroovycTest extends GroovyTestCase {
         assertTrue("Expected line 1 not found in ant output", p.matcher(antOutput).matches());
         p = Pattern.compile(".*?required[ ]*:[ ]*java.util.ArrayList<java.lang.String>.*", Pattern.DOTALL);
         assertTrue("Expected line 2 not found in ant output", p.matcher(antOutput).matches());
+    }
+    
+    /*
+     * For the code,
+     *		private ArrayList<String> x = new ArrayList<String>();
+     *		x = (ArrayList)z ;
+     *	Upto JDK6, 'javac -Xlint' produces the following output
+     		found   : java.util.ArrayList
+			required: java.util.ArrayList<java.lang.String>
+	 *	But, OpenJDK seems to be producing the following output
+			required: ArrayList<String>
+			found:    ArrayList
+	 *	So, we first adjust the output a bit, so that difference in the output brought in by OpenJDK javac
+	 *	does not impact the test adversely 
+     */
+    private String adjustOutputToHandleOpenJDKJavacOutputDifference(String antOutput) {
+		if(!antOutput.contains("java.util.ArrayList") && antOutput.contains("ArrayList")) {
+			antOutput = antOutput.replace("ArrayList", "java.util.ArrayList");
+		}
+		if(!antOutput.contains("java.lang.String") && antOutput.contains("String")) {
+			antOutput = antOutput.replace("String", "java.lang.String");
+		}
+		return antOutput;
     }
     
     public void testGroovycTest1_Joint_NoFork_WithJavaClasspath() {
