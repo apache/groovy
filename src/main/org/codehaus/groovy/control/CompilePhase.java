@@ -50,4 +50,20 @@ public enum CompilePhase {
     public int getPhaseNumber() {
         return phaseNumber;
     }
+
+    /**
+     * Returns the CompilePhase for the given integer phase number.
+     * @param phaseNumber
+     *      the phase number
+     * @return
+     *      the CompilePhase or null if not found
+     */
+    public static CompilePhase fromPhaseNumber(int phaseNumber) {
+        for (CompilePhase phase : values()) {
+            if (phase.phaseNumber == phaseNumber) {
+                return phase;
+            }
+        }
+        return null;
+    }
 }

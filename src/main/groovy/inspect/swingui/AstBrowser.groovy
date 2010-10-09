@@ -30,6 +30,18 @@ import javax.swing.tree.TreeNode
 import javax.swing.tree.TreeSelectionModel
 import org.codehaus.groovy.control.Phases
 import java.util.prefs.Preferences
+import javax.swing.JSplitPane
+import javax.swing.SwingUtilities
+import org.codehaus.groovy.ast.ClassNode
+import org.codehaus.groovy.ast.builder.AstBuilder
+import org.codehaus.groovy.control.CompilePhase
+import javax.swing.JFrame
+import org.codehaus.groovy.control.CompilationUnit
+import org.codehaus.groovy.control.CompilerConfiguration
+import org.codehaus.groovy.control.CompilationFailedException
+import org.codehaus.groovy.control.CompilationUnit.PrimaryClassNodeOperation
+import org.codehaus.groovy.control.SourceUnit
+import org.codehaus.groovy.classgen.GeneratorContext
 
 /**
  * This object is a GUI for looking at the AST that Groovy generates. 
@@ -44,7 +56,7 @@ import java.util.prefs.Preferences
 
 public class AstBrowser {
 
-    private inputArea, rootElement
+    private inputArea, rootElement, decompiledSource
     boolean showScriptFreeForm, showScriptClass
     GroovyClassLoader classLoader
 
@@ -80,7 +92,7 @@ public class AstBrowser {
         swing = new SwingBuilder()
         def prefs = new AstBrowserUiPreferences()
         def rootNode = new DefaultTreeModel(new DefaultMutableTreeNode("Loading...")) // populated later
-        def phasePicker, jTree, propertyTable, splitterPane
+        def phasePicker, jTree, propertyTable, splitterPane, mainSplitter
 
         showScriptFreeForm = prefs.showScriptFreeForm
         showScriptClass = prefs.showScriptClass
@@ -90,7 +102,7 @@ public class AstBrowser {
                 size: prefs.frameSize,
                 iconImage: swing.imageIcon(groovy.ui.Console.ICON_PATH).image,
                 defaultCloseOperation: WindowConstants.DISPOSE_ON_CLOSE,
-                windowClosing : { event -> prefs.save(frame, splitterPane, showScriptFreeForm, showScriptClass) } ) {
+                windowClosing : { event -> prefs.save(frame, splitterPane, mainSplitter, showScriptFreeForm, showScriptClass) } ) {
 
             menuBar {
                 menu(text: 'Show Script', mnemonic: 'S') {
@@ -111,15 +123,16 @@ public class AstBrowser {
                         selectedItem: CompilePhaseAdapter.SEMANTIC_ANALYSIS,
                         actionPerformed: {
                             compile(rootNode, swing, script(), phasePicker.selectedItem.phaseId)
-                        }, 
+                            decompile(phasePicker.selectedItem.phaseId, script())
+                        },
                         constraints: gbc(gridx: 1, gridy: 0, gridwidth: 1, gridheight: 1, weightx: 1.0, weighty: 0, anchor: NORTHWEST, fill: NONE, insets: [2, 2, 2, 2]))
                 button(text: 'Refresh',
                         actionPerformed: {
                             compile(rootNode, swing, script(), phasePicker.selectedItem.phaseId)
+                            decompile(phasePicker.selectedItem.phaseId, script())
                         },
                         constraints: gbc(gridx: 2, gridy: 0, gridwidth: 1, gridheight: 1, weightx: 0, weighty: 0, anchor: NORTHEAST, fill: NONE, insets: [2, 2, 2, 3]))
                 splitterPane = splitPane(
-                        dividerLocation :  prefs.dividerLocation,
                         leftComponent: scrollPane() {
                             jTree = tree(
                                     name: "AstTreeView",
@@ -133,8 +146,18 @@ public class AstBrowser {
                                     propertyColumn(header:'Type', propertyName:'type')
                                 }
                             }
+                        }
+                ) { }
+                mainSplitter = splitPane(
+                        orientation: JSplitPane.VERTICAL_SPLIT,
+                        topComponent: splitterPane,
+                        bottomComponent: scrollPane() {
+                            decompiledSource = textArea(
+                                    editable: false
+                            )
                         },
-                        constraints: gbc(gridx: 0, gridy: 1, gridwidth: 3, gridheight: 1, weightx: 1.0, weighty: 1.0, anchor: NORTHWEST, fill: BOTH, insets: [2, 2, 2, 2])) { }
+                        constraints: gbc(gridx: 0, gridy: 2, gridwidth: 3, gridheight: 1, weightx: 1.0, weighty: 1.0, anchor: NORTHWEST, fill: BOTH, insets: [2, 2, 2, 2])) { }
+
             }
         }
 
@@ -176,11 +199,21 @@ public class AstBrowser {
         } as TreeSelectionListener)
 
         frame.pack()
+        frame.location = prefs.frameLocation
+        frame.size = prefs.frameSize
+        splitterPane.dividerLocation = prefs.verticalDividerLocation
+        mainSplitter.dividerLocation = prefs.horizontalDividerLocation
         frame.show()
-        compile(rootNode, swing, script(), phasePicker.selectedItem.phaseId)
+
+        String source = script()
+        compile(rootNode, swing, source, phasePicker.selectedItem.phaseId)
         jTree.rootVisible = false
         jTree.showsRootHandles = true   // some OS's require this as a step to show nodes
+
+        decompile(phasePicker.selectedItem.phaseId, source)
     }
+
+
 
     void showAbout(EventObject evt) {
          def pane = swing.optionPane()
@@ -195,6 +228,28 @@ public class AstBrowser {
 
     void showScriptClass(EventObject evt) {
         showScriptClass = evt.source.selected
+    }
+
+    void decompile(phaseId, source) {
+
+        decompiledSource.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+        swing.doOutside {
+            try {
+
+                String result = new AstNodeToScriptAdapter().compileToScript(source, phaseId, classLoader, showScriptFreeForm, showScriptClass)
+                swing.doLater {
+                    decompiledSource.text = result;
+                    decompiledSource.setCaretPosition(0)
+                    decompiledSource.setCursor(Cursor.defaultCursor);
+                }
+            } catch (Throwable t) {
+                swing.doLater {
+                    decompiledSource.text = t.getMessage();
+                    decompiledSource.setCaretPosition(0)
+                    decompiledSource.setCursor(Cursor.defaultCursor);
+                }
+            }
+        }
     }
 
     void compile(node, swing, String script, int compilePhase) {
@@ -215,7 +270,8 @@ class AstBrowserUiPreferences {
 
     final def frameLocation
     final def frameSize
-    final def dividerLocation
+    final def verticalDividerLocation
+    final def horizontalDividerLocation
     final boolean showScriptFreeForm
     final boolean showScriptClass
 
@@ -227,18 +283,20 @@ class AstBrowserUiPreferences {
         frameSize = [
                 prefs.getInt("frameWidth", 800),
                 prefs.getInt("frameHeight", 600)]
-        dividerLocation = prefs.getInt("splitterPaneLocation", 100)
+        verticalDividerLocation = prefs.getInt("verticalSplitterLocation", 100)
+        horizontalDividerLocation = prefs.getInt("horizontalSplitterLocation", 100)
         showScriptFreeForm = prefs.getBoolean("showScriptFreeForm", false)
         showScriptClass = prefs.getBoolean("showScriptClass", true)
     }
 
-    def save(frame, splitter, scriptFreeFormPref, scriptClassPref) {
+    def save(frame, vSplitter, hSplitter, scriptFreeFormPref, scriptClassPref) {
         Preferences prefs = Preferences.userNodeForPackage(AstBrowserUiPreferences)
         prefs.putInt("frameX", frame.location.x as int)
         prefs.putInt("frameY", frame.location.y as int)
         prefs.putInt("frameWidth", frame.size.width as int)
         prefs.putInt("frameHeight", frame.size.height as int)
-        prefs.putInt("splitterPaneLocation", splitter.dividerLocation)
+        prefs.putInt("verticalSplitterLocation", vSplitter.dividerLocation)
+        prefs.putInt("horizontalSplitterLocation", hSplitter.dividerLocation)
         prefs.putBoolean("showScriptFreeForm", scriptFreeFormPref)
         prefs.putBoolean("showScriptClass", scriptClassPref)
     }
