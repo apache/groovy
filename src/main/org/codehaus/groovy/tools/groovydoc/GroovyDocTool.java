@@ -18,6 +18,7 @@ package org.codehaus.groovy.tools.groovydoc;
 import antlr.RecognitionException;
 import antlr.TokenStreamException;
 import org.codehaus.groovy.groovydoc.GroovyRootDoc;
+import org.codehaus.groovy.tools.shell.util.Logger;
 
 import java.io.File;
 import java.io.IOException;
@@ -29,7 +30,7 @@ import java.util.Properties;
  * @author Jeremy Rayner
  */
 public class GroovyDocTool {
-
+    private final Logger log = Logger.create(GroovyDocTool.class);
     private final GroovyRootDocBuilder rootDocBuilder;
     private final GroovyDocTemplateEngine templateEngine;
     private Properties properties;
@@ -60,7 +61,7 @@ public class GroovyDocTool {
     public void add(List<String> filenames) throws RecognitionException, TokenStreamException, IOException {
         if (templateEngine != null) {
             // only print out if we are being used for template generation
-            System.out.println("Loading source files for " + filenames);
+            log.debug("Loading source files for " + filenames);
         }
         rootDocBuilder.buildTree(filenames);
     }

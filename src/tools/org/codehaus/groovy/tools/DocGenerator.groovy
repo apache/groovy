@@ -4,6 +4,7 @@ import org.codehaus.groovy.runtime.DefaultGroovyMethods
 import com.thoughtworks.qdox.JavaDocBuilder
 import java.io.File
 import java.util.*
+import org.codehaus.groovy.tools.shell.util.Logger
 
 /**
  * Generate documentation about the methods provided by the Groovy Development Kit
@@ -13,6 +14,7 @@ import java.util.*
  */
 class DocGenerator {
     private static final String PRIMITIVE_TYPE_PSEUDO_PACKAGE = 'primitive-types'
+    private static final Logger log = Logger.create(DocGenerator)
     private final String TITLE = "Groovy JDK"
     def sourceFiles = []
     File outputFolder
@@ -35,7 +37,7 @@ class DocGenerator {
     private void parse() {
         builder = new JavaDocBuilder()
         sourceFiles.each {
-            println "adding reader for $it"
+            log.debug "adding reader for $it"
             builder.addSource(it.newReader())
         }
 
@@ -399,13 +401,13 @@ class DocGenerator {
                 }
             }
         } catch (MissingPropertyException mpe) {
-            System.err.println mpe.message
+            log.error mpe.message, mpe
             // no call site change available, so ignore it
         }
         def docGen = new DocGenerator(srcFiles, outFolder)
         docGen.generateNew()
         def end = System.currentTimeMillis()
-        println "Done. Took ${end - start} millis."
+        log.debug "Done. Took ${end - start} millis."
     }
 
     private static File getSourceFile(String classname) {

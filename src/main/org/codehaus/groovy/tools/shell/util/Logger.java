@@ -17,6 +17,9 @@
 package org.codehaus.groovy.tools.shell.util;
 
 import org.codehaus.groovy.tools.shell.IO;
+
+import java.io.IOException;
+
 import static org.fusesource.jansi.Ansi.ansi;
 import static org.fusesource.jansi.Ansi.Color;
 import static org.fusesource.jansi.Ansi.Color.*;
@@ -37,7 +40,7 @@ public final class Logger {
         this.name = name;
     }
     
-    private void log(final String level, Object msg, Throwable cause) throws Exception {
+    private void log(final String level, Object msg, Throwable cause) {
         assert level != null;
         assert msg != null;
         
@@ -63,8 +66,12 @@ public final class Logger {
         if (cause != null) {
             cause.printStackTrace(io.out);
         }
-        
-        io.flush();
+
+        try {
+            io.flush();
+        } catch (IOException io) {
+            throw new RuntimeException(io);
+        }
     }
     
     //
@@ -81,13 +88,13 @@ public final class Logger {
         return isDebugEnabled();
     }
     
-    public void debug(final Object msg) throws Exception {
+    public void debug(final Object msg) {
         if (isDebugEnabled()) {
             log(DEBUG, msg, null);
         }
     }
     
-    public void debug(final Object msg, final Throwable cause) throws Exception {
+    public void debug(final Object msg, final Throwable cause) {
         if (isDebugEnabled()) {
             log(DEBUG, msg, cause);
         }
@@ -95,21 +102,21 @@ public final class Logger {
 
     private static final String WARN = "WARN";
 
-    public void warn(final Object msg) throws Exception {
+    public void warn(final Object msg) {
         log(WARN, msg, null);
     }
 
-    public void warn(final Object msg, final Throwable cause) throws Exception {
+    public void warn(final Object msg, final Throwable cause) {
         log(WARN, msg, cause);
     }
     
     private static final String ERROR = "ERROR";
 
-    public void error(final Object msg) throws Exception {
+    public void error(final Object msg) {
         log(ERROR, msg, null);
     }
 
-    public void error(final Object msg, final Throwable cause) throws Exception {
+    public void error(final Object msg, final Throwable cause) {
         log(ERROR, msg, cause);
     }
 

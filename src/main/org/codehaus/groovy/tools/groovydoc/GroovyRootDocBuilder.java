@@ -33,6 +33,7 @@ import org.codehaus.groovy.antlr.treewalker.Visitor;
 import org.codehaus.groovy.groovydoc.GroovyClassDoc;
 import org.codehaus.groovy.groovydoc.GroovyRootDoc;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
+import org.codehaus.groovy.tools.shell.util.Logger;
 
 import java.io.File;
 import java.io.IOException;
@@ -45,6 +46,7 @@ import java.util.regex.Pattern;
  *  todo: order methods alphabetically (implement compareTo enough?)
  */
 public class GroovyRootDocBuilder {
+    private final Logger log = Logger.create(GroovyRootDocBuilder.class);
     private static final char FS = '/';
     private List<LinkArgument> links;
     private final GroovyDocTool tool;
@@ -83,7 +85,7 @@ public class GroovyRootDocBuilder {
         try {
             parser.compilationUnit();
         } catch (OutOfMemoryError e) {
-            System.out.println("Out of memory while processing: " + packagePath + "/" + file);
+            log.error("Out of memory while processing: " + packagePath + "/" + file);
             throw e;
         }
         AST ast = parser.getAST();
@@ -114,7 +116,7 @@ public class GroovyRootDocBuilder {
         try {
             parser.compilationUnit();
         } catch (OutOfMemoryError e) {
-            System.out.println("Out of memory while processing: " + packagePath + "/" + file);
+            log.error("Out of memory while processing: " + packagePath + "/" + file);
             throw e;
         }
         AST ast = parser.getAST();
@@ -218,9 +220,11 @@ public class GroovyRootDocBuilder {
             packageDoc.putAll(classDocs);
             rootDoc.put(packagePath, packageDoc);
         } catch (RecognitionException e) {
-            System.err.println("ignored due to RecognitionException: " + filename + " [" + e.getMessage() + "]");
+            log.error("ignored due to RecognitionException: " + filename + " [" + e.getMessage() + "]");
+            log.debug("ignored due to RecognitionException: " + filename + " [" + e.getMessage() + "]", e);
         } catch (TokenStreamException e) {
-            System.err.println("ignored due to TokenStreamException: " + filename + " [" + e.getMessage() + "]");
+            log.error("ignored due to TokenStreamException: " + filename + " [" + e.getMessage() + "]");
+            log.debug("ignored due to TokenStreamException: " + filename + " [" + e.getMessage() + "]", e);
         }
     }
 

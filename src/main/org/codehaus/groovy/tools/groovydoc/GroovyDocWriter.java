@@ -22,11 +22,13 @@ import java.util.Properties;
 import org.codehaus.groovy.groovydoc.GroovyClassDoc;
 import org.codehaus.groovy.groovydoc.GroovyPackageDoc;
 import org.codehaus.groovy.groovydoc.GroovyRootDoc;
+import org.codehaus.groovy.tools.shell.util.Logger;
 
 /**
  * Write GroovyDoc resources to destination.
  */
 public class GroovyDocWriter {
+    private final Logger log = Logger.create(GroovyDocWriter.class);
     private GroovyDocTool tool;
     private OutputTool output;
     private GroovyDocTemplateEngine templateEngine;
@@ -50,7 +52,7 @@ public class GroovyDocWriter {
         if (classDoc.isPublic() || classDoc.isProtected() && "true".equals(properties.getProperty("protectedScope")) ||
                 classDoc.isPackagePrivate() && "true".equals(properties.getProperty("packageScope")) || "true".equals(properties.getProperty("privateScope"))) {
             String destFileName = destdir + FS + classDoc.getFullPathName() + ".html";
-            System.out.println("Generating " + destFileName);
+            log.debug("Generating " + destFileName);
             String renderedSrc = templateEngine.applyClassTemplates(classDoc);
             output.writeToOutput(destFileName, renderedSrc);
         }
@@ -68,7 +70,7 @@ public class GroovyDocWriter {
             sb.append("\n");
         }
         String destFileName = destdir + FS + "package-list";
-        System.out.println("Generating " + destFileName);
+        log.debug("Generating " + destFileName);
         output.writeToOutput(destFileName, sb.toString());
     }
 
@@ -78,7 +80,7 @@ public class GroovyDocWriter {
             String template = templates.next();
             String renderedSrc = templateEngine.applyPackageTemplate(template, packageDoc);
             String destFileName = destdir + FS + packageDoc.name() + FS + tool.getFile(template);
-            System.out.println("Generating " + destFileName);
+            log.debug("Generating " + destFileName);
             output.writeToOutput(destFileName, renderedSrc);
         }
     }
@@ -93,7 +95,7 @@ public class GroovyDocWriter {
         while (templates.hasNext()) {
             String template = templates.next();
             String destFileName = destdir + FS + tool.getFile(template);
-            System.out.println("Generating " + destFileName);
+            log.debug("Generating " + destFileName);
             if (hasBinaryExtension(template)) {
                 templateEngine.copyBinaryResource(template, destFileName);
             } else {
