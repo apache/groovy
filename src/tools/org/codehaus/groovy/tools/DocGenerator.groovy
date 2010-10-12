@@ -45,7 +45,7 @@ class DocGenerator {
         sources.each {source ->
             def classes = source.getClasses()
             classes.each {aClass ->
-                methods.addAll(aClass.methods as List)
+                methods.addAll(aClass.methods.findAll{ !it.annotations.any{ it.type.fullQualifiedName == 'java.lang.Deprecated' } })
             }
         }
 
