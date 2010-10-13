@@ -32,6 +32,7 @@ switch (UIManager.getSystemLookAndFeelClassName()) {
         break
 
     case 'apple.laf.AquaLookAndFeel':
+    case 'com.apple.laf.AquaLookAndFeel':
         build(MacOSXDefaults)
         break
 
