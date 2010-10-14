@@ -1154,7 +1154,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
     // This method should be called by CallSite only
     private MetaMethod getMethodWithCachingInternal (Class sender, CallSite site, Class [] params) {
-        if (site.getUsage ().get() != 0 && GroovyCategorySupport.hasCategoryInCurrentThread())
+        if (GroovyCategorySupport.hasCategoryInCurrentThread())
             return getMethodWithoutCaching(sender, site.getName (), params, false);
 
         final MetaMethodIndex.Entry e = metaMethodIndex.getMethods(sender, site.getName());
@@ -3014,7 +3014,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     public CallSite createPogoCallSite(CallSite site, Object[] args) {
-        if (site.getUsage().get() == 0 && !(this instanceof AdaptingMetaClass)) {
+        if (!GroovyCategorySupport.hasCategoryInCurrentThread() && !(this instanceof AdaptingMetaClass)) {
             Class [] params = MetaClassHelper.convertToTypeArray(args);
             MetaMethod metaMethod = getMethodWithCachingInternal(theClass, site, params);
             if (metaMethod != null)
@@ -3024,7 +3024,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     public CallSite createPogoCallCurrentSite(CallSite site, Class sender, Object[] args) {
-        if (site.getUsage().get() == 0 && !(this instanceof AdaptingMetaClass)) {
+        if (!GroovyCategorySupport.hasCategoryInCurrentThread() && !(this instanceof AdaptingMetaClass)) {
           Class [] params = MetaClassHelper.convertToTypeArray(args);
           MetaMethod metaMethod = getMethodWithCachingInternal(sender, site, params);
           if (metaMethod != null)

@@ -19,6 +19,8 @@ import groovy.lang.MetaClass;
 import groovy.lang.MetaClassImpl;
 import groovy.lang.GroovyInterceptable;
 import groovy.lang.GroovyObject;
+
+import org.codehaus.groovy.runtime.GroovyCategorySupport;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.reflection.ClassInfo;
 
@@ -105,7 +107,7 @@ public final class CallSiteArray {
     private static CallSite createPojoSite(CallSite callSite, Object receiver, Object[] args) {
         final Class klazz = receiver.getClass();
         MetaClass metaClass = InvokerHelper.getMetaClass(receiver);
-        if (callSite.getUsage().get() == 0 && metaClass instanceof MetaClassImpl) {
+        if (!GroovyCategorySupport.hasCategoryInCurrentThread() && metaClass instanceof MetaClassImpl) {
             final MetaClassImpl mci = (MetaClassImpl) metaClass;
             final ClassInfo info = mci.getTheCachedClass().classInfo;
             if (info.hasPerInstanceMetaClasses()) {

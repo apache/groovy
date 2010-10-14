@@ -26,7 +26,6 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.wrappers.Wrapper;
 
 import java.lang.reflect.Method;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Base class for all call sites
@@ -37,20 +36,17 @@ public class AbstractCallSite implements CallSite {
     protected final int index;
     protected final String name;
     protected final CallSiteArray array;
-    protected final AtomicInteger usage;
 
     public AbstractCallSite(CallSiteArray array, int index, String name) {
         this.name = name;
         this.index = index;
         this.array = array;
-        this.usage = GroovyCategorySupport.getCategoryNameUsage(name);
     }
 
     public AbstractCallSite(CallSite prev) {
         this.name = prev.getName();
         this.index = prev.getIndex();
         this.array = prev.getArray();
-        this.usage = prev.getUsage();
     }
 
     public int getIndex() {
@@ -63,10 +59,6 @@ public class AbstractCallSite implements CallSite {
 
     public String getName() {
         return name;
-    }
-
-    public AtomicInteger getUsage() {
-        return usage;
     }
 
     public final Object callSafe(Object receiver, Object[] args) throws Throwable {

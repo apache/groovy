@@ -20,6 +20,7 @@ import groovy.lang.GroovyRuntimeException;
 import groovy.lang.MetaClassImpl;
 import groovy.lang.MetaMethod;
 import org.codehaus.groovy.reflection.CachedMethod;
+import org.codehaus.groovy.runtime.GroovyCategorySupport;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 
@@ -71,7 +72,7 @@ public class PogoMetaMethodSite extends MetaMethodSite {
 
     protected boolean checkCall(Object receiver, Object[] args) {
         try {
-            return usage.get() == 0
+            return !GroovyCategorySupport.hasCategoryInCurrentThread()
                && ((GroovyObject)receiver).getMetaClass() == metaClass // metaClass still be valid
                && MetaClassHelper.sameClasses(params, args);
         }
@@ -89,7 +90,7 @@ public class PogoMetaMethodSite extends MetaMethodSite {
 
     protected boolean checkCall(Object receiver) {
         try {
-            return usage.get() == 0
+            return !GroovyCategorySupport.hasCategoryInCurrentThread()
                && ((GroovyObject)receiver).getMetaClass() == metaClass // metaClass still be valid
                && MetaClassHelper.sameClasses(params);
         }
@@ -107,7 +108,7 @@ public class PogoMetaMethodSite extends MetaMethodSite {
 
     protected boolean checkCall(Object receiver, Object arg1) {
         try {
-            return usage.get() == 0
+            return !GroovyCategorySupport.hasCategoryInCurrentThread()
                && ((GroovyObject)receiver).getMetaClass() == metaClass // metaClass still be valid
                && MetaClassHelper.sameClasses(params, arg1);
         }
@@ -125,7 +126,7 @@ public class PogoMetaMethodSite extends MetaMethodSite {
 
     protected boolean checkCall(Object receiver, Object arg1, Object arg2) {
         try {
-            return usage.get() == 0
+            return !GroovyCategorySupport.hasCategoryInCurrentThread()
                && ((GroovyObject)receiver).getMetaClass() == metaClass // metaClass still be valid
                && MetaClassHelper.sameClasses(params, arg1, arg2);
         }
@@ -143,7 +144,7 @@ public class PogoMetaMethodSite extends MetaMethodSite {
 
     protected boolean checkCall(Object receiver, Object arg1, Object arg2, Object arg3) {
         try {
-            return usage.get() == 0
+            return !GroovyCategorySupport.hasCategoryInCurrentThread()
                && ((GroovyObject)receiver).getMetaClass() == metaClass // metaClass still be valid
                && MetaClassHelper.sameClasses(params, arg1, arg2, arg3);
         }
@@ -161,7 +162,7 @@ public class PogoMetaMethodSite extends MetaMethodSite {
 
     protected boolean checkCall(Object receiver, Object arg1, Object arg2, Object arg3, Object arg4) {
         try {
-            return usage.get() == 0
+            return !GroovyCategorySupport.hasCategoryInCurrentThread()
                && ((GroovyObject)receiver).getMetaClass() == metaClass // metaClass still be valid
                && MetaClassHelper.sameClasses(params, arg1, arg2, arg3, arg4);
         }

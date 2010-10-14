@@ -33,7 +33,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class GroovyCategorySupport {
 
-    private static AtomicInteger categoriesInUse = new AtomicInteger();
+    private static int categoriesInUse = 0;
+    private static AtomicInteger atomicCategoryUsageCounter = new AtomicInteger();
 
     public static class CategoryMethodList extends ArrayList<CategoryMethod> {
         public final int level;
@@ -65,7 +66,8 @@ public class GroovyCategorySupport {
         private Map<String, String> propertySetterMap;
         
         private void newScope () {
-            categoriesInUse.incrementAndGet();
+            atomicCategoryUsageCounter.incrementAndGet();
+            categoriesInUse = atomicCategoryUsageCounter.get();
             level++;
         }
 
@@ -86,8 +88,9 @@ public class GroovyCategorySupport {
                 }
             }
             level--;
-            categoriesInUse.getAndDecrement();
-            if (level == 0) {
+            atomicCategoryUsageCounter.getAndDecrement();
+            categoriesInUse = atomicCategoryUsageCounter.get();
+			if (level == 0) {
                 THREAD_INFO.remove();
             }
         }
@@ -251,15 +254,13 @@ public class GroovyCategorySupport {
     }
 
     public static boolean hasCategoryInCurrentThread() {
-        if (categoriesInUse.get() == 0) {
-            return false;
-        }
-        final ThreadCategoryInfo infoNullable = THREAD_INFO.getInfoNullable();
+        if (categoriesInUse == 0) return false;
+		ThreadCategoryInfo infoNullable = THREAD_INFO.getInfoNullable();
         return infoNullable != null && infoNullable.level != 0;
     }
 
     public static boolean hasCategoryInAnyThread() {
-        return categoriesInUse.get() != 0;
+        return atomicCategoryUsageCounter.get() != 0;
     }
 
     /**

@@ -17,13 +17,11 @@ package org.codehaus.groovy.runtime.callsite;
 
 import groovy.lang.GroovyObject;
 
-import java.util.concurrent.atomic.AtomicInteger;
 
 public interface CallSite {
     CallSiteArray getArray();
     int getIndex();
     String getName();
-    AtomicInteger getUsage();
 
     Object getProperty(Object receiver) throws Throwable;
     Object callGetPropertySafe (Object receiver) throws Throwable;

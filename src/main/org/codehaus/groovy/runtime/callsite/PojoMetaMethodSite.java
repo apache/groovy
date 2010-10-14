@@ -19,6 +19,7 @@ import groovy.lang.GroovyRuntimeException;
 import groovy.lang.MetaClassImpl;
 import groovy.lang.MetaMethod;
 import org.codehaus.groovy.reflection.CachedMethod;
+import org.codehaus.groovy.runtime.GroovyCategorySupport;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.runtime.NullObject;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
@@ -55,7 +56,7 @@ public class PojoMetaMethodSite extends MetaMethodSite {
     }
 
     protected final boolean checkPojoMetaClass() {
-        return usage.get() == 0
+        return !GroovyCategorySupport.hasCategoryInCurrentThread()
             && ((MetaClassImpl)metaClass).getVersion() == version;
     }
 
