@@ -45,12 +45,10 @@ public class EnumVisitor extends ClassCodeVisitorSupport{
     private static final int PUBLIC_FS = Opcodes.ACC_PUBLIC | FS;
     private static final int PRIVATE_FS = Opcodes.ACC_PRIVATE | FS;
     
-    private final CompilationUnit compilationUnit;
     private final SourceUnit sourceUnit;
     
     
     public EnumVisitor(CompilationUnit cu, SourceUnit su) {
-        compilationUnit = cu;
         sourceUnit = su;
     }    
     
@@ -307,8 +305,15 @@ public class EnumVisitor extends ClassCodeVisitorSupport{
                 ListExpression oldArgs = (ListExpression) field.getInitialExpression();
                 for (Iterator oldArgsIterator = oldArgs.getExpressions().iterator(); oldArgsIterator.hasNext();) {
                     Expression exp = (Expression) oldArgsIterator.next();
-                    if (exp instanceof ClassExpression && exp.getType() instanceof EnumConstantClassNode) {
-                        InnerClassNode inner = (InnerClassNode) exp.getType();
+                    InnerClassNode inner = null; 
+                    if (exp instanceof ClassExpression) { 
+                        ClassExpression clazzExp = (ClassExpression) exp;
+                        ClassNode ref = clazzExp.getType();
+                        if (ref instanceof EnumConstantClassNode) {
+                            inner = (InnerClassNode) ref;
+                        }
+                    }
+                    if (inner!=null) {
                         if (inner.getVariableScope()==null) {
                             enumBase = inner;
                             /*
