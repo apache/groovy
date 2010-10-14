@@ -7900,6 +7900,17 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Identity conversion which returns Boolean.TRUE for a true Boolean and Boolean.FALSE for a false Boolean.
+     *
+     * @param self a Boolean
+     * @return the original Boolean
+     * @since 1.7.6
+     */
+    public static Boolean toBoolean(Boolean self) {
+        return self;
+    }
+
+    /**
      * Convenience method to split a string (with whitespace as delimiter)
      * Like tokenize, but returns an Array of Strings instead of a List
      *
