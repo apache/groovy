@@ -176,7 +176,7 @@ public class CategoryASTTransformation implements ASTTransformation, Opcodes {
     }
 
     private ClassNode getTargetClass(SourceUnit source, AnnotationNode annotation) {
-        final Expression value = annotation.getMember("value");
+        Expression value = annotation.getMember("value");
         if (value == null || !(value instanceof ClassExpression)) {
             //noinspection ThrowableInstanceNeverThrown
             source.getErrorCollector().addErrorAndContinue(
@@ -185,8 +185,10 @@ public class CategoryASTTransformation implements ASTTransformation, Opcodes {
                             annotation.getLineNumber(),
                             annotation.getColumnNumber()),
                             source));
+            return null;
+        } else {
+            ClassExpression ce = (ClassExpression) value;
+            return ce.getType();
         }
-
-        return value != null ? value.getType() : null;
     }
 }
