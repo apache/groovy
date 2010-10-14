@@ -23,6 +23,7 @@ import org.objectweb.asm.Opcodes;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
@@ -46,7 +47,8 @@ public class ClassHelper {
         Pattern.class, Script.class, String.class,  Boolean.class, 
         Character.class, Byte.class, Short.class, Integer.class, Long.class,
         Double.class, Float.class, BigDecimal.class, BigInteger.class, Void.class,
-        Reference.class, Class.class, MetaClass.class,     
+        Reference.class, Class.class, MetaClass.class, Iterator.class,    
+        GeneratedClosure.class, 
     };
 
     private static final String[] primitiveClassNames = new String[] {
@@ -72,13 +74,18 @@ public class ClassHelper {
         Double_TYPE = makeCached(Double.class),       Boolean_TYPE = makeCached(Boolean.class),
         BigInteger_TYPE =  makeCached(java.math.BigInteger.class),
         BigDecimal_TYPE = makeCached(java.math.BigDecimal.class),
-        void_WRAPPER_TYPE = makeCached(Void.class),   
+        void_WRAPPER_TYPE = makeCached(Void.class),   METACLASS_TYPE = makeCached(MetaClass.class),
+        Iterator_TYPE = makeCached(Iterator.class),
+
+        // uncached constants.
+        CLASS_Type = makeWithoutCaching(Class.class), COMPARABLE_TYPE = makeWithoutCaching(Comparable.class),        
+        GENERATED_CLOSURE_Type = makeWithoutCaching(GeneratedClosure.class),
         
-        CLASS_Type = makeWithoutCaching(Class.class),        METACLASS_TYPE = makeCached(MetaClass.class),
-        GENERATED_CLOSURE_Type = makeCached(GeneratedClosure.class),
         Enum_Type = new ClassNode("java.lang.Enum",0,OBJECT_TYPE),
         Annotation_TYPE = new ClassNode("java.lang.annotation.Annotation",0,OBJECT_TYPE),
-        ELEMENT_TYPE_TYPE = new ClassNode("java.lang.annotation.ElementType",0,Enum_Type);
+        ELEMENT_TYPE_TYPE = new ClassNode("java.lang.annotation.ElementType",0,Enum_Type)
+        ;
+        
         
     static {
         Enum_Type.isPrimaryNode = false;
@@ -95,7 +102,7 @@ public class ClassHelper {
         Byte_TYPE, Short_TYPE, Integer_TYPE, Long_TYPE,
         Double_TYPE, Float_TYPE, BigDecimal_TYPE, BigInteger_TYPE, 
         void_WRAPPER_TYPE, REFERENCE_TYPE, CLASS_Type, METACLASS_TYPE,
-        GENERATED_CLOSURE_Type, Enum_Type, Annotation_TYPE
+        Iterator_TYPE, GENERATED_CLOSURE_Type, Enum_Type, Annotation_TYPE
     };
 
     
