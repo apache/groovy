@@ -164,7 +164,8 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
                 }
             } catch (Throwable e) {
                 e.printStackTrace();
-                throw new GroovyRuntimeException("Failed to register the DGM methods : " + e, e);
+                // we print the error, but we don't stop with an exception here
+                // since it is more comfortable this way for development
             }
         } else {
             CachedMethod[] methods = ReflectionCache.getCachedClass(theClass).getMethods();
