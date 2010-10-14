@@ -64,7 +64,6 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     private boolean isTopLevelProperty = true;
     private boolean inPropertyExpression = false;
     private boolean inClosure = false;
-    private boolean isSpecialConstructorCall = false;
 
     private Map<String, GenericsType> genericParameterNames = new HashMap<String, GenericsType>();
     private Set<FieldNode> fieldTypesChecked = new HashSet<FieldNode>();
@@ -1088,9 +1087,8 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         if (Modifier.isAbstract(type.getModifiers())) {
             addError("You cannot create an instance from the abstract " + getDescription(type) + ".", cce);
         }
-        isSpecialConstructorCall = cce.isSpecialCall();
+
         Expression ret = cce.transformExpression(this);
-        isSpecialConstructorCall = false;
         return ret;
     }
 
@@ -1247,7 +1245,6 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
 
         ModuleNode module = node.getModule();
         if (!module.hasImportsResolved()) {
-            List l = module.getImports();
             for (ImportNode importNode : module.getImports()) {
                 currImportNode = importNode;
                 ClassNode type = importNode.getType();
