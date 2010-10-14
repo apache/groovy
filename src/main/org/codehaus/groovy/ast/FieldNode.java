@@ -35,7 +35,6 @@ public class FieldNode extends AnnotatedNode implements Opcodes, Variable {
     private Expression initialValueExpression;
     private boolean dynamicTyped;
     private boolean holder;
-    private boolean closureShare = false;
 
     public static FieldNode newStatic(Class theClass, String name) throws SecurityException, NoSuchFieldException {
         Field field = theClass.getField(name);
@@ -146,12 +145,16 @@ public class FieldNode extends AnnotatedNode implements Opcodes, Variable {
         this.initialValueExpression = initialValueExpression;
     }
 
+    /**
+     * @deprecated
+     */
     public boolean isClosureSharedVariable() {
         return false;
     }
-
-    public void setClosureSharedVariable(boolean inClosure) {
-        closureShare = inClosure;
+    /**
+     * @deprecated
+     */
+    public void setClosureSharedVariable(boolean inClosure) {                
     }
 
     public ClassNode getOriginType() {
