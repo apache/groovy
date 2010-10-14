@@ -33,16 +33,16 @@ public class InterfaceHelperClassNode extends InnerClassNode {
      * @param superClass the base class name - use "java.lang.Object" if no direct base class
      * @param callSites list of callsites used in the interface
      */
-    public InterfaceHelperClassNode(ClassNode outerClass, String name, int modifiers, ClassNode superClass, List callSites) {
+    public InterfaceHelperClassNode(ClassNode outerClass, String name, int modifiers, ClassNode superClass, List<String> callSites) {
         super(outerClass, name, modifiers, superClass, ClassHelper.EMPTY_TYPE_ARRAY, MixinNode.EMPTY_ARRAY);
         setCallSites(callSites);
     }
     
-    public void setCallSites(List cs) {
-        callSites = (cs != null) ? cs : new ArrayList();
+    public void setCallSites(List<String> cs) {
+        callSites = (cs != null) ? cs : new ArrayList<String>();
     }
     
-    public List getCallSites() {
+    public List<String> getCallSites() {
         return callSites;
     }
 }
