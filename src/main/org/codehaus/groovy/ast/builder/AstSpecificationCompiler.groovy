@@ -824,7 +824,7 @@ import org.codehaus.groovy.ast.ClassHelper
 
     private void parameter(Map<String, Class> args, Closure argBlock = null) {
         if (!args) throw new IllegalArgumentException()
-        if (args.size > 1) throw new IllegalArgumentException()
+        if (args.size() > 1) throw new IllegalArgumentException()
 
         //todo: add better error handling?
         if (argBlock) {
