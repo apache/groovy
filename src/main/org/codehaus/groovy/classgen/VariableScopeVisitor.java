@@ -509,7 +509,6 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
     public void visitAnnotations(AnnotatedNode node) {
         List<AnnotationNode> annotations = node.getAnnotations();
         if (annotations.isEmpty()) return;
-        ClassNode annType;
         for (AnnotationNode an : annotations) {
         	// skip built-in properties
         	if (an.isBuiltIn()) continue;
