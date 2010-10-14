@@ -15,6 +15,8 @@
  */
 package groovy.lang;
 
+import org.codehaus.groovy.runtime.memoize.LRUProtectionStorage;
+import org.codehaus.groovy.runtime.memoize.Memoize;
 import org.codehaus.groovy.reflection.ReflectionCache;
 import org.codehaus.groovy.reflection.stdclasses.CachedClosureClass;
 import org.codehaus.groovy.runtime.ComposedClosure;
@@ -26,6 +28,8 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.util.Collections;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Represents any closure object in Groovy.
@@ -506,6 +510,105 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      */
     public V leftShift(final Object arg) {
         return call(arg);
+    }
+
+    /**
+     * Creates a caching variant of the closure.
+     * Whenever the closure is called, the mapping between the parameters and the return value is preserved in cache
+     * making subsequent calls with the same arguments fast.
+     * This variant will keep all cached values forever, i.e. till the closure gets garbage-collected.
+     * The returned function can be safely used concurrently from multiple threads, however, the implementation
+     * values high average-scenario performance and so concurrent calls on the memoized function with identical argument values
+     * may not necessarily be able to benefit from each other's cached return value. With this having been mentioned,
+     * the performance trade-off still makes concurrent use of memoized functions safe and highly recommended.
+     *
+     * The cache gets garbage-collected together with the memoized closure.
+     *
+     * @return A new closure forwarding to the original one while caching the results
+     */
+    public Closure<V> memoize() {
+        return Memoize.buildMemoizeFunction(new ConcurrentHashMap<Object, Object>(), this);
+    }
+
+    /**
+     * Creates a caching variant of the closure with upper limit on the cache size.
+     * Whenever the closure is called, the mapping between the parameters and the return value is preserved in cache
+     * making subsequent calls with the same arguments fast.
+     * This variant will keep all values until the upper size limit is reached. Then the values in the cache start rotating
+     * using the LRU (Last Recently Used) strategy.
+     * The returned function can be safely used concurrently from multiple threads, however, the implementation
+     * values high average-scenario performance and so concurrent calls on the memoized function with identical argument values
+     * may not necessarily be able to benefit from each other's cached return value. With this having been mentioned,
+     * the performance trade-off still makes concurrent use of memoized functions safe and highly recommended.
+     *
+     * The cache gets garbage-collected together with the memoized closure.
+     *
+     * @param maxCacheSize The maximum size the cache can grow to
+     * @return A new function forwarding to the original one while caching the results
+     */
+    public Closure<V> memoizeAtMost(final int maxCacheSize) {
+        if (maxCacheSize < 0) throw new IllegalArgumentException("A non-negative number is required as the maxCacheSize parameter for memoizeAtMost.");
+
+        return Memoize.buildMemoizeFunction(Collections.synchronizedMap(new LRUProtectionStorage(maxCacheSize)), this);
+    }
+
+    /**
+     * Creates a caching variant of the closure with automatic cache size adjustment and lower limit
+     * on the cache size.
+     * Whenever the closure is called, the mapping between the parameters and the return value is preserved in cache
+     * making subsequent calls with the same arguments fast.
+     * This variant allows the garbage collector to release entries from the cache and at the same time allows
+     * the user to specify how many entries should be protected from the eventual gc-initiated eviction.
+     * Cached entries exceeding the specified preservation threshold are made available for eviction based on
+     * the LRU (Last Recently Used) strategy.
+     * Given the non-deterministic nature of garbage collector, the actual cache size may grow well beyond the limits
+     * set by the user if memory is plentiful.
+     * The returned function can be safely used concurrently from multiple threads, however, the implementation
+     * values high average-scenario performance and so concurrent calls on the memoized function with identical argument values
+     * may not necessarily be able to benefit from each other's cached return value. Also the protectedCacheSize parameter
+     * might not be respected accurately in such scenarios for some periods of time. With this having been mentioned,
+     * the performance trade-off still makes concurrent use of memoized functions safe and highly recommended.
+     *
+     * The cache gets garbage-collected together with the memoized closure.
+     * @param protectedCacheSize Number of cached return values to protect from garbage collection
+     * @return A new function forwarding to the original one while caching the results
+     */
+    public Closure<V> memoizeAtLeast(final int protectedCacheSize) {
+        if (protectedCacheSize < 0) throw new IllegalArgumentException("A non-negative number is required as the protectedCacheSize parameter for memoizeAtLeast.");
+
+        return Memoize.buildSoftReferenceMemoizeFunction(protectedCacheSize, new ConcurrentHashMap<Object, Object>(), this);
+    }
+
+    /**
+     * Creates a caching variant of the closure with automatic cache size adjustment and lower and upper limits
+     * on the cache size.
+     * Whenever the closure is called, the mapping between the parameters and the return value is preserved in cache
+     * making subsequent calls with the same arguments fast.
+     * This variant allows the garbage collector to release entries from the cache and at the same time allows
+     * the user to specify how many entries should be protected from the eventual gc-initiated eviction.
+     * Cached entries exceeding the specified preservation threshold are made available for eviction based on
+     * the LRU (Last Recently Used) strategy.
+     * Given the non-deterministic nature of garbage collector, the actual cache size may grow well beyond the protected
+     * size limits set by the user, if memory is plentiful.
+     * Also, this variant will never exceed in size the upper size limit. Once the upper size limit has been reached,
+     * the values in the cache start rotating using the LRU (Last Recently Used) strategy.
+     * The returned function can be safely used concurrently from multiple threads, however, the implementation
+     * values high average-scenario performance and so concurrent calls on the memoized function with identical argument values
+     * may not necessarily be able to benefit from each other's cached return value. Also the protectedCacheSize parameter
+     * might not be respected accurately in such scenarios for some periods of time. With this having been mentioned,
+     * the performance trade-off still makes concurrent use of memoized functions safe and highly recommended.
+     *
+     * The cache gets garbage-collected together with the memoized closure.
+     * @param protectedCacheSize Number of cached return values to protect from garbage collection
+     * @param maxCacheSize The maximum size the cache can grow to
+     * @return A new function forwarding to the original one while caching the results
+     */
+    public Closure<V> memoizeBetween(final int protectedCacheSize, final int maxCacheSize) {
+        if (protectedCacheSize < 0) throw new IllegalArgumentException("A non-negative number is required as the protectedCacheSize parameter for memoizeBetween.");
+        if (maxCacheSize < 0) throw new IllegalArgumentException("A non-negative number is required as the maxCacheSize parameter for memoizeBetween.");
+        if (protectedCacheSize > maxCacheSize) throw new IllegalArgumentException("The maxCacheSize parameter to memoizeBetween is required to be greater or equal to the protectedCacheSize parameter.");
+
+        return Memoize.buildSoftReferenceMemoizeFunction(protectedCacheSize, Collections.synchronizedMap(new LRUProtectionStorage(maxCacheSize)), this);
     }
 
     /* (non-Javadoc)
