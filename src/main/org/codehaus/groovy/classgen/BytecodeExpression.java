@@ -15,6 +15,7 @@
  */
 package org.codehaus.groovy.classgen;
 
+import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.ExpressionTransformer;
@@ -35,7 +36,11 @@ public abstract class BytecodeExpression extends Expression {
 
     public BytecodeExpression() {
     }
-
+    
+    public BytecodeExpression(ClassNode type) {
+        super.setType(type);
+    }
+    
     public void visit(GroovyCodeVisitor visitor) {
         visitor.visitBytecodeExpression(this);
     }
