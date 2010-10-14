@@ -178,6 +178,9 @@ public class DefaultGroovyMethodsTest extends GroovyTestCase {
         assertEquals(DefaultGroovyMethods.toBoolean("false"), Boolean.FALSE);
         assertEquals(DefaultGroovyMethods.toBoolean("n"), Boolean.FALSE);
         assertEquals(DefaultGroovyMethods.toBoolean("0"), Boolean.FALSE);
+
+        assertEquals(DefaultGroovyMethods.toBoolean(Boolean.FALSE), Boolean.FALSE);
+        assertEquals(DefaultGroovyMethods.toBoolean(Boolean.TRUE), Boolean.TRUE);
     }
 
     public void testIsMethods() throws Exception {
