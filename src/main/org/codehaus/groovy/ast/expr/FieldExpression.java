@@ -74,4 +74,8 @@ public class FieldExpression extends Expression {
     public boolean isUseReferenceDirectly() {
         return useRef;
     }
+    
+    public String toString() {
+        return "field("+getType()+" "+getFieldName()+")";
+    }
 }
