@@ -29,7 +29,6 @@ import org.codehaus.groovy.runtime.callsite.PojoMetaClassSite;
 import org.codehaus.groovy.runtime.callsite.StaticMetaClassSite;
 import org.codehaus.groovy.runtime.metaclass.ClosureMetaMethod;
 import org.codehaus.groovy.runtime.metaclass.ClosureStaticMetaMethod;
-import org.codehaus.groovy.runtime.metaclass.MetaMethodIndex;
 import org.codehaus.groovy.runtime.metaclass.MixedInMetaClass;
 import org.codehaus.groovy.runtime.metaclass.MixinInstanceMetaMethod;
 import org.codehaus.groovy.runtime.metaclass.OwnedMetaClass;
@@ -269,12 +268,14 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
     // These two properties are used when no ExpandoMetaClassCreationHandle is present
 
     private MetaClass myMetaClass;
-    private boolean allowChangesAfterInit;
+    private volatile boolean initialized;
+    private volatile boolean modified;
 
-    private boolean initialized;
     private boolean initCalled;
-    private boolean modified;
+    
+    final private boolean allowChangesAfterInit;
     public boolean inRegistry;
+    
     private final Set<MetaMethod> inheritedMetaMethods = new HashSet<MetaMethod>();
     private final Map<String, MetaProperty> beanPropertyCache = new ConcurrentHashMap<String, MetaProperty>();
     private final Map<String, MetaProperty> staticBeanPropertyCache = new ConcurrentHashMap<String, MetaProperty>();
@@ -289,19 +290,24 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
     private ClosureStaticMetaMethod invokeStaticMethodMethod;
     private final Set<MixinInMetaClass> mixinClasses = new LinkedHashSet<MixinInMetaClass>();
 
+    private ExpandoMetaClass(Class theClass, boolean register, boolean allowChangesAfterInit, MetaMethod[] add) {
+        super(GroovySystem.getMetaClassRegistry(), theClass, add);
+        this.myMetaClass = InvokerHelper.getMetaClass(getClass());
+        this.inRegistry = register;
+        this.allowChangesAfterInit = allowChangesAfterInit;
+    }
+    
     /**
      * Constructs a new ExpandoMetaClass instance for the given class
      *
      * @param theClass The class that the MetaClass applies to
      */
     public ExpandoMetaClass(Class theClass) {
-        super(GroovySystem.getMetaClassRegistry(), theClass);
-        this.myMetaClass = InvokerHelper.getMetaClass(getClass());
+        this(theClass,false,false,null);
     }
 
-    public ExpandoMetaClass(Class theClass, MetaMethod[] add) {
-        super(GroovySystem.getMetaClassRegistry(), theClass, add);
-        this.myMetaClass = InvokerHelper.getMetaClass(getClass());
+    public ExpandoMetaClass(Class theClass, MetaMethod [] add) {
+        this(theClass,false,false,add);
     }
 
     /**
@@ -312,27 +318,23 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
      * @param register True if the MetaClass should be registered inside the MetaClassRegistry. This defaults to true and ExpandoMetaClass will effect all instances if changed
      */
     public ExpandoMetaClass(Class theClass, boolean register) {
-        this(theClass);
-        this.inRegistry = register;
+        this(theClass,register,false,null);
     }
 
-    public ExpandoMetaClass(Class theClass, boolean register, MetaMethod[] add) {
-        this(theClass, add);
-        this.inRegistry = register;
+    public ExpandoMetaClass(Class theClass, boolean register, MetaMethod [] add) {
+        this(theClass, register, false, add);
     }
 
     /**
      * Constructs a new ExpandoMetaClass instance for the given class optionally placing the MetaClass
      * in the MetaClassRegistry automatically
      *
-     * @param theClass              The class that the MetaClass applies to
-     * @param register              True if the MetaClass should be registered inside the MetaClassRegistry. This defaults to true and ExpandoMetaClass will effect all instances if changed
+     * @param theClass The class that the MetaClass applies to
+     * @param register True if the MetaClass should be registered inside the MetaClassRegistry. This defaults to true and ExpandoMetaClass will effect all instances if changed
      * @param allowChangesAfterInit Should the meta class be modifiable after initialization. Default is false.
      */
     public ExpandoMetaClass(Class theClass, boolean register, boolean allowChangesAfterInit) {
-        this(theClass);
-        this.inRegistry = register;
-        this.allowChangesAfterInit = allowChangesAfterInit;
+        this(theClass, register, allowChangesAfterInit, null);
     }
 
     public MetaMethod findMixinMethod(String methodName, Class[] arguments) {
@@ -390,7 +392,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
         this.getPropertyMethod = method;
     }
 
-    public synchronized boolean isModified() {
+    public boolean isModified() {
         return this.modified;
     }
 
@@ -468,14 +470,13 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
 
     /**
      * Checks if the meta class is initialized.
-     *
      * @see groovy.lang.MetaClassImpl#isInitialized()
      */
-    protected synchronized boolean isInitialized() {
+    protected  boolean isInitialized() {
         return this.initialized;
     }
 
-    protected synchronized void setInitialized(boolean b) {
+    protected void setInitialized(boolean b) {
         this.initialized = b;
     }
 
@@ -483,14 +484,10 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
         performOperationOnMetaClass(new Callable() {
             public void call() {
 
-                final MetaMethodIndex.Header header = metaMethodIndex.getHeader(theClass);
-                final MetaMethodIndex.Entry methods = metaMethodIndex.getOrPutMethods(metaMethodFromSuper.getName(), header);
-
                 MetaMethod existing = null;
                 try {
                     existing = pickMethod(metaMethodFromSuper.getName(), metaMethodFromSuper.getNativeParameterTypes());
-                }
-                catch (GroovyRuntimeException e) {
+                } catch ( GroovyRuntimeException e) {
                     // ignore, this happens with overlapping method definitions
                 }
 
@@ -511,15 +508,13 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
             private void addMethodWithKey(final MetaMethod metaMethodFromSuper) {
                 inheritedMetaMethods.add(metaMethodFromSuper);
                 if (metaMethodFromSuper instanceof ClosureMetaMethod) {
-                    ClosureMetaMethod closureMethod = (ClosureMetaMethod) metaMethodFromSuper;
-                    Closure cloned = (Closure) closureMethod.getClosure().clone();
+                    ClosureMetaMethod closureMethod = (ClosureMetaMethod)metaMethodFromSuper;
                     String name = metaMethodFromSuper.getName();
                     final Class declaringClass = metaMethodFromSuper.getDeclaringClass().getTheClass();
                     ClosureMetaMethod localMethod = ClosureMetaMethod.copy(closureMethod);
                     addMetaMethod(localMethod);
 
                     MethodKey key = new DefaultCachedMethodKey(declaringClass, name, localMethod.getParameterTypes(), false);
-//                    cacheInstanceMethod(key, localMethod);
 
                     checkIfGroovyObjectMethod(localMethod);
                     expandoMethods.put(key, localMethod);
