@@ -278,7 +278,8 @@ public class AnnotationVisitor {
     }
 
     protected void visitConstantExpression(String attrName, ConstantExpression constExpr, ClassNode attrType) {
-        if (!constExpr.getType().isDerivedFrom(attrType)) {
+        ClassNode type = ClassHelper.getWrapper(constExpr.getType());
+        if (!type.isDerivedFrom(attrType)) {
             addError("Attribute '" + attrName + "' should have type '" + attrType.getName() + "'; "
                     + "but found type '" + constExpr.getType().getName() + "'",
                     constExpr);
