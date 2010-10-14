@@ -13,10 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.codehaus.groovy.classgen;
+package org.codehaus.groovy.classgen.asm;
 
 import java.lang.reflect.Method;
 
+import org.codehaus.groovy.classgen.ClassGeneratorException;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;

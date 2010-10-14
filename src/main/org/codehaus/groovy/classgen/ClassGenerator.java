@@ -30,35 +30,12 @@ import java.util.LinkedList;
  * @version $Revision$
  */
 public abstract class ClassGenerator extends ClassCodeVisitorSupport implements Opcodes {
-    protected ClassLoader classLoader;
     // inner classes created while generating bytecode
     protected LinkedList<ClassNode> innerClasses = new LinkedList<ClassNode>();
-
-    public ClassGenerator(ClassLoader classLoader) {
-        this.classLoader = classLoader;
-    }
 
     public LinkedList<ClassNode> getInnerClasses() {
         return innerClasses;
     }
-
-    public ClassLoader getClassLoader() {
-        return classLoader;
-    }
-
-    /**
-     * A constant that is the ASM representation of the JDK version number for use in the
-     * <code>ClassWriter.visitor</code> method calls.
-     * <p/>
-     * <p>Prior to version 1.5 of ASM, the code generated was always JDK1.3 compliant.  As of ASM version
-     * 1.5 there is an extra (first) parameter to specify the bytecode version to generate.  In
-     * version 1.5 these are in Constants.  The CVS (as at 2004.12.12) and presumably in version 2.0,
-     * the interface Constants is replaced by Opcodes.</p>
-     */
-    public static final int asmJDKVersion = V1_3;
-    //  We can use V1_3 and not org.objectweb.asm.Opcodes.V1_3 because this abstract class
-    //  implements org.objectweb.asm.Opcodes so all its constants are available directly.
-
 
     protected SourceUnit getSourceUnit() {
         return null;

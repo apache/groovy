@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.codehaus.groovy.classgen;
+package org.codehaus.groovy.classgen.asm;
 
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
@@ -36,20 +36,17 @@ public class Variable {
     private String name;
     private final int prevCurrent;
     private boolean holder;
-    private boolean property;
 
     // br for setting on the LocalVariableTable in the class file
     // these fields should probably go to jvm Operand class
     private Label startLabel = null;
     private Label endLabel = null;
     private boolean dynamicTyped;
-    private int prevIndex;
 
     private Variable(){
         dynamicTyped = true;
         index=0;
         holder=false;
-        property=false;
         prevCurrent=0;
     }
     
@@ -67,11 +64,7 @@ public class Variable {
     public ClassNode getType() {
         return type;
     }
-    
-    public String getTypeName() {
-        return type.getName();
-    }
-
+ 
     /**
      * @return the stack index for this variable
      */
@@ -88,14 +81,6 @@ public class Variable {
 
     public void setHolder(boolean holder) {
         this.holder = holder;
-    }
-
-    public boolean isProperty() {
-        return property;
-    }
-
-    public void setProperty(boolean property) {
-        this.property = property;
     }
     
     public Label getStartLabel() {
@@ -115,7 +100,7 @@ public class Variable {
     }
 
     public String toString() {
-        return super.toString() + "[" + type + " " + name + " (" + index + ")";
+        return name + "(index=" + index + ",type=" + type + ",holder="+holder+")";
     }
 
     public void setType(ClassNode type) {
@@ -132,6 +117,6 @@ public class Variable {
     }
 
     public int getPrevIndex() {
-        return prevIndex;
+        return prevCurrent;
     }
 }

@@ -63,6 +63,6 @@ class PostfixTest extends GroovyTestCase {
         assert 0 == ++ u ++
         assert 0 == u
         assert 0 == (u++)++
-        assert 2 == u
+        assert 1 == u
     }
 }

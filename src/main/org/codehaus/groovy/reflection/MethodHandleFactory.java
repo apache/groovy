@@ -18,7 +18,7 @@ package org.codehaus.groovy.reflection;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.MethodVisitor;
-import org.codehaus.groovy.classgen.BytecodeHelper;
+import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -30,13 +30,6 @@ public class MethodHandleFactory implements Opcodes{
         if (SunClassLoader.sunVM != null || checkAccessable(method)) {
           return createCompiledMethodHandle (method, ClassInfo.getClassInfo(method.getDeclaringClass()).getArtifactClassLoader());
         }
-
-        return new ReflectiveMethodHandle(method);
-    }
-
-    private static MethodHandle unreflect (Method method, ClassLoaderForClassArtifacts loader) {
-        if (SunClassLoader.sunVM != null || checkAccessable(method))
-          return createCompiledMethodHandle (method, loader);
 
         return new ReflectiveMethodHandle(method);
     }
@@ -55,27 +48,22 @@ public class MethodHandleFactory implements Opcodes{
         return true;
     }
 
-    public static void genLoadParameters(int argumentIndex, MethodVisitor mv, BytecodeHelper helper, Method method) {
+    public static void genLoadParameters(int argumentIndex, MethodVisitor mv, Method method) {
         Class<?>[] parameters = method.getParameterTypes();
         int size = parameters.length;
         for (int i = 0; i < size; i++) {
             // unpack argument from Object[]
             mv.visitVarInsn(Opcodes.ALOAD, argumentIndex);
-            helper.pushConstant(i);
+            BytecodeHelper.pushConstant(mv, i);
             mv.visitInsn(Opcodes.AALOAD);
 
             // cast argument to parameter class, inclusive unboxing
             // for methods with primitive types
-            Class type = parameters[i];
-            if (type.isPrimitive()) {
-                helper.unbox(type);
-            } else {
-                helper.doCast(type);
-            }
+            BytecodeHelper.doCast(mv, parameters[i]);
         }
     }
 
-    public static void genLoadParametersDirect(int argumentIndex, MethodVisitor mv, BytecodeHelper helper, Method method) {
+    public static void genLoadParametersDirect(int argumentIndex, MethodVisitor mv, Method method) {
         Class<?>[] parameters = method.getParameterTypes();
         int size = parameters.length;
         for (int i = 0; i < size; i++) {
@@ -83,16 +71,11 @@ public class MethodHandleFactory implements Opcodes{
 
             // cast argument to parameter class, inclusive unboxing
             // for methods with primitive types
-            Class type = parameters[i];
-            if (type.isPrimitive()) {
-                helper.unbox(type);
-            } else {
-                helper.doCast(type);
-            }
+            BytecodeHelper.doCast(mv, parameters[i]);
         }
     }
 
-    public static void genLoadParametersPrimitiveDirect(int argumentIndex, MethodVisitor mv, BytecodeHelper helper, Method method) {
+    public static void genLoadParametersPrimitiveDirect(int argumentIndex, MethodVisitor mv, Method method) {
         Class<?>[] parameters = method.getParameterTypes();
         int size = parameters.length;
         int idx = 0;
@@ -113,7 +96,7 @@ public class MethodHandleFactory implements Opcodes{
                 mv.visitVarInsn(ILOAD, idx);
             } else {
                 mv.visitVarInsn(ALOAD, idx);
-                helper.doCast(type);
+                BytecodeHelper.doCast(mv, type);
             }
         }
     }
@@ -178,8 +161,6 @@ public class MethodHandleFactory implements Opcodes{
         mv = cw.visitMethod(Opcodes.ACC_PUBLIC, "invoke", "(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;", null, EXCEPTIONS);
         mv.visitCode();
 
-        BytecodeHelper helper = new BytecodeHelper(mv);
-
         Class callClass = method.getDeclaringClass();
         boolean useInterface = callClass.isInterface();
 
@@ -188,16 +169,16 @@ public class MethodHandleFactory implements Opcodes{
 
         // make call
         if (Modifier.isStatic(method.getModifiers())) {
-            genLoadParameters(2, mv, helper, method);
+            genLoadParameters(2, mv, method);
             mv.visitMethodInsn(Opcodes.INVOKESTATIC, type, method.getName(), descriptor);
         } else {
             mv.visitVarInsn(Opcodes.ALOAD, 1);
-            helper.doCast(callClass);
-            genLoadParameters(2, mv, helper, method);
+            BytecodeHelper.doCast(mv, callClass);
+            genLoadParameters(2, mv, method);
             mv.visitMethodInsn((useInterface) ? Opcodes.INVOKEINTERFACE : Opcodes.INVOKEVIRTUAL, type, method.getName(), descriptor);
         }
 
-        helper.box(method.getReturnType());
+        BytecodeHelper.box(mv, method.getReturnType());
         if (method.getReturnType() == void.class) {
             mv.visitInsn(Opcodes.ACONST_NULL);
         }
@@ -221,8 +202,6 @@ public class MethodHandleFactory implements Opcodes{
             mv = cw.visitMethod(Opcodes.ACC_PUBLIC, "invoke", "(Ljava/lang/Object;" + pdesc + ")Ljava/lang/Object;", null, EXCEPTIONS);
             mv.visitCode();
 
-            BytecodeHelper helper = new BytecodeHelper(mv);
-
             Class callClass = method.getDeclaringClass();
             boolean useInterface = callClass.isInterface();
 
@@ -231,16 +210,16 @@ public class MethodHandleFactory implements Opcodes{
 
             // make call
              if (Modifier.isStatic(method.getModifiers())) {
-                MethodHandleFactory.genLoadParametersDirect(2, mv, helper, method);
+                MethodHandleFactory.genLoadParametersDirect(2, mv,  method);
                 mv.visitMethodInsn(Opcodes.INVOKESTATIC, type, method.getName(), descriptor);
             } else {
                 mv.visitVarInsn(Opcodes.ALOAD, 1);
-                helper.doCast(callClass);
-                MethodHandleFactory.genLoadParametersDirect(2, mv, helper, method);
+                BytecodeHelper.doCast(mv, callClass);
+                MethodHandleFactory.genLoadParametersDirect(2, mv, method);
                 mv.visitMethodInsn((useInterface) ? Opcodes.INVOKEINTERFACE : Opcodes.INVOKEVIRTUAL, type, method.getName(), descriptor);
             }
 
-            helper.box(method.getReturnType());
+            BytecodeHelper.box(mv, method.getReturnType());
             if (method.getReturnType() == void.class) {
                 mv.visitInsn(Opcodes.ACONST_NULL);
             }
@@ -275,8 +254,6 @@ public class MethodHandleFactory implements Opcodes{
             mv = cw.visitMethod(Opcodes.ACC_PUBLIC, "invoke", "(Ljava/lang/Object;" + pdesc + ")Ljava/lang/Object;", null, EXCEPTIONS);
             mv.visitCode();
 
-            BytecodeHelper helper = new BytecodeHelper(mv);
-
             Class callClass = method.getDeclaringClass();
             boolean useInterface = callClass.isInterface();
 
@@ -285,16 +262,16 @@ public class MethodHandleFactory implements Opcodes{
 
             // make call
              if (Modifier.isStatic(method.getModifiers())) {
-                MethodHandleFactory.genLoadParametersPrimitiveDirect(2, mv, helper, method);
+                MethodHandleFactory.genLoadParametersPrimitiveDirect(2, mv, method);
                 mv.visitMethodInsn(Opcodes.INVOKESTATIC, type, method.getName(), descriptor);
             } else {
                 mv.visitVarInsn(Opcodes.ALOAD, 1);
-                helper.doCast(callClass);
-                MethodHandleFactory.genLoadParametersPrimitiveDirect(2, mv, helper, method);
+                BytecodeHelper.doCast(mv, callClass);
+                MethodHandleFactory.genLoadParametersPrimitiveDirect(2, mv, method);
                 mv.visitMethodInsn((useInterface) ? Opcodes.INVOKEINTERFACE : Opcodes.INVOKEVIRTUAL, type, method.getName(), descriptor);
             }
 
-            helper.box(method.getReturnType());
+            BytecodeHelper.box(mv, method.getReturnType());
             if (method.getReturnType() == void.class) {
                 mv.visitInsn(Opcodes.ACONST_NULL);
             }

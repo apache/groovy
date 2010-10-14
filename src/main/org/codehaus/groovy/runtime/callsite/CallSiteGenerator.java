@@ -16,7 +16,7 @@
 package org.codehaus.groovy.runtime.callsite;
 
 import org.codehaus.groovy.ast.ClassHelper;
-import org.codehaus.groovy.classgen.BytecodeHelper;
+import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.CachedMethod;
 import org.objectweb.asm.ClassWriter;
@@ -50,7 +50,6 @@ public class CallSiteGenerator {
         mv.visitJumpInsn(Opcodes.IFEQ, l0);
         
         // valid method branch
-        BytecodeHelper helper = new BytecodeHelper(mv);
 
         Class callClass = cachedMethod.getDeclaringClass().getTheClass();
         boolean useInterface = callClass.isInterface();
@@ -64,7 +63,7 @@ public class CallSiteGenerator {
             invokeMethodCode = Opcodes.INVOKESTATIC;
         } else {
             mv.visitVarInsn(Opcodes.ALOAD, 1);
-            helper.doCast(callClass);
+            BytecodeHelper.doCast(mv, callClass);
             if (useInterface) invokeMethodCode = Opcodes.INVOKEINTERFACE;
         }
         
@@ -75,7 +74,7 @@ public class CallSiteGenerator {
             if (useArray) {
                 // unpack argument from Object[]
                 mv.visitVarInsn(Opcodes.ALOAD, 2);
-                helper.pushConstant(i);
+                BytecodeHelper.pushConstant(mv, i);
                 mv.visitInsn(Opcodes.AALOAD);
             } else {
                 mv.visitVarInsn(Opcodes.ALOAD, i+2);
@@ -83,19 +82,14 @@ public class CallSiteGenerator {
 
             // cast argument to parameter class, inclusive unboxing
             // for methods with primitive types
-            Class parameterType = parameters[i];
-            if (parameterType.isPrimitive()) {
-                helper.unbox(parameterType);
-            } else {
-                helper.doCast(parameterType);
-            }
+            BytecodeHelper.doCast(mv, parameters[i]);
         }        
         
         // make call
         mv.visitMethodInsn(invokeMethodCode, type, cachedMethod.getName(), descriptor);
 
         // produce result
-        helper.box(cachedMethod.getReturnType());
+        BytecodeHelper.box(mv, cachedMethod.getReturnType());
         if (cachedMethod.getReturnType() == void.class) {
             mv.visitInsn(Opcodes.ACONST_NULL);
         }
@@ -157,7 +151,6 @@ public class CallSiteGenerator {
     }
 
     public static byte[] genPogoMetaMethodSite(CachedMethod cachedMethod, ClassWriter cw, String name) {
-        MethodVisitor mv;
         cw.visit(Opcodes.V1_4, Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNTHETIC, name.replace('.','/'), null, "org/codehaus/groovy/runtime/callsite/PogoMetaMethodSite", null);
 
         genConstructor(cw, "org/codehaus/groovy/runtime/callsite/PogoMetaMethodSite");
@@ -175,7 +168,6 @@ public class CallSiteGenerator {
     }
 
     public static byte[] genPojoMetaMethodSite(CachedMethod cachedMethod, ClassWriter cw, String name) {
-        MethodVisitor mv;
         cw.visit(Opcodes.V1_4, Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNTHETIC, name.replace('.','/'), null, "org/codehaus/groovy/runtime/callsite/PojoMetaMethodSite", null);
 
         genConstructor(cw, "org/codehaus/groovy/runtime/callsite/PojoMetaMethodSite");

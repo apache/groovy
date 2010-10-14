@@ -15,7 +15,7 @@
  */
 package org.codehaus.groovy.tools;
 
-import org.codehaus.groovy.classgen.BytecodeHelper;
+import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.CachedMethod;
 import org.codehaus.groovy.reflection.ReflectionCache;
@@ -38,7 +38,6 @@ import java.util.Collections;
 import java.util.List;
 
 public class DgmConverter implements Opcodes{
-    private static BytecodeHelper helper;
 
     public static void main(String[] args) throws IOException, ClassNotFoundException {
         Class [] classes = new Class [] {
@@ -159,11 +158,10 @@ public class DgmConverter implements Opcodes{
     private static void createDoMethodInvokeMethod(CachedMethod method, ClassWriter cw, String className, Class returnType, String methodDescriptor) {
         MethodVisitor mv;
         mv = cw.visitMethod(ACC_PUBLIC + ACC_FINAL, "doMethodInvoke", "(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;", null, null);
-        helper = new BytecodeHelper(mv);
         mv.visitCode();
         if (method.getParamsCount() == 2 && method.getParameterTypes()[0].isNumber && method.getParameterTypes()[1].isNumber) {
             mv.visitVarInsn(ALOAD,1);
-            helper.doCast(method.getParameterTypes()[0].getTheClass());
+            BytecodeHelper.doCast(mv, method.getParameterTypes()[0].getTheClass());
 
             mv.visitVarInsn(ALOAD, 0);
             mv.visitMethodInsn(INVOKEVIRTUAL, className, "getParameterTypes", "()[Lorg/codehaus/groovy/reflection/CachedClass;");
@@ -177,11 +175,7 @@ public class DgmConverter implements Opcodes{
             // cast argument to parameter class, inclusive unboxing
             // for methods with primitive types
             Class type = method.getParameterTypes()[1].getTheClass();
-            if (type.isPrimitive()) {
-                helper.unbox(type);
-            } else {
-                helper.doCast(type);
-            }
+            BytecodeHelper.doCast(mv, type);
         }
         else {
             mv.visitVarInsn(ALOAD, 0);
@@ -189,11 +183,11 @@ public class DgmConverter implements Opcodes{
             mv.visitMethodInsn(INVOKEVIRTUAL, className, "coerceArgumentsToClasses", "([Ljava/lang/Object;)[Ljava/lang/Object;");
             mv.visitVarInsn(ASTORE, 2);
             mv.visitVarInsn(ALOAD,1);
-            helper.doCast(method.getParameterTypes()[0].getTheClass());
+            BytecodeHelper.doCast(mv, method.getParameterTypes()[0].getTheClass());
             loadParameters(method,2,mv);
         }
         mv.visitMethodInsn(INVOKESTATIC, BytecodeHelper.getClassInternalName(method.getDeclaringClass().getTheClass()), method.getName(), methodDescriptor);
-        helper.box(returnType);
+        BytecodeHelper.box(mv, returnType);
         if (method.getReturnType() == void.class) {
             mv.visitInsn(ACONST_NULL);
         }
@@ -205,13 +199,12 @@ public class DgmConverter implements Opcodes{
     private static void createInvokeMethod(CachedMethod method, ClassWriter cw, Class returnType, String methodDescriptor) {
         MethodVisitor mv;
         mv = cw.visitMethod(ACC_PUBLIC, "invoke", "(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;", null, null);
-        helper = new BytecodeHelper(mv);
         mv.visitCode();
         mv.visitVarInsn(ALOAD,1);
-        helper.doCast(method.getParameterTypes()[0].getTheClass());
+        BytecodeHelper.doCast(mv, method.getParameterTypes()[0].getTheClass());
         loadParameters(method,2,mv);
         mv.visitMethodInsn(INVOKESTATIC, BytecodeHelper.getClassInternalName(method.getDeclaringClass().getTheClass()), method.getName(), methodDescriptor);
-        helper.box(returnType);
+        BytecodeHelper.box(mv, returnType);
         if (method.getReturnType() == void.class) {
             mv.visitInsn(ACONST_NULL);
         }
@@ -226,17 +219,13 @@ public class DgmConverter implements Opcodes{
         for (int i = 0; i < size; i++) {
             // unpack argument from Object[]
             mv.visitVarInsn(ALOAD, argumentIndex);
-            helper.pushConstant(i);
+            BytecodeHelper.pushConstant(mv, i);
             mv.visitInsn(AALOAD);
 
             // cast argument to parameter class, inclusive unboxing
             // for methods with primitive types
             Class type = parameters[i+1].getTheClass();
-            if (type.isPrimitive()) {
-                helper.unbox(type);
-            } else {
-                helper.doCast(type);
-            }
+            BytecodeHelper.doCast(mv, type);
         }
     }
 }

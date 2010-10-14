@@ -16,7 +16,7 @@
 
 package groovy.lang;
 
-import org.codehaus.groovy.classgen.BytecodeHelper;
+import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.ParameterTypes;
 import org.codehaus.groovy.runtime.InvokerHelper;

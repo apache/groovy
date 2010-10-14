@@ -106,7 +106,7 @@ public class DumpingClassLoader extends GroovyClassLoader implements Opcodes {
     protected ASMifierClassVisitor invisibleDumpVisitor = new ASMifierClassVisitor(new PrintWriter(new StringWriter()));
     protected CompileUnit unit = new CompileUnit(this, new CompilerConfiguration());
     protected ClassGenerator checker =
-            new AsmClassGenerator(null,new GeneratorContext(unit), new CheckClassAdapter(invisibleDumpVisitor), this, null);
-    protected ClassGenerator dumper = new AsmClassGenerator(null,new GeneratorContext(unit), dumpVisitor, this, null);
+            new AsmClassGenerator(null,new GeneratorContext(unit), new CheckClassAdapter(invisibleDumpVisitor), null);
+    protected ClassGenerator dumper = new AsmClassGenerator(null,new GeneratorContext(unit), dumpVisitor, null);
 
 }

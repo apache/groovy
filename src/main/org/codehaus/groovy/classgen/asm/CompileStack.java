@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.codehaus.groovy.classgen;
+package org.codehaus.groovy.classgen.asm;
 
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ClassHelper;
@@ -95,81 +95,96 @@ public class CompileStack implements Opcodes {
     
     private Label thisStartLabel, thisEndLabel;
 
-    private MethodVisitor mv;
-    private BytecodeHelper helper;
+//    private MethodVisitor mv;
     
     // helper to handle different stack based variables    
     private final LinkedList stateStack = new LinkedList();
+
+    // handle different states for the implicit "this"
+    private LinkedList<Boolean> implicitThisStack = new LinkedList();
+    // handle different states for being on the left hand side
+    private LinkedList<Boolean> lhsStack = new LinkedList();
+    {
+        implicitThisStack.add(false);
+        lhsStack.add(false);
+    }
     
     // defines the first variable index useable after
     // all parameters of a method 
     private int localVariableOffset;
     // this is used to store the goals for a "break foo" call
     // in a loop where foo is a label.
-    private final Map namedLoopBreakLabel = new HashMap();
-    //this is used to store the goals for a "continue foo" call
+	private final Map namedLoopBreakLabel = new HashMap();
+	// this is used to store the goals for a "continue foo" call
     // in a loop where foo is a label.
-    private final Map namedLoopContinueLabel = new HashMap();
+	private final Map namedLoopContinueLabel = new HashMap();
     private String className;
     private LinkedList<ExceptionTableEntry> typedExceptions = new LinkedList<ExceptionTableEntry>();
     private LinkedList<ExceptionTableEntry> untypedExceptions = new LinkedList<ExceptionTableEntry>();
-        
+    // stores if on left-hand-side during compilation
+    private boolean lhs;
+    // stores if implicit or explicit this is used.
+    private boolean implicitThis;
+    private WriterController controller;
+    private boolean inSpecialConstructallCall;
     
     protected static class LabelRange {
-        public Label start;
-        public Label end;
+    	public Label start;
+    	public Label end;
     }
     
-    protected static class BlockRecorder {
-        private boolean isEmpty = true;
-        public Runnable excludedStatement;
-        public LinkedList<LabelRange> ranges;
-        public BlockRecorder() {
-            ranges = new LinkedList<LabelRange>();
-        }
-        public BlockRecorder(Runnable excludedStatement) {
-            this();
-            this.excludedStatement = excludedStatement;
-        }
-        public void startRange(Label start) {
-            LabelRange range = new LabelRange();
-            range.start = start;
-            ranges.add(range);
-            isEmpty = false;
-        }
-        public void closeRange(Label end) {
-            ranges.getLast().end = end;
-        }
+    public static class BlockRecorder {
+    	private boolean isEmpty = true;
+    	public Runnable excludedStatement;
+    	public LinkedList<LabelRange> ranges;
+    	public BlockRecorder() {
+    		ranges = new LinkedList<LabelRange>();
+    	}
+    	public BlockRecorder(Runnable excludedStatement) {
+    		this();
+    		this.excludedStatement = excludedStatement;
+    	}
+    	public void startRange(Label start) {
+    		LabelRange range = new LabelRange();
+    		range.start = start;
+    		ranges.add(range);
+    		isEmpty = false;
+    	}
+    	public void closeRange(Label end) {
+    		ranges.getLast().end = end;
+    	}
     }
     
     private class ExceptionTableEntry {
-        Label start,end,goal;
-        String sig;
+    	Label start,end,goal;
+    	String sig;
     }
-    
+	
     private class StateStackElement {
         final VariableScope scope;
         final Label continueLabel;
         final Label breakLabel;
-        final int lastVariableIndex;
-        final int nextVariableIndex;
         final Map stackVariables;
         final Map currentBlockNamedLabels;
         final LinkedList<BlockRecorder> finallyBlocks;
+        final boolean inSpecialConstructallCall;
         
         StateStackElement() {
             scope = CompileStack.this.scope;
             continueLabel = CompileStack.this.continueLabel;
             breakLabel = CompileStack.this.breakLabel;
-            lastVariableIndex = CompileStack.this.currentVariableIndex;
             stackVariables = CompileStack.this.stackVariables;
-            nextVariableIndex = CompileStack.this.nextVariableIndex;
             currentBlockNamedLabels = CompileStack.this.currentBlockNamedLabels;
             finallyBlocks = CompileStack.this.finallyBlocks;
+            inSpecialConstructallCall = CompileStack.this.inSpecialConstructallCall;
         }
     }
     
-    protected void pushState() {
+    public CompileStack(WriterController wc) {
+        this.controller = wc;
+    }
+    
+    public void pushState() {
         stateStack.add(new StateStackElement());
         stackVariables = new HashMap(stackVariables);
         finallyBlocks = new LinkedList(finallyBlocks);
@@ -183,10 +198,9 @@ public class CompileStack implements Opcodes {
         scope = element.scope;
         continueLabel = element.continueLabel;
         breakLabel = element.breakLabel;
-        currentVariableIndex = element.lastVariableIndex;
         stackVariables = element.stackVariables;
-        nextVariableIndex = element.nextVariableIndex;
         finallyBlocks = element.finallyBlocks;
+        inSpecialConstructallCall = element.inSpecialConstructallCall;
     }
     
     public Label getContinueLabel() {
@@ -199,16 +213,18 @@ public class CompileStack implements Opcodes {
 
     public void removeVar(int tempIndex) {
         final Variable head = (Variable) temporaryVariables.removeFirst();
-        if (head.getIndex() != tempIndex)
-            throw new GroovyBugError("CompileStack#removeVar: tried to remove a temporary variable in wrong order");
-
-        currentVariableIndex = head.getPrevIndex ();
-        nextVariableIndex = tempIndex;
+        if (head.getIndex() != tempIndex) {
+            temporaryVariables.addFirst(head);
+            throw new GroovyBugError(
+                    "CompileStack#removeVar: tried to remove a temporary " +
+                    "variable with index "+ tempIndex + " in wrong order. " +
+                    "Current temporary variables=" + temporaryVariables);
+        }
     }
 
     private void setEndLabels(){
         Label endLabel = new Label();
-        mv.visitLabel(endLabel);
+        controller.getMethodVisitor().visitLabel(endLabel);
         for (Iterator iter = stackVariables.values().iterator(); iter.hasNext();) {
             Variable var = (Variable) iter.next();
             var.setEndLabel(endLabel);
@@ -288,12 +304,13 @@ public class CompileStack implements Opcodes {
         temporaryVariables.addFirst(answer); // TRICK: we add at the beginning so when we find for remove or get we always have the last one
         usedVariables.removeLast();
         
-        if (store) mv.visitVarInsn(ASTORE, currentVariableIndex);
+        if (store) controller.getOperandStack().storeVar(answer);
         
         return answer.getIndex();
     }
     
     private void resetVariableIndex(boolean isStatic) {
+        temporaryVariables.clear();
         if (!isStatic) {
             currentVariableIndex=1;
             nextVariableIndex=1;
@@ -313,7 +330,18 @@ public class CompileStack implements Opcodes {
             int size = stateStack.size()-1;
             throw new GroovyBugError("the compile stack contains "+size+" more push instruction"+(size==1?"":"s")+" than pops.");
         }
+        if (lhsStack.size()>1) {
+            int size = lhsStack.size()-1;
+            throw new GroovyBugError("lhs stack is supposed to be empty, but has " +
+                                     size + " elements left.");
+        }
+        if (implicitThisStack.size()>1) {
+            int size = implicitThisStack.size()-1;
+            throw new GroovyBugError("implicit 'this' stack is supposed to be empty, but has " +
+                                     size + " elements left.");
+        }
         clear = true;
+        MethodVisitor mv = controller.getMethodVisitor();
         // br experiment with local var table so debuggers can retrieve variable names
         if (true) {//AsmClassGenerator.CREATE_DEBUG_INFO) {
             if (thisEndLabel==null) setEndLabels();
@@ -334,11 +362,11 @@ public class CompileStack implements Opcodes {
         
         //exception table writing
         for (ExceptionTableEntry ep : typedExceptions) {
-            mv.visitTryCatchBlock(ep.start, ep.end, ep.goal, ep.sig);
+        	mv.visitTryCatchBlock(ep.start, ep.end, ep.goal, ep.sig);
         }
         //exception table writing
         for (ExceptionTableEntry ep : untypedExceptions) {
-            mv.visitTryCatchBlock(ep.start, ep.end, ep.goal, ep.sig);
+        	mv.visitTryCatchBlock(ep.start, ep.end, ep.goal, ep.sig);
         }
         
         
@@ -357,26 +385,26 @@ public class CompileStack implements Opcodes {
         namedLoopContinueLabel.clear();
         continueLabel=null;
         breakLabel=null;
-        helper = null;
         thisStartLabel=null;
         thisEndLabel=null;
+        mv = null;
     }
     
     public void addExceptionBlock (Label start, Label end, Label goal, 
-                                   String sig) 
+    							   String sig) 
     { 
-        // this code is in an extra method to avoid
-        // lazy initialization issues
-        ExceptionTableEntry ep = new ExceptionTableEntry();
-        ep.start = start;
-        ep.end = end;
-        ep.sig = sig;
-        ep.goal = goal;
-        if (sig==null) {
-            untypedExceptions.add(ep);
-        } else {
-            typedExceptions.add(ep);
-        }
+		// this code is in an extra method to avoid
+		// lazy initialization issues
+    	ExceptionTableEntry ep = new ExceptionTableEntry();
+    	ep.start = start;
+    	ep.end = end;
+    	ep.sig = sig;
+    	ep.goal = goal;
+    	if (sig==null) {
+    		untypedExceptions.add(ep);
+    	} else {
+    		typedExceptions.add(ep);
+    	}
     }
     
     /**
@@ -386,14 +414,12 @@ public class CompileStack implements Opcodes {
      * can be accessed by calling getVariable().
      * 
      */
-    protected void init(VariableScope el, Parameter[] parameters, MethodVisitor mv, ClassNode cn) {
+    public void init(VariableScope el, Parameter[] parameters) {
         if (!clear) throw new GroovyBugError("CompileStack#init called without calling clear before");
         clear=false;
         pushVariableScope(el);
-        this.mv = mv;
-        this.helper = new BytecodeHelper(mv);
         defineMethodVariables(parameters,el.isInStaticContext());
-        this.className = BytecodeHelper.getTypeDescription(cn);
+        this.className = BytecodeHelper.getTypeDescription(controller.getClassNode());
     }
 
     /**
@@ -401,7 +427,7 @@ public class CompileStack implements Opcodes {
      * the given scope as new current variable scope. Creates 
      * a element for the state stack so pop has to be called later
      */
-    protected void pushVariableScope(VariableScope el) {
+    public void pushVariableScope(VariableScope el) {
         pushState();
         scope = el;
         superBlockNamedLabels = new HashMap(superBlockNamedLabels);
@@ -415,7 +441,7 @@ public class CompileStack implements Opcodes {
      * for a loop structure. Creates a element for the state stack
      * so pop has to be called later 
      */
-    protected void pushLoop(VariableScope el, String labelName) {
+    public void pushLoop(VariableScope el, String labelName) {
         pushVariableScope(el);
         initLoopLabels(labelName);
     }
@@ -424,8 +450,8 @@ public class CompileStack implements Opcodes {
         continueLabel = new Label();
         breakLabel = new Label();
         if (labelName!=null) {
-            namedLoopBreakLabel.put(labelName,breakLabel);
-            namedLoopContinueLabel.put(labelName,continueLabel);
+        	namedLoopBreakLabel.put(labelName,breakLabel);
+        	namedLoopContinueLabel.put(labelName,continueLabel);
         }
     }
     
@@ -434,7 +460,7 @@ public class CompileStack implements Opcodes {
      * not define a scope. Creates a element for the state stack
      * so pop has to be called later
      */
-    protected void pushLoop(String labelName) {
+    public void pushLoop(String labelName) {
         pushState();
         initLoopLabels(labelName);
     }
@@ -445,11 +471,11 @@ public class CompileStack implements Opcodes {
      * break label of the loop if there is one found for the name.
      * If not, the current break label is returned.
      */
-    protected Label getNamedBreakLabel(String name) {
-        Label label = getBreakLabel();
-        Label endLabel = null;
+    public Label getNamedBreakLabel(String name) {
+    	Label label = getBreakLabel();
+    	Label endLabel = null;
         if (name!=null) endLabel = (Label) namedLoopBreakLabel.get(name);
-        if (endLabel!=null) label = endLabel;
+    	if (endLabel!=null) label = endLabel;
         return label;
     }
     
@@ -459,11 +485,11 @@ public class CompileStack implements Opcodes {
      * the break label of the loop if there is one found for the 
      * name. If not, getLabel is used.
      */
-    protected Label getNamedContinueLabel(String name) {
-        Label label = getLabel(name);
-        Label endLabel = null;
+    public Label getNamedContinueLabel(String name) {
+    	Label label = getLabel(name);
+    	Label endLabel = null;
         if (name!=null) endLabel = (Label) namedLoopContinueLabel.get(name);
-        if (endLabel!=null) label = endLabel;
+    	if (endLabel!=null) label = endLabel;
         return label;
     }    
     
@@ -471,7 +497,7 @@ public class CompileStack implements Opcodes {
      * Creates a new break label and a element for the state stack
      * so pop has to be called later
      */
-    protected Label pushSwitch(){
+    public Label pushSwitch(){
         pushState();
         breakLabel = new Label();
         return breakLabel;
@@ -481,7 +507,7 @@ public class CompileStack implements Opcodes {
      * because a boolean Expression may not be evaluated completly
      * it is important to keep the registers clean
      */
-    protected void pushBooleanExpression(){
+    public void pushBooleanExpression(){
         pushState();
     }
     
@@ -513,7 +539,7 @@ public class CompileStack implements Opcodes {
     private void defineMethodVariables(Parameter[] paras,boolean isInStaticContext) {
         Label startLabel  = new Label();
         thisStartLabel = startLabel;
-        mv.visitLabel(startLabel);
+        controller.getMethodVisitor().visitLabel(startLabel);
         
         makeLocalVariablesOffset(paras,isInStaticContext);      
         
@@ -524,8 +550,8 @@ public class CompileStack implements Opcodes {
             ClassNode type = paras[i].getType();
             if (paras[i].isClosureSharedVariable()) {
                 answer = defineVar(name, type, true);
-                helper.load(type,currentVariableIndex);
-                helper.box(type);
+                controller.getOperandStack().load(type,currentVariableIndex);
+                controller.getOperandStack().box();
                 createReference(answer);
                 hasHolder = true;
             } else {
@@ -541,6 +567,7 @@ public class CompileStack implements Opcodes {
     }
 
     private void createReference(Variable reference) {
+        MethodVisitor mv = controller.getMethodVisitor();
         mv.visitTypeInsn(NEW, "groovy/lang/Reference");
         mv.visitInsn(DUP_X1);
         mv.visitInsn(SWAP);
@@ -561,6 +588,7 @@ public class CompileStack implements Opcodes {
         if (v.isClosureSharedVariable()) answer.setHolder(true);
         stackVariables.put(name, answer);
         
+        MethodVisitor mv = controller.getMethodVisitor();
         Label startLabel  = new Label();
         answer.setStartLabel(startLabel);
         if (answer.isHolder())  {
@@ -650,27 +678,29 @@ public class CompileStack implements Opcodes {
     }
 
     private void applyBlockRecorder(List<BlockRecorder> blocks) {
-        if (blocks.size()==0 || blocks.size()==visitedBlocks.size()) return;
-        
-        Label end = new Label();
-        mv.visitInsn(NOP);
-        mv.visitLabel(end);
-        Label newStart = new Label();
+    	if (blocks.size()==0 || blocks.size()==visitedBlocks.size()) return;
+    	
+    	MethodVisitor mv = controller.getMethodVisitor();
+    	
+		Label end = new Label();
+		mv.visitInsn(NOP);
+		mv.visitLabel(end);
+		Label newStart = new Label();
 
-        for (BlockRecorder fb : blocks) {
-            if (visitedBlocks.contains(fb)) continue;
+    	for (BlockRecorder fb : blocks) {
+    		if (visitedBlocks.contains(fb)) continue;
 
-            fb.closeRange(end);
-           
-            // we exclude the finally block from the exception table
-            // here to avoid double visiting of finally statements
-            fb.excludedStatement.run();
-            
-            fb.startRange(newStart);
-        }
-        
-        mv.visitInsn(NOP);
-        mv.visitLabel(newStart);
+    		fb.closeRange(end);
+   		
+    		// we exclude the finally block from the exception table
+    		// here to avoid double visiting of finally statements
+    		fb.excludedStatement.run();
+    		
+    		fb.startRange(newStart);
+    	}
+    	
+		mv.visitInsn(NOP);
+		mv.visitLabel(newStart);
     }
 
     public void applyBlockRecorder() {
@@ -688,16 +718,58 @@ public class CompileStack implements Opcodes {
     
     public void pushBlockRecorderVisit(BlockRecorder finallyBlock) {
         visitedBlocks.add(finallyBlock);
+	}
+	
+	public void popBlockRecorderVisit(BlockRecorder finallyBlock) {
+	    visitedBlocks.remove(finallyBlock);
+	}
+
+	public void writeExceptionTable(BlockRecorder block, Label goal, String sig) {
+	    if (block.isEmpty) return;
+	    MethodVisitor mv = controller.getMethodVisitor();
+	    for (LabelRange range : block.ranges) {
+	        mv.visitTryCatchBlock(range.start, range.end, goal, sig);
+	    }
+	}
+
+//    public MethodVisitor getMethodVisitor() {
+//        return mv;
+//    }
+
+    public boolean isLHS() {
+        return lhs;
     }
     
-    public void popBlockRecorderVisit(BlockRecorder finallyBlock) {
-        visitedBlocks.remove(finallyBlock);
+    public void pushLHS(boolean lhs) {
+        lhsStack.add(lhs);
+        this.lhs = lhs;
+    }
+    
+    public void popLHS() {
+        lhsStack.removeLast();
+        this.lhs = lhsStack.getLast();
     }
 
-    public void writeExceptionTable(BlockRecorder block, Label goal, String sig) {
-        if (block.isEmpty) return;
-        for (LabelRange range : block.ranges) {
-            mv.visitTryCatchBlock(range.start, range.end, goal, sig);
-        }
+    public void pushImplicitThis(boolean implicitThis) {
+        implicitThisStack.add(implicitThis);
+        this.implicitThis = implicitThis;
     }
+
+    public boolean isImplicitThis() {
+        return implicitThis;
+    }
+    
+    public void popImplicitThis() {
+        implicitThisStack.removeLast();
+        this.implicitThis = implicitThisStack.getLast();
+    }
+
+    public boolean isInSpecialConstructorCall() {
+        return inSpecialConstructallCall;
+    }
+    
+    public void pushInSpecialConstructorCall() {
+        pushState();
+        inSpecialConstructallCall = true;
+    }  
 }

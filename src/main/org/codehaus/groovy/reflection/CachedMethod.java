@@ -19,7 +19,7 @@ import groovy.lang.MetaClassImpl;
 import groovy.lang.MetaMethod;
 import groovy.lang.MissingMethodException;
 
-import org.codehaus.groovy.classgen.BytecodeHelper;
+import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 import org.codehaus.groovy.runtime.InvokerInvocationException;
 import org.codehaus.groovy.runtime.callsite.*;
 import org.codehaus.groovy.runtime.metaclass.MethodHelper;

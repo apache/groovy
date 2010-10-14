@@ -16,7 +16,8 @@
 package org.codehaus.groovy.reflection;
 
 import groovy.lang.*;
-import org.codehaus.groovy.classgen.BytecodeHelper;
+
+import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 import org.codehaus.groovy.runtime.callsite.CallSiteClassLoader;
 import org.codehaus.groovy.util.LazyReference;
 import org.codehaus.groovy.util.FastArray;
@@ -311,10 +312,6 @@ public class CachedClass {
     
     public boolean isInterface() {
         return isInterface;
-    }
-
-    public void doCast(BytecodeHelper helper) {
-        helper.doCast(getTheClass());
     }
 
     public String getName() {

@@ -13,17 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.codehaus.groovy.classgen;
+package org.codehaus.groovy.classgen.asm;
 
 import org.codehaus.groovy.ast.*;
-import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import org.codehaus.groovy.reflection.ReflectionCache;
+import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
-
-import java.math.BigDecimal;
-import java.math.BigInteger;
 
 /**
  * A helper class for bytecode generation with AsmClassGenerator.
@@ -34,89 +31,8 @@ import java.math.BigInteger;
  * @version $Revision$
  */
 public class BytecodeHelper implements Opcodes {
-
-    private MethodVisitor mv;
-
-    public MethodVisitor getMethodVisitor() {
-        return mv;
-    }
-
-    public BytecodeHelper(MethodVisitor mv) {
-        this.mv = mv;
-    }
-
-    /**
-     * box the primitive value on the stack
-     *
-     * @param type
-     */
-    public void quickBoxIfNecessary(ClassNode type) {
-        String descr = getTypeDescription(type);
-        if (type == ClassHelper.boolean_TYPE) {
-            boxBoolean();
-        } else if (ClassHelper.isPrimitiveType(type) && type != ClassHelper.VOID_TYPE) {
-            ClassNode wrapper = ClassHelper.getWrapper(type);
-            String internName = getClassInternalName(wrapper);
-            mv.visitTypeInsn(NEW, internName);
-            mv.visitInsn(DUP);
-            if (type == ClassHelper.double_TYPE || type == ClassHelper.long_TYPE) {
-                mv.visitInsn(DUP2_X2);
-                mv.visitInsn(POP2);
-            } else {
-                mv.visitInsn(DUP2_X1);
-                mv.visitInsn(POP2);
-            }
-            mv.visitMethodInsn(INVOKESPECIAL, internName, "<init>", "(" + descr + ")V");
-        }
-    }
-
-    public void quickUnboxIfNecessary(ClassNode type) {
-        if (ClassHelper.isPrimitiveType(type) && type != ClassHelper.VOID_TYPE) { // todo care when BigDecimal or BigIneteger on stack
-            ClassNode wrapper = ClassHelper.getWrapper(type);
-            String internName = getClassInternalName(wrapper);
-            if (type == ClassHelper.boolean_TYPE) {
-                mv.visitTypeInsn(CHECKCAST, internName);
-                mv.visitMethodInsn(INVOKEVIRTUAL, internName, type.getName() + "Value", "()" + getTypeDescription(type));
-            } else { // numbers
-                mv.visitTypeInsn(CHECKCAST, "java/lang/Number");
-                mv.visitMethodInsn(INVOKEVIRTUAL, /*internName*/"java/lang/Number", type.getName() + "Value", "()" + getTypeDescription(type));
-            }
-        }
-    }
-
-    /**
-     * Generates the bytecode to autobox the current value on the stack
-     */
-    public void box(Class type) {
-        if (ReflectionCache.getCachedClass(type).isPrimitive && type != void.class) {
-            String returnString = "(" + getTypeDescription(type) + ")Ljava/lang/Object;";
-            mv.visitMethodInsn(INVOKESTATIC, getClassInternalName(DefaultTypeTransformation.class.getName()), "box", returnString);
-        }
-    }
-
-    public void box(ClassNode type) {
-        if (type.isPrimaryClassNode()) return;
-        box(type.getTypeClass());
-    }
-
-    /**
-     * Generates the bytecode to unbox the current value on the stack
-     */
-    public void unbox(Class type) {
-        if (type.isPrimitive() && type != Void.TYPE) {
-            String returnString = "(Ljava/lang/Object;)" + getTypeDescription(type);
-            mv.visitMethodInsn(
-                    INVOKESTATIC,
-                    getClassInternalName(DefaultTypeTransformation.class.getName()),
-                    type.getName() + "Unbox",
-                    returnString);
-        }
-    }
-
-    public void unbox(ClassNode type) {
-        if (type.isPrimaryClassNode()) return;
-        unbox(type.getTypeClass());
-    }
+    
+    private static String DTT_CLASSNAME = BytecodeHelper.getClassInternalName(DefaultTypeTransformation.class.getName());
 
     public static String getClassInternalName(ClassNode t) {
         if (t.isPrimaryClassNode()) {
@@ -136,9 +52,6 @@ public class BytecodeHelper implements Opcodes {
         return name.replace('.', '/');
     }
 
-    /**
-     * @return the ASM method type descriptor
-     */
     public static String getMethodDescriptor(ClassNode returnType, Parameter[] parameters) {
         StringBuffer buffer = new StringBuffer("(");
         for (int i = 0; i < parameters.length; i++) {
@@ -148,7 +61,7 @@ public class BytecodeHelper implements Opcodes {
         buffer.append(getTypeDescription(returnType));
         return buffer.toString();
     }
-
+    
     /**
      * @return the ASM method type descriptor
      */
@@ -273,15 +186,7 @@ public class BytecodeHelper implements Opcodes {
         return answer;
     }
 
-    protected void pushConstant(boolean value) {
-        if (value) {
-            mv.visitInsn(ICONST_1);
-        } else {
-            mv.visitInsn(ICONST_0);
-        }
-    }
-
-    public void pushConstant(int value) {
+    public static void pushConstant(MethodVisitor mv, int value) {
         switch (value) {
             case 0:
                 mv.visitInsn(ICONST_0);
@@ -311,253 +216,11 @@ public class BytecodeHelper implements Opcodes {
                 }
         }
     }
-
-    public void doCast(Class type) {
-        if (type != Object.class) {
-            if (type.isPrimitive() && type != Void.TYPE) {
-                unbox(type);
-            } else {
-                mv.visitTypeInsn(
-                        CHECKCAST,
-                        type.isArray() ? getTypeDescription(type) : getClassInternalName(type.getName()));
-            }
-        }
-    }
-
-    public void doCast(ClassNode type) {
-        if (type == ClassHelper.OBJECT_TYPE) return;
-        if (ClassHelper.isPrimitiveType(type) && type != ClassHelper.VOID_TYPE) {
-            unbox(type);
-        } else {
-            mv.visitTypeInsn(
-                    CHECKCAST,
-                    type.isArray() ? getTypeDescription(type) : getClassInternalName(type));
-        }
-    }
-
-    public void load(ClassNode type, int idx) {
-        if (type == ClassHelper.double_TYPE) {
-            mv.visitVarInsn(DLOAD, idx);
-        } else if (type == ClassHelper.float_TYPE) {
-            mv.visitVarInsn(FLOAD, idx);
-        } else if (type == ClassHelper.long_TYPE) {
-            mv.visitVarInsn(LLOAD, idx);
-        } else if (
-                type == ClassHelper.boolean_TYPE
-                        || type == ClassHelper.char_TYPE
-                        || type == ClassHelper.byte_TYPE
-                        || type == ClassHelper.int_TYPE
-                        || type == ClassHelper.short_TYPE) {
-            mv.visitVarInsn(ILOAD, idx);
-        } else {
-            mv.visitVarInsn(ALOAD, idx);
-        }
-    }
-
-    public void load(Variable v) {
-        load(v.getType(), v.getIndex());
-    }
-
-    public void store(Variable v, boolean markStart) {
-        ClassNode type = v.getType();
-        unbox(type);
-        int idx = v.getIndex();
-
-        if (type == ClassHelper.double_TYPE) {
-            mv.visitVarInsn(DSTORE, idx);
-        } else if (type == ClassHelper.float_TYPE) {
-            mv.visitVarInsn(FSTORE, idx);
-        } else if (type == ClassHelper.long_TYPE) {
-            mv.visitVarInsn(LSTORE, idx);
-        } else if (
-                type == ClassHelper.boolean_TYPE
-                        || type == ClassHelper.char_TYPE
-                        || type == ClassHelper.byte_TYPE
-                        || type == ClassHelper.int_TYPE
-                        || type == ClassHelper.short_TYPE) {
-            mv.visitVarInsn(ISTORE, idx);
-        } else {
-            mv.visitVarInsn(ASTORE, idx);
-        }
-    }
-
-    public void store(Variable v) {
-        store(v, false);
-    }
-
-    /**
-     * load the constant on the operand stack. primitives auto-boxed.
-     */
-    void loadConstant(Object value) {
-        if (value == null) {
-            mv.visitInsn(ACONST_NULL);
-        } else if (value instanceof String) {
-            mv.visitLdcInsn(value);
-        } else if (value instanceof Character) {
-            String className = "java/lang/Character";
-            mv.visitTypeInsn(NEW, className);
-            mv.visitInsn(DUP);
-            mv.visitLdcInsn(value);
-            String methodType = "(C)V";
-            mv.visitMethodInsn(INVOKESPECIAL, className, "<init>", methodType);
-        } else if (value instanceof Number) {
-            /** todo it would be more efficient to generate class constants */
-            Number n = (Number) value;
-            String className = BytecodeHelper.getClassInternalName(value.getClass().getName());
-            String methodType;
-            if(n instanceof BigDecimal || n instanceof BigInteger) {
-                mv.visitTypeInsn(NEW, className);
-                mv.visitInsn(DUP);
-                mv.visitLdcInsn(n.toString());
-                mv.visitMethodInsn(INVOKESPECIAL, className, "<init>", "(Ljava/lang/String;)V");
-            } else {
-                if (n instanceof Integer) {
-                    //pushConstant(n.intValue());
-                    mv.visitLdcInsn(n);
-                    methodType = "(I)Ljava/lang/Integer;";
-                } else if (n instanceof Double) {
-                    mv.visitLdcInsn(n);
-                    methodType = "(D)Ljava/lang/Double;";
-                } else if (n instanceof Float) {
-                    mv.visitLdcInsn(n);
-                    methodType = "(F)Ljava/lang/Float;";
-                } else if (n instanceof Long) {
-                    mv.visitLdcInsn(n);
-                    methodType = "(J)Ljava/lang/Long;";
-                } else if (n instanceof Short) {
-                    mv.visitLdcInsn(n);
-                    methodType = "(S)Ljava/lang/Short;";
-                } else if (n instanceof Byte){
-                    mv.visitLdcInsn(n);
-                    methodType = "(B)Ljava/lang/Byte;";
-                } else {
-                    throw new ClassGeneratorException(
-                            "Cannot generate bytecode for constant: " + value
-                                    + " of type: " + value.getClass().getName()
-                                    + ".  Numeric constant type not supported.");
-                }
-                mv.visitMethodInsn(INVOKESTATIC, className, "valueOf", methodType);
-            }
-        } else if (value instanceof Boolean) {
-            Boolean bool = (Boolean) value;
-            String text = (bool.booleanValue()) ? "TRUE" : "FALSE";
-            mv.visitFieldInsn(GETSTATIC, "java/lang/Boolean", text, "Ljava/lang/Boolean;");
-        } else if (value instanceof Class) {
-            Class vc = (Class) value;
-            if (vc.getName().equals("java.lang.Void")) {
-                // load nothing here for void
-            } else {
-                throw new ClassGeneratorException(
-                        "Cannot generate bytecode for constant: " + value + " of type: " + value.getClass().getName());
-            }
-        } else {
-            throw new ClassGeneratorException(
-                    "Cannot generate bytecode for constant: " + value + " of type: " + value.getClass().getName());
-        }
-    }
-
-
-    /**
-     * load the value of the variable on the operand stack. unbox it if it's a reference
-     *
-     * @param variable
-     * @deprecated use loadVar(Variable,boolean) instead
-     */
-    public void loadVar(Variable variable) {
-        int index = variable.getIndex();
-        if (variable.isHolder()) {
-            mv.visitVarInsn(ALOAD, index);
-            mv.visitMethodInsn(INVOKEVIRTUAL, "groovy/lang/Reference", "get", "()Ljava/lang/Object;");
-        } else {
-            load(variable);
-            if (variable != Variable.THIS_VARIABLE && variable != Variable.SUPER_VARIABLE) {
-                box(variable.getType());
-            }
-        }
-    }
     
-    /**
-     * load the value of the variable on the operand stack. unbox it if it's a reference
-     *
-     * @param variable
-     */
-    public void loadVar(Variable variable, boolean useReferenceDirectly) {
-        int index = variable.getIndex();
-        if (variable.isHolder()) {
-            mv.visitVarInsn(ALOAD, index);
-            if (!useReferenceDirectly) {
-                mv.visitMethodInsn(INVOKEVIRTUAL, "groovy/lang/Reference", "get", "()Ljava/lang/Object;");
-            }
-        } else {
-            load(variable);
-            if (variable != Variable.THIS_VARIABLE && variable != Variable.SUPER_VARIABLE) {
-                box(variable.getType());
-            }
-        }
-    }
-
-    public void storeVar(Variable variable) {
-        String type = variable.getTypeName();
-        int index = variable.getIndex();
-
-        if (variable.isHolder()) {
-            mv.visitVarInsn(ALOAD, index);
-            mv.visitInsn(SWAP);
-            mv.visitMethodInsn(INVOKEVIRTUAL, "groovy/lang/Reference", "set", "(Ljava/lang/Object;)V");
-        } else {
-            store(variable, false);
-        }
-    }
-
-    public void putField(FieldNode fld) {
-        putField(fld, getClassInternalName(fld.getOwner()));
-    }
-
-    public void putField(FieldNode fld, String ownerName) {
-        mv.visitFieldInsn(PUTFIELD, ownerName, fld.getName(), getTypeDescription(fld.getType()));
-    }
-
-    public void swapObjectWith(ClassNode type) {
-        if (type == ClassHelper.long_TYPE || type == ClassHelper.double_TYPE) {
-            mv.visitInsn(DUP_X2);
-            mv.visitInsn(POP);
-        } else {
-            mv.visitInsn(SWAP);
-        }
-    }
-
-    public void swapWithObject(ClassNode type) {
-        if (type == ClassHelper.long_TYPE || type == ClassHelper.double_TYPE) {
-            mv.visitInsn(DUP2_X1);
-            mv.visitInsn(POP2);
-        } else {
-            mv.visitInsn(SWAP);
-        }
-    }
-
-    public static ClassNode boxOnPrimitive(ClassNode type) {
-        if (!type.isArray()) return ClassHelper.getWrapper(type);
-        return boxOnPrimitive(type.getComponentType()).makeArray();
-    }
-
-    /**
-     * convert boolean to Boolean
-     */
-    public void boxBoolean() {
-        Label l0 = new Label();
-        mv.visitJumpInsn(IFEQ, l0);
-        mv.visitFieldInsn(GETSTATIC, "java/lang/Boolean", "TRUE", "Ljava/lang/Boolean;");
-        Label l1 = new Label();
-        mv.visitJumpInsn(GOTO, l1);
-        mv.visitLabel(l0);
-        mv.visitFieldInsn(GETSTATIC, "java/lang/Boolean", "FALSE", "Ljava/lang/Boolean;");
-        mv.visitLabel(l1);
-    }
-
     /**
      * negate a boolean on stack. true->false, false->true
      */
-    public void negateBoolean() {
+    public static void negateBoolean(MethodVisitor mv) {
         // code to negate the primitive boolean
         Label endLabel = new Label();
         Label falseLabel = new Label();
@@ -574,10 +237,10 @@ public class BytecodeHelper implements Opcodes {
      *
      * @param msg
      */
-    public void mark(String msg) {
+    /*public void mark(String msg) {
         mv.visitLdcInsn(msg);
         mv.visitInsn(POP);
-    }
+    }*/
 
     /**
      * returns a name that Class.forName() can take. Notablely for arrays:
@@ -644,11 +307,11 @@ public class BytecodeHelper implements Opcodes {
 
     }
 
-    public void dup() {
+    /*public void dup() {
         mv.visitInsn(DUP);
-    }
+    }*/
 
-    public void doReturn(ClassNode returnType) {
+    public static void doReturn(MethodVisitor mv, ClassNode returnType) {
         if (returnType == ClassHelper.double_TYPE) {
             mv.visitInsn(DRETURN);
         } else if (returnType == ClassHelper.float_TYPE) {
@@ -823,4 +486,89 @@ public class BytecodeHelper implements Opcodes {
         ret.append(end);
     }
 
+    public static void load(MethodVisitor mv, ClassNode type, int idx) {
+        if (type == ClassHelper.double_TYPE) {
+            mv.visitVarInsn(DLOAD, idx);
+        } else if (type == ClassHelper.float_TYPE) {
+            mv.visitVarInsn(FLOAD, idx);
+        } else if (type == ClassHelper.long_TYPE) {
+            mv.visitVarInsn(LLOAD, idx);
+        } else if (
+                type == ClassHelper.boolean_TYPE
+                        || type == ClassHelper.char_TYPE
+                        || type == ClassHelper.byte_TYPE
+                        || type == ClassHelper.int_TYPE
+                        || type == ClassHelper.short_TYPE) {
+            mv.visitVarInsn(ILOAD, idx);
+        } else {
+            mv.visitVarInsn(ALOAD, idx);
+        }
+    }
+    
+
+    public static void doCast(MethodVisitor mv, ClassNode type) {
+        if (type == ClassHelper.OBJECT_TYPE) return;
+        if (ClassHelper.isPrimitiveType(type) && type != ClassHelper.VOID_TYPE) {
+            unbox(mv, type);
+        } else {
+            mv.visitTypeInsn(
+                    CHECKCAST,
+                    type.isArray() ? 
+                            BytecodeHelper.getTypeDescription(type) : 
+                            BytecodeHelper.getClassInternalName(type.getName()));
+        }
+    }
+    
+    public static void doCast(MethodVisitor mv, Class type) {
+        if (type == Object.class) return;
+        if (type.isPrimitive() && type != Void.TYPE) {
+            unbox(mv, type);
+        } else {
+            mv.visitTypeInsn(
+                    CHECKCAST,
+                    type.isArray() ? 
+                            BytecodeHelper.getTypeDescription(type) : 
+                                BytecodeHelper.getClassInternalName(type.getName()));
+        }
+    }
+
+    /**
+     * Generates the bytecode to unbox the current value on the stack
+     */
+    public static void unbox(MethodVisitor mv, Class type) {
+        if (type.isPrimitive() && type != Void.TYPE) {
+            String returnString = "(Ljava/lang/Object;)" + BytecodeHelper.getTypeDescription(type);
+            mv.visitMethodInsn(
+                    INVOKESTATIC,
+                    DTT_CLASSNAME,
+                    type.getName() + "Unbox",
+                    returnString);
+        }
+    }
+
+    public static void unbox(MethodVisitor mv, ClassNode type) {
+        if (type.isPrimaryClassNode()) return;
+        unbox(mv, type.getTypeClass());
+    }
+
+    /**
+     * box top level operand
+     */
+    public static boolean box(MethodVisitor mv, ClassNode type) {
+        if (type.isPrimaryClassNode()) return false;
+        return box(mv, type.getTypeClass());
+    }
+
+    
+    /**
+     * Generates the bytecode to autobox the current value on the stack
+     */
+    public static boolean box(MethodVisitor mv, Class type) {
+        if (ReflectionCache.getCachedClass(type).isPrimitive && type != void.class) {
+            String returnString = "(" + BytecodeHelper.getTypeDescription(type) + ")Ljava/lang/Object;";
+            mv.visitMethodInsn(INVOKESTATIC, DTT_CLASSNAME, "box", returnString);
+            return true;
+        }
+        return false;
+    }
 }

@@ -180,10 +180,6 @@ public class ScriptBytecodeAdapter {
         return answer;
     }
 
-    private static Object[] getBoxedItems(Object receiver) {
-        return DefaultTypeTransformation.primitiveArrayToList(receiver).toArray();
-    }
-
     public static Object invokeMethod0(Class senderClass, Object receiver, String messageName) throws Throwable {
         return invokeMethodN(senderClass, receiver, messageName, EMPTY_ARGS);
     }

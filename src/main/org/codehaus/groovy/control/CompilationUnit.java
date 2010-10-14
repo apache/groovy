@@ -609,7 +609,6 @@ public class CompilationUnit extends ProcessingUnit {
 
     private GroovyClassOperation output = new GroovyClassOperation() {
         public void call(GroovyClass gclass) throws CompilationFailedException {
-            boolean failures = false;
             String name = gclass.getName().replace('.', File.separatorChar) + ".class";
             File path = new File(configuration.getTargetDirectory(), name);
 
@@ -632,7 +631,6 @@ public class CompilationUnit extends ProcessingUnit {
                 stream.write(bytes, 0, bytes.length);
             } catch (IOException e) {
                 getErrorCollector().addError(Message.create(e.getMessage(), CompilationUnit.this));
-                failures = true;
             } finally {
                 if (stream != null) {
                     try {
@@ -739,7 +737,7 @@ public class CompilationUnit extends ProcessingUnit {
             // also takes care of both \ and / depending on the host compiling environment
             if (sourceName != null)
                 sourceName = sourceName.substring(Math.max(sourceName.lastIndexOf('\\'), sourceName.lastIndexOf('/')) + 1);
-            ClassGenerator generator = new AsmClassGenerator(source,context, visitor, classLoader, sourceName);
+            ClassGenerator generator = new AsmClassGenerator(source, context, visitor, sourceName);
             
             //
             // Run the generation and create the class (if required)

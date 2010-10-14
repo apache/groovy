@@ -62,14 +62,6 @@ import org.codehaus.groovy.syntax.Token;
  */
 public class TupleListTest extends TestSupport {
 
-    public void testIterateOverTuple() throws Exception {
-        TupleExpression listExpression = new TupleExpression();
-        listExpression.addExpression(new ConstantExpression("a"));
-        listExpression.addExpression(new ConstantExpression("b"));
-        listExpression.addExpression(new ConstantExpression("c"));
-        assertIterate("iterateOverTuple", listExpression);
-    }
-
     public void testIterateOverList() throws Exception {
         ListExpression listExpression = new ListExpression();
         listExpression.addExpression(new ConstantExpression("a"));

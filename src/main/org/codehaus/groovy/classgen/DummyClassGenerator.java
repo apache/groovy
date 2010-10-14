@@ -17,8 +17,10 @@ package org.codehaus.groovy.classgen;
 
 import groovy.lang.GroovyRuntimeException;
 import org.codehaus.groovy.ast.*;
+import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
 
 import java.util.Iterator;
 
@@ -37,8 +39,6 @@ public class DummyClassGenerator extends ClassGenerator {
     private MethodVisitor mv;
     private GeneratorContext context;
 
-    private String sourceFile;
-
     // current class details
     private ClassNode classNode;
     private String internalClassName;
@@ -50,10 +50,8 @@ public class DummyClassGenerator extends ClassGenerator {
             ClassVisitor classVisitor,
             ClassLoader classLoader,
             String sourceFile) {
-        super(classLoader);
         this.context = context;
         this.cv = classVisitor;
-        this.sourceFile = sourceFile;
     }
 
     // GroovyClassVisitor interface
@@ -68,7 +66,7 @@ public class DummyClassGenerator extends ClassGenerator {
             this.internalBaseClassName = BytecodeHelper.getClassInternalName(classNode.getSuperClass());
 
             cv.visit(
-                    asmJDKVersion,
+                    Opcodes.V1_3,
                     classNode.getModifiers(),
                     internalClassName,
                     (String) null,

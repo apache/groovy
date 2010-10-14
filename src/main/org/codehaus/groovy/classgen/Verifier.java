@@ -22,6 +22,8 @@ import groovy.lang.GroovyObjectSupport;
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.stmt.*;
+import org.codehaus.groovy.classgen.asm.BytecodeHelper;
+import org.codehaus.groovy.classgen.asm.MopWriter;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.syntax.RuntimeParserException;
 import org.codehaus.groovy.syntax.Token;
@@ -384,7 +386,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             FieldNode timeTagField = new FieldNode(
                     Verifier.__TIMESTAMP,
                     ACC_PUBLIC | ACC_STATIC | ACC_SYNTHETIC,
-                    ClassHelper.Long_TYPE,
+                    ClassHelper.long_TYPE,
                     //"",
                     node,
                     new ConstantExpression(System.currentTimeMillis()));
@@ -395,7 +397,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             timeTagField = new FieldNode(
                     Verifier.__TIMESTAMP__ + String.valueOf(System.currentTimeMillis()),
                     ACC_PUBLIC | ACC_STATIC | ACC_SYNTHETIC,
-                    ClassHelper.Long_TYPE,
+                    ClassHelper.long_TYPE,
                     //"",
                     node,
                     new ConstantExpression((long) 0));
@@ -464,7 +466,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
 
     public void visitMethod(MethodNode node) {
         //GROOVY-3712 - if it's an MOP method, it's an error as they aren't supposed to exist before ACG is invoked
-        if (AsmClassGenerator.isMopMethod(node.getName())) {
+        if(MopWriter.isMopMethod(node.getName())) {
             throw new RuntimeParserException("Found unexpected MOP methods in the class node for " + classNode.getName() +
                     "(" + node.getName() + ")", classNode);
         }
@@ -883,8 +885,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                     mv.visitVarInsn(ALOAD, 0);
                     mv.visitFieldInsn(GETFIELD, BytecodeHelper.getClassInternalName(classNode), field.getName(), BytecodeHelper.getTypeDescription(field.getType()));
                 }
-                final BytecodeHelper helper = new BytecodeHelper(mv);
-                helper.doReturn(field.getType());
+                BytecodeHelper.doReturn(mv, field.getType());
             }
         });
     }
@@ -892,13 +893,12 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
     protected Statement createSetterBlock(PropertyNode propertyNode, final FieldNode field) {
         return new BytecodeSequence(new BytecodeInstruction() {
             public void visit(MethodVisitor mv) {
-                final BytecodeHelper helper = new BytecodeHelper(mv);
                 if (field.isStatic()) {
-                    helper.load(field.getType(), 0);
+                    BytecodeHelper.load(mv, field.getType(), 0);
                     mv.visitFieldInsn(PUTSTATIC, BytecodeHelper.getClassInternalName(classNode), field.getName(), BytecodeHelper.getTypeDescription(field.getType()));
                 } else {
                     mv.visitVarInsn(ALOAD, 0);
-                    helper.load(field.getType(), 1);
+                    BytecodeHelper.load(mv, field.getType(), 1);
                     mv.visitFieldInsn(PUTFIELD, BytecodeHelper.getClassInternalName(classNode), field.getName(), BytecodeHelper.getTypeDescription(field.getType()));
                 }
                 mv.visitInsn(RETURN);
@@ -1095,14 +1095,13 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         instructions.add(
                 new BytecodeInstruction() {
                     public void visit(MethodVisitor mv) {
-                        BytecodeHelper helper = new BytecodeHelper(mv);
-                        mv.visitVarInsn(ALOAD, 0);
+                        mv.visitVarInsn(ALOAD,0);
                         Parameter[] para = oldMethod.getParameters();
                         Parameter[] goal = overridingMethod.getParameters();
                         for (int i = 0; i < para.length; i++) {
-                            helper.load(para[i].getType(), i + 1);
+                            BytecodeHelper.load(mv, para[i].getType(), i+1);
                             if (!para[i].getType().equals(goal[i].getType())) {
-                                helper.doCast(goal[i].getType());
+                                BytecodeHelper.doCast(mv,goal[i].getType());
                             }
                         }
                         mv.visitMethodInsn(
@@ -1110,7 +1109,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                                 BytecodeHelper.getClassInternalName(classNode),
                                 overridingMethod.getName(),
                                 BytecodeHelper.getMethodDescriptor(overridingMethod.getReturnType(), overridingMethod.getParameters()));
-                        helper.doReturn(oldMethod.getReturnType());
+                        BytecodeHelper.doReturn(mv, oldMethod.getReturnType());
                     }
                 }
 

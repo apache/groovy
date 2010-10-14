@@ -48,6 +48,7 @@ package org.codehaus.groovy.classgen;
 
 import groovy.util.GroovyTestCase;
 import org.codehaus.groovy.ast.ClassHelper;
+import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 
 /**
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>

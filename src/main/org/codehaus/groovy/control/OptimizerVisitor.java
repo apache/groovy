@@ -60,6 +60,7 @@ public class OptimizerVisitor extends ClassCodeExpressionTransformer {
     private void setConstField(ConstantExpression constantExpression) {
         final Object n = constantExpression.getValue();
         if (!(n instanceof Number || n instanceof Character)) return;
+        if (n instanceof Integer) return;
         FieldNode field = (FieldNode) const2Var.get(n);
         if (field!=null) {
             constantExpression.setConstantName(field.getName());
