@@ -20,10 +20,3 @@ public interface G4410Producer1 {
 
     Object gimme(String[] a2);
 }
-
-class G4410JavaStringProducer implements G4410Producer1 {
-
-    public String gimme(final String[] a1) {
-        return "Hello World";
-    }
-}
