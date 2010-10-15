@@ -1452,8 +1452,7 @@ public class AsmClassGenerator extends ClassGenerator {
         return false;
     }
 
-    //TODO: make private
-    protected static boolean isGroovyObject(Expression objectExpression) {
+    private static boolean isGroovyObject(Expression objectExpression) {
         return isThisExpression(objectExpression) || objectExpression.getType().isDerivedFromGroovyObject() && !(objectExpression instanceof ClassExpression);
     }
 
@@ -1523,8 +1522,7 @@ public class AsmClassGenerator extends ClassGenerator {
         }
     }
 
-    //TODO: mkae private
-    public void storeThisInstanceField(FieldExpression expression) {
+    private void storeThisInstanceField(FieldExpression expression) {
         MethodVisitor mv = controller.getMethodVisitor();
         FieldNode field = expression.getField();
 
@@ -1552,8 +1550,7 @@ public class AsmClassGenerator extends ClassGenerator {
         }
     }
 
-    //TODO: make private
-    public void storeStaticField(FieldExpression expression) {
+    private void storeStaticField(FieldExpression expression) {
         MethodVisitor mv = controller.getMethodVisitor();
         FieldNode field = expression.getField();
         
@@ -1631,8 +1628,7 @@ public class AsmClassGenerator extends ClassGenerator {
         }
     }
 
-    //TODO: make private
-    protected void processClassVariable(String name) {
+    private void processClassVariable(String name) {
         if (passingParams && controller.isInScriptBody()) {
             //TODO: check if this part is actually used
             MethodVisitor mv = controller.getMethodVisitor();
@@ -2425,15 +2421,7 @@ public class AsmClassGenerator extends ClassGenerator {
     private boolean isInnerClass() {
         return controller.getClassNode() instanceof InnerClassNode;
     }
-
-    /**
-     * @return true if the given name is a local variable or a field
-     */
-    //TODO: delete
-    protected boolean isFieldOrVariable(String name) {
-        return controller.getCompileStack().containsVariable(name) || controller.getClassNode().getDeclaredField(name) != null;
-    }
-
+    
     protected CompileUnit getCompileUnit() {
         CompileUnit answer = controller.getClassNode().getCompileUnit();
         if (answer == null) {
