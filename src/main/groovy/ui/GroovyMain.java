@@ -155,6 +155,7 @@ public class GroovyMain {
      *
      * @return an options parser.
      */
+    @SuppressWarnings("static-access")
     private static synchronized Options buildOptions() {
         Options options = new Options();
         options.addOption(OptionBuilder.hasArg().withArgName("path").withDescription("Specify where to find the class files - must be first argument").create("classpath"));
@@ -162,11 +163,19 @@ public class GroovyMain {
 
         options.addOption(
             OptionBuilder.withLongOpt("define").
-                withDescription("define a system property").
-                hasArg(true).
-                withArgName("name=value").
-                create('D')
-        );
+            withDescription("define a system property").
+            hasArg(true).
+            withArgName("name=value").
+            create('D'));
+        options.addOption(
+            OptionBuilder.withLongOpt("disableopt").
+            withDescription("disables one or all optimization elements. " +
+                            "optlist can be a comma separated list with the elements: " +
+                            "all (disables all optimizations), " +
+                            "int (disable any int based optimizations)").
+            hasArg(true).
+            withArgName("optlist").
+            create());
         options.addOption(
             OptionBuilder.hasArg(false)
             .withDescription("usage information")
@@ -292,6 +301,15 @@ public class GroovyMain {
             String p = line.getOptionValue('l', "1960"); // default port to listen to
             main.port = Integer.parseInt(p);
         }
+        
+        // we use "," as default, because then split will create
+        // an empty array if no option is set
+        String disabled = line.getOptionValue("disableopt", ",");
+        String[] deopts = disabled.split(",");
+        for (String deopt_i : deopts) {
+            main.conf.getOptimizationOptions().put(deopt_i,false);
+        }
+        
         main.args = args;
 
         return main.run();

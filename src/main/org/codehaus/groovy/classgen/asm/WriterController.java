@@ -15,6 +15,8 @@
  */
 package org.codehaus.groovy.classgen.asm;
 
+import java.util.Map;
+
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
@@ -48,6 +50,7 @@ public class WriterController {
     private ConstructorNode constructorNode;
     private GeneratorContext context;
     private InterfaceHelperClassNode interfaceClassLoadingClass;
+    private boolean optimizeForInt = true;
     
     public void init(AsmClassGenerator asmClassGenerator, GeneratorContext gcon, ClassVisitor cv, ClassNode cn) {
         this.classNode = cn;
@@ -65,6 +68,16 @@ public class WriterController {
         this.context = gcon;
         this.compileStack = new CompileStack(this);
         this.cv = cv;
+        Map<String,Boolean> optOptions = cn.getCompileUnit().getConfig().getOptimizationOptions();
+        if (optOptions.isEmpty()) {
+            // IGNORE
+        } else if (optOptions.get("all")==Boolean.FALSE) {
+            optimizeForInt=false;
+            // set other optimizations options to false here
+        } else {
+            if (optOptions.get("int")==Boolean.FALSE) optimizeForInt=false;
+            // set other optimizations options to false here
+        }
     }
 
     public AsmClassGenerator getAcg() {
@@ -242,5 +255,9 @@ public class WriterController {
     
     public InterfaceHelperClassNode getInterfaceClassLoadingClass() {
         return interfaceClassLoadingClass;
+    }
+    
+    public boolean shouldOptimizeForInt() {
+        return optimizeForInt;
     }
 }

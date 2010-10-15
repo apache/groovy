@@ -141,6 +141,11 @@ public class CompilerConfiguration {
     private Map<String, Object> jointCompilationOptions;
     
     /**
+     * options for optimizations (empty map by default)
+     */
+    private Map<String, Boolean> optimizationOptions;
+    
+    /**
      * Sets the Flags to defaults.
      */
     public CompilerConfiguration() {
@@ -210,8 +215,10 @@ public class CompilerConfiguration {
         } catch (Exception e) {
             // IGNORE
         }
+        
+        setOptimizationOptions(new HashMap<String,Boolean>(2));
     }
-    
+
     /**
      * Copy constructor.  Use this if you have a mostly correct configuration
      * for your compilation but you want to make a some changes programmatically.  
@@ -249,6 +256,7 @@ public class CompilerConfiguration {
         setJointCompilationOptions(jointCompilationOptions);
         setPluginFactory(configuration.getPluginFactory());
         setScriptExtensions(configuration.getScriptExtensions());
+        setOptimizationOptions(new HashMap<String, Boolean>(configuration.getOptimizationOptions()));
     }
 
     /**
@@ -688,5 +696,26 @@ public class CompilerConfiguration {
      */
     public void setJointCompilationOptions(Map<String, Object> options) {
         jointCompilationOptions = options;
+    }
+
+    /**
+     * Gets the optimization options for this configuration.
+     * @return the options (always not null)
+     */
+    public Map<String, Boolean> getOptimizationOptions() {
+        return optimizationOptions;
+    }
+    
+    /**
+     * Sets the optimization options for this configuration. 
+     * No entry or a true for that entry means to enable that optimization, 
+     * a false means the optimization is disabled. 
+     * Valid keys are "all" and "int".
+     * @param options the options.
+     * @throws IllegalArgumentException if the options are null
+     */
+    public void setOptimizationOptions(Map<String, Boolean> options) {
+        if (options==null) throw new IllegalArgumentException("provided option map must not be null");
+        optimizationOptions = options;
     }
 }
