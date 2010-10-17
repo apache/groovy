@@ -17,29 +17,34 @@ package groovy.swing.impl;
 
 import groovy.lang.Closure;
 
-import javax.swing.ListCellRenderer;
-import javax.swing.JList;
-import javax.swing.JTable;
+import javax.swing.*;
 import javax.swing.table.TableCellRenderer;
-import java.awt.Component;
-import java.util.List;
+import javax.swing.tree.DefaultTreeCellRenderer;
+import javax.swing.tree.TreeCellRenderer;
+import java.awt.*;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author Danno.Ferrin
  */
-public class ClosureRenderer implements ListCellRenderer, TableCellRenderer {
+public class ClosureRenderer implements ListCellRenderer, TableCellRenderer, TreeCellRenderer {
 
     Closure update;
     List children = new ArrayList();
 
     JList list;
     JTable table;
+    JTree tree;
     Object value;
     boolean selected;
     boolean focused;
+    boolean leaf;
+    boolean expanded;
     int row;
     int column;
+    boolean tableHeader;
+    private boolean defaultRenderer;
 
     public ClosureRenderer() {
         this(null);
@@ -53,11 +58,14 @@ public class ClosureRenderer implements ListCellRenderer, TableCellRenderer {
     public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
         this.list = list;
         this.table = null;
+        this.tree = null;
         this.value = value;
         this.row = index;
         this.column = -1;
         this.selected = isSelected;
         this.focused = cellHasFocus;
+        this.leaf = false;
+        this.expanded = false;
 
         return render();
     }
@@ -65,16 +73,57 @@ public class ClosureRenderer implements ListCellRenderer, TableCellRenderer {
     public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
         this.list = null;
         this.table = table;
+        this.tree = null;
         this.value = value;
         this.row = row;
         this.column = column;
         this.selected = isSelected;
         this.focused = hasFocus;
+        this.leaf = false;
+        this.expanded = false;
+
+        return render();
+    }
+
+    public Component getTreeCellRendererComponent(JTree tree, Object value, boolean selected, boolean expanded, boolean leaf, int row, boolean hasFocus) {
+        this.list = null;
+        this.table = null;
+        this.tree = tree;
+        this.value = value;
+        this.row = row;
+        this.column = -1;
+        this.selected = selected;
+        this.focused = hasFocus;
+        this.leaf = leaf;
+        this.expanded = expanded;
 
         return render();
     }
 
     private Component render() {
+        if (children.isEmpty() || defaultRenderer) {
+            defaultRenderer = true;
+            children.clear();
+            if (table != null) {
+                TableCellRenderer tcr;
+                if (tableHeader) {
+                    tcr = table.getTableHeader().getDefaultRenderer();
+                } else {
+                    tcr = table.getDefaultRenderer(table.getColumnClass(column));
+                }
+                children.add(tcr.getTableCellRendererComponent(table, value, selected, focused, row, column));
+            } else if (tree != null) {
+                TreeCellRenderer tcr;
+                tcr = new DefaultTreeCellRenderer();
+                children.add(tcr.getTreeCellRendererComponent(tree, value, selected, expanded, leaf, row, focused));
+            } else if (list != null) {
+                ListCellRenderer lcr = (ListCellRenderer) UIManager.get("List.cellRenderer");
+                if (lcr == null) {
+                    lcr = new DefaultListCellRenderer();
+                }
+                children.add(lcr.getListCellRendererComponent(list, value, row, selected, focused));
+            }
+        }
         Object o = update.call();
         if (o instanceof Component) {
             return (Component) o;
@@ -93,6 +142,14 @@ public class ClosureRenderer implements ListCellRenderer, TableCellRenderer {
             update.setResolveStrategy(Closure.DELEGATE_FIRST);
         }
         this.update = update;
+    }
+
+    public void setTableHeader(boolean tableHeader) {
+        this.tableHeader = tableHeader;
+    }
+
+    public boolean isTableHeader() {
+        return tableHeader;
     }
 
     public List getChildren() {
@@ -125,5 +182,21 @@ public class ClosureRenderer implements ListCellRenderer, TableCellRenderer {
 
     public int getColumn() {
         return column;
+    }
+
+    public JTree getTree() {
+        return tree;
+    }
+
+    public boolean isLeaf() {
+        return leaf;
+    }
+
+    public boolean isExpanded() {
+        return expanded;
+    }
+
+    public boolean isDefaultRenderer() {
+        return defaultRenderer;
     }
 }

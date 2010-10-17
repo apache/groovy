@@ -15,15 +15,15 @@
  */
 package groovy.swing
 
-import groovy.swing.factory.*
-import java.awt.*
 import java.lang.reflect.InvocationTargetException
 import java.util.logging.Logger
-import javax.swing.*
 import javax.swing.border.BevelBorder
 import javax.swing.border.EtchedBorder
 import javax.swing.table.TableColumn
 import org.codehaus.groovy.runtime.MethodClosure
+import groovy.swing.factory.*
+import java.awt.*
+import javax.swing.*
 
 /**
  * A helper class for creating Swing widgets using GroovyMarkup
@@ -159,6 +159,8 @@ public class SwingBuilder extends FactoryBuilderSupport {
         registerFactory("tableModel", new TableModelFactory())
         registerFactory("propertyColumn", new PropertyColumnFactory())
         registerFactory("closureColumn", new ClosureColumnFactory())
+        registerFactory("columnModel", new ColumnModelFactory())
+        registerFactory("column", new ColumnFactory())
     }
 
     def registerBasicLayouts() {
@@ -215,6 +217,14 @@ public class SwingBuilder extends FactoryBuilderSupport {
         registerFactory("tableCellRenderer", renderFactory)
         registerFactory("listCellRenderer", renderFactory)
         registerFactory("onRender", new RendererUpdateFactory())
+        registerFactory("cellRenderer", renderFactory)
+        registerFactory("headerRenderer", renderFactory)
+    }
+
+    def registerEditors() {
+      registerFactory("cellEditor", new CellEditorFactory())
+      registerFactory("editorValue", new CellEditorGetValueFactory())
+      registerFactory("prepareEditor", new CellEditorPrepareFactory())
     }
 
     def registerThreading() {

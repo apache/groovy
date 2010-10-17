@@ -17,6 +17,8 @@ package groovy.swing.factory
 
 import groovy.swing.impl.ClosureRenderer
 import java.awt.Component
+import javax.swing.JList
+import javax.swing.JTree
 
 /**
  * @author Danno Ferrin
@@ -25,7 +27,7 @@ class RendererFactory extends AbstractFactory {
 
     public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) {
         FactoryBuilderSupport.checkValueIsNull value, name
-        return new ClosureRenderer()        
+        return new ClosureRenderer()
     }
 
     public void setChild(FactoryBuilderSupport builder, Object parent, Object child) {
@@ -35,22 +37,28 @@ class RendererFactory extends AbstractFactory {
     }
 
     public void onNodeCompleted(FactoryBuilderSupport builder, Object parent, Object node) {
-        node.update = builder.updateClosure
+        node.update = builder.context.updateClosure
+        if (parent instanceof JTree) {
+            parent.cellRenderer = node
+        }
+        else if (parent instanceof JList) {
+            parent.cellRenderer = node
+        }
     }
 }
 
 class RendererUpdateFactory extends AbstractFactory {
 
     public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) {
-        return builder.getCurrent();
+        return Collections.emptyMap()
     }
 
     public boolean isHandlesNodeChildren() {
         return true;
     }
-    
+
     public boolean onNodeChildren(FactoryBuilderSupport builder, Object node, Closure childContent) {
-        builder.updateClosure = childContent
+        builder.parentContext.updateClosure = childContent
         return false
     }
 }
