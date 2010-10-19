@@ -52,18 +52,7 @@ public class Memoize {
      * @return A new memoized closure
      */
     public static <V> Closure<V> buildMemoizeFunction(final Map<Object, Object> cache, final Closure<V> closure) {
-        return new Closure<V>(closure.getOwner()) {
-            @Override public V call(final Object[] args) {
-                final Object key = generateKey(args);
-                Object result = cache.get(key);
-                if (result == null) {
-                    result = closure.call(args);
-                    //noinspection GroovyConditionalCanBeElvis
-                    cache.put(key, result != null ? result : MEMOIZE_NULL);
-                }
-                return result == MEMOIZE_NULL ? null : (V) result;
-            }
-        };
+        return new MemoizeFunction<V>(cache, closure);
     }
 
     /**
@@ -92,23 +81,7 @@ public class Memoize {
 
         final ReferenceQueue queue = new ReferenceQueue();
 
-        return new Closure<V>(closure.getOwner()) {
-            @Override public V call(final Object[] args) {
-                if (queue.poll() != null) cleanUpNullReferences(cache, queue);  // if something has been evicted, do a clean-up
-                final Object key = generateKey(args);
-                final SoftReference reference = (SoftReference) cache.get(key);
-                Object result = reference != null ? reference.get() : null;
-                if (result == null) {
-                    result = closure.call(args);
-                    if (result == null) {
-                        result = MEMOIZE_NULL;
-                    }
-                    cache.put(key, new SoftReference(result));
-                }
-                lruProtectionStorage.touch(key, result);
-                return result == MEMOIZE_NULL ? null : (V) result;
-            }
-        };
+        return new SoftReferenceMemoizeFunction<V>(cache, closure, lruProtectionStorage, queue);
     }
 
     /**
@@ -153,5 +126,55 @@ public class Memoize {
         public int hashCode() {
             return "MemoizeNullValue".hashCode();
         }
+    }
+
+    private static class MemoizeFunction<V> extends Closure<V> {
+    	final Map<Object, Object> cache;
+    	final Closure<V> closure;
+    	
+    	MemoizeFunction(Map<Object, Object> cache, Closure<V> closure) {
+    		super(closure.getOwner());
+    		this.cache = cache;
+    		this.closure = closure;
+    	}
+    	
+    	@Override public V call(final Object[] args) {
+    		final Object key = generateKey(args);
+    		Object result = cache.get(key);
+    		if (result == null) {
+    			result = closure.call(args);
+    			//noinspection GroovyConditionalCanBeElvis
+    			cache.put(key, result != null ? result : MEMOIZE_NULL);
+    		}
+    		return result == MEMOIZE_NULL ? null : (V) result;
+    	}
+    }
+    
+    private static class SoftReferenceMemoizeFunction<V> extends MemoizeFunction<V> {
+    	final ProtectionStorage lruProtectionStorage;
+    	final ReferenceQueue queue;
+    	
+    	SoftReferenceMemoizeFunction(Map<Object, Object> cache, Closure<V> closure, 
+    			ProtectionStorage lruProtectionStorage, ReferenceQueue queue) {
+    		super(cache, closure);
+    		this.lruProtectionStorage = lruProtectionStorage;
+    		this.queue = queue;
+    	}
+    	
+    	@Override public V call(final Object[] args) {
+            if (queue.poll() != null) cleanUpNullReferences(cache, queue);  // if something has been evicted, do a clean-up
+            final Object key = generateKey(args);
+            final SoftReference reference = (SoftReference) cache.get(key);
+            Object result = reference != null ? reference.get() : null;
+            if (result == null) {
+                result = closure.call(args);
+                if (result == null) {
+                    result = MEMOIZE_NULL;
+                }
+                cache.put(key, new SoftReference(result));
+            }
+            lruProtectionStorage.touch(key, result);
+            return result == MEMOIZE_NULL ? null : (V) result;
+    	}
     }
 }
