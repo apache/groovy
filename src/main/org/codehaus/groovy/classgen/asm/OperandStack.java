@@ -27,7 +27,6 @@ import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.classgen.ClassGeneratorException;
-import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
@@ -274,14 +273,6 @@ public class OperandStack {
         try {
             if (size==0) throw new ArrayIndexOutOfBoundsException("size==0");
         } catch (ArrayIndexOutOfBoundsException ai) {
-            SourceUnit source = controller.getSourceUnit();
-            String name;
-            if (source!=null) {
-                name = source.getName();
-            } else {
-                name = "<null>";
-            }
-            System.err.println("index problem in "+name);
             throw ai;
         }
         ClassNode top = stack.get(size-1);
@@ -417,14 +408,14 @@ public class OperandStack {
         int idx = variable.getIndex();
         ClassNode type = variable.getType();
         // value is on stack
-        doGroovyCast(type);
         if (variable.isHolder()) {
             box();
             mv.visitVarInsn(ALOAD, idx);
+            mv.visitTypeInsn(CHECKCAST, "groovy/lang/Reference");
             mv.visitInsn(SWAP);
-//            mv.visitTypeInsn(CHECKCAST, "groovy/lang/Reference");
             mv.visitMethodInsn(INVOKEVIRTUAL, "groovy/lang/Reference", "set", "(Ljava/lang/Object;)V");
         } else {
+            doGroovyCast(type);
             if (type == ClassHelper.double_TYPE) {
                 mv.visitVarInsn(DSTORE, idx);
             } else if (type == ClassHelper.float_TYPE) {
