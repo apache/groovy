@@ -196,6 +196,23 @@ class ClosureTest extends GroovyTestCase {
       def cl = {a,b->a+b }
       assert cl(list)==3
     }
+
+    /**
+     * GROOVY-4484 ensure variable can be used in assignment inside closure
+     */
+    void testDeclarationOutsideWithAssignmentInsideAndReferenceInNestedClosure() {
+        assertScript """
+            class Dummy{}
+            Dummy foo(arg){new Dummy()}
+
+            def phasePicker
+            def c = {
+                phasePicker = foo(bar: {phasePicker})
+            }
+
+            assert c() instanceof Dummy
+        """
+    }
 }
 
 public class TinyAgent {
