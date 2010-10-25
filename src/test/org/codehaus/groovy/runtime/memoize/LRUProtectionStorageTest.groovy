@@ -40,8 +40,8 @@ public class LRUProtectionStorageTest extends GroovyTestCase {
         storage['key2']
         storage['key5'] = 5
         assert storage.size() == 3
-        assertNull storage['key2']
-        assertEquals 3, storage['key3']
+        assertNull storage['key3']
+        assertEquals 2, storage['key2']
         assertEquals 4, storage['key4']
         assertEquals 5, storage['key5']
     }

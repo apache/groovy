@@ -55,6 +55,16 @@ final class LRUProtectionStorage extends LinkedHashMap<Object, Object> implement
     }
 
     /**
+     * Makes sure the retrieved object is moved to the head of the LRU list
+     */
+    @Override
+    public synchronized Object get(final Object key) {
+        final Object value = remove(key);
+        if (value != null) put(key, value);
+        return value;
+    }
+    
+    /**
      * Performs a shallow clone
      *
      * @return The cloned instance
