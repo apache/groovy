@@ -510,7 +510,7 @@ public class GroovyClassLoader extends URLClassLoader {
             this.su = su;
         }
 
-        protected GroovyClassLoader getDefiningClassLoader() {
+        public GroovyClassLoader getDefiningClassLoader() {
             return cl;
         }
 
