@@ -22,9 +22,11 @@ import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
+import org.codehaus.groovy.runtime.InvokerInvocationException;
 
 import java.io.*;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.security.PrivilegedActionException;
@@ -318,6 +320,8 @@ public class GroovyShell extends GroovyObjectSupport {
                 try {
                     // instantiate a runnable and run it
                     runnable = (Runnable) constructor.newInstance();
+                } catch (InvocationTargetException ite) {
+                    throw new InvokerInvocationException(ite.getTargetException());
                 } catch (Throwable t) {
                     reason = t;
                 }

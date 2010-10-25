@@ -497,7 +497,6 @@ public class BytecodeHelper implements Opcodes {
     }
 
     public void storeVar(Variable variable) {
-        String type = variable.getTypeName();
         int index = variable.getIndex();
 
         if (variable.isHolder()) {
