@@ -26,7 +26,7 @@ import java.util.Map;
  *
  * @author Vaclav Pech
  */
-public final class LRUProtectionStorage extends LinkedHashMap<Object, Object> implements ProtectionStorage {
+final class LRUProtectionStorage extends LinkedHashMap<Object, Object> implements ProtectionStorage {
     private static final long serialVersionUID = 1L;
 
     private final int maxSize;

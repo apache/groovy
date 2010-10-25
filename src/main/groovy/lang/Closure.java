@@ -15,21 +15,20 @@
  */
 package groovy.lang;
 
-import org.codehaus.groovy.runtime.memoize.LRUProtectionStorage;
-import org.codehaus.groovy.runtime.memoize.Memoize;
 import org.codehaus.groovy.reflection.ReflectionCache;
 import org.codehaus.groovy.reflection.stdclasses.CachedClosureClass;
 import org.codehaus.groovy.runtime.ComposedClosure;
 import org.codehaus.groovy.runtime.CurriedClosure;
 import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.runtime.memoize.LRUCache;
+import org.codehaus.groovy.runtime.memoize.Memoize;
+import org.codehaus.groovy.runtime.memoize.UnlimitedConcurrentCache;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 import java.io.IOException;
 import java.io.Serializable;
 import java.io.StringWriter;
 import java.io.Writer;
-import java.util.Collections;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Represents any closure object in Groovy.
@@ -527,7 +526,7 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      * @return A new closure forwarding to the original one while caching the results
      */
     public Closure<V> memoize() {
-        return Memoize.buildMemoizeFunction(new ConcurrentHashMap<Object, Object>(), this);
+        return Memoize.buildMemoizeFunction(new UnlimitedConcurrentCache(), this);
     }
 
     /**
@@ -549,7 +548,7 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
     public Closure<V> memoizeAtMost(final int maxCacheSize) {
         if (maxCacheSize < 0) throw new IllegalArgumentException("A non-negative number is required as the maxCacheSize parameter for memoizeAtMost.");
 
-        return Memoize.buildMemoizeFunction(Collections.synchronizedMap(new LRUProtectionStorage(maxCacheSize)), this);
+        return Memoize.buildMemoizeFunction(new LRUCache(maxCacheSize), this);
     }
 
     /**
@@ -576,7 +575,7 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
     public Closure<V> memoizeAtLeast(final int protectedCacheSize) {
         if (protectedCacheSize < 0) throw new IllegalArgumentException("A non-negative number is required as the protectedCacheSize parameter for memoizeAtLeast.");
 
-        return Memoize.buildSoftReferenceMemoizeFunction(protectedCacheSize, new ConcurrentHashMap<Object, Object>(), this);
+        return Memoize.buildSoftReferenceMemoizeFunction(protectedCacheSize, new UnlimitedConcurrentCache(), this);
     }
 
     /**
@@ -608,7 +607,7 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
         if (maxCacheSize < 0) throw new IllegalArgumentException("A non-negative number is required as the maxCacheSize parameter for memoizeBetween.");
         if (protectedCacheSize > maxCacheSize) throw new IllegalArgumentException("The maxCacheSize parameter to memoizeBetween is required to be greater or equal to the protectedCacheSize parameter.");
 
-        return Memoize.buildSoftReferenceMemoizeFunction(protectedCacheSize, Collections.synchronizedMap(new LRUProtectionStorage(maxCacheSize)), this);
+        return Memoize.buildSoftReferenceMemoizeFunction(protectedCacheSize, new LRUCache(maxCacheSize), this);
     }
 
     /* (non-Javadoc)

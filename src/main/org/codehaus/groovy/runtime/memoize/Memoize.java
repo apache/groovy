@@ -20,8 +20,6 @@ import groovy.lang.Closure;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.SoftReference;
 import java.util.Collections;
-import java.util.Iterator;
-import java.util.Map;
 
 import static java.util.Arrays.asList;
 
@@ -31,7 +29,7 @@ import static java.util.Arrays.asList;
  *
  * @author Vaclav Pech
  */
-public class Memoize {
+public abstract class Memoize {
 
     /**
      * A place-holder for null values in cache
@@ -41,9 +39,9 @@ public class Memoize {
     /**
      * Creates a new closure delegating to the supplied one and memoizing all return values by the arguments.
      *
-     * The supplied map is used to store the memoized values and it is the map's responsibility to put limits
+     * The supplied cache is used to store the memoized values and it is the cache's responsibility to put limits
      * on the cache size or implement cache eviction strategy.
-     * The LRUProtectionStorage, for example, allows to set the maximum cache size constraint and implements
+     * The LRUCache, for example, allows to set the maximum cache size constraint and implements
      * the LRU (Last Recently Used) eviction strategy.
      *
      * @param cache A map to hold memoized return values
@@ -51,7 +49,7 @@ public class Memoize {
      * @param <V> The closure's return type
      * @return A new memoized closure
      */
-    public static <V> Closure<V> buildMemoizeFunction(final Map<Object, Object> cache, final Closure<V> closure) {
+    public static <V> Closure<V> buildMemoizeFunction(final MemoizeCache<Object, Object> cache, final Closure<V> closure) {
         return new MemoizeFunction<V>(cache, closure);
     }
 
@@ -60,9 +58,9 @@ public class Memoize {
      * The memoizing closure will use SoftReferences to remember the return values allowing the garbage collector
      * to reclaim the memory, if needed.
      *
-     * The supplied map is used to store the memoized values and it is the map's responsibility to put limits
+     * The supplied cache is used to store the memoized values and it is the cache's responsibility to put limits
      * on the cache size or implement cache eviction strategy.
-     * The LRUProtectionStorage, for example, allows to set the maximum cache size constraint and implements
+     * The LRUCache, for example, allows to set the maximum cache size constraint and implements
      * the LRU (Last Recently Used) eviction strategy.
      *
      * If the protectedCacheSize argument is greater than 0 an optional LRU (Last Recently Used) cache of hard references
@@ -74,7 +72,7 @@ public class Memoize {
      * @param <V> The closure's return type
      * @return A new memoized closure
      */
-    public static <V> Closure<V> buildSoftReferenceMemoizeFunction(final int protectedCacheSize, final Map<Object, Object> cache, final Closure<V> closure) {
+    public static <V> Closure<V> buildSoftReferenceMemoizeFunction(final int protectedCacheSize, final MemoizeCache<Object, Object> cache, final Closure<V> closure) {
         final ProtectionStorage lruProtectionStorage = protectedCacheSize > 0 ?
                 new LRUProtectionStorage(protectedCacheSize) :
                 new NullProtectionStorage(); // Nothing should be done when no elements need protection against eviction
@@ -82,22 +80,6 @@ public class Memoize {
         final ReferenceQueue queue = new ReferenceQueue();
 
         return new SoftReferenceMemoizeFunction<V>(cache, closure, lruProtectionStorage, queue);
-    }
-
-    /**
-     * After the garbage collector has done its job, we need to clean the cache from references to all the evicted memoized values.
-     * @param cache The cache to prune
-     * @param queue A reference queue holding references to gc-evicted memoized values
-     */
-    private static <V> void cleanUpNullReferences(final Map<Object, Object> cache, final ReferenceQueue queue) {
-        while(queue.poll() != null) {}  //empty the reference queue
-        synchronized (cache) {
-            final Iterator<Map.Entry<Object, Object>> iterator = cache.entrySet().iterator();
-            while (iterator.hasNext()) {
-                final Map.Entry<Object, Object> entry = iterator.next();
-                if (((SoftReference) entry.getValue()).get() == null) iterator.remove();
-            }
-        }
     }
 
     /**
@@ -129,10 +111,10 @@ public class Memoize {
     }
 
     private static class MemoizeFunction<V> extends Closure<V> {
-    	final Map<Object, Object> cache;
+    	final MemoizeCache<Object, Object> cache;
     	final Closure<V> closure;
     	
-    	MemoizeFunction(Map<Object, Object> cache, Closure<V> closure) {
+    	MemoizeFunction(final MemoizeCache<Object, Object> cache, Closure<V> closure) {
     		super(closure.getOwner());
     		this.cache = cache;
     		this.closure = closure;
@@ -154,7 +136,7 @@ public class Memoize {
     	final ProtectionStorage lruProtectionStorage;
     	final ReferenceQueue queue;
     	
-    	SoftReferenceMemoizeFunction(Map<Object, Object> cache, Closure<V> closure, 
+    	SoftReferenceMemoizeFunction(final MemoizeCache<Object, Object> cache, Closure<V> closure,
     			ProtectionStorage lruProtectionStorage, ReferenceQueue queue) {
     		super(cache, closure);
     		this.lruProtectionStorage = lruProtectionStorage;
@@ -176,5 +158,15 @@ public class Memoize {
             lruProtectionStorage.touch(key, result);
             return result == MEMOIZE_NULL ? null : (V) result;
     	}
+
+        /**
+         * After the garbage collector has done its job, we need to clean the cache from references to all the evicted memoized values.
+         * @param cache The cache to prune
+         * @param queue A reference queue holding references to gc-evicted memoized values
+         */
+        private static void cleanUpNullReferences(final MemoizeCache<Object, Object> cache, final ReferenceQueue queue) {
+            while(queue.poll() != null) {}  //empty the reference queue
+            cache.cleanUpNullReferences();
+        }
     }
 }

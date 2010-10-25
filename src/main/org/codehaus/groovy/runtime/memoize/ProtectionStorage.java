@@ -21,6 +21,6 @@ package org.codehaus.groovy.runtime.memoize;
  *
  * @author Vaclav Pech
  */
-public interface ProtectionStorage {
+interface ProtectionStorage {
     void touch(Object key, Object value);
 }
