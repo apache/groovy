@@ -97,7 +97,7 @@ public class ClosureWriter {
             if (!compileStack.containsVariable(name) && compileStack.getScope().isReferencedClassVariable(name)) {
                 acg.visitFieldExpression(new FieldExpression(classNode.getDeclaredField(name)));
             } else {
-                Variable v = compileStack.getVariable(name, !classNodeUsesReferences());
+                BytecodeVariable v = compileStack.getVariable(name, !classNodeUsesReferences());
                 if (v == null) {
                     // variable is not on stack because we are
                     // inside a nested Closure and this variable

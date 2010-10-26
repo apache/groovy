@@ -212,7 +212,7 @@ public class CompileStack implements Opcodes {
     }
 
     public void removeVar(int tempIndex) {
-        final Variable head = (Variable) temporaryVariables.removeFirst();
+        final BytecodeVariable head = (BytecodeVariable) temporaryVariables.removeFirst();
         if (head.getIndex() != tempIndex) {
             temporaryVariables.addFirst(head);
             throw new GroovyBugError(
@@ -226,7 +226,7 @@ public class CompileStack implements Opcodes {
         Label endLabel = new Label();
         controller.getMethodVisitor().visitLabel(endLabel);
         for (Iterator iter = stackVariables.values().iterator(); iter.hasNext();) {
-            Variable var = (Variable) iter.next();
+            BytecodeVariable var = (BytecodeVariable) iter.next();
             var.setEndLabel(endLabel);
         }
         thisEndLabel = endLabel;
@@ -252,7 +252,7 @@ public class CompileStack implements Opcodes {
         return defineTemporaryVariable(var.getName(), var.getType(),store);
     }
 
-    public Variable getVariable(String variableName ) {
+    public BytecodeVariable getVariable(String variableName ) {
         return getVariable(variableName,true);
     }
 
@@ -271,10 +271,10 @@ public class CompileStack implements Opcodes {
      * @param mustExist    throw exception if variable does not exist
      * @return the normal variable or null if not found (and <code>mustExist</code> not true)
      */
-    public Variable getVariable(String variableName, boolean mustExist) {
-        if (variableName.equals("this")) return Variable.THIS_VARIABLE;
-        if (variableName.equals("super")) return Variable.SUPER_VARIABLE;
-        Variable v = (Variable) stackVariables.get(variableName);
+    public BytecodeVariable getVariable(String variableName, boolean mustExist) {
+        if (variableName.equals("this")) return BytecodeVariable.THIS_VARIABLE;
+        if (variableName.equals("super")) return BytecodeVariable.SUPER_VARIABLE;
+        BytecodeVariable v = (BytecodeVariable) stackVariables.get(variableName);
         if (v == null && mustExist)
             throw new GroovyBugError("tried to get a variable with the name " + variableName + " as stack variable, but a variable with this name was not created");
         return v;
@@ -300,7 +300,7 @@ public class CompileStack implements Opcodes {
      * @return the index used for this temporary variable
      */
     public int defineTemporaryVariable(String name, ClassNode node, boolean store) {
-        Variable answer = defineVar(name,node,false);
+        BytecodeVariable answer = defineVar(name,node,false);
         temporaryVariables.addFirst(answer); // TRICK: we add at the beginning so when we find for remove or get we always have the last one
         usedVariables.removeLast();
         
@@ -352,7 +352,7 @@ public class CompileStack implements Opcodes {
             }
            
             for (Iterator iterator = usedVariables.iterator(); iterator.hasNext();) {
-                Variable v = (Variable) iterator.next();
+                BytecodeVariable v = (BytecodeVariable) iterator.next();
                 String type = BytecodeHelper.getTypeDescription(v.getType());
                 Label start = v.getStartLabel();
                 Label end = v.getEndLabel();
@@ -511,7 +511,7 @@ public class CompileStack implements Opcodes {
         pushState();
     }
     
-    private Variable defineVar(String name, ClassNode type, boolean methodParameterUsedInClosure) {
+    private BytecodeVariable defineVar(String name, ClassNode type, boolean methodParameterUsedInClosure) {
         int prevCurrent = currentVariableIndex;
         makeNextVariableID(type);
         int index = currentVariableIndex;
@@ -519,7 +519,7 @@ public class CompileStack implements Opcodes {
             index = localVariableOffset++;
             type = ClassHelper.getWrapper(type);
         }
-        Variable answer = new Variable(index, type, name, prevCurrent);
+        BytecodeVariable answer = new BytecodeVariable(index, type, name, prevCurrent);
         usedVariables.add(answer);
         answer.setHolder(methodParameterUsedInClosure);
         return answer;
@@ -546,7 +546,7 @@ public class CompileStack implements Opcodes {
         boolean hasHolder = false;
         for (int i = 0; i < paras.length; i++) {
             String name = paras[i].getName();
-            Variable answer;
+            BytecodeVariable answer;
             ClassNode type = paras[i].getType();
             if (paras[i].isClosureSharedVariable()) {
                 answer = defineVar(name, type, true);
@@ -566,7 +566,7 @@ public class CompileStack implements Opcodes {
         }
     }
 
-    private void createReference(Variable reference) {
+    private void createReference(BytecodeVariable reference) {
         MethodVisitor mv = controller.getMethodVisitor();
         mv.visitTypeInsn(NEW, "groovy/lang/Reference");
         mv.visitInsn(DUP_X1);
@@ -582,9 +582,9 @@ public class CompileStack implements Opcodes {
      *                      the new variable. If false null
      *                      will be used.
      */
-    public Variable defineVariable(org.codehaus.groovy.ast.Variable v, boolean initFromStack) {
+    public BytecodeVariable defineVariable(org.codehaus.groovy.ast.Variable v, boolean initFromStack) {
         String name = v.getName();
-        Variable answer = defineVar(name,v.getType(),false);
+        BytecodeVariable answer = defineVar(name,v.getType(),false);
         if (v.isClosureSharedVariable()) answer.setHolder(true);
         stackVariables.put(name, answer);
         

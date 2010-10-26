@@ -23,7 +23,7 @@ import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.stmt.*;
 import org.codehaus.groovy.classgen.asm.*;
-import org.codehaus.groovy.classgen.asm.Variable;
+import org.codehaus.groovy.classgen.asm.BytecodeVariable;
 import org.codehaus.groovy.classgen.asm.CompileStack.BlockRecorder;
 
 import org.codehaus.groovy.control.CompilerConfiguration;
@@ -473,7 +473,7 @@ public class AsmClassGenerator extends ClassGenerator {
         compileStack.pushLoop(loop.getVariableScope(), loop.getStatementLabel());
 
         // Declare the loop counter.
-        Variable variable = compileStack.defineVariable(loop.getVariable(), false);
+        BytecodeVariable variable = compileStack.defineVariable(loop.getVariable(), false);
 
         // Then get the iterator and generate the loop control
         MethodCallExpression iterator = new MethodCallExpression(loop.getCollectionExpression(), "iterator", new ArgumentListExpression());
@@ -1603,7 +1603,7 @@ public class AsmClassGenerator extends ClassGenerator {
             return;
         }
 
-        Variable variable = controller.getCompileStack().getVariable(variableName, false);
+        BytecodeVariable variable = controller.getCompileStack().getVariable(variableName, false);
         if (variable == null) {
             processClassVariable(variableName);
         } else {

@@ -378,7 +378,7 @@ public class OperandStack {
         new CastExpression(ClassHelper.STRING_TYPE, name).visit(controller.getAcg());
     }
 
-    public void loadOrStoreVariable(Variable variable, boolean useReferenceDirectly) {
+    public void loadOrStoreVariable(BytecodeVariable variable, boolean useReferenceDirectly) {
         CompileStack compileStack = controller.getCompileStack();
         
         if (compileStack.isLHS()) {
@@ -403,7 +403,7 @@ public class OperandStack {
         }
     }
 
-    public void storeVar(Variable variable) {
+    public void storeVar(BytecodeVariable variable) {
         MethodVisitor mv = controller.getMethodVisitor();
         int idx = variable.getIndex();
         ClassNode type = variable.getType();

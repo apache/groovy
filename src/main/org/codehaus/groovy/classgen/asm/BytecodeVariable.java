@@ -26,10 +26,10 @@ import org.objectweb.asm.Label;
  * @author <a href="mailto:blackdrag@gmx.org">Jochen Theodorou</a>
  * @version $Revision$
  */
-public class Variable {
+public class BytecodeVariable {
     
-    public static final Variable THIS_VARIABLE = new Variable();
-    public static final Variable SUPER_VARIABLE = new Variable();
+    public static final BytecodeVariable THIS_VARIABLE = new BytecodeVariable();
+    public static final BytecodeVariable SUPER_VARIABLE = new BytecodeVariable();
 
     private int index;
     private ClassNode type;
@@ -43,14 +43,14 @@ public class Variable {
     private Label endLabel = null;
     private boolean dynamicTyped;
 
-    private Variable(){
+    private BytecodeVariable(){
         dynamicTyped = true;
         index=0;
         holder=false;
         prevCurrent=0;
     }
     
-    public Variable(int index, ClassNode type, String name, int prevCurrent) {
+    public BytecodeVariable(int index, ClassNode type, String name, int prevCurrent) {
         this.index = index;
         this.type = type;
         this.name = name;
