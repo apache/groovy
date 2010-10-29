@@ -80,7 +80,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
             // let's register the default methods
             registerMethods(null, true, true, map);
             final Class[] additionals = DefaultGroovyMethods.additionals;
-            for (int i = 0; i != additionals.length; ++i ) {
+            for (int i = 0; i != additionals.length; ++i) {
                 createMetaMethodFromClass(map, additionals[i]);
             }
 
@@ -230,15 +230,14 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
         MetaClass mc = null;
         info.lock();
         try {            
-            if (oldMc!=null) mc=info.getStrongMetaClass();
-            // mc==null means that mc will be null too, so the 
-            // condition is always fulfilled. 
-            if (mc==oldMc) info.setStrongMetaClass(newMc);
+            mc = info.getStrongMetaClass();
+            info.setStrongMetaClass(newMc);
         } finally {
             info.unlock();
         }
-
-        if (oldMc!=mc) fireConstantMetaClassUpdate(theClass,newMc);
+        if ((oldMc == null && mc != newMc) || (oldMc != null && mc != newMc && mc != oldMc)) {
+            fireConstantMetaClassUpdate(theClass, newMc);
+        }
     }
     
     public void removeMetaClass(Class theClass) {
@@ -322,7 +321,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
             Object first = changeListenerList.getFirst();
             changeListenerList.remove(listener);
             // we want to keep the first entry!
-            if (changeListenerList.size()==0) changeListenerList.addFirst(first); 
+            if (changeListenerList.size() == 0) changeListenerList.addFirst(first);
         }
     }
 
@@ -336,8 +335,8 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
      */
     protected void fireConstantMetaClassUpdate(Class c, MetaClass newMc) {
         MetaClassRegistryChangeEventListener[]  listener = getMetaClassRegistryChangeEventListeners();
-        MetaClassRegistryChangeEvent cmcu = new MetaClassRegistryChangeEvent(this,c,newMc);
-        for (int i=0; i<listener.length; i++) {
+        MetaClassRegistryChangeEvent cmcu = new MetaClassRegistryChangeEvent(this, c, newMc);
+        for (int i = 0; i<listener.length; i++) {
             listener[i].updateConstantMetaClass(cmcu);
         }
     }
@@ -347,7 +346,8 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
      */
     public MetaClassRegistryChangeEventListener[] getMetaClassRegistryChangeEventListeners() {
         synchronized (changeListenerList) {
-            return (MetaClassRegistryChangeEventListener[]) changeListenerList.toArray(new MetaClassRegistryChangeEventListener[0]);
+            return (MetaClassRegistryChangeEventListener[]) changeListenerList.toArray(
+                    new MetaClassRegistryChangeEventListener[changeListenerList.size()]);
         }
     }
     
@@ -398,23 +398,23 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
         
         return new Iterator() {
             // index in the ref array
-            private int index=0;
+            private int index = 0;
             // the current meta class
             private MetaClass currentMeta;
             // used to ensure that hasNext has been called
-            private boolean hasNextCalled=false;
+            private boolean hasNextCalled = false;
             // the cached hasNext call value
-            private boolean hasNext=false;
+            private boolean hasNext = false;
 
             public boolean hasNext() {
                 if (hasNextCalled) return hasNext;
                 hasNextCalled = true;
                 if(index < refs.length) {
-                    hasNext=true;
-                    currentMeta= refs[index];
+                    hasNext = true;
+                    currentMeta = refs[index];
                     index++;
                 } else {
-                    hasNext=false;
+                    hasNext = false;
                 }
                 return hasNext;
             }
@@ -423,7 +423,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
                 // we ensure that hasNext has been called before 
                 // next is called
                 hasNext();
-                hasNextCalled=false;                
+                hasNextCalled = false;
             }
             
             public Object next() {
@@ -433,8 +433,8 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
             
             public void remove() {
                 ensureNext();
-                setMetaClass(currentMeta.getTheClass(),currentMeta,null);
-                currentMeta=null;
+                setMetaClass(currentMeta.getTheClass(), currentMeta, null);
+                currentMeta = null;
             }
         };
     }
