@@ -538,15 +538,16 @@ public class GroovyScriptEngine implements ResourceConnector {
             if (nextPossibleRecompilationTime > now) continue;
 
             URLConnection conn = rc.getResourceConnection(scriptName);
-            long lastMod = conn.getLastModified();
+            // getLastModified() truncates up to 999 ms from the true modification time, let's fix that
+            long lastMod = ((conn.getLastModified() / 1000) + 1) * 1000 - 1;
             // getResourceConnection() opening the inputstream, let's ensure all streams are closed
             forceClose(conn);
 
-            if (nextPossibleRecompilationTime < lastMod) {
+            if (depEntry.lastModified < lastMod) {
                 ScriptCacheEntry newEntry = new ScriptCacheEntry(depEntry.scriptClass, lastMod, depEntry.dependencies);
                 scriptCache.put(scriptName, newEntry);
+                return true;
             }
-            return true;
         }
 
         return false;
