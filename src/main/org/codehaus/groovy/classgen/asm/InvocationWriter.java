@@ -74,9 +74,6 @@ public class InvocationWriter {
             boolean safe, boolean spreadSafe, boolean implicitThis
     ) {
         ClassNode cn = controller.getClassNode();
-        if (controller.isInClosure() && !implicitThis) {
-            cn = controller.getOutermostClass();
-        }
         makeCall(new ClassExpression(cn), receiver, message, arguments,
                 adapter, safe, spreadSafe, implicitThis);
     }
