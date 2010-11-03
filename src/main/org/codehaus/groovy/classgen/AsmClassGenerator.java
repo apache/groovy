@@ -1993,9 +1993,6 @@ public class AsmClassGenerator extends ClassGenerator {
             boolean safe, boolean spreadSafe, boolean implicitThis
     ) {
         ClassNode cn = classNode;
-        if (isInClosure() && !implicitThis) {
-            cn = getOutermostClass();
-        }
         makeCall(new ClassExpression(cn), receiver, message, arguments,
                 adapter, safe, spreadSafe, implicitThis);
     }
