@@ -293,7 +293,11 @@ public class DefaultTypeTransformation {
                 }
                 return answer;
             }
-        }
+        } else if (object instanceof String && type.isEnum()) {
+			return Enum.valueOf(type, (String) object);
+		} else if (object instanceof GString && type.isEnum()) {
+			return Enum.valueOf(type, object.toString());
+		}
         Object[] args = null;
         if (object instanceof Collection) {
             // let's try invoke the constructor with the list as arguments
