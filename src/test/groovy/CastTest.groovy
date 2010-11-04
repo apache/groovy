@@ -180,17 +180,17 @@ class CastTest extends GroovyTestCase {
         assert h.class.componentType == int
     }
 
-	void testCastEnum() {
-		CastEnum val;
-		val = 'value1'
-		assert val == val.value1
-		def i=2
-		val =  "value$i"
-		assert val == val.value2
-	}
+    void testCastEnum() {
+        CastEnum val;
+        val = 'value1'
+        assert val == val.value1
+        def i = 2
+        val = "value$i"
+        assert val == val.value2
+    }
 
-	enum CastEnum {
-		value1,
-		value2
-	}
+    enum CastEnum {
+        value1,
+        value2
+    }
 }
