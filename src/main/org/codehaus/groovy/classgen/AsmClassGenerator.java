@@ -722,7 +722,6 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     public void visitBlockStatement(BlockStatement block) {
-        onLineNumber(block, "visitBlockStatement");
         visitStatement(block);
 
         compileStack.pushVariableScope(block.getVariableScope());
