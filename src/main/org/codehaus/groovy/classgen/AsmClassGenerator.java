@@ -381,7 +381,6 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     public void visitBlockStatement(BlockStatement block) {
-        onLineNumber(block, "visitBlockStatement");
         visitStatement(block);
 
         int mark = controller.getOperandStack().getStackLength();
