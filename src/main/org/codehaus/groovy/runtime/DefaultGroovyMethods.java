@@ -90,6 +90,7 @@ import java.util.regex.Pattern;
  * @author Jim Jagielski
  * @author Rodolfo Velasco
  * @author jeremi Joslin
+ * @author Hamlet D'Arcy
  */
 public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
@@ -6311,8 +6312,18 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         try {
             return (T) InvokerHelper.invokeConstructorOf(clazz, args);
         } catch (Exception e) {
-            // ignore
+            // ignore, the constructor that takes a Collection as an argument may not exist
         }
+        if (Collection.class.isAssignableFrom(clazz)) {
+            try {
+                Collection result = (Collection) InvokerHelper.invokeConstructorOf(clazz, null);
+                result.addAll(col);
+                return (T)result;
+            } catch (Exception e) {
+                // ignore, the no arg constructor might not exist.
+            }
+        }
+
         return asType((Object) col, clazz);
     }
 

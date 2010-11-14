@@ -271,4 +271,20 @@ public class DefaultGroovyMethodsTest extends GroovyTestCase {
         assertTrue(DefaultGroovyMethods.addAll(list, 1, Arrays.asList("a", "s", "i").toArray(new String[3])));
         assertEquals(list, Arrays.asList("b", "a", "s", "i", "c"));
     }
+
+    /**
+     * Tests that a List subclass without a constructor for Collections is still coerced
+     * into the correct list type. 
+     */
+    public void testCollectionTypeConstructors() {
+        MyList list = DefaultGroovyMethods.asType(Arrays.asList(1, 2, 3), MyList.class);
+        assertEquals(3, list.size());
+        assertEquals(1, list.get(0));
+        assertEquals(2, list.get(1));
+        assertEquals(3, list.get(2));
+    }
+
+    private static class MyList extends ArrayList {
+        public MyList() {}
+    }
 }
