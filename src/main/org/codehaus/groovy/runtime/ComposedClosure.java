@@ -92,6 +92,10 @@ public final class ComposedClosure extends Closure {
         return first.getParameterTypes();
     }
 
+    public Object doCall(Object[] args) {
+        return call(args);
+    }
+
     @Override
     public Object call(Object[] args) {
         Object temp = first.call(args);

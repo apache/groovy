@@ -42,6 +42,13 @@ class ClosureComposeTest extends GroovyTestCase {
         assert g(10) == 22
     }
 
+    // GROOVY-4512
+    void testComposeWithNoargs() {
+        def inst = new ComposeTestHelper()
+        assert inst.composed.call() == 42
+        assert inst.composed() == 42
+    }
+
     void testComposeWithMethodClosure() {
         def s2c = { it.chars[0] }
         def p = Integer.&toHexString >> s2c >> Character.&toUpperCase
@@ -69,5 +76,11 @@ class ClosureComposeTest extends GroovyTestCase {
         def twiceBoth = multBoth.rcurry(2)
         def twiceBothPlus10 = twiceBoth >> add2plus10
         assert twiceBothPlus10(5, 10) == 40
+    }
+
+    class ComposeTestHelper {
+        def closure1 = { 40 }
+        def closure2 = { it + 2 }
+        def composed = closure1 >> closure2
     }
 }
