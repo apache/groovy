@@ -43,10 +43,12 @@ class ClosureComposeTest extends GroovyTestCase {
     }
 
     // GROOVY-4512
-    void testComposeWithNoargs() {
+    void testClosureCompositionInstance() {
         def inst = new ComposeTestHelper()
-        assert inst.composed.call() == 42
-        assert inst.composed() == 42
+        assert inst.composedA.call() == 42
+        assert inst.composedA() == 42
+        assert inst.composedB.call(3) == 122
+        assert inst.composedB(3) == 122
     }
 
     void testComposeWithMethodClosure() {
@@ -80,7 +82,9 @@ class ClosureComposeTest extends GroovyTestCase {
 
     class ComposeTestHelper {
         def closure1 = { 40 }
-        def closure2 = { it + 2 }
-        def composed = closure1 >> closure2
+        def closure2 = { it * 40 }
+        def closure3 = { it + 2 }
+        def composedA = closure1 >> closure3
+        def composedB = closure2 >> closure3
     }
 }
