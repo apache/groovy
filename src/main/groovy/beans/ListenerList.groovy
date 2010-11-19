@@ -45,6 +45,7 @@ import org.codehaus.groovy.transform.GroovyASTTransformationClass
  *
  * The annotation can get the following parameters:
  *
+ * <pre>
  * listener    = type of the Listener instance.
  *               Default:
  *                 If the annotated collection has a single, concrete (not wildcarded) generic subtype this subtype is
@@ -68,11 +69,27 @@ import org.codehaus.groovy.transform.GroovyASTTransformationClass
  *                 false
  * </pre>
  *
- * <p>You can add the same annotation to the class itself as well, but need to specify at least listener and event.
- * Then it autocreates a private variable called <tt><name>List</tt> (starting lowercase) and uses this to store the listeners.
+ * <p>You can add the same annotation to the class itself as well, but you need to specify at least listener and event.
+ * Then it autocreates a private variable called <tt>&lt;name&gt;List</tt> (starting lowercase) and uses this to store the listeners.
  * If there already exists a compatible variable named this way, it will be used instead.
  * You can add multiple annotations to the class.
- * 
+ *
+ * <p>Another example:
+ *
+ * <pre>
+ * import groovy.beans.*
+ *
+ * class GreetingClass {
+ *   &#064;ListenerList(name = "helloListener", fire = "welcome", event = Date)
+ *   def listeners
+ * }
+ *
+ * def greet = new GreetingClass()
+ * greet.addHelloListener([welcome: { e -> println "Received: $e" }])
+ * greet.fireWelcome(new Date())
+ * // => Received: Sat Nov 20 09:46:22 EST 2010
+ * </pre>
+ *
  * <p>More info on fire-method creation:
  * For each entry in the given or default created list a fire-method name will be created: <tt>fire${suffix.capitalize()}</tt>.
  * For each fire-method name a set of fire-methods will be created with the event type as single parameter and all the
