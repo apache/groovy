@@ -68,7 +68,7 @@ import org.codehaus.groovy.transform.GroovyASTTransformationClass
  * You can add multiple annotations to the class.
  * 
  * More info on fire-method creation:
- * For each entry in the given or default created list a fire-method name will be created: "fire${suffix.capitalize()}".
+ * For each entry in the given or default created list a fire-method name will be created: <pre>"fire${suffix.capitalize()}"</pre>.
  * For each fire-method name a set of fire-methods will be created with the event type as single parameter and all the
  * parameter lists from the declared constructors of the event type.
  *
