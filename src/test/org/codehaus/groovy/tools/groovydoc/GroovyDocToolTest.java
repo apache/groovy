@@ -176,9 +176,7 @@ public class GroovyDocToolTest extends GroovySwingTestCase {
         xmlTool.renderToOutput(output, MOCK_DIR);
 
         String domBuilderDoc = output.getText(MOCK_DIR + "/groovy/xml/DOMBuilder.html");
-        // TODO reinstate
-//        assertTrue(domBuilderDoc.indexOf("<extends>BuilderSupport</extends>") > 0);
-        assertTrue(domBuilderDoc.indexOf("<extends>null</extends>") > 0);
+        assertTrue(domBuilderDoc.indexOf("<extends>BuilderSupport</extends>") > 0);
     }
 
     public void testExtendsClauseWithSuperClassInTree() throws Exception {
@@ -192,6 +190,44 @@ public class GroovyDocToolTest extends GroovySwingTestCase {
         assertTrue(domBuilderDoc.indexOf("<extends>BuilderSupport</extends>") > 0);
     }
 
+    public void testInterfaceExtendsClauseWithMultipleInterfaces() throws Exception {
+        List<String> srcList = new ArrayList<String>();
+        srcList.add("org/codehaus/groovy/tools/groovydoc/testfiles/GroovyInterfaceWithMultipleInterfaces.groovy");
+        srcList.add("org/codehaus/groovy/tools/groovydoc/testfiles/JavaInterfaceWithMultipleInterfaces.java");
+        srcList.add("org/codehaus/groovy/tools/groovydoc/testfiles/GroovyInterface1.groovy");
+        srcList.add("org/codehaus/groovy/tools/groovydoc/testfiles/JavaInterface1.java");
+        xmlToolForTests.add(srcList);
+        MockOutputTool output = new MockOutputTool();
+        xmlToolForTests.renderToOutput(output, MOCK_DIR);
+
+        String groovyClassDoc = output.getText(MOCK_DIR + "/org/codehaus/groovy/tools/groovydoc/testfiles/GroovyInterfaceWithMultipleInterfaces.html");
+        assertTrue(groovyClassDoc.indexOf("<interface>JavaInterface1</interface>") > 0);
+        assertTrue(groovyClassDoc.indexOf("<interface>GroovyInterface1</interface>") > 0);
+
+        String javaClassDoc = output.getText(MOCK_DIR + "/org/codehaus/groovy/tools/groovydoc/testfiles/JavaInterfaceWithMultipleInterfaces.html");
+        assertTrue(javaClassDoc.indexOf("<interface>JavaInterface1</interface>") > 0);
+        assertTrue(javaClassDoc.indexOf("<interface>GroovyInterface1</interface>") > 0);
+    }
+
+    public void testImplementsClauseWithMultipleInterfaces() throws Exception {
+        List<String> srcList = new ArrayList<String>();
+        srcList.add("org/codehaus/groovy/tools/groovydoc/testfiles/GroovyClassWithMultipleInterfaces.groovy");
+        srcList.add("org/codehaus/groovy/tools/groovydoc/testfiles/JavaClassWithMultipleInterfaces.java");
+        srcList.add("org/codehaus/groovy/tools/groovydoc/testfiles/GroovyInterface1.groovy");
+        srcList.add("org/codehaus/groovy/tools/groovydoc/testfiles/JavaInterface1.java");
+        xmlToolForTests.add(srcList);
+        MockOutputTool output = new MockOutputTool();
+        xmlToolForTests.renderToOutput(output, MOCK_DIR);
+
+        String groovyClassDoc = output.getText(MOCK_DIR + "/org/codehaus/groovy/tools/groovydoc/testfiles/GroovyClassWithMultipleInterfaces.html");
+        assertTrue(groovyClassDoc.indexOf("<interface>JavaInterface1</interface>") > 0);
+        assertTrue(groovyClassDoc.indexOf("<interface>GroovyInterface1</interface>") > 0);
+
+        String javaClassDoc = output.getText(MOCK_DIR + "/org/codehaus/groovy/tools/groovydoc/testfiles/JavaClassWithMultipleInterfaces.html");
+        assertTrue(javaClassDoc.indexOf("<interface>JavaInterface1</interface>") > 0);
+        assertTrue(javaClassDoc.indexOf("<interface>GroovyInterface1</interface>") > 0);
+    }
+
     public void testDefaultPackage() throws Exception {
         List<String> srcList = new ArrayList<String>();
         srcList.add("UberTestCaseBugs.java");
@@ -199,9 +235,7 @@ public class GroovyDocToolTest extends GroovySwingTestCase {
         MockOutputTool output = new MockOutputTool();
         xmlToolForTests.renderToOutput(output, MOCK_DIR);
         String domBuilderDoc = output.getText(MOCK_DIR + "/DefaultPackage/UberTestCaseBugs.html");
-        // TODO reinstate
-//        assertTrue(domBuilderDoc.indexOf("<extends>TestCase</extends>") > 0);
-        assertTrue(domBuilderDoc.indexOf("<extends>null</extends>") > 0);
+        assertTrue(domBuilderDoc.indexOf("<extends>TestCase</extends>") > 0);
     }
 
     public void testStaticModifier() throws Exception {

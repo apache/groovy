@@ -167,8 +167,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
     public void visitExtendsClause(GroovySourceAST t, int visit) {
         SimpleGroovyClassDoc currentClassDoc = getCurrentClassDoc();
         if (visit == OPENING_VISIT) {
-            GroovySourceAST superClassNode = t.childOfType(IDENT);
-            if (superClassNode != null) {
+            for (GroovySourceAST superClassNode : findTypeNames(t)) {
                 String superClassName = extractName(superClassNode);
                 if (currentClassDoc.isInterface()) {
                     currentClassDoc.addInterfaceName(superClassName);
@@ -182,11 +181,23 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
     @Override
     public void visitImplementsClause(GroovySourceAST t, int visit) {
         if (visit == OPENING_VISIT) {
-            GroovySourceAST classNode = t.childOfType(IDENT);
-            if (classNode != null) {
+            for (GroovySourceAST classNode : findTypeNames(t)) {
                 getCurrentClassDoc().addInterfaceName(extractName(classNode));
             }
         }
+    }
+
+    private List<GroovySourceAST> findTypeNames(GroovySourceAST t) {
+        List<GroovySourceAST> types = new ArrayList<GroovySourceAST>();
+        for (AST child = t.getFirstChild(); child != null; child = child.getNextSibling()) {
+            GroovySourceAST groovySourceAST = (GroovySourceAST) child;
+            if (groovySourceAST.getType() == IDENT) {
+                types.add(groovySourceAST);
+            }else if (groovySourceAST.getType() == TYPE) {
+                types.add(groovySourceAST.childOfType(IDENT));
+            }
+        }
+        return types;
     }
 
     @Override

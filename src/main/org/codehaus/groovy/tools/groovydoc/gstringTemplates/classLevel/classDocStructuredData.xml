@@ -1,6 +1,10 @@
 <class name="${classDoc.name()}">
   <containingPackage name="${classDoc.containingPackage().name()}">${classDoc.containingPackage().nameWithDots()}</containingPackage>
   <extends>${classDoc.superclass()?.name()}</extends>
+  <interfaces><% for (interfaceDoc in classDoc.interfaces()) { %>
+    <interface>${interfaceDoc.name()}</interface>
+<% } %>
+  </interfaces>
   <comment>${classDoc.commentText()}</comment>
   <constructors><% for (constructor in classDoc.constructors()) { %>
     <constructor modifiers="${constructor.isPublic()?'public ':''}" name="${constructor.name()}">

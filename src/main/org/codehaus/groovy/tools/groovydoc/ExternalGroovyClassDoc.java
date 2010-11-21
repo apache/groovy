@@ -290,7 +290,7 @@ public class ExternalGroovyClassDoc implements GroovyClassDoc {
     }
 
     public String name() {
-        return null;
+        return externalClass.getSimpleName();
     }
 
     public void setRawCommentText(String arg0) {

@@ -439,6 +439,9 @@ project.pomConfigureClosure = {
             contributor {
                 name 'Alexander Klein'
             }
+            contributor {
+                name 'Adam Murdoch'
+            }
         }
         mailingLists {
             mailingList {
