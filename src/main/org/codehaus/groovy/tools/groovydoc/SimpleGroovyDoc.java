@@ -169,10 +169,10 @@ public class SimpleGroovyDoc implements GroovyDoc, GroovyTokenTypes {
 
     // Methods from Comparable
     public int compareTo(Object that) {
-        if (that instanceof SimpleGroovyDoc) {
-            return name.compareTo(((SimpleGroovyDoc) that).name);
+        if (that instanceof GroovyDoc) {
+            return name.compareTo(((GroovyDoc) that).name());
         } else {
-            throw new ClassCastException();
+            throw new ClassCastException(String.format("Cannot compare object of type %s.", that.getClass()));
         }
     }
 
