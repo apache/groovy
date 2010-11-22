@@ -610,6 +610,39 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
         return Memoize.buildSoftReferenceMemoizeFunction(protectedCacheSize, new LRUCache(maxCacheSize), this);
     }
 
+    /**
+     * Executes the current closure on a functional trampoline.
+     * To prevent stack overflow due to deep recursion, functions can instead leverage the trampoline mechanism
+     * and avoid recursive calls altogether. Under trampoline, the function is supposed to perform one step of
+     * the calculation and, instead of a recursive call to itself or another function, it return back a new closure,
+     * which will be executed by the trampoline as the next step.
+     * Once a non-closure value is returned, the trampoline stops and returns the value as the final result.
+     * @param args Parameters to the closure, so as the trampoline mechanism can call it
+     * @return The final result returned by the last step of the trampolined calculation
+     */
+    public Object trampoline(final Object... args) {
+        return this.curry(args).trampoline();
+    }
+
+    /**
+     * Executes the current closure on a functional trampoline.
+     * To prevent stack overflow due to deep recursion, functions can instead leverage the trampoline mechanism
+     * and avoid recursive calls altogether. Under trampoline, the function is supposed to perform one step of
+     * the calculation and, instead of a recursive call to itself or another function, it return back a new closure,
+     * which will be executed by the trampoline as the next step.
+     * Once a non-closure value is returned, the trampoline stops and returns the value as the final result.
+     * @return The final result returned by the last step of the trampolined calculation
+     */
+    public Object trampoline() {
+        Closure currentFunction = this;
+        for(;;) {
+            final Object result = currentFunction.call();
+            if (result instanceof Closure) {
+                currentFunction = (Closure) result;
+            } else return result;
+        }
+    }
+    
     /* (non-Javadoc)
      * @see java.lang.Object#clone()
      */
