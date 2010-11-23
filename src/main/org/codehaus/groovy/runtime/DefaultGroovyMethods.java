@@ -142,8 +142,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Allows the closure to be called for the object reference self
-     * synonym for 'with()'.
+     * Allows the closure to be called for the object reference self. 
+     * Synonym for 'with()'.
      *
      * @param self    the object to have a closure act upon
      * @param closure the closure to call on the object
@@ -155,7 +155,24 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Allows the closure to be called for the object reference self
+     * Allows the closure to be called for the object reference self. <br/><br/>
+     * Any method invoked inside the closure will first be invoked on the 
+     * self reference. For instance, the following method calls to the append()
+     * method are invoked on the StringBuilder instance: 
+     * <pre>
+     * def b = new StringBuilder().with {
+     *   append('foo')
+     *   append('bar')
+     * }
+     * assert b.toString() == 'foobar' 
+     * </pre>
+     * This is commonly used to simplify object creation, such as this example: 
+     * <pre>
+     * def p = new Person().with {
+     *   firstName = 'John'
+     *   lastName = 'Doe'
+     * }
+     * </pre>
      *
      * @param self    the object to have a closure act upon
      * @param closure the closure to call on the object
@@ -2551,11 +2568,16 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Adds GroovyCollections#transpose(List) as a method on lists.
+     * Adds GroovyCollections#transpose(List) as a method on lists. <br/>
+     * A TransposeFunction takes a collection of columns and returns a collection of 
+     * rows. The first row consists of the first element from each column. Successive 
+     * rows are constructed similarly.      
      * <p>
      * Example usage:
      * <pre class="groovyTestCase">def result = [['a', 'b'], [1, 2]].transpose()
      * assert result == [['a', 1], ['b', 2]]</pre>
+     * <pre class="groovyTestCase">def result = [['a', 'b'], [1, 2], [3, 4]].transpose()
+     * assert result == [['a', 1, 3], ['b', 2, 4]]</pre>
      *
      * @param self a List of lists
      * @return a List of the transposed lists
