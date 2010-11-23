@@ -666,7 +666,7 @@ public class JavaStubGenerator
             // case where annotation type uses Class<? extends Closure> for the closure's type
             val = "groovy.lang.Closure.class";
         } else if (memberValue instanceof ClassExpression) {
-            val = ((Expression) memberValue).getText();
+            val = ((Expression) memberValue).getText() + ".class";
         } 
         return val;
     }

@@ -58,7 +58,8 @@ class AnnotationMemberValuesResolutionV2StubsTest extends StringSourcesStubTestC
 
     void verifyStubs() {
         classes['Bar4434V2'].with {
-            assert annotations[0].getProperty('val').toString() == 'baz.MyEnum4434V2'
+            // adjusted for GROOVY-4517
+            assert annotations[0].getProperty('val').toString() == 'baz.MyEnum4434V2.class'
         }
     }
 }
