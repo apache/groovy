@@ -351,11 +351,11 @@ public class Sql {
     public static Sql newInstance(Map<String, Object> args) throws SQLException, ClassNotFoundException {
         if (args.containsKey("driverClassName") && args.containsKey("driver"))
             throw new IllegalArgumentException("Only one of 'driverClassName' and 'driver' should be provided");
-        String driverClassName = (String) args.remove("driverClassName");
-        if (driverClassName == null) driverClassName = (String) args.remove("driver");
-        if (driverClassName != null) loadDriver(driverClassName);
+        Object driverClassName = args.remove("driverClassName");
+        if (driverClassName == null) driverClassName = args.remove("driver");
+        if (driverClassName != null) loadDriver(driverClassName.toString());
 
-        String url = (String) args.remove("url");
+        Object url = args.remove("url");
         if (url == null) throw new IllegalArgumentException("Argument 'url' is required");
 
         Properties props = (Properties) args.remove("properties");
@@ -367,10 +367,14 @@ public class Sql {
             throw new IllegalArgumentException("Found one but not both of 'user' and 'password'");
 
         Connection connection;
-        if (props != null) connection = DriverManager.getConnection(url, props);
-        else if (args.containsKey("user")) connection =
-                DriverManager.getConnection(url, (String) args.remove("user"), (String) args.remove("password"));
-        else connection = DriverManager.getConnection(url);
+        if (props != null) connection = DriverManager.getConnection(url.toString(), props);
+        else if (args.containsKey("user")) {
+            Object user = args.remove("user");
+            Object password = args.remove("password");
+            connection = DriverManager.getConnection(url.toString(),
+                    (user == null ? null : user.toString()),
+                    (password == null ? null : password.toString()));
+        } else connection = DriverManager.getConnection(url.toString());
 
         Sql result = (Sql) InvokerHelper.invokeConstructorOf(Sql.class, args);
         result.setConnection(connection);

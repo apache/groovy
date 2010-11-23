@@ -106,7 +106,8 @@ class TestHelper extends GroovyTestCase {
             def driver = props."groovy.testdb.driver"
             def username = props."groovy.testdb.username"
             def password = props."groovy.testdb.password"
-            if (!username && !password) return Sql.newInstance(url, driver)
+            // test the map of String/GString version of newInstance
+            if (!username && !password) return Sql.newInstance(url:url, driver:"$driver")
             return Sql.newInstance(url, username, password, driver)
         }
         // TODO once hsqldb 1.9.0 is out rename this
