@@ -661,7 +661,7 @@ public class JavaStubGenerator
             // assume must be static class field or enum value or class that Java can resolve
             val = ((Expression) memberValue).getText();
         } else if (memberValue instanceof ClassExpression) {
-            val = ((Expression) memberValue).getText();
+        	val = ((Expression) memberValue).getText() + ".class";
         }
         return val;
     }
