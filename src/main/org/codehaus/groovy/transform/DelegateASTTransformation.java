@@ -179,6 +179,7 @@ public class DelegateASTTransformation implements ASTTransformation, Opcodes {
             final Parameter[] newParams = new Parameter[params.length];
             for (int i = 0; i < newParams.length; i++) {
                 Parameter newParam = new Parameter(nonGeneric(params[i].getType()), params[i].getName());
+                newParam.setInitialExpression(params[i].getInitialExpression());
                 newParams[i] = newParam;
                 args.addExpression(new VariableExpression(newParam));
             }
