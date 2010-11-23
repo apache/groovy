@@ -87,7 +87,7 @@ import java.lang.annotation.Target;
  * }
  * </pre>
  * @author Hamlet D'Arcy
- * @since Groovy 1.8
+ * @since 1.8.0
  */
 @Retention(RetentionPolicy.SOURCE)
 @Target({ElementType.METHOD})
@@ -95,6 +95,9 @@ import java.lang.annotation.Target;
 public @interface WithReadLock {
     /**
      * @return if a user specified lock object with the given name should be used
+     *      the lock object must exist. If the annotated method is static then the 
+     *      lock object must be static. If the annotated method is not static then 
+     *      the lock object must not be static. 
      */
     String value () default "";
 }

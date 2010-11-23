@@ -62,6 +62,7 @@ import java.lang.annotation.Target;
  * <p>
  *
  * @author Paul King
+ * @since 1.7
  */
 @Retention(RetentionPolicy.SOURCE)
 @Target({ElementType.FIELD})

@@ -113,6 +113,7 @@ import java.lang.annotation.Target;
  * </ul>
  *
  * @author Paul King
+ * @since 1.7
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE})

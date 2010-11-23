@@ -42,6 +42,7 @@ import java.lang.annotation.Target;
  * visible within the <code>awesum</code> method.
  *
  * @author Paul King
+ * @since 1.8.0
  */
 @Retention(RetentionPolicy.SOURCE)
 @Target({ElementType.LOCAL_VARIABLE})
