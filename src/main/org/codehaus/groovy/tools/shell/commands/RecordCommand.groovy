@@ -95,7 +95,7 @@ class RecordCommand
             file = new File(args[0] as String)
         }
 
-        file.parentFile.mkdirs()
+        if(file.parentFile) file.parentFile.mkdirs()
 
         writer = file.newPrintWriter()
         writer.println("// OPENED: " + new Date())
