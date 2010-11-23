@@ -101,7 +101,7 @@ import org.codehaus.groovy.transform.GroovyASTTransformationClass
  * @author Hamlet D'Arcy
  */
 @Retention(RetentionPolicy.SOURCE)
-@Target([ElementType.FIELD, ElementType.TYPE])
+@Target(ElementType.FIELD)
 @GroovyASTTransformationClass('groovy.beans.ListenerListASTTransformation')
 @interface ListenerList {
     Class listener() default Void.class
