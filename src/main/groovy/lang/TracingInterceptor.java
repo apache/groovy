@@ -20,15 +20,48 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Writer;
 
+/*
+ * This {@link Interceptor} traces method calls on the proxied object to a log. 
+ * By default, the log is simply <pre>System.out</pre>; however, that can be 
+ * changed with the <pre>setWriter(Writer)</pre> method. <br/><br/>
+ * 
+ * A message will be written to output before a method is invoked and after a method
+ * is invoked. If methods are nested, and invoke one another, then indentation 
+ * of two spaces is written. <br/><br/>
+ *
+ * Here is an example usage on the ArrayList object: <br/>
+ * <pre>
+ * def proxy = ProxyMetaClass.getInstance(ArrayList.class)
+ * proxy.interceptor = new TracingInterceptor()
+ * proxy.use {
+ *     def list = [1, 2, 3]
+ *     assert 3 == list.size()
+ *     assert list.contains(1)
+ * }
+ * </pre>
+ * Running this code produces this output: 
+ * <pre>
+ * before java.util.ArrayList.size()
+ * after  java.util.ArrayList.size()
+ * before java.util.ArrayList.contains(java.lang.Integer)
+ * after  java.util.ArrayList.contains(java.lang.Integer)
+ * </pre>
+ */
 public class TracingInterceptor implements Interceptor {
 
     protected Writer writer = new PrintWriter(System.out);
     private int indent = 0;
 
+    /**
+    * Returns the writer associated with this interceptor. 
+    */ 
     public Writer getWriter() {
         return writer;
     }
 
+    /**
+    * Changes the writer associated with this interceptor. 
+    */ 
     public void setWriter(Writer writer) {
         this.writer = writer;
     }

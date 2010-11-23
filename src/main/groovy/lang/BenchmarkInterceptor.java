@@ -20,16 +20,40 @@ import java.util.*;
 
 /**
  * Interceptor that registers the timestamp of each method call
- * before and after invocation.
+ * before and after invocation. The timestamps are stored internally
+ * and can be retrieved through the with the <pre>getCalls()</pre> 
+ * and <pre>statistic()</pre> API. <br/><br/>
+ * 
+ * Example usage can be seen here: 
+ * <pre>
+ * def proxy = ProxyMetaClass.getInstance(ArrayList.class)
+ * proxy.interceptor = new BenchmarkInterceptor()
+ * proxy.use {
+ *     def list = (0..10000).collect{ it }
+ *     4.times { list.size() }
+ *     4000.times { list.set(it, it+1) }
+ * }
+ * proxy.interceptor.statistic()
+ * </pre>
+ * Which produces the following output: 
+ * <pre>
+ * [[size, 4, 0], [set, 4000, 21]]
+ * </pre>
  */
 public class BenchmarkInterceptor implements Interceptor {
 
     protected Map calls = new LinkedHashMap(); // keys to list of invocation times and before and after
 
-
+    /**
+    * Returns the raw data associated with the current benchmark run. 
+    */ 
     public Map getCalls() {
         return calls;
     }
+    
+    /**
+    * Resets all the benchmark data on this object. 
+    */
     public void reset() {
         calls = new HashMap();
     }
@@ -51,6 +75,9 @@ public class BenchmarkInterceptor implements Interceptor {
     }
 
     /**
+     * Returns benchmark statistics as a List&lt;Object[]&gt;. 
+     * AccumulateTime is measured in milliseconds and is as accurate as
+     * System.currentTimeMillis() allows it to be. 
      * @return a list of lines, each item is [methodname, numberOfCalls, accumulatedTime]
      */
     public List statistic() {
