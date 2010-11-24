@@ -54,6 +54,7 @@ import java.lang.annotation.Target;
  * @author Hamlet D'Arcy
  * @author Raffaele Cigni
  * @author Alberto Vilches Raton
+ * @since 1.8.0
  */
 @Retention(RetentionPolicy.SOURCE)
 @Target({ElementType.TYPE})

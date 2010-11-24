@@ -48,6 +48,7 @@ import java.lang.annotation.Target;
  *
  * @author Hamlet D'Arcy
  * @author Tomek Bujok
+ * @since 1.8.0
  */
 @Retention(RetentionPolicy.SOURCE)
 @Target({ElementType.TYPE})

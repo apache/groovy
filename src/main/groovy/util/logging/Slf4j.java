@@ -47,6 +47,7 @@ import org.objectweb.asm.Opcodes;
  *
  * @author Hamlet D'Arcy
  * @author Alberto Mijares
+ * @since 1.8.0
  */
 @Retention(RetentionPolicy.SOURCE)
 @Target({ElementType.TYPE})
