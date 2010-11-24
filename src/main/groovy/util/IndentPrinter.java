@@ -18,8 +18,38 @@ package groovy.util;
 import java.io.PrintWriter;
 
 /**
- * A helper class for printing indented text.
- * 
+ * <p>A helper class for printing indented text. This can be used stand-alone or, more commonly, from Builders. </p>
+ *
+ * <p>By default, System.out is used as the PrintWriter, but it is possible
+ * to change the PrintWriter by passing a new one as a constructor argument. </p>
+ *
+ * <p>Indention by default is 2 characters but can be changed by passing a
+ * differenet value as a constructor argument. </p>
+ *
+ * <p>The following is an example usage. Note that within a "with" block you need to
+ * specify a parameter name so that this.println is not called instead of IndentPrinter.println: </p>
+ * <pre>
+ * new IndentPrinter(new PrintWriter(out)).with { p ->
+ *     p.printIndent()
+ *     p.println('parent1')
+ *     p.incrementIndent()
+ *     p.printIndent()
+ *     p.println('child 1')
+ *     p.printIndent()
+ *     p.println('child 2')
+ *     p.decrementIndent()
+ *     p.printIndent()
+ *     p.println('parent2')
+ *     p.flush()
+ * }
+ * </pre>
+ * <p>The above example prints this to standard output: </p>
+ * <pre>
+ * parent1
+ *   child 1
+ *   child 2
+ * parent2
+ * </pre>
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
@@ -31,7 +61,7 @@ public class IndentPrinter {
     private final boolean addNewlines;
 
     /**
-     * Creates a PrintWriter pointing to System.out, with an indent of two 
+     * Creates a PrintWriter pointing to System.out, with an indent of two
      * spaces.
      * @see #IndentPrinter(PrintWriter, String)
      */
@@ -40,7 +70,7 @@ public class IndentPrinter {
     }
 
     /**
-     * Create an IndentPrinter to the given PrintWriter, with an indent of two 
+     * Create an IndentPrinter to the given PrintWriter, with an indent of two
      * spaces.
      * @param out PrintWriter to output to
      * @see #IndentPrinter(PrintWriter, String)
@@ -82,6 +112,9 @@ public class IndentPrinter {
         out.print(c);
     }
 
+    /**
+     * Prints the current indent level.  
+     */
     public void printIndent() {
         for (int i = 0; i < indentLevel; i++) {
             out.print(indent);
