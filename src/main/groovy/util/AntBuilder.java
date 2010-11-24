@@ -76,7 +76,12 @@ public class AntBuilder extends BuilderSupport {
     public AntBuilder(final Project project, final Target owningTarget) {
         this.project = project;
 
-        this.project.setInputHandler(new DefaultInputHandler());
+        /*
+         * GROOVY-4524: The following is not needed anymore as an ant Project already by default has inputhandler
+         * set to DefaultInputHandler. And if it is again set here, it mistakenly overrides the custom input handler
+         * if set using -inputhandler switch. 
+         */
+        //this.project.setInputHandler(new DefaultInputHandler());
 
         collectorTarget = owningTarget;
         antXmlContext = new AntXMLContext(project);
