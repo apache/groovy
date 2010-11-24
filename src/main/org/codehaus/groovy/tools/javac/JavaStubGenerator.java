@@ -137,7 +137,14 @@ public class JavaStubGenerator
                 	doAddMethod(new MethodNode(name, modifiers, returnType, parameters, exceptions, code));
                 }
                 protected void addConstructor(Parameter[] newParams, ConstructorNode ctor, Statement code, ClassNode node) {
-                    constructors.add(new ConstructorNode(ctor.getModifiers(), newParams, ctor.getExceptions(), code));
+                    if(code instanceof ExpressionStatement) {//GROOVY-4508
+                    	Statement temp = code;
+                    	code = new BlockStatement();
+                    	((BlockStatement)code).addStatement(temp);
+                    }
+                    ConstructorNode ctrNode = new ConstructorNode(ctor.getModifiers(), newParams, ctor.getExceptions(), code);
+                    ctrNode.setDeclaringClass(node);
+                    constructors.add(ctrNode);
                 }
                 protected void addDefaultParameters(DefaultArgsAction action, MethodNode method) {
                     final Parameter[] parameters = method.getParameters();
