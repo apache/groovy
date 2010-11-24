@@ -79,7 +79,7 @@ ${props.docTitle ?: ''}</h1>
 <%
     def s = rootDoc.summary().trim()
     def d = rootDoc.description().trim()
-    if (!d.isEmpty() && d != s) {
+    if (d && d != s) {
 %>
 <B>See:</B>
 <BR>
@@ -101,7 +101,7 @@ ${props.docTitle ?: ''}</h1>
 
 <P>
 <%
-    if (!d.isEmpty() && d != s) {
+    if (d && d != s) {
 %>
 &nbsp;<A NAME="overview_description"><!-- --></A>
 <P>
