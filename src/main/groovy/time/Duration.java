@@ -24,9 +24,9 @@ import java.util.Date;
  * we know how long a day is independent of the date.</p>
  * 
  * <p>This is not 100% true for days.
- * Days can actually be 23, 24 or 25 hours long (due to daylight saving adjustments.)
+ * Days can actually be 23, 24 or 25 hours long (due to daylight saving adjustments.)</p>
  * 
- * If you ask Duration to convert itself to milliseconds then it will work on the basis of 24 hours
+ * <p>If you ask Duration to convert itself to milliseconds then it will work on the basis of 24 hours
  * in a day. If you add or subtract it from a date it will take daylight saving into account.</p>
  *
  * @author John Wilson tug@wilson.co.uk
