@@ -104,7 +104,7 @@ import java.lang.annotation.Target;
  * object from being serialized.
  *
  * @author Paul King
- * @since 1.7
+ * @since 1.7.3
  */
 @Retention(RetentionPolicy.SOURCE)
 @Target({ElementType.METHOD})
