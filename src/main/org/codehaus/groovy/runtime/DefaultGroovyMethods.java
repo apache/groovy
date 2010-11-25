@@ -3323,6 +3323,64 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Selects the minimum value found in the map
+     * using the closure to determine the correct ordering.
+     * </p>
+     * If the closure has two parameters
+     * it is used like a traditional Comparator. I.e. it should compare
+     * its two parameters for order, returning a negative integer,
+     * zero, or a positive integer when the first parameter is less than,
+     * equal to, or greater than the second respectively. Otherwise,
+     * the Closure is assumed to take a single parameter and return a
+     * Comparable (typically an Integer) which is then used for
+     * further comparison.
+     * <pre class="groovyTestCase">
+     * def zoo = [monkeys:6, lions:5, tigers:7]
+     * def leastCommonEntry = zoo.min{ it.value }
+     * assert leastCommonEntry.value == 5
+     * def mostCommonEntry = zoo.min{ a, b -> b.value <=> a.value }
+     * assert mostCommonEntry.value == 7
+     * </pre>
+     *
+     * @param self    a Map
+     * @param closure a 1 or 2 arg Closure used to determine the correct ordering
+     * @return the Map.Entry having the minimum value as determined by the closure
+     * @since 1.7.6
+     */
+    public static <K, V> Map.Entry<K, V> min(Map<K, V> self, Closure closure) {
+        return min(self.entrySet(), closure);
+    }
+
+    /**
+     * Selects the maximum value found in the map
+     * using the closure to determine the correct ordering.
+     * </p>
+     * If the closure has two parameters
+     * it is used like a traditional Comparator. I.e. it should compare
+     * its two parameters for order, returning a negative integer,
+     * zero, or a positive integer when the first parameter is less than,
+     * equal to, or greater than the second respectively. Otherwise,
+     * the Closure is assumed to take a single parameter and return a
+     * Comparable (typically an Integer) which is then used for
+     * further comparison.
+     * <pre class="groovyTestCase">
+     * def zoo = [monkeys:6, lions:5, tigers:7]
+     * def mostCommonEntry = zoo.max{ it.value }
+     * assert mostCommonEntry.value == 7
+     * def leastCommonEntry = zoo.max{ a, b -> b.value <=> a.value }
+     * assert leastCommonEntry.value == 5
+     * </pre>
+     *
+     * @param self    a Map
+     * @param closure a 1 or 2 arg Closure used to determine the correct ordering
+     * @return the Map.Entry having the maximum value as determined by the closure
+     * @since 1.7.6
+     */
+    public static <K, V> Map.Entry<K, V> max(Map<K, V> self, Closure closure) {
+        return max(self.entrySet(), closure);
+    }
+
+    /**
      * Selects the minimum value found from the Iterator
      * using the closure to determine the correct ordering.
      * The iterator will become
