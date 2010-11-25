@@ -611,36 +611,30 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
     }
 
     /**
-     * Executes the current closure on a functional trampoline.
+     * Builds a trampolined variant of the current closure.
      * To prevent stack overflow due to deep recursion, functions can instead leverage the trampoline mechanism
      * and avoid recursive calls altogether. Under trampoline, the function is supposed to perform one step of
      * the calculation and, instead of a recursive call to itself or another function, it return back a new closure,
      * which will be executed by the trampoline as the next step.
      * Once a non-closure value is returned, the trampoline stops and returns the value as the final result.
      * @param args Parameters to the closure, so as the trampoline mechanism can call it
-     * @return The final result returned by the last step of the trampolined calculation
+     * @return A closure, which will execute the original closure on a trampoline.
      */
-    public Object trampoline(final Object... args) {
-        return this.curry(args).trampoline();
+    public Closure trampoline(final Object... args) {
+        return new TrampolineClosure(this.curry(args));
     }
 
     /**
-     * Executes the current closure on a functional trampoline.
+     * Builds a trampolined variant of the current closure.
      * To prevent stack overflow due to deep recursion, functions can instead leverage the trampoline mechanism
      * and avoid recursive calls altogether. Under trampoline, the function is supposed to perform one step of
      * the calculation and, instead of a recursive call to itself or another function, it return back a new closure,
      * which will be executed by the trampoline as the next step.
      * Once a non-closure value is returned, the trampoline stops and returns the value as the final result.
-     * @return The final result returned by the last step of the trampolined calculation
+     * @return A closure, which will execute the original closure on a trampoline.
      */
-    public Object trampoline() {
-        Closure currentFunction = this;
-        for(;;) {
-            final Object result = currentFunction.call();
-            if (result instanceof Closure) {
-                currentFunction = (Closure) result;
-            } else return result;
-        }
+    public Closure trampoline() {
+        return new TrampolineClosure(this);
     }
     
     /* (non-Javadoc)
