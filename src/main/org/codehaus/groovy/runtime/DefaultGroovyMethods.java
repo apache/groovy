@@ -14492,25 +14492,49 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static Socket accept(ServerSocket serverSocket, final Closure closure) throws IOException {
-        final Socket socket = serverSocket.accept();
-        new Thread(new Runnable() {
-            public void run() {
-                try {
-                    closure.call(socket);
-                } finally {
-                    if (socket != null) {
-                        try {
-                            socket.close();
-                        } catch (IOException e) {
-                            LOG.warning("Caught exception closing socket: " + e);
-                        }
-                    }
-                }
-            }
-        }).start();
-        return socket;
+        return accept(serverSocket, true, closure);
     }
 
+    /**
+     * Accepts a connection and passes the resulting Socket to the closure
+     * which runs in a new Thread or the calling thread, as needed.
+     *
+     * @param serverSocket a ServerSocket
+     * @param runInANewThread This flag should be true, if the closure should be invoked in a new thread, else false.
+     * @param closure      a Closure
+     * @return a Socket
+     * @throws IOException if an IOException occurs.
+     * @see java.net.ServerSocket#accept()
+     * @since 1.7.6
+     */
+    public static Socket accept(ServerSocket serverSocket, final boolean runInANewThread, 
+            final Closure closure) throws IOException {
+        final Socket socket = serverSocket.accept();
+        if(runInANewThread) {
+            new Thread(new Runnable() {
+                public void run() {
+                    invokeClosureWithSocket(socket, closure);
+                }
+            }).start();
+        } else {
+            invokeClosureWithSocket(socket, closure);
+        }
+        return socket;
+    }
+    
+    private static void invokeClosureWithSocket(Socket socket, Closure closure) {
+        try {
+            closure.call(socket);
+        } finally {
+            if (socket != null) {
+                try {
+                    socket.close();
+                } catch (IOException e) {
+                    LOG.warning("Caught exception closing socket: " + e);
+                }
+            }
+        }
+    }
 
     /**
      * Converts this File to a {@link groovy.lang.Writable}.
