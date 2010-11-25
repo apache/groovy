@@ -106,9 +106,23 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
         parameterTypes = cachedClass.getParameterTypes();
         maximumNumberOfParameters = cachedClass.getMaximumNumberOfParameters();
     }
-    
+
+    /**
+     * Constructor used when the "this" object for the Closure is null.
+     * This is rarely the case in normal Groovy usage.
+     *
+     * @param owner the Closure owner
+     */
     public Closure(Object owner) {
-        this(owner,null);
+        this(owner, null);
+    }
+
+    /**
+     * Constructor only used for rare cases where owner and "this" object are both null.
+     * Not used in normal Groovy contexts.
+     */
+    public Closure() {
+        this(null);
     }
 
     /**
