@@ -42,6 +42,7 @@ import org.codehaus.groovy.control.CompilationFailedException
 import org.codehaus.groovy.control.CompilationUnit.PrimaryClassNodeOperation
 import org.codehaus.groovy.control.SourceUnit
 import org.codehaus.groovy.classgen.GeneratorContext
+import java.awt.Font
 
 /**
  * This object is a GUI for looking at the AST that Groovy generates. 
@@ -59,6 +60,7 @@ public class AstBrowser {
     private inputArea, rootElement, decompiledSource
     boolean showScriptFreeForm, showScriptClass
     GroovyClassLoader classLoader
+    def prefs = new AstBrowserUiPreferences()
 
     AstBrowser(inputArea, rootElement, classLoader) {
         this.inputArea = inputArea
@@ -90,7 +92,6 @@ public class AstBrowser {
     void run(Closure script, String name) {
 
         swing = new SwingBuilder()
-        def prefs = new AstBrowserUiPreferences()
         def rootNode = new DefaultTreeModel(new DefaultMutableTreeNode("Loading...")) // populated later
         def phasePicker, jTree, propertyTable, splitterPane, mainSplitter
 
@@ -110,6 +111,10 @@ public class AstBrowser {
                             mnemonic: 'F',)}
                     checkBoxMenuItem(selected: showScriptClass) {action(name: 'Class Form', closure: this.&showScriptClass, 
                             mnemonic: 'C')}
+                }
+                menu(text: 'View', mnemonic: 'V') {
+                    menuItem() {action(name: 'Larger Font', closure: this.&largerFont, mnemonic: 'L', accelerator: shortcut('shift L'))}
+                    menuItem() {action(name: 'Smaller Font', closure: this.&smallerFont, mnemonic: 'S', accelerator: shortcut('shift S'))}
                 }
                 menu(text: 'Help', mnemonic: 'H') {
                     menuItem() {action(name: 'About', closure: this.&showAbout, mnemonic: 'A')}
@@ -198,6 +203,8 @@ public class AstBrowser {
             propertyTable.model.fireTableDataChanged()
         } as TreeSelectionListener)
 
+        updateFontSize(prefs.decompiledSourceFontSize)
+        
         frame.pack()
         frame.location = prefs.frameLocation
         frame.size = prefs.frameSize
@@ -213,7 +220,24 @@ public class AstBrowser {
         decompile(phasePicker.selectedItem.phaseId, source)
     }
 
+    void largerFont(EventObject evt = null) {
+        updateFontSize(decompiledSource.font.size + 2)
+    }
 
+    void smallerFont(EventObject evt = null){
+        updateFontSize(decompiledSource.font.size - 2)
+    }
+
+    private updateFontSize(newFontSize) {
+        if (newFontSize > 40) {
+            newFontSize = 40
+        } else if (newFontSize < 4) {
+            newFontSize = 4
+        }
+        
+        prefs.decompiledSourceFontSize = newFontSize
+        decompiledSource.font = new Font(decompiledSource.font.name, decompiledSource.font.style, newFontSize)
+    }
 
     void showAbout(EventObject evt) {
          def pane = swing.optionPane()
@@ -274,6 +298,7 @@ class AstBrowserUiPreferences {
     final def horizontalDividerLocation
     final boolean showScriptFreeForm
     final boolean showScriptClass
+    int decompiledSourceFontSize
 
     def AstBrowserUiPreferences() {
         Preferences prefs = Preferences.userNodeForPackage(AstBrowserUiPreferences)
@@ -283,6 +308,8 @@ class AstBrowserUiPreferences {
         frameSize = [
                 prefs.getInt("frameWidth", 800),
                 prefs.getInt("frameHeight", 600)]
+
+        decompiledSourceFontSize = prefs.getInt("decompiledFontSize", 12)
         verticalDividerLocation = prefs.getInt("verticalSplitterLocation", 100)
         horizontalDividerLocation = prefs.getInt("horizontalSplitterLocation", 100)
         showScriptFreeForm = prefs.getBoolean("showScriptFreeForm", false)
@@ -291,6 +318,7 @@ class AstBrowserUiPreferences {
 
     def save(frame, vSplitter, hSplitter, scriptFreeFormPref, scriptClassPref) {
         Preferences prefs = Preferences.userNodeForPackage(AstBrowserUiPreferences)
+        prefs.putInt("decompiledFontSize", decompiledSourceFontSize as int)
         prefs.putInt("frameX", frame.location.x as int)
         prefs.putInt("frameY", frame.location.y as int)
         prefs.putInt("frameWidth", frame.size.width as int)
