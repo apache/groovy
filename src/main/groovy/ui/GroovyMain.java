@@ -256,8 +256,6 @@ public class GroovyMain {
      * @throws ParseException if invalid options are chosen
      */
     private static boolean process(CommandLine line) throws ParseException {
-        GroovyMain main = new GroovyMain();
-
         List args = line.getArgList();
         
         if (line.hasOption('D')) {
@@ -268,6 +266,8 @@ public class GroovyMain {
             }
         }
 
+        GroovyMain main = new GroovyMain();
+        
         // add the ability to parse scripts with a specified encoding
         main.conf.setSourceEncoding(line.getOptionValue('c',main.conf.getSourceEncoding()));
 
