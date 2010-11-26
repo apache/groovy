@@ -30,8 +30,30 @@ import java.net.URL;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 
 /**
- * Simple server that executes supplied script against a socket
+ * Simple server that executes supplied script against a socket. <br/><br/>
  *
+ * Typically this is used from the groovy command line agent but it can be 
+ * invoked programatically. To run this program from the command line please
+ * refer to the command line documentation at <a href="http://groovy.codehaus.org/Groovy+CLI">
+ * Groovy CLI</a>. <br/><br/>
+ * 
+ * Here is an example of how to use this class to open a listening socket on the server, 
+ * listen for incoming data, and then echo the data back to the client in reverse order: 
+ * <pre>
+ * new GroovySocketServer(
+ *         new GroovyShell(),      // evaluator
+ *         false,                  // is not a file
+ *         "println line.reverse()",         // script to evaluate
+ *         true,                   // return result to client
+ *         1960)                   //port
+ * </pre>
+ * There are several variables in the script binding: </br>
+ * <ul>
+ * <li>line - The data from the socket</li> 
+ * <li>out - The output PrintWriter, should you need it for some reason.</li> 
+ * <li>socket - The socket, should you need it for some reason.</li> 
+ * </ul>
+ * 
  * @version $Id$
  * @author Jeremy Rayner
  */
@@ -42,6 +64,22 @@ public class GroovySocketServer implements Runnable {
     private String scriptFilenameOrText;
     private boolean autoOutput;
     
+    /**
+    * This creates and starts the socket server on a new Thread. There is no need to call run or spawn
+    * a new thread yourself. 
+    * @param groovy
+    *       The GroovyShell object that evaluates the incoming text. If you need additional classes in the 
+    *       classloader then configure that through this object. 
+    * @param isScriptFile
+    *       Whether the incoming scoket data String will be a script or a file path. 
+    * @param scriptFilenameOrText
+    *       This will be a groovy script or a file location depending on the argument isScriptFile. 
+    * @param autoOutput
+    *       whether output should be automatically echoed back to the client
+    * @param port
+    *       the port to listen on
+    * 
+    */ 
     public GroovySocketServer(GroovyShell groovy, boolean isScriptFile, String scriptFilenameOrText, boolean autoOutput, int port) {
         this.groovy = groovy;
         this.isScriptFile = isScriptFile;
@@ -56,6 +94,10 @@ public class GroovySocketServer implements Runnable {
         new Thread(this).start();
     }
 
+    /**
+    * Runs this server. There is typically no need to call this method, as the object's constructor
+    * creates a new thread and runs this object automatically. 
+    */ 
     public void run() {
         try {
             ServerSocket serverSocket = new ServerSocket(url.getPort());
