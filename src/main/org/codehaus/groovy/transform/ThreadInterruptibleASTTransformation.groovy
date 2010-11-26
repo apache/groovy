@@ -23,7 +23,7 @@ import org.codehaus.groovy.control.CompilePhase
 import org.codehaus.groovy.control.SourceUnit
 import org.codehaus.groovy.ast.*
 import org.codehaus.groovy.ast.stmt.*
-import groovy.transform.AutoInterrupt
+import groovy.transform.ThreadInterrupt
 import org.codehaus.groovy.ast.expr.BooleanExpression
 import org.codehaus.groovy.ast.expr.MethodCallExpression
 import org.codehaus.groovy.ast.expr.StaticMethodCallExpression
@@ -35,7 +35,7 @@ import org.codehaus.groovy.ast.expr.ConstructorCallExpression
  * checks on loops (for, while, do) and first statement of closures. By default, also adds an interrupt check
  * statement on the beginning of method calls.
  *
- * @see groovy.transform.AutoInterrupt
+ * @see groovy.transform.ThreadInterrupt
  * 
  * @author Cédric Champeau
  * @author Hamlet D'Arcy
@@ -43,9 +43,9 @@ import org.codehaus.groovy.ast.expr.ConstructorCallExpression
  * @since 1.8.0
  */
 @GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
-public class AutoInterruptibleASTTransformation extends ClassCodeVisitorSupport implements ASTTransformation {
+public class ThreadInterruptibleASTTransformation extends ClassCodeVisitorSupport implements ASTTransformation {
 
-    private static final ClassNode MY_TYPE = new ClassNode(AutoInterrupt.class)
+    private static final ClassNode MY_TYPE = new ClassNode(ThreadInterrupt.class)
     private static final String CHECK_METHOD_START_MEMBER = 'checkOnMethodStart'
     private static final String PROPAGATE_TO_COMPILE_UNIT = 'applyToAllClasses'
     private final static def INTERRUPT_STATEMENT = createInterruptStatement()
@@ -53,7 +53,7 @@ public class AutoInterruptibleASTTransformation extends ClassCodeVisitorSupport 
     private boolean checkOnMethodStart
     private boolean applyToAllClasses  
 
-    public AutoInterruptibleASTTransformation() {
+    public ThreadInterruptibleASTTransformation() {
 
     }
     

@@ -43,7 +43,7 @@ import org.codehaus.groovy.transform.GroovyASTTransformationClass
  * The following is sample usage of the annotation:
  * <br/>
  * <pre>
- * <code>@groovy.transform.AutoInterrupt</code>
+ * <code>@groovy.transform.ThreadInterrupt</code>
  * def scriptMethod() {
  *     4.times {
  *         println 'executing script method...'
@@ -106,8 +106,8 @@ import org.codehaus.groovy.transform.GroovyASTTransformationClass
  */
 @Retention(RetentionPolicy.SOURCE)
 @Target([ ElementType.METHOD, ElementType.TYPE])
-@GroovyASTTransformationClass(["org.codehaus.groovy.transform.AutoInterruptibleASTTransformation"])
-public @interface AutoInterrupt {
+@GroovyASTTransformationClass(["org.codehaus.groovy.transform.ThreadInterruptibleASTTransformation"])
+public @interface ThreadInterrupt {
     /**
      * By default, annotating anything in a source file ('Compilation Unit') will trigger this transformation
      * for all classes and scripts in that file. If you add the Annotation to an import statement, then all

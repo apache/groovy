@@ -1,14 +1,14 @@
 package groovy.transform
 
 import groovy.mock.interceptor.StubFor
-import org.codehaus.groovy.transform.AutoInterruptibleASTTransformation
+import org.codehaus.groovy.transform.ThreadInterruptibleASTTransformation
 
 /**
- * Test for @AutoInterrupt.
+ * Test for @ThreadInterrupt.
  *
  * @author Hamlet D'Arcy
  */
-class AutoInterruptTest extends GroovyTestCase {
+class ThreadInterruptTest extends GroovyTestCase {
     @Override protected void tearDown() {
         Thread.metaClass = null
     }
@@ -17,7 +17,7 @@ class AutoInterruptTest extends GroovyTestCase {
     public void testDefaultParameters_Method() {
 
         def c = new GroovyClassLoader().parseClass("""
-            @groovy.transform.AutoInterrupt
+            @groovy.transform.ThreadInterrupt
             class MyClass {
               def myMethod() { }
             }
@@ -35,7 +35,7 @@ class AutoInterruptTest extends GroovyTestCase {
     public void testNoMethodCheck_Method() {
 
         def c = new GroovyClassLoader().parseClass("""
-            @groovy.transform.AutoInterrupt(checkOnMethodStart = false)
+            @groovy.transform.ThreadInterrupt(checkOnMethodStart = false)
             class MyClass {
               def myMethod() { }
             }
@@ -52,7 +52,7 @@ class AutoInterruptTest extends GroovyTestCase {
     public void testDefaultParameters_ForLoop() {
 
         def c = new GroovyClassLoader().parseClass("""
-            @groovy.transform.AutoInterrupt
+            @groovy.transform.ThreadInterrupt
             class MyClass {
               def myMethod() {
                   for (int i in (1..99)) {
@@ -74,7 +74,7 @@ class AutoInterruptTest extends GroovyTestCase {
     public void testDefaultParameters_WhileLoop() {
 
         def c = new GroovyClassLoader().parseClass("""
-            @groovy.transform.AutoInterrupt
+            @groovy.transform.ThreadInterrupt
             class MyClass {
               def myMethod() {
                   int x = 99
@@ -97,7 +97,7 @@ class AutoInterruptTest extends GroovyTestCase {
     public void testDefaultParameters_Closure() {
 
         def c = new GroovyClassLoader().parseClass("""
-            @groovy.transform.AutoInterrupt
+            @groovy.transform.ThreadInterrupt
             class MyClass {
               def myMethod() {
                   99.times {
@@ -119,7 +119,7 @@ class AutoInterruptTest extends GroovyTestCase {
     public void testInterrupt_Method() {
 
         def c = new GroovyClassLoader().parseClass("""
-            @groovy.transform.AutoInterrupt
+            @groovy.transform.ThreadInterrupt
             class MyClass {
               def myMethod() { }
             }
@@ -135,7 +135,7 @@ class AutoInterruptTest extends GroovyTestCase {
     public void testInterrupt_ForLoop() {
 
         def c = new GroovyClassLoader().parseClass("""
-            @groovy.transform.AutoInterrupt
+            @groovy.transform.ThreadInterrupt
             class MyClass {
               def myMethod() {
                   for (int i in (1..99)) {
@@ -155,7 +155,7 @@ class AutoInterruptTest extends GroovyTestCase {
     public void testInterrupt_WhileLoop() {
 
         def c = new GroovyClassLoader().parseClass("""
-            @groovy.transform.AutoInterrupt
+            @groovy.transform.ThreadInterrupt
             class MyClass {
               def myMethod() {
                   int x = 99
@@ -176,7 +176,7 @@ class AutoInterruptTest extends GroovyTestCase {
     public void testInterrupt_Closure() {
 
         def c = new GroovyClassLoader().parseClass("""
-            @groovy.transform.AutoInterrupt
+            @groovy.transform.ThreadInterrupt
             class MyClass {
               def myMethod() {
                   99.times {
@@ -200,7 +200,7 @@ class AutoInterruptTest extends GroovyTestCase {
                 // this method should inherit the checks from the annotation defined later
             }
 
-            @groovy.transform.AutoInterrupt
+            @groovy.transform.ThreadInterrupt
             class MyClass {
 
               def myMethod() {
@@ -223,7 +223,7 @@ class AutoInterruptTest extends GroovyTestCase {
     public void testOnlyScriptAffected() {
 
         def script = '''
-            @groovy.transform.AutoInterrupt(applyToAllClasses = false)
+            @groovy.transform.ThreadInterrupt(applyToAllClasses = false)
             def scriptMethod() {
                 // should be affected
             }
@@ -249,7 +249,7 @@ class AutoInterruptTest extends GroovyTestCase {
     public void testAnnotationOnImport() {
 
         def script = '''
-            @groovy.transform.AutoInterrupt
+            @groovy.transform.ThreadInterrupt
             import java.lang.String
 
             3.times {
@@ -273,7 +273,7 @@ class AutoInterruptTest extends GroovyTestCase {
                 // this should not be affected
             }
 
-            @groovy.transform.AutoInterrupt(applyToAllClasses = false)
+            @groovy.transform.ThreadInterrupt(applyToAllClasses = false)
             class MyClass {
               def myMethod() {
                 // this should be affected
@@ -286,7 +286,7 @@ class AutoInterruptTest extends GroovyTestCase {
         def mocker = new StubFor(Thread.class)
         mocker.demand.currentThread(1..Integer.MAX_VALUE) { counter }
         mocker.use {
-            new GroovyShell(AutoInterruptibleASTTransformation.getClassLoader()).evaluate(script)
+            new GroovyShell(ThreadInterruptibleASTTransformation.getClassLoader()).evaluate(script)
         }
         // 1 is once for myMethod()
         assert 1 == counter.interruptedCheckCount
