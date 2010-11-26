@@ -2,6 +2,7 @@ package org.codehaus.groovy.runtime.memoize
 
 import java.lang.ref.SoftReference
 import java.util.concurrent.CyclicBarrier
+import java.util.concurrent.TimeUnit
 
 /**
  * @author Vaclav Pech
@@ -50,8 +51,8 @@ public class CacheCleanupTest extends GroovyTestCase {
                 barrier.await()
             }
         }
-        barrier.await()  //start threads
-        barrier.await()  //wait for threads to finish
+        barrier.await(30, TimeUnit.SECONDS)  //start threads
+        barrier.await(30, TimeUnit.SECONDS)  //wait for threads to finish
 
         assert cache.cache.size() == 2
     }
