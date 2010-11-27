@@ -53,10 +53,6 @@ public class ThreadInterruptibleASTTransformation extends ClassCodeVisitorSuppor
     private boolean checkOnMethodStart
     private boolean applyToAllClasses  
 
-    public ThreadInterruptibleASTTransformation() {
-
-    }
-    
     public void visit(ASTNode[] nodes, SourceUnit source) {
         if (nodes.length != 2 || !(nodes[0] instanceof AnnotationNode) || !(nodes[1] instanceof AnnotatedNode)) {
             internalError("Expecting [AnnotationNode, AnnotatedClass] but got: " + Arrays.asList(nodes))

@@ -103,7 +103,7 @@ public class AstBrowser {
                 size: prefs.frameSize,
                 iconImage: swing.imageIcon(groovy.ui.Console.ICON_PATH).image,
                 defaultCloseOperation: WindowConstants.DISPOSE_ON_CLOSE,
-                windowClosing : { event -> prefs.save(frame, splitterPane, mainSplitter, showScriptFreeForm, showScriptClass) } ) {
+                windowClosing : { event -> prefs.save(frame, splitterPane, mainSplitter, showScriptFreeForm, showScriptClass, phasePicker.selectedItem) } ) {
 
             menuBar {
                 menu(text: 'Show Script', mnemonic: 'S') {
@@ -125,7 +125,7 @@ public class AstBrowser {
                 label(text: "At end of Phase: ",
                         constraints: gbc(gridx: 0, gridy: 0, gridwidth: 1, gridheight: 1, weightx: 0, weighty: 0, anchor: WEST, fill: HORIZONTAL, insets: [2, 2, 2, 2]))
                 phasePicker = comboBox(items: CompilePhaseAdapter.values(),
-                        selectedItem: CompilePhaseAdapter.SEMANTIC_ANALYSIS,
+                        selectedItem: prefs.selectedPhase,
                         actionPerformed: {
                             compile(rootNode, swing, script(), phasePicker.selectedItem.phaseId)
                             decompile(phasePicker.selectedItem.phaseId, script())
@@ -299,6 +299,7 @@ class AstBrowserUiPreferences {
     final boolean showScriptFreeForm
     final boolean showScriptClass
     int decompiledSourceFontSize
+    final CompilePhaseAdapter selectedPhase
 
     def AstBrowserUiPreferences() {
         Preferences prefs = Preferences.userNodeForPackage(AstBrowserUiPreferences)
@@ -314,9 +315,13 @@ class AstBrowserUiPreferences {
         horizontalDividerLocation = prefs.getInt("horizontalSplitterLocation", 100)
         showScriptFreeForm = prefs.getBoolean("showScriptFreeForm", false)
         showScriptClass = prefs.getBoolean("showScriptClass", true)
+        int phase = prefs.getInt('compilerPhase', Phases.SEMANTIC_ANALYSIS)
+        selectedPhase = CompilePhaseAdapter.values().find {
+            it.phaseId == phase
+        }
     }
 
-    def save(frame, vSplitter, hSplitter, scriptFreeFormPref, scriptClassPref) {
+    def save(frame, vSplitter, hSplitter, scriptFreeFormPref, scriptClassPref, CompilePhaseAdapter phase) {
         Preferences prefs = Preferences.userNodeForPackage(AstBrowserUiPreferences)
         prefs.putInt("decompiledFontSize", decompiledSourceFontSize as int)
         prefs.putInt("frameX", frame.location.x as int)
@@ -327,6 +332,7 @@ class AstBrowserUiPreferences {
         prefs.putInt("horizontalSplitterLocation", hSplitter.dividerLocation)
         prefs.putBoolean("showScriptFreeForm", scriptFreeFormPref)
         prefs.putBoolean("showScriptClass", scriptClassPref)
+        prefs.putInt('compilerPhase', phase.phaseId)
     }
 }
 
