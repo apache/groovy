@@ -58,7 +58,7 @@ public class SwingBuilder extends FactoryBuilderSupport {
         registerFactory("buttonGroup", new ButtonGroupFactory())
         addAttributeDelegate(ButtonGroupFactory.&buttonGroupAttributeDelegate)
 
-        //object id delegage, for propertyNotFound
+        //object id delegate, for propertyNotFound
         addAttributeDelegate(SwingBuilder.&objectIDAttributeDelegate)
 
         addAttributeDelegate(SwingBuilder.&clientPropertyAttributeDelegate)
@@ -313,8 +313,8 @@ public class SwingBuilder extends FactoryBuilderSupport {
      * Utility method to run a closure outside of the EDT.
      * <p>
      * The closure is wrapped in a thread, and the thread is started
-     * immediatly, only if the current thread is the EDT, otherwise the
-     * closure will be called immediatly.
+     * immediately, only if the current thread is the EDT, otherwise the
+     * closure will be called immediately.
      *
      * @param c this closure is started outside of the EDT
      */
@@ -383,7 +383,7 @@ public class SwingBuilder extends FactoryBuilderSupport {
     public static LookAndFeel lookAndFeel(Map attributes = [:], Object laf = null, Closure initCode = null) {
         // if we get rid of this warning, we can make it static.
         //if (context) {
-        //    LOG.warning "For best result do not call lookAndFeel when it is a child of a SwingBuidler node, initializaiton of the Look and Feel may be inconsistant."
+        //    LOG.warning "For best result do not call lookAndFeel when it is a child of a SwingBuidler node, initialization of the Look and Feel may be inconsistent."
         //}
         LookAndFeelHelper.instance.lookAndFeel(laf, attributes, initCode)
     }
@@ -402,7 +402,7 @@ public class SwingBuilder extends FactoryBuilderSupport {
                     return _laf(laf)
                 }
             } catch (Throwable t) {
-                LOG.fine "Could not instantiate Look and Feel $laf because of ${t}. Attemting next option."
+                LOG.fine "Could not instantiate Look and Feel $laf because of ${t}. Attempting next option."
             }
         }
         LOG.warning "All Look and Feel options failed: $lafs"
@@ -479,7 +479,7 @@ public class SwingBuilder extends FactoryBuilderSupport {
                 condition = JComponent.WHEN_IN_FOCUSED_WINDOW
                 break
             default:
-                // let's be lenient and asign WHEN_FOCUSED by default
+                // let's be lenient and assign WHEN_FOCUSED by default
                 condition = JComponent.WHEN_FOCUSED
         }
         def actionKey = attributes.remove("actionKey")
