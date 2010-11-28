@@ -69,7 +69,7 @@ class MatteBorderFactory extends SwingBorderFactory {
             throw new RuntimeException("$name only supports the attributes [ icon: | color:]  [ size: | ( top: left: bottom: right: ) }")
         }
 
-        // spread list and milti-dispatch.  That's groovy!
+        // spread list and multi-dispatch.  That's groovy!
         return BorderFactory.createMatteBorder(*border, matte)
     }
 

@@ -25,7 +25,7 @@ package groovy.inspect.swingui;
  * can be reallocated. As requests are made of the sorter (like
  * getValueAt(row, col) it redirects them to its model via the mapping
  * array. That way the TableSorter appears to hold another copy of the table
- * with the rows in a different order. The sorting algorthm used is stable
+ * with the rows in a different order. The sorting algorithm used is stable
  * which means that it does not move around rows when its comparison
  * function returns 0 to denote that they are equivalent.
  *
@@ -223,7 +223,7 @@ space and avoid unnecessary heap allocation.
     // This is a home-grown implementation which we have not had time
     // to research - it may perform poorly in some circumstances. It
     // requires twice the space of an in-place algorithm and makes
-    // NlogN assigments shuttling the values between the two
+    // NlogN assignments shuttling the values between the two
     // arrays. The number of compares appears to vary between N-1 and
     // NlogN depending on the initial order but the main reason for
     // using it here is that, unlike qsort, it is stable.
@@ -243,7 +243,7 @@ space and avoid unnecessary heap allocation.
         ordered.  If so, no further comparisons are needed; the
         sub-array can just be copied.  The array must be copied rather
         than assigned otherwise sister calls in the recursion might
-        get out of sinc.  When the number of elements is three they
+        get out of sync.  When the number of elements is three they
         are partitioned so that the first set, [low, mid), has one
         element and and the second, [mid, high), has two. We skip the
         optimisation when the number of elements is three or less as

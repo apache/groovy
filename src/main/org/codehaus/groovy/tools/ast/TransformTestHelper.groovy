@@ -58,7 +58,7 @@ class TransformTestHelper {
     }
 
     /**
-     * Compiles the File into a Class applying the tranform specified in the constructor.
+     * Compiles the File into a Class applying the transform specified in the constructor.
      * @input input
      *      must be a groovy source file
      */
@@ -68,7 +68,7 @@ class TransformTestHelper {
     }
 
     /**
-     * Compiles the String into a Class applying the tranform specified in the constructor.
+     * Compiles the String into a Class applying the transform specified in the constructor.
      * @input input
      *      must be a valid groovy source string
      */

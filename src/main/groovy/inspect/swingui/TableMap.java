@@ -19,7 +19,7 @@ package groovy.inspect.swingui;
 
 /**
  * In a chain of data manipulators some behaviour is common. TableMap
- * provides most of this behavour and can be subclassed by filters
+ * provides most of this behaviour and can be subclassed by filters
  * that only need to override a handful of specific methods. TableMap
  * implements TableModel by routing all requests to its model, and
  * TableModelListener by routing all events to its listeners. Inserting

@@ -39,7 +39,7 @@ public class TextArgWidgetFactory extends AbstractFactory {
         Object widget = klass.newInstance();
 
         if (value instanceof String) {
-            // this does not create property setting order issues, since the value arg preceeds all attributes in the builder element
+            // this does not create property setting order issues, since the value arg precedes all attributes in the builder element
             InvokerHelper.setProperty(widget, "text", value);
         }
 

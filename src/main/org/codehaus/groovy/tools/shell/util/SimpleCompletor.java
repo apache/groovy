@@ -57,7 +57,7 @@ public class SimpleCompletor
         //
         
         if (list == null) {
-            throw new IllegalStateException("The loader closure did not return a list of candicates; found: " + obj);
+            throw new IllegalStateException("The loader closure did not return a list of candidates; found: " + obj);
         }
 
         Iterator iter = list.iterator();
@@ -78,7 +78,7 @@ public class SimpleCompletor
     }
 
     //
-    // NOTE: Duplicated (and augumented) from JLine sources to make it call getCandidates() to make the list more dynamic
+    // NOTE: Duplicated (and augmented) from JLine sources to make it call getCandidates() to make the list more dynamic
     //
 
     public int complete(final String buffer, final int cursor, final List clist) {

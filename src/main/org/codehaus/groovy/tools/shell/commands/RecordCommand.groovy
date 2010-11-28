@@ -63,7 +63,7 @@ class RecordCommand
         // result maybe null
 
         if (recording) {
-            // Useing String.valueOf() to prevent crazy exceptions
+            // Using String.valueOf() to prevent crazy exceptions
             writer.println("// RESULT: ${String.valueOf(result)}")
             writer.flush()
         }

@@ -58,7 +58,7 @@ class JTableMetaMethods {
         }
         TableModel model = table.model
         if (model instanceof javax.swing.table.DefaultTableModel) {
-            // could be groovier, but it works and is a well understookd idiom
+            // could be groovier, but it works and is a well understood idiom
             Map value = [:]
             TableColumnModel cmodel = table.columnModel
             for (int i = 0; i < cmodel.getColumnCount(); i++) {

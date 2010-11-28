@@ -25,7 +25,7 @@ import jline.MultiCompletor
 import org.codehaus.groovy.tools.shell.util.Logger
 
 /**
- * Support for running a {@link Shell} interactivly using the JLine library.
+ * Support for running a {@link Shell} interactively using the JLine library.
  *
  * @version $Id$
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
@@ -138,7 +138,7 @@ class CommandsMultiCompletor
         assert buffer != null
         
         //
-        // FIXME: This is a bit of a hack, I'm too lazy to rewrite a more efficent
+        // FIXME: This is a bit of a hack, I'm too lazy to rewrite a more efficient
         //        completor impl that is more dynamic than the jline.MultiCompletor version
         //        so just re-use it and reset the list as needed
         //

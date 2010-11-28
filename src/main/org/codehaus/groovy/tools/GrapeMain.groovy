@@ -290,7 +290,7 @@ if (cmd.hasOption('v')) {
 
 
 cmd.getOptionValues('D')?.each {String prop ->
-    def (k, v) = prop.split ('=', 2) as List // array multiple assignement quirk
+    def (k, v) = prop.split ('=', 2) as List // array multiple assignment quirk
     System.setProperty(k, v ?: "")
 }
 

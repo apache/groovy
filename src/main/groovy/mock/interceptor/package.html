@@ -6,7 +6,7 @@
     <p>The groovy.mock.interceptor is an all-groovy mock testing library.</p>
     <p>Terms:</p>
     <dl>
-        <dt>Callaborator</dt>
+        <dt>Collaborator</dt>
         <dd>An ordinary Groovy or Java class that's instance or class methods
         are to be called. Calling them can be time consuming or produce side effects that
         are unwanted when testing (e.g. database operations). </dd>
@@ -19,14 +19,14 @@
         <dd>An object that can be used to augment the Collaborator.
         Method calls to the Collaborator will be handled by the Mock, showing a <em>demanded</em>
         <em>behavior</em>. Method calls are <em>expected</em> to occur <em>strictly</em> in the <em>demanded</em>
-        sequence with a given <em>range</em> of cardinality. The <em>use</em> of a Mock implicitely
+        sequence with a given <em>range</em> of cardinality. The <em>use</em> of a Mock implicitly
         ends with <em>verifying</em> the <em>expectations</em>.
         </dd>
 
         <dt>Stub</dt>
         <dd>Much like a Mock but the <em>expectation</em> about sequences of method calls on the Collaborator is
         <em>loose</em>, i.e. calls may occur out of the demanded order as long as the <em>ranges</em>
-        of cardinality are met. The <em>use</em> of a Stub does <em>not</em> end with an implict
+        of cardinality are met. The <em>use</em> of a Stub does <em>not</em> end with an implicit
         <em>verification</em> since the stubbing effect is typically asserted on the Caller.
         An explicit call to <em>verify</em> can be issued to assert all demanded method call
         have been effected with the specified cardinality.</dd>
@@ -40,7 +40,7 @@
         <li>mocks Groovy and Java Collaborators (but Caller must be groovy)</li>
         <li>can mock all objects of a given class (or a single Groovy object)</li>
         <li>mocks even if Collaborator cannot be injected into the Caller</li>
-        <li>mocks even if Collaborator is not accesible on the Caller (no getter)</li>
+        <li>mocks even if Collaborator is not accessible on the Caller (no getter)</li>
         <li>demanded calls specified via recording calls on the Demand object (EasyMock style).</li>
         <li>cardinality specified as Ranges, default is 1..1; 'optional' can be achieved with 0..1</li>
         <li>behavior specified via Closures, allowing static or calculated return values, throwing exceptions,

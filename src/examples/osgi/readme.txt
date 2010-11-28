@@ -35,7 +35,7 @@ Once these properties are set, simply run ant to build:
 The build creates three jar files: 
   hello-bundle-imports-groovy.jar - OSGi bundle written in Groovy that resolves the 
         groovy-all Jar file from the container.
-  hello-bundle-contains-groovy.jar - OSGi bundle wriiten in Groovy that resolves the
+  hello-bundle-contains-groovy.jar - OSGi bundle written in Groovy that resolves the
         groovy-all Jar file from within itself. The container never sees Groovy. 
   hello-groovy-test-harness.jar - OSGi bundle that loads and tests one of the previous
         two services. 

@@ -51,7 +51,7 @@
 	    </manifest>
     </jar>
     
-    <!-- This jar includes the Groovy jar withinn itself-->
+    <!-- This jar includes the Groovy jar within itself-->
     <jar destfile="${build.dir}${file.separator}${hello.bundle.contains}">
 	    <fileset dir="${build.dir}${file.separator}hello-groovy-bundle"/>
 	    <fileset file="${groovy.bin.dir}${file.separator}${groovy.jar}" casesensitive="no" />

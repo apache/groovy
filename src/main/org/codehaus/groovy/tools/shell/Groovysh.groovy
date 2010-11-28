@@ -155,7 +155,7 @@ class Groovysh
                 break
 
             case ParseCode.INCOMPLETE:
-                // Save the current buffer so user can build up complex muli-line code blocks
+                // Save the current buffer so user can build up complex multi-line code blocks
                 buffers.updateSelected(current)
                 break
 
@@ -326,7 +326,7 @@ class Groovysh
         else {
             boolean sanitize = Preferences.sanitizeStackTrace
 
-            // Sanitize the stack trace unless we are inverbose mode, or the user has request otherwise
+            // Sanitize the stack trace unless we are in verbose mode, or the user has request otherwise
             if (!io.verbose && sanitize) {
                 cause = StackTraceUtils.deepSanitize(cause);
             }

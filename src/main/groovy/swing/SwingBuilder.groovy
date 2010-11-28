@@ -383,7 +383,7 @@ public class SwingBuilder extends FactoryBuilderSupport {
     public static LookAndFeel lookAndFeel(Map attributes = [:], Object laf = null, Closure initCode = null) {
         // if we get rid of this warning, we can make it static.
         //if (context) {
-        //    LOG.warning "For best result do not call lookAndFeel when it is a child of a SwingBuidler node, initialization of the Look and Feel may be inconsistent."
+        //    LOG.warning "For best result do not call lookAndFeel when it is a child of a SwingBuilder node, initialization of the Look and Feel may be inconsistent."
         //}
         LookAndFeelHelper.instance.lookAndFeel(laf, attributes, initCode)
     }

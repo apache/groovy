@@ -32,7 +32,7 @@ if (System.properties['java.version'] =~ /^1\.5/) {
     // use metal instead
     lookAndFeel('metal', boldFonts:false)
     
-    // we also need to turn on anti-alising ourselves
+    // we also need to turn on anti-aliasing ourselves
     key = InvokerHelper.getProperty('com.sun.java.swing.SwingUtilities2' as Class,
         'AA_TEXT_PROPERTY_KEY')
     addAttributeDelegate {builder, node, attributes ->

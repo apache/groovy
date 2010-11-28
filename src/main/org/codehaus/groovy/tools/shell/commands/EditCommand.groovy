@@ -60,7 +60,7 @@ class EditCommand
             log.debug("Executing: $cmd")
             def p = cmd.execute()
             
-            // Wait for it to finishe
+            // Wait for it to finish
             log.debug("Waiting for process: $p")
             p.waitFor()
 

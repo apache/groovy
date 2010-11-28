@@ -73,7 +73,7 @@ exitAction = action(
     closure: controller.&exit,
     mnemonic: 'X'
 // whether or not application exit should have an
-// accellerator is debatable in usability circles
+// accelerator is debatable in usability circles
 // at the very least a confirm dialog should dhow up
 //accelerator: shortcut('Q')
 )

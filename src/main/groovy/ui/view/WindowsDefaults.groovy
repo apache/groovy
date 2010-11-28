@@ -28,7 +28,7 @@ if (System.properties['os.version'] =~ /6\./) {
     styles.regular[StyleConstants.FontFamily] = 'Consolas'
     styles[StyleContext.DEFAULT_STYLE][StyleConstants.FontFamily] = 'Consolas'
 
-    // in JDK 1.5 we need to turn on anti-aliasing so consolas looks better
+    // in JDK 1.5 we need to turn on anti-aliasing so consoles looks better
     if (System.properties['java.version'] =~ /^1\.5/) {
         key = InvokerHelper.getProperty('com.sun.java.swing.SwingUtilities2' as Class,
             'AA_TEXT_PROPERTY_KEY')

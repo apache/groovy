@@ -20,7 +20,7 @@ import org.codehaus.groovy.syntax.Types
 /**
 * A ConfigObject at a simple level is a Map that creates configuration entries (other ConfigObjects) when referencing them.
 * This means that navigating to foo.bar.stuff will not return null but nested ConfigObjects which are of course empty maps
-* The Groovy truth can be used to check for the existance of "real" entries.
+* The Groovy truth can be used to check for the existence of "real" entries.
 *
 * @author Graeme Rocher
 * @since 1.5
@@ -63,7 +63,7 @@ class ConfigObject extends LinkedHashMap implements Writable {
 
     /**
      * Overrides the default getProperty implementation to create nested ConfigObject instances on demand
-     * for non-existant keys
+     * for non-existent keys
      */
     def getProperty(String name) {  
         if(name == 'configFile') return this.configFile
@@ -138,7 +138,7 @@ class ConfigObject extends LinkedHashMap implements Writable {
             }
             else {
                 if(configEntry instanceof Map && configEntry.size() > 0 && entry.value instanceof Map) {
-                    // recurse
+                    // recur
                     merge(configEntry, entry.value)
                }
                else {

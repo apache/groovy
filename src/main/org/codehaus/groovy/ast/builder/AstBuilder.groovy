@@ -57,7 +57,7 @@ public class AstBuilder {
      * and not from  {@link AstBuilder#buildFromCode(CompilePhase, boolean, Closure)} .
      *
      * The compiler saves the source code of the closure as a String within the Java class file. The String source
-     * of the closure will be visible and unobfuscated within the class file. If your Closure parameter contains
+     * of the closure will be visible and un-obfuscated within the class file. If your Closure parameter contains
      * sensitive data such as a hard-coded password then that data is free to be seen by anyone with the class file.
      * Do not store sensitive data within the closure parameter.
      *
@@ -122,7 +122,7 @@ Are you sure you are using it correctly?
         // find the block statement from the result, and unwrap it from one level.
         result.collect { node ->
             if (node instanceof BlockStatement) {
-                ((BlockStatement)node).statements[0] //unwrap the artifact of prepending the goto label                
+                ((BlockStatement)node).statements[0] //unwrap the artifact of pre-pending the goto label
             } else {
                 node
             }

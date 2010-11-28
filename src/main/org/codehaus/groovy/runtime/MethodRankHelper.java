@@ -394,13 +394,13 @@ public class MethodRankHelper{
 
     /**
      * This is a slightly modified version of the Damerau Levenshtein distance
-     * algorithm. It has a additional test to see if a charackter has switched case,
+     * algorithm. It has a additional test to see if a character has switched case,
      * in the original algorithm this counts as a substitution.
      * The "cost" for a substitution is given as 10 instead of 1 in this version,
      * this enables transpositions and case modifications to have a lower cost than
      * substitutions.
      *
-     * Currently the lowercase versions of t_j and s_i isnt cached, its probable
+     * Currently the lowercase versions of t_j and s_i isn't cached, its probable
      * that some speed could be gained from this.
      * 
      * This version is based on Chas Emerick's implementation of Lenenshtein Distance

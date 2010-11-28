@@ -19,7 +19,7 @@ package org.codehaus.groovy.tools.shell
 import jline.Completor
 
 /**
- * Provides the interface required for command extentions.
+ * Provides the interface required for command extensions.
  *
  * @version $Id$
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>

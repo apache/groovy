@@ -41,7 +41,7 @@ public class BindFactory extends AbstractFactory {
         syntheticBindings.putAll(JTextComponentProperties.syntheticProperties)
 
         // covers JCheckBox.selected
-        // covers JChecBoxMenuItem.selected
+        // covers JCheckBoxMenuItem.selected
         // covers JRadioButton.selected
         // covers JRadioButtonMenuItem.selected
         // covers JToggleButton.selected
@@ -162,7 +162,7 @@ public class BindFactory extends AbstractFactory {
                 Closure queryValue = (Closure) attributes.remove("sourceValue")
                 sb = new ClosureSourceBinding(queryValue)
             } else {
-                // soruce value is the property value
+                // source value is the property value
                 sb = pb
             }
 
@@ -256,7 +256,7 @@ public class BindFactory extends AbstractFactory {
             }
             currentClass = currentClass.getSuperclass()
         }
-        //TODO inspect the bean info and throw an error if the property is not obserbable and not bind:false?
+        //TODO inspect the bean info and throw an error if the property is not observable and not bind:false?
         return psb
     }
 

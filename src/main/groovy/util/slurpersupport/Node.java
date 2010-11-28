@@ -249,20 +249,20 @@ public class Node implements Writable {
 
             if (tag == null) {
                 // we have to declare the namespace - choose a tag
-                tag = findNamespaceTag(local, namespaceURI);  // If the namespace has been decared in the GPath expression use that tag
+                tag = findNamespaceTag(local, namespaceURI);  // If the namespace has been declared in the GPath expression use that tag
 
                 if (tag == null || tag.length() == 0) {
-                    tag = findNamespaceTag(tagHints, namespaceURI);  // If the namespace has been used in the parse documant use that tag
+                    tag = findNamespaceTag(tagHints, namespaceURI);  // If the namespace has been used in the parse document use that tag
                 }
 
                 if (tag == null || tag.length() == 0) { // otherwise make up a new tag and check it has not been used before
                     int suffix = 0;
 
                     do {
-                        final String posibleTag = "tag" + suffix++;
+                        final String possibleTag = "tag" + suffix++;
 
-                        if (!pending.containsKey(posibleTag) && !current.containsKey(posibleTag) && !local.containsKey(posibleTag)) {
-                            tag = posibleTag;
+                        if (!pending.containsKey(possibleTag) && !current.containsKey(possibleTag) && !local.containsKey(possibleTag)) {
+                            tag = possibleTag;
                         }
                     } while (tag == null);
                 }

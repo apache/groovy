@@ -45,7 +45,7 @@ import org.codehaus.groovy.syntax.SyntaxException
  * into source code and rewrites the AST so that the "from string" 
  * builder is invoked on the source. In order for this to work, the 
  * closure source must be given a goto label. It is the "from string" 
- * approach's responsibilty to remove the BlockStatement created
+ * approach's responsibility to remove the BlockStatement created
  * by the label. 
  *
  * @author Hamlet D'Arcy

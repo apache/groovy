@@ -18,7 +18,7 @@ package groovy.swing.factory
 import javax.swing.BorderFactory
 
 /**
- * accepts values in leiu of attributes:
+ * accepts values in lieu of attributes:
  *  int - all of top, left, bottom, right
  *  [int, int, int, int] - top, left, bottom, right
  * accepts attributes when no value present:

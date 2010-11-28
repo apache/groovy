@@ -20,7 +20,7 @@ import org.codehaus.groovy.vmplugin.v6.Java6;
 
 /**
  * Java 7 based functions. Currently just a stub but you can
- * add your own methods to your own version and place it on the claspath
+ * add your own methods to your own version and place it on the classpath
  * ahead of this one.
  *
  * @author Jochen Theodorou

@@ -73,7 +73,7 @@ public class ActionFactory extends AbstractFactory {
         
         for (entry in attributes.entrySet()) {
             String propertyName = (String) entry.getKey()
-            // first attempt to set as a straight proeprty
+            // first attempt to set as a straight property
             try {
                 InvokerHelper.setProperty(action, propertyName, entry.getValue())
             } catch (MissingPropertyException mpe) {

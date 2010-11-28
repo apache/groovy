@@ -604,7 +604,7 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
     @Override
     public void visitTupleExpression(TupleExpression expression) {
         print '('
-        visitExpressionsAndCommaSeperate(expression?.expressions)
+        visitExpressionsAndCommaSeparate(expression?.expressions)
         print ')'
     }
 
@@ -778,7 +778,7 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
     @Override
     public void visitMapExpression(MapExpression expression) {
         print '['
-        visitExpressionsAndCommaSeperate(expression?.mapEntryExpressions)
+        visitExpressionsAndCommaSeparate(expression?.mapEntryExpressions)
         print ']'
     }
 
@@ -796,7 +796,7 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
     @Override
     public void visitListExpression(ListExpression expression) {
         print '['
-        visitExpressionsAndCommaSeperate(expression?.expressions)
+        visitExpressionsAndCommaSeparate(expression?.expressions)
         print ']'
     }
 
@@ -940,11 +940,11 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
         print 'new '
         visitType expression?.elementType
         print '['
-        visitExpressionsAndCommaSeperate(expression?.sizeExpression)
+        visitExpressionsAndCommaSeparate(expression?.sizeExpression)
         print ']'
     }
 
-    private void visitExpressionsAndCommaSeperate(List<? super Expression> expressions) {
+    private void visitExpressionsAndCommaSeparate(List<? super Expression> expressions) {
         boolean first = true
         expressions?.each {
             if (!first) {

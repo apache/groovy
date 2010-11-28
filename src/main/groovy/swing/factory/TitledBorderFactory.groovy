@@ -21,7 +21,7 @@ import javax.swing.border.Border
 import javax.swing.border.TitledBorder
 
 /**
- * The node must be called with either a value arugment or a title: attribute. <br />
+ * The node must be called with either a value argument or a title: attribute. <br />
  * The following attributes are optional. <br />
  *    position: one of "default", "aboveTop", "top", "belowTop", "aboveBottom", "bottom", "belowBottom", or a constant from javax.swing.border.TitledBorder
  *    justification: one of "default", "left", "center", "right", "leading", "trailing", or a constant from javax.swing.border.TitledBorder

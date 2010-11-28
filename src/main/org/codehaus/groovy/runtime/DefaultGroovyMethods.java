@@ -890,7 +890,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * 'Case' implementation for a GString, which simply calls the equivalet method for String.
+     * 'Case' implementation for a GString, which simply calls the equivalent method for String.
      *
      * @param caseValue   the case value
      * @param switchValue the switch value
@@ -4558,7 +4558,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self          a String object
      * @param numberOfChars the total number of characters
-     * @param padding       the charaters used for padding
+     * @param padding       the characters used for padding
      * @return the String padded to the left
      * @since 1.0
      */
