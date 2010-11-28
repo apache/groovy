@@ -16,10 +16,11 @@
 
 package groovy.inspect.swingui
 
-
 import groovy.swing.SwingBuilder
 import java.awt.Cursor
-import static java.awt.GridBagConstraints.*
+import java.awt.Font
+import java.util.prefs.Preferences
+import javax.swing.JSplitPane
 import javax.swing.UIManager
 import javax.swing.WindowConstants
 import javax.swing.event.TreeSelectionEvent
@@ -29,20 +30,11 @@ import javax.swing.tree.DefaultTreeModel
 import javax.swing.tree.TreeNode
 import javax.swing.tree.TreeSelectionModel
 import org.codehaus.groovy.control.Phases
-import java.util.prefs.Preferences
-import javax.swing.JSplitPane
-import javax.swing.SwingUtilities
-import org.codehaus.groovy.ast.ClassNode
-import org.codehaus.groovy.ast.builder.AstBuilder
-import org.codehaus.groovy.control.CompilePhase
-import javax.swing.JFrame
-import org.codehaus.groovy.control.CompilationUnit
-import org.codehaus.groovy.control.CompilerConfiguration
-import org.codehaus.groovy.control.CompilationFailedException
-import org.codehaus.groovy.control.CompilationUnit.PrimaryClassNodeOperation
-import org.codehaus.groovy.control.SourceUnit
-import org.codehaus.groovy.classgen.GeneratorContext
-import java.awt.Font
+import static java.awt.GridBagConstraints.*
+import javax.swing.JTree
+import javax.swing.JPanel
+import javax.swing.JLabel
+import java.awt.BorderLayout
 
 /**
  * This object is a GUI for looking at the AST that Groovy generates. 
@@ -127,14 +119,14 @@ public class AstBrowser {
                 phasePicker = comboBox(items: CompilePhaseAdapter.values(),
                         selectedItem: prefs.selectedPhase,
                         actionPerformed: {
-                            compile(rootNode, swing, script(), phasePicker.selectedItem.phaseId)
                             decompile(phasePicker.selectedItem.phaseId, script())
+                            compile(jTree, rootNode, script(), phasePicker.selectedItem.phaseId)
                         },
                         constraints: gbc(gridx: 1, gridy: 0, gridwidth: 1, gridheight: 1, weightx: 1.0, weighty: 0, anchor: NORTHWEST, fill: NONE, insets: [2, 2, 2, 2]))
                 button(text: 'Refresh',
                         actionPerformed: {
-                            compile(rootNode, swing, script(), phasePicker.selectedItem.phaseId)
                             decompile(phasePicker.selectedItem.phaseId, script())
+                            compile(jTree, rootNode, script(), phasePicker.selectedItem.phaseId)
                         },
                         constraints: gbc(gridx: 2, gridy: 0, gridwidth: 1, gridheight: 1, weightx: 0, weighty: 0, anchor: NORTHEAST, fill: NONE, insets: [2, 2, 2, 3]))
                 splitterPane = splitPane(
@@ -213,11 +205,11 @@ public class AstBrowser {
         frame.show()
 
         String source = script()
-        compile(rootNode, swing, source, phasePicker.selectedItem.phaseId)
+        decompile(phasePicker.selectedItem.phaseId, source)
+        compile(jTree, rootNode, source, phasePicker.selectedItem.phaseId)
         jTree.rootVisible = false
         jTree.showsRootHandles = true   // some OS's require this as a step to show nodes
 
-        decompile(phasePicker.selectedItem.phaseId, source)
     }
 
     void largerFont(EventObject evt = null) {
@@ -257,6 +249,8 @@ public class AstBrowser {
     void decompile(phaseId, source) {
 
         decompiledSource.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+        decompiledSource.text = 'Loading...';
+
         swing.doOutside {
             try {
 
@@ -276,12 +270,23 @@ public class AstBrowser {
         }
     }
 
-    void compile(node, swing, String script, int compilePhase) {
-        frame.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR))
-        def nodeMaker = new SwingTreeNodeMaker() 
-        def adapter = new ScriptToTreeNodeAdapter(classLoader, showScriptFreeForm, showScriptClass, nodeMaker)
-        node.setRoot(adapter.compile(script, compilePhase))
-        frame.setCursor(Cursor.defaultCursor)
+    void compile(jTree, node, String script, int compilePhase) {
+        jTree.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR))
+        Thread.start {
+            try {
+                def nodeMaker = new SwingTreeNodeMaker()
+                def adapter = new ScriptToTreeNodeAdapter(classLoader, showScriptFreeForm, showScriptClass, nodeMaker)
+                def result = adapter.compile(script, compilePhase)
+                swing.doLater {
+                    node.setRoot(result)
+                    jTree.setCursor(Cursor.defaultCursor)
+                }
+            } catch (Throwable t) {
+                swing.doLater {
+                    jTree.setCursor(Cursor.defaultCursor)
+                }
+            }
+        }
     }
 }
 

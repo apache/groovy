@@ -259,7 +259,7 @@ public class SwingBuilder extends FactoryBuilderSupport {
     }
 
     /**
-     * Utilitiy method to run a closure in EDT,
+     * Utility method to run a closure in EDT,
      * using <code>SwingUtilities.invokeAndWait</cod>.
      *
      * @param c this closure is run in the EDT
