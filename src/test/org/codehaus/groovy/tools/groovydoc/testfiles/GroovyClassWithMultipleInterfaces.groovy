@@ -1,4 +1,4 @@
 package org.codehaus.groovy.tools.groovydoc.testfiles
 
-class GroovyClassWithMultipleInterfaces implements GroovyInterface1, JavaInterface1 {
+abstract class GroovyClassWithMultipleInterfaces implements GroovyInterface1, JavaInterface1, Runnable {
 }
