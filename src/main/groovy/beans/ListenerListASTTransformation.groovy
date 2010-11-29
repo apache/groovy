@@ -105,15 +105,10 @@ class ListenerListASTTransformation implements ASTTransformation, Opcodes {
             }
         }
 
-        def synchronize = node.getMember('synchronize') 
+        def synchronize = node.getMember('synchronize')
         addAddListener(source, node, declaringClass, field, listener, name, synchronize)
         addRemoveListener(source, node, declaringClass, field, listener, name, synchronize)
         addGetListeners(source, node, declaringClass, field, listener, name, synchronize)
-
-        def constructors = [[event]]
-        event.declaredConstructors.each { con ->
-            constructors << con.parameters.type
-        }
 
         fireList.each {
             def parts = it.split('->')
@@ -123,7 +118,7 @@ class ListenerListASTTransformation implements ASTTransformation, Opcodes {
                 boolean mapListener = listener.isDerivedFrom(ClassHelper.make(Map)) || listener.implementsInterface(ClassHelper.make(Map))
                 eventMethod = (listener.abstractMethods.name.contains(fireMethod)) ? fireMethod : (mapListener ? fireMethod : listener.abstractMethods[0].name)
             }
-            addFireMethods(source, node, declaringClass, field, event, eventMethod, fireMethod, constructors)
+            addFireMethods(source, node, declaringClass, field, event, eventMethod, fireMethod, event)
         }
     }
 
@@ -131,16 +126,16 @@ class ListenerListASTTransformation implements ASTTransformation, Opcodes {
      * Adds the add&lt;Listener&gt; method like:
      * <p/>
      * <pre>
-     * synchronized void add${name.capitalize}(${listener.name} listener) {*   if (listener == null)
-     *     return
-     *   if (${field.name} == null)
-     *     ${field.name} = []
-     *   ${field.name}.add(listener)
+     * synchronized void add${name.capitalize}(${listener.name} listener) {*     if (listener == null)
+     *         return
+     *     if (${field.name} == null)
+     *        ${field.name} = []
+     *     ${field.name}.add(listener)
      *}* </pre>
      */
     void addAddListener(SourceUnit source, AnnotationNode node, ClassNode declaringClass, FieldNode field, ClassNode listener, String name, synchronize) {
 
-        def methodModifiers = synchronize ? Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNCHRONIZED : Opcodes.ACC_PUBLIC 
+        def methodModifiers = synchronize ? Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNCHRONIZED : Opcodes.ACC_PUBLIC
         def methodReturnType = ClassHelper.make(Void.TYPE)
         def methodName = "add${name.capitalize()}"
         def methodParameter = [new Parameter(listener, 'listener')] as Parameter[]
@@ -188,11 +183,11 @@ class ListenerListASTTransformation implements ASTTransformation, Opcodes {
      * Adds the remove<Listener> method like:
      * <p/>
      * <pre>
-     * synchronized void remove${name.capitalize}(${listener.name} listener) {*   if (listener == null)
-     *     return
-     *   if (${field.name} == null)
-     *     ${field.name} = []
-     *   ${field.name}.remove(listener)
+     * synchronized void remove${name.capitalize}(${listener.name} listener) {*     if (listener == null)
+     *         return
+     *     if (${field.name} == null)
+     *         ${field.name} = []
+     *     ${field.name}.remove(listener)
      *}* </pre>
      */
     void addRemoveListener(SourceUnit source, AnnotationNode node, ClassNode declaringClass, FieldNode field, ClassNode listener, String name, synchronize) {
@@ -244,9 +239,9 @@ class ListenerListASTTransformation implements ASTTransformation, Opcodes {
      * Adds the get&lt;Listener&gt;s method like:
      * <p/>
      * <pre>
-     * synchronized ${name.capitalize}[] get${name.capitalize}s() {*   def __result = []
+     * synchronized ${name.capitalize}[] get${name.capitalize}s() {*     def __result = []
      *     if (${field.name} != null)
-     *       __result.addAll(${field.name})
+     *         __result.addAll(${field.name})
      *     return __result as ${name.capitalize}[]
      *}* </pre>
      */
@@ -293,77 +288,74 @@ class ListenerListASTTransformation implements ASTTransformation, Opcodes {
      * Adds the fire&lt;Event&gt; methods like:
      * <p/>
      * <pre>
-     * void fire${fireMethod.capitalize()}(${parameterList.join(', ')}){*   if (${field.name} != null) {*     def __list = new ArrayList(${field.name})
-     *     __list.each{ listener ->
-     *         listener.$eventMethod(${evt})
-     *}*}*}* </pre>
+     * void fire${fireMethod.capitalize()}(${parameterList.join(', ')}) {
+     *     if (${field.name} != null) {
+     *         def __list = new ArrayList(${field.name})
+     *         __list.each { listener ->
+     *             listener.$eventMethod(${evt})
+     *         }
+     *     }
+     * }
+     *  </pre>
      */
-    void addFireMethods(SourceUnit source, AnnotationNode node, ClassNode declaringClass, FieldNode field, ClassNode event, String eventMethod, String fireMethod, List constructors) {
-        constructors.each { con ->
-            def parameters = []
-            def parameterMap = [:] as LinkedHashMap
-            def parameterList = []
-            con.eachWithIndex { item, idx ->
-                parameters << new Parameter(item, "p$idx")
-                parameterList << "$item.name p$idx"
-                parameterMap["p$idx"] = item
-            }
-            def methodModifiers = Opcodes.ACC_PUBLIC
-            def methodReturnType = ClassHelper.make(Void.TYPE)
-            def methodName = "fire${fireMethod.capitalize()}"
-            def methodParameter = parameters as Parameter[]
+    void addFireMethods(SourceUnit source, AnnotationNode node, ClassNode declaringClass, FieldNode field, ClassNode event, String eventMethod, String fireMethod, Object constructorType) {
+        def parameterMap = [p0: constructorType] as LinkedHashMap
+        def parameterList = ["$constructorType.name p0"]
 
-            if (!declaringClass.hasMethod(methodName, methodParameter)) {
-                def args = new ArgumentListExpression()
-                if (parameterMap.size() == 1 && parameterMap.p0 == event) {
-                    args.addExpression(new VariableExpression('p0'))
-                } else {
-                    ArgumentListExpression constrArgs = new ArgumentListExpression()
-                    parameterMap.keySet().each {
-                        constrArgs.addExpression(new VariableExpression(it))
-                    }
-                    args.addExpression(new ConstructorCallExpression(event, constrArgs))
+        def methodReturnType = ClassHelper.make(Void.TYPE)
+        def methodName = "fire${fireMethod.capitalize()}"
+        def methodParameter = [new Parameter(constructorType, "p0")] as Parameter[]
+
+        if (!declaringClass.hasMethod(methodName, methodParameter)) {
+            def args = new ArgumentListExpression()
+            if (parameterMap.size() == 1 && parameterMap.p0 == event) {
+                args.addExpression(new VariableExpression('p0'))
+            } else {
+                ArgumentListExpression constrArgs = new ArgumentListExpression()
+                parameterMap.keySet().each {
+                    constrArgs.addExpression(new VariableExpression(it))
                 }
-
-                BlockStatement block = new BlockStatement()
-                block.addStatements([
-                        new IfStatement(
-                                new BooleanExpression(
-                                        new BinaryExpression(
-                                                new VariableExpression(field.name),
-                                                Token.newSymbol(Types.COMPARE_NOT_EQUAL, 0, 0),
-                                                ConstantExpression.NULL
-                                        )
-                                ),
-                                new BlockStatement([
-                                        new ExpressionStatement(
-                                                new DeclarationExpression(
-                                                        new VariableExpression('__list', ClassHelper.make(ArrayList)),
-                                                        Token.newSymbol(Types.EQUALS, 0, 0),
-                                                        new ConstructorCallExpression(ClassHelper.make(ArrayList), new ArgumentListExpression(
-                                                                new VariableExpression(field.name)
-                                                        ))
-                                                )
-                                        ),
-                                        new ForStatement(
-                                                new Parameter(ClassHelper.DYNAMIC_TYPE, 'listener'),
-                                                new VariableExpression('__list'),
-                                                new BlockStatement([
-                                                        new ExpressionStatement(
-                                                                new MethodCallExpression(
-                                                                        new VariableExpression('listener'),
-                                                                        eventMethod,
-                                                                        args
-                                                                )
-                                                        )
-                                                ], new VariableScope())
-                                        )
-                                ], new VariableScope()),
-                                new EmptyStatement()
-                        )
-                ])
-                declaringClass.addMethod(new MethodNode(methodName, methodModifiers, methodReturnType, methodParameter, [] as ClassNode[], block))
+                args.addExpression(new ConstructorCallExpression(event, constrArgs))
             }
+
+            BlockStatement block = new BlockStatement()
+            block.addStatements([
+                    new IfStatement(
+                            new BooleanExpression(
+                                    new BinaryExpression(
+                                            new VariableExpression(field.name),
+                                            Token.newSymbol(Types.COMPARE_NOT_EQUAL, 0, 0),
+                                            ConstantExpression.NULL
+                                    )
+                            ),
+                            new BlockStatement([
+                                    new ExpressionStatement(
+                                            new DeclarationExpression(
+                                                    new VariableExpression('__list', ClassHelper.make(ArrayList)),
+                                                    Token.newSymbol(Types.EQUALS, 0, 0),
+                                                    new ConstructorCallExpression(ClassHelper.make(ArrayList), new ArgumentListExpression(
+                                                            new VariableExpression(field.name)
+                                                    ))
+                                            )
+                                    ),
+                                    new ForStatement(
+                                            new Parameter(ClassHelper.DYNAMIC_TYPE, 'listener'),
+                                            new VariableExpression('__list'),
+                                            new BlockStatement([
+                                                    new ExpressionStatement(
+                                                            new MethodCallExpression(
+                                                                    new VariableExpression('listener'),
+                                                                    eventMethod,
+                                                                    args
+                                                            )
+                                                    )
+                                            ], new VariableScope())
+                                    )
+                            ], new VariableScope()),
+                            new EmptyStatement()
+                    )
+            ])
+            declaringClass.addMethod(new MethodNode(methodName, Opcodes.ACC_PUBLIC, methodReturnType, methodParameter, [] as ClassNode[], block))
         }
     }
 }
