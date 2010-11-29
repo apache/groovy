@@ -1127,7 +1127,6 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     public void visitTryCatchFinally(TryCatchStatement statement) {
-        onLineNumber(statement, "visitTryCatchFinally");
         visitStatement(statement);
 
         Statement tryStatement = statement.getTryStatement();
