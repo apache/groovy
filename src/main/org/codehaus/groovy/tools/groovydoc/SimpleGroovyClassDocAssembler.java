@@ -191,10 +191,10 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
         List<GroovySourceAST> types = new ArrayList<GroovySourceAST>();
         for (AST child = t.getFirstChild(); child != null; child = child.getNextSibling()) {
             GroovySourceAST groovySourceAST = (GroovySourceAST) child;
-            if (groovySourceAST.getType() == IDENT) {
+            if (groovySourceAST.getType() == TYPE) {
+                types.add((GroovySourceAST) groovySourceAST.getFirstChild());
+            } else {
                 types.add(groovySourceAST);
-            }else if (groovySourceAST.getType() == TYPE) {
-                types.add(groovySourceAST.childOfType(IDENT));
             }
         }
         return types;
@@ -570,7 +570,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
 
     // preempt resolve as info is partially available here (star imports won't match here)
     private String extractName(GroovySourceAST typeNode) {
-        String typeName = typeNode.getText();
+        String typeName = buildName(typeNode);
         if (typeName.indexOf("/") == -1) {
             String slashName = "/" + typeName;
             for (String name : importedClassesAndPackages) {
@@ -580,6 +580,20 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
             }
         }
         return typeName;
+    }
+
+    private String buildName(GroovySourceAST t) {
+        if (t != null) {
+            if (t.getType() == DOT) {
+                GroovySourceAST firstChild = (GroovySourceAST) t.getFirstChild();
+                GroovySourceAST secondChild = (GroovySourceAST) firstChild.getNextSibling();
+                return (buildName(firstChild) + "/" + buildName(secondChild));
+            }
+            if (t.getType() == IDENT) {
+                return t.getText();
+            }
+        }
+        return "";
     }
 
     private String getTypeOrDefault(GroovySourceAST t) {

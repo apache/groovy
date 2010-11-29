@@ -203,10 +203,12 @@ public class GroovyDocToolTest extends GroovySwingTestCase {
         String groovyClassDoc = output.getText(MOCK_DIR + "/org/codehaus/groovy/tools/groovydoc/testfiles/GroovyInterfaceWithMultipleInterfaces.html");
         assertTrue(groovyClassDoc.indexOf("<interface>JavaInterface1</interface>") > 0);
         assertTrue(groovyClassDoc.indexOf("<interface>GroovyInterface1</interface>") > 0);
+        assertTrue(groovyClassDoc.indexOf("<interface>Runnable</interface>") > 0);
 
         String javaClassDoc = output.getText(MOCK_DIR + "/org/codehaus/groovy/tools/groovydoc/testfiles/JavaInterfaceWithMultipleInterfaces.html");
         assertTrue(javaClassDoc.indexOf("<interface>JavaInterface1</interface>") > 0);
         assertTrue(javaClassDoc.indexOf("<interface>GroovyInterface1</interface>") > 0);
+        assertTrue(javaClassDoc.indexOf("<interface>Runnable</interface>") > 0);
     }
 
     public void testImplementsClauseWithMultipleInterfaces() throws Exception {
@@ -222,10 +224,31 @@ public class GroovyDocToolTest extends GroovySwingTestCase {
         String groovyClassDoc = output.getText(MOCK_DIR + "/org/codehaus/groovy/tools/groovydoc/testfiles/GroovyClassWithMultipleInterfaces.html");
         assertTrue(groovyClassDoc.indexOf("<interface>JavaInterface1</interface>") > 0);
         assertTrue(groovyClassDoc.indexOf("<interface>GroovyInterface1</interface>") > 0);
+        assertTrue(groovyClassDoc.indexOf("<interface>Runnable</interface>") > 0);
 
         String javaClassDoc = output.getText(MOCK_DIR + "/org/codehaus/groovy/tools/groovydoc/testfiles/JavaClassWithMultipleInterfaces.html");
         assertTrue(javaClassDoc.indexOf("<interface>JavaInterface1</interface>") > 0);
         assertTrue(javaClassDoc.indexOf("<interface>GroovyInterface1</interface>") > 0);
+        assertTrue(javaClassDoc.indexOf("<interface>Runnable</interface>") > 0);
+    }
+
+    public void testFullyQualifiedNamesInImplementsClause() throws Exception {
+        List<String> srcList = new ArrayList<String>();
+        srcList.add("org/codehaus/groovy/tools/groovydoc/testfiles/GroovyClassWithMultipleInterfaces.groovy");
+        srcList.add("org/codehaus/groovy/tools/groovydoc/testfiles/JavaClassWithMultipleInterfaces.java");
+        srcList.add("org/codehaus/groovy/tools/groovydoc/testfiles/GroovyInterface1.groovy");
+        srcList.add("org/codehaus/groovy/tools/groovydoc/testfiles/JavaInterface1.java");
+        xmlToolForTests.add(srcList);
+        MockOutputTool output = new MockOutputTool();
+        xmlToolForTests.renderToOutput(output, MOCK_DIR);
+
+        String groovyClassDoc = output.getText(MOCK_DIR + "/org/codehaus/groovy/tools/groovydoc/testfiles/GroovyClassWithMultipleInterfaces.html");
+        assertTrue(groovyClassDoc.indexOf("<interface>GroovyInterface1</interface>") > 0);
+        assertTrue(groovyClassDoc.indexOf("<interface>Runnable</interface>") > 0);
+
+        String javaClassDoc = output.getText(MOCK_DIR + "/org/codehaus/groovy/tools/groovydoc/testfiles/JavaClassWithMultipleInterfaces.html");
+        assertTrue(javaClassDoc.indexOf("<interface>JavaInterface1</interface>") > 0);
+        assertTrue(javaClassDoc.indexOf("<interface>Runnable</interface>") > 0);
     }
 
     public void testDefaultPackage() throws Exception {
