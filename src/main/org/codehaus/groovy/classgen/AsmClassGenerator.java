@@ -644,7 +644,6 @@ public class AsmClassGenerator extends ClassGenerator {
     }
     
     public void visitTryCatchFinally(TryCatchStatement statement) {
-        onLineNumber(statement, "visitTryCatchFinally");
         visitStatement(statement);
         MethodVisitor mv = controller.getMethodVisitor();
         CompileStack compileStack = controller.getCompileStack();
