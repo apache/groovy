@@ -1336,14 +1336,18 @@ public class AsmClassGenerator extends ClassGenerator {
             String name = expression.getPropertyAsString();
             if (name != null) {
                 FieldNode field = null;
+                boolean privateSuperField = false;
                 if (isSuperExpression(objectExpression)) {
                     field = controller.getClassNode().getSuperClass().getDeclaredField(name);
+                    if (field != null && ((field.getModifiers() & ACC_PRIVATE) != 0)) {
+                    	privateSuperField = true;
+                    }
                 } else {
                 	if (controller.isNotExplicitThisInClosure(expression.isImplicitThis())) {
                         field = controller.getClassNode().getDeclaredField(name);
                 	}
                 }
-                if (field != null) {
+                if (field != null && !privateSuperField) {//GROOVY-4497: don't visit super field if it is private 
                     visitFieldExpression(new FieldExpression(field));
                     return;
                 }
