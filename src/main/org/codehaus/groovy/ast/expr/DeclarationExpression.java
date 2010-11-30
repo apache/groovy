@@ -52,7 +52,17 @@ public class DeclarationExpression extends BinaryExpression {
     public void visit(GroovyCodeVisitor visitor) {
         visitor.visitDeclarationExpression(this);
     }
-    
+
+    /**
+     * This method returns the left hand side of the declaration cast to the VariableExpression type.
+     * This is an unsafe method to call. In a multiple assignment statement, the left hand side will
+     * be an ArgumentListExpression and a ClassCastException will occur.
+     * @return
+     *      left hand side of normal variable declarations
+     * @deprecated This is an unsafe method to call. In a multiple assignment statement, the left hand side will
+     * be an ArgumentListExpression and a ClassCastException will occur. 
+     *
+     */
     public VariableExpression getVariableExpression() {
         return (VariableExpression) this.getLeftExpression();
     }

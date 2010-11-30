@@ -18,6 +18,12 @@ package groovy.inspect.swingui
 import org.codehaus.groovy.control.Phases
 import javax.swing.tree.TreeNode
 import junit.framework.AssertionFailedError
+import org.codehaus.groovy.ast.expr.DeclarationExpression
+import org.codehaus.groovy.ast.expr.ArgumentListExpression
+import org.codehaus.groovy.ast.expr.VariableExpression
+import org.codehaus.groovy.syntax.Token
+import org.codehaus.groovy.ast.expr.ListExpression
+import org.codehaus.groovy.ast.expr.ConstantExpression
 
 /**
  * Unit test for ScriptToTreeNodeAdapter.
@@ -226,6 +232,18 @@ public class ScriptToTreeNodeAdapterTest extends GroovyTestCase {
                         eq('Spread - *args'),
                         startsWith('Variable - args : java.lang.Object'),
                         eq('Parameter - args'),
+                ]
+        )
+    }
+
+    public void testMultipleAssignments() {
+        assertTreeStructure(
+                " def (x, y) = [1, 2] ",
+                [
+                        startsWith('BlockStatement'),
+                        startsWith('ExpressionStatement'),
+                        eq('Declaration - ((x, y) = [1, 2])'),
+                        eq('ArgumentList - (x, y)'),
                 ]
         )
     }

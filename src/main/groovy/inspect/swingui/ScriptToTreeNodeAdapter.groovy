@@ -127,7 +127,13 @@ class ScriptToTreeNodeAdapter {
                 def name = it.name.toString()
                 def value
                 try {
-                    value = it.getProperty(node).toString()
+                    // multiple assignment statements cannot be cast to VariableExpression so
+                    // instead reference the value through the leftExpression property, which is the same
+                    if (node instanceof DeclarationExpression && name == 'variableExpression') {
+                        value = node.leftExpression.toString()
+                    } else {
+                        value = it.getProperty(node).toString()
+                    }
                 } catch (GroovyBugError reflectionArtefact) {
                     // compiler throws error if it thinks a field is being accessed
                     // before it is set under certain conditions. It wasn't designed
