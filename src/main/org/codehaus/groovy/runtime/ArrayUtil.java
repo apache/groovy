@@ -15,6 +15,12 @@
  */
 package org.codehaus.groovy.runtime;
 
+/**
+* This is a generated class used internally during the writing of bytecode
+* within the CallSiteWriter logic. 
+* This is not a class exposed to users, as is the case with almost all
+* classes in the org.codehaus.groovy packages. 
+*/ 
 public class ArrayUtil {
     private static final Object[] EMPTY = new Object[0]
             ;
