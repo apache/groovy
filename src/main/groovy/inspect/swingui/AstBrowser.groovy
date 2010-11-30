@@ -19,8 +19,10 @@ package groovy.inspect.swingui
 import groovy.swing.SwingBuilder
 import java.awt.Cursor
 import java.awt.Font
+import java.awt.event.KeyEvent
 import java.util.prefs.Preferences
 import javax.swing.JSplitPane
+import javax.swing.KeyStroke
 import javax.swing.UIManager
 import javax.swing.WindowConstants
 import javax.swing.event.TreeSelectionEvent
@@ -31,17 +33,13 @@ import javax.swing.tree.TreeNode
 import javax.swing.tree.TreeSelectionModel
 import org.codehaus.groovy.control.Phases
 import static java.awt.GridBagConstraints.*
-import javax.swing.JTree
-import javax.swing.JPanel
-import javax.swing.JLabel
-import java.awt.BorderLayout
 
 /**
  * This object is a GUI for looking at the AST that Groovy generates. 
- * 
+ *
  * Usage: java groovy.inspect.swingui.AstBrowser [filename]
  *         where [filename] is an existing Groovy script. 
- * 
+ *
  * @author Hamlet D'Arcy (hamletdrc@gmail.com)
  * @author Guillaume Laforge, highlighting the code corresponding to a node selected in the tree view
  * @author Roshan Dawrani - separated out the swing UI related code from the model part so model could be used for various UIs
@@ -63,15 +61,15 @@ public class AstBrowser {
     def swing, frame
 
     public static void main(args) {
-        
+
         if (!args) {
             println "Usage: java groovy.inspect.swingui.AstBrowser [filename]\nwhere [filename] is a Groovy script"
         } else {
-            def file = new File((String)args[0])
+            def file = new File((String) args[0])
             if (!file.exists()) {
                 println "File $args[0] cannot be found."
             } else {
-                UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()); 
+                UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
                 new AstBrowser(null, null, new GroovyClassLoader()).run({file.text}, file.path)
             }
         }
@@ -89,24 +87,34 @@ public class AstBrowser {
 
         showScriptFreeForm = prefs.showScriptFreeForm
         showScriptClass = prefs.showScriptClass
-        
-        frame = swing.frame(title: 'Groovy AST Browser' + (name ? " - $name":''),
+
+        frame = swing.frame(title: 'Groovy AST Browser' + (name ? " - $name" : ''),
                 location: prefs.frameLocation,
                 size: prefs.frameSize,
                 iconImage: swing.imageIcon(groovy.ui.Console.ICON_PATH).image,
                 defaultCloseOperation: WindowConstants.DISPOSE_ON_CLOSE,
-                windowClosing : { event -> prefs.save(frame, splitterPane, mainSplitter, showScriptFreeForm, showScriptClass, phasePicker.selectedItem) } ) {
+                windowClosing: { event -> prefs.save(frame, splitterPane, mainSplitter, showScriptFreeForm, showScriptClass, phasePicker.selectedItem) }) {
 
             menuBar {
                 menu(text: 'Show Script', mnemonic: 'S') {
-                    checkBoxMenuItem(selected: showScriptFreeForm) {action(name: 'Free Form', closure: this.&showScriptFreeForm, 
-                            mnemonic: 'F',)}
-                    checkBoxMenuItem(selected: showScriptClass) {action(name: 'Class Form', closure: this.&showScriptClass, 
-                            mnemonic: 'C')}
+                    checkBoxMenuItem(selected: showScriptFreeForm) {
+                        action(name: 'Free Form', closure: this.&showScriptFreeForm,
+                                mnemonic: 'F',)
+                    }
+                    checkBoxMenuItem(selected: showScriptClass) {
+                        action(name: 'Class Form', closure: this.&showScriptClass,
+                                mnemonic: 'C')
+                    }
                 }
                 menu(text: 'View', mnemonic: 'V') {
                     menuItem() {action(name: 'Larger Font', closure: this.&largerFont, mnemonic: 'L', accelerator: shortcut('shift L'))}
                     menuItem() {action(name: 'Smaller Font', closure: this.&smallerFont, mnemonic: 'S', accelerator: shortcut('shift S'))}
+                    menuItem() {
+                        action(name: 'Refresh', closure: {
+                            decompile(phasePicker.selectedItem.phaseId, script())
+                            compile(jTree, rootNode, script(), phasePicker.selectedItem.phaseId)
+                        }, mnemonic: 'R', accelerator: KeyStroke.getKeyStroke(KeyEvent.VK_F5, 0))
+                    }
                 }
                 menu(text: 'Help', mnemonic: 'H') {
                     menuItem() {action(name: 'About', closure: this.&showAbout, mnemonic: 'A')}
@@ -137,10 +145,10 @@ public class AstBrowser {
                         },
                         rightComponent: scrollPane() {
                             propertyTable = table() {
-                                tableModel(list:[[:]]) {
-                                    propertyColumn(header:'Name', propertyName:'name')
-                                    propertyColumn(header:'Value', propertyName:'value')
-                                    propertyColumn(header:'Type', propertyName:'type')
+                                tableModel(list: [[:]]) {
+                                    propertyColumn(header: 'Name', propertyName: 'name')
+                                    propertyColumn(header: 'Value', propertyName: 'value')
+                                    propertyColumn(header: 'Type', propertyName: 'type')
                                 }
                             }
                         }
@@ -159,7 +167,7 @@ public class AstBrowser {
         }
 
         propertyTable.model.rows.clear() //for some reason this suppress an empty row
-        
+
         jTree.cellRenderer.setLeafIcon(swing.imageIcon(groovy.ui.Console.NODE_ICON_PATH));
 
         jTree.selectionModel.selectionMode = TreeSelectionModel.SINGLE_TREE_SELECTION;
@@ -196,7 +204,7 @@ public class AstBrowser {
         } as TreeSelectionListener)
 
         updateFontSize(prefs.decompiledSourceFontSize)
-        
+
         frame.pack()
         frame.location = prefs.frameLocation
         frame.size = prefs.frameSize
@@ -216,7 +224,7 @@ public class AstBrowser {
         updateFontSize(decompiledSource.font.size + 2)
     }
 
-    void smallerFont(EventObject evt = null){
+    void smallerFont(EventObject evt = null) {
         updateFontSize(decompiledSource.font.size - 2)
     }
 
@@ -226,16 +234,16 @@ public class AstBrowser {
         } else if (newFontSize < 4) {
             newFontSize = 4
         }
-        
+
         prefs.decompiledSourceFontSize = newFontSize
         decompiledSource.font = new Font(decompiledSource.font.name, decompiledSource.font.style, newFontSize)
     }
 
     void showAbout(EventObject evt) {
-         def pane = swing.optionPane()
-         pane.setMessage('An interactive GUI to explore AST capabilities.')
-         def dialog = pane.createDialog(frame, 'About Groovy AST Browser')
-         dialog.show()
+        def pane = swing.optionPane()
+        pane.setMessage('An interactive GUI to explore AST capabilities.')
+        def dialog = pane.createDialog(frame, 'About Groovy AST Browser')
+        dialog.show()
     }
 
     void showScriptFreeForm(EventObject evt) {
@@ -381,8 +389,8 @@ class TreeNodeWithProperties extends DefaultMutableTreeNode {
 
     /**
      * Creates a tree node and attaches properties to it.
-     * @param userObject    same as a DefaultMutableTreeNode requires
-     * @param properties    a list of String lists
+     * @param userObject same as a DefaultMutableTreeNode requires
+     * @param properties a list of String lists
      */
     def TreeNodeWithProperties(userObject, List<List<String>> properties) {
         super(userObject)
@@ -397,6 +405,7 @@ class TreeNodeWithProperties extends DefaultMutableTreeNode {
  */
 interface AstBrowserNodeMaker<T> {
     T makeNode(Object userObject)
+
     T makeNodeWithProperties(Object userObject, List<List<String>> properties)
 }
 
