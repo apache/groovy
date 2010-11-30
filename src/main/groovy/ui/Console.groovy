@@ -705,6 +705,9 @@ options:
         if(!executing) {
             bindResults()
         }
+        
+        // GROOVY-4496: set the output window position to the top-left so the exception details are visible from the start
+        outputArea.caretPosition = 0 
 
         if (detachedOutput) {
             prepareOutputWindow()
