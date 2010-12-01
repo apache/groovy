@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2009 the original author or authors.
+ * Copyright 2008-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,14 +29,20 @@ import org.objectweb.asm.Opcodes;
 
 import groovy.lang.Reference;
 
-import java.util.Set;
-import java.util.LinkedList;
-import java.util.HashSet;
 import java.util.Arrays;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Set;
 
 /**
- * Handles generation of code for the @Category annotation
- * - all non-static methods converted to static ones with additional parameter 'self'
+ * Handles generation of code for the @Category annotation.
+ * <p>
+ * Transformation logic is as follows:
+ * <ul>
+ * <li>all non-static methods converted to static ones with an additional 'self' parameter
+ * <li>references to 'this' changed to the additional 'self' parameter
+ * </ul>
  *
  * @author Alex Tkachman
  */
@@ -83,12 +89,14 @@ public class CategoryASTTransformation implements ASTTransformation, Opcodes {
                 varStack.add(names);
             }
             
+            @Override
             public void visitMethod(MethodNode node) {
                 addVariablesToStack(node.getParameters());
                 super.visitMethod(node);
                 varStack.removeLast();
             }
 
+            @Override
             public void visitBlockStatement(BlockStatement block) {
                 Set<String> names = new HashSet<String>();
                 names.addAll(varStack.getLast());
@@ -97,11 +105,31 @@ public class CategoryASTTransformation implements ASTTransformation, Opcodes {
                 varStack.remove(names);
             }
 
+            @Override
+            public void visitClosureExpression(ClosureExpression ce) {
+                addVariablesToStack(ce.getParameters());
+                super.visitClosureExpression(ce);
+                varStack.removeLast();
+            }
+
+            @Override
             public void visitDeclarationExpression(DeclarationExpression expression) {
-                varStack.getLast().add(expression.getVariableExpression().getName());
+                Expression left = expression.getLeftExpression();
+                if (left instanceof ArgumentListExpression) {
+                    ArgumentListExpression ale = (ArgumentListExpression) left;
+                    List<Expression> list = ale.getExpressions();
+                    for (Expression arg : list) {
+                        VariableExpression ve = (VariableExpression) arg;
+                        varStack.getLast().add(ve.getName());
+                    }
+                } else {
+                    VariableExpression ve = (VariableExpression) left;
+                    varStack.getLast().add(ve.getName());
+                }
                 super.visitDeclarationExpression(expression);
             }
 
+            @Override
             public void visitForLoop(ForStatement forLoop) {
                 Expression exp = forLoop.getCollectionExpression();
                 exp.visit(this);
@@ -112,6 +140,7 @@ public class CategoryASTTransformation implements ASTTransformation, Opcodes {
                 super.visitForLoop(forLoop);
             }
 
+            @Override
             public void visitExpressionStatement(ExpressionStatement es) {
                 // GROOVY-3543: visit the declaration expressions so that declaration variables get added on the varStack
                 Expression exp = es.getExpression();
@@ -121,6 +150,7 @@ public class CategoryASTTransformation implements ASTTransformation, Opcodes {
                 super.visitExpressionStatement(es);
             }
 
+            @Override
             public Expression transform(Expression exp) {
                 if (exp instanceof VariableExpression) {
                     VariableExpression ve = (VariableExpression) exp;
@@ -153,6 +183,7 @@ public class CategoryASTTransformation implements ASTTransformation, Opcodes {
                     }
                     addVariablesToStack(params);
                     ce.getCode().visit(this);
+                    varStack.removeLast();
                 }
                 return super.transform(exp);
             }
