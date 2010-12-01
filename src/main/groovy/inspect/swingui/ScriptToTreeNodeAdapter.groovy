@@ -129,7 +129,8 @@ class ScriptToTreeNodeAdapter {
                 try {
                     // multiple assignment statements cannot be cast to VariableExpression so
                     // instead reference the value through the leftExpression property, which is the same
-                    if (node instanceof DeclarationExpression && name == 'variableExpression') {
+                    if (node instanceof DeclarationExpression &&
+                            (name == 'variableExpression' || name == 'tupleExpression')) {
                         value = node.leftExpression.toString()
                     } else {
                         value = it.getProperty(node).toString()
