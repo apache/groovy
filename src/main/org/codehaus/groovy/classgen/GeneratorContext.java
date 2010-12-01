@@ -71,6 +71,7 @@ public class GeneratorContext {
             }
             methodName = methodName.replace('<', '_');
             methodName = methodName.replace('>', '_');
+            methodName = methodName.replaceAll(" ", "_");
         }
         return "_" + classShortName + methodName + "closure" + getNextInnerClassIdx();
     }
