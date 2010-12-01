@@ -38,7 +38,7 @@ class CategoryAnnotationTest extends GroovyTestCase {
             }
         """
     }
-    
+
     void testCategoryMethodsHavingDeclarationStatements() {
         // GROOVY-3543: Declaration statements in category class' methods were not being visited by 
         // CategoryASTTransformation's expressionTransformer resulting in declaration variables not being 
@@ -82,7 +82,7 @@ class CategoryAnnotationTest extends GroovyTestCase {
             }
         """
     }
-    
+
     void testPropertyNameExpandingToGetterInsideCategoryMethod() {
         //GROOVY-3543: Inside the category method, this.getType().name was failing but this.getType().getName() was not.
         assertScript """
@@ -116,7 +116,7 @@ class CategoryAnnotationTest extends GroovyTestCase {
             }
         """
     }
-    
+
     void testClosureUsingThis() {
         assertScript """
             @Category(Guy)
@@ -143,6 +143,34 @@ class CategoryAnnotationTest extends GroovyTestCase {
             Guy.mixin   Filtering
             
             assert onetest.process() == onetest.messages.findAll{it.name != onetest.getName()}        
+        """
+    }
+
+    void testClosureWithinDeclarationExpressionAndMultipleAssignment() {
+        // GROOVY-4546
+        assertScript """
+            @Category(Integer)
+            class MyOps {
+                def multiplesUpTo4() { [this * 2, this * 3, this * 4] }
+                def multiplesUpTo(num) {
+                    (2..num).collect{ j -> this * j }
+                }
+                def alsoMultiplesUpTo(num) {
+                    def ans = (2..num).collect{ i -> this * i }
+                    ans
+                }
+                def twice() {
+                    def (twice, thrice, quad) = multiplesUpTo4()
+                    twice
+                }
+            }
+
+            use(MyOps) {
+                assert 5.multiplesUpTo4() == [10, 15, 20]
+                assert 5.multiplesUpTo(6) == [10, 15, 20, 25, 30]
+                assert 5.alsoMultiplesUpTo(6) == [10, 15, 20, 25, 30]
+                assert 5.twice() == 10
+            }
         """
     }
 }
