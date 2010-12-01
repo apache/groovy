@@ -19,6 +19,7 @@ package org.codehaus.groovy.transform;
 import groovy.transform.Field;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.*;
+import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.expr.Expression;
@@ -60,10 +61,16 @@ public class FieldASTTransformation extends ClassCodeExpressionTransformer imple
             ClassNode cNode = de.getDeclaringClass();
             if (!cNode.isScript()) {
                 addError("Error: annotation " + MY_TYPE_NAME + " can only be used within a Script.", parent);
+                return;
             }
             candidate = de;
             super.visitClass(cNode);
-            VariableExpression ve = de.getVariableExpression();
+            // GROOVY-4548: temp fix to stop CCE until proper support is added
+            if (de.getLeftExpression() instanceof ArgumentListExpression) {
+                addError("Error: annotation " + MY_TYPE_NAME + " not supported with multiple assignment notation.", parent);
+                return;
+            }
+            VariableExpression ve = (VariableExpression) de.getLeftExpression();
             // set owner null here, it will be updated by addField
             FieldNode fNode = new FieldNode(ve.getName(), ve.getModifiers(), ve.getType(), null, de.getRightExpression());
             fNode.setSourcePosition(de);
@@ -75,7 +82,7 @@ public class FieldASTTransformation extends ClassCodeExpressionTransformer imple
         if (expr == null) return null;
         if (expr instanceof DeclarationExpression) {
             DeclarationExpression de = (DeclarationExpression) expr;
-            if (de.getVariableExpression() == candidate.getVariableExpression()) {
+            if (de.getLeftExpression() == candidate.getLeftExpression()) {
                 if (insideScriptBody) {
                     // TODO make EmptyExpression work
                     // partially works but not if only thing in script
@@ -83,6 +90,7 @@ public class FieldASTTransformation extends ClassCodeExpressionTransformer imple
                     return new ConstantExpression(null);
                 }
                 addError("Error: annotation " + MY_TYPE_NAME + " can only be used within a Script body.", expr);
+                return expr;
             }
         }
         return expr.transformExpression(this);
