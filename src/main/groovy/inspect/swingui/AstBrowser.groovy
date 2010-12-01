@@ -82,7 +82,6 @@ public class AstBrowser {
     void run(Closure script, String name) {
 
         swing = new SwingBuilder()
-        def rootNode = new DefaultTreeModel(new DefaultMutableTreeNode("Loading...")) // populated later
         def phasePicker, jTree, propertyTable, splitterPane, mainSplitter
 
         showScriptFreeForm = prefs.showScriptFreeForm
@@ -112,7 +111,7 @@ public class AstBrowser {
                     menuItem() {
                         action(name: 'Refresh', closure: {
                             decompile(phasePicker.selectedItem.phaseId, script())
-                            compile(jTree, rootNode, script(), phasePicker.selectedItem.phaseId)
+                            compile(jTree, script(), phasePicker.selectedItem.phaseId)
                         }, mnemonic: 'R', accelerator: KeyStroke.getKeyStroke(KeyEvent.VK_F5, 0))
                     }
                 }
@@ -128,20 +127,20 @@ public class AstBrowser {
                         selectedItem: prefs.selectedPhase,
                         actionPerformed: {
                             decompile(phasePicker.selectedItem.phaseId, script())
-                            compile(jTree, rootNode, script(), phasePicker.selectedItem.phaseId)
+                            compile(jTree, script(), phasePicker.selectedItem.phaseId)
                         },
                         constraints: gbc(gridx: 1, gridy: 0, gridwidth: 1, gridheight: 1, weightx: 1.0, weighty: 0, anchor: NORTHWEST, fill: NONE, insets: [2, 2, 2, 2]))
                 button(text: 'Refresh',
                         actionPerformed: {
                             decompile(phasePicker.selectedItem.phaseId, script())
-                            compile(jTree, rootNode, script(), phasePicker.selectedItem.phaseId)
+                            compile(jTree, script(), phasePicker.selectedItem.phaseId)
                         },
                         constraints: gbc(gridx: 2, gridy: 0, gridwidth: 1, gridheight: 1, weightx: 0, weighty: 0, anchor: NORTHEAST, fill: NONE, insets: [2, 2, 2, 3]))
                 splitterPane = splitPane(
                         leftComponent: scrollPane() {
                             jTree = tree(
                                     name: "AstTreeView",
-                                    model: rootNode) {}
+                                    model: new DefaultTreeModel(new DefaultMutableTreeNode("Loading..."))) {}
                         },
                         rightComponent: scrollPane() {
                             propertyTable = table() {
@@ -214,7 +213,7 @@ public class AstBrowser {
 
         String source = script()
         decompile(phasePicker.selectedItem.phaseId, source)
-        compile(jTree, rootNode, source, phasePicker.selectedItem.phaseId)
+        compile(jTree, source, phasePicker.selectedItem.phaseId)
         jTree.rootVisible = false
         jTree.showsRootHandles = true   // some OS's require this as a step to show nodes
 
@@ -264,7 +263,7 @@ public class AstBrowser {
 
                 String result = new AstNodeToScriptAdapter().compileToScript(source, phaseId, classLoader, showScriptFreeForm, showScriptClass)
                 swing.doLater {
-                    decompiledSource.text = result;
+                    decompiledSource.text = result 
                     decompiledSource.setCaretPosition(0)
                     decompiledSource.setCursor(Cursor.defaultCursor);
                 }
@@ -274,25 +273,35 @@ public class AstBrowser {
                     decompiledSource.setCaretPosition(0)
                     decompiledSource.setCursor(Cursor.defaultCursor);
                 }
+                throw t
             }
         }
     }
 
-    void compile(jTree, node, String script, int compilePhase) {
+    void compile(jTree, String script, int compilePhase) {
         jTree.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR))
-        Thread.start {
+        def model = jTree.model
+        swing.edt {
+            def root = model.getRoot();
+            root.removeAllChildren()
+            root.add(new DefaultMutableTreeNode(new DefaultMutableTreeNode('Loading...')));
+            model.reload(root);
+        }
+        swing.doOutside {
             try {
                 def nodeMaker = new SwingTreeNodeMaker()
                 def adapter = new ScriptToTreeNodeAdapter(classLoader, showScriptFreeForm, showScriptClass, nodeMaker)
                 def result = adapter.compile(script, compilePhase)
                 swing.doLater {
-                    node.setRoot(result)
+                    model.setRoot(result)
+                    model.reload()
                     jTree.setCursor(Cursor.defaultCursor)
                 }
             } catch (Throwable t) {
                 swing.doLater {
                     jTree.setCursor(Cursor.defaultCursor)
                 }
+                throw t
             }
         }
     }
