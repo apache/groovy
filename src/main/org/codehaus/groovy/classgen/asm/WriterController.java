@@ -83,7 +83,11 @@ public class WriterController {
         this.context = gcon;
         this.compileStack = new CompileStack(this);
         this.cv = cv;
-        this.statementWriter = new StatementWriter(this);
+        if (optimizeForInt) {
+            this.statementWriter = new OptimizingStatementWriter(this);
+        } else {
+            this.statementWriter = new StatementWriter(this);
+        }
     }
 
     public AsmClassGenerator getAcg() {
