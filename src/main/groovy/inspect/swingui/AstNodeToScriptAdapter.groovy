@@ -284,7 +284,7 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
             visitModifiers(it.modifiers)
             visitType it.type
             print ' ' + it.name
-            if (it.initialExpression) {
+            if (it.initialExpression && !(it.initialExpression instanceof EmptyExpression)) {
                 print ' = '
                 it.initialExpression.visit this
             }
