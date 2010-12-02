@@ -51,6 +51,7 @@ public class WriterController {
     private GeneratorContext context;
     private InterfaceHelperClassNode interfaceClassLoadingClass;
     public boolean optimizeForInt = true;
+    private StatementWriter statementWriter;
     
     public void init(AsmClassGenerator asmClassGenerator, GeneratorContext gcon, ClassVisitor cv, ClassNode cn) {
         Map<String,Boolean> optOptions = cn.getCompileUnit().getConfig().getOptimizationOptions();
@@ -82,6 +83,7 @@ public class WriterController {
         this.context = gcon;
         this.compileStack = new CompileStack(this);
         this.cv = cv;
+        this.statementWriter = new StatementWriter(this);
     }
 
     public AsmClassGenerator getAcg() {
@@ -263,5 +265,9 @@ public class WriterController {
     
     public boolean shouldOptimizeForInt() {
         return optimizeForInt;
+    }
+    
+    public StatementWriter getStatementWriter() {
+        return statementWriter;
     }
 }
