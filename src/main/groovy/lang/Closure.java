@@ -485,8 +485,8 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      * @param other the Closure to compose with the current Closure
      * @return the new composed Closure
      */
-    public Closure rightShift(final Closure other) {
-        return new ComposedClosure(this, other);
+    public <W> Closure<W> rightShift(final Closure<W> other) {
+        return new ComposedClosure<W>(this, other);
     }
 
     /**
@@ -504,8 +504,8 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      * @param other the Closure to compose with the current Closure
      * @return the new composed Closure
      */
-    public Closure leftShift(final Closure other) {
-        return new ComposedClosure(other, this);
+    public Closure<V> leftShift(final Closure other) {
+        return new ComposedClosure<V>(other, this);
     }
 
     /* *
@@ -816,7 +816,7 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
         }
         
         public Closure curry(final Object arguments[]) {
-            return (new CurriedClosure(this,arguments)).asWritable();
+            return (new CurriedClosure(this, arguments)).asWritable();
         }
 
         public void setResolveStrategy(int resolveStrategy) {

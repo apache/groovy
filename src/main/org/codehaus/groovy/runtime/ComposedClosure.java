@@ -54,15 +54,15 @@ import java.util.List;
  *
  * @author Paul King
  */
-public final class ComposedClosure extends Closure {
+public final class ComposedClosure<V> extends Closure<V> {
 
     private Closure first;
-    private Closure second;
+    private Closure<V> second;
 
-    public ComposedClosure(Closure first, Closure second) {
+    public ComposedClosure(Closure first, Closure<V> second) {
         super(first);
         this.first = (Closure) first.clone();
-        this.second = (Closure) second.clone();
+        this.second = (Closure<V>) second.clone();
         maximumNumberOfParameters = first.getMaximumNumberOfParameters();
     }
 
@@ -85,7 +85,7 @@ public final class ComposedClosure extends Closure {
     }
 
     public Object clone() {
-        return new ComposedClosure(first, second);
+        return new ComposedClosure<V>(first, second);
     }
 
     public Class[] getParameterTypes() {
@@ -97,7 +97,7 @@ public final class ComposedClosure extends Closure {
     }
 
     @Override
-    public Object call(Object[] args) {
+    public V call(Object[] args) {
         Object temp = first.call(args);
         if (temp instanceof List && second.getParameterTypes().length > 1) temp = ((List) temp).toArray();
         return temp instanceof Object[] ? second.call((Object[]) temp) : second.call(temp);
