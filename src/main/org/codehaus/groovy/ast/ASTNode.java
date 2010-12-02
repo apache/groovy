@@ -15,8 +15,8 @@
  */
 package org.codehaus.groovy.ast;
 
-import java.util.Map;
-
+import org.codehaus.groovy.GroovyBugError;
+import org.codehaus.groovy.util.ListHashMap;
 
 /**
  * Base class for any AST node. This class supports basic information used in all
@@ -29,9 +29,8 @@ import java.util.Map;
  * <li> every node can store meta data. A phase operation or transform can use 
  * this to transport arbitrary information to another phase operation or 
  * transform. The only requirement is that the other phase operation or transform
- * runs after the part storing the information. To save memory this map is null
- * by default. If the information transport is done and the map does not store
- * any information anymore, it is strongly recommended to set a null map again.</li> 
+ * runs after the part storing the information. If the information transport is 
+ * done it is strongly recommended to remove that meta data.</li> 
  * </ul>
  * <li> a text representation of this node trough getText(). This was in the 
  * past used for assertion messages. Since the usage of power asserts this 
@@ -47,7 +46,7 @@ public class ASTNode {
     private int columnNumber = -1;
     private int lastLineNumber = -1;
     private int lastColumnNumber = -1;
-    private Map nodeMetaData = null; 
+    private ListHashMap metaDataMap = new ListHashMap(); 
 
     public void visit(GroovyCodeVisitor visitor) {
         throw new RuntimeException("No visit() method implemented for class: " + getClass().getName());
@@ -95,6 +94,7 @@ public class ASTNode {
      * the start and a line/column pair for the end of the
      * expression or statement 
      * 
+     * @param node - the node used to configure the position information
      */
     public void setSourcePosition(ASTNode node) {
         this.columnNumber = node.getColumnNumber();
@@ -104,20 +104,39 @@ public class ASTNode {
     }
     
     /**
-     * Gets the node meta data. By default this map will be null.
-     * We do this to save memory for the AST.
-     * @return the node meta data map
+     * Gets the node meta data. 
+     * 
+     * @param key - the meta data key
+     * @return the node meta data value for this key
      */
-    public Map getNodeMetaData() {
-        return nodeMetaData;
+    public Object getNodeMetaData(Object key) {
+        if (metaDataMap==null) return null;
+        return metaDataMap.get(key);
     }
     
     /**
-     * Sets the node meta data. Note: if all the meta is deleted from
-     * the map, this method should be called with null.
-     * @param m - the node meta data map
+     * Sets the node meta data. 
+     * 
+     * @param key - the meta data key
+     * @param value - the meta data value
+     * @throws GroovyBugError if key is null or there is already meta 
+     *                        data under that key
      */
-    public void setNodeMeataData(Map m) {
-        this.nodeMetaData = m;
+    public void setNodeMetaData(Object key, Object value) {
+        if (key==null) throw new GroovyBugError("Tried to set meta data with null key.");
+        Object old = metaDataMap.put(key,value);
+        if (old!=null) throw new GroovyBugError("Tried to overwrite existing meta data.");
+    }
+    
+    /**
+     * Removes a node meta data entry.
+     * 
+     * @param key - the meta data key
+     * @throws GroovyBugError if the key is null
+     */
+    public void removeNodeMetaData(Object key) {
+        if (key==null) throw new GroovyBugError("Tried to remove meta data with null key.");
+        metaDataMap.remove(key);
+        if (metaDataMap.size()==0) metaDataMap=null;
     }
 }
