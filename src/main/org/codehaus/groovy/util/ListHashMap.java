@@ -43,7 +43,6 @@ public class ListHashMap<K,V> implements Map<K,V> {
         maxListFill = listSize;
     }
     
-    @Override
     public void clear() {
         listFill = 0;
         innerMap = null;
@@ -53,7 +52,6 @@ public class ListHashMap<K,V> implements Map<K,V> {
         }
     }
 
-    @Override
     public boolean containsKey(Object key) {
         if (size<maxListFill) {
             for (int i=0; i<listFill; i++) {
@@ -65,7 +63,6 @@ public class ListHashMap<K,V> implements Map<K,V> {
         }
     }
 
-    @Override
     public boolean containsValue(Object value) {
         if (size<maxListFill) {
             for (int i=0; i<listFill; i++) {
@@ -85,7 +82,6 @@ public class ListHashMap<K,V> implements Map<K,V> {
         return m;
     }
     
-    @Override
     public Set<java.util.Map.Entry<K, V>> entrySet() {
         Map m;
         if (size<maxListFill) {
@@ -96,7 +92,6 @@ public class ListHashMap<K,V> implements Map<K,V> {
         return m.entrySet();
     }
 
-    @Override
     public V get(Object key) {
         if(size==0) return null;
         if (size<maxListFill) {
@@ -109,12 +104,10 @@ public class ListHashMap<K,V> implements Map<K,V> {
         }
     }
 
-    @Override
     public boolean isEmpty() {
         return size == 0;
     }
 
-    @Override
     public Set<K> keySet() {
         Map m;
         if (size>=maxListFill) {
@@ -125,7 +118,6 @@ public class ListHashMap<K,V> implements Map<K,V> {
         return m.keySet();
     }
 
-    @Override
     public V put(K key, V value) {
         if (size<maxListFill) {
             for (int i=0; i<listFill; i++) {
@@ -148,7 +140,6 @@ public class ListHashMap<K,V> implements Map<K,V> {
         return innerMap.put(key,value);
     }
 
-    @Override
     public void putAll(Map<? extends K, ? extends V> m) {
        if (size+m.size()<maxListFill) {
            for (Entry<? extends K,? extends V> entry : m.entrySet()) {
@@ -164,7 +155,6 @@ public class ListHashMap<K,V> implements Map<K,V> {
        size += m.size();
     }
 
-    @Override
     public V remove(Object key) {
         if (size<maxListFill) {
             for (int i=0; i<listFill; i++) {
@@ -198,12 +188,10 @@ public class ListHashMap<K,V> implements Map<K,V> {
         innerMap = null;
     }
 
-    @Override
     public int size() {
         return size;
     }
 
-    @Override
     public Collection<V> values() {
         if (size<maxListFill) {
             ArrayList<V> list = new ArrayList(size);
