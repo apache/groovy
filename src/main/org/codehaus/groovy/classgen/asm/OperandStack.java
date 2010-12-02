@@ -36,8 +36,8 @@ import static org.objectweb.asm.Opcodes.*;
 public class OperandStack {
     
     // type conversions
-    static final MethodCaller asTypeMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "asType");
-    static final MethodCaller castToTypeMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "castToType");
+    private static final MethodCaller asTypeMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "asType");
+    private static final MethodCaller castToTypeMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "castToType");
 
     private WriterController controller;
     private ArrayList<ClassNode> stack = new ArrayList();

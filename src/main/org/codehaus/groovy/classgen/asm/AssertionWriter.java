@@ -37,7 +37,7 @@ import static org.objectweb.asm.Opcodes.*;
 
 public class AssertionWriter {
     // assert
-    static final MethodCaller assertFailedMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "assertFailed");
+    private static final MethodCaller assertFailedMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "assertFailed");
     
     private static class AssertionTracker {
         int recorderIndex;
