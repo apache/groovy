@@ -7,7 +7,7 @@ package org.codehaus.groovy.runtime.memoize;
  *
  * @author Vaclav Pech
  */
-interface MemoizeCache<K, V> {
+public interface MemoizeCache<K, V> {
 
     V put(K key, V value);
 
