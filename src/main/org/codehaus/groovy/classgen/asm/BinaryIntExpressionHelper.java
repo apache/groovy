@@ -19,7 +19,6 @@ import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.Expression;
-import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.classgen.asm.OptimizingStatementWriter.StatementMeta;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
@@ -136,10 +135,8 @@ public class BinaryIntExpressionHelper extends BinaryExpressionHelper {
      * @return true if expression is an evals to an int
      */
     protected static boolean isIntOperand(Expression exp) {
-        if (exp instanceof BinaryExpression || exp instanceof MethodCallExpression) {
-            StatementMeta meta = (StatementMeta) exp.getNodeMetaData(StatementMeta.class);
-            if (meta!=null && meta.type==ClassHelper.int_TYPE) return true;
-        }
+        StatementMeta meta = (StatementMeta) exp.getNodeMetaData(StatementMeta.class);
+        if (meta!=null) return meta.type==ClassHelper.int_TYPE;
         ClassNode type = exp.getType().redirect();
         return type == ClassHelper.int_TYPE;
     }

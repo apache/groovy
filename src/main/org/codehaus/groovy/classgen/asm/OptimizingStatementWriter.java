@@ -24,9 +24,14 @@ import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
+import org.codehaus.groovy.ast.expr.BitwiseNegationExpression;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
+import org.codehaus.groovy.ast.expr.PostfixExpression;
+import org.codehaus.groovy.ast.expr.PrefixExpression;
+import org.codehaus.groovy.ast.expr.UnaryMinusExpression;
+import org.codehaus.groovy.ast.expr.UnaryPlusExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.DoWhileStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
@@ -38,6 +43,7 @@ import org.codehaus.groovy.ast.stmt.WhileStatement;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
+import org.codehaus.groovy.syntax.Types;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 
@@ -59,6 +65,10 @@ public class OptimizingStatementWriter extends StatementWriter {
         private boolean optimizeInt=false;
         protected MethodNode target;
         protected ClassNode type;
+        public String toString() {
+            return  "optimize="+optimize+" optimizeInt="+optimizeInt+
+                    " target="+target+" type="+type;
+        }
     }
 
     private static final MethodCaller isOrigInt = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "isOrigInt");
@@ -232,10 +242,12 @@ public class OptimizingStatementWriter extends StatementWriter {
     }
     
     private static StatementMeta addMeta(ASTNode node) {
-        StatementMeta meta = new StatementMeta();
+        StatementMeta metaOld = (StatementMeta) node.getNodeMetaData(StatementMeta.class);
+        StatementMeta meta = metaOld;
+        if (meta==null) meta = new StatementMeta();
         meta.optimize = true;
         meta.optimizeInt = true;
-        node.setNodeMetaData(StatementMeta.class, meta);
+        if (metaOld==null) node.setNodeMetaData(StatementMeta.class, meta);
         return meta;
     }
     
@@ -258,12 +270,60 @@ public class OptimizingStatementWriter extends StatementWriter {
         }
         
         @Override
+        public void visitUnaryMinusExpression(UnaryMinusExpression expression) {
+            //TODO: implement int operations for this
+            super.visitUnaryMinusExpression(expression);
+            StatementMeta meta = addMeta(expression);
+            meta.type = ClassHelper.OBJECT_TYPE;
+        }
+        
+        @Override
+        public void visitUnaryPlusExpression(UnaryPlusExpression expression) {
+            //TODO: implement int operations for this
+            super.visitUnaryPlusExpression(expression);
+            StatementMeta meta = addMeta(expression);
+            meta.type = ClassHelper.OBJECT_TYPE;
+        }
+        
+        @Override
+        public void visitBitwiseNegationExpression(BitwiseNegationExpression expression) {
+            //TODO: implement int operations for this
+            super.visitBitwiseNegationExpression(expression);
+            StatementMeta meta = addMeta(expression);
+            meta.type = ClassHelper.OBJECT_TYPE;
+        }
+        
+        @Override
+        public void visitPrefixExpression(PrefixExpression expression) {
+            //TODO: implement int operations for this
+            super.visitPrefixExpression(expression);
+            StatementMeta meta = addMeta(expression);
+            meta.type = ClassHelper.OBJECT_TYPE;
+        }
+        
+        @Override
+        public void visitPostfixExpression(PostfixExpression expression) {
+            //TODO: implement int operations for this
+            super.visitPostfixExpression(expression);
+            StatementMeta meta = addMeta(expression);
+            meta.type = ClassHelper.OBJECT_TYPE;
+        }        
+        
+        @Override
         public void visitBinaryExpression(BinaryExpression expression) {
             if (expression.getNodeMetaData(StatementMeta.class)!=null) return;
             super.visitBinaryExpression(expression);
             boolean leftInt = BinaryIntExpressionHelper.isIntOperand(expression.getLeftExpression());
             boolean rightInt = BinaryIntExpressionHelper.isIntOperand(expression.getRightExpression());
-            if (!optimizeInt) optimizeInt =   leftInt || rightInt;
+            if (!optimizeInt) {
+                optimizeInt =   (leftInt || rightInt) &&
+                                //TODO: implement int operations for these
+                                expression.getOperation().getType()!=Types.DIVIDE       &&
+                                expression.getOperation().getType()!=Types.POWER        &&
+                                expression.getOperation().getType()!=Types.MULTIPLY     &&
+                                expression.getOperation().getType()!=Types.PLUS_PLUS    &&
+                                expression.getOperation().getType()!=Types.MINUS_MINUS;
+            }
             if (optimizeInt) {
                 StatementMeta meta = addMeta(expression);
                 if (leftInt && rightInt) meta.type = ClassHelper.int_TYPE;
