@@ -105,11 +105,18 @@ public class BinaryIntExpressionHelper extends BinaryExpressionHelper {
     public static final int PREFIX_MINUS_MINUS          = 261;   // --
     public static final int POSTFIX_MINUS_MINUS         = 262;   // --
     public static final int PREFIX_MINUS                = 263;   // - (negation)
-
+*/
     public static final int LEFT_SHIFT                  = 280;   // <<
     public static final int RIGHT_SHIFT                 = 281;   // >>
     public static final int RIGHT_SHIFT_UNSIGNED        = 282;   // >>>
 
+    private static final int[] shiftOp = {
+        ISHL,           // LEFT_SHIFT
+        ISHR,           // RIGHT_SHIFT
+        IUSHR          // RIGHT_SHIFT_UNSIGNED
+    };
+
+/*
     public static final int LEFT_SHIFT_EQUAL            = 285;   // <<=
     public static final int RIGHT_SHIFT_EQUAL           = 286;   // >>=
     public static final int RIGHT_SHIFT_UNSIGNED_EQUAL  = 287;   // >>>=
@@ -317,11 +324,32 @@ public class BinaryIntExpressionHelper extends BinaryExpressionHelper {
         return true;
     }
 
+    /**
+     * Write shifting operations.
+     * Type is one of LEFT_SHIFT, RIGHT_SHIFT, or RIGHT_SHIFT_UNSIGNED
+     *
+     * @param type the token type
+     * @return true on a successful shift operation write
+     */
+    private boolean writeShiftOp(int type, boolean simulate) {
+        type = type - LEFT_SHIFT;
+        if (type < 0 || type > 2) return false;
+
+        if (!simulate) {
+            int bytecode = shiftOp[type];
+            controller.getMethodVisitor().visitInsn(bytecode);
+            controller.getOperandStack().replace(ClassHelper.int_TYPE, 2);
+        }
+        return true;
+    }
+
+
     private boolean writeIntXInt(int type, boolean simulate) {
         return  writeStdCompare(type, simulate)         ||
                 writeSpaceship(type, simulate)          ||
                 writeStdOperators(type, simulate)       ||
-                writeBitwiseOp(type, simulate);
+                writeBitwiseOp(type, simulate)          ||
+                writeShiftOp(type, simulate);
     }
 
 }
