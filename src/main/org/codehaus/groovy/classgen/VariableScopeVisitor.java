@@ -17,7 +17,6 @@ package org.codehaus.groovy.classgen;
 
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.*;
-import org.codehaus.groovy.ast.Variable;
 import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.CatchStatement;
@@ -25,6 +24,7 @@ import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.control.SourceUnit;
 
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -256,7 +256,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
                     (end.isReferencedClassVariable(name) && end.getDeclaredVariable(name) == null)) {
                 scope.putReferencedClassVariable(var);
             } else {
-                var.setClosureSharedVariable(var.isClosureSharedVariable() || inClosure);
+                //var.setClosureSharedVariable(var.isClosureSharedVariable() || inClosure);
                 scope.putReferencedLocalVariable(var);
             }
             scope = scope.getParent();
@@ -377,6 +377,11 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         }
 
         super.visitClosureExpression(expression);
+        VariableScope scope = currentScope;
+        for (Iterator<Variable> it = scope.getReferencedLocalVariablesIterator(); it.hasNext();) {
+            it.next().setClosureSharedVariable(true);
+        }
+        
         popState();
     }
 
