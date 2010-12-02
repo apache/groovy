@@ -40,7 +40,6 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
     private VariableScope headScope = new VariableScope();
     private ClassNode currentClass = null;
     private SourceUnit source;
-    private boolean inClosure = false;
     private boolean inPropertyExpression = false;
     private boolean isSpecialConstructorCall = false;
     private boolean inConstructor = false;
@@ -50,13 +49,11 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
     private class StateStackElement {
         VariableScope scope;
         ClassNode clazz;
-        boolean closure;
         boolean inConstructor; 
 
         StateStackElement() {
             scope = VariableScopeVisitor.this.currentScope;
             clazz = VariableScopeVisitor.this.currentClass;
-            closure = VariableScopeVisitor.this.inClosure;
             inConstructor = VariableScopeVisitor.this.inConstructor;
         }
     }
@@ -81,18 +78,9 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
     }
 
     private void popState() {
-        // a scope in a closure is never really static
-        // the checking needs this to be as the surrounding
-        // method to correctly check the access to variables.
-        // But a closure and all nested scopes are a result
-        // of calling a non static method, so the context
-        // is not static.
-        if (inClosure) currentScope.setInStaticContext(false);
-
         StateStackElement element = (StateStackElement) stateStack.removeLast();
         currentScope = element.scope;
         currentClass = element.clazz;
-        inClosure = element.closure;
         inConstructor = element.inConstructor;
     }
 
@@ -357,8 +345,6 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
     public void visitClosureExpression(ClosureExpression expression) {
         pushState();
 
-        inClosure = true;
-
         expression.setVariableScope(currentScope);
 
         if (expression.isParameterSpecified()) {
@@ -483,8 +469,6 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
             visitClosureExpression(cl);
         }
 
-        boolean ic = inClosure;
-        inClosure = true;
         for (FieldNode field : innerClass.getFields()) {
             final Expression expression = field.getInitialExpression();
             if (expression != null) {
@@ -495,7 +479,6 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         for (Statement statement : innerClass.getObjectInitializerStatements()) {
             statement.visit(this);
         }
-        inClosure = ic;
         popState();
     }
     
