@@ -332,11 +332,11 @@ public class OptimizingStatementWriter extends StatementWriter {
         
         @Override
         public void visitBlockStatement(BlockStatement block) {
-            boolean optAll = false;
+            boolean optAll = true;
             for (Statement statement : block.getStatements()) {
                 optimizeInt = false;
                 statement.visit(this);
-                optAll = optAll || optimizeInt;
+                optAll = optAll && optimizeInt;
             }
             if (optAll) addMeta(block);
             optimizeInt = optAll;
