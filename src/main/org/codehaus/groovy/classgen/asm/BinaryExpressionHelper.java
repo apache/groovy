@@ -258,9 +258,20 @@ public class BinaryExpressionHelper {
         AsmClassGenerator acg = controller.getAcg();
         CompileStack compileStack = controller.getCompileStack();
         OperandStack operandStack = controller.getOperandStack();
+        Expression rightExpression = expression.getRightExpression();
+        Expression leftExpression = expression.getLeftExpression();
+        
+        if (    defineVariable && 
+                rightExpression==ConstantExpression.NULL 
+                && !(leftExpression instanceof TupleExpression) )
+        {
+            VariableExpression ve = (VariableExpression) leftExpression;
+            BytecodeVariable var = compileStack.defineVariable(ve, false);
+            operandStack.loadOrStoreVariable(var, false);
+            return;
+        }
         
         // let's evaluate the RHS and store the result
-        Expression rightExpression = expression.getRightExpression();
         rightExpression.visit(acg);
         ClassNode rhsType = getCastType(rightExpression);
         int rhsValueId = compileStack.defineTemporaryVariable("$rhs", rhsType, true);
@@ -268,7 +279,6 @@ public class BinaryExpressionHelper {
         BytecodeExpression rhsValueLoader = new VariableSlotLoader(rhsType,rhsValueId,operandStack); 
         
         // assignment for subscript
-        Expression leftExpression = expression.getLeftExpression();
         if (leftExpression instanceof BinaryExpression) {
             BinaryExpression leftBinExpr = (BinaryExpression) leftExpression;
             if (leftBinExpr.getOperation().getType() == Types.LEFT_SQUARE_BRACKET) {
