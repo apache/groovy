@@ -273,8 +273,14 @@ public class BinaryExpressionHelper {
         }
         
         // let's evaluate the RHS and store the result
-        rightExpression.visit(acg);
-        ClassNode rhsType = getCastType(rightExpression);
+        ClassNode rhsType;
+        if (rightExpression instanceof EmptyExpression) {
+            rhsType = leftExpression.getType();
+            loadInitValue(rhsType);
+        } else {
+            rightExpression.visit(acg);
+            rhsType = getCastType(rightExpression);
+        }
         int rhsValueId = compileStack.defineTemporaryVariable("$rhs", rhsType, true);
         //TODO: if rhs is VariableSlotLoader already, then skip crating a new one
         BytecodeExpression rhsValueLoader = new VariableSlotLoader(rhsType,rhsValueId,operandStack); 
@@ -332,6 +338,16 @@ public class BinaryExpressionHelper {
         // return value of assignment
         rhsValueLoader.visit(acg);
         compileStack.removeVar(rhsValueId);
+    }
+
+    private void loadInitValue(ClassNode type) {
+        MethodVisitor mv = controller.getMethodVisitor();
+        if (ClassHelper.isPrimitiveType(type)) {
+            mv.visitLdcInsn(0);
+        } else {
+            mv.visitInsn(ACONST_NULL);
+        }
+        controller.getOperandStack().push(type);
     }
 
     private ClassNode getCastType(Expression exp) {
