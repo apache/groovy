@@ -1138,10 +1138,11 @@ public class AsmClassGenerator extends ClassGenerator {
 
         // "this" for static methods is the Class instance
         ClassNode classNode = controller.getClassNode();
-        if (controller.isInClosure()) classNode = controller.getOutermostClass();
+        //if (controller.isInClosure()) classNode = controller.getOutermostClass();
 
         if (variableName.equals("this")) {
             if (controller.isStaticMethod() || (!controller.getCompileStack().isImplicitThis() && controller.isStaticContext())) {
+                if (controller.isInClosure()) classNode = controller.getOutermostClass();
                 visitClassExpression(new ClassExpression(classNode));
             } else {
                 loadThis();

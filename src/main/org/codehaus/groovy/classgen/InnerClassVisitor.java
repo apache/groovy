@@ -431,7 +431,7 @@ public class InnerClassVisitor extends ClassCodeVisitorSupport implements Opcode
             initial.setUseReferenceDirectly(true);
             final FieldNode pField = innerClass.addFieldFirst(ve.getName(), PUBLIC_SYNTHETIC, ClassHelper.REFERENCE_TYPE, initial);
             pField.setHolder(true);
-            pField.setOriginType(var.getOriginType());
+            pField.setOriginType(ClassHelper.getWrapper(var.getOriginType()));
         }
         
         innerClass.addConstructor(ACC_SYNTHETIC, (Parameter[]) parameters.toArray(new Parameter[0]), ClassNode.EMPTY_ARRAY, block);

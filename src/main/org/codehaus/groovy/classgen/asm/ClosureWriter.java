@@ -23,6 +23,7 @@ import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.CodeVisitorSupport;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.InnerClassNode;
@@ -244,7 +245,7 @@ public class ClosureWriter {
                 type = ClassHelper.makeReference();
                 param.setType(ClassHelper.makeReference());
                 FieldNode paramField = answer.addField(paramName, ACC_PRIVATE | ACC_SYNTHETIC, type, initialValue);
-                paramField.setOriginType(param.getOriginType());
+                paramField.setOriginType(ClassHelper.getWrapper(param.getOriginType()));
                 paramField.setHolder(true);
                 String methodName = Verifier.capitalize(paramName);
 
@@ -267,7 +268,25 @@ public class ClosureWriter {
 
         ASTNode sn = answer.addConstructor(ACC_PUBLIC, params, ClassNode.EMPTY_ARRAY, block);
         sn.setSourcePosition(expression);
+        
+        correctAccessedVariable(answer,expression);
+        
         return answer;
+    }
+
+    private void correctAccessedVariable(final InnerClassNode closureClass, ClosureExpression ce) {
+        CodeVisitorSupport visitor = new CodeVisitorSupport() {
+            @Override
+            public void visitVariableExpression(VariableExpression expression) {
+                Variable v = expression.getAccessedVariable(); 
+                if (v==null) return;
+                if (!(v instanceof FieldNode)) return;
+                String name = expression.getName();
+                FieldNode fn = closureClass.getDeclaredField(name);
+                expression.setAccessedVariable(fn);
+            }  
+        };
+        visitor.visitClosureExpression(ce);
     }
 
     /*
