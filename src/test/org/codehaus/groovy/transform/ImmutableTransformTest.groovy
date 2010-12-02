@@ -15,8 +15,6 @@
  */
 package org.codehaus.groovy.transform
 
-import gls.CompilableTestSupport
-
 /**
  * @author Paul King
  */
@@ -140,14 +138,14 @@ class ImmutableTransformTest extends GroovyShellTestCase {
         """
     }
 
-  void testImmutableWithPrivateStaticFinalField() {
-      assertScript """
+    void testImmutableWithPrivateStaticFinalField() {
+        assertScript """
           @groovy.transform.Immutable class Foo {
               private static final String BAR = 'baz'
           }
           assert new Foo().BAR == 'baz'
       """
-  }
+    }
 
     void testImmutableWithInvalidPropertyName() {
         def msg = shouldFail(MissingPropertyException) {
@@ -325,6 +323,16 @@ class ImmutableTransformTest extends GroovyShellTestCase {
                 def n1 = new Numbers(b2:2)
             '''
         }
+    }
+
+    void testImmutableWithImmutableFields() {
+        assertScript '''
+            import groovy.transform.Immutable
+            @Immutable class Bar { Integer i }
+            @Immutable class Foo { Bar b }
+            def fb = new Foo(new Bar(3))
+            assert fb.toString() == 'Foo(Bar(3))'
+        '''
     }
 
     void testStaticsAllowed_ThoughUsuallyBadDesign() {

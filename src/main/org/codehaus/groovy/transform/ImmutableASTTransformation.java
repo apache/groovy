@@ -331,6 +331,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
         if (!fieldType.isResolved()) return false;
         return fieldType.isEnum() ||
                 ClassHelper.isPrimitiveType(fieldType) ||
+                fieldType.getAnnotations(MY_TYPE).size() != 0 ||
                 inImmutableList(fieldType.getName());
     }
 
