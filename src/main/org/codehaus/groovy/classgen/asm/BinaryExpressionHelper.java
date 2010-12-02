@@ -18,7 +18,7 @@ package org.codehaus.groovy.classgen.asm;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.Parameter;
+import org.codehaus.groovy.ast.Variable;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
@@ -290,7 +290,7 @@ public class BinaryExpressionHelper {
                         rhsValueLoader, "getAt",
                         new ArgumentListExpression(new ConstantExpression(i)));
                 call.visit(acg);
-                operandStack.doGroovyCast(var.getType());
+                operandStack.doGroovyCast(var.getOriginType());
                 i++;
                 if (defineVariable) {
                     compileStack.defineVariable(var, true);
@@ -304,7 +304,7 @@ public class BinaryExpressionHelper {
         else if (defineVariable) {
             VariableExpression var = (VariableExpression) leftExpression;
             rhsValueLoader.visit(acg);
-            operandStack.doGroovyCast(var.getType());
+            operandStack.doGroovyCast(var.getOriginType());
             compileStack.defineVariable(var, true);
             operandStack.remove(1);
         } 
@@ -354,13 +354,17 @@ public class BinaryExpressionHelper {
     }
     
     private ClassNode getType(Expression exp) {
-        if (controller.isInClosure() && exp instanceof VariableExpression) {
+        Variable v = null;
+        if (exp instanceof VariableExpression) {
             VariableExpression ve = (VariableExpression) exp;
-            org.codehaus.groovy.ast.Variable v = ve.getAccessedVariable();
-            if ((v instanceof VariableExpression || v instanceof Parameter) &&
-                !ve.isClosureSharedVariable()) 
-            {
-                return exp.getType();
+            v = ve.getAccessedVariable();
+        } else if (exp instanceof FieldExpression) {
+            FieldExpression fe = (FieldExpression) exp;
+            v = fe.getField();
+        }
+        if (v!=null) {
+            if (!v.isClosureSharedVariable()) {
+                return v.getOriginType();
             } else {
                 return ClassHelper.OBJECT_TYPE;
             }

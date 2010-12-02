@@ -35,6 +35,7 @@ public class FieldNode extends AnnotatedNode implements Opcodes, Variable {
     private Expression initialValueExpression;
     private boolean dynamicTyped;
     private boolean holder;
+    private ClassNode originType = ClassHelper.DYNAMIC_TYPE;
 
     public static FieldNode newStatic(Class theClass, String name) throws SecurityException, NoSuchFieldException {
         Field field = theClass.getField(name);
@@ -49,6 +50,7 @@ public class FieldNode extends AnnotatedNode implements Opcodes, Variable {
         if (this.type == ClassHelper.DYNAMIC_TYPE && initialValueExpression != null)
             this.setType(initialValueExpression.getType());
         this.setType(type);
+        this.originType = type;
         this.owner = owner;
         this.initialValueExpression = initialValueExpression;
     }
@@ -158,7 +160,11 @@ public class FieldNode extends AnnotatedNode implements Opcodes, Variable {
     }
 
     public ClassNode getOriginType() {
-        return getType();
+        return originType;
+    }
+    
+    public void setOriginType(ClassNode cn) {
+        originType = cn;
     }
 
     public void rename(String name) {

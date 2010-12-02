@@ -38,10 +38,12 @@ public class Parameter extends AnnotatedNode implements Variable {
     private boolean inStaticContext;
     private boolean closureShare=false;
     private int modifiers;
+    private ClassNode originType=ClassHelper.DYNAMIC_TYPE;
 
     public Parameter(ClassNode type, String name) {
         this.name = name;
         this.setType(type);
+        this.originType = type;
         this.hasDefaultValue = false;
     }
     
@@ -110,7 +112,11 @@ public class Parameter extends AnnotatedNode implements Variable {
     }
 
     public ClassNode getOriginType() {
-        return getType();
+        return originType;
+    }
+    
+    public void setOriginType(ClassNode cn) {
+        originType = cn;
     }
 
     public void setModifiers(int modifiers) {

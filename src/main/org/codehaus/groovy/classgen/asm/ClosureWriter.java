@@ -28,6 +28,7 @@ import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
+import org.codehaus.groovy.ast.Variable;
 import org.codehaus.groovy.ast.VariableScope;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
@@ -50,6 +51,8 @@ import static org.objectweb.asm.Opcodes.*;
 
 public class ClosureWriter {
     
+    protected interface UseExistingReference {}
+
     private HashMap<Expression,ClassNode> closureClassMap;
     private WriterController controller;
     
@@ -106,21 +109,15 @@ public class ClosureWriter {
                     FieldNode field = classNode.getDeclaredField(name);
                     mv.visitVarInsn(ALOAD, 0);
                     mv.visitFieldInsn(GETFIELD, controller.getInternalClassName(), name, BytecodeHelper.getTypeDescription(field.getType()));
-                    // and define it
-                    // Note:
-                    // we can simply define it here and don't have to
-                    // be afraid about name problems because a second
-                    // variable with that name is not allowed inside the closure
-                    param.setClosureSharedVariable(false);
-                    v = compileStack.defineVariable(param, true);
-                    param.setClosureSharedVariable(true);
-                    v.setHolder(true);
+                } else {
+                    mv.visitVarInsn(ALOAD, v.getIndex());
                 }
-                mv.visitVarInsn(ALOAD, v.getIndex());
-                controller.getOperandStack().push(v.getType());
+                if (param.getNodeMetaData(ClosureWriter.UseExistingReference.class)==null) {
+                        param.setNodeMetaData(ClosureWriter.UseExistingReference.class,Boolean.TRUE);
+                }
+                controller.getOperandStack().push(ClassHelper.REFERENCE_TYPE);
             }
         }
-//        passingParams = false;
 
         // we may need to pass in some other constructors
         //cv.visitMethodInsn(INVOKESPECIAL, innerClassinternalName, "<init>", prototype + ")V");
@@ -169,7 +166,7 @@ public class ClosureWriter {
             // let's create a default 'it' parameter
             Parameter it = new Parameter(ClassHelper.OBJECT_TYPE, "it", ConstantExpression.NULL);
             parameters = new Parameter[]{it};
-            org.codehaus.groovy.ast.Variable ref = expression.getVariableScope().getDeclaredVariable("it");
+            Variable ref = expression.getVariableScope().getDeclaredVariable("it");
             if (ref!=null) it.setClosureSharedVariable(ref.isClosureSharedVariable());
         }
 
@@ -247,6 +244,7 @@ public class ClosureWriter {
                 type = ClassHelper.makeReference();
                 param.setType(ClassHelper.makeReference());
                 paramField = answer.addField(paramName, ACC_PRIVATE, type, initialValue);
+                paramField.setOriginType(param.getOriginType());
                 paramField.setHolder(true);
                 String methodName = Verifier.capitalize(paramName);
 
@@ -282,7 +280,9 @@ public class ClosureWriter {
     private void removeInitialValues(Parameter[] params) {
         for (int i = 0; i < params.length; i++) {
             if (params[i].hasInitialExpression()) {
-                params[i] = new Parameter(params[i].getType(), params[i].getName());
+                Parameter p = new Parameter(params[i].getType(), params[i].getName());
+                p.setOriginType(p.getOriginType());
+                params[i] = p;
             }
         }
     }
@@ -316,8 +316,10 @@ public class ClosureWriter {
         Parameter[] ret = new Parameter[scope.getReferencedLocalVariablesCount()];
         int index = 0;
         for (Iterator iter = scope.getReferencedLocalVariablesIterator(); iter.hasNext();) {
-            org.codehaus.groovy.ast.Variable element = (org.codehaus.groovy.ast.Variable) iter.next();
+            Variable element = (org.codehaus.groovy.ast.Variable) iter.next();
             Parameter p = new Parameter(element.getType(), element.getName());
+            p.setOriginType(element.getOriginType());
+            p.setClosureSharedVariable(element.isClosureSharedVariable());
             ret[index] = p;
             index++;
         }

@@ -20,6 +20,7 @@ import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.Parameter;
+import org.codehaus.groovy.ast.Variable;
 import org.codehaus.groovy.ast.VariableScope;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
@@ -515,10 +516,7 @@ public class CompileStack implements Opcodes {
         int prevCurrent = currentVariableIndex;
         makeNextVariableID(type);
         int index = currentVariableIndex;
-        if (methodParameterUsedInClosure) {
-            index = localVariableOffset++;
-            type = ClassHelper.getWrapper(type);
-        }
+        if (methodParameterUsedInClosure) index = localVariableOffset++;
         BytecodeVariable answer = new BytecodeVariable(index, type, name, prevCurrent);
         usedVariables.add(answer);
         answer.setHolder(methodParameterUsedInClosure);
@@ -536,7 +534,7 @@ public class CompileStack implements Opcodes {
         resetVariableIndex(isInStaticContext);
     }
     
-    private void defineMethodVariables(Parameter[] paras,boolean isInStaticContext) {
+    private void defineMethodVariables(Parameter[] paras, boolean isInStaticContext) {
         Label startLabel  = new Label();
         thisStartLabel = startLabel;
         controller.getMethodVisitor().visitLabel(startLabel);
@@ -549,13 +547,16 @@ public class CompileStack implements Opcodes {
             BytecodeVariable answer;
             ClassNode type = paras[i].getType();
             if (paras[i].isClosureSharedVariable()) {
-                answer = defineVar(name, type, true);
-                controller.getOperandStack().load(type,currentVariableIndex);
-                controller.getOperandStack().box();
-                createReference(answer);
-                hasHolder = true;
+                boolean useExistingReference = paras[i].getNodeMetaData(ClosureWriter.UseExistingReference.class) != null;
+                answer = defineVar(name, paras[i].getOriginType(), !useExistingReference);
+                if (!useExistingReference) {
+                    controller.getOperandStack().load(type,currentVariableIndex);
+                    controller.getOperandStack().box();
+                    createReference(answer);
+                    hasHolder = true;
+                }
             } else {
-                answer = defineVar(name,type,false);
+                answer = defineVar(name, type, false);
             }
             answer.setStartLabel(startLabel);
             stackVariables.put(name, answer);
@@ -578,13 +579,16 @@ public class CompileStack implements Opcodes {
     /**
      * Defines a new Variable using an AST variable.
      * @param initFromStack if true the last element of the 
-     *                      stack will be used to initilize
+     *                      stack will be used to initialize
      *                      the new variable. If false null
      *                      will be used.
      */
-    public BytecodeVariable defineVariable(org.codehaus.groovy.ast.Variable v, boolean initFromStack) {
+    public BytecodeVariable defineVariable(Variable v, boolean initFromStack) {
+        //TODO: any usage of this method should have different operand stack hanlding
+        //      then the remove(1) here and there in this one can be removed and others
+        //      can be changed
         String name = v.getName();
-        BytecodeVariable answer = defineVar(name,v.getType(),false);
+        BytecodeVariable answer = defineVar(name,v.getOriginType(),false); //TODO: replace false with v.isClosureSharedVariable() and remove next line? 
         if (v.isClosureSharedVariable()) answer.setHolder(true);
         stackVariables.put(name, answer);
         
@@ -592,11 +596,26 @@ public class CompileStack implements Opcodes {
         Label startLabel  = new Label();
         answer.setStartLabel(startLabel);
         if (answer.isHolder())  {
-            if (!initFromStack) mv.visitInsn(ACONST_NULL);
+            if (!initFromStack) {
+                mv.visitInsn(ACONST_NULL);
+            } else {
+                OperandStack operandStack = controller.getOperandStack();
+                operandStack.push(answer.getType());
+                operandStack.box();
+                operandStack.remove(1);
+            }
             createReference(answer);
         } else {
-            if (!initFromStack) mv.visitInsn(ACONST_NULL);
-            mv.visitVarInsn(ASTORE, currentVariableIndex);            
+            if (!initFromStack) {
+                if (ClassHelper.isPrimitiveType(answer.getType())) {
+                    mv.visitLdcInsn(0);
+                } else {
+                    mv.visitInsn(ACONST_NULL);
+                }
+            }
+            OperandStack operandStack = controller.getOperandStack();
+            operandStack.push(answer.getType());
+            operandStack.storeVar(answer);
         } 
         mv.visitLabel(startLabel);
         return answer;
@@ -771,5 +790,5 @@ public class CompileStack implements Opcodes {
     public void pushInSpecialConstructorCall() {
         pushState();
         inSpecialConstructallCall = true;
-    }  
+    }
 }
