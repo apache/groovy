@@ -115,7 +115,7 @@ public class CategoryASTTransformation implements ASTTransformation, Opcodes {
             @Override
             public void visitDeclarationExpression(DeclarationExpression expression) {
                 if (expression.isMultipleAssignmentDeclaration()) {
-                    TupleExpression te = expression.getTupleExpression();
+                    TupleExpression te = (TupleExpression) expression.getLeftExpression();
                     List<Expression> list = te.getExpressions();
                     for (Expression arg : list) {
                         VariableExpression ve = (VariableExpression) arg;
