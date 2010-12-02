@@ -290,9 +290,9 @@ public class BinaryExpressionHelper {
                         rhsValueLoader, "getAt",
                         new ArgumentListExpression(new ConstantExpression(i)));
                 call.visit(acg);
-                operandStack.doGroovyCast(var.getOriginType());
                 i++;
                 if (defineVariable) {
+                    operandStack.doGroovyCast(var);
                     compileStack.defineVariable(var, true);
                     operandStack.remove(1);
                 } else {
@@ -304,7 +304,7 @@ public class BinaryExpressionHelper {
         else if (defineVariable) {
             VariableExpression var = (VariableExpression) leftExpression;
             rhsValueLoader.visit(acg);
-            operandStack.doGroovyCast(var.getOriginType());
+            operandStack.doGroovyCast(var);
             compileStack.defineVariable(var, true);
             operandStack.remove(1);
         } 
@@ -313,7 +313,6 @@ public class BinaryExpressionHelper {
             int mark = operandStack.getStackLength();
             // to leave a copy of the rightExpression value on the stack after the assignment.
             rhsValueLoader.visit(acg);
-            operandStack.doGroovyCast(leftExpression.getType());
             leftExpression.visit(acg);
             operandStack.remove(operandStack.getStackLength()-mark);
         }
@@ -527,7 +526,6 @@ public class BinaryExpressionHelper {
 
         // br to leave a copy of rvalue on the stack. see also isPopRequired()
         operandStack.dup();
-        operandStack.doGroovyCast(leftExpression.getType());
         
         controller.getCompileStack().pushLHS(true);
         leftExpression.visit(acg);

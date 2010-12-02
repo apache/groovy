@@ -301,7 +301,7 @@ public class CompileStack implements Opcodes {
      * @return the index used for this temporary variable
      */
     public int defineTemporaryVariable(String name, ClassNode node, boolean store) {
-        BytecodeVariable answer = defineVar(name,node,false);
+        BytecodeVariable answer = defineVar(name, node, false, false);
         temporaryVariables.addFirst(answer); // TRICK: we add at the beginning so when we find for remove or get we always have the last one
         usedVariables.removeLast();
         
@@ -512,14 +512,14 @@ public class CompileStack implements Opcodes {
         pushState();
     }
     
-    private BytecodeVariable defineVar(String name, ClassNode type, boolean methodParameterUsedInClosure) {
+    private BytecodeVariable defineVar(String name, ClassNode type, boolean holder, boolean useReferenceDirectly) {
         int prevCurrent = currentVariableIndex;
         makeNextVariableID(type);
         int index = currentVariableIndex;
-        if (methodParameterUsedInClosure) index = localVariableOffset++;
+        if (holder && !useReferenceDirectly) index = localVariableOffset++;
         BytecodeVariable answer = new BytecodeVariable(index, type, name, prevCurrent);
         usedVariables.add(answer);
-        answer.setHolder(methodParameterUsedInClosure);
+        answer.setHolder(holder);
         return answer;
     }
     
@@ -541,30 +541,26 @@ public class CompileStack implements Opcodes {
         
         makeLocalVariablesOffset(paras,isInStaticContext);      
         
-        boolean hasHolder = false;
         for (int i = 0; i < paras.length; i++) {
             String name = paras[i].getName();
             BytecodeVariable answer;
             ClassNode type = paras[i].getType();
             if (paras[i].isClosureSharedVariable()) {
                 boolean useExistingReference = paras[i].getNodeMetaData(ClosureWriter.UseExistingReference.class) != null;
-                answer = defineVar(name, paras[i].getOriginType(), !useExistingReference);
+                answer = defineVar(name, paras[i].getOriginType(), true, useExistingReference);
                 if (!useExistingReference) {
                     controller.getOperandStack().load(type,currentVariableIndex);
                     controller.getOperandStack().box();
                     createReference(answer);
-                    hasHolder = true;
                 }
             } else {
-                answer = defineVar(name, type, false);
+                answer = defineVar(name, type, false, false);
             }
             answer.setStartLabel(startLabel);
             stackVariables.put(name, answer);
         }
         
-        if (hasHolder) {
-            nextVariableIndex = localVariableOffset;
-        }
+        nextVariableIndex = localVariableOffset;
     }
 
     private void createReference(BytecodeVariable reference) {
@@ -588,8 +584,7 @@ public class CompileStack implements Opcodes {
         //      then the remove(1) here and there in this one can be removed and others
         //      can be changed
         String name = v.getName();
-        BytecodeVariable answer = defineVar(name,v.getOriginType(),false); //TODO: replace false with v.isClosureSharedVariable() and remove next line? 
-        if (v.isClosureSharedVariable()) answer.setHolder(true);
+        BytecodeVariable answer = defineVar(name, v.getOriginType(), v.isClosureSharedVariable(), v.isClosureSharedVariable()); 
         stackVariables.put(name, answer);
         
         MethodVisitor mv = controller.getMethodVisitor();

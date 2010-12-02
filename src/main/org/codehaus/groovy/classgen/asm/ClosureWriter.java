@@ -235,15 +235,15 @@ public class ClosureWriter {
         // let's assign all the parameter fields from the outer context
         for (Parameter param : localVariableParams) {
             String paramName = param.getName();
-            Expression initialValue = null;
             ClassNode type = param.getType();
-            FieldNode paramField = null;
             if (true) {
-                initialValue = new VariableExpression(paramName);
+                VariableExpression initialValue = new VariableExpression(paramName);
+                initialValue.setAccessedVariable(param);
+                initialValue.setUseReferenceDirectly(true);
                 ClassNode realType = type;
                 type = ClassHelper.makeReference();
                 param.setType(ClassHelper.makeReference());
-                paramField = answer.addField(paramName, ACC_PRIVATE, type, initialValue);
+                FieldNode paramField = answer.addField(paramName, ACC_PRIVATE | ACC_SYNTHETIC, type, initialValue);
                 paramField.setOriginType(param.getOriginType());
                 paramField.setHolder(true);
                 String methodName = Verifier.capitalize(paramName);

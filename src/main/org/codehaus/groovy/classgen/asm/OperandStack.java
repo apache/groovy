@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.Variable;
 import org.codehaus.groovy.ast.expr.CastExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
@@ -261,6 +262,11 @@ public class OperandStack {
      * do Groovy cast for top level element
      */
     public void doGroovyCast(ClassNode targetType) {
+        doConvertAndCast(targetType,false);
+    }
+    
+    public void doGroovyCast(Variable v) {
+        ClassNode targetType = v.getOriginType();
         doConvertAndCast(targetType,false);
     }
     

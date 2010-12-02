@@ -254,8 +254,6 @@ public class InnerClassVisitor extends ClassCodeVisitorSupport implements Opcode
         newParams[0] = thisPara;
         node.setParameters(newParams);
 
-        Statement firstStatement = node.getFirstStatement();
-
         BlockStatement block = null;
         if (code==null) {
             block = new BlockStatement();
@@ -428,10 +426,12 @@ public class InnerClassVisitor extends ClassCodeVisitorSupport implements Opcode
 
             Parameter p = new Parameter(ClassHelper.REFERENCE_TYPE,"p"+pCount);
             parameters.add(pCount, p);
+            p.setOriginType(var.getOriginType());
             final VariableExpression initial = new VariableExpression(p);
             initial.setUseReferenceDirectly(true);
             final FieldNode pField = innerClass.addFieldFirst(ve.getName(), PUBLIC_SYNTHETIC, ClassHelper.REFERENCE_TYPE, initial);
             pField.setHolder(true);
+            pField.setOriginType(var.getOriginType());
         }
         
         innerClass.addConstructor(ACC_SYNTHETIC, (Parameter[]) parameters.toArray(new Parameter[0]), ClassNode.EMPTY_ARRAY, block);
