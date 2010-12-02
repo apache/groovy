@@ -1,5 +1,19 @@
+/*
+ * Copyright 2003-2010 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package groovy.lang;
-
 
 /**
  * A TrampolineClosure wraps a closure that needs to be executed on a functional trampoline.
@@ -11,11 +25,11 @@ package groovy.lang;
  *
  * @author Vaclav Pech
  */
-final class TrampolineClosure extends Closure<Object> {
+final class TrampolineClosure<V> extends Closure<V> {
 
-    private final Closure original;
+    private final Closure<V> original;
 
-    TrampolineClosure(final Closure original) {
+    TrampolineClosure(final Closure<V> original) {
         super(original.getOwner(), original.getDelegate());
         this.original = original;
     }
@@ -41,7 +55,7 @@ final class TrampolineClosure extends Closure<Object> {
      * @return The final result of the trampoline
      */
     @Override
-    public Object call() {
+    public V call() {
         return loop(original.call());
     }
 
@@ -50,7 +64,7 @@ final class TrampolineClosure extends Closure<Object> {
      * @return The final result of the trampoline
      */
     @Override
-    public Object call(final Object arguments) {
+    public V call(final Object arguments) {
         return loop(original.call(arguments));
     }
 
@@ -59,17 +73,17 @@ final class TrampolineClosure extends Closure<Object> {
      * @return The final result of the trampoline
      */
     @Override
-    public Object call(final Object... args) {
+    public V call(final Object... args) {
         return loop(original.call(args));
     }
 
-    private Object loop(final Object lastResult) {
+    private V loop(final Object lastResult) {
         Object result = lastResult;
 
         for (;;) {
             if (result instanceof TrampolineClosure) {
                 result = ((TrampolineClosure)result).original.call();
-            } else return result;
+            } else return (V) result;
         }
     }
 
@@ -79,8 +93,8 @@ final class TrampolineClosure extends Closure<Object> {
      * @return An instance of TrampolineClosure wrapping the original closure after currying.
      */
     @Override
-   public Closure trampoline(final Object... args) {
-        return new TrampolineClosure(original.curry(args));
+   public Closure<V> trampoline(final Object... args) {
+        return new TrampolineClosure<V>(original.curry(args));
     }
 
     /**
@@ -88,7 +102,7 @@ final class TrampolineClosure extends Closure<Object> {
      * @return An instance of TrampolineClosure wrapping the original closure.
      */
     @Override
-    public Closure trampoline() {
+    public Closure<V> trampoline() {
         return this;
     }
 }

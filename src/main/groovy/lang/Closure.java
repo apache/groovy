@@ -634,8 +634,8 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      * @param args Parameters to the closure, so as the trampoline mechanism can call it
      * @return A closure, which will execute the original closure on a trampoline.
      */
-    public Closure trampoline(final Object... args) {
-        return new TrampolineClosure(this.curry(args));
+    public Closure<V> trampoline(final Object... args) {
+        return new TrampolineClosure<V>(this.curry(args));
     }
 
     /**
@@ -647,8 +647,8 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      * Once a non-closure value is returned, the trampoline stops and returns the value as the final result.
      * @return A closure, which will execute the original closure on a trampoline.
      */
-    public Closure trampoline() {
-        return new TrampolineClosure(this);
+    public Closure<V> trampoline() {
+        return new TrampolineClosure<V>(this);
     }
     
     /* (non-Javadoc)
