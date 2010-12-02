@@ -39,14 +39,14 @@ import groovy.lang.Closure;
  * @author Jochen Theodorou
  * @author Paul King
  */
-public final class CurriedClosure extends Closure {
+public final class CurriedClosure<V> extends Closure<V> {
 
     private Object[] curriedParams;
     private int index;
     private int numTrailingArgs = 0;
     private Class varargType = null;
 
-    public CurriedClosure(int index, Closure uncurriedClosure, Object[] arguments) {
+    public CurriedClosure(int index, Closure<V> uncurriedClosure, Object[] arguments) {
         super(uncurriedClosure.clone());
         curriedParams = arguments;
         this.index = index;
@@ -82,7 +82,7 @@ public final class CurriedClosure extends Closure {
         }
     }
 
-    public CurriedClosure(Closure uncurriedClosure, Object[] arguments) {
+    public CurriedClosure(Closure<V> uncurriedClosure, Object[] arguments) {
         this(0, uncurriedClosure, arguments);
     }
 
@@ -124,9 +124,10 @@ public final class CurriedClosure extends Closure {
         return ((Closure) getOwner()).getResolveStrategy();
     }
 
+    @SuppressWarnings("unchecked")
     public Object clone() {
-        Closure uncurriedClosure = (Closure) ((Closure) getOwner()).clone();
-        return new CurriedClosure(index, uncurriedClosure, curriedParams);
+        Closure<V> uncurriedClosure = (Closure<V>) ((Closure) getOwner()).clone();
+        return new CurriedClosure<V>(index, uncurriedClosure, curriedParams);
     }
 
     public Class[] getParameterTypes() {

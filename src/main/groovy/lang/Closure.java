@@ -414,8 +414,8 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      * @param arguments the arguments to bind
      * @return the new closure with its arguments bound
      */
-    public Closure curry(final Object arguments[]) {
-        return new CurriedClosure(this, arguments);
+    public Closure<V> curry(final Object arguments[]) {
+        return new CurriedClosure<V>(this, arguments);
     }
 
     /**
@@ -432,8 +432,8 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      * @return the new closure with its arguments bound
      * @see #curry(Object[])
      */
-    public Closure rcurry(final Object arguments[]) {
-        return new CurriedClosure(-arguments.length, this, arguments);
+    public Closure<V> rcurry(final Object arguments[]) {
+        return new CurriedClosure<V>(-arguments.length, this, arguments);
     }
 
     /**
@@ -466,8 +466,8 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      * @return the new closure with its arguments bound
      * @see #curry(Object[])
      */
-    public Closure ncurry(int n, final Object arguments[]) {
-        return new CurriedClosure(n, this, arguments);
+    public Closure<V> ncurry(int n, final Object arguments[]) {
+        return new CurriedClosure<V>(n, this, arguments);
     }
 
     /**
