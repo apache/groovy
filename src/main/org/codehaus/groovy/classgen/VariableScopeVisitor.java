@@ -326,7 +326,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
 
         // no need to visit left side, just get the variable name
         if (expression.isMultipleAssignmentDeclaration()) {
-            ArgumentListExpression list = (ArgumentListExpression) expression.getLeftExpression();
+            TupleExpression list = expression.getTupleExpression();
             for (Expression e : list.getExpressions()) {
                 VariableExpression exp = (VariableExpression) e;
                 declare(exp);
