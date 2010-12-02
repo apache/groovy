@@ -300,7 +300,7 @@ class TimedInterruptTest extends GroovyTestCase {
             import groovy.transform.TimedInterrupt
             import java.util.concurrent.TimeUnit
 
-            @TimedInterrupt(value = 5L, unit = TimeUnit.HOURS)
+            @TimedInterrupt(value = 18000000L, unit = TimeUnit.MILLISECONDS)
             def myMethod() { }
         ''')
 
@@ -313,7 +313,7 @@ class TimedInterruptTest extends GroovyTestCase {
         system.use {
             instance = c.newInstance()
         }
-        assert instance.TimedInterrupt$expireTime == 18000000000666 //5 days in future
+        assert instance.TimedInterrupt$expireTime == 18000000000666 //5 hours in future
 
         system.demand.nanoTime() { 18000000000666L }
         system.use {
@@ -326,7 +326,7 @@ class TimedInterruptTest extends GroovyTestCase {
             def e = shouldFail(TimeoutException) {
                 instance.myMethod()
             }
-            assert e.contains('Execution timed out after 5 units')
+            assert e.contains('Execution timed out after 18000000 units')
         }
     }
 
