@@ -73,6 +73,7 @@ public class FieldNode extends AnnotatedNode implements Opcodes, Variable {
 
     public void setType(ClassNode type) {
         this.type = type;
+        this.originType = type;
         dynamicTyped |= type == ClassHelper.DYNAMIC_TYPE;
     }
 
