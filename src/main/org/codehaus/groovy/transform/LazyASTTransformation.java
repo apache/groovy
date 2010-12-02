@@ -58,7 +58,7 @@ public class LazyASTTransformation implements ASTTransformation, Opcodes {
 
             fieldNode.rename("$" + fieldNode.getName());
             fieldNode.setModifiers(ACC_PRIVATE | (fieldNode.getModifiers() & (~(ACC_PUBLIC | ACC_PROTECTED))));
-
+            
             if (member instanceof ConstantExpression && ((ConstantExpression) member).getValue().equals(true))
                 createSoft(fieldNode, init);
             else {
@@ -98,7 +98,7 @@ public class LazyASTTransformation implements ASTTransformation, Opcodes {
 
     private void addDoubleCheckedLockingBody(BlockStatement body, FieldNode fieldNode, Expression initExpr) {
         final Expression fieldExpr = new VariableExpression(fieldNode);
-        final VariableExpression localVar = new VariableExpression(fieldNode.getName() + "_local", fieldNode.getType());
+        final VariableExpression localVar = new VariableExpression(fieldNode.getName() + "_local");
         body.addStatement(new ExpressionStatement(new DeclarationExpression(localVar, ASSIGN, fieldExpr)));
         body.addStatement(new IfStatement(
                 new BooleanExpression(new BinaryExpression(localVar, COMPARE_NOT_EQUAL, NULL_EXPR)),

@@ -1363,7 +1363,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         }
 
         Expression leftExpression;
-        Expression rightExpression = ConstantExpression.NULL;
+        Expression rightExpression = EmptyExpression.INSTANCE;
         AST right;
 
         if (isType(ASSIGN, node)) {

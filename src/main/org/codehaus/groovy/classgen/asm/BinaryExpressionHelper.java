@@ -24,6 +24,7 @@ import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
+import org.codehaus.groovy.ast.expr.EmptyExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.FieldExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
@@ -262,8 +263,8 @@ public class BinaryExpressionHelper {
         Expression leftExpression = expression.getLeftExpression();
         
         if (    defineVariable && 
-                rightExpression==ConstantExpression.NULL 
-                && !(leftExpression instanceof TupleExpression) )
+                rightExpression instanceof EmptyExpression && 
+                !(leftExpression instanceof TupleExpression) )
         {
             VariableExpression ve = (VariableExpression) leftExpression;
             BytecodeVariable var = compileStack.defineVariable(ve, false);
@@ -332,7 +333,7 @@ public class BinaryExpressionHelper {
         rhsValueLoader.visit(acg);
         compileStack.removeVar(rhsValueId);
     }
-    
+
     private ClassNode getCastType(Expression exp) {
         if (exp instanceof ClassExpression) {
             return ClassHelper.CLASS_Type;
