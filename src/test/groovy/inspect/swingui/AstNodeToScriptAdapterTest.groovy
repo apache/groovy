@@ -257,7 +257,7 @@ public class AstNodeToScriptAdapterTest extends GroovyTestCase {
         assert result.contains('def (java.lang.Object a, java.lang.Object b, java.lang.Object c, java.lang.Object d) = [1, 2, 3, 4]')
         assert result.contains("def (java.lang.Integer e, java.lang.String f, java.lang.Integer g, java.lang.String h) = [1, '2', 3, '4']")
         assert result.contains("def (java.lang.Object _, java.lang.Object month, java.lang.Object year) = '18th June 2009'.split()")
-        assert result.contains('java.lang.Object y = null')
+        assert result.contains('java.lang.Object y')
         assert result.contains('java.lang.Object z = [1, 2]')
     }
 
