@@ -50,7 +50,7 @@ public class WriterController {
     private ConstructorNode constructorNode;
     private GeneratorContext context;
     private InterfaceHelperClassNode interfaceClassLoadingClass;
-    private boolean optimizeForInt = true;
+    public boolean optimizeForInt = true;
     
     public void init(AsmClassGenerator asmClassGenerator, GeneratorContext gcon, ClassVisitor cv, ClassNode cn) {
         Map<String,Boolean> optOptions = cn.getCompileUnit().getConfig().getOptimizationOptions();
@@ -68,7 +68,11 @@ public class WriterController {
         this.internalClassName = BytecodeHelper.getClassInternalName(classNode);
         this.callSiteWriter = new CallSiteWriter(this);
         this.invocationWriter = new InvocationWriter(this);
-        this.binaryExpHelper = new BinaryExpressionHelper(this);
+        /*if (optimizeForInt) {
+            this.binaryExpHelper = new BinaryIntExpressionHelper(this);            
+        } else {*/
+            this.binaryExpHelper = new BinaryExpressionHelper(this);
+        //}
         this.operandStack = new OperandStack(this);
         this.assertionWriter = new AssertionWriter(this);
         this.closureWriter = new ClosureWriter(this);

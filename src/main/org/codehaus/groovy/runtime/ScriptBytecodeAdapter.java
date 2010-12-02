@@ -16,6 +16,8 @@
 package org.codehaus.groovy.runtime;
 
 import groovy.lang.*;
+
+import org.codehaus.groovy.runtime.metaclass.DefaultMetaClassInfo;
 import org.codehaus.groovy.runtime.metaclass.MissingMethodExceptionNoStack;
 import org.codehaus.groovy.runtime.metaclass.MissingMethodExecutionFailed;
 import org.codehaus.groovy.runtime.metaclass.MissingPropertyExceptionNoStack;
@@ -618,7 +620,6 @@ public class ScriptBytecodeAdapter {
         return InvokerHelper.createMap(values);
     }
 
-
     //TODO: refactor
     public static List createRange(Object from, Object to, boolean inclusive) throws Throwable {
         if (from instanceof Integer && to instanceof Integer) {
@@ -722,7 +723,6 @@ public class ScriptBytecodeAdapter {
         return InvokerHelper.matchRegex(left, right);
     }
 
-
     //spread expressions
     public static Object[] despreadList(Object[] args, Object[] spreads, int[] positions) {
         List ret = new ArrayList();
@@ -776,5 +776,12 @@ public class ScriptBytecodeAdapter {
 
     public static MetaClass initMetaClass(Object object) {
         return InvokerHelper.getMetaClass(object.getClass());
+    }
+    
+    /**
+     * @return true if Integer has its default MetaClass
+     */
+    public static boolean isOrigInt(){
+       return DefaultMetaClassInfo.isOrigInt(); 
     }
 }

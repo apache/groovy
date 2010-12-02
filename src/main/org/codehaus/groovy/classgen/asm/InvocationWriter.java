@@ -15,9 +15,14 @@
  */
 package org.codehaus.groovy.classgen.asm;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
+import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.CastExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
@@ -29,6 +34,9 @@ import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
+import org.objectweb.asm.MethodVisitor;
+
+import static org.objectweb.asm.Opcodes.*;
 
 public class InvocationWriter {
     // method invocation
@@ -83,7 +91,52 @@ public class InvocationWriter {
             Expression receiver, Expression message, Expression arguments,
             MethodCallerMultiAdapter adapter,
             boolean safe, boolean spreadSafe, boolean implicitThis
-    ) {
+    ) { 
+        
+        if (adapter==invokeMethodOnCurrent && controller.optimizeForInt) {
+            String methodName = getMethodName(message);
+            if (methodName != null) {
+                List<Parameter> plist = new ArrayList(16);
+                TupleExpression args;
+                if (arguments instanceof TupleExpression) {
+                    args = (TupleExpression) arguments;
+                    for (Expression arg : args.getExpressions()) {
+                        plist.add(new Parameter(arg.getType(),""));
+                    }
+                    
+                } else {
+                    args = new TupleExpression(receiver);
+                    plist.add(new Parameter(arguments.getType(),""));
+                }
+
+                Parameter[] parameters = plist.toArray(new Parameter[plist.size()]);
+                MethodNode mn = controller.getClassNode().getMethod(methodName, parameters);
+                
+                if (mn !=null) {
+                    MethodVisitor mv = controller.getMethodVisitor();
+                    int opcode = INVOKEVIRTUAL;
+                    if (mn.isStatic()) {
+                        opcode = INVOKESTATIC;
+                    } else if (mn.isPrivate()) {
+                        opcode = INVOKESPECIAL;
+                    }
+                    
+                    if (opcode!=INVOKESTATIC) mv.visitIntInsn(ALOAD,0);
+                    for (Expression arg : args.getExpressions()) {
+                        arg.visit(controller.getAcg());
+                    }
+                    
+                    String owner = BytecodeHelper.getClassInternalName(mn.getDeclaringClass());
+                    String desc = BytecodeHelper.getMethodDescriptor(mn.getReturnType(), mn.getParameters());
+                    mv.visitMethodInsn(opcode, owner, methodName, desc);
+                    controller.getOperandStack().replace(mn.getReturnType(),args.getExpressions().size());
+                    return;
+                }
+                
+            }
+        }
+        
+        
         if ((adapter == invokeMethod || adapter == invokeMethodOnCurrent || adapter == invokeStaticMethod) && !spreadSafe) {
             String methodName = getMethodName(message);
 
@@ -104,7 +157,11 @@ public class InvocationWriter {
         compileStack.pushLHS(false);
 
         // sender
-        sender.visit(acg);
+        if (adapter == AsmClassGenerator.setProperty) {
+            ConstantExpression.NULL.visit(acg);
+        } else {
+            sender.visit(acg);
+        }
         
         // receiver
         compileStack.pushImplicitThis(implicitThis);
@@ -180,10 +237,10 @@ public class InvocationWriter {
             invokeClosure(call.getArguments(), call.getMethodAsString());
         } else {
             boolean isSuperMethodCall = usesSuper(call);
-            MethodCallerMultiAdapter adapter = InvocationWriter.invokeMethod;
-            if (AsmClassGenerator.isThisExpression(call.getObjectExpression())) adapter = InvocationWriter.invokeMethodOnCurrent;
-            if (isSuperMethodCall) adapter = InvocationWriter.invokeMethodOnSuper;
-            if (isStaticInvocation(call)) adapter = InvocationWriter.invokeStaticMethod;
+            MethodCallerMultiAdapter adapter = invokeMethod;
+            if (AsmClassGenerator.isThisExpression(call.getObjectExpression())) adapter = invokeMethodOnCurrent;
+            if (isSuperMethodCall) adapter = invokeMethodOnSuper;
+            if (isStaticInvocation(call)) adapter = invokeStaticMethod;
             makeInvokeMethodCall(call, isSuperMethodCall, adapter);
         }
     }

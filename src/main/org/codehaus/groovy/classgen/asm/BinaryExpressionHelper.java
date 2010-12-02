@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.codehaus.groovy.classgen.asm;
 
 import org.codehaus.groovy.GroovyBugError;
@@ -71,11 +70,11 @@ public class BinaryExpressionHelper {
             break;
 
         case COMPARE_EQUAL: // ==
-            evaluateBinaryExpression(compareEqualMethod, expression);
+            evaluateCompareExpression(compareEqualMethod, expression);
             break;
 
         case COMPARE_NOT_EQUAL:
-            evaluateBinaryExpression(compareNotEqualMethod, expression);
+            evaluateCompareExpression(compareNotEqualMethod, expression);
             break;
 
         case COMPARE_TO:
@@ -83,19 +82,19 @@ public class BinaryExpressionHelper {
             break;
 
         case COMPARE_GREATER_THAN:
-            evaluateBinaryExpression(compareGreaterThanMethod, expression);
+            evaluateCompareExpression(compareGreaterThanMethod, expression);
             break;
 
         case COMPARE_GREATER_THAN_EQUAL:
-            evaluateBinaryExpression(compareGreaterThanEqualMethod, expression);
+            evaluateCompareExpression(compareGreaterThanEqualMethod, expression);
             break;
 
         case COMPARE_LESS_THAN:
-            evaluateBinaryExpression(compareLessThanMethod, expression);
+            evaluateCompareExpression(compareLessThanMethod, expression);
             break;
 
         case COMPARE_LESS_THAN_EQUAL:
-            evaluateBinaryExpression(compareLessThanEqualMethod, expression);
+            evaluateCompareExpression(compareLessThanEqualMethod, expression);
             break;
 
         case LOGICAL_AND:
@@ -217,11 +216,11 @@ public class BinaryExpressionHelper {
             break;
 
         case FIND_REGEX:
-            evaluateBinaryExpression(findRegexMethod, expression);
+            evaluateCompareExpression(findRegexMethod, expression);
             break;
 
         case MATCH_REGEX:
-            evaluateBinaryExpression(matchRegexMethod, expression);
+            evaluateCompareExpression(matchRegexMethod, expression);
             break;
 
         case LEFT_SQUARE_BRACKET:
@@ -233,7 +232,7 @@ public class BinaryExpressionHelper {
             break;
 
         case KEYWORD_IN:
-            evaluateBinaryExpression(isCaseMethod, expression);
+            evaluateCompareExpression(isCaseMethod, expression);
             break;
 
         default:
@@ -335,7 +334,7 @@ public class BinaryExpressionHelper {
         }
     }
 
-    private void evaluateBinaryExpression(MethodCaller compareMethod, BinaryExpression expression) {
+    protected void evaluateCompareExpression(MethodCaller compareMethod, BinaryExpression expression) {
         Expression leftExp = expression.getLeftExpression();
         Expression rightExp = expression.getRightExpression();
         AsmClassGenerator acg = controller.getAcg();
@@ -435,7 +434,7 @@ public class BinaryExpressionHelper {
         mv.visitLabel(end);
     }
     
-    private void evaluateBinaryExpression(String message, BinaryExpression binExp) {
+    protected void evaluateBinaryExpression(String message, BinaryExpression binExp) {
         CompileStack compileStack = controller.getCompileStack();
 
         Expression receiver = binExp.getLeftExpression();
