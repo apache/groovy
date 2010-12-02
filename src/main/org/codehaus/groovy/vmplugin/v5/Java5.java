@@ -309,7 +309,9 @@ public class Java5 implements VMPlugin {
 
     private void setMethodDefaultValue(MethodNode mn, Method m) {
         Object defaultValue = m.getDefaultValue();
-        mn.setCode(new ReturnStatement(new ConstantExpression(defaultValue)));
+        ConstantExpression cExp = ConstantExpression.NULL;
+        if (defaultValue!=null) cExp = new ConstantExpression(defaultValue);
+        mn.setCode(new ReturnStatement(cExp));
         mn.setAnnotationDefault(true);
     }
 

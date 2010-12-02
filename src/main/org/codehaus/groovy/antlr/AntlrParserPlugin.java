@@ -2650,7 +2650,8 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
 
     protected ConstantExpression integerExpression(AST node) {
         String text = node.getText();
-        ConstantExpression constantExpression = new ConstantExpression(Numbers.parseInteger(text), true);
+        Object number = Numbers.parseInteger(text);
+        ConstantExpression constantExpression = new ConstantExpression(number, number instanceof Integer);
         configureAST(constantExpression, node);
         return constantExpression;
     }

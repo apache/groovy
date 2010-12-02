@@ -390,9 +390,13 @@ public class OperandStack {
             
             if (variable.isHolder()) {
                 mv.visitVarInsn(ALOAD, idx);
-//                mv.visitTypeInsn(CHECKCAST, "groovy/lang/Reference");
                 if (!useReferenceDirectly) {
                     mv.visitMethodInsn(INVOKEVIRTUAL, "groovy/lang/Reference", "get", "()Ljava/lang/Object;");
+                    //TODO: ensure original type is used here
+                    /*
+                        BytecodeHelper.doCast(mv, type);
+                        push(type);
+                    */
                     push(ClassHelper.OBJECT_TYPE);
                 } else {
                     push(ClassHelper.REFERENCE_TYPE);

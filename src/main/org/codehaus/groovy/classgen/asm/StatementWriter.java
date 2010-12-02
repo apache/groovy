@@ -60,7 +60,7 @@ public class StatementWriter {
         this.controller = controller;
     }
 
-    private void writeStatementLabel(Statement statement) {
+    protected void writeStatementLabel(Statement statement) {
         String name = statement.getStatementLabel();
         if (name != null) {
             Label label = controller.getCompileStack().createLocalLabel(name);
@@ -93,6 +93,14 @@ public class StatementWriter {
         }
     }
     
+    protected void writeIteratorHasNext(MethodVisitor mv) {
+        iteratorHasNextMethod.call(mv);
+    }
+    
+    protected void writeIteratorNext(MethodVisitor mv) {
+        iteratorNextMethod.call(mv);
+    }
+    
     protected void writeForInLoop(ForStatement loop) {
         controller.getAcg().onLineNumber(loop,"visitForLoop");
         writeStatementLabel(loop);
@@ -118,12 +126,12 @@ public class StatementWriter {
 
         mv.visitLabel(continueLabel);
         mv.visitVarInsn(ALOAD, iteratorIdx);
-        iteratorHasNextMethod.call(mv);
+        writeIteratorHasNext(mv);
         // note: ifeq tests for ==0, a boolean is 0 if it is false
         mv.visitJumpInsn(IFEQ, breakLabel);
 
         mv.visitVarInsn(ALOAD, iteratorIdx);
-        iteratorNextMethod.call(mv);
+        writeIteratorNext(mv);
         operandStack.push(ClassHelper.OBJECT_TYPE);
         operandStack.storeVar(variable);
 
@@ -437,12 +445,14 @@ public class StatementWriter {
     {
         controller.getAcg().onLineNumber(statement, "visitCaseStatement");
         MethodVisitor mv = controller.getMethodVisitor();
+        OperandStack operandStack = controller.getOperandStack();
 
         mv.visitVarInsn(ALOAD, switchVariableIndex);
         
         statement.getExpression().visit(controller.getAcg());
+        operandStack.box();
         controller.getBinaryExpHelper().getIsCaseMethod().call(mv);
-        controller.getOperandStack().replace(ClassHelper.boolean_TYPE);
+        operandStack.replace(ClassHelper.boolean_TYPE);
 
         Label l0 = controller.getOperandStack().jump(IFEQ);
 

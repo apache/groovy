@@ -18,8 +18,9 @@ package org.codehaus.groovy.classgen.asm;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
-import org.codehaus.groovy.classgen.BytecodeExpression;
-import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
+import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.MethodCallExpression;
+import org.codehaus.groovy.classgen.asm.OptimizingStatementWriter.StatementMeta;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 
@@ -28,13 +29,7 @@ import static org.objectweb.asm.Opcodes.*;
 
 public class BinaryIntExpressionHelper extends BinaryExpressionHelper {
     
-    private static interface BinExpRunner {
-        public void run(BinaryExpression binExp);
-    }
-    
     private WriterController controller;
-    
-    private static final MethodCaller isOrigInt = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "isOrigInt");
     
     /* from org.codehaus.groovy.syntax.Types
     public static final int COMPARE_NOT_EQUAL           = 120;   // !=
@@ -131,93 +126,51 @@ public class BinaryIntExpressionHelper extends BinaryExpressionHelper {
     }
 
     /**
-     * @return true if top operand is an int
+     * @return true if expression is an evals to an int
      */
-    private boolean isIntOperand() {
-        ClassNode top = controller.getOperandStack().getTopOperand().redirect();
-        return top == ClassHelper.int_TYPE;
+    protected static boolean isIntOperand(Expression exp) {
+        if (exp instanceof BinaryExpression || exp instanceof MethodCallExpression) {
+            StatementMeta meta = (StatementMeta) exp.getNodeMetaData(StatementMeta.class);
+            if (meta!=null && meta.type==ClassHelper.int_TYPE) return true;
+        }
+        ClassNode type = exp.getType().redirect();
+        return type == ClassHelper.int_TYPE;
     }
     
     @Override
     protected void evaluateCompareExpression(final MethodCaller compareMethod, BinaryExpression binExp) {
-        /*writeBinExp(binExp, false, true, new BinExpRunner(){
-            public void run(BinaryExpression binExp) {
-                BinaryIntExpressionHelper.super.evaluateCompareExpression(compareMethod, binExp);                
-            }
-        });*/
-        super.evaluateCompareExpression(compareMethod, binExp); 
-    }
-
-    private void writeBinExp(   BinaryExpression binExp, 
-                                boolean boxFastPathResult, boolean keepArguments,
-                                BinExpRunner superCall) 
-    {
-        OperandStack operandStack = controller.getOperandStack();
         int type = binExp.getOperation().getType();
-        MethodVisitor mv = controller.getMethodVisitor();
-        CompileStack compileStack = controller.getCompileStack();
-        
-        binExp.getLeftExpression().visit(controller.getAcg());
-        boolean leftIsInt = isIntOperand();
-        ClassNode lType = operandStack.getTopOperand();
-        
-        binExp.getRightExpression().visit(controller.getAcg());
-        boolean rightIsInt = isIntOperand();
-        ClassNode rType = operandStack.getTopOperand();
 
-        Label slowPath = new Label(), endOfPath = new Label();
-        if (leftIsInt && rightIsInt) {
-            // do fast path
-            isOrigInt.call(mv);
-            mv.visitJumpInsn(IFNE, slowPath);
-            if (writeIntXInt(type)) {
-                if (boxFastPathResult) operandStack.box();
-                operandStack.remove(1);
-                mv.visitJumpInsn(GOTO, endOfPath);
-            } else {
-                //mv.visitJumpInsn(GOTO, slowPath); // slowpath is next, so no jump
-            }
-            // do slow path
-            operandStack.push(lType);
-            operandStack.push(rType);
-            mv.visitLabel(slowPath);
-        }
-        int rValueId = 0, lValueId = 0;
-        if (!keepArguments) {
-            rValueId = compileStack.defineTemporaryVariable("$intXint$r", rType, true);
-            BytecodeExpression rValueLoader = new VariableSlotLoader(rType,rValueId,operandStack);
-            lValueId = compileStack.defineTemporaryVariable("$intXint$l", lType, true);
-            BytecodeExpression lValueLoader = new VariableSlotLoader(lType,lValueId,operandStack);
-            binExp = new BinaryExpression(lValueLoader,binExp.getOperation(),rValueLoader);
+        Expression left = binExp.getLeftExpression();
+        boolean leftIsInt = isIntOperand(left);
+        Expression right = binExp.getRightExpression();
+        boolean rightIsInt = isIntOperand(right);
+       
+        if (leftIsInt && rightIsInt && writeIntXInt(type, true)) {
+            left.visit(controller.getAcg());
+            right.visit(controller.getAcg());
+            writeIntXInt(type, false);
         } else {
-            //TODO: at check for primitive type to avoid swap?
-            // box left and right
-            operandStack.box();
-            operandStack.swap();
-            operandStack.box();
-            operandStack.swap();
-            operandStack.remove(2);
-            binExp = new BinaryExpression(BytecodeExpression.NOP,binExp.getOperation(),BytecodeExpression.NOP);
+            super.evaluateCompareExpression(compareMethod, binExp);
         }
-        superCall.run(binExp);
-        if (!keepArguments) {
-            compileStack.removeVar(lValueId);
-            compileStack.removeVar(rValueId);
-        }
-        
-        if (leftIsInt && rightIsInt) {
-            mv.visitLabel(endOfPath);
-        }        
     }
     
     @Override
     protected void evaluateBinaryExpression(final String message, BinaryExpression binExp) {
-        /*writeBinExp(binExp, true, false, new BinExpRunner(){
-            public void run(BinaryExpression binExp) {
-                BinaryIntExpressionHelper.super.evaluateBinaryExpression(message, binExp);                
-            }
-        });*/
-        super.evaluateBinaryExpression(message, binExp);
+        int type = binExp.getOperation().getType();
+
+        Expression left = binExp.getLeftExpression();
+        boolean leftIsInt = isIntOperand(left);
+        Expression right = binExp.getRightExpression();
+        boolean rightIsInt = isIntOperand(right);
+        
+        if (leftIsInt && rightIsInt && writeIntXInt(type, true)) {
+            left.visit(controller.getAcg());
+            right.visit(controller.getAcg());
+            writeIntXInt(type, false);
+        } else {
+            super.evaluateBinaryExpression(message, binExp);
+        }
     }
     
     /**
@@ -226,24 +179,26 @@ public class BinaryIntExpressionHelper extends BinaryExpressionHelper {
      * @param type the token type
      * @return true if a successful std compare write
      */
-    private boolean writeStdCompare(int type) {
+    private boolean writeStdCompare(int type, boolean simulate) {
         type = type-COMPARE_NOT_EQUAL;
         // look if really compare
         if (type<0||type>7) return false;
 
-        MethodVisitor mv = controller.getMethodVisitor();
-        OperandStack operandStack = controller.getOperandStack();
-        // operands are on the stack already
-        int bytecode = stdCompareCodes[type];
-        Label l1 = new Label();
-        mv.visitJumpInsn(bytecode,l1);
-        mv.visitInsn(ICONST_1);
-        Label l2 = new Label();;
-        mv.visitJumpInsn(GOTO, l2);
-        mv.visitLabel(l1);
-        mv.visitInsn(ICONST_0);
-        mv.visitLabel(l2);
-        operandStack.replace(ClassHelper.boolean_TYPE, 2);
+        if (!simulate) {
+            MethodVisitor mv = controller.getMethodVisitor();
+            OperandStack operandStack = controller.getOperandStack();
+            // operands are on the stack already
+            int bytecode = stdCompareCodes[type];
+            Label l1 = new Label();
+            mv.visitJumpInsn(bytecode,l1);
+            mv.visitInsn(ICONST_1);
+            Label l2 = new Label();;
+            mv.visitJumpInsn(GOTO, l2);
+            mv.visitLabel(l1);
+            mv.visitInsn(ICONST_0);
+            mv.visitLabel(l2);
+            operandStack.replace(ClassHelper.boolean_TYPE, 2);
+        }
         return true;
     }
     
@@ -252,7 +207,7 @@ public class BinaryIntExpressionHelper extends BinaryExpressionHelper {
      * @param type the token type
      * @return true if a successful spaceship operator write
      */
-    private boolean writeSpaceship(int type) {
+    private boolean writeSpaceship(int type, boolean simulate) {
         if (type != COMPARE_TO) return false;
         /*  
            we will actually do
@@ -299,28 +254,30 @@ public class BinaryIntExpressionHelper extends BinaryExpressionHelper {
           this means we have to pop of II before loading -1
           
         */
-        MethodVisitor mv = controller.getMethodVisitor();
-        // duplicate int arguments
-        mv.visitInsn(DUP2);
-        
-        Label l1 = new Label();
-        mv.visitJumpInsn(IF_ICMPGE,l1);
-        // no jump, so -1, need to pop off surplus II
-        mv.visitInsn(POP2);
-        mv.visitInsn(ICONST_M1);
-        Label l2 = new Label();;
-        mv.visitJumpInsn(GOTO, l2);
-        
-        mv.visitLabel(l1);
-        Label l3 = new Label();
-        mv.visitJumpInsn(IF_ICMPNE,l3);
-        mv.visitInsn(ICONST_0);
-        mv.visitJumpInsn(GOTO,l2);
-        
-        mv.visitLabel(l3);
-        mv.visitInsn(ICONST_1);
-        
-        controller.getOperandStack().replace(ClassHelper.int_TYPE, 2);
+        if (!simulate) {
+            MethodVisitor mv = controller.getMethodVisitor();
+            // duplicate int arguments
+            mv.visitInsn(DUP2);
+            
+            Label l1 = new Label();
+            mv.visitJumpInsn(IF_ICMPGE,l1);
+            // no jump, so -1, need to pop off surplus II
+            mv.visitInsn(POP2);
+            mv.visitInsn(ICONST_M1);
+            Label l2 = new Label();;
+            mv.visitJumpInsn(GOTO, l2);
+            
+            mv.visitLabel(l1);
+            Label l3 = new Label();
+            mv.visitJumpInsn(IF_ICMPNE,l3);
+            mv.visitInsn(ICONST_0);
+            mv.visitJumpInsn(GOTO,l2);
+            
+            mv.visitLabel(l3);
+            mv.visitInsn(ICONST_1);
+            
+            controller.getOperandStack().replace(ClassHelper.int_TYPE, 2);
+        }
         return true;
     }
     
@@ -330,13 +287,15 @@ public class BinaryIntExpressionHelper extends BinaryExpressionHelper {
      * @param type the token type
      * @return true if a successful std operator write
      */
-    private boolean writeStdOperators(int type) {
+    private boolean writeStdOperators(int type, boolean simulate) {
         type = type-PLUS;
         if (type<0 || type>5 || type == 3 /*DIV*/) return false;
         
-        int bytecode = stdOperations[type];
-        controller.getMethodVisitor().visitInsn(bytecode);
-        controller.getOperandStack().replace(ClassHelper.int_TYPE, 2);
+        if (!simulate) {
+            int bytecode = stdOperations[type];
+            controller.getMethodVisitor().visitInsn(bytecode);
+            controller.getOperandStack().replace(ClassHelper.int_TYPE, 2);
+        }
         return true;
     }
 
@@ -346,23 +305,23 @@ public class BinaryIntExpressionHelper extends BinaryExpressionHelper {
      * @param type the token type
      * @return true if a successful bitwise operation write
      */
-    private boolean writeBitwiseOp(int type) {
+    private boolean writeBitwiseOp(int type, boolean simulate) {
         type = type-BITWISE_OR;
         if (type<0 || type>2) return false;
 
-        int bytecode = bitOp[type];
-        controller.getMethodVisitor().visitInsn(bytecode);
-        controller.getOperandStack().replace(ClassHelper.int_TYPE, 2);
+        if (!simulate) {
+            int bytecode = bitOp[type];
+            controller.getMethodVisitor().visitInsn(bytecode);
+            controller.getOperandStack().replace(ClassHelper.int_TYPE, 2);
+        }
         return true;
     }
 
-    private boolean writeIntXInt(int type) {
-        return  writeStdCompare(type)       ||
-                writeSpaceship(type)        ||
-                writeStdOperators(type)     ||
-                writeBitwiseOp(type);
+    private boolean writeIntXInt(int type, boolean simulate) {
+        return  writeStdCompare(type, simulate)         ||
+                writeSpaceship(type, simulate)          ||
+                writeStdOperators(type, simulate)       ||
+                writeBitwiseOp(type, simulate);
     }
-
-
 
 }

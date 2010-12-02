@@ -41,7 +41,7 @@ public class WriterController {
     private ClosureWriter closureWriter;
     private String internalClassName;
     private InvocationWriter invocationWriter;
-    private BinaryExpressionHelper binaryExpHelper;
+    private BinaryExpressionHelper binaryExpHelper, fastPathBinaryExpHelper;
     private AssertionWriter assertionWriter;
     private String internalBaseClassName;
     private ClassNode outermostClass;
@@ -52,6 +52,7 @@ public class WriterController {
     private InterfaceHelperClassNode interfaceClassLoadingClass;
     public boolean optimizeForInt = true;
     private StatementWriter statementWriter;
+    private boolean fastPath = false;
     
     public void init(AsmClassGenerator asmClassGenerator, GeneratorContext gcon, ClassVisitor cv, ClassNode cn) {
         Map<String,Boolean> optOptions = cn.getCompileUnit().getConfig().getOptimizationOptions();
@@ -69,11 +70,13 @@ public class WriterController {
         this.internalClassName = BytecodeHelper.getClassInternalName(classNode);
         this.callSiteWriter = new CallSiteWriter(this);
         this.invocationWriter = new InvocationWriter(this);
-        /*if (optimizeForInt) {
-            this.binaryExpHelper = new BinaryIntExpressionHelper(this);            
-        } else {*/
-            this.binaryExpHelper = new BinaryExpressionHelper(this);
-        //}
+
+        this.binaryExpHelper = new BinaryExpressionHelper(this);
+        if (optimizeForInt) {
+            this.fastPathBinaryExpHelper = new BinaryIntExpressionHelper(this);            
+        } else {
+            this.fastPathBinaryExpHelper = this.binaryExpHelper;
+        }
         this.operandStack = new OperandStack(this);
         this.assertionWriter = new AssertionWriter(this);
         this.closureWriter = new ClosureWriter(this);
@@ -139,7 +142,11 @@ public class WriterController {
     }
 
     public BinaryExpressionHelper getBinaryExpHelper() {
-        return binaryExpHelper;
+        if (fastPath) {
+            return fastPathBinaryExpHelper;
+        } else {
+            return binaryExpHelper;
+        }
     }
 
     public AssertionWriter getAssertionWriter() {
@@ -273,5 +280,17 @@ public class WriterController {
     
     public StatementWriter getStatementWriter() {
         return statementWriter;
+    }
+
+    public void switchToFastPath() {
+        fastPath = true;
+    }
+
+    public void switchToSlowPath() {
+        fastPath = false;
+    }
+
+    public boolean isFastPath() {
+        return fastPath;
     }
 }

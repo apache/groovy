@@ -33,6 +33,7 @@ import org.codehaus.groovy.ast.expr.StaticMethodCallExpression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
+import org.codehaus.groovy.classgen.asm.OptimizingStatementWriter.StatementMeta;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 import org.objectweb.asm.MethodVisitor;
 
@@ -61,14 +62,14 @@ public class InvocationWriter {
         if (useSuper) {
             ClassNode classNode = controller.isInClosure() ? controller.getOutermostClass() : controller.getClassNode(); // GROOVY-4035 
             ClassNode superClass = classNode.getSuperClass();
-            makeCall(new ClassExpression(superClass),
+            makeCall(call, new ClassExpression(superClass),
                     objectExpression, messageName,
                     call.getArguments(), adapter,
                     call.isSafe(), call.isSpreadSafe(),
                     false
             );
         } else {
-            makeCall(objectExpression, messageName,
+            makeCall(call, objectExpression, messageName,
                     call.getArguments(), adapter,
                     call.isSafe(), call.isSpreadSafe(),
                     call.isImplicitThis()
@@ -77,23 +78,24 @@ public class InvocationWriter {
     }
     
     public void makeCall(
+            Expression origin,
             Expression receiver, Expression message, Expression arguments,
             MethodCallerMultiAdapter adapter,
             boolean safe, boolean spreadSafe, boolean implicitThis
     ) {
         ClassNode cn = controller.getClassNode();
-        makeCall(new ClassExpression(cn), receiver, message, arguments,
+        makeCall(origin, new ClassExpression(cn), receiver, message, arguments,
                 adapter, safe, spreadSafe, implicitThis);
     }
 
     private void makeCall(
-            ClassExpression sender,
+            Expression origin, ClassExpression sender,
             Expression receiver, Expression message, Expression arguments,
             MethodCallerMultiAdapter adapter,
             boolean safe, boolean spreadSafe, boolean implicitThis
     ) { 
         
-        if (adapter==invokeMethodOnCurrent && controller.optimizeForInt) {
+        if (adapter==invokeMethodOnCurrent && controller.optimizeForInt && controller.isFastPath()) {
             String methodName = getMethodName(message);
             if (methodName != null) {
                 List<Parameter> plist = new ArrayList(16);
@@ -109,8 +111,10 @@ public class InvocationWriter {
                     plist.add(new Parameter(arguments.getType(),""));
                 }
 
-                Parameter[] parameters = plist.toArray(new Parameter[plist.size()]);
-                MethodNode mn = controller.getClassNode().getMethod(methodName, parameters);
+                StatementMeta meta = null;
+                if (origin!=null) meta = (StatementMeta) origin.getNodeMetaData(StatementMeta.class);
+                MethodNode mn = null;
+                if (meta!=null) mn = meta.target;
                 
                 if (mn !=null) {
                     MethodVisitor mv = controller.getMethodVisitor();
@@ -124,12 +128,21 @@ public class InvocationWriter {
                     if (opcode!=INVOKESTATIC) mv.visitIntInsn(ALOAD,0);
                     for (Expression arg : args.getExpressions()) {
                         arg.visit(controller.getAcg());
+                        ClassNode type = arg.getType();
+                        if (!ClassHelper.isPrimitiveType(type)) {
+                            BytecodeHelper.doCast(mv, type);
+                        }
                     }
                     
                     String owner = BytecodeHelper.getClassInternalName(mn.getDeclaringClass());
                     String desc = BytecodeHelper.getMethodDescriptor(mn.getReturnType(), mn.getParameters());
                     mv.visitMethodInsn(opcode, owner, methodName, desc);
-                    controller.getOperandStack().replace(mn.getReturnType(),args.getExpressions().size());
+                    ClassNode ret = mn.getReturnType().redirect();
+                    if (ret==ClassHelper.VOID_TYPE) {
+                        ret = ClassHelper.OBJECT_TYPE;
+                        mv.visitInsn(ACONST_NULL);
+                    }
+                    controller.getOperandStack().replace(ret,args.getExpressions().size());
                     return;
                 }
                 
@@ -290,7 +303,7 @@ public class InvocationWriter {
     }
 
     public void writeInvokeStaticMethod(StaticMethodCallExpression call) {
-        makeCall(
+        makeCall(null,
                 new ClassExpression(call.getOwnerType()),
                 new ConstantExpression(call.getMethod()),
                 call.getArguments(),

@@ -98,6 +98,7 @@ public class ListHashMap<K,V> implements Map<K,V> {
 
     @Override
     public V get(Object key) {
+        if(size==0) return null;
         if (size<maxListFill) {
             for (int i=0; i<maxListFill; i++) {
                 if (listKeys[i].equals(key)) return (V) listValues[i];

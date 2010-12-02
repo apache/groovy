@@ -23,7 +23,6 @@ import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.stmt.*;
 import org.codehaus.groovy.classgen.asm.*;
-import org.codehaus.groovy.classgen.asm.BytecodeVariable;
 
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.SourceUnit;
@@ -124,6 +123,9 @@ public class AsmClassGenerator extends ClassGenerator {
         referencedClasses.clear();
         this.controller = new WriterController();
         this.controller.init(this, context, cv, classNode);
+        if (controller.shouldOptimizeForInt()) {
+            OptimizingStatementWriter.setNodeMeta(classNode);
+        }
         
         try {
             cv.visit(
@@ -370,6 +372,11 @@ public class AsmClassGenerator extends ClassGenerator {
 
     protected void visitStatement(Statement statement) {
         throw new GroovyBugError("visitStatement should not be visited here.");
+    }
+    
+    @Override
+    public void visitCatchStatement(CatchStatement statement) {
+        statement.getCode().visit(this);
     }
 
     public void visitBlockStatement(BlockStatement block) {
@@ -934,6 +941,7 @@ public class AsmClassGenerator extends ClassGenerator {
             controller.getCallSiteWriter().makeGroovyObjectGetPropertySite(objectExpression, propName, expression.isSafe(), expression.isImplicitThis());
         } else {
             controller.getInvocationWriter().makeCall(
+                    expression,
                     objectExpression, // receiver
                     new CastExpression(ClassHelper.STRING_TYPE, expression.getProperty()), // messageName
                     MethodCallExpression.NO_ARGUMENTS, adapter,

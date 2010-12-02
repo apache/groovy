@@ -123,9 +123,9 @@ public class ASTNode {
      *                        data under that key
      */
     public void setNodeMetaData(Object key, Object value) {
-        if (key==null) throw new GroovyBugError("Tried to set meta data with null key.");
+        if (key==null) throw new GroovyBugError("Tried to set meta data with null key on "+this+".");
         Object old = metaDataMap.put(key,value);
-        if (old!=null) throw new GroovyBugError("Tried to overwrite existing meta data.");
+        if (old!=null) throw new GroovyBugError("Tried to overwrite existing meta data "+this+".");
     }
     
     /**
@@ -135,7 +135,7 @@ public class ASTNode {
      * @throws GroovyBugError if the key is null
      */
     public void removeNodeMetaData(Object key) {
-        if (key==null) throw new GroovyBugError("Tried to remove meta data with null key.");
+        if (key==null) throw new GroovyBugError("Tried to remove meta data with null key "+this+".");
         metaDataMap.remove(key);
         if (metaDataMap.size()==0) metaDataMap=null;
     }
