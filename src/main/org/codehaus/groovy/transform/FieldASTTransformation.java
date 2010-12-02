@@ -66,11 +66,11 @@ public class FieldASTTransformation extends ClassCodeExpressionTransformer imple
             candidate = de;
             super.visitClass(cNode);
             // GROOVY-4548: temp fix to stop CCE until proper support is added
-            if (de.getLeftExpression() instanceof ArgumentListExpression) {
+            if (de.isMultipleAssignmentDeclaration()) {
                 addError("Error: annotation " + MY_TYPE_NAME + " not supported with multiple assignment notation.", parent);
                 return;
             }
-            VariableExpression ve = (VariableExpression) de.getLeftExpression();
+            VariableExpression ve = de.getVariableExpression();
             // set owner null here, it will be updated by addField
             FieldNode fNode = new FieldNode(ve.getName(), ve.getModifiers(), ve.getType(), null, de.getRightExpression());
             fNode.setSourcePosition(de);
