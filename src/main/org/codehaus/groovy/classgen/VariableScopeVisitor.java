@@ -363,12 +363,16 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         }
 
         super.visitClosureExpression(expression);
+        markClosureSharedVariables();
+        
+        popState();
+    }
+
+    private void markClosureSharedVariables() {
         VariableScope scope = currentScope;
         for (Iterator<Variable> it = scope.getReferencedLocalVariablesIterator(); it.hasNext();) {
             it.next().setClosureSharedVariable(true);
         }
-        
-        popState();
     }
 
     public void visitCatchStatement(CatchStatement statement) {
@@ -479,6 +483,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         for (Statement statement : innerClass.getObjectInitializerStatements()) {
             statement.visit(this);
         }
+        markClosureSharedVariables();
         popState();
     }
     
