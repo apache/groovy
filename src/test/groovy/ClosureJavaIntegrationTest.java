@@ -173,7 +173,7 @@ public class ClosureJavaIntegrationTest extends TestCase {
         }.trampoline());
         Closure<BigInteger> factorial = new Closure<BigInteger>() {
             public BigInteger doCall(Integer n) {
-                return ref.get().call(n, BigInteger.ONE);
+                return ref.get().call(new Object[]{n, BigInteger.ONE});
             }
         };
         assertEquals(BigInteger.valueOf(479001600), factorial.call(12));
