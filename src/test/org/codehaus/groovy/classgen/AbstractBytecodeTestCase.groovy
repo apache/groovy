@@ -12,7 +12,7 @@ import org.objectweb.asm.commons.EmptyVisitor
  *
  * @author Guillaume Laforge
  */
-abstract class BytecodeAbstractTestCase extends GroovyTestCase {
+abstract class AbstractBytecodeTestCase extends GroovyTestCase {
 
     /**
      * Compiles a script into bytecode and returns the decompiled string equivalent using ASM.
