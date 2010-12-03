@@ -16,11 +16,13 @@
 
 package groovy.inspect.swingui
 
-
-import groovy.inspect.swingui.ScriptToTreeNodeAdapter
 import groovy.swing.SwingBuilder
 import java.awt.Cursor
-import static java.awt.GridBagConstraints.*
+import java.awt.Font
+import java.awt.event.KeyEvent
+import java.util.prefs.Preferences
+import javax.swing.JSplitPane
+import javax.swing.KeyStroke
 import javax.swing.UIManager
 import javax.swing.WindowConstants
 import javax.swing.event.TreeSelectionEvent
@@ -30,23 +32,25 @@ import javax.swing.tree.DefaultTreeModel
 import javax.swing.tree.TreeNode
 import javax.swing.tree.TreeSelectionModel
 import org.codehaus.groovy.control.Phases
-import java.util.prefs.Preferences
+import static java.awt.GridBagConstraints.*
 
 /**
  * This object is a GUI for looking at the AST that Groovy generates. 
- * 
+ *
  * Usage: java groovy.inspect.swingui.AstBrowser [filename]
  *         where [filename] is an existing Groovy script. 
- * 
+ *
  * @author Hamlet D'Arcy (hamletdrc@gmail.com)
  * @author Guillaume Laforge, highlighting the code corresponding to a node selected in the tree view
+ * @author Roshan Dawrani - separated out the swing UI related code from the model part so model could be used for various UIs
  */
 
 public class AstBrowser {
 
-    private inputArea, rootElement
+    private inputArea, rootElement, decompiledSource
     boolean showScriptFreeForm, showScriptClass
     GroovyClassLoader classLoader
+    def prefs = new AstBrowserUiPreferences()
 
     AstBrowser(inputArea, rootElement, classLoader) {
         this.inputArea = inputArea
@@ -57,15 +61,15 @@ public class AstBrowser {
     def swing, frame
 
     public static void main(args) {
-        
+
         if (!args) {
             println "Usage: java groovy.inspect.swingui.AstBrowser [filename]\nwhere [filename] is a Groovy script"
         } else {
-            def file = new File((String)args[0])
+            def file = new File((String) args[0])
             if (!file.exists()) {
                 println "File $args[0] cannot be found."
             } else {
-                UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()); 
+                UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
                 new AstBrowser(null, null, new GroovyClassLoader()).run({file.text}, file.path)
             }
         }
@@ -78,26 +82,38 @@ public class AstBrowser {
     void run(Closure script, String name) {
 
         swing = new SwingBuilder()
-        def prefs = new AstBrowserUiPreferences()
-        def rootNode = new DefaultTreeModel(new DefaultMutableTreeNode("Loading...")) // populated later
-        def phasePicker, jTree, propertyTable, splitterPane
+        def phasePicker, jTree, propertyTable, splitterPane, mainSplitter
 
         showScriptFreeForm = prefs.showScriptFreeForm
         showScriptClass = prefs.showScriptClass
-        
-        frame = swing.frame(title: 'Groovy AST Browser' + (name ? " - $name":''),
+
+        frame = swing.frame(title: 'Groovy AST Browser' + (name ? " - $name" : ''),
                 location: prefs.frameLocation,
                 size: prefs.frameSize,
                 iconImage: swing.imageIcon(groovy.ui.Console.ICON_PATH).image,
                 defaultCloseOperation: WindowConstants.DISPOSE_ON_CLOSE,
-                windowClosing : { event -> prefs.save(frame, splitterPane, showScriptFreeForm, showScriptClass) } ) {
+                windowClosing: { event -> prefs.save(frame, splitterPane, mainSplitter, showScriptFreeForm, showScriptClass, phasePicker.selectedItem) }) {
 
             menuBar {
                 menu(text: 'Show Script', mnemonic: 'S') {
-                    checkBoxMenuItem(selected: showScriptFreeForm) {action(name: 'Free Form', closure: this.&showScriptFreeForm, 
-                            mnemonic: 'F',)}
-                    checkBoxMenuItem(selected: showScriptClass) {action(name: 'Class Form', closure: this.&showScriptClass, 
-                            mnemonic: 'C')}
+                    checkBoxMenuItem(selected: showScriptFreeForm) {
+                        action(name: 'Free Form', closure: this.&showScriptFreeForm,
+                                mnemonic: 'F',)
+                    }
+                    checkBoxMenuItem(selected: showScriptClass) {
+                        action(name: 'Class Form', closure: this.&showScriptClass,
+                                mnemonic: 'C')
+                    }
+                }
+                menu(text: 'View', mnemonic: 'V') {
+                    menuItem() {action(name: 'Larger Font', closure: this.&largerFont, mnemonic: 'L', accelerator: shortcut('shift L'))}
+                    menuItem() {action(name: 'Smaller Font', closure: this.&smallerFont, mnemonic: 'S', accelerator: shortcut('shift S'))}
+                    menuItem() {
+                        action(name: 'Refresh', closure: {
+                            decompile(phasePicker.selectedItem.phaseId, script())
+                            compile(jTree, script(), phasePicker.selectedItem.phaseId)
+                        }, mnemonic: 'R', accelerator: KeyStroke.getKeyStroke(KeyEvent.VK_F5, 0))
+                    }
                 }
                 menu(text: 'Help', mnemonic: 'H') {
                     menuItem() {action(name: 'About', closure: this.&showAbout, mnemonic: 'A')}
@@ -108,38 +124,49 @@ public class AstBrowser {
                 label(text: "At end of Phase: ",
                         constraints: gbc(gridx: 0, gridy: 0, gridwidth: 1, gridheight: 1, weightx: 0, weighty: 0, anchor: WEST, fill: HORIZONTAL, insets: [2, 2, 2, 2]))
                 phasePicker = comboBox(items: CompilePhaseAdapter.values(),
-                        selectedItem: CompilePhaseAdapter.SEMANTIC_ANALYSIS,
+                        selectedItem: prefs.selectedPhase,
                         actionPerformed: {
-                            compile(rootNode, swing, script(), phasePicker.selectedItem.phaseId)
-                        }, 
+                            decompile(phasePicker.selectedItem.phaseId, script())
+                            compile(jTree, script(), phasePicker.selectedItem.phaseId)
+                        },
                         constraints: gbc(gridx: 1, gridy: 0, gridwidth: 1, gridheight: 1, weightx: 1.0, weighty: 0, anchor: NORTHWEST, fill: NONE, insets: [2, 2, 2, 2]))
                 button(text: 'Refresh',
                         actionPerformed: {
-                            compile(rootNode, swing, script(), phasePicker.selectedItem.phaseId)
+                            decompile(phasePicker.selectedItem.phaseId, script())
+                            compile(jTree, script(), phasePicker.selectedItem.phaseId)
                         },
                         constraints: gbc(gridx: 2, gridy: 0, gridwidth: 1, gridheight: 1, weightx: 0, weighty: 0, anchor: NORTHEAST, fill: NONE, insets: [2, 2, 2, 3]))
                 splitterPane = splitPane(
-                        dividerLocation :  prefs.dividerLocation,
                         leftComponent: scrollPane() {
                             jTree = tree(
                                     name: "AstTreeView",
-                                    model: rootNode) {}
+                                    model: new DefaultTreeModel(new DefaultMutableTreeNode("Loading..."))) {}
                         },
                         rightComponent: scrollPane() {
                             propertyTable = table() {
-                                tableModel(list:[[:]]) {
-                                    propertyColumn(header:'Name', propertyName:'name')
-                                    propertyColumn(header:'Value', propertyName:'value')
-                                    propertyColumn(header:'Type', propertyName:'type')
+                                tableModel(list: [[:]]) {
+                                    propertyColumn(header: 'Name', propertyName: 'name')
+                                    propertyColumn(header: 'Value', propertyName: 'value')
+                                    propertyColumn(header: 'Type', propertyName: 'type')
                                 }
                             }
+                        }
+                ) { }
+                mainSplitter = splitPane(
+                        orientation: JSplitPane.VERTICAL_SPLIT,
+                        topComponent: splitterPane,
+                        bottomComponent: scrollPane() {
+                            decompiledSource = textArea(
+                                    editable: false
+                            )
                         },
-                        constraints: gbc(gridx: 0, gridy: 1, gridwidth: 3, gridheight: 1, weightx: 1.0, weighty: 1.0, anchor: NORTHWEST, fill: BOTH, insets: [2, 2, 2, 2])) { }
+                        constraints: gbc(gridx: 0, gridy: 2, gridwidth: 3, gridheight: 1, weightx: 1.0, weighty: 1.0, anchor: NORTHWEST, fill: BOTH, insets: [2, 2, 2, 2])) { }
+
             }
         }
 
         propertyTable.model.rows.clear() //for some reason this suppress an empty row
-        
+
         jTree.cellRenderer.setLeafIcon(swing.imageIcon(groovy.ui.Console.NODE_ICON_PATH));
 
         jTree.selectionModel.selectionMode = TreeSelectionModel.SINGLE_TREE_SELECTION;
@@ -175,18 +202,47 @@ public class AstBrowser {
             propertyTable.model.fireTableDataChanged()
         } as TreeSelectionListener)
 
+        updateFontSize(prefs.decompiledSourceFontSize)
+
         frame.pack()
+        frame.location = prefs.frameLocation
+        frame.size = prefs.frameSize
+        splitterPane.dividerLocation = prefs.verticalDividerLocation
+        mainSplitter.dividerLocation = prefs.horizontalDividerLocation
         frame.show()
-        compile(rootNode, swing, script(), phasePicker.selectedItem.phaseId)
+
+        String source = script()
+        decompile(phasePicker.selectedItem.phaseId, source)
+        compile(jTree, source, phasePicker.selectedItem.phaseId)
         jTree.rootVisible = false
         jTree.showsRootHandles = true   // some OS's require this as a step to show nodes
+
+    }
+
+    void largerFont(EventObject evt = null) {
+        updateFontSize(decompiledSource.font.size + 2)
+    }
+
+    void smallerFont(EventObject evt = null) {
+        updateFontSize(decompiledSource.font.size - 2)
+    }
+
+    private updateFontSize(newFontSize) {
+        if (newFontSize > 40) {
+            newFontSize = 40
+        } else if (newFontSize < 4) {
+            newFontSize = 4
+        }
+
+        prefs.decompiledSourceFontSize = newFontSize
+        decompiledSource.font = new Font(decompiledSource.font.name, decompiledSource.font.style, newFontSize)
     }
 
     void showAbout(EventObject evt) {
-         def pane = swing.optionPane()
-         pane.setMessage('An interactive GUI to explore AST capabilities.')
-         def dialog = pane.createDialog(frame, 'About Groovy AST Browser')
-         dialog.show()
+        def pane = swing.optionPane()
+        pane.setMessage('An interactive GUI to explore AST capabilities.')
+        def dialog = pane.createDialog(frame, 'About Groovy AST Browser')
+        dialog.show()
     }
 
     void showScriptFreeForm(EventObject evt) {
@@ -197,11 +253,57 @@ public class AstBrowser {
         showScriptClass = evt.source.selected
     }
 
-    void compile(node, swing, String script, int compilePhase) {
-        frame.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR))
-        def adapter = new ScriptToTreeNodeAdapter(classLoader, showScriptFreeForm, showScriptClass)
-        node.setRoot(adapter.compile(script, compilePhase))
-        frame.setCursor(Cursor.defaultCursor)
+    void decompile(phaseId, source) {
+
+        decompiledSource.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+        decompiledSource.text = 'Loading...';
+
+        swing.doOutside {
+            try {
+
+                String result = new AstNodeToScriptAdapter().compileToScript(source, phaseId, classLoader, showScriptFreeForm, showScriptClass)
+                swing.doLater {
+                    decompiledSource.text = result 
+                    decompiledSource.setCaretPosition(0)
+                    decompiledSource.setCursor(Cursor.defaultCursor);
+                }
+            } catch (Throwable t) {
+                swing.doLater {
+                    decompiledSource.text = t.getMessage();
+                    decompiledSource.setCaretPosition(0)
+                    decompiledSource.setCursor(Cursor.defaultCursor);
+                }
+                throw t
+            }
+        }
+    }
+
+    void compile(jTree, String script, int compilePhase) {
+        jTree.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR))
+        def model = jTree.model
+        swing.edt {
+            def root = model.getRoot();
+            root.removeAllChildren()
+            root.add(new DefaultMutableTreeNode(new DefaultMutableTreeNode('Loading...')));
+            model.reload(root);
+        }
+        swing.doOutside {
+            try {
+                def nodeMaker = new SwingTreeNodeMaker()
+                def adapter = new ScriptToTreeNodeAdapter(classLoader, showScriptFreeForm, showScriptClass)
+                def result = adapter.compile(script, compilePhase)
+                swing.doLater {
+                    model.setRoot(result)
+                    model.reload()
+                    jTree.setCursor(Cursor.defaultCursor)
+                }
+            } catch (Throwable t) {
+                swing.doLater {
+                    jTree.setCursor(Cursor.defaultCursor)
+                }
+                throw t
+            }
+        }
     }
 }
 
@@ -214,9 +316,12 @@ class AstBrowserUiPreferences {
 
     final def frameLocation
     final def frameSize
-    final def dividerLocation
+    final def verticalDividerLocation
+    final def horizontalDividerLocation
     final boolean showScriptFreeForm
     final boolean showScriptClass
+    int decompiledSourceFontSize
+    final CompilePhaseAdapter selectedPhase
 
     def AstBrowserUiPreferences() {
         Preferences prefs = Preferences.userNodeForPackage(AstBrowserUiPreferences)
@@ -226,20 +331,30 @@ class AstBrowserUiPreferences {
         frameSize = [
                 prefs.getInt("frameWidth", 800),
                 prefs.getInt("frameHeight", 600)]
-        dividerLocation = prefs.getInt("splitterPaneLocation", 100)
+
+        decompiledSourceFontSize = prefs.getInt("decompiledFontSize", 12)
+        verticalDividerLocation = prefs.getInt("verticalSplitterLocation", 100)
+        horizontalDividerLocation = prefs.getInt("horizontalSplitterLocation", 100)
         showScriptFreeForm = prefs.getBoolean("showScriptFreeForm", false)
         showScriptClass = prefs.getBoolean("showScriptClass", true)
+        int phase = prefs.getInt('compilerPhase', Phases.SEMANTIC_ANALYSIS)
+        selectedPhase = CompilePhaseAdapter.values().find {
+            it.phaseId == phase
+        }
     }
 
-    def save(frame, splitter, scriptFreeFormPref, scriptClassPref) {
+    def save(frame, vSplitter, hSplitter, scriptFreeFormPref, scriptClassPref, CompilePhaseAdapter phase) {
         Preferences prefs = Preferences.userNodeForPackage(AstBrowserUiPreferences)
+        prefs.putInt("decompiledFontSize", decompiledSourceFontSize as int)
         prefs.putInt("frameX", frame.location.x as int)
         prefs.putInt("frameY", frame.location.y as int)
         prefs.putInt("frameWidth", frame.size.width as int)
         prefs.putInt("frameHeight", frame.size.height as int)
-        prefs.putInt("splitterPaneLocation", splitter.dividerLocation)
+        prefs.putInt("verticalSplitterLocation", vSplitter.dividerLocation)
+        prefs.putInt("horizontalSplitterLocation", hSplitter.dividerLocation)
         prefs.putBoolean("showScriptFreeForm", scriptFreeFormPref)
         prefs.putBoolean("showScriptClass", scriptClassPref)
+        prefs.putInt('compilerPhase', phase.phaseId)
     }
 }
 
@@ -283,11 +398,37 @@ class TreeNodeWithProperties extends DefaultMutableTreeNode {
 
     /**
      * Creates a tree node and attaches properties to it.
-     * @param userObject    same as a DefaultMutableTreeNode requires
-     * @param properties    a list of String lists
+     * @param userObject same as a DefaultMutableTreeNode requires
+     * @param properties a list of String lists
      */
     def TreeNodeWithProperties(userObject, List<List<String>> properties) {
         super(userObject)
         this.properties = properties
+    }
+}
+
+/**
+ * This interface is used to create tree nodes of various types 
+ *
+ * @author Roshan Dawrani
+ */
+interface AstBrowserNodeMaker<T> {
+    T makeNode(Object userObject)
+
+    T makeNodeWithProperties(Object userObject, List<List<String>> properties)
+}
+
+/**
+ * Creates tree nodes for swing UI  
+ *
+ * @author Roshan Dawrani
+ */
+class SwingTreeNodeMaker implements AstBrowserNodeMaker<DefaultMutableTreeNode> {
+    DefaultMutableTreeNode makeNode(Object userObject) {
+        new DefaultMutableTreeNode(userObject)
+    }
+
+    DefaultMutableTreeNode makeNodeWithProperties(Object userObject, List<List<String>> properties) {
+        new TreeNodeWithProperties(userObject, properties)
     }
 }

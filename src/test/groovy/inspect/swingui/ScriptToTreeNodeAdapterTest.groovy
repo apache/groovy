@@ -224,6 +224,18 @@ public class ScriptToTreeNodeAdapterTest extends GroovyTestCase {
         )
     }
 
+    public void testMultipleAssignments() {
+        assertTreeStructure(
+                " def (x, y) = [1, 2] ",
+                [
+                        startsWith('BlockStatement'),
+                        startsWith('ExpressionStatement'),
+                        eq('Declaration - ((x, y) = [1, 2])'),
+                        eq('ArgumentList - (x, y)'),
+                ]
+        )
+    }
+
     public void testExpression_DuplicateDoesNotAppear() {
         assertTreeStructure(
                 " 'foo' ",
