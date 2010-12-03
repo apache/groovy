@@ -157,7 +157,7 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
             if (left instanceof StaticMethodCallExpression) {
                 StaticMethodCallExpression smce = (StaticMethodCallExpression) left;
                 StaticMethodCallExpression result = new StaticMethodCallExpression(smce.getOwnerType(), smce.getMethod(), right);
-                result.setSourcePosition(be);
+                setSourcePosition(result, be);
                 return result;
             }
         } else {
@@ -172,7 +172,7 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
         if (v != null && v instanceof DynamicVariable) {
             Expression result = findStaticFieldOrPropAccessorImportFromModule(v.getName());
             if (result != null) {
-            	result.setSourcePosition(ve);
+            	setSourcePosition(result, ve);
                 if (inAnnotation) {
                     result = transformInlineConstants(result);
                 }
@@ -181,6 +181,19 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
             if (!inPropertyExpression || inSpecialConstructorCall) addStaticVariableError(ve);
         }
         return ve;
+    }
+
+    /**
+     * Set the source position of toSet including its property expression if it has one.
+     *
+     * @param toSet resulting node
+     * @param origNode original node
+     */
+    private void setSourcePosition(Expression toSet, Expression origNode) {
+        toSet.setSourcePosition(origNode);
+        if (toSet instanceof PropertyExpression) {
+            ((PropertyExpression) toSet).getProperty().setSourcePosition(origNode);
+        }
     }
 
     // resolve constant-looking expressions statically (do here as gets transformed away later)
@@ -235,7 +248,7 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
             if (mce.isImplicitThis()) {
                 Expression ret = findStaticMethodImportFromModule(method, args);
                 if (ret != null) {
-                    ret.setSourcePosition(mce);
+                    setSourcePosition(ret, mce);
                     return ret;
                 }
                 if (method instanceof ConstantExpression && !inLeftExpression){
@@ -244,7 +257,7 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
                 	ret = findStaticFieldOrPropAccessorImportFromModule(methodName);
                 	if (ret != null) {
                 		ret = new MethodCallExpression(ret, "call", args);
-                		ret.setSourcePosition(mce);
+                		setSourcePosition(ret, mce);
                 		return ret;
                 	}
                 }
@@ -264,7 +277,7 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
                     if (inSpecialConstructorCall ||
                             (lookForPossibleStaticMethod && currentClass.hasPossibleStaticMethod(methodName, args))) {
                     	StaticMethodCallExpression smce = new StaticMethodCallExpression(currentClass, methodName, args);
-                    	smce.setSourcePosition(mce);
+                    	setSourcePosition(smce, mce);
                     	return smce;
                     }
                 }
@@ -275,7 +288,7 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
         result.setSafe(mce.isSafe());
         result.setImplicitThis(mce.isImplicitThis());
         result.setSpreadSafe(mce.isSpreadSafe());
-        result.setSourcePosition(mce);
+        setSourcePosition(result, mce);
         return result;
     }
 
