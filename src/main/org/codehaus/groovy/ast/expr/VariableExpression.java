@@ -140,6 +140,7 @@ public class VariableExpression extends Expression implements Variable {
     }
 
     public ClassNode getOriginType() {
+        if (accessedVariable!=null && accessedVariable!=this) return accessedVariable.getOriginType();
         return originType;
     }
 
