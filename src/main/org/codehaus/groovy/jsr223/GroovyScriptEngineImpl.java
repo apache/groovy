@@ -152,7 +152,7 @@ public class GroovyScriptEngineImpl
         return compile(readFully(reader));
     }
 
-    // javax.script.Invocable methods.
+    // javax.script.Invokable methods.
     public Object invokeFunction(String name, Object... args)
             throws ScriptException, NoSuchMethodException {
         return invokeImpl(null, name, args);
@@ -166,15 +166,15 @@ public class GroovyScriptEngineImpl
         return invokeImpl(thiz, name, args);
     }
 
-    public <T> T getInterface(Class<T> clasz) {
-        return makeInterface(null, clasz);
+    public <T> T getInterface(Class<T> clazz) {
+        return makeInterface(null, clazz);
     }
 
-    public <T> T getInterface(Object thiz, Class<T> clasz) {
+    public <T> T getInterface(Object thiz, Class<T> clazz) {
         if (thiz == null) {
             throw new IllegalArgumentException("script object is null");
         }
-        return makeInterface(thiz, clasz);
+        return makeInterface(thiz, clazz);
     }
 
     // package-privates

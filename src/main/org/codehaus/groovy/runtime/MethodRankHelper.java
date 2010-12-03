@@ -403,7 +403,7 @@ public class MethodRankHelper{
      * Currently the lowercase versions of t_j and s_i isn't cached, its probable
      * that some speed could be gained from this.
      * 
-     * This version is based on Chas Emerick's implementation of Lenenshtein Distance
+     * This version is based on Chas Emerick's implementation of Levenshtein Distance
      * for jakarta commons.
      * @param s a CharSequence
      * @param t the CharSequence to be compared to s

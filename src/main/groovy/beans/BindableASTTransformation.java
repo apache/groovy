@@ -48,7 +48,7 @@ import java.beans.PropertyChangeSupport;
  * It also generates the setter and wires the setter through the
  * PropertyChangeSupport.
  * <p/>
- * If a {@link Vetoable} annotaton is detected it does nothing and
+ * If a {@link Vetoable} annotation is detected it does nothing and
  * lets the {@link VetoableASTTransformation} handle all the changes.
  *
  * @author Danno Ferrin (shemnon)

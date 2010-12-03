@@ -651,7 +651,7 @@ public abstract class FactoryBuilderSupport extends Binding {
     }
 
     /**
-     * This method is responsible for instanciating a node and configure its
+     * This method is responsible for instantiating a node and configure its
      * properties.
      *
      * @param name       the name of the node

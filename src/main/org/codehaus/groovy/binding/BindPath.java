@@ -33,7 +33,7 @@ import groovy.lang.Reference;
 public class BindPath {
 
     /**
-     * The local lookup for syhtnetic properties, like JTextField#text
+     * The local lookup for synthetic properties, like JTextField#text
      */
     Map<String, TriggerBinding> localSynthetics;
 
@@ -43,7 +43,7 @@ public class BindPath {
     Object currentObject;
 
     /**
-     * The proeprty we are intiereted in
+     * The property we are interested in
      */
     String propertyName;
 
@@ -57,7 +57,7 @@ public class BindPath {
     BindPath[] children;
 
     /**
-     * Called when we detect a change somewherer down our path.
+     * Called when we detect a change somewhere down our path.
      * First, check to see if our object is changing.  If so remove our old listener
      * Next, update the reference object the children have and recurse
      * Finally, add listeners if we have a different object
@@ -125,7 +125,7 @@ public class BindPath {
             newValue = InvokerHelper.getProperty(newObject, propertyName);
 
         } catch (MissingPropertyException mpe) {
-            //todo we should flag this whent he path is created that this is a field not a prop...
+            //todo we should flag this when the path is created that this is a field not a prop...
             // try direct method...
             try {
                 newValue = InvokerHelper.getAttribute(newObject, propertyName);
@@ -205,12 +205,12 @@ public class BindPath {
     public synchronized void updateLocalSyntheticProperties(Map<String, TriggerBinding> synthetics) {
         localSynthetics = null;
         String endName = "#" + propertyName;
-        for (Map.Entry<String, TriggerBinding> synteticEntry : synthetics.entrySet()) {
-            if (synteticEntry.getKey().endsWith(endName)) {
+        for (Map.Entry<String, TriggerBinding> syntheticEntry : synthetics.entrySet()) {
+            if (syntheticEntry.getKey().endsWith(endName)) {
                 if (localSynthetics == null) {
                     localSynthetics = new TreeMap();
                 }
-                localSynthetics.put(synteticEntry.getKey(), synteticEntry.getValue());
+                localSynthetics.put(syntheticEntry.getKey(), syntheticEntry.getValue());
             }
         }
     }

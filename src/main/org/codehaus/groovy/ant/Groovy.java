@@ -555,7 +555,7 @@ public class Groovy extends Java {
     }
 
     /**
-     * Adds the class pathes (if any)
+     * Adds the class paths (if any)
      *
      * @param classLoader the classloader to configure
      */

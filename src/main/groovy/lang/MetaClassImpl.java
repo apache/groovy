@@ -2587,7 +2587,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      * do the neccessary steps for multimethod logic and using this
      * method doesn't mean, that a method added here is replacing another
      * method from a parent class completely. These steps are usually done
-     * by initalize, which means if you need these steps, you have to add
+     * by initialize, which means if you need these steps, you have to add
      * the method before running initialize the first time.
      *
      * @param method the MetaMethod
@@ -2772,7 +2772,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         else {
             MetaMethod method = (MetaMethod) methods;
             if (method.getName().equals(aMethod.getName())
-//                    TODO: shoulld be better check for case when only diff in modifiers can be SYNTETIC flag
+//                    TODO: should be better check for case when only diff in modifiers can be SYNTHETIC flag
 //                    && method.getModifiers() == aMethod.getModifiers()
                     && method.getReturnType().equals(aMethod.getReturnType())
                     && MetaMethod.equal(method.getParameterTypes(), aMethod.getParameterTypes())) {

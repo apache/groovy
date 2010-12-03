@@ -22,7 +22,7 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
  * This class is a place holder for an empty expression. 
  * Empty expression are used in closures lists like (;). During
  * class Generation this expression should be either ignored or
- * reaplce with a null value.
+ * replace with a null value.
  *   
  * @author Jochen Theodorou
  * @see org.codehaus.groovy.ast.stmt.EmptyStatement

@@ -20,7 +20,7 @@ import org.codehaus.groovy.antlr.GroovySourceAST;
 
 /**
  * A default implementation of all visitor methods.
- * If you extend this class, any un-overriden visit methods will
+ * If you extend this class, any un-overridden visit methods will
  * call visitDefault.
  *
  * @author <a href="mailto:groovy@ross-rayner.com">Jeremy Rayner</a>

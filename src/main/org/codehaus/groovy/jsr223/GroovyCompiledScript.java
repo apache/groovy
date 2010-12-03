@@ -32,9 +32,9 @@ public class GroovyCompiledScript extends CompiledScript {
     private final GroovyScriptEngineImpl engine;
     private final Class clasz;
     
-    public GroovyCompiledScript(GroovyScriptEngineImpl engine, Class clasz) {
+    public GroovyCompiledScript(GroovyScriptEngineImpl engine, Class clazz) {
         this.engine = engine;
-        this.clasz = clasz;
+        this.clasz = clazz;
     }
     
     public Object eval(ScriptContext context) throws ScriptException {

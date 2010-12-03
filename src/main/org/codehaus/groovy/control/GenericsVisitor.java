@@ -73,7 +73,7 @@ public class GenericsVisitor extends ClassCodeVisitorSupport {
         boolean error=false;
         for (int i = 0; i < generics.length; i++) {
             if(generics[i].isWildcard()) {
-                addError("A supertype may not specifiy a wildcard type",sn);
+                addError("A supertype may not specify a wildcard type",sn);
                 error = true;
             }
         }
@@ -96,7 +96,7 @@ public class GenericsVisitor extends ClassCodeVisitorSupport {
         if (nTypes.length!=cnTypes.length) {
             addError( "The class "+n.getName()+" refers to the class "+
                       cn.getName()+" and uses "+nTypes.length+
-                      " parameters, but the refered class needs "+
+                      " parameters, but the referred class needs "+
                       cnTypes.length, n);
             return;
         }

@@ -54,7 +54,7 @@ public class PropertyBinding implements SourceBinding, TargetBinding, TriggerBin
             if (!(iie.getCause() instanceof PropertyVetoException)) {
                 throw iie;
             }
-            // ignore veto exceptions, just let the binding fail like a validaiton does
+            // ignore veto exceptions, just let the binding fail like a validation does
         }
     }
 

@@ -168,7 +168,7 @@ public class ParameterTypes
      * arguments to make the method callable
      *
      * @param argumentArray the arguments used to call the method
-     * @param paramTypes    the types of the paramters the method takes
+     * @param paramTypes    the types of the parameters the method takes
      */
     private static Object[] fitToVargs(Object[] argumentArray, CachedClass[] paramTypes) {
         Class vargsClass = ReflectionCache.autoboxType(paramTypes[paramTypes.length - 1].getTheClass().getComponentType());
@@ -194,7 +194,7 @@ public class ParameterTypes
                 newArgs[newArgs.length - 1] = wrapped;
                 return newArgs;
             } else {
-                // we may have to box the arguemnt!
+                // we may have to box the argument!
                 return argumentArray;
             }
         } else if (argumentArray.length > paramTypes.length) {

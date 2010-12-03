@@ -36,7 +36,7 @@ public interface GroovyAnnotationRef {
      * Initially implemented as a temporary hack stored from the source.
      * To be replaced with strong-typed finer grained information.
      *
-     * @return the text representation of the annotaiton ref
+     * @return the text representation of the annotation ref
      */
     String description();
 }

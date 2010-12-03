@@ -132,7 +132,7 @@ public class MutualPropertyBinding implements FullBinding {
         forwardBinding = forwardTriggerBinding.createBinding(sourceBinding, targetBinding);
         reverseBinding = reverseTriggerBinding.createBinding(targetBinding, sourceBinding);
 
-        // add the anciliary pieces
+        // add the ancillary pieces
         if ((converter != null) && (reverseConverter != null)) {
             forwardBinding.setConverter(converter);
             reverseBinding.setConverter(reverseConverter);
@@ -159,7 +159,7 @@ public class MutualPropertyBinding implements FullBinding {
                 throw new RuntimeException("Both converter or reverseConverter must be set or unset to bind.  Only "
                         + ((converter != null) ? "converter": "reverseConverter") + " is set.");
             }
-            // don't bind if we are half set up, quitly stop
+            // don't bind if we are half set up, quietly stop
             if (forwardBinding == null || reverseBinding == null) {
                 // don't worry about the bind state, if the binding
                 // is completed we will bind in rebuild

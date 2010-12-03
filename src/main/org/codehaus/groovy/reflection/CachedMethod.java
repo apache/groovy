@@ -304,8 +304,8 @@ public class CachedMethod extends MetaMethod implements Comparable {
             else if (o2 instanceof CachedMethod)
                 return -((CachedMethod)o2).compareTo(o1);
             else
-                // really, this should never happen, it's eveidence of corruption if it does
-                throw new ClassCastException("One of the two comperables must be a CachedMethod");
+                // really, this should never happen, it's evidence of corruption if it does
+                throw new ClassCastException("One of the two comparables must be a CachedMethod");
         }
     }
 

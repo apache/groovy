@@ -91,7 +91,7 @@ public class ReflectorLoader extends ClassLoader {
     }
     
     /**
-     * creates a RelfectorLoader. 
+     * creates a ReflectorLoader.
      * @param parent the parent loader. This should never be null!
      */
     public ReflectorLoader(ClassLoader parent) {

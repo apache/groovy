@@ -268,7 +268,7 @@ public class XmlSlurper extends DefaultHandler {
   }
 
   /**
-   * Resolves entities against using the suppied URL as the base for relative URLs
+   * Resolves entities against using the supplied URL as the base for relative URLs
    * 
    * @param base
    * The URL used to resolve relative URLs

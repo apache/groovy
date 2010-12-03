@@ -136,7 +136,7 @@ public class CharsetToolkit {
 
     /**
      * <p>Guess the encoding of the provided buffer.</p>
-     * If Byte Order Markers are encountered at the beginning of the buffer, we immidiately
+     * If Byte Order Markers are encountered at the beginning of the buffer, we immediately
      * return the charset implied by this BOM. Otherwise, the file would not be a human
      * readable text file.</p>
      *
@@ -191,7 +191,7 @@ public class CharsetToolkit {
                 // a high order bit was encountered, thus the encoding is not US-ASCII
                 // it may be either an 8-bit encoding or UTF-8
                 highOrderBit = true;
-                // a two-bytes sequence was encoutered
+                // a two-bytes sequence was encountered
                 if (isTwoBytesSequence(b0)) {
                     // there must be one continuation byte of the form 10xxxxxx,
                     // otherwise the following characteris is not a valid UTF-8 construct
@@ -200,7 +200,7 @@ public class CharsetToolkit {
                     else
                         i++;
                 }
-                // a three-bytes sequence was encoutered
+                // a three-bytes sequence was encountered
                 else if (isThreeBytesSequence(b0)) {
                     // there must be two continuation bytes of the form 10xxxxxx,
                     // otherwise the following characteris is not a valid UTF-8 construct
@@ -209,7 +209,7 @@ public class CharsetToolkit {
                     else
                         i += 2;
                 }
-                // a four-bytes sequence was encoutered
+                // a four-bytes sequence was encountered
                 else if (isFourBytesSequence(b0)) {
                     // there must be three continuation bytes of the form 10xxxxxx,
                     // otherwise the following characteris is not a valid UTF-8 construct
@@ -218,7 +218,7 @@ public class CharsetToolkit {
                     else
                         i += 3;
                 }
-                // a five-bytes sequence was encoutered
+                // a five-bytes sequence was encountered
                 else if (isFiveBytesSequence(b0)) {
                     // there must be four continuation bytes of the form 10xxxxxx,
                     // otherwise the following characteris is not a valid UTF-8 construct
@@ -230,7 +230,7 @@ public class CharsetToolkit {
                     else
                         i += 4;
                 }
-                // a six-bytes sequence was encoutered
+                // a six-bytes sequence was encountered
                 else if (isSixBytesSequence(b0)) {
                     // there must be five continuation bytes of the form 10xxxxxx,
                     // otherwise the following characteris is not a valid UTF-8 construct

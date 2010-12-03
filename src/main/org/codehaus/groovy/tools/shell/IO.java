@@ -118,7 +118,7 @@ public class IO
     /**
      * Check if the verbosity level is set to {@link Verbosity#DEBUG}.
      *
-     * <p>For generaly usage, when debug output is required, it is better
+     * <p>For general usage, when debug output is required, it is better
      * to use the logging facility instead.
      */
     public boolean isDebug() {

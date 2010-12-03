@@ -22,7 +22,7 @@ import org.codehaus.groovy.classgen.BytecodeExpression;
 import java.util.List;
 
 /**
- * Abstract base class for any GroovyCodeVisitory which by default
+ * Abstract base class for any GroovyCodeVisitor which by default
  * just walks the code and expression tree
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>

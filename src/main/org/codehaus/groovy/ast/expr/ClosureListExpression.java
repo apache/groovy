@@ -23,7 +23,7 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
 import org.codehaus.groovy.ast.VariableScope;
 
 /**
- * This class rerpresents a list of expressions used to 
+ * This class represents a list of expressions used to
  * create closures. Example:
  * <code>
  * def foo = (1;2;;)

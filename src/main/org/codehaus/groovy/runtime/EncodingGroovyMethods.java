@@ -172,7 +172,7 @@ public class EncodingGroovyMethods {
 
             } else if (sixBit == 66) {
                 // RFC 2045 says that I'm allowed to take the presence of
-                // these characters as evedence of data corruption
+                // these characters as evidence of data corruption
                 // So I will
                 throw new RuntimeException("bad character in base64 value"); // TODO: change this exception type
             }

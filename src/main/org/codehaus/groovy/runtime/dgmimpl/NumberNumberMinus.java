@@ -30,11 +30,11 @@ public final class NumberNumberMinus extends NumberNumberMetaMethod {
     }
 
     /**
-     * Substraction of two Numbers.
+     * Subtraction of two Numbers.
      *
      * @param left  a Number
-     * @param right another Number to substract to the first one
-     * @return the substraction
+     * @param right another Number to subtract to the first one
+     * @return the subtraction
      */
     public static Number minus(Number left, Number right) {
         return NumberMath.subtract(left, right);

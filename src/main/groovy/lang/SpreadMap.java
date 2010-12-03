@@ -55,7 +55,7 @@ public class SpreadMap extends HashMap {
 
     public Object remove(Object key) {
         throw new RuntimeException("SpreadMap: " + this + " is an immutable map, and so the key ("
-                                   + key + ") cannot be deleteded.");
+                                   + key + ") cannot be deleted.");
     }
 
     public void putAll(Map t) {

@@ -65,7 +65,7 @@ public class AntlrASTProcessSnippets implements AntlrASTProcessor{
                  l.add(new LineColumn(t.getLine(),t.getColumn()));
              }
 
-             // second vist of node
+             // second visit of node
              if (itr != null && itr.hasNext()) {
                  LineColumn lc = (LineColumn)itr.next();
                  if (t.getLineLast() == 0) {

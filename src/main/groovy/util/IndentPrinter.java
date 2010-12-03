@@ -24,7 +24,7 @@ import java.io.PrintWriter;
  * to change the PrintWriter by passing a new one as a constructor argument. </p>
  *
  * <p>Indention by default is 2 characters but can be changed by passing a
- * differenet value as a constructor argument. </p>
+ * different value as a constructor argument. </p>
  *
  * <p>The following is an example usage. Note that within a "with" block you need to
  * specify a parameter name so that this.println is not called instead of IndentPrinter.println: </p>

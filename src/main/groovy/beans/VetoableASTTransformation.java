@@ -48,7 +48,7 @@ import java.beans.VetoableChangeSupport;
  * It also generates the setter and wires the setter through the
  * VetoableChangeSupport.
  * <p/>
- * If a {@link Bindable} annotaton is detected it also adds support similar
+ * If a {@link Bindable} annotation is detected it also adds support similar
  * to what {@link BindableASTTransformation} would do.
  *
  * @author Danno Ferrin (shemnon)
@@ -234,7 +234,7 @@ public class VetoableASTTransformation extends BindableASTTransformation {
     }
 
     /**
-     * Creates a statement body silimar to:
+     * Creates a statement body similar to:
      * <code>this.fireVetoableChange("field", field, field = value)</code>
      *
      * @param propertyNode           the field node for the property

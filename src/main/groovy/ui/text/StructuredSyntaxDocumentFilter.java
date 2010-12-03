@@ -185,7 +185,7 @@ public class StructuredSyntaxDocumentFilter extends DocumentFilter {
      * @throws BadLocationException
      */
     protected void parseDocument(int offset, int length) throws BadLocationException {
-        // intialize the segment with the complete document so the segment doesn't
+        // initialize the segment with the complete document so the segment doesn't
         // have an underlying gap in the buffer
         styledDocument.getText(0, styledDocument.getLength(), segment);
         

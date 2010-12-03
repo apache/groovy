@@ -195,7 +195,7 @@ public class TemplateServlet extends AbstractHttpServlet {
     private static final String GROOVY_SOURCE_ENCODING = "groovy.source.encoding";
 
     /**
-     * Create new TemplateSerlvet.
+     * Create new TemplateServlet.
      */
     public TemplateServlet() {
         this.cache = new WeakHashMap();
@@ -241,7 +241,7 @@ public class TemplateServlet extends AbstractHttpServlet {
                 template = entry.template;
             } else {
                 if (verbose) {
-                    log("Cached template needs recompiliation!");
+                    log("Cached template needs recompilation!");
                 }
             }
         } else {
@@ -331,7 +331,7 @@ public class TemplateServlet extends AbstractHttpServlet {
      * <code>new groovy.text.SimpleTemplateEngine()</code> if the init parameter
      * <code>template.engine</code> is not set by the container configuration.
      *
-     * @param config Current serlvet configuration passed by the container.
+     * @param config Current servlet configuration passed by the container.
      * @return The underlying template engine or <code>null</code> on error.
      */
     protected TemplateEngine initTemplateEngine(ServletConfig config) {

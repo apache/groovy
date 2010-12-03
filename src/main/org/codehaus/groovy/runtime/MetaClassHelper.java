@@ -486,7 +486,7 @@ public class MetaClassHelper {
     /**
      * @param methods the methods to choose from
      * @return the method with 1 parameter which takes the most general type of
-     *         object (e.g. Object) ignoring primitve types
+     *         object (e.g. Object) ignoring primitive types
      */
     public static Object chooseMostGeneralMethodWith1NullParam(FastArray methods) {
         // let's look for methods with 1 argument which matches the type of the
@@ -775,10 +775,10 @@ public class MetaClassHelper {
                 && method.getParameterTypes().length == 2;
     }
 
-    protected static boolean isSuperclass(Class claszz, Class superclass) {
-        while (claszz != null) {
-            if (claszz == superclass) return true;
-            claszz = claszz.getSuperclass();
+    protected static boolean isSuperclass(Class clazz, Class superclass) {
+        while (clazz != null) {
+            if (clazz == superclass) return true;
+            clazz = clazz.getSuperclass();
         }
         return false;
     }

@@ -544,7 +544,7 @@ public class CompilationUnit extends ProcessingUnit {
      * Dequeues any source units add through addSource and resets the compiler phase
      * to initialization.
      * <p/>
-     * Note: this does not mean a file is recompiled. If a SoucreUnit has already passed
+     * Note: this does not mean a file is recompiled. If a SourceUnit has already passed
      * a phase it is skipped until a higher phase is reached.
      *
      * @return true if there was a queued source

@@ -33,16 +33,16 @@ public interface Factory {
     /**
      * Does this factory "Own" it's child closure.
      * @return true  if the factory should have onContentClosure() called,
-     *         false if the builder shouold handle it
+     *         false if the builder should handle it
      */
     boolean isHandlesNodeChildren();
 
     /**
-     * Called when a factory is registerd to a builder
+     * Called when a factory is registered to a builder
      * @param builder the build the factory has been registered to
-     * @param registerdName the name the factory has been registerd under
+     * @param registeredName the name the factory has been registered under
      */
-    void onFactoryRegistration(FactoryBuilderSupport builder, String registerdName, String registeredGroupName);
+    void onFactoryRegistration(FactoryBuilderSupport builder, String registeredName, String registeredGroupName);
 
     /**
      *

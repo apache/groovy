@@ -71,7 +71,7 @@ public class GroovySocketServer implements Runnable {
     *       The GroovyShell object that evaluates the incoming text. If you need additional classes in the 
     *       classloader then configure that through this object. 
     * @param isScriptFile
-    *       Whether the incoming scoket data String will be a script or a file path. 
+    *       Whether the incoming socket data String will be a script or a file path.
     * @param scriptFilenameOrText
     *       This will be a groovy script or a file location depending on the argument isScriptFile. 
     * @param autoOutput

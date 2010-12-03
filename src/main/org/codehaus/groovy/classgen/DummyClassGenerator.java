@@ -25,7 +25,7 @@ import org.objectweb.asm.Opcodes;
 import java.util.Iterator;
 
 /**
- * To generate a class that has all the fields and methods, except that fields are not initilized
+ * To generate a class that has all the fields and methods, except that fields are not initialized
  * and methods are empty. It's intended for being used as a place holder during code generation
  * of reference to the "this" class itself.
  *
@@ -136,7 +136,7 @@ public class DummyClassGenerator extends ClassGenerator {
                 fieldNode.getModifiers(),
                 fieldNode.getName(),
                 BytecodeHelper.getTypeDescription(fieldNode.getType()),
-                null, //fieldValue,  //br  all the sudden that one cannot init the field here. init is done in static initilizer and instace intializer.
+                null, //fieldValue,  //br  all the sudden that one cannot init the field here. init is done in static initializer and instance initializer.
                 null);
     }
 

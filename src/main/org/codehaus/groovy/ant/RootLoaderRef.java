@@ -37,9 +37,9 @@ import org.codehaus.groovy.tools.RootLoader;
  * <li>classpath</li>
  * </ul>
  * 
- * all arguments are requiered. 
+ * all arguments are required.
  *
- * As ant requieres an AntClassLoader as reference, this will create a RootLoader
+ * As ant requires an AntClassLoader as reference, this will create a RootLoader
  * and set an AntClassLoader as child and stored in the reference. The AntClassLoader
  * instance will not have a classpath nor will it have access to the classpath somehow,
  * all loading is done by the RootLoader parent. To avoid problems with loading classes 

@@ -89,7 +89,7 @@ public interface MetaClassRegistry {
 
     /**
      * gets a snapshot of the current constant meta classes and returns it as Iterator.
-     * Modifications done using this Iterator will not cause a ConcurrentMoidificationExcpetion.
+     * Modifications done using this Iterator will not cause a ConcurrentModificationException.
      * If a MetaClass is removed using this Iterator, then the MetaClass will only
      * be removed if the MetaClass was not replaced by another MetaClass in the meantime.
      * If a MetaClass is added while using this Iterator, then it will be part of the Iteration.

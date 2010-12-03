@@ -46,7 +46,7 @@ public final class StructuredSyntaxResources {
             systemClipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
         }
         catch (SecurityException e) {
-            // means we can't get to system clipbard, so create app level one
+            // means we can't get to system clipboard, so create app level one
             systemClipboard = new Clipboard("UIResourceMgr");
         }
         catch (Exception e) {

@@ -94,7 +94,7 @@ public class AsmClassGenerator extends ClassGenerator {
 
     public static final boolean CREATE_DEBUG_INFO = true;
     public static final boolean CREATE_LINE_NUMBER_INFO = true;
-    public static final boolean ASM_DEBUG = false; // add marker in the bytecode to show source-byecode relationship
+    public static final boolean ASM_DEBUG = false; // add marker in the bytecode to show source-bytecode relationship
     
     private int lineNumber = -1;
     private ASTNode currentASTNode = null;
@@ -620,7 +620,7 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     /**
-     * return a primitive boolean value of the BooleanExpresion.
+     * return a primitive boolean value of the BooleanExpression.
      *
      * @param expression
      */
@@ -1233,8 +1233,8 @@ public class AsmClassGenerator extends ClassGenerator {
                     if (!modifiers)
                         text = " with wrong modifiers: " + fn.getModifiers() + " (" + (ACC_STATIC + ACC_SYNTHETIC) + " needed)";
                     throwException(
-                            "tried to set a static syntethic field " + staticFieldName + " in " + controller.getClassNode().getName() +
-                                    " for class resolving, but found alreeady a node of that" +
+                            "tried to set a static synthetic field " + staticFieldName + " in " + controller.getClassNode().getName() +
+                                    " for class resolving, but found already a node of that" +
                                     " name " + text);
                 }
             } else {

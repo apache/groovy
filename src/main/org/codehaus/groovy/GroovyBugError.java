@@ -67,7 +67,7 @@ public class GroovyBugError extends AssertionError {
     /**
      * Returns the detail message string of this error. The message 
      * will consist of the bug text prefixed by "BUG! " if there this
-     * isntance was created using a message. If this error was 
+     * instance was created using a message. If this error was
      * constructed without using a bug text the message of the cause 
      * is used prefixed by "BUG! UNCAUGHT EXCEPTION: "
      *  

@@ -243,7 +243,7 @@ public class BytecodeHelper implements Opcodes {
     }*/
 
     /**
-     * returns a name that Class.forName() can take. Notablely for arrays:
+     * returns a name that Class.forName() can take. Notably for arrays:
      * [I, [Ljava.lang.String; etc
      * Regular object type:  java.lang.String
      *

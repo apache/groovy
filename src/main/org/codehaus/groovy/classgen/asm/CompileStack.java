@@ -110,7 +110,7 @@ public class CompileStack implements Opcodes {
         lhsStack.add(false);
     }
     
-    // defines the first variable index useable after
+    // defines the first variable index usable after
     // all parameters of a method 
     private int localVariableOffset;
     // this is used to store the goals for a "break foo" call
@@ -505,7 +505,7 @@ public class CompileStack implements Opcodes {
     }
     
     /**
-     * because a boolean Expression may not be evaluated completly
+     * because a boolean Expression may not be evaluated completely
      * it is important to keep the registers clean
      */
     public void pushBooleanExpression(){

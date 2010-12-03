@@ -53,7 +53,7 @@ import java.util.ListIterator;
  * PropertyChangeEvent)</li>
  * <li>ObservableList.ElementClearedEvent - all elements have been removed from the list</li>
  * <li>ObservableList.MultiElementAddedEvent - triggered by calling list.addAll()</li>
- * <li>ObservableList.MultiElementRemoveedEvent - triggered by calling
+ * <li>ObservableList.MultiElementRemovedEvent - triggered by calling
  * list.removeAll()/list.retainAll()</li>
  * </ul>
  * </p>

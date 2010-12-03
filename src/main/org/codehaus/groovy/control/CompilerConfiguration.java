@@ -221,7 +221,7 @@ public class CompilerConfiguration {
 
     /**
      * Copy constructor.  Use this if you have a mostly correct configuration
-     * for your compilation but you want to make a some changes programmatically.  
+     * for your compilation but you want to make a some changes programatically.
      * An important reason to prefer this approach is that your code will most
      * likely be forward compatible with future changes to this configuration API.<br/>
      * An example of this copy constructor at work:<br/>

@@ -485,7 +485,7 @@ public class InteractiveShell
 
             // Otherwise, it's part of a statement.  If it's just whitespace,
             // we'll just accept it and move on.  Otherwise, parsing is attempted
-            // on the cumulated statement text, and errors are reported.  The
+            // on the accumulated statement text, and errors are reported.  The
             // pending input is accepted or rejected based on that parsing.
 
             freshen();

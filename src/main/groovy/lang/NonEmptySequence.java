@@ -19,7 +19,7 @@ import java.util.List;
 
 /**
  * Represents a sequence of objects which represents one or many instances of
- * of objects of a given type. The type can be ommitted in which case any type of
+ * of objects of a given type. The type can be omitted in which case any type of
  * object can be added.
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>

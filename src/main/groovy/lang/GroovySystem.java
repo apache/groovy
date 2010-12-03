@@ -34,7 +34,7 @@ public final class GroovySystem {
      */
     private static MetaClass objectMetaClass;
     /**
-     * If true then the MetaClass will only use reflection for method dispatch, property acess, etc.
+     * If true then the MetaClass will only use reflection for method dispatch, property access, etc.
      */
     private static final boolean USE_REFLECTION;
     /**

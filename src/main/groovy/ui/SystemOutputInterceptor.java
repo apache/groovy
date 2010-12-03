@@ -72,7 +72,7 @@ public class SystemOutputInterceptor extends FilterOutputStream {
     }
 
     /**
-     * Stops intercepting System.out/System.err, sending output to whereever it was
+     * Stops intercepting System.out/System.err, sending output to wherever it was
      * going when this interceptor was created.
      */
     public void stop() {

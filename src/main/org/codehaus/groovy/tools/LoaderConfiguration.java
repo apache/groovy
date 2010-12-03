@@ -264,7 +264,7 @@ public class LoaderConfiguration {
     }
 
     /*
-     * seperates the given path at the last '/'
+     * separates the given path at the last '/'
      */
     private String getParentPath(String filter) {
         int index = filter.lastIndexOf('/');

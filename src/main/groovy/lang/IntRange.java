@@ -97,7 +97,7 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer> {
     private int from;
 
     /**
-     * The last number in the range. <code>to</code> is always greater than or eqaul to <code>from</code>.
+     * The last number in the range. <code>to</code> is always greater than or equal to <code>from</code>.
      */
     private int to;
 
@@ -154,7 +154,7 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer> {
 
     /**
      * Determines if this object is equal to another object. Delegates to
-     * {@link AbstractList#equals(Object)} if <code>that</code> is anthing
+     * {@link AbstractList#equals(Object)} if <code>that</code> is anything
      * other than an {@link IntRange}.
      * <p/>
      * <p/>

@@ -4588,7 +4588,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self          a String object
      * @param numberOfChars the total number of characters
-     * @param padding       the charaters used for padding
+     * @param padding       the characters used for padding
      * @return the String padded to the right
      * @since 1.0
      */
@@ -4618,7 +4618,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self          a String object
      * @param numberOfChars the total number of characters
-     * @param padding       the charaters used for padding
+     * @param padding       the characters used for padding
      * @return the String centered with padded character around
      * @since 1.0
      */
@@ -5204,7 +5204,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * assert myList == [4, 3, 5, "a", true, 10]</pre>
      *
      * Items in the given
-     * range are relaced with items from the collection.
+     * range are replaced with items from the collection.
      *
      * @param self  a List
      * @param range the subset of the list to set
@@ -5224,7 +5224,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * assert myList == [4, 3, 5, "b", 10]</pre>
      *
      * Items in the given
-     * range are relaced with the operand.  The <code>value</code> operand is
+     * range are replaced with the operand.  The <code>value</code> operand is
      * always treated as a single value.
      *
      * @param self  a List
@@ -7340,7 +7340,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * objects as string representations to a String.
      *
      * @param self  a String
-     * @param value an Obect
+     * @param value an Object
      * @return a StringBuffer built from this string
      * @since 1.0
      */
@@ -8503,7 +8503,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Converts the given string into a Boolean object.
      * If the trimmed string is "true", "y" or "1" (ignoring case)
-     * then the result is true othewrwise it is false.
+     * then the result is true otherwise it is false.
      *
      * @param self a String
      * @return The Boolean value
@@ -8829,11 +8829,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Count the number of occurencies of a substring.
+     * Count the number of occurrences of a substring.
      *
      * @param self a String
      * @param text a substring
-     * @return the number of occurrencies of the given string inside this String
+     * @return the number of occurrences of the given string inside this String
      * @since 1.0
      */
     public static int count(String self, String text) {
@@ -9472,7 +9472,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param left  a Number
      * @param right another Number to compare to
-     * @return the comparision of both numbers
+     * @return the comparison of both numbers
      * @since 1.0
      */
     public static int compareTo(Number left, Number right) {
@@ -10929,7 +10929,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         // If we used Float.doubleValue() on 0.1f we get 0.10000000149011612.
         // Note that this is different than casting '(double) 0.1f' which will do the
         // binary extension just like in Java.
-        // With Bigs and other unkowns, this is likely to be the same.
+        // With Bigs and other unknowns, this is likely to be the same.
 
         return Double.valueOf(self.toString());
     }
@@ -13437,9 +13437,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Write a Byte Order Mark at the begining of the file
+     * Write a Byte Order Mark at the beginning of the file
      *
-     * @param stream    the FileOuputStream to write the BOM to
+     * @param stream    the FileOutputStream to write the BOM to
      * @param bigEndian true if UTF 16 Big Endian or false if Low Endian
      * @throws IOException if an IOException occurs.
      * @since 1.0
@@ -14108,7 +14108,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Filters the lines of a File and creates a Writeable in return to
+     * Filters the lines of a File and creates a Writable in return to
      * stream the filtered lines.
      *
      * @param self    a File
@@ -14124,7 +14124,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Filters the lines of a File and creates a Writeable in return to
+     * Filters the lines of a File and creates a Writable in return to
      * stream the filtered lines.
      *
      * @param self    a File

@@ -56,7 +56,7 @@ public abstract class ConversionHandler implements InvocationHandler, Serializab
 
     /**
      * This method is a default implementation for the invoke method given in
-     * Invocationhandler. Any call to a method with a declaring class that is
+     * InvocationHandler. Any call to a method with a declaring class that is
      * not Object, excluding toString(), is redirected to invokeCustom.
      * Methods like equals and hashcode are called on the class itself instead
      * of the delegate because they are considered fundamental methods that should

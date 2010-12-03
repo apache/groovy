@@ -241,9 +241,9 @@ public class GroovyShell extends GroovyObjectSupport {
      * use the test runner to run it
      * } else if (theClass implements Runnable) {
      * if (theClass has a constructor with String[] params)
-     * instanciate theClass with this constructor and run
+     * instantiate theClass with this constructor and run
      * else if (theClass has a no-args constructor)
-     * instanciate theClass with the no-args constructor and run
+     * instantiate theClass with the no-args constructor and run
      * }
      */
     private Object runScriptOrMainOrTestOrRunnable(Class scriptClass, String[] args) {
@@ -256,9 +256,9 @@ public class GroovyShell extends GroovyObjectSupport {
             try {
                 script = (Script) scriptClass.newInstance();
             } catch (InstantiationException e) {
-                // ignore instaintiations errors,, try to do main
+                // ignore instantiation errors,, try to do main
             } catch (IllegalAccessException e) {
-               // ignore instaintiations errors, try to do main
+               // ignore instantiation errors, try to do main
             }
             if (script != null) {
                 script.setBinding(context);

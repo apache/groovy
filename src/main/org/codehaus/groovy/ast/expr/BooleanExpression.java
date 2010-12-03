@@ -29,7 +29,7 @@ public class BooleanExpression extends Expression {
 
     public BooleanExpression(Expression expression) {
         this.expression = expression;
-        setType(ClassHelper.boolean_TYPE); // for consistancy with AsmClassGenerator. see AsmClassGenerator.visitBooleanExpression.  
+        setType(ClassHelper.boolean_TYPE); // for consistency with AsmClassGenerator. see AsmClassGenerator.visitBooleanExpression.
     }
     
     public Expression getExpression() {

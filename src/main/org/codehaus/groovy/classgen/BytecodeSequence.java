@@ -51,7 +51,7 @@ public class BytecodeSequence extends Statement {
      * {@link ClassGenerator#visitBytecodeSequence(BytecodeSequence)}
      * is called with this instance. If the visitor is no 
      * ClassGenerator, then this method will call visit on
-     * each ASTNode element sotred by this class. If one 
+     * each ASTNode element sorted by this class. If one
      * element is a BytecodeInstruction, then it will be skipped
      * as it is no ASTNode. 
      * 

@@ -96,7 +96,7 @@ public interface MetaObjectProtocol {
     MetaProperty getMetaProperty(String name);
 
     /**
-     * Retreives a static MetaMethod for the given name and argument values, using the types of the arguments
+     * Retrieves a static MetaMethod for the given name and argument values, using the types of the arguments
      * to establish the chosen MetaMethod
      *
      * @param name The name of the MetaMethod

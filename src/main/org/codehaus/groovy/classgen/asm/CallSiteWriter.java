@@ -37,7 +37,7 @@ import org.objectweb.asm.MethodVisitor;
 import static org.objectweb.asm.Opcodes.*;
 
 /**
- * This class represents non public API used by AasmClassGenerator. Don't
+ * This class represents non public API used by AsmClassGenerator. Don't
  * use this class in your code
  * @author Jochen Theodorou
  */

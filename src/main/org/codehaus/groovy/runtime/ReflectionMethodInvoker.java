@@ -20,7 +20,7 @@ import java.lang.reflect.Method;
 
 /**
  * Utility class to call methods through reflection, and falls through using the <code>Invoker</code> to call the method if it fails.
- * The class is particularly useful for Groovy classes implementing <code>GroovyIntercpetable</code>,
+ * The class is particularly useful for Groovy classes implementing <code>GroovyInterceptable</code>,
  * since it is not possible to call any method from this class,
  * because it is intercepted by the <code>invokeMethod()</code> method.
  *
