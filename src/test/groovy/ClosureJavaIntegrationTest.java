@@ -117,7 +117,7 @@ public class ClosureJavaIntegrationTest extends TestCase {
                 return e.getKey().length() > size;
             }
         };
-        Closure<Boolean> keyBiggerThan6 = keyBiggerThan.rcurry(new Object[]{6});
+        Closure<Boolean> keyBiggerThan6 = keyBiggerThan.rcurry(6);
         assertEquals(expected, findAll(zoo, keyBiggerThan6));
     }
 
@@ -135,15 +135,15 @@ public class ClosureJavaIntegrationTest extends TestCase {
                 return a * b + c;
             }
         };
-        Closure<Integer> tensAndUnits = arithmeticClosure.curry(new Object[]{10});
+        Closure<Integer> tensAndUnits = arithmeticClosure.curry(10);
         assertEquals(35, (int)tensAndUnits.call(new Object[]{3, 5}));
-        tensAndUnits = arithmeticClosure.ncurry(0, new Object[]{10});
+        tensAndUnits = arithmeticClosure.ncurry(0, 10);
         assertEquals(35, (int)tensAndUnits.call(new Object[]{3, 5}));
-        tensAndUnits = arithmeticClosure.ncurry(1, new Object[]{10});
+        tensAndUnits = arithmeticClosure.ncurry(1, 10);
         assertEquals(35, (int)tensAndUnits.call(new Object[]{3, 5}));
-        Closure<Integer> timesPlus5 = arithmeticClosure.rcurry(new Object[]{5});
+        Closure<Integer> timesPlus5 = arithmeticClosure.rcurry(5);
         assertEquals(35, (int)timesPlus5.call(new Object[]{15, 2}));
-        timesPlus5 = arithmeticClosure.ncurry(2, new Object[]{5});
+        timesPlus5 = arithmeticClosure.ncurry(2, 5);
         assertEquals(35, (int)timesPlus5.call(new Object[]{15, 2}));
     }
 

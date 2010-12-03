@@ -414,7 +414,7 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      * @param arguments the arguments to bind
      * @return the new closure with its arguments bound
      */
-    public Closure<V> curry(final Object arguments[]) {
+    public Closure<V> curry(final Object... arguments) {
         return new CurriedClosure<V>(this, arguments);
     }
 
@@ -430,9 +430,9 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      *
      * @param arguments the arguments to bind
      * @return the new closure with its arguments bound
-     * @see #curry(Object[])
+     * @see #curry(Object...)
      */
-    public Closure<V> rcurry(final Object arguments[]) {
+    public Closure<V> rcurry(final Object... arguments) {
         return new CurriedClosure<V>(-arguments.length, this, arguments);
     }
 
@@ -464,9 +464,9 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      * @param n the index from which to bind parameters (may be -ve in which case it will be normalized)
      * @param arguments the arguments to bind
      * @return the new closure with its arguments bound
-     * @see #curry(Object[])
+     * @see #curry(Object...)
      */
-    public Closure<V> ncurry(int n, final Object arguments[]) {
+    public Closure<V> ncurry(int n, final Object... arguments) {
         return new CurriedClosure<V>(n, this, arguments);
     }
 
@@ -631,6 +631,16 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      * the calculation and, instead of a recursive call to itself or another function, it return back a new closure,
      * which will be executed by the trampoline as the next step.
      * Once a non-closure value is returned, the trampoline stops and returns the value as the final result.
+     * Here is an example:
+     * <pre>
+     * def fact
+     * fact = { n, total ->
+     *     n == 0 ? total : fact.trampoline(n - 1, n * total)
+     * }.trampoline()
+     * def factorial = { n -> fact(n, 1G)}
+     * println factorial(20) // => 2432902008176640000
+     * </pre>
+     *
      * @param args Parameters to the closure, so as the trampoline mechanism can call it
      * @return A closure, which will execute the original closure on a trampoline.
      */
@@ -646,6 +656,7 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      * which will be executed by the trampoline as the next step.
      * Once a non-closure value is returned, the trampoline stops and returns the value as the final result.
      * @return A closure, which will execute the original closure on a trampoline.
+     * @see #trampoline(Object...)
      */
     public Closure<V> trampoline() {
         return new TrampolineClosure<V>(this);
@@ -815,7 +826,7 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
             return writer.toString();
         }
         
-        public Closure curry(final Object arguments[]) {
+        public Closure curry(final Object... arguments) {
             return (new CurriedClosure(this, arguments)).asWritable();
         }
 

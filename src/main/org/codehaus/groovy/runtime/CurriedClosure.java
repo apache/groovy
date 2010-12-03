@@ -46,7 +46,7 @@ public final class CurriedClosure<V> extends Closure<V> {
     private int numTrailingArgs = 0;
     private Class varargType = null;
 
-    public CurriedClosure(int index, Closure<V> uncurriedClosure, Object[] arguments) {
+    public CurriedClosure(int index, Closure<V> uncurriedClosure, Object... arguments) {
         super(uncurriedClosure.clone());
         curriedParams = arguments;
         this.index = index;
@@ -82,11 +82,11 @@ public final class CurriedClosure<V> extends Closure<V> {
         }
     }
 
-    public CurriedClosure(Closure<V> uncurriedClosure, Object[] arguments) {
+    public CurriedClosure(Closure<V> uncurriedClosure, Object... arguments) {
         this(0, uncurriedClosure, arguments);
     }
 
-    public Object[] getUncurriedArguments(Object[] arguments) {
+    public Object[] getUncurriedArguments(Object... arguments) {
         if (isVararg()) {
             int normalizedIndex = index < 0 ? index + arguments.length + curriedParams.length : index;
             if (normalizedIndex < 0 || normalizedIndex > arguments.length) {
