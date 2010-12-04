@@ -111,6 +111,14 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
             public void updateConstantMetaClass(MetaClassRegistryChangeEvent cmcu) {
                 synchronized (metaClassInfo) {
                    metaClassInfo.add(cmcu.getNewMetaClass());
+                   if (cmcu.getClassToUpdate()==Integer.class) {
+                       if (cmcu.getNewMetaClass()==null) {
+                           // means removal
+                           DefaultMetaClassInfo.setOrigInt(true);
+                       } else {
+                           DefaultMetaClassInfo.setOrigInt(false);
+                       }
+                   }
                 }
             }
         });

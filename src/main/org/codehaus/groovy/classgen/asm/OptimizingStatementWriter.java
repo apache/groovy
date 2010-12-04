@@ -15,7 +15,6 @@
  */
 package org.codehaus.groovy.classgen.asm;
 
-
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
 import org.codehaus.groovy.ast.ClassHelper;
@@ -26,10 +25,13 @@ import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.BitwiseNegationExpression;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
+import org.codehaus.groovy.ast.expr.ConstantExpression;
+import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.PostfixExpression;
 import org.codehaus.groovy.ast.expr.PrefixExpression;
+import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.expr.UnaryMinusExpression;
 import org.codehaus.groovy.ast.expr.UnaryPlusExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
@@ -80,8 +82,13 @@ public class OptimizingStatementWriter extends StatementWriter {
         this.controller = controller;
     }
     
+    private boolean canNotDoFastPath(StatementMeta meta) {
+        // return false if cannot do fast path and if are already on the path
+        return fastPathBlocked || meta==null || !meta.optimize || controller.isFastPath();
+    }
+    
     private FastPathData writeGuards(StatementMeta meta, Statement statement) {
-        if (fastPathBlocked || meta==null || !meta.optimize || controller.isFastPath()) return null;
+        if (canNotDoFastPath(meta)) return null;
         MethodVisitor mv = controller.getMethodVisitor();
         FastPathData fastPathData = new FastPathData();
         
@@ -112,15 +119,23 @@ public class OptimizingStatementWriter extends StatementWriter {
         StatementMeta meta = (StatementMeta) statement.getNodeMetaData(StatementMeta.class);
         FastPathData fastPathData = writeGuards(meta, statement);
         
-        boolean oldFastPathBlock = fastPathBlocked;
-        fastPathBlocked = true;
-        super.writeBlockStatement(statement);
-        fastPathBlocked = oldFastPathBlock;
-        
-        if (fastPathData==null) return;
-        writeFastPathPrelude(fastPathData);
-        super.writeBlockStatement(statement);
-        writeFastPathEpilogue(fastPathData);
+        if (fastPathData==null) {
+            // normal mode with different paths
+            // important is to not to have a fastpathblock here,
+            // otherwise the per expression statement improvement 
+            // is impossible
+            super.writeBlockStatement(statement);
+        } else {
+            // fast/slow path generation
+            boolean oldFastPathBlock = fastPathBlocked;
+            fastPathBlocked = true;
+            super.writeBlockStatement(statement);
+            fastPathBlocked = oldFastPathBlock;
+            
+            writeFastPathPrelude(fastPathData);
+            super.writeBlockStatement(statement);
+            writeFastPathEpilogue(fastPathData);
+        }
     }
     
     @Override
@@ -220,21 +235,73 @@ public class OptimizingStatementWriter extends StatementWriter {
         super.writeIfElse(statement);
         writeFastPathEpilogue(fastPathData);
     }
+    
+    private boolean isNewPathFork(StatementMeta meta) {
+        // meta.optimize -> can do fast path
+        if (meta==null || meta.optimize==false) return false;
+        // fastPathBlocked -> slow path
+        if (fastPathBlocked) return false;
+        // controller.isFastPath() -> fastPath
+        if (controller.isFastPath()) return false;
+        return true;
+    }
 
     @Override
     public void writeExpressionStatement(ExpressionStatement statement) {
         StatementMeta meta = (StatementMeta) statement.getNodeMetaData(StatementMeta.class);
-        FastPathData fastPathData = writeGuards(meta, statement);
-
-        boolean oldFastPathBlock = fastPathBlocked;
-        fastPathBlocked = true;
-        super.writeExpressionStatement(statement);
-        fastPathBlocked = oldFastPathBlock;
+        // we have to have handle DelcarationExpressions special, since their 
+        // entry should be outside the optimization path, we have to do that of
+        // course only if we are actually going to do two different paths, 
+        // otherwise it is not needed
+        //
+        // there are several cases to be considered now.
+        // (1) no fast path possible, so just do super
+        // (2) fast path possible, and at path split point (meaning not in 
+        //     fast path and not in slow path). Here we have to extract the 
+        //     Declaration and replace by an assignment
+        // (3) fast path possible and in slow or fastPath. Nothing to do here.
+        //
+        // the only case we need to handle is then (2).
         
-        if (fastPathData==null) return;
-        writeFastPathPrelude(fastPathData);
-        super.writeExpressionStatement(statement);
-        writeFastPathEpilogue(fastPathData);
+        if (isNewPathFork(meta)) {
+            DeclarationExpression declaration = getDeclaration(statement);
+            if (declaration!=null) {
+                // do declaration
+                controller.getCompileStack().defineVariable(declaration.getVariableExpression(), false);
+                // change statement to do assignment only
+                BinaryExpression assignment = new BinaryExpression(
+                        declaration.getLeftExpression(),
+                        declaration.getOperation(),
+                        declaration.getRightExpression());
+                assignment.setSourcePosition(declaration);
+                assignment.copyNodeMetaData(declaration);
+                // replace statement code
+                statement.setExpression(assignment);
+            }
+            
+            FastPathData fastPathData = writeGuards(meta, statement);
+
+            boolean oldFastPathBlock = fastPathBlocked;
+            fastPathBlocked = true;
+            super.writeExpressionStatement(statement);
+            fastPathBlocked = oldFastPathBlock;
+            
+            if (fastPathData==null) return;
+            writeFastPathPrelude(fastPathData);
+            super.writeExpressionStatement(statement);
+            writeFastPathEpilogue(fastPathData);            
+        } else {
+            super.writeExpressionStatement(statement);
+        }
+    }
+
+    private DeclarationExpression getDeclaration(ExpressionStatement statement) {
+        Expression ex = statement.getExpression();
+        if (!(ex instanceof DeclarationExpression)) return null;
+        DeclarationExpression de = (DeclarationExpression) statement.getExpression();
+        ex = de.getLeftExpression();
+        if (ex instanceof TupleExpression) return null;
+        return de;
     }
 
     public static void setNodeMeta(ClassNode classNode) {
@@ -310,6 +377,22 @@ public class OptimizingStatementWriter extends StatementWriter {
         }        
         
         @Override
+        public void visitDeclarationExpression(DeclarationExpression expression) {
+            Expression right = expression.getRightExpression();
+            right.visit(this);
+            boolean rightInt = BinaryIntExpressionHelper.isIntOperand(right);
+            boolean leftInt = BinaryIntExpressionHelper.isIntOperand(expression.getLeftExpression());
+            if (!optimizeInt) {
+                optimizeInt =   (leftInt && rightInt) &&
+                                !(right instanceof ConstantExpression);
+            }
+            if (optimizeInt) {
+                StatementMeta meta = addMeta(expression);
+                if (leftInt && rightInt) meta.type = ClassHelper.int_TYPE;
+            }
+        }
+        
+        @Override
         public void visitBinaryExpression(BinaryExpression expression) {
             if (expression.getNodeMetaData(StatementMeta.class)!=null) return;
             super.visitBinaryExpression(expression);
@@ -331,6 +414,13 @@ public class OptimizingStatementWriter extends StatementWriter {
         }
         
         @Override
+        public void visitExpressionStatement(ExpressionStatement statement) {
+            if (statement.getNodeMetaData(StatementMeta.class)!=null) return;
+            super.visitExpressionStatement(statement);
+            if (optimizeInt) addMeta(statement);
+        }
+        
+        @Override
         public void visitBlockStatement(BlockStatement block) {
             boolean optAll = true;
             for (Statement statement : block.getStatements()) {
@@ -338,6 +428,7 @@ public class OptimizingStatementWriter extends StatementWriter {
                 statement.visit(this);
                 optAll = optAll && optimizeInt;
             }
+            optAll = optAll && !block.isEmpty();
             if (optAll) addMeta(block);
             optimizeInt = optAll;
         }
