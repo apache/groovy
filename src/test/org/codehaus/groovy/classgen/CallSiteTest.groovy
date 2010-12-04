@@ -19,6 +19,7 @@ class CallSiteTest extends GroovyTestCase {
         mc = new ExpandoMetaClass(OBJ)
         mc.mutableMethod = { a, b -> a - b }
         mc.initialize ()
+
         GroovySystem.metaClassRegistry.setMetaClass(OBJ, mc)
 
         assertEquals(6, obj.method(3,3))
@@ -32,10 +33,12 @@ class CallSiteTest extends GroovyTestCase {
         mc.plus = { Integer b -> delegate * 10*b }
         mc.initialize ()
         GroovySystem.metaClassRegistry.setMetaClass(Integer, mc)
-
-        assertEquals(150, 5 + 3)
-        assertEquals(150, obj.method(5,3))
-        GroovySystem.metaClassRegistry.removeMetaClass(Integer)
+        try { // use try-finally to ensure mc will be deleted in error case
+            assertEquals(150, 5 + 3)
+            assertEquals(150, obj.method(5,3))
+        } finally {
+            GroovySystem.metaClassRegistry.removeMetaClass(Integer)
+        }
         assertEquals(8, 5 + 3)
         assertEquals(6, obj.method(3,3))
 
