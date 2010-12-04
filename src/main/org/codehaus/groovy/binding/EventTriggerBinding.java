@@ -61,7 +61,7 @@ public class EventTriggerBinding implements TriggerBinding {
             setSourceBinding(sourceBinding);
             setTargetBinding(targetBinding);
             handler = new Closure(triggerBean) {
-                public Object call(Object[] params) {
+                public Object call(Object... params) {
                     if (sourceBinding instanceof ClosureSourceBinding) {
                         ((ClosureSourceBinding)sourceBinding).setClosureArguments(params);
                     }
