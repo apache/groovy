@@ -76,7 +76,7 @@ public class ListHashMap<K,V> implements Map<K,V> {
 
     private Map<K,V> makeMap() {
         Map<K,V> m = new HashMap();
-        for (int i=0; i<maxListFill; i++) {
+        for (int i=0; i<size; i++) {
             m.put((K) listKeys[i], (V) listValues[i]);
         }
         return m;
@@ -84,7 +84,7 @@ public class ListHashMap<K,V> implements Map<K,V> {
     
     public Set<java.util.Map.Entry<K, V>> entrySet() {
         Map m;
-        if (size<maxListFill) {
+        if (size>maxListFill) {
             m = innerMap;
         } else {
             m = makeMap();
