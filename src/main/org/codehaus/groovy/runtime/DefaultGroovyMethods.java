@@ -1992,7 +1992,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #collect(Map, Collection, Closure)
      * @since 1.8.0
      */
-    public static Map<?, ?> collectEntries(Map<?, ?> self, Closure closure) {
+    public static Map<?, ?> collectEntries(Map<?, ?> self, Closure<?> closure) {
         return collectEntries(self, createSimilarMap(self), closure);
     }
 
