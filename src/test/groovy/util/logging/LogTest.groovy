@@ -2,10 +2,8 @@ package groovy.util.logging
 
 import java.lang.reflect.*
 import java.util.logging.*
-import org.codehaus.groovy.ast.*
-import org.codehaus.groovy.control.*
-import org.codehaus.groovy.tools.ast.*
-import org.codehaus.groovy.transform.*
+import groovy.mock.interceptor.MockFor
+import org.junit.Assert
 
 /**
  * Test to make sure the @Log annotation is working correctly. 
@@ -19,24 +17,6 @@ import org.codehaus.groovy.transform.*
  * @author Tomasz Bujok
  */
 class LogTest extends GroovyTestCase {
-
-    def logObserver = new LoggingObserver()
-
-    protected void setUp() {
-
-        super.setUp();
-        Logger logger = Logger.getLogger("MyClass")
-        logger.setLevel Level.FINEST
-        logger.addHandler logObserver
-
-    }
-
-    protected void tearDown() {
-        super.tearDown();
-        def logger = Logger.getLogger("MyClass")
-        logger.removeHandler logObserver
-    }
-
 
   public void testPrivateFinalStaticLogFieldAppears() {
 
@@ -113,27 +93,22 @@ class LogTest extends GroovyTestCase {
                 log.finer  ("finer   called")
                 log.finest ("finest  called")
               }
-          }
-          new MyClass().loggingMethod() """)
+          } """)
 
-      Script s = (Script) clazz.newInstance()
-      s.run()
+      def logSpy = new LoggerSpy()
+      def logger = new MockFor(Logger)
+      logger.demand.getLogger { logSpy }
+      logger.use {
+          def s = clazz.newInstance()
+          s.loggingMethod()
+      }
 
-      assert logObserver.entries.size() == 6
-
-      assert logObserver.entries[0].message == "severe  called"
-      assert logObserver.entries[1].message == "warning called"
-      assert logObserver.entries[2].message == "info    called"
-      assert logObserver.entries[3].message == "fine    called"
-      assert logObserver.entries[4].message == "finer   called"
-      assert logObserver.entries[5].message == "finest  called"
-
-      assert logObserver.entries[0].level == Level.SEVERE
-      assert logObserver.entries[1].level == Level.WARNING
-      assert logObserver.entries[2].level == Level.INFO
-      assert logObserver.entries[3].level == Level.FINE
-      assert logObserver.entries[4].level == Level.FINER
-      assert logObserver.entries[5].level == Level.FINEST
+      assert logSpy.severeParameter == 'severe  called'
+      assert logSpy.warningParameter == 'warning called'
+      assert logSpy.infoParameter == 'info    called'
+      assert logSpy.fineParameter == 'fine    called'
+      assert logSpy.finerParameter == 'finer   called'
+      assert logSpy.finestParameter == 'finest  called'
   }
 
   public void testLogInfoWithName() {
@@ -150,27 +125,22 @@ class LogTest extends GroovyTestCase {
                 logger.finer  ("finer   called")
                 logger.finest ("finest  called")
               }
-          }
-          new MyClass().loggingMethod() """)
+          }  """)
 
-      Script s = (Script) clazz.newInstance()
-      s.run()
+      def logSpy = new LoggerSpy()
+      def logger = new MockFor(Logger)
+      logger.demand.getLogger { logSpy }
+      logger.use {
+          def s = clazz.newInstance()
+          s.loggingMethod()
+      }
 
-      assert logObserver.entries.size() == 6
-
-      assert logObserver.entries[0].message == "severe  called"
-      assert logObserver.entries[1].message == "warning called"
-      assert logObserver.entries[2].message == "info    called"
-      assert logObserver.entries[3].message == "fine    called"
-      assert logObserver.entries[4].message == "finer   called"
-      assert logObserver.entries[5].message == "finest  called"
-
-      assert logObserver.entries[0].level == Level.SEVERE
-      assert logObserver.entries[1].level == Level.WARNING
-      assert logObserver.entries[2].level == Level.INFO
-      assert logObserver.entries[3].level == Level.FINE
-      assert logObserver.entries[4].level == Level.FINER
-      assert logObserver.entries[5].level == Level.FINEST
+      assert logSpy.severeParameter == 'severe  called'
+      assert logSpy.warningParameter == 'warning called'
+      assert logSpy.infoParameter == 'info    called'
+      assert logSpy.fineParameter == 'fine    called'
+      assert logSpy.finerParameter == 'finer   called'
+      assert logSpy.finestParameter == 'finest  called'
   }
 
     public void testLogGuard() {
@@ -178,55 +148,84 @@ class LogTest extends GroovyTestCase {
                @groovy.util.logging.Log
                class MyClass {
                    def loggingMethod() {
-                       log.setLevel(java.util.logging.Level.SEVERE)
-                       log.info (prepareLogMessage())
+                       log.setLevel(java.util.logging.Level.OFF)
+                       log.severe(prepareLogMessage())
+                       log.warning(prepareLogMessage())
+                       log.info   (prepareLogMessage())
+                       log.fine   (prepareLogMessage())
+                       log.finer  (prepareLogMessage())
+                       log.finest (prepareLogMessage())
                    }
 
                    def prepareLogMessage() {
-                     getObserver()?.isLogGuarded = false
                      return "formatted log message"
                    }
 
-                   def getObserver() {
-                      for(def handler : log.handlers) {
-                        if(handler.hasProperty("isLogGuarded")) {
-                          return handler
-                        }
-                      }
-                  }
-               }
-               new MyClass().loggingMethod() """)
+               }  """)
 
-       Script s = (Script) clazz.newInstance()
-       s.run()
+        def logSpy = new LoggerSpy()
+        def logger = new MockFor(Logger)
+        logger.demand.getLogger { logSpy }
+        logger.use {
+            def s = clazz.newInstance()
+            s.loggingMethod()
+        }
 
-       assert logObserver.isLogGuarded == true
+        assert !logSpy.severeParameter
+        assert !logSpy.warningParameter
+        assert !logSpy.infoParameter
+        assert !logSpy.fineParameter
+        assert !logSpy.finerParameter
+        assert !logSpy.finestParameter
      }
+}
 
+private class LoggerSpy extends Logger {
 
-    def getObserver() {
-        for(def handler : log.handlers) {
-          if(handler.hasProperty("isLogGuarded")) {
-            return handler
-          }
-        }
+    String severeParameter  = null
+    String warningParameter = null
+    String infoParameter    = null
+    String fineParameter    = null
+    String finerParameter   = null
+    String finestParameter  = null
+
+    LoggerSpy() {
+        super(null, null)
     }
 
-    class LoggingObserver extends Handler {
-
-        def entries = []
-        boolean isLogGuarded = true
-
-        void publish(LogRecord record) {
-            entries << record
-        }
-
-        void flush() {
-        }
-
-        void close() {
-        }
+    @Override
+    void severe(String s) {
+        if (severeParameter) throw new AssertionError("Severe already called once with parameter $severeParameter")
+        severeParameter = s
     }
 
+    @Override
+    void warning(String s) {
+        if (warningParameter) throw new AssertionError("Warning already called once with parameter $warningParameter")
+        warningParameter= s
+    }
 
+    @Override
+    void info(String s) {
+        if (infoParameter) throw new AssertionError("Info already called once with parameter $infoParameter")
+        infoParameter = s
+    }
+
+    @Override
+    void fine(String s) {
+        if (fineParameter) throw new AssertionError("Fine already called once with parameter $fineParameter")
+        fineParameter= s
+    }
+
+    @Override
+    void finer(String s) {
+        if (finerParameter) throw new AssertionError("Finer already called once with parameter $finerParameter")
+        finerParameter= s
+    }
+
+    @Override
+    void finest(String s) {
+        if (finestParameter) throw new AssertionError("Finest already called once with parameter $finestParameter")
+        finestParameter= s
+    }
 }
