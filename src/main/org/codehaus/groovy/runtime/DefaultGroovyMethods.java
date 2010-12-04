@@ -1969,8 +1969,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #collect(Map, Collection, Closure)
      * @since 1.8.0
      */
-    public static <K, V> Map<K, V> collectEntries(Map<K, V> self, Map<K, V> result, Closure<?> closure) {
-        for (Map.Entry<K, V> entry : self.entrySet()) {
+    public static <K, V> Map<K, V> collectEntries(Map<?, ?> self, Map<K, V> result, Closure<?> closure) {
+        for (Map.Entry<?, ?> entry : self.entrySet()) {
             addEntry(result, callClosureForMapEntry(closure, entry));
         }
         return result;
@@ -1992,7 +1992,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #collect(Map, Collection, Closure)
      * @since 1.8.0
      */
-    public static <K, V> Map<K, V> collectEntries(Map<K, V> self, Closure closure) {
+    public static Map<?, ?> collectEntries(Map<?, ?> self, Closure closure) {
         return collectEntries(self, createSimilarMap(self), closure);
     }
 
@@ -2015,7 +2015,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #collect(Map, Collection, Closure)
      * @since 1.8.0
      */
-    public static <K, V> Map<K, V> collectEntries(Collection self, Map<K, V> result, Closure closure) {
+    public static <K, V> Map<K, V> collectEntries(Collection<?> self, Map<K, V> result, Closure<?> closure) {
         for (Iterator iter = self.iterator(); iter.hasNext();) {
             addEntry(result, closure.call(iter.next()));
         }
@@ -2042,7 +2042,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #collect(Map, Collection, Closure)
      * @since 1.8.0
      */
-    public static <K, V> Map<K, V> collectEntries(Object[] self, Map<K, V> result, Closure closure) {
+    public static <K, V> Map<K, V> collectEntries(Object[] self, Map<K, V> result, Closure<?> closure) {
         return collectEntries(toList(self), result, closure);
     }
 
@@ -2064,7 +2064,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #collectEntries(Collection, Map, Closure)
      * @since 1.8.0
      */
-    public static <K, V> Map<K, V> collectEntries(Collection self, Closure closure) {
+    public static <K, V> Map<K, V> collectEntries(Collection<?> self, Closure<?> closure) {
         return collectEntries(self, new LinkedHashMap<K, V>(), closure);
     }
 
@@ -2087,7 +2087,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #collectEntries(Collection, Map, Closure)
      * @since 1.8.0
      */
-    public static <K, V> Map<K, V> collectEntries(Object[] self, Closure closure) {
+    public static <K, V> Map<K, V> collectEntries(Object[] self, Closure<?> closure) {
         return collectEntries(toList(self), new LinkedHashMap<K, V>(), closure);
     }
 
