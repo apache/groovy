@@ -15,6 +15,7 @@
  */
 package org.codehaus.groovy.classgen.asm;
 
+import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
 import org.codehaus.groovy.ast.ClassHelper;
@@ -245,6 +246,28 @@ public class OptimizingStatementWriter extends StatementWriter {
         if (controller.isFastPath()) return false;
         return true;
     }
+    
+    @Override
+    public void writeReturn(ReturnStatement statement) {
+        StatementMeta meta = (StatementMeta) statement.getNodeMetaData(StatementMeta.class);
+        if (isNewPathFork(meta)) {
+            writeDeclarationExtraction(statement);
+            
+            FastPathData fastPathData = writeGuards(meta, statement);
+
+            boolean oldFastPathBlock = fastPathBlocked;
+            fastPathBlocked = true;
+            super.writeReturn(statement);
+            fastPathBlocked = oldFastPathBlock;
+            
+            if (fastPathData==null) return;
+            writeFastPathPrelude(fastPathData);
+            super.writeReturn(statement);
+            writeFastPathEpilogue(fastPathData); 
+        } else {
+            super.writeReturn(statement);
+        }
+    }
 
     @Override
     public void writeExpressionStatement(ExpressionStatement statement) {
@@ -264,20 +287,7 @@ public class OptimizingStatementWriter extends StatementWriter {
         // the only case we need to handle is then (2).
         
         if (isNewPathFork(meta)) {
-            DeclarationExpression declaration = getDeclaration(statement);
-            if (declaration!=null) {
-                // do declaration
-                controller.getCompileStack().defineVariable(declaration.getVariableExpression(), false);
-                // change statement to do assignment only
-                BinaryExpression assignment = new BinaryExpression(
-                        declaration.getLeftExpression(),
-                        declaration.getOperation(),
-                        declaration.getRightExpression());
-                assignment.setSourcePosition(declaration);
-                assignment.copyNodeMetaData(declaration);
-                // replace statement code
-                statement.setExpression(assignment);
-            }
+            writeDeclarationExtraction(statement);
             
             FastPathData fastPathData = writeGuards(meta, statement);
 
@@ -295,10 +305,44 @@ public class OptimizingStatementWriter extends StatementWriter {
         }
     }
 
-    private DeclarationExpression getDeclaration(ExpressionStatement statement) {
-        Expression ex = statement.getExpression();
+    private void writeDeclarationExtraction(Statement statement) {
+        DeclarationExpression declaration = getDeclaration(statement);
+        if (declaration==null) return;
+        
+        // do declaration
+        controller.getCompileStack().defineVariable(declaration.getVariableExpression(), false);
+        // change statement to do assignment only
+        BinaryExpression assignment = new BinaryExpression(
+                declaration.getLeftExpression(),
+                declaration.getOperation(),
+                declaration.getRightExpression());
+        assignment.setSourcePosition(declaration);
+        assignment.copyNodeMetaData(declaration);
+        // replace statement code
+        if (statement instanceof ReturnStatement) {
+            ReturnStatement rs = (ReturnStatement) statement;
+            rs.setExpression(assignment);
+        } else if (statement instanceof ExpressionStatement) {
+            ExpressionStatement es = (ExpressionStatement) statement;
+            es.setExpression(assignment);            
+        } else {
+            throw new GroovyBugError("unknown statement type :"+statement.getClass());
+        }
+    }
+
+    private DeclarationExpression getDeclaration(Statement statement) {
+        Expression ex = null;
+        if (statement instanceof ReturnStatement) {
+            ReturnStatement rs = (ReturnStatement) statement;
+            ex = rs.getExpression();
+        } else if (statement instanceof ExpressionStatement) {
+            ExpressionStatement es = (ExpressionStatement) statement;
+            ex = es.getExpression();            
+        } else {
+            throw new GroovyBugError("unknown statement type :"+statement.getClass());
+        } 
         if (!(ex instanceof DeclarationExpression)) return null;
-        DeclarationExpression de = (DeclarationExpression) statement.getExpression();
+        DeclarationExpression de = (DeclarationExpression) ex;
         ex = de.getLeftExpression();
         if (ex instanceof TupleExpression) return null;
         return de;
