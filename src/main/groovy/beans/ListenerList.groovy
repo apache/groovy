@@ -46,15 +46,6 @@ import org.codehaus.groovy.transform.GroovyASTTransformationClass
  * The annotation can get the following parameters:
  *
  * <pre>
- * listener    = type of the Listener instance.
- *               Default:
- *                 If the annotated collection has a single, concrete (not wildcarded) generic subtype this subtype is
- *                 used as listener type.
- *                 Otherwise java.util.Map is used.
- * event       = type of the Event to fire
- *               Default:
- *                 If the listener type has a single abstract method with a single parameter, this is used as event type
- *                 Otherwise java.lang.Object is used.
  * fire        = One or many names of event-methods to fire
  *               Format: <suffix for fire-method>[-><event-method to be called>]?
  *                 e.g. fire="eventOccurred" or fire="eventOccurred2->eventOccurred"
@@ -104,9 +95,6 @@ import org.codehaus.groovy.transform.GroovyASTTransformationClass
 @Target(ElementType.FIELD)
 @GroovyASTTransformationClass('groovy.beans.ListenerListASTTransformation')
 @interface ListenerList {
-    Class listener() default Void.class
-    Class event() default Void.class
-    String[] fire() default []
     String name() default ""
     boolean synchronize() default false
 }

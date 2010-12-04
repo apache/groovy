@@ -11,15 +11,14 @@ class ListenerListASTTest extends GroovyTestCase {
     public void testDefaultFireAndName() {
         GroovyShell shell = new GroovyShell()
         def tc = shell.evaluate("""
-      package b
-      import groovy.beans.*
+            import groovy.beans.*
 
-      class TestClass {
-        @ListenerList(listener = TestListener, event = TestEvent)
-        def listeners
-      }
+            class TestClass {
+                @ListenerList
+                List<TestListener> listeners
+            }
 
-      new TestClass()
+            new TestClass()
     """)
         assert tc.listeners == []
         int count = 0
@@ -44,8 +43,8 @@ class ListenerListASTTest extends GroovyTestCase {
       import groovy.beans.*
 
       class TestClass {
-        @ListenerList(listener = TestListener, event = TestEvent, fire = "eventOccurred2", name = "someOtherTestListener")
-        def listeners
+        @ListenerList(name = "someOtherTestListener")
+        List<TestListener> listeners
       }
 
       new TestClass ()
@@ -58,11 +57,11 @@ class ListenerListASTTest extends GroovyTestCase {
         assert !tc.class.methods.name.contains('addTestListener')
         assert !tc.class.methods.name.contains('removeTestListener')
         assert !tc.class.methods.name.contains('getTestListeners')
-        assert !tc.class.methods.name.contains('fireEventOccurred')
+        assert tc.class.methods.name.contains('fireEventOccurred')
         assert tc.someOtherTestListeners.size() == 0
         tc.addSomeOtherTestListener([eventOccurred: { e -> count++; evt = e }] as TestListener)
         assert tc.someOtherTestListeners.size() == 1
-        tc.fireEventOccurred2(new TestEvent(source, message))
+        tc.fireEventOccurred(new TestEvent(source, message))
         tc.removeSomeOtherTestListener(tc.someOtherTestListeners[0])
         assert tc.someOtherTestListeners.size() == 0
         assert count == 1
@@ -77,8 +76,8 @@ class ListenerListASTTest extends GroovyTestCase {
               import groovy.beans.*
 
               class TestClass {
-                @ListenerList(listener = TestTwoMethodListener, event = TestEvent)
-                def listeners
+                @ListenerList
+                List<TestTwoMethodListener> listeners
               }
 
               new TestClass ()
@@ -105,55 +104,32 @@ class ListenerListASTTest extends GroovyTestCase {
         assert evt2.message.is (message2)
     }
 
-    public void testMultipleListsOfSameEvent() {
-        GroovyShell shell = new GroovyShell()
-        def tc = shell.evaluate("""
+    public void testMultipleListenersConflictsDetected() {
+        def message = shouldFail {
+            new GroovyShell().evaluate("""
               package b
               import groovy.beans.*
 
               class TestClass {
-                @ListenerList(listener = TestListener, event = TestEvent)
-                def listeners
-                @ListenerList(listener = TestListener, event = TestEvent, fire = "eventOccurred2->eventOccurred", name = "someOtherTestListener")
-                def listeners2
-              }
+                @ListenerList
+                Set<TestListener> listeners
+                @ListenerList(name = "someOtherTestListener")
+                Vector<TestListener> listeners2
+              } """)
+        }
 
-              new TestClass ()    """)
-
-        assert tc.listeners == []
-        assert tc.listeners2 == []
-        int count1 = 0
-        int count2 = 0
-        String source1 = 'TestSource'
-        String source2 = 'TestSource'
-        String message1 = 'TestMessage'
-        String message2 = 'TestMessage'
-        def evt1
-        def evt2
-        tc.addTestListener ([eventOccurred: { e -> count1++; evt1 = e }] as TestListener)
-        tc.fireEventOccurred (new TestEvent(source1, message1))
-        assert count1 == 1
-        assert count2 == 0
-        assert evt1.source.is (source1)
-        assert evt1.message.is (message1)
-
-        tc.addSomeOtherTestListener ([eventOccurred: { e -> count2++; evt2 = e }] as TestListener)
-        tc.fireEventOccurred2 (new TestEvent(source2, message2))
-        assert count1 == 1
-        assert count2 == 1
-        assert evt2.source.is (source2)
-        assert evt2.message.is (message2)
+        assert message.contains('Class b.TestClass already has method fireEventOccurred')
     }
 
-    public void testMultipleMethodListenerWithCustomFire() {
+    public void testMultipleMethodListeners() {
         GroovyShell shell = new GroovyShell()
         def tc = shell.evaluate("""
       package b
       import groovy.beans.*
 
       class TestClass {
-        @ListenerList(listener = TestTwoMethodListener, event = TestEvent, fire = ["eventOccurred->eventOccurred1", "nextEventOccurred->eventOccurred2"])
-        def listeners
+        @ListenerList
+        List<TestTwoMethodListener> listeners
       }
 
       new TestClass ()
@@ -168,12 +144,12 @@ class ListenerListASTTest extends GroovyTestCase {
         def evt1
         def evt2
         tc.addTestTwoMethodListener ([eventOccurred1: { e -> count1++; evt1 = e }, eventOccurred2: { e -> count2++; evt2 = e }] as TestTwoMethodListener)
-        tc.fireEventOccurred (new TestEvent(source1, message1))
+        tc.fireEventOccurred1 (new TestEvent(source1, message1))
         assert count1 == 1
         assert count2 == 0
         assert evt1.source.is (source1)
         assert evt1.message.is (message1)
-        tc.fireNextEventOccurred (new TestEvent(source2, message2))
+        tc.fireEventOccurred2 (new TestEvent(source2, message2))
         assert count1 == 1
         assert count2 == 1
         assert evt2.source.is (source2)
@@ -187,8 +163,8 @@ class ListenerListASTTest extends GroovyTestCase {
               import groovy.beans.*
 
               class TestClass {
-                @ListenerList(listener = TestMapListener, event = Map)
-                def listeners
+                @ListenerList
+                List<TestMapListener> listeners
               }
 
               new TestClass ()    """)
@@ -204,85 +180,46 @@ class ListenerListASTTest extends GroovyTestCase {
         assert evt.message.is (message)
     }
 
-    public void testMapListener() {
-        GroovyShell shell = new GroovyShell()
-        def tc = shell.evaluate("""
-              package b
-              import groovy.beans.*
+    public void testError_AnnotationNotOnCollection() {
+        def message = shouldFail {
+            new GroovyShell().evaluate("""
+                  import groovy.beans.*
 
-              class TestClass {
-                @ListenerList(event = TestEvent, name = "testListener", fire = "eventOccurred")
-                def listeners
-              }
-
-              new TestClass () """)
-        assert tc.listeners == []
-        int count = 0
-        String source = 'TestSource'
-        String message = 'TestMessage'
-        def evt
-        tc.addTestListener ([eventOccurred: { e -> count++; evt = e }])
-        tc.fireEventOccurred (new TestEvent (source, message))
-        assert count == 1
-        assert evt.source.is (source)
-        assert evt.message.is (message)
+                  class TestClass {
+                    @ListenerList
+                    def listeners
+                  }
+                """)
+        }
+        assert message.contains('@groovy.beans.ListenerList can only annotate collection properties')
     }
 
-    public void testMultipleMapListener() {
-        GroovyShell shell = new GroovyShell()
-        def tc = shell.evaluate("""
-          package b
-          import groovy.beans.*
+    public void testError_AnnotationWithoutGeneric() {
+        def message = shouldFail {
+            new GroovyShell().evaluate("""
+                  import groovy.beans.*
 
-          class TestClass {
-            @ListenerList(event = TestEvent, name = "testListener", fire = ["eventOccurred", "eventOccurred2"])
-            def listeners
-          }
-
-          new TestClass ()    """)
-        assert tc.listeners == []
-        int count = 0
-        String source = 'TestSource'
-        String message = 'TestMessage'
-        def evt
-        int count2 = 0
-        String source2 = 'TestSource'
-        String message2 = 'TestMessage'
-        def evt2
-        tc.addTestListener ([eventOccurred: { e -> count++; evt = e }, eventOccurred2: { e -> count2++; evt2 = e }])
-        tc.fireEventOccurred (new TestEvent (source, message))
-        tc.fireEventOccurred2 (new TestEvent (source2, message2))
-        assert count == 1
-        assert evt.source.is (source)
-        assert evt.message.is (message)
-        assert count2 == 1
-        assert evt.source.is (source2)
-        assert evt.message.is (message2)
+                  class TestClass {
+                    @ListenerList
+                    List listeners
+                  }
+                """)
+        }
+        assert message.contains('@groovy.beans.ListenerList fields must have a generic type')
     }
 
-    public testMapListenerAndEvent = {->
-        GroovyShell shell = new GroovyShell()
-        def tc = shell.evaluate("""
-              package b
-              import groovy.beans.*
+    public void testError_AnnotationWithWildcard() {
+        def message = shouldFail {
+            new GroovyShell().evaluate("""
+                  import groovy.beans.*
 
-              class TestClass {
-                @ListenerList(name = "testListener", fire = "eventOccurred", event = Map)
-                def listeners
-              }
-
-              new TestClass ()
-            """)
-        assert tc.listeners == []
-        int count = 0
-        String source = "TestSource"
-        String message = 'TestMessage'
-        def evt
-        tc.addTestListener([eventOccurred: { e -> count++; evt = e }])
-        tc.fireEventOccurred([source: source, message: message])
-        assert count == 1
-        assert evt.source.is(source)
-        assert evt.message.is(message)
+                  class TestClass {
+                    @ListenerList
+                    List<? super Object> listeners
+                  }
+                """)
+        }
+        assert message.contains('@groovy.beans.ListenerList fields with generic wildcards not yet supported')
     }
 
     public void testListEvent() {
@@ -292,8 +229,8 @@ class ListenerListASTTest extends GroovyTestCase {
               import groovy.beans.*
 
               class TestClass {
-                @ListenerList(listener = TestListListener)
-                def listeners
+                @ListenerList
+                List<TestListListener> listeners
               }
 
               new TestClass ()
@@ -317,8 +254,8 @@ class ListenerListASTTest extends GroovyTestCase {
               import groovy.beans.*
 
               class TestClass {
-                @ListenerList(listener = TestObjectListener)
-                def listeners
+                @ListenerList
+                List<TestObjectListener> listeners
               }
 
               new TestClass ()    """)
@@ -339,7 +276,7 @@ class ListenerListASTTest extends GroovyTestCase {
               import groovy.beans.*
 
               class TestClass {
-                @ListenerList(event = String)
+                @ListenerList
                 List<TestObjectListener> listeners
               }
 
