@@ -136,15 +136,15 @@ public class ClosureJavaIntegrationTest extends TestCase {
             }
         };
         Closure<Integer> tensAndUnits = arithmeticClosure.curry(10);
-        assertEquals(35, (int)tensAndUnits.call(new Object[]{3, 5}));
+        assertEquals(35, (int)tensAndUnits.call(3, 5));
         tensAndUnits = arithmeticClosure.ncurry(0, 10);
-        assertEquals(35, (int)tensAndUnits.call(new Object[]{3, 5}));
+        assertEquals(35, (int)tensAndUnits.call(3, 5));
         tensAndUnits = arithmeticClosure.ncurry(1, 10);
-        assertEquals(35, (int)tensAndUnits.call(new Object[]{3, 5}));
+        assertEquals(35, (int)tensAndUnits.call(3, 5));
         Closure<Integer> timesPlus5 = arithmeticClosure.rcurry(5);
-        assertEquals(35, (int)timesPlus5.call(new Object[]{15, 2}));
+        assertEquals(35, (int)timesPlus5.call(15, 2));
         timesPlus5 = arithmeticClosure.ncurry(2, 5);
-        assertEquals(35, (int)timesPlus5.call(new Object[]{15, 2}));
+        assertEquals(35, (int)timesPlus5.call(15, 2));
     }
 
     public void testComposition() {
@@ -173,7 +173,7 @@ public class ClosureJavaIntegrationTest extends TestCase {
         }.trampoline());
         Closure<BigInteger> factorial = new Closure<BigInteger>() {
             public BigInteger doCall(Integer n) {
-                return ref.get().call(new Object[]{n, BigInteger.ONE});
+                return ref.get().call(n, BigInteger.ONE);
             }
         };
         assertEquals(BigInteger.valueOf(479001600), factorial.call(12));

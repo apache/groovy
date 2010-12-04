@@ -178,7 +178,7 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
                     final Closure c = (Closure) value;
 
                     if (c.getMaximumNumberOfParameters() == 0) {
-                        InvokerHelper.write(out, c.call(null));
+                        InvokerHelper.write(out, c.call((Object)null));
                     } else if (c.getMaximumNumberOfParameters() == 1) {
                         c.call(new Object[]{out});
                     } else {

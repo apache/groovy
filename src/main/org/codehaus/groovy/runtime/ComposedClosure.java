@@ -92,12 +92,12 @@ public final class ComposedClosure<V> extends Closure<V> {
         return first.getParameterTypes();
     }
 
-    public Object doCall(Object[] args) {
+    public Object doCall(Object... args) {
         return call(args);
     }
 
     @Override
-    public V call(Object[] args) {
+    public V call(Object... args) {
         Object temp = first.call(args);
         if (temp instanceof List && second.getParameterTypes().length > 1) temp = ((List) temp).toArray();
         return temp instanceof Object[] ? second.call((Object[]) temp) : second.call(temp);

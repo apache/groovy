@@ -296,7 +296,7 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
     }
 
     @SuppressWarnings("unchecked")
-    public V call(Object[] args) {
+    public V call(Object... args) {
         try {
             return (V) getMetaClass().invokeMethod(this,"doCall",args);
         } catch (Exception e) {
@@ -740,11 +740,11 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
             return ((Closure) getOwner()).call(arguments);
         }
         
-        public Object call(Object[] args) {
+        public Object call(Object... args) {
             return ((Closure) getOwner()).call(args);
         }
 
-        public Object doCall(Object[] args) {
+        public Object doCall(Object... args) {
             return call(args);
         }
         

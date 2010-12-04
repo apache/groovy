@@ -768,7 +768,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
         Object delegate = closure.getDelegate();
         closure.setDelegate(definer);
         closure.setResolveStrategy(Closure.DELEGATE_ONLY);
-        closure.call(null);
+        closure.call((Object)null);
         closure.setDelegate(delegate);
         closure.setResolveStrategy(Closure.DELEGATE_FIRST);
         definer.definition = false;
@@ -1318,7 +1318,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
             final SubClassDefiningClosure definer = new SubClassDefiningClosure(subClass);
             closure.setDelegate(definer);
             closure.setResolveStrategy(Closure.DELEGATE_FIRST);
-            closure.call(null);
+            closure.call((Object)null);
         }
 
         public Object invokeMethod(String name, Object obj) {
@@ -1332,7 +1332,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
                         Closure c = (Closure) ((Object[]) obj)[0];
                         c.setDelegate(staticDef);
                         c.setResolveStrategy(Closure.DELEGATE_ONLY);
-                        c.call(null);
+                        c.call((Object)null);
                         return null;
                     }
                     Object args[] = (Object[]) obj;
