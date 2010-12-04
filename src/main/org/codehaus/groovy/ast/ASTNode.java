@@ -110,8 +110,15 @@ public class ASTNode {
      * @return the node meta data value for this key
      */
     public Object getNodeMetaData(Object key) {
-        if (metaDataMap==null) return null;
         return metaDataMap.get(key);
+    }
+    
+    /**
+     * Copies all node meta data from one node to the other
+     * @param other - the other node
+     */
+    public void copyNodeMetaData(ASTNode other) {
+        metaDataMap.putAll(other.metaDataMap);
     }
     
     /**
