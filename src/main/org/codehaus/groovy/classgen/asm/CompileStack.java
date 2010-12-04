@@ -602,8 +602,13 @@ public class CompileStack implements Opcodes {
             createReference(answer);
         } else {
             if (!initFromStack) {
-                if (ClassHelper.isPrimitiveType(answer.getType())) {
-                    mv.visitLdcInsn(0);
+                ClassNode type = answer.getType().redirect();
+                if (ClassHelper.isPrimitiveType(type)) {
+                    if (type==ClassHelper.long_TYPE) {
+                        mv.visitInsn(LCONST_0);
+                    } else {
+                        mv.visitLdcInsn(0);
+                    }
                 } else {
                     mv.visitInsn(ACONST_NULL);
                 }
