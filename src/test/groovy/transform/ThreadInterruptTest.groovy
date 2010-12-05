@@ -116,7 +116,7 @@ class ThreadInterruptTest extends GroovyTestCase {
         assert 100 == counter.interruptedCheckCount
     }
 
-    public void testInterrupt_Method() {
+    public void testInterrupt_Method_AndTestExceptionMessage() {
 
         def c = new GroovyClassLoader().parseClass("""
             @groovy.transform.ThreadInterrupt
@@ -128,7 +128,8 @@ class ThreadInterruptTest extends GroovyTestCase {
         def mocker = new StubFor(Thread.class)
         mocker.demand.currentThread(1..Integer.MAX_VALUE) { new InterruptingThread() }
         mocker.use {
-            shouldFail(InterruptedException) { c.newInstance().myMethod() }
+            def message = shouldFail(InterruptedException) { c.newInstance().myMethod() }
+            assert message == 'Execution interrupted. The current thread has been interrupted.'
         }
     }
 

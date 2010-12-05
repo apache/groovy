@@ -24,10 +24,11 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 
 
 /**
- * Represents a closure creation expression such as { statement; } 
- * or { i : statement; } or { i, x, String y: statement }
+ * Represents a closure expression such as { statement }
+ * or { i -> statement } or { i, x, String y ->  statement }
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
+ * @author Hamlet D'Arcy
  * @version $Revision$
  */
 public class ClosureExpression extends Expression {
@@ -54,8 +55,22 @@ public class ClosureExpression extends Expression {
         return super.toString() + InvokerHelper.toString(parameters) + "{ " + code + " }";
     }
 
+    /**
+     * This gets the code statement of the closure. You can read this method to find out what actions
+     * the closure is going to perform.
+     * @return
+     */
     public Statement getCode() {
         return code;
+    }
+
+    /**
+     * This sets the code statement of the closure. You can use this method in order to add more actions
+     * during the closure execution.  
+     * @return
+     */
+    public void setCode(Statement code) {
+        this.code = code;
     }
 
     public Parameter[] getParameters() {
