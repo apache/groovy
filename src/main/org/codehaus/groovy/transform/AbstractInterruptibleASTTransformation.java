@@ -166,25 +166,7 @@ public abstract class AbstractInterruptibleASTTransformation extends ClassCodeVi
      * Shortcut method which avoids duplicating code for every type of loop.
      * Actually wraps the loopBlock of different types of loop statements.
      */
-    private void visitLoop(ForStatement loopStatement) {
-        Statement statement = loopStatement.getLoopBlock();
-        loopStatement.setLoopBlock(wrapBlock(statement));
-    }
-
-    /**
-     * Shortcut method which avoids duplicating code for every type of loop.
-     * Actually wraps the loopBlock of different types of loop statements.
-     */
-    private void visitLoop(DoWhileStatement loopStatement) {
-        Statement statement = loopStatement.getLoopBlock();
-        loopStatement.setLoopBlock(wrapBlock(statement));
-    }
-
-    /**
-     * Shortcut method which avoids duplicating code for every type of loop.
-     * Actually wraps the loopBlock of different types of loop statements.
-     */
-    private void visitLoop(WhileStatement loopStatement) {
+    private void visitLoop(LoopingStatement loopStatement) {
         Statement statement = loopStatement.getLoopBlock();
         loopStatement.setLoopBlock(wrapBlock(statement));
     }

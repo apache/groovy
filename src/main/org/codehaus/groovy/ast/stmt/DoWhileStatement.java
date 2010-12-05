@@ -24,7 +24,7 @@ import org.codehaus.groovy.ast.expr.BooleanExpression;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class DoWhileStatement extends Statement {
+public class DoWhileStatement extends Statement implements LoopingStatement {
 
     private BooleanExpression booleanExpression;
     private Statement loopBlock;

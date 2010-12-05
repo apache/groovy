@@ -28,7 +28,7 @@ import org.codehaus.groovy.ast.expr.Expression;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class ForStatement extends Statement {
+public class ForStatement extends Statement implements LoopingStatement {
     public static final Parameter FOR_LOOP_DUMMY = new Parameter(ClassHelper.OBJECT_TYPE,"forLoopDummyParameter");
 
     private Parameter variable;
