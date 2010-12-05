@@ -335,6 +335,21 @@ class ImmutableTransformTest extends GroovyShellTestCase {
         '''
     }
 
+    void testImmutableWithConstant() {
+        assertScript '''
+            import groovy.transform.Immutable
+            @Immutable class MinIntegerHolder {
+                Integer i
+                public static final MIN = 3
+                Integer getMinI() { [i, MIN].max() }
+            }
+            def mih2 = new MinIntegerHolder(2)
+            def mih4 = new MinIntegerHolder(4)
+            assert mih2.minI == 3
+            assert mih4.minI == 4
+        '''
+    }
+
     void testStaticsAllowed_ThoughUsuallyBadDesign() {
         // design here is questionable as getDescription() method is not idempotent
         assertScript '''

@@ -251,7 +251,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
     private void ensureNotPublic(String cNode, FieldNode fNode) {
         String fName = fNode.getName();
         // TODO: do we need to lock down things like: $ownClass
-        if (fNode.isPublic() && !fName.contains("$")) {
+        if (fNode.isPublic() && !fName.contains("$") && !(fNode.isStatic() && fNode.isFinal())) {
             addError("Public field '" + fName + "' not allowed for " + MY_TYPE_NAME + " class '" + cNode + "'.", fNode);
         }
     }
