@@ -250,9 +250,7 @@ public class OptimizingStatementWriter extends StatementWriter {
     @Override
     public void writeReturn(ReturnStatement statement) {
         StatementMeta meta = (StatementMeta) statement.getNodeMetaData(StatementMeta.class);
-        if (isNewPathFork(meta)) {
-            writeDeclarationExtraction(statement);
-            
+        if (isNewPathFork(meta) && writeDeclarationExtraction(statement)) {
             FastPathData fastPathData = writeGuards(meta, statement);
 
             boolean oldFastPathBlock = fastPathBlocked;
@@ -286,9 +284,7 @@ public class OptimizingStatementWriter extends StatementWriter {
         //
         // the only case we need to handle is then (2).
         
-        if (isNewPathFork(meta)) {
-            writeDeclarationExtraction(statement);
-            
+        if (isNewPathFork(meta) && writeDeclarationExtraction(statement)) {
             FastPathData fastPathData = writeGuards(meta, statement);
 
             boolean oldFastPathBlock = fastPathBlocked;
@@ -305,10 +301,22 @@ public class OptimizingStatementWriter extends StatementWriter {
         }
     }
 
-    private void writeDeclarationExtraction(Statement statement) {
-        DeclarationExpression declaration = getDeclaration(statement);
-        if (declaration==null) return;
-        
+    private boolean writeDeclarationExtraction(Statement statement) {
+        Expression ex = null;
+        if (statement instanceof ReturnStatement) {
+            ReturnStatement rs = (ReturnStatement) statement;
+            ex = rs.getExpression();
+        } else if (statement instanceof ExpressionStatement) {
+            ExpressionStatement es = (ExpressionStatement) statement;
+            ex = es.getExpression();            
+        } else {
+            throw new GroovyBugError("unknown statement type :"+statement.getClass());
+        } 
+        if (!(ex instanceof DeclarationExpression)) return true;
+        DeclarationExpression declaration = (DeclarationExpression) ex;
+        ex = declaration.getLeftExpression();
+        if (ex instanceof TupleExpression) return false;
+                
         // do declaration
         controller.getCompileStack().defineVariable(declaration.getVariableExpression(), false);
         // change statement to do assignment only
@@ -328,26 +336,9 @@ public class OptimizingStatementWriter extends StatementWriter {
         } else {
             throw new GroovyBugError("unknown statement type :"+statement.getClass());
         }
+        return true;
     }
-
-    private DeclarationExpression getDeclaration(Statement statement) {
-        Expression ex = null;
-        if (statement instanceof ReturnStatement) {
-            ReturnStatement rs = (ReturnStatement) statement;
-            ex = rs.getExpression();
-        } else if (statement instanceof ExpressionStatement) {
-            ExpressionStatement es = (ExpressionStatement) statement;
-            ex = es.getExpression();            
-        } else {
-            throw new GroovyBugError("unknown statement type :"+statement.getClass());
-        } 
-        if (!(ex instanceof DeclarationExpression)) return null;
-        DeclarationExpression de = (DeclarationExpression) ex;
-        ex = de.getLeftExpression();
-        if (ex instanceof TupleExpression) return null;
-        return de;
-    }
-
+    
     public static void setNodeMeta(ClassNode classNode) {
        new OptVisitor().visitClass(classNode);   
     }
