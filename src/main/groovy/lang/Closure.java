@@ -123,14 +123,6 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
     }
 
     /**
-     * Constructor only used for rare cases where owner and "this" object are both null.
-     * Not used in normal Groovy contexts.
-     */
-    public Closure() {
-        this(null);
-    }
-
-    /**
      * Sets the strategy which the closure uses to resolve property references. The default is Closure.OWNER_FIRST
      *
      * @param resolveStrategy The resolve strategy to set

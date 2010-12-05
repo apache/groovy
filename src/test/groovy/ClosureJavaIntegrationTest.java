@@ -50,7 +50,7 @@ public class ClosureJavaIntegrationTest extends TestCase {
 
     public void testEachList() {
         final List<Integer> result = new ArrayList<Integer>();
-        each(animals, new Closure() {
+        each(animals, new Closure(null) {
             public void doCall(String arg) {
                 result.add(arg.length());
             }
@@ -60,7 +60,7 @@ public class ClosureJavaIntegrationTest extends TestCase {
 
     public void testEachMap() {
         final List<String> result = new ArrayList<String>();
-        each(zoo, new Closure() {
+        each(zoo, new Closure(null) {
             public void doCall(String k, Integer v) {
                 result.add("k=" + k + ",v=" + v);
             }
@@ -69,7 +69,7 @@ public class ClosureJavaIntegrationTest extends TestCase {
     }
 
     public void testCollectList() {
-        assertEquals(Arrays.asList(3, 4, 5), collect(animals, new Closure<Integer>() {
+        assertEquals(Arrays.asList(3, 4, 5), collect(animals, new Closure<Integer>(null) {
             public Integer doCall(String it) {
                 return it.length();
             }
@@ -81,7 +81,7 @@ public class ClosureJavaIntegrationTest extends TestCase {
         for (Map.Entry<String, Integer> entry : zoo.entrySet()) {
             if (entry.getKey().equals("Lions")) lionEntry = entry;
         }
-        assertEquals(lionEntry, max(zoo.entrySet(), new Closure<Integer>() {
+        assertEquals(lionEntry, max(zoo.entrySet(), new Closure<Integer>(null) {
             public Integer doCall(Map.Entry<String, Integer> e) {
                 return e.getKey().length() * e.getValue();
             }
@@ -89,12 +89,12 @@ public class ClosureJavaIntegrationTest extends TestCase {
     }
 
     public void testSortMapKeys() {
-        assertEquals(Arrays.asList("Monkeys", "Lions", "Giraffe"), sort(zoo.keySet(), new Closure<Integer>() {
+        assertEquals(Arrays.asList("Monkeys", "Lions", "Giraffe"), sort(zoo.keySet(), new Closure<Integer>(null) {
             public Integer doCall(String a, String b) {
                 return -a.compareTo(b);
             }
         }));
-        assertEquals(Arrays.asList("Giraffe", "Lions", "Monkeys"), sort(zoo.keySet(), new Closure<Integer>() {
+        assertEquals(Arrays.asList("Giraffe", "Lions", "Monkeys"), sort(zoo.keySet(), new Closure<Integer>(null) {
             public Integer doCall(String a, String b) {
                 return a.compareTo(b);
             }
@@ -102,7 +102,7 @@ public class ClosureJavaIntegrationTest extends TestCase {
     }
 
     public void testAnyMap() {
-        assertTrue(any(zoo, new Closure<Boolean>() {
+        assertTrue(any(zoo, new Closure<Boolean>(null) {
             public Boolean doCall(String k, Integer v) {
                 return k.equals("Lions") && v == 5;
             }
@@ -112,7 +112,7 @@ public class ClosureJavaIntegrationTest extends TestCase {
     public void testFindAllAndCurry() {
         Map<String, Integer> expected = new HashMap<String, Integer>(zoo);
         expected.remove("Lions");
-        Closure<Boolean> keyBiggerThan = new Closure<Boolean>() {
+        Closure<Boolean> keyBiggerThan = new Closure<Boolean>(null) {
             public Boolean doCall(Map.Entry<String, Integer> e, Integer size) {
                 return e.getKey().length() > size;
             }
@@ -125,12 +125,12 @@ public class ClosureJavaIntegrationTest extends TestCase {
         List<List> numLists = new ArrayList<List>();
         numLists.add(Arrays.asList(1, 2, 3));
         numLists.add(Arrays.asList(10, 20, 30));
-        assertEquals(Arrays.asList(6, 60), collect(numLists, new Closure<Integer>() {
+        assertEquals(Arrays.asList(6, 60), collect(numLists, new Closure<Integer>(null) {
             public Integer doCall(Integer a, Integer b, Integer c) {
                 return a + b + c;
             }
         }));
-        Closure<Integer> arithmeticClosure = new Closure<Integer>() {
+        Closure<Integer> arithmeticClosure = new Closure<Integer>(null) {
             public Integer doCall(Integer a, Integer b, Integer c) {
                 return a * b + c;
             }
@@ -148,12 +148,12 @@ public class ClosureJavaIntegrationTest extends TestCase {
     }
 
     public void testComposition() {
-        Closure<String> toUpperCase = new Closure<String>() {
+        Closure<String> toUpperCase = new Closure<String>(null) {
             public String doCall(String s) {
                 return s.toUpperCase();
             }
         };
-        Closure<Boolean> hasCapitalA = new Closure<Boolean>() {
+        Closure<Boolean> hasCapitalA = new Closure<Boolean>(null) {
             public Boolean doCall(String s) {
                 return s.contains("A");
             }
@@ -166,12 +166,12 @@ public class ClosureJavaIntegrationTest extends TestCase {
 
     public void testTrampoline() {
         final Reference<Closure<BigInteger>> ref = new Reference<Closure<BigInteger>>();
-        ref.set(new Closure<BigInteger>() {
+        ref.set(new Closure<BigInteger>(null) {
             public Object doCall(Integer n, BigInteger total) {
                 return n > 1 ? ref.get().trampoline(n - 1, total.multiply(BigInteger.valueOf(n))) : total;
             }
         }.trampoline());
-        Closure<BigInteger> factorial = new Closure<BigInteger>() {
+        Closure<BigInteger> factorial = new Closure<BigInteger>(null) {
             public BigInteger doCall(Integer n) {
                 return ref.get().call(n, BigInteger.ONE);
             }
