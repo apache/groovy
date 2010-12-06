@@ -323,7 +323,12 @@ class ListenerListASTTransformation implements ASTTransformation, Opcodes {
                         new EmptyStatement()
                 )
         ])
-        declaringClass.addMethod(
-                new MethodNode(methodName, methodModifiers, methodReturnType, method.parameters, [] as ClassNode[], block))
+        
+        def params = method.parameters.collect {   
+            def cn = ClassHelper.makeWithoutCaching(it.type.name) 
+            cn.setRedirect(it.type)
+            new Parameter(cn, it.name)  
+        }
+        declaringClass.addMethod(methodName, methodModifiers, methodReturnType, params as Parameter[], [] as ClassNode[], block)
     }
 }
