@@ -48,7 +48,7 @@ import javax.swing.SwingUtilities
 
 public class AstBrowser {
 
-    private inputArea, rootElement, decompiledSource, jTree
+    private inputArea, rootElement, decompiledSource, jTree, propertyTable
     boolean showScriptFreeForm, showScriptClass
     GroovyClassLoader classLoader
     def prefs = new AstBrowserUiPreferences()
@@ -83,7 +83,7 @@ public class AstBrowser {
     void run(Closure script, String name) {
 
         swing = new SwingBuilder()
-        def phasePicker, propertyTable, splitterPane, mainSplitter
+        def phasePicker, splitterPane, mainSplitter
 
         showScriptFreeForm = prefs.showScriptFreeForm
         showScriptClass = prefs.showScriptClass
@@ -239,6 +239,9 @@ public class AstBrowser {
         decompiledSource.font = new Font(decompiledSource.font.name, decompiledSource.font.style, newFontSize)
         jTree.cellRenderer.font = new Font(decompiledSource.font.name, decompiledSource.font.style, newFontSize)
         jTree.model.reload(jTree.model.root)
+        propertyTable.tableHeader.font = newFont
+        propertyTable.font = newFont
+        propertyTable.rowHeight = newFontSize + 2
     }
 
     void showAbout(EventObject evt) {
