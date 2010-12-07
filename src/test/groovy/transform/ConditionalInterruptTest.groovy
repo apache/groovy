@@ -96,6 +96,28 @@ class ConditionalInterruptTest extends GroovyTestCase {
         assert 6 == instance.count
     }
 
+    public void testForLoopVisited() {
+
+        def c = new GroovyClassLoader().parseClass('''
+            import groovy.transform.ConditionalInterrupt
+            @ConditionalInterrupt({ count > 5 })
+            class MyClass {
+                int count = 0
+                def myMethod = {
+                    for (int x = 0; x < 10; x++) {
+                        count++
+                    }
+                }
+            }
+        ''')
+
+        def instance = c.newInstance()
+        shouldFail(InterruptedException) {
+            instance.myMethod()
+        }
+        assert 6 == instance.count
+    }
+
     public void testStaticClosureFieldNotVisited() {
 
          def c = new GroovyClassLoader().parseClass('''
