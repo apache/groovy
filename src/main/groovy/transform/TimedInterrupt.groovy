@@ -79,6 +79,9 @@ import java.util.concurrent.TimeUnit
  * </pre>
  * @author Hamlet D'Arcy
  *
+ * @see groovy.transform.ThreadInterrupt
+ * @see groovy.transform.ConditionalInterrupt
+ *
  * @since 1.8.0
  */
 @Retention(RetentionPolicy.SOURCE)

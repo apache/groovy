@@ -65,7 +65,7 @@ public class ConditionalInterruptibleASTTransformation extends AbstractInterrupt
 
     public void visitClass(ClassNode type) {
         currentClass = type;
-        def method = type.addMethod(CONDITION_METHOD, ACC_PROTECTED | ACC_SYNTHETIC, ClassHelper.Boolean_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, conditionNode.code);
+        def method = type.addMethod(CONDITION_METHOD, ACC_PRIVATE | ACC_SYNTHETIC, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, conditionNode.code);
         method.synthetic = true
         super.visitClass(type);
     }

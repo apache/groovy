@@ -29,14 +29,14 @@ import org.codehaus.groovy.transform.GroovyASTTransformationClass
  * <br/>
  * <br/>
  * This is especially useful when executing foreign scripts that you do not have control over. Inject this
- * transformation into a script that you need to interrupt.
+ * transformation into a script that you need to interrupt based on some custom criteria.
  * <br/>
  * <br/>
- * Annotating anything in a script will cause for loops, while loops, methods, and closures to make an
- * isInterruptedCheck and throw a InterruptedException if the check yields true. The annotation by default
- * will apply to any classes defined in the script as well. Annotated a class will cause (by default) all classes
- * in the entire file ('Compilation Unit') to be enhanced. You can fine tune what is enhanced using the annotation
- * parameters.
+ * Annotating anything in a script will cause for loops, while loops, methods, and closures to make a
+ * check against the specified closure. If the closure yields true (according to GroovyTruth), then the script
+ * will throw an InterruptedException. The annotation by default applies to any classes defined in the script
+ * as well. Annotated a class will cause (by default) all classes in the entire file ('Compilation Unit') to be
+ * enhanced. You can fine tune what is enhanced using the annotation parameters.
  * <br/>
  * <br/>
  * Extensive usage examples can be found in the unit test for this class. A smaller example is presented here.
@@ -55,61 +55,58 @@ import org.codehaus.groovy.transform.GroovyASTTransformationClass
  *
  * scriptMethod()
  * </pre>
- * <br/>
  * Which results in the following code being generated. Notice the checks and exceptions:
  * <br/>
  * <pre>
- * public class script1291120482763 extends groovy.lang.Script {
+ * public class script1291741477073 extends groovy.lang.Script {
+ *
+ *     Object counter = 0
+ *
+ *     public java.lang.Object run() {
+ *         counter = 0
+ *     }
  *
  *     public java.lang.Object scriptMethod() {
  *         if (this.conditionalTransform$condition()) {
- *             throw new java.lang.InterruptedException('Execution Interrupted')
+ *             throw new java.lang.InterruptedException('Execution interrupted. The following condition failed: { counter++> 10}')
  *         }
  *         4.times({
  *             if (this.conditionalTransform$condition()) {
- *                 throw new java.lang.InterruptedException('Execution Interrupted')
+ *                 throw new java.lang.InterruptedException('Execution interrupted. The following condition failed: { counter++> 10}')
  *             }
  *             this.println('executing script method...')
  *         })
  *     }
  *
- *     protected java.lang.Boolean conditionalTransform$condition() {
- *         ( counter )++ > 10
+ *     private java.lang.Object conditionalTransform$condition() {
+ *         counter++ > 10
  *     }
- *
  * }
  * </pre>
  * <br/>
  *
  * Note that when you're annotating scripts, the variable scoping semantics are unchanged. Therefore, you must be
- * careful about the variable scope you're using. For example will work :
- *
- * <pre><code>@ConditionalInterrupt({counter++>1})</code>
- * import groovy.transform.ConditionalInterrupt
- *
- * counter = 0
- * def scriptMethod() {
- *      4.times {
- *          println 'executing script method...'
- *      }
- * }
- *
- * scriptMethod()
- * </pre>
- * while the following will throw a 'No such property: counter' error :
- *
- * <pre><code>@ConditionalInterrupt({counter++>1})</code>
+ * careful about the variable scope you're using. Make sure that variables you reference in the closure parameter
+ * are in scope during script execution. The following example will throw a MissingPropertyException because
+ * counter is not in scope for a class:
+ * <pre>
  * import groovy.transform.ConditionalInterrupt
  *
  * def counter = 0
- * def scriptMethod() {
- *      4.times {
- *          println 'executing script method...'
- *      }
+ * <code>@ConditionalInterrupt({ counter++> 10})</code>
+ * class MyClass {
+ *     def myMethod() {
+ *         4.times {
+ *             println 'executing script method...'
+ *         }
+ *     }
  * }
  *
- * scriptMethod()
+ * new MyClass().myMethod()
  * </pre>
+ *
+ * @see groovy.transform.TimedInterrupt
+ * @see groovy.transform.ThreadInterrupt
  *
  * @author Cédric Champeau
  * @author Hamlet D'Arcy
@@ -138,8 +135,7 @@ public @interface ConditionalInterrupt {
 
 
     /**
-     * Condition should be set as a closure expression. The closure will automatically be converted to a
-     * boolean expression statement.
+     * Condition should be set as a closure expression. 
      * @return
      */
     Class value();

@@ -99,6 +99,9 @@ import org.codehaus.groovy.transform.GroovyASTTransformationClass
  * new MyClass().myMethod()
  * <br/>
  *
+ * @see groovy.transform.TimedInterrupt
+ * @see groovy.transform.ConditionalInterrupt
+ *
  * @author Cédric Champeau
  * @author Hamlet D'Arcy
  *
