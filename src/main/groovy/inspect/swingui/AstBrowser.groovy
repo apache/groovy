@@ -33,6 +33,7 @@ import javax.swing.tree.TreeNode
 import javax.swing.tree.TreeSelectionModel
 import org.codehaus.groovy.control.Phases
 import static java.awt.GridBagConstraints.*
+import javax.swing.SwingUtilities
 
 /**
  * This object is a GUI for looking at the AST that Groovy generates. 
@@ -47,7 +48,7 @@ import static java.awt.GridBagConstraints.*
 
 public class AstBrowser {
 
-    private inputArea, rootElement, decompiledSource
+    private inputArea, rootElement, decompiledSource, jTree
     boolean showScriptFreeForm, showScriptClass
     GroovyClassLoader classLoader
     def prefs = new AstBrowserUiPreferences()
@@ -82,7 +83,7 @@ public class AstBrowser {
     void run(Closure script, String name) {
 
         swing = new SwingBuilder()
-        def phasePicker, jTree, propertyTable, splitterPane, mainSplitter
+        def phasePicker, propertyTable, splitterPane, mainSplitter
 
         showScriptFreeForm = prefs.showScriptFreeForm
         showScriptClass = prefs.showScriptClass
@@ -236,6 +237,8 @@ public class AstBrowser {
 
         prefs.decompiledSourceFontSize = newFontSize
         decompiledSource.font = new Font(decompiledSource.font.name, decompiledSource.font.style, newFontSize)
+        jTree.cellRenderer.font = new Font(decompiledSource.font.name, decompiledSource.font.style, newFontSize)
+        jTree.model.reload(jTree.model.root)
     }
 
     void showAbout(EventObject evt) {
