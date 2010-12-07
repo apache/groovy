@@ -34,6 +34,11 @@ import javax.swing.tree.TreeSelectionModel
 import org.codehaus.groovy.control.Phases
 import static java.awt.GridBagConstraints.*
 import javax.swing.SwingUtilities
+import javax.swing.JTable
+import javax.swing.table.TableColumnModel
+import javax.swing.table.TableColumn
+import javax.swing.table.TableCellRenderer
+import java.awt.Component
 
 /**
  * This object is a GUI for looking at the AST that Groovy generates. 
@@ -48,7 +53,7 @@ import javax.swing.SwingUtilities
 
 public class AstBrowser {
 
-    private inputArea, rootElement, decompiledSource, jTree
+    private inputArea, rootElement, decompiledSource, jTree, propertyTable
     boolean showScriptFreeForm, showScriptClass
     GroovyClassLoader classLoader
     def prefs = new AstBrowserUiPreferences()
@@ -83,7 +88,7 @@ public class AstBrowser {
     void run(Closure script, String name) {
 
         swing = new SwingBuilder()
-        def phasePicker, propertyTable, splitterPane, mainSplitter
+        def phasePicker, splitterPane, mainSplitter
 
         showScriptFreeForm = prefs.showScriptFreeForm
         showScriptClass = prefs.showScriptClass
@@ -169,8 +174,6 @@ public class AstBrowser {
         propertyTable.model.rows.clear() //for some reason this suppress an empty row
 
         jTree.cellRenderer.setLeafIcon(swing.imageIcon(groovy.ui.Console.NODE_ICON_PATH));
-
-
         jTree.selectionModel.selectionMode = TreeSelectionModel.SINGLE_TREE_SELECTION;
         jTree.addTreeSelectionListener({ TreeSelectionEvent e ->
 
@@ -229,7 +232,7 @@ public class AstBrowser {
         updateFontSize(decompiledSource.font.size - 2)
     }
 
-    private updateFontSize(newFontSize) {
+    private updateFontSize = {newFontSize ->
         if (newFontSize > 40) {
             newFontSize = 40
         } else if (newFontSize < 4) {
@@ -237,9 +240,13 @@ public class AstBrowser {
         }
 
         prefs.decompiledSourceFontSize = newFontSize
-        decompiledSource.font = new Font(decompiledSource.font.name, decompiledSource.font.style, newFontSize)
-        jTree.cellRenderer.font = new Font(decompiledSource.font.name, decompiledSource.font.style, newFontSize)
+        def newFont = new Font(decompiledSource.font.name, decompiledSource.font.style, newFontSize)
+        decompiledSource.font = newFont
+        jTree.cellRenderer.font = newFont
         jTree.model.reload(jTree.model.root)
+        propertyTable.tableHeader.font = newFont
+        propertyTable.font = newFont
+        propertyTable.rowHeight = newFontSize + 2
     }
 
     void showAbout(EventObject evt) {
