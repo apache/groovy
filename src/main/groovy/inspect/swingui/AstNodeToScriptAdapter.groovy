@@ -542,7 +542,13 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
     @Override
     public void visitStaticMethodCallExpression(StaticMethodCallExpression expression) {
         print expression?.ownerType?.name + "." + expression?.method
-        expression?.arguments?.visit this
+        if (expression?.arguments instanceof VariableExpression) {
+            print '('
+            expression?.arguments?.visit this
+            print ')'            
+        } else {
+            expression?.arguments?.visit this
+        }
     }
 
     @Override
