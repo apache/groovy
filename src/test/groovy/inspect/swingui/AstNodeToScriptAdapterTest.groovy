@@ -381,6 +381,14 @@ public class AstNodeToScriptAdapterTest extends GroovyTestCase {
         assert result.contains('return _result.toString()')
     }
 
+    public void testToImmutableClass() {
+        String script = '@groovy.transform.ToString class Event { Date when }'
+
+        String result = compileToScript(script, CompilePhase.CANONICALIZATION)
+        // we had problems with the ast transform passing a VariableExpression as StateMethodCallExpression arguments
+        assert result.contains('_result.append(org.codehaus.groovy.runtime.InvokerHelper.toString( when ))')
+    }
+
     public void testAtImmutableClassWithProperties() {
         String script = """
             @Immutable class Event {
