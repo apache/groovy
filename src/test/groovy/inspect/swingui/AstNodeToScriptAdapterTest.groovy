@@ -381,7 +381,7 @@ public class AstNodeToScriptAdapterTest extends GroovyTestCase {
         assert result.contains('return _result.toString()')
     }
 
-    public void testToImmutableClass() {
+    public void testToStringClassAndStaticMethodCallExpression() {
         String script = '@groovy.transform.ToString class Event { Date when }'
 
         String result = compileToScript(script, CompilePhase.CANONICALIZATION)
