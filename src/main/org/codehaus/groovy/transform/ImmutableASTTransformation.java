@@ -39,12 +39,7 @@ import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.InvokerHelper;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.codehaus.groovy.transform.AbstractASTTransformUtil.*;
 import static org.codehaus.groovy.transform.EqualsAndHashCodeASTTransformation.createEquals;
@@ -89,6 +84,9 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
     private static final ClassNode COLLECTION_TYPE = new ClassNode(Collection.class);
     private static final ClassNode READONLYEXCEPTION_TYPE = new ClassNode(ReadOnlyPropertyException.class);
     private static final ClassNode DGM_TYPE = new ClassNode(DefaultGroovyMethods.class);
+    private static final ClassNode SELF_TYPE = new ClassNode(ImmutableASTTransformation.class);
+    private static final ClassNode HASHMAP_TYPE = new ClassNode(HashMap.class);
+    private static final ClassNode MAP_TYPE = new ClassNode(Map.class);
 
     public void visit(ASTNode[] nodes, SourceUnit source) {
         init(nodes, source);

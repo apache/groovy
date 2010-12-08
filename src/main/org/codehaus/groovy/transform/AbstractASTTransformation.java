@@ -35,9 +35,6 @@ import java.util.List;
 import java.util.Map;
 
 public abstract class AbstractASTTransformation implements Opcodes, ASTTransformation {
-    protected static final ClassNode SELF_TYPE = new ClassNode(ImmutableASTTransformation.class);
-    protected static final ClassNode HASHMAP_TYPE = new ClassNode(HashMap.class);
-    protected static final ClassNode MAP_TYPE = new ClassNode(Map.class);
     private SourceUnit sourceUnit;
 
     protected void init(ASTNode[] nodes, SourceUnit sourceUnit) {
