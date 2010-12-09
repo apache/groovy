@@ -353,6 +353,17 @@ public class OperandStack {
                 mv.visitInsn(DUP);
                 mv.visitLdcInsn(value.toString());
                 mv.visitMethodInsn(INVOKESPECIAL, className, "<init>", "(Ljava/lang/String;)V");
+            } else if (value instanceof Long) {
+                long l = (Long) value;
+                if (l==0) {
+                    mv.visitInsn(LCONST_0);
+                } else if (l==1) {
+                    mv.visitInsn(LCONST_1);
+                } else {
+                    mv.visitLdcInsn(value);
+                }
+                BytecodeHelper.box(mv, ClassHelper.getUnwrapper(type)); // does not change this.stack field contents
+                BytecodeHelper.doCast(mv, type);
             } else {
                 mv.visitLdcInsn(value);
                 BytecodeHelper.box(mv, ClassHelper.getUnwrapper(type)); // does not change this.stack field contents
