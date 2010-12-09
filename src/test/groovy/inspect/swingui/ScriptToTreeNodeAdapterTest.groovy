@@ -248,6 +248,19 @@ public class ScriptToTreeNodeAdapterTest extends GroovyTestCase {
         )
     }
 
+    public void testEnum() {
+        assertTreeStructure(
+                '''enum MyEnum {
+                      FOO,
+                      BAR;
+                    }''',
+                [
+                        eq('ClassNode - MyEnum'),
+                        eq('Fields'),
+                        startsWith('FieldNode - FOO : MyEnum'),
+                ])
+    }
+
     public void testExpression_DuplicateDoesNotAppear() {
         assertTreeStructure(
                 " 'foo' ",
@@ -422,7 +435,7 @@ public class ScriptToTreeNodeAdapterTest extends GroovyTestCase {
         }
     }
 
-    public void testScriptWithAdapterThatLoadsNitherFreeFormNorClass() {
+   public void testScriptWithAdapterThatLoadsNitherFreeFormNorClass() {
         ScriptToTreeNodeAdapter adapter = createAdapter(false, false)
 
         // since free standing script is not being loaded, it should fail
