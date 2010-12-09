@@ -16,17 +16,39 @@
 package org.codehaus.groovy.ast;
 
 /**
- * An implementation of the visitor pattern for working with ASTNodes
+ * A special visitor for working with the structure of a class. In general, your 
+ * will want to use the Abstract class based on this class {@link ClassCodeVisitorSupport}. 
+ * 
+ * @see org.codehaus.groovy.ast.ClassNode
+ * @see org.codehaus.groovy.ast.ClassCodeVisitorSupport
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
 public interface GroovyClassVisitor {
 
+    /**
+    * Visit a ClassNode. 
+    */ 
     void visitClass(ClassNode node);
-    void visitConstructor(ConstructorNode node);
-    void visitMethod(MethodNode node);
-    void visitField(FieldNode node);
-    void visitProperty(PropertyNode node);
 
+    /**
+    * Visit a ConstructorNode. 
+    */ 
+    void visitConstructor(ConstructorNode node);
+
+    /**
+    * Visit a MethodNode. 
+    */ 
+    void visitMethod(MethodNode node);
+
+    /**
+    * Visit a FieldNode. 
+    */ 
+    void visitField(FieldNode node);
+
+    /**
+    * Visit a PropertyNode. 
+    */ 
+    void visitProperty(PropertyNode node);
 }
