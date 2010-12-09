@@ -239,8 +239,8 @@ public class AstBrowser {
         decompiledSource.font = new Font(decompiledSource.font.name, decompiledSource.font.style, newFontSize)
         jTree.cellRenderer.font = new Font(decompiledSource.font.name, decompiledSource.font.style, newFontSize)
         jTree.model.reload(jTree.model.root)
-        propertyTable.tableHeader.font = newFont
-        propertyTable.font = newFont
+        propertyTable.tableHeader.font = new Font(decompiledSource.font.name, decompiledSource.font.style, newFontSize)
+        propertyTable.font = new Font(decompiledSource.font.name, decompiledSource.font.style, newFontSize)
         propertyTable.rowHeight = newFontSize + 2
     }
 

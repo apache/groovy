@@ -236,6 +236,19 @@ public class ScriptToTreeNodeAdapterTest extends GroovyTestCase {
         )
     }
 
+    public void testEnum() {
+        assertTreeStructure(
+                '''enum MyEnum {
+                      FOO,
+                      BAR;
+                    }''',
+                [
+                        eq('ClassNode - MyEnum'),
+                        eq('Fields'),
+                        startsWith('FieldNode - FOO : MyEnum'),
+                ])
+    }
+
     public void testExpression_DuplicateDoesNotAppear() {
         assertTreeStructure(
                 " 'foo' ",
