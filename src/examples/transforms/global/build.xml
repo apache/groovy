@@ -15,7 +15,7 @@
     
         <groovyc destdir="."
                 srcdir="."
-                includes="LoggingASTTransformation.groovy" 
+                includes="*Transformation.groovy" 
                 listfiles="true">
         </groovyc>
         
@@ -26,7 +26,7 @@
             basedir="."
             includes="**/*.class,META-INF/**" />
 
-        <echo>You can now run "groovy -cp LoggingTransform.jar LoggingExample.groovy" to see that the transformation worked.</echo>
+        <echo>You can now run "groovy -cp LoggingTransform.jar LoggingExample.groovy" or "groovy -cp LoggingTransform.jar CompiledAtExample.groovy" to see that the transformation worked.</echo>
     </target>
 </project>
 
