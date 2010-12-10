@@ -15,6 +15,7 @@
  */
 package org.codehaus.groovy.classgen;
 
+import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.VariableScope;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
@@ -34,8 +35,7 @@ public class ReturnAdder {
         if (!node.isVoidMethod()) {
             if (statement != null) // it happens with @interface methods
               node.setCode(addReturnsIfNeeded(statement, node.getVariableScope()));
-        }
-        else if (!node.isAbstract()) {
+        } else if (!node.isAbstract() && node.getReturnType().redirect()!=ClassHelper.VOID_TYPE) {
             if (!(statement instanceof BytecodeSequence)) {
                 BlockStatement newBlock = new BlockStatement();
                 Statement code = node.getCode();

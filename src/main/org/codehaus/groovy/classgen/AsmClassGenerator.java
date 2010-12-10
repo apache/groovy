@@ -280,8 +280,8 @@ public class AsmClassGenerator extends ClassGenerator {
         // handle body
         super.visitConstructorOrMethod(node, isConstructor);
         
-        if (node.isVoidMethod()) mv.visitInsn(RETURN);
         controller.getCompileStack().clear();
+        if (node.isVoidMethod()) mv.visitInsn(RETURN);
     }
 
     void visitAnnotationDefaultExpression(AnnotationVisitor av, ClassNode type, Expression exp) {
