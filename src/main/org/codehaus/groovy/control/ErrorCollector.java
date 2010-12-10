@@ -31,8 +31,8 @@ import org.codehaus.groovy.syntax.SyntaxException;
 
 /**
  * A base class for collecting messages and errors during processing.
- * Each CompilationUnit should have one and SourceUnits should share
- * their ErrorCollector with the CompilationUnit.
+ * Each CompilationUnit should have an ErrorCollector, and the SourceUnits
+ * should share their ErrorCollector with the CompilationUnit.
  *
  * @author <a href="mailto:cpoirier@dreaming.org">Chris Poirier</a>
  * @author <a href="mailto:blackdrag@gmx.org">Jochen Theodorou</a>
@@ -83,7 +83,8 @@ public class ErrorCollector {
     
     
     /**
-     * Adds an error to the message set, but don't fail.
+     * Adds an error to the message set, but does not cause a failure. The message is not required to have a source
+     * line and column specified, but it is best practice to try and include that information. 
      */
     public void addErrorAndContinue(Message message) {
         if (this.errors == null) {
@@ -94,7 +95,9 @@ public class ErrorCollector {
     }
     
     /**
-     * Adds a non-fatal error to the message set.
+     * Adds a non-fatal error to the message set, which may cause a failure if the error threshold is exceeded.
+     * The message is not required to have a source line and column specified, but it is best practice to try
+     * and include that information.
      */
     public void addError(Message message) throws CompilationFailedException {
         addErrorAndContinue(message);
@@ -105,8 +108,11 @@ public class ErrorCollector {
     }
     
     /**
-     * Adds an optionally-fatal error to the message set.  Throws
-     * the unit as a PhaseFailedException, if the error is fatal.
+     * Adds an optionally-fatal error to the message set.
+     * The message is not required to have a source line and column specified, but it is best practice to try
+     * and include that information.
+     * @param fatal
+     *      if true then then processing will stop
      */
     public void addError(Message message, boolean fatal) throws CompilationFailedException {
         if (fatal) {
