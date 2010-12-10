@@ -260,7 +260,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 visitStdMethod(node, isConstructor, parameters, code);
             }
             // we use this NOP to have a valid jump target for the various labels 
-            mv.visitInsn(NOP);
+            //mv.visitInsn(NOP);
             mv.visitMaxs(0, 0);
         }
         mv.visitEnd();
@@ -281,7 +281,22 @@ public class AsmClassGenerator extends ClassGenerator {
         super.visitConstructorOrMethod(node, isConstructor);
         
         controller.getCompileStack().clear();
-        if (node.isVoidMethod()) mv.visitInsn(RETURN);
+        if (node.isVoidMethod()) {
+            mv.visitInsn(RETURN);
+        } else {
+            // we make a dummy return for label ranges that reach here
+            ClassNode type = node.getReturnType().redirect();
+            if (ClassHelper.isPrimitiveType(type)) {
+                mv.visitLdcInsn(0);
+                controller.getOperandStack().push(ClassHelper.int_TYPE);
+                controller.getOperandStack().doGroovyCast(type);
+                BytecodeHelper.doReturn(mv, type);
+                controller.getOperandStack().remove(1);
+            } else {
+                mv.visitInsn(ACONST_NULL);
+                BytecodeHelper.doReturn(mv, type);
+            }
+        }
     }
 
     void visitAnnotationDefaultExpression(AnnotationVisitor av, ClassNode type, Expression exp) {
