@@ -121,6 +121,11 @@ public abstract class ProcessingUnit {
         return Phases.getDescription(this.phase);
     }
 
+    /**
+     * Errors found during the compilation should be reported through the ErrorCollector.
+     * @return
+     *      the ErrorCollector for this ProcessingUnit
+     */
     public ErrorCollector getErrorCollector() {
         return errorCollector;
     }
@@ -162,3 +167,4 @@ public abstract class ProcessingUnit {
     }
 
 }
+
