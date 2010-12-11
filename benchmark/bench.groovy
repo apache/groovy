@@ -2,6 +2,7 @@ import org.codehaus.groovy.tools.FileSystemCompiler as Compiler
 
 
 def benchData = [
+    hello           :   [1],
     ackermann       :   [5,6,7,8],
 /*    ary             :   [1],
     binarytrees     :   [1],
@@ -16,7 +17,6 @@ def benchData = [
     hash            :   [1],
     hash2           :   [1],
     heapsort        :   [1],
-    hello           :   [1],
     knucleotide     :   [1],
     lists           :   [1],
     magicsquares    :   [1],
