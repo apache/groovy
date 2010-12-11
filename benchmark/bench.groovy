@@ -10,9 +10,9 @@ def benchData = [
     except          :   [1],
     fannkuch        :   [1],
     fannkuchredux   :   [1],
-    fasta           :   [1],
-    fibo            :   [1],
-    harmonic        :   [1],
+    fasta           :   [1],*/
+    fibo            :   [30,31,32,33,34],
+/*    harmonic        :   [1],
     hash            :   [1],
     hash2           :   [1],
     heapsort        :   [1],
