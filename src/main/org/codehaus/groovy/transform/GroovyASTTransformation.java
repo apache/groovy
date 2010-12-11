@@ -40,6 +40,7 @@ import java.lang.annotation.Target;
  * latter phases, and only if the type was present in the source unit
  * during SEMANTIC_ANALYSIS.
  *
+ * @see ASTTransformation
  * @author Danno Ferrin (shemnon)
  */
 @Retention(RetentionPolicy.RUNTIME)
