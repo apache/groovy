@@ -24,6 +24,14 @@ class BooleanBug extends GroovyTestCase {
     public boolean isApplicableTo(BooleanBean field) {
         return !field.isFoo();
     }
+    
+    public testBooleanAsMethodArgumentFromCompare() {
+        assertScript """
+            def foo(x){x}
+            def i = 0
+            assert foo(i==0)==true
+        """
+    }
 
 }
 

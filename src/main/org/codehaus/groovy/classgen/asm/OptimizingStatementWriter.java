@@ -433,15 +433,30 @@ public class OptimizingStatementWriter extends StatementWriter {
             super.visitBinaryExpression(expression);
             boolean leftInt = BinaryIntExpressionHelper.isIntOperand(expression.getLeftExpression());
             boolean rightInt = BinaryIntExpressionHelper.isIntOperand(expression.getRightExpression());
-            if (!optimizeInt) {
-                optimizeInt =   (leftInt || rightInt) &&
-                                //TODO: implement int operations for these
-                                expression.getOperation().getType()!=Types.DIVIDE       &&
-                                expression.getOperation().getType()!=Types.POWER        &&
-                                expression.getOperation().getType()!=Types.MULTIPLY     &&
-                                expression.getOperation().getType()!=Types.PLUS_PLUS    &&
-                                expression.getOperation().getType()!=Types.MINUS_MINUS;
+            if (!optimizeInt) optimizeInt =   (leftInt && rightInt);
+            if (optimizeInt) {
+                switch (expression.getOperation().getType()) {
+                    case Types.DIVIDE: case Types.POWER: 
+                    case Types.MULTIPLY: case Types.PLUS_PLUS: 
+                    case Types.MINUS_MINUS:
+                        optimizeInt = false;
+                    case Types.COMPARE_EQUAL: 
+                    case Types.COMPARE_LESS_THAN:
+                    case Types.COMPARE_LESS_THAN_EQUAL:
+                    case Types.COMPARE_GREATER_THAN:
+                    case Types.COMPARE_GREATER_THAN_EQUAL:
+                    case Types.COMPARE_NOT_EQUAL:
+                    case Types.LOGICAL_AND:
+                    case Types.LOGICAL_OR:
+                        expression.setType(ClassHelper.boolean_TYPE);
+                    case Types.BITWISE_AND:
+                    case Types.BITWISE_OR:
+                    case Types.BITWISE_XOR:
+                        expression.setType(ClassHelper.int_TYPE);
+                    default:
+                }   
             }
+                
             if (optimizeInt) {
                 StatementMeta meta = addMeta(expression);
                 if (leftInt && rightInt) meta.type = ClassHelper.int_TYPE;
