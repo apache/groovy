@@ -22,7 +22,7 @@ import java.lang.ref.WeakReference
 
 class ActorTest extends GroovyTestCase {
     void testSync () {
-        new FibCalculator().calcFibSync(20)
+        new FibCalculator().calcFibSync(15)
     }
 
     void testAsync () {
@@ -41,12 +41,12 @@ class ActorTest extends GroovyTestCase {
         WorkerThread.metaClass.mixin ReentrantLock
         Thread.metaClass.mixin WorkerThread
 
-        WorkerThread.startPool(12)
+        WorkerThread.startPool(15)
 
         Thread thread = Thread.currentThread()
         thread.name = "Main App Thread"
         thread.registerWorker ()
-        new FibCalculator().calcFib(20)
+        new FibCalculator().calcFib(18)
 
         Object.metaClass = null
         ReentrantLock.metaClass = null
