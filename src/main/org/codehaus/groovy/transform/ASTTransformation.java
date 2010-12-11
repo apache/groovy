@@ -20,17 +20,29 @@ import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.control.SourceUnit;
 
 /**
- * This is the delegate class for {@link GroovyASTTransformation}s.
+ * This class is instantiated and invoked when an AST transformation is
+ * activated. For Global AST Transformations, this interface is called once per SourceUnit, which is usually a
+ * Groovy source file. For Local AST Transformations, this interface is invoked once every time the Local annotation
+ * marker is encountered. <br/><br/>
  *
+ * You must annotate this class with {@link GroovyASTTransformation} so that Groovy knows which
+ * {@link org.codehaus.groovy.control.CompilePhase} to run in.
+ *
+ * @see GroovyASTTransformation
  * @author Danno Ferrin (shemnon)
  */
 public interface ASTTransformation {
 
     /**
-     * The call made when the compiler encounters an AST Transformation Annotation
+     * The method is invoked when an AST Transformation is active. For local transformations, it is invoked once
+     * each time the local annotation is encountered. For global transformations, it is invoked once for every source
+     * unit, which is typically a source file.
      *
-     * @param nodes The ASTnodes when the call was triggered
-     * @param source The source unit being compiled
+     * @param nodes The ASTnodes when the call was triggered. Element 0 is the AnnotationNode that triggered this
+     *      annotation to be activated. Element 1 is the AnnotatedNode decorated, such as a MethodNode or ClassNode. For
+     *      global transformations it is usually safe to ignore this parameter.
+     * @param source The source unit being compiled. The source unit may contain several classes. For global transformations,
+     *      information about the AST can be retrieved from this object. 
      */
     void visit(ASTNode nodes[], SourceUnit source);
 }
