@@ -23,7 +23,7 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
 import org.codehaus.groovy.ast.VariableScope;
 
 /**
- * A list of statements
+ * A list of statements and a scope. 
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
@@ -36,12 +36,30 @@ public class BlockStatement extends Statement {
     public BlockStatement() {
         this(new ArrayList<Statement>(), new VariableScope());
     }
-    
+
+    /**
+     * Creates a BlockStatement with a scope and children statements.
+     * @param statements
+     *      the statements. Do not pass null. If you do, no exception will occur,
+     *      but a NullPointerException will eventually occur later. Also, a reference
+     *      to the list is kept, so modifying the List later does effect this class.
+     * @param scope
+     *      the scope
+     */
     public BlockStatement(List<Statement> statements, VariableScope scope) {
         this.statements = statements;
         this.scope = scope;
     }
     
+    /**
+     * Creates a BlockStatement with a scope and children statements.
+     * @param statements
+     *      the statements, which cannot be null or an exception occurs. No reference
+     *      to the array is held, so modifying the array later has no effect on this
+     *      class.
+     * @param scope
+     *      the scope
+     */
     public BlockStatement(Statement[] statements, VariableScope scope) {
         this.statements.addAll(Arrays.asList(statements));
         this.scope = scope;
