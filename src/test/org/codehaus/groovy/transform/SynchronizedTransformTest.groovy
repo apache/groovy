@@ -15,29 +15,36 @@
  */
 package org.codehaus.groovy.transform
 
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.CountDownLatch
+
 /**
  * @author Paul King
+ * @author Hamlet D'Arcy
  */
-class SynchronizedTransformTest extends GroovyShellTestCase {
+class SynchronizedTransformTest extends GroovyTestCase {
+
+    def countReadyLatch = new CountDownLatch(1);
+    def testReadyLatch = new CountDownLatch(1);
 
     void testSynchronized() {
-        assertScript """
-            class Count {
-              private val = 0
-              @groovy.transform.Synchronized
-              void incDec() {
-                assert val == 0; val++; assert val == 1
-                sleep 500
-                assert val == 1; val--; assert val == 0
-              }
-            }
-
-            def c = new Count()
-            def t = Thread.start{ c.incDec() }
-            sleep 100
+        def c = new Count()
+        Thread.start{
             c.incDec()
-            t.join()
-        """
+        }
+        testReadyLatch.countDown()
+        countReadyLatch.await(5, TimeUnit.SECONDS)
+        c.incDec()
     }
 
+    class Count {
+      private val = 0
+      @groovy.transform.Synchronized
+      void incDec() {
+        assert val == 0; val++; assert val == 1
+        countReadyLatch.countDown()
+        testReadyLatch.await(5, TimeUnit.SECONDS)
+        assert val == 1; val--; assert val == 0
+      }
+    }
 }
