@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,23 +20,23 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
 import org.codehaus.groovy.syntax.Token;
 
 /**
- * Represents a local variable name declaration, an expression like 
+ * Represents a local variable name declaration, an expression like
  * "def foo" or with type "String foo".
- * 
+ *
  * @author Jochen Theodorou
  * @version $Revision$
  */
 public class DeclarationExpression extends BinaryExpression {
-    
+
     public DeclarationExpression(VariableExpression left, Token operation, Expression right) {
         super(left,operation,right);
     }
-    
+
     public DeclarationExpression(Expression left, Token operation, Expression right) {
         super(left,operation,right);
         check(left,right);
     }
-    
+
     private void check(Expression left,Expression right) {
         if (left instanceof VariableExpression) {
             //nothing
@@ -52,28 +52,37 @@ public class DeclarationExpression extends BinaryExpression {
     public void visit(GroovyCodeVisitor visitor) {
         visitor.visitDeclarationExpression(this);
     }
-    
+
     public VariableExpression getVariableExpression() {
         return (VariableExpression) this.getLeftExpression();
     }
-    
+
     public void setLeftExpression(Expression leftExpression) {
         check(leftExpression,getRightExpression());
         super.setLeftExpression(leftExpression);
     }
-    
+
     public void setRightExpression(Expression rightExpression) {
         check(getLeftExpression(),rightExpression);
         super.setRightExpression(rightExpression);
     }
-    
+
     public Expression transformExpression(ExpressionTransformer transformer) {
         Expression left = getLeftExpression();
         Expression ret = new DeclarationExpression(transformer.transform(getLeftExpression()), getOperation(), transformer.transform(getRightExpression()));
         ret.setSourcePosition(this);
-        return ret;        
+        return ret;
     }
-    
+
+    /**
+     * This method tells you if this declaration is a multiple assignment declaration, which
+     * has the form "def (x, y) = ..." in Groovy. If this method returns true, then the left
+     * hand side is an ArgumentListExpression. Do not call "getVariableExpression()" on this
+     * object if this method returns true, instead use "getLeftExpression()".
+     * @return
+     *      true if this declaration is a multiple assignment declaration, which means the
+     *      left hand side is an ArgumentListExpression.
+     */
     public boolean isMultipleAssignmentDeclaration() {
         return getLeftExpression() instanceof ArgumentListExpression;
     }
