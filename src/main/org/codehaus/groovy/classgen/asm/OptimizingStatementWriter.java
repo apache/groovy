@@ -433,13 +433,14 @@ public class OptimizingStatementWriter extends StatementWriter {
             super.visitBinaryExpression(expression);
             boolean leftInt = BinaryIntExpressionHelper.isIntOperand(expression.getLeftExpression());
             boolean rightInt = BinaryIntExpressionHelper.isIntOperand(expression.getRightExpression());
-            if (!optimizeInt) optimizeInt =   (leftInt && rightInt);
+            if (!optimizeInt) optimizeInt = (leftInt && rightInt);
             if (optimizeInt) {
                 switch (expression.getOperation().getType()) {
                     case Types.DIVIDE: case Types.POWER: 
                     case Types.MULTIPLY: case Types.PLUS_PLUS: 
                     case Types.MINUS_MINUS:
                         optimizeInt = false;
+                        break;
                     case Types.COMPARE_EQUAL: 
                     case Types.COMPARE_LESS_THAN:
                     case Types.COMPARE_LESS_THAN_EQUAL:
@@ -449,10 +450,12 @@ public class OptimizingStatementWriter extends StatementWriter {
                     case Types.LOGICAL_AND:
                     case Types.LOGICAL_OR:
                         expression.setType(ClassHelper.boolean_TYPE);
+                        break;
                     case Types.BITWISE_AND:
                     case Types.BITWISE_OR:
                     case Types.BITWISE_XOR:
                         expression.setType(ClassHelper.int_TYPE);
+                        break;
                     default:
                 }   
             }
