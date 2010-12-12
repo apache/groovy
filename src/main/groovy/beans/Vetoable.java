@@ -42,7 +42,7 @@ import java.lang.annotation.Target;
  *
  * Here is a simple example of how to annotate a class with Vetoable: 
  * <pre>
- * @groovy.beans.Vetoable
+ * &#064;groovy.beans.Vetoable
  * class Person {
  *     String firstName
  *     def zipCode

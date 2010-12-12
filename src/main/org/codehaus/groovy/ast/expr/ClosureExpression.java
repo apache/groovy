@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.VariableScope;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.runtime.InvokerHelper;
-
 
 /**
  * Represents a closure expression such as { statement }
@@ -58,7 +57,8 @@ public class ClosureExpression extends Expression {
     /**
      * This gets the code statement of the closure. You can read this method to find out what actions
      * the closure is going to perform.
-     * @return
+     *
+     * @return the code statement of the closure
      */
     public Statement getCode() {
         return code;
@@ -66,8 +66,9 @@ public class ClosureExpression extends Expression {
 
     /**
      * This sets the code statement of the closure. You can use this method in order to add more actions
-     * during the closure execution.  
-     * @return
+     * during the closure execution.
+     *
+     * @param code the new Statement
      */
     public void setCode(Statement code) {
         this.code = code;

@@ -44,10 +44,10 @@ import java.lang.annotation.Target;
  * of a class: 
  * <pre>
  * class Person {
- *    @groovy.beans.Bindable
+ *    &#064;groovy.beans.Bindable
  *    String firstName
  *
- *    @groovy.beans.Bindable
+ *    &#064;groovy.beans.Bindable
  *    def zipCode
  * }
  * </pre>
@@ -56,9 +56,9 @@ import java.lang.annotation.Target;
  * <pre>
  * public class Person { 
  * 
- *     @groovy.beans.Bindable
+ *     &#064;groovy.beans.Bindable
  *     private java.lang.String firstName 
- *     @groovy.beans.Bindable
+ *     &#064;groovy.beans.Bindable
  *     private java.lang.Object zipCode 
  *     final private java.beans.PropertyChangeSupport this$propertyChangeSupport 
  * 
@@ -104,7 +104,6 @@ import java.lang.annotation.Target;
  * }
  * </pre>
  * @see BindableASTTransformation
- *
  * @author Danno Ferrin (shemnon)
  */
 @Retention(RetentionPolicy.SOURCE)

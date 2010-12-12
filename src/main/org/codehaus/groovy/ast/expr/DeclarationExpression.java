@@ -146,7 +146,7 @@ public class DeclarationExpression extends BinaryExpression {
      * has the form "def (x, y) = ..." in Groovy. If this method returns true, then the left
      * hand side is an ArgumentListExpression. Do not call "getVariableExpression()" on this 
      * object if this method returns true, instead use "getLeftExpression()". 
-     * @returns
+     * @return
      *      true if this declaration is a multiple assignment declaration, which means the
      *      left hand side is an ArgumentListExpression. 
      */ 
