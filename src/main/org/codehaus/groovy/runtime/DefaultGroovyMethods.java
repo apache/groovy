@@ -4327,7 +4327,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return a List containing all full matches of the regex within the string, an empty list will be returned if there are no matches
      * @since 1.6.1
      */
-    public static List findAll(String self, String regex) {
+    public static List<String> findAll(String self, String regex) {
         return findAll(self, Pattern.compile(regex));
     }
 
@@ -4350,14 +4350,14 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return a List containing all full matches of the Pattern within the string, an empty list will be returned if there are no matches
      * @since 1.6.1
      */
-    public static List findAll(String self, Pattern pattern) {
+    public static List<String> findAll(String self, Pattern pattern) {
         Matcher matcher = pattern.matcher(self);
-        List list = new ArrayList();
+        List<String> list = new ArrayList<String>();
         for (Iterator iter = iterator(matcher); iter.hasNext();) {
             if (hasGroup(matcher)) {
-                list.add(((List) iter.next()).get(0));
+                list.add((String) ((List) iter.next()).get(0));
             } else {
-                list.add(iter.next());
+                list.add((String) iter.next());
             }
         }
         return list;
@@ -4389,7 +4389,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return a List containing all full matches of the regex within the string, an empty list will be returned if there are no matches
      * @since 1.6.1
      */
-    public static List findAll(String self, String regex, Closure closure) {
+    public static <T> List<T> findAll(String self, String regex, Closure<T> closure) {
         return findAll(self, Pattern.compile(regex), closure);
     }
 
@@ -4419,7 +4419,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return a List containing all full matches of the regex Pattern within the string, an empty list will be returned if there are no matches
      * @since 1.6.1
      */
-    public static List findAll(String self, Pattern pattern, Closure closure) {
+    public static <T> List<T> findAll(String self, Pattern pattern, Closure<T> closure) {
         Matcher matcher = pattern.matcher(self);
         return collect(matcher, closure);
     }
