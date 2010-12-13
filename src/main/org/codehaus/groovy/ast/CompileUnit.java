@@ -135,7 +135,7 @@ public class CompileUnit {
                 // same class in same source
                 txt += "The source " + nodeSource.getName() + " contains at least two definitions of the class " + node.getName() + ".\n";
                 if (node.isScriptBody() || stored.isScriptBody()) {
-                    txt += "One of the classes is a explicit generated class using the class statement, the other is a class generated from" +
+                    txt += "One of the classes is an explicit generated class using the class statement, the other is a class generated from" +
                             " the script body based on the file name. Solutions are to change the file name or to change the class name.\n";
                 }
             } else {
