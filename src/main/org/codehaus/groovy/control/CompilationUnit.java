@@ -145,7 +145,6 @@ public class CompilationUnit extends ProcessingUnit {
         this.ast = new CompileUnit(this.classLoader, security, this.configuration);
         this.generatedClasses = new ArrayList<GroovyClass>();
 
-
         this.verifier = new Verifier();
         this.resolveVisitor = new ResolveVisitor(this);
         this.staticImportVisitor = new StaticImportVisitor();
@@ -473,6 +472,11 @@ public class CompilationUnit extends ProcessingUnit {
 
         while (throughPhase >= phase && phase <= Phases.ALL) {
 
+            if (phase == Phases.SEMANTIC_ANALYSIS) {
+                doPhaseOperation(resolve);
+                if (dequeued()) continue;
+            }
+
             processPhaseOperations(phase);
             // Grab processing may have brought in new AST transforms into various phases, process them as well
             processNewPhaseOperations(phase);
@@ -495,8 +499,8 @@ public class CompilationUnit extends ProcessingUnit {
 
     private void processPhaseOperations(int ph) {
         LinkedList ops = phaseOperations[ph];
-        for (Iterator it = ops.iterator(); it.hasNext();) {
-            doPhaseOperation(it.next());
+        for (Object next : ops) {
+            doPhaseOperation(next);
         }
     }
     
