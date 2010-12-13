@@ -514,7 +514,7 @@ public class CompileStack implements Opcodes {
     
     private BytecodeVariable defineVar(String name, ClassNode type, boolean holder, boolean useReferenceDirectly) {
         int prevCurrent = currentVariableIndex;
-        makeNextVariableID(type);
+        makeNextVariableID(type,useReferenceDirectly);
         int index = currentVariableIndex;
         if (holder && !useReferenceDirectly) index = localVariableOffset++;
         BytecodeVariable answer = new BytecodeVariable(index, type, name, prevCurrent);
@@ -527,7 +527,7 @@ public class CompileStack implements Opcodes {
         resetVariableIndex(isInStaticContext);
         
         for (int i = 0; i < paras.length; i++) {
-            makeNextVariableID(paras[i].getType());
+            makeNextVariableID(paras[i].getType(),false);
         }
         localVariableOffset = nextVariableIndex;
         
@@ -633,9 +633,9 @@ public class CompileStack implements Opcodes {
      * Calculates the index of the next free register stores it
      * and sets the current variable index to the old value
      */
-    private void makeNextVariableID(ClassNode type) {
+    private void makeNextVariableID(ClassNode type, boolean useReferenceDirectly) {
         currentVariableIndex = nextVariableIndex;
-        if (type==ClassHelper.long_TYPE || type==ClassHelper.double_TYPE) {
+        if ((type==ClassHelper.long_TYPE || type==ClassHelper.double_TYPE) && !useReferenceDirectly) {
             nextVariableIndex++;
         }
         nextVariableIndex++;
