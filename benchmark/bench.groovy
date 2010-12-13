@@ -123,7 +123,8 @@ void execBenchmark(bench, input) {
         20.times { n->
             printProgress(n)
             def p = [javaCommand(), "-cp", cp, bench, param].execute()
-            p.consumeProcessOutput()
+            p.consumeProcessOutputStream(null)
+            p.consumeProcessErrorStream(System.err)
             p.waitForOrKill(10 * 60  *1000)
         }
         def time2 = System.nanoTime()
