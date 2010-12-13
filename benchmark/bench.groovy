@@ -3,7 +3,7 @@ import org.codehaus.groovy.tools.FileSystemCompiler as Compiler
 
 def benchData = [
     hello           :   [1],
-    ackermann       :   [5,6,7,8],
+    ackermann       :   [5, 6, 7, 8],
 /*    ary             :   [1],
     binarytrees     :   [1],
     chameneos       :   [1],
@@ -12,7 +12,7 @@ def benchData = [
     fannkuch        :   [1],
     fannkuchredux   :   [1],
     fasta           :   [1],*/
-    fibo            :   [30,31,32,33,34],
+    fibo            :   [30, 31, 32, 33, 34],
 /*    harmonic        :   [1],
     hash            :   [1],
     hash2           :   [1],
@@ -53,11 +53,11 @@ def benchData = [
 
 setGroovyLib()
 
-println "-"*80
+horizontalBreak()
 println "Groovy benchmarking test"
 showJavaVersion()
 println "Groovy lib: $GROOVY_LIB"
-println "-"*80
+horizontalBreak()
 benchData.each { bench, input ->
     println "Benchmark $bench"
     [".java", ".groovy"].each { ending ->
@@ -71,7 +71,11 @@ benchData.each { bench, input ->
         }
         cleanFolder()
     }
-    println "-"*80
+    horizontalBreak()
+}
+
+void horizontalBreak() {
+    println "-" * 80
 }
 
 boolean prepare(bench, ending) {
@@ -90,18 +94,27 @@ void cleanFolder(){
     dir.eachFile { file -> file.delete() }
 }
 
+String javaHome() {
+    def path = System.getenv("JAVA_HOME")
+    if (!path.endsWith("$File.separatorChar")) path += File.separatorChar
+    return path
+}
+
+String javaCommand() {
+    javaHome() + "bin/java"
+}
+
 void showJavaVersion() {
-    def p = [System.getenv("JAVA_HOME")+"bin/java","-version"].execute()
+    def p = [javaCommand(), "-version"].execute()
     p.consumeProcessErrorStream(System.out)
     p.consumeProcessOutputStream(System.out)
-    p.waitForOrKill(10*60*1000)
+    p.waitForOrKill(10 * 60 * 1000)
 }
 
 void execBenchmark(bench, input) {
     input.each { param -> 
-        def java = System.getenv("JAVA_HOME")+"bin/java"
-        def cp = "./exec/"+File.pathSeparatorChar
-        cp += GROOVY_LIB+File.pathSeparatorChar
+        def cp = "./exec/"
+        cp += GROOVY_LIB + File.pathSeparatorChar
         cp += "../target/lib/runtime/*"
 
         def time1 = System.nanoTime()
@@ -109,13 +122,13 @@ void execBenchmark(bench, input) {
         print "\t\trunning  "
         20.times { n->
             printProgress(n)
-            def p = [java, "-cp", cp, bench, param].execute()
+            def p = [javaCommand(), "-cp", cp, bench, param].execute()
             p.consumeProcessOutput()
-            p.waitForOrKill(10*60*1000)
+            p.waitForOrKill(10 * 60  *1000)
         }
         def time2 = System.nanoTime()
-        long td = (time2-time1)/1000000/20
-        print "\b"*9
+        long td = (time2-time1) / 1000000 / 20
+        print "\b" * 9
         println "time ($param) = $td"
     }
 }
