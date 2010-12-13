@@ -113,7 +113,7 @@ void showJavaVersion() {
 
 void execBenchmark(bench, input) {
     input.each { param -> 
-        def cp = "./exec/"
+        def cp = "./exec/" + File.pathSeparatorChar
         cp += GROOVY_LIB + File.pathSeparatorChar
         cp += "../target/lib/runtime/*"
 
