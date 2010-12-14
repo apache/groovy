@@ -526,12 +526,26 @@ public class CompileStack implements Opcodes {
                 answer = defineVar(name, type, true);
                 helper.load(type,currentVariableIndex);
                 helper.box(type);
+
+                // GROOVY-4237, the original variable should always appear
+                // in the variable index, otherwise some programs get into 
+                // trouble. So we define a dummy variable for the packaging 
+                // phase and let it end right away before the normal 
+                // reference will be used
+                Label newStart = new Label();
+                mv.visitLabel(newStart);
+                Variable var = new Variable(currentVariableIndex, paras[i].getOriginType(), name, currentVariableIndex);
+                var.setStartLabel(startLabel);
+                var.setEndLabel(newStart);
+                usedVariables.add(var);
+                answer.setStartLabel(newStart);
+
                 createReference(answer);
                 hasHolder = true;
             } else {
                 answer = defineVar(name,type,false);
+                answer.setStartLabel(startLabel);
             }
-            answer.setStartLabel(startLabel);
             stackVariables.put(name, answer);
         }
         
