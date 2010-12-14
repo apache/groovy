@@ -578,12 +578,6 @@ public class CompilationUnit extends ProcessingUnit {
         public void call(SourceUnit source) throws CompilationFailedException {
             List<ClassNode> classes = source.ast.getClasses();
             for (ClassNode node : classes) {
-
-//                if (node instanceof InnerClassNode && ((InnerClassNode)node).getVariableScope() != null) {
-//                    // what we want to do is not to process anonymous here as they were processed already
-//                    continue;
-//                }
-
                 VariableScopeVisitor scopeVisitor = new VariableScopeVisitor(source);
                 scopeVisitor.visitClass(node);
 
