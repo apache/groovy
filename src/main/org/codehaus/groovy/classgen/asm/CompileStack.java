@@ -548,15 +548,30 @@ public class CompileStack implements Opcodes {
             if (paras[i].isClosureSharedVariable()) {
                 boolean useExistingReference = paras[i].getNodeMetaData(ClosureWriter.UseExistingReference.class) != null;
                 answer = defineVar(name, paras[i].getOriginType(), true, useExistingReference);
+                answer.setStartLabel(startLabel);
                 if (!useExistingReference) {
                     controller.getOperandStack().load(type,currentVariableIndex);
                     controller.getOperandStack().box();
+                    
+                    // GROOVY-4237, the original variable should always appear
+                    // in the variable index, otherwise some programs get into 
+                    // trouble. So we define a dummy variable for the packaging 
+                    // phase and let it end right away before the normal 
+                    // reference will be used
+                    Label newStart = new Label();
+                    controller.getMethodVisitor().visitLabel(newStart);
+                    BytecodeVariable var = new BytecodeVariable(currentVariableIndex, paras[i].getOriginType(), name, currentVariableIndex);
+                    var.setStartLabel(startLabel);
+                    var.setEndLabel(newStart);
+                    usedVariables.add(var);
+                    answer.setStartLabel(newStart);
+
                     createReference(answer);
                 }
             } else {
                 answer = defineVar(name, type, false, false);
+                answer.setStartLabel(startLabel);
             }
-            answer.setStartLabel(startLabel);
             stackVariables.put(name, answer);
         }
         
