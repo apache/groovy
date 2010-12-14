@@ -33,6 +33,8 @@ import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.stmt.*;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.SourceUnit;
+import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
+import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.Types;
 import org.objectweb.asm.Opcodes;
@@ -305,6 +307,15 @@ public class EnumVisitor extends ClassCodeVisitorSupport{
                 ListExpression oldArgs = (ListExpression) field.getInitialExpression();
                 for (Iterator oldArgsIterator = oldArgs.getExpressions().iterator(); oldArgsIterator.hasNext();) {
                     Expression exp = (Expression) oldArgsIterator.next();
+                    if (exp instanceof MapEntryExpression) {
+                        String msg = "The usage of a map entry expression to initialize an Enum is currently not supported, please use an explicit map instead.";
+                        sourceUnit.getErrorCollector().addErrorAndContinue(
+                                new SyntaxErrorMessage(
+                                        new SyntaxException(msg + '\n', exp.getLineNumber(), exp.getColumnNumber()), sourceUnit)
+                        );
+                        continue;
+                    }
+                    
                     InnerClassNode inner = null; 
                     if (exp instanceof ClassExpression) { 
                         ClassExpression clazzExp = (ClassExpression) exp;

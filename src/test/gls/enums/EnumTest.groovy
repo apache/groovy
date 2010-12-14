@@ -408,6 +408,24 @@ class EnumTest extends CompilableTestSupport {
             assert foos[1].j == 2
         """
     }
+    
+    void testNamedArguments() {
+        // this test is a result of GROOVY-4219 and should be changed once
+        // GROOVY-4582 is implemented.
+        shouldNotCompile """
+            enum ImageSortField {
+                FILENAME(field: null, name: null),
+                TIME(field: null, name: null)
+                
+                def field
+                def name
+            
+                public String toString(){
+                    name
+                }
+            }
+        """
+    }
 }
 
 
