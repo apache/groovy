@@ -383,6 +383,11 @@ class RegularExpressionsTest extends GroovyTestCase {
         assert matcher[0][1] == "abc"
     }
 
+    void testReplaceWithClosure() {
+        assert '1-FISH, two fish' == "one fish, two fish".replaceFirst(~/([a-z]{3})\s([a-z]{4})/) { [one:1, two:2][it[1]] + '-' + it[2].toUpperCase() }
+        assert '1-FISH, 2-FISH' == "one fish, two fish".replaceAll(~/([a-z]{3})\s([a-z]{4})/) { [one:1, two:2][it[1]] + '-' + it[2].toUpperCase() }
+    }
+
     void testNoGroupMatcherAndGet() {
         def p = /ab[d|f]/
         def m = "abcabdabeabf" =~ p

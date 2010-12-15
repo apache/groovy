@@ -4060,6 +4060,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * <p/>
      * <p> For examples,
      * <pre>
+     *     assert "hellO wOrld" == "hello world".replaceAll("(o)") { it[0].toUpperCase() }
+     * <p/>
      *     assert "FOOBAR-FOOBAR-" == "foobar-FooBar-".replaceAll("(([fF][oO]{2})[bB]ar)", { Object[] it -> it[0].toUpperCase() })
      * <p/>
      *     Here,
@@ -4086,9 +4088,35 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @throws java.util.regex.PatternSyntaxException if the regular expression's syntax is invalid
      * @since 1.0
      * @see java.util.regex.Matcher#quoteReplacement(java.lang.String)
+     * @see #replaceAll(String, Pattern, Closure)
      */
     public static String replaceAll(final String self, final String regex, final Closure closure) {
         return replaceAll(self, Pattern.compile(regex), closure);
+    }
+
+    /**
+     * Replaces the first occurrence of a captured group by the result of a closure call on that text.
+     * <p/>
+     * <p> For example (with some replaceAll variants thrown in for comparison purposes),
+     * <pre>
+     * assert "hellO world" == "hello world".replaceFirst("(o)") { it[0].toUpperCase() } // first match
+     * assert "hellO wOrld" == "hello world".replaceAll("(o)") { it[0].toUpperCase() }   // all matches
+     * <p/>
+     * assert '1-FISH, two fish' == "one fish, two fish".replaceFirst(/([a-z]{3})\s([a-z]{4})/) { [one:1, two:2][it[1]] + '-' + it[2].toUpperCase() }
+     * assert '1-FISH, 2-FISH' == "one fish, two fish".replaceAll(/([a-z]{3})\s([a-z]{4})/) { [one:1, two:2][it[1]] + '-' + it[2].toUpperCase() }
+     * </pre>
+     *
+     * @param self    a String
+     * @param regex   the capturing regex
+     * @param closure the closure to apply on the first captured group
+     * @return a String with replaced content
+     * @throws java.util.regex.PatternSyntaxException if the regular expression's syntax is invalid
+     * @since 1.7.7
+     * @see java.util.regex.Matcher#quoteReplacement(java.lang.String)
+     * @see #replaceFirst(String, Pattern, Closure)
+     */
+    public static String replaceFirst(final String self, final String regex, final Closure closure) {
+        return replaceFirst(self, Pattern.compile(regex), closure);
     }
 
     /**
@@ -4123,10 +4151,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Replaces all occurrences of a captured group by the result of a closure on that text.
+     * Replaces all occurrences of a captured group by the result of a closure call on that text.
      * <p/>
      * <p> For examples,
      * <pre>
+     *     assert "hellO wOrld" == "hello world".replaceAll(~"(o)") { it[0].toUpperCase() }
+     * <p/>
      *     assert "FOOBAR-FOOBAR-" == "foobar-FooBar-".replaceAll(~"(([fF][oO]{2})[bB]ar)", { it[0].toUpperCase() })
      * <p/>
      *     Here,
@@ -4169,6 +4199,38 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                 String replacement = getReplacement(matcher, closure);
                 matcher.appendReplacement(sb, Matcher.quoteReplacement(replacement));
             } while (matcher.find());
+            matcher.appendTail(sb);
+            return sb.toString();
+        } else {
+            return self;
+        }
+    }
+
+    /**
+     * Replaces the first occurrence of a captured group by the result of a closure call on that text.
+     * <p/>
+     * <p> For example (with some replaceAll variants thrown in for comparison purposes),
+     * <pre>
+     * assert "hellO world" == "hello world".replaceFirst(~"(o)") { it[0].toUpperCase() } // first match
+     * assert "hellO wOrld" == "hello world".replaceAll(~"(o)") { it[0].toUpperCase() }   // all matches
+     * <p/>
+     * assert '1-FISH, two fish' == "one fish, two fish".replaceFirst(~/([a-z]{3})\s([a-z]{4})/) { [one:1, two:2][it[1]] + '-' + it[2].toUpperCase() }
+     * assert '1-FISH, 2-FISH' == "one fish, two fish".replaceAll(~/([a-z]{3})\s([a-z]{4})/) { [one:1, two:2][it[1]] + '-' + it[2].toUpperCase() }
+     * </pre>
+     *
+     * @param self    a String
+     * @param pattern the capturing regex Pattern
+     * @param closure the closure to apply on the first captured group
+     * @return a String with replaced content
+     * @since 1.7.7
+     * @see #replaceAll(String, Pattern, Closure)
+     */
+    public static String replaceFirst(final String self, final Pattern pattern, final Closure closure) {
+        final Matcher matcher = pattern.matcher(self);
+        if (matcher.find()) {
+            final StringBuffer sb = new StringBuffer(self.length() + 16);
+            String replacement = getReplacement(matcher, closure);
+            matcher.appendReplacement(sb, Matcher.quoteReplacement(replacement));
             matcher.appendTail(sb);
             return sb.toString();
         } else {
