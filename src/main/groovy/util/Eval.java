@@ -22,26 +22,44 @@ import groovy.lang.Binding;
 import groovy.lang.GroovyShell;
 
 /**
- * Allow easy integration from Groovy into Java through convenience methods.
+ * Allow easy integration from Groovy into Java through convenience methods. <br/><br/>
+ * 
+ * This class is a simple helper on top of GroovyShell. You can use it to evaluate small
+ * Groovy scripts that don't need large Binding objects. For example, this script 
+ * executes with no errors: 
+ * <pre>
+ * assert 10 == Eval.me(' 2 * 4 + 2')
+ * assert 10 == Eval.x(2, ' x * 4 + 2')
+ * </pre>
+ * 
+ * @see GroovyShell
  * 
  * @author Dierk Koenig
  */
 
 public class Eval {
     /**
+     * Evaluates the specified String expression and returns the result. For example: 
+     * <pre>
+     * assert 10 == Eval.me(' 2 * 4 + 2')
+     * </pre>
      * @param expression the Groovy expression to evaluate
      * @return the result of the expression
-     * @throws CompilationFailedException if expression is no proper Groovy
+     * @throws CompilationFailedException if expression is not valid Groovy
      */
     public static Object me(final String expression) throws CompilationFailedException {
         return me(null, null, expression);
     }
 
     /**
-     * evaluate expression and make object available inside the expression as 'symbol'
+     * Evaluates the specified String expression and makes the parameter available inside
+     * the script, returning the result. For example, this code binds the 'x' variable: 
+     * <pre>
+     * assert 10 == Eval.me('x', 2, ' x * 4 + 2')
+     * </pre>
      * @param expression the Groovy expression to evaluate
      * @return the result of the expression
-     * @throws CompilationFailedException if expression is no proper Groovy
+     * @throws CompilationFailedException if expression is not valid Groovy
      */
     public static Object me(final String symbol, final Object object, final String expression) throws CompilationFailedException {
         Binding b = new Binding();
@@ -51,20 +69,30 @@ public class Eval {
     }
 
     /**
-     * evaluate expression and make x available inside the expression as 'x'
+     * Evaluates the specified String expression and makes the parameter available inside
+     * the script bound to a variable named 'x', returning the result. For example, this 
+     * code executes without failure: 
+     * <pre>
+     * assert 10 == Eval.x(2, ' x * 4 + 2')
+     * </pre>
      * @param expression the Groovy expression to evaluate
      * @return the result of the expression
-     * @throws CompilationFailedException if expression is no proper Groovy
+     * @throws CompilationFailedException if expression is not valid Groovy
      */
     public static Object x(final Object x, final String expression) throws CompilationFailedException {
         return me("x", x, expression);
     }
 
     /**
-     * evaluate expression and make x and y available inside the expression as 'x' and 'y'
+     * Evaluates the specified String expression and makes the first two parameters available inside
+     * the script bound to variables named 'x' and 'y' respectively, returning the result. For example, 
+     * this code executes without failure: 
+     * <pre>
+     * assert 10 == Eval.xy(2, 4, ' x * y + 2')
+     * </pre>
      * @param expression the Groovy expression to evaluate
      * @return the result of the expression
-     * @throws CompilationFailedException if expression is no proper Groovy
+     * @throws CompilationFailedException if expression is not valid Groovy
      */
     public static Object xy(final Object x, final Object y, final String expression) throws CompilationFailedException {
         Binding b = new Binding();
@@ -75,10 +103,15 @@ public class Eval {
     }
 
     /**
-     * evaluate expression and make x,y,z available inside the expression as 'x','y','z'
+     * Evaluates the specified String expression and makes the first three parameters available inside
+     * the script bound to variables named 'x', 'y', and 'z' respectively, returning the result. For 
+     * example, this code executes without failure: 
+     * <pre>
+     * assert 10 == Eval.xyz(2, 4, 2, ' x * y + z')
+     * </pre>
      * @param expression the Groovy expression to evaluate
      * @return the result of the expression
-     * @throws CompilationFailedException if expression is no proper Groovy
+     * @throws CompilationFailedException if expression is not valid Groovy
      */
     public static Object xyz(final Object x, final Object y, final Object z, final String expression) throws CompilationFailedException {
         Binding b = new Binding();
