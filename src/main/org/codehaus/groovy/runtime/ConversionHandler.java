@@ -16,6 +16,8 @@
 
 package org.codehaus.groovy.runtime;
 
+import groovy.lang.GroovyRuntimeException;
+
 import java.io.Serializable;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
@@ -76,7 +78,11 @@ public abstract class ConversionHandler implements InvocationHandler, Serializab
      */
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
         if (!checkMethod(method)) {
-            return invokeCustom(proxy, method, args);
+            try {
+                return invokeCustom(proxy, method, args);
+            } catch (GroovyRuntimeException gre) {
+                throw ScriptBytecodeAdapter.unwrap(gre);
+            }
         }
         try {
             return method.invoke(this, args);
