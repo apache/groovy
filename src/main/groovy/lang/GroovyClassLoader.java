@@ -774,11 +774,23 @@ public class GroovyClassLoader extends URLClassLoader {
             if ((oldClass != null && isSourceNewer(source, oldClass)) || (oldClass == null)) {
                 synchronized (sourceCache) {
                     sourceCache.remove(className);
-                    return parseClass(source.openStream(), className);
+                    if (isFile(source)) {
+                        try {
+                            return parseClass(new File(source.toURI()));
+                        } catch (URISyntaxException e) {
+                            // do nothing and fall back to the other version
+                        }
+                    }
+                    return parseClass(source.openStream(), makeFileName(className));
                 }
             }
         }
         return oldClass;
+    }
+
+    private String makeFileName(String className) {
+        className = className.replace('.','/');
+        return className+".groovy";
     }
 
     /**
