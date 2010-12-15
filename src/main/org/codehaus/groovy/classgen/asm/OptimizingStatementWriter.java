@@ -415,8 +415,8 @@ public class OptimizingStatementWriter extends StatementWriter {
         public void visitDeclarationExpression(DeclarationExpression expression) {
             Expression right = expression.getRightExpression();
             right.visit(this);
-            boolean rightInt = BinaryIntExpressionHelper.isIntOperand(right);
-            boolean leftInt = BinaryIntExpressionHelper.isIntOperand(expression.getLeftExpression());
+            boolean rightInt = BinaryIntExpressionHelper.isIntOperand(right, node);
+            boolean leftInt = BinaryIntExpressionHelper.isIntOperand(expression.getLeftExpression(), node);
             if (!optimizeInt) {
                 optimizeInt =   (leftInt && rightInt) &&
                                 !(right instanceof ConstantExpression);
@@ -431,8 +431,8 @@ public class OptimizingStatementWriter extends StatementWriter {
         public void visitBinaryExpression(BinaryExpression expression) {
             if (expression.getNodeMetaData(StatementMeta.class)!=null) return;
             super.visitBinaryExpression(expression);
-            boolean leftInt = BinaryIntExpressionHelper.isIntOperand(expression.getLeftExpression());
-            boolean rightInt = BinaryIntExpressionHelper.isIntOperand(expression.getRightExpression());
+            boolean leftInt = BinaryIntExpressionHelper.isIntOperand(expression.getLeftExpression(), node);
+            boolean rightInt = BinaryIntExpressionHelper.isIntOperand(expression.getRightExpression(), node);
             if (!optimizeInt) optimizeInt = (leftInt && rightInt);
             if (optimizeInt) {
                 switch (expression.getOperation().getType()) {

@@ -60,4 +60,21 @@ class NameResolvingTest extends CompilableTestSupport {
             }
         """
     }
+    
+    public void testSuperClassVariableAccess() {
+        assertScript """
+            class U {
+                public static final int uint
+            }
+        
+            class A extends U {
+                def foo ( ) {
+                    id  "A" + ( ( uint < 7 ) ? "B" : "C" ) + '\\n'
+                }
+                def id(x){x}
+            }
+            def a = new A()
+            assert a.foo() == "AB\\n"
+        """
+    }
 }

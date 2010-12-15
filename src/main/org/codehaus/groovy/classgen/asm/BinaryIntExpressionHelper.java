@@ -17,9 +17,12 @@ package org.codehaus.groovy.classgen.asm;
 
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.Variable;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.FieldExpression;
+import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.classgen.asm.OptimizingStatementWriter.StatementMeta;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
@@ -135,11 +138,18 @@ public class BinaryIntExpressionHelper extends BinaryExpressionHelper {
     /**
      * @return true if expression is an evals to an int
      */
-    protected static boolean isIntOperand(Expression exp) {
+    protected static boolean isIntOperand(Expression exp, ClassNode current) {
         StatementMeta meta = (StatementMeta) exp.getNodeMetaData(StatementMeta.class);
         if (meta!=null) return meta.type==ClassHelper.int_TYPE;
         ClassNode type = null;
-        if (exp instanceof Variable) {
+        if (exp instanceof VariableExpression) {
+            VariableExpression ve = (VariableExpression) exp;
+            type = ve.getOriginType();
+            if (ve.getAccessedVariable() instanceof FieldNode) {
+                FieldNode fn = (FieldNode) ve.getAccessedVariable();
+                if (!fn.getDeclaringClass().equals(current)) return false;
+            }
+        } else if (exp instanceof Variable) {
             Variable v = (Variable) exp;
             type = v.getOriginType();
         } else {
@@ -154,9 +164,9 @@ public class BinaryIntExpressionHelper extends BinaryExpressionHelper {
         int type = binExp.getOperation().getType();
 
         Expression left = binExp.getLeftExpression();
-        boolean leftIsInt = isIntOperand(left);
+        boolean leftIsInt = isIntOperand(left, controller.getClassNode());
         Expression right = binExp.getRightExpression();
-        boolean rightIsInt = isIntOperand(right);
+        boolean rightIsInt = isIntOperand(right, controller.getClassNode());
        
         if (leftIsInt && rightIsInt && writeIntXInt(type, true)) {
             left.visit(controller.getAcg());
@@ -172,9 +182,9 @@ public class BinaryIntExpressionHelper extends BinaryExpressionHelper {
         int type = binExp.getOperation().getType();
 
         Expression left = binExp.getLeftExpression();
-        boolean leftIsInt = isIntOperand(left);
+        boolean leftIsInt = isIntOperand(left, controller.getClassNode());
         Expression right = binExp.getRightExpression();
-        boolean rightIsInt = isIntOperand(right);
+        boolean rightIsInt = isIntOperand(right, controller.getClassNode());
         
         if (leftIsInt && rightIsInt && writeIntXInt(type, true)) {
             left.visit(controller.getAcg());
