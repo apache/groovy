@@ -2918,8 +2918,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Selects the minimum value found in the collection
-     * using the closure to determine the correct ordering.
+     * Selects an item in the collection having the minimum
+     * value as determined by the supplied closure.
+     * If more than one item has the minimum value,
+     * an arbitrary choice is made between the items having the minimum value.
      * </p>
      * If the closure has two parameters
      * it is used like a traditional Comparator. I.e. it should compare
@@ -2929,7 +2931,18 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * the Closure is assumed to take a single parameter and return a
      * Comparable (typically an Integer) which is then used for
      * further comparison.
-     * <pre class="groovyTestCase">assert "hi" == ["hello","hi","hey"].min { it.length() } </pre>
+     * <pre class="groovyTestCase">
+     * assert "hi" == ["hello","hi","hey"].min { it.length() }
+     * </pre>
+     * <pre class="groovyTestCase">
+     * def lastDigit = { a, b -> a % 10 <=> b % 10 }
+     * assert [19, 55, 91].min(lastDigit) == 91
+     * </pre>
+     * <pre class="groovyTestCase">
+     * def pets = ['dog', 'cat', 'anaconda']
+     * def shortestName = pets.min{ it.size() } // one of 'dog' or 'cat'
+     * assert shortestName.size() == 3
+     * </pre>
      *
      * @param self    a Collection
      * @param closure a 1 or 2 arg Closure used to determine the correct ordering
@@ -2954,8 +2967,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Selects the minimum value found in the map
-     * using the closure to determine the correct ordering.
+     * Selects an entry in the map having the minimum
+     * calculated value as determined by the supplied closure.
+     * If more than one entry has the minimum value,
+     * an arbitrary choice is made between the entries having the minimum value.
      * </p>
      * If the closure has two parameters
      * it is used like a traditional Comparator. I.e. it should compare
@@ -2969,8 +2984,15 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * def zoo = [monkeys:6, lions:5, tigers:7]
      * def leastCommonEntry = zoo.min{ it.value }
      * assert leastCommonEntry.value == 5
-     * def mostCommonEntry = zoo.min{ a, b -> b.value <=> a.value }
+     * def mostCommonEntry = zoo.min{ a, b -> b.value <=> a.value } // double negative!
      * assert mostCommonEntry.value == 7
+     * </pre>
+     * Edge case for multiple min values:
+     * <pre class="groovyTestCase">
+     * def zoo = [monkeys:6, lions:5, tigers:7]
+     * def lastCharOfName = { e -> e.key[-1] }
+     * def ans = zoo.min(lastCharOfName) // some random entry
+     * assert lastCharOfName(ans) == 's'
      * </pre>
      *
      * @param self    a Map
@@ -2983,8 +3005,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Selects the maximum value found in the map
-     * using the closure to determine the correct ordering.
+     * Selects an entry in the map having the maximum
+     * calculated value as determined by the supplied closure.
+     * If more than one entry has the maximum value,
+     * an arbitrary choice is made between the entries having the maximum value.
      * </p>
      * If the closure has two parameters
      * it is used like a traditional Comparator. I.e. it should compare
@@ -2993,13 +3017,20 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * equal to, or greater than the second respectively. Otherwise,
      * the Closure is assumed to take a single parameter and return a
      * Comparable (typically an Integer) which is then used for
-     * further comparison.
+     * further comparison. An example:
      * <pre class="groovyTestCase">
      * def zoo = [monkeys:6, lions:5, tigers:7]
      * def mostCommonEntry = zoo.max{ it.value }
      * assert mostCommonEntry.value == 7
-     * def leastCommonEntry = zoo.max{ a, b -> b.value <=> a.value }
+     * def leastCommonEntry = zoo.max{ a, b -> b.value <=> a.value } // double negative!
      * assert leastCommonEntry.value == 5
+     * </pre>
+     * Edge case for multiple max values:
+     * <pre class="groovyTestCase">
+     * def zoo = [monkeys:6, lions:5, tigers:7]
+     * def lengthOfNamePlusNumber = { e -> e.key.size() + e.value }
+     * def ans = zoo.max(lengthOfNamePlusNumber) // one of [monkeys:6, tigers:7]
+     * assert lengthOfNamePlusNumber(ans) == 13
      * </pre>
      *
      * @param self    a Map
@@ -3098,8 +3129,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Selects the maximum value found in the collection
-     * using the closure to determine the correct ordering.
+     * Selects an item in the collection having the maximum
+     * value as determined by the supplied closure.
+     * If more than one item has the maximum value,
+     * an arbitrary choice is made between the items having the maximum value.
      * </p>
      * If the closure has two parameters
      * it is used like a traditional Comparator. I.e. it should compare
@@ -3111,6 +3144,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * further comparison.
      * <pre class="groovyTestCase">assert "hello" == ["hello","hi","hey"].max { it.length() }</pre>
      * <pre class="groovyTestCase">assert "hello" == ["hello","hi","hey"].max { a, b -> a.length() <=> b.length() }</pre>
+     * <pre class="groovyTestCase">
+     * def pets = ['dog', 'elephant', 'anaconda']
+     * def longestName = pets.max{ it.size() } // one of 'elephant' or 'anaconda'
+     * assert longestName.size() == 8
+     * </pre>
      *
      * @param self    a Collection
      * @param closure a 1 or 2 arg Closure used to determine the correct ordering
