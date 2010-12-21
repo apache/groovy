@@ -11,23 +11,23 @@ import static Temperature.*
  * Simple table presenting what is possible and what is not
  * according to this table old syntax should works the same as now
  *
- * expression           |   possible meanings       | allowed in old syntax
- *  foo {c}             |       foo({c})            |  (same meaning)
- *  foo a1              |       foo(a1)             |  (same meaning)
- *  foo a1()            |       foo(a1())           |  (same meaning)
- *  foo a1 {c}          |       foo(a1({c}))        |  (same meaning)
- *  foo a1 a2           |       not allowed         |   not allowed
- *  foo a1() a2         |       not allowed         |   not allowed
- *  foo a1 a2()         |       not allowed         |   not allowed
- *  foo a1 a2 {c}       |       not allowed         |   not allowed
- *  foo a1 {c} a2       |       not allowed         |   not allowed
- *  foo a1 {c} a2 {c}   |       not allowed         |   not allowed
- *  foo a1 a2 a3        |       foo(a1).a2(a3)      |   not allowed
- *  foo a1() a2 a3()    |       foo(a1()).a2(a3())  |   not allowed
- *  foo a1 a2() a3      |       not allowed         |   not allowed
- *  foo a1 a2 a3 {c}    |       foo(a1).a2(a3({c})) |   not allowed
- *  foo a1 a2 a3 a4     |       not allowed         |   not allowed
- *  foo a1 a2 a3 a4 {c} |       not allowed         |   not allowed
+ * expression           | meaning              | allowed in old syntax
+ *  foo {c}             |  foo({c})            |  (same meaning)
+ *  foo a1              |  foo(a1)             |  (same meaning)
+ *  foo a1()            |  foo(a1())           |  (same meaning)
+ *  foo a1 {c}          |  foo(a1({c}))        |  (same meaning)
+ *  foo a1 a2           |  not allowed         |   not allowed
+ *  foo a1() a2         |  not allowed         |   not allowed
+ *  foo a1 a2()         |  not allowed         |   not allowed
+ *  foo a1 a2 {c}       |  not allowed         |   not allowed
+ *  foo a1 {c} a2       |  nnot allowed         |   not allowed
+ *  foo a1 {c} a2 {c}   |  not allowed         |   not allowed
+ *  foo a1 a2 a3        |  foo(a1).a2(a3)      |   not allowed
+ *  foo a1() a2 a3()    |  foo(a1()).a2(a3())  |   not allowed
+ *  foo a1 a2() a3      |  not allowed         |   not allowed
+ *  foo a1 a2 a3 {c}    |  foo(a1).a2(a3({c})) |   not allowed
+ *  foo a1 a2 a3 a4     |  not allowed         |   not allowed
+ *  foo a1 a2 a3 a4 {c} |  not allowed         |   not allowed
  *
  * Summary of the pattern
  * - A command-expression is composed of an even number of elements
@@ -183,6 +183,107 @@ class Gep3Test extends GroovyTestCase {
 
         r3 = drink coffee with sugar, milk and liquor
         assert r3.beverage == coffee && r3.ingredients == [sugar, milk, liquor]
+    }
+
+    /**
+     * case             a b  c d
+     * equivalent       a(b).c(d)
+     */
+    void testNominalCase() {
+
+        def turned = false
+        def (left, right) = ['left', 'right']
+        def turn = { String s -> [then: { turned = true }] }
+
+        turn left then right
+
+        assert turned
+    }
+
+    /**
+     * For odd number of elements, treat the last element as a call to a getter
+     *
+     * case            a b  c
+     * equivalent      a(b).getC()
+     */
+    void testTrailingElementAsGetter() {
+        def drank = false
+        def more = 'more'
+        def drink = { String s -> [milk: { drank = true }()] }
+
+        def d = drink more milk
+
+        assert drank
+    }
+
+    /**
+     * Only closure parameters, enabling interesting control constructs
+     *
+     * case          a {}  b {}  c {}
+     * equivalent    a({}).b({}).c({})
+     *
+     */
+    void testOnlyClosureParameters() {
+        def bdd = 0
+        def given = { c1 -> c1(); [when: { c2 -> c2(); [then: { c3 -> c3() }] }]}
+
+        given {
+            bdd++
+        } when {
+            bdd++
+        } then {
+            bdd++
+        }
+
+        assert bdd == 3
+    }
+
+    /**
+     * If the last method takes no arguments, parentheses are required
+     *
+     * case            a b  c()
+     * equivalent      a(b).c()
+     */
+    void testZeroArgMethodCallAtEndOfChain() {
+        def built = false
+        def all = 'all'
+        def select = { String s -> [build: { built = true }] }
+
+        select all build()
+
+        assert built
+    }
+
+    /**
+     * A zero-arg method call in the middle of a chain requires parentheses
+     *
+     * case            a b  c() d e
+     * equivalent      a(b).c().d(e)
+     */
+    void testZeroArgMethodCallInTheMiddleOfTheChain() {
+        def uploaded = false
+        def (file, here) = ['file', 'here']
+        def upload = { String s1 -> [check: {-> [decompress: { String s2 -> uploaded = true }] }]}
+
+        upload file check() decompress here
+
+        assert uploaded
+    }
+
+    /**
+     * Case where a midle element of the chain is actually a pretty complex exception
+     *
+     * case            a b  c[1](){} d e
+     * equivalent      a(b).c[1](){}.d(e)
+     */
+    void testComplexCaseWithSubscriptAndMethodCallWithClosureArgument() {
+        def resolved = false
+        def (cube, topLayer, down) = ['cube', 3, 'down']
+        def resolve = { String s1 -> [move: [0, 1, 2, { c -> [upside: { String s2 -> resolved = true }] }]] }
+
+        resolve cube move [topLayer]() {} upside down
+
+        assert resolved
     }
 }
 
