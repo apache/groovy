@@ -2224,9 +2224,10 @@ commandArgumentsGreedy[AST head]
             (
                 (LPAREN|LCURLY|LBRACK)=> 
                 (   options { greedy = true; } :
-                    //nls!
+                    nls!
                     pe:pathElement[prev]!
                     { #prev = #pe; }
+                    ((NLS)=> {break;})?
                 )+            
             |
                 (
