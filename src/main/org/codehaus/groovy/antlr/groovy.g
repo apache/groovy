@@ -413,6 +413,22 @@ tokens {
         if (x == null || x.getType() != IDENT)  return false;  // cannot happen?
         return cname.equals(x.getText());
     }
+    
+    private void dumpTree(AST ast, String offset) {
+    	dump(ast, offset);
+        for (AST node = ast.getFirstChild(); node != null; node = node.getNextSibling()) {
+            dumpTree(node, offset+"\t");
+        }
+    }
+
+    private void dump(AST node, String offset) {
+        System.out.println(offset+"Type: " + getTokenName(node) + " text: " + node.getText());
+    }
+    
+    private String getTokenName(AST node) {
+        if (node == null) return "null";
+        return getTokenName(node.getType());
+    }
 
     // Scratch variable for last 'sep' token.
     // Written by the 'sep' rule, read only by immediate callers of 'sep'.
@@ -2169,10 +2185,9 @@ handler {Token first = LT(1);}
  *  without labels or spread operators.
  */
 commandArguments[AST head]
-  {
-      Token first = LT(1);
-      int hls=0;
-  }
+{
+	Token first = LT(1);
+}
     :
         commandArgument ( options {greedy=true;}: COMMA! nls! commandArgument )*
         // println 2+2 //OK
@@ -2185,35 +2200,47 @@ commandArguments[AST head]
         // foo.bar baz{bat}, bang{boz} //OK
         {
             AST elist = #(create(ELIST,"ELIST",first,LT(1)), #commandArguments);
-            AST headid = getASTFactory().dup(#head);
-            headid.setType(METHOD_CALL);
-            headid.setText("<command>");
-            #commandArguments = #(headid, head, elist);
+            AST headid = #(create(METHOD_CALL,"<command>",first,LT(1)), head, elist);
+            #commandArguments = headid;
         }
     ;
 
 commandArgumentsGreedy[AST head]
-{ AST prev = null; }
+{ 
+	AST prev = null; 
+}
     :
-        commandArguments[head]
-        {
-            prev = astFactory.dupTree((AST)returnAST);
-            //prev = #(create(LPAREN,"(",prev),prev);
-        }
-        (
-            options { greedy = true; } :
-            (COMMA! nls!|)
+        { #prev = #head; }
+    
+        (   {#prev.getType()!=METHOD_CALL}?
+            first : commandArguments[head]!
+            { #prev = #first; }
+        )?
+        
+        (   options { greedy = true; } :
+            pre:primaryExpression!
+            { #prev = #(create(DOT, ".", #prev), #prev, #pre); }
 
-            current : expression[LC_STMT]
-            {
-                 AST chain = #(create(DOT, ".", #prev), #prev, #current);
-                 commandArguments(chain);
-                 AST chained = astFactory.dupTree( (AST)returnAST );
-                 prev = chained;
-            }
+            (
+                (LPAREN|LCURLY|LBRACK)=> 
+                (   options { greedy = true; } :
+                    //nls!
+                    pe:pathElement[prev]!
+                    { #prev = #pe; }
+                )+            
+            |
+                (
+                    (commandArgument)=> (
+                        ca:commandArguments[prev]!
+                        { #prev = #ca; }
+                    )
+                    |
+                )
+            )
         )*
-        { #commandArgumentsGreedy = prev; } ;
-
+        { #commandArgumentsGreedy = prev; } 
+    ;
+    
 commandArgument
     :
         (argumentLabel COLON nls!) => (
