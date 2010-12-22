@@ -6,28 +6,31 @@ import static CookingAction.*
 import static Temperature.*
 
 /**
- * Test case for GEP-3 new features
+ * Test case for "extended command expressions" (GEP-3) added in Groovy 1.8
  *
  * Simple table presenting what is possible and what is not
  * according to this table old syntax should works the same as now
  *
- * expression           | meaning                   | allowed in old syntax
- *  foo {c}             |  foo({c})                 |  (same meaning)
- *  foo a1              |  foo(a1)                  |  (same meaning)
- *  foo a1()            |  foo(a1())                |  (same meaning)
- *  foo a1 {c}          |  foo(a1({c}))             |  (same meaning)
- *  foo a1 a2           |  foo(a1).getA2()          |   not allowed
- *  foo a1() a2         |  foo(a1()).getA2()        |   not allowed
- *  foo a1 a2()         |  foo(a1).a2()             |   not allowed
- *  foo a1 a2 {c}       |  foo(a1).a2{c}            |   not allowed
- *  foo a1 {c} a2       |  foo(a1{c}).getA2()       |   not allowed
- *  foo a1 {c} a2 {c}   |  foo(a1{c}).a2{c}         |   not allowed
- *  foo a1 a2 a3        |  foo(a1).a2(a3)           |   not allowed
- *  foo a1() a2 a3()    |  foo(a1()).a2(a3())       |   not allowed
- *  foo a1 a2() a3      |  foo(a1).a2().getA3()     |   not allowed
- *  foo a1 a2 a3 {c}    |  foo(a1).a2(a3({c}))      |   not allowed
- *  foo a1 a2 a3 a4     |  foo(a1).a2(a3).getA4()   |   not allowed
- *  foo a1 a2 a3 a4 {c} |  foo(a1).a2(a3).a4{c}     |   not allowed
+ * expression              | meaning                   | before extended command expressions (GEP-3)
+ *  foo {c}                |  foo({c})                 |  (same meaning)
+ *  foo a1                 |  foo(a1)                  |  (same meaning)
+ *  foo a1()               |  foo(a1())                |  (same meaning)
+ *  foo a1 {c}             |  foo(a1({c}))             |  (same meaning)
+ *  foo a1 a2              |  foo(a1).getA2()          |   not allowed
+ *  foo a1() a2            |  foo(a1()).getA2()        |   not allowed
+ *  foo a1 a2()            |  foo(a1).a2()             |   not allowed
+ *  foo a1 a2 {c}          |  foo(a1).a2{c}            |   not allowed
+ *  foo a1 {c} a2          |  foo(a1{c}).getA2()       |   not allowed
+ *  foo a1 {c} a2 {c}      |  foo(a1{c}).a2{c}         |   not allowed
+ *  foo a1 a2 a3           |  foo(a1).a2(a3)           |   not allowed
+ *  foo a1() a2 a3()       |  foo(a1()).a2(a3())       |   not allowed
+ *  foo a1 a2() a3         |  foo(a1).a2().getA3()     |   not allowed
+ *  foo a1 a2 a3 {c}       |  foo(a1).a2(a3({c}))      |   not allowed
+ *  foo a1 a2 a3 a4        |  foo(a1).a2(a3).getA4()   |   not allowed
+ *  foo a1 a2 a3 a4 {c}    |  foo(a1).a2(a3).a4{c}     |   not allowed
+ *  foo {} a1 {}           |  foo({}).a1({})           |  foo({}).call(a1({}))  <- breaking change
+ *  foo {} a1 {} a2 {}     |  foo({}).a1({}).a2({})    |   not allowed
+ *  foo a1 a2[1](){} a3 a4 |  foo(a1).a2[1](){}.a3(a4) |   not allowed
  *
  * Summary of the pattern
  * - A command-expression is composed of an even number of elements
