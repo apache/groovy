@@ -18,12 +18,6 @@ package groovy.inspect.swingui
 import org.codehaus.groovy.control.Phases
 import javax.swing.tree.TreeNode
 import junit.framework.AssertionFailedError
-import org.codehaus.groovy.ast.expr.DeclarationExpression
-import org.codehaus.groovy.ast.expr.ArgumentListExpression
-import org.codehaus.groovy.ast.expr.VariableExpression
-import org.codehaus.groovy.syntax.Token
-import org.codehaus.groovy.ast.expr.ListExpression
-import org.codehaus.groovy.ast.expr.ConstantExpression
 
 /**
  * Unit test for ScriptToTreeNodeAdapter.
@@ -56,13 +50,28 @@ public class ScriptToTreeNodeAdapterTest extends GroovyTestCase {
      def assertTreeStructure(String script, List<Closure> specification, ScriptToTreeNodeAdapter adapter) {
          TreeNode root = adapter.compile(script, Phases.SEMANTIC_ANALYSIS)
          def original = root
+         def lastSpec = 0
          specification.each { spec ->
+             if (root) lastSpec++
              root = root?.children()?.find { spec(it) }
          }
          if (!root) {
-             fail("Could not locate Expression in AST: ${printnode(original)}")
+             fail("Could not locate Expression in AST.${printSpecs(specification, lastSpec)}\nAST: ${printnode(original)}")
          }
      }
+
+    private printSpecs(specification, index) {
+        def len = specification.size()
+        (index > 1 ? '\nPassed: ' : '') + specification[0..<index].collect{ extractSpecType(it.class.name) }.join(', ') +
+        '\nFailed: ' + extractSpecType(specification[index-1].class.name) +
+        (index < len ? '\nIgnored: ' + specification[index..-1].collect{ extractSpecType(it.class.name) }.join(', ') : '')
+    }
+
+    private extractSpecType(fullyQualified) {
+        def start = fullyQualified.indexOf('$_')
+        def end = fullyQualified.indexOf('_', start+2)
+        fullyQualified.substring(start+2, end)
+    }
 
     /**
      * Helper method to assert a map entry element.
@@ -224,14 +233,10 @@ public class ScriptToTreeNodeAdapterTest extends GroovyTestCase {
                 [
                         startsWith('ClassNode'),
                         eq('Methods'),
-                        startsWith('MethodNode - this$dist$invoke$'),
+                        startsWith('MethodNode - run'),
                         startsWith('BlockStatement'),
-                        startsWith('ReturnStatement'),
-                        startsWith('MethodCall'),
-                        startsWith('ArgumentList'),
-                        eq('Spread - *args'),
-                        startsWith('Variable - args : java.lang.Object'),
-                        eq('Parameter - args'),
+                        startsWith('ExpressionStatement'),
+                        startsWith('Constant - foo'),
                 ]
         )
     }
@@ -286,9 +291,6 @@ public class ScriptToTreeNodeAdapterTest extends GroovyTestCase {
                 }""",
                 [
                         startsWith('InnerClassNode - Outer\$Inner2'),
-                        eq('Constructors'),
-                        startsWith('ConstructorNode'),
-                        startsWith('BlockStatement'),
                 ]
         )
     }

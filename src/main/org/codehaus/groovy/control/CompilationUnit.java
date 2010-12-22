@@ -192,6 +192,14 @@ public class CompilationUnit extends ProcessingUnit {
                 sv.visitClass(classNode, source);
             }
         }, Phases.SEMANTIC_ANALYSIS);
+        addPhaseOperation(new PrimaryClassNodeOperation() {
+            @Override
+            public void call(SourceUnit source, GeneratorContext context,
+                             ClassNode classNode) throws CompilationFailedException {
+                InnerClassCompletionVisitor iv = new InnerClassCompletionVisitor(CompilationUnit.this,source);
+                iv.visitClass(classNode);
+            }
+        }, Phases.CANONICALIZATION);
 
         this.classgenCallback = null;
     }
