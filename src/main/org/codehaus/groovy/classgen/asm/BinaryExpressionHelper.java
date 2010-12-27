@@ -680,6 +680,8 @@ public class BinaryExpressionHelper {
                 operandStack.push(ClassHelper.OBJECT_TYPE);
                 // change (receiver,callsite) to (callsite,receiver)
                 operandStack.swap();
+                setType(operandStack.getTopOperand());
+                
                 // no need to keep any of those on the operand stack
                 // after this expression is processed, the operand stack
                 // will contain callSiteReceiverSwap.getType()

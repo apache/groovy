@@ -21,7 +21,6 @@ import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.Variable;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.Expression;
-import org.codehaus.groovy.ast.expr.FieldExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.classgen.asm.OptimizingStatementWriter.StatementMeta;
 import org.objectweb.asm.Label;
@@ -188,7 +187,9 @@ public class BinaryIntExpressionHelper extends BinaryExpressionHelper {
         
         if (leftIsInt && rightIsInt && writeIntXInt(type, true)) {
             left.visit(controller.getAcg());
+            controller.getOperandStack().doGroovyCast(ClassHelper.int_TYPE);
             right.visit(controller.getAcg());
+            controller.getOperandStack().doGroovyCast(ClassHelper.int_TYPE);
             writeIntXInt(type, false);
         } else {
             super.evaluateBinaryExpression(message, binExp);
