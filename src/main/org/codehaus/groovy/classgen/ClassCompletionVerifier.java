@@ -363,14 +363,14 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
             VariableExpression ve = (VariableExpression) expression;
             v = ve.getAccessedVariable();
         } else {
-        	PropertyExpression propExp = ((PropertyExpression) expression);
-        	Expression objectExpression = propExp.getObjectExpression();
-        	if(objectExpression instanceof VariableExpression) {
-        		VariableExpression varExp = (VariableExpression) objectExpression;
-        		if(varExp.isThisExpression()) {
-        			v = currentClass.getDeclaredField(propExp.getPropertyAsString());
-        		}
-        	}
+            PropertyExpression propExp = ((PropertyExpression) expression);
+            Expression objectExpression = propExp.getObjectExpression();
+            if (objectExpression instanceof VariableExpression) {
+                VariableExpression varExp = (VariableExpression) objectExpression;
+                if (varExp.isThisExpression()) {
+                    v = currentClass.getDeclaredField(propExp.getPropertyAsString());
+                }
+            }
         }
         if (v instanceof FieldNode) {
             FieldNode fn = (FieldNode) v;
