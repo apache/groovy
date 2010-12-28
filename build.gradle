@@ -38,7 +38,7 @@ dependencies {
     }
     compile "junit:junit:4.8.1"
     compile "commons-cli:commons-cli:1.2"
-    compile "org.apache.ant:ant:1.8.0"
+    compile "org.apache.ant:ant:1.8.2"
     compile "javax.servlet:servlet-api:2.4"
     compile "javax.servlet:jsp-api:2.0"
     compile("com.thoughtworks.xstream:xstream:1.3.1") {
@@ -51,15 +51,9 @@ dependencies {
     compile("org.apache.ivy:ivy:2.2.0-rc1") {
         transitive = false
     }
-    runtime "org.apache.ant:ant-junit:1.8.0"
-    runtime "org.apache.ant:ant-launcher:1.8.0"
-    runtime("org.apache.ant:ant-trax:1.8.0") {
-        exclude(group: 'xerces', module: 'xercesImpl')
-        exclude(group: 'xml-apis', module: 'xml-apis')
-        exclude(group: 'xalan', module: 'xalan')
-        exclude(group: 'org.apache.ant', module: 'ant-nodeps')
-    }
-    runtime "org.apache.ant:ant-antlr:1.8.0"
+    runtime "org.apache.ant:ant-junit:1.8.2"
+    runtime "org.apache.ant:ant-launcher:1.8.2"
+    runtime "org.apache.ant:ant-antlr:1.8.2"
     runtime("commons-logging:commons-logging:1.1.1") {
         exclude(group: 'log4j', module: 'log4j')
         exclude(group: 'logkit', module: 'logkit')
@@ -108,7 +102,7 @@ dependencies {
         exclude(module: 'geronimo-j2ee-connector_1.5_spec')
     }
 
-    antlr "org.apache.ant:ant-antlr:1.8.0"
+    antlr "org.apache.ant:ant-antlr:1.8.2"
 }
 
 sourceSets {
