@@ -43,7 +43,7 @@ public class DefaultTypeTransformation {
     //  --------------------------------------------------------       
     
     public static byte byteUnbox(Object value) {
-        Number n = castToNumber(value);
+        Number n = castToNumber(value, byte.class);
         return n.byteValue();
     }
 
@@ -52,12 +52,12 @@ public class DefaultTypeTransformation {
     }
 
     public static short shortUnbox(Object value) {
-        Number n = castToNumber(value);
+        Number n = castToNumber(value, short.class);
         return n.shortValue();
     }
 
     public static int intUnbox(Object value) {
-        Number n = castToNumber(value);
+        Number n = castToNumber(value, int.class);
         return n.intValue();
     }
 
@@ -66,17 +66,17 @@ public class DefaultTypeTransformation {
     }
 
     public static long longUnbox(Object value) {
-        Number n = castToNumber(value);
+        Number n = castToNumber(value, long.class);
         return n.longValue();
     }
 
     public static float floatUnbox(Object value) {
-        Number n = castToNumber(value);
+        Number n = castToNumber(value, float.class);
         return n.floatValue();
     }
 
     public static double doubleUnbox(Object value) {
-        Number n = castToNumber(value);
+        Number n = castToNumber(value, double.class);
         return n.doubleValue();
     } 
 

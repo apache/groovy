@@ -44,15 +44,39 @@ public class GroovyCastException extends ClassCastException {
 
     private static String makeMessage(Object objectToCast, Class classToCastTo) {
        String classToCastFrom;
+       Object msgObject = objectToCast;
        if (objectToCast!=null) {
            classToCastFrom = objectToCast.getClass().getName();
        } else {
-           objectToCast = "null";
+           msgObject = "null";
            classToCastFrom = "null";
        }
-       return "Cannot cast object '" + objectToCast + "' " +
-              "with class '" + classToCastFrom + "' " +
-              "to class '" + classToCastTo.getName() + "'";
+       String msg = 
+               "Cannot cast object '" + msgObject + "' " +
+               "with class '" + classToCastFrom + "' " +
+               "to class '" + classToCastTo.getName() + "'";
+
+       if (objectToCast==null){
+           msg += getWrapper(classToCastTo);
+       }
+
+       return msg;
+    }
+
+    private static String getWrapper(Class cls) {
+        Class ncls = cls;
+        if (cls==byte.class)        {ncls=Byte.class;}
+        else if (cls==short.class)  {ncls=Short.class;}
+        else if (cls==char.class)   {ncls=Character.class;}
+        else if (cls==int.class)    {ncls=Integer.class;}
+        else if (cls==long.class)   {ncls=Long.class;}
+        else if (cls==float.class)  {ncls=Float.class;}
+        else if (cls==double.class) {ncls=Double.class;}
+        if (cls!=null && ncls!=cls) {
+            String msg = ". Try '" + ncls.getName() + "' instead";
+            return msg;
+        }
+        return "";
     }
 
 }
