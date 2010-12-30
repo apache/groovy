@@ -663,8 +663,11 @@ public class JavaStubGenerator
             Object constValue = ce.getValue();
             if (constValue instanceof Number || constValue instanceof Boolean)
                 val = constValue.toString();
-            else
-                val = "\"" + constValue + "\"";
+            else {
+				String stringValue = constValue.toString();
+				stringValue = stringValue.replace("\n", "\\n").replace("\r", "\\r"); // handle multi-line strings
+				val = "\"" + stringValue + "\"";
+			}
         } else if (memberValue instanceof PropertyExpression || memberValue instanceof VariableExpression) {
             // assume must be static class field or enum value or class that Java can resolve
             val = ((Expression) memberValue).getText();
