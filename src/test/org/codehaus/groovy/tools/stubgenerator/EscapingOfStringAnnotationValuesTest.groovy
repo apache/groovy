@@ -18,20 +18,21 @@ package org.codehaus.groovy.tools.stubgenerator
 import org.junit.Assert
 
 // http://jira.codehaus.org/browse/GROOVY-4470
-class MultiLineStringsInAnnotationsTest extends StringSourcesStubTestCase {
+// http://jira.codehaus.org/browse/GROOVY-4604
+class EscapingOfStringAnnotationValuesTest extends StringSourcesStubTestCase {
 	Map<String, String> provideSources() {
 		['StringAnn.java': '''
 import java.lang.annotation.*;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface StringAnn {
-	String value();
+	String str();
 }
 		''',
 		'StringAnnUsage.groovy': '''
-@StringAnn("""Now that's what
+@StringAnn(str = """Now that's what
 I
-	call a
-  multi-line
+	call an
+  "unescaped"
 String!""")
 class StringAnnUsage {}
 		'''
@@ -40,6 +41,6 @@ class StringAnnUsage {}
 
 	void verifyStubs() {
 		def ann = classes['StringAnnUsage'].annotations[0]
-		Assert.assertEquals("\"Now that's what\\nI\\n	call a\\n  multi-line\\nString!\"", ann.getNamedParameter("value"))
+		Assert.assertEquals("\"Now that's what\\nI\\n	call an\\n  \\\"unescaped\\\"\\nString!\"", ann.getNamedParameter("str"))
 	}
 }
