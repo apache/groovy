@@ -662,11 +662,8 @@ public class JavaStubGenerator
             Object constValue = ce.getValue();
             if (constValue instanceof Number || constValue instanceof Boolean)
                 val = constValue.toString();
-            else {
-				String stringValue = constValue.toString();
-				stringValue = stringValue.replace("\n", "\\n").replace("\r", "\\r"); // handle multi-line strings
-				val = "\"" + stringValue + "\"";
-			}
+            else
+				val = "\"" + escapeStringAnnotationValue(constValue.toString()) + "\"";
         } else if (memberValue instanceof PropertyExpression || memberValue instanceof VariableExpression) {
             // assume must be static class field or enum value or class that Java can resolve
             val = ((Expression) memberValue).getText();
@@ -729,4 +726,8 @@ public class JavaStubGenerator
             new File(outputPath, path + ".java").delete();
         }
     }
+
+	private static String escapeStringAnnotationValue(String value) {
+		return value.replace("\n", "\\n").replace("\r", "\\r").replace("\"", "\\\"");
+	}
 }
