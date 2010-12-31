@@ -17,7 +17,7 @@ package groovy.bugs
 
 import gls.CompilableTestSupport
 
-class Groovy4418 extends CompilableTestSupport {
+class Groovy4418Bug extends CompilableTestSupport {
     void testStaticFieldAccess() {
         assertScript '''
             class Base {

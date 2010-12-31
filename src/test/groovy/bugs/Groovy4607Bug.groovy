@@ -17,7 +17,7 @@ package groovy.bugs
 
 import gls.CompilableTestSupport
 
-class Groovy4607 extends CompilableTestSupport {
+class Groovy4607Bug extends CompilableTestSupport {
     void testProtectedOverridingPublic() {
         def errorMsg = shouldNotCompile('''
             abstract class Super {
