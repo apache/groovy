@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2009 the original author or authors.
+ * Copyright 2003-2011 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@ package groovy.inspect.swingui;
 
 
 import org.codehaus.groovy.ast.*;
-import org.codehaus.groovy.ast.builder.AstBuilder;
 import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.stmt.*;
 import org.codehaus.groovy.classgen.BytecodeExpression
@@ -964,10 +963,5 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
     public void visitSpreadMapExpression(SpreadMapExpression expression) {
         print '*:'
         expression?.expression?.visit this
-    }
-
-    @Deprecated
-    public void visitRegexExpression(RegexExpression node) {
-        print '/' + node.text + '/'
     }
 }

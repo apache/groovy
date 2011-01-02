@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2011 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -114,9 +114,6 @@ public interface GroovyCodeVisitor {
     void visitVariableExpression(VariableExpression expression);
 
     void visitDeclarationExpression(DeclarationExpression expression);
-
-    @Deprecated
-    void visitRegexExpression(RegexExpression expression);
 
     void visitGStringExpression(GStringExpression expression);
 
