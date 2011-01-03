@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2011 the original author or authors.
+ * Copyright 2008 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -142,6 +142,11 @@ public class TruthExpressionRewriter implements GroovyCodeVisitor {
 
     public void visitDeclarationExpression(DeclarationExpression expr) {
         unsupported(); // cannot occur in an assertion statement
+    }
+
+    @Deprecated
+    public void visitRegexExpression(RegexExpression expr) {
+        unsupported(); // class RegexExpression doesn't seem to be used
     }
 
     public void visitBinaryExpression(BinaryExpression expr) {

@@ -1126,6 +1126,23 @@ public class AstBuilderFromSpecificationTest extends GroovyTestCase {
     }
 
 
+    // TODO remove in a future version
+    public void testRegexExpression() {
+        // what source code would generate this? Is this valid usage?
+        def result = new AstBuilder().buildFromSpec {
+            regex {
+                constant 'foo.*'
+            }
+        }
+
+        def expected = new RegexExpression(
+                new ConstantExpression('foo.*')
+        )
+
+        AstAssert.assertSyntaxTree([expected], result)
+    }
+
+
     public void testSpreadExpression() {
         // todo: what source code generates this node type?
         def result = new AstBuilder().buildFromSpec {

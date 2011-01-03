@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2011 the original author or authors.
+ * Copyright 2003-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package groovy.inspect.swingui
 
+import groovy.inspect.swingui.TreeNodeWithProperties
 import groovy.text.GStringTemplateEngine
 import groovy.text.Template
 import java.util.concurrent.atomic.AtomicBoolean
@@ -550,6 +551,11 @@ private class TreeNodeBuildingVisitor extends CodeVisitorSupport {
 
     public void visitFieldExpression(FieldExpression node) {
         addNode(node, FieldExpression, { super.visitFieldExpression(it) });
+    }
+
+    @Deprecated
+    public void visitRegexExpression(RegexExpression node) {
+        addNode(node, RegexExpression, { super.visitRegexExpression(it) });
     }
 
     public void visitGStringExpression(GStringExpression node) {
