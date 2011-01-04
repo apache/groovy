@@ -240,8 +240,7 @@ apply from: "$projectDir/gradle/assemble.gradle"
 apply from: "$projectDir/gradle/upload.gradle"
 
 task wrapper(type: Wrapper) {
-    jarPath = 'gradle/wrapper'
-    gradleVersion = '0.9-rc-1'
+    gradleVersion = '0.9.1'
 }
 
 
