@@ -231,7 +231,7 @@ class CliBuilder {
      */
     def invokeMethod(String name, Object args) {
         if (args instanceof Object[]) {
-            if (args.size() == 1 && args[0] instanceof String) {
+            if (args.size() == 1 && (args[0] instanceof String || args[0] instanceof GString)) {
                 options.addOption(option(name, [:], args[0]))
                 return null
             }
