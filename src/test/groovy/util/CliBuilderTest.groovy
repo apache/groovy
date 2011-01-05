@@ -444,4 +444,21 @@ usage: groovy
         assert !options.d
         assert options.arguments() == ['@temp.args', 'foo', '@@baz']
     }
+
+    void testGStringSpecification_Groovy4621() {
+        def user = 'scott'
+        def pass = 'tiger'
+        def ignore = false
+        def longOptName = 'user'
+        def cli = new CliBuilder(usage: 'blah')
+        cli.dbusername(longOpt:"$longOptName", args: 1, "Database username [default $user]")
+        cli.dbpassword(args: 1, "Database password [default $pass]")
+        cli.i("ignore case [default $ignore]")
+        def args = ['-dbpassword', 'foo', '--user', 'bar', '-i']
+        def options = cli.parse(args)
+        assert options.user == 'bar'
+        assert options.dbusername == 'bar'
+        assert options.dbpassword == 'foo'
+        assert options.i
+    }
 }
