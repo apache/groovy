@@ -27,7 +27,8 @@ allManifest = manifest {
             "Bundle-RequiredExecutionEnvironment": 'J2SE-1.5',
             "Eclipse-BuddyPolicy": 'dependent',
             "Eclipse-LazyStart": 'true',
-            "DynamicImport-Package": '*')
+            "DynamicImport-Package": '*',
+            "Main-class": 'groovy.ui.GroovyMain')
 }
 
 licenseSpec = copySpec {

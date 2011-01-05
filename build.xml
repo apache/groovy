@@ -464,6 +464,7 @@ $Date$
                 <attribute name="Eclipse-BuddyPolicy" value="dependent"/>
                 <attribute name="Eclipse-LazyStart" value="true"/>
                 <attribute name="DynamicImport-Package" value="*"/>
+            	<attribute name="Main-class" value="groovy.ui.GroovyMain"/>
             </manifest>
         </sequential>
     </macrodef>
