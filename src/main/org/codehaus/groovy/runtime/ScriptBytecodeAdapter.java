@@ -779,9 +779,16 @@ public class ScriptBytecodeAdapter {
     }
     
     /**
-     * @return true if Integer has its default MetaClass
+     * @return true if integer has its default MetaClass
      */
     public static boolean isOrigInt(){
        return DefaultMetaClassInfo.isOrigInt(); 
+    }
+    
+    /**
+     * @return true if integer array has its default MetaClass
+     */
+    public static boolean isOrigIntArray(){
+       return DefaultMetaClassInfo.isOrigIntArray(); 
     }
 }

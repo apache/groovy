@@ -23,13 +23,15 @@ package org.codehaus.groovy.runtime.metaclass;
  *
  */
 public class DefaultMetaClassInfo {
-    // if a custom meta class creation handle is set
-    private static boolean withoutCustomHandle = true;
+    //---------------------------------------------
+    //                  int
+    //---------------------------------------------
+    
     // if original Integer meta class
     private static boolean origInt = true;
     // if origInt and withoutCustomHandle
     private static boolean origIntWCH = true;
-
+    
     /**
      * @return  true if no meta class creation handle is set and if
      *          the original integer meta class is used.
@@ -39,13 +41,46 @@ public class DefaultMetaClassInfo {
     }
     
     /**
-     * sets if the original meta class is used
+     * sets if the original int meta class is used
      */
     public static void setOrigInt(boolean v) {
         origInt = v;
         origIntWCH = withoutCustomHandle && origInt;
     }
+
+    //---------------------------------------------
+    //                  int[]
+    //---------------------------------------------
+
+    // if original Integer[] meta class
+    private static boolean origIntArray = true;
+    // if origInt and withoutCustomHandle
+    private static boolean origIntArrayWCH = true;
+
+    /**
+     * @return  true if no meta class creation handle is set and if
+     *          the original integer array meta class is used.
+     */
+    public static boolean isOrigIntArray() {
+        return origIntArrayWCH;
+    }
     
+    /**
+     * sets if the original int array meta class is used
+     */
+    public static void setOrigIntArray(boolean v) {
+        origIntArray = v;
+        origIntArrayWCH = withoutCustomHandle && origIntArray;
+    }
+    
+    
+    //---------------------------------------------
+    //     custom meta class creation handle
+    //---------------------------------------------
+
+    // if a custom meta class creation handle is set
+    private static boolean withoutCustomHandle = true;
+
     /**
      * sets if the system uses a custom meta class creation handle
      */

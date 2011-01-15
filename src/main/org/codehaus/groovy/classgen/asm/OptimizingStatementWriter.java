@@ -433,8 +433,10 @@ public class OptimizingStatementWriter extends StatementWriter {
             super.visitBinaryExpression(expression);
             boolean leftInt = BinaryIntExpressionHelper.isIntOperand(expression.getLeftExpression(), node);
             boolean rightInt = BinaryIntExpressionHelper.isIntOperand(expression.getRightExpression(), node);
-            if (!optimizeInt) optimizeInt = (leftInt && rightInt);
-            if (optimizeInt) {
+            boolean optimizeThisExpression = leftInt && rightInt;
+            ClassNode type = null;
+            optimizeInt = optimizeInt || optimizeThisExpression;
+            if (optimizeThisExpression) {
                 switch (expression.getOperation().getType()) {
                     case Types.DIVIDE: case Types.POWER: 
                     case Types.MULTIPLY: case Types.PLUS_PLUS: 
@@ -457,12 +459,21 @@ public class OptimizingStatementWriter extends StatementWriter {
                         expression.setType(ClassHelper.int_TYPE);
                         break;
                     default:
-                }   
+                }
+                type = ClassHelper.int_TYPE;
+            } else if (rightInt && expression.getOperation().getType()==Types.LEFT_SQUARE_BRACKET) {
+                // maybe getting from array
+                ClassNode ltype = BinaryIntExpressionHelper.getType(expression.getLeftExpression(), node);
+                if (ltype.getComponentType()==ClassHelper.int_TYPE) {
+                    optimizeInt=true;
+                    optimizeThisExpression = true;
+                    type = ClassHelper.int_TYPE;
+                }
             }
                 
-            if (optimizeInt) {
+            if (optimizeThisExpression) {
                 StatementMeta meta = addMeta(expression);
-                if (leftInt && rightInt) meta.type = ClassHelper.int_TYPE;
+                meta.type = type;
             }
         }
         
@@ -535,6 +546,14 @@ public class OptimizingStatementWriter extends StatementWriter {
         StatementMeta meta = (StatementMeta) exp.getNodeMetaData(StatementMeta.class);
         if (meta==null || meta.type==null) return type;
         return meta.type;
+    }
+
+    protected static boolean shouldOptimize(ASTNode orig) {
+        StatementMeta meta = (StatementMeta) orig.getNodeMetaData(StatementMeta.class);
+        if (meta==null) return false;
+        if (meta.optimize=false) return false;
+        if (meta.optimizeInt==true) return true;
+        return false;
     }
     
 

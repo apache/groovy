@@ -133,20 +133,20 @@ public class BinaryIntExpressionHelper extends BinaryExpressionHelper {
         super(wc);
         controller = wc;
     }
-
+    
     /**
-     * @return true if expression is an evals to an int
+     * return the type of an expression, taking meta data into account 
      */
-    protected static boolean isIntOperand(Expression exp, ClassNode current) {
+    protected static ClassNode getType(Expression exp, ClassNode current) {
         StatementMeta meta = (StatementMeta) exp.getNodeMetaData(StatementMeta.class);
-        if (meta!=null) return meta.type==ClassHelper.int_TYPE;
+        if (meta!=null) return meta.type;
         ClassNode type = null;
         if (exp instanceof VariableExpression) {
             VariableExpression ve = (VariableExpression) exp;
             type = ve.getOriginType();
             if (ve.getAccessedVariable() instanceof FieldNode) {
                 FieldNode fn = (FieldNode) ve.getAccessedVariable();
-                if (!fn.getDeclaringClass().equals(current)) return false;
+                if (!fn.getDeclaringClass().equals(current)) return ClassHelper.OBJECT_TYPE;
             }
         } else if (exp instanceof Variable) {
             Variable v = (Variable) exp;
@@ -154,8 +154,14 @@ public class BinaryIntExpressionHelper extends BinaryExpressionHelper {
         } else {
             type = exp.getType();
         }
-        type = type.redirect();
-        return type == ClassHelper.int_TYPE;
+        return type.redirect();
+    }
+    
+    /**
+     * @return true if expression is an evals to an int
+     */
+    protected static boolean isIntOperand(Expression exp, ClassNode current) {
+        return getType(exp,current) == ClassHelper.int_TYPE;
     }
     
     @Override
@@ -191,8 +197,47 @@ public class BinaryIntExpressionHelper extends BinaryExpressionHelper {
             right.visit(controller.getAcg());
             controller.getOperandStack().doGroovyCast(ClassHelper.int_TYPE);
             writeIntXInt(type, false);
+            return;
+        } else if ( rightIsInt && type==LEFT_SQUARE_BRACKET &&
+                    getType(left,controller.getClassNode()).getComponentType()==ClassHelper.int_TYPE)
+        {
+            left.visit(controller.getAcg());
+            controller.getOperandStack().doGroovyCast(getType(left,controller.getClassNode()));
+            right.visit(controller.getAcg());
+            controller.getOperandStack().doGroovyCast(ClassHelper.int_TYPE);
+            MethodVisitor mv = controller.getMethodVisitor();
+            mv.visitInsn(IALOAD);
+            controller.getOperandStack().replace(ClassHelper.int_TYPE,2);
         } else {
             super.evaluateBinaryExpression(message, binExp);
+        }
+    }
+    
+    @Override
+    protected void assignToArray(Expression orig, Expression receiver, Expression index, Expression rhsValueLoader) {
+        if (OptimizingStatementWriter.shouldOptimize(orig)) {
+            OperandStack operandStack = controller.getOperandStack();
+            
+            // load the array
+            receiver.visit(controller.getAcg());
+            //operandStack.doGroovyCast(ClassHelper.int_TYPE.makeArray());
+            
+            // load index
+            index.visit(controller.getAcg());
+            operandStack.doGroovyCast(ClassHelper.int_TYPE);
+            
+            // load rhs
+            rhsValueLoader.visit(controller.getAcg());
+            operandStack.doGroovyCast(ClassHelper.int_TYPE);
+            
+            // store value in array
+            controller.getMethodVisitor().visitInsn(IASTORE);
+            
+            // load return value && correct operand stack stack
+            operandStack.remove(3);
+            rhsValueLoader.visit(controller.getAcg());
+        } else {        
+            super.assignToArray(orig, receiver, index, rhsValueLoader);
         }
     }
     

@@ -241,7 +241,7 @@ public class BinaryExpressionHelper {
         }
     }
     
-    private void assignArray(Expression receiver, Expression index, Expression rhsValueLoader) {
+    protected void assignToArray(Expression parrent, Expression receiver, Expression index, Expression rhsValueLoader) {
         // let's replace this assignment to a subscript operator with a
         // method call
         // e.g. x[5] = 10
@@ -279,7 +279,8 @@ public class BinaryExpressionHelper {
             loadInitValue(rhsType);
         } else {
             rightExpression.visit(acg);
-            rhsType = getCastType(rightExpression);
+            //rhsType = getCastType(rightExpression);
+            rhsType = controller.getOperandStack().getTopOperand();
         }
         int rhsValueId = compileStack.defineTemporaryVariable("$rhs", rhsType, true);
         //TODO: if rhs is VariableSlotLoader already, then skip crating a new one
@@ -289,7 +290,7 @@ public class BinaryExpressionHelper {
         if (leftExpression instanceof BinaryExpression) {
             BinaryExpression leftBinExpr = (BinaryExpression) leftExpression;
             if (leftBinExpr.getOperation().getType() == Types.LEFT_SQUARE_BRACKET) {
-                assignArray(leftBinExpr.getLeftExpression(), leftBinExpr.getRightExpression(), rhsValueLoader);
+                assignToArray(expression, leftBinExpr.getLeftExpression(), leftBinExpr.getRightExpression(), rhsValueLoader);
             }
             compileStack.removeVar(rhsValueId);
             return;
@@ -713,7 +714,7 @@ public class BinaryExpressionHelper {
             
             // execute the assignment, this will leave the right side 
             // (here the method call result) on the stack
-            assignArray(be.getLeftExpression(), usesSubscript, methodResultLoader);
+            assignToArray(be, be.getLeftExpression(), usesSubscript, methodResultLoader);
 
             compileStack.removeVar(resultIdx);
         } 
