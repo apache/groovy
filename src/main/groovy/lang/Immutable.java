@@ -101,7 +101,7 @@ import java.lang.annotation.Target;
  * As outlined above, {@code Collection}s and {@code Map}s are wrapped by immutable wrapper classes (but not deeply cloned!).
  * </li>
  * <li>
- * Currently {@code BigInteger} and {#code BigDecimal} are deemed immutable but see:
+ * Currently {@code BigInteger} and {@code BigDecimal} are deemed immutable but see:
  * http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6348370
  * </li>
  * <li>
