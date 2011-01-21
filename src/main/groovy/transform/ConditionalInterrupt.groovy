@@ -113,6 +113,7 @@ import org.codehaus.groovy.transform.GroovyASTTransformationClass
  *
  * @since 1.8.0
  */
+@java.lang.annotation.Documented
 @Retention(RetentionPolicy.SOURCE)
 @Target([ ElementType.METHOD, ElementType.TYPE])
 @GroovyASTTransformationClass(["org.codehaus.groovy.transform.ConditionalInterruptibleASTTransformation"])

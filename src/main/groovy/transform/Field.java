@@ -44,6 +44,7 @@ import java.lang.annotation.Target;
  * @author Paul King
  * @since 1.8.0
  */
+@java.lang.annotation.Documented
 @Retention(RetentionPolicy.SOURCE)
 @Target({ElementType.LOCAL_VARIABLE})
 @GroovyASTTransformationClass("org.codehaus.groovy.transform.FieldASTTransformation")

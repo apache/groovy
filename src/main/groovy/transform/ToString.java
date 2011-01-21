@@ -80,6 +80,7 @@ import java.lang.annotation.Target;
  * @author Paul King
  * @since 1.8.0
  */
+@java.lang.annotation.Documented
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE})
 @GroovyASTTransformationClass("org.codehaus.groovy.transform.ToStringASTTransformation")

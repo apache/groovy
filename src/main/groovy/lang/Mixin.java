@@ -27,6 +27,7 @@ import java.lang.annotation.Target;
  *
  * @author Alex Tkachman
  */
+@java.lang.annotation.Documented
 @Retention(RetentionPolicy.SOURCE)
 @Target(ElementType.TYPE)
 @GroovyASTTransformationClass("org.codehaus.groovy.ast.MixinASTTransformation")

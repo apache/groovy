@@ -104,6 +104,7 @@ import java.lang.annotation.Target;
  *
  * @author Danno Ferrin (shemnon)
  */
+@java.lang.annotation.Documented
 @Retention(RetentionPolicy.SOURCE)
 @Target({ElementType.FIELD, ElementType.TYPE})
 @GroovyASTTransformationClass("groovy.beans.VetoableASTTransformation")

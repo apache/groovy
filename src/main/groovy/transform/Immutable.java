@@ -115,6 +115,7 @@ import java.lang.annotation.Target;
  * @author Paul King
  * @since 1.7
  */
+@java.lang.annotation.Documented
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE})
 @GroovyASTTransformationClass("org.codehaus.groovy.transform.ImmutableASTTransformation")

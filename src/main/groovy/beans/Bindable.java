@@ -106,6 +106,7 @@ import java.lang.annotation.Target;
  * @see BindableASTTransformation
  * @author Danno Ferrin (shemnon)
  */
+@java.lang.annotation.Documented
 @Retention(RetentionPolicy.SOURCE)
 @Target({ElementType.FIELD, ElementType.TYPE})
 @GroovyASTTransformationClass("groovy.beans.BindableASTTransformation")

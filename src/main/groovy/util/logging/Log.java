@@ -56,6 +56,7 @@ import java.lang.annotation.Target;
  * @author Alberto Vilches Raton
  * @since 1.8.0
  */
+@java.lang.annotation.Documented
 @Retention(RetentionPolicy.SOURCE)
 @Target({ElementType.TYPE})
 @GroovyASTTransformationClass("org.codehaus.groovy.transform.LogASTTransformation")

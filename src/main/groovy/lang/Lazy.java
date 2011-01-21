@@ -145,6 +145,7 @@ import java.lang.annotation.Target;
  * @author Alex Tkachman
  * @author Paul King
  */
+@java.lang.annotation.Documented
 @Retention(RetentionPolicy.SOURCE)
 @Target({ElementType.FIELD})
 @GroovyASTTransformationClass("org.codehaus.groovy.transform.LazyASTTransformation")

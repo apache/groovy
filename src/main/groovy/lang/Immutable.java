@@ -117,6 +117,7 @@ import java.lang.annotation.Target;
  * @author Paul King
  * @deprecated use groovy.transform.Immutable
  */
+@java.lang.annotation.Documented
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE})
 @GroovyASTTransformationClass("org.codehaus.groovy.transform.ImmutableASTTransformation")

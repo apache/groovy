@@ -93,6 +93,7 @@ import java.lang.annotation.Target;
  *
  * @author Paul King
  */
+@java.lang.annotation.Documented
 @Retention(RetentionPolicy.SOURCE)
 @Target({ElementType.CONSTRUCTOR, ElementType.METHOD, ElementType.TYPE, ElementType.FIELD})
 @GroovyASTTransformationClass("org.codehaus.groovy.transform.NewifyASTTransformation")

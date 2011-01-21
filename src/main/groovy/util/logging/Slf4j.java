@@ -49,6 +49,7 @@ import org.objectweb.asm.Opcodes;
  * @author Alberto Mijares
  * @since 1.8.0
  */
+@java.lang.annotation.Documented
 @Retention(RetentionPolicy.SOURCE)
 @Target({ElementType.TYPE})
 @GroovyASTTransformationClass("org.codehaus.groovy.transform.LogASTTransformation")

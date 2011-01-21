@@ -94,6 +94,7 @@ import org.codehaus.groovy.transform.GroovyASTTransformationClass
  * @author Alexander Klein
  * @author Hamlet D'Arcy
  */
+@java.lang.annotation.Documented
 @Retention(RetentionPolicy.SOURCE)
 @Target(ElementType.FIELD)
 @GroovyASTTransformationClass('groovy.beans.ListenerListASTTransformation')
