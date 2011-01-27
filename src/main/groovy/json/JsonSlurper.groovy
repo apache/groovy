@@ -16,6 +16,7 @@
 package groovy.json
 
 import static JsonTokenType.*
+import groovy.io.LineColumnReader
 
 /**
  * JSON slurper which parses text or reader content into a data structure of lists and maps.

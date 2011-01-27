@@ -1,4 +1,4 @@
-package groovy.json
+package groovy.io
 
 import java.nio.CharBuffer
 
@@ -7,7 +7,7 @@ import java.nio.CharBuffer
  */
 class LineColumnReaderTest extends GroovyTestCase {
 
-    def reader = new LineColumnReader(new FileReader(new File('src/test/groovy/json/sample-text-file.txt')))
+    def reader = new LineColumnReader(new FileReader(new File('src/test/groovy/io/sample-text-file.txt')))
 
     void testReadLine() {
         reader.withReader { LineColumnReader r ->

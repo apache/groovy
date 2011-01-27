@@ -17,6 +17,7 @@ package groovy.json
 
 import static JsonTokenType.*
 import static Matching.*
+import groovy.io.LineColumnReader
 
 /**
  * The lexer reads JSON tokens in a streaming fashion from the underlying reader.
