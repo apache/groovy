@@ -179,15 +179,14 @@ class JsonBuilder implements Writable {
      * @return a map with a single key
      */
     def invokeMethod(String name, Object args) {
-        if (!args || args.size() > 1 || !(args[0] instanceof Closure || args[0] instanceof Map)) {
+        if (args?.size() == 1 && args[0] instanceof Closure) {
+            this.content = [(name): JsonDelegate.cloneDelegateAndGetContent(args[0])]
+        } else if (args?.size() == 1 && args[0] instanceof Map) {
+            this.content = [(name): args[0]]
+        } else {
             throw new JsonException("Expected a map or a closure parameter as argument.")
         }
 
-        if (args[0] instanceof Closure) {
-            this.content = [(name): JsonDelegate.cloneDelegateAndGetContent(args[0])]
-        } else {
-            this.content = [(name): args[0]]
-        }
         return content
     }
 
