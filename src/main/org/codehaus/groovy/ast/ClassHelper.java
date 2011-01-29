@@ -48,7 +48,7 @@ public class ClassHelper {
         Character.class, Byte.class, Short.class, Integer.class, Long.class,
         Double.class, Float.class, BigDecimal.class, BigInteger.class, Void.class,
         Reference.class, Class.class, MetaClass.class, Iterator.class,    
-        GeneratedClosure.class, 
+        GeneratedClosure.class, GroovyObjectSupport.class
     };
 
     private static final String[] primitiveClassNames = new String[] {
@@ -60,7 +60,7 @@ public class ClassHelper {
         DYNAMIC_TYPE = makeCached(Object.class),  OBJECT_TYPE = DYNAMIC_TYPE,
         VOID_TYPE = makeCached(Void.TYPE),        CLOSURE_TYPE = makeCached(Closure.class),
         GSTRING_TYPE = makeCached(GString.class), LIST_TYPE = makeWithoutCaching(List.class),
-        MAP_TYPE = makeWithoutCaching(Map.class),         RANGE_TYPE = makeCached(Range.class),
+        MAP_TYPE = makeWithoutCaching(Map.class), RANGE_TYPE = makeCached(Range.class),
         PATTERN_TYPE = makeCached(Pattern.class), STRING_TYPE = makeCached(String.class),
         SCRIPT_TYPE = makeCached(Script.class),   REFERENCE_TYPE = makeWithoutCaching(Reference.class),
         
@@ -80,6 +80,7 @@ public class ClassHelper {
         // uncached constants.
         CLASS_Type = makeWithoutCaching(Class.class), COMPARABLE_TYPE = makeWithoutCaching(Comparable.class),        
         GENERATED_CLOSURE_Type = makeWithoutCaching(GeneratedClosure.class),
+        GROOVY_OBJECT_SUPPORT_TYPE = makeWithoutCaching(GroovyObjectSupport.class),
         
         Enum_Type = new ClassNode("java.lang.Enum",0,OBJECT_TYPE),
         Annotation_TYPE = new ClassNode("java.lang.annotation.Annotation",0,OBJECT_TYPE),
@@ -102,7 +103,8 @@ public class ClassHelper {
         Byte_TYPE, Short_TYPE, Integer_TYPE, Long_TYPE,
         Double_TYPE, Float_TYPE, BigDecimal_TYPE, BigInteger_TYPE, 
         void_WRAPPER_TYPE, REFERENCE_TYPE, CLASS_Type, METACLASS_TYPE,
-        Iterator_TYPE, GENERATED_CLOSURE_Type, Enum_Type, Annotation_TYPE
+        Iterator_TYPE, GENERATED_CLOSURE_Type, GROOVY_OBJECT_SUPPORT_TYPE, 
+        Enum_Type, Annotation_TYPE
     };
 
     
