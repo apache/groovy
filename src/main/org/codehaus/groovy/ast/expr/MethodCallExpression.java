@@ -124,7 +124,12 @@ public class MethodCallExpression extends Expression {
     }
 
     public String getText() {
-        return objectExpression.getText() + "." + method.getText() + arguments.getText();
+        String object = objectExpression.getText();
+        String meth = method.getText();
+        String args = arguments.getText();
+        String spread = spreadSafe ? "*" : "";
+        String dereference = safe ? "?" : "";
+        return object + spread + dereference + "." + meth + args;
     }
 
     /**
