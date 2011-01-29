@@ -94,8 +94,9 @@ public class InvocationWriter {
             MethodCallerMultiAdapter adapter,
             boolean safe, boolean spreadSafe, boolean implicitThis
     ) { 
-        
-        if (adapter==invokeMethodOnCurrent && controller.optimizeForInt && controller.isFastPath()) {
+        boolean fittingAdapter =    adapter == invokeMethodOnCurrent ||
+                                    adapter == invokeStaticMethod;
+        if (fittingAdapter && controller.optimizeForInt && controller.isFastPath()) {
             String methodName = getMethodName(message);
             if (methodName != null) {
                 List<Parameter> plist = new ArrayList(16);
@@ -126,12 +127,11 @@ public class InvocationWriter {
                     }
                     
                     if (opcode!=INVOKESTATIC) mv.visitIntInsn(ALOAD,0);
-                    for (Expression arg : args.getExpressions()) {
-                        arg.visit(controller.getAcg());
-                        ClassNode type = arg.getType();
-                        if (!ClassHelper.isPrimitiveType(type)) {
-                            BytecodeHelper.doCast(mv, type);
-                        }
+                    Parameter[] para = mn.getParameters();
+                    List<Expression> argumentList = args.getExpressions();
+                    for (int i=0; i<argumentList.size(); i++) {
+                        argumentList.get(i).visit(controller.getAcg());
+                        controller.getOperandStack().doGroovyCast(para[i].getType());
                     }
                     
                     String owner = BytecodeHelper.getClassInternalName(mn.getDeclaringClass());
@@ -303,7 +303,7 @@ public class InvocationWriter {
     }
 
     public void writeInvokeStaticMethod(StaticMethodCallExpression call) {
-        makeCall(null,
+        makeCall(call,
                 new ClassExpression(call.getOwnerType()),
                 new ConstantExpression(call.getMethod()),
                 call.getArguments(),

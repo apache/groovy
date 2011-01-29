@@ -18,7 +18,6 @@ package org.codehaus.groovy.classgen.asm;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.Variable;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
@@ -369,25 +368,6 @@ public class BinaryExpressionHelper {
         operandStack.replace(resType,2);
     }
     
-    private ClassNode getType(Expression exp) {
-        Variable v = null;
-        if (exp instanceof VariableExpression) {
-            VariableExpression ve = (VariableExpression) exp;
-            v = ve.getAccessedVariable();
-        } else if (exp instanceof FieldExpression) {
-            FieldExpression fe = (FieldExpression) exp;
-            v = fe.getField();
-        }
-        if (v!=null) {
-            if (!v.isClosureSharedVariable()) {
-                return v.getOriginType();
-            } else {
-                return ClassHelper.OBJECT_TYPE;
-            }
-        }
-        return exp.getType();
-    }
-    
     private void evaluateCompareTo(BinaryExpression expression) {
         Expression leftExpression = expression.getLeftExpression();
         AsmClassGenerator acg = controller.getAcg();
@@ -661,7 +641,8 @@ public class BinaryExpressionHelper {
         // at this point the receiver will be already on the stack.
         // in a[1]++ the method will be "++" aka "next" and the receiver a[1]
         
-        Expression callSiteReceiverSwap = new BytecodeExpression(getType(expression)) {
+        ClassNode BEType = BinaryIntExpressionHelper.getType(expression,controller.getClassNode());
+        Expression callSiteReceiverSwap = new BytecodeExpression(BEType) {
             @Override
             public void visit(MethodVisitor mv) {
                 // CallSite is normally not showing up on the 

@@ -25,6 +25,7 @@ import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.BitwiseNegationExpression;
+import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.DeclarationExpression;
@@ -32,9 +33,11 @@ import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.PostfixExpression;
 import org.codehaus.groovy.ast.expr.PrefixExpression;
+import org.codehaus.groovy.ast.expr.StaticMethodCallExpression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.expr.UnaryMinusExpression;
 import org.codehaus.groovy.ast.expr.UnaryPlusExpression;
+import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.DoWhileStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
@@ -504,14 +507,32 @@ public class OptimizingStatementWriter extends StatementWriter {
         }
         
         @Override
+        public void visitStaticMethodCallExpression(StaticMethodCallExpression expression) {
+            if (expression.getNodeMetaData(StatementMeta.class)!=null) return;
+            super.visitStaticMethodCallExpression(expression);
+
+            setMethodTarget(expression,expression.getMethod(), expression.getArguments());
+        }
+        
+        @Override
         public void visitMethodCallExpression(MethodCallExpression expression) {
             if (expression.getNodeMetaData(StatementMeta.class)!=null) return;
             super.visitMethodCallExpression(expression);
-            if (!AsmClassGenerator.isThisExpression(expression.getObjectExpression())) return;
-            String name = expression.getMethodAsString();
+            
+            Expression object = expression.getObjectExpression();
+            boolean setTarget = AsmClassGenerator.isThisExpression(object);
+            if (!setTarget) {
+                if (!(object instanceof ClassExpression)) return;
+                setTarget = object.equals(node);
+            }
+            
+            if (!setTarget) return;
+            setMethodTarget(expression, expression.getMethodAsString(), expression.getArguments());
+        }
+        
+        private void setMethodTarget(Expression expression, String name, Expression callArgs) {
             if (name==null) return;
             // find method call target
-            Expression callArgs = expression.getArguments();
             Parameter[] paraTypes = null;
             if (callArgs instanceof ArgumentListExpression) {
                 ArgumentListExpression args = (ArgumentListExpression) callArgs;
@@ -519,34 +540,30 @@ public class OptimizingStatementWriter extends StatementWriter {
                 paraTypes = new Parameter[size];
                 int i=0;
                 for (Expression exp: args.getExpressions()) {
-                    ClassNode type = getType(exp);
+                    ClassNode type = BinaryIntExpressionHelper.getType(exp,node);
                     paraTypes[i] = new Parameter(type,"");
                     i++;
                 }
             } else {
-                ClassNode type = getType(callArgs);
+                ClassNode type = BinaryIntExpressionHelper.getType(callArgs,node);
                 paraTypes = new Parameter[]{new Parameter(type,"")};
             }
             
             MethodNode target = node.getMethod(name, paraTypes);
             StatementMeta meta = addMeta(expression);
             meta.target = target;
-            if (target!=null) meta.type = target.getReturnType().redirect();
-            if (!optimizeInt) meta.optimizeInt =false;
+            if (target!=null) {
+                meta.type = target.getReturnType().redirect();
+                optimizeInt = true;
+            }
+            //if (!optimizeInt) meta.optimizeInt = false;
         }
         
         @Override
         public void visitClosureExpression(ClosureExpression expression) {
             return;
         }
-    }
-
-    private static ClassNode getType(Expression exp) {
-        ClassNode type = exp.getType();
-        StatementMeta meta = (StatementMeta) exp.getNodeMetaData(StatementMeta.class);
-        if (meta==null || meta.type==null) return type;
-        return meta.type;
-    }
+    }    
 
     protected static boolean shouldOptimize(ASTNode orig) {
         StatementMeta meta = (StatementMeta) orig.getNodeMetaData(StatementMeta.class);
