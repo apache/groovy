@@ -621,6 +621,10 @@ public class CompileStack implements Opcodes {
                 if (ClassHelper.isPrimitiveType(type)) {
                     if (type==ClassHelper.long_TYPE) {
                         mv.visitInsn(LCONST_0);
+                    } else if (type==ClassHelper.double_TYPE) {
+                        mv.visitInsn(DCONST_0);
+                    } else if (type==ClassHelper.float_TYPE) {
+                        mv.visitInsn(FCONST_0);
                     } else {
                         mv.visitLdcInsn(0);
                     }
