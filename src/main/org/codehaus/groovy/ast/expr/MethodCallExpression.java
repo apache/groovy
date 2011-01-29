@@ -19,6 +19,7 @@ import groovy.lang.MetaMethod;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.GenericsType;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
+import org.codehaus.groovy.ast.MethodNode;
 
 /**
  * A method call on an object or class
@@ -34,10 +35,12 @@ public class MethodCallExpression extends Expression {
     private boolean spreadSafe = false;
     private boolean safe = false;
     private boolean implicitThis;
-    
+
     // type spec for generics
     private GenericsType[] genericsTypes = null;
     private boolean usesGenerics = false;
+
+    private MethodNode target;
     
     public static final Expression NO_ARGUMENTS = new TupleExpression();
 
@@ -121,7 +124,12 @@ public class MethodCallExpression extends Expression {
     }
 
     public String getText() {
-        return objectExpression.getText() + "." + method.getText() + arguments.getText();
+        String object = objectExpression.getText();
+        String meth = method.getText();
+        String args = arguments.getText();
+        String spread = spreadSafe ? "*" : "";
+        String dereference = safe ? "?" : "";
+        return object + spread + dereference + "." + meth + args;
     }
 
     /**
@@ -187,5 +195,14 @@ public class MethodCallExpression extends Expression {
 
     public boolean isUsingGenerics() {
         return usesGenerics;
+	}
+
+    public void setMethodTarget(MethodNode mn) {
+        this.target = mn;
+        setType(target.getReturnType());
+    }
+    
+    public MethodNode getMethodTarget() {
+        return target;
     }
 }
