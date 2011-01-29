@@ -37,7 +37,6 @@ import org.codehaus.groovy.ast.expr.StaticMethodCallExpression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.expr.UnaryMinusExpression;
 import org.codehaus.groovy.ast.expr.UnaryPlusExpression;
-import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.DoWhileStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
@@ -541,6 +540,7 @@ public class OptimizingStatementWriter extends StatementWriter {
                 int i=0;
                 for (Expression exp: args.getExpressions()) {
                     ClassNode type = BinaryIntExpressionHelper.getType(exp,node);
+                    if (!validTypeForCall(type)) return;
                     paraTypes[i] = new Parameter(type,"");
                     i++;
                 }
@@ -550,15 +550,21 @@ public class OptimizingStatementWriter extends StatementWriter {
             }
             
             MethodNode target = node.getMethod(name, paraTypes);
+            if (target==null) return;
+            if (!target.getDeclaringClass().equals(node)) return;
             StatementMeta meta = addMeta(expression);
             meta.target = target;
-            if (target!=null) {
-                meta.type = target.getReturnType().redirect();
-                optimizeInt = true;
-            }
-            //if (!optimizeInt) meta.optimizeInt = false;
+            meta.type = target.getReturnType().redirect();
+            optimizeInt = true;
         }
         
+        private static boolean validTypeForCall(ClassNode type) {
+            // do call only for final classes and primitive types
+            if (ClassHelper.isPrimitiveType(type)) return true;
+            if ((type.getModifiers() & ACC_FINAL)>0) return true;
+            return false;
+        }
+
         @Override
         public void visitClosureExpression(ClosureExpression expression) {
             return;
