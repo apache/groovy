@@ -467,7 +467,7 @@ public class OptimizingStatementWriter extends StatementWriter {
             } else if (rightInt && expression.getOperation().getType()==Types.LEFT_SQUARE_BRACKET) {
                 // maybe getting from array
                 ClassNode ltype = BinaryIntExpressionHelper.getType(expression.getLeftExpression(), node);
-                if (ltype!=null && ltype.getComponentType()==ClassHelper.int_TYPE) {
+                if (ltype.getComponentType()==ClassHelper.int_TYPE) {
                     optimizeInt=true;
                     optimizeThisExpression = true;
                     type = ClassHelper.int_TYPE;

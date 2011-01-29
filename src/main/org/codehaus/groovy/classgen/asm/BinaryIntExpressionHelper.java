@@ -144,8 +144,9 @@ public class BinaryIntExpressionHelper extends BinaryExpressionHelper {
      */
     protected static ClassNode getType(Expression exp, ClassNode current) {
         StatementMeta meta = (StatementMeta) exp.getNodeMetaData(StatementMeta.class);
-        if (meta!=null) return meta.type;
         ClassNode type = null;
+        if (meta!=null) type = meta.type;
+        if (type!=null) return type;
         if (exp instanceof VariableExpression) {
             VariableExpression ve = (VariableExpression) exp;
             type = ve.getOriginType();
