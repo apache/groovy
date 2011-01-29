@@ -351,16 +351,6 @@ public class BinaryExpressionHelper {
         controller.getOperandStack().push(type);
     }
 
-    private ClassNode getCastType(Expression exp) {
-        if (exp instanceof ClassExpression) {
-            return ClassHelper.CLASS_Type;
-        } else if (exp instanceof ConstructorCallExpression) {
-            return ClassHelper.OBJECT_TYPE;
-        } else {
-            return exp.getType();
-        }
-    }
-
     protected void evaluateCompareExpression(MethodCaller compareMethod, BinaryExpression expression) {
         Expression leftExp = expression.getLeftExpression();
         Expression rightExp = expression.getRightExpression();
