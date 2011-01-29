@@ -29,8 +29,8 @@ class JsonTokenValueTest extends GroovyTestCase {
 
         assert new JsonToken(type: NULL, text: 'null').value == null
 
-        assert new JsonToken(type: BOOL_TRUE, text: 'true').value
-        assert !new JsonToken(type: BOOL_FALSE, text: 'false').value
+        assert new JsonToken(type: TRUE, text: 'true').value
+        assert !new JsonToken(type: FALSE, text: 'false').value
 
         assert new JsonToken(type: NUMBER, text: '0').value == 0
         assert new JsonToken(type: NUMBER, text: '1000').value == 1000

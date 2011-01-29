@@ -99,7 +99,7 @@ class JsonSlurper {
                 content << parseObject(lexer)
             } else if (currentToken.type == OPEN_BRACKET) {
                 content << parseArray(lexer)
-            } else if (currentToken.type in [NUMBER, STRING, BOOL_TRUE, BOOL_FALSE, NULL]) {
+            } else if (currentToken.type in [NUMBER, STRING, TRUE, FALSE, NULL]) {
                 content << currentToken.value
             } else if (currentToken.type == CLOSE_BRACKET) {
                 return content
@@ -184,7 +184,7 @@ class JsonSlurper {
                 content[mapKey] = parseObject(lexer)
             } else if (currentToken.type == OPEN_BRACKET) {
                 content[mapKey] = parseArray(lexer)
-            } else if (currentToken.type in [NUMBER, STRING, BOOL_TRUE, BOOL_FALSE, NULL]) {
+            } else if (currentToken.type in [NUMBER, STRING, TRUE, FALSE, NULL]) {
                 content[mapKey] = currentToken.value
             } else {
                 throw new JsonException(

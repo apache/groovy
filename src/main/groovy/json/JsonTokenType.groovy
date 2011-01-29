@@ -32,8 +32,8 @@ enum JsonTokenType {
     COLON           ( "a colon ':'",                        ':'         ),
     COMMA           ( "a comma ','",                        ','         ),
     NULL            ( "the constant 'null'",                'null'      ),
-    BOOL_TRUE       ( "the constant 'true'",                'true'      ),
-    BOOL_FALSE      ( "the constant 'false'",               'false'     ),
+    TRUE            ( "the constant 'true'",                'true'      ),
+    FALSE           ( "the constant 'false'",               'false'     ),
     NUMBER          ( "a number",                           ~/-?\d+(\.\d+)?((e|E)(\+|-)?\d+)?/  ),
     STRING          ( "a string",                           ~/"([^"\\]|\\(["\\\/bfnrt]|u[0-9a-fA-F]{4}))*"/ )
 

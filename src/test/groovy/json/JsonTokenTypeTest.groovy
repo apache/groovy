@@ -24,24 +24,24 @@ import static Matching.*
 class JsonTokenTypeTest extends GroovyTestCase {
 
     void testMatchingConstants() {
-        assert BOOL_TRUE.matching('xyz')        == NO
-        assert BOOL_TRUE.matching('t')          == POSSIBLE
-        assert BOOL_TRUE.matching('tr')         == POSSIBLE
-        assert BOOL_TRUE.matching('tru')        == POSSIBLE
-        assert BOOL_TRUE.matching('true')       == YES
+        assert TRUE.matching('xyz')        == NO
+        assert TRUE.matching('t')          == POSSIBLE
+        assert TRUE.matching('tr')         == POSSIBLE
+        assert TRUE.matching('tru')        == POSSIBLE
+        assert TRUE.matching('true')       == YES
 
-        assert BOOL_FALSE.matching('xyz')       == NO
-        assert BOOL_FALSE.matching('f')         == POSSIBLE
-        assert BOOL_FALSE.matching('fa')        == POSSIBLE
-        assert BOOL_FALSE.matching('fal')       == POSSIBLE
-        assert BOOL_FALSE.matching('fals')      == POSSIBLE
-        assert BOOL_FALSE.matching('false')     == YES
+        assert FALSE.matching('xyz')       == NO
+        assert FALSE.matching('f')         == POSSIBLE
+        assert FALSE.matching('fa')        == POSSIBLE
+        assert FALSE.matching('fal')       == POSSIBLE
+        assert FALSE.matching('fals')      == POSSIBLE
+        assert FALSE.matching('false')     == YES
 
-        assert NULL.matching('xyz')             == NO
-        assert NULL.matching('n')               == POSSIBLE
-        assert NULL.matching('nu')              == POSSIBLE
-        assert NULL.matching('nul')             == POSSIBLE
-        assert NULL.matching('null')            == YES
+        assert NULL.matching('xyz')        == NO
+        assert NULL.matching('n')          == POSSIBLE
+        assert NULL.matching('nu')         == POSSIBLE
+        assert NULL.matching('nul')        == POSSIBLE
+        assert NULL.matching('null')       == YES
     }
 
     void testMatchingPunctuation() {

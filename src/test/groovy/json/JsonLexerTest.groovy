@@ -43,7 +43,7 @@ class JsonLexerTest extends GroovyTestCase {
             def lexer = new JsonLexer(new StringReader(it))
             lexer.nextToken().type
         } == [
-                BOOL_TRUE, BOOL_FALSE, NULL, NUMBER,
+                TRUE, FALSE, NULL, NUMBER,
                 OPEN_BRACKET, CLOSE_BRACKET, OPEN_CURLY, CLOSE_CURLY, COLON, COMMA
         ]
     }
@@ -56,11 +56,11 @@ class JsonLexerTest extends GroovyTestCase {
 
         assert output == [
                 "[ (OPEN_BRACKET) [1:2-1:3]",
-                "true (BOOL_TRUE) [1:4-1:8]",
+                "true (TRUE) [1:4-1:8]",
                 ", (COMMA) [1:8-1:9]",
                 "null (NULL) [1:10-1:14]",
                 ", (COMMA) [1:14-1:15]",
-                "false (BOOL_FALSE) [1:16-1:21]",
+                "false (FALSE) [1:16-1:21]",
                 ", (COMMA) [1:21-1:22]",
                 "{ (OPEN_CURLY) [1:23-1:24]",
                 '"a" (STRING) [1:25-1:28]',

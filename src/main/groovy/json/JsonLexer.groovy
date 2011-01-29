@@ -52,75 +52,133 @@ class JsonLexer implements Iterator<JsonToken> {
      * @return the next token from the stream
      */
     JsonToken nextToken() {
-        skipWhitespace()
+        int firstIntRead = skipWhitespace()
+        if (firstIntRead == -1) return null
 
-        JsonToken token = null
-        StringBuilder tokenContent = new StringBuilder()
-        Collection<JsonTokenType> possibleTokenTypes = JsonTokenType.values()
+        char firstChar = (char)firstIntRead
 
-        int startColumn = reader.column
+        JsonTokenType possibleToken = tokenStartingWith((char)firstIntRead)
+
+        if (possibleToken == null) {
+            throw new JsonException(
+                    "Lexing failed on line: ${reader.line}, column: ${reader.column}, while reading '${firstChar}', " +
+                    "no possible valid JSON value or punctuation could be recognized."
+            )
+        }
+
+        reader.reset()
         int startLine = reader.line
+        int startColumn = reader.column
 
-        for(;;) {
-            reader.mark(1)
-            int read = reader.read()
-            if (read == -1) return token
+        JsonToken token = new JsonToken(
+                startLine:  startLine,      startColumn:    startColumn,
+                endLine:    startLine,      endColumn:      startColumn + 1,
+                type:       possibleToken,  text:           firstChar
+        )
 
-            char c = (char)read
-            tokenContent.append(c)
-            String currentContent = tokenContent.toString()
-
-            // reduce the possible tokens
-            def currentTokenTypes = possibleTokenTypes.findAll { it.matching(currentContent) != NO }
-
-            if (currentTokenTypes.size() == 0) {
-                if (possibleTokenTypes.size() == 1 && possibleTokenTypes[0] == NUMBER) {
-                    reader.reset()
-                    return token
-                } else {
-                    throw new JsonException(
-                            "Lexing failed on line: ${reader.line}, column: ${reader.column}, while reading '${currentContent}', " +
-                            "was trying to match ${possibleTokenTypes.collect { it.label }.join(', ')}"
-                    )
+        if (possibleToken in [OPEN_CURLY, CLOSE_CURLY, OPEN_BRACKET, CLOSE_BRACKET, COLON, COMMA, TRUE, FALSE, NULL]) {
+            return readingConstant(possibleToken, token)
+        } else if (possibleToken in [STRING, NUMBER]) {
+            StringBuilder currentContent = new StringBuilder()
+            for(;;) {
+                reader.mark(1)
+                int read = reader.read()
+                if (read == -1) {
+                    return null
                 }
-            } else if (currentTokenTypes.size() == 1) {
-                def matching = currentTokenTypes[0].matching(currentContent)
-                if (matching == YES) {
-                    token = new JsonToken()
-                    token.startColumn = startColumn
-                    token.startLine = startLine
-                    token.endColumn = reader.column
-                    token.endLine = reader.line
-                    token.type = currentTokenTypes[0]
-                    token.text = currentContent
+                currentContent.append((char)read)
+                def matching = possibleToken.matching(currentContent.toString())
 
-                    // we return the token, unless we're trying to match a number
-                    // as numbers should be matched eagerly, as more input can be part of the number
-                    // (ie. 12.34 is a valid number, but if there's another digit 5 after that,
-                    // then 12.345 is also a valid number, so read as much as possible)
-                    if (currentTokenTypes[0] != NUMBER) {
+                if (matching == NO) {
+                    if (possibleToken == NUMBER) {
+                        reader.reset()
+                        return token
+                    } else {
+                        throw new JsonException(
+                                "Lexing failed on line: ${reader.line}, column: ${reader.column}, while reading '${currentContent}', " +
+                                "was trying to match ${possibleToken.label}"
+                        )
+                    }
+                } else if (matching == POSSIBLE) {
+                    token.endLine = reader.line
+                    token.endColumn = reader.column
+                    token.text = currentContent.toString()
+                }
+
+                if (matching == YES) {
+                    token.endLine = reader.line
+                    token.endColumn = reader.column
+                    token.text = currentContent.toString()
+
+                    if (possibleToken == STRING) {
                         return token
                     }
                 }
             }
-            
-            // reduce the possibilities for the next loop
-            possibleTokenTypes = currentTokenTypes
+        }
+    }
+
+    JsonToken readingConstant(JsonTokenType type, JsonToken token) {
+        int numCharsToRead = type.validator.size()
+        char[] chars = new char[numCharsToRead]
+        reader.read(chars)
+        def stringRead = new String(chars)
+
+        if (stringRead == type.validator) {
+            token.endColumn = token.startColumn + numCharsToRead
+            token.text = stringRead
+            return token
+        } else {
+            throw new JsonException(
+                    "Lexing failed on line: ${reader.line}, column: ${reader.column}, while reading '${stringRead}', " +
+                    "was trying to match ${type.label}"
+            )
+        }
+    }
+
+    JsonTokenType tokenStartingWith(char c) {
+        switch (c) {
+            case '{': return OPEN_CURLY
+            case '}': return CLOSE_CURLY
+            case '[': return OPEN_BRACKET
+            case ']': return CLOSE_BRACKET
+            case ',': return COMMA
+            case ':': return COLON
+
+            case 't': return TRUE
+            case 'f': return FALSE
+            case 'n': return NULL
+
+            case '"': return STRING
+
+            case '-':
+            case '0':
+            case '1':
+            case '2':
+            case '3':
+            case '4':
+            case '5':
+            case '6':
+            case '7':
+            case '8':
+            case '9':
+                return NUMBER
         }
     }
 
     /**
      * Skips all the whitespace characters and moves the cursor to the next non-space character.
      */
-    void skipWhitespace() {
+    int skipWhitespace() {
+        int readChar = 20
         Character c = SPACE
-
         while(c.isWhitespace()) {
             reader.mark(1)
-            c = new Character((char)reader.read())
+            readChar = reader.read()
+            c = new Character((char)readChar)
         }
-
         reader.reset()
+        return readChar
     }
 
     /**

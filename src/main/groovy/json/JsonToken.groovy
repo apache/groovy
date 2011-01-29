@@ -85,9 +85,9 @@ class JsonToken {
                         return v
                     }
                 }
-            case BOOL_TRUE:
+            case TRUE:
                 return true
-            case BOOL_FALSE:
+            case FALSE:
                 return false
             case NULL:
                 return null
