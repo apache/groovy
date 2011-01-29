@@ -46,6 +46,7 @@ import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.ast.stmt.WhileStatement;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
+import org.codehaus.groovy.classgen.Verifier;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 import org.codehaus.groovy.syntax.Types;
@@ -65,6 +66,8 @@ public class OptimizingStatementWriter extends StatementWriter {
         private Label afterPath = new Label();
     }
     
+    public static class ClassNodeSkip{}
+    
     public static class StatementMeta {
         private boolean optimize=false;
         private boolean optimizeInt=false;
@@ -77,6 +80,7 @@ public class OptimizingStatementWriter extends StatementWriter {
     }
 
     private static final MethodCaller isOrigInt = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "isOrigInt");
+    private static final MethodCaller disabledStandardMetaClass = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "disabledStandardMetaClass");
     private boolean fastPathBlocked = false;
     private WriterController controller;
 
@@ -94,12 +98,29 @@ public class OptimizingStatementWriter extends StatementWriter {
         if (canNotDoFastPath(meta)) return null;
         MethodVisitor mv = controller.getMethodVisitor();
         FastPathData fastPathData = new FastPathData();
+        Label slowPath = new Label();
         
         if (meta.optimizeInt) {
             isOrigInt.call(mv);
-            mv.visitJumpInsn(IFNE, fastPathData.pathStart);
+            mv.visitJumpInsn(IFEQ, slowPath);
         } 
+        
+        // meta class check with boolean holder
+        String owner = BytecodeHelper.getClassInternalName(controller.getClassNode());
+        MethodNode mn = controller.getMethodNode();
+        if (mn!=null) {
+            mv.visitFieldInsn(GETSTATIC, owner, Verifier.STATIC_METACLASS_BOOL, "Z");
+            mv.visitJumpInsn(IFNE, slowPath);
+        }
+        
+        //standard metaclass check
+        disabledStandardMetaClass.call(mv);
+        mv.visitJumpInsn(IFNE, slowPath);
+        
         // other guards here
+        
+        mv.visitJumpInsn(GOTO, fastPathData.pathStart);
+        mv.visitLabel(slowPath);
         
         return fastPathData;
     }
@@ -342,7 +363,8 @@ public class OptimizingStatementWriter extends StatementWriter {
     }
     
     public static void setNodeMeta(ClassNode classNode) {
-       new OptVisitor().visitClass(classNode);   
+        if (classNode.getNodeMetaData(ClassNodeSkip.class)!=null) return;
+        new OptVisitor().visitClass(classNode);   
     }
     
     private static StatementMeta addMeta(ASTNode node) {

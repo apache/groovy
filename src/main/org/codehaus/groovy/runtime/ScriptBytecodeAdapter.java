@@ -814,4 +814,8 @@ public class ScriptBytecodeAdapter {
             a[DefaultGroovyMethodsSupport.normaliseIndex(i,a.length)]=v;
         }
     }
+    
+    public static boolean disabledStandardMetaClass() {
+        return DefaultMetaClassInfo.disabledStandardMetaClass();
+    }
 }

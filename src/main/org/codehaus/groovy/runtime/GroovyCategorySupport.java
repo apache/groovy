@@ -17,9 +17,11 @@ package org.codehaus.groovy.runtime;
 
 import groovy.lang.Closure;
 import java.lang.ref.SoftReference;
+
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.CachedMethod;
 import org.codehaus.groovy.reflection.ReflectionCache;
+import org.codehaus.groovy.runtime.metaclass.DefaultMetaClassInfo;
 import org.codehaus.groovy.runtime.metaclass.NewInstanceMetaMethod;
 
 import java.util.*;
@@ -35,7 +37,7 @@ public class GroovyCategorySupport {
 
     private static int categoriesInUse = 0;
     private static AtomicInteger atomicCategoryUsageCounter = new AtomicInteger();
-
+    
     public static class CategoryMethodList extends ArrayList<CategoryMethod> {
         public final int level;
         final CategoryMethodList previous;
@@ -68,6 +70,7 @@ public class GroovyCategorySupport {
         private void newScope () {
             atomicCategoryUsageCounter.incrementAndGet();
             categoriesInUse = atomicCategoryUsageCounter.get();
+            DefaultMetaClassInfo.setCategoryUsed(true);
             level++;
         }
 
@@ -90,6 +93,7 @@ public class GroovyCategorySupport {
             level--;
             atomicCategoryUsageCounter.getAndDecrement();
             categoriesInUse = atomicCategoryUsageCounter.get();
+            if (categoriesInUse==0) DefaultMetaClassInfo.setCategoryUsed(false);
 			if (level == 0) {
                 THREAD_INFO.remove();
             }

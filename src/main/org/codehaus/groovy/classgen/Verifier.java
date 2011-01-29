@@ -18,12 +18,12 @@ package org.codehaus.groovy.classgen;
 import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyObject;
 import groovy.lang.MetaClass;
-import groovy.lang.GroovyObjectSupport;
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.stmt.*;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 import org.codehaus.groovy.classgen.asm.MopWriter;
+import org.codehaus.groovy.classgen.asm.OptimizingStatementWriter.ClassNodeSkip;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.syntax.RuntimeParserException;
 import org.codehaus.groovy.syntax.Token;
@@ -46,6 +46,8 @@ import java.util.*;
  */
 public class Verifier implements GroovyClassVisitor, Opcodes {
 
+    public static final String STATIC_METACLASS_BOOL = "__$stMC";
+    
     public static final String __TIMESTAMP = "__timeStamp";
     public static final String __TIMESTAMP__ = "__timeStamp__239_neverHappen";
     private static final Parameter[] INVOKE_METHOD_PARAMS = new Parameter[]{
@@ -147,8 +149,9 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
 
         boolean knownSpecialCase =
                 node.isDerivedFrom(ClassHelper.GSTRING_TYPE)
-                        || node.isDerivedFrom(ClassHelper.make(GroovyObjectSupport.class));
+                        || node.isDerivedFrom(ClassHelper.GROOVY_OBJECT_SUPPORT_TYPE);
 
+        addFastPathHelperFieldsAndHelperMethod(node, classInternalName, knownSpecialCase);
         if (!knownSpecialCase) addGroovyObjectInterfaceAndMethods(node, classInternalName);
 
         addDefaultConstructor(node);
@@ -161,6 +164,33 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         node.getObjectInitializerStatements().clear();
         addCovariantMethods(node);
         node.visitContents(this);
+    }
+
+    private FieldNode checkFieldDoesNotExist(ClassNode node, String fieldName) {
+        for (ClassNode current = node; current!=null; current=current.getSuperClass()) {
+            FieldNode ret = current.getDeclaredField(fieldName);
+            if (ret == null) continue;
+            if (    Modifier.isPublic(ret.getModifiers()) &&
+                    ret.getType().redirect()==ClassHelper.boolean_TYPE) {
+                return ret;
+            }
+            throw new RuntimeParserException("The class " + node.getName() +
+                    " cannot declare field '"+fieldName+"' as this" + 
+                    " field is needed for internal groovy purposes", ret);
+        }
+        return null;
+    }
+    
+    private void addFastPathHelperFieldsAndHelperMethod(ClassNode node, final String classInternalName, boolean knownSpecialCase) {
+        if (node.getNodeMetaData(ClassNodeSkip.class)!=null) return;
+        FieldNode stMCB = checkFieldDoesNotExist(node,STATIC_METACLASS_BOOL);
+        if (stMCB==null) {
+            stMCB = node.addField(
+                    STATIC_METACLASS_BOOL, 
+                    ACC_PUBLIC | ACC_STATIC | ACC_SYNTHETIC | ACC_TRANSIENT, 
+                    ClassHelper.boolean_TYPE, null);
+            stMCB.setSynthetic(true);
+        }
     }
 
     private void addDefaultConstructor(ClassNode node) {
@@ -243,7 +273,18 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                     new BytecodeSequence(new BytecodeInstruction() {
                         public void visit(MethodVisitor mv) {
                             Label nullLabel = new Label();
-
+                            /**
+                             *  the code is:
+                             *  if (this.metaClass==null) {
+                             *      this.metaClass = this.$getStaticMetaClass
+                             *      return this.metaClass
+                             *  } else {
+                             *      return this.metaClass    
+                             *  }     
+                             *  with the optimization that the result of the 
+                             *  first this.metaClass is duped on the operand
+                             *  stack and reused for the return in the else part
+                             */                            
                             mv.visitVarInsn(ALOAD, 0);
                             mv.visitFieldInsn(GETFIELD, classInternalName, "metaClass", "Lgroovy/lang/MetaClass;");
                             mv.visitInsn(DUP);
@@ -276,9 +317,14 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                 List list = new ArrayList();
                 list.add(new BytecodeInstruction() {
                     public void visit(MethodVisitor mv) {
+                        /**
+                         * the code is (meta class is stored in 1):
+                         * this.metaClass = <1>
+                         */
                         mv.visitVarInsn(ALOAD, 0);
                         mv.visitVarInsn(ALOAD, 1);
-                        mv.visitFieldInsn(PUTFIELD, classInternalName, "metaClass", "Lgroovy/lang/MetaClass;");
+                        mv.visitFieldInsn(PUTFIELD, classInternalName, 
+                                "metaClass", "Lgroovy/lang/MetaClass;");
                         mv.visitInsn(RETURN);
                     }
                 });
@@ -287,10 +333,8 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
 
             addMethod(node, !Modifier.isAbstract(node.getModifiers()),
                     "setMetaClass",
-                    ACC_PUBLIC,
-                    ClassHelper.VOID_TYPE,
-                    SET_METACLASS_PARAMS,
-                    ClassNode.EMPTY_ARRAY,
+                    ACC_PUBLIC, ClassHelper.VOID_TYPE,
+                    SET_METACLASS_PARAMS, ClassNode.EMPTY_ARRAY,
                     setMetaClassCode
             );
         }

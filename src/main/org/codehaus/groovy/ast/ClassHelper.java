@@ -17,6 +17,7 @@
 package org.codehaus.groovy.ast;
 
 import groovy.lang.*;
+
 import org.codehaus.groovy.runtime.GeneratedClosure;
 import org.codehaus.groovy.vmplugin.VMPluginFactory;
 import org.objectweb.asm.Opcodes;

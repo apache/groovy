@@ -29,6 +29,7 @@ import org.codehaus.groovy.runtime.callsite.PojoMetaClassSite;
 import org.codehaus.groovy.runtime.callsite.StaticMetaClassSite;
 import org.codehaus.groovy.runtime.metaclass.ClosureMetaMethod;
 import org.codehaus.groovy.runtime.metaclass.ClosureStaticMetaMethod;
+import org.codehaus.groovy.runtime.metaclass.DefaultMetaClassInfo;
 import org.codehaus.groovy.runtime.metaclass.MixedInMetaClass;
 import org.codehaus.groovy.runtime.metaclass.MixinInstanceMetaMethod;
 import org.codehaus.groovy.runtime.metaclass.OwnedMetaClass;
@@ -446,6 +447,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
      * inheritance will function correctly, but has a higher memory usage on the JVM than normal Groovy
      */
     public static void enableGlobally() {
+        DefaultMetaClassInfo.setWithoutCustomMetaclassCreationHandle(false);
         ExpandoMetaClassCreationHandle.enable();
     }
 
@@ -453,6 +455,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
      * Call to disable the global use of ExpandoMetaClass
      */
     public static void disableGlobally() {
+        DefaultMetaClassInfo.setWithoutCustomMetaclassCreationHandle(true);
         ExpandoMetaClassCreationHandle.disable();
     }
 

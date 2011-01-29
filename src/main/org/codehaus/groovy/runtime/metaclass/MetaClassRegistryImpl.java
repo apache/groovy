@@ -17,6 +17,7 @@ package org.codehaus.groovy.runtime.metaclass;
 
 import groovy.lang.*;
 
+import org.codehaus.groovy.classgen.Verifier;
 import org.codehaus.groovy.reflection.*;
 import org.codehaus.groovy.runtime.*;
 import org.codehaus.groovy.vmplugin.VMPluginFactory;
@@ -25,6 +26,7 @@ import org.codehaus.groovy.util.ManagedLinkedList;
 import org.codehaus.groovy.util.ReferenceBundle;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.*;
 
@@ -111,14 +113,31 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
             public void updateConstantMetaClass(MetaClassRegistryChangeEvent cmcu) {
                 synchronized (metaClassInfo) {
                    metaClassInfo.add(cmcu.getNewMetaClass());
-                   if (cmcu.getClassToUpdate()==Integer.class) {
+                   Class c = cmcu.getClassToUpdate();
+                   if (c==Integer.class) {
                        if (cmcu.getNewMetaClass()==null) {
                            // means removal
                            DefaultMetaClassInfo.setOrigInt(true);
                        } else {
                            DefaultMetaClassInfo.setOrigInt(false);
                        }
+                   } else if (c.getComponentType()==Integer.class) {
+                       if (cmcu.getNewMetaClass()==null) {
+                           // means removal
+                           DefaultMetaClassInfo.setOrigIntArray(true);
+                       } else {
+                           DefaultMetaClassInfo.setOrigIntArray(false);
+                       }
+                   } else {
+                       Field sdyn;
+                       try {
+                           sdyn = c.getDeclaredField(Verifier.STATIC_METACLASS_BOOL);
+                           sdyn.setBoolean(null, cmcu.getNewMetaClass()!=null);
+                       } catch (Throwable e) {
+                           //DO NOTHING
+                       }
                    }
+
                 }
             }
         });

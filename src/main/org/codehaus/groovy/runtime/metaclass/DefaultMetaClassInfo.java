@@ -30,14 +30,14 @@ public class DefaultMetaClassInfo {
     // if original Integer meta class
     private static boolean origInt = true;
     // if origInt and withoutCustomHandle
-    private static boolean origIntWCH = true;
+    private static boolean origIntRes = true;
     
     /**
      * @return  true if no meta class creation handle is set and if
      *          the original integer meta class is used.
      */
     public static boolean isOrigInt() {
-        return origIntWCH;
+        return origIntRes;
     }
     
     /**
@@ -45,7 +45,7 @@ public class DefaultMetaClassInfo {
      */
     public static void setOrigInt(boolean v) {
         origInt = v;
-        origIntWCH = withoutCustomHandle && origInt;
+        origIntRes = withoutCustomHandle && origInt;
     }
 
     //---------------------------------------------
@@ -86,6 +86,35 @@ public class DefaultMetaClassInfo {
      */
     public static void setWithoutCustomMetaclassCreationHandle(boolean mch) {
         withoutCustomHandle = mch;
-        setOrigInt(origInt);
+        changeFlags(mch);
+    }
+
+    //---------------------------------------------
+    //              category handle
+    //---------------------------------------------
+    private static boolean categoryUsed = false;
+    private static boolean disabledStandardMC = false;
+    
+    public static void setCategoryUsed(boolean b) {
+        categoryUsed = b;
+        disabledStandardMC = b || !withoutCustomHandle;
+    }
+    
+    public static boolean disabledStandardMetaClass() {
+        return disabledStandardMC;
+    }    
+
+
+    private static void changeFlags(boolean mch) {
+        if (mch) {
+            disabledStandardMC = true;
+            origIntArrayWCH = false;
+            origIntRes = false;
+        } else {
+            disabledStandardMC = categoryUsed;
+            origIntRes = origInt;
+            origIntArrayWCH = origIntArray;
+        }
+        
     }
 }
