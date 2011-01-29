@@ -89,7 +89,11 @@ public class PropertyExpression extends Expression {
     }
 
     public String getText() {
-        return objectExpression.getText() + "." + property.getText();
+        String object = objectExpression.getText();
+        String text = property.getText();
+        String spread = isSpreadSafe() ? "*" : "";
+        String safe = isSafe() ? "?" : "";
+        return object + spread + safe + "." + text;
     }
 
     /**
