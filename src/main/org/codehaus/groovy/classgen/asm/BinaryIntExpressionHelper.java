@@ -23,6 +23,7 @@ import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.classgen.asm.OptimizingStatementWriter.StatementMeta;
+import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 
@@ -30,6 +31,10 @@ import static org.codehaus.groovy.syntax.Types.*;
 import static org.objectweb.asm.Opcodes.*;
 
 public class BinaryIntExpressionHelper extends BinaryExpressionHelper {
+    
+    private static final MethodCaller intArrayGet = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "intArrayGet");
+    private static final MethodCaller intArraySet = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "intArraySet");
+    
     
     private WriterController controller;
     
@@ -190,24 +195,25 @@ public class BinaryIntExpressionHelper extends BinaryExpressionHelper {
         boolean leftIsInt = isIntOperand(left, controller.getClassNode());
         Expression right = binExp.getRightExpression();
         boolean rightIsInt = isIntOperand(right, controller.getClassNode());
+        OperandStack operandStack = controller.getOperandStack();
         
         if (leftIsInt && rightIsInt && writeIntXInt(type, true)) {
             left.visit(controller.getAcg());
-            controller.getOperandStack().doGroovyCast(ClassHelper.int_TYPE);
+            operandStack.doGroovyCast(ClassHelper.int_TYPE);
             right.visit(controller.getAcg());
-            controller.getOperandStack().doGroovyCast(ClassHelper.int_TYPE);
+            operandStack.doGroovyCast(ClassHelper.int_TYPE);
             writeIntXInt(type, false);
             return;
         } else if ( rightIsInt && type==LEFT_SQUARE_BRACKET &&
                     getType(left,controller.getClassNode()).getComponentType()==ClassHelper.int_TYPE)
         {
             left.visit(controller.getAcg());
-            controller.getOperandStack().doGroovyCast(getType(left,controller.getClassNode()));
+            operandStack.doGroovyCast(getType(left,controller.getClassNode()));
             right.visit(controller.getAcg());
-            controller.getOperandStack().doGroovyCast(ClassHelper.int_TYPE);
+            operandStack.doGroovyCast(ClassHelper.int_TYPE);
             MethodVisitor mv = controller.getMethodVisitor();
-            mv.visitInsn(IALOAD);
-            controller.getOperandStack().replace(ClassHelper.int_TYPE,2);
+            intArrayGet.call(mv);
+            operandStack.replace(ClassHelper.int_TYPE,2);
         } else {
             super.evaluateBinaryExpression(message, binExp);
         }
@@ -217,6 +223,7 @@ public class BinaryIntExpressionHelper extends BinaryExpressionHelper {
     protected void assignToArray(Expression orig, Expression receiver, Expression index, Expression rhsValueLoader) {
         if (OptimizingStatementWriter.shouldOptimize(orig)) {
             OperandStack operandStack = controller.getOperandStack();
+            MethodVisitor mv = controller.getMethodVisitor(); 
             
             // load the array
             receiver.visit(controller.getAcg());
@@ -231,7 +238,8 @@ public class BinaryIntExpressionHelper extends BinaryExpressionHelper {
             operandStack.doGroovyCast(ClassHelper.int_TYPE);
             
             // store value in array
-            controller.getMethodVisitor().visitInsn(IASTORE);
+            intArraySet.call(mv);
+            
             
             // load return value && correct operand stack stack
             operandStack.remove(3);
