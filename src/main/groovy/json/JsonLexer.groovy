@@ -57,9 +57,9 @@ class JsonLexer implements Iterator<JsonToken> {
 
         char firstChar = (char)firstIntRead
 
-        JsonTokenType possibleToken = tokenStartingWith((char)firstIntRead)
+        JsonTokenType possibleTokenType = tokenStartingWith((char)firstIntRead)
 
-        if (possibleToken == null) {
+        if (possibleTokenType == null) {
             throw new JsonException(
                     "Lexing failed on line: ${reader.line}, column: ${reader.column}, while reading '${firstChar}', " +
                     "no possible valid JSON value or punctuation could be recognized."
@@ -73,12 +73,12 @@ class JsonLexer implements Iterator<JsonToken> {
         JsonToken token = new JsonToken(
                 startLine:  startLine,      startColumn:    startColumn,
                 endLine:    startLine,      endColumn:      startColumn + 1,
-                type:       possibleToken,  text:           firstChar
+                type:       possibleTokenType,  text:           firstChar
         )
 
-        if (possibleToken in [OPEN_CURLY, CLOSE_CURLY, OPEN_BRACKET, CLOSE_BRACKET, COLON, COMMA, TRUE, FALSE, NULL]) {
-            return readingConstant(possibleToken, token)
-        } else if (possibleToken in [STRING, NUMBER]) {
+        if (possibleTokenType in [OPEN_CURLY, CLOSE_CURLY, OPEN_BRACKET, CLOSE_BRACKET, COLON, COMMA, TRUE, FALSE, NULL]) {
+            return readingConstant(possibleTokenType, token)
+        } else if (possibleTokenType in [STRING, NUMBER]) {
             StringBuilder currentContent = new StringBuilder()
             for(;;) {
                 reader.mark(1)
@@ -87,16 +87,16 @@ class JsonLexer implements Iterator<JsonToken> {
                     return null
                 }
                 currentContent.append((char)read)
-                def matching = possibleToken.matching(currentContent.toString())
+                def matching = possibleTokenType.matching(currentContent.toString())
 
                 if (matching == NO) {
-                    if (possibleToken == NUMBER) {
+                    if (possibleTokenType == NUMBER) {
                         reader.reset()
                         return token
                     } else {
                         throw new JsonException(
                                 "Lexing failed on line: ${reader.line}, column: ${reader.column}, while reading '${currentContent}', " +
-                                "was trying to match ${possibleToken.label}"
+                                "was trying to match ${possibleTokenType.label}"
                         )
                     }
                 } else if (matching == POSSIBLE) {
@@ -110,7 +110,11 @@ class JsonLexer implements Iterator<JsonToken> {
                     token.endColumn = reader.column
                     token.text = currentContent.toString()
 
-                    if (possibleToken == STRING) {
+                    if (possibleTokenType == STRING) {
+                        // replace unicode escape with real characters
+                        token.text = token.text.replaceAll(/\\u(\p{XDigit}{4})/) {
+                            new String(Integer.valueOf(it[1], 16) as char)
+                        }
                         return token
                     }
                 }
