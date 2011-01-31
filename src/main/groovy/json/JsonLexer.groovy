@@ -111,10 +111,20 @@ class JsonLexer implements Iterator<JsonToken> {
                     token.text = currentContent.toString()
 
                     if (possibleTokenType == STRING) {
-                        // replace unicode escape with real characters
-                        token.text = token.text.replaceAll(/\\u(\p{XDigit}{4})/) {
-                            new String(Integer.valueOf(it[1], 16) as char)
-                        }
+                        // replace unicode escape and other control characters with real characters
+                        token.text = token.text.
+                                replaceAll(/\\([bfnrt\\\/"])/) {
+                                    switch(it[1]) {
+                                        case 'b': '\b'; break
+                                        case 'f': '\f'; break
+                                        case 'n': '\n'; break
+                                        case 'r': '\r'; break
+                                        case 't': '\t'; break
+                                        default: it[1]
+                                    }
+                                }.replaceAll(/\\u(\p{XDigit}{4})/) {
+                                    new String(Integer.valueOf(it[1], 16) as char)
+                                }
                         return token
                     }
                 }
