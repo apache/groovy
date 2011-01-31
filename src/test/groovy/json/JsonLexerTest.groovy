@@ -107,4 +107,15 @@ class JsonLexerTest extends GroovyTestCase {
             lexer.remove()
         }
     }
+
+    void testUnescaping() {
+        assert JsonLexer.unescape('\\b') == '\b'
+        assert JsonLexer.unescape('\\f') == '\f'
+        assert JsonLexer.unescape('\\n') == '\n'
+        assert JsonLexer.unescape('\\r') == '\r'
+        assert JsonLexer.unescape('\\t') == '\t'
+        assert JsonLexer.unescape('\\\\') == '\\'
+        assert JsonLexer.unescape('\\/') == '/'
+        assert JsonLexer.unescape('\\"') == '"'
+    }
 }

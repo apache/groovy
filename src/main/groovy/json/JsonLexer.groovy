@@ -57,7 +57,7 @@ class JsonLexer implements Iterator<JsonToken> {
 
         char firstChar = (char)firstIntRead
 
-        JsonTokenType possibleTokenType = tokenStartingWith((char)firstIntRead)
+        JsonTokenType possibleTokenType = startingWith((char)firstIntRead)
 
         if (possibleTokenType == null) {
             throw new JsonException(
@@ -99,32 +99,15 @@ class JsonLexer implements Iterator<JsonToken> {
                                 "was trying to match ${possibleTokenType.label}"
                         )
                     }
-                } else if (matching == POSSIBLE) {
-                    token.endLine = reader.line
-                    token.endColumn = reader.column
-                    token.text = currentContent.toString()
                 }
 
-                if (matching == YES) {
-                    token.endLine = reader.line
-                    token.endColumn = reader.column
-                    token.text = currentContent.toString()
+                token.endLine = reader.line
+                token.endColumn = reader.column
+                token.text = currentContent.toString()
 
+                if (matching == YES) {
                     if (possibleTokenType == STRING) {
-                        // replace unicode escape and other control characters with real characters
-                        token.text = token.text.
-                                replaceAll(/\\([bfnrt\\\/"])/) {
-                                    switch(it[1]) {
-                                        case 'b': '\b'; break
-                                        case 'f': '\f'; break
-                                        case 'n': '\n'; break
-                                        case 'r': '\r'; break
-                                        case 't': '\t'; break
-                                        default: it[1]
-                                    }
-                                }.replaceAll(/\\u(\p{XDigit}{4})/) {
-                                    new String(Integer.valueOf(it[1], 16) as char)
-                                }
+                        token.text = unescape(token.text)
                         return token
                     }
                 }
@@ -132,7 +115,36 @@ class JsonLexer implements Iterator<JsonToken> {
         }
     }
 
-    JsonToken readingConstant(JsonTokenType type, JsonToken token) {
+    /**
+     * Replace unicode escape and other control characters with real characters
+     *
+     * @param input text
+     * @return input text without the escaping
+     */
+    static String unescape(String input) {
+        input.replaceAll(/\\([bfnrt\\\/"])/) {
+            switch(it[1]) {
+                case 'b': '\b'; break
+                case 'f': '\f'; break
+                case 'n': '\n'; break
+                case 'r': '\r'; break
+                case 't': '\t'; break
+                default: it[1]
+            }
+        }.replaceAll(/\\u(\p{XDigit}{4})/) {
+            new String(Integer.valueOf(it[1], 16) as char)
+        }
+    }
+
+    /**
+     * When a constant token type is expected, check that the expected constant is read,
+     * and update the content of the token accordingly.
+     *
+     * @param type the token type
+     * @param token the token
+     * @return the token updated with end column and text updated
+     */
+    private JsonToken readingConstant(JsonTokenType type, JsonToken token) {
         int numCharsToRead = type.validator.size()
         char[] chars = new char[numCharsToRead]
         reader.read(chars)
@@ -147,36 +159,6 @@ class JsonLexer implements Iterator<JsonToken> {
                     "Lexing failed on line: ${reader.line}, column: ${reader.column}, while reading '${stringRead}', " +
                     "was trying to match ${type.label}"
             )
-        }
-    }
-
-    JsonTokenType tokenStartingWith(char c) {
-        switch (c) {
-            case '{': return OPEN_CURLY
-            case '}': return CLOSE_CURLY
-            case '[': return OPEN_BRACKET
-            case ']': return CLOSE_BRACKET
-            case ',': return COMMA
-            case ':': return COLON
-
-            case 't': return TRUE
-            case 'f': return FALSE
-            case 'n': return NULL
-
-            case '"': return STRING
-
-            case '-':
-            case '0':
-            case '1':
-            case '2':
-            case '3':
-            case '4':
-            case '5':
-            case '6':
-            case '7':
-            case '8':
-            case '9':
-                return NUMBER
         }
     }
 

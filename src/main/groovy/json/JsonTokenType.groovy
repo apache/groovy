@@ -88,4 +88,40 @@ enum JsonTokenType {
             }
         }
     }
+
+    /**
+     * Find which JSON value might be starting with a given character
+     *
+     * @param c the character
+     * @return the possible token type found
+     */
+    static JsonTokenType startingWith(char c) {
+        switch (c) {
+            case '{': return OPEN_CURLY
+            case '}': return CLOSE_CURLY
+            case '[': return OPEN_BRACKET
+            case ']': return CLOSE_BRACKET
+            case ',': return COMMA
+            case ':': return COLON
+
+            case 't': return TRUE
+            case 'f': return FALSE
+            case 'n': return NULL
+
+            case '"': return STRING
+
+            case '-':
+            case '0':
+            case '1':
+            case '2':
+            case '3':
+            case '4':
+            case '5':
+            case '6':
+            case '7':
+            case '8':
+            case '9':
+                return NUMBER
+        }
+    }
 }

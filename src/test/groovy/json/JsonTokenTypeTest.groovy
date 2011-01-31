@@ -82,4 +82,31 @@ class JsonTokenTypeTest extends GroovyTestCase {
         assert STRING.matching('"a\\"')         == POSSIBLE
         assert STRING.matching('"a\\""')        == YES
     }
+
+    void testTokenStartingWithChar() {
+        assert startingWith('{' as char)      == OPEN_CURLY
+        assert startingWith('}' as char)      == CLOSE_CURLY
+        assert startingWith('[' as char)      == OPEN_BRACKET
+        assert startingWith(']' as char)      == CLOSE_BRACKET
+        assert startingWith(',' as char)      == COMMA
+        assert startingWith(':' as char)      == COLON
+
+        assert startingWith('t' as char)      == TRUE
+        assert startingWith('f' as char)      == FALSE
+        assert startingWith('n' as char)      == NULL
+
+        assert startingWith('"' as char)      == STRING
+
+        assert startingWith('-' as char)      == NUMBER
+        assert startingWith('1' as char)      == NUMBER
+        assert startingWith('2' as char)      == NUMBER
+        assert startingWith('3' as char)      == NUMBER
+        assert startingWith('4' as char)      == NUMBER
+        assert startingWith('5' as char)      == NUMBER
+        assert startingWith('6' as char)      == NUMBER
+        assert startingWith('7' as char)      == NUMBER
+        assert startingWith('8' as char)      == NUMBER
+        assert startingWith('9' as char)      == NUMBER
+        assert startingWith('0' as char)      == NUMBER
+    }
 }
