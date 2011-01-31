@@ -44,6 +44,7 @@ import java.util.*;
  */
 public class Verifier implements GroovyClassVisitor, Opcodes {
 
+    public static final String SWAP_INIT = "__$swapInit";
     public static final String __TIMESTAMP = "__timeStamp";
     public static final String __TIMESTAMP__ = "__timeStamp__239_neverHappen";
     private static final Parameter[] INVOKE_METHOD_PARAMS = new Parameter[]{
@@ -708,9 +709,25 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         // add a new invoke
     }
 
-    protected void addInitialization(ClassNode node) {
+    protected void addInitialization(final ClassNode node) {
+        boolean addSwapInit = moveOptimizedConstantsInitialization(node);
+
         for (Iterator iter = node.getDeclaredConstructors().iterator(); iter.hasNext();) {
             addInitialization(node, (ConstructorNode) iter.next());
+        }
+        
+        if (addSwapInit) {
+            BytecodeSequence seq = new BytecodeSequence(
+                    new BytecodeInstruction() {
+                        @Override
+                        public void visit(MethodVisitor mv) {
+                            mv.visitMethodInsn(INVOKESTATIC, BytecodeHelper.getClassInternalName(node), SWAP_INIT, "()V");
+                        }
+                    });
+            
+            List<Statement> swapCall= new ArrayList<Statement>(1);
+            swapCall.add(seq);
+            node.addStaticInitializerStatements(swapCall, true);
         }
     }
 
@@ -743,11 +760,11 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                 }
             }
         }
-        for (Iterator iter = node.getFields().iterator(); iter.hasNext();) {
-            addFieldInitialization(statements, staticStatements,
-                    (FieldNode) iter.next(), isEnum,
+        for (FieldNode fn : node.getFields()) {
+            addFieldInitialization(statements, staticStatements, fn, isEnum,
                     initStmtsAfterEnumValuesInit, explicitStaticPropsInEnum);
         }
+        
         statements.addAll(node.getObjectInitializerStatements());
         if (!statements.isEmpty()) {
             Statement code = constructorNode.getCode();
@@ -779,6 +796,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             constructorNode.setCode(newBlock);
         }
 
+        
         if (!staticStatements.isEmpty()) {
             if(isEnum) {
                 /*
@@ -1231,6 +1249,36 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             }
         }
         return ret;
+    }
+    
+    private boolean moveOptimizedConstantsInitialization(ClassNode node) {
+        if (node.isInterface()) return false;
+
+        final int mods = Opcodes.ACC_STATIC|Opcodes.ACC_SYNTHETIC| Opcodes.ACC_PUBLIC;
+        String name = SWAP_INIT;
+        BlockStatement methodCode = new BlockStatement();
+        node.addSyntheticMethod(
+                name, mods, ClassHelper.VOID_TYPE,
+                Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, methodCode);        
+        
+        for (FieldNode fn : node.getFields()) {
+            if (!fn.isStatic() || !fn.isSynthetic() || !fn.getName().startsWith("$const$")) continue;
+            if (fn.getInitialExpression()==null) continue;
+            final FieldExpression fe = new FieldExpression(fn);
+            if (fn.getType().equals(ClassHelper.REFERENCE_TYPE)) fe.setUseReferenceDirectly(true);
+            ConstantExpression init = (ConstantExpression) fn.getInitialExpression();
+            ExpressionStatement statement =
+                    new ExpressionStatement(
+                            new BinaryExpression(
+                                    fe,
+                                    Token.newSymbol(Types.EQUAL, fn.getLineNumber(), fn.getColumnNumber()),
+                                    init));
+            fn.setInitialValueExpression(null);
+            init.setConstantName(null);
+            methodCode.addStatement(statement);
+        }
+        
+        return true;
     }
 
 }
