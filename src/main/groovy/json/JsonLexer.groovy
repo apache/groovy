@@ -26,7 +26,14 @@ import groovy.io.LineColumnReader
  * @since 1.8.0
  */
 class JsonLexer implements Iterator<JsonToken> {
-    private static final Character SPACE = new Character(' ' as char)
+    private static final Character SPACE    = new Character(' ' as char)
+    private static final Character DOT      = new Character('.' as char)
+    private static final Character MINUS    = new Character('-' as char)
+    private static final Character PLUS     = new Character('+' as char)
+    private static final Character LOWER_E  = new Character('e' as char)
+    private static final Character UPPER_E  = new Character('E' as char)
+    private static final Character ZERO     = new Character('0' as char)
+    private static final Character NINE     = new Character('9' as char)
 
     /**
      * Underlying reader from which to read the JSON tokens.
@@ -78,39 +85,59 @@ class JsonLexer implements Iterator<JsonToken> {
 
         if (possibleTokenType in [OPEN_CURLY, CLOSE_CURLY, OPEN_BRACKET, CLOSE_BRACKET, COLON, COMMA, TRUE, FALSE, NULL]) {
             return readingConstant(possibleTokenType, token)
-        } else if (possibleTokenType in [STRING, NUMBER]) {
+        } else if (possibleTokenType == STRING) {
+            StringBuilder currentContent = new StringBuilder('"')
+            // consume the first double quote starting the string
+            reader.read()
+            for(;;) {
+                int read = reader.read()
+                if (read == -1) return null
+                currentContent.append((char)read)
+
+                if (currentContent[-1] == '"' && currentContent[-2] != '\\' &&
+                        possibleTokenType.matching(currentContent.toString()) == YES) {
+                    token.endLine = reader.line
+                    token.endColumn = reader.column
+                    token.text = currentContent.toString()
+
+                    return token
+                }
+
+            }
+            if (currentContent[-1] != '"') {
+                throw new JsonException(
+                        "Lexing failed on line: ${reader.line}, column: ${reader.column}, while reading '${currentContent}', " +
+                                "was trying to match ${possibleTokenType.label}"
+                )
+            }
+        } else if (possibleTokenType == NUMBER) {
             StringBuilder currentContent = new StringBuilder()
             for(;;) {
                 reader.mark(1)
                 int read = reader.read()
-                if (read == -1) {
-                    return null
-                }
-                currentContent.append((char)read)
-                def matching = possibleTokenType.matching(currentContent.toString())
+                if (read == -1) return null
+                char lastCharRead = (char)read
 
-                if (matching == NO) {
-                    if (possibleTokenType == NUMBER) {
-                        reader.reset()
-                        return token
-                    } else {
-                        throw new JsonException(
-                                "Lexing failed on line: ${reader.line}, column: ${reader.column}, while reading '${currentContent}', " +
-                                "was trying to match ${possibleTokenType.label}"
-                        )
-                    }
+                if (lastCharRead >= ZERO && lastCharRead <= NINE || lastCharRead in [DOT, MINUS, PLUS, LOWER_E, UPPER_E]) {
+                    currentContent.append(lastCharRead)
+                } else {
+                    reader.reset()
+                    break
                 }
+            }
 
+            String content = currentContent.toString()
+            if (possibleTokenType.matching(content) == YES) {
                 token.endLine = reader.line
                 token.endColumn = reader.column
                 token.text = currentContent.toString()
 
-                if (matching == YES) {
-                    if (possibleTokenType == STRING) {
-                        token.text = unescape(token.text)
-                        return token
-                    }
-                }
+                return token
+            } else (currentContent[-1] != '"') {
+                throw new JsonException(
+                        "Lexing failed on line: ${reader.line}, column: ${reader.column}, while reading '${currentContent}', " +
+                                "was trying to match ${possibleTokenType.label}"
+                )
             }
         }
     }
