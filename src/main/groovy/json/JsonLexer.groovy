@@ -71,8 +71,8 @@ class JsonLexer implements Iterator<JsonToken> {
         int startColumn = reader.column
 
         JsonToken token = new JsonToken(
-                startLine:  startLine,      startColumn:    startColumn,
-                endLine:    startLine,      endColumn:      startColumn + 1,
+                startLine:  startLine,          startColumn:    startColumn,
+                endLine:    startLine,          endColumn:      startColumn + 1,
                 type:       possibleTokenType,  text:           firstChar
         )
 
