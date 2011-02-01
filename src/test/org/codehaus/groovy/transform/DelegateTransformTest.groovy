@@ -213,6 +213,10 @@ class DelegateTransformTest extends CompilableTestSupport {
             foo.finalBaz = 'New value - finalBaz'
         }
     }
+
+    void testDelegateSuperInterfaces_Groovy4619() {
+        assert 'doSomething' in SomeClass4619.class.methods*.name
+    }
 }
 
 interface DelegateFoo {
@@ -255,4 +259,15 @@ class Foo4244 {
 class Bar4244 {
     String nonFinalBaz = "Initial value - nonFinalBaz"
     final String finalBaz = "Initial value - finalBaz"
+}
+
+interface SomeInterface4619 {
+    void doSomething()
+}
+
+interface SomeOtherInterface4619 extends SomeInterface4619 {}
+
+class SomeClass4619 {
+    @Delegate
+    SomeOtherInterface4619 delegate
 }
