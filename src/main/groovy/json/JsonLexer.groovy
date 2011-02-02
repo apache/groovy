@@ -98,7 +98,7 @@ class JsonLexer implements Iterator<JsonToken> {
                         possibleTokenType.matching(currentContent.toString()) == YES) {
                     token.endLine = reader.line
                     token.endColumn = reader.column
-                    token.text = currentContent.toString()
+                    token.text = unescape(currentContent.toString())
 
                     return token
                 }
