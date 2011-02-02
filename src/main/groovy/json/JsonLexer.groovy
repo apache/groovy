@@ -133,7 +133,7 @@ class JsonLexer implements Iterator<JsonToken> {
                 token.text = currentContent.toString()
 
                 return token
-            } else (currentContent[-1] != '"') {
+            } else {
                 throw new JsonException(
                         "Lexing failed on line: ${reader.line}, column: ${reader.column}, while reading '${currentContent}', " +
                                 "was trying to match ${possibleTokenType.label}"
