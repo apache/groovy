@@ -608,7 +608,7 @@ public class ObservableList implements List {
         private List values = new ArrayList();
 
         public MultiElementRemovedEvent(Object source, List values) {
-            super(source, ChangeType.oldValue, ChangeType.newValue, 0, ChangeType.MULTI_ADD);
+            super(source, ChangeType.oldValue, ChangeType.newValue, 0, ChangeType.MULTI_REMOVE);
             if (values != null) {
                 this.values.addAll(values);
             }
