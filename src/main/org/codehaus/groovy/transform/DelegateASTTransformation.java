@@ -71,11 +71,15 @@ public class DelegateASTTransformation implements ASTTransformation, Opcodes {
                 return;
             }
             final List<MethodNode> fieldMethods = getAllMethods(type);
+            for (ClassNode next : type.getAllInterfaces()) {
+                fieldMethods.addAll(getAllMethods(next));
+            }
             final Expression deprecatedElement = node.getMember("deprecated");
             final boolean deprecated = hasBooleanValue(deprecatedElement, true);
 
+            final List<MethodNode> ownerMethods = getAllMethods(owner);
             for (MethodNode mn : fieldMethods) {
-                addDelegateMethod(fieldNode, owner, getAllMethods(owner), mn, deprecated);
+                addDelegateMethod(fieldNode, owner, ownerMethods, mn, deprecated);
             }
 
             for (PropertyNode prop : type.getProperties()) {
@@ -159,6 +163,13 @@ public class DelegateASTTransformation implements ASTTransformation, Opcodes {
 
         // ignore methods from GroovyObject
         for (MethodNode mn : GROOVYOBJECT_TYPE.getMethods()) {
+            if (mn.getTypeDescriptor().equals(candidate.getTypeDescriptor())) {
+                return;
+            }
+        }
+
+        // ignore methods already in owner
+        for (MethodNode mn : owner.getMethods()) {
             if (mn.getTypeDescriptor().equals(candidate.getTypeDescriptor())) {
                 return;
             }

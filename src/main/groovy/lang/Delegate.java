@@ -111,6 +111,8 @@ import java.lang.annotation.Target;
  * <li>All methods defined in the owner class (including static, abstract or private etc.)
  * take precedence over methods with identical signatures from a {@code @Delegate} field
  * <li>Recursive delegation to your own class is not allowed
+ * <li>Mixing of {@code @Delegate} with default method arguments is known not to work in some cases. We recommend
+ * not using these features together.
  * </ul>
  *
  * @author Alex Tkachman
