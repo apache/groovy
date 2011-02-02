@@ -152,7 +152,13 @@ class JsonBuilder implements Writable {
     /**
      * A method call on the JSON builder instance will create a root object with only one key
      * whose name is the name of the method being called.
-     * This method either takes a closure or a map (ie. named arguments) as argument.
+     * This method takes as arguments:
+     * <ul>
+     *     <li>a closure</li>
+     *     <li>a map (ie. named arguments)</li>
+     *     <li>a map and a closure</li>
+     *     <li>or no argument at all</li>
+     * </ul>
      * <p>
      * Example with a classicala builder-style:
      * <pre><code>
@@ -174,20 +180,49 @@ class JsonBuilder implements Writable {
      * assert json.toString() == '{"person":{"name":"Guillaume","age":33}}'
      * </code></pre>
      *
+     * If you use named arguments and a closure as last argument,
+     * the key/value pairs of the map (as named arguments)
+     * and the key/value pairs represented in the closure
+     * will be merged together &mdash;
+     * the closure properties overriding the map key/values
+     * in case the same key is used.
+     * <pre><code>
+     * def json = new JsonBuilder()
+     * json.person(name: "Guillaume", age: 33) { town "Paris" }
+     *
+     * assert json.toString() == '{"person":{"name":"Guillaume","age":33,"town":"Paris"}}'
+     * </code></pre>
+     *
+     * The empty args call will create a key whose value will be an empty JSON object:
+     * <pre><code>
+     * def json = new JsonBuilder()
+     * json.person()
+     *
+     * assert json.toString() == '{"person":{}}'
+     * </code></pre>
+     *
      * @param name the single key
      * @param args the value associated with the key
      * @return a map with a single key
      */
     def invokeMethod(String name, Object args) {
-        if (args?.size() == 1 && args[0] instanceof Closure) {
-            this.content = [(name): JsonDelegate.cloneDelegateAndGetContent(args[0])]
-        } else if (args?.size() == 1 && args[0] instanceof Map) {
-            this.content = [(name): args[0]]
-        } else {
-            throw new JsonException("Expected a map or a closure parameter as argument.")
+        if (args?.size() == 0) {
+            this.content = [(name): [:]]
+            return content
+        } else if (args?.size() == 1) {
+            if (args[0] instanceof Closure) {
+                this.content = [(name): JsonDelegate.cloneDelegateAndGetContent(args[0])]
+                return content
+            } else if (args[0] instanceof Map) {
+                this.content = [(name): args[0]]
+                return content
+            }
+        } else if (args?.size() == 2 && args[0] instanceof Map && args[1] instanceof Closure) {
+            this.content = [(name): [*:args[0], *:JsonDelegate.cloneDelegateAndGetContent(args[1])]]
+            return content
         }
 
-        return content
+        throw new JsonException("Expected no arguments, a single map, a single closure, or a map and closure as arguments.")
     }
 
     /**

@@ -241,4 +241,17 @@ class JsonBuilderTest extends GroovyTestCase {
 
         assert builder.toString() == '{"people":{"person":{"firstName":"Guillame","lastName":"Laforge","address":{"city":"Paris","country":"France","zip":12345},"married":true,"conferences":["JavaOne","Gr8conf"]}}}'
     }
+
+    void testEdgeCases() {
+        def builder = new JsonBuilder()
+
+        assert builder { elem 1, 2, 3 } == [elem: [1, 2, 3]]
+
+        assert builder.elem() == [elem: [:]]
+        assert builder.elem(a: 1, b: 2) { c 3 } == [elem: [a: 1, b: 2, c: 3]]
+
+        shouldFail(JsonException) {
+            builder.elem(a: 1, b: 2, "ABCD")
+        }
+    }
 }
