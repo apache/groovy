@@ -13,9 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package groovy.io
+package groovy.io;
 
-import java.nio.CharBuffer
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.Reader;
+import java.nio.CharBuffer;
 
 /**
  * The <code>LineColumnReader</code> is an extension to <code>BufferedReader</code>
@@ -24,29 +27,29 @@ import java.nio.CharBuffer
  * @author Guillaume Laforge
  * @since 1.8.0
  */
-class LineColumnReader extends BufferedReader {
+public class LineColumnReader extends BufferedReader {
 
     /**
      * The current line position
      */
-    long line = 1
+    private long line = 1;
 
     /**
      * The current column position
      */
-    long column = 1
+    private long column = 1;
 
     /**
      * The latest marked line position
      */
-    long lineMark = 1
+    private long lineMark = 1;
 
     /**
      * The latest marked line position
      */
-    long columnMark = 1
+    private long columnMark = 1;
 
-    private boolean newLineWasRead = false
+    private boolean newLineWasRead = false;
 
     /**
      * Constructor wrapping a <code>Reader</code>
@@ -54,8 +57,8 @@ class LineColumnReader extends BufferedReader {
      *
      * @param reader the reader to wrap
      */
-    LineColumnReader(Reader reader) {
-        super(reader)
+    public LineColumnReader(Reader reader) {
+        super(reader);
     }
 
     /**
@@ -67,20 +70,20 @@ class LineColumnReader extends BufferedReader {
      *      Therefore large values should be used with care.
      */
     @Override
-    void mark(int readAheadLimit) {
-        lineMark = line
-        columnMark = column
-        super.mark(readAheadLimit)
+    public void mark(int readAheadLimit) throws IOException {
+        lineMark = line;
+        columnMark = column;
+        super.mark(readAheadLimit);
     }
 
     /**
      * Resets the stream to the most recent mark.
      */
     @Override
-    void reset() {
-        line = lineMark
-        column = columnMark
-        super.reset()
+    public void reset() throws IOException {
+        line = lineMark;
+        column = columnMark;
+        super.reset();
     }
 
     /**
@@ -90,35 +93,35 @@ class LineColumnReader extends BufferedReader {
      *      or -1 if the end of the stream has been reached
      */
     @Override
-    int read() {
+    public int read() throws IOException {
         if (newLineWasRead) {
-            line += 1
-            column = 1
-            newLineWasRead = false
+            line += 1;
+            column = 1;
+            newLineWasRead = false;
         }
 
-        def charRead = super.read()
+        int charRead = super.read();
         if (charRead > -1) {
-            char c = (char)charRead
+            char c = (char)charRead;
             // found a \r or \n, like on Mac or Unix
             // could also be Windows' \r\n
             if (c == '\r' || c == '\n') {
-                newLineWasRead = true
+                newLineWasRead = true;
                 if (c == '\r') {
-                    mark(1)
-                    c = (char)super.read()
+                    mark(1);
+                    c = (char)super.read();
                     // check if we have \r\n like on Windows
                     // if it's not \r\n we reset, otherwise, the \n is just consummed
                     if (c != '\n') {
-                        reset()
+                        reset();
                     }
                 }
             } else {
-                column += 1
+                column += 1;
             }
         }
 
-        return charRead
+        return charRead;
     }
 
     /**
@@ -130,13 +133,13 @@ class LineColumnReader extends BufferedReader {
      * @return
      */
     @Override
-    int read(char[] chars, int startOffset, int length) {
+    public int read(char[] chars, int startOffset, int length) throws IOException {
         for (int i = startOffset; i <= startOffset + length; i++) {
-            int readInt = read()
-            if (readInt == -1) return i - startOffset
-            chars[i] = (char)readInt
+            int readInt = read();
+            if (readInt == -1) return i - startOffset;
+            chars[i] = (char)readInt;
         }
-        return length
+        return length;
     }
 
     /**
@@ -147,19 +150,19 @@ class LineColumnReader extends BufferedReader {
      *      or null if the end of the stream has been reached
      */
     @Override
-    String readLine() {
-        StringBuilder result = new StringBuilder()
+    public String readLine() throws IOException {
+        StringBuilder result = new StringBuilder();
         for (;;) {
-            int intRead = read()
+            int intRead = read();
             if (intRead == -1) {
-                return result.length() == 0 ? null : result.toString()
+                return result.length() == 0 ? null : result.toString();
             }
-            
-            def c = (char)intRead
-            if (c == '\n' || c == '\r') break
-            result.append((char)c)
+
+            char c = (char)intRead;
+            if (c == '\n' || c == '\r') break;
+            result.append(c);
         }
-        return result.toString()
+        return result.toString();
     }
 
     /**
@@ -169,12 +172,12 @@ class LineColumnReader extends BufferedReader {
      * @return The number of characters actually skipped
      */
     @Override
-    long skip(long toSkip) {
+    public long skip(long toSkip) throws IOException {
         for (long i = 0; i < toSkip; i++) {
-            int intRead = read()
-            if (intRead == -1) return i
+            int intRead = read();
+            if (intRead == -1) return i;
         }
-        return toSkip
+        return toSkip;
     }
 
     /**
@@ -186,8 +189,8 @@ class LineColumnReader extends BufferedReader {
      * @return The number of characters read, or -1 if the end of the stream has been reached
      */
     @Override
-    int read(char[] chars) {
-        return read(chars, 0, chars.length - 1)
+    public int read(char[] chars) throws IOException {
+        return read(chars, 0, chars.length - 1);
     }
 
     /**
@@ -198,8 +201,8 @@ class LineColumnReader extends BufferedReader {
      * @throws UnsupportedOperationException as the method is not implemented
      */
     @Override
-    int read(CharBuffer buffer) {
-        throw new UnsupportedOperationException("read(CharBuffer) not yet implemented")
+    public int read(CharBuffer buffer) {
+        throw new UnsupportedOperationException("read(CharBuffer) not yet implemented");
     }
 
     /**
@@ -208,7 +211,39 @@ class LineColumnReader extends BufferedReader {
      * will throw an IOException. Closing a previously closed stream has no effect.
      */
     @Override
-    void close() {
-        super.close()
+    public void close() throws IOException {
+        super.close();
+    }
+
+    public long getColumn() {
+        return column;
+    }
+
+    public void setColumn(long column) {
+        this.column = column;
+    }
+
+    public long getColumnMark() {
+        return columnMark;
+    }
+
+    public void setColumnMark(long columnMark) {
+        this.columnMark = columnMark;
+    }
+
+    public long getLine() {
+        return line;
+    }
+
+    public void setLine(long line) {
+        this.line = line;
+    }
+
+    public long getLineMark() {
+        return lineMark;
+    }
+
+    public void setLineMark(long lineMark) {
+        this.lineMark = lineMark;
     }
 }

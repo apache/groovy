@@ -13,25 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package groovy.json
+package groovy.json;
 
 /**
- * The <code>Matching</code> enum provides three values used by the lexer,
- * to say if the content currently read on the reader is matching a certain token,
- * whether it's a possible match (ie. more input needed for fully matching the pattern),
- * or if it doesn't match at all.
+ * <code>JsonException</code> is the exception thrown by the JSON builder and slurper classes,
+ * whenever a problem occurs when creating or parsing JSON data structures.
  *
  * @author Guillaume Laforge
  * @since 1.8.0
  */
-enum Matching {
-    
-    /** The current read input cannot match the pattern */
-    NO,
+public class JsonException extends RuntimeException {
+    public JsonException() {
+        super();
+    }
 
-    /** The current read input can match the pattern if more input is provided */
-    POSSIBLE,
+    public JsonException(String s) {
+        super(s);
+    }
 
-    /** The current read input matches the pattern */
-    YES
+    public JsonException(String s, Throwable throwable) {
+        super(s, throwable);
+    }
+
+    public JsonException(Throwable throwable) {
+        super(throwable);
+    }
+
 }

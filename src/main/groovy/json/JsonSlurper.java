@@ -13,10 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package groovy.json
+package groovy.json;
 
-import static JsonTokenType.*
-import groovy.io.LineColumnReader
+import static groovy.json.JsonTokenType.*;
+import groovy.io.LineColumnReader;
+
+import java.io.Reader;
+import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * JSON slurper which parses text or reader content into a data structure of lists and maps.
@@ -25,7 +32,7 @@ import groovy.io.LineColumnReader
  * <code><pre>
  * def slurper = new JsonSlurper()
  * def result = slurper.parseText('{"person":{"name":"Guillaume","age":33,"pets":["dog","cat"]}}')
- * 
+ *
  * assert result.person.name == "Guillaume"
  * assert result.person.age == 33
  * assert result.person.pets.size() == 2
@@ -36,7 +43,7 @@ import groovy.io.LineColumnReader
  * @author Guillaume Laforge
  * @since 1.8.0
  */
-class JsonSlurper {
+public class JsonSlurper {
 
     /**
      * Parse a text representation of a JSON data structure
@@ -44,8 +51,8 @@ class JsonSlurper {
      * @param text JSON text to parse
      * @return a data structure of lists and maps
      */
-    def parseText(String text) {
-        parse(new LineColumnReader(new StringReader(text)))
+    Object parseText(String text) {
+        return parse(new LineColumnReader(new StringReader(text)));
     }
 
     /**
@@ -54,24 +61,24 @@ class JsonSlurper {
      * @param reader reader over a JSON content
      * @return a data structure of lists and maps
      */
-    def parse(Reader reader) {
-        def content
+    Object parse(Reader reader) {
+        Object content;
 
-        def lexer = new JsonLexer(reader)
+        JsonLexer lexer = new JsonLexer(reader);
 
-        def token = lexer.nextToken()
-        if (token.type == OPEN_CURLY) {
-            content = parseObject(lexer)
-        } else if (token.type == OPEN_BRACKET) {
-            content = parseArray(lexer)
+        JsonToken token = lexer.nextToken();
+        if (token.getType() == OPEN_CURLY) {
+            content = parseObject(lexer);
+        } else if (token.getType() == OPEN_BRACKET) {
+            content = parseArray(lexer);
         } else {
             throw new JsonException(
                     "A JSON payload should start with ${OPEN_CURLY.label} or ${OPEN_BRACKET.label}.\n" +
                     "Instead, '${token.text}' was found on line: ${token.startLine}, column: ${token.startColumn}"
-            )
+            );
         }
-        
-        return content
+
+        return content;
     }
 
     /**
@@ -81,57 +88,57 @@ class JsonSlurper {
      * @return a list of JSON values
      */
     private List parseArray(JsonLexer lexer) {
-        def content = []
+        List content = new ArrayList();
 
-        def currentToken
+        JsonToken currentToken;
 
         for(;;) {
-            currentToken = lexer.nextToken()
+            currentToken = lexer.nextToken();
 
             if (currentToken == null) {
                 throw new JsonException(
                         "Expected a value on line: ${lexer.reader.line}, column: ${lexer.reader.column}.\n" +
                         "But got an unterminated array."
-                )
+                );
             }
 
-            if (currentToken.type == OPEN_CURLY) {
-                content << parseObject(lexer)
-            } else if (currentToken.type == OPEN_BRACKET) {
-                content << parseArray(lexer)
-            } else if (currentToken.type in [NUMBER, STRING, TRUE, FALSE, NULL]) {
-                content << currentToken.value
-            } else if (currentToken.type == CLOSE_BRACKET) {
-                return content
+            if (currentToken.getType() == OPEN_CURLY) {
+                content.add(parseObject(lexer));
+            } else if (currentToken.getType() == OPEN_BRACKET) {
+                content.add(parseArray(lexer));
+            } else if (currentToken.getType().ordinal() >= NULL.ordinal()) {
+                content.add(currentToken.getValue());
+            } else if (currentToken.getType() == CLOSE_BRACKET) {
+                return content;
             } else {
                 throw new JsonException(
                         "Expected a value, an array, or an object on line: ${currentToken.startLine}, column: ${currentToken.startColumn}.\n" +
                         "But got '${currentToken.text}' instead."
-                )
+                );
             }
 
-            currentToken = lexer.nextToken()
+            currentToken = lexer.nextToken();
 
             if (currentToken == null) {
                 throw new JsonException(
                         "Expected ${CLOSE_BRACKET.label} or ${COMMA.label} on line: ${lexer.reader.line}, column: ${lexer.reader.column}.\n" +
                         "But got an unterminated array."
-                )
+                );
             }
 
             // Expect a comma for an upcoming value
             // or a closing bracket for the end of the array
-            if (currentToken.type == CLOSE_BRACKET) {
-                break
-            } else if (currentToken.type != COMMA) {
+            if (currentToken.getType() == CLOSE_BRACKET) {
+                break;
+            } else if (currentToken.getType() != COMMA) {
                 throw new JsonException(
                         "Expected a value or ${CLOSE_BRACKET.label} on line: ${currentToken.startLine} column: ${currentToken.startColumn}.\n" +
                         "But got '${currentToken.text}' instead."
-                )
+                );
             }
         }
 
-        return content
+        return content;
     }
 
     /**
@@ -141,83 +148,88 @@ class JsonSlurper {
      * @return a Map representing a JSON object
      */
     private Map parseObject(JsonLexer lexer) {
-        def content = [:]
+        Map content = new HashMap();
 
-        def previousToken
-        def currentToken
+        JsonToken previousToken = null;
+        JsonToken currentToken = null;
 
         for(;;) {
-            previousToken = currentToken
-            currentToken = lexer.nextToken()
+            previousToken = currentToken;
+            currentToken = lexer.nextToken();
 
             // expect a string key, or already a closing curly brace
 
-            if (currentToken.type == CLOSE_CURLY) {
-                return content
-            } else if (currentToken.type != STRING) {
+            if (currentToken.getType() == CLOSE_CURLY) {
+                return content;
+            } else if (currentToken.getType() != STRING) {
                 throw new JsonException(
-                        "Expected ${STRING.label} key on line: ${currentToken.startLine}, column: ${currentToken.startColumn}.\n" +
+                        "Expected " + STRING.getLabel() +
+                        " key on line: " + currentToken.getStartLine() + ", column: " + currentToken.getStartColumn() + ".\n" +
                         "Bug got '${currentToken.text}' instead."
-                )
+                );
             }
 
-            String mapKey = currentToken.value
+            String mapKey = (String) currentToken.getValue();
 
-            previousToken = currentToken
-            currentToken = lexer.nextToken()
+            previousToken = currentToken;
+            currentToken = lexer.nextToken();
 
             // expect a colon between the key and value pair
 
-            if (currentToken.type != COLON) {
+            if (currentToken.getType() != COLON) {
                 throw new JsonException(
-                        "Expected ${COLON.label} on line: ${currentToken.startLine}, column: ${currentToken.startColumn}.\n" +
-                        "Bug got '${currentToken.text}' instead."
-                )
+                        "Expected " + COLON.getLabel() +
+                        " on line: " + currentToken.getStartLine() + ", column: " + currentToken.getStartColumn() + ".\n" +
+                        "Bug got '" + currentToken.getText() +  "' instead."
+                );
             }
 
-            previousToken = currentToken
-            currentToken = lexer.nextToken()
+            previousToken = currentToken;
+            currentToken = lexer.nextToken();
 
             // value can be an object, an array, a number, string, boolean or null values
 
-            if (currentToken.type == OPEN_CURLY) {
-                content[mapKey] = parseObject(lexer)
-            } else if (currentToken.type == OPEN_BRACKET) {
-                content[mapKey] = parseArray(lexer)
-            } else if (currentToken.type in [NUMBER, STRING, TRUE, FALSE, NULL]) {
-                content[mapKey] = currentToken.value
+            if (currentToken.getType() == OPEN_CURLY) {
+                content.put(mapKey, parseObject(lexer));
+            } else if (currentToken.getType() == OPEN_BRACKET) {
+                content.put(mapKey, parseArray(lexer));
+            } else if (currentToken.getType().ordinal() >= NULL.ordinal()) {
+                content.put(mapKey, currentToken.getValue());
             } else {
                 throw new JsonException(
-                        "Expected a value, an array, or an object on line: ${currentToken.startLine}, column: ${currentToken.startColumn}.\n" +
-                        "But got '${currentToken.text}' instead."
-                )
+                        "Expected a value, an array, or an object " +
+                        "on line: " + currentToken.getStartLine() + ", column: " + currentToken.getStartColumn() + ".\n" +
+                        "But got '" + currentToken.getText() + "' instead."
+                );
             }
 
-            previousToken = currentToken
-            currentToken = lexer.nextToken()
+            previousToken = currentToken;
+            currentToken = lexer.nextToken();
 
             // premature end of the object
 
             if (currentToken == null) {
                 throw new JsonException(
-                        "Expected ${CLOSE_CURLY.label} or ${COMMA.label} on line: ${previousToken.endLine}, column: ${previousToken.endColumn}.\n" +
+                        "Expected " + CLOSE_CURLY.getLabel() + " or " + COMMA.getLabel() + " " +
+                        "on line: " + previousToken.getEndLine() + ", column: " + previousToken.getEndColumn() + ".\n" +
                         "But got an unterminated object."
-                )
+                );
             }
 
             // Expect a comma for an upcoming key/value pair
             // or a closing curly brace for the end of the object
-            if (currentToken.type == CLOSE_CURLY) {
-                break
-            } else if (currentToken.type != COMMA) {
+            if (currentToken.getType() == CLOSE_CURLY) {
+                break;
+            } else if (currentToken.getType() != COMMA) {
                 throw new JsonException(
-                        "Expected a value or ${CLOSE_CURLY.label} on line: ${currentToken.startLine}, column: ${currentToken.startColumn}.\n" +
-                        "But got '${currentToken.text}' instead."
-                )
+                        "Expected a value or " + CLOSE_CURLY.getLabel() + " " +
+                        "on line: " + currentToken.getStartLine() + ", column: " + currentToken.getStartColumn() + ".\n" +
+                        "But got '" + currentToken.getText() + "' instead."
+                );
             }
         }
 
-        return content
+        return content;
     }
 
 }

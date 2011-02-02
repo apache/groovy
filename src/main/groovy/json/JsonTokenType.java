@@ -13,10 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package groovy.json
+package groovy.json;
 
-import java.util.regex.Pattern
-import static Matching.*
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import static groovy.json.Matching.*;
 
 /**
  * Enum listing all the possible JSON tokens that should be recognized by the lexer.
@@ -24,28 +25,28 @@ import static Matching.*
  * @author Guillaume Laforge
  * @since 1.8.0
  */
-enum JsonTokenType {
-    OPEN_CURLY      ( "an openning curly brace '{'",        '{'         ),
-    CLOSE_CURLY     ( "a closing curly brace '}'",          '}'         ),
-    OPEN_BRACKET    ( "an openning square bracket '['",     '['         ),
-    CLOSE_BRACKET   ( "a closing square bracket ']'",       ']'         ),
-    COLON           ( "a colon ':'",                        ':'         ),
-    COMMA           ( "a comma ','",                        ','         ),
-    NULL            ( "the constant 'null'",                'null'      ),
-    TRUE            ( "the constant 'true'",                'true'      ),
-    FALSE           ( "the constant 'false'",               'false'     ),
-    NUMBER          ( "a number",                           ~/-?\d+(\.\d+)?((e|E)(\+|-)?\d+)?/  ),
-    STRING          ( "a string",                           ~/"([^"\\]|\\(["\\\/bfnrt]|u[0-9a-fA-F]{4}))*"/ )
+public enum JsonTokenType {
+    OPEN_CURLY      ( "an openning curly brace '{'",        "{"         ),
+    CLOSE_CURLY     ( "a closing curly brace '}'",          "}"         ),
+    OPEN_BRACKET    ( "an openning square bracket '['",     "["         ),
+    CLOSE_BRACKET   ( "a closing square bracket ']'",       "]"         ),
+    COLON           ( "a colon ':'",                        ":"         ),
+    COMMA           ( "a comma ','",                        ","         ),
+    NULL            ( "the constant 'null'",                "null"      ),
+    TRUE            ( "the constant 'true'",                "true"      ),
+    FALSE           ( "the constant 'false'",               "false"     ),
+    NUMBER          ( "a number",                           Pattern.compile("-?\\d+(\\.\\d+)?((e|E)(\\+|-)?\\d+)?"  )),
+    STRING          ( "a string",                           Pattern.compile("\"([^\"\\\\]|\\\\([\"\\/bfnrt]|u[0-9a-fA-F]{4}))*\""));
 
     /**
      * A String constant or a Pattern, serving as a validator for matching tokens.
      */
-    Object validator
+    private Object validator;
 
     /**
      * A label describing the token
      */
-    String label
+    private String label;
 
     /**
      * Construct a token type with a label and a validator
@@ -54,15 +55,15 @@ enum JsonTokenType {
      * @param validator a String or Pattern validating input strings as valid tokens
      */
     JsonTokenType(String label, Object validator) {
-        this.validator = validator
-        this.label = label
+        this.validator = validator;
+        this.label = label;
     }
 
     /**
      * Tells if an input string matches a token.
      *
      * @param input the input string to match
-     * 
+     *
      * @return a <code>Matching</code> enum value:
      * <code>YES</code> if this is an exact match,
      * <code>POSSIBLE</code> if more characters could turn the input string into a valid token,
@@ -70,22 +71,24 @@ enum JsonTokenType {
      */
     Matching matching(String input) {
         if (validator instanceof Pattern) {
-            def matcher = validator.matcher(input)
+            Matcher matcher = ((Pattern)validator).matcher(input);
             if (matcher.matches()) {
-                return YES
+                return YES;
             } else if (matcher.hitEnd()) {
-                return POSSIBLE
+                return POSSIBLE;
             } else {
-                return NO
+                return NO;
             }
         } else if (validator instanceof String) {
-            if (input == validator) {
-                return YES
-            } else if (validator.startsWith(input)) {
-                return POSSIBLE
+            if (input.equals(validator)) {
+                return YES;
+            } else if (((String)validator).startsWith(input)) {
+                return POSSIBLE;
             } else {
-                return NO
+                return NO;
             }
+        } else {
+            return NO;
         }
     }
 
@@ -97,18 +100,18 @@ enum JsonTokenType {
      */
     static JsonTokenType startingWith(char c) {
         switch (c) {
-            case '{': return OPEN_CURLY
-            case '}': return CLOSE_CURLY
-            case '[': return OPEN_BRACKET
-            case ']': return CLOSE_BRACKET
-            case ',': return COMMA
-            case ':': return COLON
+            case '{': return OPEN_CURLY;
+            case '}': return CLOSE_CURLY;
+            case '[': return OPEN_BRACKET;
+            case ']': return CLOSE_BRACKET;
+            case ',': return COMMA;
+            case ':': return COLON;
 
-            case 't': return TRUE
-            case 'f': return FALSE
-            case 'n': return NULL
+            case 't': return TRUE;
+            case 'f': return FALSE;
+            case 'n': return NULL;
 
-            case '"': return STRING
+            case '"': return STRING;
 
             case '-':
             case '0':
@@ -121,7 +124,16 @@ enum JsonTokenType {
             case '7':
             case '8':
             case '9':
-                return NUMBER
+                return NUMBER;
         }
+        return null;
+    }
+
+    public String getLabel() {
+        return label;
+    }
+
+    public Object getValidator() {
+        return validator;
     }
 }
