@@ -17,6 +17,7 @@
 package org.codehaus.groovy.ant;
 
 import groovy.lang.GroovyClassLoader;
+import groovy.lang.GroovyResourceLoader;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.PosixParser;
@@ -46,6 +47,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
@@ -987,7 +989,16 @@ public class Groovyc extends MatchingTask {
                     antLoader.addPathElement(cpEntry);
             }
         }
-        return new GroovyClassLoader(parent, configuration);
+
+        GroovyClassLoader loader = new GroovyClassLoader(parent, configuration);
+        // in command line we don't need to do script lookups
+        loader.setResourceLoader(new GroovyResourceLoader() {
+            public URL loadGroovySource(String filename) throws MalformedURLException {
+                return null;
+            }
+        });
+
+        return loader;
     }
 
     /**

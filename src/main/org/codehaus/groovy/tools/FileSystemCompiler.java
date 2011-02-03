@@ -16,6 +16,7 @@
 
 package org.codehaus.groovy.tools;
 
+import groovy.lang.GroovyResourceLoader;
 import org.apache.commons.cli.*;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilerConfiguration;
@@ -28,6 +29,8 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.*;
 
 /**
@@ -46,10 +49,17 @@ public class FileSystemCompiler {
         if (cu != null) {
             unit = cu;
         } else if (configuration.getJointCompilationOptions() != null) {
-            this.unit = new JavaAwareCompilationUnit(configuration);
+            unit = new JavaAwareCompilationUnit(configuration);
         } else {
-            this.unit = new CompilationUnit(configuration);
+            unit = new CompilationUnit(configuration);
         }
+
+        // in command line we don't need to do script lookups
+        unit.getClassLoader().setResourceLoader(new GroovyResourceLoader() {
+            public URL loadGroovySource(String filename) throws MalformedURLException {
+                return null;
+            }
+        });
     }
 
     public void compile(String[] paths) throws Exception {
