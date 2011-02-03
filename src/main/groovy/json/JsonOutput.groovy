@@ -15,6 +15,8 @@
  */
 package groovy.json
 
+import static JsonTokenType.*
+
 /**
  * Class responsible for the actual String serialization of the possible values of a JSON structure.
  * This class can also be used as a category, so as to add <code>toJson()</code> methods to various types.
@@ -118,5 +120,49 @@ class JsonOutput {
      */
     static String toJson(Map m) {
         "{" + m.collect { k, v -> toJson(k.toString()) + ':' + toJson(v) }.join(',') + "}"
+    }
+
+    /**
+     * Pretty print a JSON payload
+     * 
+     * @param jsonPayload
+     * @return
+     */
+    static String prettyPrint(String jsonPayload) {
+        int indent = 0
+        def output = new StringBuilder()
+        def lexer = new JsonLexer(new StringReader(jsonPayload))
+
+        while (lexer.hasNext()) {
+            JsonToken token = lexer.next()
+            if (token.type == OPEN_CURLY) {
+                indent += 4
+                output.append('{\n')
+                output.append(' ' * indent)
+            } else if (token.type == CLOSE_CURLY) {
+                indent -= 4
+                output.append('\n')
+                output.append(' ' * indent)
+                output.append('}')
+            } else if(token.type == OPEN_BRACKET) {
+                indent += 4
+                output.append('[\n')
+                output.append(' ' * indent)
+            } else if(token.type == CLOSE_BRACKET) {
+                indent -= 4
+                output.append('\n')
+                output.append(' ' * indent)
+                output.append(']')
+            } else if (token.type == COMMA) {
+                output.append(',\n')
+                output.append(' ' * indent)
+            } else if (token.type == COLON) {
+                output.append(': ')
+            } else {
+                output.append(token.text)
+            }
+        }
+
+        return output.toString()
     }
 }

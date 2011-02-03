@@ -155,6 +155,59 @@ class JsonOutputTest extends GroovyTestCase {
     void testIteratorEnumeration() {
         assert toJson([1, 2, 3].iterator()) == '[1,2,3]'
         assert toJson(Collections.enumeration([1, 2, 3])) == '[1,2,3]'
+    }
 
+    void testPrettyPrint() {
+        def json = new JsonBuilder()
+
+        json.trends {
+            "2010-06-22 17:20" ([
+                    name: "Guille Franco",
+                    query: "Guille Franco"
+            ], {
+                name "#worldcup"
+                query "#worldcup"
+            }, [
+                    name: "Uruguai",
+                    query: "Uruguai"
+            ])
+            "2010-06-22 06:20" ({
+                name "#honestyhour"
+                query "#honestyhour"
+            }, [
+                    name: "#blackpeoplerules",
+                    query: "#blackpeoplerules"
+            ])
+        }
+
+        assert json.toPrettyString() == """\
+            {
+                "trends": {
+                    "2010-06-22 17:20": [
+                        {
+                            "name": "Guille Franco",
+                            "query": "Guille Franco"
+                        },
+                        {
+                            "name": "#worldcup",
+                            "query": "#worldcup"
+                        },
+                        {
+                            "name": "Uruguai",
+                            "query": "Uruguai"
+                        }
+                    ],
+                    "2010-06-22 06:20": [
+                        {
+                            "name": "#honestyhour",
+                            "query": "#honestyhour"
+                        },
+                        {
+                            "name": "#blackpeoplerules",
+                            "query": "#blackpeoplerules"
+                        }
+                    ]
+                }
+            }""".stripIndent()
     }
 }

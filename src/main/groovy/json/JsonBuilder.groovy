@@ -243,6 +243,20 @@ class JsonBuilder implements Writable {
     }
 
     /**
+     * Pretty-prints and formats the JSON payload.
+     * <p>
+     * This method calls the JsonLexer to parser the output of the builder,
+     * so this may not be an optimal method to call,
+     * and should be used mainly for debugging purpose
+     * for a human-readable output of the JSON content.
+     *
+     * @return a pretty printed JSON output
+     */
+    String toPrettyString() {
+        JsonOutput.prettyPrint(toString())
+    }
+
+    /**
      * The JSON builder implements the <code>Writable</code> interface,
      * so that you can have the builder serialize itself the JSON payload to a writer.
      * <p>
