@@ -13,15 +13,7 @@ package org.codehaus.groovy.classgen;
 
 import java.util.List;
 
-import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
-import org.codehaus.groovy.ast.ClassHelper;
-import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.ConstructorNode;
-import org.codehaus.groovy.ast.FieldNode;
-import org.codehaus.groovy.ast.MethodNode;
-import org.codehaus.groovy.ast.Parameter;
-import org.codehaus.groovy.ast.PropertyNode;
-import org.codehaus.groovy.ast.Variable;
+import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.DeclarationExpression;
@@ -104,6 +96,9 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
         checkClassForModifier(node, isTransient(node.getModifiers()), "transient");
         checkClassForModifier(node, isVolatile(node.getModifiers()), "volatile");
         checkClassForModifier(node, isNative(node.getModifiers()), "native");
+        if (!(node instanceof InnerClassNode)) {
+            checkClassForModifier(node, isStatic(node.getModifiers()), "static");
+        }
         // don't check synchronized here as it overlaps with ACC_SUPER
     }
 

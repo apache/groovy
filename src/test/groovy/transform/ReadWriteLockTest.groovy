@@ -168,7 +168,7 @@ class ReadWriteLockTest extends GroovyTestCase {
     }
 }
 
-static class MyClass {
+class MyClass {
 
     def readerMethod1Called = false
     def readerMethod2Called = false
