@@ -15186,7 +15186,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         }
 
         try {
-            if (ReflectionCache.isArray(type)) {
+            if (type!=String[].class && ReflectionCache.isArray(type)) {
                 return (T) asArrayType(obj, type);
             }
         }
