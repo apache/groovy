@@ -22,13 +22,13 @@ import java.io.PrintWriter;
 import java.io.Writer;
 
 /**
- * <p>A helper class for printing indented text. This can be used stand-alone or, more commonly, from Builders. </p>
+ * <p>A helper class for printing indented text. This can be used stand-alone or, more commonly, from Builders.</p>
  *
  * <p>By default, a PrintWriter to System.out is used as the Writer, but it is possible
- * to change the Writer by passing a new one as a constructor argument. </p>
+ * to change the Writer by passing a new one as a constructor argument.</p>
  *
  * <p>Indention by default is 2 characters but can be changed by passing a
- * different value as a constructor argument. </p>
+ * different value as a constructor argument.</p>
  *
  * <p>The following is an example usage. Note that within a "with" block you need to
  * specify a parameter name so that this.println is not called instead of IndentPrinter.println: </p>
@@ -64,7 +64,7 @@ public class IndentPrinter {
     private final boolean addNewlines;
 
     /**
-     * Creates a PrintWriter pointing to System.out, with an indent of two spaces.
+     * Creates an IndentPrinter backed by a PrintWriter pointing to System.out, with an indent of two spaces.
      *
      * @see #IndentPrinter(Writer, String)
      */
@@ -73,7 +73,7 @@ public class IndentPrinter {
     }
 
     /**
-     * Create an IndentPrinter to the given PrintWriter, with an indent of two spaces.
+     * Creates an IndentPrinter backed by the supplied Writer, with an indent of two spaces.
      *
      * @param out Writer to output to
      * @see #IndentPrinter(Writer, String)
@@ -83,7 +83,8 @@ public class IndentPrinter {
     }
 
     /**
-     * Create an IndentPrinter to the given Writer, with a user-supplied String used for indenting.
+     * Creates an IndentPrinter backed by the supplied Writer,
+     * with a user-supplied String to be used for indenting.
      *
      * @param out Writer to output to
      * @param indent character(s) used to indent each line
@@ -93,7 +94,8 @@ public class IndentPrinter {
     }
 
     /**
-     * Create an IndentPrinter to the given Writer, with a user-supplied String used for indenting
+     * Creates an IndentPrinter backed by the supplied Writer,
+     * with a user-supplied String to be used for indenting
      * and the ability to override newline handling.
      *
      * @param out Writer to output to
