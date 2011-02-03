@@ -74,7 +74,7 @@ public class MarkupBuilder extends BuilderSupport {
      * Sends markup to the given PrintWriter
      *
      * @param pw the PrintWriter to use
-     * @see IndentPrinter#IndentPrinter(PrintWriter)
+     * @see IndentPrinter#IndentPrinter(Writer)
      */
     public MarkupBuilder(PrintWriter pw) {
         this(new IndentPrinter(pw));
@@ -84,7 +84,7 @@ public class MarkupBuilder extends BuilderSupport {
      * Sends markup to the given Writer but first wrapping it in a PrintWriter
      *
      * @param writer the writer to use
-     * @see IndentPrinter#IndentPrinter(PrintWriter)
+     * @see IndentPrinter#IndentPrinter(Writer)
      */
     public MarkupBuilder(Writer writer) {
         this(new IndentPrinter(new PrintWriter(writer)));
@@ -92,7 +92,7 @@ public class MarkupBuilder extends BuilderSupport {
 
     /**
      * Sends markup to the given IndentPrinter.  Use this option if you want
-     * to customize the indent used.
+     * to customize the indent used or provide your own IndentPrinter.
      *
      * @param out the IndentPrinter to use
      */

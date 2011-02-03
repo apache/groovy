@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2011 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,81 +15,169 @@
  */
 package groovy.util;
 
+import groovy.lang.GroovyRuntimeException;
+
+import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.Writer;
 
 /**
- * A helper class for printing indented text.
- * 
+ * <p>A helper class for printing indented text. This can be used stand-alone or, more commonly, from Builders. </p>
+ *
+ * <p>By default, a PrintWriter to System.out is used as the Writer, but it is possible
+ * to change the Writer by passing a new one as a constructor argument. </p>
+ *
+ * <p>Indention by default is 2 characters but can be changed by passing a
+ * different value as a constructor argument. </p>
+ *
+ * <p>The following is an example usage. Note that within a "with" block you need to
+ * specify a parameter name so that this.println is not called instead of IndentPrinter.println: </p>
+ * <pre>
+ * new IndentPrinter(new PrintWriter(out)).with { p ->
+ *     p.printIndent()
+ *     p.println('parent1')
+ *     p.incrementIndent()
+ *     p.printIndent()
+ *     p.println('child 1')
+ *     p.printIndent()
+ *     p.println('child 2')
+ *     p.decrementIndent()
+ *     p.printIndent()
+ *     p.println('parent2')
+ *     p.flush()
+ * }
+ * </pre>
+ * <p>The above example prints this to standard output: </p>
+ * <pre>
+ * parent1
+ *   child 1
+ *   child 2
+ * parent2
+ * </pre>
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 public class IndentPrinter {
 
     private int indentLevel;
     private String indent;
-    private PrintWriter out;
+    private Writer out;
     private final boolean addNewlines;
 
     /**
-     * Creates a PrintWriter pointing to System.out, with an indent of two 
-     * spaces.
-     * @see #IndentPrinter(PrintWriter, String)
+     * Creates a PrintWriter pointing to System.out, with an indent of two spaces.
+     *
+     * @see #IndentPrinter(Writer, String)
      */
     public IndentPrinter() {
         this(new PrintWriter(System.out), "  ");
     }
 
     /**
-     * Create an IndentPrinter to the given PrintWriter, with an indent of two 
-     * spaces.
-     * @param out PrintWriter to output to
-     * @see #IndentPrinter(PrintWriter, String)
+     * Create an IndentPrinter to the given PrintWriter, with an indent of two spaces.
+     *
+     * @param out Writer to output to
+     * @see #IndentPrinter(Writer, String)
      */
-    public IndentPrinter(PrintWriter out) {
+    public IndentPrinter(Writer out) {
         this(out, "  ");
     }
 
     /**
-     * Create an IndentPrinter to the given PrintWriter
-     * @param out PrintWriter to output to
+     * Create an IndentPrinter to the given Writer, with a user-supplied String used for indenting.
+     *
+     * @param out Writer to output to
      * @param indent character(s) used to indent each line
      */
-    public IndentPrinter(PrintWriter out, String indent) {
+    public IndentPrinter(Writer out, String indent) {
         this(out, indent, true);
     }
 
-    public IndentPrinter(PrintWriter out, String indent, boolean addNewlines) {
+    /**
+     * Create an IndentPrinter to the given Writer, with a user-supplied String used for indenting
+     * and the ability to override newline handling.
+     *
+     * @param out Writer to output to
+     * @param indent character(s) used to indent each line
+     * @param addNewlines set to false to gobble all new lines (default true)
+     */
+    public IndentPrinter(Writer out, String indent, boolean addNewlines) {
         this.addNewlines = addNewlines;
         if (out == null) {
-            /** @todo temporary hack */
-            out = new PrintWriter(System.out);
-            //throw new IllegalArgumentException("Must specify a PrintWriter");
+            throw new IllegalArgumentException("Must specify a Writer");
         }
         this.out = out;
         this.indent = indent;
     }
 
+    /**
+     * Prints a string followed by an end of line character.
+     *
+     * @param  text String to be written
+     */
     public void println(String text) {
-        out.print(text);
-        println();
-    }
-
-    public void print(String text) {
-        out.print(text);
-    }
-
-    public void print(char c) {
-        out.print(c);
-    }
-
-    public void printIndent() {
-        for (int i = 0; i < indentLevel; i++) {
-            out.print(indent);
+        try {
+            out.write(text);
+            println();
+        } catch(IOException ioe) {
+            throw new GroovyRuntimeException(ioe);
         }
     }
 
+    /**
+     * Prints a string.
+     *
+     * @param  text String to be written
+     */
+    public void print(String text) {
+        try {
+            out.write(text);
+        } catch(IOException ioe) {
+            throw new GroovyRuntimeException(ioe);
+        }
+    }
+
+    /**
+     * Prints a character.
+     *
+     * @param  c char to be written
+     */
+    public void print(char c) {
+        try {
+            out.write(c);
+        } catch(IOException ioe) {
+            throw new GroovyRuntimeException(ioe);
+        }
+    }
+
+    /**
+     * Prints the current indent level.
+     */
+    public void printIndent() {
+        for (int i = 0; i < indentLevel; i++) {
+            try {
+                out.write(indent);
+            } catch(IOException ioe) {
+                throw new GroovyRuntimeException(ioe);
+            }
+        }
+    }
+
+    /**
+     * Prints an end-of-line character (if enabled via addNewLines property).
+     * Defaults to outputting a single '\n' character but by using a custom
+     * Writer, e.g. PlatformLineWriter, you can get platform-specific
+     * end-of-line characters.
+     *
+     * @see #IndentPrinter(Writer, String, boolean)
+     */
     public void println() {
-        if (addNewlines) out.print("\n");
+        if (addNewlines) {
+            try {
+                out.write("\n");
+            } catch(IOException ioe) {
+                throw new GroovyRuntimeException(ioe);
+            }
+        }
     }
 
     public void incrementIndent() {
@@ -109,6 +197,10 @@ public class IndentPrinter {
     }
 
     public void flush() {
-        out.flush();
+        try {
+            out.flush();
+        } catch(IOException ioe) {
+            throw new GroovyRuntimeException(ioe);
+        }
     }
 }
