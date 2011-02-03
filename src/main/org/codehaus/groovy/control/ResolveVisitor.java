@@ -49,6 +49,7 @@ import java.util.*;
  *
  * @author Jochen Theodorou
  * @author Roshan Dawrani
+ * @author Alex Tkachman
  */
 public class ResolveVisitor extends ClassCodeExpressionTransformer {
     private ClassNode currentClass;
@@ -57,7 +58,6 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     private CompilationUnit compilationUnit;
     private Map cachedClasses = new HashMap();
     private static final Object NO_CLASS = new Object();
-    private static final Object SCRIPT = new Object();
     private SourceUnit source;
     private VariableScope currentScope;
 
@@ -272,16 +272,14 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             return true;
         }
 
-        return  resolveNestedClass(type) ||
+        return resolveNestedClass(type) ||
                 resolveFromModule(type, testModuleImports) ||
                 resolveFromCompileUnit(type) ||
                 resolveFromDefaultImports(type, testDefaultImports) ||
                 resolveFromStaticInnerClasses(type, testStaticInnerClasses) ||
-                resolveFromClassCache(type) ||
-                resolveToClass(type) ||
-                resolveToScript(type);
+                resolveToClass(type);
     }
-    
+
     private boolean resolveNestedClass(ClassNode type) {
         // we have for example a class name A, are in class X
         // and there is a nested class A$X. we want to be able 
@@ -341,17 +339,6 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         
         return false;   
     }
-    
-    private boolean resolveFromClassCache(ClassNode type) {
-        String name = type.getName();
-        Object val = cachedClasses.get(name);
-        if (val == null || val == NO_CLASS) {
-            return false;
-        } else {
-            type.setRedirect((ClassNode)val);
-            return true;
-        }
-    }
 
     // NOTE: copied from GroovyClassLoader
     private long getTimeStamp(Class cls) {
@@ -386,17 +373,6 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     private boolean resolveToScript(ClassNode type) {
         String name = type.getName();
 
-        // We do not need to check instances of LowerCaseClass
-        // to be a script, because unless there was an import for
-        // for this we  do not lookup these cases. This was a decision
-        // made on the mailing list. To ensure we will not visit this
-        // method again we set a NO_CLASS for this name
-        if (type instanceof LowerCaseClass) {
-            cachedClasses.put(name, NO_CLASS);
-        }
-        
-        if (cachedClasses.get(name) == NO_CLASS) return false;
-        if (cachedClasses.get(name) == SCRIPT) cachedClasses.put(name, NO_CLASS);
         if (name.startsWith("java.")) return type.isResolved();
         //TODO: don't ignore inner static classes completely
         if (name.indexOf('$') != -1) return type.isResolved();
@@ -695,15 +671,6 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     private boolean resolveToClass(ClassNode type) {
         String name = type.getName();
 
-        // We do not need to check instances of LowerCaseClass
-        // to be a Class, because unless there was an import for
-        // for this we  do not lookup these cases. This was a decision
-        // made on the mailing list. To ensure we will not visit this
-        // method again we set a NO_CLASS for this name
-        if (type instanceof LowerCaseClass) {
-            cachedClasses.put(name,NO_CLASS);
-        }
-
         // We use here the class cache cachedClasses to prevent
         // calls to ClassLoader#loadClass. disabling this cache will
         // cause a major performance hit. Unlike at the end of this
@@ -711,11 +678,27 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         // want to recompile or not. If the class was cached, then
         // we do not want to recompile, recompilation is already
         // scheduled then
+
         Object cached = cachedClasses.get(name);
-        if (cached == NO_CLASS) return false;
-        // cached == SCRIPT should not happen here!
-        if (cached == SCRIPT) throw new GroovyBugError("name "+name+" was marked as script, but was not resolved as such");
-        if (cached != null) return true;
+        if (cached == NO_CLASS)
+            return false;
+
+        if (cached != null) {
+            // cached == SCRIPT should not happen here!
+            type.setRedirect((ClassNode) cached);
+            return true;
+        }
+
+
+        // We do not need to check instances of LowerCaseClass
+        // to be a Class, because unless there was an import for
+        // for this we  do not lookup these cases. This was a decision
+        // made on the mailing list. To ensure we will not visit this
+        // method again we set a NO_CLASS for this name
+        if (type instanceof LowerCaseClass) {
+            cachedClasses.put(name,NO_CLASS);
+            return false;
+        }
 
         if (currentClass.getModule().hasPackageName() && name.indexOf('.') == -1) return false;
         GroovyClassLoader loader = compilationUnit.getClassLoader();
@@ -725,11 +708,11 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             // here since the GroovyClassLoader would create a new CompilationUnit
             cls = loader.loadClass(name, false, true);
         } catch (ClassNotFoundException cnfe) {
-            cachedClasses.put(name, SCRIPT);
-            return false;
+            cachedClasses.put(name, NO_CLASS);
+            return resolveToScript(type);
         } catch (CompilationFailedException cfe) {
             compilationUnit.getErrorCollector().addErrorAndContinue(new ExceptionMessage(cfe, true, source));
-            return false;
+            return resolveToScript(type);
         }
         //TODO: the case of a NoClassDefFoundError needs a bit more research
         // a simple recompilation is not possible it seems. The current class
@@ -748,7 +731,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         //      because  we want to give a possible script a chance to
         //      recompile. This can only be done if the loader was not
         //      the instance defining the class.
-        return cls.getClassLoader() == loader;
+        return cls.getClassLoader() == loader || resolveToScript(type);
     }
 
 
