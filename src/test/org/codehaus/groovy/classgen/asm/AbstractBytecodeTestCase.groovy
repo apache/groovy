@@ -1,4 +1,4 @@
-package org.codehaus.groovy.classgen
+package org.codehaus.groovy.classgen.asm
 
 import org.codehaus.groovy.control.CompilationUnit
 import org.objectweb.asm.util.TraceClassVisitor

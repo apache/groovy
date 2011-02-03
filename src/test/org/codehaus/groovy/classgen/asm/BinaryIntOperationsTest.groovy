@@ -1,4 +1,4 @@
-package org.codehaus.groovy.classgen
+package org.codehaus.groovy.classgen.asm
 
 /**
  * @author Guillaume Laforge
