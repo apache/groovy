@@ -3,6 +3,7 @@ package org.codehaus.groovy.classgen.asm
 import org.codehaus.groovy.control.CompilationUnit
 import org.objectweb.asm.util.TraceClassVisitor
 import org.objectweb.asm.MethodVisitor
+import org.objectweb.asm.FieldVisitor
 import org.objectweb.asm.ClassReader
 import org.codehaus.groovy.control.Phases
 import org.objectweb.asm.commons.EmptyVisitor
@@ -20,7 +21,7 @@ abstract class AbstractBytecodeTestCase extends GroovyTestCase {
      * @param scriptText the script to compile
      * @return the decompiled <code>InstructionSequence</code>
      */
-    InstructionSequence compile(String scriptText) {
+    InstructionSequence compile(Map options=[method:"run"], String scriptText) {
         def cu = new CompilationUnit()
         cu.addSource("script", scriptText)
         cu.compile(Phases.CLASS_GENERATION)
@@ -28,33 +29,28 @@ abstract class AbstractBytecodeTestCase extends GroovyTestCase {
         def output = new StringWriter()
         def tcf = new TraceClassVisitor(new PrintWriter(output)) {
             MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
-                if (name == "run")
+                if (options.method == name) {
                     super.visitMethod(access, name, desc, signature, exceptions)
-                else
+                } else {
                     new EmptyVisitor()
+                }
             }
+            FieldVisitor visitField(int access, String name, String desc, String signature, Object value) {
+                if (options.field == name) {
+                    super.visitField(access, name, desc, signature, value)
+                } else {
+                    new EmptyVisitor()
+                }
+            }
+            
         }
         def cr = new ClassReader(cu.classes[0].bytes)
         cr.accept(tcf, 0)
 
         def code = output.toString()
-        def runMethodCode = code[code.indexOf('public run()Ljava/lang/Object;')+31..-3]
 
-        return new InstructionSequence(instructions: runMethodCode.split('\n')*.trim())
+        return new InstructionSequence(instructions: code.split('\n')*.trim())
     }
-
-    /**
-     * Main test method calling the abstract method <code>assertBytecode</code>
-     * that all sub-classes must implement.
-     */
-    void testAssertBytecode() {
-        assertBytecode()
-    }
-
-    /**
-     * Abstract method to be implemented by all sub-classes.
-     */
-    abstract void assertBytecode()
 }
 
 /**
