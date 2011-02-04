@@ -1879,7 +1879,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param defaultResult an Object that should be returned if all closure results are null
      * @param closure a closure that returns a non-null value when processing should stop
      * @return the first non-null result of the closure, otherwise the default value
-     * @since 1.8
+     * @since 1.7.5
      */
     public static Object findResult(Object self, Object defaultResult, Closure closure) {
         Object result = findResult(self, closure);
@@ -1893,7 +1893,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self    an Object with an iterator returning its values
      * @param closure a closure that returns a non-null value when processing should stop
      * @return the first non-null result of the closure
-     * @since 1.8
+     * @since 1.7.5
      */
     public static Object findResult(Object self, Closure closure) {
         for (Iterator iter = InvokerHelper.asIterator(self); iter.hasNext();) {
@@ -1938,7 +1938,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param defaultResult an Object that should be returned if all closure results are null
      * @param closure a closure that returns a non-null value when processing should stop and a value should be returned
      * @return the first non-null result of the closure
-     * @since 1.8
+     * @since 1.7.5
      */
     public static <T> Object findResult(Collection<T> self, Object defaultResult, Closure closure) {
         Object result = findResult(self, closure);
@@ -1955,7 +1955,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self    a Collection
      * @param closure a closure that returns a non-null value when processing should stop and a value should be returned
      * @return the first non-null result of the closure
-     * @since 1.8
+     * @since 1.7.5
      */
     public static <T> Object findResult(Collection<T> self, Closure closure) {
         for (T value : self) {
@@ -2001,7 +2001,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param defaultResult an Object that should be returned if all closure results are null
      * @param closure a 1 or 2 arg Closure that returns a non-null value when processing should stop and a value should be returned
      * @return a Map.Entry where the key is the key of the first non-null result of the closure and the value is that result
-     * @since 1.8
+     * @since 1.7.5
      */
     public static <K, V> Object findResult(Map<K, V> self, Object defaultResult, Closure closure) {
         Object result = findResult(self, closure);
@@ -2020,7 +2020,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self    a Map
      * @param closure a 1 or 2 arg Closure that returns a non-null value when processing should stop and a value should be returned
      * @return a Map.Entry where the key is the key of the first non-null result of the closure and the value is that result
-     * @since 1.8
+     * @since 1.7.5
      */
     public static <K, V> Object findResult(Map<K, V> self, Closure closure) {
         for (Map.Entry<K, V> entry : self.entrySet()) {
@@ -13414,7 +13414,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure   a 2 parameter closure which is passed the byte[] and a number of bytes successfully read.
      * @throws IOException if an IOException occurs.
      * @see #eachByte(java.io.InputStream, int, groovy.lang.Closure)
-     * @since 1.8
+     * @since 1.7.4
      */
     public static void eachByte(File self, int bufferLen, Closure closure) throws IOException {
         BufferedInputStream is = newInputStream(self);
