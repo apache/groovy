@@ -178,6 +178,11 @@ class CastTest extends GroovyTestCase {
         def h = ['100', '200'] as int[]
         assert h == [100, 200]
         assert h.class.componentType == int
+        
+        def sa = [null,"1"] as String[]
+        assert sa[0]==null
+        assert sa[1]=="1"
+        assert sa.class.componentType == String
     }
 
     void testCastEnum() {

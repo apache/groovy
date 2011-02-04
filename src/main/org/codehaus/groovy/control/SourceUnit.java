@@ -355,5 +355,7 @@ public class SourceUnit extends ProcessingUnit {
     public void addError(SyntaxException se) throws CompilationFailedException {
         getErrorCollector().addError(se, this);
     }
+
+    public ReaderSource getSource() { return source; }
 }
 
