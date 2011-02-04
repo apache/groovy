@@ -228,7 +228,7 @@ public class CachedMethod extends MetaMethod implements Comparable {
             final Constructor constructor = pogoCallSiteConstructor.get();
             if (constructor != null) {
                 try {
-                return (CallSite) constructor.newInstance(site, metaClass, this, params);
+                return (CallSite) constructor.newInstance(site, metaClass, this, params, constructor);
                 } catch (Throwable e) { //
                 }
             }
@@ -252,7 +252,7 @@ public class CachedMethod extends MetaMethod implements Comparable {
             final Constructor constructor = pojoCallSiteConstructor.get();
             if (constructor != null) {
                 try {
-                return (CallSite) constructor.newInstance(site, metaClass, this, params);
+                return (CallSite) constructor.newInstance(site, metaClass, this, params, constructor);
                 } catch (Throwable e) { //
                 }
             }
@@ -276,7 +276,7 @@ public class CachedMethod extends MetaMethod implements Comparable {
             final Constructor constructor = staticCallSiteConstructor.get();
             if (constructor != null) {
                 try {
-                return (CallSite) constructor.newInstance(site, metaClass, this, params);
+                return (CallSite) constructor.newInstance(site, metaClass, this, params, constructor);
                 } catch (Throwable e) { //
                 }
             }
