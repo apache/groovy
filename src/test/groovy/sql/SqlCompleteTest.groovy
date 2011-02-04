@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2009 the original author or authors.
+ * Copyright 2003-2011 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -368,6 +368,45 @@ class SqlCompleteTest extends TestHelper {
         assert result != null
         assert result["name"] == "edam"
     }
+    
+    void testEachRowPaging() {
+        def sql = createSql()
+        def names = []
+        sql.eachRow("select name from FOOD order by name", 2, 2) { row ->
+            names << row.name
+        }
+        assert names.size() == 2
+        assert names[0] == "brie"
+        assert names[1] == "cheddar"
+    }
+
+    void testEachRowPagingWithParams() {
+        def sql = createSql()
+        def names = []
+        sql.eachRow("select name from FOOD where name <> ? order by name", ['brie'], 2, 2) { row ->
+            names << row.name
+        }
+        assert names.size() == 2
+        assert names[0] == "cheddar"
+        assert names[1] == "coffee"
+    }
+
+    void testRowsPaging() {
+        def sql = createSql()
+        def names = sql.rows("select name from FOOD order by name", 2, 2)
+        assert names.size() == 2
+        assert names[0] == ["NAME":"brie"]
+        assert names[1] == ["NAME":"cheddar"]
+    }
+
+    void testRowsPagingWithParams() {
+        def sql = createSql()
+        def names = sql.rows("select name from FOOD where name <> ? order by name", ['brie'], 2, 2)
+        assert names.size() == 2
+        assert names[0] == ["NAME":"cheddar"]
+        assert names[1] == ["NAME":"coffee"]
+    }
+        
 }
 
 class PersonDTO {

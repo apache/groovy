@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2011 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -821,6 +821,10 @@ public class Sql {
     public void eachRow(String sql, Closure closure) throws SQLException {
         eachRow(sql, (Closure) null, closure);
     }
+    
+    public void eachRow(String sql, int offset, int maxRows, Closure closure) throws SQLException {
+        eachRow(sql, (Closure) null, offset, maxRows, closure);
+    }
 
     /**
      * Performs the given SQL query calling the given <code>rowClosure</code> with each row of the
@@ -852,6 +856,10 @@ public class Sql {
      * @throws SQLException if a database access error occurs
      */
     public void eachRow(String sql, Closure metaClosure, Closure rowClosure) throws SQLException {
+        eachRow(sql, metaClosure, 0, 0, rowClosure);
+    }
+        
+    public void eachRow(String sql, Closure metaClosure, int offset, int maxRows, Closure rowClosure) throws SQLException {
         Connection connection = createConnection();
         Statement statement = getStatement(connection, sql);
         ResultSet results = null;
@@ -859,9 +867,15 @@ public class Sql {
             results = statement.executeQuery(sql);
 
             if (metaClosure != null) metaClosure.call(results.getMetaData());
+            
+            boolean cursorAtRow = moveCursor(results, offset);
+            if (!cursorAtRow) return;
 
             GroovyResultSet groovyRS = new GroovyResultSetProxy(results).getImpl();
-            groovyRS.eachRow(rowClosure);
+            int i = 0;
+            while (groovyRS.next() && (maxRows <= 0 || i++ < maxRows)) {
+                rowClosure.call(groovyRS);
+            }
         } catch (SQLException e) {
             LOG.warning("Failed to execute: " + sql + " because: " + e.getMessage());
             throw e;
@@ -869,6 +883,48 @@ public class Sql {
             closeResources(connection, statement, results);
         }
     }
+    
+    private boolean moveCursor(ResultSet results, int offset) throws SQLException {
+        boolean cursorAtRow = true;
+        if (results.getType() == ResultSet.TYPE_FORWARD_ONLY) {
+            int i = 1;
+            while (i++ < offset && cursorAtRow) {
+                cursorAtRow = results.next();
+            }
+        } else if (offset > 1) {
+            cursorAtRow = results.absolute(offset - 1);
+        }
+        return cursorAtRow;
+    }
+    
+    public void eachRow(String sql, List<Object> params, Closure metaClosure, int offset, int maxRows, Closure closure) throws SQLException {
+        Connection connection = createConnection();
+        PreparedStatement statement = null;
+        ResultSet results = null;
+        try {
+            statement = getPreparedStatement(connection, sql, params);
+            results = statement.executeQuery();
+
+            if (metaClosure != null) metaClosure.call(results.getMetaData());
+
+            boolean cursorAtRow = moveCursor(results, offset);
+            if (!cursorAtRow) return;            
+            
+            GroovyResultSet groovyRS = new GroovyResultSetProxy(results).getImpl();
+            int i = 0;
+            while (groovyRS.next() && (maxRows <= 0 || i++ < maxRows)) {
+                closure.call(groovyRS);
+            }
+        }
+        catch (SQLException e) {
+            LOG.warning("Failed to execute: " + sql + " because: " + e.getMessage());
+            throw e;
+        }
+        finally {
+            closeResources(connection, statement, results);
+        }
+    }    
+    
 
     /**
      * Performs the given SQL query calling the given Closure with each row of the
@@ -905,27 +961,7 @@ public class Sql {
      * @throws SQLException if a database access error occurs
      */
     public void eachRow(String sql, List<Object> params, Closure metaClosure, Closure closure) throws SQLException {
-        Connection connection = createConnection();
-        PreparedStatement statement = null;
-        ResultSet results = null;
-        try {
-            statement = getPreparedStatement(connection, sql, params);
-            results = statement.executeQuery();
-
-            if (metaClosure != null) metaClosure.call(results.getMetaData());
-
-            GroovyResultSet groovyRS = new GroovyResultSetProxy(results).getImpl();
-            while (groovyRS.next()) {
-                closure.call(groovyRS);
-            }
-        }
-        catch (SQLException e) {
-            LOG.warning("Failed to execute: " + sql + " because: " + e.getMessage());
-            throw e;
-        }
-        finally {
-            closeResources(connection, statement, results);
-        }
+        eachRow(sql, params, metaClosure, 0, 0, closure);
     }
 
     /**
@@ -951,6 +987,11 @@ public class Sql {
     public void eachRow(String sql, List<Object> params, Closure closure) throws SQLException {
         eachRow(sql, params, null, closure);
     }
+    
+    public void eachRow(String sql, List<Object> params, int offset, int maxRows, Closure closure) throws SQLException {
+        eachRow(sql, params, null, offset, maxRows, closure);
+    }
+    
 
     /**
      * Performs the given SQL query calling the given Closure with each row of the
@@ -1031,8 +1072,13 @@ public class Sql {
      * @throws SQLException if a database access error occurs
      */
     public List<GroovyRowResult> rows(String sql) throws SQLException {
-        return rows(sql, (Closure) null);
+        return rows(sql, 0, 0, null);
     }
+    
+    public List<GroovyRowResult> rows(String sql, int offset, int maxRows) throws SQLException {
+        return rows(sql, offset, maxRows, null);
+    }
+    
 
     /**
      * Performs the given SQL query and return the rows of the result set.
@@ -1054,11 +1100,15 @@ public class Sql {
      * @throws SQLException if a database access error occurs
      */
     public List<GroovyRowResult> rows(String sql, Closure metaClosure) throws SQLException {
+        return rows(sql, 0, 0, metaClosure);
+    }
+    
+    public List<GroovyRowResult> rows(String sql, int offset, int maxRows, Closure metaClosure) throws SQLException {
         AbstractQueryCommand command = createQueryCommand(sql);
         ResultSet rs = null;
         try {
             rs = command.execute();
-            List<GroovyRowResult> result = asList(sql, rs, metaClosure);
+            List<GroovyRowResult> result = asList(sql, rs, offset, maxRows, metaClosure);
             rs = null;
             return result;
         } finally {
@@ -1087,6 +1137,11 @@ public class Sql {
             throws SQLException {
         return rows(sql, params, null);
     }
+    
+    public List<GroovyRowResult> rows(String sql, List<Object> params, int offset, int maxRows) throws SQLException {
+        return rows(sql, params, offset, maxRows, null);
+    }
+    
 
     /**
      * Performs the given SQL query and return the rows of the result set.
@@ -1100,7 +1155,11 @@ public class Sql {
      */
     public List<GroovyRowResult> rows(String sql, Object[] params)
             throws SQLException {
-        return rows(sql, Arrays.asList(params), null);
+        return rows(sql, params, 0, 0);
+    }
+    
+    public List<GroovyRowResult> rows(String sql, Object[] params, int offset, int maxRows) throws SQLException {
+        return rows(sql, Arrays.asList(params), offset, maxRows, null);
     }
 
     /**
@@ -1143,9 +1202,15 @@ public class Sql {
      */
     public List<GroovyRowResult> rows(String sql, List<Object> params, Closure metaClosure)
             throws SQLException {
+        return rows(sql, params, 0, 0, metaClosure);
+    }
+        
+    public List<GroovyRowResult> rows(String sql, List<Object> params, int offset, int maxRows, Closure metaClosure)
+        throws SQLException {
+        
         AbstractQueryCommand command = createPreparedQueryCommand(sql, params);
         try {
-            return asList(sql, command.execute(), metaClosure);
+            return asList(sql, command.execute(), offset, maxRows, metaClosure);
         }
         finally {
             command.closeResources();
@@ -2320,13 +2385,22 @@ public class Sql {
      * @throws SQLException if a database error occurs
      */
     protected List<GroovyRowResult> asList(String sql, ResultSet rs, Closure metaClosure) throws SQLException {
+        return asList(sql, rs, 0, 0, metaClosure);
+    }
+    
+    protected List<GroovyRowResult> asList(String sql, ResultSet rs, int offset, int maxRows, Closure metaClosure) throws SQLException {
         List<GroovyRowResult> results = new ArrayList<GroovyRowResult>();
 
         try {
             if (metaClosure != null) {
                 metaClosure.call(rs.getMetaData());
             }
-            while (rs.next()) {
+
+            boolean cursorAtRow = moveCursor(rs, offset);
+            if (!cursorAtRow) return null;
+            
+            int i = 0;
+            while (rs.next() && (maxRows <= 0 || i++ < maxRows)) {
                 results.add(SqlGroovyMethods.toRowResult(rs));
             }
             return (results);
