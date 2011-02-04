@@ -761,6 +761,22 @@
             </exclusions>
         </dependency>
 
+        <!-- Adding GPars in the Groovy distribution lib folder -->
+        <dependency>
+            <groupId>org.codehaus.gpars</groupId>
+            <artifactId>gpars</artifactId>
+            <version>0.11</version>
+            <scope>runtime</scope>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.coconut.forkjoin</groupId>
+            <artifactId>jsr166y</artifactId>
+            <version>070108</version>
+            <scope>runtime</scope>
+            <optional>true</optional>
+        </dependency>
+
         <!-- Used for richer interactive groovysh support -->
         <dependency>
             <groupId>jline</groupId>
