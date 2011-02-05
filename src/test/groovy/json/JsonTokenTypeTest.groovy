@@ -16,7 +16,6 @@
 package groovy.json
 
 import static JsonTokenType.*
-import static Matching.*
 
 /**
  * @author Guillaume Laforge
@@ -24,63 +23,63 @@ import static Matching.*
 class JsonTokenTypeTest extends GroovyTestCase {
 
     void testMatchingConstants() {
-        assert TRUE.matching('xyz')        == NO
-        assert TRUE.matching('t')          == POSSIBLE
-        assert TRUE.matching('tr')         == POSSIBLE
-        assert TRUE.matching('tru')        == POSSIBLE
-        assert TRUE.matching('true')       == YES
+        assert !TRUE.matching('xyz')
+        assert !TRUE.matching('t')
+        assert !TRUE.matching('tr')
+        assert !TRUE.matching('tru')
+        assert TRUE.matching('true')
 
-        assert FALSE.matching('xyz')       == NO
-        assert FALSE.matching('f')         == POSSIBLE
-        assert FALSE.matching('fa')        == POSSIBLE
-        assert FALSE.matching('fal')       == POSSIBLE
-        assert FALSE.matching('fals')      == POSSIBLE
-        assert FALSE.matching('false')     == YES
+        assert !FALSE.matching('xyz')
+        assert !FALSE.matching('f')
+        assert !FALSE.matching('fa')
+        assert !FALSE.matching('fal')
+        assert !FALSE.matching('fals')
+        assert FALSE.matching('false')
 
-        assert NULL.matching('xyz')        == NO
-        assert NULL.matching('n')          == POSSIBLE
-        assert NULL.matching('nu')         == POSSIBLE
-        assert NULL.matching('nul')        == POSSIBLE
-        assert NULL.matching('null')       == YES
+        assert !NULL.matching('xyz')
+        assert !NULL.matching('n')
+        assert !NULL.matching('nu')
+        assert !NULL.matching('nul')
+        assert NULL.matching('null')
     }
 
     void testMatchingPunctuation() {
-        assert OPEN_CURLY.matching('{')         == YES
-        assert CLOSE_CURLY.matching('}')        == YES
-        assert OPEN_BRACKET.matching('[')       == YES
-        assert CLOSE_BRACKET.matching(']')      == YES
-        assert COLON.matching(':')              == YES
-        assert COMMA.matching(',')              == YES
+        assert OPEN_CURLY.matching('{')
+        assert CLOSE_CURLY.matching('}')
+        assert OPEN_BRACKET.matching('[')
+        assert CLOSE_BRACKET.matching(']')
+        assert COLON.matching(':')
+        assert COMMA.matching(',')
     }
 
     void testMatchingNumbers() {
-        assert NUMBER.matching('-')             == POSSIBLE
-        assert NUMBER.matching('-1')            == YES
-        assert NUMBER.matching('-1.2')          == YES
-        assert NUMBER.matching('-1.2e')         == POSSIBLE
-        assert NUMBER.matching('-1.2e-')        == POSSIBLE
-        assert NUMBER.matching('-1.2e-3')       == YES
+        assert !NUMBER.matching('-')
+        assert NUMBER.matching('-1')
+        assert NUMBER.matching('-1.2')
+        assert !NUMBER.matching('-1.2e')
+        assert !NUMBER.matching('-1.2e-')
+        assert NUMBER.matching('-1.2e-3')
 
-        assert NUMBER.matching('1')             == YES
-        assert NUMBER.matching('12')            == YES
-        assert NUMBER.matching('12.3')          == YES
-        assert NUMBER.matching('12.34')         == YES
-        assert NUMBER.matching('12.34e')        == POSSIBLE
-        assert NUMBER.matching('12.34e5')       == YES
-        assert NUMBER.matching('12.34e56')      == YES
+        assert NUMBER.matching('1')
+        assert NUMBER.matching('12')
+        assert NUMBER.matching('12.3')
+        assert NUMBER.matching('12.34')
+        assert !NUMBER.matching('12.34e')
+        assert NUMBER.matching('12.34e5')
+        assert NUMBER.matching('12.34e56')
     }
 
     void testMatchingString() {
-        assert STRING.matching('1234')          == NO
+        assert !STRING.matching('1234')
 
-        assert STRING.matching('"')             == POSSIBLE
-        assert STRING.matching('"a')            == POSSIBLE
-        assert STRING.matching('"a"')           == YES
-        assert STRING.matching('"aa"')          == YES
+        assert !STRING.matching('"')
+        assert !STRING.matching('"a')
+        assert STRING.matching('"a"')
+        assert STRING.matching('"aa"')
 
-        assert STRING.matching('"a\\')          == POSSIBLE
-        assert STRING.matching('"a\\"')         == POSSIBLE
-        assert STRING.matching('"a\\""')        == YES
+        assert !STRING.matching('"a\\')
+        assert !STRING.matching('"a\\"')
+        assert STRING.matching('"a\\""')
     }
 
     void testTokenStartingWithChar() {

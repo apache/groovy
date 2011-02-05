@@ -17,7 +17,6 @@ package groovy.json;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import static groovy.json.Matching.*;
 
 /**
  * Enum listing all the possible JSON tokens that should be recognized by the lexer.
@@ -69,26 +68,14 @@ public enum JsonTokenType {
      * <code>POSSIBLE</code> if more characters could turn the input string into a valid token,
      * or <code>NO</code> if the string cannot possibly match the pattern even with more characters to read.
      */
-    Matching matching(String input) {
+    boolean matching(String input) {
         if (validator instanceof Pattern) {
             Matcher matcher = ((Pattern)validator).matcher(input);
-            if (matcher.matches()) {
-                return YES;
-            } else if (matcher.hitEnd()) {
-                return POSSIBLE;
-            } else {
-                return NO;
-            }
+            return matcher.matches();
         } else if (validator instanceof String) {
-            if (input.equals(validator)) {
-                return YES;
-            } else if (((String)validator).startsWith(input)) {
-                return POSSIBLE;
-            } else {
-                return NO;
-            }
+            return input.equals(validator);
         } else {
-            return NO;
+            return false;
         }
     }
 

@@ -16,7 +16,6 @@
 package groovy.json;
 
 import static groovy.json.JsonTokenType.*;
-import static groovy.json.Matching.*;
 
 import groovy.io.LineColumnReader;
 
@@ -44,12 +43,16 @@ public class JsonLexer implements Iterator<JsonToken> {
 
     private static final Pattern p = Pattern.compile("\\\\u(\\p{XDigit}{4})");
 
+    private LineColumnReader reader;
+
     /**
      * Underlying reader from which to read the JSON tokens.
      * This reader is an instance of <code>LineColumnReader</code>,
      * to keep track of line and column positions.
      */
-    LineColumnReader reader;
+    public LineColumnReader getReader() {
+        return reader;
+    }
 
     private JsonToken currentToken = null;
 
@@ -109,7 +112,7 @@ public class JsonLexer implements Iterator<JsonToken> {
                 currentContent.append((char)read);
 
                 if (currentContent.charAt(currentContent.length()-1) == '"' && currentContent.charAt(currentContent.length()-2) != '\\' &&
-                        possibleTokenType.matching(currentContent.toString()) == YES) {
+                        possibleTokenType.matching(currentContent.toString())) {
                     token.setEndLine(reader.getLine());
                     token.setEndColumn(reader.getColumn());
                     token.setText(unescape(currentContent.toString()));
@@ -136,7 +139,7 @@ public class JsonLexer implements Iterator<JsonToken> {
             }
 
             String content = currentContent.toString();
-            if (possibleTokenType.matching(content) == YES) {
+            if (possibleTokenType.matching(content)) {
                 token.setEndLine(reader.getLine());
                 token.setEndColumn(reader.getColumn());
                 token.setText(currentContent.toString());
