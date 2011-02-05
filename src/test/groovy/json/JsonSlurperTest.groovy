@@ -127,4 +127,21 @@ class JsonSlurperTest extends GroovyTestCase {
                 ]
         ]
     }
+
+    void testNullEmptyMalformedPayloads() {
+        shouldFail(IllegalArgumentException) { parser.parseText(null)   }
+        shouldFail(IllegalArgumentException) { parser.parseText("")     }
+
+        shouldFail(JsonException) { parser.parseText("[")           }
+        shouldFail(JsonException) { parser.parseText("[a")          }
+        shouldFail(JsonException) { parser.parseText('{"')          }
+        shouldFail(JsonException) { parser.parseText('{"key"')      }
+        shouldFail(JsonException) { parser.parseText('{"key":')     }
+        shouldFail(JsonException) { parser.parseText('{"key":1')    }
+        shouldFail(JsonException) { parser.parseText('[')           }
+        shouldFail(JsonException) { parser.parseText('[a')          }
+        shouldFail(JsonException) { parser.parseText('["a"')        }
+        shouldFail(JsonException) { parser.parseText('["a", ')      }
+        shouldFail(JsonException) { parser.parseText('["a", true')  }
+    }
 }
