@@ -112,6 +112,8 @@ class JsonOutput {
                 object instanceof Iterator ||
                 object instanceof Enumeration) {
             "[" + object.collect { toJson(it) }.join(',') + "]"
+        } else {
+            toJson(object.toString())
         }
     }
 
