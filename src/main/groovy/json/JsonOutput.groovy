@@ -113,7 +113,7 @@ class JsonOutput {
                 object instanceof Enumeration) {
             "[" + object.collect { toJson(it) }.join(',') + "]"
         } else {
-            toJson(object.toString)
+            toJson(object.toString())
         }
     }
 
