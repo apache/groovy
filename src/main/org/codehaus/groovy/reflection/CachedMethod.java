@@ -43,6 +43,8 @@ public class CachedMethod extends MetaMethod implements Comparable {
 
     private SoftReference<Constructor> pogoCallSiteConstructor, pojoCallSiteConstructor, staticCallSiteConstructor;
 
+    private boolean skipCompiled;
+
     public CachedMethod(CachedClass clazz, Method method) {
         this.cachedMethod = method;
         this.cachedClass = clazz;
@@ -212,72 +214,91 @@ public class CachedMethod extends MetaMethod implements Comparable {
     public String toString() {
         return cachedMethod.toString();
     }
+    
+    private Constructor getConstrcutor(SoftReference<Constructor> ref) {
+        if (ref==null) return null;
+        return ref.get();
+    }
 
     public CallSite createPogoMetaMethodSite(CallSite site, MetaClassImpl metaClass, Class[] params) {
-        if (!hasPogoCallSiteConstructor()) {
-          Constructor constr = null;
-          if (CallSiteGenerator.isCompilable(this)) {
-              constr = CallSiteGenerator.compilePogoMethod(this);
-
-              if (constr != null)
-                 pogoCallSiteConstructor = new SoftReference<Constructor> (constr);
-          }
-        }
-
-        if (hasPogoCallSiteConstructor()) {
-            final Constructor constructor = pogoCallSiteConstructor.get();
-            if (constructor != null) {
+        if (!skipCompiled) {
+            Constructor constr = getConstrcutor(pogoCallSiteConstructor);
+            if (constr==null) {
+                if (CallSiteGenerator.isCompilable(this)) {
+                  constr = CallSiteGenerator.compilePogoMethod(this);
+                }
+                if (constr != null) {
+                     pogoCallSiteConstructor = new SoftReference<Constructor> (constr);
+                } else {
+                    skipCompiled = true;
+                }
+            }
+    
+            if (constr!=null) {
                 try {
-                return (CallSite) constructor.newInstance(site, metaClass, this, params, constructor);
-                } catch (Throwable e) { //
+                    return (CallSite) constr.newInstance(site, metaClass, this, params, constr);
+                } catch (Error e) {
+                    skipCompiled=true;
+                    throw e;
+                } catch (Throwable e) {
+                    skipCompiled=true;
                 }
             }
         }
-
         return new PogoMetaMethodSite.PogoCachedMethodSiteNoUnwrapNoCoerce(site, metaClass, this, params);
     }
 
+
     public CallSite createPojoMetaMethodSite(CallSite site, MetaClassImpl metaClass, Class[] params) {
-        if (!hasPojoCallSiteConstructor()) {
-          Constructor constr = null;
-          if (CallSiteGenerator.isCompilable(this)) {
-              constr = CallSiteGenerator.compilePojoMethod(this);
-
-              if (constr != null)
-                 pojoCallSiteConstructor = new SoftReference<Constructor> (constr);
-          }
-        }
-
-        if (hasPogoCallSiteConstructor()) {
-            final Constructor constructor = pojoCallSiteConstructor.get();
-            if (constructor != null) {
+        if (!skipCompiled) {
+            Constructor constr = getConstrcutor(pojoCallSiteConstructor);
+            if (constr==null) {
+                if (CallSiteGenerator.isCompilable(this)) {
+                  constr = CallSiteGenerator.compilePojoMethod(this);
+                }
+                if (constr != null) {
+                    pojoCallSiteConstructor = new SoftReference<Constructor> (constr);
+                } else {
+                    skipCompiled = true;
+                }
+            }
+    
+            if (constr!=null) {
                 try {
-                return (CallSite) constructor.newInstance(site, metaClass, this, params, constructor);
-                } catch (Throwable e) { //
+                    return (CallSite) constr.newInstance(site, metaClass, this, params, constr);
+                } catch (Error e) {
+                    skipCompiled=true;
+                    throw e;
+                } catch (Throwable e) {
+                    skipCompiled=true;
                 }
             }
         }
-
         return new PojoMetaMethodSite.PojoCachedMethodSiteNoUnwrapNoCoerce(site, metaClass, this, params);
     }
 
     public CallSite createStaticMetaMethodSite(CallSite site, MetaClassImpl metaClass, Class[] params) {
-        if (!hasStaticCallSiteConstructor()) {
-          Constructor constr = null;
-          if (CallSiteGenerator.isCompilable(this)) {
-              constr = CallSiteGenerator.compileStaticMethod(this);
-
-              if (constr != null)
-                 staticCallSiteConstructor = new SoftReference<Constructor> (constr);
-          }
-        }
-
-        if (hasStaticCallSiteConstructor()) {
-            final Constructor constructor = staticCallSiteConstructor.get();
-            if (constructor != null) {
+        if (!skipCompiled) {
+            Constructor constr = getConstrcutor(staticCallSiteConstructor);
+            if (constr==null) {
+                if (CallSiteGenerator.isCompilable(this)) {
+                  constr = CallSiteGenerator.compileStaticMethod(this);
+                }
+                if (constr != null) {
+                    staticCallSiteConstructor = new SoftReference<Constructor> (constr);
+                } else {
+                    skipCompiled = true;
+                }
+            }
+    
+            if (constr!=null) {
                 try {
-                return (CallSite) constructor.newInstance(site, metaClass, this, params, constructor);
-                } catch (Throwable e) { //
+                    return (CallSite) constr.newInstance(site, metaClass, this, params, constr);
+                } catch (Error e) {
+                    skipCompiled=true;
+                    throw e;
+                } catch (Throwable e) {
+                    skipCompiled=true;
                 }
             }
         }
@@ -285,14 +306,17 @@ public class CachedMethod extends MetaMethod implements Comparable {
         return new StaticMetaMethodSite.StaticMetaMethodSiteNoUnwrapNoCoerce(site, metaClass, this, params);
     }
 
+    //TODO: deprecate and remove this method
     public boolean hasPogoCallSiteConstructor() {
         return pogoCallSiteConstructor != null && pogoCallSiteConstructor.get() != null;
     }
 
+    //TODO: deprecate and remove this method
     public boolean hasPojoCallSiteConstructor() {
         return pojoCallSiteConstructor != null && pojoCallSiteConstructor.get() != null;
     }
 
+    //TODO: deprecate and remove this method
     public boolean hasStaticCallSiteConstructor() {
         return staticCallSiteConstructor != null && staticCallSiteConstructor.get() != null;
     }
