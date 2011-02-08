@@ -157,7 +157,7 @@ public class CallSiteGenerator {
     public static byte[] genPogoMetaMethodSite(CachedMethod cachedMethod, ClassWriter cw, String name) {
         String internalName = name.replace('.', '/');
         cw.visit(Opcodes.V1_4, Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNTHETIC, internalName, null, "org/codehaus/groovy/runtime/callsite/PogoMetaMethodSite", null);
-        cw.visitField(Opcodes.ACC_STATIC + Opcodes.ACC_PUBLIC + Opcodes.ACC_FINAL, "__constructor__", "Ljava/lang/reflect/Constructor;", null, null);
+        cw.visitField(Opcodes.ACC_PUBLIC + Opcodes.ACC_STATIC, "__constructor__", "Ljava/lang/reflect/Constructor;", null, null);
  
         genConstructor(cw, "org/codehaus/groovy/runtime/callsite/PogoMetaMethodSite", internalName);
 
@@ -176,7 +176,7 @@ public class CallSiteGenerator {
     public static byte[] genPojoMetaMethodSite(CachedMethod cachedMethod, ClassWriter cw, String name) {
         String internalName = name.replace('.', '/');
         cw.visit(Opcodes.V1_4, Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNTHETIC, internalName, null, "org/codehaus/groovy/runtime/callsite/PojoMetaMethodSite", null);
-        cw.visitField(Opcodes.ACC_PUBLIC + Opcodes.ACC_FINAL, "__constructor__", "Ljava/lang/reflect/Constructor;", null, null);
+        cw.visitField(Opcodes.ACC_PUBLIC + Opcodes.ACC_STATIC, "__constructor__", "Ljava/lang/reflect/Constructor;", null, null);
 
         genConstructor(cw, "org/codehaus/groovy/runtime/callsite/PojoMetaMethodSite", internalName);
 
