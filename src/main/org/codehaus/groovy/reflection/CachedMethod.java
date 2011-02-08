@@ -306,17 +306,17 @@ public class CachedMethod extends MetaMethod implements Comparable {
         return new StaticMetaMethodSite.StaticMetaMethodSiteNoUnwrapNoCoerce(site, metaClass, this, params);
     }
 
-    //TODO: deprecate and remove this method
+    @Deprecated
     public boolean hasPogoCallSiteConstructor() {
         return pogoCallSiteConstructor != null && pogoCallSiteConstructor.get() != null;
     }
 
-    //TODO: deprecate and remove this method
+    @Deprecated
     public boolean hasPojoCallSiteConstructor() {
         return pojoCallSiteConstructor != null && pojoCallSiteConstructor.get() != null;
     }
 
-    //TODO: deprecate and remove this method
+    @Deprecated()
     public boolean hasStaticCallSiteConstructor() {
         return staticCallSiteConstructor != null && staticCallSiteConstructor.get() != null;
     }
