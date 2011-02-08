@@ -184,6 +184,13 @@ class CastTest extends GroovyTestCase {
         assert sa[1]=="1"
         assert sa.class.componentType == String
     }
+    
+    void testCastString() {
+        // this test must pass on 1.7.x
+        // see GROOVY-3978, GROOVY-4657, GROOVY-4669
+        def val = "abcde" as byte[]
+        assert val == "abcde".bytes
+    }
 
     void testCastEnum() {
         CastEnum val;

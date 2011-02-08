@@ -6487,6 +6487,14 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             stack.addAll(col);
             return (T) stack;
         }
+        
+        if (clazz!=String[].class && ReflectionCache.isArray(clazz)) {
+            try {
+                return (T) asArrayType(col, clazz);
+            } catch (GroovyCastException e) {
+                /* ignore */
+            }
+        }
 
         Object[] args = {col};
         try {
@@ -15185,14 +15193,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             return (T) InvokerHelper.toString(obj);
         }
 
-        try {
-            if (type!=String[].class && ReflectionCache.isArray(type)) {
-                return (T) asArrayType(obj, type);
-            }
-        }
-        catch (GroovyCastException e) {
-            /* ignore */
-        }
         // fall back to cast
         try {
           return (T) DefaultTypeTransformation.castToType(obj, type);
