@@ -89,7 +89,7 @@ public class ClassLoaderForClassArtifacts extends ClassLoader {
 
         if (cls != null) {
             try {
-                return cls.getConstructor(CallSite.class, MetaClassImpl.class, MetaMethod.class, Class[].class);
+                return cls.getConstructor(CallSite.class, MetaClassImpl.class, MetaMethod.class, Class[].class, Constructor.class);
             } catch (NoSuchMethodException e) { //
             }
         }
