@@ -2852,16 +2852,20 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * the closure along with the first item. The result is passed back (injected) into
      * the closure along with the second item. The new result is injected back into
      * the closure along with the third item and so on until the entire collection
-     * has been used. Also known as <pre>foldLeft</pre> in functional parlance.
+     * has been used. Also known as <tt>foldLeft</tt> in functional parlance.
      *
      * Examples:
      * <pre class="groovyTestCase">
      * assert 1*1*2*3*4 == [1,2,3,4].inject(1) { acc, val -> acc * val }
+     *
      * assert 0+1+2+3+4 == [1,2,3,4].inject(0) { acc, val -> acc + val }
+     *
      * assert 'The quick brown fox' ==
      *     ['quick', 'brown', 'fox'].inject('The') { acc, val -> acc + ' ' + val }
+     *
      * assert 'bat' ==
      *     ['rat', 'bat', 'cat'].inject('zzz') { min, next -> next < min ? next : min }
+     *
      * def max = { a, b -> [a, b].max() }
      * def animals = ['bat', 'rat', 'cat']
      * assert 'rat' == animals.inject('aaa', max)
