@@ -60,36 +60,6 @@ class ArrayTest extends GroovyTestCase {
         assert ca[0] == 'z'
     }
 
-    void testIntegerArrayElementAssignments() {
-        Integer[] ca = new Integer[1]
-        
-        // Assignments statements.
-        ca[0] = 1
-        assert ca[0] == 1
-
-        ca[0] = 2.0
-        assert ca[0] == 2
-
-        ca[0] = 'c'
-        assert ca[0] == 99
-
-        // Assignment in value context.
-        def v
-        
-        v = (ca[0] = 1)
-        assert ca[0] == 1
-        assert ca[0].is(v)
-        
-        v = (ca[0] = 2.0)
-        assert ca[0] == 2
-        assert ca[0].is(v)
-
-        v = (ca[0] = 'c')
-        assert ca[0] == 99
-        assert ca[0].is(v)
-
-    }
-    
     void testCharArrayWithInitializer() {
         def bar = 'c'
         char[] array = ['a', 'b', "$bar"]
@@ -273,29 +243,6 @@ class ArrayTest extends GroovyTestCase {
 
         ca[0] = "$foo"
         assert ca[0] == 'z'
-        
-        // Assignment in value context.
-        def v
-        
-        v = (ca[0] = 'b' as char)
-        assert ca[0] == 'b'
-        assert v.is(ca[0])
-
-        v = (ca[0] = '\u00A1' as char)
-        assert ca[0] == '\u00A1'
-        assert v.is(ca[0])
-
-        v = (ca[0] = 'a')
-        assert ca[0] == 'a'
-        assert v.is(ca[0])
-
-        v = (ca[0] = '\u00A0')
-        assert ca[0] == '\u00A0'
-        assert v.is(ca[0])
-
-        v = (ca[0] = "$foo")
-        assert ca[0] == 'z'
-        assert v.is(ca[0])
     }
 
     void testAssignmentOfSingleCharStringToNumberArrays() {
