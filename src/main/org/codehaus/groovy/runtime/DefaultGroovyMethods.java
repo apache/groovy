@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2011 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -2848,33 +2848,65 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
 
     /**
-     * Iterates through the given collection, passing in the initial value to
-     * the closure along with the current iterated item then passing into the
-     * next iteration the value of the previous closure.
-     * <pre class="groovyTestCase">assert 1*1*2*3*4 == [1,2,3,4].inject(1) { acc, val -> acc * val }</pre>
+     * Iterates through the given Collection, passing in the initial value to
+     * the 2-arg closure along with the first item. The result is passed back (injected) into
+     * the closure along with the second item. The new result is injected back into
+     * the closure along with the third item and so on until the entire collection
+     * has been used. Also known as <tt>foldLeft</tt> in functional parlance.
      *
-     * @param self    a Collection
-     * @param value   a value
-     * @param closure a closure
-     * @return the last value of the last iteration
+     * Examples:
+     * <pre class="groovyTestCase">
+     * assert 1*1*2*3*4 == [1,2,3,4].inject(1) { acc, val -> acc * val }
+     *
+     * assert 0+1+2+3+4 == [1,2,3,4].inject(0) { acc, val -> acc + val }
+     *
+     * assert 'The quick brown fox' ==
+     *     ['quick', 'brown', 'fox'].inject('The') { acc, val -> acc + ' ' + val }
+     *
+     * assert 'bat' ==
+     *     ['rat', 'bat', 'cat'].inject('zzz') { min, next -> next < min ? next : min }
+     *
+     * def max = { a, b -> [a, b].max() }
+     * def animals = ['bat', 'rat', 'cat']
+     * assert 'rat' == animals.inject('aaa', max)
+     * </pre>
+     * Visual representation of the last example above:
+     * <pre>
+     *    initVal  animals[0]
+     *       v        v
+     * max('aaa',   'bat')  =>  'bat'  animals[1]
+     *                            v       v
+     *                      max('bat',  'rat')  =>  'rat'  animals[2]
+     *                                                v       v
+     *                                          max('rat',  'cat')  =>  'rat'
+     * </pre>
+     *
+     * @param self         a Collection
+     * @param initialValue some initial value
+     * @param closure      a closure
+     * @return the result of the last closure call
      * @since 1.0
      */
-    public static Object inject(Collection self, Object value, Closure closure) {
-        return inject(self.iterator(), value, closure);
+    public static <T, U extends T> T inject(Collection self, U initialValue, Closure<? extends T> closure) {
+        return inject(self.iterator(), initialValue, closure);
     }
 
     /**
-     * Iterates through the given iterator, passing in the initial value to
-     * the closure along with the current iterated item then passing into the
-     * next iteration the value of the previous closure.
+     * Iterates through the given Iterator, passing in the initial value to
+     * the closure along with the first item. The result is passed back (injected) into
+     * the closure along with the second item. The new result is injected back into
+     * the closure along with the third item and so on until the Iterator has been
+     * expired of values. Also known as foldLeft in functional parlance.
      *
-     * @param self    a Collection
-     * @param value   a value
-     * @param closure a closure
-     * @return the last value of the last iteration
+     * @param self         an Iterator
+     * @param initialValue some initial value
+     * @param closure      a closure
+     * @return the result of the last closure call
+     * @see #inject(Collection, Object, Closure)
      * @since 1.5.0
      */
-    public static Object inject(Iterator self, Object value, Closure closure) {
+    public static <T, U extends T> T inject(Iterator self, U initialValue, Closure<? extends T> closure) {
+        T value = initialValue;
         Object[] params = new Object[2];
         while (self.hasNext()) {
             Object item = self.next();
@@ -2886,35 +2918,41 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Iterates through the given object, passing in the initial value to
-     * the closure along with the current iterated item then passing into the
-     * next iteration the value of the previous closure.
+     * Iterates through the given Object, passing in the initial value to
+     * the closure along with the first item. The result is passed back (injected) into
+     * the closure along with the second item. The new result is injected back into
+     * the closure along with the third item and so on until further iteration of
+     * the object is not possible. Also known as foldLeft in functional parlance.
      *
-     * @param self    a Collection
-     * @param value   a value
-     * @param closure a closure
-     * @return the last value of the last iteration
+     * @param self         an Object
+     * @param initialValue some initial value
+     * @param closure      a closure
+     * @return the result of the last closure call
+     * @see #inject(Collection, Object, Closure)
      * @since 1.5.0
      */
-    public static Object inject(Object self, Object value, Closure closure) {
+    public static <T, U extends T> T inject(Object self, U initialValue, Closure<? extends T> closure) {
         Iterator iter = InvokerHelper.asIterator(self);
-        return inject(iter, value, closure);
+        return inject(iter, initialValue, closure);
     }
 
     /**
-     * Iterates through the given array of objects, passing in the initial value to
-     * the closure along with the current iterated item then passing into the
-     * next iteration the value of the previous closure.
+     * Iterates through the given array, passing in the initial value to
+     * the closure along with the first item. The result is passed back (injected) into
+     * the closure along with the second item. The new result is injected back into
+     * the closure along with the third item and so on until all elements of the array
+     * have been used. Also known as foldLeft in functional parlance.
      *
      * @param self         an Object[]
-     * @param initialValue an initialValue
+     * @param initialValue some initial value
      * @param closure      a closure
-     * @return the last value of the last iteration
+     * @return the result of the last closure call
+     * @see #inject(Collection, Object, Closure)
      * @since 1.5.0
      */
-    public static Object inject(Object[] self, Object initialValue, Closure closure) {
+    public static <T, U extends T> T inject(Object[] self, U initialValue, Closure<? extends T> closure) {
         Object[] params = new Object[2];
-        Object value = initialValue;
+        T value = initialValue;
         for (Object next : self) {
             params[0] = value;
             params[1] = next;
