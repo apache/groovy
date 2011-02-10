@@ -2485,41 +2485,14 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * the closure along with the third item and so on until the entire collection
      * has been used. Also known as <tt>foldLeft</tt> in functional parlance.
      *
-     * Examples:
-     * <pre class="groovyTestCase">
-     * assert 1*1*2*3*4 == [1,2,3,4].inject(1) { acc, val -> acc * val }
-     *
-     * assert 0+1+2+3+4 == [1,2,3,4].inject(0) { acc, val -> acc + val }
-     *
-     * assert 'The quick brown fox' ==
-     *     ['quick', 'brown', 'fox'].inject('The') { acc, val -> acc + ' ' + val }
-     *
-     * assert 'bat' ==
-     *     ['rat', 'bat', 'cat'].inject('zzz') { min, next -> next < min ? next : min }
-     *
-     * def max = { a, b -> [a, b].max() }
-     * def animals = ['bat', 'rat', 'cat']
-     * assert 'rat' == animals.inject('aaa', max)
-     * </pre>
-     * Visual representation of the last example above:
-     * <pre>
-     *    initVal  animals[0]
-     *       v        v
-     * max('aaa',   'bat')  =>  'bat'  animals[1]
-     *                            v       v
-     *                      max('bat',  'rat')  =>  'rat'  animals[2]
-     *                                                v       v
-     *                                          max('rat',  'cat')  =>  'rat'
-     * </pre>
-     *
-     * @param self         a Collection
-     * @param initialValue some initial value
-     * @param closure      a closure
-     * @return the result of the last closure call
+     * @param self    a Collection
+     * @param value   a value
+     * @param closure a closure
+     * @return the last value of the last iteration
      * @since 1.0
      */
-    public static <T, U extends T> T inject(Collection self, U initialValue, Closure<? extends T> closure) {
-        return inject(self.iterator(), initialValue, closure);
+    public static Object inject(Collection self, Object value, Closure closure) {
+        return inject(self.iterator(), value, closure);
     }
 
     /**
@@ -2529,15 +2502,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * the closure along with the third item and so on until the Iterator has been
      * expired of values. Also known as foldLeft in functional parlance.
      *
-     * @param self         an Iterator
-     * @param initialValue some initial value
-     * @param closure      a closure
-     * @return the result of the last closure call
-     * @see #inject(Collection, Object, Closure)
+     * @param self    a Collection
+     * @param value   a value
+     * @param closure a closure
+     * @return the last value of the last iteration
      * @since 1.5.0
      */
-    public static <T, U extends T> T inject(Iterator self, U initialValue, Closure<? extends T> closure) {
-        T value = initialValue;
+    public static Object inject(Iterator self, Object value, Closure closure) {
         Object[] params = new Object[2];
         while (self.hasNext()) {
             Object item = self.next();
@@ -2555,16 +2526,15 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * the closure along with the third item and so on until further iteration of
      * the object is not possible. Also known as foldLeft in functional parlance.
      *
-     * @param self         an Object
-     * @param initialValue some initial value
-     * @param closure      a closure
-     * @return the result of the last closure call
-     * @see #inject(Collection, Object, Closure)
+     * @param self    a Collection
+     * @param value   a value
+     * @param closure a closure
+     * @return the last value of the last iteration
      * @since 1.5.0
      */
-    public static <T, U extends T> T inject(Object self, U initialValue, Closure<? extends T> closure) {
+    public static Object inject(Object self, Object value, Closure closure) {
         Iterator iter = InvokerHelper.asIterator(self);
-        return inject(iter, initialValue, closure);
+        return inject(iter, value, closure);
     }
 
     /**
@@ -2575,15 +2545,14 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * have been used. Also known as foldLeft in functional parlance.
      *
      * @param self         an Object[]
-     * @param initialValue some initial value
+     * @param initialValue an initialValue
      * @param closure      a closure
-     * @return the result of the last closure call
-     * @see #inject(Collection, Object, Closure)
+     * @return the last value of the last iteration
      * @since 1.5.0
      */
-    public static <T, U extends T> T inject(Object[] self, U initialValue, Closure<? extends T> closure) {
+    public static Object inject(Object[] self, Object initialValue, Closure closure) {
         Object[] params = new Object[2];
-        T value = initialValue;
+        Object value = initialValue;
         for (Object next : self) {
             params[0] = value;
             params[1] = next;
