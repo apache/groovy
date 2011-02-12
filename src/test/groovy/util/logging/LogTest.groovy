@@ -78,6 +78,24 @@ class LogTest extends GroovyTestCase {
       }
   }
 
+    void testLogFromStaticMethods() {
+        Class clazz = new GroovyClassLoader().parseClass("""
+            @groovy.util.logging.Log
+            class MyClass {
+                static loggingMethod() {
+                  log.info   ("info    called")
+                }
+            } """)
+
+        def logSpy = new LoggerSpy()
+        def logger = new MockFor(Logger)
+        logger.demand.getLogger { logSpy }
+        logger.use {
+            clazz.loggingMethod()
+        }
+
+        assert logSpy.infoParameter == 'info    called'
+    }
 
   public void testLogInfo() {
 

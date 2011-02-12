@@ -95,6 +95,21 @@ class CommonsTest extends GroovyTestCase {
         s.run()
     }
 
+    void testLogFromStaticMethods() {
+        Class clazz = new GroovyClassLoader().parseClass("""
+            @groovy.util.logging.Commons
+            class MyClass {
+                static loggingMethod() {
+                  log.info   ("(static) info called")
+                }
+            }
+            MyClass.loggingMethod()""")
+
+        Script s = (Script) clazz.newInstance()
+        s.run()
+    }
+
+
     /**
      * This test output must be observed manually.
      * There is unfortunately no good way to add an appender to Commons Logging.

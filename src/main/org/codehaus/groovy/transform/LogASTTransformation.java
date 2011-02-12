@@ -39,7 +39,7 @@ import java.util.Arrays;
  * @author Martin Ghados
  * @author Matthias Cullmann
  */
-@GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
+@GroovyASTTransformation(phase = CompilePhase.SEMANTIC_ANALYSIS)
 public class LogASTTransformation implements ASTTransformation {
 
     public void visit(ASTNode[] nodes, final SourceUnit source) {
