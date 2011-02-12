@@ -135,6 +135,25 @@ class Slf4jTest extends GroovyTestCase {
       assert events[ind].message == "trace called"
   }
 
+    void testLogFromStaticMethods() {
+        Class clazz = new GroovyClassLoader().parseClass("""
+            @groovy.util.logging.Slf4j
+            class MyClass {
+                static loggingMethod() {
+                  log.info   ("(static) info called")
+                }
+            }
+            MyClass.loggingMethod()""")
+
+        Script s = (Script) clazz.newInstance()
+        s.run()
+
+        def events = appender.getEvents()
+        assert events.size() == 1
+        assert events[0].level == Level.INFO
+        assert events[0].message == "(static) info called"
+    }
+
   public void testLogInfoWithNamedLogger() {
 
       Class clazz = new GroovyClassLoader().parseClass('''
