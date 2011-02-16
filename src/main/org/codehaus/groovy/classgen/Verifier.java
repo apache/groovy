@@ -1142,6 +1142,26 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                             " with disparate static modifier",
                     overridingMethod);
         }
+        if (!equalReturnType) {
+            boolean oldM = ClassHelper.isPrimitiveType(oldMethod.getReturnType());
+            boolean newM = ClassHelper.isPrimitiveType(overridingMethod.getReturnType());
+            if (oldM || newM) {
+                String message="";
+                if (oldM && newM) {
+                    message = " with old and new method having different primitive return types";
+                } else if (newM) {
+                    message = " with new method having a primitive return type and old method not";
+                } else if (oldM) {
+                    message = " with old method having a primitive return type and new method not";
+                }
+                throw new RuntimeParserException(
+                        "Cannot override method " + 
+                            oldMethod.getTypeDescriptor() +
+                            " in " + oldMethod.getDeclaringClass().getName() +
+                            message,
+                        overridingMethod);
+            }
+        }
 
         MethodNode newMethod = new MethodNode(
                 oldMethod.getName(),
@@ -1169,6 +1189,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                                 BytecodeHelper.getClassInternalName(classNode),
                                 overridingMethod.getName(),
                                 BytecodeHelper.getMethodDescriptor(overridingMethod.getReturnType(), overridingMethod.getParameters()));
+                        
                         BytecodeHelper.doReturn(mv, oldMethod.getReturnType());
                     }
                 }
