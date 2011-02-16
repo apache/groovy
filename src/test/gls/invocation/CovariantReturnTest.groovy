@@ -201,5 +201,29 @@ public class CovariantReturnTest extends CompilableTestSupport {
             }
         """
     }
+    
+    void testPrimitiveObjectMix() {
+        //Object overridden by primitive
+        shouldNotCompile """
+            class BaseClass{ def foo(){} }
+            class DerivedClass extends BaseClass {
+                boolean foo(){}
+            }
+        """
+        //primitive overridden by Object
+        shouldNotCompile """
+            class BaseClass{ boolean foo(){} }
+            class DerivedClass extends BaseClass {
+                Object foo(){}
+            }
+        """
+        //primitive overriding different primitive
+        shouldNotCompile """
+            class BaseClass{ boolean foo(){} }
+            class DerivedClass extends BaseClass {
+                int foo(){}
+            }
+        """
+    }
 
 }
