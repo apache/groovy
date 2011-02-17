@@ -103,8 +103,13 @@ class HistoryCommand
         
         try {
             id = Integer.parseInt(id)
-            
-            line = history.historyList[id]
+            if (shell.historyFull) {
+                // if history was full before execution of the command, then the recall command itself
+                // has been added to history before it actually gets executed
+                // so we need to shift by one
+                id--
+            };
+            line = id<0?shell.evictedLine:history.historyList[id]
         }
         catch (Exception e) {
             fail("Invalid history identifier: $id", e)
