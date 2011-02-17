@@ -130,7 +130,7 @@ public class AsmClassGenerator extends ClassGenerator {
         try {
             cv.visit(
                     getBytecodeVersion(),
-                    adjustedModifiers(classNode.getModifiers()),
+                    adjustedClassModifiers(classNode.getModifiers()),
                     controller.getInternalClassName(),
                     BytecodeHelper.getGenericsSignature(classNode),
                     controller.getInternalBaseClassName(),
@@ -213,9 +213,12 @@ public class AsmClassGenerator extends ClassGenerator {
     /*
      * Classes but not interfaces should have ACC_SUPER set
      */
-    private int adjustedModifiers(int modifiers) {
+    private int adjustedClassModifiers(int modifiers) {
         boolean needsSuper = (modifiers & ACC_INTERFACE) == 0;
-        return needsSuper ? modifiers | ACC_SUPER : modifiers;
+        modifiers = needsSuper ? modifiers | ACC_SUPER : modifiers;
+        // eliminate static
+        modifiers = modifiers & ~ACC_STATIC;
+        return modifiers;
     }
 
     public void visitGenericType(GenericsType genericsType) {
