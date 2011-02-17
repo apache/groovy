@@ -2891,14 +2891,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return inject(self.iterator(), initialValue, closure);
     }
 
-    public static Integer foo(Integer self) {
-        Collection c = new ArrayList();
-        Number x = inject(c, (Integer)3, new Closure<BigInteger>(c) {
-            void doCall(){}
-        });
-        return self;
-    }
-
     /**
      * Iterates through the given Iterator, passing in the initial value to
      * the closure along with the first item. The result is passed back (injected) into
