@@ -54,7 +54,7 @@ import static org.codehaus.groovy.transform.AbstractASTTransformUtil.isInstanceO
 @GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
 public class AutoCloneASTTransformation extends AbstractASTTransformation {
     static final Class MY_CLASS = AutoClone.class;
-    static final ClassNode MY_TYPE = new ClassNode(MY_CLASS);
+    static final ClassNode MY_TYPE = ClassHelper.make(MY_CLASS);
     static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
     private static final ClassNode CLONEABLE_TYPE = ClassHelper.make(Cloneable.class);
     private static final ClassNode BAOS_TYPE = ClassHelper.make(ByteArrayOutputStream.class);

@@ -39,9 +39,8 @@ import java.util.Arrays;
 public class SynchronizedASTTransformation implements ASTTransformation, Opcodes {
 
     private static final Class MY_CLASS = Synchronized.class;
-    private static final ClassNode MY_TYPE = new ClassNode(MY_CLASS);
+    private static final ClassNode MY_TYPE = ClassHelper.make(MY_CLASS);
     private static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
-    private static final ClassNode OBJECT_TYPE = new ClassNode(Object.class);
 
     public void visit(ASTNode[] nodes, SourceUnit source) {
         if (nodes.length != 2 || !(nodes[0] instanceof AnnotationNode) || !(nodes[1] instanceof AnnotatedNode)) {
@@ -83,7 +82,7 @@ public class SynchronizedASTTransformation implements ASTTransformation, Opcodes
             FieldNode field = cNode.getDeclaredField("$LOCK");
             if (field == null) {
                 int visibility = ACC_PRIVATE | ACC_STATIC | ACC_FINAL;
-                cNode.addField("$LOCK", visibility, OBJECT_TYPE, zeroLengthObjectArray());
+                cNode.addField("$LOCK", visibility, ClassHelper.OBJECT_TYPE, zeroLengthObjectArray());
             } else if (!field.isStatic()) {
                 throw new RuntimeException("Error during " + MY_TYPE_NAME + " processing: $LOCK field must be static");
             }
@@ -92,7 +91,7 @@ public class SynchronizedASTTransformation implements ASTTransformation, Opcodes
         FieldNode field = cNode.getDeclaredField("$lock");
         if (field == null) {
             int visibility = ACC_PRIVATE | ACC_FINAL;
-            cNode.addField("$lock", visibility, OBJECT_TYPE, zeroLengthObjectArray());
+            cNode.addField("$lock", visibility, ClassHelper.OBJECT_TYPE, zeroLengthObjectArray());
         } else if (field.isStatic()) {
             throw new RuntimeException("Error during " + MY_TYPE_NAME + " processing: $lock field must not be static");
         }
@@ -100,7 +99,7 @@ public class SynchronizedASTTransformation implements ASTTransformation, Opcodes
     }
 
     private Expression zeroLengthObjectArray() {
-        return new ArrayExpression(OBJECT_TYPE, null, Arrays.asList((Expression)new ConstantExpression(0)));
+        return new ArrayExpression(ClassHelper.OBJECT_TYPE, null, Arrays.asList((Expression)new ConstantExpression(0)));
     }
 
 }

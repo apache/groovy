@@ -49,10 +49,9 @@ import java.util.List;
 public class IndexedPropertyASTTransformation implements ASTTransformation, Opcodes {
 
     private static final Class MY_CLASS = IndexedProperty.class;
-    private static final ClassNode MY_TYPE = new ClassNode(MY_CLASS);
+    private static final ClassNode MY_TYPE = ClassHelper.make(MY_CLASS);
     private static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
-    private static final ClassNode LIST_TYPE = new ClassNode(List.class);
-    private static final ClassNode OBJECT_TYPE = new ClassNode(Object.class);
+    private static final ClassNode LIST_TYPE = ClassHelper.make(List.class);
     private static final Token ASSIGN = Token.newSymbol("=", -1, -1);
     private static final Token INDEX = Token.newSymbol("[", -1, -1);
 
@@ -139,7 +138,7 @@ public class IndexedPropertyASTTransformation implements ASTTransformation, Opco
         if (fType.isUsingGenerics() && fType.getGenericsTypes().length == 1) {
             return fType.getGenericsTypes()[0].getType();
         } else {
-            return OBJECT_TYPE;
+            return ClassHelper.OBJECT_TYPE;
         }
     }
 

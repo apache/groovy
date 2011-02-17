@@ -39,7 +39,6 @@ public class LazyASTTransformation implements ASTTransformation, Opcodes {
 
     private static final ClassNode SOFT_REF = ClassHelper.make(SoftReference.class);
     private static final Expression NULL_EXPR = ConstantExpression.NULL;
-    private static final ClassNode OBJECT_TYPE = new ClassNode(Object.class);
     private static final Token ASSIGN = Token.newSymbol("=", -1, -1);
     private static final Token COMPARE_NOT_EQUAL = Token.newSymbol("!=", -1, -1);
 
@@ -88,7 +87,7 @@ public class LazyASTTransformation implements ASTTransformation, Opcodes {
         final ClassNode fieldType = fieldNode.getType();
         final int visibility = ACC_PRIVATE | ACC_STATIC;
         final String fullName = declaringClass.getName() + "$" + fieldType.getNameWithoutPackage() + "Holder_" + fieldNode.getName().substring(1);
-        final InnerClassNode holderClass = new InnerClassNode(declaringClass, fullName, visibility, OBJECT_TYPE);
+        final InnerClassNode holderClass = new InnerClassNode(declaringClass, fullName, visibility, ClassHelper.OBJECT_TYPE);
         final String innerFieldName = "INSTANCE";
         holderClass.addField(innerFieldName, ACC_PRIVATE | ACC_STATIC | ACC_FINAL, fieldType, initExpr);
         final Expression innerField = new PropertyExpression(new ClassExpression(holderClass), innerFieldName);

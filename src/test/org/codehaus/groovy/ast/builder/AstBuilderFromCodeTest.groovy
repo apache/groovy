@@ -58,6 +58,7 @@ import org.codehaus.groovy.ast.expr.ClosureExpression
 import org.codehaus.groovy.ast.expr.CastExpression
 import org.codehaus.groovy.ast.expr.ListExpression
 import org.codehaus.groovy.ast.stmt.IfStatement
+import org.codehaus.groovy.ast.ClassHelper
 
 /**
  * Test case to show an ASTBuilder working off of a code block.
@@ -348,14 +349,14 @@ public class AstBuilderFromCodeTest extends GroovyTestCase {
         def expected = new BlockStatement(
                 [new ExpressionStatement(
                         new MethodCallExpression(
-                                new VariableExpression('this', new ClassNode(Object)),
+                                new VariableExpression('this', ClassHelper.OBJECT_TYPE),
                                 'func',
                                 new NamedArgumentListExpression(
                                         [new MapEntryExpression(
                                                 new SpreadMapExpression(
-                                                        new VariableExpression('m', new ClassNode(Object))
+                                                        new VariableExpression('m', ClassHelper.OBJECT_TYPE)
                                                 ),
-                                                new VariableExpression('m', new ClassNode(Object))
+                                                new VariableExpression('m', ClassHelper.OBJECT_TYPE)
                                         )]
                                 )
                         ))], new VariableScope())
@@ -373,7 +374,7 @@ public class AstBuilderFromCodeTest extends GroovyTestCase {
         }
 
         def expected = new BlockStatement([new ForStatement(
-                new Parameter(new ClassNode(Object), "forLoopDummyParameter"),
+                new Parameter(ClassHelper.OBJECT_TYPE, "forLoopDummyParameter"),
                 new ClosureListExpression(
                         [
                                 new DeclarationExpression(
@@ -592,7 +593,7 @@ public class AstBuilderFromCodeTest extends GroovyTestCase {
         def expected = new BlockStatement(
                 [new ExpressionStatement(
                         new MethodPointerExpression(
-                                new ClassExpression(new ClassNode(Integer)),
+                                new ClassExpression(ClassHelper.Integer_TYPE),
                                 new ConstantExpression("toString")
                         ))], new VariableScope())
 
@@ -651,7 +652,7 @@ public class AstBuilderFromCodeTest extends GroovyTestCase {
                         new DeclarationExpression(
                                 new VariableExpression("foo"),
                                 new Token(Types.EQUALS, "=", -1, -1),
-                                new ClassExpression(new ClassNode(String))
+                                new ClassExpression(ClassHelper.STRING_TYPE)
                         ))], new VariableScope())
 
         AstAssert.assertSyntaxTree([expected], result)
@@ -767,9 +768,9 @@ public class AstBuilderFromCodeTest extends GroovyTestCase {
                 [new ExpressionStatement(
                         new ClosureExpression(
                                 [
-                                        new Parameter(new ClassNode(Object), "x"),
-                                        new Parameter(new ClassNode(Object), "y"),
-                                        new Parameter(new ClassNode(Object), "z")] as Parameter[],
+                                        new Parameter(ClassHelper.OBJECT_TYPE, "x"),
+                                        new Parameter(ClassHelper.OBJECT_TYPE, "y"),
+                                        new Parameter(ClassHelper.OBJECT_TYPE, "z")] as Parameter[],
                                 new BlockStatement(
                                         [new ExpressionStatement(
                                                 new MethodCallExpression(

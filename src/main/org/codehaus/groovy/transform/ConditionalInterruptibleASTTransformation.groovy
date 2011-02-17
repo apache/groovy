@@ -40,7 +40,7 @@ import groovy.inspect.swingui.AstNodeToScriptAdapter
 @GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
 public class ConditionalInterruptibleASTTransformation extends AbstractInterruptibleASTTransformation {
 
-    private static final ClassNode MY_TYPE = new ClassNode(ConditionalInterrupt)
+    private static final ClassNode MY_TYPE = ClassHelper.make(ConditionalInterrupt)
     private static final String CONDITION_METHOD = 'conditionalTransform$condition';
 
     private ClosureExpression conditionNode

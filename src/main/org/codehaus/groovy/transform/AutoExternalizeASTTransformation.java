@@ -51,7 +51,7 @@ import static org.codehaus.groovy.transform.AbstractASTTransformUtil.getInstance
 @GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
 public class AutoExternalizeASTTransformation extends AbstractASTTransformation {
     static final Class MY_CLASS = AutoExternalize.class;
-    static final ClassNode MY_TYPE = new ClassNode(MY_CLASS);
+    static final ClassNode MY_TYPE = ClassHelper.make(MY_CLASS);
     static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
     private static final ClassNode EXTERNALIZABLE_TYPE = ClassHelper.make(Externalizable.class);
     private static final ClassNode OBJECTOUTPUT_TYPE = ClassHelper.make(ObjectOutput.class);

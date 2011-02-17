@@ -17,12 +17,7 @@ package org.codehaus.groovy.transform;
 
 import groovy.transform.InheritConstructors;
 import org.codehaus.groovy.GroovyBugError;
-import org.codehaus.groovy.ast.ASTNode;
-import org.codehaus.groovy.ast.AnnotatedNode;
-import org.codehaus.groovy.ast.AnnotationNode;
-import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.ConstructorNode;
-import org.codehaus.groovy.ast.Parameter;
+import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.Expression;
@@ -49,7 +44,7 @@ import java.util.List;
 public class InheritConstructorsASTTransformation implements ASTTransformation, Opcodes {
 
     private static final Class MY_CLASS = InheritConstructors.class;
-    private static final ClassNode MY_TYPE = new ClassNode(MY_CLASS);
+    private static final ClassNode MY_TYPE = ClassHelper.make(MY_CLASS);
     private static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
 
     public void visit(ASTNode[] nodes, SourceUnit source) {

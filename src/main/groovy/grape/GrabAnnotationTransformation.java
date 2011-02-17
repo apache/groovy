@@ -61,7 +61,7 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
     private static final String GRAPERESOLVER_DOT_NAME = dotName(GRABRESOLVER_CLASS_NAME);
     private static final String GRABRESOLVER_SHORT_NAME = shortName(GRAPERESOLVER_DOT_NAME);
     
-    private static final ClassNode THREAD_CLASSNODE = new ClassNode(Thread.class);
+    private static final ClassNode THREAD_CLASSNODE = ClassHelper.make(Thread.class);
     private static final List<String> GRABEXCLUDE_REQUIRED = Arrays.asList("group", "module");
     private static final List<String> GRAPERESOLVER_REQUIRED = Arrays.asList("name", "root");
     private static final List<String> GRAB_REQUIRED = Arrays.asList("group", "module", "version");
@@ -160,7 +160,7 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
             
             visitClass(classNode);
 
-            ClassNode grapeClassNode = new ClassNode(Grape.class);
+            ClassNode grapeClassNode = ClassHelper.make(Grape.class);
 
             if (!grabResolverAnnotations.isEmpty()) {
                 grabResolverAnnotationLoop:

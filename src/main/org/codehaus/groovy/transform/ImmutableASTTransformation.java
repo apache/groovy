@@ -77,16 +77,16 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
             "java.net.URI"
     );
     private static final Class MY_CLASS = groovy.transform.Immutable.class;
-    static final ClassNode MY_TYPE = new ClassNode(MY_CLASS);
+    static final ClassNode MY_TYPE = ClassHelper.make(MY_CLASS);
     static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
-    private static final ClassNode DATE_TYPE = new ClassNode(Date.class);
-    private static final ClassNode CLONEABLE_TYPE = new ClassNode(Cloneable.class);
-    private static final ClassNode COLLECTION_TYPE = new ClassNode(Collection.class);
-    private static final ClassNode READONLYEXCEPTION_TYPE = new ClassNode(ReadOnlyPropertyException.class);
-    private static final ClassNode DGM_TYPE = new ClassNode(DefaultGroovyMethods.class);
-    private static final ClassNode SELF_TYPE = new ClassNode(ImmutableASTTransformation.class);
-    private static final ClassNode HASHMAP_TYPE = new ClassNode(HashMap.class);
-    private static final ClassNode MAP_TYPE = new ClassNode(Map.class);
+    private static final ClassNode DATE_TYPE = ClassHelper.make(Date.class);
+    private static final ClassNode CLONEABLE_TYPE = ClassHelper.make(Cloneable.class);
+    private static final ClassNode COLLECTION_TYPE = ClassHelper.make(Collection.class);
+    private static final ClassNode READONLYEXCEPTION_TYPE = ClassHelper.make(ReadOnlyPropertyException.class);
+    private static final ClassNode DGM_TYPE = ClassHelper.make(DefaultGroovyMethods.class);
+    private static final ClassNode SELF_TYPE = ClassHelper.make(ImmutableASTTransformation.class);
+    private static final ClassNode HASHMAP_TYPE = ClassHelper.make(HashMap.class);
+    private static final ClassNode MAP_TYPE = ClassHelper.make(Map.class);
 
     public void visit(ASTNode[] nodes, SourceUnit source) {
         init(nodes, source);

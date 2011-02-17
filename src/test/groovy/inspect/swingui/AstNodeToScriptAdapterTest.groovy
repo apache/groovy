@@ -371,7 +371,7 @@ public class AstNodeToScriptAdapterTest extends GroovyTestCase {
         String result = compileToScript(script, CompilePhase.CANONICALIZATION)
         assert result.contains('private boolean $print$names')
         assert result.contains('private int $hash$code')
-        assert result.contains('public Event(java.util.HashMap args)')
+        assert result.contains('public Event(java.util.HashMap<K extends java.lang.Object, V extends java.lang.Object> args)')
 
         // assert toString()... quotations marks were a hassle
         assert result.contains('public java.lang.String toString()')
