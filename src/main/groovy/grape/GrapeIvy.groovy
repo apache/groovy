@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2011 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -329,6 +329,35 @@ class GrapeIvy implements GrapeEngine {
         }
 
         return report
+    }
+
+    public void uninstallArtifact(String group, String module, String rev) {
+        // TODO consider transitive uninstall as an option
+        Pattern ivyFilePattern = ~/ivy-(.*)\.xml/ //TODO get pattern from ivy conf
+        grapeCacheDir.eachDir { File groupDir ->
+            if (groupDir.name == group) groupDir.eachDir { File moduleDir ->
+                if (moduleDir.name == module) moduleDir.eachFileMatch(ivyFilePattern) { File ivyFile ->
+                    def m = ivyFilePattern.matcher(ivyFile.name)
+                    if (m.matches() && m.group(1) == rev) {
+                        def root = new XmlParser(false, false).parse(ivyFile)
+                        def jardir = new File(moduleDir, 'jars')
+                        if (!jardir.exists()) return
+                        root.publications.artifact.each {
+                            def name = it.@name + "-$rev"
+                            def classifier = it.'@m:classifier'
+                            if (classifier) name += "-$classifier"
+                            name += ".${it.@ext}"
+                            def jarfile = new File(jardir, name)
+                            if (jarfile.exists()) {
+                                println "Deleting ${jarfile.name}"
+                                jarfile.delete()
+                            }
+                        }
+                        ivyFile.delete()
+                    }
+                }
+            }
+        }
     }
 
     private addExcludesIfNeeded(Map args, DefaultModuleDescriptor md) {

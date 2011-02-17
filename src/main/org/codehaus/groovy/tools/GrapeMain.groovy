@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2008 the original author or authors.
+ * Copyright 2003-2011 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import org.apache.commons.cli.*
 
 install = {arg, cmd ->
     if (arg.size() > 5 || arg.size() < 3) {
-        println 'install requires two to four arguments, <group> <module> [<version>] [<classifier>]'
+        println 'install requires two to four arguments: <group> <module> [<version>] [<classifier>]'
         return
     }
     def ver = '*'
@@ -46,6 +46,43 @@ install = {arg, cmd ->
     } catch (Exception e) {
         println "An error occured : $ex"
     }
+}
+
+uninstall = {arg, cmd ->
+    if (arg.size() != 4) {
+        println 'uninstall requires three arguments: <group> <module> <version>'
+        // TODO make version optional? support classifier?
+//        println 'uninstall requires two to four arguments, <group> <module> [<version>] [<classifier>]'
+        return
+    }
+    String group = arg[1]
+    String module = arg[2]
+    String ver = arg[3]
+//    def classifier = null
+
+    // set the instance so we can re-set the logger
+    Grape.getInstance()
+    setupLogging()
+
+    if (!Grape.enumerateGrapes().find {String groupName, Map g ->
+        g.any {String moduleName, List<String> versions ->
+            group == groupName && module == moduleName && ver in versions
+        }
+    }) {
+        println "uninstall did not find grape matching: $group $module $ver"
+        def fuzzyMatches = Grape.enumerateGrapes().findAll { String groupName, Map g ->
+            g.any {String moduleName, List<String> versions ->
+                groupName.contains(group) || moduleName.contains(module) ||
+                group.contains(groupName) || module.contains(moduleName)
+            }
+        }
+        if (fuzzyMatches) {
+            println 'possible matches:'
+            fuzzyMatches.each { String groupName, Map g -> println "    $groupName: $g" }
+        }
+        return
+    }
+    Grape.instance.uninstallArtifact(group, module, ver)
 }
 
 list = {arg, cmd ->
@@ -173,6 +210,8 @@ resolve = {arg, cmd ->
 def commands = [
     'install': [closure: install,
         shortHelp: 'Installs a particular grape'],
+    'uninstall': [closure: uninstall,
+        shortHelp: 'Uninstalls a particular grape (non-transitively removes the respective jar file from the grape cache)'],
     'list': [closure: list,
         shortHelp: 'Lists all installed grapes'],
     'resolve': [closure: resolve,
