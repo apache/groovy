@@ -93,11 +93,17 @@ class InnerClassTest extends CompilableTestSupport {
 
     void testStaticInnerClass() {
         assertScript """
+            import java.lang.reflect.Modifier
+        
             class A {
                 static class B{}
             }
             def x = new A.B()
             assert x != null
+            
+            def mods = A.B.modifiers
+            assert Modifier.isPublic(mods)
+            assert !Modifier.isStatic(mods)
         """
     }
 
