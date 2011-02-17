@@ -105,6 +105,14 @@ class InnerClassTest extends CompilableTestSupport {
             assert Modifier.isPublic(mods)
             assert !Modifier.isStatic(mods)
         """
+        
+        assertScript """
+            class A {
+                static class B{}
+            }
+            assert A.declaredClasses.length==1
+            assert A.declaredClasses[0]==A.B
+        """
     }
 
     void testNonStaticInnerClass_FAILS() {
