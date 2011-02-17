@@ -54,6 +54,7 @@ import java.util.regex.Pattern;
  * be ignored.</li>
  * <li>* is used to match zero or more characters in a file.</li>
  * <li>** is used to match zero or more directories.</li>
+ * <li>Loading paths with <code>load ./*.jar</code> or <code>load *.jar</code> are not supported.</li>
  * </ul>
  * <p/>
  * Defining the main class is required unless setRequireMain(boolean) is
