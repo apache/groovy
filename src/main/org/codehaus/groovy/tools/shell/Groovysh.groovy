@@ -60,7 +60,10 @@ class Groovysh
     InteractiveShellRunner runner
     
     History history
-    
+
+    boolean historyFull  // used as a workaround for GROOVY-2177
+    String evictedLine  // remembers the command which will get evicted if history is full
+
     Groovysh(final ClassLoader classLoader, final Binding binding, final IO io, final Closure registrar) {
         super(io)
         
@@ -166,7 +169,7 @@ class Groovysh
                 // Should never happen
                 throw new Error("Invalid parse status: $status.code")
         }
-        
+
         return result
     }
 
