@@ -178,36 +178,40 @@ public class AsmClassGenerator extends ClassGenerator {
                 createSyntheticStaticFields();
             }
 
-            for (Iterator iter = innerClasses.iterator(); iter.hasNext();) {
-                ClassNode innerClass = (ClassNode) iter.next();
-                String innerClassName = innerClass.getName();
-                String innerClassInternalName = BytecodeHelper.getClassInternalName(innerClassName);
-                {
-                    int index = innerClassName.lastIndexOf('$');
-                    if (index >= 0) innerClassName = innerClassName.substring(index + 1);
-                }
-                String outerClassName = controller.getInternalClassName(); // default for inner classes
-                MethodNode enclosingMethod = innerClass.getEnclosingMethod();
-                if (enclosingMethod != null) {
-                    // local inner classes do not specify the outer class name
-                    outerClassName = null;
-                    innerClassName = null;
-                }
-                //int mods = adjustedModifiers(innerClass.getModifiers());
-                int mods = innerClass.getModifiers();
-                cv.visitInnerClass(
-                        innerClassInternalName,
-                        outerClassName,
-                        innerClassName,
-                        mods);
+            for (Iterator<InnerClassNode> iter = classNode.getInnerClasses(); iter.hasNext();) {
+                InnerClassNode innerClass = iter.next();
+                makeInnerClassEntry(innerClass);
             }
-            //TODO: an inner class should have an entry of itself
+            makeInnerClassEntry(classNode);
 
             cv.visitEnd();
         } catch (GroovyRuntimeException e) {
             e.setModule(classNode.getModule());
             throw e;
         }
+    }
+
+    private void makeInnerClassEntry(ClassNode innerClass) {
+        if (!(innerClass instanceof InnerClassNode)) return;
+        String innerClassName = innerClass.getName();
+        String innerClassInternalName = BytecodeHelper.getClassInternalName(innerClassName);
+        {
+            int index = innerClassName.lastIndexOf('$');
+            if (index >= 0) innerClassName = innerClassName.substring(index + 1);
+        }
+        String outerClassName = controller.getInternalClassName(); // default for inner classes
+        MethodNode enclosingMethod = innerClass.getEnclosingMethod();
+        if (enclosingMethod != null) {
+            // local inner classes do not specify the outer class name
+            outerClassName = null;
+            innerClassName = null;
+        }
+        int mods = innerClass.getModifiers();
+        cv.visitInnerClass(
+                innerClassInternalName,
+                outerClassName,
+                innerClassName,
+                mods);
     }
 
     /*
