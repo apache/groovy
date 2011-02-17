@@ -61,6 +61,7 @@ class InteractiveShellRunner
         completor.refresh()
 
         // And then actually run
+        adjustHistory()
         super.run()
     }
     
@@ -92,6 +93,22 @@ class InteractiveShellRunner
             return "";
         }
     }
+
+    @Override
+    protected boolean work() {
+        boolean result= super.work()
+        adjustHistory()
+
+        result
+    }
+
+    private void adjustHistory() {
+        if (shell instanceof Groovysh) {
+            shell.historyFull = shell.history.size() >= shell.history.maxSize
+            if (shell.historyFull) shell.evictedLine = shell.history.historyList[0]
+        }
+    }
+
 }
 
 /**
