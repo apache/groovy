@@ -4565,7 +4565,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Get a replacement corresponds to the matched pattern for {@link org.codehaus.groovy.runtime.DefaultGroovyMethods#replaceAll(final String self, final Pattern pattern, final Closure closure)}.
+     * Get a replacement corresponding to the matched pattern for {@link org.codehaus.groovy.runtime.DefaultGroovyMethods#replaceAll(String, Pattern, Closure)}.
      * The closure take parameter:
      * <ul>
      * <li>Whole of match if the pattern include no capturing group</li>
