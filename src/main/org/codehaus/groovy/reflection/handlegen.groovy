@@ -15,6 +15,8 @@
  */
 package org.codehaus.groovy.reflection
 
+System.err.println "WARNING: this class is deprecated and will be removed in Groovy 1.9"
+
 def types = [
         "boolean",
         "char",

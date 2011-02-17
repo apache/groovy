@@ -17,7 +17,10 @@ package org.codehaus.groovy.reflection;
 
 import org.codehaus.groovy.runtime.ArrayUtil;
 
-
+/**
+* This class is unused and will be removed in Groovy 1.9
+*/
+@Deprecated
 public class MethodHandle {
 
     protected MethodHandle () {

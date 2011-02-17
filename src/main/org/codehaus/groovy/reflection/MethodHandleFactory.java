@@ -24,8 +24,13 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Constructor;
 
+/**
+* his class is unused and will be removed in Groovy 1.9
+*/
+@Deprecated
 public class MethodHandleFactory implements Opcodes{
 
+    @Deprecated
     public static MethodHandle unreflect (Method method) {
         if (SunClassLoader.sunVM != null || checkAccessable(method)) {
           return createCompiledMethodHandle (method, ClassInfo.getClassInfo(method.getDeclaringClass()).getArtifactClassLoader());
@@ -48,6 +53,7 @@ public class MethodHandleFactory implements Opcodes{
         return true;
     }
 
+    @Deprecated
     public static void genLoadParameters(int argumentIndex, MethodVisitor mv, Method method) {
         Class<?>[] parameters = method.getParameterTypes();
         int size = parameters.length;
@@ -63,6 +69,7 @@ public class MethodHandleFactory implements Opcodes{
         }
     }
 
+    @Deprecated
     public static void genLoadParametersDirect(int argumentIndex, MethodVisitor mv, Method method) {
         Class<?>[] parameters = method.getParameterTypes();
         int size = parameters.length;
@@ -75,6 +82,7 @@ public class MethodHandleFactory implements Opcodes{
         }
     }
 
+    @Deprecated
     public static void genLoadParametersPrimitiveDirect(int argumentIndex, MethodVisitor mv, Method method) {
         Class<?>[] parameters = method.getParameterTypes();
         int size = parameters.length;
@@ -101,6 +109,7 @@ public class MethodHandleFactory implements Opcodes{
         }
     }
 
+    @Deprecated
     private static class ReflectiveMethodHandle extends MethodHandle {
         private final Method method;
 
@@ -156,6 +165,7 @@ public class MethodHandleFactory implements Opcodes{
         mv.visitEnd();
     }
 
+    @Deprecated
     public static void genInvokeXxxWithArray(ClassWriter cw, Method method) {
         MethodVisitor mv;
         mv = cw.visitMethod(Opcodes.ACC_PUBLIC, "invoke", "(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;", null, EXCEPTIONS);
