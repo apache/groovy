@@ -57,8 +57,8 @@ import java.beans.PropertyChangeSupport;
 @GroovyASTTransformation(phase= CompilePhase.CANONICALIZATION)
 public class BindableASTTransformation implements ASTTransformation, Opcodes {
 
-    protected static ClassNode boundClassNode = new ClassNode(Bindable.class);
-    protected ClassNode pcsClassNode = new ClassNode(PropertyChangeSupport.class);
+    protected static ClassNode boundClassNode = ClassHelper.make(Bindable.class);
+    protected ClassNode pcsClassNode = ClassHelper.make(PropertyChangeSupport.class);
 
     /**
      * Convenience method to see if an annotated node is {@code @Bindable}.

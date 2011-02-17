@@ -29,6 +29,7 @@ import org.codehaus.groovy.ast.FieldNode
 import org.codehaus.groovy.ast.MethodNode
 import org.codehaus.groovy.ast.Parameter
 import org.codehaus.groovy.ast.ConstructorNode
+import org.codehaus.groovy.ast.ClassHelper
 
 /**
  * Unit test for the AstBuilder class. Shows the usage of how to create AST from string input.  
@@ -126,7 +127,7 @@ public class AstBuilderFromStringTest extends GroovyTestCase {
                 new VariableScope()
         )
 
-        def expectedClassNode = new ClassNode("synthesized", 1024, new ClassNode(Script))
+        def expectedClassNode = new ClassNode("synthesized", 1024, ClassHelper.make(Script))
 
         AstAssert.assertSyntaxTree([expectedScriptBody, expectedClassNode], result)
     }
@@ -282,7 +283,7 @@ public class AstBuilderFromStringTest extends GroovyTestCase {
 
         def expected = [
                 new BlockStatement(),
-                new ClassNode("MyClass", Opcodes.ACC_PUBLIC, new ClassNode(Object))
+                new ClassNode("MyClass", Opcodes.ACC_PUBLIC, ClassHelper.OBJECT_TYPE)
         ]
         AstAssert.assertSyntaxTree(expected, result)
 
@@ -291,7 +292,7 @@ public class AstBuilderFromStringTest extends GroovyTestCase {
         def expectedField = new FieldNode(
                 'myField',
                 Opcodes.ACC_PRIVATE,
-                new ClassNode(String),
+                ClassHelper.STRING_TYPE,
                 classNode,
                 new ConstantExpression('a field value')
         )
@@ -301,7 +302,7 @@ public class AstBuilderFromStringTest extends GroovyTestCase {
         def expectedMethod = new MethodNode(
                 'myMethod',
                 Opcodes.ACC_PUBLIC,
-                new ClassNode(Object),
+                ClassHelper.OBJECT_TYPE,
                 [] as Parameter[],
                 [] as ClassNode[],
                 new BlockStatement(

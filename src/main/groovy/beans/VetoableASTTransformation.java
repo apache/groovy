@@ -57,8 +57,8 @@ import java.beans.VetoableChangeSupport;
 @GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
 public class VetoableASTTransformation extends BindableASTTransformation {
 
-    protected static ClassNode constrainedClassNode = new ClassNode(Vetoable.class);
-    protected ClassNode vcsClassNode = new ClassNode(VetoableChangeSupport.class);
+    protected static ClassNode constrainedClassNode = ClassHelper.make(Vetoable.class);
+    protected ClassNode vcsClassNode = ClassHelper.make(VetoableChangeSupport.class);
 
     /**
      * Convenience method to see if an annotated node is {@code @Vetoable}.
@@ -328,7 +328,7 @@ public class VetoableASTTransformation extends BindableASTTransformation {
      */
     protected void createSetterMethod(ClassNode declaringClass, PropertyNode propertyNode, String setterName, Statement setterBlock) {
         Parameter[] setterParameterTypes = {new Parameter(propertyNode.getType(), "value")};
-        ClassNode[] exceptions = {new ClassNode(PropertyVetoException.class)};
+        ClassNode[] exceptions = {ClassHelper.make(PropertyVetoException.class)};
         MethodNode setter =
                 new MethodNode(setterName, propertyNode.getModifiers(), ClassHelper.VOID_TYPE, setterParameterTypes, exceptions, setterBlock);
         setter.setSynthetic(true);
@@ -445,7 +445,7 @@ public class VetoableASTTransformation extends BindableASTTransformation {
                         ACC_PUBLIC | ACC_SYNTHETIC,
                         ClassHelper.VOID_TYPE,
                         new Parameter[]{new Parameter(ClassHelper.STRING_TYPE, "name"), new Parameter(ClassHelper.OBJECT_TYPE, "oldValue"), new Parameter(ClassHelper.OBJECT_TYPE, "newValue")},
-                        new ClassNode[] {new ClassNode(PropertyVetoException.class)},
+                        new ClassNode[] {ClassHelper.make(PropertyVetoException.class)},
                         new ExpressionStatement(
                                 new MethodCallExpression(
                                         new FieldExpression(vcsField),

@@ -18,13 +18,7 @@ package org.codehaus.groovy.transform;
 
 import groovy.transform.PackageScope;
 import groovy.transform.PackageScopeTarget;
-import org.codehaus.groovy.ast.ASTNode;
-import org.codehaus.groovy.ast.AnnotatedNode;
-import org.codehaus.groovy.ast.AnnotationNode;
-import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.FieldNode;
-import org.codehaus.groovy.ast.MethodNode;
-import org.codehaus.groovy.ast.PropertyNode;
+import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
@@ -50,11 +44,11 @@ import java.util.ArrayList;
 public class PackageScopeASTTransformation implements ASTTransformation, Opcodes {
 
     private static final Class MY_CLASS = PackageScope.class;
-    private static final ClassNode MY_TYPE = new ClassNode(MY_CLASS);
+    private static final ClassNode MY_TYPE = ClassHelper.make(MY_CLASS);
     private static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
     private static final String LEGACY_TYPE_NAME = "groovy.lang.PackageScope";
     private static final Class TARGET_CLASS = groovy.transform.PackageScopeTarget.class;
-    private static final String TARGET_CLASS_NAME = new ClassNode(TARGET_CLASS).getNameWithoutPackage();
+    private static final String TARGET_CLASS_NAME = ClassHelper.make(TARGET_CLASS).getNameWithoutPackage();
 
     public void visit(ASTNode[] nodes, SourceUnit source) {
         if (nodes.length != 2 || !(nodes[0] instanceof AnnotationNode) || !(nodes[1] instanceof AnnotatedNode)) {

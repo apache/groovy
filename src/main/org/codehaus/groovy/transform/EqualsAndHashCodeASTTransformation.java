@@ -44,9 +44,9 @@ import static org.codehaus.groovy.transform.AbstractASTTransformUtil.*;
 @GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
 public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformation {
     static final Class MY_CLASS = EqualsAndHashCode.class;
-    static final ClassNode MY_TYPE = new ClassNode(MY_CLASS);
+    static final ClassNode MY_TYPE = ClassHelper.make(MY_CLASS);
     static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
-    private static final ClassNode HASHUTIL_TYPE = new ClassNode(HashCodeHelper.class);
+    private static final ClassNode HASHUTIL_TYPE = ClassHelper.make(HashCodeHelper.class);
     private static final Token ASSIGN = Token.newSymbol(Types.ASSIGN, -1, -1);
     private static final ClassNode OBJECT_TYPE = new ClassNode(Object.class);
 

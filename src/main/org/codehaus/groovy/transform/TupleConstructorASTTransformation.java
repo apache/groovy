@@ -51,7 +51,7 @@ import static org.codehaus.groovy.transform.AbstractASTTransformUtil.*;
 public class TupleConstructorASTTransformation extends AbstractASTTransformation {
 
     static final Class MY_CLASS = TupleConstructor.class;
-    static final ClassNode MY_TYPE = new ClassNode(MY_CLASS);
+    static final ClassNode MY_TYPE = ClassHelper.make(MY_CLASS);
     static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
     private static Map<Class<?>, Expression> primitivesInitialValues;
 

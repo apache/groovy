@@ -34,7 +34,7 @@ import java.util.Set;
  */
 @GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
 public class NewifyASTTransformation extends ClassCodeExpressionTransformer implements ASTTransformation {
-    private static final ClassNode MY_TYPE = new ClassNode(Newify.class);
+    private static final ClassNode MY_TYPE = ClassHelper.make(Newify.class);
     private static final String MY_NAME = MY_TYPE.getNameWithoutPackage();
     private SourceUnit source;
     private ListExpression classesToNewify;

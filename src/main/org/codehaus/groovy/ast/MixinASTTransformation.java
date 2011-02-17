@@ -30,7 +30,7 @@ import java.util.Arrays;
 
 @GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
 public class MixinASTTransformation implements ASTTransformation {
-    private static final ClassNode MY_TYPE = new ClassNode(Mixin.class);
+    private static final ClassNode MY_TYPE = ClassHelper.make(Mixin.class);
 
     // TODO would it be better to actually statically mixin the methods?
     public void visit(ASTNode nodes[], SourceUnit source) {

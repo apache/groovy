@@ -15,6 +15,7 @@
  */
 package groovy.util.logging;
 
+import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.expr.*;
@@ -61,9 +62,9 @@ public @interface Commons {
         public FieldNode addLoggerFieldToClass(ClassNode classNode, String logFieldName) {
             return classNode.addField(logFieldName,
                     Opcodes.ACC_FINAL | Opcodes.ACC_TRANSIENT | Opcodes.ACC_STATIC | Opcodes.ACC_PRIVATE,
-                    new ClassNode("org.apache.commons.logging.Log", Opcodes.ACC_PUBLIC, new ClassNode(Object.class)),
+                    new ClassNode("org.apache.commons.logging.Log", Opcodes.ACC_PUBLIC, ClassHelper.OBJECT_TYPE),
                     new MethodCallExpression(
-                            new ClassExpression(new ClassNode("org.apache.commons.logging.LogFactory", Opcodes.ACC_PUBLIC, new ClassNode(Object.class))),
+                            new ClassExpression(new ClassNode("org.apache.commons.logging.LogFactory", Opcodes.ACC_PUBLIC, ClassHelper.OBJECT_TYPE)),
                             "getLog",
                             new ClassExpression(classNode)));
         }

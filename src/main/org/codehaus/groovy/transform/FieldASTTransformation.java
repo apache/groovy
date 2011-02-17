@@ -40,7 +40,7 @@ import java.util.Arrays;
 public class FieldASTTransformation extends ClassCodeExpressionTransformer implements ASTTransformation, Opcodes {
 
     private static final Class MY_CLASS = Field.class;
-    private static final ClassNode MY_TYPE = new ClassNode(MY_CLASS);
+    private static final ClassNode MY_TYPE = ClassHelper.make(MY_CLASS);
     private static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
     private SourceUnit sourceUnit;
     private DeclarationExpression candidate;

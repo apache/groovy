@@ -43,7 +43,7 @@ import org.codehaus.groovy.ast.stmt.*
 @GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
 public class TimedInterruptibleASTTransformation implements ASTTransformation {
 
-  private static final ClassNode MY_TYPE = new ClassNode(TimedInterrupt.class)
+  private static final ClassNode MY_TYPE = ClassHelper.make(TimedInterrupt.class)
   private static final String CHECK_METHOD_START_MEMBER = 'checkOnMethodStart'
   private static final String PROPAGATE_TO_COMPILE_UNIT = 'applyToAllClasses'
 

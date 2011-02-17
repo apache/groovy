@@ -71,9 +71,9 @@ public @interface Log {
         public FieldNode addLoggerFieldToClass(ClassNode classNode, String logFieldName) {
             return classNode.addField(logFieldName,
                         Opcodes.ACC_FINAL | Opcodes.ACC_TRANSIENT | Opcodes.ACC_STATIC | Opcodes.ACC_PRIVATE,
-                        new ClassNode("java.util.logging.Logger", Opcodes.ACC_PUBLIC, new ClassNode(Object.class)),
+                        new ClassNode("java.util.logging.Logger", Opcodes.ACC_PUBLIC, ClassHelper.OBJECT_TYPE),
                         new MethodCallExpression(
-                                new ClassExpression(new ClassNode("java.util.logging.Logger", Opcodes.ACC_PUBLIC, new ClassNode(Object.class))),
+                                new ClassExpression(new ClassNode("java.util.logging.Logger", Opcodes.ACC_PUBLIC, ClassHelper.OBJECT_TYPE)),
                                 "getLogger",
                                 new ConstantExpression(classNode.getName())));
         }

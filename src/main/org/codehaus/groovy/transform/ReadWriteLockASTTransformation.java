@@ -40,9 +40,9 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 @GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
 public class ReadWriteLockASTTransformation implements ASTTransformation, Opcodes {
 
-    private static final ClassNode READ_LOCK_TYPE = new ClassNode(WithReadLock.class);
-    private static final ClassNode WRITE_LOCK_TYPE = new ClassNode(WithWriteLock.class);
-    private static final ClassNode LOCK_TYPE = new ClassNode(ReentrantReadWriteLock.class);
+    private static final ClassNode READ_LOCK_TYPE = ClassHelper.make(WithReadLock.class);
+    private static final ClassNode WRITE_LOCK_TYPE = ClassHelper.make(WithWriteLock.class);
+    private static final ClassNode LOCK_TYPE = ClassHelper.make(ReentrantReadWriteLock.class);
     private static final Token ASSIGN = Token.newSymbol("=", -1, -1);
 
     public void visit(ASTNode[] nodes, SourceUnit source) {

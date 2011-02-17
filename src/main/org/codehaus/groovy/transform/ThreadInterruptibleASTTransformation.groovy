@@ -41,7 +41,7 @@ import org.codehaus.groovy.ast.expr.*
 @GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
 public class ThreadInterruptibleASTTransformation extends AbstractInterruptibleASTTransformation {
 
-    private static final ClassNode MY_TYPE = new ClassNode(ThreadInterrupt)
+    private static final ClassNode MY_TYPE = ClassHelper.make(ThreadInterrupt)
 
     protected ClassNode type() {
         return MY_TYPE;
