@@ -191,15 +191,16 @@ public class AsmClassGenerator extends ClassGenerator {
         }
     }
 
-    private void makeInnerClassEntry(ClassNode innerClass) {
-        if (!(innerClass instanceof InnerClassNode)) return;
+    private void makeInnerClassEntry(ClassNode cn) {
+        if (!(cn instanceof InnerClassNode)) return;
+        InnerClassNode innerClass = (InnerClassNode) cn;
         String innerClassName = innerClass.getName();
         String innerClassInternalName = BytecodeHelper.getClassInternalName(innerClassName);
         {
             int index = innerClassName.lastIndexOf('$');
             if (index >= 0) innerClassName = innerClassName.substring(index + 1);
         }
-        String outerClassName = controller.getInternalClassName(); // default for inner classes
+        String outerClassName = BytecodeHelper.getClassInternalName(innerClass.getOuterClass().getName());
         MethodNode enclosingMethod = innerClass.getEnclosingMethod();
         if (enclosingMethod != null) {
             // local inner classes do not specify the outer class name
