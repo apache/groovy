@@ -103,7 +103,6 @@ class InnerClassTest extends CompilableTestSupport {
             
             def mods = A.B.modifiers
             assert Modifier.isPublic(mods)
-            assert !Modifier.isStatic(mods)
         """
         
         assertScript """
