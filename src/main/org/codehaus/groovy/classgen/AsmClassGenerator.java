@@ -130,7 +130,7 @@ public class AsmClassGenerator extends ClassGenerator {
         try {
             cv.visit(
                     getBytecodeVersion(),
-                    adjustedModifiers(classNode.getModifiers()),
+                    adjustedClassModifiers(classNode.getModifiers()),
                     controller.getInternalClassName(),
                     BytecodeHelper.getGenericsSignature(classNode),
                     controller.getInternalBaseClassName(),
@@ -178,30 +178,11 @@ public class AsmClassGenerator extends ClassGenerator {
                 createSyntheticStaticFields();
             }
 
-            for (Iterator iter = innerClasses.iterator(); iter.hasNext();) {
-                ClassNode innerClass = (ClassNode) iter.next();
-                String innerClassName = innerClass.getName();
-                String innerClassInternalName = BytecodeHelper.getClassInternalName(innerClassName);
-                {
-                    int index = innerClassName.lastIndexOf('$');
-                    if (index >= 0) innerClassName = innerClassName.substring(index + 1);
-                }
-                String outerClassName = controller.getInternalClassName(); // default for inner classes
-                MethodNode enclosingMethod = innerClass.getEnclosingMethod();
-                if (enclosingMethod != null) {
-                    // local inner classes do not specify the outer class name
-                    outerClassName = null;
-                    innerClassName = null;
-                }
-                //int mods = adjustedModifiers(innerClass.getModifiers());
-                int mods = innerClass.getModifiers();
-                cv.visitInnerClass(
-                        innerClassInternalName,
-                        outerClassName,
-                        innerClassName,
-                        mods);
+            for (Iterator<InnerClassNode> iter = classNode.getInnerClasses(); iter.hasNext();) {
+                InnerClassNode innerClass = iter.next();
+                makeInnerClassEntry(innerClass);
             }
-            //TODO: an inner class should have an entry of itself
+            makeInnerClassEntry(classNode);
 
             cv.visitEnd();
         } catch (GroovyRuntimeException e) {
@@ -210,12 +191,39 @@ public class AsmClassGenerator extends ClassGenerator {
         }
     }
 
+    private void makeInnerClassEntry(ClassNode cn) {
+        if (!(cn instanceof InnerClassNode)) return;
+        InnerClassNode innerClass = (InnerClassNode) cn;
+        String innerClassName = innerClass.getName();
+        String innerClassInternalName = BytecodeHelper.getClassInternalName(innerClassName);
+        {
+            int index = innerClassName.lastIndexOf('$');
+            if (index >= 0) innerClassName = innerClassName.substring(index + 1);
+        }
+        String outerClassName = BytecodeHelper.getClassInternalName(innerClass.getOuterClass().getName());
+        MethodNode enclosingMethod = innerClass.getEnclosingMethod();
+        if (enclosingMethod != null) {
+            // local inner classes do not specify the outer class name
+            outerClassName = null;
+            innerClassName = null;
+        }
+        int mods = innerClass.getModifiers();
+        cv.visitInnerClass(
+                innerClassInternalName,
+                outerClassName,
+                innerClassName,
+                mods);
+    }
+
     /*
      * Classes but not interfaces should have ACC_SUPER set
      */
-    private int adjustedModifiers(int modifiers) {
+    private int adjustedClassModifiers(int modifiers) {
         boolean needsSuper = (modifiers & ACC_INTERFACE) == 0;
-        return needsSuper ? modifiers | ACC_SUPER : modifiers;
+        modifiers = needsSuper ? modifiers | ACC_SUPER : modifiers;
+        // eliminate static
+        modifiers = modifiers & ~ACC_STATIC;
+        return modifiers;
     }
 
     public void visitGenericType(GenericsType genericsType) {
