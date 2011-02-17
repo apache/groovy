@@ -208,8 +208,8 @@ public class GroovyScriptEngine implements ResourceConnector {
 
         private String getPath(Class clazz) {
             ThreadLocal<CompilationUnit> localCu = getLocalCompilationUnit();
-
-            ClassNode classNode = localCu.get().getClassNode(clazz.getCanonicalName());
+            String name = clazz.getName();
+            ClassNode classNode = localCu.get().getClassNode(name);
             return classNode.getModule().getContext().getName();
         }
 
