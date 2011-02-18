@@ -17,7 +17,6 @@ package org.codehaus.groovy.runtime;
 
 import groovy.lang.*;
 
-import org.codehaus.groovy.runtime.metaclass.DefaultMetaClassInfo;
 import org.codehaus.groovy.runtime.metaclass.MissingMethodExceptionNoStack;
 import org.codehaus.groovy.runtime.metaclass.MissingMethodExecutionFailed;
 import org.codehaus.groovy.runtime.metaclass.MissingPropertyExceptionNoStack;
@@ -776,46 +775,5 @@ public class ScriptBytecodeAdapter {
 
     public static MetaClass initMetaClass(Object object) {
         return InvokerHelper.getMetaClass(object.getClass());
-    }
-    
-    /**
-     * @return true if integer has its default MetaClass
-     */
-    public static boolean isOrigInt(){
-       return DefaultMetaClassInfo.isOrigInt(); 
-    }
-    
-    /**
-     * @return true if integer array has its default MetaClass
-     */
-    public static boolean isOrigIntArray(){
-       return DefaultMetaClassInfo.isOrigIntArray(); 
-    }
-    
-    
-    /**
-     * get value from int[] using normalized index
-     */
-    public static int intArrayGet(int[] a, int i) {
-        try {
-            return a[i];
-        } catch (Throwable t) {
-            return a[DefaultGroovyMethodsSupport.normaliseIndex(i,a.length)];
-        }
-    }
-    
-    /**
-     * set value from int[] using normalized index
-     */
-    public static void intArraySet(int[] a, int i, int v) {
-        try {
-            a[i]=v;
-        } catch (Throwable t) {
-            a[DefaultGroovyMethodsSupport.normaliseIndex(i,a.length)]=v;
-        }
-    }
-    
-    public static boolean disabledStandardMetaClass() {
-        return DefaultMetaClassInfo.disabledStandardMetaClass();
     }
 }

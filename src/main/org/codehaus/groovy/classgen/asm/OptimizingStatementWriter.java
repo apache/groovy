@@ -48,7 +48,7 @@ import org.codehaus.groovy.ast.stmt.WhileStatement;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.classgen.Verifier;
 import org.codehaus.groovy.control.SourceUnit;
-import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
+import org.codehaus.groovy.runtime.BytecodeInterface8;
 import org.codehaus.groovy.syntax.Types;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
@@ -79,8 +79,8 @@ public class OptimizingStatementWriter extends StatementWriter {
         }
     }
 
-    private static final MethodCaller isOrigInt = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "isOrigInt");
-    private static final MethodCaller disabledStandardMetaClass = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "disabledStandardMetaClass");
+    private static final MethodCaller isOrigInt = MethodCaller.newStatic(BytecodeInterface8.class, "isOrigInt");
+    private static final MethodCaller disabledStandardMetaClass = MethodCaller.newStatic(BytecodeInterface8.class, "disabledStandardMetaClass");
     private boolean fastPathBlocked = false;
     private WriterController controller;
 
