@@ -23,7 +23,7 @@ import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.classgen.asm.OptimizingStatementWriter.StatementMeta;
-import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
+import org.codehaus.groovy.runtime.BytecodeInterface8;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 
@@ -32,8 +32,8 @@ import static org.objectweb.asm.Opcodes.*;
 
 public class BinaryIntExpressionHelper extends BinaryExpressionHelper {
     
-    private static final MethodCaller intArrayGet = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "intArrayGet");
-    private static final MethodCaller intArraySet = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "intArraySet");
+    private static final MethodCaller intArrayGet = MethodCaller.newStatic(BytecodeInterface8.class, "intArrayGet");
+    private static final MethodCaller intArraySet = MethodCaller.newStatic(BytecodeInterface8.class, "intArraySet");
     
     
     private WriterController controller;
