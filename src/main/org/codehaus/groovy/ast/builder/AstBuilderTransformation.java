@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2011 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,13 +27,12 @@ import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.transform.ASTTransformation;
 import org.codehaus.groovy.transform.GroovyASTTransformation;
 
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
  * Transformation to capture ASTBuilder from code statements.
- *
+ * <p/>
  * The AstBuilder "from code" approach is used with a single Closure
  * parameter. This transformation converts the ClosureExpression back
  * into source code and rewrites the AST so that the "from string"
@@ -45,7 +44,7 @@ import java.util.List;
  * @author Hamlet D'Arcy
  */
 
-@GroovyASTTransformation (phase = CompilePhase.SEMANTIC_ANALYSIS)
+@GroovyASTTransformation(phase = CompilePhase.SEMANTIC_ANALYSIS)
 public class AstBuilderTransformation implements ASTTransformation {
 
     public void visit(ASTNode[] nodes, SourceUnit sourceUnit) {
@@ -53,12 +52,12 @@ public class AstBuilderTransformation implements ASTTransformation {
         // todo : are there other import types that can be specified?
         AstBuilderInvocationTrap transformer = new AstBuilderInvocationTrap(
                 sourceUnit.getAST().getImports(),
-                sourceUnit.getAST().getImportPackages(),
+                sourceUnit.getAST().getStarImports(),
                 sourceUnit.getSource(),
                 sourceUnit
         );
         if (nodes != null) {
-            for(ASTNode it : nodes) {
+            for (ASTNode it : nodes) {
                 if (!(it instanceof AnnotationNode) && !(it instanceof ClassNode)) {
                     it.visit(transformer);
                 }
@@ -83,7 +82,7 @@ public class AstBuilderTransformation implements ASTTransformation {
                         if (classNode.getDeclaredConstructors() != null) {
                             for (MethodNode node : classNode.getDeclaredConstructors()) {
                                 if (node != null && node.getCode() != null) {
-                                    node.getCode().visit(transformer); 
+                                    node.getCode().visit(transformer);
                                 }
                             }
                         }
@@ -104,7 +103,7 @@ public class AstBuilderTransformation implements ASTTransformation {
                         if (classNode.getObjectInitializerStatements() != null) {
                             for (Statement node : classNode.getObjectInitializerStatements()) {
                                 if (node != null) {
-                                    node.visit(transformer); 
+                                    node.visit(transformer);
                                 }
                             }
                         }
@@ -126,7 +125,7 @@ public class AstBuilderTransformation implements ASTTransformation {
                             }
                         }
                         if (node.getCode() != null) {
-                            node.getCode().visit(transformer); 
+                            node.getCode().visit(transformer);
                         }
                     }
                 }
@@ -135,101 +134,101 @@ public class AstBuilderTransformation implements ASTTransformation {
     }
 
     /**
- * This class traps invocations of AstBuilder.build(CompilePhase, boolean, Closure) and converts
- * the contents of the closure into expressions by reading the source of the Closure and sending
- * that as a String to AstBuilder.build(String, CompilePhase, boolean) at runtime.
- */
-private static class AstBuilderInvocationTrap extends CodeVisitorSupport {
-
-    private final List<String> factoryTargets = new ArrayList<String>();
-    private final ReaderSource source;
-    private final SourceUnit sourceUnit;
-
-    /**
-     * Creates the trap and captures all the ways in which a class may be referenced via imports.
-     * @param imports
-     *      all the imports from the source
-     * @param importPackages
-     *      all the imported packages from the source
-     * @param source
-     *      the reader source that contains source for the SourceUnit
-     * @param sourceUnit
-     *      the source unit being compiled. Used for error messages.
+     * This class traps invocations of AstBuilder.build(CompilePhase, boolean, Closure) and converts
+     * the contents of the closure into expressions by reading the source of the Closure and sending
+     * that as a String to AstBuilder.build(String, CompilePhase, boolean) at runtime.
      */
-    AstBuilderInvocationTrap(List<ImportNode> imports, List<String> importPackages, ReaderSource source, SourceUnit sourceUnit) {
-        if (source == null) throw new IllegalArgumentException("Null: source");
-        if (sourceUnit == null) throw new IllegalArgumentException("Null: sourceUnit");
-        this.source = source;
-        this.sourceUnit = sourceUnit;
+    private static class AstBuilderInvocationTrap extends CodeVisitorSupport {
 
-        // factory type may be references as fully qualified, an import, or an alias
-        factoryTargets.add("org.codehaus.groovy.ast.builder.AstBuilder"  ) ;//default package
+        private final List<String> factoryTargets = new ArrayList<String>();
+        private final ReaderSource source;
+        private final SourceUnit sourceUnit;
 
-        if (imports != null) {
-            for (ImportNode importStatement : imports) {
-                if ("org.codehaus.groovy.ast.builder.AstBuilder".equals(importStatement.getType().getName())) {
-                    factoryTargets.add(importStatement.getAlias());
+        /**
+         * Creates the trap and captures all the ways in which a class may be referenced via imports.
+         *
+         * @param imports        all the imports from the source
+         * @param importPackages all the imported packages from the source
+         * @param source         the reader source that contains source for the SourceUnit
+         * @param sourceUnit     the source unit being compiled. Used for error messages.
+         */
+        AstBuilderInvocationTrap(List<ImportNode> imports, List<ImportNode> importPackages, ReaderSource source, SourceUnit sourceUnit) {
+            if (source == null) throw new IllegalArgumentException("Null: source");
+            if (sourceUnit == null) throw new IllegalArgumentException("Null: sourceUnit");
+            this.source = source;
+            this.sourceUnit = sourceUnit;
+
+            // factory type may be references as fully qualified, an import, or an alias
+            factoryTargets.add("org.codehaus.groovy.ast.builder.AstBuilder");//default package
+
+            if (imports != null) {
+                for (ImportNode importStatement : imports) {
+                    if ("org.codehaus.groovy.ast.builder.AstBuilder".equals(importStatement.getType().getName())) {
+                        factoryTargets.add(importStatement.getAlias());
+                    }
+                }
+            }
+
+            if (importPackages != null) {
+                for (ImportNode importPackage : importPackages) {
+                    if ("org.codehaus.groovy.ast.builder.".equals(importPackage.getType().getName())) {
+                        factoryTargets.add("AstBuilder");
+                        break;
+                    }
                 }
             }
         }
 
-        if (importPackages.contains("org.codehaus.groovy.ast.builder.")) {
-            factoryTargets.add("AstBuilder");
+        /**
+         * Reports an error back to the source unit.
+         *
+         * @param msg  the error message
+         * @param expr the expression that caused the error message.
+         */
+        private void addError(String msg, ASTNode expr) {
+            int line = expr.getLineNumber();
+            int col = expr.getColumnNumber();
+            sourceUnit.getErrorCollector().addErrorAndContinue(
+                    new SyntaxErrorMessage(new SyntaxException(msg + '\n', line, col), sourceUnit)
+            );
         }
-    }
-
-    /**
-    * Reports an error back to the source unit.
-    * @param  msg
-    *       the error message
-    * @param expr
-    *       the expression that caused the error message.
-    */
-    private void addError(String msg, ASTNode expr) {
-        int line = expr.getLineNumber();
-        int col = expr.getColumnNumber();
-        sourceUnit.getErrorCollector().addErrorAndContinue(
-          new SyntaxErrorMessage(new SyntaxException(msg + '\n', line, col), sourceUnit)
-        );
-    }
 
 
-    /**
-    * Attempts to find AstBuilder 'from code' invocations. When found, converts them into calls
-    * to the 'from string' approach.
-    *
-    * @param call
-    *       the method call expression that may or may not be an AstBuilder 'from code' invocation.
-    */
-    public void visitMethodCallExpression(MethodCallExpression call) {
+        /**
+         * Attempts to find AstBuilder 'from code' invocations. When found, converts them into calls
+         * to the 'from string' approach.
+         *
+         * @param call the method call expression that may or may not be an AstBuilder 'from code' invocation.
+         */
+        public void visitMethodCallExpression(MethodCallExpression call) {
 
-        if (isBuildInvocation(call)) {
+            if (isBuildInvocation(call)) {
 
-            ClosureExpression closureExpression = getClosureArgument(call);
-            List<Expression> otherArgs = getNonClosureArguments(call);
-            String source = convertClosureToSource(closureExpression);
+                ClosureExpression closureExpression = getClosureArgument(call);
+                List<Expression> otherArgs = getNonClosureArguments(call);
+                String source = convertClosureToSource(closureExpression);
 
-            // parameter order is build(CompilePhase, boolean, String)
-            otherArgs.add(new ConstantExpression(source));
-            call.setArguments(new ArgumentListExpression(otherArgs));
-            call.setMethod(new ConstantExpression("buildFromBlock"));
-            call.setSpreadSafe(false);
-            call.setSafe(false);
-            call.setImplicitThis(false); 
-        } else {
-            // continue normal tree walking
-            call.getObjectExpression().visit(this);
-            call.getMethod().visit(this);
-            call.getArguments().visit(this);
+                // parameter order is build(CompilePhase, boolean, String)
+                otherArgs.add(new ConstantExpression(source));
+                call.setArguments(new ArgumentListExpression(otherArgs));
+                call.setMethod(new ConstantExpression("buildFromBlock"));
+                call.setSpreadSafe(false);
+                call.setSafe(false);
+                call.setImplicitThis(false);
+            } else {
+                // continue normal tree walking
+                call.getObjectExpression().visit(this);
+                call.getMethod().visit(this);
+                call.getArguments().visit(this);
+            }
         }
-    }
 
         private List<Expression> getNonClosureArguments(MethodCallExpression call) {
             List<Expression> result = new ArrayList<Expression>();
             if (call.getArguments() instanceof TupleExpression) {
-                for (ASTNode node : ((TupleExpression)call.getArguments()).getExpressions()) {
+                for (ASTNode node : ((TupleExpression) call.getArguments()).getExpressions()) {
                     if (!(node instanceof ClosureExpression)) {
-                        result.add((Expression)node);
+                        result.add((Expression) node);
                     }
                 }
             }
@@ -239,9 +238,9 @@ private static class AstBuilderInvocationTrap extends CodeVisitorSupport {
         private ClosureExpression getClosureArgument(MethodCallExpression call) {
 
             if (call.getArguments() instanceof TupleExpression) {
-                for (ASTNode node : ((TupleExpression)call.getArguments()).getExpressions()) {
+                for (ASTNode node : ((TupleExpression) call.getArguments()).getExpressions()) {
                     if (node instanceof ClosureExpression) {
-                        return (ClosureExpression)node;
+                        return (ClosureExpression) node;
                     }
                 }
             }
@@ -249,77 +248,78 @@ private static class AstBuilderInvocationTrap extends CodeVisitorSupport {
         }
 
         /**
-     * Looks for method calls on the AstBuilder class called build that take
-     * a Closure as parameter. This is all needed b/c build is overloaded.
-     * @param call
-     *      the method call expression, may not be null
-     */
-    private boolean isBuildInvocation(MethodCallExpression call) {
-        if (call == null) throw new IllegalArgumentException("Null: call");
+         * Looks for method calls on the AstBuilder class called build that take
+         * a Closure as parameter. This is all needed b/c build is overloaded.
+         *
+         * @param call the method call expression, may not be null
+         */
+        private boolean isBuildInvocation(MethodCallExpression call) {
+            if (call == null) throw new IllegalArgumentException("Null: call");
 
-        // is method name correct?
-        if (call.getMethod() instanceof ConstantExpression && "buildFromCode".equals(((ConstantExpression)call.getMethod()).getValue())) {
+            // is method name correct?
+            if (call.getMethod() instanceof ConstantExpression && "buildFromCode".equals(((ConstantExpression) call.getMethod()).getValue())) {
 
-            // is method object correct type?
-            if (call.getObjectExpression() != null && call.getObjectExpression().getType() != null) {
-                String name = call.getObjectExpression().getType().getName();
-                if (name != null && !"".equals(name) && factoryTargets.contains(name)) {
+                // is method object correct type?
+                if (call.getObjectExpression() != null && call.getObjectExpression().getType() != null) {
+                    String name = call.getObjectExpression().getType().getName();
+                    if (name != null && !"".equals(name) && factoryTargets.contains(name)) {
 
-                    // is one of the arguments a closure?
-                    if (call.getArguments() != null && call.getArguments() instanceof TupleExpression) {
-                        if (((TupleExpression) call.getArguments()).getExpressions() != null) {
-                            for (ASTNode node : ((TupleExpression) call.getArguments()).getExpressions()) {
-                                if (node instanceof ClosureExpression) {
-                                    return true;
+                        // is one of the arguments a closure?
+                        if (call.getArguments() != null && call.getArguments() instanceof TupleExpression) {
+                            if (((TupleExpression) call.getArguments()).getExpressions() != null) {
+                                for (ASTNode node : ((TupleExpression) call.getArguments()).getExpressions()) {
+                                    if (node instanceof ClosureExpression) {
+                                        return true;
+                                    }
                                 }
                             }
                         }
                     }
                 }
             }
+            return false;
         }
-        return false;
-    }
 
-    /**
-     * Converts a ClosureExpression into the String source.
-     * @param expression    a closure
-     * @return              the source the closure was created from
-     */
-    private String convertClosureToSource(ClosureExpression expression) {
-        if (expression == null) throw new IllegalArgumentException("Null: expression");
+        /**
+         * Converts a ClosureExpression into the String source.
+         *
+         * @param expression a closure
+         * @return the source the closure was created from
+         */
+        private String convertClosureToSource(ClosureExpression expression) {
+            if (expression == null) throw new IllegalArgumentException("Null: expression");
 
-        StringBuilder result = new StringBuilder();
-        for (int x = expression.getLineNumber(); x <= expression.getLastLineNumber(); x++) {
-            String line = source.getLine(x, null);
-            if (line == null) {
+            StringBuilder result = new StringBuilder();
+            for (int x = expression.getLineNumber(); x <= expression.getLastLineNumber(); x++) {
+                String line = source.getLine(x, null);
+                if (line == null) {
+                    addError(
+                            "Error calculating source code for expression. Trying to read line " + x + " from " + source.getClass(),
+                            expression
+                    );
+                }
+                if (x == expression.getLastLineNumber()) {
+                    line = line.substring(0, expression.getLastColumnNumber() - 1);
+                }
+                if (x == expression.getLineNumber()) {
+                    line = line.substring(expression.getColumnNumber() - 1);
+                }
+                //restoring line breaks is important b/c of lack of semicolons
+                result.append(line).append('\n');
+            }
+
+
+            String source = result.toString().trim();
+            if (!source.startsWith("{")) {
                 addError(
-                        "Error calculating source code for expression. Trying to read line " + x + " from " + source.getClass(),
+                        "Error converting ClosureExpression into source code. Closures must start with {. Found: " + source,
                         expression
                 );
             }
-            if (x == expression.getLastLineNumber()) {
-                line = line.substring(0, expression.getLastColumnNumber() - 1);
-            }
-            if (x == expression.getLineNumber()) {
-                line = line.substring(expression.getColumnNumber() - 1);
-            }
-            //restoring line breaks is important b/c of lack of semicolons
-            result.append(line).append('\n');
+
+            return source;
         }
-
-
-        String source = result.toString().trim();
-        if (!source.startsWith("{")) {
-            addError(
-                    "Error converting ClosureExpression into source code. Closures must start with {. Found: " + source,
-                    expression
-            );
-        }
-
-        return source;
     }
-}
 }
 
 
