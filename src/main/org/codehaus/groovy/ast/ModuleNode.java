@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2009 the original author or authors.
+ * Copyright 2003-2011 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -93,18 +93,6 @@ public class ModuleNode extends ASTNode implements Opcodes {
         return new ArrayList<ImportNode>(imports.values());
     }
 
-    /**
-     * @deprecated replaced by {@link #getStarImports()}
-     */
-    @Deprecated
-    public List<String> getImportPackages() {
-        List<String> result = new ArrayList<String>();
-        for (ImportNode importStarNode : starImports) {
-            result.add(importStarNode.getPackageName());
-        }
-        return result;
-    }
-
     public List<ImportNode> getStarImports() {
         return starImports;
     }
@@ -134,15 +122,6 @@ public class ModuleNode extends ASTNode implements Opcodes {
         ImportNode importNode = new ImportNode(type, alias);
         imports.put(alias, importNode);
         importNode.addAnnotations(annotations);
-    }
-
-    /**
-     * @deprecated replaced by {@link #addStarImport(String)}
-     */
-    @Deprecated
-    public String[] addImportPackage(String packageName) {
-        addStarImport(packageName);
-        return new String[]{};
     }
 
     public void addStarImport(String packageName) {
@@ -422,56 +401,12 @@ public class ModuleNode extends ASTNode implements Opcodes {
         this.importsResolved = importsResolved;
     }
 
-    /**
-     * @deprecated replaced by {@link #getStaticImports()}
-     */
-    @Deprecated
-    public Map<String, ClassNode> getStaticImportAliases() {
-        Map<String, ClassNode> result = new HashMap<String, ClassNode>();
-        for (Map.Entry<String, ImportNode> entry : staticImports.entrySet()) {
-            result.put(entry.getKey(), entry.getValue().getType());
-        }
-        return result;
-    }
-
-    /**
-     * @deprecated replaced by {@link #getStaticStarImports()}
-     */
-    @Deprecated
-    public Map<String, ClassNode> getStaticImportClasses() {
-        Map<String, ClassNode> result = new HashMap<String, ClassNode>();
-        for (Map.Entry<String, ImportNode> entry : staticStarImports.entrySet()) {
-            result.put(entry.getKey(), entry.getValue().getType());
-        }
-        return result;
-    }
-
-    /**
-     * @deprecated replaced by {@link #getStaticImports()}
-     */
-    @Deprecated
-    public Map<String, String> getStaticImportFields() {
-        Map<String, String> result = new HashMap<String, String>();
-        for (Map.Entry<String, ImportNode> entry : staticImports.entrySet()) {
-            result.put(entry.getKey(), entry.getValue().getFieldName());
-        }
-        return result;
-    }
-
     public Map<String, ImportNode> getStaticImports() {
         return staticImports;
     }
 
     public Map<String, ImportNode> getStaticStarImports() {
         return staticStarImports;
-    }
-
-    /**
-     * @deprecated replaced by {@link #addStaticImport(ClassNode, String, String)}
-     */
-    @Deprecated
-    public void addStaticMethodOrField(ClassNode type, String fieldName, String alias) {
-        addStaticImport(type, fieldName, alias);
     }
 
     public void addStaticImport(ClassNode type, String fieldName, String alias) {
@@ -482,14 +417,6 @@ public class ModuleNode extends ASTNode implements Opcodes {
         ImportNode node = new ImportNode(type, fieldName, alias);
         node.addAnnotations(annotations);
         staticImports.put(alias, node);
-    }
-
-    /**
-     * @deprecated replaced by {@link #addStaticStarImport(String, ClassNode)}
-     */
-    @Deprecated
-    public void addStaticImportClass(String name, ClassNode type) {
-        addStaticStarImport(name, type);
     }
 
     public void addStaticStarImport(String name, ClassNode type) {
