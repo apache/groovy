@@ -95,31 +95,6 @@ public class GroovyCodeSource {
         }
     }
 
-    /**
-     * Construct a GroovyCodeSource for an inputStream of groovyCode that has an
-     * unknown provenance -- meaning it didn't come from a File or a URL (e.g.&nbsp;a String).
-     * The supplied codeBase will be used to construct a File URL that should match up
-     * with a java Policy entry that determines the grants to be associated with the
-     * class that will be built from the InputStream.
-     * <p/>
-     * The permission groovy.security.GroovyCodeSourcePermission will be used to determine if the given codeBase
-     * may be specified.  That is, the current Policy set must have a GroovyCodeSourcePermission that implies
-     * the codeBase, or an exception will be thrown.  This is to prevent callers from hijacking
-     * existing codeBase policy entries unless explicitly authorized by the user.
-     *
-     * @deprecated Prefer using methods taking a Reader rather than an InputStream to avoid wrong encoding issues.
-     */
-    @Deprecated
-    public GroovyCodeSource(InputStream inputStream, String name, String codeBase) {
-        this.name = name;
-        this.codeSource = createCodeSource(codeBase);
-        try {
-            this.scriptText = DefaultGroovyMethods.getText(inputStream);
-        } catch (IOException e) {
-            throw new RuntimeException("Impossible to read the text content from that input stream, for script: " + name + " with codeBase: " + codeBase, e);
-        }
-    }
-
     public GroovyCodeSource(final File infile, final String encoding) throws IOException {
         // avoid files which confuse us like ones with .. in path
         final File file = new File(infile.getCanonicalPath());
@@ -199,34 +174,6 @@ public class GroovyCodeSource {
 
     CodeSource getCodeSource() {
         return codeSource;
-    }
-
-    /**
-     * @deprecated Prefer using methods taking a Reader rather than an InputStream to avoid wrong encoding issues.
-     */
-    @Deprecated
-    public InputStream getInputStream() {
-        IOException ioe;
-        if (file == null) {
-            try {
-                return new ByteArrayInputStream(scriptText.getBytes("UTF-8"));
-            } catch (UnsupportedEncodingException e) {
-                ioe = e;
-            }
-        } else {
-            try {
-                return new FileInputStream(file);
-            } catch (FileNotFoundException e) {
-                ioe = e;
-            }
-        }
-
-        String errorMsg = "Impossible to read the bytes from the associated script: " + scriptText + " with name: " + name;
-        if (ioe != null) {
-            throw new RuntimeException(errorMsg, ioe);
-        } else {
-            throw new RuntimeException(errorMsg);
-        }
     }
 
     public String getScriptText() {

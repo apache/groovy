@@ -879,7 +879,6 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
     /**
      * Invokes the given method on the object.
-     * TODO: should this be deprecated? If so, we have to propogate to many places.
      */
     public Object invokeMethod(Object object, String methodName, Object[] originalArguments) {
         return invokeMethod(theClass, object, methodName, originalArguments, false, false);
@@ -1379,15 +1378,6 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         } else {
             return method;
         }
-    }
-
-    /**
-     * Warning, this method will be removed
-     *
-     * @deprecated use invokeConstructor instead
-     */
-    public Object invokeConstructorAt(Class at, Object[] arguments) {
-        return invokeConstructor(arguments);
     }
 
     public Object invokeConstructor(Object[] arguments) {
@@ -3322,13 +3312,6 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
     public MetaMethod pickMethod(String methodName, Class[] arguments) {
         return getMethodWithoutCaching(theClass, methodName, arguments, false);
-    }
-
-    /**
-     * @deprecated use pickMethod instead
-     */
-    protected MetaMethod retrieveMethod(String methodName, Class[] arguments) {
-        return pickMethod(methodName, arguments);
     }
 
     /**

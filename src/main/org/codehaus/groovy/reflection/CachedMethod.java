@@ -306,21 +306,6 @@ public class CachedMethod extends MetaMethod implements Comparable {
         return new StaticMetaMethodSite.StaticMetaMethodSiteNoUnwrapNoCoerce(site, metaClass, this, params);
     }
 
-    @Deprecated
-    public boolean hasPogoCallSiteConstructor() {
-        return pogoCallSiteConstructor != null && pogoCallSiteConstructor.get() != null;
-    }
-
-    @Deprecated
-    public boolean hasPojoCallSiteConstructor() {
-        return pojoCallSiteConstructor != null && pojoCallSiteConstructor.get() != null;
-    }
-
-    @Deprecated()
-    public boolean hasStaticCallSiteConstructor() {
-        return staticCallSiteConstructor != null && staticCallSiteConstructor.get() != null;
-    }
-
     private static class MyComparator implements Comparator {
         public int compare(Object o1, Object o2) {
             if (o1 instanceof CachedMethod)
@@ -336,39 +321,6 @@ public class CachedMethod extends MetaMethod implements Comparable {
     public Method getCachedMethod() {
         return cachedMethod;
     }
-
-//    private static class CompileThread extends Thread {
-//        static final LinkedBlockingQueue queue = new LinkedBlockingQueue();
-//
-//        static {
-//            new CompileThread().start();
-//        }
-//
-//        private CompileThread() {
-//            setDaemon(true);
-//            setPriority(Thread.MAX_PRIORITY-2);
-//        }
-//
-//        public void run() {
-//            try {
-//                while (true) {
-//                    final CachedMethod method = (CachedMethod) queue.take();
-//                    if (method != null) {
-//                        CallSiteGenerator.compilePogoMethod(method);
-//                    }
-//                }
-//            }
-//            catch (InterruptedException e) {//
-//            }
-//        }
-//
-//        public static void addMethod (CachedMethod method) {
-//            try {
-//                queue.put(method);
-//            } catch (InterruptedException e) {
-//            }
-//        }
-//    }
 
 }
 

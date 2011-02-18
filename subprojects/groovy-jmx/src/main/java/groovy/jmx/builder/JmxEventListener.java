@@ -45,11 +45,6 @@ public class JmxEventListener implements NotificationListener {
         return listener;
     }
 
-    @Deprecated
-    public static synchronized JmxEventListener getListner() {
-        return getListener();
-    }
-
     /**
      * This is the implemented method for NotificationListener.  It is called by an event emitter to dispatch
      * JMX events to listeners.  Here it handles internal JmxBuilder events.

@@ -325,35 +325,7 @@ public class ObservableMap implements Map {
     }
 
     public abstract static class PropertyEvent extends PropertyChangeEvent {
-        /**
-         * deprecated
-         */
-        public static final int ADDED = ChangeType.ADDED.ordinal();
-        /**
-         * deprecated
-         */
-        public static final int UPDATED = ChangeType.UPDATED.ordinal();
-        /**
-         * deprecated
-         */
-        public static final int REMOVED = ChangeType.REMOVED.ordinal();
-        /**
-         * deprecated
-         */
-        public static final int CLEARED = ChangeType.CLEARED.ordinal();
-        /**
-         * deprecated
-         */
-        public static final int MULTI = ChangeType.MULTI.ordinal();
-
         private ChangeType type;
-
-        /**
-         * @deprecated
-         */
-        public PropertyEvent(Object source, String propertyName, Object oldValue, Object newValue, int type) {
-            this(source, propertyName, oldValue, newValue, ChangeType.resolve(type));
-        }
 
         public PropertyEvent(Object source, String propertyName, Object oldValue, Object newValue, ChangeType type) {
             super(source, propertyName, oldValue, newValue);
@@ -392,10 +364,6 @@ public class ObservableMap implements Map {
     }
 
     public static class PropertyClearedEvent extends PropertyEvent {
-        /**
-         * @deprecated
-         */
-        public static final String CLEAR_PROPERTY = ObservableMap.CLEARED_PROPERTY;
         private Map values = new HashMap();
 
         public PropertyClearedEvent(Object source, Map values) {

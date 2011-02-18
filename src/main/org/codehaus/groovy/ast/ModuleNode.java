@@ -204,8 +204,6 @@ public class ModuleNode extends ASTNode implements Opcodes {
     }
 
     public void setDescription(String description) {
-        // DEPRECATED -- context.getName() is now sufficient
-        // TODO add deprecated annotation or javadoc comment?
         this.description = description;
     }
 
@@ -323,7 +321,6 @@ public class ModuleNode extends ASTNode implements Opcodes {
         for (Iterator iter = methods.iterator(); iter.hasNext();) {
             MethodNode node = (MethodNode) iter.next();
             if(node.getName().equals("main")) {
-                int modifiers = node.getModifiers();
                 if (node.isStatic() && node.getParameters().length == 1) {
                     boolean retTypeMatches, argTypeMatches;
                     ClassNode argType = node.getParameters()[0].getType();

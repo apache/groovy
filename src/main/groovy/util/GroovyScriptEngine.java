@@ -16,7 +16,6 @@
 package groovy.util;
 
 import groovy.lang.Binding;
-import groovy.lang.DeprecationException;
 import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyCodeSource;
 import groovy.lang.GroovyResourceLoader;
@@ -426,18 +425,6 @@ public class GroovyScriptEngine implements ResourceConnector {
     }
 
     /**
-     * @param parentClassLoader ClassLoader to be used as the parent ClassLoader
-     *                          for scripts executed by the engine
-     * @deprecated
-     */
-    public void setParentClassLoader(ClassLoader parentClassLoader) {
-        throw new DeprecationException(
-                "The method GroovyScriptEngine#setParentClassLoader(ClassLoader) " +
-                        "is no longer supported. Specify a parentLoader in the constructor instead."
-        );
-    }
-
-    /**
      * Get the class of the scriptName in question, so that you can instantiate
      * Groovy objects with caching and reloading.
      *
@@ -465,25 +452,6 @@ public class GroovyScriptEngine implements ResourceConnector {
             forceClose(conn);
         }
         return clazz;
-    }
-
-    /**
-     * Get the class of the scriptName in question, so that you can instantiate
-     * Groovy objects with caching and reloading.
-     *
-     * @param scriptName        resource name pointing to the script
-     * @param parentClassLoader the class loader to use when loading the script
-     * @return the loaded scriptName as a compiled class
-     * @throws ResourceException if there is a problem accessing the script
-     * @throws ScriptException   if there is a problem parsing the script
-     * @deprecated
-     */
-    public Class loadScriptByName(String scriptName, ClassLoader parentClassLoader)
-            throws ResourceException, ScriptException {
-        throw new DeprecationException(
-                "The method GroovyScriptEngine#loadScriptByName(String,ClassLoader) " +
-                        "is no longer supported. Use GroovyScriptEngine#loadScriptByName(String) instead."
-        );
     }
 
     /**

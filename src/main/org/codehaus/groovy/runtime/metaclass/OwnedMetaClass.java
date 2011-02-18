@@ -135,15 +135,6 @@ public abstract class OwnedMetaClass extends DelegatingMetaClass {
         return super.toString() + "[" + delegate.toString()+ "]";
     }
 
-    /**
-     * @deprecated
-     */
-    public MetaMethod pickMethod(String methodName, Class[] arguments) {
-        final Object owner = getOwner();
-        final MetaClass ownerMetaClass = getOwnerMetaClass(owner);
-        return ownerMetaClass.pickMethod(methodName,arguments);
-    }
-
     public Object getAttribute(Class sender, Object receiver, String messageName, boolean useSuper) {
         final Object owner = getOwner();
         final MetaClass ownerMetaClass = getOwnerMetaClass(owner);

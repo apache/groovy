@@ -147,18 +147,6 @@ public class GroovyClassLoader extends URLClassLoader {
     }
 
     /**
-     * Loads the given class node returning the implementation Class
-     *
-     * @param classNode
-     * @return a class
-     * @deprecated
-     */
-    public Class defineClass(ClassNode classNode, String file) {
-        //return defineClass(classNode, file, "/groovy/defineClass");
-        throw new DeprecationException("the method GroovyClassLoader#defineClass(ClassNode, String) is no longer used and removed");
-    }
-
-    /**
      * Loads the given class node returning the implementation Class.
      * <p/>
      * WARNING: this compilation is not synchronized
@@ -223,17 +211,6 @@ public class GroovyClassLoader extends URLClassLoader {
     public Class parseClass(String text) throws CompilationFailedException {
         return parseClass(text, "script" + System.currentTimeMillis() +
                 Math.abs(text.hashCode()) + ".groovy");
-    }
-
-    /**
-     * Parses the given character stream into a Java class capable of being run
-     *
-     * @param in an InputStream
-     * @return the main class defined in the given script
-     * @deprecated Prefer using methods taking a Reader rather than an InputStream to avoid wrong encoding issues.
-     */
-    public Class parseClass(InputStream in) throws CompilationFailedException {
-        return parseClass(in, generateScriptName());
     }
 
     public synchronized String generateScriptName() {
@@ -350,27 +327,6 @@ public class GroovyClassLoader extends URLClassLoader {
             ret[i] = urls[i].getFile();
         }
         return ret;
-    }
-
-    /**
-     * expands the classpath
-     *
-     * @param pathList  an empty list that will contain the elements of the classpath
-     * @param classpath the classpath specified as a single string
-     * @deprecated
-     */
-    protected void expandClassPath(List pathList, String base, String classpath, boolean isManifestClasspath) {
-        throw new DeprecationException("the method groovy.lang.GroovyClassLoader#expandClassPath(List,String,String,boolean) is no longer used internally and removed");
-    }
-
-    /**
-     * A helper method to allow bytecode to be loaded. spg changed name to
-     * defineClass to make it more consistent with other ClassLoader methods
-     *
-     * @deprecated
-     */
-    protected Class defineClass(String name, byte[] bytecode, ProtectionDomain domain) {
-        throw new DeprecationException("the method groovy.lang.GroovyClassLoader#defineClass(String,byte[],ProtectionDomain) is no longer used internally and removed");
     }
 
     protected PermissionCollection getPermissions(CodeSource codeSource) {
@@ -862,10 +818,6 @@ public class GroovyClassLoader extends URLClassLoader {
         URL ret = getResource(filename);
         if (isFile(ret) && getFileForUrl(ret, filename) == null) return null;
         return ret;
-    }
-
-    private URL getSourceFile(String name) {
-        return getSourceFile(name, config.getDefaultScriptExtension());
     }
 
     /**

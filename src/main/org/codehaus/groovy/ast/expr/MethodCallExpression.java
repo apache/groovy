@@ -44,13 +44,6 @@ public class MethodCallExpression extends Expression {
     
     public static final Expression NO_ARGUMENTS = new TupleExpression();
 
-    /**
-     * @deprecated
-     */
-    public MetaMethod getMetaMethod() {
-        return null;
-    }
-
     public MethodCallExpression(Expression objectExpression, String method, Expression arguments) {
         this(objectExpression,new ConstantExpression(method),arguments);
     }
@@ -174,14 +167,6 @@ public class MethodCallExpression extends Expression {
             + " arguments: "
             + arguments
             + "]";
-    }
-
-    /**
-     * @deprecated
-     */
-    public void setMetaMethod(MetaMethod mmeth) {
-        //this.metaMethod = mmeth;
-        //super.setType(ClassHelper.make(mmeth.getReturnType()));
     }
 
     public GenericsType[] getGenericsTypes() {

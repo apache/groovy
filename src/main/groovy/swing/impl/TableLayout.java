@@ -15,7 +15,6 @@
  */
 package groovy.swing.impl;
 
-import java.awt.Component;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -35,14 +34,6 @@ public class TableLayout extends JPanel {
 
     public TableLayout() {
         setLayout(new GridBagLayout());
-    }
-
-    /**
-     * @deprecated Simply returns this
-     * @return this
-     */
-    public Component getComponent() {
-        return this;
     }
     
     public int getCellpadding() {

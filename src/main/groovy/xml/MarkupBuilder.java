@@ -284,40 +284,7 @@ public class MarkupBuilder extends BuilderSupport {
     protected Object getName(String methodName) {
         return super.getName(methodName);
     }
-
-    /**
-     * Returns a String with special XML characters escaped as entities so that
-     * output XML is valid. Escapes the following characters as corresponding
-     * entities:
-     * <ul>
-     * <li>\' as &amp;apos;</li>
-     * <li>&amp; as &amp;amp;</li>
-     * <li>&lt; as &amp;lt;</li>
-     * <li>&gt; as &amp;gt;</li>
-     * </ul>
-     *
-     * @param value to be searched and replaced for XML special characters.
-     * @return value with XML characters escaped
-     * @see #escapeXmlValue(String, boolean)
-     * @deprecated
-     */
-    protected String transformValue(String value) {
-        // & has to be checked and replaced before others
-        if (value.matches(".*&.*")) {
-            value = value.replaceAll("&", "&amp;");
-        }
-        if (value.matches(".*\\'.*")) {
-            value = value.replaceAll("\'", "&apos;");
-        }
-        if (value.matches(".*<.*")) {
-            value = value.replaceAll("<", "&lt;");
-        }
-        if (value.matches(".*>.*")) {
-            value = value.replaceAll(">", "&gt;");
-        }
-        return value;
-    }
-
+    
     /**
      * Escapes a string so that it can be used directly as an XML
      * attribute value.

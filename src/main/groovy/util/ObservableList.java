@@ -498,40 +498,9 @@ public class ObservableList implements List {
     }
 
     public abstract static class ElementEvent extends PropertyChangeEvent {
-        /**
-         * deprecated
-         */
-        public static final int ADDED = ChangeType.ADDED.ordinal();
-        /**
-         * deprecated
-         */
-        public static final int UPDATED = ChangeType.UPDATED.ordinal();
-        /**
-         * deprecated
-         */
-        public static final int REMOVED = ChangeType.REMOVED.ordinal();
-        /**
-         * deprecated
-         */
-        public static final int CLEARED = ChangeType.CLEARED.ordinal();
-        /**
-         * deprecated
-         */
-        public static final int MULTI_ADD = ChangeType.MULTI_ADD.ordinal();
-        /**
-         * deprecated
-         */
-        public static final int MULTI_REMOVE = ChangeType.MULTI_REMOVE.ordinal();
 
         private final ChangeType type;
         private final int index;
-
-        /**
-         * @deprecated
-         */
-        public ElementEvent(Object source, Object oldValue, Object newValue, int index, int type) {
-            this(source, oldValue, newValue, index, ChangeType.resolve(type));
-        }
 
         public ElementEvent(Object source, Object oldValue, Object newValue, int index, ChangeType type) {
             super(source, ObservableList.CONTENT_PROPERTY, oldValue, newValue);

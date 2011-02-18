@@ -69,16 +69,6 @@ public class VariableScope  {
         this.inStaticContext = inStaticContext;
     }
 
-    @Deprecated
-    public boolean isResolvingDynamic() {
-        return resolvesDynamic;
-    }
-
-    @Deprecated
-    public void setDynamicResolving(boolean resolvesDynamic) {
-        this.resolvesDynamic = resolvesDynamic;
-    }
-
     public void setClassScope(ClassNode node) {
         this.clazzScope = node;
     }

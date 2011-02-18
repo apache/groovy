@@ -109,9 +109,4 @@ public class JavaStubCompilationUnit
         }
         return null;
     }
-
-    @Deprecated
-    public void addSourceFile(final File file) {
-        addSource(file);
-    }
 }

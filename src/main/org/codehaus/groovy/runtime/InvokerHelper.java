@@ -22,7 +22,6 @@ import org.codehaus.groovy.runtime.metaclass.MissingMethodExecutionFailed;
 import org.codehaus.groovy.runtime.powerassert.PowerAssertionError;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import org.codehaus.groovy.runtime.wrappers.PojoWrapper;
-import org.codehaus.groovy.util.ReleaseInfo;
 import org.w3c.dom.Element;
 
 import java.beans.Introspector;
@@ -452,13 +451,6 @@ public class InvokerHelper {
                 // Ignore
             }
         }
-    }
-
-    /**
-     * @deprecated Use GroovySystem version instead.
-     */
-    public static String getVersion() {
-        return ReleaseInfo.getVersion();
     }
 
     /**
