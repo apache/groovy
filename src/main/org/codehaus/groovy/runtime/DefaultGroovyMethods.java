@@ -2887,7 +2887,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the result of the last closure call
      * @since 1.0
      */
-    public static <T, U extends T> T inject(Collection self, U initialValue, Closure<? extends T> closure) {
+    public static Object inject(Collection self, Object initialValue, Closure closure) {
         return inject(self.iterator(), initialValue, closure);
     }
 
@@ -2905,8 +2905,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #inject(Collection, Object, Closure)
      * @since 1.5.0
      */
-    public static <T, U extends T> T inject(Iterator self, U initialValue, Closure<? extends T> closure) {
-        T value = initialValue;
+    public static Object inject(Iterator self, Object initialValue, Closure closure) {
+        Object value = initialValue;
         Object[] params = new Object[2];
         while (self.hasNext()) {
             Object item = self.next();
@@ -2931,7 +2931,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #inject(Collection, Object, Closure)
      * @since 1.5.0
      */
-    public static <T, U extends T> T inject(Object self, U initialValue, Closure<? extends T> closure) {
+    public static Object inject(Object self, Object initialValue, Closure closure) {
         Iterator iter = InvokerHelper.asIterator(self);
         return inject(iter, initialValue, closure);
     }
@@ -2950,9 +2950,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #inject(Collection, Object, Closure)
      * @since 1.5.0
      */
-    public static <T, U extends T> T inject(Object[] self, U initialValue, Closure<? extends T> closure) {
+    public static Object inject(Object[] self, Object initialValue, Closure closure) {
         Object[] params = new Object[2];
-        T value = initialValue;
+        Object value = initialValue;
         for (Object next : self) {
             params[0] = value;
             params[1] = next;
