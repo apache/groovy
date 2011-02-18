@@ -171,7 +171,7 @@ public class AstBuilderTransformation implements ASTTransformation {
 
             if (importPackages != null) {
                 for (ImportNode importPackage : importPackages) {
-                    if ("org.codehaus.groovy.ast.builder.".equals(importPackage.getType().getName())) {
+                    if ("org.codehaus.groovy.ast.builder.".equals(importPackage.getPackageName())) {
                         factoryTargets.add("AstBuilder");
                         break;
                     }
