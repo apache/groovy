@@ -799,42 +799,6 @@ class SwingBuilderTest extends GroovySwingTestCase {
       }
     }
 
-    void testTableLayout() {
-      testInEDT {
-
-        def swing = new SwingBuilder()
-        def msg = shouldFailWithCause(RuntimeException){
-            def frame = swing.frame(){
-                tr()
-            }
-        }
-        assert msg =~ /'tr' must be within a 'tableLayout'/
-        msg = shouldFailWithCause(RuntimeException){
-            def frame = swing.frame(){
-                tableLayout(){
-                    td()
-                }
-            }
-        }
-        assert msg =~ /'td' must be within a 'tr'/
-        swing.frame(id:'frame'){
-            tableLayout(){
-                tr {
-                    td {
-                        label(id:'label')
-                    }
-                }
-            }
-        }
-
-        assert swing.label.parent
-        assert swing.label.parent.parent
-        assert swing.label.parent.parent.parent
-        assert swing.label.parent.parent.parent.parent
-        assert swing.frame == swing.label.parent.parent.parent.parent.parent
-      }
-    }
-
     void testAttributeOrdering() {
       testInEDT {
 

@@ -5,8 +5,6 @@ import javax.script.ScriptEngine
 import javax.script.ScriptEngineFactory
 import javax.script.ScriptException
 
-import org.codehaus.groovy.runtime.InvokerHelper
-
 import javax.script.SimpleScriptContext
 
 /**
@@ -62,7 +60,7 @@ class JSR223Test extends GroovyTestCase {
         assertNotNull(factory.getExtensions())
         assertNotNull(factory.getMimeTypes())
 
-        assertEquals(InvokerHelper.getVersion(), factory.getLanguageVersion())
+        assertEquals(GroovySystem.getVersion(), factory.getLanguageVersion())
     }
 
     void testSimpleExpr() throws ScriptException {

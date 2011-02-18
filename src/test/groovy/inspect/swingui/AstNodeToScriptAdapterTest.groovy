@@ -366,7 +366,7 @@ public class AstNodeToScriptAdapterTest extends GroovyTestCase {
     }
 
     public void testAtImmutableClass() {
-        String script = '@Immutable class Event { }'
+        String script = '@groovy.transform.Immutable class Event { }'
 
         String result = compileToScript(script, CompilePhase.CANONICALIZATION)
         assert result.contains('private boolean $print$names')
@@ -391,6 +391,7 @@ public class AstNodeToScriptAdapterTest extends GroovyTestCase {
 
     public void testAtImmutableClassWithProperties() {
         String script = """
+            import groovy.transform.Immutable
             @Immutable class Event {
                 String title
                 Date when

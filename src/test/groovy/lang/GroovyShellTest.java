@@ -22,7 +22,6 @@ import junit.textui.TestRunner;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.io.File;
@@ -49,7 +48,7 @@ public class GroovyShellTest extends GroovyTestCase {
     public void testExecuteScript() {
         GroovyShell shell = new GroovyShell();
         try {
-            Object result = shell.evaluate(new ByteArrayInputStream(script1.getBytes()), "Test.groovy");
+            Object result = shell.evaluate(script1, "Test.groovy");
             assertEquals(new Integer(1), result);
         }
         catch (Exception e) {
@@ -76,7 +75,7 @@ public class GroovyShellTest extends GroovyTestCase {
         context.setVariable("test", new PropertyHolder());
         GroovyShell shell = new GroovyShell(context);
         try {
-            Object result = shell.evaluate(new ByteArrayInputStream(script2.getBytes()), "Test.groovy");
+            Object result = shell.evaluate(script2, "Test.groovy");
             assertEquals(new Integer(2), result);
         }
         catch (Exception e) {
@@ -113,7 +112,7 @@ public class GroovyShellTest extends GroovyTestCase {
         if(!helperScript.exists()) {
             fail("File " + scriptFileName + " does not exist");
         } else {
-            URL url = helperScript.toURL();
+            URL url = helperScript.toURI().toURL();
             GroovyCodeSource gcs = new GroovyCodeSource(url);
             GroovyShell shell = new GroovyShell();
             Object result = shell.evaluate(gcs);
