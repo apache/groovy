@@ -126,7 +126,7 @@ public class Groovyc extends MatchingTask {
     private boolean keepStubs;
 
     private Set<String> scriptExtensions = new LinkedHashSet<String>();
-    
+
     /**
      * Adds a path for source compilation.
      *
@@ -172,7 +172,7 @@ public class Groovyc extends MatchingTask {
     }
 
     /**
-     * Set the extension to use when searching for Groovy source files. 
+     * Set the extension to use when searching for Groovy source files.
      * Accepts extensions in the form *.groovy, .groovy or groovy
      *
      * @param scriptExtension the extension of Groovy source files
@@ -186,7 +186,7 @@ public class Groovyc extends MatchingTask {
             this.scriptExtension = "*." + scriptExtension;
         }
     }
-    
+
     /**
      * Get the extension to use when searching for Groovy source files.
      *
@@ -195,27 +195,27 @@ public class Groovyc extends MatchingTask {
     public String getScriptExtension() {
         return scriptExtension;
     }
-    
+
     /**
      * Sets the bytecode compatibility mode
-     * 
+     *
      * @param version the bytecode compatibility mode
      */
     public void setTargetBytecode(String version) {
-        if(CompilerConfiguration.PRE_JDK5.equals(version) || CompilerConfiguration.POST_JDK5.equals(version)) {
+        if (CompilerConfiguration.PRE_JDK5.equals(version) || CompilerConfiguration.POST_JDK5.equals(version)) {
             this.targetBytecode = version;
         }
     }
 
     /**
      * Retrieves the compiler bytecode compatibility mode.
-     * 
+     *
      * @return bytecode compatibility mode. Can be either <tt>1.5</tt> or <tt>1.4</tt>.
      */
     public String getTargetBytecode() {
         return this.targetBytecode;
     }
-    
+
     /**
      * Set the destination directory into which the Java source
      * files should be compiled.
@@ -632,10 +632,10 @@ public class Groovyc extends MatchingTask {
         SourceFileScanner sfs = new SourceFileScanner(this);
         File[] newFiles;
         for (String extension : getScriptExtensions()) {
-        	m.setFrom("*." + extension);
-        	m.setTo("*.class");
-        	newFiles = sfs.restrictAsFiles(files, srcDir, destDir, m);
-        	addToCompileList(newFiles);
+            m.setFrom("*." + extension);
+            m.setTo("*.class");
+            newFiles = sfs.restrictAsFiles(files, srcDir, destDir, m);
+            addToCompileList(newFiles);
         }
 
         if (jointCompilation) {
@@ -739,14 +739,14 @@ public class Groovyc extends MatchingTask {
                     Enumeration children = rc.getChildren();
                     while (children.hasMoreElements()) {
                         RuntimeConfigurable childrc = (RuntimeConfigurable) children.nextElement();
-                        if(childrc.getElementTag().equals("compilerarg")) {
+                        if (childrc.getElementTag().equals("compilerarg")) {
                             for (Iterator i = childrc.getAttributeMap().entrySet().iterator(); i.hasNext();) {
                                 final Map.Entry e = (Map.Entry) i.next();
                                 final String key = e.getKey().toString();
-                                if(key.equals("value")) {
+                                if (key.equals("value")) {
                                     final String value = getProject().replaceProperties(e.getValue().toString());
                                     StringTokenizer st = new StringTokenizer(value, " ");
-                                    while(st.hasMoreTokens()) {
+                                    while (st.hasMoreTokens()) {
                                         String optionStr = st.nextToken();
                                         jointOptions.add(optionStr.replace("-X", "-FX"));
                                     }
@@ -791,10 +791,10 @@ public class Groovyc extends MatchingTask {
                     if ((memoryMaximumSize != null) && !memoryMaximumSize.equals("")) {
                         commandLineList.add("-Xmx" + memoryMaximumSize);
                     }
-                    if(!"*.groovy".equals(getScriptExtension())) {
-                    	String tmpExtension = getScriptExtension();
-                    	if(tmpExtension.startsWith("*.")) tmpExtension = tmpExtension.substring(1);
-                    	commandLineList.add("-Dgroovy.default.scriptExtension=" + tmpExtension);
+                    if (!"*.groovy".equals(getScriptExtension())) {
+                        String tmpExtension = getScriptExtension();
+                        if (tmpExtension.startsWith("*.")) tmpExtension = tmpExtension.substring(1);
+                        commandLineList.add("-Dgroovy.default.scriptExtension=" + tmpExtension);
                     }
                     commandLineList.add("org.codehaus.groovy.tools.FileSystemCompiler");
                 }
@@ -861,8 +861,7 @@ public class Groovyc extends MatchingTask {
                     executor.setCommandline(commandLine);
                     try {
                         executor.execute();
-                    }
-                    catch (final IOException ioe) {
+                    } catch (final IOException ioe) {
                         throw new BuildException("Error running forked groovyc.", ioe);
                     }
                     final int returnCode = executor.getExitValue();
@@ -887,7 +886,7 @@ public class Groovyc extends MatchingTask {
                         configuration = FileSystemCompiler.generateCompilerConfigurationFromOptions(cli);
                         configuration.setScriptExtensions(getScriptExtensions());
                         String tmpExtension = getScriptExtension();
-                        if(tmpExtension.startsWith("*.")) tmpExtension = tmpExtension.substring(1);
+                        if (tmpExtension.startsWith("*.")) tmpExtension = tmpExtension.substring(1);
                         configuration.setDefaultScriptExtension(tmpExtension);
 
                         // Load the file name list
@@ -896,10 +895,10 @@ public class Groovyc extends MatchingTask {
 
                         fileNameErrors = fileNameErrors && !FileSystemCompiler.validateFiles(filenames);
 
-                        if(targetBytecode != null) {
+                        if (targetBytecode != null) {
                             configuration.setTargetBytecode(targetBytecode);
                         }
-                        
+
                         if (!fileNameErrors) {
                             FileSystemCompiler.doCompilation(configuration, makeCompileUnit(), filenames);
                         }
@@ -1043,21 +1042,21 @@ public class Groovyc extends MatchingTask {
     }
 
     private Set<String> getScriptExtensions() {
-    	return scriptExtensions;
+        return scriptExtensions;
     }
 
     private void loadRegisteredScriptExtensions() {
-    	if (scriptExtensions.isEmpty()) {
-    		
-    		scriptExtensions.add(getScriptExtension().substring(2)); // first extension will be the one set explicitly on <groovyc>
-    		
-    		Path classpath = getClasspath() != null ? getClasspath() : new Path(getProject());
-    		final String[] pe = classpath.list();
-    		final GroovyClassLoader loader = new GroovyClassLoader(getClass().getClassLoader());
-    		for (String file : pe) {
-    			loader.addClasspath(file);
-    		}
-    		scriptExtensions.addAll(SourceExtensionHandler.getRegisteredExtensions(loader));
-    	}
+        if (scriptExtensions.isEmpty()) {
+
+            scriptExtensions.add(getScriptExtension().substring(2)); // first extension will be the one set explicitly on <groovyc>
+
+            Path classpath = getClasspath() != null ? getClasspath() : new Path(getProject());
+            final String[] pe = classpath.list();
+            final GroovyClassLoader loader = new GroovyClassLoader(getClass().getClassLoader());
+            for (String file : pe) {
+                loader.addClasspath(file);
+            }
+            scriptExtensions.addAll(SourceExtensionHandler.getRegisteredExtensions(loader));
+        }
     }
 }
