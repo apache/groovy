@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2011 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,10 +18,14 @@ package groovy;
 import groovy.lang.Closure;
 import groovy.lang.Reference;
 import junit.framework.TestCase;
+import org.codehaus.groovy.runtime.DefaultGroovyMethods;
+import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,7 +37,7 @@ import static org.codehaus.groovy.runtime.DefaultGroovyMethods.*;
  * mind, but these tests illustrate some of the possible ways to use them from Java.
  */
 public class ClosureJavaIntegrationTest extends TestCase {
-    Map<String,  Integer> zoo = new HashMap<String,  Integer>();
+    Map<String, Integer> zoo = new HashMap<String, Integer>();
     List<String> animals = Arrays.asList("ant", "bear", "camel");
 
     @Override
@@ -136,15 +140,15 @@ public class ClosureJavaIntegrationTest extends TestCase {
             }
         };
         Closure<Integer> tensAndUnits = arithmeticClosure.curry(10);
-        assertEquals(35, (int)tensAndUnits.call(3, 5));
+        assertEquals(35, (int) tensAndUnits.call(3, 5));
         tensAndUnits = arithmeticClosure.ncurry(0, 10);
-        assertEquals(35, (int)tensAndUnits.call(3, 5));
+        assertEquals(35, (int) tensAndUnits.call(3, 5));
         tensAndUnits = arithmeticClosure.ncurry(1, 10);
-        assertEquals(35, (int)tensAndUnits.call(3, 5));
+        assertEquals(35, (int) tensAndUnits.call(3, 5));
         Closure<Integer> timesPlus5 = arithmeticClosure.rcurry(5);
-        assertEquals(35, (int)timesPlus5.call(15, 2));
+        assertEquals(35, (int) timesPlus5.call(15, 2));
         timesPlus5 = arithmeticClosure.ncurry(2, 5);
-        assertEquals(35, (int)timesPlus5.call(15, 2));
+        assertEquals(35, (int) timesPlus5.call(15, 2));
     }
 
     public void testComposition() {
@@ -177,5 +181,16 @@ public class ClosureJavaIntegrationTest extends TestCase {
             }
         };
         assertEquals(BigInteger.valueOf(479001600), factorial.call(12));
+    }
+
+    public void testInject() {
+        Collection<Integer> c = Arrays.asList(2, 4, 5, 20);
+        Number initial = BigDecimal.ZERO;
+        Closure<? extends Number> closure = new Closure<BigDecimal>(c) {
+            BigDecimal doCall(BigDecimal total, Integer next) {
+                return total.add(BigDecimal.ONE.divide(new BigDecimal(next)));
+            }
+        };
+        assertTrue(DefaultTypeTransformation.compareEqual(BigDecimal.ONE, inject(c, initial, closure)));
     }
 }
