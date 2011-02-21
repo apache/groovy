@@ -130,7 +130,7 @@ public class LineColumnReader extends BufferedReader {
      * @param chars Destination array of char
      * @param startOffset Offset at which to start storing characters
      * @param length Maximum number of characters to read
-     * @return
+     * @return an exception if an error occurs
      */
     @Override
     public int read(char[] chars, int startOffset, int length) throws IOException {
