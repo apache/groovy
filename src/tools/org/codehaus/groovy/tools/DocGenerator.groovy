@@ -37,8 +37,10 @@ class DocGenerator {
     private void parse() {
         builder = new JavaDocBuilder()
         sourceFiles.each {
-            log.debug "adding reader for $it"
-            builder.addSource(it.newReader())
+            if (it.exists()) {
+                builder.addSource(it.newReader())
+                log.debug "adding reader for $it"
+            } else log.debug "not found, skipping: $it.path"
         }
 
         def sources = builder.getSources()
@@ -55,9 +57,9 @@ class DocGenerator {
             if (method.isPublic() && method.isStatic()) {
                 def parameters = method.getParameters()
                 def jdkClass = parameters[0].getType().toString()
-                if(jdkClass.equals('T')) {
+                if (jdkClass.equals('T') || jdkClass.equals('U') || jdkClass.equals('V')) {
                     jdkClass = 'java.lang.Object'
-                } else if(jdkClass.equals('T[]')) {
+                } else if (jdkClass.equals('T[]')) {
                     jdkClass = 'java.lang.Object[]'
                 }
                 if (jdkClass.startsWith('groovy')) {
@@ -270,7 +272,7 @@ class DocGenerator {
             type = "$first#$name(${args.join(', ')})".toString()
             inGdk = true
         }
-        if (type in ['T', 'K', 'V']) {
+        if (type in ['T', 'U', 'V', 'K', 'V']) {
             type = "java.lang.Object"
         } else if (type == 'T[]') {
             type = "java.lang.Object[]"
