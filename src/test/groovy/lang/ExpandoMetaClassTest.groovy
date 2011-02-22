@@ -739,6 +739,16 @@ class ExpandoMetaClassTest extends GroovyTestCase {
        // arguments.
        assert "".metaClass.pickMethod("trim")
     }
+    
+    void testEMCMetaClassProperty() {
+        // GROOVY-2516
+        try {
+            assert ExpandoMetaClass.class.metaClass instanceof MetaClass
+        } finally {
+            GroovySystem.metaClassRegistry.setMetaClass(ExpandoMetaClass.class,null)
+        }
+     
+    }
 }
 
 interface EMCT_InterfaceWithFormat {
