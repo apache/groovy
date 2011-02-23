@@ -175,6 +175,24 @@ public class MethodSelectionTest extends CompilableTestSupport {
     } 
   }
   
+  void testPrivateMethodSelectionFromClosure(){
+      assertScript """
+          class I1 {
+              private foo() {1}
+              def bar(){
+                def x = "foo"
+                return {this."\$x"()}
+              }
+          }
+          class I2 extends I1 {
+              def foo(){2}
+          }
+          def i = new I2()
+          assert i.bar()() == 1
+      
+      """
+  }
+  
   void testBDandBIToFloatAutoConversionInMethodSelection() {
     def foo = new Foo3977()
     

@@ -84,6 +84,7 @@ public class InvocationWriter {
             boolean safe, boolean spreadSafe, boolean implicitThis
     ) {
         ClassNode cn = controller.getClassNode();
+        if (controller.isInClosure() && !implicitThis && AsmClassGenerator.isThisExpression(receiver)) cn=cn.getOuterClass();
         makeCall(origin, new ClassExpression(cn), receiver, message, arguments,
                 adapter, safe, spreadSafe, implicitThis);
     }
