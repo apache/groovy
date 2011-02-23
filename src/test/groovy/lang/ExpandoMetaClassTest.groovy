@@ -745,9 +745,29 @@ class ExpandoMetaClassTest extends GroovyTestCase {
         try {
             assert ExpandoMetaClass.class.metaClass instanceof MetaClass
         } finally {
-            GroovySystem.metaClassRegistry.setMetaClass(ExpandoMetaClass.class,null)
+            GroovySystem.metaClassRegistry.removeMetaClass(ExpandoMetaClass.class)
         }
-     
+    }
+    
+    void testDynamicAddedMethodWithGStringCall() {
+        // GROOVY-4691
+        assertScript """
+          class A {
+            def bar(x) {
+              return {this."\$x"()}
+            }
+          }
+          try {
+            A.metaClass.foo = {->1}
+            A.metaClass.methodMissing = { method, args -> 2}
+          
+            def a = new A()
+            assert a.bar("foo")() == 1
+            assert a.x() == 2
+          } finally {
+            GroovySystem.metaClassRegistry.removeMetaClass(A);
+          }
+        """
     }
 }
 
