@@ -4692,10 +4692,29 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Pad a String with the characters appended to the left
+     * Pad a String to a minimum length specified by <tt>numberOfChars</tt>, adding the supplied padding String as many times as needed to the left.
+     *
+     * If the String is already the same size or bigger than the target <tt>numberOfChars</tt>, then the original String is returned. An example:
+     * <pre>
+     * println 'Numbers:'
+     * [1, 10, 100, 1000].each{ println it.toString().padLeft(5, '*') }
+     * [2, 20, 200, 2000].each{ println it.toString().padLeft(5, '*_') }
+     * </pre>
+     * will produce output like:
+     * <pre>
+     * Numbers:
+     * ****1
+     * ***10
+     * **100
+     * *1000
+     * *_*_2
+     * *_*20
+     * *_200
+     * *2000
+     * </pre>
      *
      * @param self          a String object
-     * @param numberOfChars the total number of characters
+     * @param numberOfChars the total minimum number of characters of the resulting string
      * @param padding       the characters used for padding
      * @return the String padded to the left
      * @since 1.0
@@ -4710,11 +4729,26 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Pad a String with the spaces appended to the left
+     * Pad a String to a minimum length specified by <tt>numberOfChars</tt> by adding the space character to the left as many times as needed.
+     *
+     * If the String is already the same size or bigger than the target <tt>numberOfChars</tt>, then the original String is returned. An example:
+     * <pre>
+     * println 'Numbers:'
+     * [1, 10, 100, 1000].each{ println it.toString().padLeft(5) }
+     * </pre>
+     * will produce output like:
+     * <pre>
+     * Numbers:
+     *     1
+     *    10
+     *   100
+     *  1000
+     * </pre>
      *
      * @param self          a String object
-     * @param numberOfChars the total number of characters
+     * @param numberOfChars the total minimum number of characters of the resulting string
      * @return the String padded to the left
+     * @see #padLeft(String, Number, String)
      * @since 1.0
      */
     public static String padLeft(String self, Number numberOfChars) {
@@ -4722,10 +4756,22 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Pad a String with the characters appended to the right
+     * Pad a String to a minimum length specified by <tt>numberOfChars</tt>, adding the supplied padding String as many times as needed to the right.
+     *
+     * If the String is already the same size or bigger than the target <tt>numberOfChars</tt>, then the original String is returned. An example:
+     * <pre>
+     * ['A', 'BB', 'CCC', 'DDDD'].each{ println it.padRight(5, '#') + it.size() }
+     * </pre>
+     * will produce output like:
+     * <pre>
+     * A####1
+     * BB###2
+     * CCC##3
+     * DDDD#4
+     * </pre>
      *
      * @param self          a String object
-     * @param numberOfChars the total number of characters
+     * @param numberOfChars the total minimum number of characters of the resulting string
      * @param padding       the characters used for padding
      * @return the String padded to the right
      * @since 1.0
@@ -4740,10 +4786,22 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Pad a String with the spaces appended to the right
+     * Pad a String to a minimum length specified by <tt>numberOfChars</tt> by adding the space character to the right as many times as needed.
+     *
+     * If the String is already the same size or bigger than the target <tt>numberOfChars</tt>, then the original String is returned. An example:
+     * <pre>
+     * ['A', 'BB', 'CCC', 'DDDD'].each{ println it.padRight(5) + it.size() }
+     * </pre>
+     * will produce output like:
+     * <pre>
+     * A    1
+     * BB   2
+     * CCC  3
+     * DDDD 4
+     * </pre>
      *
      * @param self          a String object
-     * @param numberOfChars the total number of characters
+     * @param numberOfChars the total minimum number of characters of the resulting string
      * @return the String padded to the right
      * @since 1.0
      */
@@ -4752,12 +4810,24 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Center a String and pad it with the characters appended around it
+     * Pad a String to a minimum length specified by <tt>numberOfChars</tt>, appending the supplied padding String around the original as many times as needed keeping it centered.
+     *
+     * If the String is already the same size or bigger than the target <tt>numberOfChars</tt>, then the original String is returned. An example:
+     * <pre>
+     * ['A', 'BB', 'CCC', 'DDDD'].each{ println '|' + it.center(6, '+') + '|' }
+     * </pre>
+     * will produce output like:
+     * <pre>
+     * |++A+++|
+     * |++BB++|
+     * |+CCC++|
+     * |+DDDD+|
+     * </pre>
      *
      * @param self          a String object
-     * @param numberOfChars the total number of characters
+     * @param numberOfChars the total minimum number of characters of the resulting string
      * @param padding       the characters used for padding
-     * @return the String centered with padded character around
+     * @return the String centered with padded characters around it
      * @since 1.0
      */
     public static String center(String self, Number numberOfChars, String padding) {
@@ -4777,11 +4847,24 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Center a String and pad it with spaces appended around it
+     * Pad a String to a minimum length specified by <tt>numberOfChars</tt> by adding the space character around it as many times as needed so that it remains centered.
+     *
+     * If the String is already the same size or bigger than the target <tt>numberOfChars</tt>, then the original String is returned. An example:
+     * <pre>
+     * ['A', 'BB', 'CCC', 'DDDD'].each{ println '|' + it.center(6) + '|' }
+     * </pre>
+     * will produce output like:
+     * <pre>
+     * |  A   |
+     * |  BB  |
+     * | CCC  |
+     * | DDDD |
+     * </pre>
      *
      * @param self          a String object
-     * @param numberOfChars the total number of characters
-     * @return the String centered with padded character around
+     * @param numberOfChars the total minimum number of characters of the resulting string
+     * @return the String centered with padded characters around it
+     * @see #center(String, Number, String)
      * @since 1.0
      */
     public static String center(String self, Number numberOfChars) {
