@@ -1967,7 +1967,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *                should return a Map.Entry, a Map or a two-element list containing the resulting key and value
      * @return a Map of the transformed entries
      * @see #collect(Map, Collection, Closure)
-     * @since 1.8.0
+     * @since 1.7.9
      */
     public static <K, V> Map<K, V> collectEntries(Map<?, ?> self, Map<K, V> result, Closure<?> closure) {
         for (Map.Entry<?, ?> entry : self.entrySet()) {
@@ -1990,7 +1990,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *                should return a Map.Entry, a Map or a two-element list containing the resulting key and value
      * @return a Map of the transformed entries
      * @see #collect(Map, Collection, Closure)
-     * @since 1.8.0
+     * @since 1.7.9
      */
     public static Map<?, ?> collectEntries(Map<?, ?> self, Closure<?> closure) {
         return collectEntries(self, createSimilarMap(self), closure);
@@ -2013,11 +2013,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *                should return a Map.Entry, a Map or a two-element list containing the resulting key and value
      * @return a Map of the transformed entries
      * @see #collect(Map, Collection, Closure)
-     * @since 1.8.0
+     * @since 1.7.9
      */
     public static <K, V> Map<K, V> collectEntries(Collection<?> self, Map<K, V> result, Closure<?> closure) {
-        for (Iterator iter = self.iterator(); iter.hasNext();) {
-            addEntry(result, closure.call(iter.next()));
+        for (Object next : self) {
+            addEntry(result, closure.call(next));
         }
         return result;
     }
@@ -2040,7 +2040,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *                should return a Map.Entry, a Map or a two-element list containing the resulting key and value
      * @return a Map of the transformed entries
      * @see #collect(Map, Collection, Closure)
-     * @since 1.8.0
+     * @since 1.7.9
      */
     public static <K, V> Map<K, V> collectEntries(Object[] self, Map<K, V> result, Closure<?> closure) {
         return collectEntries(toList(self), result, closure);
@@ -2062,7 +2062,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *                should return a Map.Entry, a Map or a two-element list containing the resulting key and value
      * @return a Map of the transformed entries
      * @see #collectEntries(Collection, Map, Closure)
-     * @since 1.8.0
+     * @since 1.7.9
      */
     public static <K, V> Map<K, V> collectEntries(Collection<?> self, Closure<?> closure) {
         return collectEntries(self, new LinkedHashMap<K, V>(), closure);
@@ -2085,7 +2085,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *                should return a Map.Entry, a Map or a two-element list containing the resulting key and value
      * @return a Map of the transformed entries
      * @see #collectEntries(Collection, Map, Closure)
-     * @since 1.8.0
+     * @since 1.7.9
      */
     public static <K, V> Map<K, V> collectEntries(Object[] self, Closure<?> closure) {
         return collectEntries(toList(self), new LinkedHashMap<K, V>(), closure);
