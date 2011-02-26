@@ -33,11 +33,6 @@ import javax.swing.tree.TreeNode
 import javax.swing.tree.TreeSelectionModel
 import org.codehaus.groovy.control.Phases
 import static java.awt.GridBagConstraints.*
-import javax.swing.SwingUtilities
-import javax.swing.JTable
-import javax.swing.table.TableColumnModel
-import javax.swing.table.TableColumn
-import javax.swing.table.TableCellRenderer
 import java.awt.Component
 
 /**

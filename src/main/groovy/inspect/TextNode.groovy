@@ -21,8 +21,6 @@
  */
 package groovy.inspect
 
-import groovy.inspect.swingui.AstBrowserNodeMaker
-
 class TextNode {
     Object userObject
     List<List<String>> properties

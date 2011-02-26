@@ -17,7 +17,6 @@ package groovy.inspect.swingui;
 
 
 import org.codehaus.groovy.ast.*;
-import org.codehaus.groovy.ast.builder.AstBuilder;
 import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.stmt.*;
 import org.codehaus.groovy.classgen.BytecodeExpression

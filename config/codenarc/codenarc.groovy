@@ -37,12 +37,17 @@ ruleset {
     }
     ruleset('rulesets/grails.xml')
     ruleset('rulesets/logging.xml') 
-    ruleset('rulesets/braces.xml') 
+    ruleset('rulesets/braces.xml') {
+        exclude 'IfStatementBraces' // if statements without braces seems acceptable in our coding standards
+        exclude 'ElseBlockBraces'   // else statements without braces seems acceptable in our coding standards
+    }
     ruleset('rulesets/basic.xml') 
     ruleset('rulesets/size.xml') 
     ruleset('rulesets/junit.xml') 
     ruleset('rulesets/concurrency.xml') 
-    ruleset('rulesets/unnecessary.xml') 
+    ruleset('rulesets/unnecessary.xml') {
+        exclude 'UnnecessaryObjectReferences' // CodeNarc 0.12 has a bug
+    }
     ruleset('rulesets/dry.xml') 
     ruleset('rulesets/design.xml') 
     ruleset('rulesets/exceptions.xml') 

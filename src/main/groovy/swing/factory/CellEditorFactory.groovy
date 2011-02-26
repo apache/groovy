@@ -18,7 +18,6 @@ package groovy.swing.factory
 
 import groovy.swing.impl.ClosureCellEditor
 import java.awt.Component
-import javax.swing.JTree
 
 /**
 * @author Alexander Klein

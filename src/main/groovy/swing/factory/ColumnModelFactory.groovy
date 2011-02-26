@@ -16,7 +16,6 @@
 
 package groovy.swing.factory
 
-import java.util.logging.Logger
 import javax.swing.JTable
 import javax.swing.table.TableColumnModel
 import groovy.util.logging.Log

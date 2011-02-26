@@ -20,9 +20,6 @@ import groovy.transform.ThreadInterrupt
 import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.MethodNode
-import org.codehaus.groovy.ast.stmt.DoWhileStatement
-import org.codehaus.groovy.ast.stmt.ForStatement
-import org.codehaus.groovy.ast.stmt.WhileStatement
 import org.codehaus.groovy.control.CompilePhase
 import org.codehaus.groovy.ast.expr.*
 

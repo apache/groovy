@@ -17,13 +17,9 @@ package org.codehaus.groovy.transform;
 
 
 import groovy.transform.ConditionalInterrupt
-import org.codehaus.groovy.ast.stmt.DoWhileStatement
-import org.codehaus.groovy.ast.stmt.ForStatement
-import org.codehaus.groovy.ast.stmt.WhileStatement
 import org.codehaus.groovy.control.CompilePhase
 import org.codehaus.groovy.ast.*
 import org.codehaus.groovy.ast.expr.*
-import groovy.inspect.swingui.AstNodeToScriptAdapter
 
 /**
  * Allows "interrupt-safe" executions of scripts by adding a custom conditional
