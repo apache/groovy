@@ -57,6 +57,36 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         public Expression transformExpression(ExpressionTransformer transformer) {
             return null;
         }
+
+        @Override
+        public void setSourcePosition(final ASTNode node) {
+            super.setSourcePosition(node);
+            innerClass.setSourcePosition(node);
+        }
+
+        @Override
+        public void setColumnNumber(final int columnNumber) {
+            super.setColumnNumber(columnNumber);
+            innerClass.setColumnNumber(columnNumber);
+        }
+
+        @Override
+        public void setLineNumber(final int lineNumber) {
+            super.setLineNumber(lineNumber);
+            innerClass.setLineNumber(lineNumber);
+        }
+
+        @Override
+        public void setLastColumnNumber(final int columnNumber) {
+            super.setLastColumnNumber(columnNumber);
+            innerClass.setLastColumnNumber(columnNumber);
+        }
+
+        @Override
+        public void setLastLineNumber(final int lineNumber) {
+            super.setLastLineNumber(lineNumber);
+            innerClass.setLastLineNumber(lineNumber);
+        }
     }
 
     protected AST ast;
