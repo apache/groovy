@@ -15,8 +15,6 @@
  */
 package groovy.bugs
 
-import org.codehaus.groovy.control.MultipleCompilationErrorsException
-
 class Groovy4119Bug extends GroovyTestCase {
     void testThis$0PassingInSuperCallWithinInnerClasses() {
         assertScript """

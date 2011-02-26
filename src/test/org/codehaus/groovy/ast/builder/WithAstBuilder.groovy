@@ -1,6 +1,5 @@
 package org.codehaus.groovy.ast.builder;
 
-import groovy.util.GroovyTestCase;
 import org.codehaus.groovy.transform.GroovyASTTransformationClass;
 
 import java.lang.annotation.Target;

@@ -15,8 +15,6 @@
  */
 package groovy.bugs
 
-import org.codehaus.groovy.control.MultipleCompilationErrorsException
-
 class Groovy4129Bug extends GroovyTestCase {
     void testImplicitThisPassingInObjInitBlock() {
         new GroovyShell().parse """

@@ -1,7 +1,6 @@
 package groovy.util;
 
 import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException
 import javax.swing.SwingUtilities;
 
 public class GroovySwingTestCase extends GroovyTestCase {

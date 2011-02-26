@@ -17,7 +17,6 @@ package groovy.sql
 
 import javax.sql.DataSource
 import java.sql.Connection
-import java.sql.SQLException
 
 /**
  * Test Sql batch features

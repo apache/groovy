@@ -1,7 +1,5 @@
 package org.codehaus.groovy.runtime
 
-import org.codehaus.groovy.reflection.ClassInfo
-
 class PerInstanceMetaClassTest extends GroovyTestCase{
 
     static Integer [] cache

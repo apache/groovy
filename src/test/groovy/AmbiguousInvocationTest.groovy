@@ -10,6 +10,7 @@ class AmbiguousInvocationTest extends GroovyTestCase {
     def dummy1, dummy2
 
     void setUp() {
+        super.setUp()
         dummy1 = new groovy.DummyMethodsJava()
         dummy2 = new groovy.DummyMethodsGroovy()
     }

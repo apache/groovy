@@ -1,7 +1,6 @@
 package org.codehaus.groovy.ast.builder.testpackage
 
 import org.codehaus.groovy.ast.builder.*
-import org.codehaus.groovy.runtime.MethodClosure
 
 /**
  * Test package imports in AstBuilder.

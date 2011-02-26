@@ -20,7 +20,6 @@ import groovy.model.DefaultTableColumn
 import groovy.model.DefaultTableModel
 import groovy.model.PropertyModel
 import groovy.model.ValueHolder
-import javax.swing.JTable
 
 class SwingBuilderTableTest extends GroovySwingTestCase {
 

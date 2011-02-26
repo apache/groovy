@@ -15,8 +15,6 @@
  */
 package groovy.bugs
 
-import org.codehaus.groovy.control.MultipleCompilationErrorsException
-
 class Groovy4134Bug extends GroovyTestCase {
     void testClosureParamsWithDefaultValues() {
         def c = {Integer maxRows = Integer.MAX_VALUE -> maxRows}

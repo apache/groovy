@@ -16,8 +16,6 @@
 
 package org.codehaus.groovy.tools.shell.commands
 
-import org.codehaus.groovy.tools.shell.CommandException
-
 /**
  * Tests for the {@link SetCommand} class.
  *

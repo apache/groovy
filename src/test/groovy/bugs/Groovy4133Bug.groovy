@@ -15,8 +15,6 @@
  */
 package groovy.bugs
 
-import org.codehaus.groovy.control.MultipleCompilationErrorsException
-
 class Groovy4133Bug extends GroovyTestCase {
     void testDelegateAnnotationWithNativeMethods() {
         new GroovyShell().evaluate """

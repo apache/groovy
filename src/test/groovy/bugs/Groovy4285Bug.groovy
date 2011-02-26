@@ -16,7 +16,6 @@
 package groovy.bugs
 
 import groovy.xml.XmlUtil
-import groovy.xml.StreamingMarkupBuilder
 
 class Groovy4285Bug extends GroovyShellTestCase {
     void testXMLSerializationOfGPathResultObject() {

@@ -5,19 +5,15 @@ import org.codehaus.groovy.ast.builder.AstBuilder
 import org.codehaus.groovy.ast.builder.*
 import org.codehaus.groovy.control.CompilePhase
 import org.codehaus.groovy.ast.ASTNode
-import org.codehaus.groovy.runtime.MethodClosure
-import org.codehaus.groovy.ast.MethodNode
 import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.Parameter
 import org.codehaus.groovy.ast.stmt.BlockStatement
 import org.codehaus.groovy.ast.VariableScope
-import org.codehaus.groovy.ast.AnnotationNode
 import org.codehaus.groovy.ast.expr.ConstantExpression
 import static org.objectweb.asm.Opcodes.*
 import org.codehaus.groovy.ast.stmt.ExpressionStatement
 import org.codehaus.groovy.ast.expr.BinaryExpression
 import org.codehaus.groovy.ast.expr.VariableExpression
-import org.codehaus.groovy.ast.DynamicVariable
 import org.codehaus.groovy.syntax.Token
 import org.codehaus.groovy.syntax.Types
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression
@@ -33,7 +29,6 @@ import org.codehaus.groovy.ast.stmt.ContinueStatement
 import org.codehaus.groovy.ast.expr.TernaryExpression
 import org.codehaus.groovy.ast.expr.MethodCallExpression
 import org.codehaus.groovy.ast.expr.SpreadMapExpression
-import org.codehaus.groovy.ast.expr.StaticMethodCallExpression
 import org.codehaus.groovy.ast.expr.ArgumentListExpression
 import org.codehaus.groovy.ast.stmt.ForStatement
 import org.codehaus.groovy.ast.expr.ClosureListExpression
