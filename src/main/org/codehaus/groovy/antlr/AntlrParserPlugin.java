@@ -237,6 +237,21 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             if (output.getStatementBlock().isEmpty() && output.getMethods().isEmpty() && output.getClasses().isEmpty()) {
                 output.addStatement(ReturnStatement.RETURN_NULL_OR_VOID);
             }
+
+            // set the script source position
+            
+            ClassNode scriptClassNode = output.getScriptClassDummy();
+            if (scriptClassNode != null) {
+                List<Statement> statements = output.getStatementBlock().getStatements();
+                if (statements.size() > 0) {
+                    Statement firstStatement = statements.get(0);
+                    Statement lastStatement = statements.get(statements.size() - 1);
+
+                    scriptClassNode.setSourcePosition(firstStatement);
+                    scriptClassNode.setLastColumnNumber(lastStatement.getLastColumnNumber());
+                    scriptClassNode.setLastLineNumber(lastStatement.getLastLineNumber());
+                }
+            }
         }
         catch (ASTRuntimeException e) {
             throw new ASTParserException(e.getMessage() + ". File: " + sourceUnit.getName(), e);
