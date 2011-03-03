@@ -97,7 +97,7 @@ public abstract class FactoryBuilderSupport extends Binding {
                 return true;
             } else {
                 throw new RuntimeException("The value argument of '" + name + "' must be of type "
-                        + type.getName());
+                        + type.getName() + ". Found: " + value.getClass());
             }
         } else {
             return false;
@@ -121,7 +121,7 @@ public abstract class FactoryBuilderSupport extends Binding {
                 return false;
             } else {
                 throw new RuntimeException("The value argument of '" + name + "' must be of type "
-                        + type.getName() + " or a String.");
+                        + type.getName() + " or a String. Found: " + value.getClass());
             }
         } else {
             return false;

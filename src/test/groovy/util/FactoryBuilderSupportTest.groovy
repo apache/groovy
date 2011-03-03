@@ -744,6 +744,26 @@ class FactoryBuilderSupportTest extends GroovyTestCase {
             ]
     }
 
+    void testErrorMessage_checkValueIsType() {
+        def msg = shouldFail(Exception) {
+            FactoryBuilderSupport.checkValueIsType('message', 'prop', Integer)
+        }
+        assert msg.contains('prop')
+        assert msg.contains('Integer')
+        assert msg.contains('String')
+    }
+
+    void testErrorMessage_checkValueIsTypeNotString() {
+        def msg = shouldFail(Exception) {
+            FactoryBuilderSupport.checkValueIsTypeNotString(123G, 'prop', Integer)
+        }
+        assert msg.contains('prop')
+        assert msg.contains('Integer')
+        assert msg.contains('String')
+        assert msg.contains('BigInteger')
+
+    }
+
 //    void testMultiThreaded() {
 //        def b = new SpoofFactoryBuilder()
 //        Thread t1 = Thread.start {
