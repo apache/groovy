@@ -113,7 +113,8 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         // TODO find a way to inject any GroovyLexer/GroovyRecognizer
 
         UnicodeEscapingReader unicodeReader = new UnicodeEscapingReader(reader, sourceBuffer);
-        GroovyLexer lexer = new GroovyLexer(unicodeReader);
+        UnicodeLexerSharedInputState inputState = new UnicodeLexerSharedInputState(unicodeReader);
+        GroovyLexer lexer = new GroovyLexer(inputState);
         unicodeReader.setLexer(lexer);
         GroovyRecognizer parser = GroovyRecognizer.make(lexer);
         parser.setSourceBuffer(sourceBuffer);

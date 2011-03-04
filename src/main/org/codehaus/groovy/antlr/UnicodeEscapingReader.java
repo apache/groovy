@@ -21,12 +21,14 @@ import java.io.IOException;
 import java.io.Reader;
 
 import antlr.CharScanner;
+import antlr.Token;
+import antlr.TokenStreamException;
 
 /**
  * Translates GLS-defined unicode escapes into characters. Throws an exception
  * in the event of an invalid unicode escape being detected.
  *
- * <p>No attempt has been made to optimise this class for speed or
+ * <p>No attempt has been made to optimize this class for speed or
  * space.</p>
  *
  * @version $Revision$
@@ -38,7 +40,27 @@ public class UnicodeEscapingReader extends Reader {
     private boolean hasNextChar = false;
     private int nextChar;
     private final SourceBuffer sourceBuffer;
+    private int previousLine;
+    private int numUnicodeEscapesFound = 0;
+    private int numUnicodeEscapesFoundOnCurrentLine = 0;
 
+    private static class DummyLexer extends CharScanner{
+        final private Token t = new Token();
+        @Override
+        public Token nextToken() throws TokenStreamException {
+            return t;
+        }
+        @Override
+        public int getColumn() {
+            return 0;
+        }
+        @Override
+        public int getLine() {
+            return 0;
+        }
+        
+    }
+    
     /**
      * Constructor.
      * @param reader The reader that this reader will filter over.
@@ -46,6 +68,7 @@ public class UnicodeEscapingReader extends Reader {
     public UnicodeEscapingReader(Reader reader,SourceBuffer sourceBuffer) {
         this.reader = reader;
         this.sourceBuffer = sourceBuffer;
+        this.lexer = new DummyLexer();
     }
 
     /**
@@ -82,6 +105,12 @@ public class UnicodeEscapingReader extends Reader {
             return nextChar;
         }
 
+        if (previousLine != lexer.getLine()) {
+            // new line, so reset unicode escapes
+            numUnicodeEscapesFoundOnCurrentLine = 0;
+            previousLine = lexer.getLine();
+        }
+        
         int c = reader.read();
         if (c != '\\') {
             write(c);
@@ -98,7 +127,9 @@ public class UnicodeEscapingReader extends Reader {
         }
 
         // Swallow multiple 'u's
+        int numberOfUChars = 0;
         do {
+            numberOfUChars++;
             c = reader.read();
         } while (c == 'u');
 
@@ -115,6 +146,10 @@ public class UnicodeEscapingReader extends Reader {
         }
         int rv = Integer.parseInt(charNum.toString(), 16);
         write(rv);
+        
+        numUnicodeEscapesFound += 4 + numberOfUChars;
+        numUnicodeEscapesFoundOnCurrentLine += 4 + numberOfUChars;
+
         return rv;
     }
     private void write(int c) {
@@ -138,6 +173,14 @@ public class UnicodeEscapingReader extends Reader {
         nextChar = c;
         throw new IOException("Did not find four digit hex character code."
                 + " line: " + lexer.getLine() + " col:" + lexer.getColumn());
+    }
+
+    public int getUnescapedUnicodeColumnCount() {
+        return numUnicodeEscapesFoundOnCurrentLine;
+    }
+
+    public int getUnescapedUnicodeOffsetCount() {
+        return numUnicodeEscapesFound;
     }
 
     /**
