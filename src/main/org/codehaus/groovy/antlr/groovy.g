@@ -2212,10 +2212,12 @@ commandArgumentsGreedy[AST head]
     :
         { #prev = #head; }
     
-        (   {#prev.getType()!=METHOD_CALL}?
-            first : commandArguments[head]!
-            { #prev = #first; }
-        )?
+        (   ({#prev.getType()!=METHOD_CALL}? commandArgument)=> (   
+                first : commandArguments[head]!
+                { #prev = #first; }
+            )
+            |
+        )
         
         (   options { greedy = true; } :
             pre:primaryExpression!
