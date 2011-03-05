@@ -19,12 +19,14 @@ import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.objectweb.asm.Opcodes;
 
+import java.lang.reflect.Modifier;
 import java.util.List;
 
 /**
  * Represents a method declaration
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
+ * @author Hamlet D'Arcy
  * @version $Revision$
  */
 public class MethodNode extends AnnotatedNode implements Opcodes {
@@ -253,5 +255,19 @@ public class MethodNode extends AnnotatedNode implements Opcodes {
 
     public void setSyntheticPublic(boolean syntheticPublic) {
         this.syntheticPublic = syntheticPublic;
+    }
+
+    /**
+     * Provides a nicely formatted string of the method definition. For simplicity, generic types on some of the elements
+     * are not displayed. 
+     * @return
+     *      string form of node with some generic elements suppressed
+     */
+    @Override
+    public String getText() {
+        String retType = AstToTextHelper.getClassText(returnType);
+        String exceptionTypes = AstToTextHelper.getThrowsClauseText(exceptions);
+        String parms = AstToTextHelper.getParametersText(parameters);
+        return AstToTextHelper.getModifiersText(modifiers) + " " + retType + " " + name + "(" + parms + ") " + exceptionTypes + " { ... }";
     }
 }
