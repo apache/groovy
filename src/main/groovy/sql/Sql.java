@@ -2596,7 +2596,16 @@ public class Sql {
                 }
             }
         } else {
-            statement.setObject(i, value);
+            try {
+                statement.setObject(i, value);
+            } catch (SQLException e) {
+                if (value == null) {
+                    throw new SQLException("Your JDBC driver may not support null arguments for setObject. Consider using Groovy's InParameter feature." +
+                            (e.getMessage() == null ? "" : " (CAUSE: " + e.getMessage() + ")"), e);
+                } else {
+                    throw e;
+                }
+            }
         }
     }
 
