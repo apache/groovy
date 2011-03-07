@@ -112,11 +112,11 @@ import java.util.*;
  *             GroovyClassLoader loader = new GroovyClassLoader(this.class.classLoader, config)
  *  </pre>
  *  
- * @author C�dric Champeau
+ * @author Cédric Champeau
  * @author Guillaume Laforge
  * @author Hamlet D'Arcy
  * 
- * @since 1.9.0
+ * @since 1.8.0
  */
 public class SecureASTCustomizer extends CompilationCustomizer {
 

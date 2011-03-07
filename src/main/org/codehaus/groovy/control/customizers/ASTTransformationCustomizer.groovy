@@ -68,9 +68,9 @@ import java.lang.annotation.Annotation
  * your transformation selectively. It can also be useful to debug global AST transformations without having to
  * package your annotation in a jar file.
  *
- * @author C�dric Champeau
+ * @author Cédric Champeau
  *
- * @since 1.9.0
+ * @since 1.8.0
  * 
  */
 class ASTTransformationCustomizer extends CompilationCustomizer {
