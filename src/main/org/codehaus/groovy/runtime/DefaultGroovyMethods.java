@@ -5586,7 +5586,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * A helper method to allow lists to work with subscript operators
+     * A helper method to allow maps to work with subscript operators
      *
      * @param self  a Map
      * @param key   an Object as a key for the map
