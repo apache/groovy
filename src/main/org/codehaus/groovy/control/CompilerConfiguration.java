@@ -16,11 +16,13 @@
 
 package org.codehaus.groovy.control;
 
+import org.codehaus.groovy.control.customizers.CompilationCustomizer;
 import org.codehaus.groovy.control.io.NullWriter;
 import org.codehaus.groovy.control.messages.WarningMessage;
 
 import java.io.File;
 import java.io.PrintWriter;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -144,7 +146,9 @@ public class CompilerConfiguration {
      * options for optimizations (empty map by default)
      */
     private Map<String, Boolean> optimizationOptions;
-    
+
+    private List<CompilationCustomizer> compilationCustomizers = new LinkedList<CompilationCustomizer>();
+
     /**
      * Sets the Flags to defaults.
      */
@@ -718,4 +722,25 @@ public class CompilerConfiguration {
         if (options==null) throw new IllegalArgumentException("provided option map must not be null");
         optimizationOptions = options;
     }
+
+    /**
+     * Adds compilation customizers to the compilation process. A compilation customizer is a class node
+     * operation which performs various operations going from adding imports to access control.
+     * @param customizers the list of customizers to be added
+     * @return this configuration instance
+     */
+    public CompilerConfiguration addCompilationCustomizers(CompilationCustomizer... customizers) {
+        if (customizers==null) throw new IllegalArgumentException("provided customizers list must not be null");
+        compilationCustomizers.addAll(Arrays.asList(customizers));
+        return this;
+    }
+
+    /**
+     * Returns the list of compilation customizers.
+     * @return the customizers (always not null)
+     */
+    public List<CompilationCustomizer> getCompilationCustomizers() {
+        return compilationCustomizers;
+    }
+
 }
