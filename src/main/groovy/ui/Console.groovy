@@ -75,8 +75,6 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
 
     static final String DEFAULT_SCRIPT_NAME_START = "ConsoleScript"
 
-    static final String THREAD_INTERRUPT_STATEMENT = "\n@groovy.transform.ThreadInterrupt\nimport groovy.transform.ThreadInterrupt\n"
-
     static private prefs = Preferences.userNodeForPackage(Console)
 
     // Whether or not std output should be captured to the console
