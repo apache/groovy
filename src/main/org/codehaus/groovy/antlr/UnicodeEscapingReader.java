@@ -46,7 +46,6 @@ public class UnicodeEscapingReader extends Reader {
 
     private static class DummyLexer extends CharScanner{
         final private Token t = new Token();
-        @Override
         public Token nextToken() throws TokenStreamException {
             return t;
         }
