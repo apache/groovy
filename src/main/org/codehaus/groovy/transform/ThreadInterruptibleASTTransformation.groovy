@@ -69,7 +69,7 @@ public class ThreadInterruptibleASTTransformation extends AbstractInterruptibleA
 
     @Override
     public void visitMethod(MethodNode node) {
-        if (checkOnMethodStart && !node.isSynthetic()) {
+        if (checkOnMethodStart && !node.isSynthetic() && !node.isAbstract()) {
             def code = node.code
             node.code = wrapBlock(code);
         }

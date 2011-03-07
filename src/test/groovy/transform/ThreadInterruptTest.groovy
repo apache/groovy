@@ -292,6 +292,31 @@ class ThreadInterruptTest extends GroovyTestCase {
         // 1 is once for myMethod()
         assert 1 == counter.interruptedCheckCount
     }
+
+    public void testThreadInterruptOnAbstractClass() {
+        def script = '''
+            @groovy.transform.ThreadInterrupt
+            abstract class MyAbstractClass {
+                abstract void myMethod()
+            }
+
+            class Concrete extends MyAbstractClass {
+                void myMethod() {
+                    99.times {
+                        // do something
+                    }
+                }
+            }
+
+            new Concrete().myMethod()
+        '''
+        def mocker = new StubFor(Thread.class)
+        mocker.demand.currentThread(1..Integer.MAX_VALUE) { new InterruptingThread() }
+        mocker.use {
+            shouldFail(InterruptedException) { new GroovyShell(ThreadInterruptibleASTTransformation.getClassLoader()).evaluate(script) }
+        }
+
+    }
 }
 
 class InterruptingThread extends Thread {

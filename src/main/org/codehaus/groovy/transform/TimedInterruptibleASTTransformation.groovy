@@ -265,7 +265,7 @@ public class TimedInterruptibleASTTransformation implements ASTTransformation {
 
     @Override
     public void visitMethod(MethodNode node) {
-      if (checkOnMethodStart && !node.isSynthetic() && !node.isStatic()) {
+      if (checkOnMethodStart && !node.isSynthetic() && !node.isStatic() && !node.isAbstract()) {
         def code = node.code
         node.code = wrapBlock(code);
       }

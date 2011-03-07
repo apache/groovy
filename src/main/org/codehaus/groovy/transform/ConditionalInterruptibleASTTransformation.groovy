@@ -110,7 +110,7 @@ public class ConditionalInterruptibleASTTransformation extends AbstractInterrupt
             // the condition is actually tested
             super.visitMethod(node)
         } else {
-            if (checkOnMethodStart && !node.isSynthetic() && !node.isStatic()) {
+            if (checkOnMethodStart && !node.isSynthetic() && !node.isStatic() && !node.isAbstract()) {
                 def code = node.code
                 node.code = wrapBlock(code);
             }
