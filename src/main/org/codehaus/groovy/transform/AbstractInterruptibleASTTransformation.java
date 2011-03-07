@@ -31,7 +31,7 @@ import java.util.List;
  * Base class for AST Transformations which will automatically throw an {@link InterruptedException} when
  * some conditions are met.
  *
- * @author Cédric Champeau
+ * @author Cedric Champeau
  * @author Hamlet D'Arcy
  * @since 1.8.0
  */
