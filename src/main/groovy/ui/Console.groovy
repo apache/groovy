@@ -53,6 +53,9 @@ import org.codehaus.groovy.syntax.SyntaxException
 import org.codehaus.groovy.control.messages.ExceptionMessage
 import java.awt.Dimension
 import java.awt.BorderLayout
+import org.codehaus.groovy.control.CompilerConfiguration
+import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
+import groovy.transform.ThreadInterrupt
 
 /**
  * Groovy Swing console.
@@ -71,8 +74,6 @@ import java.awt.BorderLayout
 class Console implements CaretListener, HyperlinkListener, ComponentListener, FocusListener {
 
     static final String DEFAULT_SCRIPT_NAME_START = "ConsoleScript"
-
-    static final String THREAD_INTERRUPT_STATEMENT = "\n@groovy.transform.ThreadInterrupt\nimport groovy.transform.ThreadInterrupt\n"
 
     static private prefs = Preferences.userNodeForPackage(Console)
 
@@ -229,7 +230,10 @@ options:
     }
 
     void newScript(ClassLoader parent, Binding binding) {
-        shell = new GroovyShell(parent, binding)
+        def config = new CompilerConfiguration()
+        config.addCompilationCustomizers(new ASTTransformationCustomizer(ThreadInterrupt))
+
+        shell = new GroovyShell(parent, binding, config)
     }
 
     static def frameConsoleDelegates = [
@@ -903,7 +907,7 @@ options:
                 if(beforeExecution) {
                     beforeExecution()
                 }
-                def result = shell.run(record.getTextToRun(selected) + THREAD_INTERRUPT_STATEMENT, name, [])
+                def result = shell.run(record.getTextToRun(selected), name, [])
                 if(afterExecution) {
                     afterExecution()
                 }
