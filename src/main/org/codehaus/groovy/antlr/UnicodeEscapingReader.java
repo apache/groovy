@@ -44,9 +44,8 @@ public class UnicodeEscapingReader extends Reader {
     private int numUnicodeEscapesFound = 0;
     private int numUnicodeEscapesFoundOnCurrentLine = 0;
 
-    private static class DummyLexer extends CharScanner{
+    private static class DummyLexer extends CharScanner {
         final private Token t = new Token();
-        @Override
         public Token nextToken() throws TokenStreamException {
             return t;
         }
@@ -58,7 +57,6 @@ public class UnicodeEscapingReader extends Reader {
         public int getLine() {
             return 0;
         }
-        
     }
     
     /**
