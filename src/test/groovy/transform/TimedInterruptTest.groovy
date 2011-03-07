@@ -3,6 +3,7 @@ package groovy.transform
 import groovy.mock.interceptor.StubFor
 import java.util.concurrent.TimeoutException
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
+import org.codehaus.groovy.transform.TimedInterruptibleASTTransformation
 
 /**
  * Test for TimedInterrupt.
@@ -395,4 +396,40 @@ class TimedInterruptTest extends GroovyTestCase {
             ''')
         }
     }
+
+    public void testTimedInterruptOnAbstractClass() {
+        def script = '''
+            @groovy.transform.TimedInterrupt(value = 1L)
+            abstract class MyAbstractClass {
+                abstract void myMethod()
+            }
+
+            class Concrete extends MyAbstractClass {
+                void myMethod() {
+                    99.times {
+                        // do something
+                    }
+                }
+            }
+
+            new Concrete()
+        '''
+
+        def system = new StubFor(System)
+
+        // start time initialized to the Long of the Beast
+        system.demand.nanoTime(4) { 666L } // 4 times to cover full instantiation
+
+        system.use {
+            def instance = new GroovyShell(TimedInterruptibleASTTransformation.getClassLoader()).evaluate(script)
+            assert instance.TimedInterrupt$expireTime == 1000000666L //5 hours in future
+            system.demand.nanoTime() { 1000000667L }
+
+            shouldFail(TimeoutException) {
+                instance.myMethod()
+            }
+        }
+
+    }
+
 }
