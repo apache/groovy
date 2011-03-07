@@ -37,7 +37,7 @@ import java.util.*;
  *
  * @author Cédric Champeau
  *
- * @since 1.9.0
+ * @since 1.8.0
  *
  */
 public class ImportCustomizer extends CompilationCustomizer {

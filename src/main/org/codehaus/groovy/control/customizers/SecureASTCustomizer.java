@@ -116,7 +116,7 @@ import java.util.*;
  * @author Guillaume Laforge
  * @author Hamlet D'Arcy
  * 
- * @since 1.9.0
+ * @since 1.8.0
  */
 public class SecureASTCustomizer extends CompilationCustomizer {
 

@@ -70,7 +70,7 @@ import java.lang.annotation.Annotation
  *
  * @author Cédric Champeau
  *
- * @since 1.9.0
+ * @since 1.8.0
  * 
  */
 class ASTTransformationCustomizer extends CompilationCustomizer {
