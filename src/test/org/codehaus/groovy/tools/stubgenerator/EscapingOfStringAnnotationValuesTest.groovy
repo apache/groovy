@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2011 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,32 +15,45 @@
  */
 package org.codehaus.groovy.tools.stubgenerator
 
-import org.junit.Assert
-
-// http://jira.codehaus.org/browse/GROOVY-4470
-// http://jira.codehaus.org/browse/GROOVY-4604
+/**
+ * Test case for GROOVY-4470, GROOVY-4604 and GROOVY-4601
+ *
+ * @author Peter Niederwieser
+ * @author Guillaume Laforge
+ */
 class EscapingOfStringAnnotationValuesTest extends StringSourcesStubTestCase {
-	Map<String, String> provideSources() {
-		['StringAnn.java': '''
-import java.lang.annotation.*;
-@Retention(RetentionPolicy.RUNTIME)
-public @interface StringAnn {
-	String str();
-}
-		''',
-		'StringAnnUsage.groovy': '''
-@StringAnn(str = """Now that's what
-I
-	call an
-  "unescaped"
-String!""")
-class StringAnnUsage {}
-		'''
-		]
-	}
 
-	void verifyStubs() {
-		def ann = classes['StringAnnUsage'].annotations[0]
-		Assert.assertEquals("\"Now that's what\\nI\\n	call an\\n  \\\"unescaped\\\"\\nString!\"", ann.getNamedParameter("str"))
-	}
+    Map<String, String> provideSources() {
+        [
+                'StringAnn.java': '''
+                    import java.lang.annotation.*;
+                    @Retention(RetentionPolicy.RUNTIME)
+                    public @interface StringAnn {
+                        String str();
+                    }
+                ''',
+
+                'StringAnnUsage.groovy': '''
+                    |@StringAnn(str = """Now that's what
+                    |I
+                    |\tcall an
+                    |  "unescaped"
+                    |String!""")
+                    |class StringAnnUsage {}
+                '''.stripMargin('|'),
+
+                'StringAnnoUser.groovy': '''
+                    @StringAnn(str = 'single quote string with "double quote string"')
+                    class StringAnnoUser {}
+                '''
+        ]
+    }
+
+    void verifyStubs() {
+        def ann1 = classes['StringAnnUsage'].annotations[0]
+        assert "\"Now that's what\\nI\\n\tcall an\\n  \\\"unescaped\\\"\\nString!\"" == ann1.getNamedParameter("str")
+
+        def ann2 = classes['StringAnnoUser'].annotations[0]
+        assert '"single quote string with \\"double quote string\\""' == ann2.getNamedParameter("str")
+    }
 }
