@@ -3,7 +3,9 @@ Global AST Transformation Example
 This example shows how to wire together a global transformation. 
 
 The example requires ant in your path and the Groovy 1.6 (or greater) 
-Jar in your classpath. 
+Jar in your classpath. The current directory must *not* be on your
+classpath, otherwise ant will try to read the META-INF directory and
+apply the transformations prematurely. 
 
 To build the example run "ant" from the current directory. The default 
 target will compile the classes needed. The last step of the build 
