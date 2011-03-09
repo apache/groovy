@@ -75,7 +75,7 @@ public class StreamingMarkupWriter extends Writer {
             StreamingMarkupWriter.this.writingAttribute = writingAttribute;
         }
 
-        public Writer excaped() {
+        public Writer escaped() {
             return escapedWriter;
         }
 
