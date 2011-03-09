@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2011 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -99,7 +99,6 @@ class StreamingMarkupBuilder extends AbstractStreamingBuilder {
         body.each {
             if (it instanceof Closure) {
                 def body1 = it.clone()
-
                 body1.delegate = doc
                 body1(doc)
             } else if (it instanceof Buildable) {
@@ -124,7 +123,6 @@ class StreamingMarkupBuilder extends AbstractStreamingBuilder {
             if (!(namespaces.containsKey(prefix) || pendingNamespaces.containsKey(prefix))) {
                 throw new GroovyRuntimeException("Namespace prefix: ${prefix} is not bound to a URI")
             }
-
             if (prefix != ":") tag = prefix + ":" + tag
         }
 
@@ -233,7 +231,7 @@ class StreamingMarkupBuilder extends AbstractStreamingBuilder {
         def enc = encoding; // take a snapshot of the encoding when the closure is bound to the builder
 
         {out ->
-            out = new StreamingMarkupWriter(out, enc)
+            out = new StreamingMarkupWriter(out, enc, useDoubleQuotes)
             boundClosure.trigger = out
             out.flush()
         }.asWritable()
