@@ -1092,6 +1092,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         result.setSpreadSafe(mce.isSpreadSafe());
         result.setSourcePosition(mce);
         result.setGenericsTypes(mce.getGenericsTypes());
+        result.setMethodTarget(mce.getMethodTarget());
         return result;
     }
     
