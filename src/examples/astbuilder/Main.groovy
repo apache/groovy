@@ -15,6 +15,6 @@ import java.lang.annotation.Retention
 
 @Retention (RetentionPolicy.SOURCE)
 @Target ([ElementType.METHOD])
-@GroovyASTTransformationClass (["examples.local.MainTransformation"])
+@GroovyASTTransformationClass (["examples.astbuilder.MainTransformation"])
 public @interface Main { 
 }

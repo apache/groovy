@@ -1,13 +1,10 @@
 package examples.astbuilder
 
+import org.codehaus.groovy.ast.*
 import org.codehaus.groovy.control.CompilePhase
 import org.codehaus.groovy.transform.GroovyASTTransformation
 import org.codehaus.groovy.transform.ASTTransformation
-import org.codehaus.groovy.ast.ASTNode
 import org.codehaus.groovy.control.SourceUnit
-import org.codehaus.groovy.ast.MethodNode
-import org.codehaus.groovy.ast.ClassNode
-import org.codehaus.groovy.ast.AnnotationNode
 import org.codehaus.groovy.ast.builder.AstBuilder
 
 /**
@@ -36,7 +33,7 @@ public class MainTransformation implements ASTTransformation {
         if (!(astNodes[1] instanceof MethodNode)) return 
 
         MethodNode annotatedMethod = astNodes[1]
-        ClassNode declaringClass = astNodes[1].declaringClass
+        ClassNode declaringClass = annotatedMethod.declaringClass
         MethodNode mainMethod = makeMainMethod(annotatedMethod)
         declaringClass.addMethod(mainMethod)
     }
@@ -48,17 +45,19 @@ public class MainTransformation implements ASTTransformation {
     * is void and not Void. 
     */ 
     MethodNode makeMainMethod(MethodNode source) {
-        def ast = new AstBuilder().buildFromSpec {
-            method('main', PUBLIC | STATIC, Void.TYPE) {
-                parameters {
-                    parameter 'args': String[].class
+        def packageName = source.declaringClass.packageName
+        def className = source.declaringClass.name
+        def methodName = source.name
+
+        def ast = new AstBuilder().buildFromString(CompilePhase.INSTRUCTION_SELECTION, false, """
+            package $source.declaringClass.packageName
+            
+            class $source.declaringClass.nameWithoutPackage {
+                public static void main(String[] args) {
+                    new $className().$methodName()
                 }
-                exceptions {}
-                block { }
             }
-        }
-        MethodNode target = ast[0]
-        target.code = source.code
-        target
+        """)
+        ast[1].methods.find { it.name == 'main' }
     }
 }
