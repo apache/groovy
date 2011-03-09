@@ -51,6 +51,26 @@ abstract class BuilderTestSupport extends GroovyTestCase {
         assertExpectedXml m, { it.useDoubleQuotes = true }, '<a href="http://groovy.codehaus.org">groovy</a>'
     }
 
+    void testNestedQuotesSingle() {
+        def m = {
+            root {
+                one( foo:"bar('baz')", 'foo("baz")' )
+                two( foo:'bar("baz")', "foo('baz')" )
+            }
+        }
+        assertExpectedXml m, '<root><one foo=\'bar(&apos;baz&apos;)\'>foo("baz")</one><two foo=\'bar("baz")\'>foo(\'baz\')</two></root>'
+    }
+
+    void testNestedQuotesDouble() {
+        def m = {
+            root {
+                one( foo:"bar('baz')", 'foo("baz")' )
+                two( foo:'bar("baz")', "foo('baz')" )
+            }
+        }
+        assertExpectedXml m, { it.useDoubleQuotes = true }, '<root><one foo="bar(\'baz\')">foo("baz")</one><two foo="bar(&quot;baz&quot;)">foo(\'baz\')</two></root>'
+    }
+
     void testTree() {
         def m = {
             root2(a: 5, b: 7) {
