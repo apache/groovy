@@ -16,10 +16,11 @@ import org.codehaus.groovy.ast.builder.AstBuilder
 @GroovyASTTransformation(phase=CompilePhase.CONVERSION)
 public class CompiledAtASTTransformation implements ASTTransformation {
 
+    private final static compileTime = new Date().toString()
 
     public void visit(ASTNode[] astNodes, SourceUnit sourceUnit) {
 
-        List classes = sourceUnit.getAST()?.getClasses()
+        List classes = sourceUnit.ast?.classes
         classes?.each { ClassNode clazz ->
             clazz.addMethod(makeMethod())
         }
@@ -36,12 +37,12 @@ public class CompiledAtASTTransformation implements ASTTransformation {
                 exceptions {}
                 block { 
                     returnStatement {
-                        constant(new Date().toString()) 
+                        constant(compileTime) 
                     }
                 }
                 annotations {}
             }
         }
-        return ast[0]
+        ast[0]
     }
 }
