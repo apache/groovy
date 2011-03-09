@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2011 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@ public class StreamingMarkupWriter extends Writer {
     protected boolean writingAttribute = false;
     protected boolean haveHighSurrogate = false;
     protected StringBuffer surrogatePair = new StringBuffer(2);
+    private boolean useDoubleQuotes;
     private final Writer escapedWriter = new Writer() {
         /* (non-Javadoc)
         * @see java.io.Writer#close()
@@ -85,6 +86,11 @@ public class StreamingMarkupWriter extends Writer {
     };
 
     public StreamingMarkupWriter(final Writer writer, final String encoding) {
+        this(writer, encoding, false);
+    }
+
+    public StreamingMarkupWriter(final Writer writer, final String encoding, boolean useDoubleQuotes) {
+        this.useDoubleQuotes = useDoubleQuotes;
         this.writer = writer;
 
         if (encoding != null) {
@@ -160,8 +166,11 @@ public class StreamingMarkupWriter extends Writer {
                 this.writer.write("&#x");
                 this.writer.write(Integer.toHexString(c));
                 this.writer.write(';');
-            } else if (c == '\'' && this.writingAttribute) {
-                this.writer.write("&apos;");
+            }    else if(c == '\'' && this.writingAttribute && !useDoubleQuotes) {
+                    this.writer.write("&apos;");
+                }
+                else if(c == '"' && this.writingAttribute && useDoubleQuotes) {
+                    this.writer.write("&quot;");
             } else {
                 this.writer.write(c);
             }
