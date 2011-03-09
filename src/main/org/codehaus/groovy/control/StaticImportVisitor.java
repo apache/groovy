@@ -277,6 +277,7 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
         result.setSafe(mce.isSafe());
         result.setImplicitThis(mce.isImplicitThis());
         result.setSpreadSafe(mce.isSpreadSafe());
+        result.setMethodTarget(mce.getMethodTarget());
         setSourcePosition(result, mce);
         return result;
     }

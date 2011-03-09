@@ -15,7 +15,6 @@
  */
 package org.codehaus.groovy.classgen.asm;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import org.codehaus.groovy.ast.ClassHelper;
@@ -88,6 +87,57 @@ public class InvocationWriter {
         makeCall(origin, new ClassExpression(cn), receiver, message, arguments,
                 adapter, safe, spreadSafe, implicitThis);
     }
+    
+    private boolean writeDirectMethodCall(MethodNode target, boolean implicitThis,  Expression receiver, TupleExpression args) {
+        if (target==null) return false;
+        
+        String methodName = target.getName();
+        CompileStack compileStack = controller.getCompileStack();
+        OperandStack operandStack = controller.getOperandStack();
+        
+        MethodVisitor mv = controller.getMethodVisitor();
+        int opcode = INVOKEVIRTUAL;
+        if (target.isStatic()) {
+            opcode = INVOKESTATIC;
+        } else if (target.isPrivate()) {
+            opcode = INVOKESPECIAL;
+        }
+
+        // handle receiver
+        int argumentsToRemove = 0;
+        if (opcode!=INVOKESTATIC) {
+            if (receiver!=null) {
+                // load receiver if not static invocation
+                compileStack.pushImplicitThis(implicitThis);
+                receiver.visit(controller.getAcg());
+                operandStack.doGroovyCast(target.getDeclaringClass());
+                compileStack.popImplicitThis();
+                argumentsToRemove++;
+            } else {
+                mv.visitIntInsn(ALOAD,0);
+            }
+        }
+        
+        // load arguments
+        Parameter[] para = target.getParameters();
+        List<Expression> argumentList = args.getExpressions();
+        for (int i=0; i<argumentList.size(); i++) {
+            argumentList.get(i).visit(controller.getAcg());
+            controller.getOperandStack().doGroovyCast(para[i].getType());
+        }
+
+        String owner = BytecodeHelper.getClassInternalName(target.getDeclaringClass());
+        String desc = BytecodeHelper.getMethodDescriptor(target.getReturnType(), target.getParameters());
+        mv.visitMethodInsn(opcode, owner, methodName, desc);
+        ClassNode ret = target.getReturnType().redirect();
+        if (ret==ClassHelper.VOID_TYPE) {
+            ret = ClassHelper.OBJECT_TYPE;
+            mv.visitInsn(ACONST_NULL);
+        }
+        argumentsToRemove += args.getExpressions().size();
+        controller.getOperandStack().replace(ret, argumentsToRemove);
+        return true;
+    }
 
     private void makeCall(
             Expression origin, ClassExpression sender,
@@ -95,22 +145,17 @@ public class InvocationWriter {
             MethodCallerMultiAdapter adapter,
             boolean safe, boolean spreadSafe, boolean implicitThis
     ) { 
+        // optimization path
         boolean fittingAdapter =    adapter == invokeMethodOnCurrent ||
                                     adapter == invokeStaticMethod;
         if (fittingAdapter && controller.optimizeForInt && controller.isFastPath()) {
             String methodName = getMethodName(message);
             if (methodName != null) {
-                List<Parameter> plist = new ArrayList(16);
                 TupleExpression args;
                 if (arguments instanceof TupleExpression) {
                     args = (TupleExpression) arguments;
-                    for (Expression arg : args.getExpressions()) {
-                        plist.add(new Parameter(arg.getType(),""));
-                    }
-                    
                 } else {
                     args = new TupleExpression(receiver);
-                    plist.add(new Parameter(arguments.getType(),""));
                 }
 
                 StatementMeta meta = null;
@@ -118,39 +163,18 @@ public class InvocationWriter {
                 MethodNode mn = null;
                 if (meta!=null) mn = meta.target;
                 
-                if (mn !=null) {
-                    MethodVisitor mv = controller.getMethodVisitor();
-                    int opcode = INVOKEVIRTUAL;
-                    if (mn.isStatic()) {
-                        opcode = INVOKESTATIC;
-                    } else if (mn.isPrivate()) {
-                        opcode = INVOKESPECIAL;
-                    }
-                    
-                    if (opcode!=INVOKESTATIC) mv.visitIntInsn(ALOAD,0);
-                    Parameter[] para = mn.getParameters();
-                    List<Expression> argumentList = args.getExpressions();
-                    for (int i=0; i<argumentList.size(); i++) {
-                        argumentList.get(i).visit(controller.getAcg());
-                        controller.getOperandStack().doGroovyCast(para[i].getType());
-                    }
-                    
-                    String owner = BytecodeHelper.getClassInternalName(mn.getDeclaringClass());
-                    String desc = BytecodeHelper.getMethodDescriptor(mn.getReturnType(), mn.getParameters());
-                    mv.visitMethodInsn(opcode, owner, methodName, desc);
-                    ClassNode ret = mn.getReturnType().redirect();
-                    if (ret==ClassHelper.VOID_TYPE) {
-                        ret = ClassHelper.OBJECT_TYPE;
-                        mv.visitInsn(ACONST_NULL);
-                    }
-                    controller.getOperandStack().replace(ret,args.getExpressions().size());
-                    return;
-                }
-                
+                if (writeDirectMethodCall(mn, true, null, args)) return;                
             }
         }
         
+        boolean containsSpreadExpression = AsmClassGenerator.containsSpreadExpression(arguments);
+        if (!containsSpreadExpression && origin instanceof MethodCallExpression) {
+            MethodCallExpression mce = (MethodCallExpression) origin;
+            MethodNode target = mce.getMethodTarget();
+            if (writeDirectMethodCall(target, implicitThis, receiver, makeArgumentList(arguments))) return;
+        }
         
+        // prepare call site
         if ((adapter == invokeMethod || adapter == invokeMethodOnCurrent || adapter == invokeStaticMethod) && !spreadSafe) {
             String methodName = getMethodName(message);
 
@@ -170,7 +194,7 @@ public class InvocationWriter {
         // ensure VariableArguments are read, not stored
         compileStack.pushLHS(false);
 
-        // sender
+        // sender only for call sites
         if (adapter == AsmClassGenerator.setProperty) {
             ConstantExpression.NULL.visit(acg);
         } else {
@@ -183,6 +207,7 @@ public class InvocationWriter {
         operandStack.box();
         compileStack.popImplicitThis();
         
+        
         int operandsToRemove = 2;
         // message
         if (message != null) {
@@ -192,19 +217,9 @@ public class InvocationWriter {
         }
 
         // arguments
-        boolean containsSpreadExpression = AsmClassGenerator.containsSpreadExpression(arguments);
         int numberOfArguments = containsSpreadExpression ? -1 : AsmClassGenerator.argumentSize(arguments);
         if (numberOfArguments > MethodCallerMultiAdapter.MAX_ARGS || containsSpreadExpression) {
-            ArgumentListExpression ae;
-            if (arguments instanceof ArgumentListExpression) {
-                ae = (ArgumentListExpression) arguments;
-            } else if (arguments instanceof TupleExpression) {
-                TupleExpression te = (TupleExpression) arguments;
-                ae = new ArgumentListExpression(te.getExpressions());
-            } else {
-                ae = new ArgumentListExpression();
-                ae.addExpression(arguments);
-            }
+            ArgumentListExpression ae = makeArgumentList(arguments);
             if (containsSpreadExpression) {
                 acg.despreadList(ae.getExpressions(), true);
             } else {
@@ -225,6 +240,20 @@ public class InvocationWriter {
 
         compileStack.popLHS();
         operandStack.replace(ClassHelper.OBJECT_TYPE,operandsToRemove);
+    }
+
+    private ArgumentListExpression makeArgumentList(Expression arguments) {
+        ArgumentListExpression ae;
+        if (arguments instanceof ArgumentListExpression) {
+            ae = (ArgumentListExpression) arguments;
+        } else if (arguments instanceof TupleExpression) {
+            TupleExpression te = (TupleExpression) arguments;
+            ae = new ArgumentListExpression(te.getExpressions());
+        } else {
+            ae = new ArgumentListExpression();
+            ae.addExpression(arguments);
+        }
+        return ae;
     }
 
     private String getMethodName(Expression message) {

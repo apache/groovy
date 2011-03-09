@@ -23,9 +23,14 @@ abstract class AbstractBytecodeTestCase extends GroovyTestCase {
      */
     InstructionSequence compile(Map options=[method:"run"], String scriptText) {
         def cu = new CompilationUnit()
-        cu.addSource("script", scriptText)
+        def su = cu.addSource("script", scriptText)
+        cu.compile(Phases.CONVERSION)
+        if (options.conversionAction!=null) {
+            options.conversionAction(su)
+        }
         cu.compile(Phases.CLASS_GENERATION)
-
+        
+        
         def output = new StringWriter()
         def tcf = new TraceClassVisitor(new PrintWriter(output)) {
             MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
