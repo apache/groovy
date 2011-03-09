@@ -15,7 +15,6 @@
  */
 package org.codehaus.groovy.ast.expr;
 
-import groovy.lang.MetaMethod;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.GenericsType;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
@@ -75,6 +74,7 @@ public class MethodCallExpression extends Expression {
         answer.setSpreadSafe(spreadSafe);
         answer.setImplicitThis(implicitThis);
         answer.setSourcePosition(this);
+        answer.setMethodTarget(target);
         return answer;
     }
 
@@ -98,7 +98,7 @@ public class MethodCallExpression extends Expression {
       this.method = method;
     }
 
-  /**
+    /**
      * This method returns the method name as String if it is no dynamic
      * calculated method name, but a constant.
      */
@@ -182,11 +182,23 @@ public class MethodCallExpression extends Expression {
         return usesGenerics;
 	}
 
+    /**
+     * Sets a method call target for a direct method call. 
+     * WARNING: A method call made this way will run outside of the MOP! 
+     * @param mn the target as MethodNode, mn==null means no target
+     */
     public void setMethodTarget(MethodNode mn) {
         this.target = mn;
-        setType(target.getReturnType());
+        if (mn!=null) {
+            setType(target.getReturnType());
+        } else {
+            setType(ClassHelper.OBJECT_TYPE);
+        }
     }
     
+    /**
+     * @return the target as method node if set
+     */
     public MethodNode getMethodTarget() {
         return target;
     }
