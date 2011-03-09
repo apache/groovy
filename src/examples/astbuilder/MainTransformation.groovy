@@ -29,7 +29,7 @@ public class MainTransformation implements ASTTransformation {
         if (!astNodes[0]) return 
         if (!astNodes[1]) return 
         if (!(astNodes[0] instanceof AnnotationNode)) return
-        if (astNodes[0].classNode?.name != Main.class.getName()) return
+        if (astNodes[0].classNode?.name != Main.class.name) return
         if (!(astNodes[1] instanceof MethodNode)) return 
 
         MethodNode annotatedMethod = astNodes[1]
@@ -45,7 +45,6 @@ public class MainTransformation implements ASTTransformation {
     * is void and not Void. 
     */ 
     MethodNode makeMainMethod(MethodNode source) {
-        def packageName = source.declaringClass.packageName
         def className = source.declaringClass.name
         def methodName = source.name
 
