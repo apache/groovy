@@ -256,7 +256,7 @@ abstract class StubTestCase extends GroovyTestCase {
      * @return the source code of the class
      */
     protected String stubJavaSourceFor(String fqn) {
-        new File(stubDir, fqn.replaceAll(/\./, File.separator) + '.java').text
+        new File(stubDir, fqn.replace('.' as char, File.separatorChar) + '.java').text
     }
 
     /**
