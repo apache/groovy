@@ -58,6 +58,8 @@ ruleset {
     }
     ruleset('rulesets/grails.xml')
     ruleset('rulesets/logging.xml') {
+        exclude 'LoggerForDifferentClass'   // BUG in CodeNarc 0.13, add exclude for SwingBuilder only
+
         exclude 'Println'  // too many to worry about, review later
         exclude 'SystemOutPrint'  // too many to worry about, review later
         exclude 'SystemErrPrint'    // too many to worry about, review later
@@ -91,6 +93,7 @@ ruleset {
         exclude 'ConstantIfExpression'    // too many to worry about, review later
         exclude 'ExplicitLinkedListInstantiation'    // too many to worry about, review later
         exclude 'ExplicitArrayListInstantiation'    // too many to worry about, review later
+        exclude 'ExplicitStackInstantiation'    // too many to worry about, review later
         exclude 'ExplicitHashMapInstantiation'    // too many to worry about, review later
         exclude 'ExplicitTreeSetInstantiation'    // too many to worry about, review later
         exclude 'ExplicitCallToCompareToMethod'    // too many to worry about, review later
@@ -117,6 +120,7 @@ ruleset {
 
     }
     ruleset('rulesets/size.xml') {
+        exclude 'CyclomaticComplexity'  // too many to worry about, review later
         exclude 'AbcComplexity'  // too many to worry about, review later
         exclude 'MethodSize'  // too many to worry about, review later
         exclude 'MethodCount'  // too many to worry about, review later
@@ -150,6 +154,9 @@ ruleset {
 
     ruleset('rulesets/unnecessary.xml') {
         exclude 'UnnecessaryObjectReferences'   // CodeNarc 0.12 has a bug
+
+        exclude 'UnnecessaryBooleanInstantiation'  // too many to worry about, review later
+        exclude 'UnnecessaryNullCheckBeforeInstanceOf'  // too many to worry about, review later
         exclude 'UnnecessaryReturnKeywordRule'  // too many to worry about, review later
         exclude 'UnnecessaryReturnKeyword'  // too many to worry about, review later
         exclude 'UnnecessaryGetter'    // too many to worry about, review later
@@ -170,7 +177,7 @@ ruleset {
         exclude 'UnnecessaryNullCheck'   // too many to worry about, review later
         exclude 'UnnecessaryStringInstantiation' // too many to worry about, review later
         exclude 'UnnecessaryOverridingMethod' // too many to worry about, review later
-
+        exclude 'UnnecessaryCallForLastElement' // too many to worry about, review later
     }
     ruleset('rulesets/dry.xml') {
         exclude 'DuplicateNumberLiteral'    // BUG in CodeNarc 0.13. No way to exclude a float. 
@@ -186,6 +193,8 @@ ruleset {
         exclude 'ImplementationAsType'      // too many to worry about, review later
         exclude 'AbstractClassWithoutAbstractMethod'     // too many to worry about, review later
         exclude 'ConstantsOnlyInterface'    // too many to worry about, review later
+        exclude 'FinalClassWithProtectedMember'    // too many to worry about, review later
+
     }
     ruleset('rulesets/exceptions.xml') {
         exclude 'ThrowRuntimeException'    // too many to worry about, review later
@@ -198,8 +207,12 @@ ruleset {
         exclude 'ThrowNullPointerException'    // too many to worry about, review later
         exclude 'CatchIllegalMonitorStateException'    // too many to worry about, review later
         exclude 'CatchError'   // too many to worry about, review later
+        exclude 'ExceptionExtendsError'   // too many to worry about, review later
+        exclude 'ThrowError'   // too many to worry about, review later
+
     }
     ruleset('rulesets/unused.xml') {
+        exclude 'UnusedObject'  // too many to worry about, review later
         exclude 'UnusedVariableRule'  // too many to worry about, review later
         exclude 'UnusedVariable'  // too many to worry about, review later
         exclude 'UnusedPrivateField'  // too many to worry about, review later
