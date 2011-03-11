@@ -1,14 +1,7 @@
 package org.codehaus.groovy.classgen.asm
 
-import java.util.List;
-
-import org.codehaus.groovy.ast.ClassHelper;
-import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.Parameter;
-import org.codehaus.groovy.ast.expr.MethodCallExpression;
-import org.codehaus.groovy.ast.stmt.BlockStatement;
-import org.codehaus.groovy.ast.stmt.ExpressionStatement;
-import org.codehaus.groovy.ast.stmt.Statement;
+import org.codehaus.groovy.ast.ClassHelper
+import org.codehaus.groovy.ast.Parameter
 
 /**
  * @author Jochen Theodorou

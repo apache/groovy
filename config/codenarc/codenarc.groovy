@@ -21,7 +21,6 @@ ruleset {
         exclude 'UnnecessaryGroovyImport'   // too many to worry about, review later
         exclude 'UnnecessaryGroovyImportRule'   // too many to worry about, review later
         exclude 'ImportFromSamePackage'   // too many to worry about, review later
-        exclude 'UnusedImport'   // too many to worry about, review later
     }
 
     ruleset('rulesets/naming.xml') {
