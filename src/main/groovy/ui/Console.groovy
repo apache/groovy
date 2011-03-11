@@ -1021,7 +1021,7 @@ options:
     }
 
     void showAbout(EventObject evt = null) {
-        def version = InvokerHelper.getVersion()
+        def version = GroovySystem.getVersion()
         def pane = swing.optionPane()
          // work around GROOVY-1048
         pane.setMessage('Welcome to the Groovy Console for evaluating Groovy scripts\nVersion ' + version)

@@ -322,7 +322,7 @@ if (cmd.hasOption('h')) {
 }
 
 if (cmd.hasOption('v')) {
-    String version = InvokerHelper.getVersion();
+    String version = GroovySystem.getVersion();
     println "Groovy Version: $version JVM: ${System.getProperty('java.version')}"
     return
 }
