@@ -30,8 +30,4 @@ class MixedMarkupTestSupport {
     private static boolean isParser(node) {
         return (node instanceof groovy.util.Node)
     }
-
-    private static boolean isDom(node) {
-        return node.getClass().name.contains('Element')
-    }
 }

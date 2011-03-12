@@ -22,7 +22,6 @@ import org.codehaus.groovy.control.CompilerConfiguration;
  */
 class GroovyScriptEngineTest extends GroovyTestCase {
 
-    private File currentDir
     private File srcDir;
     private File script
     private File com
@@ -34,8 +33,6 @@ class GroovyScriptEngineTest extends GroovyTestCase {
     private File helper
     private File bug4013
     private File bug4234
-
-    private List allFiles = [currentDir, srcDir, script, company, util, makeMeSuper, makeMe, helperIntf, helper, bug4013, bug4234]
 
     /**
      * Here we have inheritance and delegation-- where the delegate implements an

@@ -13,7 +13,7 @@ import org.xml.sax.SAXException
  * @version $Revision: 4111 $
  */
 public class DomToGroovyTest extends GroovyTestCase {
-    private static final String LS = System.getProperty("line.separator")
+
     private static final String TEST_XML_1 =
         "<a href='http://groovy.codehaus.org'>Groovy</a>"
     private static final String TEST_XML_2 =

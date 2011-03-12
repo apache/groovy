@@ -83,7 +83,6 @@ import org.codehaus.groovy.ast.stmt.SynchronizedStatement
 import org.codehaus.groovy.ast.stmt.ThrowStatement
 import org.codehaus.groovy.ast.stmt.TryCatchStatement
 import org.codehaus.groovy.ast.stmt.WhileStatement
-import org.codehaus.groovy.control.CompilePhase
 import org.codehaus.groovy.runtime.MethodClosure
 import org.codehaus.groovy.syntax.Token
 import org.codehaus.groovy.syntax.Types
@@ -103,9 +102,6 @@ import org.codehaus.groovy.ast.ClassHelper
  */
 @PackageScope class AstSpecificationCompiler implements GroovyInterceptable {
 
-    private boolean returnScriptBodyOnly = false
-    private CompilePhase phase
-    private String source
     private final List<ASTNode> expression = []
 
     /**

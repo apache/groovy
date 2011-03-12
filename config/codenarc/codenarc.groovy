@@ -105,7 +105,7 @@ ruleset {
     ruleset('rulesets/unused.xml') {
         'UnusedVariable'  {
             doNotApplyToClassNames='SourceBaseTestCase,SAXTest,groovy.ForLoopTest,groovy.bugs.Groovy3894Bug,' + 
-                'ExpandoMetaClassTest,ExceptionTest,JSR223Test,' + 
+                'ExpandoMetaClassTest,ExceptionTest,JSR223Test,'  + 
                 'groovy.util.GroovyShellTestCase,org.codehaus.groovy.tools.shell.ShellRunner,' + 
                 'groovy.bugs.Bytecode7Bug,groovy.mock.interceptor.HalfMockTest,' + 
                 'groovy.mock.interceptor.MockSingleCallTest,groovy.mock.interceptor.StubSingleCallTest,' + 
@@ -130,10 +130,24 @@ ruleset {
                 'org.codehaus.groovy.tools.LoaderConfigurationTest' 
         }
 
-        exclude 'UnusedPrivateField'  // too many to worry about, review later
-        exclude 'UnusedPrivateMethod'  // too many to worry about, review later
-        exclude 'UnusedPrivateMethodParameter'  // too many to worry about, review later
-        exclude 'UnusedObject'  // too many to worry about, review later
+        'UnusedPrivateField' {
+            doNotApplyToClassNames='gls.annotations.closures.CallOnOwner,gls.annotations.closures.CallOnThisObject,' +
+                'gls.annotations.closures.UnqualifiedCall,gls.annotations.closures.ClosureWithParameters,' + 
+                'gls.annotations.closures.JavaCompatibility,gls.annotations.closures.JavaCompatibilityParameterized,' +
+                'groovy.Foo,groovy.Singlet'
+        }
+
+        'UnusedPrivateMethod'  {
+            doNotApplyToClassNames='org.codehaus.groovy.ast.builder.AstBuilder,org.codehaus.groovy.ast.builder.AstSpecificationCompiler,' + 
+                'org.codehaus.groovy.tools.shell.Groovysh,org.codehaus.groovy.tools.shell.commands.EditCommand,StringMethodName,Foo,' + 
+                'groovy.execute.ExecuteTest,BinaryStreamsTest' //BinaryStreamsTest is a CodeNarc 0.13 defect
+        }
+        'UnusedPrivateMethodParameter' {
+            doNotApplyToClassNames='groovy.StaticImportTest,CurryFoo4170,AssertionRenderingTest'
+        } 
+        'UnusedObject'  {
+            doNotApplyToClassNames='groovy.ui.OutputTransforms,org.codehaus.groovy.ast.builder.AstSpecificationCompiler,groovy.lang.GroovyCodeSourceTest'        
+        }
     }
 
     ruleset('rulesets/grails.xml')
