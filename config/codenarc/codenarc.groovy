@@ -103,12 +103,37 @@ ruleset {
         }
     }
     ruleset('rulesets/unused.xml') {
-        exclude 'UnusedObject'  // too many to worry about, review later
-        exclude 'UnusedVariableRule'  // too many to worry about, review later
-        exclude 'UnusedVariable'  // too many to worry about, review later
+        'UnusedVariable'  {
+            doNotApplyToClassNames='SourceBaseTestCase,SAXTest,groovy.ForLoopTest,groovy.bugs.Groovy3894Bug,' + 
+                'ExpandoMetaClassTest,ExceptionTest,JSR223Test,' + 
+                'groovy.util.GroovyShellTestCase,org.codehaus.groovy.tools.shell.ShellRunner,' + 
+                'groovy.bugs.Bytecode7Bug,groovy.mock.interceptor.HalfMockTest,' + 
+                'groovy.mock.interceptor.MockSingleCallTest,groovy.mock.interceptor.StubSingleCallTest,' + 
+                'groovy.operator.TernaryOperatorsTest,groovy.swing.SwingBuilderTableTest,' + 
+                'groovy.swing.SwingBuilderTest,groovy.util.BuilderSupportTest,' + 
+                'groovy.util.GroovyScriptEngineTest,groovy.util.ObservableMapTest,' + 
+                'groovy.xml.NamespaceNodeGPathTest,groovy.bugs.ClassGeneratorFixesTest,' + 
+                'groovy.bugs.ClosureWithBitwiseDefaultParamTest,groovy.bugs.ConstructorThisCallBug,' + 
+                'groovy.bugs.InconsistentStackHeightBug,groovy.bugs.InterfaceImplBug,' + 
+                'groovy.bugs.TedsClosureBug,org.codehaus.groovy.ast.builder.AstBuilderFromCodeTest,' + 
+                'SubscriptTest,UnsafeNavigationTest,' +
+                'GStringTest,GeneratorTest,GroovyClosureMethodsTest,' +
+                'GroovyMethodsTest,ImmutableModificationTest,LittleClosureTest,' +
+                'NumberMathTest,OptionalReturnTest,OverridePropertyGetterTest,' +
+                'PrivateVariableAccessFromAnotherInstanceTest,PropertyTest,' +
+                'gls.annotations.closures.CallOnOwner,gls.annotations.closures.JavaCompatibility,' +
+                'gls.annotations.closures.CallOnThisObject,gls.annotations.closures.JavaCompatibilityParameterized,' +
+                'gls.annotations.closures.UnqualifiedCall,groovy.CompileOrderTest,' +
+                'gls.annotations.closures.ClosureWithParameters,EscapedUnicodeTest,' +
+                'groovy.bugs.Groovy2365Base,groovy.bugs.Groovy249_Bug,' + 
+                'groovy.bugs.Groovy3139Bug,groovy.bugs.Get2,groovy.bugs.Groovy3511Bug,' + 
+                'org.codehaus.groovy.tools.LoaderConfigurationTest' 
+        }
+
         exclude 'UnusedPrivateField'  // too many to worry about, review later
         exclude 'UnusedPrivateMethod'  // too many to worry about, review later
         exclude 'UnusedPrivateMethodParameter'  // too many to worry about, review later
+        exclude 'UnusedObject'  // too many to worry about, review later
     }
 
     ruleset('rulesets/grails.xml')

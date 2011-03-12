@@ -77,7 +77,6 @@ class ConfigSlurper {
             def tokens = key.split(/\./)
             
             def current = config
-            def currentToken
             def last
             def lastToken
             def foundBase = false
