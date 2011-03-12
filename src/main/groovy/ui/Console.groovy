@@ -44,7 +44,6 @@ import javax.swing.text.StyleConstants
 import javax.swing.text.html.HTML
 import javax.swing.filechooser.FileFilter
 
-import org.codehaus.groovy.runtime.InvokerHelper
 import org.codehaus.groovy.runtime.StackTraceUtils
 import org.codehaus.groovy.control.ErrorCollector
 import org.codehaus.groovy.control.MultipleCompilationErrorsException

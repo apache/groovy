@@ -188,10 +188,6 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
         readyToIndent = true
     }
 
-    def AstNodeToScriptAdapter(Writer out) {
-        this._out = out;
-    }
-
     @Override
     public void visitClass(ClassNode node) {
 

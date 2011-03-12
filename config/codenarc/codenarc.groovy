@@ -15,6 +15,104 @@
  */
 
 ruleset {    
+    ruleset('rulesets/naming.xml') {
+        exclude 'PackageName' {
+            regex = '^[a-z]([a-zA-Z\\.0-9])*\\b'
+        } 
+
+        'ClassName' {
+            regex = '^[A-Z]([a-zA-Z0-9$_])*\\b'
+            doNotApplyToClassNames='$Temp,fileNameFinderTest,rayMain'
+        }
+        'FieldName' {
+            regex = '^[a-z]([a-zA-Z0-9$])*\\b'
+            finalRegex = '^[a-z]([a-zA-Z0-9$])*\\b'
+            staticFinalRegex = '^[A-Z]([A-Z0-9$_])*\\b|^serialVersionUID\\b'
+            staticRegex = '^[A-Z]([A-Z0-9$_])*\\b'
+            doNotApplyToClassNames='Entity,AstNodeToScriptVisitor,LookAndFeelHelper,SwingBuilder,Console,' +    
+                        'JavadocAssertionTestBuilder,JavadocAssertionTestSuite,Main,Groovysh,Parser,' + 
+                        'AliasTargetProxyCommand,WorkerThread,Cheddar,CategoryTestPropertyCategory,' + 
+                        'GroovyClosureMethodsTest,SingletonBugPrivate,SingletonBugProtected,' + 
+                        'GroovyInnerEnumBug$MyEnum,GroovyInnerEnumBug,' + 
+                        'CategoryTestHelperPropertyReplacer,PrimitiveTypeFieldTest,I3830,Cheese,' + 
+                        'SingletonBugTest,ClosureWithStaticVariablesBug,Groovy1018_Bug,Groovy3830Bug,Groovy4386_Bug,' + 
+                        'GroovyInnerEnumBug,GroovySwingTestCase,GpathSyntaxTestSupport,MixedMarkupTestSupport,' + 
+                        'TraversalTestSupport,CallClosureFieldAsMethodTest'
+        }
+        'PropertyName' {
+            regex = '^[a-z]([a-zA-Z0-9$])*\\b'
+            finalRegex = '^[a-z]([a-zA-Z0-9$])*\\b'
+            staticFinalRegex = '^[A-Z]([A-Z0-9$_])*\\b|^serialVersionUID\\b'
+            staticRegex = '^[A-Z]([A-Z0-9$_])*\\b'
+            doNotApplyToClassNames='groovy.inspect.swingui.AstNodeToScriptVisitor,groovy.inspect.swingui.ScriptToTreeNodeAdapter,' +
+                'groovy.swing.factory.TitledBorderFactory,groovy.ui.Console,groovy.ui.OutputTransforms,' +
+                'org.codehaus.groovy.tools.shell.commands.HistoryCommand,org.codehaus.groovy.tools.shell.commands.PurgeCommand,' +
+                'org.codehaus.groovy.tools.shell.commands.RecordCommand,org.codehaus.groovy.tools.shell.commands.ShadowCommand,' +
+                'org.codehaus.groovy.tools.shell.commands.ShowCommand,org.codehaus.groovy.tools.shell.ComplexCommandSupport,' + 
+                'groovy.bugs.StaticPropertyFoo,groovy.bugs.Groovy3135Bug,groovy.util.XmlParserTest,' +
+                'org.codehaus.groovy.runtime.PerInstanceMetaClassTest,groovy.StaticImportChild,' +
+                'gls.scope.VariablePrecedenceTest,groovy.bugs.Groovy3069Bug,groovy.StaticImportTarget,' +
+                'gls.scope.VariablePrecedenceTest,groovy.bugs.Groovy3069Bug,groovy.mock.interceptor.Baz,' +
+                'groovy.bugs.Groovy2706Bug,groovy.sql.TestHelper,org.codehaus.groovy.runtime.WriterAppendTest,' +
+                'groovy.bugs.Groovy3135Bug,groovy.mock.interceptor.Baz,groovy.ReadLineTest,' +
+                'groovy.bugs.TedsClosureBug,groovy.tree.ClosureClassLoaderBug,groovy.tree.NestedClosureBugTest,' +
+                'groovy.tree.SmallTreeTest,groovy.ReadLineTest,groovy.bugs.Groovy3135Bug,' +
+                'org.codehaus.groovy.runtime.DateGDKTest,groovy.sql.PersonDTO,groovy.bugs.One,' +
+                'groovy.bugs.Two,org.codehaus.groovy.runtime.FileAppendTest,org.codehaus.groovy.runtime.WriterAppendTest,' +
+                'org.codehaus.groovy.runtime.FileAppendTest,org.codehaus.groovy.runtime.WriterAppendTest,groovy.sql.PersonDTO,' +
+                'groovy.bugs.Groovy3135Bug,Sphere,groovy.sql.PersonDTO,groovy.bugs.Groovy3135Bug,' +
+                'gls.enums.GrooyColors3693,groovy.sql.PersonDTO,groovy.bugs.HasStaticFieldSomeClass,groovy.PrintTest,' +
+                'groovy.bugs.StaticClosurePropertyBug,groovy.bugs.Groovy3311Bug,groovy.StaticImportParent,' +
+                'org.codehaus.groovy.transform.TestTransform,org.codehaus.groovy.classgen.asm.InstructionSequenceHelperClassTest,' +
+                'groovy.bugs.Groovy3511Bug,groovy.bugs.Groovy3135Bug,groovy.bugs.Groovy2556Bug,' +
+                'groovy.mock.interceptor.Baz,org.codehaus.groovy.ast.builder.AstBuilderFromCodeTest,' +
+                'groovy.bugs.UseStaticInClosureBug,groovy.bugs.Groovy2556Bug,' +
+                'groovy.ReadLineTest,org.codehaus.groovy.runtime.FileAppendTest,org.codehaus.groovy.runtime.WriterAppendTest,' +
+                'org.codehaus.groovy.transform.TestTransform,groovy.bugs.ClosureWithStaticVariablesBug'
+        }
+        'VariableName' {
+            regex = '^[a-z]([a-zA-Z0-9$])*\\b'
+            finalRegex = '^[a-z]([a-zA-Z0-9$])*\\b'
+            doNotApplyToClassNames='groovy.GroovyClosureMethodsTest,groovy.RegularExpressionsTest,groovy.NumberMathTest,' + 
+                        'groovy.NumberMathTest,groovy.NumberMathTest,groovy.NumberMathTest,groovy.NumberMathTest,' + 
+                        'groovy.NumberMathTest,groovy.NumberMathTest,groovy.NumberMathTest,groovy.NumberMathTest,' + 
+                        'groovy.NumberMathTest,groovy.RegularExpressionsTest,' + 
+                        'groovy.NumberMathTest,groovy.NumberMathTest,groovy.NumberMathTest,groovy.NumberMathTest,' + 
+                        'groovy.RegularExpressionsTest,groovy.NumberMathTest,groovy.NumberMathTest,' + 
+                        'groovy.NumberMathTest,groovy.ValidNameTest,groovy.ValidNameTest,' + 
+                        'org.codehaus.groovy.runtime.PerInstanceMetaClassTest,' + 
+                        'groovy.NumberMathTest,groovy.NumberMathTest,groovy.NumberMathTest,groovy.NumberMathTest,' + 
+                        'groovy.NumberMathTest,groovy.NumberMathTest,groovy.NumberMathTest,groovy.NumberMathTest,' + 
+                        'gls.scope.NameResolvingTest,groovy.util.AntTest,groovy.sql.SqlCacheTest,' + 
+                        'groovy.operator.NegateListsTest,org.codehaus.groovy.reflection.WeakMapTest,' + 
+                        'groovy.RegularExpressionsTest,gls.scope.NameResolvingTest'
+        }
+
+        'MethodName' {
+            doNotApplyToClassNames='groovy.swing.SwingBuilder,groovy.$Temp,groovy.bugs.Groovy4119Bug,' + 
+                        'groovy.lang.MetaClassRegistryTest,groovy.lang.MixinTest,' + 
+                        'groovy.swing.TitledBorderFactoryJustificationTest'
+            doNotApplyToFilesMatching='.*spectralnorm\\.groovy'
+        }
+        'ParameterName' {
+            doNotApplyToClassNames='groovy.bugs.MyDelegatingMetaClass'
+            doNotApplyToFilesMatching='.*spectralnorm\\.groovy'
+        }
+        'ConfusingMethodName'  {
+            doNotApplyToClassNames='Groovy1059Foo'
+        }
+    }
+    ruleset('rulesets/unused.xml') {
+        exclude 'UnusedObject'  // too many to worry about, review later
+        exclude 'UnusedVariableRule'  // too many to worry about, review later
+        exclude 'UnusedVariable'  // too many to worry about, review later
+        exclude 'UnusedPrivateField'  // too many to worry about, review later
+        exclude 'UnusedPrivateMethod'  // too many to worry about, review later
+        exclude 'UnusedPrivateMethodParameter'  // too many to worry about, review later
+    }
+
+    ruleset('rulesets/grails.xml')
+
     ruleset('rulesets/imports.xml') {
 
         exclude 'DuplicateImport'   // too many to worry about, review later
@@ -23,39 +121,6 @@ ruleset {
         exclude 'ImportFromSamePackage'   // too many to worry about, review later
     }
 
-    ruleset('rulesets/naming.xml') {
-        exclude 'PackageName' {
-            regex = '^[a-z]([a-zA-Z\\.0-9])*\\b'
-        } 
-
-        exclude 'ClassName'  // TODO: regexs are correct, but need exclude list
-//        'ClassName' {
-//            regex = '^[A-Z]([a-zA-Z0-9$_])*\\b'
-//        }
-        exclude 'FieldName'  // TODO: regexs are correct, but need exclude list
-//        'FieldName' {
-//            regex = '^[a-z]([a-zA-Z0-9$])*\\b'
-//            finalRegex = '^[a-z]([a-zA-Z0-9$])*\\b'
-//            staticFinalRegex = '^[A-Z]([A-Z0-9$_])*\\b|^serialVersionUID\\b'
-//            staticRegex = '^[A-Z]([A-Z0-9$_])*\\b'
-//        }
-        exclude 'PropertyName'  // TODO: regexs are correct, but need exclude list
-//        'PropertyName' {
-//            regex = '^[a-z]([a-zA-Z0-9$])*\\b'
-//            finalRegex = '^[a-z]([a-zA-Z0-9$])*\\b'
-//            staticFinalRegex = '^[A-Z]([A-Z0-9$_])*\\b|^serialVersionUID\\b'
-//            staticRegex = '^[A-Z]([A-Z0-9$_])*\\b'
-//        }
-        exclude 'VariableName'
-//        'VariableName' {
-//            regex = '^[a-z]([a-zA-Z0-9$])*\\b'
-//            finalRegex = '^[a-z]([a-zA-Z0-9$])*\\b'
-//        }
-        exclude 'MethodName' // TODO: regexs are correct, but need exclude list
-        exclude 'ParameterName' // figure out correct regex
-        exclude 'ConfusingMethodName'  // too many to worry about, review later
-    }
-    ruleset('rulesets/grails.xml')
     ruleset('rulesets/logging.xml') {
         exclude 'LoggerForDifferentClass'   // BUG in CodeNarc 0.13, add exclude for SwingBuilder only
 
@@ -72,6 +137,9 @@ ruleset {
     }
     ruleset('rulesets/basic.xml') {
         exclude 'ConsecutiveStringConcatenation'  // defect in CodeNarc 0.13    
+        'DeadCode' {
+            doNotApplyToClassNames='ThrowTest'
+        }
 
         exclude 'ConstantTernaryExpression'    // too many to worry about, review later
         exclude 'GStringAsMapKey'    // too many to worry about, review later
@@ -85,7 +153,6 @@ ruleset {
         exclude 'ExplicitCallToOrMethod'    // too many to worry about, review later
         exclude 'ExplicitCallToPowerMethod'    // too many to worry about, review later
         exclude 'ConsecutiveLiteralAppends'    // too many to worry about, review later
-        exclude 'DeadCode'    // too many to worry about, review later
         exclude 'CloneableWithoutClone'    // too many to worry about, review later
         exclude 'ConfusingTernary'    // too many to worry about, review later
         exclude 'ExplicitCallToEqualsMethod'    // too many to worry about, review later
@@ -128,6 +195,8 @@ ruleset {
         exclude 'NestedBlockDepth'  // too many to worry about, review later
     }
     ruleset('rulesets/junit.xml') {
+        exclude 'UseAssertTrueInsteadOfAssertEquals'    // defect in CodeNarc 0.13
+
         exclude 'ChainedTest'  // too many to worry about, review later
         exclude 'UnnecessaryFail'  // too many to worry about, review later
         exclude 'JUnitUnnecessarySetUp'  // too many to worry about, review later
@@ -141,8 +210,6 @@ ruleset {
         exclude 'JUnitTearDownCallsSuper'  // too many to worry about, review later
         exclude 'UseAssertNullInsteadOfAssertEquals'   // too many to worry about, review later
         exclude 'JUnitAssertAlwaysFails'   // too many to worry about, review later
-
-        exclude 'UseAssertTrueInsteadOfAssertEquals'    // defect in CodeNarc 0.13
     }
 
     ruleset('rulesets/concurrency.xml') {
@@ -154,6 +221,7 @@ ruleset {
     ruleset('rulesets/unnecessary.xml') {
         exclude 'UnnecessaryObjectReferences'   // CodeNarc 0.12 has a bug
 
+        exclude 'UnnecessaryNullCheck'   // too many to worry about, review later
         exclude 'UnnecessaryBooleanInstantiation'  // too many to worry about, review later
         exclude 'UnnecessaryNullCheckBeforeInstanceOf'  // too many to worry about, review later
         exclude 'UnnecessaryReturnKeywordRule'  // too many to worry about, review later
@@ -173,7 +241,6 @@ ruleset {
         exclude 'UnnecessaryConstructor'   // too many to worry about, review later
         exclude 'UnnecessaryBooleanExpression'   // too many to worry about, review later
         exclude 'UnnecessaryInstantiationToGetClass'   // too many to worry about, review later
-        exclude 'UnnecessaryNullCheck'   // too many to worry about, review later
         exclude 'UnnecessaryStringInstantiation' // too many to worry about, review later
         exclude 'UnnecessaryOverridingMethod' // too many to worry about, review later
         exclude 'UnnecessaryCallForLastElement' // too many to worry about, review later
@@ -209,14 +276,6 @@ ruleset {
         exclude 'ExceptionExtendsError'   // too many to worry about, review later
         exclude 'ThrowError'   // too many to worry about, review later
 
-    }
-    ruleset('rulesets/unused.xml') {
-        exclude 'UnusedObject'  // too many to worry about, review later
-        exclude 'UnusedVariableRule'  // too many to worry about, review later
-        exclude 'UnusedVariable'  // too many to worry about, review later
-        exclude 'UnusedPrivateField'  // too many to worry about, review later
-        exclude 'UnusedPrivateMethod'  // too many to worry about, review later
-        exclude 'UnusedPrivateMethodParameter'  // too many to worry about, review later
     }
 }
 

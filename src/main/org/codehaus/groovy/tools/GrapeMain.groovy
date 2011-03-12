@@ -18,7 +18,6 @@ package org.codehaus.groovy.tools
 import groovy.grape.Grape
 import org.apache.ivy.util.DefaultMessageLogger
 import org.apache.ivy.util.Message
-import org.codehaus.groovy.runtime.InvokerHelper
 import org.apache.commons.cli.*
 
 //commands
@@ -256,6 +255,7 @@ options.addOptionGroup(
         OptionBuilder.hasArg(false)
         .withDescription("Log level 3 - verbose")
         .withLongOpt("verbose")
+
         .create('V'))
     .addOption(
         OptionBuilder.hasArg(false)
