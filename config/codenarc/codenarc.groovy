@@ -145,7 +145,7 @@ ruleset {
 
         try {
             'UnusedPrivateMethodParameter' {
-                doNotApplyToClassNames='groovy.StaticImportTest,CurryFoo4170,AssertionRenderingTest'
+                doNotApplyToClassNames='CurryFoo4170,AssertionRenderingTest'
             } 
         } catch(AssertionError e) { /* only exists in 0.13 */ }
 
@@ -185,9 +185,16 @@ ruleset {
         exclude 'ElseBlockBraces'   // else statements without braces seems acceptable in our coding standards
     }
     ruleset('rulesets/basic.xml') {
-        exclude 'ConsecutiveStringConcatenation'  // defect in CodeNarc 0.13    
+        'ConsecutiveStringConcatenation' {
+            doNotApplyToClassNames='groovy.DynamicMemberTest,groovy.StaticImportTest,groovy.bugs.Groovy675_Bug,groovy.bugs.MorgansBug,' + 
+                        'groovy.bugs.WriteOnlyPropertyBug,groovy.operator.StringOperatorsTest,groovy.swing.SwingBuilderTest,' + 
+                        'org.codehaus.groovy.runtime.powerassert.EvaluationTest' 
+        } 
         'DeadCode' {
             doNotApplyToClassNames='ThrowTest'
+        }
+        'ConsecutiveLiteralAppends' {
+            doNotApplyToClassNames='groovy.bugs.ByteIndexBug'
         }
 
         exclude 'ConstantTernaryExpression'    // too many to worry about, review later
@@ -201,7 +208,6 @@ ruleset {
         exclude 'InvertedIfElse'    // too many to worry about, review later
         exclude 'ExplicitCallToOrMethod'    // too many to worry about, review later
         exclude 'ExplicitCallToPowerMethod'    // too many to worry about, review later
-        exclude 'ConsecutiveLiteralAppends'    // too many to worry about, review later
         exclude 'CloneableWithoutClone'    // too many to worry about, review later
         exclude 'ConfusingTernary'    // too many to worry about, review later
         exclude 'ExplicitCallToEqualsMethod'    // too many to worry about, review later
