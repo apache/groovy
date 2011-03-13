@@ -142,9 +142,13 @@ ruleset {
                 'org.codehaus.groovy.tools.shell.Groovysh,org.codehaus.groovy.tools.shell.commands.EditCommand,StringMethodName,Foo,' + 
                 'groovy.execute.ExecuteTest,BinaryStreamsTest' //BinaryStreamsTest is a CodeNarc 0.13 defect
         }
-        'UnusedPrivateMethodParameter' {
-            doNotApplyToClassNames='groovy.StaticImportTest,CurryFoo4170,AssertionRenderingTest'
-        } 
+
+        try {
+            'UnusedPrivateMethodParameter' {
+                doNotApplyToClassNames='groovy.StaticImportTest,CurryFoo4170,AssertionRenderingTest'
+            } 
+        } catch(AssertionError e) { /* only exists in 0.13 */ }
+
         'UnusedObject'  {
             doNotApplyToClassNames='groovy.ui.OutputTransforms,org.codehaus.groovy.ast.builder.AstSpecificationCompiler,groovy.lang.GroovyCodeSourceTest'        
         }
@@ -161,7 +165,13 @@ ruleset {
     }
 
     ruleset('rulesets/logging.xml') {
-        exclude 'LoggerForDifferentClass'   // BUG in CodeNarc 0.13, add exclude for SwingBuilder only
+        try {
+            'LoggerForDifferentClass' {
+                doNotApplyToClassNames='' // BUG in CodeNarc 0.13, add exclude for SwingBuilder only
+            }
+        } catch (AssertionError e) {
+            // only in CodeNarc 0.13        
+        }   
 
         exclude 'Println'  // too many to worry about, review later
         exclude 'SystemOutPrint'  // too many to worry about, review later
@@ -260,9 +270,12 @@ ruleset {
     ruleset('rulesets/unnecessary.xml') {
         exclude 'UnnecessaryObjectReferences'   // CodeNarc 0.12 has a bug
 
+        'UnnecessaryInstantiationToGetClass'  {
+             doNotApplyToClassNames='SpreadDotTest'
+        } 
+
         exclude 'UnnecessaryNullCheck'   // too many to worry about, review later
         exclude 'UnnecessaryBooleanInstantiation'  // too many to worry about, review later
-        exclude 'UnnecessaryNullCheckBeforeInstanceOf'  // too many to worry about, review later
         exclude 'UnnecessaryReturnKeywordRule'  // too many to worry about, review later
         exclude 'UnnecessaryReturnKeyword'  // too many to worry about, review later
         exclude 'UnnecessaryGetter'    // too many to worry about, review later
@@ -279,21 +292,22 @@ ruleset {
         exclude 'UnnecessaryCollectCall'   // too many to worry about, review later
         exclude 'UnnecessaryConstructor'   // too many to worry about, review later
         exclude 'UnnecessaryBooleanExpression'   // too many to worry about, review later
-        exclude 'UnnecessaryInstantiationToGetClass'   // too many to worry about, review later
         exclude 'UnnecessaryStringInstantiation' // too many to worry about, review later
         exclude 'UnnecessaryOverridingMethod' // too many to worry about, review later
         exclude 'UnnecessaryCallForLastElement' // too many to worry about, review later
     }
     ruleset('rulesets/dry.xml') {
-        exclude 'DuplicateNumberLiteral'    // BUG in CodeNarc 0.13. No way to exclude a float. 
-        //'DuplicateNumberLiteral' {
-        //    ignoreNumbers = '0,1,2,3,4,5,6,9,10,11,12,16,24,33,34,48,55,77,97,100,123,456,10.0,1.0,0.0,2.0,-1,27.0'
-        //}            
+        //exclude 'DuplicateNumberLiteral'    // BUG in CodeNarc 0.13. No way to exclude a float. 
+        'DuplicateNumberLiteral' {
+            ignoreNumbers = '-1,-1.0,-1000,0,1,2,3,3.0,4,5,5.0,7,8,8.0,6,9,10,11,12,12.2,15,15.0,16,20,22,24,33,34,40,42,48,55,77,81,97,99,100,111,119,123,200,255,256,456,10.0,1.0,0.0,2.0,27.0,999,1100,1200,1300,2222111'
+        }            
         exclude 'DuplicateStringLiteralRule'    // too many to worry about, review later
         exclude 'DuplicateStringLiteral'    // too many to worry about, review later
     }
     ruleset('rulesets/design.xml') {
-        exclude 'CloseWithoutCloseable'   // too many to worry about, review later
+        'CloseWithoutCloseable' { 
+            doNotApplyToClassNames='Log4jInterceptingAppender'
+        }
         exclude 'EmptyMethodInAbstractClass'      // too many to worry about, review later
         exclude 'ImplementationAsType'      // too many to worry about, review later
         exclude 'AbstractClassWithoutAbstractMethod'     // too many to worry about, review later

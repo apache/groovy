@@ -174,7 +174,7 @@ public class AstBrowser {
 
             propertyTable.model.rows.clear()
             TreeNode node = jTree.lastSelectedPathComponent
-            if (node != null && node instanceof TreeNodeWithProperties) {
+            if (node instanceof TreeNodeWithProperties) {
 
                 node.properties.each {
                     propertyTable.model.rows << ["name": it[0], "value": it[1], "type": it[2]]
