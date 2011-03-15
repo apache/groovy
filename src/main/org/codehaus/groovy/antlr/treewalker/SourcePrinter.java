@@ -18,6 +18,7 @@ package org.codehaus.groovy.antlr.treewalker;
 import java.io.PrintStream;
 import java.util.Stack;
 
+import antlr.collections.AST;
 import org.codehaus.groovy.antlr.GroovySourceAST;
 import org.codehaus.groovy.antlr.parser.GroovyTokenTypes;
 
@@ -420,7 +421,7 @@ public class SourcePrinter extends VisitorAdapter {
     }
 
     public void visitLiteralCatch(GroovySourceAST t,int visit) {
-        printUpdatingTabLevel(t,visit," catch (",null,") ");
+        printUpdatingTabLevel(t, visit, " catch (", null, ") ");
     }
 
     public void visitLiteralChar(GroovySourceAST t, int visit) {
@@ -664,6 +665,22 @@ public class SourcePrinter extends VisitorAdapter {
     }
     public void visitModAssign(GroovySourceAST t, int visit) {
         print(t,visit," %= ",null,null);
+    }
+
+    @Override
+    public void visitMultiCatch(final GroovySourceAST t, final int visit) {
+        if (visit == CLOSING_VISIT) {
+            final AST child = t.getFirstChild();
+            if ("MULTICATCH_TYPES".equals(child.getText())) {
+                print(t, visit, null, null, " "+child.getNextSibling().getText());
+            } else {
+                print(t, visit, null, null, " "+child.getFirstChild().getText());
+            }
+        }
+    }
+
+    @Override
+    public void visitMultiCatchTypes(final GroovySourceAST t, final int visit) {
     }
 
     // visitNls

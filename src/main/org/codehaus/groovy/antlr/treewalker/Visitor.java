@@ -170,6 +170,8 @@ public interface Visitor {
     void visitMod(GroovySourceAST t, int visit);
     void visitModifiers(GroovySourceAST t, int visit);
     void visitModAssign(GroovySourceAST t, int visit);
+    void visitMultiCatch(GroovySourceAST t, int visit);
+    void visitMultiCatchTypes(GroovySourceAST t, int visit);
     void visitNls(GroovySourceAST t, int visit);
     void visitNotEqual(GroovySourceAST t, int visit);
     void visitNullTreeLookahead(GroovySourceAST t, int visit);

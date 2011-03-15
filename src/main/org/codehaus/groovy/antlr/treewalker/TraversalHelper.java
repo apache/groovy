@@ -203,6 +203,8 @@ public abstract class TraversalHelper implements AntlrASTProcessor {
                 case GroovyTokenTypes.NLS                           :   v.visitNls(ast,n);                          break;
                 case GroovyTokenTypes.NOT_EQUAL                     :   v.visitNotEqual(ast,n);                     break;
                 case GroovyTokenTypes.NULL_TREE_LOOKAHEAD           :   v.visitNullTreeLookahead(ast,n);            break;
+                case GroovyTokenTypes.MULTICATCH                    :   v.visitMultiCatch(ast,n);                   break;
+                case GroovyTokenTypes.MULTICATCH_TYPES              :   v.visitMultiCatchTypes(ast,n);              break;
                 case GroovyTokenTypes.NUM_BIG_DECIMAL               :   v.visitNumBigDecimal(ast,n);                break;
                 case GroovyTokenTypes.NUM_BIG_INT                   :   v.visitNumBigInt(ast,n);                    break;
                 case GroovyTokenTypes.NUM_DOUBLE                    :   v.visitNumDouble(ast,n);                    break;

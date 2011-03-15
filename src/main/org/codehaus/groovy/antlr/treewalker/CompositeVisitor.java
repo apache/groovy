@@ -758,6 +758,16 @@ public class CompositeVisitor implements Visitor{
         while (itr.hasNext()) {((Visitor)itr.next()).visitModAssign(t,visit);}
     }
 
+    public void visitMultiCatch(GroovySourceAST t, int visit) {
+        Iterator itr = itr(visit);
+        while (itr.hasNext()) {((Visitor)itr.next()).visitMultiCatch(t, visit);}
+    }
+
+    public void visitMultiCatchTypes(final GroovySourceAST t, final int visit) {
+        Iterator itr = itr(visit);
+        while (itr.hasNext()) {((Visitor)itr.next()).visitMultiCatchTypes(t, visit);}
+    }
+
     public void visitNls(GroovySourceAST t, int visit) {
         Iterator itr = itr(visit);
         while (itr.hasNext()) {((Visitor)itr.next()).visitNls(t,visit);}

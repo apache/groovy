@@ -226,7 +226,7 @@ tokens {
     STATIC_IMPORT; ENUM_DEF; ENUM_CONSTANT_DEF; FOR_EACH_CLAUSE; ANNOTATION_DEF; ANNOTATIONS;
     ANNOTATION; ANNOTATION_MEMBER_VALUE_PAIR; ANNOTATION_FIELD_DEF; ANNOTATION_ARRAY_INIT;
     TYPE_ARGUMENTS; TYPE_ARGUMENT; TYPE_PARAMETERS; TYPE_PARAMETER; WILDCARD_TYPE;
-    TYPE_UPPER_BOUNDS; TYPE_LOWER_BOUNDS; CLOSURE_LIST;
+    TYPE_UPPER_BOUNDS; TYPE_LOWER_BOUNDS; CLOSURE_LIST;MULTICATCH;MULTICATCH_TYPES;
 }
 
 {
@@ -1660,6 +1660,26 @@ parameterDeclaration!
         }
     ;
 
+multicatch_types
+{Token first = LT(1);}
+    :
+        nls!
+        classOrInterfaceType[false]
+        (
+            BOR! nls! classOrInterfaceType[false]
+        )*
+        
+        {#multicatch_types = #(create(MULTICATCH_TYPES, "MULTICATCH_TYPES",first,LT(1)), #multicatch_types);}
+    ;
+		    
+multicatch
+{Token first = LT(1);}
+    :    nls! ("def")? (m:multicatch_types)? id:IDENT!
+        {
+          #multicatch = #(create(MULTICATCH,"MULTICATCH",first, LT(1)),m,id);
+        }
+    ;
+
 /*OBS*
 variableLengthParameterDeclaration!  {Token first = LT(1);}
     :   pm:parameterModifier t:typeSpec[false] TRIPLE_DOT! id:IDENT
@@ -2175,7 +2195,7 @@ finallyClause {Token first = LT(1);}
 
 // an exception handler
 handler {Token first = LT(1);}
-    :   "catch"! LPAREN! pd:parameterDeclaration! RPAREN! nlsWarn! handlerCs:compoundStatement!
+    :   "catch"! LPAREN! pd:multicatch! RPAREN! nlsWarn! handlerCs:compoundStatement!
         {#handler = #(create(LITERAL_catch,"catch",first,LT(1)),pd,handlerCs);}
     ;
 

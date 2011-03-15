@@ -168,6 +168,8 @@ public class VisitorAdapter implements Visitor {
     public void visitMod(GroovySourceAST t,int visit) {visitDefault(t,visit);}
     public void visitModifiers(GroovySourceAST t,int visit) {visitDefault(t,visit);}
     public void visitModAssign(GroovySourceAST t,int visit) {visitDefault(t,visit);}
+    public void visitMultiCatch(GroovySourceAST t,int visit) {visitDefault(t,visit);}
+    public void visitMultiCatchTypes(GroovySourceAST t,int visit) {visitDefault(t,visit);}
     public void visitNls(GroovySourceAST t,int visit) {visitDefault(t,visit);}
     public void visitNotEqual(GroovySourceAST t,int visit) {visitDefault(t,visit);}
     public void visitNullTreeLookahead(GroovySourceAST t,int visit) {visitDefault(t,visit);}

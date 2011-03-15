@@ -1564,7 +1564,8 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         // let's do the catch nodes
         List<CatchStatement> catches = new ArrayList<CatchStatement>();
         for (; node != null && isType(LITERAL_catch, node); node = node.getNextSibling()) {
-            catches.add(catchStatement(node));
+            final List<CatchStatement> catchStatements = catchStatement(node);
+            catches.addAll(catchStatements);
         }
 
         if (isType(LITERAL_finally, node)) {
@@ -1584,17 +1585,37 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         return tryCatchStatement;
     }
 
-    protected CatchStatement catchStatement(AST catchNode) {
+    protected List<CatchStatement> catchStatement(AST catchNode) {
         AST node = catchNode.getFirstChild();
-        Parameter parameter = parameter(node);
-        ClassNode exceptionType = parameter.getType();
-        String variable = parameter.getName();
-        node = node.getNextSibling();
-        Statement code = statement(node);
-        Parameter catchParameter = new Parameter(exceptionType, variable);
-        CatchStatement answer = new CatchStatement(catchParameter, code);
-        configureAST(answer, catchNode);
-        return answer;
+        List<CatchStatement> catches = new LinkedList<CatchStatement>();
+        Statement code = statement(node.getNextSibling());
+        if (MULTICATCH == node.getType()) {
+            AST variableNode = node.getNextSibling();
+            final AST multicatches = node.getFirstChild();
+            if (multicatches.getType() != MULTICATCH_TYPES) {
+                // catch (e)
+                // catch (def e)
+                String variable = identifier(multicatches);
+                Parameter catchParameter = new Parameter(ClassHelper.DYNAMIC_TYPE, variable);
+                CatchStatement answer = new CatchStatement(catchParameter, code);
+                configureAST(answer, catchNode);
+                catches.add(answer);
+            } else {
+                // catch (Exception e)
+                // catch (Exception1 | Exception2 e)
+                AST exceptionNodes = multicatches.getFirstChild();
+                String variable = identifier(multicatches.getNextSibling());
+                while (exceptionNodes != null) {
+                    ClassNode exceptionType = buildName(exceptionNodes);
+                    Parameter catchParameter = new Parameter(exceptionType, variable);
+                    CatchStatement answer = new CatchStatement(catchParameter, code);
+                    configureAST(answer, catchNode);
+                    catches.add(answer);
+                    exceptionNodes = exceptionNodes.getNextSibling();
+                }
+            }
+        }
+        return catches;
     }
 
     protected Statement whileStatement(AST whileNode) {
