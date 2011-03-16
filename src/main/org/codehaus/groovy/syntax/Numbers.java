@@ -160,16 +160,17 @@ public class Numbers
         // Determine radix (default is 10).
 
         int radix = 10;
-        if( text.charAt(0) == '0' && length > 1 )
-        {
-            if( (c = text.charAt(1)) == 'X' || c == 'x' )
-            {
+        if( text.charAt(0) == '0' && length > 1 ) {
+            c = text.charAt(1);
+            if( c == 'X' || c == 'x' ) {
                 radix = 16;
                 text = text.substring( 2, length);
                 length -= 2;
-            }
-            else
-            {
+            } else if ( c == 'B' || c == 'b' ) { 
+                radix = 2;
+                text = text.substring(2, length);
+                length -= 2;
+            } else {
                 radix = 8;
             }
         }

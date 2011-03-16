@@ -4184,6 +4184,10 @@ options {
                     }
                 :   HEX_DIGIT
                 )+
+            
+            |   //binary literal
+                ('b'|'B') ('0'|'1')+
+                {isDecimal = false;}
 
             |   //float or double with leading zero
                 (('0'..'9')+ ('.'('0'..'9')|EXPONENT|FLOAT_SUFFIX)) => ('0'..'9')+
