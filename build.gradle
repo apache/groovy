@@ -61,6 +61,7 @@ dependencies {
                  'jmock:jmock-clib:1.2.0' ,
                  'xmlunit:xmlunit:1.2' ,
                  'hsqldb:hsqldb:1.8.0.7' ,
+                 'org.apache.ant:ant-testutil:1.8.2' ,
                  ] )
   runtime ( [
              'org.apache.ant:ant-junit:1.7.1' ,
