@@ -140,6 +140,9 @@ public class Numbers
 
     public static Number parseInteger( String text )
     {
+        // remove place holder underscore before starting
+        text = text.replace("_", "");
+        
         char c = ' ';
         int length = text.length();
 
@@ -250,6 +253,7 @@ public class Numbers
 
     public static Number parseDecimal( String text )
     {
+        text = text.replace("_", "");
         int length = text.length();
 
 
