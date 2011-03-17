@@ -1,0 +1,36 @@
+<project name="CustomGroovyDocTestProject" basedir="../../../">
+    <property name="src" location="src"/>
+    <property name="main" location="${src}/main"/>
+    <property name="test" location="${src}/test"/>
+
+    <property name="target" location="target"/>
+
+    <property name="tmpdir" value="${java.io.tmpdir}/${user.name}/${ant.project.name}"/>
+
+    <path id="classpath">
+        <fileset dir="${target}/classes" includes="**/*.*"/>
+        <fileset dir="${target}/test-classes" includes="**/*.*"/>
+    </path>
+
+    <taskdef
+            name="groovydoc"
+            classname="org.codehaus.groovy.tools.groovydoc.CustomGroovyDoc"
+            classpathref="classpath"/>
+
+    <target name="doc">
+        <groovydoc
+                destdir="${tmpdir}"
+                sourcepath="${test}"
+                packagenames="org/codehaus/groovy/tools/groovydoc/testfiles/**.*"
+                use="true"
+                windowtitle="GroovyDoc"
+                private="false">
+
+            <link packages="java.,org.xml.,javax.,org.xml." href="http://download.oracle.com/javase/6/docs/api"/>
+            <link packages="org.apache.tools.ant." href="http://evgeny-goldin.org/javadoc/ant/api"/>
+            <link packages="org.junit.,junit.framework." href="http://kentbeck.github.com/junit/javadoc/latest"/>
+            <link packages="groovy.,org.codehaus.groovy." href="http://groovy.codehaus.org/api/"/>
+            <link packages="org.codehaus.gmaven." href="http://evgeny-goldin.org/javadoc/gmaven"/>
+        </groovydoc>
+    </target>
+</project>

@@ -187,7 +187,7 @@ $Date$
 
     <property name="vm5GroovySourceFiles" value="**/*.groovy"/>
     <property name="vm5JavaSourceFiles" value="**/*.java"/>
-	<property name="anotherGroovyExtTestFiles" value="**/*.foogroovy"/>
+    <property name="anotherGroovyExtTestFiles" value="**/*.foogroovy"/>
     <property name="vm6GroovySourceFiles" value="groovy/**/vm6/*Test.groovy,org/codehaus/groovy/**/vm6/*Test.groovy"/>
 
     <target name="-initGroovyc">
@@ -214,6 +214,7 @@ $Date$
         <copy todir="${testClassesDirectory}">
             <fileset dir="${testSourceDirectory}">
                 <include name="META-INF/services/*"/>
+                <include name="**/*.html"/><!-- includes groovydoc templates -->
             </fileset>
         </copy>
         <groovyc srcdir="${testSourcePath}"
@@ -464,7 +465,7 @@ $Date$
                 <attribute name="Eclipse-BuddyPolicy" value="dependent"/>
                 <attribute name="Eclipse-LazyStart" value="true"/>
                 <attribute name="DynamicImport-Package" value="*"/>
-            	<attribute name="Main-class" value="groovy.ui.GroovyMain"/>
+                <attribute name="Main-class" value="groovy.ui.GroovyMain"/>
             </manifest>
         </sequential>
     </macrodef>

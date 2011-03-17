@@ -406,9 +406,9 @@ public class Groovydoc extends Task {
         GroovyDocTool htmlTool = new GroovyDocTool(
                 new ClasspathResourceManager(), // we're gonna get the default templates out of the dist jar file
                 sourcePath.list(),
-                GroovyDocTemplateInfo.DEFAULT_DOC_TEMPLATES,
-                GroovyDocTemplateInfo.DEFAULT_PACKAGE_TEMPLATES,
-                GroovyDocTemplateInfo.DEFAULT_CLASS_TEMPLATES,
+                getDocTemplates(),
+                getPackageTemplates(),
+                getClassTemplates(),
                 links,
                 properties
         );
@@ -456,5 +456,42 @@ public class Groovydoc extends Task {
         LinkArgument result = new LinkArgument();
         links.add(result);
         return result;
+    }
+    
+    /**
+     * Creates and returns an array of package template classpath entries.<p/>
+     * 
+     * This method is meant to be overridden by custom GroovyDoc implementations, using custom package templates.
+     * 
+     * @return an array of package templates, whereas each entry is resolved as classpath entry, defaults to
+     *  {@link GroovyDocTemplateInfo#DEFAULT_PACKAGE_TEMPLATES}.
+     */
+    protected String[] getPackageTemplates() {
+        return GroovyDocTemplateInfo.DEFAULT_PACKAGE_TEMPLATES;
+    }
+
+    /**
+     * Creates and returns an array of doc template classpath entries.<p/>
+     * 
+     * This method is meant to be overridden by custom GroovyDoc implementations, using custom doc templates.
+     * 
+     * @return an array of doc templates, whereas each entry is resolved as classpath entry, defaults to
+     *  {@link GroovyDocTemplateInfo#DEFAULT_DOC_TEMPLATES}.
+     *
+     */
+    protected String[] getDocTemplates() {
+        return GroovyDocTemplateInfo.DEFAULT_DOC_TEMPLATES;
+    }
+
+    /**
+     * Creates and returns an array of class template classpath entries.<p/>
+     * 
+     * This method is meant to be overridden by custom GroovyDoc implementations, using custom class templates.
+     * 
+     * @return an array of class templates, whereas each entry is resolved as classpath entry, defaults to
+     *  {@link GroovyDocTemplateInfo#DEFAULT_CLASS_TEMPLATES}.
+     */
+    protected String[] getClassTemplates() {
+        return GroovyDocTemplateInfo.DEFAULT_CLASS_TEMPLATES;
     }
 }

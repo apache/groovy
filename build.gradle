@@ -37,7 +37,7 @@ dependencies {
     compile("bsf:bsf:2.4.0") {
         exclude(group: 'commons-logging', module: 'commons-logging')
     }
-    compile "junit:junit:4.8.1"
+    compile "junit:junit:4.8.2"
     compile "commons-cli:commons-cli:1.2"
     compile "org.apache.ant:ant:1.8.2"
     compile "javax.servlet:servlet-api:2.4"
@@ -67,8 +67,10 @@ dependencies {
     testCompile "ch.qos.logback:logback-classic:0.9.21"
     testCompile "log4j:log4j:1.2.16"
     testCompile "org.slf4j:jcl-over-slf4j:1.6.0"
-//    testCompile "commons-logging:commons-logging:1.1.1"
     testCompile "com.thoughtworks.qdox:qdox:1.12"
+    testCompile "org.apache.ant:ant-testutil:1.8.2"
+    runtime "org.codehaus.gpars:gpars:0.11"
+    runtime "org.coconut.forkjoin:jsr166y:070108"
 
     // todo this was provided
     compile "org.livetribe:livetribe-jsr223:2.0.6"
@@ -256,10 +258,5 @@ apply from: "$projectDir/gradle/assemble.gradle"
 apply from: "$projectDir/gradle/upload.gradle"
 
 task wrapper(type: Wrapper) {
-    gradleVersion = '0.9.1'
+    gradleVersion = '0.9.2'
 }
-
-
-
-
-
