@@ -834,6 +834,14 @@
             <version>1.6.0</version>
             <scope>test</scope>
         </dependency>
+
+        <!-- Used for testing the GroovyDoc Ant task -->
+        <dependency>
+            <groupId>org.apache.ant</groupId>
+            <artifactId>ant-testutil</artifactId>
+            <version>1.8.2</version>
+            <scope>test</scope>
+        </dependency>
 <!--
         <dependency>
             <groupId>commons-logging</groupId>
