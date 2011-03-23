@@ -1668,13 +1668,13 @@ multicatch_types
         (
             BOR! nls! classOrInterfaceType[false]
         )*
-        
+
         {#multicatch_types = #(create(MULTICATCH_TYPES, "MULTICATCH_TYPES",first,LT(1)), #multicatch_types);}
     ;
-		    
+
 multicatch
 {Token first = LT(1);}
-    :    nls! ("def")? (m:multicatch_types)? id:IDENT!
+    :   nls! (FINAL)? ("def")? (m:multicatch_types)? id:IDENT!
         {
           #multicatch = #(create(MULTICATCH,"MULTICATCH",first, LT(1)),m,id);
         }

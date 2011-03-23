@@ -42,6 +42,36 @@ class MultiCatchTest extends GroovyTestCase{
         assert catched
     }
 
+    void testRegularCatchWithFinalModifier() {
+        def catched = false
+        try {
+            throw new RuntimeException("Error")
+        } catch (final RuntimeException ex) {
+            catched = true
+        }
+        assert catched
+    }
+
+    void testRegularCatchWithFinalModifierAndDynamicType() {
+        def catched = false
+        try {
+            throw new RuntimeException("Error")
+        } catch (final def ex) {
+            catched = true
+        }
+        assert catched
+    }
+
+    void testRegularCatchWithFinalModifierWithoutType() {
+        def catched = false
+        try {
+            throw new RuntimeException("Error")
+        } catch (final ex) {
+            catched = true
+        }
+        assert catched
+    }
+
     void testMultipleCatchJavaStyle() {
         def catched = false
         try {
