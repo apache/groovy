@@ -32,7 +32,6 @@ class Groovy4720Bug extends GroovyTestCase {
                 def methodName = method.name
                 def parameterTypes = method.parameterTypes
                 if (parameterTypes) {
-                    parameterTypes = Arrays.copyOfRange(parameterTypes, 0, parameterTypes.length)
                     "$methodName"(new Closure(this) {
                         def call(Object[] args) {
                             apiInstance."$methodName"(* args)
