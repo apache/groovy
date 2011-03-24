@@ -112,31 +112,7 @@ public class ClosureMetaMethod extends MetaMethod implements ClosureInvokingMeth
                 }
             }
             else {
-                MetaMethod metaMethod = 
-                new MetaMethod(closure.getParameterTypes()){
-                    public int getModifiers() {
-                        return Modifier.PUBLIC;
-                    }
-
-                    public String getName() {
-                        return name;
-                    }
-
-                    public Class getReturnType() {
-                        return Object.class;
-                    }
-
-                    public CachedClass getDeclaringClass() {
-                        return ReflectionCache.getCachedClass(declaringClass);
-                    }
-
-                    public Object invoke(Object object, Object[] arguments) {
-                        Closure cloned = (Closure) closure.clone();
-                        cloned.setDelegate(object);
-                        arguments = coerceArgumentsToClasses(arguments);
-                        return InvokerHelper.invokeMethod(cloned, "call", arguments);
-                    }
-                };
+                MetaMethod metaMethod = new AnonymousMetaMethod(closure, name, declaringClass);
                 res.add(adjustParamTypesForStdMethods(metaMethod, name));
             }
         }
@@ -171,6 +147,42 @@ public class ClosureMetaMethod extends MetaMethod implements ClosureInvokingMeth
 
         public Object invoke(Object object, Object[] arguments) {
             return getDoCall().invoke(getClosure().getOwner(), arguments);
+        }
+    }
+
+    static class AnonymousMetaMethod extends MetaMethod {
+        private final Closure closure;
+        private final String name;
+        private final Class declaringClass;
+
+        public AnonymousMetaMethod(Closure closure, String name, Class declaringClass) {
+            super(closure.getParameterTypes());
+            this.closure = closure;
+            this.name = name;
+            this.declaringClass = declaringClass;
+        }
+
+        public int getModifiers() {
+            return Modifier.PUBLIC;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public Class getReturnType() {
+            return Object.class;
+        }
+
+        public CachedClass getDeclaringClass() {
+            return ReflectionCache.getCachedClass(declaringClass);
+        }
+
+        public Object invoke(Object object, Object[] arguments) {
+            Closure cloned = (Closure) closure.clone();
+            cloned.setDelegate(object);
+            arguments = coerceArgumentsToClasses(arguments);
+            return InvokerHelper.invokeMethod(cloned, "call", arguments);
         }
     }
 }
