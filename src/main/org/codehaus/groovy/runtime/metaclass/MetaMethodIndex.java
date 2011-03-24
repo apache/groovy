@@ -436,7 +436,8 @@ public class MetaMethodIndex {
                 method instanceof ClosureMetaMethod ||
                 method instanceof GeneratedMetaMethod ||
                 method instanceof ClosureStaticMetaMethod ||
-                method instanceof MixinInstanceMetaMethod;
+                method instanceof MixinInstanceMetaMethod ||
+                method instanceof ClosureMetaMethod.AnonymousMetaMethod;
     }
 
     private boolean isMatchingMethod(MetaMethod aMethod, MetaMethod method) {
