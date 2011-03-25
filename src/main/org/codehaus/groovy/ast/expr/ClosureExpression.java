@@ -15,10 +15,7 @@
  */
 package org.codehaus.groovy.ast.expr;
 
-import org.codehaus.groovy.ast.ClassHelper;
-import org.codehaus.groovy.ast.GroovyCodeVisitor;
-import org.codehaus.groovy.ast.Parameter;
-import org.codehaus.groovy.ast.VariableScope;
+import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.runtime.InvokerHelper;
 
@@ -90,4 +87,13 @@ public class ClosureExpression extends Expression {
         this.variableScope = variableScope;
     }
 
+    @Override
+    public String getText() {
+        String paramText = AstToTextHelper.getParametersText(parameters);
+        if (paramText.length() > 0) {
+            return "{ " + paramText + " -> ... }";
+        } else {
+            return "{ -> ... }";
+        }
+    }
 }
