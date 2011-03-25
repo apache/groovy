@@ -1,7 +1,5 @@
 package groovy.util
 
-import groovy.lang.MissingMethodException
-
 /**
      Testing BuilderSupport and reveal how calling
     methods on it result in implementation callbacks.

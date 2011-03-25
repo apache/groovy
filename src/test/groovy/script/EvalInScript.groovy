@@ -1,4 +1,3 @@
-import java.io.File
 
 a = 1
 evaluate("a = 3")

@@ -1,7 +1,5 @@
 package groovy;
 
-import java.io.StringWriter;
-
 import groovy.text.Template;
 import groovy.text.GStringTemplateEngine;
 

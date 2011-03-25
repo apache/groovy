@@ -2,7 +2,6 @@ package groovy
 
 import groovy.io.GroovyPrintStream
 
-import java.io.PrintStream
 import java.text.NumberFormat
 
 class PrintTest extends GroovyTestCase {

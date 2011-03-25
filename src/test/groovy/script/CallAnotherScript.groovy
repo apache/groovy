@@ -1,4 +1,3 @@
-import java.io.File
 
 println("About to call another script")
 

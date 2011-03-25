@@ -1,7 +1,5 @@
 package groovy.util;
 
-import java.util.ResourceBundle;
-
 public class ResourceBundleTest extends GroovyTestCase {
     public void testNoClassLoaderNoLocale() {
         def results = []

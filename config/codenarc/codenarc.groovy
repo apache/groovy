@@ -139,8 +139,7 @@ ruleset {
 
         'UnusedPrivateMethod'  {
             doNotApplyToClassNames='org.codehaus.groovy.ast.builder.AstBuilder,org.codehaus.groovy.ast.builder.AstSpecificationCompiler,' + 
-                'org.codehaus.groovy.tools.shell.Groovysh,org.codehaus.groovy.tools.shell.commands.EditCommand,StringMethodName,Foo,' + 
-                'groovy.execute.ExecuteTest,BinaryStreamsTest' //BinaryStreamsTest is a CodeNarc 0.13 defect
+                'StringMethodName,Foo' 
         }
 
         try {
@@ -158,9 +157,10 @@ ruleset {
 
     ruleset('rulesets/imports.xml') {
 
+        'UnnecessaryGroovyImport' {
+            doNotApplyToFileNames='JListProperties.groovy,GridBagFactory.groovy,Groovy558_616_Bug.groovy'
+        }
         exclude 'DuplicateImport'   // too many to worry about, review later
-        exclude 'UnnecessaryGroovyImport'   // too many to worry about, review later
-        exclude 'UnnecessaryGroovyImportRule'   // too many to worry about, review later
         exclude 'ImportFromSamePackage'   // too many to worry about, review later
     }
 
@@ -204,7 +204,6 @@ ruleset {
         exclude 'ExplicitGarbageCollection'    // too many to worry about, review later
         exclude 'DoubleNegative'    // too many to worry about, review later
         exclude 'ThrowExceptionFromFinallyBlock'    // too many to worry about, review later
-        exclude 'InvertedIfElse'    // too many to worry about, review later
         exclude 'InvertedIfElse'    // too many to worry about, review later
         exclude 'ExplicitCallToOrMethod'    // too many to worry about, review later
         exclude 'ExplicitCallToPowerMethod'    // too many to worry about, review later
