@@ -20,7 +20,6 @@ import groovy.io.FileType;
 import groovy.io.FileVisitResult;
 import groovy.io.GroovyPrintWriter;
 import groovy.lang.*;
-import groovy.sql.GroovyResultSet;
 import groovy.util.*;
 import org.codehaus.groovy.reflection.ClassInfo;
 import org.codehaus.groovy.reflection.MixinInMetaClass;
@@ -91,6 +90,7 @@ import java.util.regex.Pattern;
  * @author Rodolfo Velasco
  * @author jeremi Joslin
  * @author Hamlet D'Arcy
+ * @author Tim Yates
  */
 public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
@@ -1034,9 +1034,33 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self a collection
      * @return the now modified collection
+     * @see #unique(Collection, boolean)
      * @since 1.0
      */
     public static <T> Collection<T> unique(Collection<T> self) {
+        return unique(self, true);
+    }
+
+    /**
+     * Remove all duplicates from a given Collection using the default comparator.
+     * If mutate is true, it works by modifying the original object (and also returning it).
+     * If mutate is false, a new collection is returned leaving the original unchanged.
+     * <pre class="groovyTestCase">
+     * assert [1,3] == [1,3,3].unique()
+     * </pre>
+     * <pre class="groovyTestCase">
+     * def orig = [1, 3, 2, 3]
+     * def uniq = orig.unique(false)
+     * assert orig == [1, 3, 2, 3]
+     * assert uniq == [1, 3, 2]
+     * </pre>
+     *
+     * @param self a collection
+     * @param mutate false will cause a new list containing unique items from the collection to be created, true will mutate collections in place
+     * @return the now modified collection
+     * @since 1.8.1
+     */
+    public static <T> Collection<T> unique(Collection<T> self, boolean mutate) {
         List<T> answer = new ArrayList<T>();
         for (T t : self) {
             boolean duplicated = false;
@@ -1049,9 +1073,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             if (!duplicated)
                 answer.add(t);
         }
-        self.clear();
-        self.addAll(answer);
-        return self;
+        if (mutate) {
+            self.clear();
+            self.addAll(answer);
+        }
+        return mutate ? self : answer ;
     }
 
     /**
@@ -1107,17 +1133,52 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self    a Collection
      * @param closure a 1 or 2 arg Closure used to determine unique items
      * @return self   without any duplicates
+     * @see #unique(Collection, boolean, Closure)
      * @since 1.0
      */
     public static <T> Collection<T> unique(Collection<T> self, Closure closure) {
+        return unique(self, true, closure);
+    }
+
+    /**
+     * A convenience method for making a collection unique using a Closure to determine duplicate (equal) items.
+     * If mutate is true, it works on the receiver object and returns it. If mutate is false, a new collection is returned.
+     * </p>
+     * If the closure takes a single parameter, the
+     * argument passed will be each element, and the closure
+     * should return a value used for comparison (either using
+     * {@link java.lang.Comparable#compareTo(java.lang.Object)} or {@link java.lang.Object#equals(java.lang.Object)}).
+     * If the closure takes two parameters, two items from the collection
+     * will be passed as arguments, and the closure should return an
+     * int value (with 0 indicating the items are not unique).
+     * <pre class="groovyTestCase">
+     * def orig = [1, 3, 4, 5]
+     * def uniq = orig.unique(false) { it % 2 }
+     * assert orig == [1, 3, 4, 5]
+     * assert uniq == [1, 4]
+     * </pre>
+     * <pre class="groovyTestCase">
+     * def orig = [2, 3, 3, 4]
+     * def uniq = orig.unique(false) { a, b -> a <=> b }
+     * assert orig == [2, 3, 3, 4]
+     * assert uniq == [2, 3, 4]
+     * </pre>
+     *
+     * @param self    a Collection
+     * @param mutate  false will always cause a new list to be created, true will mutate lists in place
+     * @param closure a 1 or 2 arg Closure used to determine unique items
+     * @return self   without any duplicates
+     * @since 1.8.1
+     */
+    public static <T> Collection<T> unique(Collection<T> self, boolean mutate, Closure closure) {
         // use a comparator of one item or two
         int params = closure.getMaximumNumberOfParameters();
         if (params == 1) {
             OrderBy<T> by = new OrderBy<T>(closure);
             by.setEqualityCheck(true);
-            unique(self, by);
+            self = unique(self, mutate, by);
         } else {
-            unique(self, new ClosureComparator<T>(closure));
+            self = unique(self, mutate, new ClosureComparator<T>(closure));
         }
         return self;
     }
@@ -1137,7 +1198,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Remove all duplicates from a given Collection.
-     * Works on the receiver object and returns it.
+     * Works on the original object (and also returns it).
      * The order of members in the Collection are compared by the given Comparator.
      * For each duplicate, the first member which is returned
      * by the given Collection's iterator is retained, but all other ones are removed.
@@ -1178,10 +1239,63 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self       a Collection
      * @param comparator a Comparator
-     * @return self       the now modified collection without duplicates
+     * @return self      the now modified collection without duplicates
+     * @see #unique(java.util.Collection, boolean, java.util.Comparator)
      * @since 1.0
      */
     public static <T> Collection<T> unique(Collection<T> self, Comparator<T> comparator) {
+        return unique(self, true, comparator) ;
+    }
+
+    /**
+     * Remove all duplicates from a given Collection.
+     * If mutate is true, it works on the original object (and also returns it). If mutate is false, a new collection is returned.
+     * The order of members in the Collection are compared by the given Comparator.
+     * For each duplicate, the first member which is returned
+     * by the given Collection's iterator is retained, but all other ones are removed.
+     * The given Collection's original order is preserved.
+     * <p/>
+     * <code><pre class="groovyTestCase">
+     *     class Person {
+     *         def fname, lname
+     *         public String toString() {
+     *             return fname + " " + lname
+     *         }
+     *     }
+     *
+     *     class PersonComparator implements Comparator {
+     *         public int compare(Object o1, Object o2) {
+     *             Person p1 = (Person) o1
+     *             Person p2 = (Person) o2
+     *             if (p1.lname != p2.lname)
+     *                 return p1.lname.compareTo(p2.lname)
+     *             else
+     *                 return p1.fname.compareTo(p2.fname)
+     *         }
+     *
+     *         public boolean equals(Object obj) {
+     *             return this.equals(obj)
+     *         }
+     *     }
+     *
+     *     Person a = new Person(fname:"John", lname:"Taylor")
+     *     Person b = new Person(fname:"Clark", lname:"Taylor")
+     *     Person c = new Person(fname:"Tom", lname:"Cruz")
+     *     Person d = new Person(fname:"Clark", lname:"Taylor")
+     *
+     *     def list = [a, b, c, d]
+     *     List list2 = list.unique(new PersonComparator(), false)
+     *     assert( list2 != list && list2 == [a, b, c] )
+     * </pre></code>
+     *
+     *
+     * @param self       a Collection
+     * @param mutate     false will always cause a new collection to be created, true will mutate collections in place
+     * @param comparator a Comparator
+     * @return self      the collection without duplicates
+     * @since 1.8.1
+     */
+    public static <T> Collection<T> unique(Collection<T> self, boolean mutate, Comparator<T> comparator) {
         List<T> answer = new ArrayList<T>();
         for (T t : self) {
             boolean duplicated = false;
@@ -1194,9 +1308,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             if (!duplicated)
                 answer.add(t);
         }
-        self.clear();
-        self.addAll(answer);
-        return self;
+        if (mutate) {
+            self.clear();
+            self.addAll(answer);
+        }
+        return mutate ? self : answer;
     }
 
     /**
@@ -1347,18 +1463,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Reverse the items in an Object array.
-     *
-     * @param self    an Object array
-     * @return an array containing the reversed items
-     * @since 1.5.5
-     */
-    @SuppressWarnings("unchecked")
-    public static <T> T[] reverse(T[] self) {
-        return (T[]) toList(new ReverseListIterator<T>(Arrays.asList(self))).toArray();
-    }
-
-    /**
      * Used to determine if the given predicate closure is valid (i.e.&nsbp;returns
      * <code>true</code> for all items in this data structure).
      * A simple example for a list:
@@ -1447,8 +1551,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * closure takes one parameter then it will be passed the Map.Entry
      * otherwise if the closure takes two parameters then it will be
      * passed the key and the value.
-     * <pre class="groovyTestCase">assert [2:3, 4:5, 5:10].any { key, value -> key * 2 == value }
-     * assert ![2:3, 4:5, 5:10].any { entry -> entry.key == entry.value * 2 }</pre>
+     * <pre class="groovyTestCase">
+     * assert [2:3, 4:5, 5:10].any { key, value -> key * 2 == value }
+     * assert ![2:3, 4:5, 5:10].any { entry -> entry.key == entry.value * 2 }
+     * </pre>
      *
      * @param self    the map over which we iterate
      * @param closure the 1 or 2 arg closure predicate used for matching
@@ -2326,6 +2432,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Returns <tt>true</tt> if this collection contains all of the elements
      * in the specified array.
      *
+     * @param  self  a Collection to be checked for containment
      * @param  items array to be checked for containment in this collection
      * @return <tt>true</tt> if this collection contains all of the elements
      *           in the specified array
@@ -2337,10 +2444,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Removes all of this collection's elements that are also contained in the
-     * specified array.  After this call returns, this collection will contain
-     * no elements in common with the specified array.
+     * Modifies this collection by removing its elements that are contained
+     * within the specified object array.
      *
+     * See also <code>findAll</code> and <code>grep</code> when wanting to produce a new list
+     * containing items which don't match some criteria while leaving the original collection unchanged.
+     *
+     * @param  self  a Collection to be modified
      * @param  items array containing elements to be removed from this collection
      * @return <tt>true</tt> if this collection changed as a result of the call
      * @see    Collection#removeAll(Collection)
@@ -2351,10 +2461,14 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Retains only the elements in this collection that are contained in the
-     * specified array.  In other words, removes from this collection all of
+     * Modifies this collection so that it retains only its elements that are contained
+     * in the specified array.  In other words, removes from this collection all of
      * its elements that are not contained in the specified array.
      *
+     * See also <code>grep</code> and <code>findAll</code> when wanting to produce a new list
+     * containing items which match some specified items but leaving the original collection unchanged.
+     *
+     * @param  self  a Collection to be modified
      * @param  items array containing elements to be retained from this collection
      * @return <tt>true</tt> if this collection changed as a result of the call
      * @see    Collection#retainAll(Collection)
@@ -2365,22 +2479,25 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Retains only the elements in this collection that are matched according
-     * to the specified closure condition.  In other words, removes from this
-     * collection all of its elements that don't match.
+     * Modifies this collection so that it retains only its elements
+     * that are matched according to the specified closure condition.  In other words,
+     * removes from this collection all of its elements that don't match.
      *
-     * @param  self a Collection to be modified
-     * @param  closure a closure condition
+     * See also <code>findAll</code> and <code>grep</code> when wanting to produce a new list
+     * containing items which match some criteria but leaving the original collection unchanged.
+     *
+     * @param  self      a Collection to be modified
+     * @param  condition a closure condition
      * @return <tt>true</tt> if this collection changed as a result of the call
      * @see    Iterator#remove()
      * @since 1.7.2
      */
-    public static boolean retainAll(Collection self, Closure closure) {
+    public static boolean retainAll(Collection self, Closure condition) {
         Iterator iter = InvokerHelper.asIterator(self);
         boolean result = false;
         while (iter.hasNext()) {
             Object value = iter.next();
-            if (!DefaultTypeTransformation.castToBoolean(closure.call(value))) {
+            if (!DefaultTypeTransformation.castToBoolean(condition.call(value))) {
                 iter.remove();
                 result = true;
             }
@@ -2389,21 +2506,24 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Removes the elements in this collection that are matched according
+     * Modifies this collection by removing the elements that are matched according
      * to the specified closure condition.
      *
+     * See also <code>findAll</code> and <code>grep</code> when wanting to produce a new list
+     * containing items which don't match some criteria while leaving the original collection unchanged.
+     *
      * @param  self a Collection to be modified
-     * @param  closure a closure condition
+     * @param  condition a closure condition
      * @return <tt>true</tt> if this collection changed as a result of the call
      * @see    Iterator#remove()
      * @since 1.7.2
      */
-    public static boolean removeAll(Collection self, Closure closure) {
+    public static boolean removeAll(Collection self, Closure condition) {
         Iterator iter = InvokerHelper.asIterator(self);
         boolean result = false;
         while (iter.hasNext()) {
             Object value = iter.next();
-            if (DefaultTypeTransformation.castToBoolean(closure.call(value))) {
+            if (DefaultTypeTransformation.castToBoolean(condition.call(value))) {
                 iter.remove();
                 result = true;
             }
@@ -2412,10 +2532,14 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Adds all of the elements in the specified array to this collection.
+     * Modifies the collection by adding all of the elements in the specified array to the collection.
      * The behavior of this operation is undefined if
      * the specified array is modified while the operation is in progress.
      *
+     * See also <code>plus</code> or the '+' operator if wanting to produce a new collection
+     * containing additional items but while leaving the original collection unchanged.
+     *
+     * @param  self  a Collection to be modified
      * @param  items array containing elements to be added to this collection
      * @return <tt>true</tt> if this collection changed as a result of the call
      * @see    Collection#addAll(Collection)
@@ -2426,7 +2550,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Inserts all of the elements in the specified array into this
+     * Modifies this list by inserting all of the elements in the specified array into the
      * list at the specified position.  Shifts the
      * element currently at that position (if any) and any subsequent
      * elements to the right (increases their indices).  The new elements
@@ -2434,8 +2558,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * The behavior of this operation is undefined if the specified array
      * is modified while the operation is in progress.
      *
-     * @param  items array containing elements to be added to this collection
-     * @param  index index at which to insert the first element from the
+     * See also <code>plus</code> for similar functionality with copy semantics, i.e. which produces a new
+     * list after adding the additional items at the specified position but leaves the original list unchanged.
+     *
+     * @param self  a list to be modified
+     * @param items array containing elements to be added to this collection
+     * @param index index at which to insert the first element from the
      *              specified array
      * @return <tt>true</tt> if this collection changed as a result of the call
      * @see    List#addAll(int, Collection)
@@ -5856,16 +5984,43 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Sorts the given collection into a sorted list.  The collection items are
-     * assumed to be comparable.
+     * Sorts the Collection. Assumes that the collection items are
+     * comparable and uses their natural ordering to determine the resulting order.
+     * If the Collection is a List,
+     * it is sorted in place and returned. Otherwise, the elements are first placed
+     * into a new list which is then sorted and returned - leaving the original Collection unchanged.
      * <pre class="groovyTestCase">assert [1,2,3] == [3,1,2].sort()</pre>
      *
      * @param self the collection to be sorted
      * @return the sorted collection as a List
+     * @see #sort(Collection, boolean)
      * @since 1.0
      */
     public static <T> List<T> sort(Collection<T> self) {
-        List<T> answer = asList(self);
+        return sort(self, true);
+    }
+
+    /**
+     * Sorts the Collection. Assumes that the collection items are
+     * comparable and uses their natural ordering to determine the resulting order.
+     * If the Collection is a List and mutate is true,
+     * it is sorted in place and returned. Otherwise, the elements are first placed
+     * into a new list which is then sorted and returned - leaving the original Collection unchanged.
+     * <pre class="groovyTestCase">assert [1,2,3] == [3,1,2].sort()</pre>
+     * <pre class="groovyTestCase">
+     * def orig = [1, 3, 2]
+     * def sorted = orig.sort(false)
+     * assert orig == [1, 3, 2]
+     * assert sorted == [1, 2, 3]
+     * </pre>
+     *
+     * @param self   the collection to be sorted
+     * @param mutate false will always cause a new list to be created, true will mutate lists in place
+     * @return the sorted collection as a List
+     * @since 1.8.1
+     */
+    public static <T> List<T> sort(Collection<T> self, boolean mutate) {
+        List<T> answer = mutate ? asList(self) : toList(self);
         Collections.sort(answer, new NumberAwareComparator<T>());
         return answer;
     }
@@ -5873,10 +6028,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Sorts the elements from the given map into a new ordered map using
      * the closure as a comparator to determine the ordering.
+     * The original map is unchanged.
      * <pre class="groovyTestCase">def map = [a:5, b:3, c:6, d:4].sort { a, b -> a.value <=> b.value }
      * assert map == [b:3, d:4, a:5, c:6]</pre>
      *
-     * @param self the map to be sorted
+     * @param self the original unsorted map
      * @param closure a Closure used as a comparator
      * @return the sorted map
      * @since 1.6.0
@@ -5894,10 +6050,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Sorts the elements from the given map into a new ordered Map using
      * the specified key comparator to determine the ordering.
+     * The original map is unchanged.
      * <pre class="groovyTestCase">def map = [ba:3, cz:6, ab:5].sort({ a, b -> a[-1] <=> b[-1] } as Comparator)
      * assert map*.value == [3, 5, 6]</pre>
      *
-     * @param self the map to be sorted
+     * @param self the original unsorted map
      * @param comparator a Comparator
      * @return the sorted map
      * @since 1.7.2
@@ -5911,11 +6068,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Sorts the elements from the given map into a new ordered Map using
      * the natural ordering of the keys to determine the ordering.
+     * The original map is unchanged.
      * <pre class="groovyTestCase">map = [ba:3, cz:6, ab:5].sort()
      * assert map*.value == [5, 3, 6]
      * </pre>
      *
-     * @param self the map to be sorted
+     * @param self the original unsorted map
      * @return the sorted map
      * @since 1.7.2
      */
@@ -5924,8 +6082,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Sorts the given Object array into sorted order.  The array items are
-     * assumed to be comparable.
+     * Modifies this array so that its elements are in sorted order.
+     * The array items are assumed to be comparable.
      *
      * @param self the array to be sorted
      * @return the sorted array
@@ -5937,10 +6095,35 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Sorts the given iterator items into a sorted iterator.  The items are
-     * assumed to be comparable.  The original iterator will become
-     * exhausted of elements after completing this method call. A new iterator
-     * is produced that traverses the items in sorted order.
+     * Sorts the given array into sorted order.
+     * The array items are assumed to be comparable.
+     * If mutate is true, the array is sorted in place and returned. Otherwise, a new sorted
+     * array is returned and the original array remains unchanged.
+     * <pre class="groovyTestCase">
+     * def orig = ["hello","hi","Hey"] as String[]
+     * def sorted = orig.sort(false)
+     * assert orig == ["hello","hi","Hey"] as String[]
+     * assert sorted == ["Hey","hello","hi"] as String[]
+     * orig.sort(true)
+     * assert orig == ["Hey","hello","hi"] as String[]
+     * </pre>
+     *
+     * @param self   the array to be sorted
+     * @param mutate false will always cause a new array to be created, true will mutate the array in place
+     * @return the sorted array
+     * @since 1.8.1
+     */
+    public static <T> T[] sort(T[] self, boolean mutate) {
+        T[] answer = mutate ? self : self.clone();
+        Arrays.sort(answer, new NumberAwareComparator<T>());
+        return answer;
+    }
+
+    /**
+     * Sorts the given iterator items into a sorted iterator. The items are
+     * assumed to be comparable. The original iterator will become
+     * exhausted of elements after completing this method call.
+     * A new iterator is produced that traverses the items in sorted order.
      *
      * @param self the Iterator to be sorted
      * @return the sorted items as an Iterator
@@ -5951,8 +6134,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Sorts the given iterator items into a sorted iterator using
-     * the comparator.
+     * Sorts the given iterator items into a sorted iterator using the comparator. The
+     * original iterator will become exhausted of elements after completing this method call.
+     * A new iterator is produced that traverses the items in sorted order.
      *
      * @param self       the Iterator to be sorted
      * @param comparator a Comparator used for comparing items
@@ -5964,24 +6148,54 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Sorts the Collection using the given comparator.  The elements are
-     * sorted into a new list, and the existing collection is unchanged.
-     * <pre class="groovyTestCase">assert ["hi","hey","hello"] == ["hello","hi","hey"].sort( { a, b -> a.length() <=> b.length() } as Comparator )</pre>
-     * <pre class="groovyTestCase">assert ["hello","Hey","hi"] == ["hello","hi","Hey"].sort(String.CASE_INSENSITIVE_ORDER)</pre>
+     * Sorts the Collection using the given Comparator. If the Collection is a List,
+     * it is sorted in place and returned. Otherwise, the elements are first placed
+     * into a new list which is then sorted and returned - leaving the original Collection unchanged.
+     * <pre class="groovyTestCase">
+     * assert ["hi","hey","hello"] == ["hello","hi","hey"].sort( { a, b -> a.length() <=> b.length() } as Comparator )
+     * </pre>
+     * <pre class="groovyTestCase">
+     * assert ["hello","Hey","hi"] == ["hello","hi","Hey"].sort(String.CASE_INSENSITIVE_ORDER)
+     * </pre>
      *
      * @param self       a collection to be sorted
      * @param comparator a Comparator used for the comparison
-     * @return a newly created sorted List
+     * @return a sorted List
+     * @see #sort(Collection, boolean, Comparator)
      * @since 1.0
      */
     public static <T> List<T> sort(Collection<T> self, Comparator<T> comparator) {
-        List<T> list = asList(self);
+        return sort(self, true, comparator);
+    }
+
+    /**
+     * Sorts the Collection using the given Comparator. If the Collection is a List and mutate
+     * is true, it is sorted in place and returned. Otherwise, the elements are first placed
+     * into a new list which is then sorted and returned - leaving the original Collection unchanged.
+     * <pre class="groovyTestCase">
+     * assert ["hi","hey","hello"] == ["hello","hi","hey"].sort( { a, b -> a.length() <=> b.length() } as Comparator )
+     * </pre>
+     * <pre class="groovyTestCase">
+     * def orig = ["hello","hi","Hey"]
+     * def sorted = orig.sort(false, String.CASE_INSENSITIVE_ORDER)
+     * assert orig == ["hello","hi","Hey"]
+     * assert sorted == ["hello","Hey","hi"]
+     * </pre>
+     *
+     * @param self       a collection to be sorted
+     * @param mutate     false will always cause a new list to be created, true will mutate lists in place
+     * @param comparator a Comparator used for the comparison
+     * @return a sorted List
+     * @since 1.8.1
+     */
+    public static <T> List<T> sort(Collection<T> self, boolean mutate, Comparator<T> comparator) {
+        List<T> list = mutate ? asList(self) : toList(self);
         Collections.sort(list, comparator);
         return list;
     }
 
     /**
-     * Sorts the given Object array into sorted order using the given comparator.
+     * Sorts the given array into sorted order using the given comparator.
      *
      * @param self the array to be sorted
      * @param comparator a Comparator used for the comparison
@@ -5989,25 +6203,46 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.5.5
      */
     public static <T> T[] sort(T[] self, Comparator<T> comparator) {
-        Arrays.sort(self, comparator);
-        return self;
+        return sort(self, true, comparator);
     }
 
     /**
-     * Sorts the given iterator items into a sorted iterator using
-     * the Closure to determine the correct ordering. The original
-     * iterator will be fully processed after the method call.
-     * </p>
-     * If the closure has two parameters
-     * it is used like a traditional Comparator. I.e. it should compare
-     * its two parameters for order, returning a negative integer,
-     * zero, or a positive integer when the first parameter is less than,
-     * equal to, or greater than the second respectively. Otherwise,
-     * the Closure is assumed to take a single parameter and return a
-     * Comparable (typically an Integer) which is then used for
-     * further comparison.
+     * Modifies this array so that its elements are in sorted order as determined by the given comparator.
+     * If mutate is true, the array is sorted in place and returned. Otherwise, a new sorted
+     * array is returned and the original array remains unchanged.
+     * <pre class="groovyTestCase">
+     * def orig = ["hello","hi","Hey"] as String[]
+     * def sorted = orig.sort(false, String.CASE_INSENSITIVE_ORDER)
+     * assert orig == ["hello","hi","Hey"] as String[]
+     * assert sorted == ["hello","Hey","hi"] as String[]
+     * orig.sort(true, String.CASE_INSENSITIVE_ORDER)
+     * assert orig == ["hello","Hey","hi"] as String[]
+     * </pre>
      *
-     * @param self       the Iterator to be sorted
+     * @param self       the array containing elements to be sorted
+     * @param mutate     false will always cause a new array to be created, true will mutate arrays in place
+     * @param comparator a Comparator used for the comparison
+     * @return a sorted array
+     * @since 1.8.1
+     */
+    public static <T> T[] sort(T[] self, boolean mutate, Comparator<T> comparator) {
+        T[] answer = mutate ? self : self.clone();
+        Arrays.sort(answer, comparator);
+        return answer;
+    }
+
+    /**
+     * Sorts the given iterator items into a sorted iterator using the Closure to determine the correct ordering.
+     * The original iterator will be fully processed after the method call.
+     * </p>
+     * If the closure has two parameters it is used like a traditional Comparator.
+     * I.e. it should compare its two parameters for order, returning a negative integer,
+     * zero, or a positive integer when the first parameter is less than, equal to,
+     * or greater than the second respectively. Otherwise, the Closure is assumed
+     * to take a single parameter and return a Comparable (typically an Integer)
+     * which is then used for further comparison.
+     *
+     * @param self    the Iterator to be sorted
      * @param closure a Closure used to determine the correct ordering
      * @return the sorted items as an Iterator
      * @since 1.5.5
@@ -6017,33 +6252,65 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Sorts the given Object array into a newly created array using
+     * Sorts the elements from this array into a newly created array using
      * the Closure to determine the correct ordering.
      * </p>
-     * If the closure has two parameters
-     * it is used like a traditional Comparator. I.e. it should compare
-     * its two parameters for order, returning a negative integer,
-     * zero, or a positive integer when the first parameter is less than,
-     * equal to, or greater than the second respectively. Otherwise,
-     * the Closure is assumed to take a single parameter and return a
-     * Comparable (typically an Integer) which is then used for
-     * further comparison.
+     * If the closure has two parameters it is used like a traditional Comparator. I.e. it should compare
+     * its two parameters for order, returning a negative integer, zero, or a positive integer when the
+     * first parameter is less than, equal to, or greater than the second respectively. Otherwise,
+     * the Closure is assumed to take a single parameter and return a Comparable (typically an Integer)
+     * which is then used for further comparison.
      *
-     * @param self the array to be sorted
+     * @param self the array containing the elements to be sorted
      * @param closure a Closure used to determine the correct ordering
      * @return the sorted array
      * @since 1.5.5
      */
     @SuppressWarnings("unchecked")
     public static <T> T[] sort(T[] self, Closure closure) {
-        return (T[]) sort(toList(self), closure).toArray();
+        return sort(self, false, closure);
     }
 
     /**
-     * Sorts this Collection using
-     * the closure to determine the correct ordering.
+     * Modifies this array so that its elements are in sorted order using the Closure to determine the correct ordering.
+     * If mutate is false, a new array is returned and the original array remains unchanged.
+     * Otherwise, the original array is sorted in place and returned.
      * </p>
-     * If the closure has two parameters
+     * If the closure has two parameters it is used like a traditional Comparator. I.e. it should compare
+     * its two parameters for order, returning a negative integer, zero, or a positive integer when the
+     * first parameter is less than, equal to, or greater than the second respectively. Otherwise,
+     * the Closure is assumed to take a single parameter and return a Comparable (typically an Integer)
+     * which is then used for further comparison.
+     * <pre class="groovyTestCase">
+     * def orig = ["hello","hi","Hey"] as String[]
+     * def sorted = orig.sort(false) { it.size() }
+     * assert orig == ["hello","hi","Hey"] as String[]
+     * assert sorted == ["hi","Hey","hello"] as String[]
+     * orig.sort(true) { it.size() }
+     * assert orig == ["hi","Hey","hello"] as String[]
+     * </pre>
+     *
+     * @param self    the array to be sorted
+     * @param mutate  false will always cause a new array to be created, true will mutate arrays in place
+     * @param closure a Closure used to determine the correct ordering
+     * @return the sorted array
+     * @since 1.8.1
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> T[] sort(T[] self, boolean mutate, Closure closure) {
+        T[] answer = (T[]) sort(toList(self), closure).toArray();
+        if (mutate) {
+            System.arraycopy(answer, 0, self, 0, answer.length);
+        }
+        return mutate ? self : answer;
+    }
+
+    /**
+     * Sorts this Collection using the given Closure to determine the correct ordering. If the Collection is a List,
+     * it is sorted in place and returned. Otherwise, the elements are first placed
+     * into a new list which is then sorted and returned - leaving the original Collection unchanged.
+     * </p>
+     * If the Closure has two parameters
      * it is used like a traditional Comparator. I.e. it should compare
      * its two parameters for order, returning a negative integer,
      * zero, or a positive integer when the first parameter is less than,
@@ -6057,10 +6324,43 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self    a Collection to be sorted
      * @param closure a 1 or 2 arg Closure used to determine the correct ordering
      * @return a newly created sorted List
+     * @see #sort(Collection, boolean, Closure)
      * @since 1.0
      */
     public static <T> List<T> sort(Collection<T> self, Closure closure) {
-        List<T> list = asList(self);
+        return sort(self, true, closure);
+    }
+
+    /**
+     * Sorts this Collection using the given Closure to determine the correct ordering. If the Collection is a List
+     * and mutate is true, it is sorted in place and returned. Otherwise, the elements are first placed
+     * into a new list which is then sorted and returned - leaving the original Collection unchanged.
+     * </p>
+     * If the closure has two parameters
+     * it is used like a traditional Comparator. I.e. it should compare
+     * its two parameters for order, returning a negative integer,
+     * zero, or a positive integer when the first parameter is less than,
+     * equal to, or greater than the second respectively. Otherwise,
+     * the Closure is assumed to take a single parameter and return a
+     * Comparable (typically an Integer) which is then used for
+     * further comparison.
+     * <pre class="groovyTestCase">assert ["hi","hey","hello"] == ["hello","hi","hey"].sort { it.length() }</pre>
+     * <pre class="groovyTestCase">assert ["hi","hey","hello"] == ["hello","hi","hey"].sort { a, b -> a.length() <=> b.length() }</pre>
+     * <pre class="groovyTestCase">
+     * def orig = ["hello","hi","Hey"]
+     * def sorted = orig.sort(false) { it.toUpperCase() }
+     * assert orig == ["hello","hi","Hey"]
+     * assert sorted == ["hello","Hey","hi"]
+     * </pre>
+     *
+     * @param self    a Collection to be sorted
+     * @param mutate  false will always cause a new list to be created, true will mutate lists in place
+     * @param closure a 1 or 2 arg Closure used to determine the correct ordering
+     * @return a newly created sorted List
+     * @since 1.8.1
+     */
+    public static <T> List<T> sort(Collection<T> self, boolean mutate, Closure closure) {
+        List<T> list = mutate ? asList(self) : toList(self);
         // use a comparator of one item or two
         int params = closure.getMaximumNumberOfParameters();
         if (params == 1) {
@@ -6715,17 +7015,44 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Reverses the list.  The result is a new List with the identical contents
-     * in reverse order.
-     * <pre class="groovyTestCase">def list = ["a", 4, false]
+     * Creates a new List with the identical contents to this list
+     * but in reverse order.
+     * <pre class="groovyTestCase">
+     * def list = ["a", 4, false]
      * assert list.reverse() == [false, 4, "a"]
-     * assert list == ["a", 4, false]</pre>
+     * assert list == ["a", 4, false]
+     * </pre>
      *
      * @param self a List
      * @return a reversed List
+     * @see #reverse(List, boolean)
      * @since 1.0
      */
     public static <T> List<T> reverse(List<T> self) {
+        return reverse(self, false);
+    }
+
+    /**
+     * Reverses the elements in a list. If mutate is true, the original list is modified in place and returned.
+     * Otherwise, a new list containing the reversed items is produced.
+     * <pre class="groovyTestCase">
+     * def list = ["a", 4, false]
+     * assert list.reverse(false) == [false, 4, "a"]
+     * assert list == ["a", 4, false]
+     * assert list.reverse(true) == [false, 4, "a"]
+     * assert list == [false, 4, "a"]
+     * </pre>
+     *
+     * @param self a List
+     * @param mutate true if the list itself should be reversed in place and returned, false if a new list should be created
+     * @return a reversed List
+     * @since 1.8.1
+     */
+    public static <T> List<T> reverse(List<T> self, boolean mutate) {
+        if (mutate) {
+            Collections.reverse(self);
+            return self;
+        }
         int size = self.size();
         List<T> answer = new ArrayList<T>(size);
         ListIterator<T> iter = self.listIterator(size);
@@ -6733,6 +7060,39 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             answer.add(iter.previous());
         }
         return answer;
+    }
+
+    /**
+     * Creates a new array containing items which are the same as this array but in reverse order.
+     *
+     * @param self    an array
+     * @return an array containing the reversed items
+     * @see #reverse(Object[], boolean)
+     * @since 1.5.5
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> T[] reverse(T[] self) {
+        return reverse(self, false);
+    }
+
+    /**
+     * Reverse the items in an array. If mutate is true, the original array is modified in place and returned.
+     * Otherwise, a new array containing the reversed items is produced.
+     *
+     * @param self   an array
+     * @param mutate true if the array itself should be reversed in place and returned, false if a new array should be created
+     * @return an array containing the reversed items
+     * @since 1.8.1
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> T[] reverse(T[] self, boolean mutate) {
+        if (!mutate) {
+            return (T[]) toList(new ReverseListIterator<T>(Arrays.asList(self))).toArray();
+        }
+        List<T> items = Arrays.asList(self);
+        Collections.reverse(items);
+        System.arraycopy((T[])items.toArray(), 0, self, 0, items.size());
+        return self;
     }
 
     /**
@@ -6763,6 +7123,66 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static <T> Collection<T> plus(Collection<T> left, Collection<T> right) {
         final Collection<T> answer = cloneSimilarCollection(left, left.size() + right.size());
         answer.addAll(right);
+        return answer;
+    }
+
+    /**
+     * Creates a new list by adding all of the elements in the specified array to the elements from the original list at the specified index.
+     * Shifts the element currently at that index (if any) and any subsequent
+     * elements to the right (increasing their indices).  The new elements
+     * will appear in this list in the order that they occur in the array.
+     * The behavior of this operation is undefined if the specified array
+     * is modified while the operation is in progress. The original list remains unchanged.
+     *
+     * <pre class="groovyTestCase">
+     * def items = [1, 2, 3]
+     * def newItems = items.plus(2, 'a'..'c' as String[])
+     * assert newItems == [1, 2, 'a', 'b', 'c', 3]
+     * assert items == [1, 2, 3]
+     * </pre>
+     *
+     * See also <code>addAll</code> for similar functionality with modify semantics, i.e. which performs
+     * the changes on the original list itself.
+     *
+     * @param self  an original list
+     * @param items array containing elements to be merged with elements from the original list
+     * @param index index at which to insert the first element from the specified array
+     * @return the new list
+     * @see #plus(List, int, List)
+     * @since 1.8.1
+     */
+    public static <T> List<T> plus(List<T> self, int index, T[] items) {
+        return plus(self, index, Arrays.asList(items));
+    }
+
+    /**
+     * Creates a new list by adding all of the elements in the specified list
+     * to the elements from this list at the specified index.
+     * Shifts the element currently at that index (if any) and any subsequent
+     * elements to the right (increasing their indices).  The new elements
+     * will appear in this list in the order that they occur in the array.
+     * The behavior of this operation is undefined if the specified array
+     * is modified while the operation is in progress. The original list remains unchanged.
+     *
+     * <pre class="groovyTestCase">
+     * def items = [1, 2, 3]
+     * def newItems = items.plus(2, 'a'..'c')
+     * assert newItems == [1, 2, 'a', 'b', 'c', 3]
+     * assert items == [1, 2, 3]
+     * </pre>
+     *
+     * See also <code>addAll</code> for similar functionality with modify semantics, i.e. which performs
+     * the changes on the original list itself.
+     *
+     * @param self      an original list
+     * @param additions array containing elements to be merged with elements from the original list
+     * @param index     index at which to insert the first element from the specified list
+     * @return the new list
+     * @since 1.8.1
+     */
+    public static <T> List<T> plus(List<T> self, int index, List<T> additions) {
+        final List<T> answer = new ArrayList<T>(self);
+        answer.addAll(index, additions);
         return answer;
     }
 

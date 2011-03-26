@@ -90,4 +90,21 @@ class UniqueOnCollectionTest extends GroovyTestCase {
         x.unique()
         assert x == [1, 2, 3, null, 'a']
     }
+
+    /** GROOVY-4742 */
+    void testNonMutatingList() {
+        def it = [-1, 0, 1, 1, 0, -1]
+        def uniq = it.unique( false )
+        assert uniq != it
+        assert uniq == [-1, 0, 1]
+        assert it   == [-1, 0, 1, 1, 0, -1]
+    }
+
+    /** GROOVY-4742 */
+    void testImmutableUniqueListWithDefaultComparator() {
+        def orig = [1, 3, 2, 3]
+        def uniq = orig.unique(false)
+        assert orig == [1, 3, 2, 3]
+        assert uniq == [1, 3, 2]
+    }
 }

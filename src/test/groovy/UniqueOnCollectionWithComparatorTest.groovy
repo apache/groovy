@@ -41,4 +41,36 @@ class UniqueOnCollectionWithComparatorTest extends GroovyTestCase {
         def comparator = new ClosureComparator({a, b -> Math.abs(a) <=> Math.abs(b)})
         assert set.unique(comparator).size() == 2
     }
+
+    /** GROOVY-4742 */
+    void testImmutableUniqueWithComparatorList() {
+        def list = [-1, 0, 1, 1, 0, -1]
+        def comparator = new ClosureComparator({a, b -> Math.abs(a) <=> Math.abs(b)})
+        def result = list.unique(comparator, false)
+        assert result == [-1, 0]
+        assert list   == [-1, 0, 1, 1, 0, -1]
+    }
+
+    /** GROOVY-4742 */
+    void testImmutableUniqueWithComparatorSet() {
+        def set = [-1, 0, 1] as Set
+        def comparator = new ClosureComparator({a, b -> Math.abs(a) <=> Math.abs(b)})
+        def result = set.unique(comparator, false).size()
+        assert result == 2
+        assert set    == [-1, 0, 1] as Set
+    }
+
+    /** GROOVY-4742 */
+    void testImmutableUniqueWithComparator() {
+        def comparator = [ compare:{ p1, p2 -> p1.lname <=> p2.lname ?: p1.fname <=> p2.fname } ] as Comparator
+     
+        def a = [fname:"John", lname:"Taylor"]
+        def b = [fname:"Clark", lname:"Taylor"]
+        def c = [fname:"Tom", lname:"Cruz"]
+        def d = [fname:"Clark", lname:"Taylor"]
+     
+        def list = [a, b, c, d]
+        List list2 = list.unique(comparator, false)
+        assert( list2 != list && list2 == [a, b, c] )
+    }
 }
