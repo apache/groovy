@@ -1207,13 +1207,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * <code><pre class="groovyTestCase">
      *     class Person {
      *         def fname, lname
-     *         public String toString() {
+     *         String toString() {
      *             return fname + " " + lname
      *         }
      *     }
      *
      *     class PersonComparator implements Comparator {
-     *         public int compare(Object o1, Object o2) {
+     *         int compare(Object o1, Object o2) {
      *             Person p1 = (Person) o1
      *             Person p2 = (Person) o2
      *             if (p1.lname != p2.lname)
@@ -1222,7 +1222,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *                 return p1.fname.compareTo(p2.fname)
      *         }
      *
-     *         public boolean equals(Object obj) {
+     *         boolean equals(Object obj) {
      *             return this.equals(obj)
      *         }
      *     }
@@ -1258,13 +1258,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * <code><pre class="groovyTestCase">
      *     class Person {
      *         def fname, lname
-     *         public String toString() {
+     *         String toString() {
      *             return fname + " " + lname
      *         }
      *     }
      *
      *     class PersonComparator implements Comparator {
-     *         public int compare(Object o1, Object o2) {
+     *         int compare(Object o1, Object o2) {
      *             Person p1 = (Person) o1
      *             Person p2 = (Person) o2
      *             if (p1.lname != p2.lname)
@@ -1273,7 +1273,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *                 return p1.fname.compareTo(p2.fname)
      *         }
      *
-     *         public boolean equals(Object obj) {
+     *         boolean equals(Object obj) {
      *             return this.equals(obj)
      *         }
      *     }
@@ -1284,7 +1284,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *     Person d = new Person(fname:"Clark", lname:"Taylor")
      *
      *     def list = [a, b, c, d]
-     *     List list2 = list.unique(new PersonComparator(), false)
+     *     List list2 = list.unique(false, new PersonComparator())
      *     assert( list2 != list && list2 == [a, b, c] )
      * </pre></code>
      *

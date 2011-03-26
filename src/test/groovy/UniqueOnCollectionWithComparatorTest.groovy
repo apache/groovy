@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2011 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package groovy
 /**
  * @author Michael Baehr
  * @author Paul King
+ * @author Tim Yates
  */
 class UniqueOnCollectionWithComparatorTest extends GroovyTestCase {
 
@@ -46,7 +47,7 @@ class UniqueOnCollectionWithComparatorTest extends GroovyTestCase {
     void testImmutableUniqueWithComparatorList() {
         def list = [-1, 0, 1, 1, 0, -1]
         def comparator = new ClosureComparator({a, b -> Math.abs(a) <=> Math.abs(b)})
-        def result = list.unique(comparator, false)
+        def result = list.unique(false, comparator)
         assert result == [-1, 0]
         assert list   == [-1, 0, 1, 1, 0, -1]
     }
@@ -55,7 +56,7 @@ class UniqueOnCollectionWithComparatorTest extends GroovyTestCase {
     void testImmutableUniqueWithComparatorSet() {
         def set = [-1, 0, 1] as Set
         def comparator = new ClosureComparator({a, b -> Math.abs(a) <=> Math.abs(b)})
-        def result = set.unique(comparator, false).size()
+        def result = set.unique(false, comparator).size()
         assert result == 2
         assert set    == [-1, 0, 1] as Set
     }
@@ -70,7 +71,7 @@ class UniqueOnCollectionWithComparatorTest extends GroovyTestCase {
         def d = [fname:"Clark", lname:"Taylor"]
      
         def list = [a, b, c, d]
-        List list2 = list.unique(comparator, false)
+        List list2 = list.unique(false, comparator)
         assert( list2 != list && list2 == [a, b, c] )
     }
 }
