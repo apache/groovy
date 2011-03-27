@@ -632,7 +632,7 @@ public class GroovyClassLoader extends URLClassLoader {
      * @param name                  of the class to be loaded
      * @param lookupScriptFiles     if false no lookup at files is done at all
      * @param preferClassOverScript if true the file lookup is only done if there is no class
-     * @param resolve               @see ClassLoader#loadClass(java.lang.String, boolean)
+     * @param resolve               see {@link java.lang.ClassLoader#loadClass(java.lang.String, boolean)}
      * @return the class found or the class created from a file lookup
      * @throws ClassNotFoundException     if the class could not be found
      * @throws CompilationFailedException if the source file could not be compiled

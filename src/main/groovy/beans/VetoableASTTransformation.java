@@ -255,7 +255,7 @@ public class VetoableASTTransformation extends BindableASTTransformation {
 
     /**
      * Creates a statement body similar to:
-     * <code>field = value</code>
+     * <code>field = value</code>.
      * <p/>
      * Used when the field is not also @Bindable
      *
