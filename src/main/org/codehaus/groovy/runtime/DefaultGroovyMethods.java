@@ -5984,11 +5984,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Sorts the Collection. Assumes that the collection items are
-     * comparable and uses their natural ordering to determine the resulting order.
-     * If the Collection is a List,
-     * it is sorted in place and returned. Otherwise, the elements are first placed
-     * into a new list which is then sorted and returned - leaving the original Collection unchanged.
+     * Sorts the Collection. Assumes that the collection items are comparable
+     * and uses their natural ordering to determine the resulting order.
+     * If the Collection is a List, it is sorted in place and returned.
+     * Otherwise, the elements are first placed into a new list which is then
+     * sorted and returned - leaving the original Collection unchanged.
      * <pre class="groovyTestCase">assert [1,2,3] == [3,1,2].sort()</pre>
      *
      * @param self the collection to be sorted
@@ -6372,13 +6372,24 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Avoids doing unnecessary work when sorting an already sorted set.
+     * Avoids doing unnecessary work when sorting an already sorted set (i.e. an identity function for an already sorted set).
      *
-     * @param self an identity function for an already sorted set
-     * @return the sorted set
+     * @param self an already sorted set
+     * @return the set
      * @since 1.0
      */
     public static <T> SortedSet<T> sort(SortedSet<T> self) {
+        return self;
+    }
+
+    /**
+     * Avoids doing unnecessary work when sorting an already sorted map (i.e. an identity function for an already sorted map).
+     *
+     * @param self an already sorted map
+     * @return the map
+     * @since 1.8.1
+     */
+    public static <K, V> SortedMap<K, V> sort(SortedMap<K, V> self) {
         return self;
     }
 
