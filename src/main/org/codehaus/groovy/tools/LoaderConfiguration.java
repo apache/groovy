@@ -345,7 +345,7 @@ public class LoaderConfiguration {
 
     /**
      * Sets the main class. If there is already a main class
-     * it is overwritten. Calling @see #configure(InputStream)
+     * it is overwritten. Calling {@link #configure(InputStream)}
      * after calling this method does not require a main class
      * definition inside the stream.
      *

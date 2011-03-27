@@ -99,7 +99,7 @@ public class RootLoader extends URLClassLoader {
     }
 
     /**
-     * constructs a new RootLoader with a @see LoaderConfiguration
+     * constructs a new RootLoader with a {@link LoaderConfiguration}
      * object which holds the classpath
      */
     public RootLoader(LoaderConfiguration lc) {

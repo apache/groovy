@@ -911,7 +911,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *     break;
      *   case Set :
      *     // etc
-     * }<pre>
+     * }</pre>
      *
      * @param caseValue   the case value
      * @param switchValue the switch value
@@ -4994,7 +4994,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Support the range subscript operator for a List
+     * Support the range subscript operator for a List.
      * <pre class="groovyTestCase">def list = [1, "a", 4.5, true]
      * assert list[1..2] == ["a", 4.5]</pre>
      *
@@ -5014,7 +5014,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Support the range subscript operator for a List
+     * Support the range subscript operator for a List.
      * <pre class="groovyTestCase">def list = [true, 1, 3.4]
      * assert list[0..<0] == []</pre>
      *
@@ -5600,7 +5600,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Support the subscript operator for List
+     * Support the subscript operator for Collection.
      * <pre class="groovyTestCase">assert [String, Long, Integer] == ["a",5L,2]["class"]</pre>
      *
      * @param coll     a Collection
@@ -5793,7 +5793,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * <p/>
      * For examples, if there is defined a function like as
      * <blockquote><pre>
-     *     def fn(a, b, c, d) { return a + b + c + d }
+     *     def fn(Map m) { return m.a + m.b + m.c + m.d }
      * </pre></blockquote>, then all of the following three have the same meaning.
      * <blockquote><pre>
      *     println fn(a:1, [b:2, c:3].toSpreadMap(), d:4)

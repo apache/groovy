@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 the original author or authors.
+ * Copyright 2003-2011 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import org.codehaus.groovy.control.CompilationFailedException
 class GrapeIvyTest extends GroovyTestCase {
 
     public GrapeIvyTest() {
-        // insure files are installed locally
+        // ensure files are installed locally
         [[groupId:'log4j', artifactId:'log4j', version:'1.1.3'],
             [groupId:'org.apache.poi', artifactId:'poi', version:'3.0.1-FINAL'],
             [groupId:'com.jidesoft', artifactId:'jide-oss', version:'[2.2.1,2.3)'],

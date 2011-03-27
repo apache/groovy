@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2009 the original author or authors.
+ * Copyright 2003-2011 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -81,15 +81,20 @@ public @interface Grab {
      * The configuration if in use (normally only used by internal ivy repositories).
      * One or more coma separated values with or without square brackets,
      * e.g. for hibernate you might have "default,proxool,oscache" or "[default,dbcp,swarmcache]".
-     * This last hibernate example assumes you have set up such configurations in your local Ivy repo
-     * and changed your grape config to point to that repo.
+     * This last hibernate example assumes you have set up such configurations in your
+     * local Ivy repo and changed your grape config to point to that repo.
      */
     String conf() default "";
 
     /**
-     * The extension of the artifact (normally safe to leave at default value of "jar")
+     * The extension of the artifact (normally safe to leave at default value of "jar" but other values like "zip" are sometimes useful)
      */
     String ext() default "";
+
+    /**
+     * The type of the artifact (normally safe to leave at default value of "jar" but other values like "sources" and "javadoc" are sometimes useful)
+     */
+    String type() default "";
 
     /**
      * Allows a more compact convenience format in one of two formats.

@@ -19,7 +19,7 @@ import java.util.List;
 
 /**
  * <p>An interface that defines the API usable by clients of Groovy's Meta Object Protocol (MOP). These methods are
- * implemented by the reference implementation of the @link groovy.lang.MetaClass interface.</p>
+ * implemented by the reference implementation of the {@link groovy.lang.MetaClass} interface.</p>
  *
  * @see MetaClassImpl
  *

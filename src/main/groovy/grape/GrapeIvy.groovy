@@ -192,11 +192,13 @@ class GrapeIvy implements GrapeEngine {
     public IvyGrabRecord createGrabRecord(Map deps) {
         // parse the actual dependency arguments
         String module =  deps.module ?: deps.artifactId ?: deps.artifact
-        if (!module) {
+        if (!module) {                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             
             throw new RuntimeException('grab requires at least a module: or artifactId: or artifact: argument')
         }
 
         String groupId = deps.group ?: deps.groupId ?: deps.organisation ?: deps.organization ?: deps.org ?: ''
+        String ext = deps.ext ?: ''
+        String type = deps.type ?: ''
 
         //TODO accept ranges and decode them?  except '1.0.0'..<'2.0.0' won't work in groovy
         String version     = deps.version ?: deps.revision ?: deps.rev ?: '*'
@@ -214,7 +216,7 @@ class GrapeIvy implements GrapeEngine {
         }
         def classifier = deps.classifier ?: null
 
-        return new IvyGrabRecord(mrid:mrid, conf:conf, changing:changing, transitive:transitive, force:force, classifier:classifier)
+        return new IvyGrabRecord(mrid:mrid, conf:conf, changing:changing, transitive:transitive, force:force, classifier:classifier, ext:ext, type:type)
     }
 
     public grab(String endorsedModule) {
@@ -277,7 +279,7 @@ class GrapeIvy implements GrapeEngine {
             conf.each {dd.addDependencyConfiguration('default', it)}
             if (grabRecord.classifier) {
                 def dad = new DefaultDependencyArtifactDescriptor(dd,
-                        grabRecord.mrid.name, 'jar', grabRecord.ext ?: 'jar', null, [classifier:grabRecord.classifier])
+                        grabRecord.mrid.name, grabRecord.type ?: 'jar', grabRecord.ext ?: 'jar', null, [classifier:grabRecord.classifier])
                 conf.each { dad.addConfiguration(it)  }
                 dd.addDependencyArtifact('default', dad)
             }
@@ -530,6 +532,7 @@ class IvyGrabRecord {
     boolean force
     String classifier
     String ext
+    String type
 
     public int hashCode() {
         return (mrid.hashCode() ^ conf.hashCode()
@@ -537,7 +540,8 @@ class IvyGrabRecord {
             ^ (transitive ? 0xbbbbbbbb : 0x66666666)
             ^ (force ? 0xcccccccc: 0x77777777)
             ^ (classifier ? classifier.hashCode() : 0)
-            ^ (ext ? ext.hashCode() : 0))
+            ^ (ext ? ext.hashCode() : 0)
+            ^ (type ? type.hashCode() : 0))
     }
 
     public boolean equals(Object o) {
@@ -548,6 +552,7 @@ class IvyGrabRecord {
             && (mrid == o.mrid)
             && (conf == o.conf)
             && (classifier == o.classifier)
-            && (ext == o.ext))
+            && (ext == o.ext)
+            && (type == o.type))
     }
 }

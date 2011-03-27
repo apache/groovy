@@ -692,7 +692,7 @@ public class GroovyShell extends GroovyObjectSupport {
      *
      * @param reader    the stream reading the script
      * @param fileName  is the logical file name of the script (which is used to create the class name of the script)
-     * @return the parsed script which is ready to be run via @link Script.run()
+     * @return the parsed script which is ready to be run via {@link Script#run()}
      */
     public Script parse(final Reader reader, final String fileName) throws CompilationFailedException {
         return parse(new GroovyCodeSource(reader, fileName, DEFAULT_CODE_BASE));

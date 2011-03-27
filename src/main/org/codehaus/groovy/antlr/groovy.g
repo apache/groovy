@@ -12,7 +12,7 @@ import org.codehaus.groovy.GroovyBugError;
 import antlr.TokenStreamRecognitionException;
 }
 
-/** JSR-241 Groovy Recognizer
+/** JSR-241 Groovy Recognizer.
  *
  * Run 'java Main [-showtree] directory-full-of-groovy-files'
  *
