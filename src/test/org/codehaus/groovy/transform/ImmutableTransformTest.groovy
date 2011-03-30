@@ -39,6 +39,40 @@ class ImmutableTransformTest extends GroovyShellTestCase {
         assertTrue objects[0].nums.class.name.contains("Unmodifiable")
     }
 
+    void testImmutableClonesListAndCollectionFields() {
+        def objects = evaluate("""
+            def myNums = [1, 2]
+            @Immutable class Bar {
+                List nums
+                Collection otherNums
+            }
+            def myBar = new Bar(nums:myNums, otherNums:myNums)
+            myNums << 3
+            [myNums, myBar]
+        """)
+
+        assertNotSame(objects[0], objects[1].nums)
+        assertNotSame(objects[0], objects[1].otherNums)
+        assertNotSame(objects[1].nums, objects[1].otherNums)
+        assertEquals 3, objects[0].size()
+        assertEquals 2, objects[1].nums.size()
+        assertEquals 2, objects[1].otherNums.size()
+        assertTrue objects[1].nums.class.name.contains("Unmodifiable")
+        assertTrue objects[1].otherNums.class.name.contains("Unmodifiable")
+    }
+
+    void testImmutableField() {
+        def person = evaluate("""
+            @Immutable class Person {
+                boolean married
+            }
+            new Person(married:false)
+        """)
+        shouldFail(ReadOnlyPropertyException) {
+            person.married = true
+        }
+    }
+
     void testImmutableListProp() {
         def objects = evaluate("""
               @Immutable class HasList {

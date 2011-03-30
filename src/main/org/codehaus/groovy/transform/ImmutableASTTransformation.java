@@ -81,6 +81,7 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
     private static final Token COMPARE_EQUAL = Token.newSymbol(Types.COMPARE_EQUAL, -1, -1);
     private static final Token COMPARE_NOT_EQUAL = Token.newSymbol(Types.COMPARE_NOT_EQUAL, -1, -1);
     private static final Token ASSIGN = Token.newSymbol(Types.ASSIGN, -1, -1);
+    private static final Token INSTANCEOF = Token.newSymbol(Types.KEYWORD_INSTANCEOF, -1, -1);
 
     public void visit(ASTNode[] nodes, SourceUnit source) {
         if (nodes.length != 2 || !(nodes[0] instanceof AnnotationNode) || !(nodes[1] instanceof AnnotatedNode)) {
@@ -398,7 +399,7 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
             statement = createConstructorStatementArrayOrCloneable(fNode);
         } else if (fieldType.isDerivedFrom(DATE_TYPE)) {
             statement = createConstructorStatementDate(fNode);
-        } else if (isOrImplements(fieldType, COLLECTION_TYPE) || isOrImplements(fieldType, MAP_TYPE)) {
+        } else if (isOrImplements(fieldType, COLLECTION_TYPE) || fieldType.isDerivedFrom(COLLECTION_TYPE) || isOrImplements(fieldType, MAP_TYPE) || fieldType.isDerivedFrom(MAP_TYPE)) {
             statement = createConstructorStatementCollection(fNode);
         } else if (isKnownImmutable(fieldType)) {
             statement = createConstructorStatementDefault(fNode);
@@ -444,7 +445,10 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
                         equalsNullExpr(initExpr),
                         new EmptyStatement(),
                         assignStatement(fieldExpr, cloneCollectionExpr(initExpr))),
-                assignStatement(fieldExpr, cloneCollectionExpr(collection)));
+                new IfStatement(
+                    isInstanceOf(collection, CLONEABLE_TYPE),
+                    assignStatement(fieldExpr, cloneCollectionExpr(cloneArrayOrCloneableExpr(collection))),
+                    assignStatement(fieldExpr, cloneCollectionExpr(collection))));
     }
 
     private Statement createConstructorStatementMapSpecial(FieldNode fNode) {
@@ -471,6 +475,10 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
                                 assignStatement(fieldExpr, cloneCollectionExpr(baseArgs)))
                 )
         );
+    }
+
+    private BooleanExpression isInstanceOf(Expression objectExpression, ClassNode cNode) {
+        return new BooleanExpression(new BinaryExpression(objectExpression, INSTANCEOF, new ClassExpression(cNode)));
     }
 
     private boolean isKnownImmutable(ClassNode fieldType) {
