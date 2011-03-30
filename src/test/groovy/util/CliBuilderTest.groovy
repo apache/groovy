@@ -461,4 +461,14 @@ usage: groovy
         assert options.dbpassword == 'foo'
         assert options.i
     }
+
+    void testNoExpandArgsWithEmptyArg() {
+        def cli = new CliBuilder(expandArgumentFiles: false)
+        cli.parse(['something', ''])
+    }
+
+    void testExpandArgsWithEmptyArg() {
+        def cli = new CliBuilder(expandArgumentFiles: true)
+        cli.parse(['something', ''])
+    }
 }
