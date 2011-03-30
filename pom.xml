@@ -556,6 +556,10 @@
             <name>Adam Murdoch</name>
             <email></email>
         </contributor>
+        <contributor>
+            <name>Cédric Champeau</name>
+            <email></email>
+        </contributor>
     </contributors>
 
     <dependencies>

@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 the original author or authors.
+ * Copyright 2008-2011 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ import gls.CompilableTestSupport
 
 /**
  * @author Paul King
+ * @author Cédric Champeau
  */
 class FieldTransformTest extends CompilableTestSupport {
 
@@ -137,6 +138,36 @@ class FieldTransformTest extends CompilableTestSupport {
                 }
             }
             println Inner.class.name
+        """
+    }
+
+    void testFieldShouldBeAccessibleFromClosure() {
+        assertScript """
+            import groovy.transform.Field
+            @Field int x
+            def closure = { x = 1; x }
+            assert closure() == 1
+        """
+    }
+
+    void testFieldShouldBeAccessibleFromClosureWithoutAssignment() {
+        // GROOVY-4700
+        assertScript """import groovy.transform.Field
+            @Field xxx = 3
+            foo = {
+                xxx + 1
+            }
+            assert foo() == 4
+        """
+    }
+
+    void testStaticFieldShouldBeAccessibleFromClosure() {
+        assertScript """
+            import groovy.transform.Field
+            @Field static int x
+            x = 10
+            def closure = { x * 2 }
+            assert closure() == 20
         """
     }
 

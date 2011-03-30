@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 the original author or authors.
+ * Copyright 2008-2011 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,22 +19,26 @@ package org.codehaus.groovy.transform;
 import groovy.transform.Field;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.*;
-import org.codehaus.groovy.ast.expr.ArgumentListExpression;
+import org.codehaus.groovy.ast.expr.BinaryExpression;
+import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
+import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 import org.objectweb.asm.Opcodes;
 
 import java.util.Arrays;
+import java.util.Iterator;
 
 /**
  * Handles transformation for the @Field annotation.
  * This is experimental, use at your own risk.
  *
  * @author Paul King
+ * @author Cédric Champeau
  */
 @GroovyASTTransformation(phase = CompilePhase.SEMANTIC_ANALYSIS)
 public class FieldASTTransformation extends ClassCodeExpressionTransformer implements ASTTransformation, Opcodes {
@@ -45,6 +49,9 @@ public class FieldASTTransformation extends ClassCodeExpressionTransformer imple
     private SourceUnit sourceUnit;
     private DeclarationExpression candidate;
     private boolean insideScriptBody;
+    private String variableName;
+    private FieldNode fieldNode;
+    private ClosureExpression currentClosure;
 
     public void visit(ASTNode[] nodes, SourceUnit source) {
         sourceUnit = source;
@@ -64,20 +71,22 @@ public class FieldASTTransformation extends ClassCodeExpressionTransformer imple
                 return;
             }
             candidate = de;
-            super.visitClass(cNode);
             // GROOVY-4548: temp fix to stop CCE until proper support is added
             if (de.isMultipleAssignmentDeclaration()) {
                 addError("Error: annotation " + MY_TYPE_NAME + " not supported with multiple assignment notation.", parent);
                 return;
             }
             VariableExpression ve = de.getVariableExpression();
+            variableName = ve.getName();
             // set owner null here, it will be updated by addField
-            FieldNode fNode = new FieldNode(ve.getName(), ve.getModifiers(), ve.getType(), null, de.getRightExpression());
-            fNode.setSourcePosition(de);
-            cNode.addField(fNode);
+            fieldNode = new FieldNode(variableName, ve.getModifiers(), ve.getType(), null, de.getRightExpression());
+            fieldNode.setSourcePosition(de);
+            cNode.addField(fieldNode);
+            super.visitClass(cNode);
         }
     }
 
+    @Override
     public Expression transform(Expression expr) {
         if (expr == null) return null;
         if (expr instanceof DeclarationExpression) {
@@ -92,8 +101,32 @@ public class FieldASTTransformation extends ClassCodeExpressionTransformer imple
                 addError("Error: annotation " + MY_TYPE_NAME + " can only be used within a Script body.", expr);
                 return expr;
             }
+        } else if (insideScriptBody && expr instanceof VariableExpression && currentClosure != null) {
+            VariableExpression ve = (VariableExpression) expr;
+            if (ve.getName().equals(variableName)) {
+                // we may only check the variable name because the Groovy compiler
+                // already fails if a variable with the same name already exists in the scope.
+                // this means that a closure cannot shadow a class variable
+                ve.setAccessedVariable(fieldNode);
+                final VariableScope variableScope = currentClosure.getVariableScope();
+                final Iterator<Variable> iterator = variableScope.getReferencedLocalVariablesIterator();
+                while (iterator.hasNext()) {
+                    Variable next = iterator.next();
+                    if (next.getName().equals(variableName)) iterator.remove();
+                }
+                variableScope.putReferencedClassVariable(fieldNode);
+                return ve;
+            }
         }
         return expr.transformExpression(this);
+    }
+
+    @Override
+    public void visitClosureExpression(final ClosureExpression expression) {
+        ClosureExpression old = currentClosure;
+        currentClosure = expression;
+        super.visitClosureExpression(expression);
+        currentClosure = old;
     }
 
     @Override
@@ -102,6 +135,15 @@ public class FieldASTTransformation extends ClassCodeExpressionTransformer imple
         if (node.isScriptBody()) insideScriptBody = true;
         super.visitMethod(node);
         insideScriptBody = oldInsideScriptBody;
+    }
+
+    @Override
+    public void visitExpressionStatement(ExpressionStatement es) {
+        Expression exp = es.getExpression();
+        if (exp instanceof BinaryExpression) {
+            exp.visit(this);
+        }
+        super.visitExpressionStatement(es);
     }
 
     protected SourceUnit getSourceUnit() {
