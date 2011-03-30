@@ -154,7 +154,7 @@ class FieldTransformTest extends CompilableTestSupport {
         // GROOVY-4700
         assertScript """import groovy.transform.Field
             @Field xxx = 3
-            def foo = {
+            foo = {
                 xxx + 1
             }
             assert foo() == 4
