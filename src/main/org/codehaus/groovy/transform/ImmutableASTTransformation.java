@@ -280,7 +280,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
             statement = createConstructorStatementArrayOrCloneable(fNode);
         } else if (fieldType.isDerivedFrom(DATE_TYPE)) {
             statement = createConstructorStatementDate(fNode);
-        } else if (isOrImplements(fieldType, COLLECTION_TYPE) || isOrImplements(fieldType, MAP_TYPE)) {
+        } else if (isOrImplements(fieldType, COLLECTION_TYPE) || fieldType.isDerivedFrom(COLLECTION_TYPE) || isOrImplements(fieldType, MAP_TYPE) || fieldType.isDerivedFrom(MAP_TYPE)) {
             statement = createConstructorStatementCollection(fNode);
         } else if (isKnownImmutable(fieldType)) {
             statement = createConstructorStatementDefault(fNode);
@@ -322,7 +322,10 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
                         equalsNullExpr(initExpr),
                         new EmptyStatement(),
                         assignStatement(fieldExpr, cloneCollectionExpr(initExpr))),
-                assignStatement(fieldExpr, cloneCollectionExpr(collection)));
+                new IfStatement(
+                    isInstanceOf(collection, CLONEABLE_TYPE),
+                    assignStatement(fieldExpr, cloneCollectionExpr(cloneArrayOrCloneableExpr(collection))),
+                    assignStatement(fieldExpr, cloneCollectionExpr(collection))));
     }
 
     private boolean isKnownImmutable(ClassNode fieldType) {
