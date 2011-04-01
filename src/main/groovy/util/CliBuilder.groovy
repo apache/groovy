@@ -293,7 +293,7 @@ class CliBuilder {
     static expandArgumentFiles(args) throws IOException {
         def result = []
         for (arg in args) {
-            if (arg && arg[0] == '@') {
+            if (arg && arg != '@' && arg[0] == '@') {
                 arg = arg.substring(1)
                 if (arg[0] != '@') {
                     expandArgumentFile(arg, result)
