@@ -284,7 +284,9 @@ public class ClosureWriter {
                 if (!(v instanceof FieldNode)) return;
                 String name = expression.getName();
                 FieldNode fn = closureClass.getDeclaredField(name);
-                expression.setAccessedVariable(fn);
+                if (fn != null) { // only overwrite if we find something more specific
+                    expression.setAccessedVariable(fn);
+                }
             }  
         };
         visitor.visitClosureExpression(ce);
