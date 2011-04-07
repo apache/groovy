@@ -128,7 +128,9 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             ConstructorNode dummy = new ConstructorNode(0, null);
             addInitialization(node, dummy);
             node.visitContents(this);
-            classNode.setNodeMetaData(ClassNodeSkip.class,true);
+            if (classNode.getNodeMetaData(ClassNodeSkip.class)==null) {
+                classNode.setNodeMetaData(ClassNodeSkip.class,true);
+            }
             return;
         }
 
