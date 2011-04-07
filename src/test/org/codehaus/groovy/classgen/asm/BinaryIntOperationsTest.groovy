@@ -27,4 +27,15 @@ class BinaryIntOperationsTest extends AbstractBytecodeTestCase {
                 "IF_ICMPGE"
         ])
     }
+    
+    void testCompareLessThanInClosure() {
+        // GROOVY-4741
+        assert """
+            int a = 0
+            [].each {
+                if (a < 0) {}
+            }
+            true
+        """
+    }
 }
