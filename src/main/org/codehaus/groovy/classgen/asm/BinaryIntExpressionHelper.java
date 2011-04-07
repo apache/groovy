@@ -149,6 +149,7 @@ public class BinaryIntExpressionHelper extends BinaryExpressionHelper {
         if (type!=null) return type;
         if (exp instanceof VariableExpression) {
             VariableExpression ve = (VariableExpression) exp;
+            if (ve.isClosureSharedVariable()) return ve.getType();
             type = ve.getOriginType();
             if (ve.getAccessedVariable() instanceof FieldNode) {
                 FieldNode fn = (FieldNode) ve.getAccessedVariable();
