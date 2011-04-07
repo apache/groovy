@@ -391,6 +391,19 @@ class SqlCompleteTest extends TestHelper {
         assert names[1] == "coffee"
     }
 
+    void testEachRowPagingGString() {
+        def sql = createSql()
+        def name = "brie"
+        def names = []
+        sql.eachRow("select name from FOOD where name <> $name order by name", 2, 2) { row ->
+            names << row.name
+        }
+        assert names.size() == 2
+        assert names[0] == "cheddar"
+        assert names[1] == "coffee"
+    }
+
+
     void testRowsPaging() {
         def sql = createSql()
         def names = sql.rows("select name from FOOD order by name", 2, 2)
@@ -406,7 +419,16 @@ class SqlCompleteTest extends TestHelper {
         assert names[0] == ["NAME":"cheddar"]
         assert names[1] == ["NAME":"coffee"]
     }
-        
+
+    void testGStringRowsPaging() {
+        def sql = createSql()
+        def name = "brie"
+        def names = sql.rows("select name from FOOD where name <> $name order by name", 2, 2)
+        assert names.size() == 2
+        assert names[0] == ["NAME":"cheddar"]
+        assert names[1] == ["NAME":"coffee"]
+    }
+
 }
 
 class PersonDTO {

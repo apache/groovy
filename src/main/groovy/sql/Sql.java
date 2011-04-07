@@ -1073,7 +1073,7 @@ public class Sql {
     public void eachRow(String sql, List<Object> params, Closure closure) throws SQLException {
         eachRow(sql, params, null, closure);
     }
-    
+
     /**
      * Performs the given SQL query calling the given <code>closure</code> with each row of the result set starting at 
      * the provided <code>offset</code>, and including up to <code>maxRows</code> number of rows.
@@ -1135,6 +1135,60 @@ public class Sql {
         List<Object> params = getParameters(gstring);
         String sql = asSql(gstring, params);
         eachRow(sql, params, metaClosure, rowClosure);
+    }
+
+    /**
+     * Performs the given SQL query calling the given <code>closure</code> with each row of the result set starting at 
+     * the provided <code>offset</code>, and including up to <code>maxRows</code> number of rows.
+     * In addition, the <code>metaClosure</code> will be called once passing in the
+     * <code>ResultSetMetaData</code> as argument.
+     * The query may contain GString expressions.
+     * <p/>
+     * Note that the underlying implementation is based on either invoking <code>ResultSet.absolute()</code>, 
+     * or if the ResultSet type is <code>ResultSet.TYPE_FORWARD_ONLY</code>, the <code>ResultSet.next()</code> method
+     * is invoked equivalently.  The first row of a ResultSet is 1, so passing in an offset of 1 or less has no effect 
+     * on the initial positioning within the result set.
+     * <p/>
+     * Note that different database and JDBC driver implementations may work differently with respect to this method.  
+     * Specifically, one should expect that <code>ResultSet.TYPE_FORWARD_ONLY</code> may be less efficient than a 
+     * "scrollable" type.
+     * 
+     * @param gstring a GString containing the SQL query with embedded params
+     * @param offset  the 1-based offset for the first row to be processed
+     * @param maxRows the maximum number of rows to be processed
+     * @param closure called for each row with a GroovyResultSet
+     * @throws SQLException if a database access error occurs
+     */
+    public void eachRow(GString gstring, Closure metaClosure, int offset, int maxRows, Closure closure) throws SQLException {
+        List<Object> params = getParameters(gstring);
+        String sql = asSql(gstring, params);
+        eachRow(sql, params, metaClosure, offset, maxRows, closure);
+    }
+
+    /**
+     * Performs the given SQL query calling the given <code>closure</code> with each row of the result set starting at 
+     * the provided <code>offset</code>, and including up to <code>maxRows</code> number of rows.
+     * The query may contain GString expressions.
+     * <p/>
+     * Note that the underlying implementation is based on either invoking <code>ResultSet.absolute()</code>, 
+     * or if the ResultSet type is <code>ResultSet.TYPE_FORWARD_ONLY</code>, the <code>ResultSet.next()</code> method
+     * is invoked equivalently.  The first row of a ResultSet is 1, so passing in an offset of 1 or less has no effect 
+     * on the initial positioning within the result set.
+     * <p/>
+     * Note that different database and JDBC driver implementations may work differently with respect to this method.  
+     * Specifically, one should expect that <code>ResultSet.TYPE_FORWARD_ONLY</code> may be less efficient than a 
+     * "scrollable" type.
+     * 
+     * @param gstring a GString containing the SQL query with embedded params
+     * @param offset  the 1-based offset for the first row to be processed
+     * @param maxRows the maximum number of rows to be processed
+     * @param closure called for each row with a GroovyResultSet
+     * @throws SQLException if a database access error occurs
+     */
+    public void eachRow(GString gstring, int offset, int maxRows, Closure closure) throws SQLException {
+        List<Object> params = getParameters(gstring);
+        String sql = asSql(gstring, params);
+        eachRow(sql, params, offset, maxRows, closure);
     }
     
     /**
@@ -1429,6 +1483,32 @@ public class Sql {
     }
 
     /**
+     * Performs the given SQL query and return a "page" of rows from the result set.  A page is defined as starting at
+     * a 1-based offset, and containing a maximum number of rows.
+     * The query may contain GString expressions.
+     * <p/>
+     * Note that the underlying implementation is based on either invoking <code>ResultSet.absolute()</code>, 
+     * or if the ResultSet type is <code>ResultSet.TYPE_FORWARD_ONLY</code>, the <code>ResultSet.next()</code> method
+     * is invoked equivalently.  The first row of a ResultSet is 1, so passing in an offset of 1 or less has no effect 
+     * on the initial positioning within the result set.
+     * <p/>
+     * Note that different database and JDBC driver implementations may work differently with respect to this method.  
+     * Specifically, one should expect that <code>ResultSet.TYPE_FORWARD_ONLY</code> may be less efficient than a 
+     * "scrollable" type.
+     * <p/>
+     * Resource handling is performed automatically where appropriate.
+     *
+     * @param sql     the SQL statement
+     * @param offset  the 1-based offset for the first row to be processed
+     * @param maxRows the maximum number of rows to be processed
+     * @return a list of GroovyRowResult objects
+     * @throws SQLException if a database access error occurs
+     */
+    public List<GroovyRowResult> rows(GString sql, int offset, int maxRows) throws SQLException {
+        return rows(sql, offset, maxRows, null);
+    }
+
+    /**
      * Performs the given SQL query and return the rows of the result set.
      * The query may contain GString expressions.
      * <p/>
@@ -1478,6 +1558,37 @@ public class Sql {
         String sql = asSql(gstring, params);
         return rows(sql, params, metaClosure);
     }
+
+    /**
+     * Performs the given SQL query and return a "page" of rows from the result set.  A page is defined as starting at
+     * a 1-based offset, and containing a maximum number of rows.
+     * In addition, the <code>metaClosure</code> will be called once passing in the
+     * <code>ResultSetMetaData</code> as argument.
+     * The query may contain GString expressions.
+     * <p/>
+     * Note that the underlying implementation is based on either invoking <code>ResultSet.absolute()</code>, 
+     * or if the ResultSet type is <code>ResultSet.TYPE_FORWARD_ONLY</code>, the <code>ResultSet.next()</code> method
+     * is invoked equivalently.  The first row of a ResultSet is 1, so passing in an offset of 1 or less has no effect 
+     * on the initial positioning within the result set.
+     * <p/>
+     * Note that different database and JDBC driver implementations may work differently with respect to this method.  
+     * Specifically, one should expect that <code>ResultSet.TYPE_FORWARD_ONLY</code> may be less efficient than a 
+     * "scrollable" type.
+     * <p/>
+     * Resource handling is performed automatically where appropriate.
+     *
+     * @param gstring the SQL statement
+     * @param offset  the 1-based offset for the first row to be processed
+     * @param maxRows the maximum number of rows to be processed
+     * @return a list of GroovyRowResult objects
+     * @throws SQLException if a database access error occurs
+     */
+    public List<GroovyRowResult> rows(GString gstring, int offset, int maxRows, Closure metaClosure) throws SQLException {
+        List<Object> params = getParameters(gstring);
+        String sql = asSql(gstring, params);
+        return rows(sql, params, offset, maxRows, metaClosure);
+    }    
+    
 
     /**
      * Performs the given SQL query and return the first row of the result set.
