@@ -33,7 +33,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public abstract class InnerClassVisitorHelper extends ClassCodeVisitorSupport {
-    protected void setPropertyGetterDispatcher(BlockStatement block, Expression thiz, Parameter[] parameters) {
+    protected static void setPropertyGetterDispatcher(BlockStatement block, Expression thiz, Parameter[] parameters) {
         List<ConstantExpression> gStringStrings = new ArrayList<ConstantExpression>();
         gStringStrings.add(new ConstantExpression(""));
         gStringStrings.add(new ConstantExpression(""));
@@ -52,7 +52,7 @@ public abstract class InnerClassVisitorHelper extends ClassCodeVisitorSupport {
         );
     }
 
-    protected void setPropertySetterDispatcher(BlockStatement block, Expression thiz, Parameter[] parameters) {
+    protected static void setPropertySetterDispatcher(BlockStatement block, Expression thiz, Parameter[] parameters) {
         List<ConstantExpression> gStringStrings = new ArrayList<ConstantExpression>();
         gStringStrings.add(new ConstantExpression(""));
         gStringStrings.add(new ConstantExpression(""));
@@ -75,7 +75,7 @@ public abstract class InnerClassVisitorHelper extends ClassCodeVisitorSupport {
         );
     }
 
-    protected void setMethodDispatcherCode(BlockStatement block, Expression thiz, Parameter[] parameters) {
+    protected static void setMethodDispatcherCode(BlockStatement block, Expression thiz, Parameter[] parameters) {
         List<ConstantExpression> gStringStrings = new ArrayList<ConstantExpression>();
         gStringStrings.add(new ConstantExpression(""));
         gStringStrings.add(new ConstantExpression(""));
@@ -97,19 +97,19 @@ public abstract class InnerClassVisitorHelper extends ClassCodeVisitorSupport {
         );
     }
 
-    protected boolean isStatic(InnerClassNode node) {
+    protected static boolean isStatic(InnerClassNode node) {
         VariableScope scope = node.getVariableScope();
         if (scope != null) return scope.isInStaticContext();
         return (node.getModifiers() & Opcodes.ACC_STATIC) != 0;
     }
 
-    protected ClassNode getClassNode(ClassNode node, boolean isStatic) {
+    protected static ClassNode getClassNode(ClassNode node, boolean isStatic) {
         if (isStatic) node = ClassHelper.CLASS_Type;
         return node;
     }
 
-    protected int getObjectDistance(ClassNode node) {
-        int count = 1;
+    protected static int getObjectDistance(ClassNode node) {
+        int count = 0;
         while (node != null && node != ClassHelper.OBJECT_TYPE) {
             count++;
             node = node.getSuperClass();
