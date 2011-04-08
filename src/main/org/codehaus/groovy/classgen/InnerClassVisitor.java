@@ -77,7 +77,6 @@ public class InnerClassVisitor extends InnerClassVisitorHelper implements Opcode
         super.visitClass(node);
 
         if (node.isEnum() || node.isInterface()) return;
-        addDispatcherMethods();
         if (innerClass == null) return;
 
         if (node.getSuperClass().isInterface()) {
@@ -356,66 +355,6 @@ public class InnerClassVisitor extends InnerClassVisitorHelper implements Opcode
                 this0 = new PropertyExpression(this0, "this$0");
             argsListExp.getExpressions().add(0, this0);
         }
-    }
-
-    private void addDispatcherMethods() {
-        final int objectDistance = getObjectDistance(classNode);
-
-        // since we added an anonymous inner class we should also
-        // add the dispatcher methods
-
-        // add method dispatcher
-        Parameter[] parameters = new Parameter[]{
-                new Parameter(ClassHelper.STRING_TYPE, "name"),
-                new Parameter(ClassHelper.OBJECT_TYPE, "args")
-        };
-        MethodNode method = classNode.addSyntheticMethod(
-                "this$dist$invoke$" + objectDistance,
-                ACC_PUBLIC + ACC_SYNTHETIC,
-                ClassHelper.OBJECT_TYPE,
-                parameters,
-                ClassNode.EMPTY_ARRAY,
-                null
-        );
-
-        BlockStatement block = new BlockStatement();
-        setMethodDispatcherCode(block, VariableExpression.THIS_EXPRESSION, parameters);
-        method.setCode(block);
-
-        // add property setter
-        parameters = new Parameter[]{
-                new Parameter(ClassHelper.STRING_TYPE, "name"),
-                new Parameter(ClassHelper.OBJECT_TYPE, "value")
-        };
-        method = classNode.addSyntheticMethod(
-                "this$dist$set$" + objectDistance,
-                ACC_PUBLIC + ACC_SYNTHETIC,
-                ClassHelper.VOID_TYPE,
-                parameters,
-                ClassNode.EMPTY_ARRAY,
-                null
-        );
-
-        block = new BlockStatement();
-        setPropertySetterDispatcher(block, VariableExpression.THIS_EXPRESSION, parameters);
-        method.setCode(block);
-
-        // add property getter
-        parameters = new Parameter[]{
-                new Parameter(ClassHelper.STRING_TYPE, "name")
-        };
-        method = classNode.addSyntheticMethod(
-                "this$dist$get$" + objectDistance,
-                ACC_PUBLIC + ACC_SYNTHETIC,
-                ClassHelper.OBJECT_TYPE,
-                parameters,
-                ClassNode.EMPTY_ARRAY,
-                null
-        );
-
-        block = new BlockStatement();
-        setPropertyGetterDispatcher(block, VariableExpression.THIS_EXPRESSION, parameters);
-        method.setCode(block);
     }
 
     private static void addFieldInit(Parameter p, FieldNode fn, BlockStatement block) {

@@ -21,34 +21,24 @@ import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.ClassExpression;
+import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
-import org.codehaus.groovy.control.CompilationUnit;
-import org.codehaus.groovy.control.SourceUnit;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
-public class InnerClassCompletionVisitor extends InnerClassVisitorHelper implements Opcodes {
+import static org.objectweb.asm.Opcodes.*;
+import static org.codehaus.groovy.classgen.InnerClassVisitorHelper.*;
 
-    private final SourceUnit sourceUnit;
+public class InnerClassCompletionVisitor {
 
-    public InnerClassCompletionVisitor(CompilationUnit cu, SourceUnit su) {
-        sourceUnit = su;
-    }
-
-    @Override
-    protected SourceUnit getSourceUnit() {
-        return sourceUnit;
-    }
-
-    @Override
     public void visitClass(ClassNode node) {
         InnerClassNode innerClass = null;
         if (!node.isEnum() && !node.isInterface() && node instanceof InnerClassNode) {
             innerClass = (InnerClassNode) node;
         }
-        super.visitClass(node);
         if (node.isEnum() || node.isInterface()) return;
+        addDispatcherMethods(node);
         if (innerClass == null) return;
 
         addDefaultMethods(innerClass);
@@ -62,13 +52,74 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper impleme
         return BytecodeHelper.getClassInternalName(getClassNode(node, isStatic));
     }
 
+    private void addDispatcherMethods(ClassNode classNode) {
+        final int objectDistance = getObjectDistance(classNode);
+
+        // since we added an anonymous inner class we should also
+        // add the dispatcher methods
+
+        // add method dispatcher
+        Parameter[] parameters = new Parameter[]{
+                new Parameter(ClassHelper.STRING_TYPE, "name"),
+                new Parameter(ClassHelper.OBJECT_TYPE, "args")
+        };
+        MethodNode method = classNode.addSyntheticMethod(
+                "this$dist$invoke$" + objectDistance,
+                ACC_PUBLIC + ACC_SYNTHETIC,
+                ClassHelper.OBJECT_TYPE,
+                parameters,
+                ClassNode.EMPTY_ARRAY,
+                null
+        );
+
+        BlockStatement block = new BlockStatement();
+        setMethodDispatcherCode(block, VariableExpression.THIS_EXPRESSION, parameters);
+        method.setCode(block);
+
+        // add property setter
+        parameters = new Parameter[]{
+                new Parameter(ClassHelper.STRING_TYPE, "name"),
+                new Parameter(ClassHelper.OBJECT_TYPE, "value")
+        };
+        method = classNode.addSyntheticMethod(
+                "this$dist$set$" + objectDistance,
+                ACC_PUBLIC + ACC_SYNTHETIC,
+                ClassHelper.VOID_TYPE,
+                parameters,
+                ClassNode.EMPTY_ARRAY,
+                null
+        );
+
+        block = new BlockStatement();
+        setPropertySetterDispatcher(block, VariableExpression.THIS_EXPRESSION, parameters);
+        method.setCode(block);
+
+        // add property getter
+        parameters = new Parameter[]{
+                new Parameter(ClassHelper.STRING_TYPE, "name")
+        };
+        method = classNode.addSyntheticMethod(
+                "this$dist$get$" + objectDistance,
+                ACC_PUBLIC + ACC_SYNTHETIC,
+                ClassHelper.OBJECT_TYPE,
+                parameters,
+                ClassNode.EMPTY_ARRAY,
+                null
+        );
+
+        block = new BlockStatement();
+        setPropertyGetterDispatcher(block, VariableExpression.THIS_EXPRESSION, parameters);
+        method.setCode(block);
+    }
+    
     private void addDefaultMethods(InnerClassNode node) {
         final boolean isStatic = isStatic(node);
 
+        ClassNode outerClass = node.getOuterClass();
         final String classInternalName = org.codehaus.groovy.classgen.asm.BytecodeHelper.getClassInternalName(node);
-        final String outerClassInternalName = getInternalName(node.getOuterClass(), isStatic);
-        final String outerClassDescriptor = getTypeDescriptor(node.getOuterClass(), isStatic);
-        final int objectDistance = getObjectDistance(node.getOuterClass());
+        final String outerClassInternalName = getInternalName(outerClass, isStatic);
+        final String outerClassDescriptor = getTypeDescriptor(outerClass, isStatic);
+        final int objectDistance = getObjectDistance(outerClass);
 
         // add method dispatcher
         Parameter[] parameters = new Parameter[]{
@@ -86,7 +137,7 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper impleme
 
         BlockStatement block = new BlockStatement();
         if (isStatic) {
-            setMethodDispatcherCode(block, new ClassExpression(node.getOuterClass()), parameters);
+            setMethodDispatcherCode(block, new ClassExpression(outerClass), parameters);
         } else {
             block.addStatement(
                     new BytecodeSequence(new BytecodeInstruction() {

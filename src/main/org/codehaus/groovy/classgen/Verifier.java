@@ -1305,7 +1305,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         return ret;
     }
     
-    private boolean moveOptimizedConstantsInitialization(ClassNode node) {
+    private boolean moveOptimizedConstantsInitialization(final ClassNode node) {
         if (node.isInterface()) return false;
 
         final int mods = Opcodes.ACC_STATIC|Opcodes.ACC_SYNTHETIC| Opcodes.ACC_PUBLIC;
@@ -1315,6 +1315,14 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                 name, mods, ClassHelper.VOID_TYPE,
                 Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, methodCode);        
         
+        methodCode.addStatement(new BytecodeSequence(new BytecodeInstruction() {
+            @Override
+            public void visit(MethodVisitor mv) {
+                final String classInternalName = BytecodeHelper.getClassInternalName(node);
+                mv.visitInsn(ACONST_NULL);
+                mv.visitFieldInsn(PUTSTATIC, classInternalName, "$callSiteArray", "Ljava/lang/ref/SoftReference;");
+            }
+        }));
         for (FieldNode fn : node.getFields()) {
             if (!fn.isStatic() || !fn.isSynthetic() || !fn.getName().startsWith("$const$")) continue;
             if (fn.getInitialExpression()==null) continue;
