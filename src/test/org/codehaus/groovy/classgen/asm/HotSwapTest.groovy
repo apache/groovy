@@ -9,7 +9,8 @@ class HotSwapTest extends AbstractBytecodeTestCase {
         assert compile(method: '__$swapInit', '''
             double d = 1d
         ''').hasSequence([
-                'INVOKESTATIC script.$getCallSiteArray ()[Lorg/codehaus/groovy/runtime/callsite/CallSite;'
+                'ACONST_NULL',
+                'PUTSTATIC script.$callSiteArray : Ljava/lang/ref/SoftReference;'
         ])
     }
     

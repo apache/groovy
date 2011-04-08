@@ -198,7 +198,7 @@ public class CompilationUnit extends ProcessingUnit {
             @Override
             public void call(SourceUnit source, GeneratorContext context,
                              ClassNode classNode) throws CompilationFailedException {
-                InnerClassCompletionVisitor iv = new InnerClassCompletionVisitor(CompilationUnit.this, source);
+                InnerClassCompletionVisitor iv = new InnerClassCompletionVisitor();
                 iv.visitClass(classNode);
             }
         }, Phases.CANONICALIZATION);
