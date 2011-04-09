@@ -63,13 +63,13 @@ class GrapeIvy implements GrapeEngine {
     Set<String> downloadedArtifacts
     // weak hash map so we don't leak loaders directly
     Map<ClassLoader, Set<IvyGrabRecord>> loadedDeps = new WeakHashMap<ClassLoader, Set<IvyGrabRecord>>()
-    // set that stores the IvyGrabRecord(s) for all the dependencies in each grab() call 
+    // set that stores the IvyGrabRecord(s) for all the dependencies in each grab() call
     Set<IvyGrabRecord> grabRecordsForCurrDependencies = new LinkedHashSet<IvyGrabRecord>()
     // we keep the settings so that addResolver can add to the resolver chain
     IvySettings settings
 
     public GrapeIvy() {
-        // if we are already inited, quit
+        // if we are already initialized, quit
         if (enableGrapes) return
 
         // start ivy
@@ -197,6 +197,7 @@ class GrapeIvy implements GrapeEngine {
         }
 
         String groupId = deps.group ?: deps.groupId ?: deps.organisation ?: deps.organization ?: deps.org ?: ''
+        String ext = deps.ext ?: deps.type ?: ''
 
         //TODO accept ranges and decode them?  except '1.0.0'..<'2.0.0' won't work in groovy
         String version     = deps.version ?: deps.revision ?: deps.rev ?: '*'
@@ -214,7 +215,7 @@ class GrapeIvy implements GrapeEngine {
         }
         def classifier = deps.classifier ?: null
 
-        return new IvyGrabRecord(mrid:mrid, conf:conf, changing:changing, transitive:transitive, force:force, classifier:classifier)
+        return new IvyGrabRecord(mrid:mrid, conf:conf, changing:changing, transitive:transitive, force:force, classifier:classifier, ext:ext)
     }
 
     public grab(String endorsedModule) {
@@ -250,7 +251,7 @@ class GrapeIvy implements GrapeEngine {
             Set<IvyGrabRecord> grabRecordsForCurrLoader = getLoadedDepsForLoader(loader)
             grabRecordsForCurrLoader.removeAll(grabRecordsForCurrDependencies)
             grabRecordsForCurrDependencies.clear()
-            
+
             if (args.noExceptions) {
                 return e
             } else {
@@ -394,7 +395,7 @@ class GrapeIvy implements GrapeEngine {
     public URI[] resolve(Map args, Map ... dependencies) {
         resolve(args, null, dependencies)
     }
-    
+
     public URI[] resolve(Map args, List depsInfo, Map ... dependencies) {
         // identify the target classloader early, so we fail before checking repositories
         def loader = chooseClassLoader(
@@ -413,7 +414,7 @@ class GrapeIvy implements GrapeEngine {
     URI [] resolve(ClassLoader loader, Map args, Map... dependencies) {
         return resolve(loader, args, null, dependencies)
     }
-    
+
     URI [] resolve(ClassLoader loader, Map args, List depsInfo, Map... dependencies) {
         // check for mutually exclusive arguments
         Set keys = args.keySet()
@@ -434,7 +435,7 @@ class GrapeIvy implements GrapeEngine {
         dependencies.each {
             IvyGrabRecord igr = createGrabRecord(it)
             grabRecordsForCurrDependencies.add(igr)
-            localDeps.add(igr) 
+            localDeps.add(igr)
         }
         // the call to reverse ensures that the newest additions are in
         // front causing existing dependencies to come last and thus
@@ -451,7 +452,7 @@ class GrapeIvy implements GrapeEngine {
                 results += adl.localFile.toURI()
             }
         }
-        
+
         if (populateDepsInfo) {
             def deps = report.dependencies
             deps.each { depNode ->
@@ -459,7 +460,7 @@ class GrapeIvy implements GrapeEngine {
                 depsInfo << ['group' : id.organisation, 'module' : id.name, 'revision' : id.revision]
             }
         }
-        
+
         return results as URI[]
     }
 
@@ -507,7 +508,7 @@ class GrapeIvy implements GrapeEngine {
             return null
         }
     }
-    
+
     public void addResolver(Map<String, Object> args) {
         ChainResolver chainResolver = settings.getResolver("downloadGrapes")
 
@@ -515,7 +516,7 @@ class GrapeIvy implements GrapeEngine {
               m2compatible:(args.m2Compatible ?: true), settings:settings)
 
         chainResolver.add(resolver)
-        
+
         ivyInstance = Ivy.newInstance(settings)
         resolvedDependencies = []
         downloadedArtifacts = []
