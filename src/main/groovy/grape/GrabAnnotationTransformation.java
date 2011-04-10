@@ -65,7 +65,7 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
     private static final List<String> GRABEXCLUDE_REQUIRED = Arrays.asList("group", "module");
     private static final List<String> GRAPERESOLVER_REQUIRED = Arrays.asList("name", "root");
     private static final List<String> GRAB_REQUIRED = Arrays.asList("group", "module", "version");
-    private static final List<String> GRAB_OPTIONAL = Arrays.asList("classifier", "transitive", "conf", "ext");
+    private static final List<String> GRAB_OPTIONAL = Arrays.asList("classifier", "transitive", "conf", "ext", "type", "changing", "force");
     private static final Collection<String> GRAB_ALL = DefaultGroovyMethods.plus(GRAB_REQUIRED, GRAB_OPTIONAL);
     private static final Pattern IVY_PATTERN = Pattern.compile("([a-zA-Z0-9-/._+=]+)#([a-zA-Z0-9-/._+=]+)(;([a-zA-Z0-9-/.\\(\\)\\[\\]\\{\\}_+=,:@][a-zA-Z0-9-/.\\(\\)\\]\\{\\}_+=,:@]*))?(\\[([a-zA-Z0-9-/._+=,]*)\\])?");
     private static final Pattern ATTRIBUTES_PATTERN = Pattern.compile("(.*;|^)([a-zA-Z0-9]+)=([a-zA-Z0-9.*\\[\\]\\-\\(\\),]*)$");

@@ -40,6 +40,8 @@ import org.apache.ivy.plugins.resolver.IBiblioResolver
 import org.apache.ivy.util.DefaultMessageLogger
 import org.apache.ivy.util.Message
 import org.codehaus.groovy.reflection.ReflectionUtils
+//import java.util.zip.ZipFile
+//import java.util.zip.ZipEntry
 
 /**
  * @author Danno Ferrin
@@ -201,7 +203,7 @@ class GrapeIvy implements GrapeEngine {
         String type = deps.type ?: ''
 
         //TODO accept ranges and decode them?  except '1.0.0'..<'2.0.0' won't work in groovy
-        String version     = deps.version ?: deps.revision ?: deps.rev ?: '*'
+        String version = deps.version ?: deps.revision ?: deps.rev ?: '*'
         if ('*' == version) version = 'latest.default'
 
         ModuleRevisionId mrid = ModuleRevisionId.newInstance(groupId, module, version)
@@ -245,6 +247,7 @@ class GrapeIvy implements GrapeEngine {
 
             for (URI uri in resolve(loader, args, dependencies)) {
                 //TODO check artifact type, jar vs library, etc
+//                processServices(new File(uri));
                 loader.addURL(uri.toURL())
             }
         } catch (Exception e) {
@@ -261,6 +264,18 @@ class GrapeIvy implements GrapeEngine {
         }
         return null
     }
+
+//    void processServices(File f) {
+//        System.out.println('Processing ' + f.getCanonicalPath())
+//        ZipFile zf = new ZipFile(f)
+//        ZipEntry dgmMethods = zf.getEntry("META-INF/services/groovy/defaultGroovyMethods")
+//        if (dgmMethods == null) return
+//        InputStream is = zf.getInputStream(dgmMethods)
+//        List<String> classNames = is.text.readLines()
+//        classNames.each {
+//            println it.trim()
+//        }
+//    }
 
     public ResolveReport getDependencies(Map args, IvyGrabRecord... grabRecords) {
         ResolutionCacheManager cacheManager = ivyInstance.resolutionCacheManager
@@ -342,6 +357,7 @@ class GrapeIvy implements GrapeEngine {
                     def m = ivyFilePattern.matcher(ivyFile.name)
                     if (m.matches() && m.group(1) == rev) {
                         def root = new XmlParser(false, false).parse(ivyFile)
+                        // TODO handle other types? e.g. 'dlls'
                         def jardir = new File(moduleDir, 'jars')
                         if (!jardir.exists()) return
                         root.publications.artifact.each {
@@ -501,6 +517,9 @@ class GrapeIvy implements GrapeEngine {
                 }
                 if (grabbed.ext) {
                     dep.ext = grabbed.ext
+                }
+                if (grabbed.type) {
+                    dep.type = grabbed.type
                 }
                 results << dep
             }
