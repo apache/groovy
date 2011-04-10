@@ -60,7 +60,7 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
     private static final String GRABRESOLVER_CLASS_NAME = GrabResolver.class.getName();
     private static final String GRAPERESOLVER_DOT_NAME = dotName(GRABRESOLVER_CLASS_NAME);
     private static final String GRABRESOLVER_SHORT_NAME = shortName(GRAPERESOLVER_DOT_NAME);
-    
+
     private static final ClassNode THREAD_CLASSNODE = ClassHelper.make(Thread.class);
     private static final List<String> GRABEXCLUDE_REQUIRED = Arrays.asList("group", "module");
     private static final List<String> GRAPERESOLVER_REQUIRED = Arrays.asList("name", "root");
@@ -97,7 +97,7 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
     boolean allowShortGrabResolver;
     Set<String> grabResolverAliases;
     List<AnnotationNode> grabResolverAnnotations;
-    
+
     SourceUnit sourceUnit;
     ClassLoader loader;
     boolean initContextClassLoader;
@@ -158,7 +158,7 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
             grabConfigAnnotations = new ArrayList<AnnotationNode>();
             grapesAnnotations = new ArrayList<AnnotationNode>();
             grabResolverAnnotations = new ArrayList<AnnotationNode>();
-            
+
             visitClass(classNode);
 
             ClassNode grapeClassNode = ClassHelper.make(Grape.class);
@@ -202,7 +202,7 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
                     Grape.addResolver(grapeResolverMap);
                 }
             }
-            
+
             if (!grapesAnnotations.isEmpty()) {
                 for (AnnotationNode node : grapesAnnotations) {
                     Expression init = node.getMember("initClass");
@@ -272,7 +272,7 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
                 }
             }
         }
-        
+
         if (!grabMaps.isEmpty()) {
             Map<String, Object> basicArgs = new HashMap<String, Object>();
             basicArgs.put("classLoader", loader != null ? loader : sourceUnit.getClassLoader());
@@ -454,7 +454,7 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
                     || (allowShortGrabResolver && GRABRESOLVER_SHORT_NAME.equals(name))
                     || (grabResolverAliases.contains(name))) {
                 grabResolverAnnotations.add(annotation);
-            }            
+            }
         }
     }
 
