@@ -41,6 +41,9 @@ import java.lang.annotation.ElementType;
  * import org.apache.commons.lang.WordUtils
  * println "Hello ${WordUtils.capitalize('world')}"
  * </pre>
+ * Further information such as where artifacts are downloaded to, how to add additional resolvers,
+ * how to customise artifact resolution etc., can be found on the Grape documentation page:
+ * <a href="http://groovy.codehaus.org/Grape">http://groovy.codehaus.org/Grape</a>.
  */
 @Retention(RetentionPolicy.SOURCE)
 @Target({
