@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2009 the original author or authors.
+ * Copyright 2003-2011 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,6 +68,7 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
     private static final List<String> GRAB_OPTIONAL = Arrays.asList("classifier", "transitive", "conf", "ext");
     private static final Collection<String> GRAB_ALL = DefaultGroovyMethods.plus(GRAB_REQUIRED, GRAB_OPTIONAL);
     private static final Pattern IVY_PATTERN = Pattern.compile("([a-zA-Z0-9-/._+=]+)#([a-zA-Z0-9-/._+=]+)(;([a-zA-Z0-9-/.\\(\\)\\[\\]\\{\\}_+=,:@][a-zA-Z0-9-/.\\(\\)\\]\\{\\}_+=,:@]*))?(\\[([a-zA-Z0-9-/._+=,]*)\\])?");
+    private static final Pattern ATTRIBUTES_PATTERN = Pattern.compile("(.*;|^)([a-zA-Z]+)=([a-zA-Z0-9.*]*)$");
 
     private static String dotName(String className) {
         return className.substring(className.lastIndexOf("."));
@@ -374,6 +375,25 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
         Object allParts = ((ConstantExpression)val).getValue();
         if (!(allParts instanceof String)) return;
         String allstr = (String) allParts;
+
+        // strip off trailing attributes
+        boolean done = false;
+        while (!done) {
+            Matcher attrs = ATTRIBUTES_PATTERN.matcher(allstr);
+            if (attrs.find()) {
+                if (attrs.group(2) == null || attrs.group(3) == null) continue;
+                node.addMember(attrs.group(2), new ConstantExpression(attrs.group(3)));
+                int lastSemi = allstr.lastIndexOf(';');
+                if (lastSemi == -1) {
+                    allstr = "";
+                    break;
+                }
+                allstr = allstr.substring(0, lastSemi);
+            } else {
+                done = true;
+            }
+        }
+
         if (allstr.contains("#")) {
             // see: http://ant.apache.org/ivy/history/latest-milestone/textual.html
             Matcher m = IVY_PATTERN.matcher(allstr);
@@ -383,7 +403,7 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
             node.addMember("group", new ConstantExpression(m.group(1)));
             if (m.group(6) != null) node.addMember("conf", new ConstantExpression(m.group(6)));
             if (m.group(4) != null) node.addMember("version", new ConstantExpression(m.group(4)));
-            else if (!exclude) node.addMember("version", new ConstantExpression("*"));
+            else if (!exclude && node.getMember("version") == null) node.addMember("version", new ConstantExpression("*"));
             node.getMembers().remove("value");
         } else if (allstr.contains(":")) {
             // assume gradle syntax
@@ -400,7 +420,7 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
             if (parts.length > 4) return;
             if (parts.length > 3) node.addMember("classifier", new ConstantExpression(parts[3]));
             if (parts.length > 2) node.addMember("version", new ConstantExpression(parts[2]));
-            else if (!exclude) node.addMember("version", new ConstantExpression("*"));
+            else if (!exclude && node.getMember("version") == null) node.addMember("version", new ConstantExpression("*"));
             if (ext.length() > 0) node.addMember("ext", new ConstantExpression(ext));
             node.addMember("module", new ConstantExpression(parts[1]));
             node.addMember("group", new ConstantExpression(parts[0]));
