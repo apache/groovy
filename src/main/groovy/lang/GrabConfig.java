@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2009 the original author or authors.
+ * Copyright 2003-2011 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,14 +21,12 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Use within a {@code @Grapes} annotation to modify grab configuration.
+ * Used to modify the grape configuration for grab requests.
  * <p/>
  * An example involving databases:
  * <pre>
- * {@code @Grapes}([
- *     {@code @Grab}('mysql:mysql-connector-java:5.1.6'),
- *     {@code @GrabConfig}(systemClassLoader=true)
- * ])
+ * {@code @Grab}('mysql:mysql-connector-java:5.1.6'),
+ * {@code @GrabConfig}(systemClassLoader=true)
  * import groovy.sql.Sql
  *
  * def sql=Sql.newInstance("jdbc:mysql://localhost/test", "user", "password", "com.mysql.jdbc.Driver")
@@ -65,6 +63,9 @@ import java.lang.annotation.Target;
  *
  * println john2.dump()
  * </pre>
+ * <p/>
+ * Further information about customising grape behavior can be found on the Grape documentation page:
+ * <a href="http://groovy.codehaus.org/Grape">http://groovy.codehaus.org/Grape</a>.
  */
 @Retention(RetentionPolicy.SOURCE)
 @Target({

@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2009 the original author or authors.
+ * Copyright 2003-2011 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import java.lang.annotation.Target;
 import java.lang.annotation.ElementType;
 
 /**
- * Used to add a repository for resolving Grape dependencies
+ * Used to add a repository for resolving Grape dependencies.
  * <p/>
  * For example:
  * <pre>
@@ -31,6 +31,15 @@ import java.lang.annotation.ElementType;
  *   // ...
  * }
  * </pre>
+ * By default, the Grapes subsystem uses an Ivy chained resolver. Each resolver
+ * added using {@code @GrabResolver} is appended to the chain. By default, the grape
+ * subsystem is shared globally, so added resolvers will become available for any subsequent
+ * grab calls. Dependency resolution follows Ivy's artifact resolution which tries
+ * to resolve artifacts in the order specified in the chain of resolvers.
+ * <p/>
+ * Further information about customising grape behavior can be found on the Grape documentation page:
+ * <a href="http://groovy.codehaus.org/Grape">http://groovy.codehaus.org/Grape</a>.
+ *
  * @author Merlyn Albery-Speyer
  */
 @Retention(RetentionPolicy.SOURCE)
