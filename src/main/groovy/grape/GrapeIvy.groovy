@@ -63,13 +63,13 @@ class GrapeIvy implements GrapeEngine {
     Set<String> downloadedArtifacts
     // weak hash map so we don't leak loaders directly
     Map<ClassLoader, Set<IvyGrabRecord>> loadedDeps = new WeakHashMap<ClassLoader, Set<IvyGrabRecord>>()
-    // set that stores the IvyGrabRecord(s) for all the dependencies in each grab() call 
+    // set that stores the IvyGrabRecord(s) for all the dependencies in each grab() call
     Set<IvyGrabRecord> grabRecordsForCurrDependencies = new LinkedHashSet<IvyGrabRecord>()
     // we keep the settings so that addResolver can add to the resolver chain
     IvySettings settings
 
     public GrapeIvy() {
-        // if we are already inited, quit
+        // if we are already initialized, quit
         if (enableGrapes) return
 
         // start ivy
@@ -192,16 +192,16 @@ class GrapeIvy implements GrapeEngine {
     public IvyGrabRecord createGrabRecord(Map deps) {
         // parse the actual dependency arguments
         String module =  deps.module ?: deps.artifactId ?: deps.artifact
-        if (!module) {                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             
+        if (!module) {
             throw new RuntimeException('grab requires at least a module: or artifactId: or artifact: argument')
         }
 
         String groupId = deps.group ?: deps.groupId ?: deps.organisation ?: deps.organization ?: deps.org ?: ''
-        String ext = deps.ext ?: ''
+        String ext = deps.ext ?: deps.type ?: ''
         String type = deps.type ?: ''
 
         //TODO accept ranges and decode them?  except '1.0.0'..<'2.0.0' won't work in groovy
-        String version     = deps.version ?: deps.revision ?: deps.rev ?: '*'
+        String version = deps.version ?: deps.revision ?: deps.rev ?: '*'
         if ('*' == version) version = 'latest.default'
 
         ModuleRevisionId mrid = ModuleRevisionId.newInstance(groupId, module, version)
@@ -252,7 +252,7 @@ class GrapeIvy implements GrapeEngine {
             Set<IvyGrabRecord> grabRecordsForCurrLoader = getLoadedDepsForLoader(loader)
             grabRecordsForCurrLoader.removeAll(grabRecordsForCurrDependencies)
             grabRecordsForCurrDependencies.clear()
-            
+
             if (args.noExceptions) {
                 return e
             } else {
@@ -342,6 +342,7 @@ class GrapeIvy implements GrapeEngine {
                     def m = ivyFilePattern.matcher(ivyFile.name)
                     if (m.matches() && m.group(1) == rev) {
                         def root = new XmlParser(false, false).parse(ivyFile)
+                        // TODO handle other types? e.g. 'dlls'
                         def jardir = new File(moduleDir, 'jars')
                         if (!jardir.exists()) return
                         root.publications.artifact.each {
@@ -396,7 +397,7 @@ class GrapeIvy implements GrapeEngine {
     public URI[] resolve(Map args, Map ... dependencies) {
         resolve(args, null, dependencies)
     }
-    
+
     public URI[] resolve(Map args, List depsInfo, Map ... dependencies) {
         // identify the target classloader early, so we fail before checking repositories
         def loader = chooseClassLoader(
@@ -415,7 +416,7 @@ class GrapeIvy implements GrapeEngine {
     URI [] resolve(ClassLoader loader, Map args, Map... dependencies) {
         return resolve(loader, args, null, dependencies)
     }
-    
+
     URI [] resolve(ClassLoader loader, Map args, List depsInfo, Map... dependencies) {
         // check for mutually exclusive arguments
         Set keys = args.keySet()
@@ -436,7 +437,7 @@ class GrapeIvy implements GrapeEngine {
         dependencies.each {
             IvyGrabRecord igr = createGrabRecord(it)
             grabRecordsForCurrDependencies.add(igr)
-            localDeps.add(igr) 
+            localDeps.add(igr)
         }
         // the call to reverse ensures that the newest additions are in
         // front causing existing dependencies to come last and thus
@@ -453,7 +454,7 @@ class GrapeIvy implements GrapeEngine {
                 results += adl.localFile.toURI()
             }
         }
-        
+
         if (populateDepsInfo) {
             def deps = report.dependencies
             deps.each { depNode ->
@@ -461,7 +462,7 @@ class GrapeIvy implements GrapeEngine {
                 depsInfo << ['group' : id.organisation, 'module' : id.name, 'revision' : id.revision]
             }
         }
-        
+
         return results as URI[]
     }
 
@@ -502,6 +503,9 @@ class GrapeIvy implements GrapeEngine {
                 if (grabbed.ext) {
                     dep.ext = grabbed.ext
                 }
+                if (grabbed.type) {
+                    dep.type = grabbed.type
+                }
                 results << dep
             }
             return results
@@ -509,7 +513,7 @@ class GrapeIvy implements GrapeEngine {
             return null
         }
     }
-    
+
     public void addResolver(Map<String, Object> args) {
         ChainResolver chainResolver = settings.getResolver("downloadGrapes")
 
@@ -517,7 +521,7 @@ class GrapeIvy implements GrapeEngine {
               m2compatible:(args.m2Compatible ?: true), settings:settings)
 
         chainResolver.add(resolver)
-        
+
         ivyInstance = Ivy.newInstance(settings)
         resolvedDependencies = []
         downloadedArtifacts = []
