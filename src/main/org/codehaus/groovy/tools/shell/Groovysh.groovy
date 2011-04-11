@@ -436,7 +436,7 @@ class Groovysh
                         width = 80
                     }
 
-                    io.out.println(messages.format('startup_banner.0', InvokerHelper.version, System.properties['java.version']))
+                    io.out.println(messages.format('startup_banner.0', GroovySystem.getVersion(), System.properties['java.version']))
                     io.out.println(messages['startup_banner.1'])
                     io.out.println('-' * (width - 1))
                 }
