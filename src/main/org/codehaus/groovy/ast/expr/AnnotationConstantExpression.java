@@ -39,5 +39,6 @@ public class AnnotationConstantExpression extends ConstantExpression {
         for (Expression expr : attrs.values()) {
             expr.visit(visitor);
         }
+        super.visit(visitor);
     }
 }
