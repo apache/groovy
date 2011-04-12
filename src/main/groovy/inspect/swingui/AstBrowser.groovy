@@ -156,11 +156,7 @@ public class AstBrowser {
                 mainSplitter = splitPane(
                         orientation: JSplitPane.VERTICAL_SPLIT,
                         topComponent: splitterPane,
-                        bottomComponent: scrollPane() {
-                            decompiledSource = textArea(
-                                    editable: false
-                            )
-                        },
+                        bottomComponent: decompiledSource = new groovy.ui.ConsoleTextEditor(editable: false, showLineNumbers: false), 
                         constraints: gbc(gridx: 0, gridy: 2, gridwidth: 3, gridheight: 1, weightx: 1.0, weighty: 1.0, anchor: NORTHWEST, fill: BOTH, insets: [2, 2, 2, 2])) { }
 
             }
@@ -220,11 +216,11 @@ public class AstBrowser {
     }
 
     void largerFont(EventObject evt = null) {
-        updateFontSize(decompiledSource.font.size + 2)
+        updateFontSize(decompiledSource.textEditor.font.size + 2)
     }
 
     void smallerFont(EventObject evt = null) {
-        updateFontSize(decompiledSource.font.size - 2)
+        updateFontSize(decompiledSource.textEditor.font.size - 2)
     }
 
     private updateFontSize = {newFontSize ->
@@ -235,8 +231,8 @@ public class AstBrowser {
         }
 
         prefs.decompiledSourceFontSize = newFontSize
-        def newFont = new Font(decompiledSource.font.name, decompiledSource.font.style, newFontSize)
-        decompiledSource.font = newFont
+        def newFont = new Font(decompiledSource.textEditor.font.name, decompiledSource.textEditor.font.style, newFontSize)
+        decompiledSource.textEditor.font = newFont
         jTree.cellRenderer.font = newFont
         jTree.model.reload(jTree.model.root)
         propertyTable.tableHeader.font = newFont
@@ -261,23 +257,23 @@ public class AstBrowser {
 
     void decompile(phaseId, source) {
 
-        decompiledSource.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-        decompiledSource.text = 'Loading...';
+        decompiledSource.textEditor.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+        decompiledSource.textEditor.text = 'Loading...';
 
         swing.doOutside {
             try {
 
                 String result = new AstNodeToScriptAdapter().compileToScript(source, phaseId, classLoader, showScriptFreeForm, showScriptClass)
                 swing.doLater {
-                    decompiledSource.text = result 
-                    decompiledSource.setCaretPosition(0)
-                    decompiledSource.setCursor(Cursor.defaultCursor);
+                    decompiledSource.textEditor.text = result 
+                    decompiledSource.textEditor.setCaretPosition(0)
+                    decompiledSource.textEditor.setCursor(Cursor.defaultCursor);
                 }
             } catch (Throwable t) {
                 swing.doLater {
-                    decompiledSource.text = t.getMessage();
-                    decompiledSource.setCaretPosition(0)
-                    decompiledSource.setCursor(Cursor.defaultCursor);
+                    decompiledSource.textEditor.text = t.getMessage();
+                    decompiledSource.textEditor.setCaretPosition(0)
+                    decompiledSource.textEditor.setCursor(Cursor.defaultCursor);
                 }
                 throw t
             }
