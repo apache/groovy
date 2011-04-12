@@ -92,6 +92,8 @@ public class Java5 implements VMPlugin {
             return configureTypeVariableReference((TypeVariable) type);
         } else if (type instanceof Class) {
             return configureClass((Class) type);
+        } else if (type==null) {
+            throw new GroovyBugError("Type is null. Most probably you let a transform reuse existing ClassNodes with generics information, that is now used in a wrong context.");
         } else {
             throw new GroovyBugError("unknown type: " + type + " := " + type.getClass());
         }
