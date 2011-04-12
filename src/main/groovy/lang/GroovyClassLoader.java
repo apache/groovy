@@ -314,6 +314,11 @@ public class GroovyClassLoader extends URLClassLoader {
             setClassCacheEntry(clazz);
             if(clazzName.equals(mainClass)) answer = clazz;
         }
+        for (Object o : collector.getLoadedClasses()) {
+            Class clazz = (Class) o;
+            InnerLoader il = (InnerLoader) clazz.getClassLoader();
+            il.resolveClass(clazz);
+        }
         return answer;
     }
 
@@ -446,9 +451,11 @@ public class GroovyClassLoader extends URLClassLoader {
         public Class loadClass(String name, boolean lookupScriptFiles, boolean preferClassOverScript, boolean resolve) throws ClassNotFoundException, CompilationFailedException {
             Class c = findLoadedClass(name);
             if (c != null) return c;
+            c = classCache.get(name);
+            if (c!=null) return c;
             return delegate.loadClass(name, lookupScriptFiles, preferClassOverScript, resolve);
         }
-
+        
         public Class parseClass(GroovyCodeSource codeSource, boolean shouldCache) throws CompilationFailedException {
             return delegate.parseClass(codeSource, shouldCache);
         }
@@ -498,7 +505,7 @@ public class GroovyClassLoader extends URLClassLoader {
 
     public static class ClassCollector extends CompilationUnit.ClassgenCallback {
         private Class generatedClass;
-        private final GroovyClassLoader cl;
+        private final InnerLoader cl;
         private final SourceUnit su;
         private final CompilationUnit unit;
         private final Collection<Class> loadedClasses;

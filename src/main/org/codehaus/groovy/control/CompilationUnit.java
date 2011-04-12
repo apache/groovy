@@ -180,9 +180,10 @@ public class CompilationUnit extends ProcessingUnit {
 
         ASTTransformationVisitor.addPhaseOperations(this);
         addPhaseOperation(new PrimaryClassNodeOperation() {
+            @Override
             public void call(SourceUnit source, GeneratorContext context,
                              ClassNode classNode) throws CompilationFailedException {
-                InnerClassCompletionVisitor iv = new InnerClassCompletionVisitor(CompilationUnit.this,source);
+                InnerClassCompletionVisitor iv = new InnerClassCompletionVisitor();
                 iv.visitClass(classNode);
             }
         }, Phases.CANONICALIZATION);
