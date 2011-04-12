@@ -2414,9 +2414,9 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             setTypeArgumentsOnMethodCallExpression(expression, typeArgumentList);
             configureAST(expression, methodCallNode);
             return expression;
-        } else if
-                (isType(DYNAMIC_MEMBER, selector) || isType(IDENT, selector) ||
-                        isType(STRING_CONSTRUCTOR, selector) || isType(STRING_LITERAL, selector)) {
+        } else if (!implicitThis || isType(DYNAMIC_MEMBER, selector) || isType(IDENT, selector) ||
+                   isType(STRING_CONSTRUCTOR, selector) || isType(STRING_LITERAL, selector)) 
+        {
             name = expression(selector, true);
         } else {
             implicitThis = false;

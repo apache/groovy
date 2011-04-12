@@ -274,7 +274,7 @@ class Gep3Test extends GroovyTestCase {
     }
 
     /**
-     * Case where a midle element of the chain is actually a pretty complex exception
+     * Case where a middle element of the chain is actually a pretty complex exception
      *
      * case            a b  c[1](){} d e
      * equivalent      a(b).c[1](){}.d(e)
@@ -287,6 +287,21 @@ class Gep3Test extends GroovyTestCase {
         resolve cube move [topLayer]() {} upside down
 
         assert resolved
+    }
+    
+    /**
+    * Case where an Integer is used as name
+    *
+    * case            a b 1 2
+    * equivalent      a(b)."1"(2)
+    */
+    void testIntegerAsName() {
+        Integer.metaClass."1" = {x-> assert delegate == 10; x}
+        def a = {x-> assert x == "b"; 10}
+        def b = "b"
+        def x = a b 1 2
+        assert x == 2
+        assert a(b)."1"(2) == 2
     }
 }
 
