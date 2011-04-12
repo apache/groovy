@@ -74,7 +74,6 @@ public class ConsoleTextEditor extends JScrollPane {
         @Override
         public void paintComponent(Graphics g) {
             super.paintComponent(g);
-
             // starting position in document
             int start = textEditor.viewToModel(getViewport().getViewPosition());
             // end position in document
@@ -140,7 +139,7 @@ public class ConsoleTextEditor extends JScrollPane {
      */
     public ConsoleTextEditor() {
         textEditor.setFont(new Font(defaultFamily, Font.PLAIN, Preferences.userNodeForPackage(Console.class).getInt("fontSize", 12)));
-
+        
         setViewportView(new JPanel(new BorderLayout()) {{
             add(numbersPanel, BorderLayout.WEST);
             add(textEditor, BorderLayout.CENTER);
@@ -198,6 +197,21 @@ public class ConsoleTextEditor extends JScrollPane {
         ks = KeyStroke.getKeyStroke(KeyEvent.VK_P, InputEvent.CTRL_MASK, false);
         im.put(ks, StructuredSyntaxResources.PRINT);
         am.put(StructuredSyntaxResources.PRINT, printAction);
+    }
+
+    public void setShowLineNumbers(boolean showLineNumbers) {
+        if (showLineNumbers) {
+            setViewportView(new JPanel(new BorderLayout()) {{
+                add(numbersPanel, BorderLayout.WEST);
+                add(textEditor, BorderLayout.CENTER);
+            }});
+        } else {
+            setViewportView(textEditor);
+        }
+    }
+
+    public void setEditable(boolean editable) {
+        textEditor.setEditable(editable); 
     }
 
     public boolean clipBoardAvailable() {
