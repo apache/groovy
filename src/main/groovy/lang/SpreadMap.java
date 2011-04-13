@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2011 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 package groovy.lang;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Iterator;
 
@@ -25,7 +26,6 @@ import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
  * Represents a spreadable map which extends java.util.HashMap.
  * 
  * @author Pilho Kim
- * @version $Revision$
  */
 public class SpreadMap extends HashMap {
 
@@ -42,6 +42,14 @@ public class SpreadMap extends HashMap {
 
     public SpreadMap(Map map) {
         this.mapData = map;
+    }
+
+    /**
+     * @since 1.8.0
+     * @param list the list to make spreadable
+     */
+    public SpreadMap(List list) {
+        this(list.toArray());
     }
 
     public Object get(Object obj) {
@@ -78,11 +86,10 @@ public class SpreadMap extends HashMap {
         if (that == null) return false;        
 
         if (size() == that.size()) {
-            SpreadMap other = (SpreadMap) that;
             Iterator iter = mapData.keySet().iterator();
             for (; iter.hasNext(); ) {
                 Object key = iter.next();
-                if (! DefaultTypeTransformation.compareEqual(get(key), other.get(key)) ) {
+                if (! DefaultTypeTransformation.compareEqual(get(key), that.get(key)) ) {
                     return false;
                 }
             }
@@ -105,8 +112,6 @@ public class SpreadMap extends HashMap {
     }
 
     /**
-     * Returns the string expression of <code>this</code>.
-     *
      * @return the string expression of <code>this</code>
      */
     public String toString() {
