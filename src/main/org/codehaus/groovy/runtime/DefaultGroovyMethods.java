@@ -142,7 +142,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Allows the closure to be called for the object reference self. 
+     * Allows the closure to be called for the object reference self.
      * Synonym for 'with()'.
      *
      * @param self    the object to have a closure act upon
@@ -156,17 +156,17 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Allows the closure to be called for the object reference self. <br/><br/>
-     * Any method invoked inside the closure will first be invoked on the 
+     * Any method invoked inside the closure will first be invoked on the
      * self reference. For instance, the following method calls to the append()
-     * method are invoked on the StringBuilder instance: 
+     * method are invoked on the StringBuilder instance:
      * <pre>
      * def b = new StringBuilder().with {
      *   append('foo')
      *   append('bar')
      * }
-     * assert b.toString() == 'foobar' 
+     * assert b.toString() == 'foobar'
      * </pre>
-     * This is commonly used to simplify object creation, such as this example: 
+     * This is commonly used to simplify object creation, such as this example:
      * <pre>
      * def p = new Person().with {
      *   firstName = 'John'
@@ -905,13 +905,15 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Special 'Case' implementation for Class, which allows testing
      * for a certain class in a switch statement.
      * For example:
-     * <pre>switch( obj ) {
+     * <pre>
+     * switch( obj ) {
      *   case List :
      *     // obj is a list
      *     break;
      *   case Set :
      *     // etc
-     * }</pre>
+     * }
+     * </pre>
      *
      * @param caseValue   the case value
      * @param switchValue the switch value
@@ -1137,7 +1139,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Remove all duplicates from a given Collection.
-     * Works on the receiver object and returns it.
+     * Works on the original object (and also returns it).
      * The order of members in the Collection are compared by the given Comparator.
      * For each duplicate, the first member which is returned
      * by the given Collection's iterator is retained, but all other ones are removed.
@@ -1178,7 +1180,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self       a Collection
      * @param comparator a Comparator
-     * @return self       the now modified collection without duplicates
+     * @return self      the now modified collection without duplicates
      * @since 1.0
      */
     public static <T> Collection<T> unique(Collection<T> self, Comparator<T> comparator) {
@@ -2239,9 +2241,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Returns the first non-null closure result by passing each map entry to the closure, otherwise it returns the defaultResult.  
-     * If the closure takes two parameters, the entry key and value are passed.  If the closure takes
-     * one parameter, the Map.Entry object is passed.
+     * Returns the first non-null closure result by passing each map entry to the closure,
+     * otherwise it returns the defaultResult. If the closure takes two parameters, the entry
+     * key and value are passed.  If the closure takes one parameter, the Map.Entry object is passed.
      * <pre class="groovyTestCase">
      *     assert "Found b:3" == [a:1, b:3].findResult("default") { if (it.value == 3) return "Found ${it.key}:${it.value}" }
      *
@@ -2326,6 +2328,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Returns <tt>true</tt> if this collection contains all of the elements
      * in the specified array.
      *
+     * @param  self  a Collection to be checked for containment
      * @param  items array to be checked for containment in this collection
      * @return <tt>true</tt> if this collection contains all of the elements
      *           in the specified array
@@ -2337,10 +2340,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Removes all of this collection's elements that are also contained in the
-     * specified array.  After this call returns, this collection will contain
-     * no elements in common with the specified array.
+     * Modifies this collection by removing its elements that are contained
+     * within the specified object array.
      *
+     * See also <code>findAll</code> and <code>grep</code> when wanting to produce a new list
+     * containing items which don't match some criteria while leaving the original collection unchanged.
+     *
+     * @param  self  a Collection to be modified
      * @param  items array containing elements to be removed from this collection
      * @return <tt>true</tt> if this collection changed as a result of the call
      * @see    Collection#removeAll(Collection)
@@ -2351,10 +2357,14 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Retains only the elements in this collection that are contained in the
-     * specified array.  In other words, removes from this collection all of
+     * Modifies this collection so that it retains only its elements that are contained
+     * in the specified array.  In other words, removes from this collection all of
      * its elements that are not contained in the specified array.
      *
+     * See also <code>grep</code> and <code>findAll</code> when wanting to produce a new list
+     * containing items which match some specified items but leaving the original collection unchanged.
+     *
+     * @param  self  a Collection to be modified
      * @param  items array containing elements to be retained from this collection
      * @return <tt>true</tt> if this collection changed as a result of the call
      * @see    Collection#retainAll(Collection)
@@ -2365,22 +2375,25 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Retains only the elements in this collection that are matched according
-     * to the specified closure condition.  In other words, removes from this
-     * collection all of its elements that don't match.
+     * Modifies this collection so that it retains only its elements
+     * that are matched according to the specified closure condition.  In other words,
+     * removes from this collection all of its elements that don't match.
      *
-     * @param  self a Collection to be modified
-     * @param  closure a closure condition
+     * See also <code>findAll</code> and <code>grep</code> when wanting to produce a new list
+     * containing items which match some criteria but leaving the original collection unchanged.
+     *
+     * @param  self      a Collection to be modified
+     * @param  condition a closure condition
      * @return <tt>true</tt> if this collection changed as a result of the call
      * @see    Iterator#remove()
      * @since 1.7.2
      */
-    public static boolean retainAll(Collection self, Closure closure) {
+    public static boolean retainAll(Collection self, Closure condition) {
         Iterator iter = InvokerHelper.asIterator(self);
         boolean result = false;
         while (iter.hasNext()) {
             Object value = iter.next();
-            if (!DefaultTypeTransformation.castToBoolean(closure.call(value))) {
+            if (!DefaultTypeTransformation.castToBoolean(condition.call(value))) {
                 iter.remove();
                 result = true;
             }
@@ -2389,21 +2402,24 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Removes the elements in this collection that are matched according
+     * Modifies this collection by removing the elements that are matched according
      * to the specified closure condition.
      *
+     * See also <code>findAll</code> and <code>grep</code> when wanting to produce a new list
+     * containing items which don't match some criteria while leaving the original collection unchanged.
+     *
      * @param  self a Collection to be modified
-     * @param  closure a closure condition
+     * @param  condition a closure condition
      * @return <tt>true</tt> if this collection changed as a result of the call
      * @see    Iterator#remove()
      * @since 1.7.2
      */
-    public static boolean removeAll(Collection self, Closure closure) {
+    public static boolean removeAll(Collection self, Closure condition) {
         Iterator iter = InvokerHelper.asIterator(self);
         boolean result = false;
         while (iter.hasNext()) {
             Object value = iter.next();
-            if (DefaultTypeTransformation.castToBoolean(closure.call(value))) {
+            if (DefaultTypeTransformation.castToBoolean(condition.call(value))) {
                 iter.remove();
                 result = true;
             }
@@ -2412,10 +2428,14 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Adds all of the elements in the specified array to this collection.
+     * Modifies the collection by adding all of the elements in the specified array to the collection.
      * The behavior of this operation is undefined if
      * the specified array is modified while the operation is in progress.
      *
+     * See also <code>plus</code> or the '+' operator if wanting to produce a new collection
+     * containing additional items but while leaving the original collection unchanged.
+     *
+     * @param  self  a Collection to be modified
      * @param  items array containing elements to be added to this collection
      * @return <tt>true</tt> if this collection changed as a result of the call
      * @see    Collection#addAll(Collection)
@@ -2426,7 +2446,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Inserts all of the elements in the specified array into this
+     * Modifies this list by inserting all of the elements in the specified array into the
      * list at the specified position.  Shifts the
      * element currently at that position (if any) and any subsequent
      * elements to the right (increases their indices).  The new elements
@@ -2434,8 +2454,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * The behavior of this operation is undefined if the specified array
      * is modified while the operation is in progress.
      *
-     * @param  items array containing elements to be added to this collection
-     * @param  index index at which to insert the first element from the
+     * See also <code>plus</code> for similar functionality with copy semantics, i.e. which produces a new
+     * list after adding the additional items at the specified position but leaves the original list unchanged.
+     *
+     * @param self  a list to be modified
+     * @param items array containing elements to be added to this collection
+     * @param index index at which to insert the first element from the
      *              specified array
      * @return <tt>true</tt> if this collection changed as a result of the call
      * @see    List#addAll(int, Collection)
@@ -2569,9 +2593,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Adds GroovyCollections#transpose(List) as a method on lists. <br/>
-     * A TransposeFunction takes a collection of columns and returns a collection of 
-     * rows. The first row consists of the first element from each column. Successive 
-     * rows are constructed similarly.      
+     * A transpose function takes a collection of columns and returns a collection of
+     * rows. The first row consists of the first element from each column. Successive
+     * rows are constructed similarly.
      * <p>
      * Example usage:
      * <pre class="groovyTestCase">def result = [['a', 'b'], [1, 2]].transpose()
@@ -2849,7 +2873,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Iterates through the given Collection, passing in the initial value to
-     * the closure along with the first item. The result is passed back (injected) into
+     * the 2-arg closure along with the first item. The result is passed back (injected) into
      * the closure along with the second item. The new result is injected back into
      * the closure along with the third item and so on until the entire collection
      * has been used. Also known as <tt>foldLeft</tt> in functional parlance.
@@ -5856,8 +5880,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Sorts the given collection into a sorted list.  The collection items are
-     * assumed to be comparable.
+     * Sorts the Collection. Assumes that the collection items are
+     * comparable and uses their natural ordering to determine the resulting order.
+     * If the Collection is a List,
+     * it is sorted in place and returned. Otherwise, the elements are first placed
+     * into a new list which is then sorted and returned - leaving the original Collection unchanged.
      * <pre class="groovyTestCase">assert [1,2,3] == [3,1,2].sort()</pre>
      *
      * @param self the collection to be sorted
@@ -5873,10 +5900,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Sorts the elements from the given map into a new ordered map using
      * the closure as a comparator to determine the ordering.
+     * The original map is unchanged.
      * <pre class="groovyTestCase">def map = [a:5, b:3, c:6, d:4].sort { a, b -> a.value <=> b.value }
      * assert map == [b:3, d:4, a:5, c:6]</pre>
      *
-     * @param self the map to be sorted
+     * @param self the original unsorted map
      * @param closure a Closure used as a comparator
      * @return the sorted map
      * @since 1.6.0
@@ -5894,10 +5922,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Sorts the elements from the given map into a new ordered Map using
      * the specified key comparator to determine the ordering.
+     * The original map is unchanged.
      * <pre class="groovyTestCase">def map = [ba:3, cz:6, ab:5].sort({ a, b -> a[-1] <=> b[-1] } as Comparator)
      * assert map*.value == [3, 5, 6]</pre>
      *
-     * @param self the map to be sorted
+     * @param self the original unsorted map
      * @param comparator a Comparator
      * @return the sorted map
      * @since 1.7.2
@@ -5911,11 +5940,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Sorts the elements from the given map into a new ordered Map using
      * the natural ordering of the keys to determine the ordering.
+     * The original map is unchanged.
      * <pre class="groovyTestCase">map = [ba:3, cz:6, ab:5].sort()
      * assert map*.value == [5, 3, 6]
      * </pre>
      *
-     * @param self the map to be sorted
+     * @param self the original unsorted map
      * @return the sorted map
      * @since 1.7.2
      */
@@ -5924,8 +5954,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Sorts the given Object array into sorted order.  The array items are
-     * assumed to be comparable.
+     * Modifies this array so that its elements are in sorted order.
+     * The array items are assumed to be comparable.
      *
      * @param self the array to be sorted
      * @return the sorted array
@@ -5937,10 +5967,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Sorts the given iterator items into a sorted iterator.  The items are
-     * assumed to be comparable.  The original iterator will become
-     * exhausted of elements after completing this method call. A new iterator
-     * is produced that traverses the items in sorted order.
+     * Sorts the given iterator items into a sorted iterator. The items are
+     * assumed to be comparable. The original iterator will become
+     * exhausted of elements after completing this method call.
+     * A new iterator is produced that traverses the items in sorted order.
      *
      * @param self the Iterator to be sorted
      * @return the sorted items as an Iterator
@@ -5951,8 +5981,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Sorts the given iterator items into a sorted iterator using
-     * the comparator.
+     * Sorts the given iterator items into a sorted iterator using the comparator. The
+     * original iterator will become exhausted of elements after completing this method call.
+     * A new iterator is produced that traverses the items in sorted order.
      *
      * @param self       the Iterator to be sorted
      * @param comparator a Comparator used for comparing items
@@ -5964,14 +5995,19 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Sorts the Collection using the given comparator.  The elements are
-     * sorted into a new list, and the existing collection is unchanged.
-     * <pre class="groovyTestCase">assert ["hi","hey","hello"] == ["hello","hi","hey"].sort( { a, b -> a.length() <=> b.length() } as Comparator )</pre>
-     * <pre class="groovyTestCase">assert ["hello","Hey","hi"] == ["hello","hi","Hey"].sort(String.CASE_INSENSITIVE_ORDER)</pre>
+     * Sorts the Collection using the given Comparator. If the Collection is a List,
+     * it is sorted in place and returned. Otherwise, the elements are first placed
+     * into a new list which is then sorted and returned - leaving the original Collection unchanged.
+     * <pre class="groovyTestCase">
+     * assert ["hi","hey","hello"] == ["hello","hi","hey"].sort( { a, b -> a.length() <=> b.length() } as Comparator )
+     * </pre>
+     * <pre class="groovyTestCase">
+     * assert ["hello","Hey","hi"] == ["hello","hi","Hey"].sort(String.CASE_INSENSITIVE_ORDER)
+     * </pre>
      *
      * @param self       a collection to be sorted
      * @param comparator a Comparator used for the comparison
-     * @return a newly created sorted List
+     * @return a sorted List
      * @since 1.0
      */
     public static <T> List<T> sort(Collection<T> self, Comparator<T> comparator) {
@@ -5981,7 +6017,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Sorts the given Object array into sorted order using the given comparator.
+     * Sorts the given array into sorted order using the given comparator.
      *
      * @param self the array to be sorted
      * @param comparator a Comparator used for the comparison
@@ -5994,20 +6030,17 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Sorts the given iterator items into a sorted iterator using
-     * the Closure to determine the correct ordering. The original
-     * iterator will be fully processed after the method call.
+     * Sorts the given iterator items into a sorted iterator using the Closure to determine the correct ordering.
+     * The original iterator will be fully processed after the method call.
      * </p>
-     * If the closure has two parameters
-     * it is used like a traditional Comparator. I.e. it should compare
-     * its two parameters for order, returning a negative integer,
-     * zero, or a positive integer when the first parameter is less than,
-     * equal to, or greater than the second respectively. Otherwise,
-     * the Closure is assumed to take a single parameter and return a
-     * Comparable (typically an Integer) which is then used for
-     * further comparison.
+     * If the closure has two parameters it is used like a traditional Comparator.
+     * I.e. it should compare its two parameters for order, returning a negative integer,
+     * zero, or a positive integer when the first parameter is less than, equal to,
+     * or greater than the second respectively. Otherwise, the Closure is assumed
+     * to take a single parameter and return a Comparable (typically an Integer)
+     * which is then used for further comparison.
      *
-     * @param self       the Iterator to be sorted
+     * @param self    the Iterator to be sorted
      * @param closure a Closure used to determine the correct ordering
      * @return the sorted items as an Iterator
      * @since 1.5.5
@@ -6040,10 +6073,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Sorts this Collection using
-     * the closure to determine the correct ordering.
+     * Sorts this Collection using the given Closure to determine the correct ordering. If the Collection is a List,
+     * it is sorted in place and returned. Otherwise, the elements are first placed
+     * into a new list which is then sorted and returned - leaving the original Collection unchanged.
      * </p>
-     * If the closure has two parameters
+     * If the Closure has two parameters
      * it is used like a traditional Comparator. I.e. it should compare
      * its two parameters for order, returning a negative integer,
      * zero, or a positive integer when the first parameter is less than,
@@ -6608,7 +6642,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             stack.addAll(col);
             return (T) stack;
         }
-        
+
         if (clazz!=String[].class && ReflectionCache.isArray(clazz)) {
             try {
                 return (T) asArrayType(col, clazz);
@@ -6723,11 +6757,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Reverses the list.  The result is a new List with the identical contents
-     * in reverse order.
-     * <pre class="groovyTestCase">def list = ["a", 4, false]
+     * Creates a new List with the identical contents to this list
+     * but in reverse order.
+     * <pre class="groovyTestCase">
+     * def list = ["a", 4, false]
      * assert list.reverse() == [false, 4, "a"]
-     * assert list == ["a", 4, false]</pre>
+     * assert list == ["a", 4, false]
+     * </pre>
      *
      * @param self a List
      * @return a reversed List
@@ -6771,6 +6807,66 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static <T> Collection<T> plus(Collection<T> left, Collection<T> right) {
         final Collection<T> answer = cloneSimilarCollection(left, left.size() + right.size());
         answer.addAll(right);
+        return answer;
+    }
+
+    /**
+     * Creates a new list by adding all of the elements in the specified array to the elements from the original list at the specified index.
+     * Shifts the element currently at that index (if any) and any subsequent
+     * elements to the right (increasing their indices).  The new elements
+     * will appear in this list in the order that they occur in the array.
+     * The behavior of this operation is undefined if the specified array
+     * is modified while the operation is in progress. The original list remains unchanged.
+     *
+     * <pre class="groovyTestCase">
+     * def items = [1, 2, 3]
+     * def newItems = items.plus(2, 'a'..'c' as String[])
+     * assert newItems == [1, 2, 'a', 'b', 'c', 3]
+     * assert items == [1, 2, 3]
+     * </pre>
+     *
+     * See also <code>addAll</code> for similar functionality with modify semantics, i.e. which performs
+     * the changes on the original list itself.
+     *
+     * @param self  an original list
+     * @param items array containing elements to be merged with elements from the original list
+     * @param index index at which to insert the first element from the specified array
+     * @return the new list
+     * @see #plus(List, int, List)
+     * @since 1.8.0
+     */
+    public static <T> List<T> plus(List<T> self, int index, T[] items) {
+        return plus(self, index, Arrays.asList(items));
+    }
+
+    /**
+     * Creates a new list by adding all of the elements in the specified list
+     * to the elements from this list at the specified index.
+     * Shifts the element currently at that index (if any) and any subsequent
+     * elements to the right (increasing their indices).  The new elements
+     * will appear in this list in the order that they occur in the array.
+     * The behavior of this operation is undefined if the specified array
+     * is modified while the operation is in progress. The original list remains unchanged.
+     *
+     * <pre class="groovyTestCase">
+     * def items = [1, 2, 3]
+     * def newItems = items.plus(2, 'a'..'c')
+     * assert newItems == [1, 2, 'a', 'b', 'c', 3]
+     * assert items == [1, 2, 3]
+     * </pre>
+     *
+     * See also <code>addAll</code> for similar functionality with modify semantics, i.e. which performs
+     * the changes on the original list itself.
+     *
+     * @param self      an original list
+     * @param additions array containing elements to be merged with elements from the original list
+     * @param index     index at which to insert the first element from the specified list
+     * @return the new list
+     * @since 1.8.0
+     */
+    public static <T> List<T> plus(List<T> self, int index, List<T> additions) {
+        final List<T> answer = new ArrayList<T>(self);
+        answer.addAll(index, additions);
         return answer;
     }
 
@@ -9857,7 +9953,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Power of a BigDecimal to an integer certain exponent.  If the
      * exponent is positive, call the BigDecimal.pow(int) method to
      * maintain precision. Called by the '**' operator.
-     * 
+     *
      * @param self     a BigDecimal
      * @param exponent an Integer exponent
      * @return a Number to the power of a the exponent
@@ -9874,7 +9970,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Power of a BigInteger to an integer certain exponent.  If the
      * exponent is positive, call the BigInteger.pow(int) method to
      * maintain precision. Called by the '**' operator.
-     * 
+     *
      *  @param self     a BigInteger
      *  @param exponent an Integer exponent
      *  @return a Number to the power of a the exponent
@@ -9892,7 +9988,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * exponent is positive, convert to a BigInteger and call
      * BigInteger.pow(int) method to maintain precision. Called by the
      * '**' operator.
-     * 
+     *
      *  @param self     an Integer
      *  @param exponent an Integer exponent
      *  @return a Number to the power of a the exponent
@@ -14736,7 +14832,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see java.net.ServerSocket#accept()
      * @since 1.7.6
      */
-    public static Socket accept(ServerSocket serverSocket, final boolean runInANewThread, 
+    public static Socket accept(ServerSocket serverSocket, final boolean runInANewThread,
             final Closure closure) throws IOException {
         final Socket socket = serverSocket.accept();
         if(runInANewThread) {
@@ -14750,7 +14846,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         }
         return socket;
     }
-    
+
     private static void invokeClosureWithSocket(Socket socket, Closure closure) {
         try {
             closure.call(socket);
