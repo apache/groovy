@@ -48,8 +48,8 @@ import java.awt.Component
 
 public class AstBrowser {
 
-    private inputArea, rootElement, decompiledSource, jTree, propertyTable
-    boolean showScriptFreeForm, showScriptClass
+    private inputArea, rootElement, decompiledSource, jTree, propertyTable, splitterPane, mainSplitter
+    boolean showScriptFreeForm, showScriptClass, showTreeView
     GroovyClassLoader classLoader
     def prefs = new AstBrowserUiPreferences()
 
@@ -83,17 +83,18 @@ public class AstBrowser {
     void run(Closure script, String name) {
 
         swing = new SwingBuilder()
-        def phasePicker, splitterPane, mainSplitter
+        def phasePicker
 
         showScriptFreeForm = prefs.showScriptFreeForm
         showScriptClass = prefs.showScriptClass
+        showTreeView = prefs.showTreeView
 
         frame = swing.frame(title: 'Groovy AST Browser' + (name ? " - $name" : ''),
                 location: prefs.frameLocation,
                 size: prefs.frameSize,
                 iconImage: swing.imageIcon(groovy.ui.Console.ICON_PATH).image,
                 defaultCloseOperation: WindowConstants.DISPOSE_ON_CLOSE,
-                windowClosing: { event -> prefs.save(frame, splitterPane, mainSplitter, showScriptFreeForm, showScriptClass, phasePicker.selectedItem) }) {
+                windowClosing: { event -> prefs.save(frame, splitterPane, mainSplitter, showScriptFreeForm, showScriptClass, phasePicker.selectedItem, showTreeView) }) {
 
             menuBar {
                 menu(text: 'Show Script', mnemonic: 'S') {
@@ -104,6 +105,10 @@ public class AstBrowser {
                     checkBoxMenuItem(selected: showScriptClass) {
                         action(name: 'Class Form', closure: this.&showScriptClass,
                                 mnemonic: 'C')
+                    }
+                    checkBoxMenuItem(selected: showTreeView) {
+                        action(name: 'Tree View', closure: this.&showTreeView,
+                                mnemonic: 'T')
                     }
                 }
                 menu(text: 'View', mnemonic: 'V') {
@@ -138,6 +143,7 @@ public class AstBrowser {
                         },
                         constraints: gbc(gridx: 2, gridy: 0, gridwidth: 1, gridheight: 1, weightx: 0, weighty: 0, anchor: NORTHEAST, fill: NONE, insets: [2, 2, 2, 3]))
                 splitterPane = splitPane(
+                        visible: showTreeView, 
                         leftComponent: scrollPane() {
                             jTree = tree(
                                     name: "AstTreeView",
@@ -255,6 +261,16 @@ public class AstBrowser {
         showScriptClass = evt.source.selected
     }
 
+    void showTreeView(EventObject evt = null) {
+        showTreeView = !showTreeView
+        splitterPane.visible = showTreeView
+        if (showTreeView) {
+            mainSplitter.dividerLocation = 100
+        } else {
+            mainSplitter.dividerLocation = 0
+        }
+    }
+
     void decompile(phaseId, source) {
 
         decompiledSource.textEditor.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
@@ -321,6 +337,7 @@ class AstBrowserUiPreferences {
     final def verticalDividerLocation
     final def horizontalDividerLocation
     final boolean showScriptFreeForm
+    final boolean showTreeView
     final boolean showScriptClass
     int decompiledSourceFontSize
     final CompilePhaseAdapter selectedPhase
@@ -335,17 +352,18 @@ class AstBrowserUiPreferences {
                 prefs.getInt("frameHeight", 600)]
 
         decompiledSourceFontSize = prefs.getInt("decompiledFontSize", 12)
-        verticalDividerLocation = prefs.getInt("verticalSplitterLocation", 100)
-        horizontalDividerLocation = prefs.getInt("horizontalSplitterLocation", 100)
+        verticalDividerLocation = Math.max(prefs.getInt("verticalSplitterLocation", 100), 100)
+        horizontalDividerLocation = Math.max(prefs.getInt("horizontalSplitterLocation", 100), 100)
         showScriptFreeForm = prefs.getBoolean("showScriptFreeForm", false)
         showScriptClass = prefs.getBoolean("showScriptClass", true)
+        showTreeView = prefs.getBoolean("showTreeView", true)
         int phase = prefs.getInt('compilerPhase', Phases.SEMANTIC_ANALYSIS)
         selectedPhase = CompilePhaseAdapter.values().find {
             it.phaseId == phase
         }
     }
 
-    def save(frame, vSplitter, hSplitter, scriptFreeFormPref, scriptClassPref, CompilePhaseAdapter phase) {
+    def save(frame, vSplitter, hSplitter, scriptFreeFormPref, scriptClassPref, CompilePhaseAdapter phase, showTreeView) {
         Preferences prefs = Preferences.userNodeForPackage(AstBrowserUiPreferences)
         prefs.putInt("decompiledFontSize", decompiledSourceFontSize as int)
         prefs.putInt("frameX", frame.location.x as int)
@@ -356,6 +374,7 @@ class AstBrowserUiPreferences {
         prefs.putInt("horizontalSplitterLocation", hSplitter.dividerLocation)
         prefs.putBoolean("showScriptFreeForm", scriptFreeFormPref)
         prefs.putBoolean("showScriptClass", scriptClassPref)
+        prefs.putBoolean("showTreeView", showTreeView)
         prefs.putInt('compilerPhase', phase.phaseId)
     }
 }
