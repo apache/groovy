@@ -5805,7 +5805,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Synonym for {@link #toSpreadMap(java.util.Map)}.
      * @param self a map
-     * @return a newly created Spreadmap
+     * @return a newly created SpreadMap
      * @since 1.0
      */
     public static SpreadMap spread(Map self) {
@@ -5815,19 +5815,21 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Returns a new <code>SpreadMap</code> from this map.
      * <p/>
-     * For examples, if there is defined a function like as
-     * <blockquote><pre>
-     *     def fn(Map m) { return m.a + m.b + m.c + m.d }
-     * </pre></blockquote>, then all of the following three have the same meaning.
-     * <blockquote><pre>
-     *     println fn(a:1, [b:2, c:3].toSpreadMap(), d:4)
-     *     println fn(a:1, *:[b:2, c:3], d:4)
-     *     println fn(a:1, b:2, c:3, d:4)
-     * </pre></blockquote>
-     * <p/>
+     * The example below shows the various possible use cases:
+     * <pre class="groovyTestCase">
+     * def fn(Map m) { return m.a + m.b + m.c + m.d }
      *
-     * @param self a list to be converted into a spreadmap
-     * @return a newly created Spreadmap if this list is not null and its size is positive.
+     * assert fn(a:1, b:2, c:3, d:4) == 10
+     * assert fn(a:1, *:[b:2, c:3], d:4) == 10
+     * assert fn([a:1, b:2, c:3, d:4].toSpreadMap()) == 10
+     * assert fn((['a', 1, 'b', 2, 'c', 3, 'd', 4] as Object[]).toSpreadMap()) == 10
+     * assert fn(['a', 1, 'b', 2, 'c', 3, 'd', 4].toSpreadMap()) == 10
+     * assert fn(['abcd'.toList(), 1..4].transpose().flatten().toSpreadMap()) == 10
+     * </pre>
+     * Note that toSpreadMap() is not normally used explicitly but under the covers by Groovy.
+     *
+     * @param self a map to be converted into a SpreadMap
+     * @return a newly created SpreadMap if this map is not null and its size is positive.
      * @see groovy.lang.SpreadMap#SpreadMap(java.util.Map)
      * @since 1.0
      */
@@ -5840,9 +5842,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Creates a spreadable map from this array.
+     * <p/>
      * @param self an object array
-     * @return a newly created Spreadmap
+     * @return a newly created SpreadMap
      * @see groovy.lang.SpreadMap#SpreadMap(java.lang.Object[])
+     * @see #toSpreadMap(java.util.Map)
      * @since 1.0
      */
     public static SpreadMap toSpreadMap(Object[] self) {
@@ -5850,6 +5854,24 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             throw new GroovyRuntimeException("Fail to convert Object[] to SpreadMap, because it is null.");
         else if (self.length % 2 != 0)
             throw new GroovyRuntimeException("Fail to convert Object[] to SpreadMap, because it's size is not even.");
+        else
+            return new SpreadMap(self);
+    }
+
+    /**
+     * Creates a spreadable map from this list.
+     * <p/>
+     * @param self a list
+     * @return a newly created SpreadMap
+     * @see groovy.lang.SpreadMap#SpreadMap(java.util.List)
+     * @see #toSpreadMap(java.util.Map)
+     * @since 1.8.0
+     */
+    public static SpreadMap toSpreadMap(List self) {
+        if (self == null)
+            throw new GroovyRuntimeException("Fail to convert List to SpreadMap, because it is null.");
+        else if (self.size() % 2 != 0)
+            throw new GroovyRuntimeException("Fail to convert List to SpreadMap, because it's size is not even.");
         else
             return new SpreadMap(self);
     }
