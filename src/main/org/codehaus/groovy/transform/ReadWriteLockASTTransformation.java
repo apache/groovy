@@ -53,9 +53,13 @@ public class ReadWriteLockASTTransformation implements ASTTransformation, Opcode
         AnnotatedNode parent = (AnnotatedNode) nodes[1];
         AnnotationNode node = (AnnotationNode) nodes[0];
         if (!READ_LOCK_TYPE.equals(node.getClassNode()) && !WRITE_LOCK_TYPE.equals(node.getClassNode())) return;
-        boolean isWriteLock = false;
+        final boolean isWriteLock;
         if (READ_LOCK_TYPE.equals(node.getClassNode())) {
-            isWriteLock = true; 
+            isWriteLock = false;
+        } else if (WRITE_LOCK_TYPE.equals(node.getClassNode())) {
+            isWriteLock = true;
+        } else {
+            throw new RuntimeException("Internal error: expecting [" + READ_LOCK_TYPE.getName() + ", " + WRITE_LOCK_TYPE.getName() + "]" + " but got: " + node.getClassNode().getName());
         }
 
         String myTypeName = "@" + node.getClassNode().getNameWithoutPackage();
