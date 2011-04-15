@@ -237,8 +237,11 @@ public class AstBrowser {
         }
 
         prefs.decompiledSourceFontSize = newFontSize
-        def newFont = new Font(decompiledSource.textEditor.font.name, decompiledSource.textEditor.font.style, newFontSize)
-        decompiledSource.textEditor.font = newFont
+
+        def newDecompilerFont = new Font(decompiledSource.textEditor.font.name, decompiledSource.textEditor.font.style, newFontSize)
+        decompiledSource.textEditor.font = newDecompilerFont
+
+        def newFont = new Font(jTree.cellRenderer.font.name, jTree.cellRenderer.font.style, newFontSize)
         jTree.cellRenderer.font = newFont
         jTree.model.reload(jTree.model.root)
         propertyTable.tableHeader.font = newFont
