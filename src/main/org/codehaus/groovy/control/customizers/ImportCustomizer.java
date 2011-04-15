@@ -35,7 +35,7 @@ import java.util.*;
  *     <li>static star imports thanks to {@link #addStaticStar(String)} or {@link #addStaticStars(String...)}</li>
  * </ul>
  *
- * @author Cédric Champeau
+ * @author Cedric Champeau
  *
  * @since 1.8.0
  *

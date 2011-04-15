@@ -30,7 +30,7 @@ import org.codehaus.groovy.ast.expr.*
  *
  * @see groovy.transform.ThreadInterrupt
  *
- * @author Cédric Champeau
+ * @author Cedric Champeau
  * @author Hamlet D'Arcy
  *
  * @since 1.8.0
