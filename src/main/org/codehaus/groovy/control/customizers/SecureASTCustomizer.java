@@ -112,7 +112,7 @@ import java.util.*;
  *             GroovyClassLoader loader = new GroovyClassLoader(this.class.classLoader, config)
  *  </pre>
  *  
- * @author Cédric Champeau
+ * @author Cedric Champeau
  * @author Guillaume Laforge
  * @author Hamlet D'Arcy
  * 
