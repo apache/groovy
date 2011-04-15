@@ -60,28 +60,140 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
 
     /**
      * With this resolveStrategy set the closure will attempt to resolve property references to the
-     * owner first
+     * owner first, then the delegate (<b>this is the default strategy</b>).
+     *
+     * For example the following code :
+     * <pre>
+     *  class Test {
+     *    def x = 30
+     *    def y = 40
+     *
+     *    def run() {
+     *        def data = [ x: 10, y: 20 ]
+     *        def cl = { y = x + y }
+     *        cl.delegate = data
+     *        cl()
+     *        println x
+     *        println y
+     *        println data
+     *    }
+     *  }
+     *
+     *  new Test().run()
+     * </pre>
+     * will output :
+     * <pre>
+     *     30
+     *     70
+     *     [x:10, y:20]
+     * </pre>
+     * because the x and y fields declared in the Test class the variables in the delegate.<p>
+     * <i>Note that local variables are always looked up first, independently of the resolution strategy.</i>
      */
     public static final int OWNER_FIRST = 0;
+
     /**
      * With this resolveStrategy set the closure will attempt to resolve property references to the
-     * delegate first
+     * delegate first then the owner.
+     *
+     * For example the following code :
+     * <pre>
+     *  class Test {
+     *    def x = 30
+     *    def y = 40
+     *
+     *    def run() {
+     *        def data = [ x: 10, y: 20 ]
+     *        def cl = { y = x + y }
+     *        cl.delegate = data
+     *        cl.resolveStrategy = Closure.DELEGATE_FIRST
+     *        cl()
+     *        println x
+     *        println y
+     *        println data
+     *    }
+     *  }
+     *
+     *  new Test().run()
+     * </pre>
+     * will output :
+     * <pre>
+     *     30
+     *     40
+     *     [x:10, y:30]
+     * </pre>
+     * because the x and y variables declared in the delegate shadow the fields in the owner class.<p>
+     * <i>Note that local variables are always looked up first, independently of the resolution strategy.</i>
      */
     public static final int DELEGATE_FIRST = 1;
+
     /**
      * With this resolveStrategy set the closure will resolve property references to the owner only
-     * and not call the delegate at all
+     * and not call the delegate at all. For example the following code :
+     *
+     * <pre>
+     *  class Test {
+     *    def x = 30
+     *    def y = 40
+     *
+     *    def run() {
+     *        def data = [ x: 10, y: 20, z: 30 ]
+     *        def cl = { y = x + y }
+     *        cl.delegate = data
+     *        cl.resolveStrategy = Closure.OWNER_ONLY
+     *        cl()
+     *        println x
+     *        println y
+     *        println data
+     *    }
+     *  }
+     *
+     *  new Test().run()
+     * </pre>
+     *
+     * will throw "No such property: z" error because even if the z variable is declared in the delegate, no
+     * lookup is made.<p>
+     * <i>Note that local variables are always looked up first, independently of the resolution strategy.</i>
      */
     public static final int OWNER_ONLY = 2;
+
     /**
      * With this resolveStrategy set the closure will resolve property references to the delegate
-     * only and entirely bypass the owner
+     * only and entirely bypass the owner. For example the following code :
+     *
+     * <pre>
+     *  class Test {
+     *    def x = 30
+     *    def y = 40
+     *    def z = 50
+     *
+     *    def run() {
+     *        def data = [ x: 10, y: 20 ]
+     *        def cl = { y = x + y + z}
+     *        cl.delegate = data
+     *        cl.resolveStrategy = Closure.DELEGATE_ONLY
+     *        cl()
+     *        println x
+     *        println y
+     *        println data
+     *    }
+     *  }
+     *
+     *  new Test().run()
+     * </pre>
+     *
+     * will throw an error because even if the owner declares a "z" field, the resolution strategy will bypass
+     * lookup in the owner.<p>
+     * <i>Note that local variables are always looked up first, independently of the resolution strategy.</i>
      */
     public static final int DELEGATE_ONLY = 3;
+
     /**
      * With this resolveStrategy set the closure will resolve property references to itself and go
-     * through the usual MetaClass look-up process. This allows the developer to override getProperty
-     * using ExpandoMetaClass of the closure itself
+     * through the usual MetaClass look-up process. This means that properties are neither resolved from
+     * the owner nor the delegate, but only on the closure object itself. This allows the developer to override
+     * getProperty using ExpandoMetaClass of the closure itself.<p>
+     * <i>Note that local variables are always looked up first, independently of the resolution strategy.</i>
      */
     public static final int TO_SELF = 4;
 
