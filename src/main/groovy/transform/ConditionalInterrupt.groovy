@@ -108,7 +108,7 @@ import org.codehaus.groovy.transform.GroovyASTTransformationClass
  * @see groovy.transform.TimedInterrupt
  * @see groovy.transform.ThreadInterrupt
  *
- * @author Cédric Champeau
+ * @author Cedric Champeau
  * @author Hamlet D'Arcy
  *
  * @since 1.8.0

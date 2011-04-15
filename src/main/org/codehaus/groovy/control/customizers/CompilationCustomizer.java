@@ -25,7 +25,7 @@ import org.codehaus.groovy.control.CompilePhase;
  * call the {@link org.codehaus.groovy.control.CompilerConfiguration#addCompilationCustomizers(CompilationCustomizer...)}
  * method.
  *
- * @author Cédric Champeau
+ * @author Cedric Champeau
  *
  * @since 1.8.0
  *
