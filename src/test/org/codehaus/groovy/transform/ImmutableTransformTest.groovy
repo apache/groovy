@@ -373,4 +373,18 @@ class ImmutableTransformTest extends GroovyShellTestCase {
             assert spock.description == 'Leonard Nimoy is a Vulcan'
         '''
     }
+
+    void testImmutableToString_TracksNamedParameters() {
+        assertScript '''
+            @groovy.transform.Immutable
+            class Person {
+                String first, last
+            }
+
+            // normal toString
+            assert new Person("Hamlet", "D'Arcy").toString() == "Person(Hamlet, D'Arcy)"
+            // instance created with named parameters has special toString
+            assert new Person(first: "Hamlet", last: "D'Arcy").toString() == "Person(first:Hamlet, last:D'Arcy)"
+            '''
+    }
 }
