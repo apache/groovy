@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 the original author or authors.
+ * Copyright 2008-2011 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -85,19 +85,19 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
             final Expression hash = new VariableExpression(hashField);
             body.addStatement(new IfStatement(
                     isZeroExpr(hash),
-                    calculateHashStatements(hash, list, callSuper),
+                    calculateHashStatements(hash, list, callSuper, excludes),
                     new EmptyStatement()
             ));
             body.addStatement(new ReturnStatement(hash));
         } else {
-            body.addStatement(calculateHashStatements(null, list, callSuper));
+            body.addStatement(calculateHashStatements(null, list, callSuper, excludes));
         }
 
         cNode.addMethod(new MethodNode(hasExistingHashCode ? "_hashCode" : "hashCode", hasExistingHashCode ? ACC_PRIVATE : ACC_PUBLIC,
                 ClassHelper.int_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, body));
     }
 
-    private static Statement calculateHashStatements(Expression hash, List<FieldNode> list, boolean callSuper) {
+    private static Statement calculateHashStatements(Expression hash, List<FieldNode> list, boolean callSuper, List<String> excludes) {
         final BlockStatement body = new BlockStatement();
         // def _result = HashCodeHelper.initHash()
         final Expression result = new VariableExpression("_result");
@@ -105,7 +105,7 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
         body.addStatement(new ExpressionStatement(new DeclarationExpression(result, ASSIGN, init)));
 
         for (FieldNode fNode : list) {
-            if (fNode.getName().contains("$")) continue;
+            if (excludes.contains(fNode.getName()) || fNode.getName().contains("$")) continue;
             // _result = HashCodeHelper.updateHash(_result, field)
             final Expression fieldExpr = new VariableExpression(fNode);
             final Expression args = new TupleExpression(result, fieldExpr);
