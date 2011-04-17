@@ -52,7 +52,6 @@ public class ReadWriteLockASTTransformation implements ASTTransformation, Opcode
 
         AnnotatedNode parent = (AnnotatedNode) nodes[1];
         AnnotationNode node = (AnnotationNode) nodes[0];
-        if (!READ_LOCK_TYPE.equals(node.getClassNode()) && !WRITE_LOCK_TYPE.equals(node.getClassNode())) return;
         final boolean isWriteLock;
         if (READ_LOCK_TYPE.equals(node.getClassNode())) {
             isWriteLock = false;
