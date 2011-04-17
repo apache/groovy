@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 the original author or authors.
+ * Copyright 2008-2011 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -101,6 +101,14 @@ class CanonicalComponentsTransformTest extends GroovyShellTestCase {
         // no need to use includeFields=true here because of Object clone!
         assert c1.agePeek() == c2.agePeek()
     }
+
+    // GROOVY-4786
+    void testExcludesWithEqualsAndHashCode() {
+        def p1 = new PointIgnoreY(x:1, y:10)
+        def p2 = new PointIgnoreY(x:1, y:100)
+        assert p1 == p2
+        assert p1.hashCode() == p2.hashCode()
+    }
 }
 
 @TupleConstructor
@@ -144,4 +152,11 @@ class Customer5 {
     List favItems
     private int age
     int agePeek() { age }
+}
+
+// GROOVY-4786
+@EqualsAndHashCode(excludes="y")
+class PointIgnoreY {
+    int x
+    int y // y coordinate excluded from Equals and hashCode
 }
