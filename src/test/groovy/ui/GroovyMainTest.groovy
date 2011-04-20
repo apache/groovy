@@ -35,4 +35,23 @@ class GroovyMainTest extends GroovyTestCase {
         def out = baos.toString()
         assert out.contains('error: error: cannot compile file with .java extension: abc.java')
     }
+
+    /**
+     * GROOVY-1512: Add support for begin() and end() methods when processing files by line with -a -ne
+     */
+    void testAandNEparametersWithBeginEndFunctions() {
+        def originalErr = System.err
+        System.setErr(ps)
+        def tempFile = File.createTempFile("dummy", "txt")
+        tempFile << "dummy text\n" * 10
+        try {
+            String[] args = ['-a', '-ne', 'def begin() { nb = 0 }; def end() { System.err.println nb }; nb++', tempFile.absolutePath]
+            GroovyMain.main(args)
+            def out = baos.toString()
+            assert out.contains('10')
+        } finally {
+            tempFile.delete()
+            System.setErr(originalErr)
+        }
+    }
 }
