@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2011 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -118,15 +118,14 @@ class DateGDKTest extends GroovyTestCase {
         assertEquals(-4444, (sqld - 4444) - sqld);
     }
 
-    /** GROOVY-3374  */
+    /** GROOVY-3374 & GROOVY-4788 */
     void testClearTime() {
-        def now = new Date()
-        def calendarNow = Calendar.getInstance()
+        def dateNow = new Date().clearTime()
 
-        now.clearTime()
+        def calendarNow = Calendar.getInstance()
         calendarNow.clearTime()
 
-        assert now == calendarNow.time
+        assert dateNow == calendarNow.time
 
         assert calendarNow.get(Calendar.HOUR) == 0
         assert calendarNow.get(Calendar.MINUTE) == 0
