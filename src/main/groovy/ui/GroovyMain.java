@@ -17,6 +17,7 @@ package groovy.ui;
 
 import groovy.lang.GroovyShell;
 import groovy.lang.GroovySystem;
+import groovy.lang.MissingMethodException;
 import groovy.lang.Script;
 
 import java.io.*;
@@ -33,6 +34,7 @@ import org.apache.commons.cli.ParseException;
 import org.apache.commons.cli.PosixParser;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilerConfiguration;
+import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.InvokerInvocationException;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 
@@ -488,6 +490,13 @@ public class GroovyMain {
         String autoSplitName = "split";
         s.setProperty("out", pw);
 
+        try {
+            InvokerHelper.invokeMethod(s, "begin", null);
+        } catch (MissingMethodException mme) {
+            // ignore the missing method exception
+            // as it means no begin() method is present
+        }
+
         while ((line = reader.readLine()) != null) {
             s.setProperty("line", line);
             s.setProperty(lineCountName, ((BigInteger)s.getProperty(lineCountName)).add(BigInteger.ONE));
@@ -501,6 +510,13 @@ public class GroovyMain {
             if (autoOutput && o != null) {
                 pw.println(o);
             }
+        }
+
+        try {
+            InvokerHelper.invokeMethod(s, "end", null);
+        } catch (MissingMethodException mme) {
+            // ignore the missing method exception
+            // as it means no end() method is present
         }
     }
     
