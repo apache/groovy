@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2011 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ import java.util.Map;
  * This class defines new groovy methods which appear on normal JDK
  * Date and Calendar classes inside the Groovy environment.
  */
-public class DateGroovyMethods extends DefaultGroovyMethodsSupport {
+public class DateGroovyMethods {
 
     /**
      * Support the subscript operator for a Date.
@@ -132,7 +132,7 @@ public class DateGroovyMethods extends DefaultGroovyMethodsSupport {
      * m[DATE] = 25
      * cal.set(m)
      * println cal.time // Christmas 2010
-     * <p/>
+     *
      * cal.set(year:2011, month:DECEMBER, date:25)
      * println cal.time // Christmas 2010
      * </pre>
@@ -488,6 +488,7 @@ public class DateGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Common code for {@link #clearTime(java.util.Calendar)} and {@link #clearTime(java.util.Date)}
      * and {@link #clearTime(java.sql.Date)}
+     *
      * @param self a Calendar to adjust
      */
     private static void clearTimeCommon(final Calendar self) {
@@ -502,13 +503,15 @@ public class DateGroovyMethods extends DefaultGroovyMethodsSupport {
      * compare month/day/year only portions of a Date
      *
      * @param self a Date
+     * @return the Date but with the time portion cleared
      * @since 1.6.7
      */
-    public static void clearTime(final Date self) {
+    public static Date clearTime(final Date self) {
         Calendar calendar = Calendar.getInstance();
         calendar.setTime(self);
         clearTimeCommon(calendar);
         self.setTime(calendar.getTime().getTime());
+        return self;
     }
 
     /**
@@ -516,13 +519,15 @@ public class DateGroovyMethods extends DefaultGroovyMethodsSupport {
      * where it makes sense to compare month/day/year only portions of a Date
      *
      * @param self a java.sql.Date
+     * @return the java.sql.Date but with the time portion cleared
      * @since 1.6.7
      */
-    public static void clearTime(final java.sql.Date self) {
+    public static java.sql.Date clearTime(final java.sql.Date self) {
         Calendar calendar = Calendar.getInstance();
         calendar.setTime(self);
         clearTimeCommon(calendar);
         self.setTime(calendar.getTime().getTime());
+        return self;
     }
 
     /**
@@ -530,10 +535,12 @@ public class DateGroovyMethods extends DefaultGroovyMethodsSupport {
      * where it makes sense to compare month/day/year only portions of a Calendar.
      *
      * @param self a Calendar
+     * @return the Calendar but with the time portion cleared
      * @since 1.6.7
      */
-    public static void clearTime(final Calendar self) {
+    public static Calendar clearTime(final Calendar self) {
         clearTimeCommon(self);
+        return self;
     }
 
     /**
