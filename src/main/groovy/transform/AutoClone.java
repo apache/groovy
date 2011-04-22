@@ -91,7 +91,7 @@ import java.lang.annotation.Target;
  * <p/>
  * Another popular cloning strategy is known as the copy constructor pattern.
  * If any of your fields are {@code final} and {@code Cloneable} you should set
- * {@code useCopyConstructor=true} which will then use the copy constructor pattern.
+ * {@code style=COPY_CONSTRUCTOR} which will then use the copy constructor pattern.
  * Here is an example making use of the copy constructor pattern:
  * <pre>
  * import groovy.transform.AutoClone
