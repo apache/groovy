@@ -303,6 +303,29 @@ class Gep3Test extends GroovyTestCase {
         assert x == 2
         assert a(b)."1"(2) == 2
     }
+
+    void testMethodAndMethodCallTakingClosureArgument() {
+        def valued = { it() }
+        def at = { it }
+
+        def res1 = valued at {}
+        def res2 = valued at { 42 }
+
+        assert res1 == null
+        assert res2 == 42
+    }
+
+    // case             a b  c d
+    // equivalent       a(b).c(d)
+    void testTurnLeftThenRight() {
+        def turned = false
+        def (left, right) = ['left', 'right']
+        def turn = { String s -> [then: { turned = true }] }
+
+        turn left then right
+
+        assert turned
+    }
 }
 
 
