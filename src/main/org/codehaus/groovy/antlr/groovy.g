@@ -1719,7 +1719,7 @@ closableBlockParamsOpt[boolean addImplicit]
 /** Lookahead to check whether a block begins with explicit closure arguments. */
 closableBlockParamsStart!
     :
-        parameterDeclarationList nls CLOSABLE_BLOCK_OP
+        nls parameterDeclarationList nls CLOSABLE_BLOCK_OP
     ;
 
 /** Simple names, as in {x|...}, are completely equivalent to {(def x)|...}.  Build the right AST. */
@@ -2059,7 +2059,7 @@ expressionStatementNoCheck
         { isPathExpr = (#head == lastPathExpression); }
         (
             // A path expression (e.g., System.out.print) can take arguments.
-            {isPathExpr}?
+            {LA(1)!=LITERAL_else && isPathExpr /*&& #head.getType()==METHOD_CALL*/}?
             cmd:commandArgumentsGreedy[#head]!
             {
                 #expressionStatementNoCheck = #cmd;
@@ -2227,11 +2227,12 @@ commandArguments[AST head]
 
 commandArgumentsGreedy[AST head]
 { 
-	AST prev = null; 
+	AST prev = null;
 }
     :
         { #prev = #head; }
-    
+        
+        // argument to the already existing method name
         (   ({#prev.getType()!=METHOD_CALL}? commandArgument)=> (   
                 first : commandArguments[head]!
                 { #prev = #first; }
@@ -2239,28 +2240,38 @@ commandArgumentsGreedy[AST head]
             |
         )
         
+        // we start a series of methods and arguments
         (   options { greedy = true; } :
-            pre:primaryExpression!
-            { #prev = #(create(DOT, ".", #prev), #prev, #pre); }
-
-            (
-                (LPAREN|LCURLY|LBRACK)=> 
-                (   options { greedy = true; } :
-                    nls!
-                    pe:pathElement[prev]!
-                    { #prev = #pe; }
-                    ((NLS)=> {break;})?
-                )+            
-            |
-                (
-                    (commandArgument)=> (
-                        ca:commandArguments[prev]!
-                        { #prev = #ca; }
-                    )
-                    |
-                )
-            )
-        )*
+            (   options { greedy = true; } :
+                // method name
+                pre:primaryExpression!
+                { #prev = #(create(DOT, ".", #prev), #prev, #pre); }
+                // what follows is either a normal argument, parens, 
+                // an appended block, an index operation, or nothing
+                // parens (a b already processed): 
+                //      a b c() d e -> a(b).c().d(e)
+                //      a b c()() d e -> a(b).c().call().d(e)
+                // index (a b already processed): 
+                //      a b c[x] d e -> a(b).c[x].d(e)
+                //      a b c[x][y] d e -> a(b).c[x][y].d(e)
+                // block (a b already processed):
+                //      a b c {x} d e -> a(b).c({x}).d(e)
+                //
+                // parens/block completes method call
+                // index makes method call to property get with index
+                // 
+                (options {greedy=true;}:
+                (pathElementStart)=>   
+                    (   
+                        pc:pathChain[LC_STMT,#prev]!
+                        { #prev = #pc; }
+                    )      
+                |
+                    (   ca:commandArguments[#prev]!
+                        { #prev = #ca; })
+                )?
+            )*
+        )
         { #commandArgumentsGreedy = prev; } 
     ;
     
@@ -2340,6 +2351,37 @@ controlExpressionList  {Token first = LT(1); boolean sce=false;}
         {#controlExpressionList = #(create(ELIST,"ELIST",first,LT(1)), controlExpressionList);}
     ;
 
+pathChain[int lc_stmt, AST prefix]
+    :
+        (
+            options {
+                // \n{foo} could match here or could begin a new statement
+                // We do want to match here. Turn off warning.
+                greedy=true;
+                // This turns the ambiguity warning of the second alternative
+                // off. See below. (The "ANTLR_LOOP_EXIT" predicate makes it non-issue)
+                //@@ warnWhenFollowAmbig=false;
+            }
+            // Parsing of this chain is greedy.  For example, a pathExpression may be a command name
+            // followed by a command argument, but that command argument cannot begin with an LPAREN,
+            // since a parenthesized expression is greedily attached to the pathExpression as a method argument.
+            // The lookahead is also necessary to reach across newline in foo \n {bar}.
+            // (Apparently antlr's basic approximate LL(k) lookahead is too weak for this.)
+        :   (pathElementStart)=>
+            nls!
+            pe:pathElement[prefix]!
+            { prefix = #pe; }
+        |
+            {lc_stmt == LC_STMT || lc_stmt == LC_INIT}?
+            (nls LCURLY)=>
+            nlsWarn!
+            apb:appendedBlock[prefix]!
+            { prefix = #apb; }
+        )+
+
+        { #pathChain = prefix; }
+    ;
+
 /** A "path expression" is a name or other primary, possibly qualified by various
  *  forms of dot, and/or followed by various kinds of brackets.
  *  It can be used for value or assigned to, or else further qualified, indexed, or called.
@@ -2353,7 +2395,6 @@ pathExpression[int lc_stmt]
     :
         pre:primaryExpression!
         { prefix = #pre; }
-
         (
             options {
                 // \n{foo} could match here or could begin a new statement
@@ -2379,7 +2420,6 @@ pathExpression[int lc_stmt]
             apb:appendedBlock[prefix]!
             { prefix = #apb; }
         )*
-
         {
             #pathExpression = prefix;
             lastPathExpression = #pathExpression;
