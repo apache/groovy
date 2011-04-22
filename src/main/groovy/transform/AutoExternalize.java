@@ -29,8 +29,8 @@ import java.lang.annotation.Target;
  * The {@code @AutoExternalize} annotation instructs the compiler to execute an
  * AST transformation which adds {@code writeExternal()} and {@code readExternal()} methods
  * to a class and adds {@code Externalizable} to the interfaces which the class implements.
- * The {@code writeExternal()} method writes each property (or field) or the class while the
- * {@code readExternal()} method will read each one in the same order. Properties or fields
+ * The {@code writeExternal()} method writes each property (or field) for the class while the
+ * {@code readExternal()} method will read each one back in the same order. Properties or fields
  * marked as {@code transient} are ignored.
  * <p/>
  * Example usage:
