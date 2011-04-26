@@ -42,6 +42,7 @@ import org.codehaus.groovy.ast.stmt.*
  */
 @GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
 class ListenerListASTTransformation implements ASTTransformation, Opcodes {
+    private static final Class MY_CLASS = groovy.beans.ListenerList.class
     private static final ClassNode COLLECTION_TYPE = ClassHelper.make(Collection)
 
     public void visit(ASTNode[] nodes, SourceUnit source) {
@@ -56,18 +57,18 @@ class ListenerListASTTransformation implements ASTTransformation, Opcodes {
         boolean isCollection = parentClass.isDerivedFrom(COLLECTION_TYPE) || parentClass.implementsInterface(COLLECTION_TYPE)
 
         if (!isCollection) {
-            addError(node, source, '@groovy.beans.ListenerList can only annotate collection properties.')
+            addError(node, source, '@' + MY_CLASS.name + ' can only annotate collection properties.')
             return
         }
 
         def types = field.type.genericsTypes
         if (!types) {
-            addError(node, source, '@groovy.beans.ListenerList fields must have a generic type.')
+            addError(node, source, '@' + MY_CLASS.name + ' fields must have a generic type.')
             return
         }
 
         if (types[0].wildcard) {
-            addError(node, source, '@groovy.beans.ListenerList fields with generic wildcards not yet supported.')
+            addError(node, source, '@' + MY_CLASS.name + ' fields with generic wildcards not yet supported.')
             return
         }
 
@@ -80,7 +81,7 @@ class ListenerListASTTransformation implements ASTTransformation, Opcodes {
         def name = node.getMember('name')?.value ?: listener.nameWithoutPackage
 
         def fireList = listener.methods.findAll { MethodNode m ->
-                m.isPublic() && !m.isSynthetic() && !m.isStatic()
+            m.isPublic() && !m.isSynthetic() && !m.isStatic()
         }
 
         def synchronize = node.getMember('synchronize')?.value ?: false
@@ -88,7 +89,7 @@ class ListenerListASTTransformation implements ASTTransformation, Opcodes {
         addRemoveListener(source, node, declaringClass, field, listener, name, synchronize)
         addGetListeners(source, node, declaringClass, field, listener, name, synchronize)
 
-        fireList.each { MethodNode method -> 
+        fireList.each { MethodNode method ->
             addFireMethods(source, node, declaringClass, field, synchronize, method)
         }
     }
@@ -112,7 +113,7 @@ class ListenerListASTTransformation implements ASTTransformation, Opcodes {
      *     if (${field.name} == null)
      *        ${field.name} = []
      *     ${field.name}.add(listener)
-     *}
+     * }
      * </pre>
      */
     void addAddListener(SourceUnit source, AnnotationNode node, ClassNode declaringClass, FieldNode field, ClassNode listener, String name, synchronize) {
@@ -123,7 +124,7 @@ class ListenerListASTTransformation implements ASTTransformation, Opcodes {
         def methodParameter = [new Parameter(listener, 'listener')] as Parameter[]
 
         if (declaringClass.hasMethod(methodName, methodParameter)) {
-            addError node, source, """Conflict using @groovy.beans.@ListenerList. Class $declaringClass.name already has method $methodName"""
+            addError node, source, "Conflict using @${MY_CLASS.name}. Class $declaringClass.name already has method $methodName"
             return
         }
 
@@ -174,7 +175,7 @@ class ListenerListASTTransformation implements ASTTransformation, Opcodes {
      *     if (${field.name} == null)
      *         ${field.name} = []
      *     ${field.name}.remove(listener)
-     *}
+     * }
      * </pre>
      */
     void addRemoveListener(SourceUnit source, AnnotationNode node, ClassNode declaringClass, FieldNode field, ClassNode listener, String name, synchronize) {
@@ -184,7 +185,7 @@ class ListenerListASTTransformation implements ASTTransformation, Opcodes {
         def methodParameter = [new Parameter(listener, 'listener')] as Parameter[]
 
         if (declaringClass.hasMethod(methodName, methodParameter)) {
-            addError node, source, """Conflict using @groovy.beans.@ListenerList. Class $declaringClass.name already has method $methodName"""
+            addError node, source, "Conflict using @${MY_CLASS.name}. Class $declaringClass.name already has method $methodName"
             return
         }
 
@@ -234,7 +235,7 @@ class ListenerListASTTransformation implements ASTTransformation, Opcodes {
      *     if (${field.name} != null)
      *         __result.addAll(${field.name})
      *     return __result as ${name.capitalize}[]
-     *}
+     * }
      * </pre>
      */
     void addGetListeners(SourceUnit source, AnnotationNode node, ClassNode declaringClass, FieldNode field, ClassNode listener, String name, synchronize) {
@@ -244,7 +245,7 @@ class ListenerListASTTransformation implements ASTTransformation, Opcodes {
         def methodParameter = [] as Parameter[]
 
         if (declaringClass.hasMethod(methodName, methodParameter)) {
-            addError node, source, """Conflict using @groovy.beans.@ListenerList. Class $declaringClass.name already has method $methodName"""
+            addError node, source, "Conflict using @${MY_CLASS.name}. Class $declaringClass.name already has method $methodName"
             return
         }
 
@@ -300,7 +301,7 @@ class ListenerListASTTransformation implements ASTTransformation, Opcodes {
         def methodModifiers = synchronize ? ACC_PUBLIC | ACC_SYNCHRONIZED : ACC_PUBLIC
 
         if (declaringClass.hasMethod(methodName, method.parameters)) {
-            addError node, source, "Conflict using @groovy.beans.@ListenerList. Class $declaringClass.name already has method $methodName"
+            addError node, source, "Conflict using @${MY_CLASS.name}. Class $declaringClass.name already has method $methodName"
             return
         }
 
@@ -346,11 +347,11 @@ class ListenerListASTTransformation implements ASTTransformation, Opcodes {
                         new EmptyStatement()
                 )
         ])
-        
-        def params = method.parameters.collect {   
-            def cn = ClassHelper.makeWithoutCaching(it.type.name) 
+
+        def params = method.parameters.collect {
+            def cn = ClassHelper.makeWithoutCaching(it.type.name)
             cn.setRedirect(it.type)
-            new Parameter(cn, it.name)  
+            new Parameter(ClassHelper.getWrapper(cn), it.name)
         }
         declaringClass.addMethod(methodName, methodModifiers, methodReturnType, params as Parameter[], [] as ClassNode[], block)
     }
