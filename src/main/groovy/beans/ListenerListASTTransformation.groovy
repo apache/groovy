@@ -107,12 +107,14 @@ class ListenerListASTTransformation implements ASTTransformation, Opcodes {
      * Adds the add&lt;Listener&gt; method like:
      * <p/>
      * <pre>
-     * synchronized void add${name.capitalize}(${listener.name} listener) {*     if (listener == null)
+     * synchronized void add${name.capitalize}(${listener.name} listener) {
+     *     if (listener == null)
      *         return
      *     if (${field.name} == null)
      *        ${field.name} = []
      *     ${field.name}.add(listener)
-     *}* </pre>
+     * }
+     * </pre>
      */
     void addAddListener(SourceUnit source, AnnotationNode node, ClassNode declaringClass, FieldNode field, ClassNode listener, String name, synchronize) {
 
@@ -167,12 +169,14 @@ class ListenerListASTTransformation implements ASTTransformation, Opcodes {
      * Adds the remove<Listener> method like:
      * <p/>
      * <pre>
-     * synchronized void remove${name.capitalize}(${listener.name} listener) {*     if (listener == null)
+     * synchronized void remove${name.capitalize}(${listener.name} listener) {
+     *     if (listener == null)
      *         return
      *     if (${field.name} == null)
      *         ${field.name} = []
      *     ${field.name}.remove(listener)
-     *}* </pre>
+     * }
+     * </pre>
      */
     void addRemoveListener(SourceUnit source, AnnotationNode node, ClassNode declaringClass, FieldNode field, ClassNode listener, String name, synchronize) {
         def methodModifiers = synchronize ? ACC_PUBLIC | ACC_SYNCHRONIZED : ACC_PUBLIC
@@ -226,11 +230,13 @@ class ListenerListASTTransformation implements ASTTransformation, Opcodes {
      * Adds the get&lt;Listener&gt;s method like:
      * <p/>
      * <pre>
-     * synchronized ${name.capitalize}[] get${name.capitalize}s() {*     def __result = []
+     * synchronized ${name.capitalize}[] get${name.capitalize}s() {
+     *     def __result = []
      *     if (${field.name} != null)
      *         __result.addAll(${field.name})
      *     return __result as ${name.capitalize}[]
-     *}* </pre>
+     * }
+     * </pre>
      */
     void addGetListeners(SourceUnit source, AnnotationNode node, ClassNode declaringClass, FieldNode field, ClassNode listener, String name, synchronize) {
         def methodModifiers = synchronize ? ACC_PUBLIC | ACC_SYNCHRONIZED : ACC_PUBLIC
@@ -278,10 +284,15 @@ class ListenerListASTTransformation implements ASTTransformation, Opcodes {
      * Adds the fire&lt;Event&gt; methods like:
      * <p/>
      * <pre>
-     * void fire${fireMethod.capitalize()}(${parameterList.join(', ')}) {*     if (${field.name} != null) {*         def __list = new ArrayList(${field.name})
+     * void fire${fireMethod.capitalize()}(${parameterList.join(', ')}) {
+     *     if (${field.name} != null) {
+     *         def __list = new ArrayList(${field.name})
      *         __list.each { listener ->
      *             listener.$eventMethod(${evt})
-     *}*}*}* </pre>
+     *         }
+     *     }
+     * }
+     * </pre>
      */
     void addFireMethods(SourceUnit source, AnnotationNode node, ClassNode declaringClass, FieldNode field, boolean synchronize, MethodNode method) {
 
