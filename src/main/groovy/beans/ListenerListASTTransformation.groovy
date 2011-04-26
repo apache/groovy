@@ -340,7 +340,7 @@ class ListenerListASTTransformation implements ASTTransformation, Opcodes {
         def params = method.parameters.collect {
             def cn = ClassHelper.makeWithoutCaching(it.type.name)
             cn.setRedirect(it.type)
-            new Parameter(cn, it.name)
+            new Parameter(ClassHelper.getWrapper(cn), it.name)
         }
         declaringClass.addMethod(methodName, methodModifiers, methodReturnType, params as Parameter[], [] as ClassNode[], block)
     }

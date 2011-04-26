@@ -366,4 +366,19 @@ class ListenerListASTTest extends GroovyTestCase {
                 assert !Modifier.isSynchronized(C3.class.getMethod('getEventListeners').modifiers)
             """)
         }
+
+        // GROOVY-4797
+        void testPrimitiveTypes() {
+            GroovyShell shell = new GroovyShell()
+            shell.evaluate("""
+                import groovy.beans.ListenerList
+                import java.lang.reflect.Modifier
+
+                class C {
+                    @ListenerList List<Object> listeners // wait(long timeout) has primitive arg
+                }
+
+                assert C.class.getMethod('getObjects')
+            """)
+        }
 }
