@@ -1,3 +1,18 @@
+/*
+ * Copyright 2003-2011 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package groovy.beans
 
 import org.codehaus.groovy.control.CompilePhase
@@ -27,6 +42,8 @@ import org.codehaus.groovy.ast.stmt.*
  */
 @GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
 class ListenerListASTTransformation implements ASTTransformation, Opcodes {
+    private static final ClassNode COLLECTION_TYPE = ClassHelper.make(Collection)
+
     public void visit(ASTNode[] nodes, SourceUnit source) {
         if (!(nodes[0] instanceof AnnotationNode) || !(nodes[1] instanceof AnnotatedNode)) {
             throw new RuntimeException("Internal error: wrong types: ${node.class} / ${parent.class}")
@@ -36,7 +53,7 @@ class ListenerListASTTransformation implements ASTTransformation, Opcodes {
         ClassNode declaringClass = nodes[1].declaringClass
         ClassNode parentClass = field.type
 
-        boolean isCollection = parentClass.isDerivedFrom(ClassHelper.make(Collection)) || parentClass.implementsInterface(ClassHelper.make(Collection))
+        boolean isCollection = parentClass.isDerivedFrom(COLLECTION_TYPE) || parentClass.implementsInterface(COLLECTION_TYPE)
 
         if (!isCollection) {
             addError(node, source, '@groovy.beans.ListenerList can only annotate collection properties.')
@@ -89,16 +106,18 @@ class ListenerListASTTransformation implements ASTTransformation, Opcodes {
      * Adds the add&lt;Listener&gt; method like:
      * <p/>
      * <pre>
-     * synchronized void add${name.capitalize}(${listener.name} listener) {*     if (listener == null)
+     * synchronized void add${name.capitalize}(${listener.name} listener) {
+     *     if (listener == null)
      *         return
      *     if (${field.name} == null)
      *        ${field.name} = []
      *     ${field.name}.add(listener)
-     *}* </pre>
+     *}
+     * </pre>
      */
     void addAddListener(SourceUnit source, AnnotationNode node, ClassNode declaringClass, FieldNode field, ClassNode listener, String name, synchronize) {
 
-        def methodModifiers = synchronize ? Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNCHRONIZED : Opcodes.ACC_PUBLIC
+        def methodModifiers = synchronize ? ACC_PUBLIC | ACC_SYNCHRONIZED : ACC_PUBLIC
         def methodReturnType = ClassHelper.make(Void.TYPE)
         def methodName = "add${name.capitalize()}"
         def methodParameter = [new Parameter(listener, 'listener')] as Parameter[]
@@ -149,15 +168,17 @@ class ListenerListASTTransformation implements ASTTransformation, Opcodes {
      * Adds the remove<Listener> method like:
      * <p/>
      * <pre>
-     * synchronized void remove${name.capitalize}(${listener.name} listener) {*     if (listener == null)
+     * synchronized void remove${name.capitalize}(${listener.name} listener) {
+     *     if (listener == null)
      *         return
      *     if (${field.name} == null)
      *         ${field.name} = []
      *     ${field.name}.remove(listener)
-     *}* </pre>
+     *}
+     * </pre>
      */
     void addRemoveListener(SourceUnit source, AnnotationNode node, ClassNode declaringClass, FieldNode field, ClassNode listener, String name, synchronize) {
-        def methodModifiers = synchronize ? Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNCHRONIZED : Opcodes.ACC_PUBLIC
+        def methodModifiers = synchronize ? ACC_PUBLIC | ACC_SYNCHRONIZED : ACC_PUBLIC
         def methodReturnType = ClassHelper.make(Void.TYPE)
         def methodName = "remove${name.capitalize()}"
         def methodParameter = [new Parameter(listener, 'listener')] as Parameter[]
@@ -208,14 +229,16 @@ class ListenerListASTTransformation implements ASTTransformation, Opcodes {
      * Adds the get&lt;Listener&gt;s method like:
      * <p/>
      * <pre>
-     * synchronized ${name.capitalize}[] get${name.capitalize}s() {*     def __result = []
+     * synchronized ${name.capitalize}[] get${name.capitalize}s() {
+     *     def __result = []
      *     if (${field.name} != null)
      *         __result.addAll(${field.name})
      *     return __result as ${name.capitalize}[]
-     *}* </pre>
+     *}
+     * </pre>
      */
     void addGetListeners(SourceUnit source, AnnotationNode node, ClassNode declaringClass, FieldNode field, ClassNode listener, String name, synchronize) {
-        def methodModifiers = synchronize ? Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNCHRONIZED : Opcodes.ACC_PUBLIC
+        def methodModifiers = synchronize ? ACC_PUBLIC | ACC_SYNCHRONIZED : ACC_PUBLIC
         def methodReturnType = listener.makeArray()
         def methodName = "get${name.capitalize()}s"
         def methodParameter = [] as Parameter[]
@@ -268,16 +291,16 @@ class ListenerListASTTransformation implements ASTTransformation, Opcodes {
      *         }
      *     }
      * }
-     *  </pre>
+     * </pre>
      */
     void addFireMethods(SourceUnit source, AnnotationNode node, ClassNode declaringClass, FieldNode field, boolean synchronize, MethodNode method) {
 
         def methodReturnType = ClassHelper.make(Void.TYPE)
         def methodName = "fire${method.name.capitalize()}"
-        def methodModifiers = synchronize ? Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNCHRONIZED : Opcodes.ACC_PUBLIC
+        def methodModifiers = synchronize ? ACC_PUBLIC | ACC_SYNCHRONIZED : ACC_PUBLIC
 
         if (declaringClass.hasMethod(methodName, method.parameters)) {
-            addError node, source, """Conflict using @groovy.beans.@ListenerList. Class $declaringClass.name already has method $methodName"""
+            addError node, source, "Conflict using @groovy.beans.@ListenerList. Class $declaringClass.name already has method $methodName"
             return
         }
 
