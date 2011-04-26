@@ -83,7 +83,7 @@ class ListenerListASTTransformation implements ASTTransformation, Opcodes {
                 m.isPublic() && !m.isSynthetic() && !m.isStatic()
         }
 
-        def synchronize = node.getMember('synchronize') ?: false
+        def synchronize = node.getMember('synchronize')?.value ?: false
         addAddListener(source, node, declaringClass, field, listener, name, synchronize)
         addRemoveListener(source, node, declaringClass, field, listener, name, synchronize)
         addGetListeners(source, node, declaringClass, field, listener, name, synchronize)

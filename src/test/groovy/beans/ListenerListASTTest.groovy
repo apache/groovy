@@ -343,4 +343,27 @@ class ListenerListASTTest extends GroovyTestCase {
         assert evt.source.is(source)
         assert evt.message.is(message)
     }
+
+        // GROOVY-4795
+        void testSynchronized() {
+            GroovyShell shell = new GroovyShell()
+            shell.evaluate("""
+                import groovy.beans.ListenerList
+                import java.lang.reflect.Modifier
+
+                class C1 {
+                    @ListenerList(synchronize=true) List<EventListener> listeners
+                }
+                class C2 {
+                    @ListenerList(synchronize=false) List<EventListener> listeners
+                }
+                class C3 {
+                    @ListenerList List<EventListener> listeners
+                }
+
+                assert Modifier.isSynchronized(C1.class.getMethod('getEventListeners').modifiers)
+                assert !Modifier.isSynchronized(C2.class.getMethod('getEventListeners').modifiers)
+                assert !Modifier.isSynchronized(C3.class.getMethod('getEventListeners').modifiers)
+            """)
+        }
 }
