@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2011 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,18 +26,17 @@ import java.util.List;
 import java.util.logging.Logger;
 
 /**
- * Class which delegates to a Statement but keeps track of
- * a batch count size. If the batch count reaches the predefined number,
- * this Statement does an executeBatch() automatically. If batchSize is
- * zero, then no batching is performed.
+ * Class which delegates to a Statement but keeps track of a batch count size.
+ * If the batch count reaches the predefined number, this Statement does an executeBatch()
+ * automatically. If batchSize is zero, then no batching is performed.
  */
 public class BatchingStatementWrapper extends GroovyObjectSupport {
     private Statement delegate;
-    private int batchSize;
-    private int batchCount;
+    protected int batchSize;
+    protected int batchCount;
     private Connection connection;
-    private Logger log;
-    private List<Integer> results;
+    protected Logger log;
+    protected List<Integer> results;
 
     public BatchingStatementWrapper(Statement delegate, int batchSize, Logger log, Connection connection) {
         this.delegate = delegate;
@@ -78,19 +77,20 @@ public class BatchingStatementWrapper extends GroovyObjectSupport {
             int[] result = delegate.executeBatch();
             log.fine("Successfully executed batch with " + result.length + " command(s)");
             return result;
-        } else {
-            int[] lastResult = delegate.executeBatch();
-            for (int i : lastResult) {
-                results.add(i);
-            }
-            log.fine("Successfully executed batch with " + lastResult.length + " command(s)");
-            int[] result = new int[results.size()];
-            for (int i = 0; i < results.size(); i++) {
-                result[i] = results.get(i);
-            }
-            results = new ArrayList<Integer>();
-            return result;
         }
+
+        int[] lastResult = delegate.executeBatch();
+        for (int i : lastResult) {
+            results.add(i);
+        }
+        log.fine("Successfully executed batch with " + lastResult.length + " command(s)");
+        int[] result = new int[results.size()];
+        for (int i = 0; i < results.size(); i++) {
+            result[i] = results.get(i);
+        }
+        results = new ArrayList<Integer>();
+        batchCount = 0;
+        return result;
     }
 
     public void close() throws SQLException {
