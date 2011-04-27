@@ -179,6 +179,7 @@ import org.codehaus.groovy.runtime.SqlGroovyMethods;
  * @author John Bito
  * @author John Hurst
  * @author David Durham
+ * @author Daniel Henrique Alves Lima
  */
 public class Sql {
 
@@ -189,7 +190,7 @@ public class Sql {
 
     private static final List<Object> EMPTY_LIST = Collections.emptyList();
 
-    private static final Pattern NAMED_QUERY_PATTERN = Pattern.compile("(?::|\\?(\\d?)\\.)(\\w+)");
+    private static final Pattern NAMED_QUERY_PATTERN = Pattern.compile("(?::|\\?(\\d?)\\.?)(\\w*)");
 
     private DataSource dataSource;
 
@@ -2616,6 +2617,140 @@ public class Sql {
     }
 
     /**
+     * Performs the closure within a batch update.
+     * Uses a batch size of zero, i.e. no automatic partitioning of batches. This means that
+     * <code>executeBatch()</code> will be called automatically after the <code>withBatch</code>
+     * closure has finished but may be called explicitly if desired as well for more fine-grained
+     * partitioning of the batch. The closure will be called with a single argument; the prepared
+     * statement associated with this batch.
+     * <pre>
+     * def updateCounts = sql.withBatch('insert into TABLENAME(a, b, c) values (?, ?, ?)') { ps ->
+     *     ps.addBatch([10, 12, 5])
+     *     ps.addBatch([7, 3, 98])
+     *     ps.addBatch(22, 67, 11)
+     *     def partialUpdateCounts = ps.executeBatch() // optional interim batching
+     *     ps.addBatch(30, 40, 50)
+     *     ...
+     * }
+     * </pre>
+     *
+     * @param sql batch update statement
+     * @param closure the closure containing batch statements (to bind parameters) and optionally other statements
+     * @return an array of update counts containing one element for each
+     *         binding in the batch.  The elements of the array are ordered according
+     *         to the order in which commands were executed.
+     * @throws SQLException if a database access error occurs,
+     *                      or this method is called on a closed <code>Statement</code>, or the
+     *                      driver does not support batch statements. Throws {@link java.sql.BatchUpdateException}
+     *                      (a subclass of <code>SQLException</code>) if one of the commands sent to the
+     *                      database fails to execute properly or attempts to return a result set.
+     * @see #withBatch(int, String, Closure)
+     */
+    public int[] withBatch(String sql, Closure closure) throws SQLException {
+        return withBatch(0, sql, closure);
+    }
+
+    /**
+     * Performs the closure within a batch update.
+     * The closure will be called with a single argument; the statement
+     * associated with this batch. Use it like this for batchSize of 20:
+     * <pre>
+     * def updateCounts = sql.withBatch(20, 'insert into TABLENAME(a, b, c) values (?, ?, ?)') { ps ->
+     *     ps.addBatch(10, 12, 5)      // varargs style
+     *     ps.addBatch([7, 3, 98])     // list
+     *     ps.addBatch([22, 67, 11])
+     *     ...
+     * }
+     * </pre>
+     * Named parameters (into maps or domain objects) are also supported:
+     * <pre>
+     * def updateCounts = sql.withBatch(20, 'insert into TABLENAME(a, b, c) values (:foo, :bar, :baz)') { ps ->
+     *     ps.addBatch([foo:10, bar:12, baz:5])  // map
+     *     ps.addBatch(foo:7, bar:3, baz:98)     // Groovy named args allow outer brackets to be dropped
+     *     ...
+     * }
+     * </pre>
+     * Named ordinal parameters (into maps or domain objects) are also supported:
+     * <pre>
+     * def updateCounts = sql.withBatch(20, 'insert into TABLENAME(a, b, c) values (?1.foo, ?2.bar, ?2.baz)') { ps ->
+     *     ps.addBatch([[foo:22], [bar:67, baz:11]])  // list of maps or domain objects
+     *     ps.addBatch([foo:10], [bar:12, baz:5])     // varargs allows outer brackets to be dropped
+     *     ps.addBatch([foo:7], [bar:3, baz:98])
+     *     ...
+     * }
+     * def updateCounts2 = sql.withBatch(5, 'insert into TABLENAME(a, b, c) values (?1, ?2.bar, ?2.baz)') { ps ->
+     *     ps.addBatch(10, [bar:12, baz:5])
+     *     ps.addBatch(7, [bar:3, baz:98])
+     *     ...
+     * }
+     * </pre>
+     *
+     * @param batchSize partition the batch into batchSize pieces, i.e. after batchSize
+     *                  <code>addBatch()</code> invocations, call <code>executeBatch()</code> automatically;
+     *                  0 means manual calls to executeBatch are required if additional partitioning of the batch is required
+     * @param sql batch update statement
+     * @param closure the closure containing batch statements (to bind parameters) and optionally other statements
+     * @return an array of update counts containing one element for each
+     *         binding in the batch.  The elements of the array are ordered according
+     *         to the order in which commands were executed.
+     * @throws SQLException if a database access error occurs,
+     *                      or this method is called on a closed <code>Statement</code>, or the
+     *                      driver does not support batch statements. Throws {@link java.sql.BatchUpdateException}
+     *                      (a subclass of <code>SQLException</code>) if one of the commands sent to the
+     *                      database fails to execute properly or attempts to return a result set.
+     */
+    public int[] withBatch(int batchSize, String sql, Closure closure) throws SQLException {
+        boolean savedCacheConnection = cacheConnection;
+        cacheConnection = true;
+        Connection connection = null;
+        List<Tuple> indexPropList = null;
+        SqlWithParams preCheck = preCheckForNamedParams(sql);
+        boolean savedAutoCommit = true;
+        boolean savedWithinBatch = withinBatch;
+        BatchingPreparedStatementWrapper psWrapper = null;
+        if (preCheck != null) {
+            indexPropList = new ArrayList<Tuple>();
+            for (Object next : preCheck.getParams()) {
+                indexPropList.add((Tuple) next);
+            }
+            sql = preCheck.getSql();
+        }
+
+        try {
+            withinBatch = true;
+            connection = createConnection();
+            savedAutoCommit = connection.getAutoCommit();
+            connection.setAutoCommit(false);
+            PreparedStatement statement = (PreparedStatement) getAbstractStatement(new CreatePreparedStatementCommand(0), connection, sql);
+            configure(statement);
+            psWrapper = new BatchingPreparedStatementWrapper(statement, indexPropList, batchSize, LOG, this);
+            closure.call(psWrapper);
+            int[] result = psWrapper.executeBatch();
+            connection.commit();
+            return result;
+        } catch (SQLException e) {
+            handleError(connection, e);
+            throw e;
+        } catch (RuntimeException e) {
+            handleError(connection, e);
+            throw e;
+        } catch (Error e) {
+            handleError(connection, e);
+            throw e;
+        } finally {
+            if (connection != null) connection.setAutoCommit(savedAutoCommit);
+            cacheConnection = false;
+            closeResources(psWrapper);
+            closeResources(connection);
+            cacheConnection = savedCacheConnection;
+            withinBatch = savedWithinBatch;
+            if (dataSource != null && !cacheConnection) {
+                useConnection = null;
+            }
+        }
+    }
+
+    /**
      * Caches every created preparedStatement in Closure <i>closure</i></br>
      * Every cached preparedStatement is closed after closure has been called.
      * If the closure takes a single argument, it will be called
@@ -3156,80 +3291,44 @@ public class Sql {
     }
 
     public SqlWithParams checkForNamedParams(String sql, List<Object> params) {
+        SqlWithParams preCheck = preCheckForNamedParams(sql);
+        if (preCheck == null) {
+            return new SqlWithParams(sql, params);
+        }
+
+        List<Tuple> indexPropList = new ArrayList<Tuple>();
+        for (Object next : preCheck.getParams()) {
+            indexPropList.add((Tuple) next);
+        }
+        return new SqlWithParams(preCheck.getSql(), getUpdatedParams(params, indexPropList));
+    }
+
+    public SqlWithParams preCheckForNamedParams(String sql) {
         // look for quick exit
         if (!enableNamedQueries || !NAMED_QUERY_PATTERN.matcher(sql).find()) {
-            return new SqlWithParams(sql, params);
+            return null;
         }
 
-        List<Tuple> indexPropList;
-        String newSql;
-        if (cacheNamedQueries && namedParamSqlCache.containsKey(sql)) {
-            newSql = namedParamSqlCache.get(sql);
-            indexPropList = namedParamIndexPropCache.get(sql);
-        } else {
-            indexPropList = new ArrayList<Tuple>();
-            StringBuilder sb = new StringBuilder();
-            StringBuilder currentChunk = new StringBuilder();
-            char[] chars = sql.toCharArray();
-            int i = 0;
-            boolean inString = false; //TODO: Cater for comments?
-            while (i < chars.length) {
-                switch (chars[i]) {
-                    case '\'':
-                        inString = !inString;
-                        if (inString) {
-                            sb.append(adaptForNamedParams(currentChunk.toString(), indexPropList));
-                            currentChunk = new StringBuilder();
-                            currentChunk.append(chars[i]);
-                        } else {
-                            currentChunk.append(chars[i]);
-                            sb.append(currentChunk);
-                            currentChunk = new StringBuilder();
-                        }
-                        break;
-                    default:
-                        currentChunk.append(chars[i]);
-                }
-                i++;
-            }
-            if (inString)
-                throw new IllegalStateException("Failed to process query. Unterminated ' character?");
-            sb.append(adaptForNamedParams(currentChunk.toString(), indexPropList));
-            newSql = sb.toString();
-            namedParamSqlCache.put(sql, newSql);
-            namedParamIndexPropCache.put(sql, indexPropList);
-        }
+        ExtractIndexAndSql extractIndexAndSql = new ExtractIndexAndSql(sql).invoke();
+        String newSql = extractIndexAndSql.getNewSql();
         if (sql.equals(newSql)) {
-            return new SqlWithParams(sql, params);
+            return null;
         }
 
+        List<Object> indexPropList = new ArrayList<Object>(extractIndexAndSql.getIndexPropList());
+        return new SqlWithParams(newSql, indexPropList);
+    }
+
+    public List<Object> getUpdatedParams(List<Object> params, List<Tuple> indexPropList) {
         List<Object> updatedParams = new ArrayList<Object>();
         for (Tuple tuple : indexPropList) {
             int index = (Integer) tuple.get(0);
             String prop = (String) tuple.get(1);
             if (index < 0 || index >= params.size())
                 throw new IllegalArgumentException("Invalid index " + index + " should be in range 1.." + params.size());
-            updatedParams.add(InvokerHelper.getProperty(params.get(index), prop));
+            updatedParams.add(prop.equals("<this>") ? params.get(index) : InvokerHelper.getProperty(params.get(index), prop));
         }
-
-        return new SqlWithParams(newSql, updatedParams);
-    }
-
-    private String adaptForNamedParams(String sql, List<Tuple> indexPropList) {
-        StringBuilder newSql = new StringBuilder();
-        int txtIndex = 0;
-
-        Matcher matcher = NAMED_QUERY_PATTERN.matcher(sql);
-        while (matcher.find()) {
-            newSql.append(sql.substring(txtIndex, matcher.start())).append('?');
-            String indexStr = matcher.group(1);
-            int index = (indexStr == null || indexStr.length() == 0) ? 0 : new Integer(matcher.group(1)) - 1;
-            String prop = matcher.group(2);
-            indexPropList.add(new Tuple(new Object[]{index, prop}));
-            txtIndex = matcher.end();
-        }
-        newSql.append(sql.substring(txtIndex)); // append ending SQL after last param.
-        return newSql.toString();
+        return updatedParams;
     }
 
     private PreparedStatement getPreparedStatement(Connection connection, String sql, List<Object> params) throws SQLException {
@@ -3447,5 +3546,80 @@ public class Sql {
      * @param conn the connection that is about to be used by a command
      */
     protected void setInternalConnection(Connection conn) {
+    }
+
+    private class ExtractIndexAndSql {
+        private String sql;
+        private List<Tuple> indexPropList;
+        private String newSql;
+
+        public ExtractIndexAndSql(String sql) {
+            this.sql = sql;
+        }
+
+        public List<Tuple> getIndexPropList() {
+            return indexPropList;
+        }
+
+        public String getNewSql() {
+            return newSql;
+        }
+
+        public ExtractIndexAndSql invoke() {
+            if (cacheNamedQueries && namedParamSqlCache.containsKey(sql)) {
+                newSql = namedParamSqlCache.get(sql);
+                indexPropList = namedParamIndexPropCache.get(sql);
+            } else {
+                indexPropList = new ArrayList<Tuple>();
+                StringBuilder sb = new StringBuilder();
+                StringBuilder currentChunk = new StringBuilder();
+                char[] chars = sql.toCharArray();
+                int i = 0;
+                boolean inString = false; //TODO: Cater for comments?
+                while (i < chars.length) {
+                    switch (chars[i]) {
+                        case '\'':
+                            inString = !inString;
+                            if (inString) {
+                                sb.append(adaptForNamedParams(currentChunk.toString(), indexPropList));
+                                currentChunk = new StringBuilder();
+                                currentChunk.append(chars[i]);
+                            } else {
+                                currentChunk.append(chars[i]);
+                                sb.append(currentChunk);
+                                currentChunk = new StringBuilder();
+                            }
+                            break;
+                        default:
+                            currentChunk.append(chars[i]);
+                    }
+                    i++;
+                }
+                if (inString)
+                    throw new IllegalStateException("Failed to process query. Unterminated ' character?");
+                sb.append(adaptForNamedParams(currentChunk.toString(), indexPropList));
+                newSql = sb.toString();
+                namedParamSqlCache.put(sql, newSql);
+                namedParamIndexPropCache.put(sql, indexPropList);
+            }
+            return this;
+        }
+
+        private String adaptForNamedParams(String sql, List<Tuple> indexPropList) {
+            StringBuilder newSql = new StringBuilder();
+            int txtIndex = 0;
+
+            Matcher matcher = NAMED_QUERY_PATTERN.matcher(sql);
+            while (matcher.find()) {
+                newSql.append(sql.substring(txtIndex, matcher.start())).append('?');
+                String indexStr = matcher.group(1);
+                int index = (indexStr == null || indexStr.length() == 0) ? 0 : new Integer(indexStr) - 1;
+                String prop = matcher.group(2);
+                indexPropList.add(new Tuple(new Object[]{index, prop.length() == 0 ? "<this>" : prop}));
+                txtIndex = matcher.end();
+            }
+            newSql.append(sql.substring(txtIndex)); // append ending SQL after last param.
+            return newSql.toString();
+        }
     }
 }

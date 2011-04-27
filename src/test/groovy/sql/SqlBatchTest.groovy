@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2009 the original author or authors.
+ * Copyright 2003-2011 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -86,6 +86,57 @@ class SqlBatchTest extends GroovyTestCase {
             myOthers.eachWithIndex { k, v, index ->
                 def id = index + numRows + 1
                 stmt.addBatch("insert into PERSON (id, firstname, lastname) values ($id, '$k', '$v')")
+            }
+        }
+        assert result == [1] * myOthers.size()
+        assert sql.rows("SELECT * FROM PERSON").size() == numRows + myOthers.size()
+        // end result the same as if no batching was in place but logging should show:
+        // FINE: Successfully executed batch with 3 command(s)
+        // FINE: Successfully executed batch with 1 command(s)
+    }
+
+    void testWithBatchHavingSizeUsingPreparedStatement() {
+        def numRows = sql.rows("SELECT * FROM PERSON").size()
+        assert numRows == 3
+        def myOthers = ['f4':'l4','f5':'l5','f6':'l6','f7':'l7']
+        def result = sql.withBatch(3, "insert into PERSON (id, firstname, lastname) values (?, ?, ?)") { ps ->
+            myOthers.eachWithIndex { k, v, index ->
+                def id = index + numRows + 1
+                ps.addBatch(id, k, v)
+            }
+        }
+        assert result == [1] * myOthers.size()
+        assert sql.rows("SELECT * FROM PERSON").size() == numRows + myOthers.size()
+        // end result the same as if no batching was in place but logging should show:
+        // FINE: Successfully executed batch with 3 command(s)
+        // FINE: Successfully executed batch with 1 command(s)
+    }
+
+    void testWithBatchHavingSizeUsingPreparedStatementNamedParams() {
+        def numRows = sql.rows("SELECT * FROM PERSON").size()
+        assert numRows == 3
+        def myOthers = ['f4':'l4','f5':'l5','f6':'l6','f7':'l7']
+        def result = sql.withBatch(3, "insert into PERSON (id, firstname, lastname) values (?.id, :first, :last)") { ps ->
+            myOthers.eachWithIndex { k, v, index ->
+                def id = index + numRows + 1
+                ps.addBatch(id:id, first:k, last:v)
+            }
+        }
+        assert result == [1] * myOthers.size()
+        assert sql.rows("SELECT * FROM PERSON").size() == numRows + myOthers.size()
+        // end result the same as if no batching was in place but logging should show:
+        // FINE: Successfully executed batch with 3 command(s)
+        // FINE: Successfully executed batch with 1 command(s)
+    }
+
+    void testWithBatchHavingSizeUsingPreparedStatementNamedOrdinalParams() {
+        def numRows = sql.rows("SELECT * FROM PERSON").size()
+        assert numRows == 3
+        def myOthers = ['f4':'l4','f5':'l5','f6':'l6','f7':'l7']
+        def result = sql.withBatch(3, "insert into PERSON (id, firstname, lastname) values (?1, ?2.first, ?2.last)") { ps ->
+            myOthers.eachWithIndex { k, v, index ->
+                def id = index + numRows + 1
+                ps.addBatch(id, [first:k, last:v])
             }
         }
         assert result == [1] * myOthers.size()
