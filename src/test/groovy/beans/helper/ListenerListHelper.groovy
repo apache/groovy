@@ -40,7 +40,7 @@ interface TestObjectListener {
 }
 
 interface TestListListener {
-  void eventOccurred(List event)
+  void eventOccurred(List<? extends Object> event)
 }
 
 interface TestMapListener {
