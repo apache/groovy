@@ -113,6 +113,24 @@ class SqlBatchTest extends GroovyTestCase {
         // FINE: Successfully executed batch with 1 command(s)
     }
 
+    void testWithBatchInsideWithTransaction() {
+        def numRows = sql.rows("SELECT * FROM PERSON").size()
+        assert numRows == 3
+        def myOthers = ['f4':'l4','f5':'l5','f6':'l6','f7':'l7']
+        shouldFail(IllegalStateException) {
+            sql.withTransaction {
+                sql.withBatch(2, "insert into PERSON (id, firstname, lastname) values (?, ?, ?)") { ps ->
+                    myOthers.eachWithIndex { k, v, index ->
+                        def id = index + numRows + 1
+                        if (k == 'f6') throw new IllegalStateException('BOOM')
+                        ps.addBatch(id, k, v)
+                    }
+                }
+            }
+        }
+        assert sql.rows("SELECT * FROM PERSON").size() == numRows
+    }
+
     void testWithBatchHavingSizeUsingPreparedStatementNamedParams() {
         def numRows = sql.rows("SELECT * FROM PERSON").size()
         assert numRows == 3

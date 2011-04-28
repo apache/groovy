@@ -16,9 +16,9 @@
 package groovy.sql;
 
 import groovy.lang.GroovyObjectSupport;
+import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.InvokerHelper;
 
-import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
@@ -34,16 +34,18 @@ public class BatchingStatementWrapper extends GroovyObjectSupport {
     private Statement delegate;
     protected int batchSize;
     protected int batchCount;
-    private Connection connection;
     protected Logger log;
     protected List<Integer> results;
 
-    public BatchingStatementWrapper(Statement delegate, int batchSize, Logger log, Connection connection) {
+    public BatchingStatementWrapper(Statement delegate, int batchSize, Logger log) {
         this.delegate = delegate;
         this.batchSize = batchSize;
-        this.connection = connection;
         this.log = log;
-        this.batchCount = 0;
+        reset();
+    }
+
+    protected void reset() {
+        batchCount = 0;
         results = new ArrayList<Integer>();
     }
 
@@ -55,42 +57,45 @@ public class BatchingStatementWrapper extends GroovyObjectSupport {
     public void addBatch(String sql) throws SQLException {
         delegate.addBatch(sql);
         batchCount++;
-        if (batchSize != 0 && batchCount % batchSize == 0) {
+        if (batchCount == batchSize /* never true for batchSize of 0 */) {
             int[] result = delegate.executeBatch();
-            connection.commit();
-            for (int i : result) {
-                results.add(i);
-            }
-            log.fine("Successfully executed batch with " + result.length + " command(s)");
+            processResult(result);
+            batchCount = 0;
         }
     }
 
     public void clearBatch() throws SQLException {
         if (batchSize != 0) {
-            results = new ArrayList<Integer>();
+            reset();
         }
         delegate.clearBatch();
     }
 
     public int[] executeBatch() throws SQLException {
-        if (batchSize == 0) {
-            int[] result = delegate.executeBatch();
-            log.fine("Successfully executed batch with " + result.length + " command(s)");
-            return result;
-        }
-
         int[] lastResult = delegate.executeBatch();
-        for (int i : lastResult) {
-            results.add(i);
-        }
-        log.fine("Successfully executed batch with " + lastResult.length + " command(s)");
+        processResult(lastResult);
         int[] result = new int[results.size()];
         for (int i = 0; i < results.size(); i++) {
             result[i] = results.get(i);
         }
-        results = new ArrayList<Integer>();
-        batchCount = 0;
+        reset();
         return result;
+    }
+
+    protected void processResult(int[] lastResult) {
+        boolean foundError = false;
+        for (int i : lastResult) {
+            if (i == Statement.EXECUTE_FAILED) foundError = true;
+            results.add(i);
+        }
+        // A little bit of paranoid checking here? Most drivers will throw BatchUpdateException perhaps?
+        if (batchCount != lastResult.length) {
+            log.warning("Problem executing batch - expected result length of " + batchCount + " but got " + lastResult.length);
+        } else if (foundError) {
+            log.warning("Problem executing batch - at least one result failed in: " + DefaultGroovyMethods.toList(lastResult));
+        } else {
+            log.fine("Successfully executed batch with " + lastResult.length + " command(s)");
+        }
     }
 
     public void close() throws SQLException {
