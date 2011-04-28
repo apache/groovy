@@ -1155,15 +1155,16 @@ public class Sql {
      * "scrollable" type.
      * 
      * @param gstring a GString containing the SQL query with embedded params
+     * @param metaClosure called for meta data (only once after sql execution)
      * @param offset  the 1-based offset for the first row to be processed
      * @param maxRows the maximum number of rows to be processed
-     * @param closure called for each row with a GroovyResultSet
+     * @param rowClosure called for each row with a GroovyResultSet
      * @throws SQLException if a database access error occurs
      */
-    public void eachRow(GString gstring, Closure metaClosure, int offset, int maxRows, Closure closure) throws SQLException {
+    public void eachRow(GString gstring, Closure metaClosure, int offset, int maxRows, Closure rowClosure) throws SQLException {
         List<Object> params = getParameters(gstring);
         String sql = asSql(gstring, params);
-        eachRow(sql, params, metaClosure, offset, maxRows, closure);
+        eachRow(sql, params, metaClosure, offset, maxRows, rowClosure);
     }
 
     /**
@@ -1581,6 +1582,7 @@ public class Sql {
      * @param gstring the SQL statement
      * @param offset  the 1-based offset for the first row to be processed
      * @param maxRows the maximum number of rows to be processed
+     * @param metaClosure called for meta data (only once after sql execution)
      * @return a list of GroovyRowResult objects
      * @throws SQLException if a database access error occurs
      */
@@ -2578,41 +2580,23 @@ public class Sql {
      * @see #withBatch(Closure)
      */
     public synchronized int[] withBatch(int batchSize, Closure closure) throws SQLException {
-        boolean savedCacheConnection = cacheConnection;
-        cacheConnection = true;
-        Connection connection = null;
+        Connection connection = createConnection();
         BatchingStatementWrapper statement = null;
-        boolean savedAutoCommit = true;
         boolean savedWithinBatch = withinBatch;
         try {
             withinBatch = true;
-            connection = createConnection();
-            savedAutoCommit = connection.getAutoCommit();
-            connection.setAutoCommit(false);
-            statement = new BatchingStatementWrapper(createStatement(connection), batchSize, LOG, connection);
+            statement = new BatchingStatementWrapper(createStatement(connection), batchSize, LOG);
             closure.call(statement);
-            int[] result = statement.executeBatch();
-            connection.commit();
-            return result;
-        } catch (SQLException e) {
-            handleError(connection, e);
+            return statement.executeBatch();
+        }
+        catch (SQLException e) {
+            LOG.warning("Error during batch execution: " + e.getMessage());
             throw e;
-        } catch (RuntimeException e) {
-            handleError(connection, e);
-            throw e;
-        } catch (Error e) {
-            handleError(connection, e);
-            throw e;
-        } finally {
-            if (connection != null) connection.setAutoCommit(savedAutoCommit);
-            cacheConnection = false;
+        }
+        finally {
             closeResources(statement);
             closeResources(connection);
-            cacheConnection = savedCacheConnection;
             withinBatch = savedWithinBatch;
-            if (dataSource != null && !cacheConnection) {
-                useConnection = null;
-            }
         }
     }
 
@@ -2646,7 +2630,7 @@ public class Sql {
      *                      database fails to execute properly or attempts to return a result set.
      * @see #withBatch(int, String, Closure)
      */
-    public int[] withBatch(String sql, Closure closure) throws SQLException {
+    public synchronized int[] withBatch(String sql, Closure closure) throws SQLException {
         return withBatch(0, sql, closure);
     }
 
@@ -2699,13 +2683,10 @@ public class Sql {
      *                      (a subclass of <code>SQLException</code>) if one of the commands sent to the
      *                      database fails to execute properly or attempts to return a result set.
      */
-    public int[] withBatch(int batchSize, String sql, Closure closure) throws SQLException {
-        boolean savedCacheConnection = cacheConnection;
-        cacheConnection = true;
-        Connection connection = null;
+    public synchronized int[] withBatch(int batchSize, String sql, Closure closure) throws SQLException {
+        Connection connection = createConnection();
         List<Tuple> indexPropList = null;
         SqlWithParams preCheck = preCheckForNamedParams(sql);
-        boolean savedAutoCommit = true;
         boolean savedWithinBatch = withinBatch;
         BatchingPreparedStatementWrapper psWrapper = null;
         if (preCheck != null) {
@@ -2718,35 +2699,20 @@ public class Sql {
 
         try {
             withinBatch = true;
-            connection = createConnection();
-            savedAutoCommit = connection.getAutoCommit();
-            connection.setAutoCommit(false);
             PreparedStatement statement = (PreparedStatement) getAbstractStatement(new CreatePreparedStatementCommand(0), connection, sql);
             configure(statement);
             psWrapper = new BatchingPreparedStatementWrapper(statement, indexPropList, batchSize, LOG, this);
             closure.call(psWrapper);
-            int[] result = psWrapper.executeBatch();
-            connection.commit();
-            return result;
-        } catch (SQLException e) {
-            handleError(connection, e);
+            return psWrapper.executeBatch();
+        }
+        catch (SQLException e) {
+            LOG.warning("Error during batch execution of '" + sql + "' with message: " + e.getMessage());
             throw e;
-        } catch (RuntimeException e) {
-            handleError(connection, e);
-            throw e;
-        } catch (Error e) {
-            handleError(connection, e);
-            throw e;
-        } finally {
-            if (connection != null) connection.setAutoCommit(savedAutoCommit);
-            cacheConnection = false;
+        }
+        finally {
             closeResources(psWrapper);
             closeResources(connection);
-            cacheConnection = savedCacheConnection;
             withinBatch = savedWithinBatch;
-            if (dataSource != null && !cacheConnection) {
-                useConnection = null;
-            }
         }
     }
 
@@ -2883,7 +2849,7 @@ public class Sql {
             throw new IllegalArgumentException("No SQL specified in GString: " + gstring);
         }
         boolean nulls = false;
-        StringBuffer buffer = new StringBuffer();
+        StringBuilder buffer = new StringBuilder();
         boolean warned = false;
         Iterator<Object> iter = values.iterator();
         for (int i = 0; i < strings.length; i++) {

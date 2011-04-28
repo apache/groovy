@@ -17,11 +17,9 @@ package groovy.sql;
 
 import groovy.lang.Tuple;
 
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Logger;
@@ -42,7 +40,7 @@ public class BatchingPreparedStatementWrapper extends BatchingStatementWrapper {
     private Sql sql;
 
     public BatchingPreparedStatementWrapper(PreparedStatement delegate, List<Tuple> indexPropList, int batchSize, Logger log, Sql sql) {
-        super(delegate, batchSize, log, (Connection) null);
+        super(delegate, batchSize, log);
         this.delegate = delegate;
         this.indexPropList = indexPropList;
         this.sql = sql;
@@ -60,34 +58,10 @@ public class BatchingPreparedStatementWrapper extends BatchingStatementWrapper {
         }
         delegate.addBatch();
         batchCount++;
-        if (batchSize != 0 && (batchCount % batchSize) == 0) {
+        if (batchCount == batchSize /* never true for batchSize of 0 */) {
             int[] result = delegate.executeBatch();
-            for (int i : result) {
-                results.add(i);
-            }
-            log.fine("Successfully executed batch with " + result.length + " command(s)");
+            processResult(result);
+            batchCount = 0;
         }
     }
-
-    public int[] executeBatch() throws SQLException {
-        if (batchSize == 0) {
-            int[] result = delegate.executeBatch();
-            log.fine("Successfully executed batch with " + result.length + " command(s)");
-            return result;
-        }
-
-        int[] lastResult = delegate.executeBatch();
-        for (int i : lastResult) {
-            results.add(i);
-        }
-        log.fine("Successfully executed batch with " + lastResult.length + " command(s)");
-        int[] result = new int[results.size()];
-        for (int i = 0; i < results.size(); i++) {
-            result[i] = results.get(i);
-        }
-        results = new ArrayList<Integer>();
-        batchCount = 0;
-        return result;
-    }
-
 }
