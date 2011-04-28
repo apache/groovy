@@ -1342,16 +1342,21 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static <T> T eachWithIndex(T self, Closure closure) {
+        final Object[] args = new Object[2];
         int counter = 0;
         for (Iterator iter = InvokerHelper.asIterator(self); iter.hasNext();) {
-            closure.call(new Object[]{iter.next(), counter++});
+            args[0] = iter.next();
+            args[1] = counter++;
+            closure.call(args);
         }
         return self;
     }
 
     private static <T> Iterator<T> each(Iterator<T> iter, Closure closure) {
+        final Object[] args = new Object[1];
         while (iter.hasNext()) {
-            closure.call(iter.next());
+            args[0] = iter.next();
+            closure.call(args);
         }
         return iter;
     }
@@ -2419,12 +2424,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     private static <T> Collection<T> findAll(Closure closure, Collection<T> answer, Iterator<? extends T> iter) {
-        while (iter.hasNext()) {
-            T value = iter.next();
-            if (DefaultTypeTransformation.castToBoolean(closure.call(value))) {
-                answer.add(value);
+            while (iter.hasNext()) {
+                T value = iter.next();
+                if (DefaultTypeTransformation.castToBoolean(closure.call(value))) {
+                    answer.add(value);
+                }
             }
-        }
         return answer;
     }
 
