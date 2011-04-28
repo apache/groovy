@@ -162,8 +162,8 @@ class JsonOutputTest extends GroovyTestCase {
 
         json.trends {
             "2010-06-22 17:20" ([
-                    name: "Guille Franco",
-                    query: "Guille Franco"
+                    name: "Groovy rules",
+                    query: "Groovy rules"
             ], {
                 name "#worldcup"
                 query "#worldcup"
@@ -172,11 +172,11 @@ class JsonOutputTest extends GroovyTestCase {
                     query: "Uruguai"
             ])
             "2010-06-22 06:20" ({
-                name "#honestyhour"
-                query "#honestyhour"
+                name "#groovy"
+                query "#groovy"
             }, [
-                    name: "#blackpeoplerules",
-                    query: "#blackpeoplerules"
+                    name: "#java",
+                    query: "#java"
             ])
         }
 
@@ -185,8 +185,8 @@ class JsonOutputTest extends GroovyTestCase {
                 "trends": {
                     "2010-06-22 17:20": [
                         {
-                            "name": "Guille Franco",
-                            "query": "Guille Franco"
+                            "name": "Groovy rules",
+                            "query": "Groovy rules"
                         },
                         {
                             "name": "#worldcup",
@@ -199,12 +199,12 @@ class JsonOutputTest extends GroovyTestCase {
                     ],
                     "2010-06-22 06:20": [
                         {
-                            "name": "#honestyhour",
-                            "query": "#honestyhour"
+                            "name": "#groovy",
+                            "query": "#groovy"
                         },
                         {
-                            "name": "#blackpeoplerules",
-                            "query": "#blackpeoplerules"
+                            "name": "#java",
+                            "query": "#java"
                         }
                     ]
                 }
