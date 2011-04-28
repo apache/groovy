@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 the original author or authors.
+ * Copyright 2008-2011 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package org.codehaus.groovy.transform;
 
+import org.codehaus.groovy.ast.stmt.CatchStatement;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
@@ -37,7 +38,7 @@ import java.util.Set;
 
 /**
  * Handles generation of code for the @Category annotation.
- * <p>
+ * <p/>
  * Transformation logic is as follows:
  * <ul>
  * <li>all non-static methods converted to static ones with an additional 'self' parameter
@@ -49,6 +50,7 @@ import java.util.Set;
 @GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
 public class CategoryASTTransformation implements ASTTransformation, Opcodes {
     private static final VariableExpression THIS_EXPRESSION;
+
     static {
         THIS_EXPRESSION = new VariableExpression("$this");
         THIS_EXPRESSION.setClosureSharedVariable(true);
@@ -88,7 +90,14 @@ public class CategoryASTTransformation implements ASTTransformation, Opcodes {
                 }
                 varStack.add(names);
             }
-            
+
+            @Override
+            public void visitCatchStatement(CatchStatement statement) {
+                varStack.getLast().add(statement.getVariable().getName());
+                super.visitCatchStatement(statement);
+                varStack.getLast().remove(statement.getVariable().getName());
+            }
+
             @Override
             public void visitMethod(MethodNode node) {
                 addVariablesToStack(node.getParameters());
@@ -173,10 +182,10 @@ public class CategoryASTTransformation implements ASTTransformation, Opcodes {
                     ClosureExpression ce = (ClosureExpression) exp;
                     ce.getVariableScope().putReferencedLocalVariable((Parameter) parameter.get());
                     Parameter[] params = ce.getParameters();
-                    if (params==null){
+                    if (params == null) {
                         params = new Parameter[0];
-                    } else if (params.length==0) {
-                        params = new Parameter[] {
+                    } else if (params.length == 0) {
+                        params = new Parameter[]{
                                 new Parameter(ClassHelper.OBJECT_TYPE, "it")
                         };
                     }
@@ -195,7 +204,7 @@ public class CategoryASTTransformation implements ASTTransformation, Opcodes {
                 final Parameter[] newParams = new Parameter[origParams.length + 1];
                 Parameter p = new Parameter(targetClass, "$this");
                 p.setClosureSharedVariable(true);
-                newParams[0] = p; 
+                newParams[0] = p;
                 parameter.set(p);
                 System.arraycopy(origParams, 0, newParams, 1, origParams.length);
                 method.setParameters(newParams);

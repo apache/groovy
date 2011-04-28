@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2011 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,6 +36,25 @@ class CategoryAnnotationTest extends GroovyTestCase {
                 def d3 = d1 + d2
                 assert d3.number == 15
             }
+        """
+    }
+
+    void testTransformationWithCatchClause() {
+        //Test the fix for GROOVY-4801
+        assertScript """
+            class ExceptionHandler {
+                static def handled(Object self, Closure block) {
+                    try { block.call() }
+                    catch (Throwable t) { t.message }
+                }
+            }
+
+            @Mixin(ExceptionHandler)
+            class Caller {
+                def thrower() { handled { 1/0 } }
+            }
+
+            assert new Caller().thrower() == 'Division by zero'
         """
     }
 
