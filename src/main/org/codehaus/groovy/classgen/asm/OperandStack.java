@@ -303,6 +303,10 @@ public class OperandStack {
         if (primTop && primTarget) {
             //TODO: use jvm primitive conversions
             // here we box and unbox to get the goal type
+            if (convertPrimitive(top, targetType)) {
+                replace(targetType);
+                return;
+            }
             box();
         } else if (primTop) {
             // top is primitive, target is not
@@ -322,6 +326,87 @@ public class OperandStack {
         }
         BytecodeHelper.doCast(mv,targetType);
         replace(targetType);
+    }
+    
+    private boolean convertFromInt(ClassNode target) {
+        int convertCode = 0;
+        if (target==ClassHelper.char_TYPE){
+            convertCode = I2C;
+        } else if (target==ClassHelper.byte_TYPE){
+            convertCode = I2B;
+        } else if (target==ClassHelper.short_TYPE){
+            convertCode = I2S;
+        } else if (target==ClassHelper.long_TYPE){
+            convertCode = I2L;
+        } else if (target==ClassHelper.float_TYPE){
+            convertCode = I2F;
+        } else if (target==ClassHelper.double_TYPE){
+            convertCode = I2D;
+        } else {
+            return false;
+        }
+        controller.getMethodVisitor().visitInsn(convertCode);
+        return true;
+    }
+
+    private boolean convertFromDouble(ClassNode target) {
+        MethodVisitor mv = controller.getMethodVisitor();
+        if (target==ClassHelper.int_TYPE){
+            mv.visitInsn(D2I);
+            return true;
+        } else if ( target==ClassHelper.char_TYPE ||
+                    target==ClassHelper.byte_TYPE ||
+                    target==ClassHelper.short_TYPE)
+        {
+            mv.visitInsn(D2I);
+            return convertFromInt(target);
+        } else if (target==ClassHelper.long_TYPE){
+            mv.visitInsn(D2L);
+            return true;
+        } else if (target==ClassHelper.float_TYPE){
+            mv.visitInsn(D2F);
+            return true;
+        } 
+        return false;
+    }    
+    
+    private boolean convertFromFloat(ClassNode target) {
+        MethodVisitor mv = controller.getMethodVisitor();
+        if (target==ClassHelper.int_TYPE){
+            mv.visitInsn(F2I);
+            return true;
+        } else if ( target==ClassHelper.char_TYPE ||
+                    target==ClassHelper.byte_TYPE ||
+                    target==ClassHelper.short_TYPE)
+        {
+            mv.visitInsn(F2I);
+            return convertFromInt(target);
+        } else if (target==ClassHelper.long_TYPE){
+            mv.visitInsn(F2L);
+            return true;
+        } else if (target==ClassHelper.double_TYPE){
+            mv.visitInsn(F2D);
+            return true;
+        } 
+        return false;
+    }
+    
+    private boolean convertPrimitive(ClassNode top, ClassNode target) {
+        if (top==target) return true;
+        if (top==ClassHelper.int_TYPE) {
+            return convertFromInt(target);
+        } else if ( top==ClassHelper.char_TYPE || 
+                    top==ClassHelper.byte_TYPE ||
+                    top==ClassHelper.short_TYPE)
+        {
+            if (target==ClassHelper.int_TYPE) return true;
+            return convertFromInt(target);
+        } else if ( top==ClassHelper.float_TYPE) {
+            return convertFromFloat(target);
+        } else if ( top==ClassHelper.double_TYPE) {
+            return convertFromDouble(target);
+        }
+        return false;
     }
 
     /**
