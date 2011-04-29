@@ -231,6 +231,11 @@ public abstract class BinaryExpressionWriter {
     }
     
     protected abstract MethodCaller getArrayGetCaller();
+
+    protected ClassNode getArrayGetResultType(){
+        return getNormalOpResultType();
+    }
+    
     protected abstract MethodCaller getArraySetCaller();
     
     public boolean arrayGet(int operation, boolean simulate) {

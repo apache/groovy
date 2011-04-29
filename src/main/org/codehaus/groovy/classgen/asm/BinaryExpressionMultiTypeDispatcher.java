@@ -19,6 +19,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.codehaus.groovy.GroovyBugError;
+import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.Variable;
@@ -27,6 +28,7 @@ import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.classgen.asm.OptimizingStatementWriter.StatementMeta;
+import org.codehaus.groovy.runtime.BytecodeInterface8;
 import org.objectweb.asm.MethodVisitor;
 
 import static org.codehaus.groovy.ast.ClassHelper.*;
@@ -80,15 +82,51 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
         @Override protected void removeTwoOperands(MethodVisitor mv) {}
     }
     
+    private static class BinaryCharExpressionHelper extends BinaryIntExpressionHelper {
+        public BinaryCharExpressionHelper(WriterController wc) {
+            super(wc);
+        }
+        private static final MethodCaller 
+            charArrayGet = MethodCaller.newStatic(BytecodeInterface8.class, "cArrayGet"),
+            charArraySet = MethodCaller.newStatic(BytecodeInterface8.class, "cArraySet");
+        @Override protected MethodCaller getArrayGetCaller() { return charArrayGet; }
+        @Override protected ClassNode getArrayGetResultType() { return ClassHelper.char_TYPE; }
+        @Override protected MethodCaller getArraySetCaller() { return charArraySet; }    
+    }
+    
+    private static class BinaryByteExpressionHelper extends BinaryIntExpressionHelper {
+        public BinaryByteExpressionHelper(WriterController wc) {
+            super(wc);
+        }
+        private static final MethodCaller 
+            byteArrayGet = MethodCaller.newStatic(BytecodeInterface8.class, "bArrayGet"),
+            byteArraySet = MethodCaller.newStatic(BytecodeInterface8.class, "bArraySet");
+        @Override protected MethodCaller getArrayGetCaller() { return byteArrayGet; }
+        @Override protected ClassNode getArrayGetResultType() { return ClassHelper.byte_TYPE; }
+        @Override protected MethodCaller getArraySetCaller() { return byteArraySet; }    
+    }
+    
+    private static class BinaryShortExpressionHelper extends BinaryIntExpressionHelper {
+        public BinaryShortExpressionHelper(WriterController wc) {
+            super(wc);
+        }
+        private static final MethodCaller 
+            shortArrayGet = MethodCaller.newStatic(BytecodeInterface8.class, "sArrayGet"),
+            shortArraySet = MethodCaller.newStatic(BytecodeInterface8.class, "sArraySet");
+        @Override protected MethodCaller getArrayGetCaller() { return shortArrayGet; }
+        @Override protected ClassNode getArrayGetResultType() { return ClassHelper.short_TYPE; }
+        @Override protected MethodCaller getArraySetCaller() { return shortArraySet; }    
+    }
+    
     private BinaryExpressionWriter[] binExpWriter = {
             /* 0: dummy  */ new DummyHelper(getController()),
             /* 1: int    */ new BinaryIntExpressionHelper(getController()),
             /* 2: long   */ new BinaryLongExpressionHelper(getController()),
             /* 3: double */ new BinaryDoubleExpressionHelper(getController()),
-            /* 4: char   */ new DummyHelper(getController()),
-            /* 5: byte   */ new DummyHelper(getController()),
-            /* 6: short  */ new DummyHelper(getController()),
-            /* 7: float  */ new DummyHelper(getController()),
+            /* 4: char   */ new BinaryCharExpressionHelper(getController()),
+            /* 5: byte   */ new BinaryByteExpressionHelper(getController()),
+            /* 6: short  */ new BinaryShortExpressionHelper(getController()),
+            /* 7: float  */ new BinaryFloatExpressionHelper(getController()),
     };
     
     private static Map<ClassNode,Integer> typeMap = new HashMap<ClassNode,Integer>(14);
@@ -202,6 +240,7 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
             rightExp.visit(acg);
             os.doGroovyCast(int_TYPE);
             bew.arrayGet(operation, false);
+            os.doGroovyCast(bew.getArrayGetResultType());
         } else if (bew.write(operation, true)) {
             leftExp.visit(acg);
             os.doGroovyCast(int_TYPE);
