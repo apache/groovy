@@ -2201,7 +2201,7 @@ public class Sql {
             connection = createConnection();
             savedAutoCommit = connection.getAutoCommit();
             connection.setAutoCommit(false);
-            statement = new BatchingStatementWrapper(createStatement(connection), batchSize, LOG, connection);
+            statement = new BatchingStatementWrapper(createStatement(connection), batchSize, LOG);
             closure.call(statement);
             int[] result = statement.executeBatch();
             connection.commit();
