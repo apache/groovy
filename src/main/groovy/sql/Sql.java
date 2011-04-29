@@ -2525,14 +2525,30 @@ public class Sql {
     }
 
     /**
-     * Performs the closure within a batch using a cached connection.
+     * Performs the closure (containing batch operations) within a batch using a cached connection.
      * Uses a batch size of zero, i.e. no automatic partitioning of batches.
+     *
+     * This means that <code>executeBatch()</code> will be called automatically after the <code>withBatch</code>
+     * closure has finished but may be called explicitly if desired as well for more fine-grained
+     * partitioning of the batch.
+     *
+     * The closure will be called with a single argument; the database
+     * statement (actually a <code>BatchingStatementWrapper</code> helper object)
+     * associated with this batch.
+     *
      * Use it like this:
      * <pre>
      * def updateCounts = sql.withBatch { stmt ->
      *     stmt.addBatch("insert into TABLENAME ...")
      *     stmt.addBatch("insert into TABLENAME ...")
      *     stmt.addBatch("insert into TABLENAME ...")
+     *     ...
+     * }
+     * </pre>
+     * For integrity and performance reasons, you may wish to consider executing your batch command(s) within a transaction:
+     * <pre>
+     * sql.withTransaction {
+     *     def result1 = sql.withBatch { ... }
      *     ...
      * }
      * </pre>
@@ -2548,19 +2564,35 @@ public class Sql {
      *         database fails to execute properly or attempts to return a result set.
      * @see #withBatch(int, Closure)
      */
-    public synchronized int[] withBatch(Closure closure) throws SQLException {
+    public int[] withBatch(Closure closure) throws SQLException {
         return withBatch(0, closure);
     }
 
     /**
-     * Performs the closure within a batch using a cached connection.
-     * The closure will be called with a single argument; the statement
-     * associated with this batch. Use it like this for batchSize of 20:
+     * Performs the closure (containing batch operations) within a batch using a given batch size.
+     *
+     * After every <code>batchSize</code> <code>addBatch(sqlBatchOperation)</code>
+     * operations, automatically calls an <code>executeBatch()</code> operation to "chunk" up the database operations
+     * into partitions. Though not normally needed, you can also explicitly call <code>executeBatch()</code> which
+     * after executing the current batch, resets the batch count back to zero.
+     *
+     * The closure will be called with a single argument; the database statement
+     * (actually a <code>BatchingStatementWrapper</code> helper object)
+     * associated with this batch.
+     *
+     * Use it like this for batchSize of 20:
      * <pre>
      * def updateCounts = sql.withBatch(20) { stmt ->
      *     stmt.addBatch("insert into TABLENAME ...")
      *     stmt.addBatch("insert into TABLENAME ...")
      *     stmt.addBatch("insert into TABLENAME ...")
+     *     ...
+     * }
+     * </pre>
+     * For integrity and performance reasons, you may wish to consider executing your batch command(s) within a transaction:
+     * <pre>
+     * sql.withTransaction {
+     *     def result1 = sql.withBatch { ... }
      *     ...
      * }
      * </pre>
@@ -2578,8 +2610,10 @@ public class Sql {
      *         (a subclass of <code>SQLException</code>) if one of the commands sent to the
      *         database fails to execute properly or attempts to return a result set.
      * @see #withBatch(Closure)
+     * @see BatchingStatementWrapper
+     * @see Statement
      */
-    public synchronized int[] withBatch(int batchSize, Closure closure) throws SQLException {
+    public int[] withBatch(int batchSize, Closure closure) throws SQLException {
         Connection connection = createConnection();
         BatchingStatementWrapper statement = null;
         boolean savedWithinBatch = withinBatch;
@@ -2601,12 +2635,18 @@ public class Sql {
     }
 
     /**
-     * Performs the closure within a batch update.
-     * Uses a batch size of zero, i.e. no automatic partitioning of batches. This means that
-     * <code>executeBatch()</code> will be called automatically after the <code>withBatch</code>
+     * Performs the closure (containing batch operations specific to an associated prepared statement)
+     * within a batch. Uses a batch size of zero, i.e. no automatic partitioning of batches.
+     *
+     * This means that <code>executeBatch()</code> will be called automatically after the <code>withBatch</code>
      * closure has finished but may be called explicitly if desired as well for more fine-grained
-     * partitioning of the batch. The closure will be called with a single argument; the prepared
-     * statement associated with this batch.
+     * partitioning of the batch.
+     *
+     * The closure will be called with a single argument; the prepared
+     * statement (actually a <code>BatchingPreparedStatementWrapper</code> helper object)
+     * associated with this batch.
+     *
+     * An example:
      * <pre>
      * def updateCounts = sql.withBatch('insert into TABLENAME(a, b, c) values (?, ?, ?)') { ps ->
      *     ps.addBatch([10, 12, 5])
@@ -2614,6 +2654,13 @@ public class Sql {
      *     ps.addBatch(22, 67, 11)
      *     def partialUpdateCounts = ps.executeBatch() // optional interim batching
      *     ps.addBatch(30, 40, 50)
+     *     ...
+     * }
+     * </pre>
+     * For integrity and performance reasons, you may wish to consider executing your batch command(s) within a transaction:
+     * <pre>
+     * sql.withTransaction {
+     *     def result1 = sql.withBatch { ... }
      *     ...
      * }
      * </pre>
@@ -2629,15 +2676,27 @@ public class Sql {
      *                      (a subclass of <code>SQLException</code>) if one of the commands sent to the
      *                      database fails to execute properly or attempts to return a result set.
      * @see #withBatch(int, String, Closure)
+     * @see BatchingPreparedStatementWrapper
+     * @see PreparedStatement
      */
-    public synchronized int[] withBatch(String sql, Closure closure) throws SQLException {
+    public int[] withBatch(String sql, Closure closure) throws SQLException {
         return withBatch(0, sql, closure);
     }
 
     /**
-     * Performs the closure within a batch update.
-     * The closure will be called with a single argument; the statement
-     * associated with this batch. Use it like this for batchSize of 20:
+     * Performs the closure (containing batch operations specific to an associated prepared statement)
+     * within a batch using a given batch size.
+     *
+     * After every <code>batchSize</code> <code>addBatch(params)</code>
+     * operations, automatically calls an <code>executeBatch()</code> operation to "chunk" up the database operations
+     * into partitions. Though not normally needed, you can also explicitly call <code>executeBatch()</code> which
+     * after executing the current batch, resets the batch count back to zero.
+     *
+     * The closure will be called with a single argument; the prepared
+     * statement (actually a <code>BatchingPreparedStatementWrapper</code> helper object)
+     * associated with this batch.
+     *
+     * Below is an example using a batchSize of 20:
      * <pre>
      * def updateCounts = sql.withBatch(20, 'insert into TABLENAME(a, b, c) values (?, ?, ?)') { ps ->
      *     ps.addBatch(10, 12, 5)      // varargs style
@@ -2662,9 +2721,18 @@ public class Sql {
      *     ps.addBatch([foo:7], [bar:3, baz:98])
      *     ...
      * }
-     * def updateCounts2 = sql.withBatch(5, 'insert into TABLENAME(a, b, c) values (?1, ?2.bar, ?2.baz)') { ps ->
-     *     ps.addBatch(10, [bar:12, baz:5])
-     *     ps.addBatch(7, [bar:3, baz:98])
+     * // swap to batch size of 5 and illustrate simple and domain object cases ...
+     * class Person { String first, last }
+     * def updateCounts2 = sql.withBatch(5, 'insert into PERSON(id, first, last) values (?1, ?2.first, ?2.last)') { ps ->
+     *     ps.addBatch(1, new Person(first:'Peter', last:'Pan'))
+     *     ps.addBatch(2, new Person(first:'Snow', last:'White'))
+     *     ...
+     * }
+     * </pre>
+     * For integrity and performance reasons, you may wish to consider executing your batch command(s) within a transaction:
+     * <pre>
+     * sql.withTransaction {
+     *     def result1 = sql.withBatch { ... }
      *     ...
      * }
      * </pre>
@@ -2682,8 +2750,10 @@ public class Sql {
      *                      driver does not support batch statements. Throws {@link java.sql.BatchUpdateException}
      *                      (a subclass of <code>SQLException</code>) if one of the commands sent to the
      *                      database fails to execute properly or attempts to return a result set.
+     * @see BatchingPreparedStatementWrapper
+     * @see PreparedStatement
      */
-    public synchronized int[] withBatch(int batchSize, String sql, Closure closure) throws SQLException {
+    public int[] withBatch(int batchSize, String sql, Closure closure) throws SQLException {
         Connection connection = createConnection();
         List<Tuple> indexPropList = null;
         SqlWithParams preCheck = preCheckForNamedParams(sql);
