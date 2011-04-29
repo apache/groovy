@@ -121,8 +121,7 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
     private BinaryExpressionWriter[] binExpWriter = {
             /* 0: dummy  */ new DummyHelper(getController()),
             /* 1: int    */ new BinaryIntExpressionHelper(getController()),
-            /* 2: long   */ //new BinaryLongExpressionHelper(getController()),
-            new DummyHelper(getController()),
+            /* 2: long   */ new BinaryLongExpressionHelper(getController()),
             /* 3: double */ new BinaryDoubleExpressionHelper(getController()),
             /* 4: char   */ new BinaryCharExpressionHelper(getController()),
             /* 5: byte   */ new BinaryByteExpressionHelper(getController()),
@@ -211,9 +210,9 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
             AsmClassGenerator acg = getController().getAcg();
             OperandStack os = getController().getOperandStack();
             leftExp.visit(acg);
-            os.doGroovyCast(int_TYPE);
+            os.doGroovyCast(bew.getNormalOpResultType());
             rightExp.visit(acg);
-            os.doGroovyCast(int_TYPE);
+            os.doGroovyCast(bew.getNormalOpResultType());
             bew.write(operation, false);
         } else {
             super.evaluateCompareExpression(compareMethod, binExp);
@@ -244,9 +243,9 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
             os.doGroovyCast(bew.getArrayGetResultType());
         } else if (bew.write(operation, true)) {
             leftExp.visit(acg);
-            os.doGroovyCast(int_TYPE);
+            os.doGroovyCast(bew.getNormalOpResultType());
             rightExp.visit(acg);
-            os.doGroovyCast(int_TYPE);
+            os.doGroovyCast(bew.getNormalOpResultType());
             bew.write(operation, false);
         } else {
             super.evaluateBinaryExpression(message, binExp);
