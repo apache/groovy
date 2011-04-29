@@ -29,54 +29,31 @@ public class BinaryIntExpressionHelper implements BinaryExpressionWriter {
     
     private static final MethodCaller intArrayGet = MethodCaller.newStatic(BytecodeInterface8.class, "intArrayGet");
     private static final MethodCaller intArraySet = MethodCaller.newStatic(BytecodeInterface8.class, "intArraySet");
-    
-    /* from org.codehaus.groovy.syntax.Types
-    public static final int COMPARE_NOT_EQUAL           = 120;   // !=
-    public static final int COMPARE_IDENTICAL           = 121;   // ===
-    public static final int COMPARE_NOT_IDENTICAL       = 122;   // !==
-    public static final int COMPARE_EQUAL               = 123;   // ==
-    public static final int COMPARE_LESS_THAN           = 124;   // <
-    public static final int COMPARE_LESS_THAN_EQUAL     = 125;   // <=
-    public static final int COMPARE_GREATER_THAN        = 126;   // >
-    public static final int COMPARE_GREATER_THAN_EQUAL  = 127;   // >=
-    */
+
     private static final int[] stdCompareCodes = {
-        IF_ICMPEQ,      // COMPARE_NOT_EQUAL 
-        IF_ICMPNE,      // COMPARE_IDENTICAL
-        IF_ICMPEQ,      // COMPARE_NOT_IDENTICAL
-        IF_ICMPNE,      // COMPARE_EQUAL
-        IF_ICMPGE,      // COMPARE_LESS_THAN
-        IF_ICMPGT,      // COMPARE_LESS_THAN_EQUAL
-        IF_ICMPLE,      // COMPARE_GREATER_THAN
-        IF_ICMPLT,      // COMPARE_GREATER_THAN_EQUAL
+        IF_ICMPEQ,      // COMPARE_NOT_EQUAL            120
+        IF_ICMPNE,      // COMPARE_IDENTICAL            121 
+        IF_ICMPEQ,      // COMPARE_NOT_IDENTICAL        122
+        IF_ICMPNE,      // COMPARE_EQUAL                123
+        IF_ICMPGE,      // COMPARE_LESS_THAN            124
+        IF_ICMPGT,      // COMPARE_LESS_THAN_EQUAL      125
+        IF_ICMPLE,      // COMPARE_GREATER_THAN         126
+        IF_ICMPLT,      // COMPARE_GREATER_THAN_EQUAL   127
     };
     
-    /* from org.codehaus.groovy.syntax.Types
-    public static final int PLUS                        = 200;   // +
-    public static final int MINUS                       = 201;   // -
-    public static final int MULTIPLY                    = 202;   // *
-    public static final int INTDIV                      = 204;   // \
-    public static final int MOD                         = 205;   // %
-    */    
     private static final int[] stdOperations = {
-        IADD,           //  PLUS
-        ISUB,           //  MINUS
-        IMUL,           //  MULTIPLY
-        0,              //  DIV, but we don't want that one
-        IDIV,           //  INTDIV
-        IREM,           //  MOD
+        IADD,           //  PLUS        200
+        ISUB,           //  MINUS       201
+        IMUL,           //  MULTIPLY    202
+        0,              //  DIV, (203) but we don't want that one
+        IDIV,           //  INTDIV      204
+        IREM,           //  MOD         203
     };
     
-    /* from org.codehaus.groovy.syntax.Types
-    public static final int PIPE                        = 340;   // |
-    public static final int BITWISE_OR                  = PIPE;  // |
-    public static final int BITWISE_AND                 = 341;   // &
-    public static final int BITWISE_XOR                 = 342;   // ^
-    */
     private static final int[] bitOp = {
-        IOR,            //  BITWISE_OR / PIPE
-        IAND,           //  BITWISE_AND
-        IXOR,           //  BIWISE_XOR
+        IOR,            //  BITWISE_OR / PIPE   340
+        IAND,           //  BITWISE_AND         341
+        IXOR,           //  BIWISE_XOR          342
     };    
     
     /* unhandled types from from org.codehaus.groovy.syntax.Types
@@ -105,14 +82,10 @@ public class BinaryIntExpressionHelper implements BinaryExpressionWriter {
     public static final int POSTFIX_MINUS_MINUS         = 262;   // --
     public static final int PREFIX_MINUS                = 263;   // - (negation)
 */
-    public static final int LEFT_SHIFT                  = 280;   // <<
-    public static final int RIGHT_SHIFT                 = 281;   // >>
-    public static final int RIGHT_SHIFT_UNSIGNED        = 282;   // >>>
-
     private static final int[] shiftOp = {
-        ISHL,           // LEFT_SHIFT
-        ISHR,           // RIGHT_SHIFT
-        IUSHR          // RIGHT_SHIFT_UNSIGNED
+        ISHL,           // LEFT_SHIFT               280
+        ISHR,           // RIGHT_SHIFT              281
+        IUSHR           // RIGHT_SHIFT_UNSIGNED     282
     };
 
 /*

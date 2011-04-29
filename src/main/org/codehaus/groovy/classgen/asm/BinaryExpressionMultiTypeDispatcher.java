@@ -54,14 +54,14 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
     }
     
     private BinaryExpressionWriter[] binExpWriter = {
-            new DummyHelper(),                              // 0: dummy
-            new BinaryIntExpressionHelper(getController()), // 1: int
-            new DummyHelper(),                              // 2: long
-            new DummyHelper(),                              // 3: double
-            new DummyHelper(),                              // 4: char
-            new DummyHelper(),                              // 5: byte
-            new DummyHelper(),                              // 6: short
-            new DummyHelper(),                              // 7: float
+            /* 0: dummy  */ new DummyHelper(),
+            /* 1: int    */ new BinaryIntExpressionHelper(getController()),
+            /* 2: long   */ new BinaryLongExpressionHelper(getController()),
+            /* 3: double */ new DummyHelper(),
+            /* 4: char   */ new DummyHelper(),
+            /* 5: byte   */ new DummyHelper(),
+            /* 6: short  */ new DummyHelper(),
+            /* 7: float  */ new DummyHelper(),
     };
     
     private static Map<ClassNode,Integer> typeMap = new HashMap<ClassNode,Integer>(14);
