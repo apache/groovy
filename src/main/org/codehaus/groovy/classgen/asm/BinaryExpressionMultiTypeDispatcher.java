@@ -27,6 +27,7 @@ import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.classgen.asm.OptimizingStatementWriter.StatementMeta;
+import org.objectweb.asm.MethodVisitor;
 
 import static org.codehaus.groovy.ast.ClassHelper.*;
 
@@ -38,7 +39,10 @@ import static org.codehaus.groovy.ast.ClassHelper.*;
  */
 public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper {
 
-    private static class DummyHelper implements BinaryExpressionWriter {
+    private static class DummyHelper extends BinaryExpressionWriter {
+        public DummyHelper(WriterController controller) {
+            super(controller);
+        }
         @Override public boolean write(int operation, boolean simulate) {
             if (simulate) return false;
             throw new GroovyBugError("should not reach here");
@@ -51,17 +55,40 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
             if (simulate) return false;
             throw new GroovyBugError("should not reach here");
         }
+        @Override protected void doubleTwoOperands(MethodVisitor mv) {}
+        @Override protected MethodCaller getArrayGetCaller() {
+            return null;
+        }
+        @Override protected MethodCaller getArraySetCaller() {
+            return null;
+        }
+        @Override protected int getBitwiseOperationBytecode(int type) {
+            return -1;
+        }
+        @Override protected int getCompareCode() {
+            return -1;
+        }
+        @Override protected ClassNode getNormalOpResultType() {
+            return null;
+        }
+        @Override protected int getShiftOperationBytecode(int type) {
+            return -1;
+        }
+        @Override protected int getStandardOperationBytecode(int type) {
+            return -1;
+        }
+        @Override protected void removeTwoOperands(MethodVisitor mv) {}
     }
     
     private BinaryExpressionWriter[] binExpWriter = {
-            /* 0: dummy  */ new DummyHelper(),
+            /* 0: dummy  */ new DummyHelper(getController()),
             /* 1: int    */ new BinaryIntExpressionHelper(getController()),
             /* 2: long   */ new BinaryLongExpressionHelper(getController()),
-            /* 3: double */ new DummyHelper(),
-            /* 4: char   */ new DummyHelper(),
-            /* 5: byte   */ new DummyHelper(),
-            /* 6: short  */ new DummyHelper(),
-            /* 7: float  */ new DummyHelper(),
+            /* 3: double */ new BinaryDoubleExpressionHelper(getController()),
+            /* 4: char   */ new DummyHelper(getController()),
+            /* 5: byte   */ new DummyHelper(getController()),
+            /* 6: short  */ new DummyHelper(getController()),
+            /* 7: float  */ new DummyHelper(getController()),
     };
     
     private static Map<ClassNode,Integer> typeMap = new HashMap<ClassNode,Integer>(14);

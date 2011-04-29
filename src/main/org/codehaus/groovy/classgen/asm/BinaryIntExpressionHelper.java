@@ -25,7 +25,7 @@ import org.objectweb.asm.MethodVisitor;
 import static org.codehaus.groovy.syntax.Types.*;
 import static org.objectweb.asm.Opcodes.*;
 
-public class BinaryIntExpressionHelper implements BinaryExpressionWriter {
+public class BinaryIntExpressionHelper extends BinaryExpressionWriter {
     
     private static final MethodCaller intArrayGet = MethodCaller.newStatic(BytecodeInterface8.class, "intArrayGet");
     private static final MethodCaller intArraySet = MethodCaller.newStatic(BytecodeInterface8.class, "intArraySet");
@@ -100,8 +100,8 @@ public class BinaryIntExpressionHelper implements BinaryExpressionWriter {
     */
     
     private WriterController controller;
-    
     public BinaryIntExpressionHelper(WriterController wc) {
+        super(wc);
         controller = wc;
     }
     
@@ -118,7 +118,7 @@ public class BinaryIntExpressionHelper implements BinaryExpressionWriter {
      * @param type the token type
      * @return true if a successful std compare write
      */
-    private boolean writeStdCompare(int type, boolean simulate) {
+    protected boolean writeStdCompare(int type, boolean simulate) {
         type = type-COMPARE_NOT_EQUAL;
         // look if really compare
         if (type<0||type>7) return false;
@@ -146,7 +146,7 @@ public class BinaryIntExpressionHelper implements BinaryExpressionWriter {
      * @param type the token type
      * @return true if a successful spaceship operator write
      */
-    private boolean writeSpaceship(int type, boolean simulate) {
+    protected boolean writeSpaceship(int type, boolean simulate) {
         if (type != COMPARE_TO) return false;
         /*  
            we will actually do
@@ -219,87 +219,49 @@ public class BinaryIntExpressionHelper implements BinaryExpressionWriter {
         }
         return true;
     }
-    
-    /**
-     * writes some int standard operations. type is one of IADD, ISUB, IMUL,
-     * IDIV or IREM
-     * @param type the token type
-     * @return true if a successful std operator write
-     */
-    private boolean writeStdOperators(int type, boolean simulate) {
-        type = type-PLUS;
-        if (type<0 || type>5 || type == 3 /*DIV*/) return false;
-        
-        if (!simulate) {
-            int bytecode = stdOperations[type];
-            controller.getMethodVisitor().visitInsn(bytecode);
-            controller.getOperandStack().replace(ClassHelper.int_TYPE, 2);
-        }
-        return true;
-    }
 
-    /**
-     * writes some the bitwise operations. type is one of BITWISE_OR, 
-     * BITWISE_AND, BIWISE_XOR
-     * @param type the token type
-     * @return true if a successful bitwise operation write
-     */
-    private boolean writeBitwiseOp(int type, boolean simulate) {
-        type = type-BITWISE_OR;
-        if (type<0 || type>2) return false;
-
-        if (!simulate) {
-            int bytecode = bitOp[type];
-            controller.getMethodVisitor().visitInsn(bytecode);
-            controller.getOperandStack().replace(ClassHelper.int_TYPE, 2);
-        }
-        return true;
-    }
-
-    /**
-     * Write shifting operations.
-     * Type is one of LEFT_SHIFT, RIGHT_SHIFT, or RIGHT_SHIFT_UNSIGNED
-     *
-     * @param type the token type
-     * @return true on a successful shift operation write
-     */
-    private boolean writeShiftOp(int type, boolean simulate) {
-        type = type - LEFT_SHIFT;
-        if (type < 0 || type > 2) return false;
-
-        if (!simulate) {
-            int bytecode = shiftOp[type];
-            controller.getMethodVisitor().visitInsn(bytecode);
-            controller.getOperandStack().replace(ClassHelper.int_TYPE, 2);
-        }
-        return true;
+    @Override
+    protected void doubleTwoOperands(MethodVisitor mv) {
+        mv.visitInsn(DUP2);
     }
 
     @Override
-    public boolean write(int operation, boolean simulate) {
-        return  writeStdCompare(operation, simulate)         ||
-                writeSpaceship(operation, simulate)          ||
-                writeStdOperators(operation, simulate)       ||
-                writeBitwiseOp(operation, simulate)          ||
-                writeShiftOp(operation, simulate);
+    protected MethodCaller getArrayGetCaller() {
+        return intArrayGet;
     }
 
     @Override
-    public boolean arrayGet(int operation, boolean simulate) {
-        if (operation!=LEFT_SQUARE_BRACKET) return false;
-        
-        if (!simulate) {
-            intArrayGet.call(controller.getMethodVisitor());
-            controller.getOperandStack().replace(ClassHelper.int_TYPE,2);
-        }
-        return true;
+    protected MethodCaller getArraySetCaller() {
+        return intArraySet;
     }
 
     @Override
-    public boolean arraySet(boolean simulate) {        
-        if (!simulate) {
-            intArraySet.call(controller.getMethodVisitor());
-        }
-        return true;
+    protected int getBitwiseOperationBytecode(int type) {
+        return bitOp[type];
+    }
+
+    @Override
+    protected int getCompareCode() {
+        return -1;
+    }
+
+    @Override
+    protected ClassNode getNormalOpResultType() {
+        return ClassHelper.int_TYPE;
+    }
+
+    @Override
+    protected int getShiftOperationBytecode(int type) {
+        return shiftOp[type];
+    }
+
+    @Override
+    protected int getStandardOperationBytecode(int type) {
+        return stdOperations[type];
+    }
+
+    @Override
+    protected void removeTwoOperands(MethodVisitor mv) {
+        mv.visitInsn(POP2);
     }
 }

@@ -17,73 +17,49 @@ package org.codehaus.groovy.classgen.asm;
 
 import static org.objectweb.asm.Opcodes.*;
 
+import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.runtime.BytecodeInterface8;
-import org.objectweb.asm.MethodVisitor;
 
 /**
  * @author <a href="mailto:blackdrag@gmx.org">Jochen "blackdrag" Theodorou</a>
  */
-public class BinaryLongExpressionHelper extends BinaryExpressionWriter {
+public class BinaryDoubleExpressionHelper extends BinaryLongExpressionHelper {
 
-    public BinaryLongExpressionHelper(WriterController controller) {
+
+    public BinaryDoubleExpressionHelper(WriterController controller) {
         super(controller);
-    }
- 
-    @Override
-    protected void doubleTwoOperands(MethodVisitor mv) {
-        /*
-            since there is no DUP4 we have to do this:
-            DUP2_X1
-            POP2
-            DUP2_X1
-            DUP2_X1
-            POP2
-            DUP2_X1          
-         */
-        mv.visitInsn(DUP2_X1);
-        mv.visitInsn(POP2);
-        mv.visitInsn(DUP2_X1);
-        mv.visitInsn(DUP2_X1);
-        mv.visitInsn(POP2);
-        mv.visitInsn(DUP2_X1);
-    }
-    
-    @Override
-    protected void removeTwoOperands(MethodVisitor mv) {
-        mv.visitInsn(POP2);
-        mv.visitInsn(POP2);
     }
 
     private static final MethodCaller 
-        longArrayGet = MethodCaller.newStatic(BytecodeInterface8.class, "lArrayGet"),
-        longArraySet = MethodCaller.newStatic(BytecodeInterface8.class, "lArraySet");
+        doubleArrayGet = MethodCaller.newStatic(BytecodeInterface8.class, "dArrayGet"),
+        doubleArraySet = MethodCaller.newStatic(BytecodeInterface8.class, "dArraySet");
 
     @Override
     protected MethodCaller getArrayGetCaller() {
-        return longArrayGet;
+        return doubleArrayGet;
     }
 
     @Override
     protected MethodCaller getArraySetCaller() {
-        return longArraySet;
+        return doubleArraySet;
     }
     
-    private static final int[] bitOp = {
-        LOR,            //  BITWISE_OR / PIPE   340
-        LAND,           //  BITWISE_AND         341
-        LXOR,           //  BIWISE_XOR          342
-    };
+    @Override
+    protected boolean writeBitwiseOp(int type, boolean simulate) {
+        if (!simulate) throw new GroovyBugError("should not reach here");
+        return false;   
+    }
     
     @Override
     protected int getBitwiseOperationBytecode(int type) {
-        return bitOp[type];
+        return -1;
     }
 
     @Override
     protected int getCompareCode() {
-        return LCMP;
+        return DCMPG;
     }
 
     @Override
@@ -91,24 +67,24 @@ public class BinaryLongExpressionHelper extends BinaryExpressionWriter {
         return ClassHelper.long_TYPE;
     }
 
-    private static final int[] shiftOp = {
-        LSHL,           // LEFT_SHIFT               280
-        LSHR,           // RIGHT_SHIFT              281
-        LUSHR           // RIGHT_SHIFT_UNSIGNED     282
-    };
+    @Override
+    protected boolean writeShiftOp(int type, boolean simulate) {
+        if (!simulate) throw new GroovyBugError("should not reach here");
+        return false;   
+    }
     
     @Override
     protected int getShiftOperationBytecode(int type) {
-        return shiftOp[type];
+        return -1;
     }
 
     private static final int[] stdOperations = {
-        LADD,           //  PLUS        200
-        LSUB,           //  MINUS       201
-        LMUL,           //  MULTIPLY    202
+        DADD,           //  PLUS        200
+        DSUB,           //  MINUS       201
+        DMUL,           //  MULTIPLY    202
         0,              //  DIV, (203) but we don't want that one
-        LDIV,           //  INTDIV      204
-        LREM,           //  MOD         203
+        DDIV,           //  INTDIV      204
+        DREM,           //  MOD         203
     };
     
     @Override
