@@ -29,6 +29,7 @@ import org.codehaus.groovy.runtime.dgmimpl.NumberNumberMinus;
 import org.codehaus.groovy.runtime.dgmimpl.NumberNumberMultiply;
 import org.codehaus.groovy.runtime.dgmimpl.NumberNumberPlus;
 import org.codehaus.groovy.runtime.dgmimpl.arrays.*;
+import org.codehaus.groovy.runtime.metaclass.ClosureMetaClass;
 import org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl;
 import org.codehaus.groovy.runtime.metaclass.MissingPropertyExceptionNoStack;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
@@ -1354,9 +1355,26 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     private static <T> Iterator<T> each(Iterator<T> iter, Closure closure) {
         final Object[] args = new Object[1];
+        final Class[] types = new Class[1];
+        MetaClass mc = closure.getMetaClass();
+        MetaMethod cachedMethod = null;
+        Class cachedType = null;
         while (iter.hasNext()) {
-            args[0] = iter.next();
-            closure.call(args);
+            Object arg = iter.next();
+            args[0] = arg;
+            Class type = null;
+            if (arg!=null) type = arg.getClass();
+            
+            if (cachedMethod==null || type!=cachedType) {
+                types[0] = type;
+                cachedMethod = mc.pickMethod("call", types);
+                cachedType = type;
+            } 
+            if (cachedMethod!=null) {
+                cachedMethod.doMethodInvoke(closure, args);
+            } else {
+                mc.invokeMethod(closure, "call", args);
+            } 
         }
         return iter;
     }
