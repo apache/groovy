@@ -2525,7 +2525,7 @@ public class Sql {
     }
 
     /**
-     * Performs the closure (containing batch operations) within a batch using a cached connection.
+     * Performs the closure (containing batch operations) within a batch.
      * Uses a batch size of zero, i.e. no automatic partitioning of batches.
      *
      * This means that <code>executeBatch()</code> will be called automatically after the <code>withBatch</code>
