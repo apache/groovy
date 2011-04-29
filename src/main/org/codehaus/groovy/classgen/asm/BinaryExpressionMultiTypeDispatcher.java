@@ -121,7 +121,8 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
     private BinaryExpressionWriter[] binExpWriter = {
             /* 0: dummy  */ new DummyHelper(getController()),
             /* 1: int    */ new BinaryIntExpressionHelper(getController()),
-            /* 2: long   */ new BinaryLongExpressionHelper(getController()),
+            /* 2: long   */ //new BinaryLongExpressionHelper(getController()),
+            new DummyHelper(getController()),
             /* 3: double */ new BinaryDoubleExpressionHelper(getController()),
             /* 4: char   */ new BinaryCharExpressionHelper(getController()),
             /* 5: byte   */ new BinaryByteExpressionHelper(getController()),
