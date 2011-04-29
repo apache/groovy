@@ -73,7 +73,7 @@ public class WriterController {
 
         this.binaryExpHelper = new BinaryExpressionHelper(this);
         if (optimizeForInt) {
-            this.fastPathBinaryExpHelper = new BinaryIntExpressionHelper(this);            
+            this.fastPathBinaryExpHelper = new BinaryExpressionMultiTypeDispatcher(this);            
         } else {
             this.fastPathBinaryExpHelper = this.binaryExpHelper;
         }

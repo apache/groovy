@@ -487,7 +487,7 @@ public class OptimizingStatementWriter extends StatementWriter {
                 type = ClassHelper.int_TYPE;
             } else if (rightInt && expression.getOperation().getType()==Types.LEFT_SQUARE_BRACKET) {
                 // maybe getting from array
-                ClassNode ltype = BinaryIntExpressionHelper.getType(expression.getLeftExpression(), node);
+                ClassNode ltype = BinaryExpressionMultiTypeDispatcher.getType(expression.getLeftExpression(), node);
                 if (ltype.getComponentType()==ClassHelper.int_TYPE) {
                     optimizeInt=true;
                     optimizeThisExpression = true;
@@ -561,13 +561,13 @@ public class OptimizingStatementWriter extends StatementWriter {
                 paraTypes = new Parameter[size];
                 int i=0;
                 for (Expression exp: args.getExpressions()) {
-                    ClassNode type = BinaryIntExpressionHelper.getType(exp,node);
+                    ClassNode type = BinaryExpressionMultiTypeDispatcher.getType(exp,node);
                     if (!validTypeForCall(type)) return;
                     paraTypes[i] = new Parameter(type,"");
                     i++;
                 }
             } else {
-                ClassNode type = BinaryIntExpressionHelper.getType(callArgs,node);
+                ClassNode type = BinaryExpressionMultiTypeDispatcher.getType(callArgs,node);
                 paraTypes = new Parameter[]{new Parameter(type,"")};
             }
             

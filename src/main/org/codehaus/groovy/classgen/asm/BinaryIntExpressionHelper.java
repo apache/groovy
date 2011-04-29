@@ -17,12 +17,7 @@ package org.codehaus.groovy.classgen.asm;
 
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.FieldNode;
-import org.codehaus.groovy.ast.Variable;
-import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.Expression;
-import org.codehaus.groovy.ast.expr.VariableExpression;
-import org.codehaus.groovy.classgen.asm.OptimizingStatementWriter.StatementMeta;
 import org.codehaus.groovy.runtime.BytecodeInterface8;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
@@ -30,13 +25,10 @@ import org.objectweb.asm.MethodVisitor;
 import static org.codehaus.groovy.syntax.Types.*;
 import static org.objectweb.asm.Opcodes.*;
 
-public class BinaryIntExpressionHelper extends BinaryExpressionHelper {
+public class BinaryIntExpressionHelper implements BinaryExpressionWriter {
     
     private static final MethodCaller intArrayGet = MethodCaller.newStatic(BytecodeInterface8.class, "intArrayGet");
     private static final MethodCaller intArraySet = MethodCaller.newStatic(BytecodeInterface8.class, "intArraySet");
-    
-    
-    private WriterController controller;
     
     /* from org.codehaus.groovy.syntax.Types
     public static final int COMPARE_NOT_EQUAL           = 120;   // !=
@@ -134,121 +126,17 @@ public class BinaryIntExpressionHelper extends BinaryExpressionHelper {
     public static final int BITWISE_NEGATION            = REGEX_PATTERN;    // ~
     */
     
-    public BinaryIntExpressionHelper(WriterController wc) {
-        super(wc);
-        controller = wc;
-    }
+    private WriterController controller;
     
-    /**
-     * return the type of an expression, taking meta data into account 
-     */
-    protected static ClassNode getType(Expression exp, ClassNode current) {
-        StatementMeta meta = (StatementMeta) exp.getNodeMetaData(StatementMeta.class);
-        ClassNode type = null;
-        if (meta!=null) type = meta.type;
-        if (type!=null) return type;
-        if (exp instanceof VariableExpression) {
-            VariableExpression ve = (VariableExpression) exp;
-            if (ve.isClosureSharedVariable()) return ve.getType();
-            type = ve.getOriginType();
-            if (ve.getAccessedVariable() instanceof FieldNode) {
-                FieldNode fn = (FieldNode) ve.getAccessedVariable();
-                if (!fn.getDeclaringClass().equals(current)) return ClassHelper.OBJECT_TYPE;
-            }
-        } else if (exp instanceof Variable) {
-            Variable v = (Variable) exp;
-            type = v.getOriginType();
-        } else {
-            type = exp.getType();
-        }
-        return type.redirect();
+    public BinaryIntExpressionHelper(WriterController wc) {
+        controller = wc;
     }
     
     /**
      * @return true if expression is an evals to an int
      */
     protected static boolean isIntOperand(Expression exp, ClassNode current) {
-        return getType(exp,current) == ClassHelper.int_TYPE;
-    }
-    
-    @Override
-    protected void evaluateCompareExpression(final MethodCaller compareMethod, BinaryExpression binExp) {
-        int type = binExp.getOperation().getType();
-
-        Expression left = binExp.getLeftExpression();
-        boolean leftIsInt = isIntOperand(left, controller.getClassNode());
-        Expression right = binExp.getRightExpression();
-        boolean rightIsInt = isIntOperand(right, controller.getClassNode());
-       
-        if (leftIsInt && rightIsInt && writeIntXInt(type, true)) {
-            left.visit(controller.getAcg());
-            right.visit(controller.getAcg());
-            writeIntXInt(type, false);
-        } else {
-            super.evaluateCompareExpression(compareMethod, binExp);
-        }
-    }
-    
-    @Override
-    protected void evaluateBinaryExpression(final String message, BinaryExpression binExp) {
-        int type = binExp.getOperation().getType();
-
-        Expression left = binExp.getLeftExpression();
-        boolean leftIsInt = isIntOperand(left, controller.getClassNode());
-        Expression right = binExp.getRightExpression();
-        boolean rightIsInt = isIntOperand(right, controller.getClassNode());
-        OperandStack operandStack = controller.getOperandStack();
-        
-        if (leftIsInt && rightIsInt && writeIntXInt(type, true)) {
-            left.visit(controller.getAcg());
-            operandStack.doGroovyCast(ClassHelper.int_TYPE);
-            right.visit(controller.getAcg());
-            operandStack.doGroovyCast(ClassHelper.int_TYPE);
-            writeIntXInt(type, false);
-            return;
-        } else if ( rightIsInt && type==LEFT_SQUARE_BRACKET &&
-                    getType(left,controller.getClassNode()).getComponentType()==ClassHelper.int_TYPE)
-        {
-            left.visit(controller.getAcg());
-            operandStack.doGroovyCast(getType(left,controller.getClassNode()));
-            right.visit(controller.getAcg());
-            operandStack.doGroovyCast(ClassHelper.int_TYPE);
-            MethodVisitor mv = controller.getMethodVisitor();
-            intArrayGet.call(mv);
-            operandStack.replace(ClassHelper.int_TYPE,2);
-        } else {
-            super.evaluateBinaryExpression(message, binExp);
-        }
-    }
-    
-    @Override
-    protected void assignToArray(Expression orig, Expression receiver, Expression index, Expression rhsValueLoader) {
-        if (OptimizingStatementWriter.shouldOptimize(orig)) {
-            OperandStack operandStack = controller.getOperandStack();
-            MethodVisitor mv = controller.getMethodVisitor(); 
-            
-            // load the array
-            receiver.visit(controller.getAcg());
-            //operandStack.doGroovyCast(ClassHelper.int_TYPE.makeArray());
-            
-            // load index
-            index.visit(controller.getAcg());
-            operandStack.doGroovyCast(ClassHelper.int_TYPE);
-            
-            // load rhs
-            rhsValueLoader.visit(controller.getAcg());
-            operandStack.doGroovyCast(ClassHelper.int_TYPE);
-            
-            // store value in array
-            intArraySet.call(mv);
-            
-            
-            // load return value && correct operand stack stack
-            operandStack.remove(3);
-            rhsValueLoader.visit(controller.getAcg());
-        } else {        
-            super.assignToArray(orig, receiver, index, rhsValueLoader);
-        }
+        return BinaryExpressionMultiTypeDispatcher.getType(exp,current) == ClassHelper.int_TYPE;
     }
     
     /**
@@ -414,13 +302,31 @@ public class BinaryIntExpressionHelper extends BinaryExpressionHelper {
         return true;
     }
 
-
-    private boolean writeIntXInt(int type, boolean simulate) {
-        return  writeStdCompare(type, simulate)         ||
-                writeSpaceship(type, simulate)          ||
-                writeStdOperators(type, simulate)       ||
-                writeBitwiseOp(type, simulate)          ||
-                writeShiftOp(type, simulate);
+    @Override
+    public boolean write(int operation, boolean simulate) {
+        return  writeStdCompare(operation, simulate)         ||
+                writeSpaceship(operation, simulate)          ||
+                writeStdOperators(operation, simulate)       ||
+                writeBitwiseOp(operation, simulate)          ||
+                writeShiftOp(operation, simulate);
     }
 
+    @Override
+    public boolean arrayGet(int operation, boolean simulate) {
+        if (operation!=LEFT_SQUARE_BRACKET) return false;
+        
+        if (!simulate) {
+            intArrayGet.call(controller.getMethodVisitor());
+            controller.getOperandStack().replace(ClassHelper.int_TYPE,2);
+        }
+        return true;
+    }
+
+    @Override
+    public boolean arraySet(boolean simulate) {        
+        if (!simulate) {
+            intArraySet.call(controller.getMethodVisitor());
+        }
+        return true;
+    }
 }
