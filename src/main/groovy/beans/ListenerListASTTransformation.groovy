@@ -90,7 +90,7 @@ class ListenerListASTTransformation implements ASTTransformation, Opcodes {
         addGetListeners(source, node, declaringClass, field, listener, name, synchronize)
 
         fireList.each { MethodNode method ->
-            addFireMethods(source, node, declaringClass, field, synchronize, method)
+            addFireMethods(source, node, declaringClass, field, types, synchronize, method)
         }
     }
 
@@ -121,7 +121,9 @@ class ListenerListASTTransformation implements ASTTransformation, Opcodes {
         def methodModifiers = synchronize ? ACC_PUBLIC | ACC_SYNCHRONIZED : ACC_PUBLIC
         def methodReturnType = ClassHelper.make(Void.TYPE)
         def methodName = "add${name.capitalize()}"
-        def methodParameter = [new Parameter(listener, 'listener')] as Parameter[]
+        def cn = ClassHelper.makeWithoutCaching(listener.name)
+        cn.redirect = listener
+        def methodParameter = [new Parameter(cn,'listener')] as Parameter[]
 
         if (declaringClass.hasMethod(methodName, methodParameter)) {
             addError node, source, "Conflict using @${MY_CLASS.name}. Class $declaringClass.name already has method $methodName"
@@ -182,7 +184,9 @@ class ListenerListASTTransformation implements ASTTransformation, Opcodes {
         def methodModifiers = synchronize ? ACC_PUBLIC | ACC_SYNCHRONIZED : ACC_PUBLIC
         def methodReturnType = ClassHelper.make(Void.TYPE)
         def methodName = "remove${name.capitalize()}"
-        def methodParameter = [new Parameter(listener, 'listener')] as Parameter[]
+        def cn = ClassHelper.makeWithoutCaching(listener.name)
+        cn.redirect = listener
+        def methodParameter = [new Parameter(cn,'listener')] as Parameter[]
 
         if (declaringClass.hasMethod(methodName, methodParameter)) {
             addError node, source, "Conflict using @${MY_CLASS.name}. Class $declaringClass.name already has method $methodName"
@@ -294,7 +298,7 @@ class ListenerListASTTransformation implements ASTTransformation, Opcodes {
      * }
      * </pre>
      */
-    void addFireMethods(SourceUnit source, AnnotationNode node, ClassNode declaringClass, FieldNode field, boolean synchronize, MethodNode method) {
+    void addFireMethods(SourceUnit source, AnnotationNode node, ClassNode declaringClass, FieldNode field, GenericsType[] types, boolean synchronize, MethodNode method) {
 
         def methodReturnType = ClassHelper.make(Void.TYPE)
         def methodName = "fire${method.name.capitalize()}"
@@ -305,12 +309,11 @@ class ListenerListASTTransformation implements ASTTransformation, Opcodes {
             return
         }
 
-        def args = new ArgumentListExpression()
-        method.parameters.each { Parameter parameter ->
-            args.addExpression(new VariableExpression(parameter.name))
-        }
+        def args = new ArgumentListExpression(method.parameters)
 
         BlockStatement block = new BlockStatement()
+        def listenerListType = ClassHelper.make(ArrayList)
+        listenerListType.setGenericsTypes(types)
         block.addStatements([
                 new IfStatement(
                         new BooleanExpression(
@@ -323,9 +326,9 @@ class ListenerListASTTransformation implements ASTTransformation, Opcodes {
                         new BlockStatement([
                                 new ExpressionStatement(
                                         new DeclarationExpression(
-                                                new VariableExpression('__list', ClassHelper.make(ArrayList)),
+                                                new VariableExpression('__list', listenerListType),
                                                 Token.newSymbol(Types.EQUALS, 0, 0),
-                                                new ConstructorCallExpression(ClassHelper.make(ArrayList), new ArgumentListExpression(
+                                                new ConstructorCallExpression(listenerListType, new ArgumentListExpression(
                                                         new VariableExpression(field.name)
                                                 ))
                                         )
@@ -349,9 +352,10 @@ class ListenerListASTTransformation implements ASTTransformation, Opcodes {
         ])
 
         def params = method.parameters.collect {
-            def cn = ClassHelper.makeWithoutCaching(it.type.name)
-            cn.setRedirect(it.type)
-            new Parameter(ClassHelper.getWrapper(cn), it.name)
+            def paramType = ClassHelper.getWrapper(it.type)
+            def cn = ClassHelper.makeWithoutCaching(paramType.name)
+            cn.setRedirect(paramType)
+            new Parameter(cn, it.name)
         }
         declaringClass.addMethod(methodName, methodModifiers, methodReturnType, params as Parameter[], [] as ClassNode[], block)
     }
