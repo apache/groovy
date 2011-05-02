@@ -245,7 +245,7 @@ codeNarcConfigFileName = "./config/codenarc/codenarc.groovy"
 // ignore CodeNarc on examples
 task codenarcExamples(overwrite: true) << {};
 // don't fail build on CodeNarc tasks
-tasks.withType(CodeNarc).allTasks { codeNarcTask ->
+tasks.withType(CodeNarc).all { codeNarcTask ->
     codeNarcTask.ignoreFailures = true
 }
 

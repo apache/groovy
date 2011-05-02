@@ -162,7 +162,7 @@ distSpec = copySpec {
     }
     into("bin") {
         from("src/bin") {
-            filter(ReplaceTokens, tokens: [token: 'GROOVYJAR', value: jar.archiveName])
+            filter(ReplaceTokens, tokens: [GROOVYJAR:jar.archiveName])
             fileMode = 0755
         }
         from("src/tools/org/codehaus/groovy/tools/groovy.ico")
