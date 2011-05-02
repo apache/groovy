@@ -15,8 +15,6 @@
 package org.codehaus.groovy.ant;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.regex.Pattern;
 
 import org.apache.tools.ant.BuildException;
@@ -62,7 +60,7 @@ public class GroovycTest extends GroovyTestCase {
             // End result is as if .exists() returned null
         }
     }
-    
+
     private void ensureNotPresent(final String classname) {
         if (!(new File(classDirectory + "GroovycTest.class")).exists()) {
             fail("Class file for GroovycTest does not exist and should.");
@@ -77,7 +75,7 @@ public class GroovycTest extends GroovyTestCase {
             fail("Class file for " + classname + " does not exist and should.");
         }
     }
-    
+
     private void ensureResultOK(final String classname) {
         if (!(new File(classDirectory + classname + ".class")).exists()) {
             fail("Class file for " + classname + " does not exist and should.");
@@ -87,11 +85,9 @@ public class GroovycTest extends GroovyTestCase {
         try {
             (new FileReader(result)).read(buffer);
             assertEquals("OK.", new String(buffer).trim());
-        }
-        catch (final FileNotFoundException fnfe) {
+        } catch (final FileNotFoundException fnfe) {
             fail("File " + result.getName() + " should have been created but wasn't.");
-        }
-        catch (final IOException ioe) {
+        } catch (final IOException ioe) {
             fail("Error reading file " + result.getName() + ".");
         }
     }
@@ -147,7 +143,7 @@ public class GroovycTest extends GroovyTestCase {
         ensureNotPresent("IncorrectGenericsUsage");
         project.executeTarget("Groovyc_Joint_NoFork_NestedCompilerArg_WithGroovyClasspath");
         ensurePresent("IncorrectGenericsUsage");
-        
+
         String antOutput = allOutput.toString();
         antOutput = adjustOutputToHandleOpenJDKJavacOutputDifference(antOutput);
         System.setOut(origOut);
@@ -158,30 +154,30 @@ public class GroovycTest extends GroovyTestCase {
         p = Pattern.compile(".*?required[ ]*:[ ]*java.util.ArrayList<java.lang.String>.*", Pattern.DOTALL);
         assertTrue("Expected line 2 not found in ant output", p.matcher(antOutput).matches());
     }
-    
-    /*
-     * For the code,
-     *		private ArrayList<String> x = new ArrayList<String>();
-     *		x = (ArrayList)z ;
-     *	Upto JDK6, 'javac -Xlint' produces the following output
-     		found   : java.util.ArrayList
-			required: java.util.ArrayList<java.lang.String>
-	 *	But, OpenJDK seems to be producing the following output
-			required: ArrayList<String>
-			found:    ArrayList
-	 *	So, we first adjust the output a bit, so that difference in the output brought in by OpenJDK javac
-	 *	does not impact the test adversely 
+
+    /**
+     * For the code:
+     *     private ArrayList<String> x = new ArrayList<String>();
+     *     x = (ArrayList)z ;
+     * Upto JDK6, 'javac -Xlint' produces the following output:
+     *     found   : java.util.ArrayList
+     *     required: java.util.ArrayList<java.lang.String>
+     * But, OpenJDK seems to be producing the following output:
+     *     required: ArrayList<String>
+     *     found:    ArrayList
+     * So, we first adjust the output a bit, so that difference in the output brought in by OpenJDK javac
+     * does not impact the test adversely
      */
     private String adjustOutputToHandleOpenJDKJavacOutputDifference(String antOutput) {
-		if(!antOutput.contains("java.util.ArrayList") && antOutput.contains("ArrayList")) {
-			antOutput = antOutput.replace("ArrayList", "java.util.ArrayList");
-		}
-		if(!antOutput.contains("java.lang.String") && antOutput.contains("String")) {
-			antOutput = antOutput.replace("String", "java.lang.String");
-		}
-		return antOutput;
+        if (!antOutput.contains("java.util.ArrayList") && antOutput.contains("ArrayList")) {
+            antOutput = antOutput.replace("ArrayList", "java.util.ArrayList");
+        }
+        if (!antOutput.contains("java.lang.String") && antOutput.contains("String")) {
+            antOutput = antOutput.replace("String", "java.lang.String");
+        }
+        return antOutput;
     }
-    
+
     public void testGroovycTest1_Joint_NoFork_WithJavaClasspath() {
         ensureExecutes("GroovycTest1_Joint_NoFork_WithJavaClasspath");
     }
