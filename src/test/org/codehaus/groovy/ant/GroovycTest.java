@@ -1,22 +1,21 @@
 /*
- *  Copyright © 2008 Russel Winder
+ * Copyright 2003-2011 the original author or authors.
  *
- *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
- *  compliance with the License.  You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
- *  Unless required by applicable law or agreed to in writing, software distributed under the License is
- *  distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
- *  implied.  See the License for the specific language governing permissions and limitations under the
- *  License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
-
 package org.codehaus.groovy.ant;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.regex.Pattern;
 
 import org.apache.tools.ant.BuildException;
@@ -62,7 +61,7 @@ public class GroovycTest extends GroovyTestCase {
             // End result is as if .exists() returned null
         }
     }
-    
+
     private void ensureNotPresent(final String classname) {
         if (!(new File(classDirectory + "GroovycTest.class")).exists()) {
             fail("Class file for GroovycTest does not exist and should.");
@@ -77,7 +76,7 @@ public class GroovycTest extends GroovyTestCase {
             fail("Class file for " + classname + " does not exist and should.");
         }
     }
-    
+
     private void ensureResultOK(final String classname) {
         if (!(new File(classDirectory + classname + ".class")).exists()) {
             fail("Class file for " + classname + " does not exist and should.");
@@ -87,11 +86,9 @@ public class GroovycTest extends GroovyTestCase {
         try {
             (new FileReader(result)).read(buffer);
             assertEquals("OK.", new String(buffer).trim());
-        }
-        catch (final FileNotFoundException fnfe) {
+        } catch (final FileNotFoundException fnfe) {
             fail("File " + result.getName() + " should have been created but wasn't.");
-        }
-        catch (final IOException ioe) {
+        } catch (final IOException ioe) {
             fail("Error reading file " + result.getName() + ".");
         }
     }
@@ -147,7 +144,7 @@ public class GroovycTest extends GroovyTestCase {
         ensureNotPresent("IncorrectGenericsUsage");
         project.executeTarget("Groovyc_Joint_NoFork_NestedCompilerArg_WithGroovyClasspath");
         ensurePresent("IncorrectGenericsUsage");
-        
+
         String antOutput = allOutput.toString();
         antOutput = adjustOutputToHandleOpenJDKJavacOutputDifference(antOutput);
         System.setOut(origOut);
@@ -158,30 +155,30 @@ public class GroovycTest extends GroovyTestCase {
         p = Pattern.compile(".*?required[ ]*:[ ]*java.util.ArrayList<java.lang.String>.*", Pattern.DOTALL);
         assertTrue("Expected line 2 not found in ant output", p.matcher(antOutput).matches());
     }
-    
-    /*
-     * For the code,
-     *		private ArrayList<String> x = new ArrayList<String>();
-     *		x = (ArrayList)z ;
-     *	Upto JDK6, 'javac -Xlint' produces the following output
-     		found   : java.util.ArrayList
-			required: java.util.ArrayList<java.lang.String>
-	 *	But, OpenJDK seems to be producing the following output
-			required: ArrayList<String>
-			found:    ArrayList
-	 *	So, we first adjust the output a bit, so that difference in the output brought in by OpenJDK javac
-	 *	does not impact the test adversely 
+
+    /**
+     * For the code:
+     *     private ArrayList<String> x = new ArrayList<String>();
+     *     x = (ArrayList)z ;
+     * Upto JDK6, 'javac -Xlint' produces the following output:
+     *     found   : java.util.ArrayList
+     *     required: java.util.ArrayList<java.lang.String>
+     * But, OpenJDK seems to be producing the following output:
+     *     required: ArrayList<String>
+     *     found:    ArrayList
+     * So, we first adjust the output a bit, so that difference in the output brought in by OpenJDK javac
+     * does not impact the test adversely
      */
     private String adjustOutputToHandleOpenJDKJavacOutputDifference(String antOutput) {
-		if(!antOutput.contains("java.util.ArrayList") && antOutput.contains("ArrayList")) {
-			antOutput = antOutput.replace("ArrayList", "java.util.ArrayList");
-		}
-		if(!antOutput.contains("java.lang.String") && antOutput.contains("String")) {
-			antOutput = antOutput.replace("String", "java.lang.String");
-		}
-		return antOutput;
+        if (!antOutput.contains("java.util.ArrayList") && antOutput.contains("ArrayList")) {
+            antOutput = antOutput.replace("ArrayList", "java.util.ArrayList");
+        }
+        if (!antOutput.contains("java.lang.String") && antOutput.contains("String")) {
+            antOutput = antOutput.replace("String", "java.lang.String");
+        }
+        return antOutput;
     }
-    
+
     public void testGroovycTest1_Joint_NoFork_WithJavaClasspath() {
         ensureExecutes("GroovycTest1_Joint_NoFork_WithJavaClasspath");
     }
@@ -256,7 +253,7 @@ public class GroovycTest extends GroovyTestCase {
         ensureNotPresent("GroovycTestBad1");
         try {
             project.executeTarget(target);
-            fail("Ant script shuold have failed with execution exception");
+            fail("Ant script should have failed with execution exception");
         } catch (BuildException be) {
             be.printStackTrace();
             ensureNotPresent("GroovycTestBad1");
