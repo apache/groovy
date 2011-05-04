@@ -56,7 +56,7 @@ public class OperandStack {
         MethodVisitor mv = controller.getMethodVisitor();
         while (last>elements) {
             last--;
-            ClassNode element = stack.remove(last);
+            ClassNode element = popWithMessage(last);
             if (isTwoSlotType(element)) {
                 mv.visitInsn(POP2);
             } else {
@@ -65,6 +65,22 @@ public class OperandStack {
         }   
     }
     
+    private ClassNode popWithMessage(int last) {
+        try {
+            return stack.remove(last);
+        } catch (ArrayIndexOutOfBoundsException ai) {
+            String method = "";
+            if (controller.getMethodNode()!=null) {
+                method = controller.getMethodNode().getTypeDescriptor();
+            } else {
+                method = controller.getConstructorNode().getTypeDescriptor();
+            }
+            throw new GroovyBugError(
+                    "Error while poping argument from operand stack tracker in"+
+                    " class "+controller.getClassName()+" method "+method+".");
+        }
+    }
+
     /**
      * returns true for long and double
      */
@@ -182,12 +198,7 @@ public class OperandStack {
     public void remove(int amount) {
         int size = stack.size();
         for (int i=size-1; i>size-1-amount; i--) {
-            try {
-                stack.remove(i);
-            } catch (ArrayIndexOutOfBoundsException ai) {
-                System.err.println("index problem in "+controller.getSourceUnit().getName());
-                throw ai;
-            }
+            popWithMessage(i);
         }
     }
 
