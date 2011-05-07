@@ -51,7 +51,7 @@ public class JsonSlurper {
      * @param text JSON text to parse
      * @return a data structure of lists and maps
      */
-    Object parseText(String text) {
+    public Object parseText(String text) {
         if (text == null || text.length() == 0) {
             throw new IllegalArgumentException("The JSON input text should neither be null nor empty.");
         }
@@ -65,7 +65,7 @@ public class JsonSlurper {
      * @param reader reader over a JSON content
      * @return a data structure of lists and maps
      */
-    Object parse(Reader reader) {
+    public Object parse(Reader reader) {
         Object content;
 
         JsonLexer lexer = new JsonLexer(reader);
@@ -274,5 +274,4 @@ public class JsonSlurper {
 
         return content;
     }
-
 }

@@ -68,7 +68,7 @@ public enum JsonTokenType {
      * <code>POSSIBLE</code> if more characters could turn the input string into a valid token,
      * or <code>NO</code> if the string cannot possibly match the pattern even with more characters to read.
      */
-    boolean matching(String input) {
+    public boolean matching(String input) {
         if (validator instanceof Pattern) {
             Matcher matcher = ((Pattern)validator).matcher(input);
             return matcher.matches();
@@ -85,7 +85,7 @@ public enum JsonTokenType {
      * @param c the character
      * @return the possible token type found
      */
-    static JsonTokenType startingWith(char c) {
+    public static JsonTokenType startingWith(char c) {
         switch (c) {
             case '{': return OPEN_CURLY;
             case '}': return CLOSE_CURLY;
