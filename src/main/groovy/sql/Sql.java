@@ -810,9 +810,9 @@ public class Sql {
     }
 
     /**
-     * Performs the given SQL query calling the given Closure with each row of the
-     * result set. The row will be a <code>GroovyRowResult</code> which is a Map
-     * that also supports accessing the fields using ordinal index values.
+     * Performs the given SQL query calling the given Closure with each row of the result set.
+     * The row will be a <code>GroovyResultSet</code> which is a <code>ResultSet</code>
+     * that supports accessing the fields using property style notation and ordinal index values.
      * <p/>
      * Example usages:
      * <pre>
@@ -838,6 +838,8 @@ public class Sql {
     /**
      * Performs the given SQL query calling the given <code>closure</code> with each row of the result set starting at 
      * the provided <code>offset</code>, and including up to <code>maxRows</code> number of rows.
+     * The row will be a <code>GroovyResultSet</code> which is a <code>ResultSet</code>
+     * that supports accessing the fields using property style notation and ordinal index values.
      * <p/>
      * Note that the underlying implementation is based on either invoking <code>ResultSet.absolute()</code>, 
      * or if the ResultSet type is <code>ResultSet.TYPE_FORWARD_ONLY</code>, the <code>ResultSet.next()</code> method
@@ -864,8 +866,9 @@ public class Sql {
 
     /**
      * Performs the given SQL query calling the given <code>rowClosure</code> with each row of the
-     * result set. The row will be a <code>GroovyRowResult</code> which is a Map
-     * that also supports accessing the fields using ordinal index values.
+     * result set.
+     * The row will be a <code>GroovyResultSet</code> which is a <code>ResultSet</code>
+     * that supports accessing the fields using property style notation and ordinal index values.
      * In addition, the <code>metaClosure</code> will be called once passing in the
      * <code>ResultSetMetaData</code> as argument.
      * <p/>
@@ -898,6 +901,9 @@ public class Sql {
     /**
      * Performs the given SQL query calling the given <code>rowClosure</code> with each row of the result set starting at 
      * the provided <code>offset</code>, and including up to <code>maxRows</code> number of rows.
+     * The row will be a <code>GroovyResultSet</code> which is a <code>ResultSet</code>
+     * that supports accessing the fields using property style notation and ordinal index values.
+     * <p/>
      * In addition, the <code>metaClosure</code> will be called once passing in the
      * <code>ResultSetMetaData</code> as argument.
      * <p/>
@@ -962,6 +968,9 @@ public class Sql {
     /**
      * Performs the given SQL query calling the given <code>rowClosure</code> with each row of the result set starting at 
      * the provided <code>offset</code>, and including up to <code>maxRows</code> number of rows.
+     * The row will be a <code>GroovyResultSet</code> which is a <code>ResultSet</code>
+     * that supports accessing the fields using property style notation and ordinal index values.
+     * <p/>
      * In addition, the <code>metaClosure</code> will be called once passing in the
      * <code>ResultSetMetaData</code> as argument.
      * The query may contain placeholder question marks which match the given list of parameters.
@@ -970,7 +979,6 @@ public class Sql {
      * or if the ResultSet type is <code>ResultSet.TYPE_FORWARD_ONLY</code>, the <code>ResultSet.next()</code> method
      * is invoked equivalently.  The first row of a ResultSet is 1, so passing in an offset of 1 or less has no effect 
      * on the initial positioning within the result set.
-     * 
      * <p/>
      * Note that different database and JDBC driver implementations may work differently with respect to this method.  
      * Specifically, one should expect that <code>ResultSet.TYPE_FORWARD_ONLY</code> may be less efficient than a 
@@ -1014,9 +1022,9 @@ public class Sql {
     
 
     /**
-     * Performs the given SQL query calling the given Closure with each row of the
-     * result set. The row will be a <code>GroovyRowResult</code> which is a Map
-     * that also supports accessing the fields using ordinal index values.
+     * Performs the given SQL query calling the given Closure with each row of the result set.
+     * The row will be a <code>GroovyResultSet</code> which is a <code>ResultSet</code>
+     * that supports accessing the fields using property style notation and ordinal index values.
      * In addition, the <code>metaClosure</code> will be called once passing in the
      * <code>ResultSetMetaData</code> as argument.
      * The query may contain placeholder question marks which match the given list of parameters.
@@ -1052,9 +1060,9 @@ public class Sql {
     }
 
     /**
-     * Performs the given SQL query calling the given Closure with each row of the
-     * result set. The row will be a <code>GroovyRowResult</code> which is a Map
-     * that also supports accessing the fields using ordinal index values.
+     * Performs the given SQL query calling the given Closure with each row of the result set.
+     * The row will be a <code>GroovyResultSet</code> which is a <code>ResultSet</code>
+     * that supports accessing the fields using property style notation and ordinal index values.
      * The query may contain placeholder question marks which match the given list of parameters.
      * <p/>
      * Example usage:
@@ -1078,6 +1086,8 @@ public class Sql {
     /**
      * Performs the given SQL query calling the given <code>closure</code> with each row of the result set starting at 
      * the provided <code>offset</code>, and including up to <code>maxRows</code> number of rows.
+     * The row will be a <code>GroovyResultSet</code> which is a <code>ResultSet</code>
+     * that supports accessing the fields using property style notation and ordinal index values.
      * The query may contain placeholder question marks which match the given list of parameters.
      * <p/>
      * Note that the underlying implementation is based on either invoking <code>ResultSet.absolute()</code>, 
@@ -1101,9 +1111,10 @@ public class Sql {
     }
 
     /**
-     * Performs the given SQL query calling the given Closure with each row of the
-     * result set. The row will be a <code>GroovyRowResult</code> which is a Map
-     * that also supports accessing the fields using ordinal index values.
+     * Performs the given SQL query calling the given Closure with each row of the result set.
+     * The row will be a <code>GroovyResultSet</code> which is a <code>ResultSet</code>
+     * that supports accessing the fields using property style notation and ordinal index values.
+     * <p/>
      * In addition, the <code>metaClosure</code> will be called once passing in the
      * <code>ResultSetMetaData</code> as argument.
      * The query may contain GString expressions.
@@ -1141,6 +1152,8 @@ public class Sql {
     /**
      * Performs the given SQL query calling the given <code>closure</code> with each row of the result set starting at 
      * the provided <code>offset</code>, and including up to <code>maxRows</code> number of rows.
+     * The row will be a <code>GroovyResultSet</code> which is a <code>ResultSet</code>
+     * that supports accessing the fields using property style notation and ordinal index values.
      * In addition, the <code>metaClosure</code> will be called once passing in the
      * <code>ResultSetMetaData</code> as argument.
      * The query may contain GString expressions.
@@ -1170,6 +1183,8 @@ public class Sql {
     /**
      * Performs the given SQL query calling the given <code>closure</code> with each row of the result set starting at 
      * the provided <code>offset</code>, and including up to <code>maxRows</code> number of rows.
+     * The row will be a <code>GroovyResultSet</code> which is a <code>ResultSet</code>
+     * that supports accessing the fields using property style notation and ordinal index values.
      * The query may contain GString expressions.
      * <p/>
      * Note that the underlying implementation is based on either invoking <code>ResultSet.absolute()</code>, 
@@ -1194,9 +1209,9 @@ public class Sql {
     }
     
     /**
-     * Performs the given SQL query calling the given Closure with each row of the
-     * result set. The row will be a <code>GroovyRowResult</code> which is a Map
-     * that also supports accessing the fields using ordinal index values.
+     * Performs the given SQL query calling the given Closure with each row of the result set.
+     * The row will be a <code>GroovyResultSet</code> which is a <code>ResultSet</code>
+     * that supports accessing the fields using property style notation and ordinal index values.
      * The query may contain GString expressions.
      * <p/>
      * Example usage:
@@ -1608,7 +1623,7 @@ public class Sql {
      * @return a GroovyRowResult object or <code>null</code> if no row is found
      * @throws SQLException if a database access error occurs
      */
-    public Object firstRow(String sql) throws SQLException {
+    public GroovyRowResult firstRow(String sql) throws SQLException {
         List<GroovyRowResult> rows = rows(sql);
         if (rows.isEmpty()) return null;
         return (rows.get(0));
@@ -1633,7 +1648,7 @@ public class Sql {
      * @throws SQLException if a database access error occurs
      * @see #expand(Object)
      */
-    public Object firstRow(GString gstring) throws SQLException {
+    public GroovyRowResult firstRow(GString gstring) throws SQLException {
         List<Object> params = getParameters(gstring);
         String sql = asSql(gstring, params);
         return firstRow(sql, params);
@@ -1670,7 +1685,7 @@ public class Sql {
      * @return a GroovyRowResult object or <code>null</code> if no row is found
      * @throws SQLException if a database access error occurs
      */
-    public Object firstRow(String sql, List<Object> params) throws SQLException {
+    public GroovyRowResult firstRow(String sql, List<Object> params) throws SQLException {
         List<GroovyRowResult> rows = rows(sql, params);
         if (rows.isEmpty()) return null;
         return rows.get(0);
@@ -1686,7 +1701,7 @@ public class Sql {
      * @return a GroovyRowResult object or <code>null</code> if no row is found
      * @throws SQLException if a database access error occurs
      */
-    public Object firstRow(String sql, Object[] params) throws SQLException {
+    public GroovyRowResult firstRow(String sql, Object[] params) throws SQLException {
         return firstRow(sql, Arrays.asList(params));
     }
 
