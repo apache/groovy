@@ -342,7 +342,7 @@ public class Sql {
      *     resultSetConcurrency: CONCUR_READ_ONLY
      * )
      * </pre>
-     * 
+     *
      * @param args a Map contain further arguments
      * @return a new Sql instance with a connection
      * @throws SQLException           if a database access error occurs
@@ -797,9 +797,9 @@ public class Sql {
     }
 
     /**
-     * Performs the given SQL query calling the given Closure with each row of the
-     * result set. The row will be a <code>GroovyRowResult</code> which is a Map
-     * that also supports accessing the fields using ordinal index values.
+     * Performs the given SQL query calling the given Closure with each row of the result set.
+     * The row will be a <code>GroovyResultSet</code> which is a <code>ResultSet</code>
+     * that supports accessing the fields using property style notation and ordinal index values.
      * <p/>
      * Example usages:
      * <pre>
@@ -824,8 +824,9 @@ public class Sql {
 
     /**
      * Performs the given SQL query calling the given <code>rowClosure</code> with each row of the
-     * result set. The row will be a <code>GroovyRowResult</code> which is a Map
-     * that also supports accessing the fields using ordinal index values.
+     * result set.
+     * The row will be a <code>GroovyResultSet</code> which is a <code>ResultSet</code>
+     * that supports accessing the fields using property style notation and ordinal index values.
      * In addition, the <code>metaClosure</code> will be called once passing in the
      * <code>ResultSetMetaData</code> as argument.
      * <p/>
@@ -871,9 +872,9 @@ public class Sql {
     }
 
     /**
-     * Performs the given SQL query calling the given Closure with each row of the
-     * result set. The row will be a <code>GroovyRowResult</code> which is a Map
-     * that also supports accessing the fields using ordinal index values.
+     * Performs the given SQL query calling the given Closure with each row of the result set.
+     * The row will be a <code>GroovyResultSet</code> which is a <code>ResultSet</code>
+     * that supports accessing the fields using property style notation and ordinal index values.
      * In addition, the <code>metaClosure</code> will be called once passing in the
      * <code>ResultSetMetaData</code> as argument.
      * The query may contain placeholder question marks which match the given list of parameters.
@@ -929,9 +930,9 @@ public class Sql {
     }
 
     /**
-     * Performs the given SQL query calling the given Closure with each row of the
-     * result set. The row will be a <code>GroovyRowResult</code> which is a Map
-     * that also supports accessing the fields using ordinal index values.
+     * Performs the given SQL query calling the given Closure with each row of the result set.
+     * The row will be a <code>GroovyResultSet</code> which is a <code>ResultSet</code>
+     * that supports accessing the fields using property style notation and ordinal index values.
      * The query may contain placeholder question marks which match the given list of parameters.
      * <p/>
      * Example usage:
@@ -953,9 +954,10 @@ public class Sql {
     }
 
     /**
-     * Performs the given SQL query calling the given Closure with each row of the
-     * result set. The row will be a <code>GroovyRowResult</code> which is a Map
-     * that also supports accessing the fields using ordinal index values.
+     * Performs the given SQL query calling the given Closure with each row of the result set.
+     * The row will be a <code>GroovyResultSet</code> which is a <code>ResultSet</code>
+     * that supports accessing the fields using property style notation and ordinal index values.
+     * <p/>
      * In addition, the <code>metaClosure</code> will be called once passing in the
      * <code>ResultSetMetaData</code> as argument.
      * The query may contain GString expressions.
@@ -991,9 +993,9 @@ public class Sql {
     }
 
     /**
-     * Performs the given SQL query calling the given Closure with each row of the
-     * result set. The row will be a <code>GroovyRowResult</code> which is a Map
-     * that also supports accessing the fields using ordinal index values.
+     * Performs the given SQL query calling the given Closure with each row of the result set.
+     * The row will be a <code>GroovyResultSet</code> which is a <code>ResultSet</code>
+     * that supports accessing the fields using property style notation and ordinal index values.
      * The query may contain GString expressions.
      * <p/>
      * Example usage:
