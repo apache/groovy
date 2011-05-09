@@ -101,12 +101,8 @@ public class AnnotationVisitor {
                 if (type.isEnum()) {
                     boolean ok = false;
                     try {
-                        if(type.isResolved()) {
-                            ok = Enum.valueOf(type.getTypeClass(), name) != null;
-                        } else {
-                            FieldNode enumField = type.getDeclaredField(name);
-                            ok = enumField != null && enumField.getType().equals(type);
-                        }
+                        FieldNode enumField = type.getDeclaredField(name);
+                        ok = enumField != null && enumField.getType().equals(type);
                     } catch(Exception ex) {
                         // ignore
                     }
