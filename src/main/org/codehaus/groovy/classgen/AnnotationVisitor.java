@@ -130,7 +130,6 @@ public class AnnotationVisitor {
                     return exp;
 
                 try {
-                    type.getFields();
                     Field field = type.getTypeClass().getField(pe.getPropertyAsString());
                     if (field != null && Modifier.isStatic(field.getModifiers()) && Modifier.isFinal(field.getModifiers())) {
                         return new ConstantExpression(field.get(null));

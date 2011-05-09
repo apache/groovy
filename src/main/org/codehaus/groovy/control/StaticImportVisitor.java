@@ -503,7 +503,6 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
 
     private Expression findStaticField(ClassNode staticImportType, String fieldName) {
         if (staticImportType.isPrimaryClassNode() || staticImportType.isResolved()) {
-            staticImportType.getFields(); // force init
             FieldNode field = staticImportType.getField(fieldName);
             if (field != null && field.isStatic())
                 return new PropertyExpression(new ClassExpression(staticImportType), fieldName);
