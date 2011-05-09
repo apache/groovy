@@ -113,7 +113,7 @@ public class ExtendedVerifier implements GroovyClassVisitor {
         for (AnnotationNode unvisited : node.getAnnotations()) {
             AnnotationNode visited = visitAnnotation(unvisited);
             boolean isTargetAnnotation = visited.getClassNode().isResolved() &&
-                    visited.getClassNode().getTypeClass() == Target.class;
+                    visited.getClassNode().getName().equals("java.lang.annotation.Target");
 
             // Check if the annotation target is correct, unless it's the target annotating an annotation definition
             // defining on which target elements the annotation applies
@@ -127,7 +127,7 @@ public class ExtendedVerifier implements GroovyClassVisitor {
     }
 
     private void visitDeprecation(AnnotatedNode node, AnnotationNode visited) {
-        if (visited.getClassNode().isResolved() && visited.getClassNode().getTypeClass().getName().equals(Deprecated.class.getName())) {
+        if (visited.getClassNode().isResolved() && visited.getClassNode().getName().equals("java.lang.Deprecated")) {
             if (node instanceof MethodNode) {
                 MethodNode mn = (MethodNode) node;
                 mn.setModifiers(mn.getModifiers() | Opcodes.ACC_DEPRECATED);
