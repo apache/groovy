@@ -710,6 +710,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
      * @return the method matching the given name and parameters or null
      */
     public FieldNode getDeclaredField(String name) {
+        if (!redirect().lazyInitDone) redirect().lazyClassInit();
         ClassNode r = redirect ();
         if (r.fieldIndex == null)
             r.fieldIndex = new HashMap<String,FieldNode> ();
