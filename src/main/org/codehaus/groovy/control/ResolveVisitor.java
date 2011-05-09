@@ -929,6 +929,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     }
 
     protected Expression transformVariableExpression(VariableExpression ve) {
+        visitAnnotations(ve);
         Variable v = ve.getAccessedVariable();
         
         if(!(v instanceof DynamicVariable) && !checkingVariableTypeInDeclaration) {
