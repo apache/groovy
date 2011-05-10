@@ -95,5 +95,20 @@ class ImportCustomizerTest extends GroovyTestCase {
         // no exception means success
     }
 
+    void testAddImportsOnScriptEngine() {
+        File script = File.createTempFile('test', '.groovy')
+            script.deleteOnExit()
+            script.write """
+            println new SimpleDateFormat()
+        """
+
+        importCustomizer.addImports 'java.text.SimpleDateFormat'
+
+        // Run script with script engine: this will not work, import customizer is not used
+        GroovyScriptEngine scriptEngine = new GroovyScriptEngine(script.parent)
+        scriptEngine.setConfig configuration
+        scriptEngine.run script.name, new Binding()
+    }
+
     protected static class Inner {}
 }
