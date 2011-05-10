@@ -31,6 +31,7 @@ import java.security.AccessController;
 import java.security.CodeSource;
 import java.security.PrivilegedAction;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -43,6 +44,7 @@ import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.Phases;
 import org.codehaus.groovy.control.SourceUnit;
+import org.codehaus.groovy.control.customizers.CompilationCustomizer;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.tools.gse.DependencyTracker;
@@ -139,8 +141,8 @@ public class GroovyScriptEngine implements ResourceConnector {
         }
 
         @Override
-        protected CompilationUnit createCompilationUnit(CompilerConfiguration config, CodeSource source) {
-            CompilationUnit cu = super.createCompilationUnit(config, source);
+        protected CompilationUnit createCompilationUnit(CompilerConfiguration configuration, CodeSource source) {
+            CompilationUnit cu = super.createCompilationUnit(configuration, source);
             getLocalCompilationUnit().set(cu);
             final StringSetMap cache = getDepCache().get();
 
@@ -167,6 +169,15 @@ public class GroovyScriptEngine implements ResourceConnector {
                     dt.visitClass(classNode);
                 }
             }, Phases.CLASS_GENERATION);
+
+            final List<CompilationCustomizer> customizers = config.getCompilationCustomizers();
+            if (customizers!=null) {
+                // GROOVY-4813 : apply configuration customizers
+                for (CompilationCustomizer customizer : customizers) {
+                    cu.addPhaseOperation(customizer, customizer.getPhase().getPhaseNumber());
+                }
+            }
+            
             return cu;
         }
 
