@@ -1210,7 +1210,7 @@ options:
 }
 
 class GroovyFileFilter extends FileFilter {
-    private static final GROOVY_SOURCE_EXTENSIONS = ['*.groovy', '*.gvy', '*.gy', '*.gsh']
+    private static final GROOVY_SOURCE_EXTENSIONS = ['*.groovy', '*.gvy', '*.gy', '*.gsh', '*.story', '*.gpp', '*.grunit']
     private static final GROOVY_SOURCE_EXT_DESC = GROOVY_SOURCE_EXTENSIONS.join(',')
 
     public boolean accept(File f) {
