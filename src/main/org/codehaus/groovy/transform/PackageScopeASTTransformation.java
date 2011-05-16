@@ -167,7 +167,7 @@ public class PackageScopeASTTransformation implements ASTTransformation, Opcodes
         Expression oe = expr.getObjectExpression();
         if (oe instanceof ClassExpression) {
             ClassExpression ce = (ClassExpression) oe;
-            if (ce.getType().getTypeClass().equals(TARGET_CLASS)) {
+            if (ce.getType().getName().equals("groovy.transform.PackageScopeTarget")) {
                 Expression prop = expr.getProperty();
                 if (prop instanceof ConstantExpression) {
                     String propName = (String) ((ConstantExpression) prop).getValue();
