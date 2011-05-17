@@ -20,3 +20,10 @@ To build without running tests:
 
     ant install -DskipTests=true
 
+To build from Eclipse:
+
+    1. ant install
+    2. ensure that the M2_REPO classpath variable exists and points to the correct place (typically ~/.m2/repository)
+       To Change this, go to Preferences -> Java -> Build Path -> Classpath variables
+    3. Project -> Clean... and then build.  Should compile with no errors.  But if there are errors, then send a message to the groovy users mailing list
+    4. You will *not* be able to run the tests from inside of Eclipse. 
