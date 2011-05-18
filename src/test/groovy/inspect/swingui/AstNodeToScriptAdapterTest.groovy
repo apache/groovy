@@ -362,12 +362,11 @@ public class AstNodeToScriptAdapterTest extends GroovyTestCase {
             }"""
         String result = compileToScript(script)
 
-        assert result.trim().contains('''@java.lang.SuppressWarnings
-@java.lang.SuppressWarnings(value = 'some parameter')
-@java.lang.SuppressWarnings(value = ['p1', 'p2'])
-@MyAnnotation(classes = [java.lang.String, java.lang.Integer])
-@groovy.transform.ToString(includeFields = true, includeNames = false)
-public class Event''')
+        assert result.contains('@java.lang.SuppressWarnings')
+        assert result.contains("@java.lang.SuppressWarnings(value = 'some parameter')")
+        assert result.contains("@java.lang.SuppressWarnings(value = ['p1', 'p2'])")
+        assert result.contains("@MyAnnotation(classes = [java.lang.String, java.lang.Integer])")
+        assert result.contains("@groovy.transform.ToString(includeFields = true, includeNames = false)")
 
     }
 
@@ -390,13 +389,11 @@ public class Event''')
                 boolean p2() default false;
             }"""
         String result = compileToScript(script)
-        assert result.contains('''@java.lang.SuppressWarnings
-    @java.lang.SuppressWarnings(value = 'some parameter')
-    @java.lang.SuppressWarnings(value = ['p1', 'p2'])
-    @MyAnnotation(classes = [java.lang.String, java.lang.Integer])
-    @MyAnnotation(p2 = false, p1 = true)
-    public java.lang.Object method()''')
-        
+        assert result.contains("@java.lang.SuppressWarnings")
+        assert result.contains("@java.lang.SuppressWarnings(value = 'some parameter')")
+        assert result.contains("@java.lang.SuppressWarnings(value = ['p1', 'p2'])")
+        assert result.contains("@MyAnnotation(classes = [java.lang.String, java.lang.Integer])")
+        assert result.contains("@MyAnnotation(p2 = false, p1 = true)")
     }
 
     public void testPropertyAnnotations() {
@@ -418,13 +415,11 @@ public class Event''')
                 boolean p2() default false;
             }"""
         String result = compileToScript(script)
-        assert result.contains('''@java.lang.SuppressWarnings
-    @java.lang.SuppressWarnings(value = 'some parameter')
-    @java.lang.SuppressWarnings(value = ['p1', 'p2'])
-    @MyAnnotation(classes = [java.lang.String, java.lang.Integer])
-    @MyAnnotation(p2 = false, p1 = true)
-    private java.lang.String myString''')
-
+        assert result.contains("@java.lang.SuppressWarnings")
+        assert result.contains("@java.lang.SuppressWarnings(value = 'some parameter')")
+        assert result.contains("@java.lang.SuppressWarnings(value = ['p1', 'p2'])")
+        assert result.contains("@MyAnnotation(classes = [java.lang.String, java.lang.Integer])")
+        assert result.contains("@MyAnnotation(p2 = false, p1 = true)")
     }
 
     public void testPackageAnnotations() {
@@ -448,14 +443,12 @@ public class Event''')
         
         String result = compileToScript(script)
 
-        assert result.trim().startsWith('''@java.lang.SuppressWarnings
-@java.lang.SuppressWarnings(value = 'some parameter')
-@java.lang.SuppressWarnings(value = ['p1', 'p2'])
-@foo.bar.baz.MyAnnotation(classes = [java.lang.String, java.lang.Integer])
-@foo.bar.baz.MyAnnotation(p2 = false, p1 = true)
-package foo.bar.baz
-
-'hello world\'''')
+        assert result.contains("@java.lang.SuppressWarnings")
+        assert result.contains("@java.lang.SuppressWarnings(value = 'some parameter')")
+        assert result.contains("@java.lang.SuppressWarnings(value = ['p1', 'p2'])")
+        assert result.contains("@foo.bar.baz.MyAnnotation(classes = [java.lang.String, java.lang.Integer])")
+        assert result.contains("@foo.bar.baz.MyAnnotation(p2 = false, p1 = true)")
+        assert result.contains("package foo.bar.baz")
     }
 
     public void testImportStatements() {
@@ -490,24 +483,21 @@ package foo.bar.baz
         String result = compileToScript(script)
 
 
-        assert result.trim().startsWith('''@java.lang.SuppressWarnings(value = ['p1', 'p2'])
-import static java.lang.Integer.MAX_VALUE
-@java.lang.SuppressWarnings
-import static java.lang.Double.POSITIVE_INFINITY
-@java.lang.SuppressWarnings
-import static java.lang.Math.PI as PLOP
-@java.lang.SuppressWarnings
-import static java.lang.Float.*
-
-@java.lang.SuppressWarnings
-import java.lang.Double as BadaBing
-@java.lang.SuppressWarnings
-@java.lang.SuppressWarnings(value = 'some parameter')
-import java.lang.String as String
-@java.lang.SuppressWarnings
-import java.util.concurrent.*
-
-'hello world\'''')
+        assert result.contains("@java.lang.SuppressWarnings(value = ['p1', 'p2'])")
+        assert result.contains("import static java.lang.Integer.MAX_VALUE")
+        assert result.contains("@java.lang.SuppressWarnings")
+        assert result.contains("import static java.lang.Double.POSITIVE_INFINITY")
+        assert result.contains("@java.lang.SuppressWarnings")
+        assert result.contains("import static java.lang.Math.PI as PLOP")
+        assert result.contains("@java.lang.SuppressWarnings")
+        assert result.contains("import static java.lang.Float.*")
+        assert result.contains("@java.lang.SuppressWarnings")
+        assert result.contains("import java.lang.Double as BadaBing")
+        assert result.contains("@java.lang.SuppressWarnings")
+        assert result.contains("@java.lang.SuppressWarnings(value = 'some parameter')")
+        assert result.contains("import java.lang.String as String")
+        assert result.contains("@java.lang.SuppressWarnings")
+        assert result.contains("import java.util.concurrent.*")
     }
 
     public void testParameterAnnotations() {
