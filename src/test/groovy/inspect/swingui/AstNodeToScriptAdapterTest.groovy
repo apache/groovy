@@ -366,7 +366,9 @@ public class AstNodeToScriptAdapterTest extends GroovyTestCase {
         assert result.contains("@java.lang.SuppressWarnings(value = 'some parameter')")
         assert result.contains("@java.lang.SuppressWarnings(value = ['p1', 'p2'])")
         assert result.contains("@MyAnnotation(classes = [java.lang.String, java.lang.Integer])")
-        assert result.contains("@groovy.transform.ToString(includeFields = true, includeNames = false)")
+        assert result.contains("@groovy.transform.ToString(") &&
+                result.contains("includeFields = true") &&
+                result.contains("includeNames = false")
 
     }
 
@@ -393,7 +395,7 @@ public class AstNodeToScriptAdapterTest extends GroovyTestCase {
         assert result.contains("@java.lang.SuppressWarnings(value = 'some parameter')")
         assert result.contains("@java.lang.SuppressWarnings(value = ['p1', 'p2'])")
         assert result.contains("@MyAnnotation(classes = [java.lang.String, java.lang.Integer])")
-        assert result.contains("@MyAnnotation(p2 = false, p1 = true)")
+        assert result.contains("@MyAnnotation(") && result.contains("p2 = false") && result.contains("p1 = true")
     }
 
     public void testPropertyAnnotations() {
@@ -419,7 +421,7 @@ public class AstNodeToScriptAdapterTest extends GroovyTestCase {
         assert result.contains("@java.lang.SuppressWarnings(value = 'some parameter')")
         assert result.contains("@java.lang.SuppressWarnings(value = ['p1', 'p2'])")
         assert result.contains("@MyAnnotation(classes = [java.lang.String, java.lang.Integer])")
-        assert result.contains("@MyAnnotation(p2 = false, p1 = true)")
+        assert result.contains("@MyAnnotation(") && result.contains("p2 = false") && result.contains("p1 = true")
     }
 
     public void testPackageAnnotations() {
@@ -447,7 +449,7 @@ public class AstNodeToScriptAdapterTest extends GroovyTestCase {
         assert result.contains("@java.lang.SuppressWarnings(value = 'some parameter')")
         assert result.contains("@java.lang.SuppressWarnings(value = ['p1', 'p2'])")
         assert result.contains("@foo.bar.baz.MyAnnotation(classes = [java.lang.String, java.lang.Integer])")
-        assert result.contains("@foo.bar.baz.MyAnnotation(p2 = false, p1 = true)")
+        assert result.contains("@foo.bar.baz.MyAnnotation(") && result.contains("p2 = false") && result.contains("p1 = true)")
         assert result.contains("package foo.bar.baz")
     }
 
