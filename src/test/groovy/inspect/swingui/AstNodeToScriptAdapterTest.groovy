@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2009 the original author or authors.
+ * Copyright 2003-2011 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -449,7 +449,7 @@ public class AstNodeToScriptAdapterTest extends GroovyTestCase {
         assert result.contains("@java.lang.SuppressWarnings(value = 'some parameter')")
         assert result.contains("@java.lang.SuppressWarnings(value = ['p1', 'p2'])")
         assert result.contains("@foo.bar.baz.MyAnnotation(classes = [java.lang.String, java.lang.Integer])")
-        assert result.contains("@foo.bar.baz.MyAnnotation(") && result.contains("p2 = false") && result.contains("p1 = true)")
+        assert result.contains("@foo.bar.baz.MyAnnotation(") && result.contains("p2 = false") && result.contains("p1 = true")
         assert result.contains("package foo.bar.baz")
     }
 
