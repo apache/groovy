@@ -17,7 +17,6 @@ package groovy.inspect.swingui;
 
 
 import org.codehaus.groovy.ast.*;
-import org.codehaus.groovy.ast.builder.AstBuilder;
 import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.stmt.*;
 import org.codehaus.groovy.classgen.BytecodeExpression
@@ -131,12 +130,47 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
     }
 
     void call(SourceUnit source, GeneratorContext context, ClassNode classNode) {
+
+        visitPackage(source?.getAST()?.getPackage())
+
+        visitAllImports(source)
+
         if (showScriptFreeForm && !scriptHasBeenVisited) {
             scriptHasBeenVisited = true
             source?.getAST()?.getStatementBlock()?.visit(this)
         }
         if (showScriptClass || !classNode.isScript()) {
             visitClass classNode
+        }
+    }
+
+    private def visitAllImports(SourceUnit source) {
+        boolean staticImportsPresent = false
+        boolean importsPresent = false
+
+        source?.getAST()?.getStaticImports()?.values()?.each {
+            visitImport(it)
+            staticImportsPresent = true
+        }
+        source?.getAST()?.getStaticStarImports()?.values()?.each {
+            visitImport(it)
+            staticImportsPresent = true
+        }
+
+        if (staticImportsPresent) {
+            printDoubleBreak()
+        }
+
+        source?.getAST()?.getImports()?.each {
+            visitImport(it)
+            importsPresent = true
+        }
+        source?.getAST()?.getStarImports()?.each {
+            visitImport(it)
+            importsPresent = true
+        }
+        if (importsPresent) {
+            printDoubleBreak()
         }
     }
 
@@ -189,22 +223,45 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
         readyToIndent = true
     }
 
-    def AstNodeToScriptAdapter(Writer out) {
-        this._out = out;
+    void visitPackage(PackageNode packageNode) {
+
+        if (packageNode) {
+
+            packageNode.annotations?.each {
+                visitAnnotationNode(it)
+                printLineBreak()
+            }
+
+            if (packageNode.text.endsWith(".")) {
+                print packageNode.text[0..-2]
+            } else {
+                print packageNode.text
+            }
+            printDoubleBreak()
+        }
+    }
+
+    void visitImport(ImportNode node) {
+        if (node) {
+            node.annotations?.each {
+                visitAnnotationNode(it)
+                printLineBreak()
+            }
+            print node.text
+            printLineBreak()
+        }
     }
 
     @Override
     public void visitClass(ClassNode node) {
 
         classNameStack.push(node.name)
-        if (node?.package) {
-            if (node.package.text.endsWith(".")) {
-                print node.package.text[0..-2]
-            } else {
-                print node.package.text
-            }
-            printDoubleBreak()
+
+        node?.annotations?.each {
+            visitAnnotationNode(it)
+            printLineBreak()
         }
+
         visitModifiers(node.modifiers)
         print "class $node.name"
         visitGenerics node?.genericsTypes
@@ -281,6 +338,12 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
                 print ', '
             }
             first = false
+
+            it.annotations?.each {
+                visitAnnotationNode(it)
+                print(' ')
+            }
+
             visitModifiers(it.modifiers)
             visitType it.type
             print ' ' + it.name
@@ -293,6 +356,11 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
 
     @Override
     public void visitMethod(MethodNode node) {
+        node?.annotations?.each {
+            visitAnnotationNode(it)
+            printLineBreak()
+        }
+
         visitModifiers(node.modifiers)
         if (node.name == '<init>') {
             print "${classNameStack.peek()}("

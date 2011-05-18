@@ -345,6 +345,184 @@ public class AstNodeToScriptAdapterTest extends GroovyTestCase {
         assert result.contains('metaClass = /*BytecodeExpression*/')
     }
 
+    public void testClassAnnotations() {
+        String script = """
+            import org.codehaus.groovy.transform.*
+
+            @SuppressWarnings
+            @SuppressWarnings('some parameter')
+            @SuppressWarnings(['p1', 'p2'])
+            @MyAnnotation(classes = [String, Integer])
+            @groovy.transform.ToString(includeFields = true, includeNames = false)
+            class Event {
+            }
+
+            @interface MyAnnotation {
+                Class[] classes() default [];
+            }"""
+        String result = compileToScript(script)
+
+        assert result.trim().contains('''@java.lang.SuppressWarnings
+@java.lang.SuppressWarnings(value = 'some parameter')
+@java.lang.SuppressWarnings(value = ['p1', 'p2'])
+@MyAnnotation(classes = [java.lang.String, java.lang.Integer])
+@groovy.transform.ToString(includeFields = true, includeNames = false)
+public class Event''')
+
+    }
+
+    public void testMethodAnnotations() {
+        String script = """
+            import org.codehaus.groovy.transform.*
+
+            class Event {
+                @SuppressWarnings
+                @SuppressWarnings('some parameter')
+                @SuppressWarnings(['p1', 'p2'])
+                @MyAnnotation(classes = [String, Integer])
+                @MyAnnotation(p1 = true, p2 = false)
+                def method() {}
+            }
+
+            @interface MyAnnotation {
+                Class[] classes() default [];
+                boolean p1() default false;
+                boolean p2() default false;
+            }"""
+        String result = compileToScript(script)
+        assert result.contains('''@java.lang.SuppressWarnings
+    @java.lang.SuppressWarnings(value = 'some parameter')
+    @java.lang.SuppressWarnings(value = ['p1', 'p2'])
+    @MyAnnotation(classes = [java.lang.String, java.lang.Integer])
+    @MyAnnotation(p2 = false, p1 = true)
+    public java.lang.Object method()''')
+        
+    }
+
+    public void testPropertyAnnotations() {
+        String script = """
+            import org.codehaus.groovy.transform.*
+
+            class Event {
+                @SuppressWarnings
+                @SuppressWarnings('some parameter')
+                @SuppressWarnings(['p1', 'p2'])
+                @MyAnnotation(classes = [String, Integer])
+                @MyAnnotation(p1 = true, p2 = false)
+                String myString
+            }
+
+            @interface MyAnnotation {
+                Class[] classes() default [];
+                boolean p1() default false;
+                boolean p2() default false;
+            }"""
+        String result = compileToScript(script)
+        assert result.contains('''@java.lang.SuppressWarnings
+    @java.lang.SuppressWarnings(value = 'some parameter')
+    @java.lang.SuppressWarnings(value = ['p1', 'p2'])
+    @MyAnnotation(classes = [java.lang.String, java.lang.Integer])
+    @MyAnnotation(p2 = false, p1 = true)
+    private java.lang.String myString''')
+
+    }
+
+    public void testPackageAnnotations() {
+        String script = """
+
+            @SuppressWarnings
+            @SuppressWarnings('some parameter')
+            @SuppressWarnings(['p1', 'p2'])
+            @MyAnnotation(classes = [String, Integer])
+            @MyAnnotation(p1 = true, p2 = false)
+            package foo.bar.baz
+
+            'hello world'
+
+            @interface MyAnnotation {
+                Class[] classes() default [];
+                boolean p1() default false;
+                boolean p2() default false;
+            }
+            """
+        
+        String result = compileToScript(script)
+
+        assert result.trim().startsWith('''@java.lang.SuppressWarnings
+@java.lang.SuppressWarnings(value = 'some parameter')
+@java.lang.SuppressWarnings(value = ['p1', 'p2'])
+@foo.bar.baz.MyAnnotation(classes = [java.lang.String, java.lang.Integer])
+@foo.bar.baz.MyAnnotation(p2 = false, p1 = true)
+package foo.bar.baz
+
+'hello world\'''')
+    }
+
+    public void testImportStatements() {
+        String script = """
+
+            @SuppressWarnings
+            @SuppressWarnings('some parameter')
+            import java.lang.String
+
+            @SuppressWarnings(['p1', 'p2'])
+            import static java.lang.Integer.MAX_VALUE
+
+            @SuppressWarnings
+            import java.util.concurrent.*
+
+            @SuppressWarnings
+            import static java.lang.Float.*
+
+            @SuppressWarnings
+            import static java.lang.Double.POSITIVE_INFINITY
+
+            @SuppressWarnings
+            import static java.lang.Math.PI as PLOP
+
+            @SuppressWarnings
+            import java.lang.Double as BadaBing
+
+            'hello world'
+
+            """
+
+        String result = compileToScript(script)
+
+
+        assert result.trim().startsWith('''@java.lang.SuppressWarnings(value = ['p1', 'p2'])
+import static java.lang.Integer.MAX_VALUE
+@java.lang.SuppressWarnings
+import static java.lang.Double.POSITIVE_INFINITY
+@java.lang.SuppressWarnings
+import static java.lang.Math.PI as PLOP
+@java.lang.SuppressWarnings
+import static java.lang.Float.*
+
+@java.lang.SuppressWarnings
+import java.lang.Double as BadaBing
+@java.lang.SuppressWarnings
+@java.lang.SuppressWarnings(value = 'some parameter')
+import java.lang.String as String
+@java.lang.SuppressWarnings
+import java.util.concurrent.*
+
+'hello world\'''')
+    }
+
+    public void testParameterAnnotations() {
+        String script = """
+
+            def method(@SuppressWarnings @SuppressWarnings('foo') parameter) {
+            }
+
+            """
+
+        String result = compileToScript(script)
+
+        assert result.contains("public java.lang.Object method(@java.lang.SuppressWarnings @java.lang.SuppressWarnings(value = 'foo') java.lang.Object parameter) {")
+    }
+
     public void testParenthesisInArgumentList() {
         String script = """public java.lang.String toString() {
                             _result = new java.lang.StringBuffer()
@@ -366,7 +544,7 @@ public class AstNodeToScriptAdapterTest extends GroovyTestCase {
     }
 
     public void testAtImmutableClass() {
-        String script = '@Immutable class Event { }'
+        String script = '@groovy.transform.Immutable class Event { }'
 
         String result = compileToScript(script, CompilePhase.CANONICALIZATION)
         assert result.contains('private boolean $print$names')
@@ -391,6 +569,7 @@ public class AstNodeToScriptAdapterTest extends GroovyTestCase {
 
     public void testAtImmutableClassWithProperties() {
         String script = """
+            import groovy.transform.Immutable
             @Immutable class Event {
                 String title
                 Date when
