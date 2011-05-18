@@ -19,7 +19,7 @@ import gls.CompilableTestSupport
 
 /**
  * @author Paul King
- * @author Cédric Champeau
+ * @author Cï¿½dric Champeau
  */
 class FieldTransformTest extends CompilableTestSupport {
 
@@ -171,4 +171,25 @@ class FieldTransformTest extends CompilableTestSupport {
         """
     }
 
+    void testAnnotationsOnFieldShouldBeSet() {
+        assertScript """
+            import groovy.transform.Field
+            import java.lang.annotation.*
+
+            @Retention(RetentionPolicy.RUNTIME)
+            @Target(ElementType.FIELD)
+            public @interface Awesome {
+            }
+
+            @Awesome @Field def test
+
+            class Doh {
+              @Awesome String test
+            }
+
+            assert Doh.getDeclaredField('test').getAnnotations().size() == 1
+            assert this.class.getDeclaredField('test').getAnnotations().size() == 1
+
+        """
+    }
 }
