@@ -32,13 +32,14 @@ import org.objectweb.asm.Opcodes;
 
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.List;
 
 /**
  * Handles transformation for the @Field annotation.
  * This is experimental, use at your own risk.
  *
  * @author Paul King
- * @author Cédric Champeau
+ * @author Cedric Champeau
  */
 @GroovyASTTransformation(phase = CompilePhase.SEMANTIC_ANALYSIS)
 public class FieldASTTransformation extends ClassCodeExpressionTransformer implements ASTTransformation, Opcodes {
@@ -46,6 +47,7 @@ public class FieldASTTransformation extends ClassCodeExpressionTransformer imple
     private static final Class MY_CLASS = Field.class;
     private static final ClassNode MY_TYPE = ClassHelper.make(MY_CLASS);
     private static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
+    private static final ClassNode ASTTRANSFORM_TYPE = ClassHelper.make(GroovyASTTransformationClass.class);
     private SourceUnit sourceUnit;
     private DeclarationExpression candidate;
     private boolean insideScriptBody;
@@ -82,6 +84,16 @@ public class FieldASTTransformation extends ClassCodeExpressionTransformer imple
             fieldNode = new FieldNode(variableName, ve.getModifiers(), ve.getType(), null, de.getRightExpression());
             fieldNode.setSourcePosition(de);
             cNode.addField(fieldNode);
+
+            // GROOVY-4833 : annotations that are not Groovy transforms should be transfered to the generated field
+            final List<AnnotationNode> annotations = de.getAnnotations();
+            for (AnnotationNode annotation : annotations) {
+                final ClassNode annotationClassNode = annotation.getClassNode();
+                if (annotationClassNode.getAnnotations(ASTTRANSFORM_TYPE).isEmpty()) {
+                    fieldNode.addAnnotation(annotation);
+                }
+            }
+
             super.visitClass(cNode);
         }
     }
