@@ -166,11 +166,14 @@ public class StreamingMarkupWriter extends Writer {
                 this.writer.write("&#x");
                 this.writer.write(Integer.toHexString(c));
                 this.writer.write(';');
-            }    else if(c == '\'' && this.writingAttribute && !useDoubleQuotes) {
-                    this.writer.write("&apos;");
-                }
-                else if(c == '"' && this.writingAttribute && useDoubleQuotes) {
-                    this.writer.write("&quot;");
+            } else if (c == '\'' && this.writingAttribute && !useDoubleQuotes) {
+                this.writer.write("&apos;");
+            } else if (c == '"' && this.writingAttribute && useDoubleQuotes) {
+                this.writer.write("&quot;");
+            } else if (c == '\n' && this.writingAttribute) {
+                this.writer.write("&#10;");
+            } else if (c == '\r' && this.writingAttribute) {
+                this.writer.write("&#13;");
             } else {
                 this.writer.write(c);
             }

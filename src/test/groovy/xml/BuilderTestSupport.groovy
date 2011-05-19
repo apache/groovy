@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2009 the original author or authors.
+ * Copyright 2003-2011 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -207,6 +207,17 @@ require escaping. The other characters consist of:
     * &gt; - greater than
     * &amp; - ampersand
 </element>'''
+    }
+
+    void testNewlinesInMarkupBuilder() {
+        def m = {
+            root {
+                a( b:'''one\n\rtwo''' ) {
+                  c( 'one\n\rtwo' )
+                }
+            }
+        }
+        assertExpectedXml m, """<root><a b='one&#10;&#13;two'><c>one\n\rtwo</c></a></root>"""
     }
 
     void testObjectOperationsInMarkup() {

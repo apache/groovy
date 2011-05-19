@@ -365,6 +365,12 @@ public class MarkupBuilder extends BuilderSupport {
                 return "&lt;";
             case '>':
                 return "&gt;";
+            case '\n':
+                if (isAttrValue) return "&#10;";
+                break;
+            case '\r':
+                if (isAttrValue) return "&#13;";
+                break;
             case '"':
                 // The double quote is only escaped if the value is for
                 // an attribute and the builder is configured to output
