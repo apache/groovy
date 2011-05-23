@@ -209,15 +209,15 @@ require escaping. The other characters consist of:
 </element>'''
     }
 
-    void testNewlinesInMarkupBuilder() {
+    void testNewlineCarriageReturnTabExpansion() {
         def m = {
             root {
-                a( b:'''one\n\rtwo''' ) {
-                  c( 'one\n\rtwo' )
+                a( b:'''one\n\r\ttwo''' ) {
+                  c( 'one\n\r\ttwo' )
                 }
             }
         }
-        assertExpectedXml m, """<root><a b='one&#10;&#13;two'><c>one\n\rtwo</c></a></root>"""
+        assertExpectedXml m, """<root><a b='one&#10;&#13;&#09;two'><c>one\n\r\ttwo</c></a></root>"""
     }
 
     void testObjectOperationsInMarkup() {

@@ -39,11 +39,15 @@ import groovy.xml.streamingmarkupsupport.BaseMarkupBuilder
  *     &lt;c a2='two'&gt;blah&lt;/c&gt;
  *   &lt;/a&gt;
  * &lt;/root&gt;</pre>
- * Note that <code>mkp</code> is a special namespace used to escape
+ * Notes:
+ * <ul>
+ *     <li>that <code>mkp</code> is a special namespace used to escape
  * away from the normal building mode of the builder and get access
  * to helper markup methods 'yield', 'pi', 'comment', 'out',
  * 'namespaces', 'xmlDeclaration' and 'yieldUnescaped'.
- *
+ * </li>
+ *     <li>Note that tab, newline and carriage return characters are escaped within attributes, i.e. will become &#09;, &#10; and &#13; respectively</li>
+ * </ul>
  */
 class StreamingMarkupBuilder extends AbstractStreamingBuilder {
     boolean useDoubleQuotes = false

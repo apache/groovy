@@ -41,11 +41,14 @@ import java.util.Iterator;
  *     &lt;c a2='two'&gt;blah&lt;/c&gt;
  *   &lt;/a&gt;
  * &lt;/root&gt;</pre>
- * Note that <code>mkp</code> is a special namespace used to escape
+ * Notes:
+ * <ul>
+ *    <li><code>mkp</code> is a special namespace used to escape
  * away from the normal building mode of the builder and get access
  * to helper markup methods such as 'yield' and 'yieldUnescaped'.
- * See the javadoc for {@link #getMkp()} for further details.
- *
+ * See the javadoc for {@link #getMkp()} for further details.</li>
+ *     <li>Note that tab, newline and carriage return characters are escaped within attributes, i.e. will become &#09;, &#10; and &#13; respectively</li>
+ * </ul>
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @author Stefan Matthias Aust
  * @author <a href="mailto:scottstirling@rcn.com">Scott Stirling</a>
@@ -403,6 +406,9 @@ public class MarkupBuilder extends BuilderSupport {
                 break;
             case '\r':
                 if (isAttrValue) return "&#13;";
+                break;
+            case '\t':
+                if (isAttrValue) return "&#09;";
                 break;
             case '"':
                 // The double quote is only escaped if the value is for
