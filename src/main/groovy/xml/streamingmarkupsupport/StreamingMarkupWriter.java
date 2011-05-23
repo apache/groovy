@@ -174,6 +174,8 @@ public class StreamingMarkupWriter extends Writer {
                 this.writer.write("&#10;");
             } else if (c == '\r' && this.writingAttribute) {
                 this.writer.write("&#13;");
+            } else if (c == '\t' && this.writingAttribute) {
+                this.writer.write("&#09;");
             } else {
                 this.writer.write(c);
             }
