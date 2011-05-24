@@ -69,6 +69,7 @@ menuBar {
     menu(text: 'Script', mnemonic: 'S') {
         menuItem(runAction)
         menuItem(runSelectionAction)
+        checkBoxMenuItem(threadInterruptAction, selected: controller.threadInterrupt)
         menuItem(interruptAction)
         menuItem(compileAction)
         separator()

@@ -339,6 +339,12 @@ aboutAction = action(
     mnemonic: 'A'
 )
 
+threadInterruptAction = action(
+    name: 'Allow Interruption',
+    closure: controller.&threadInterruption,
+    mnemonic: 'O'
+)
+
 interruptAction = action(
     name: 'Interrupt',
     closure: controller.&doInterrupt,
