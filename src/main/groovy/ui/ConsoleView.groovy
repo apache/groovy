@@ -91,6 +91,7 @@ controller.fullStackTracesAction = fullStackTracesAction
 controller.showToolbarAction = showToolbarAction
 controller.detachedOutputAction = detachedOutputAction
 controller.autoClearOutputAction = autoClearOutputAction
+controller.threadInterruptAction = threadInterruptAction
 controller.showOutputWindowAction = showOutputWindowAction
 controller.hideOutputWindowAction1 = hideOutputWindowAction1
 controller.hideOutputWindowAction2 = hideOutputWindowAction2

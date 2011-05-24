@@ -111,6 +111,10 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
     boolean autoClearOutput = prefs.getBoolean('autoClearOutput', false)
     Action autoClearOutputAction
 
+    // Safer thread interruption
+    boolean threadInterrupt = prefs.getBoolean('threadInterrupt', false)
+    Action threadInterruptAction
+
     // Maximum size of history
     int maxHistory = 10
 
@@ -159,6 +163,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
     File currentClasspathDir = new File(Preferences.userNodeForPackage(Console).get('currentClasspathDir', '.'))
 
     // Running scripts
+    CompilerConfiguration config
     GroovyShell shell
     int scriptNameCounter = 0
     SystemOutputInterceptor systemOutInterceptor
@@ -229,8 +234,8 @@ options:
     }
 
     void newScript(ClassLoader parent, Binding binding) {
-        def config = new CompilerConfiguration()
-        config.addCompilationCustomizers(new ASTTransformationCustomizer(ThreadInterrupt))
+        config = new CompilerConfiguration()
+        if (threadInterrupt) config.addCompilationCustomizers(new ASTTransformationCustomizer(ThreadInterrupt))
 
         shell = new GroovyShell(parent, binding, config)
     }
@@ -514,6 +519,16 @@ options:
     void autoClearOutput(EventObject evt) {
         autoClearOutput = evt.source.selected
         prefs.putBoolean('autoClearOutput', autoClearOutput)
+    }
+
+    void threadInterruption(EventObject evt) {
+        threadInterrupt = evt.source.selected
+        prefs.putBoolean('threadInterrupt', threadInterrupt)
+        def customizers = config.compilationCustomizers
+        customizers.clear()
+        if (threadInterrupt) {
+            config.addCompilationCustomizers(new ASTTransformationCustomizer(ThreadInterrupt))
+        }
     }
 
     void caretUpdate(CaretEvent e){
