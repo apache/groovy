@@ -24,6 +24,7 @@ import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
 import org.codehaus.groovy.syntax.SyntaxException;
 
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.Arrays;
 
 /**
@@ -50,9 +51,9 @@ public class LogASTTransformation implements ASTTransformation {
         AnnotatedNode targetClass = (AnnotatedNode) nodes[1];
         AnnotationNode logAnnotation = (AnnotationNode) nodes[0];
 
-        final LoggingStrategy loggingStrategy = createLoggingStrategy(logAnnotation); 
+        final LoggingStrategy loggingStrategy = createLoggingStrategy(logAnnotation);
         if (loggingStrategy == null) return;
-        
+
         final String logFieldName = lookupLogFieldName(logAnnotation);
 
         if (!(targetClass instanceof ClassNode))
@@ -79,8 +80,10 @@ public class LogASTTransformation implements ASTTransformation {
             @Override
             public void visitClass(ClassNode node) {
                 FieldNode logField = node.getField(logFieldName);
-                if (logField != null) {
+                if (logField != null && logField.getOwner().equals(node)) {
                     addError("Class annotated with Log annotation cannot have log field declared", logField);
+                } else if (logField != null && !Modifier.isPrivate(logField.getModifiers())) {
+                    addError("Class annotated with Log annotation cannot have log field declared because the field exists in the parent class: " + logField.getOwner().getName(), logField);
                 } else {
                     logNode = loggingStrategy.addLoggerFieldToClass(node, logFieldName);
                 }
@@ -103,9 +106,9 @@ public class LogASTTransformation implements ASTTransformation {
 
                 variableExpression.setAccessedVariable(logNode);
 
-                if (!loggingStrategy.isLoggingMethod(methodName)) return exp; 
+                if (!loggingStrategy.isLoggingMethod(methodName)) return exp;
 
-                return loggingStrategy.wrapLoggingMethodCall(variableExpression, methodName, exp); 
+                return loggingStrategy.wrapLoggingMethodCall(variableExpression, methodName, exp);
             }
 
             private boolean usesSimpleMethodArgumentsOnly(MethodCallExpression mce) {
@@ -161,7 +164,7 @@ public class LogASTTransformation implements ASTTransformation {
 
         Method annotationMethod;
         try {
-            annotationMethod = annotationClass.getDeclaredMethod("loggingStrategy", (Class[])null);
+            annotationMethod = annotationClass.getDeclaredMethod("loggingStrategy", (Class[]) null);
         } catch (Throwable e) {
             throw new RuntimeException("Could not find method named loggingStrategy on class named " + annotationName);
         }
@@ -173,7 +176,7 @@ public class LogASTTransformation implements ASTTransformation {
             throw new RuntimeException("Could not find default value of method named loggingStrategy on class named " + annotationName);
         }
 
-        if (!LoggingStrategy.class.isAssignableFrom((Class)defaultValue)) {
+        if (!LoggingStrategy.class.isAssignableFrom((Class) defaultValue)) {
             throw new RuntimeException("Default loggingStrategy value on class named " + annotationName + " is not a LoggingStrategy");
         }
 
@@ -194,16 +197,16 @@ public class LogASTTransformation implements ASTTransformation {
     public interface LoggingStrategy {
         /**
          * In this method, you are given a ClassNode and a field name, and you must add a new Field
-         *  onto the class. Return the result of the ClassNode.addField operations.
-         * @param classNode
-         *      the class that was originally annotated with the Log transformation.
-         * @param fieldName
-         *      the name of the logger field
-         * @return
-         *      the FieldNode instance that was created and added to the class
+         * onto the class. Return the result of the ClassNode.addField operations.
+         *
+         * @param classNode the class that was originally annotated with the Log transformation.
+         * @param fieldName the name of the logger field
+         * @return the FieldNode instance that was created and added to the class
          */
         FieldNode addLoggerFieldToClass(ClassNode classNode, String fieldName);
+
         boolean isLoggingMethod(String methodName);
+
         Expression wrapLoggingMethodCall(Expression logVariable, String methodName, Expression originalExpression);
     }
 }
