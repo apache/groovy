@@ -21,6 +21,7 @@ import groovy.transform.EqualsAndHashCode
 import groovy.transform.TupleConstructor
 import static groovy.transform.AutoCloneStyle.COPY_CONSTRUCTOR
 import static groovy.transform.AutoCloneStyle.SERIALIZATION
+import groovy.transform.ToString
 
 /**
  * @author Paul King
@@ -109,6 +110,14 @@ class CanonicalComponentsTransformTest extends GroovyShellTestCase {
         assert p1 == p2
         assert p1.hashCode() == p2.hashCode()
     }
+
+    // GROOVY-4844
+    void testToStringCustomGetter() {
+        def p1 = new Point(1, 2)
+        def p2 = new Point(1, 1) { int getY() { 2 } }
+        assert p1.toString() == 'Point(1, 2)'
+        assert p2.toString() == 'Point(1, 2)'
+    }
 }
 
 @TupleConstructor
@@ -160,3 +169,7 @@ class PointIgnoreY {
     int x
     int y // y coordinate excluded from Equals and hashCode
 }
+
+// GROOVY-4844
+@TupleConstructor @ToString
+class Point { int x, y }
