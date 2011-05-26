@@ -115,8 +115,8 @@ class CanonicalComponentsTransformTest extends GroovyShellTestCase {
     void testToStringCustomGetter() {
         def p1 = new Point(1, 2)
         def p2 = new Point(1, 1) { int getY() { 2 } }
-        assert p1.toString() == 'Point(1, 2)'
-        assert p2.toString() == 'Point(1, 2)'
+        assert p1.toString() == 'org.codehaus.groovy.transform.Point(1, 2)'
+        assert p2.toString() == 'org.codehaus.groovy.transform.Point(1, 2)'
     }
 }
 
