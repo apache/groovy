@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 the original author or authors.
+ * Copyright 2008-2011 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
+import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.expr.BooleanExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
@@ -38,16 +39,18 @@ import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.IfStatement;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
+import org.codehaus.groovy.classgen.Verifier;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.Types;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.codehaus.groovy.transform.AbstractASTTransformUtil.getInstanceNonPropertyFields;
-import static org.codehaus.groovy.transform.AbstractASTTransformUtil.getInstancePropertyFields;
+import static org.codehaus.groovy.transform.AbstractASTTransformUtil.getInstanceProperties;
 import static org.codehaus.groovy.transform.AbstractASTTransformUtil.hasDeclaredMethod;
 
 /**
@@ -100,11 +103,19 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
         body.addStatement(append(result, new ConstantExpression(cNode.getName())));
         body.addStatement(append(result, new ConstantExpression("(")));
         boolean first = true;
-        List<FieldNode> list = getInstancePropertyFields(cNode);
-        if (includeFields) {
-            list.addAll(getInstanceNonPropertyFields(cNode));
+        List<PropertyNode> pList = getInstanceProperties(cNode);
+        for (PropertyNode pNode : pList) {
+            if (excludes.contains(pNode.getName()) || pNode.getName().contains("$")) continue;
+            first = appendPrefix(cNode, body, result, first, pNode.getName());
+            String getterName = "get" + Verifier.capitalize(pNode.getName());
+            Expression getter = new MethodCallExpression(VariableExpression.THIS_EXPRESSION, getterName, MethodCallExpression.NO_ARGUMENTS);
+            body.addStatement(append(result, new StaticMethodCallExpression(INVOKER_TYPE, "toString", getter)));
         }
-        for (FieldNode fNode : list) {
+        List<FieldNode> fList = new ArrayList<FieldNode>();
+        if (includeFields) {
+            fList.addAll(getInstanceNonPropertyFields(cNode));
+        }
+        for (FieldNode fNode : fList) {
             if (excludes.contains(fNode.getName()) || fNode.getName().contains("$")) continue;
             first = appendPrefix(cNode, body, result, first, fNode.getName());
             body.addStatement(append(result, new StaticMethodCallExpression(INVOKER_TYPE, "toString", new VariableExpression(fNode))));

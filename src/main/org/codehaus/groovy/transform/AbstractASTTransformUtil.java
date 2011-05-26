@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 the original author or authors.
+ * Copyright 2008-2011 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,6 +62,14 @@ public abstract class AbstractASTTransformUtil implements Opcodes {
         );
     }
 
+    public static Statement returnFalseIfNotInstanceof(ClassNode cNode, Expression other) {
+        return new IfStatement(
+                isInstanceof(cNode, other),
+                new EmptyStatement(),
+                new ReturnStatement(ConstantExpression.FALSE)
+        );
+    }
+
     public static IfStatement returnFalseIfNull(Expression other) {
         return new IfStatement(
                 equalsNullExpr(other),
@@ -78,9 +86,22 @@ public abstract class AbstractASTTransformUtil implements Opcodes {
         );
     }
 
+    @Deprecated
     public static Statement returnFalseIfPropertyNotEqual(FieldNode fNode, Expression other) {
+        return returnFalseIfFieldNotEqual(fNode, other);
+    }
+
+    public static Statement returnFalseIfPropertyNotEqual(PropertyNode pNode, Expression other) {
         return new IfStatement(
-                notEqualsExpr(fNode, other),
+                notEqualsPropertyExpr(pNode, other),
+                new ReturnStatement(ConstantExpression.FALSE),
+                new EmptyStatement()
+        );
+    }
+
+    public static Statement returnFalseIfFieldNotEqual(FieldNode fNode, Expression other) {
+        return new IfStatement(
+                notEqualsFieldExpr(fNode, other),
                 new ReturnStatement(ConstantExpression.FALSE),
                 new EmptyStatement()
         );
@@ -166,9 +187,15 @@ public abstract class AbstractASTTransformUtil implements Opcodes {
         return new BooleanExpression(new BinaryExpression(expr, COMPARE_EQUAL, new ConstantExpression(0)));
     }
 
-    private static BooleanExpression notEqualsExpr(FieldNode fNode, Expression other) {
+    private static BooleanExpression notEqualsFieldExpr(FieldNode fNode, Expression other) {
         final Expression fieldExpr = new VariableExpression(fNode);
         final Expression otherExpr = new PropertyExpression(other, fNode.getName());
+        return new BooleanExpression(new BinaryExpression(fieldExpr, COMPARE_NOT_EQUAL, otherExpr));
+    }
+
+    private static BooleanExpression notEqualsPropertyExpr(PropertyNode pNode, Expression other) {
+        final Expression fieldExpr = new VariableExpression(pNode);
+        final Expression otherExpr = new PropertyExpression(other, pNode.getName());
         return new BooleanExpression(new BinaryExpression(fieldExpr, COMPARE_NOT_EQUAL, otherExpr));
     }
 
@@ -179,6 +206,10 @@ public abstract class AbstractASTTransformUtil implements Opcodes {
     private static BooleanExpression notEqualClasses(ClassNode cNode, Expression other) {
         return new BooleanExpression(new BinaryExpression(new ClassExpression(cNode), COMPARE_NOT_EQUAL,
                 new MethodCallExpression(other, "getClass", MethodCallExpression.NO_ARGUMENTS)));
+    }
+
+    private static BooleanExpression isInstanceof(ClassNode cNode, Expression other) {
+        return new BooleanExpression(new BinaryExpression(other, INSTANCEOF, new ClassExpression(cNode)));
     }
 
     public static boolean isOrImplements(ClassNode fieldType, ClassNode interfaceType) {
