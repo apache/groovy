@@ -4,6 +4,22 @@ import org.codehaus.groovy.control.customizers.ImportCustomizer
 import org.codehaus.groovy.control.customizers.SecureASTCustomizer
 import org.codehaus.groovy.control.messages.ExceptionMessage
 import static org.codehaus.groovy.syntax.Types.*
+import org.codehaus.groovy.ast.stmt.BlockStatement
+import org.codehaus.groovy.ast.stmt.ExpressionStatement
+import org.codehaus.groovy.ast.expr.BinaryExpression
+import org.codehaus.groovy.ast.expr.ConstantExpression
+import org.codehaus.groovy.ast.expr.MethodCallExpression
+import org.codehaus.groovy.ast.expr.StaticMethodCallExpression
+import org.codehaus.groovy.ast.expr.ArgumentListExpression
+import org.codehaus.groovy.ast.expr.PropertyExpression
+import org.codehaus.groovy.ast.expr.UnaryMinusExpression
+import org.codehaus.groovy.ast.expr.UnaryPlusExpression
+import org.codehaus.groovy.ast.expr.PrefixExpression
+import org.codehaus.groovy.ast.expr.PostfixExpression
+import org.codehaus.groovy.ast.expr.TernaryExpression
+import org.codehaus.groovy.ast.expr.ElvisOperatorExpression
+import org.codehaus.groovy.ast.expr.BooleanExpression
+import org.codehaus.groovy.ast.expr.ClassExpression
 
 /**
  * The arithmetic shell is similar to a GroovyShell in that it can evaluate text as
@@ -74,6 +90,31 @@ class ArithmeticShell {
                         Long,
                         BigDecimal
                 ].asImmutable()
+
+                statementsWhitelist = [
+                        BlockStatement,
+                        ExpressionStatement
+                ].asImmutable()
+
+                expressionsWhitelist = [
+                        BinaryExpression,
+                        ConstantExpression,
+                        MethodCallExpression,
+                        StaticMethodCallExpression,
+                        ArgumentListExpression,
+                        PropertyExpression,
+                        UnaryMinusExpression,
+                        UnaryPlusExpression,
+                        PrefixExpression,
+                        PostfixExpression,
+                        TernaryExpression,
+                        ElvisOperatorExpression,
+                        BooleanExpression,
+                        // ClassExpression needed for processing of MethodCallExpression, PropertyExpression
+                        // and StaticMethodCallExpression
+                  ClassExpression
+                ].asImmutable()
+
             }
             CompilerConfiguration config = new CompilerConfiguration()
             config.addCompilationCustomizers(imports, secure)
