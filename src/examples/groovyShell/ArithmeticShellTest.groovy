@@ -55,5 +55,37 @@ class ArithmeticShellTest extends GroovyTestCase {
         shouldFail(SecurityException) {
             evaluate("new File();Double.valueOf('5')")
         }
+
+        shouldFail(SecurityException) {
+             // without statement whitelist set, this causes the arithmetic shell to
+             // enter an infinite loop
+             evaluate("while (1);")    
+        }
+
+        shouldFail(SecurityException) {
+             // without statement whitelist set, security exception is still thrown as it should,
+             // but with the error message that closures are not allowed, which may be confusing
+             evaluate("for (;;);")
+        }
+
+        shouldFail(SecurityException) {
+             // without statement whitelist set, no exception is thrown
+             evaluate("if (1) 12 else 15")    
+        }
+
+        shouldFail(SecurityException) {
+             // without expression whitelist set, no exception is thrown
+             evaluate("[1,2]; 1")
+        }
+
+        shouldFail(SecurityException) {
+             // without expression whitelist set, no exception is thrown
+             evaluate("[1:2]; 1")
+        }
+
+        shouldFail(SecurityException) {
+             // without expression whitelist set, no exception is thrown
+             evaluate("new Object(); 1")
+        }
     }
 }
