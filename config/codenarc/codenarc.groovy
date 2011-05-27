@@ -185,17 +185,21 @@ ruleset {
         exclude 'ElseBlockBraces'   // else statements without braces seems acceptable in our coding standards
     }
     ruleset('rulesets/basic.xml') {
+	/* not available with gradle 0.9.2
         'ConsecutiveStringConcatenation' {
             doNotApplyToClassNames='groovy.DynamicMemberTest,groovy.StaticImportTest,groovy.bugs.Groovy675_Bug,groovy.bugs.MorgansBug,' + 
                         'groovy.bugs.WriteOnlyPropertyBug,groovy.operator.StringOperatorsTest,groovy.swing.SwingBuilderTest,' + 
                         'org.codehaus.groovy.runtime.powerassert.EvaluationTest' 
         } 
+    */
         'DeadCode' {
             doNotApplyToClassNames='ThrowTest'
         }
+	/* not available with gradle 0.9.2
         'ConsecutiveLiteralAppends' {
             doNotApplyToClassNames='groovy.bugs.ByteIndexBug'
         }
+    */
 
         exclude 'ConstantTernaryExpression'    // too many to worry about, review later
         exclude 'GStringAsMapKey'    // too many to worry about, review later
