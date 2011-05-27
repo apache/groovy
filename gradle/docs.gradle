@@ -22,6 +22,7 @@ javadoc {
 
 groovydoc {
     dependsOn classes
+    groovyClasspath = configurations.compile // todo: ask why the default seems to be silly
     use = true
     windowtitle = doc.title
     doctitle = doc.title
