@@ -22,6 +22,8 @@ import groovy.transform.TupleConstructor
 import static groovy.transform.AutoCloneStyle.COPY_CONSTRUCTOR
 import static groovy.transform.AutoCloneStyle.SERIALIZATION
 import groovy.transform.ToString
+//import groovy.transform.InheritConstructors
+import groovy.transform.Canonical
 
 /**
  * @author Paul King
@@ -118,6 +120,64 @@ class CanonicalComponentsTransformTest extends GroovyShellTestCase {
         assert p1.toString() == 'org.codehaus.groovy.transform.Point(1, 2)'
         assert p2.toString() == 'org.codehaus.groovy.transform.Point(1, 2)'
     }
+
+    // GROOVY-4849
+    void testEqualsOnEquivalentClasses() {
+        def (p1, p2, p3) = new GroovyShell().evaluate("""
+        import groovy.transform.*
+        @Canonical class IntPair {
+            int x, y
+        }
+
+        @InheritConstructors
+        class IntPairWithSum extends IntPair {
+            def sum() { x + y }
+        }
+
+        [new IntPair(1, 2), new IntPair(1, 1) { int getY() { 2 } }, new IntPairWithSum(x:1, y:2)]
+        """)
+
+        assert p1 == p2 && p2 == p1
+        assert p1 == p3 && p3 == p1
+        assert p3 == p2 && p2 == p3
+    }
+
+    // GROOVY-4849
+    void testEqualsOnDifferentClasses() {
+        def (p1, p2, p3, t1) = new GroovyShell().evaluate("""
+        import groovy.transform.*
+        @Canonical class IntPair {
+            int x, y
+            boolean hasEqualXY(other) { other.x == getX() && other.y == getY() }
+        }
+
+        @InheritConstructors
+        class IntPairWithSum extends IntPair {
+            def sum() { x + y }
+        }
+
+        @EqualsAndHashCode
+        @TupleConstructor(includeSuperProperties=true)
+        class IntTriple extends IntPair { int z }
+
+        [new IntPair(1, 2), new IntPair(1, 1) { int getY() { 2 } }, new IntPairWithSum(x:1, y:2), new IntTriple(1, 2, 3)]
+        """)
+
+        assert p1 != t1 && p2 != t1 && t1 != p3
+        assert p1.hasEqualXY(t1) && t1.hasEqualXY(p1)
+        assert p2.hasEqualXY(t1) && t1.hasEqualXY(p2)
+        assert p3.hasEqualXY(t1) && t1.hasEqualXY(p3)
+    }
+
+    // GROOVY-4849
+    void testCanEqualDefined() {
+        def p1 = new IntPair(1, 2)
+        def p2 = new IntPairNoCanEqual(x:1, y:2)
+        assert p1 != p2
+        assert p1.hashCode() == p2.hashCode()
+        assert 'canEqual' in p1.class.methods*.name
+        assert !('canEqual' in p2.class.methods*.name)
+    }
 }
 
 @TupleConstructor
@@ -173,3 +233,14 @@ class PointIgnoreY {
 // GROOVY-4844
 @TupleConstructor @ToString
 class Point { int x, y }
+
+// GROOVY-4849
+@Canonical class IntPair {
+    int x, y
+}
+
+// GROOVY-4849
+@EqualsAndHashCode(useCanEqual=false)
+class IntPairNoCanEqual {
+    int x, y
+}

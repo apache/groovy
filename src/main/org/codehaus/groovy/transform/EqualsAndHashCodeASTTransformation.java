@@ -16,14 +16,7 @@
 package org.codehaus.groovy.transform;
 
 import groovy.transform.EqualsAndHashCode;
-import org.codehaus.groovy.ast.ASTNode;
-import org.codehaus.groovy.ast.AnnotatedNode;
-import org.codehaus.groovy.ast.AnnotationNode;
-import org.codehaus.groovy.ast.ClassHelper;
-import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.FieldNode;
-import org.codehaus.groovy.ast.MethodNode;
-import org.codehaus.groovy.ast.Parameter;
+import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.EmptyStatement;
@@ -31,12 +24,14 @@ import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.IfStatement;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
+import org.codehaus.groovy.classgen.Verifier;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.Types;
 import org.codehaus.groovy.util.HashCodeHelper;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.codehaus.groovy.transform.AbstractASTTransformUtil.*;
@@ -60,13 +55,14 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
             ClassNode cNode = (ClassNode) parent;
             checkNotInterface(cNode, MY_TYPE_NAME);
             boolean callSuper = memberHasValue(anno, "callSuper", true);
+            boolean useCanEqual = !memberHasValue(anno, "useCanEqual", false);
             if (callSuper && cNode.getSuperClass().getName().equals("java.lang.Object")) {
                 addError("Error during " + MY_TYPE_NAME + " processing: callSuper=true but '" + cNode.getName() + "' has no super class.", anno);
             }
             boolean includeFields = memberHasValue(anno, "includeFields", true);
             List<String> excludes = tokenize((String) getMemberValue(anno, "excludes"));
             createHashCode(cNode, false, includeFields, callSuper, excludes);
-            createEquals(cNode, includeFields, callSuper, excludes);
+            createEquals(cNode, includeFields, callSuper, useCanEqual, excludes);
         }
     }
 
@@ -76,35 +72,47 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
         if (hasExistingHashCode && hasDeclaredMethod(cNode, "_hashCode", 0)) return;
 
         final BlockStatement body = new BlockStatement();
-        List<FieldNode> list = getInstancePropertyFields(cNode);
-        if (includeFields) {
-            list.addAll(getInstanceNonPropertyFields(cNode));
-        }
+        // TODO use pList and fList
         if (cacheResult) {
             final FieldNode hashField = cNode.addField("$hash$code", ACC_PRIVATE | ACC_SYNTHETIC, ClassHelper.int_TYPE, null);
             final Expression hash = new VariableExpression(hashField);
             body.addStatement(new IfStatement(
                     isZeroExpr(hash),
-                    calculateHashStatements(hash, list, callSuper, excludes),
+                    calculateHashStatements(cNode, hash, includeFields, callSuper, excludes),
                     new EmptyStatement()
             ));
             body.addStatement(new ReturnStatement(hash));
         } else {
-            body.addStatement(calculateHashStatements(null, list, callSuper, excludes));
+            body.addStatement(calculateHashStatements(cNode, null, includeFields, callSuper, excludes));
         }
 
         cNode.addMethod(new MethodNode(hasExistingHashCode ? "_hashCode" : "hashCode", hasExistingHashCode ? ACC_PRIVATE : ACC_PUBLIC,
                 ClassHelper.int_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, body));
     }
 
-    private static Statement calculateHashStatements(Expression hash, List<FieldNode> list, boolean callSuper, List<String> excludes) {
+    private static Statement calculateHashStatements(ClassNode cNode, Expression hash, boolean includeFields, boolean callSuper, List<String> excludes) {
+        final List<PropertyNode> pList = getInstanceProperties(cNode);
+        final List<FieldNode> fList = new ArrayList<FieldNode>();
+        if (includeFields) {
+            fList.addAll(getInstanceNonPropertyFields(cNode));
+        }
         final BlockStatement body = new BlockStatement();
         // def _result = HashCodeHelper.initHash()
         final Expression result = new VariableExpression("_result");
         final Expression init = new StaticMethodCallExpression(HASHUTIL_TYPE, "initHash", MethodCallExpression.NO_ARGUMENTS);
         body.addStatement(new ExpressionStatement(new DeclarationExpression(result, ASSIGN, init)));
 
-        for (FieldNode fNode : list) {
+        for (PropertyNode pNode : pList) {
+            if (excludes.contains(pNode.getName()) || pNode.getName().contains("$")) continue;
+            // _result = HashCodeHelper.updateHash(_result, getProperty())
+            String getterName = "get" + Verifier.capitalize(pNode.getName());
+            Expression getter = new MethodCallExpression(VariableExpression.THIS_EXPRESSION, getterName, MethodCallExpression.NO_ARGUMENTS);
+            final Expression args = new TupleExpression(result, getter);
+            final Expression current = new StaticMethodCallExpression(HASHUTIL_TYPE, "updateHash", args);
+            body.addStatement(assignStatement(result, current));
+
+        }
+        for (FieldNode fNode : fList) {
             if (excludes.contains(fNode.getName()) || fNode.getName().contains("$")) continue;
             // _result = HashCodeHelper.updateHash(_result, field)
             final Expression fieldExpr = new VariableExpression(fNode);
@@ -127,42 +135,69 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
         return body;
     }
 
-    public static void createEquals(ClassNode cNode, boolean includeFields, boolean callSuper, List<String> excludes) {
+    private static void createCanEqual(ClassNode cNode) {
+        boolean hasExistingCanEqual = hasDeclaredMethod(cNode, "canEqual", 1);
+        if (hasExistingCanEqual && hasDeclaredMethod(cNode, "_canEqual", 1)) return;
+
+        final BlockStatement body = new BlockStatement();
+        VariableExpression other = new VariableExpression("other");
+        body.addStatement(new ReturnStatement(isInstanceof(cNode, other)));
+        Parameter[] params = {new Parameter(OBJECT_TYPE, other.getName())};
+        cNode.addMethod(new MethodNode(hasExistingCanEqual ? "_canEqual" : "canEqual", hasExistingCanEqual ? ACC_PRIVATE : ACC_PUBLIC,
+                ClassHelper.boolean_TYPE, params, ClassNode.EMPTY_ARRAY, body));
+
+    }
+
+    public static void createEquals(ClassNode cNode, boolean includeFields, boolean callSuper, boolean useCanEqual, List<String> excludes) {
+        if (useCanEqual) createCanEqual(cNode);
         // make a public method if none exists otherwise try a private method with leading underscore
         boolean hasExistingEquals = hasDeclaredMethod(cNode, "equals", 1);
         if (hasExistingEquals && hasDeclaredMethod(cNode, "_equals", 1)) return;
 
         final BlockStatement body = new BlockStatement();
-        Expression other = new VariableExpression("other");
+        VariableExpression other = new VariableExpression("other");
 
         // some short circuit cases for efficiency
         body.addStatement(returnFalseIfNull(other));
-        body.addStatement(returnFalseIfWrongType(cNode, other));
         body.addStatement(returnTrueIfIdentical(VariableExpression.THIS_EXPRESSION, other));
 
-        body.addStatement(new ExpressionStatement(new BinaryExpression(other, ASSIGN, new CastExpression(cNode, other))));
-
-        List<FieldNode> list = getInstancePropertyFields(cNode);
-        if (includeFields) {
-            list.addAll(getInstanceNonPropertyFields(cNode));
+        if (useCanEqual) {
+            body.addStatement(returnFalseIfNotInstanceof(cNode, other));
+            body.addStatement(new IfStatement(
+                    new BooleanExpression(new MethodCallExpression(other, "canEqual", VariableExpression.THIS_EXPRESSION)),
+                    new EmptyStatement(),
+                    new ReturnStatement(ConstantExpression.FALSE)
+            ));
+        } else {
+            body.addStatement(returnFalseIfWrongType(cNode, other));
         }
-        for (FieldNode fNode : list) {
+//        body.addStatement(new ExpressionStatement(new BinaryExpression(other, ASSIGN, new CastExpression(cNode, other))));
+
+        List<PropertyNode> pList = getInstanceProperties(cNode);
+        for (PropertyNode pNode : pList) {
+            if (excludes.contains(pNode.getName()) || pNode.getName().contains("$")) continue;
+            body.addStatement(returnFalseIfPropertyNotEqual(pNode, other));
+        }
+        List<FieldNode> fList = new ArrayList<FieldNode>();
+        if (includeFields) {
+            fList.addAll(getInstanceNonPropertyFields(cNode));
+        }
+        for (FieldNode fNode : fList) {
             if (excludes.contains(fNode.getName()) || fNode.getName().contains("$")) continue;
-            body.addStatement(returnFalseIfPropertyNotEqual(fNode, other));
+            body.addStatement(returnFalseIfFieldNotEqual(fNode, other));
         }
         if (callSuper) {
-            Statement result = new IfStatement(
+            body.addStatement(new IfStatement(
                     isTrueExpr(new MethodCallExpression(VariableExpression.SUPER_EXPRESSION, "equals", other)),
                     new EmptyStatement(),
                     new ReturnStatement(ConstantExpression.FALSE)
-            );
-            body.addStatement(result);
+            ));
         }
 
         // default
         body.addStatement(new ReturnStatement(ConstantExpression.TRUE));
 
-        Parameter[] params = {new Parameter(OBJECT_TYPE, "other")};
+        Parameter[] params = {new Parameter(OBJECT_TYPE, other.getName())};
         cNode.addMethod(new MethodNode(hasExistingEquals ? "_equals" : "equals", hasExistingEquals ? ACC_PRIVATE : ACC_PUBLIC,
                 ClassHelper.boolean_TYPE, params, ClassNode.EMPTY_ARRAY, body));
     }
