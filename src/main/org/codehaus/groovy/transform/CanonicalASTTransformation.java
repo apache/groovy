@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 the original author or authors.
+ * Copyright 2008-2011 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -60,7 +60,7 @@ public class CanonicalASTTransformation extends AbstractASTTransformation {
             }
             if (!hasAnnotation(cNode, EqualsAndHashCodeASTTransformation.MY_TYPE)) {
                 createHashCode(cNode, false, false, false, new ArrayList<String>());
-                createEquals(cNode, false, false, new ArrayList<String>());
+                createEquals(cNode, false, false, true, new ArrayList<String>());
             }
             if (!hasAnnotation(cNode, ToStringASTTransformation.MY_TYPE)) {
                 toStringInit(cNode, ConstantExpression.FALSE);

@@ -576,9 +576,9 @@ public class AstNodeToScriptAdapterTest extends GroovyTestCase {
         // assert hashCode
         assert result.contains('public int hashCode()')
         assert result.contains('java.lang.Object _result = org.codehaus.groovy.util.HashCodeHelper.initHash()')
-        assert result.contains('_result = org.codehaus.groovy.util.HashCodeHelper.updateHash( _result , title )')
-        assert result.contains('_result = org.codehaus.groovy.util.HashCodeHelper.updateHash( _result , when )')
-        assert result.contains('_result = org.codehaus.groovy.util.HashCodeHelper.updateHash( _result , color )')
+        assert result.contains('_result = org.codehaus.groovy.util.HashCodeHelper.updateHash( _result , this.getTitle())')
+        assert result.contains('_result = org.codehaus.groovy.util.HashCodeHelper.updateHash( _result , this.getWhen())')
+        assert result.contains('_result = org.codehaus.groovy.util.HashCodeHelper.updateHash( _result , this.getColor())')
 
         // assert clones
         assert result.contains('return when.clone()')

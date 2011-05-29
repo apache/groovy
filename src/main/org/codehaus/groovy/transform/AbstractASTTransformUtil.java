@@ -30,6 +30,7 @@ import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.IfStatement;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
+import org.codehaus.groovy.classgen.Verifier;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.Types;
 import org.objectweb.asm.Opcodes;
@@ -194,9 +195,10 @@ public abstract class AbstractASTTransformUtil implements Opcodes {
     }
 
     private static BooleanExpression notEqualsPropertyExpr(PropertyNode pNode, Expression other) {
-        final Expression fieldExpr = new VariableExpression(pNode);
-        final Expression otherExpr = new PropertyExpression(other, pNode.getName());
-        return new BooleanExpression(new BinaryExpression(fieldExpr, COMPARE_NOT_EQUAL, otherExpr));
+        String getterName = "get" + Verifier.capitalize(pNode.getName());
+        Expression selfGetter = new MethodCallExpression(VariableExpression.THIS_EXPRESSION, getterName, MethodCallExpression.NO_ARGUMENTS);
+        Expression otherGetter = new MethodCallExpression(other, getterName, MethodCallExpression.NO_ARGUMENTS);
+        return new BooleanExpression(new BinaryExpression(selfGetter, COMPARE_NOT_EQUAL, otherGetter));
     }
 
     private static BooleanExpression identicalExpr(Expression self, Expression other) {
@@ -208,7 +210,7 @@ public abstract class AbstractASTTransformUtil implements Opcodes {
                 new MethodCallExpression(other, "getClass", MethodCallExpression.NO_ARGUMENTS)));
     }
 
-    private static BooleanExpression isInstanceof(ClassNode cNode, Expression other) {
+    public static BooleanExpression isInstanceof(ClassNode cNode, Expression other) {
         return new BooleanExpression(new BinaryExpression(other, INSTANCEOF, new ClassExpression(cNode)));
     }
 
