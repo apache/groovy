@@ -75,7 +75,7 @@ import java.lang.annotation.Target;
  *     return other instanceof IntPair
  * }
  * </pre>
- * If no further options are specified, this is the default style for non-final {@code @Canonical} and
+ * If no further options are specified, this is the default style for {@code @Canonical} and
  * {@code @EqualsAndHashCode} annotated classes. The advantage of this style is that it allows inheritance
  * to be used in limited cases where its purpose is for overriding implementation details rather than
  * creating a derived type with different behavior. This is useful when using JPA Proxies for example or
@@ -131,13 +131,19 @@ import java.lang.annotation.Target;
  *     return true
  * }
  * </pre>
- * This style is appropriate for final classes where inheritance is not
- * allowed (e.g. for {@code @Immutable} classes) and hence there is no need
- * to introduce the <code>canEqual()</code> method.
+ * This style is appropriate for final classes (where inheritance is not
+ * allowed) which have only <code>java.lang.Object</code> as a super class.
+ * Most {@code @Immutable} classes fall in to this category. For such classes,
+ * there is no need to introduce the <code>canEqual()</code> method.
  * <p/>
- * Note that the two implementations supported adhere to the equals
- * contract. You can provide your own equivalence relationships if you need,
- * e.g. for comparing the <code>IntPair</code> and <code>IntTriple</code>
+ * Note that if you explicitly set <code>useCanEqual=false</code> for child nodes
+ * in a class hierarchy but have it <code>true</code> for parent nodes and you
+ * also have <code>callSuper=true</code> in the child, then your generated
+ * equals methods will not strictly follow the equals contract.
+ * <p/>
+ * Note that when used in the recommended fashion, the two implementations supported adhere
+ * to the equals contract. You can provide your own equivalence relationships if you need,
+ * e.g. for comparing instances of the <code>IntPair</code> and <code>IntTriple</code> classes
  * discussed earlier, you could provide the following method in <code>IntPair</code>:
  * <pre>
  * boolean hasEqualXY(other) { other.x == getX() && other.y == getY() }
