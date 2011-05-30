@@ -46,6 +46,7 @@ public class TimedInterruptibleASTTransformation implements ASTTransformation {
   private static final ClassNode MY_TYPE = ClassHelper.make(TimedInterrupt.class)
   private static final String CHECK_METHOD_START_MEMBER = 'checkOnMethodStart'
   private static final String PROPAGATE_TO_COMPILE_UNIT = 'applyToAllClasses'
+  private static final String THROWN_EXCEPTION_TYPE = "thrown"
 
   public void visit(ASTNode[] nodes, SourceUnit source) {
     if (nodes.length != 2 || !(nodes[0] instanceof AnnotationNode) || !(nodes[1] instanceof AnnotatedNode)) {
@@ -62,6 +63,8 @@ public class TimedInterruptibleASTTransformation implements ASTTransformation {
     def checkOnMethodStart = getConstantAnnotationParameter(node, CHECK_METHOD_START_MEMBER, Boolean.TYPE, true)
     def applyToAllClasses = getConstantAnnotationParameter(node, PROPAGATE_TO_COMPILE_UNIT, Boolean.TYPE, true)
     def maximum = getConstantAnnotationParameter(node, 'value', Long.TYPE, Long.MAX_VALUE)
+    def thrown = AbstractInterruptibleASTTransformation.getClassAnnotationParameter(node, THROWN_EXCEPTION_TYPE, ClassHelper.make(TimeoutException))
+
     Expression unit = node.getMember('unit') ?: new PropertyExpression(new ClassExpression(ClassHelper.make(TimeUnit)), "SECONDS")
 
     // should be limited to the current SourceUnit or propagated to the whole CompilationUnit
@@ -69,20 +72,20 @@ public class TimedInterruptibleASTTransformation implements ASTTransformation {
       // guard every class and method defined in this script
       source.getAST()?.classes?.each { ClassNode it ->
         // DO NOT inline this code. It has state that must not persist between calls
-        def visitor = new TimedInterruptionVisitor(source, checkOnMethodStart, applyToAllClasses, maximum, unit)
+        def visitor = new TimedInterruptionVisitor(source, checkOnMethodStart, applyToAllClasses, maximum, unit, thrown)
         visitor.visitClass(it)
       }
     } else if (annotatedNode instanceof ClassNode) {
       // only guard this particular class
       // DO NOT inline this code. It has state that must not persist between calls
-      def visitor = new TimedInterruptionVisitor(source, checkOnMethodStart, applyToAllClasses, maximum, unit)
+      def visitor = new TimedInterruptionVisitor(source, checkOnMethodStart, applyToAllClasses, maximum, unit, thrown)
       visitor.visitClass annotatedNode
     } else {
       // only guard the script class
       source.getAST()?.classes?.each { ClassNode it ->
         if (it.isScript()) {
           // DO NOT inline this code. It has state that must not persist between calls
-          def visitor = new TimedInterruptionVisitor(source, checkOnMethodStart, applyToAllClasses, maximum, unit)
+          def visitor = new TimedInterruptionVisitor(source, checkOnMethodStart, applyToAllClasses, maximum, unit, thrown)
           visitor.visitClass(it)
         }
       }
@@ -118,13 +121,15 @@ public class TimedInterruptibleASTTransformation implements ASTTransformation {
     private FieldNode startTimeField = null
     private final Expression unit
     private final maximum
+    private final ClassNode thrown
 
-    TimedInterruptionVisitor(source, checkOnMethodStart, applyToAllClasses, maximum, unit) {
+    TimedInterruptionVisitor(source, checkOnMethodStart, applyToAllClasses, maximum, unit, thrown) {
       this.source = source
       this.checkOnMethodStart = checkOnMethodStart
       this.applyToAllClasses = applyToAllClasses
       this.unit = unit
       this.maximum = maximum
+      this.thrown = thrown
     }
 
     /**
@@ -144,7 +149,7 @@ public class TimedInterruptibleASTTransformation implements ASTTransformation {
                       )
               ),
               new ThrowStatement(
-                      new ConstructorCallExpression(ClassHelper.make(TimeoutException),
+                      new ConstructorCallExpression(thrown,
                               new ArgumentListExpression(
                                       new BinaryExpression(
                                               new ConstantExpression(

@@ -39,6 +39,25 @@ class ConditionalInterruptTest extends GroovyTestCase {
         assert instance.visited
     }
 
+    public void testMethodIsVisited_AndCustomExceptionMessage() {
+
+        def c = new GroovyClassLoader(this.class.classLoader).parseClass('''
+            import groovy.transform.ConditionalInterrupt
+            @ConditionalInterrupt(thrown=groovy.transform.CustomException, value={ visited = true })
+            class MyClass {
+              boolean visited = false
+              def myMethod() { }
+            }
+        ''')
+
+        def instance = c.newInstance()
+        def message = shouldFail(CustomException) {
+            instance.myMethod()
+        }
+        assert message == 'Execution interrupted. The following condition failed: { visited = true }'
+        assert instance.visited
+    }
+
 
     public void testStaticMethodIsNotVisited() {
 
@@ -162,4 +181,3 @@ new MyOtherClass().myOtherMethod()
         }
     }
 }
-
