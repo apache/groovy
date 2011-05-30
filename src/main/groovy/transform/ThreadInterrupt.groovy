@@ -127,4 +127,6 @@ public @interface ThreadInterrupt {
      * @return
      */
     boolean checkOnMethodStart() default true;
+
+    Class thrown() default InterruptedException;
 }

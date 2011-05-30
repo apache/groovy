@@ -39,9 +39,11 @@ public abstract class AbstractInterruptibleASTTransformation extends ClassCodeVi
 
     protected static final String CHECK_METHOD_START_MEMBER = "checkOnMethodStart";
     protected static final String PROPAGATE_TO_COMPILE_UNIT = "applyToAllClasses";
+    protected static final String THROWN_EXCEPTION_TYPE = "thrown";
     protected SourceUnit source;
     protected boolean checkOnMethodStart;
     protected boolean applyToAllClasses;
+    protected ClassNode thrownExceptionType;
 
     protected SourceUnit getSourceUnit() {
         return source;
@@ -62,6 +64,7 @@ public abstract class AbstractInterruptibleASTTransformation extends ClassCodeVi
     protected void setupTransform(AnnotationNode node) {
         checkOnMethodStart = getBooleanAnnotationParameter(node, CHECK_METHOD_START_MEMBER, true);
         applyToAllClasses = getBooleanAnnotationParameter(node, PROPAGATE_TO_COMPILE_UNIT, true);
+        thrownExceptionType = getClassAnnotationParameter(node, THROWN_EXCEPTION_TYPE, ClassHelper.make(InterruptedException.class));
     }
 
     public void visit(ASTNode[] nodes, SourceUnit source) {
@@ -122,6 +125,22 @@ public abstract class AbstractInterruptibleASTTransformation extends ClassCodeVi
         return defaultValue;
     }
 
+    protected static ClassNode getClassAnnotationParameter(AnnotationNode node, String parameterName, ClassNode defaultValue) {
+        Expression member = node.getMember(parameterName);
+        if (member != null) {
+            if (member instanceof ClassExpression) {
+                try {
+                    return member.getType();
+                } catch (Exception e) {
+                    internalError("Expecting class value for " + parameterName + " annotation parameter. Found " + member + "member");
+                }
+            } else {
+                internalError("Expecting class value for " + parameterName + " annotation parameter. Found " + member + "member");
+            }
+        }
+        return defaultValue;
+    }
+
     protected static void internalError(String message) {
         throw new GroovyBugError("Internal error: " + message);
     }
@@ -135,7 +154,7 @@ public abstract class AbstractInterruptibleASTTransformation extends ClassCodeVi
                         createCondition()
                 ),
                 new ThrowStatement(
-                        new ConstructorCallExpression(ClassHelper.make(InterruptedException.class),
+                        new ConstructorCallExpression(thrownExceptionType,
                                 new ArgumentListExpression(new ConstantExpression(getErrorMessage())))
                 ),
                 new EmptyStatement()

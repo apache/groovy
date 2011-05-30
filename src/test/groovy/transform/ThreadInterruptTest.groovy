@@ -194,6 +194,26 @@ class ThreadInterruptTest extends GroovyTestCase {
         }
     }
 
+    public void testInterrupt_ClosureWithCustomExceptionType() {
+
+        def c = new GroovyClassLoader(this.class.classLoader).parseClass("""
+            @groovy.transform.ThreadInterrupt(thrown=groovy.transform.CustomException)
+            class MyClass {
+              def myMethod() {
+                  99.times {
+                    // do something
+                  }
+              }
+            }
+        """)
+
+        def mocker = new StubFor(Thread.class)
+        mocker.demand.currentThread(1..Integer.MAX_VALUE) { new InterruptingThread() }
+        mocker.use {
+            shouldFail(CustomException) { c.newInstance().myMethod() }
+        }
+    }
+
     public void testEntireCompileUnitIsAffected() {
 
         def script = '''
@@ -335,4 +355,11 @@ class CountingThread extends Thread {
         false
     }
 
+}
+
+class CustomException extends Exception {
+
+    public CustomException(final String message) {
+        super(message)
+    }
 }

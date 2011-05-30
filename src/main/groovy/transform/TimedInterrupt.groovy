@@ -22,6 +22,7 @@ import java.lang.annotation.RetentionPolicy
 import java.lang.annotation.Target
 import org.codehaus.groovy.transform.GroovyASTTransformationClass
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeoutException
 
 /**
  * Allows safe timed executions of scripts by adding elapsed time checks on loops (for, while, do), the first statement
@@ -116,5 +117,11 @@ public @interface TimedInterrupt {
      * @return
      */
     TimeUnit unit() default TimeUnit.SECONDS;
+
+    /**
+     * The type of exception thrown when timeout is reached.
+     * @return
+     */
+    Class thrown() default TimeoutException;
 }
 

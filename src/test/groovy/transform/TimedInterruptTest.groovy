@@ -48,6 +48,44 @@ class TimedInterruptTest extends GroovyTestCase {
         }
     }
 
+    public void testClassMethodIsVisitedAndCustomExceptionThrown() {
+
+        def c = new GroovyClassLoader(this.class.classLoader).parseClass('''
+            import groovy.transform.TimedInterrupt
+            import java.util.concurrent.TimeUnit
+
+            @TimedInterrupt(thrown=groovy.transform.CustomException,value = 1L)
+            class MyClass {
+              def myMethod() { }
+            }
+        ''')
+
+        def system = new StubFor(System)
+
+        // start time initialized to the Long of the Beast
+        system.demand.nanoTime() { 666L }
+
+        def instance
+        system.use {
+            instance = c.newInstance()
+        }
+        assert instance.TimedInterrupt$expireTime == 1000000666L //one second in future
+
+        system.demand.nanoTime() { 1000000666L }
+        system.use {
+            instance.myMethod()
+        }
+
+        // one nanosecond later, but still in the neighborhood of the beast
+        system.demand.nanoTime() { 1000000667L }
+        system.use {
+            def e = shouldFail(CustomException) {
+                instance.myMethod()
+            }
+            assert e.contains('Execution timed out after 1 units')
+        }
+    }
+
 
     public void testScriptMethodIsVisited() {
 

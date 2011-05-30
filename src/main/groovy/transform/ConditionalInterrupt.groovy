@@ -134,6 +134,11 @@ public @interface ConditionalInterrupt {
      */
     boolean checkOnMethodStart() default true;
 
+    /**
+     * Sets the type of exception which is thrown.
+     * @return
+     */
+    Class thrown() default InterruptedException;
 
     /**
      * Condition should be set as a closure expression. 
