@@ -49,7 +49,7 @@ dependencies {
         exclude(group: 'junit', module: 'junit')
     }
     compile "org.fusesource.jansi:jansi:1.2.1"
-    compile("org.apache.ivy:ivy:2.2.0-rc1") {
+    compile("org.apache.ivy:ivy:2.2.0") {
         transitive = false
     }
     runtime "org.apache.ant:ant-junit:1.8.2"
@@ -69,8 +69,7 @@ dependencies {
     testCompile "org.slf4j:jcl-over-slf4j:1.6.0"
     testCompile "com.thoughtworks.qdox:qdox:1.12"
     testCompile "org.apache.ant:ant-testutil:1.8.2"
-    runtime "org.codehaus.gpars:gpars:0.11"
-    runtime "org.coconut.forkjoin:jsr166y:070108"
+    runtime "org.codehaus.gpars:gpars:0.12"
 
     // todo this was provided
     compile "org.livetribe:livetribe-jsr223:2.0.6"

@@ -777,14 +777,7 @@
         <dependency>
             <groupId>org.codehaus.gpars</groupId>
             <artifactId>gpars</artifactId>
-            <version>0.11</version>
-            <scope>runtime</scope>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>org.coconut.forkjoin</groupId>
-            <artifactId>jsr166y</artifactId>
-            <version>070108</version>
+            <version>0.12</version>
             <scope>runtime</scope>
             <optional>true</optional>
         </dependency>
@@ -854,14 +847,6 @@
             <version>1.8.2</version>
             <scope>test</scope>
         </dependency>
-<!--
-        <dependency>
-            <groupId>commons-logging</groupId>
-            <artifactId>commons-logging</artifactId>
-            <version>1.1.1</version>
-            <scope>test</scope>
-        </dependency>
--->
     </dependencies>
     
     <!--
