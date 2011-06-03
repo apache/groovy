@@ -48,7 +48,7 @@ dependencies {
     compile("jline:jline:0.9.94") {
         exclude(group: 'junit', module: 'junit')
     }
-    compile "org.fusesource.jansi:jansi:1.2.1"
+    compile "org.fusesource.jansi:jansi:1.4"
     compile("org.apache.ivy:ivy:2.2.0") {
         transitive = false
     }
