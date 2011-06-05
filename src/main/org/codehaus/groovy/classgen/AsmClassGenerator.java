@@ -162,7 +162,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 if (owner instanceof InnerClassNode) {
                     owner = owner.getOuterClass();
                 }
-                String outerClassName = owner.getName();
+                String outerClassName = classNode.getName();
                 String name = outerClassName + "$" + context.getNextInnerClassIdx();
                 controller.setInterfaceClassLoadingClass(
                         new InterfaceHelperClassNode (
