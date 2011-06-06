@@ -668,6 +668,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         ClassNode enumClass = EnumHelper.makeEnumNode(enumName, modifiers, interfaces, classNode);
         enumClass.setSyntheticPublic(syntheticPublic);
         ClassNode oldNode = classNode;
+        enumClass.addAnnotations(annotations);
         classNode = enumClass;
         assertNodeType(OBJBLOCK, node);
         objectBlock(node);

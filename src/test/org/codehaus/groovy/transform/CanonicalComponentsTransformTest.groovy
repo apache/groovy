@@ -178,6 +178,11 @@ class CanonicalComponentsTransformTest extends GroovyShellTestCase {
         assert 'canEqual' in p1.class.methods*.name
         assert !('canEqual' in p2.class.methods*.name)
     }
+
+    // GROOVY-4570
+    void testToStringForEnums() {
+        assert Color.PURPLE.toString() == 'org.codehaus.groovy.transform.Color(r:255, g:0, b:255)'
+    }
 }
 
 @TupleConstructor
@@ -243,4 +248,12 @@ class Point { int x, y }
 @EqualsAndHashCode(useCanEqual=false)
 class IntPairNoCanEqual {
     int x, y
+}
+
+// GROOVY-4570
+@ToString(includeNames=true)
+enum Color {
+  BLACK(0,0,0), WHITE(255,255,255), PURPLE(255,0,255)
+  int r, g, b
+  Color(int r, g, b) { this.r = r; this.g = g; this.b = b }
 }
