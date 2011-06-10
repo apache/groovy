@@ -41,45 +41,52 @@ import java.util.Map;
  * Servlet-specific binding extension to lazy load the writer or the output
  * stream from the response.
  * <p/>
- * <p>
  * <h3>Eager variables</h3>
  * <ul>
- * <li><tt>"request"</tt> : the HttpServletRequest object</li>
- * <li><tt>"response"</tt> : the HttpServletRequest object</li>
- * <li><tt>"context"</tt> : the ServletContext object</li>
+ * <li><tt>"request"</tt> : the <code>HttpServletRequest</code> object</li>
+ * <li><tt>"response"</tt> : the <code>HttpServletRequest</code> object</li>
+ * <li><tt>"context"</tt> : the <code>ServletContext</code> object</li>
  * <li><tt>"application"</tt> : same as context</li>
  * <li><tt>"session"</tt> : shorthand for <code>request.getSession(<tt>false</tt>)</code> - can be null!</li>
  * <li><tt>"params"</tt> : map of all form parameters - can be empty</li>
  * <li><tt>"headers"</tt> : map of all <tt>request</tt> header fields</li>
  * </ul>
  * <p/>
- * <p>
  * <h3>Lazy variables</h3>
  * <ul>
- * <li><tt>"out"</tt> : response.getWriter()</li>
- * <li><tt>"sout"</tt> : response.getOutputStream()</li>
- * <li><tt>"html"</tt> : new MarkupBuilder(response.getWriter())</li>
+ * <li><tt>"out"</tt> : <code>response.getWriter()</code></li>
+ * <li><tt>"sout"</tt> : <code>response.getOutputStream()</code></li>
+ * <li><tt>"html"</tt> : <code>new MarkupBuilder(response.getWriter())</code> - <code>expandEmptyElements</code> flag is set to true</li>
  * </ul>
- * As per specification a call to response.getWriter() should not be done if
- * a call to response.getOutputStream() have been done already and the other way
- * around. Lazy bound variables can be requested without side effects, since the 
- * writer and stream is wrapped. That means response.getWriter() is not directly 
- * called if 'out' or 'html' is requested. Only if a write method call is done
- * using the variable, a write method call on 'sout' will cause a IllegalStateException.
- * If a write method call on 'sout' has been done already any further write method call
- * on 'out' or 'html' will cause a IllegalStateException. 
- * </p><p>
- * If response.getWriter() is called directly (without using out), then a write method 
- * call on 'sout' will not cause the IllegalStateException, but it will still be invalid. 
- * It is the responsibility of the user of this class, to not to mix these different usage
- * styles. The same applies to calling response.getOoutputStream() and using 'out' or 'html'.
+ * As per the Servlet specification, a call to <code>response.getWriter()</code> should not be
+ * done if a call to <code>response.getOutputStream()</code> has already occurred or the other way
+ * around. You may wonder then how the above lazy variables can possibly be provided - since
+ * setting them up would involve calling both of the above methods. The trick is catered for
+ * behind the scenes using lazy variables. Lazy bound variables can be requested without side
+ * effects; under the covers the writer and stream are wrapped. That means
+ * <code>response.getWriter()</code> is never directly called until some output is done using
+ * 'out' or 'html'. Once a write method call is done using either of these variable, then an attempt
+ * to write using 'sout' will cause an <code>IllegalStateException</code>. Similarly, if a write method
+ * call on 'sout' has been done already, then any further write method call on 'out' or 'html' will cause an
+ * <code>IllegalStateException</code>.
+ * <p/>
+ * <h3>Reserved internal variable names (see "Methods" below)</h3>
+ * <ul>
+ * <li><tt>"forward"</tt></li>
+ * <li><tt>"include"</tt></li>
+ * <li><tt>"redirect"</tt></li>
+ * </ul>
  * </p>
- * <p>
+ * If <code>response.getWriter()</code> is called directly (without using out), then a write method
+ * call on 'sout' will not cause the <code>IllegalStateException</code>, but it will still be invalid.
+ * It is the responsibility of the user of this class, to not to mix these different usage
+ * styles. The same applies to calling <code>response.getOutputStream()</code> and using 'out' or 'html'.
+ * </p>
  * <h3>Methods</h3>
  * <ul>
- * <li><tt>"forward(String path)"</tt> : request.getRequestDispatcher(path).forward(request, response);</li>
- * <li><tt>"include(String path)"</tt> : request.getRequestDispatcher(path).include(request, response);</li>
- * <li><tt>"redirect(String location)"</tt> : response.sendRedirect(location);</li>
+ * <li><tt>"forward(String path)"</tt> : <code>request.getRequestDispatcher(path).forward(request, response)</code></li>
+ * <li><tt>"include(String path)"</tt> : <code>request.getRequestDispatcher(path).include(request, response)</code></li>
+ * <li><tt>"redirect(String location)"</tt> : <code>response.sendRedirect(location)</code></li>
  * </ul>
  * </p>
  *
@@ -225,18 +232,7 @@ public class ServletBinding extends Binding {
          *
          * If there are multiple, they are passed as an array.
          */
-        Map params = new LinkedHashMap();
-        for (Enumeration names = request.getParameterNames(); names.hasMoreElements();) {
-            String name = (String) names.nextElement();
-            if (!super.getVariables().containsKey(name)) {
-                String[] values = request.getParameterValues(name);
-                if (values.length == 1) {
-                    params.put(name, values[0]);
-                } else {
-                    params.put(name, values);
-                }
-            }
-        }
+        Map params = collectParams(request);
         super.setVariable("params", params);
 
         /*
@@ -249,6 +245,23 @@ public class ServletBinding extends Binding {
             headers.put(headerName, headerValue);
         }
         super.setVariable("headers", headers);
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map collectParams(HttpServletRequest request) {
+        Map params = new LinkedHashMap();
+        for (Enumeration names = request.getParameterNames(); names.hasMoreElements();) {
+            String name = (String) names.nextElement();
+            if (!super.getVariables().containsKey(name)) {
+                String[] values = request.getParameterValues(name);
+                if (values.length == 1) {
+                    params.put(name, values[0]);
+                } else {
+                    params.put(name, values);
+                }
+            }
+        }
+        return params;
     }
 
     @Override
@@ -284,8 +297,6 @@ public class ServletBinding extends Binding {
         if (initialized) return;
         initialized = true;
         HttpServletResponse response = (HttpServletResponse) super.getVariable("response");
-        ServletContext context = (ServletContext) super.getVariable("context");
-        super.setVariable("context", context);
         ServletOutput output = new ServletOutput(response);
         super.setVariable("out", output.getWriter());
         super.setVariable("sout", output.getOutputStream());
