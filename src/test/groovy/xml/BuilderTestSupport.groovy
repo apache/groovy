@@ -71,6 +71,19 @@ abstract class BuilderTestSupport extends GroovyTestCase {
         assertExpectedXml m, { it.useDoubleQuotes = true }, '<root><one foo="bar(\'baz\')">foo("baz")</one><two foo="bar(&quot;baz&quot;)">foo(\'baz\')</two></root>'
     }
 
+    void testExpandEmptyElements() {
+        def m = {
+            html {
+                head()
+                body {
+                    textarea(left: 40)
+                    textarea('')
+                }
+            }
+        }
+        assertExpectedXml m, { it.useDoubleQuotes = true }, '''<html><head/><body><textarea left='40'/><textarea></textarea></body></html>'''
+    }
+
     void testTree() {
         def m = {
             root2(a: 5, b: 7) {

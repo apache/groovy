@@ -51,6 +51,7 @@ import groovy.xml.streamingmarkupsupport.BaseMarkupBuilder
  */
 class StreamingMarkupBuilder extends AbstractStreamingBuilder {
     boolean useDoubleQuotes = false
+    boolean expandEmptyElements = false
     def getQt() { useDoubleQuotes ? '"' : "'" }
     def pendingStack = []
     
@@ -162,7 +163,7 @@ class StreamingMarkupBuilder extends AbstractStreamingBuilder {
             out << qt
         }
 
-        if (body == null) {
+        if (body == null && !expandEmptyElements) {
             out << "/>"
         } else {
             out << ">"

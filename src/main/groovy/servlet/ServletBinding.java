@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2008 the original author or authors.
+ * Copyright 2003-2011 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -285,10 +285,13 @@ public class ServletBinding extends Binding {
         initialized = true;
         HttpServletResponse response = (HttpServletResponse) super.getVariable("response");
         ServletContext context = (ServletContext) super.getVariable("context");
+        super.setVariable("context", context);
         ServletOutput output = new ServletOutput(response);
         super.setVariable("out", output.getWriter());
         super.setVariable("sout", output.getOutputStream());
-        super.setVariable("html", new MarkupBuilder(output.getWriter()));
+        MarkupBuilder builder = new MarkupBuilder(output.getWriter());
+        builder.setExpandEmptyElements(true);
+        super.setVariable("html", builder);
         
         // bind forward method
         MethodClosure c = new MethodClosure(this, "forward");
