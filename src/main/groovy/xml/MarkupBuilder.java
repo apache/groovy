@@ -63,6 +63,7 @@ public class MarkupBuilder extends BuilderSupport {
     private boolean useDoubleQuotes = false;
     private boolean omitNullAttributes = false;
     private boolean omitEmptyAttributes = false;
+    private boolean expandEmptyElements = false;
 
     /**
      * Prints markup to System.out
@@ -167,6 +168,28 @@ public class MarkupBuilder extends BuilderSupport {
      */
     public void setOmitEmptyAttributes(boolean omitEmptyAttributes) {
         this.omitEmptyAttributes = omitEmptyAttributes;
+    }
+
+    /**
+     * Whether empty elements are expanded from &lt;tagName/&gt; to &lt;tagName&gt;&lt;/tagName&gt;.
+     *
+     * @return <code>true</code>, if empty elements will be represented by an opening tag
+     *                            followed immediately by a closing tag.
+     */
+    public boolean isExpandEmptyElements() {
+        return expandEmptyElements;
+    }
+
+    /**
+     * Whether empty elements are expanded from <tagName/> to <tagName></tagName>.
+     *
+     * @param expandEmptyElements if <code>true</code>, empty
+     *                            elements will be represented by an opening tag
+     *                            followed immediately by a closing tag.
+     *                            Defaults to <code>false</code>.
+     */
+    public void setExpandEmptyElements(boolean expandEmptyElements) {
+        this.expandEmptyElements = expandEmptyElements;
     }
 
     protected IndentPrinter getPrinter() {
@@ -457,7 +480,13 @@ public class MarkupBuilder extends BuilderSupport {
                         break;
                     case 3:
                         if (nodeIsEmpty) {
-                            out.print(" />");
+                            if (expandEmptyElements) {
+                                out.print("></");
+                                print(name);
+                                out.print(">");
+                            } else {
+                                out.print(" />");
+                            }
                         }
                         break;
                 }
