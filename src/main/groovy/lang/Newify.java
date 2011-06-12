@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 the original author or authors.
+ * Copyright 2008-2011 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ import java.lang.annotation.Target;
  * </pre>
  * or this ("Ruby-style"):
  * <pre>
- * {@code @Newify()} class MyTreeProcessor {
+ * {@code @Newify} class MyTreeProcessor {
  *     def myTree = Tree.new(Tree.new(Leaf.new("A"), Leaf.new("B")), Leaf.new("C"))
  *     def process() { ... }
  * }
@@ -67,7 +67,7 @@ import java.lang.annotation.Target;
  * <pre>
  * {@code @Newify(auto=false, value=Foo)}
  * class Main {
- *     {@code @Newify()} // turn auto on for field
+ *     {@code @Newify} // turn auto on for field
  *     def field1 = java.math.BigInteger.new(42)
  *     def field2, field3, field4
  *
@@ -95,7 +95,7 @@ import java.lang.annotation.Target;
  */
 @java.lang.annotation.Documented
 @Retention(RetentionPolicy.SOURCE)
-@Target({ElementType.CONSTRUCTOR, ElementType.METHOD, ElementType.TYPE, ElementType.FIELD})
+@Target({ElementType.CONSTRUCTOR, ElementType.METHOD, ElementType.TYPE, ElementType.FIELD, ElementType.LOCAL_VARIABLE})
 @GroovyASTTransformationClass("org.codehaus.groovy.transform.NewifyASTTransformation")
 public @interface Newify {
     Class[] value();
