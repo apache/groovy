@@ -128,26 +128,21 @@ public class ConditionalInterruptibleASTTransformation extends AbstractInterrupt
         def source = lineRange.collect {
             def line = source.source.getLine(it, null)
             if (line == null) {
-                addError(
-                        "Error calculating source code for expression. Trying to read line $it from ${source.source.class}",
-                        expression
-                )
-            }
-            if (it == expression.lastLineNumber) {
-                line = line.substring(0, expression.lastColumnNumber - 1)
-            }
-            if (it == expression.lineNumber) {
-                line = line.substring(expression.columnNumber - 1)
+                return "Error calculating source code for expression. Trying to read line $it from ${source.source.class}"
+            } else {
+                if (it == expression.lastLineNumber) {
+                    line = line.substring(0, expression.lastColumnNumber - 1)
+                }
+                if (it == expression.lineNumber) {
+                    line = line.substring(expression.columnNumber - 1)
+                }
             }
             return line
         }?.join('\n')?.trim()   //restoring line breaks is important b/c of lack of semicolons
 
         if (!source.startsWith('{')) {
-            addError(
-                    'Error converting ClosureExpression into source code. ' +
-                    "Closures must start with {. Found: $source",
-                    expression
-            )
+            return 'Error converting ClosureExpression into source code. ' +
+                    "Closures must start with {. Found: $source"
         }
 
         return source
