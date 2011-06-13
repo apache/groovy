@@ -6,10 +6,10 @@ package transforms.global
 * @author Hamlet D'Arcy
 */ 
 
-println 'Script compiled at: ' + getCompiledTime()
+println 'Script compiled at: ' + compiledTime
 
 class MyClass {
     
 }
 
-println 'Class compiled at: ' + MyClass.getCompiledTime()
+println 'Class compiled at: ' + MyClass.compiledTime
