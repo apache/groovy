@@ -27,6 +27,10 @@ import org.codehaus.groovy.ast.ASTNode
 import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.transform.GroovyASTTransformationClass
 import java.lang.annotation.Annotation
+import org.codehaus.groovy.ast.expr.ClosureExpression
+import org.codehaus.groovy.ast.expr.ConstantExpression
+import org.codehaus.groovy.ast.expr.ClassExpression
+import org.codehaus.groovy.ast.Parameter
 
 /**
  * This customizer allows applying an AST transformation to a source unit with
@@ -91,6 +95,19 @@ class ASTTransformationCustomizer extends CompilationCustomizer {
         this.annotationNode = null
     }
 
+    ASTTransformationCustomizer(final Map annotationParams, final Class<? extends Annotation> transformationAnnotation) {
+        super(findPhase(transformationAnnotation))
+        final Class<ASTTransformation> clazz = findASTTranformationClass(transformationAnnotation)
+        this.transformation = clazz.newInstance()
+        this.annotationNode = new AnnotationNode(ClassHelper.make(transformationAnnotation))
+        setAnnotationParameters(annotationParams)
+    }
+
+    ASTTransformationCustomizer(final Map annotationParams, final ASTTransformation transformation) {
+        this(transformation)
+        setAnnotationParameters(annotationParams)
+    }
+
 
     private static Class<ASTTransformation> findASTTranformationClass(Class<? extends Annotation> anAnnotationClass) {
         final GroovyASTTransformationClass annotation = anAnnotationClass.getAnnotation(GroovyASTTransformationClass)
@@ -118,7 +135,52 @@ class ASTTransformationCustomizer extends CompilationCustomizer {
 
         findPhase(clazz.newInstance())
     }
-    
+
+    /**
+     * Specify annotation parameters. For example, if the annotation is :
+     * <pre>@Log(value='logger')</pre>
+     * You could create an AST transformation customizer and specify the "value" parameter thanks to this method:
+     * <pre>annotationParameters = [value: 'logger']
+     *
+     * Note that you cannot specify annotation closure values directly. If the annotation you want to add takes
+     * a closure as an argument, you will have to set a {@link ClosureExpression} instead. This can be done by either
+     * creating a custom {@link ClosureExpression} from code, or using the {@link org.codehaus.groovy.ast.builder.AstBuilder}.
+     *
+     * Here is an example :
+     * <pre>
+     *        // add @Contract({distance >= 0 })
+     *        customizer = new ASTTransformationCustomizer(Contract)
+     *        final expression = new AstBuilder().buildFromCode(CompilePhase.CONVERSION) {->
+     *            distance >= 0
+     *        }.expression[0]
+     *        customizer.annotationParameters = [value: expression]</pre>
+     *
+     * @param params the annotation parameters
+     *
+     * @since 1.8.1
+     */
+    public void setAnnotationParameters(Map<String,Object> params) {
+        if (params==null || annotationNode==null) return;
+        params.each { key, value ->
+            if (!annotationNode.classNode.getMethod(key)) {
+                throw new IllegalArgumentException("${annotationNode.classNode.name} does not accept any [$key] parameter")
+            }
+            if (value instanceof Closure) {
+                throw new IllegalArgumentException("Direct usage of closure is not supported by the AST " +
+                "compilation customizer. Please use ClosureExpression instead.")
+            } else if (value instanceof ClosureExpression) {
+                // avoid NPEs due to missing source code
+                value.setLineNumber(0)
+                value.setLastLineNumber(0)
+                annotationNode.addMember(key, value)
+            } else if (value instanceof Class) {
+                annotationNode.addMember(key, new ClassExpression(ClassHelper.make(value)))
+            } else {
+                annotationNode.addMember(key, new ConstantExpression(value))
+            }
+        }
+    }
+
     @Override
     void call(SourceUnit source, GeneratorContext context, ClassNode classNode) {
         if (annotationNode!=null) {

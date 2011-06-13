@@ -25,6 +25,15 @@ import org.codehaus.groovy.control.CompilePhase
 import java.util.concurrent.atomic.AtomicBoolean
 import org.codehaus.groovy.ast.ASTNode
 import org.codehaus.groovy.control.SourceUnit
+import java.lang.annotation.Retention
+import java.lang.annotation.Target
+import org.codehaus.groovy.transform.GroovyASTTransformationClass
+import java.lang.annotation.ElementType
+import java.lang.annotation.RetentionPolicy
+import org.codehaus.groovy.ast.ClassNode
+import org.objectweb.asm.Opcodes
+import org.codehaus.groovy.ast.builder.AstBuilder
+import groovy.transform.ConditionalInterrupt
 
 /**
  * Tests the {@link ASTTransformationCustomizer}.
@@ -46,6 +55,62 @@ class ASTTransformationCustomizerTest extends GroovyTestCase {
             new MyClass()
         """)
         assert result.log.class == Logger
+    }
+
+    void testLocalTransformationWithAnnotationParameter() {
+        customizer = new ASTTransformationCustomizer(Log)
+        customizer.annotationParameters = [value: 'logger']
+        configuration.addCompilationCustomizers(customizer)
+        def shell = new GroovyShell(configuration)
+        def result = shell.evaluate("""
+            class MyClass {}
+            new MyClass()
+        """)
+        assert result.logger.class == Logger
+    }
+
+    void testLocalTransformationWithInvalidAnnotationParameter() {
+        customizer = new ASTTransformationCustomizer(Log)
+        shouldFail(IllegalArgumentException) {
+            customizer.annotationParameters = [invalid: 'logger']
+        }
+    }
+
+    void testLocalTransformationWithClosureAnnotationParameter() {
+        // add @Contract({distance = 1 })
+        customizer = new ASTTransformationCustomizer(Contract)
+        final expression = new AstBuilder().buildFromCode(CompilePhase.CONVERSION) {->
+            distance = 1
+        }.expression[0]
+        customizer.annotationParameters = [value: expression]
+        configuration.addCompilationCustomizers(customizer)
+        def shell = new GroovyShell(configuration)
+        def result = shell.evaluate("""
+            class MyClass {
+                int distance
+                MyClass() {}
+            }
+            new MyClass()
+        """)
+        assert result.distance == 1
+    }
+
+    void testLocalTransformationWithClassAnnotationParameter() {
+        // add @ConditionalInterrupt(value={ true }, thrown=SecurityException)
+        final expression = new AstBuilder().buildFromCode(CompilePhase.CONVERSION) {->
+            true
+        }.expression[0]
+        customizer = new ASTTransformationCustomizer(ConditionalInterrupt, value:expression, thrown:SecurityException)
+        configuration.addCompilationCustomizers(customizer)
+        def shell = new GroovyShell(configuration)
+        shouldFail(SecurityException) {
+            shell.evaluate("""
+                class MyClass {
+                    void doIt() { }
+                }
+                new MyClass().doIt()
+            """)
+        }
     }
 
     void testGlobalTransformation() {
@@ -82,4 +147,22 @@ class ASTTransformationCustomizerTest extends GroovyTestCase {
         }
         
     }
+
+}
+
+@Retention(RetentionPolicy.SOURCE)
+@Target([ElementType.TYPE])
+@GroovyASTTransformationClass("org.codehaus.groovy.control.customizers.ContractAnnotation")
+protected @interface Contract {
+    Class value();
+}
+
+@GroovyASTTransformation(phase=CompilePhase.CONVERSION)
+protected class ContractAnnotation implements ASTTransformation, Opcodes {
+    void visit(ASTNode[] nodes, SourceUnit source) {
+        def node = nodes[0]
+        def member = node.getMember("value")
+        ((ClassNode)nodes[1]).getDeclaredConstructors()[0].code = member.code
+    }
+
 }
