@@ -16,6 +16,7 @@
 package groovy.json
 
 import static groovy.json.JsonOutput.toJson
+import groovy.transform.Canonical
 
 /**
  * 
@@ -210,4 +211,72 @@ class JsonOutputTest extends GroovyTestCase {
                 }
             }""".stripIndent()
     }
+
+    void testSerializePogos() {
+        def city = new JsonCity("Paris", [
+                new JsonDistrict(1, [
+                        new JsonStreet("Saint-Honore", JsonStreetKind.street),
+                        new JsonStreet("de l'Opera",   JsonStreetKind.avenue)
+                ] as JsonStreet[]),
+                new JsonDistrict(2, [
+                        new JsonStreet("des Italiens",   JsonStreetKind.boulevard),
+                        new JsonStreet("Bonne Nouvelle", JsonStreetKind.boulevard)
+                ] as JsonStreet[])
+        ])
+
+        assert JsonOutput.prettyPrint(JsonOutput.toJson(city)) == '''\
+            {
+                "name": "Paris",
+                "districts": [
+                    {
+                        "streets": [
+                            {
+                                "kind": "street",
+                                "streetName": "Saint-Honore"
+                            },
+                            {
+                                "kind": "avenue",
+                                "streetName": "de l'Opera"
+                            }
+                        ],
+                        "number": 1
+                    },
+                    {
+                        "streets": [
+                            {
+                                "kind": "boulevard",
+                                "streetName": "des Italiens"
+                            },
+                            {
+                                "kind": "boulevard",
+                                "streetName": "Bonne Nouvelle"
+                            }
+                        ],
+                        "number": 2
+                    }
+                ]
+            }'''.stripIndent()
+    }
+}
+
+@Canonical
+class JsonCity {
+    String name
+    List<JsonDistrict> districts
+}
+
+@Canonical
+class JsonDistrict {
+    int number
+    JsonStreet[] streets
+}
+
+@Canonical
+class JsonStreet {
+    String streetName
+    JsonStreetKind kind
+}
+
+enum JsonStreetKind {
+    street, boulevard, avenue
 }
