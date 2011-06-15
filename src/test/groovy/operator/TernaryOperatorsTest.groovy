@@ -61,4 +61,30 @@ class TernaryOperatorsTest extends GroovyTestCase {
         def c= { false? { i } : it == i }
         assert true
     }
+
+    void testLineBreaks() {
+        def bar = 0 ? "moo" : "cow"
+        assert bar == 'cow'
+
+        bar = 0 ?
+            "moo" : "cow"
+        assert bar == 'cow'
+
+        bar = 0 ? "moo" :
+            "cow"
+        assert bar == 'cow'
+
+        bar = 0 ?
+            "moo" :
+            "cow"
+        assert bar == 'cow'
+
+        bar = 0 ? "moo"         \
+              : "cow"
+        assert bar == 'cow'
+
+        // This used to fail
+        bar = 0 ? "moo": "cow"
+        assert bar == 'cow'
+    }
 }   
