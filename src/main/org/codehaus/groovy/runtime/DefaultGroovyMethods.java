@@ -92,6 +92,7 @@ import java.util.regex.Pattern;
  * @author jeremi Joslin
  * @author Hamlet D'Arcy
  * @author Tim Yates
+ * @author Cedric Champeau
  */
 public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
@@ -12985,6 +12986,19 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Read the content of this URL and returns it as a String.
+     *
+     * @param url URL to read content from
+     * @param parameters connection parameters
+     * @return the text from that URL
+     * @throws IOException if an IOException occurs.
+     * @since 1.8.1
+     */
+    public static String getText(URL url, Map parameters) throws IOException {
+        return getText(url, parameters, CharsetToolkit.getDefaultSystemCharset().toString());
+    }
+
+    /**
      * Read the data from this URL and return it as a String.  The connection
      * stream is closed before this method returns.
      *
@@ -12997,6 +13011,23 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static String getText(URL url, String charset) throws IOException {
         BufferedReader reader = newReader(url, charset);
+        return getText(reader);
+    }
+
+    /**
+     * Read the data from this URL and return it as a String.  The connection
+     * stream is closed before this method returns.
+     *
+     * @param url     URL to read content from
+     * @param parameters connection parameters
+     * @param charset opens the stream with a specified charset
+     * @return the text from that URL
+     * @throws IOException if an IOException occurs.
+     * @see java.net.URLConnection#getInputStream()
+     * @since 1.8.1
+     */
+    public static String getText(URL url, Map parameters, String charset) throws IOException {
+        BufferedReader reader = newReader(url, parameters, charset);
         return getText(reader);
     }
 
@@ -14502,6 +14533,49 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Creates an inputstream for this URL, with the possibility to set different connection parameters using the
+     * <i>parameters map</i>:
+     * <ul>
+     *     <li>connectTimeout : the connection timeout</li>
+     *     <li>readTimeout : the read timeout</li>
+     *     <li>useCaches : set the use cache property for the URL connection</li>
+     *     <li>allowUserInteraction : set the user interaction flag for the URL connection</li>
+     *     <li>requestProperties : a map of properties to be passed to the URL connection</li>
+     * </ul>
+     * @param parameters an optional map specifying part or all of supported connection parameters
+     * @param url the url for which to create the inputstream
+     * @return an InputStream from the underlying URLConnection
+     * @throws IOException if an I/O error occurs while creating the input stream
+     * @since 1.8.1
+     */
+    private static InputStream configuredInputStream(Map parameters, URL url) throws IOException {
+        final URLConnection connection = url.openConnection();
+        if (parameters!=null) {
+            if (parameters.containsKey("connectTimeout")) {
+                connection.setConnectTimeout(asType(parameters.get("connectTimeout"), Integer.class));
+            }
+            if (parameters.containsKey("readTimeout")) {
+                connection.setReadTimeout(asType(parameters.get("readTimeout"), Integer.class));
+            }
+            if (parameters.containsKey("useCaches")) {
+                connection.setUseCaches(asType(parameters.get("useCaches"), Boolean.class));
+            }
+            if (parameters.containsKey("allowUserInteraction")) {
+                connection.setAllowUserInteraction(asType(parameters.get("allowUserInteraction"), Boolean.class));
+            }
+            if (parameters.containsKey("requestProperties")) {
+                @SuppressWarnings("unchecked")
+                Map<String,String> properties = (Map<String, String>) parameters.get("requestProperties");
+                for (Map.Entry<String, String> entry : properties.entrySet()) {
+                    connection.setRequestProperty(entry.getKey(), entry.getValue());
+                }
+            }
+
+        }
+        return connection.getInputStream();
+    }
+
+    /**
      * Creates a buffered input stream for this URL.
      *
      * @param url a URL
@@ -14511,7 +14585,21 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.5.2
      */
     public static BufferedInputStream newInputStream(URL url) throws MalformedURLException, IOException {
-        return new BufferedInputStream(url.openConnection().getInputStream());
+        return new BufferedInputStream(configuredInputStream(null, url));
+    }
+
+    /**
+     * Creates a buffered input stream for this URL.
+     *
+     * @param url a URL
+     * @param parameters connection parameters
+     * @return a BufferedInputStream for the URL
+     * @throws MalformedURLException is thrown if the URL is not well formed
+     * @throws IOException if an I/O error occurs while creating the input stream
+     * @since 1.8.1
+     */
+    public static BufferedInputStream newInputStream(URL url, Map parameters) throws MalformedURLException, IOException {
+        return new BufferedInputStream(configuredInputStream(parameters, url));
     }
 
     /**
@@ -14524,7 +14612,21 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.5.5
      */
     public static BufferedReader newReader(URL url) throws MalformedURLException, IOException {
-        return newReader(url.openConnection().getInputStream());
+        return newReader(configuredInputStream(null, url));
+    }
+
+    /**
+     * Creates a buffered reader for this URL.
+     *
+     * @param url a URL
+     * @param parameters connection parameters
+     * @return a BufferedReader for the URL
+     * @throws MalformedURLException is thrown if the URL is not well formed
+     * @throws IOException if an I/O error occurs while creating the input stream
+     * @since 1.8.1
+     */
+    public static BufferedReader newReader(URL url, Map parameters) throws MalformedURLException, IOException {
+        return newReader(configuredInputStream(parameters, url));
     }
 
     /**
@@ -14538,7 +14640,22 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.5.5
      */
     public static BufferedReader newReader(URL url, String charset) throws MalformedURLException, IOException {
-        return new BufferedReader(new InputStreamReader(url.openConnection().getInputStream(), charset));
+        return new BufferedReader(new InputStreamReader(configuredInputStream(null, url), charset));
+    }
+
+    /**
+     * Creates a buffered reader for this URL using the given encoding.
+     *
+     * @param url a URL
+     * @param parameters connection parameters
+     * @param charset opens the stream with a specified charset
+     * @return a BufferedReader for the URL
+     * @throws MalformedURLException is thrown if the URL is not well formed
+     * @throws IOException if an I/O error occurs while creating the input stream
+     * @since 1.8.1
+     */
+    public static BufferedReader newReader(URL url, Map parameters, String charset) throws MalformedURLException, IOException {
+        return new BufferedReader(new InputStreamReader(configuredInputStream(parameters, url), charset));
     }
 
     /**
