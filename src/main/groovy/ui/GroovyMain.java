@@ -37,6 +37,7 @@ import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.InvokerInvocationException;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
+import org.codehaus.groovy.runtime.StackTraceUtils;
 
 /**
  * A Command line to execute groovy.
@@ -340,18 +341,10 @@ public class GroovyMain {
                 e = iie.getCause();
             }
             System.err.println("Caught: " + e);
-            if (debug) {
-                e.printStackTrace();
-            } else {
-                StackTraceElement[] stackTrace = e.getStackTrace();
-                for (int i = 0; i < stackTrace.length; i++) {
-                    StackTraceElement element = stackTrace[i];
-                    String fileName = element.getFileName();
-                    if (fileName!=null && !fileName.endsWith(".java")) {
-                        System.err.println("\tat " + element);
-                    }
-                }
+            if (!debug) {
+                StackTraceUtils.deepSanitize(e);
             }
+            e.printStackTrace();
             return false;
         }
     }
