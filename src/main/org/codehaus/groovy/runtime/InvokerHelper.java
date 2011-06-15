@@ -496,7 +496,7 @@ public class InvokerHelper {
         return format(arguments, verbose, -1);
     }
 
-    protected static String format(Object arguments, boolean verbose, int maxSize) {
+    public static String format(Object arguments, boolean verbose, int maxSize) {
         if (arguments == null) {
             final NullObject nullObject = NullObject.getNullObject();
             return (String) nullObject.getMetaClass().invokeMethod(nullObject, "toString", EMPTY_ARGS);
@@ -505,7 +505,7 @@ public class InvokerHelper {
             if (arguments instanceof char[]) {
                 return new String((char[]) arguments);
             }
-            return format(DefaultTypeTransformation.asCollection(arguments), verbose);
+            return format(DefaultTypeTransformation.asCollection(arguments), verbose, maxSize);
         }
         if (arguments instanceof Range) {
             Range range = (Range) arguments;
