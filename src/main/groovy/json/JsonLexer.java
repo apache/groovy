@@ -73,83 +73,81 @@ public class JsonLexer implements Iterator<JsonToken> {
      */
     public JsonToken nextToken() {
         try {
-        int firstIntRead = skipWhitespace();
-        if (firstIntRead == -1) return null;
+            int firstIntRead = skipWhitespace();
+            if (firstIntRead == -1) return null;
 
-        char firstChar = (char)firstIntRead;
+            char firstChar = (char) firstIntRead;
+            JsonTokenType possibleTokenType = startingWith((char) firstIntRead);
 
-        JsonTokenType possibleTokenType = startingWith((char)firstIntRead);
+            if (possibleTokenType == null) {
+                throw new JsonException(
+                        "Lexing failed on line: " + reader.getLine() + ", column: " + reader.getColumn() +
+                                ", while reading '" + firstChar + "', " +
+                                "no possible valid JSON value or punctuation could be recognized."
+                );
+            }
 
-        if (possibleTokenType == null) {
-            throw new JsonException(
-                    "Lexing failed on line: " + reader.getLine() + ", column: " + reader.getColumn() +
-                    ", while reading '" + firstChar + "', " +
-                    "no possible valid JSON value or punctuation could be recognized."
-            );
-        }
+            reader.reset();
+            long startLine = reader.getLine();
+            long startColumn = reader.getColumn();
 
-        reader.reset();
-        long startLine = reader.getLine();
-        long startColumn = reader.getColumn();
+            JsonToken token = new JsonToken();
+            token.setStartLine(startLine);
+            token.setStartColumn(startColumn);
+            token.setEndLine(startLine);
+            token.setEndColumn(startColumn + 1);
+            token.setType(possibleTokenType);
+            token.setText("" + firstChar);
 
-        JsonToken token = new JsonToken();
-        token.setStartLine(startLine);
-        token.setStartColumn(startColumn);
-        token.setEndLine(startLine);
-        token.setEndColumn(startColumn + 1);
-        token.setType(possibleTokenType);
-        token.setText("" + firstChar);
+            if (possibleTokenType.ordinal() >= OPEN_CURLY.ordinal() && possibleTokenType.ordinal() <= FALSE.ordinal()) {
+                return readingConstant(possibleTokenType, token);
+            } else if (possibleTokenType == STRING) {
+                StringBuilder currentContent = new StringBuilder("\"");
+                // consume the first double quote starting the string
+                reader.read();
+                for (;;) {
+                    int read = reader.read();
+                    if (read == -1) return null;
+                    currentContent.append((char) read);
 
-        if (possibleTokenType.ordinal() >= OPEN_CURLY.ordinal() && possibleTokenType.ordinal() <= FALSE.ordinal()) {
-            return readingConstant(possibleTokenType, token);
-        } else if (possibleTokenType == STRING) {
-            StringBuilder currentContent = new StringBuilder("\"");
-            // consume the first double quote starting the string
-            reader.read();
-            for(;;) {
-                int read = reader.read();
-                if (read == -1) return null;
-                currentContent.append((char)read);
+                    if (currentContent.charAt(currentContent.length() - 1) == '"' && currentContent.charAt(currentContent.length() - 2) != '\\' &&
+                            possibleTokenType.matching(currentContent.toString())) {
+                        token.setEndLine(reader.getLine());
+                        token.setEndColumn(reader.getColumn());
+                        token.setText(unescape(currentContent.toString()));
+                        return token;
+                    }
+                }
+            } else if (possibleTokenType == NUMBER) {
+                StringBuilder currentContent = new StringBuilder();
+                for (;;) {
+                    reader.mark(1);
+                    int read = reader.read();
+                    if (read == -1) return null;
+                    char lastCharRead = (char) read;
 
-                if (currentContent.charAt(currentContent.length()-1) == '"' && currentContent.charAt(currentContent.length()-2) != '\\' &&
-                        possibleTokenType.matching(currentContent.toString())) {
+                    if (lastCharRead >= ZERO && lastCharRead <= NINE ||
+                            lastCharRead == DOT || lastCharRead == MINUS || lastCharRead == PLUS ||
+                            lastCharRead == LOWER_E || lastCharRead == UPPER_E) {
+                        currentContent.append(lastCharRead);
+                    } else {
+                        reader.reset();
+                        break;
+                    }
+                }
+
+                String content = currentContent.toString();
+                if (possibleTokenType.matching(content)) {
                     token.setEndLine(reader.getLine());
                     token.setEndColumn(reader.getColumn());
-                    token.setText(unescape(currentContent.toString()));
+                    token.setText(currentContent.toString());
+
                     return token;
-                }
-
-            }
-        } else if (possibleTokenType == NUMBER) {
-            StringBuilder currentContent = new StringBuilder();
-            for(;;) {
-                reader.mark(1);
-                int read = reader.read();
-                if (read == -1) return null;
-                char lastCharRead = (char)read;
-
-                if (lastCharRead >= ZERO && lastCharRead <= NINE ||
-                        lastCharRead == DOT || lastCharRead == MINUS || lastCharRead == PLUS ||
-                        lastCharRead == LOWER_E || lastCharRead == UPPER_E) {
-                    currentContent.append(lastCharRead);
                 } else {
-                    reader.reset();
-                    break;
+                    throwJsonException(currentContent.toString(), possibleTokenType);
                 }
             }
-
-            String content = currentContent.toString();
-            if (possibleTokenType.matching(content)) {
-                token.setEndLine(reader.getLine());
-                token.setEndColumn(reader.getColumn());
-                token.setText(currentContent.toString());
-
-                return token;
-            } else {
-                throwJsonException(currentContent.toString(), possibleTokenType);
-            }
-        }
-        return null;
+            return null;
         } catch (IOException ioe) {
             throw new JsonException("An IO exception occurred while reading the JSON payload", ioe);
         }

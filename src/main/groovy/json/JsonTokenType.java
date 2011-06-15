@@ -35,7 +35,7 @@ public enum JsonTokenType {
     TRUE            ( "the constant 'true'",                "true"      ),
     FALSE           ( "the constant 'false'",               "false"     ),
     NUMBER          ( "a number",                           Pattern.compile("-?\\d+(\\.\\d+)?((e|E)(\\+|-)?\\d+)?"  )),
-    STRING          ( "a string",                           Pattern.compile("\"([^\"\\\\]|\\\\([\"\\/bfnrt]|u[0-9a-fA-F]{4}))*\""));
+    STRING          ( "a string",                           Pattern.compile("\"([^\"\\\\]|\\\\([\"\\\\/bfnrt]|u[0-9a-fA-F]{4}))*\""));
 
     /**
      * A String constant or a Pattern, serving as a validator for matching tokens.

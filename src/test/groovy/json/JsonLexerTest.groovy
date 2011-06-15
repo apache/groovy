@@ -126,4 +126,13 @@ class JsonLexerTest extends GroovyTestCase {
 
         assert JsonLexer.unescape('\\u004A\\u0053\\u004F\\u004E') == 'JSON'
     }
+
+    void testBackSlashEscaping() {
+        def lexer = new JsonLexer(new StringReader('["Guill\\\\aume"]'))
+
+        assert lexer.nextToken().type == JsonTokenType.OPEN_BRACKET
+        assert lexer.nextToken().value == "Guill\\aume"
+        assert lexer.nextToken().type == JsonTokenType.CLOSE_BRACKET
+        assert lexer.nextToken() == null
+    }
 }

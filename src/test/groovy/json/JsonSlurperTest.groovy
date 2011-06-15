@@ -144,4 +144,19 @@ class JsonSlurperTest extends GroovyTestCase {
         shouldFail(JsonException) { parser.parseText('["a", ')      }
         shouldFail(JsonException) { parser.parseText('["a", true')  }
     }
+
+    void testBackSlashEscapting() {
+        def json = new JsonBuilder()
+
+        json.person {
+            name "Guill\\aume"
+            age 33
+            pets "Hector", "Felix"
+        }
+
+        def jsonstring = json.toString()
+
+        def slurper = new JsonSlurper()
+        assert slurper.parseText(jsonstring).person.name == "Guill\\aume"
+    }
 }
