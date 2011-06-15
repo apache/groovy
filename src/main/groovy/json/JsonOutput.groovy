@@ -112,8 +112,14 @@ class JsonOutput {
                 object instanceof Iterator ||
                 object instanceof Enumeration) {
             "[" + object.collect { toJson(it) }.join(',') + "]"
+        } else if (object instanceof Enum) {
+            '"' + object.name() + '"'
         } else {
-            toJson(object.toString())
+            def properties = object.properties
+            properties.remove('class')
+            properties.remove('declaringClass')
+            properties.remove('metaClass')
+            toJson(properties)
         }
     }
 
