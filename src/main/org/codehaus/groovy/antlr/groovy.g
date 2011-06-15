@@ -2684,7 +2684,7 @@ conditionalExpression[int lc_stmt]
     :   logicalOrExpression[lc_stmt]
         (
           (ELVIS_OPERATOR)=> ELVIS_OPERATOR^ nls! conditionalExpression[0]
-          | QUESTION^ nls! assignmentExpression[0] COLON! nls! conditionalExpression[0]
+          | QUESTION^ nls! assignmentExpression[0] nls! COLON! nls! conditionalExpression[0]
         )?
     ;
 
