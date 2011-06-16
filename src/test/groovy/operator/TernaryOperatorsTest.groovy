@@ -84,7 +84,8 @@ class TernaryOperatorsTest extends GroovyTestCase {
         assert bar == 'cow'
 
         // This used to fail
-        bar = 0 ? "moo": "cow"
+        bar = 0 ? "moo"
+                : "cow"
         assert bar == 'cow'
     }
 }   
