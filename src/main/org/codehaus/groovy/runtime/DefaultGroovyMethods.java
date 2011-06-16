@@ -91,6 +91,7 @@ import java.util.regex.Pattern;
  * @author Rodolfo Velasco
  * @author jeremi Joslin
  * @author Hamlet D'Arcy
+ * @author Cedric Champeau
  * @author Tim Yates
  * @author Dinko Srkoc
  */
