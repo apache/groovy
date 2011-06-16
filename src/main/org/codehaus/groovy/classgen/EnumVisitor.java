@@ -95,17 +95,14 @@ public class EnumVisitor extends ClassCodeVisitorSupport{
             if (hasNext && hasPrevious) break;
         }
 
-
         {
             // create values() method
             MethodNode valuesMethod = new MethodNode("values",PUBLIC_FS,enumClass.makeArray(),new Parameter[0],ClassNode.EMPTY_ARRAY,null);
             valuesMethod.setSynthetic(true);
             BlockStatement code = new BlockStatement();
-            code.addStatement(
-                    new ReturnStatement(
-                            new MethodCallExpression(new FieldExpression(values),"clone",MethodCallExpression.NO_ARGUMENTS)
-                    )
-            );
+            MethodCallExpression cloneCall = new MethodCallExpression(new FieldExpression(values), "clone", MethodCallExpression.NO_ARGUMENTS);
+            cloneCall.setMethodTarget(values.getType().getMethod("clone", Parameter.EMPTY_ARRAY));
+            code.addStatement(new ReturnStatement(cloneCall));
             valuesMethod.setCode(code);
             enumClass.addMethod(valuesMethod);
         }
