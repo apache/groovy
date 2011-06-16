@@ -947,7 +947,6 @@ class GroovyMethodsTest extends GroovySwingTestCase {
         def data = [ 'groovy',      // String
                      "${'groovy'}", // GString
                      java.nio.CharBuffer.wrap( 'groovy' ),
-                     new javax.swing.text.Segment( 'groovy' as char[], 0, 6 ),
                      new StringBuffer( 'groovy' ),
                      new StringBuilder( 'groovy' ) ]
         data.each {
@@ -1015,7 +1014,6 @@ class GroovyMethodsTest extends GroovySwingTestCase {
         def data = [ 'groovy',      // String
                      "${'groovy'}", // GString
                      java.nio.CharBuffer.wrap( 'groovy' ),
-                     new javax.swing.text.Segment( 'groovy' as char[], 0, 6 ),
                      new StringBuffer( 'groovy' ),
                      new StringBuilder( 'groovy' ) ]
         data.each {
@@ -1048,7 +1046,6 @@ class GroovyMethodsTest extends GroovySwingTestCase {
           // CharSequences
           (java.lang.String)        : new String( 'groovy' ),
           (java.nio.CharBuffer)     : java.nio.CharBuffer.wrap( 'groovy' ),
-          (javax.swing.text.Segment): new javax.swing.text.Segment( 'groovy' as char[], 0, 6 ),
         ]
         data.each { Class clazz, object ->
             assert clazz.isInstance( object.take( 5 ) )
