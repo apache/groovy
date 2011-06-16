@@ -165,6 +165,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * def b = new StringBuilder().with {
      *   append('foo')
      *   append('bar')
+     *   return it
      * }
      * assert b.toString() == 'foobar' 
      * </pre>
@@ -173,6 +174,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * def p = new Person().with {
      *   firstName = 'John'
      *   lastName = 'Doe'
+     *   return it
      * }
      * </pre>
      *
