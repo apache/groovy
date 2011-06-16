@@ -585,6 +585,26 @@ class GroovyMethodsTest extends GroovySwingTestCase {
         assert 3 == result.size()
     }
 
+    void testGroupByListMultipleCriteria() {
+        def list1 = [1, 'a', 2, 'b', 3.5, 4.6]
+        def result1 = list1.groupBy({ it.class }, { it.class == Integer ? 'integer' : 'non-integer' })
+        assert [integer: [1, 2]] == result1[Integer]
+        assert ['non-integer': ['a', 'b']] == result1[String]
+        assert ['non-integer': [3.5, 4.6]] == result1[BigDecimal]
+
+        def list2 = [
+                [aa: 11, bb: 22, cc: 33],
+                [aa: 11, bb: 22, cc: 44],
+                [aa: 11, bb: 33, cc: 55],
+                [aa: 22, bb: 22, cc: 66],
+                [aa: 22, bb: 22, cc: 77],
+                [aa: 22, bb: 33, cc: 77]
+        ]
+        def result2 = list2.groupBy([{ it.aa }, { it.bb }, { it.cc }])
+        assert [[aa: 11, bb: 22, cc: 33]]== result2[11][22][33]
+        assert [77: [[aa: 22, bb: 33, cc: 77]]] == result2[22][33]
+    }
+
     void testMapGroupEntriesBy() {
         def expectedKeys = [Integer: [1, 3], String: [2, 4], BigDecimal: [5, 6]]
         def expectedVals = [Integer: [1, 2], String: ["a", "b"], BigDecimal: [3.5, 4.6]]
@@ -606,6 +626,25 @@ class GroovyMethodsTest extends GroovySwingTestCase {
         assert result[BigDecimal] == [5:3.5, 6:4.6]
         assert result[String] == [2:'a', 4:'b']
         assert result[Integer] == [1:1, 3:2]
+    }
+
+    void testMapGroupByMultipleCriteria() {
+        def map1 = [1: 1, 2: "a", 3: 2, 4: "b", 5: 3.5, 6: 4.6]
+        def result1 = map1.groupBy({entry -> entry.value.class}, {entry -> entry.key + 1})
+
+        assert 3 == result1.size()
+        assert result1[BigDecimal] == [6: [5: 3.5], 7: [6: 4.6]]
+        assert result1[String] == [3: [2: "a"], 5: [4: "b"]]
+        assert result1[Integer][2] == [1: 1]
+        assert result1[Integer][4] == [3: 2]
+
+        def map2 = [aa: 11, bb: 22, cc: 33]
+        def result2 = map2.groupBy({ it.key }, { it.key.next() }, { it.key.next().next() })
+
+        assert result2.size() == 3
+        assert result2['aa']['ab']['ac'] == [aa: 11]
+        assert result2['bb']['bc']['bd'] == [bb: 22]
+        assert result2['cc']['cd']['ce'] == [cc: 33]
     }
 
     def leftCol = ["2"]
