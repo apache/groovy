@@ -154,7 +154,26 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Allows the closure to be called for the object reference self
+     * Allows the closure to be called for the object reference self<br/><br/>
+     * Any method invoked inside the closure will first be invoked on the
+     * self reference. For instance, the following method calls to the append()
+     * method are invoked on the StringBuilder instance:
+     * <pre>
+     * def b = new StringBuilder().with {
+     *   append('foo')
+     *   append('bar')
+     *   return it
+     * }
+     * assert b.toString() == 'foobar'
+     * </pre>
+     * This is commonly used to simplify object creation, such as this example:
+     * <pre>
+     * def p = new Person().with {
+     *   firstName = 'John'
+     *   lastName = 'Doe'
+     *   return it
+     * }
+     * </pre>
      *
      * @param self    the object to have a closure act upon
      * @param closure the closure to call on the object
