@@ -28,6 +28,8 @@ import org.codehaus.groovy.util.StringUtil
  * @author Paul King
  * @author Joachim Baumann
  * @author Mike Dillon
+ * @author Tim Yates
+ * @author Dinko Srkoc
  * @version $Revision$
  */
 class GroovyMethodsTest extends GroovySwingTestCase {
@@ -891,6 +893,167 @@ class GroovyMethodsTest extends GroovySwingTestCase {
         assert 'Hello-World!'.tr('a-d-f-m-s', '_') == 'He__o_Wor__!'
         assert 'Hello-World!'.tr('--a', 'Z') == 'ZelloZZorld!'
         assert 'Hello, World!'.tr(' --', 'Z') == 'HelloZZWorldZ'
+    }
+
+    void testListTake() {
+        def data = [
+            new ArrayList( [ 1, 2, 3 ] ),
+            new LinkedList( [ 1, 2, 3 ] ),
+            new Stack() {{ addAll( [ 1, 2, 3 ] ) }},
+            new Vector( [ 1, 2, 3 ] ),
+        ]
+        data.each {
+            assert it.take( -1 ) == []
+            assert it.take(  0 ) == []
+            assert it.take(  2 ) == [ 1, 2 ]
+            assert it.take(  4 ) == [ 1, 2, 3 ]
+        }
+    }
+
+    void testArrayTake() {
+        String[] items = [ 'ant', 'bee', 'cat' ]
+
+        assert items.take( -1 ) == [] as String[]
+        assert items.take(  0 ) == [] as String[]
+        assert items.take(  2 ) == [ 'ant', 'bee' ] as String[]
+        assert items.take(  4 ) == [ 'ant', 'bee', 'cat' ] as String[]
+    }
+
+    void testMapTake() {
+        def data = [
+            [ 'ant':10, 'bee':20, 'cat':30, 'dog':40 ],
+            new TreeMap( [ 'ant':10, 'bee':20, 'cat':30, 'dog':40 ] ),
+        ]
+        data.each {
+            assert it.take( -1 ) == [:]
+            assert it.take(  0 ) == [:]
+            assert it.take(  2 ) == [ 'ant':10, 'bee':20 ]
+            assert it.take(  4 ) == [ 'ant':10, 'bee':20, 'cat':30, 'dog':40 ]
+            assert it.take(  5 ) == [ 'ant':10, 'bee':20, 'cat':30, 'dog':40 ]
+        }
+    }
+
+    void testIteratorTake() {
+        int a = 1
+        Iterator items = [ hasNext:{ true }, next:{ a++ } ] as Iterator
+
+        assert items.take( -1 ).collect { it } == []
+        assert items.take(  0 ).collect { it } == []
+        assert items.take(  2 ).collect { it } == [ 1, 2 ]
+        assert items.take(  4 ).collect { it } == [ 3, 4, 5, 6 ]
+    }
+
+    void testCharSequenceTake() {
+        def data = [ 'groovy',      // String
+                     "${'groovy'}", // GString
+                     java.nio.CharBuffer.wrap( 'groovy' ),
+                     new javax.swing.text.Segment( 'groovy' as char[], 0, 6 ),
+                     new StringBuffer( 'groovy' ),
+                     new StringBuilder( 'groovy' ) ]
+        data.each {
+            // Need toString() as CharBuffer.subSequence returns a java.nio.StringCharBuffer
+            assert it.take( -1 ).toString() == ''
+            assert it.take(  0 ).toString() == ''
+            assert it.take(  3 ).toString() == 'gro'
+            assert it.take(  6 ).toString() == 'groovy'
+            assert it.take( 10 ).toString() == 'groovy'
+        }
+    }
+
+    void testListDrop() {
+        def data = [
+            new ArrayList( [ 1, 2, 3 ] ),
+            new LinkedList( [ 1, 2, 3 ] ),
+            new Stack() {{ addAll( [ 1, 2, 3 ] ) }},
+            new Vector( [ 1, 2, 3 ] ),
+        ]
+        data.each {
+            assert it.drop( -1 ) == [ 1, 2, 3 ]
+            assert it.drop(  0 ) == [ 1, 2, 3 ]
+            assert it.drop(  2 ) == [ 3 ]
+            assert it.drop(  4 ) == []
+        }
+    }
+
+    void testArrayDrop() {
+        String[] items = [ 'ant', 'bee', 'cat' ]
+
+        assert items.drop(  2 ) == [ 'cat' ] as String[]
+        assert items.drop(  4 ) == [] as String[]
+        assert items.drop(  0 ) == [ 'ant', 'bee', 'cat' ] as String[]
+        assert items.drop( -1 ) == [ 'ant', 'bee', 'cat' ] as String[]
+    }
+
+    void testMapDrop() {
+        def data = [
+            [ 'ant':10, 'bee':20, 'cat':30, 'dog':40 ],
+            new TreeMap( [ 'ant':10, 'bee':20, 'cat':30, 'dog':40 ] ),
+        ]
+        data.each {
+            assert it.drop( -1 ) == [ 'ant':10, 'bee':20, 'cat':30, 'dog':40 ]
+            assert it.drop(  0 ) == [ 'ant':10, 'bee':20, 'cat':30, 'dog':40 ]
+            assert it.drop(  2 ) == [ 'cat':30, 'dog':40 ]
+            assert it.drop(  4 ) == [ : ]
+            assert it.drop(  5 ) == [ : ]
+        }
+    }
+
+    void testIteratorDrop() {
+        int a = 1
+        Iterator items = [ hasNext:{ a < 6 }, next:{ a++ } ] as Iterator
+
+        assert items.drop( 0 ).collect { it } == [ 1, 2, 3, 4, 5 ]
+        a = 1
+        assert items.drop( 2 ).collect { it } == [ 3, 4, 5 ]
+        a = 1
+        assert items.drop( 4 ).collect { it } == [ 5 ]
+        a = 1
+        assert items.drop( 5 ).collect { it } == []
+    }
+
+    void testCharSequenceDrop() {
+        def data = [ 'groovy',      // String
+                     "${'groovy'}", // GString
+                     java.nio.CharBuffer.wrap( 'groovy' ),
+                     new javax.swing.text.Segment( 'groovy' as char[], 0, 6 ),
+                     new StringBuffer( 'groovy' ),
+                     new StringBuilder( 'groovy' ) ]
+        data.each {
+            // Need toString() as CharBuffer.subSequence returns a java.nio.StringCharBuffer
+            assert it.drop( -1 ).toString() == 'groovy'
+            assert it.drop(  0 ).toString() == 'groovy'
+            assert it.drop(  3 ).toString() == 'ovy'
+            assert it.drop(  6 ).toString() == ''
+            assert it.drop( 10 ).toString() == ''
+        }
+    }
+
+    void testTakeDropClassSymmetry() {
+        // NOTES:
+        // - Cannot test plain HashMap, as Groovy will always default to a LinkedHashMap
+        //   See org.codehaus.groovy.runtime.DefaultGroovyMethodsSupport.java:183
+        // - Cannot test StringBuffer or StringBuilder, as X.subSequence in Java returns String
+        def data = [
+          // Lists
+          (java.util.ArrayList)     : new ArrayList( [ 1, 2, 3 ] ),
+          (java.util.LinkedList)    : new LinkedList( [ 1, 2, 3 ] ),
+          (java.util.Stack)         : new Stack() {{ addAll( [ 1, 2, 3 ] ) }},
+          (java.util.Vector)        : new Vector( [ 1, 2, 3 ] ),
+          // Maps
+          (java.util.LinkedHashMap) : new LinkedHashMap( [ a:1, b:2, c:3 ] ),
+          (java.util.TreeMap)       : new TreeMap( [ a:1, b:2, c:3 ] ),
+          (java.util.Hashtable)     : new Hashtable( [ a:1, b:2, c:3 ] ),
+          // Iterators
+          (java.util.Iterator)      : [ hasNext:{ true }, next:{ 'groovy' } ] as Iterator,
+          // CharSequences
+          (java.lang.String)        : new String( 'groovy' ),
+          (java.nio.CharBuffer)     : java.nio.CharBuffer.wrap( 'groovy' ),
+          (javax.swing.text.Segment): new javax.swing.text.Segment( 'groovy' as char[], 0, 6 ),
+        ]
+        data.each { Class clazz, object ->
+            assert clazz.isInstance( object.take( 5 ) )
+            assert clazz.isInstance( object.drop( 5 ) )
+        }
     }
 }
 
