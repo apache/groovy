@@ -2799,6 +2799,86 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Sorts all collection members into (sub)groups determined by the supplied
+     * mapping closures. Each closure should return the key that this item
+     * should be grouped by. The returned LinkedHashMap will have an entry for each
+     * distinct 'key path' returned from the closures, with each value being a list
+     * of items for that 'group path'. <p>
+     *
+     * Example usage:
+     * <pre class="groovyTestCase">def result = [1,2,3,4,5,6].groupBy({ it % 2 }, { it < 4 })
+     * assert result == [1:[(true):[1, 3], (false):[5]], 0:[(true):[2], (false):[4, 6]]]</pre>
+     *
+     * Another example:
+     * <pre>def sql = groovy.sql.Sql.newInstance(/&ast; ... &ast;/)
+     * def data = sql.rows("SELECT * FROM a_table").groupBy({ it.column1 }, { it.column2 }, { it.column3 })
+     * if (data.val1.val2.val3) {
+     *     // there exists a record where:
+     *     //   a_table.column1 == val1
+     *     //   a_table.column2 == val2, and
+     *     //   a_table.column3 == val3
+     * } else {
+     *     // there is no such record
+     * }</pre>
+     *
+     * @param self     a collection to group
+     * @param closures an array of closures, each mapping entries on keys
+     * @return a new Map grouped by keys on each criterion
+     * @since 1.8.1
+     */
+    public static <K, T> Map<K, ?> groupBy(Collection<T> self, Object... closures) {
+        final Closure<K> head = (Closure) closures[0];
+
+        Map<K, List<T>> first = groupBy(self, head);
+        if (closures.length < 2)
+            return first;
+
+        final Object[] tail = new Object[closures.length - 1];
+        System.arraycopy(closures, 1, tail, 0, closures.length - 1); // Arrays.copyOfRange only since JDK 1.6
+
+        // inject([:]) { a,e -> a << [(e.key): e.value.groupBy(tail)] }
+        Map<K, Map> acc = new LinkedHashMap<K, Map>();
+        for (Map.Entry<K, List<T>> item : first.entrySet()) {
+            acc.put(item.getKey(), groupBy(item.getValue(), tail));
+        }
+
+        return acc;
+    }
+
+    /**
+     * Sorts all collection members into (sub)groups determined by the supplied
+     * mapping closures. Each closure should return the key that this item
+     * should be grouped by. The returned LinkedHashMap will have an entry for each
+     * distinct 'key path' returned from the closures, with each value being a list
+     * of items for that 'group path'. <p>
+     *
+     * Example usage:
+     * <pre class="groovyTestCase">def result = [1,2,3,4,5,6].groupBy([{ it % 2 }, { it < 4 }])
+     * assert result == [1:[(true):[1, 3], (false):[5]], 0:[(true):[2], (false):[4, 6]]]</pre>
+     *
+     * Another example:
+     * <pre>def sql = groovy.sql.Sql.newInstance(/&ast; ... &ast;/)
+     * def data = sql.rows("SELECT * FROM a_table").groupBy([{ it.column1 }, { it.column2 }, { it.column3 }])
+     * if (data.val1.val2.val3) {
+     *     // there exists a record where:
+     *     //   a_table.column1 == val1
+     *     //   a_table.column2 == val2, and
+     *     //   a_table.column3 == val3
+     * } else {
+     *     // there is no such record
+     * }</pre>
+     *
+     * @param self     a collection to group
+     * @param closures a list of closures, each mapping entries on keys
+     * @return a new Map grouped by keys on each criterion
+     * @since 1.8.1
+     */
+    public static <K, T> Map<K, ?> groupBy(Collection<T> self, List<Closure<K>> closures) {
+        return groupBy(self, closures.toArray());
+    }
+
+
+    /**
      * Sorts all collection members into groups determined by the supplied mapping
      * closure and counts the group size.  The closure should return the key that each
      * item should be grouped by.  The returned Map will have an entry for each
@@ -2921,6 +3001,70 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             answer.put(key, target);
         }
         return answer;
+    }
+
+    /**
+     * Groups the members of a map into sub maps determined by the supplied
+     * mapping closures. Each closure will be passed a Map.Entry or key and
+     * value (depending on the number of parameters the closure accepts) and
+     * should return the key that each item should be grouped under. The
+     * resulting map will have an entry for each 'group path' returned by all
+     * closures, with values being the map members from the original map that
+     * belong to each such 'group path'. <p>
+     *
+     * If the <code>self</code> map is one of TreeMap, Hashtable, or Properties,
+     * the returned Map will preserve that type, otherwise a LinkedHashMap will
+     * be returned.
+     *
+     * <pre class="groovyTestCase">def result = [a:1,b:2,c:3,d:4,e:5,f:6].groupBy({ it.value % 2 }, { it.key.next() })
+     * assert result == [1:[b:[a:1], d:[c:3], f:[e:5]], 0:[c:[b:2], e:[d:4], g:[f:6]]]</pre>
+     *
+     * @param self     a map to group
+     * @param closures an array of closures that map entries on keys
+     * @return a new map grouped by keys on each criterion
+     * @since 1.8.1
+     */
+    public static <G, K, V> Map<G, ?> groupBy(Map<K, V> self, Object... closures) {
+        final Closure<G> head = (Closure) closures[0];
+
+        Map<G, Map<K, V>> first = groupBy(self, head);
+        if (closures.length < 2)
+            return first;
+
+        final Object[] tail = new Object[closures.length - 1];
+        System.arraycopy(closures, 1, tail, 0, closures.length - 1); // Arrays.copyOfRange only since JDK 1.6
+
+        Map<G, Map> acc = new LinkedHashMap<G, Map>();
+        for (Map.Entry<G, Map<K, V>> item: first.entrySet()) {
+            acc.put(item.getKey(), groupBy(item.getValue(), tail));
+        }
+        
+        return acc;
+    }
+
+    /**
+     * Groups the members of a map into sub maps determined by the supplied
+     * mapping closures. Each closure will be passed a Map.Entry or key and
+     * value (depending on the number of parameters the closure accepts) and
+     * should return the key that each item should be grouped under. The
+     * resulting map will have an entry for each 'group path' returned by all
+     * closures, with values being the map members from the original map that
+     * belong to each such 'group path'. <p>
+     *
+     * If the <code>self</code> map is one of TreeMap, Hashtable, or Properties,
+     * the returned Map will preserve that type, otherwise a LinkedHashMap will
+     * be returned.
+     *
+     * <pre class="groovyTestCase">def result = [a:1,b:2,c:3,d:4,e:5,f:6].groupBy([{ it.value % 2 }, { it.key.next() }])
+     * assert result == [1:[b:[a:1], d:[c:3], f:[e:5]], 0:[c:[b:2], e:[d:4], g:[f:6]]]</pre>
+     *
+     * @param self     a map to group
+     * @param closures a list of closures that map entries on keys
+     * @return a new map grouped by keys on each criterion
+     * @since 1.8.1
+     */
+    public static <G, K, V> Map<G, ?> groupBy(Map<K, V> self, List<Closure<G>> closures) {
+        return groupBy(self, closures.toArray());
     }
 
     /**
