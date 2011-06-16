@@ -91,6 +91,8 @@ import java.util.regex.Pattern;
  * @author Rodolfo Velasco
  * @author jeremi Joslin
  * @author Hamlet D'Arcy
+ * @author Tim Yates
+ * @author Dinko Srkoc
  */
 public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
@@ -6351,6 +6353,301 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         T[] result = (T[]) Array.newInstance(componentType, self.length - 1);
         System.arraycopy(self, 1, result, 0, self.length - 1);
         return result;
+    }
+
+    /**
+     * Returns the first <code>num</code> elements from the head of this list.
+     * <pre class="groovyTestCase">
+     *     def strings = [ 'a', 'b', 'c' ]
+     *     assert strings.take( 0 ) == []
+     *     assert strings.take( 2 ) == [ 'a', 'b' ]
+     *     assert strings.take( 5 ) == [ 'a', 'b', 'c' ]
+     * </pre>
+     *
+     * @param self the original list
+     * @param num the number of elements to take from this list
+     * @return a list consisting of the first <code>num</code> elements of this list,
+     *         or else the whole list if it has less then <code>num</code> elements.
+     * @since 1.8.1
+     */
+    public static <T> List<T> take( List<T> self, int num ) {
+        if( self.isEmpty() || num <= 0 ) {
+            return createSimilarList( self, 0 ) ;
+        }
+        if( self.size() <= num ) {
+            List<T> ret = createSimilarList( self, self.size() ) ;
+            ret.addAll( self ) ;
+            return ret ;
+        }
+        List<T> ret = createSimilarList( self, num ) ;
+        ret.addAll( self.subList( 0, num ) ) ;
+        return ret ;
+    }
+
+    /**
+     * Returns the first <code>num</code> elements from the head of this array.
+     * <pre class="groovyTestCase">
+     *     String[] strings = [ 'a', 'b', 'c' ]
+     *     assert strings.take( 0 ) == [] as String[]
+     *     assert strings.take( 2 ) == [ 'a', 'b' ] as String[]
+     *     assert strings.take( 5 ) == [ 'a', 'b', 'c' ] as String[]
+     * </pre>
+     *
+     * @param self the original array
+     * @param num the number of elements to take from this array
+     * @return an array consisting of the first <code>num</code> elements of this array,
+     *         or else the whole array if it has less then <code>num</code> elements.
+     * @since 1.8.1
+     */
+    public static <T> T[] take( T[] self, int num ) {
+        Class<T> componentType = (Class<T>) self.getClass().getComponentType();
+        if( self.length == 0 || num <= 0 ) {
+            return (T[]) Array.newInstance(componentType, 0);
+        }
+        if( self.length <= num ) {
+            T[] ret = (T[]) Array.newInstance(componentType, self.length);
+            System.arraycopy(self, 0, ret, 0, self.length);
+            return ret;
+        }
+
+        T[] ret = (T[]) Array.newInstance(componentType, num);
+        System.arraycopy(self, 0, ret, 0, num);
+        return ret;
+    }
+
+    /**
+     * Returns a new map containing the first <code>num</code> elements from the head of this map.
+     * If the map instance does not have ordered keys,then this function could return a random <code>n<code>
+     * entries.  Groovy by default used LinkedHashMap, so this shouldn't be an issue in the main.
+     * <pre class="groovyTestCase">
+     *     def strings = [ 'a':10, 'b':20, 'c':30 ]
+     *     assert strings.take( 0 ) == [:]
+     *     assert strings.take( 2 ) == [ 'a':10, 'b':20 ]
+     *     assert strings.take( 5 ) == [ 'a':10, 'b':20, 'c':30 ]
+     * </pre>
+     *
+     * @param self the original map
+     * @param num the number of elements to take from this map
+     * @return a new map consisting of the first <code>num</code> elements of this map,
+     *         or else the whole map if it has less then <code>num</code> elements.
+     * @since 1.8.1
+     */
+    public static <K,V> Map<K,V> take( Map<K,V> self, int num ) {
+        if( self.isEmpty() || num <= 0 ) {
+            return createSimilarMap( self ) ;
+        }
+        Map<K,V> ret = createSimilarMap( self ) ;
+        for( K key : self.keySet() ) {
+            ret.put( key, self.get( key ) ) ;
+            if( --num <= 0 ) {
+                break ;
+            }
+        }
+        return ret ;
+    }
+
+    /**
+     * Returns an iterator to up to the first <code>num</code> elements from this iterator.
+     * The original iterator is stepped along by <code>num</code> elements.
+     * <pre class="groovyTestCase">
+     *     def a = 0
+     *     def iter = [ hasNext:{ true }, next:{ a++ } ] as Iterator
+     *
+     *     def iteratorCompare( Iterator a, List b ) {
+     *       a.collect { it } == b
+     *     }
+     *     assert iteratorCompare( iter.take( 0 ), [] )
+     *     assert iteratorCompare( iter.take( 2 ), [ 0, 1 ] )
+     *     assert iteratorCompare( iter.take( 5 ), [ 2, 3, 4, 5, 6 ] )
+     * </pre>
+     *
+     * @param self the Iterator
+     * @param num the number of elements to take from this iterator
+     * @return a list consisting of up to the first <code>num</code> elements of this iterator.
+     * @since 1.8.1
+     */
+    public static <T> Iterator<T> take( Iterator<T> self, int num ) {
+        List<T> ret = new ArrayList<T>() ;
+        while( num-- > 0 && self.hasNext() ) {
+            ret.add( self.next() ) ;
+        }
+        return ret.listIterator() ;
+    }
+
+    /**
+     * Returns the first <code>num</code> elements from this CharSequence.
+     * <pre class="groovyTestCase">
+     *     def text = "Groovy"
+     *     assert text.take( 0 ) == ''
+     *     assert text.take( 2 ) == 'Gr'
+     *     assert text.take( 7 ) == 'Groovy'
+     * </pre>
+     *
+     * @param self the original CharSequence
+     * @param num the number of chars to take from this CharSequence
+     * @return a CharSequence consisting of the first <code>num</code> chars,
+     *         or else the whole CharSequence if it has less then <code>num</code> elements.
+     * @since 1.8.1
+     */
+    public static CharSequence take( CharSequence self, int num ) {
+        if( num < 0 ) {
+            return self.subSequence( 0, 0 ) ;
+        }
+        if( self.length() <= num ) {
+            return self ;
+        }
+        return self.subSequence( 0, num ) ;
+    }
+
+    /**
+     * Drops the given number of elements from the head of this list
+     * if they are available.
+     * <pre class="groovyTestCase">
+     *     def strings = [ 'a', 'b', 'c' ]
+     *     assert strings.drop( 0 ) == [ 'a', 'b', 'c' ]
+     *     assert strings.drop( 2 ) == [ 'c' ]
+     *     assert strings.drop( 5 ) == []
+     * </pre>
+     *
+     * @param self the original list
+     * @param num the number of elements to drop from this list
+     * @return a list consisting of all elements of this list except the first
+     *         <code>num</code> ones, or else the empty list, if this list has
+     *         less than <code>num</code> elements.
+     * @since 1.8.1
+     */
+    public static <T> List<T> drop(List<T> self, int num) {
+        if (self.size() <= num) {
+            return createSimilarList( self, 0 ) ;
+        }
+        if (num <= 0) {
+            List<T> ret = createSimilarList( self, self.size() ) ;
+            ret.addAll( self ) ;
+            return ret ;
+        }
+        List<T> ret = createSimilarList( self, self.size() - num ) ;
+        ret.addAll(self.subList(num, self.size())) ;
+        return ret ;
+    }
+
+    /**
+     * Drops the given number of elements from the head of this array
+     * if they are available.
+     * <pre class="groovyTestCase">
+     *     String[] strings = [ 'a', 'b', 'c' ]
+     *     assert strings.drop( 0 ) == [ 'a', 'b', 'c' ] as String[]
+     *     assert strings.drop( 2 ) == [ 'c' ] as String[]
+     *     assert strings.drop( 5 ) == [] as String[]
+     * </pre>
+     *
+     * @param self the original array
+     * @param num the number of elements to drop from this array
+     * @return an array consisting of all elements of this array except the
+     *         first <code>num</code> ones, or else the empty array, if this
+     *         array has less than <code>num</code> elements.
+     * @since 1.8.1
+     */
+    public static <T> T[] drop(T[] self, int num) {
+        Class<T> componentType = (Class<T>) self.getClass().getComponentType();
+        if (self.length <= num) {
+            return (T[]) Array.newInstance(componentType, 0);
+        }
+        if (num <= 0) {
+            T[] ret = (T[]) Array.newInstance(componentType, self.length);
+            System.arraycopy(self, 0, ret, 0, self.length);
+            return ret;
+        }
+
+        T[] ret = (T[]) Array.newInstance(componentType, self.length - num);
+        System.arraycopy(self, num, ret, 0, self.length - num);
+        return ret;
+    }
+
+    /**
+     * Drops the given number of key/value pairs from the head of this map if they are available.
+     * If the map instance does not have ordered keys,then this function could return a random <code>n<code>
+     * entries.  Groovy by default used LinkedHashMap, so this shouldn't be an issue in the main.
+     * <pre class="groovyTestCase">
+     *     def strings = [ 'a':10, 'b':20, 'c':30 ]
+     *     assert strings.drop( 0 ) == [ 'a':10, 'b':20, 'c':30 ]
+     *     assert strings.drop( 2 ) == [ 'c':30 ]
+     *     assert strings.drop( 5 ) == [:]
+     * </pre>
+     *
+     * @param self the original map
+     * @param num the number of elements to drop from this map
+     * @return a map consisting of all key/value pairs of this map except the first
+     *         <code>num</code> ones, or else the empty map, if this map has
+     *         less than <code>num</code> elements.
+     * @since 1.8.1
+     */
+    public static <K,V> Map<K,V> drop( Map<K,V> self, int num ) {
+        if( self.size() <= num ) {
+            return createSimilarMap( self ) ;
+        }
+        if( num == 0 ) {
+            return cloneSimilarMap( self ) ;
+        }
+        Map<K,V> ret = createSimilarMap( self ) ;
+        for( K key : self.keySet() ) {
+            if( num-- <= 0 ) {
+                ret.put( key, self.get( key ) ) ;
+            }
+        }
+        return ret ;
+    }
+    
+    /**
+     * Drops the given number of elements from the head of this iterator if they are available.
+     * The original iterator is stepped along by <code>num</code> elements.
+     * <pre class="groovyTestCase">
+     *     def iteratorCompare( Iterator a, List b ) {
+     *       a.collect { it } == b
+     *     }
+     *     def iter = [ 1, 2, 3, 4, 5 ].listIterator()
+     *     assert iteratorCompare( iter.drop( 0 ), [ 1, 2, 3, 4, 5 ] )
+     *     iter = [ 1, 2, 3, 4, 5 ].listIterator()
+     *     assert iteratorCompare( iter.drop( 2 ), [ 3, 4, 5 ] )
+     *     iter = [ 1, 2, 3, 4, 5 ].listIterator()
+     *     assert iteratorCompare( iter.drop( 5 ), [] )
+     * </pre>
+     *
+     * @param self the original iterator
+     * @param num the number of elements to drop from this iterator
+     * @return The iterator stepped along by <code>num</code> elements if they exist.
+     * @since 1.8.1
+     */
+    public static <T> Iterator<T> drop(Iterator<T> self, int num) {
+        while (num-- > 0 && self.hasNext()) {
+            self.next();
+        }
+        return self ;
+    }
+
+    /**
+     * Drops the given number of chars from the head of this CharSequence
+     * if they are available.
+     * <pre class="groovyTestCase">
+     *     def text = "Groovy"
+     *     assert text.drop( 0 ) == 'Groovy'
+     *     assert text.drop( 2 ) == 'oovy'
+     *     assert text.drop( 7 ) == ''
+     * </pre>
+     *
+     * @param self the original CharSequence
+     * @param num the number of characters to drop from this iterator
+     * @return a CharSequence consisting of all characters except the first <code>num</code> ones,
+     *         or else an empty String, if this CharSequence has less than <code>num</code> characters.
+     * @since 1.8.1
+     */
+    public static CharSequence drop(CharSequence self, int num) {
+        if( num <= 0 ) {
+            return self ;
+        }
+        if( self.length() <= num ) {
+            return self.subSequence( 0, 0 ) ;
+        }
+        return self.subSequence( num, self.length() ) ;
     }
 
     /**
