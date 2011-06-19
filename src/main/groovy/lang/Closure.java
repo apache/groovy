@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2011 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -204,6 +204,11 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
 
     public static final int DONE = 1, SKIP = 2;
     private static final Object[] EMPTY_OBJECT_ARRAY = {};
+    public static final Closure IDENTITY = new Closure<Object>(null) {
+        public Object doCall(Object args) {
+            return args;
+        }
+    };
     
     private Object delegate;
     private Object owner;
