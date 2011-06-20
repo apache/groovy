@@ -83,6 +83,8 @@ public class MapExpression extends Expression {
                     break;
                 }
             }
+        } else {
+            sb.append(":");
         }
         sb.append("]");
         return sb.toString();
