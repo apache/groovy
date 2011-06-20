@@ -575,6 +575,15 @@ class GroovyMethodsTest extends GroovySwingTestCase {
         assert !new WackyHashCode().is(new WackyHashCode())
     }
 
+    void testGroupByListIdentity() {
+        def items = [1, 2, 'foo']
+        assert items.groupBy() == [1:[1], 2:[2], foo:['foo']]
+        assert items.groupBy([]) == [1:[1], 2:[2], foo:['foo']]
+        assert items.groupBy(Closure.IDENTITY) == [1:[1], 2:[2], foo:['foo']]
+        assert items.groupBy({it}) == [1:[1], 2:[2], foo:['foo']]
+        assert items.groupBy({it},{it}) == [1:[1:[1]], 2:[2:[2]], foo:[foo:['foo']]]
+    }
+
     void testGroupByList() {
         def expected = [Integer: [1, 2], String: ["a", "b"], BigDecimal: [3.5, 4.6]]
         def list = [1, "a", 2, "b", 3.5, 4.6]
@@ -603,6 +612,16 @@ class GroovyMethodsTest extends GroovySwingTestCase {
         def result2 = list2.groupBy([{ it.aa }, { it.bb }, { it.cc }])
         assert [[aa: 11, bb: 22, cc: 33]]== result2[11][22][33]
         assert [77: [[aa: 22, bb: 33, cc: 77]]] == result2[22][33]
+    }
+
+    void testGroupByMapIdentity() {
+        def map = [a:1, b:2]
+        def entries = map.entrySet()
+        def result = map.groupBy()
+        def groupedKeys = result.keySet()
+        assert entries == groupedKeys
+        def entry_a = entries.find{ it.key == 'a' }
+        assert result[entry_a] == [a:1]
     }
 
     void testMapGroupEntriesBy() {
