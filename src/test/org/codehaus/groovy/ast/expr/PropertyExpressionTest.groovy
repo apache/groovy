@@ -6,10 +6,10 @@ package org.codehaus.groovy.ast.expr
  */
 class PropertyExpressionTest extends GroovyTestCase {
 
-    public void testGetText() {
-
+    void testGetText() {
         PropertyExpression property = new PropertyExpression(new VariableExpression('foo'), 'bar')
         assert 'foo.bar' == property.text
+
         property.safe = true
         property.spreadSafe = false
         assert 'foo?.bar' == property.text
