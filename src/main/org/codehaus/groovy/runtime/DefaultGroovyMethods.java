@@ -2820,16 +2820,19 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * } else {
      *     // there is no such record
      * }</pre>
+     * If an empty array of closures is supplied the IDENTITY Closure will be used.
      *
      * @param self     a collection to group
      * @param closures an array of closures, each mapping entries on keys
      * @return a new Map grouped by keys on each criterion
      * @since 1.8.1
+     * @see Closure.IDENTITY
      */
-    public static <K, T> Map<K, ?> groupBy(Collection<T> self, Object... closures) {
-        final Closure<K> head = (Closure) closures[0];
+    public static Map groupBy(Collection self, Object... closures) {
+        final Closure head = closures.length == 0 ? Closure.IDENTITY : (Closure) closures[0];
 
-        Map<K, List<T>> first = groupBy(self, head);
+        @SuppressWarnings("unchecked")
+        Map<Object, List> first = groupBy(self, head);
         if (closures.length < 2)
             return first;
 
@@ -2837,8 +2840,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         System.arraycopy(closures, 1, tail, 0, closures.length - 1); // Arrays.copyOfRange only since JDK 1.6
 
         // inject([:]) { a,e -> a << [(e.key): e.value.groupBy(tail)] }
-        Map<K, Map> acc = new LinkedHashMap<K, Map>();
-        for (Map.Entry<K, List<T>> item : first.entrySet()) {
+        Map<Object, Map> acc = new LinkedHashMap<Object, Map>();
+        for (Map.Entry<Object, List> item : first.entrySet()) {
             acc.put(item.getKey(), groupBy(item.getValue(), tail));
         }
 
@@ -2867,13 +2870,15 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * } else {
      *     // there is no such record
      * }</pre>
+     * If an empty list of closures is supplied the IDENTITY Closure will be used.
      *
      * @param self     a collection to group
      * @param closures a list of closures, each mapping entries on keys
      * @return a new Map grouped by keys on each criterion
      * @since 1.8.1
+     * @see Closure.IDENTITY
      */
-    public static <K, T> Map<K, ?> groupBy(Collection<T> self, List<Closure<K>> closures) {
+    public static Map groupBy(Collection self, List<Closure> closures) {
         return groupBy(self, closures.toArray());
     }
 
@@ -3018,27 +3023,31 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * <pre class="groovyTestCase">def result = [a:1,b:2,c:3,d:4,e:5,f:6].groupBy({ it.value % 2 }, { it.key.next() })
      * assert result == [1:[b:[a:1], d:[c:3], f:[e:5]], 0:[c:[b:2], e:[d:4], g:[f:6]]]</pre>
+     * If an empty array of closures is supplied the IDENTITY Closure will be used.
      *
      * @param self     a map to group
      * @param closures an array of closures that map entries on keys
      * @return a new map grouped by keys on each criterion
      * @since 1.8.1
+     * @see Closure.IDENTITY
      */
-    public static <G, K, V> Map<G, ?> groupBy(Map<K, V> self, Object... closures) {
-        final Closure<G> head = (Closure) closures[0];
+    public static Map<Object, Map> groupBy(Map self, Object... closures) {
+        @SuppressWarnings("unchecked")
+        final Closure<Object> head = closures.length == 0 ? Closure.IDENTITY : (Closure) closures[0];
 
-        Map<G, Map<K, V>> first = groupBy(self, head);
+        @SuppressWarnings("unchecked")
+        Map<Object, Map> first = groupBy(self, head);
         if (closures.length < 2)
             return first;
 
         final Object[] tail = new Object[closures.length - 1];
         System.arraycopy(closures, 1, tail, 0, closures.length - 1); // Arrays.copyOfRange only since JDK 1.6
 
-        Map<G, Map> acc = new LinkedHashMap<G, Map>();
-        for (Map.Entry<G, Map<K, V>> item: first.entrySet()) {
+        Map<Object, Map> acc = new LinkedHashMap<Object, Map>();
+        for (Map.Entry<Object, Map> item: first.entrySet()) {
             acc.put(item.getKey(), groupBy(item.getValue(), tail));
         }
-        
+
         return acc;
     }
 
@@ -3057,13 +3066,15 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * <pre class="groovyTestCase">def result = [a:1,b:2,c:3,d:4,e:5,f:6].groupBy([{ it.value % 2 }, { it.key.next() }])
      * assert result == [1:[b:[a:1], d:[c:3], f:[e:5]], 0:[c:[b:2], e:[d:4], g:[f:6]]]</pre>
+     * If an empty list of closures is supplied the IDENTITY Closure will be used.
      *
      * @param self     a map to group
      * @param closures a list of closures that map entries on keys
      * @return a new map grouped by keys on each criterion
      * @since 1.8.1
+     * @see Closure.IDENTITY
      */
-    public static <G, K, V> Map<G, ?> groupBy(Map<K, V> self, List<Closure<G>> closures) {
+    public static Map<Object, Map> groupBy(Map self, List<Closure> closures) {
         return groupBy(self, closures.toArray());
     }
 
