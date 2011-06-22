@@ -85,12 +85,13 @@ public class InspectorTest extends MockObjectTestCase implements Serializable {
     public void testMetaMethods() {
         Inspector insp = new Inspector(new Object());
         Object[] metaMethods = insp.getMetaMethods();
-        String[] names = {"sleep", "sleep", "println", "println", "println", "find", "findResult", "findResult", "print", "print", "each", "invokeMethod", "asType",
-                "inspect", "is", "isCase", "identity", "getAt", "putAt", "dump", "getMetaPropertyValues", "getProperties",
-                "use", "use", "use", "printf", "printf", "eachWithIndex", "every", "every", "any", "any", "grep", "collect", "collect", "findAll",
+        String[] names = {"sleep", "sleep", "println", "println", "println", "find", "find", "findResult", "findResult",
+                "print", "print", "each", "invokeMethod", "asType", "inspect", "is", "isCase", "identity", "getAt",
+                "putAt", "dump", "getMetaPropertyValues", "getProperties", "use", "use", "use", "printf", "printf",
+                "eachWithIndex", "every", "every", "any", "any", "grep", "grep", "collect", "collect", "findAll","findAll",
                 "split", "findIndexOf", "findIndexOf", "findLastIndexOf", "findLastIndexOf", "findIndexValues", "findIndexValues",
-                "iterator", "addShutdownHook", "sprintf", "sprintf", "with", "inject", "getMetaClass", "setMetaClass", "metaClass",
-                "respondsTo", "respondsTo", "hasProperty", "toString", "asBoolean"
+                "iterator", "addShutdownHook", "sprintf", "sprintf", "with", "inject", "getMetaClass", "setMetaClass",
+                "metaClass", "respondsTo", "respondsTo", "hasProperty", "toString", "asBoolean"
         };
         assertEquals("Incorrect number of methods found examining: " + getNamesFor(metaMethods), names.length, metaMethods.length);
         assertNameEquals(names, metaMethods);

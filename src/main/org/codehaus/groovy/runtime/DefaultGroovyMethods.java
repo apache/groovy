@@ -1490,13 +1490,17 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Iterates over every element of the collection and returns each item that matches
+     * Iterates over the collection of items which this Object represents and returns each item that matches
      * the given filter - calling the <code>{@link #isCase(java.lang.Object, java.lang.Object)}</code>
      * method used by switch statements.  This method can be used with different
      * kinds of filters like regular expressions, classes, ranges etc.
      * Example:
-     * <pre>def list = ['a', 'b', 'aa', 'bc' ]
-     * def filtered = list.grep( ~/a+/ ) //contains 'a' and 'aa'
+     * <pre class="groovyTestCase">
+     * def list = ['a', 'b', 'aa', 'bc', 3, 4.5]
+     * assert list.grep( ~/a+/ )  == ['a', 'aa']
+     * assert list.grep( ~/../ )  == ['aa', 'bc']
+     * assert list.grep( Number ) == [ 3, 4.5 ]
+     * assert list.grep{ it.toString().size() == 1 } == [ 'a', 'b', 3 ]
      * </pre>
      *
      * @param self   the object over which we iterate
@@ -1514,6 +1518,24 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             }
         }
         return answer;
+    }
+
+    /**
+     * Iterates over the collection of items which this Object represents and returns each item that matches
+     * using the IDENTITY Closure as a filter - effectively returning all elements which satisfy Groovy truth.
+     * <p/>
+     * Example:
+     * <pre class="groovyTestCase">
+     * def items = [1, 2, 0, false, true, '', 'foo', [], [4, 5], null]
+     * assert items.grep() == [1, 2, true, 'foo', [4, 5]]
+     * </pre>
+     *
+     * @param self   the object over which we iterate
+     * @return a collection of objects which match the filter
+     * @since 1.8.1
+     */
+    public static Collection grep(Object self) {
+        return grep(self, Closure.IDENTITY);
     }
 
     /**
@@ -2117,7 +2139,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self    an Object with an iterator returning its values
      * @param closure a closure condition
-     * @return the first Object found
+     * @return the first Object found or null if none was found
      * @since 1.0
      */
     public static Object find(Object self, Closure closure) {
@@ -2128,6 +2150,24 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             }
         }
         return null;
+    }
+
+    /**
+     * Finds the first item matching the IDENTITY Closure (i.e.&nbsp;matching Groovy truth).
+     * <p/>
+     * Example:
+     * <pre class="groovyTestCase">
+     * def items = [null, 0, 0.0, false, '', [], 42, 43]
+     * assert items.find() == 42
+     * </pre>
+     *
+     * @param self    an Object with an Iterator returning its values
+     * @return the first Object found or null if none was found
+     * @since 1.8.1
+     * @see Closure.IDENTITY
+     */
+    public static Object find(Object self) {
+        return find(self, Closure.IDENTITY);
     }
 
     /**
@@ -2182,6 +2222,24 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             }
         }
         return null;
+    }
+
+    /**
+     * Finds the first item matching the IDENTITY Closure (i.e.&nbsp;matching Groovy truth).
+     * <p/>
+     * Example:
+     * <pre class="groovyTestCase">
+     * def items = [null, 0, 0.0, false, '', [], 42, 43]
+     * assert items.find() == 42
+     * </pre>
+     *
+     * @param self    a Collection
+     * @return the first Object found or null if none was found
+     * @since 1.8.1
+     * @see Closure.IDENTITY
+     */
+    public static <T> T find(Collection<T> self) {
+        return find(self, Closure.IDENTITY);
     }
 
     /**
@@ -2306,6 +2364,24 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Finds the items matching the IDENTITY Closure (i.e.&nbsp;matching Groovy truth).
+     * <p/>
+     * Example:
+     * <pre class="groovyTestCase">
+     * def items = [1, 2, 0, false, true, '', 'foo', [], [4, 5], null]
+     * assert items.findAll() == [1, 2, true, 'foo', [4, 5]]
+     * </pre>
+     *
+     * @param self    a Collection
+     * @return a List of the values found
+     * @since 1.8.1
+     * @see Closure.IDENTITY
+     */
+    public static <T> Collection<T>  findAll(Collection<T> self) {
+        return findAll(self, Closure.IDENTITY);
+    }
+
+    /**
      * Finds all items matching the closure condition.
      *
      * @param self    an Object with an Iterator returning its values
@@ -2317,6 +2393,24 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         List answer = new ArrayList();
         Iterator iter = InvokerHelper.asIterator(self);
         return findAll(closure, answer, iter);
+    }
+
+    /**
+     * Finds all items matching the IDENTITY Closure (i.e.&nbsp;matching Groovy truth).
+     * <p/>
+     * Example:
+     * <pre class="groovyTestCase">
+     * def items = [1, 2, 0, false, true, '', 'foo', [], [4, 5], null]
+     * assert items.findAll() == [1, 2, true, 'foo', [4, 5]]
+     * </pre>
+     *
+     * @param self    an Object with an Iterator returning its values
+     * @return a List of the values found
+     * @since 1.8.1
+     * @see Closure.IDENTITY
+     */
+    public static Collection findAll(Object self) {
+        return findAll(self, Closure.IDENTITY);
     }
 
     private static <T> Collection<T> findAll(Closure closure, Collection<T> answer, Iterator<? extends T> iter) {
