@@ -1533,6 +1533,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self   the object over which we iterate
      * @return a collection of objects which match the filter
      * @since 1.8.1
+     * @see Closure#IDENTITY
      */
     public static Collection grep(Object self) {
         return grep(self, Closure.IDENTITY);
@@ -2164,7 +2165,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self    an Object with an Iterator returning its values
      * @return the first Object found or null if none was found
      * @since 1.8.1
-     * @see Closure.IDENTITY
+     * @see Closure#IDENTITY
      */
     public static Object find(Object self) {
         return find(self, Closure.IDENTITY);
@@ -2236,7 +2237,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self    a Collection
      * @return the first Object found or null if none was found
      * @since 1.8.1
-     * @see Closure.IDENTITY
+     * @see Closure#IDENTITY
      */
     public static <T> T find(Collection<T> self) {
         return find(self, Closure.IDENTITY);
@@ -2375,7 +2376,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self    a Collection
      * @return a List of the values found
      * @since 1.8.1
-     * @see Closure.IDENTITY
+     * @see Closure#IDENTITY
      */
     public static <T> Collection<T>  findAll(Collection<T> self) {
         return findAll(self, Closure.IDENTITY);
@@ -2407,7 +2408,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self    an Object with an Iterator returning its values
      * @return a List of the values found
      * @since 1.8.1
-     * @see Closure.IDENTITY
+     * @see Closure#IDENTITY
      */
     public static Collection findAll(Object self) {
         return findAll(self, Closure.IDENTITY);
@@ -2794,7 +2795,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closures an array of closures, each mapping entries on keys
      * @return a new Map grouped by keys on each criterion
      * @since 1.8.1
-     * @see Closure.IDENTITY
+     * @see Closure#IDENTITY
      */
     public static Map groupBy(Collection self, Object... closures) {
         final Closure head = closures.length == 0 ? Closure.IDENTITY : (Closure) closures[0];
@@ -2844,7 +2845,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closures a list of closures, each mapping entries on keys
      * @return a new Map grouped by keys on each criterion
      * @since 1.8.1
-     * @see Closure.IDENTITY
+     * @see Closure#IDENTITY
      */
     public static Map groupBy(Collection self, List<Closure> closures) {
         return groupBy(self, closures.toArray());
@@ -3040,7 +3041,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closures a list of closures that map entries on keys
      * @return a new map grouped by keys on each criterion
      * @since 1.8.1
-     * @see Closure.IDENTITY
+     * @see Closure#IDENTITY
      */
     public static Map<Object, Map> groupBy(Map self, List<Closure> closures) {
         return groupBy(self, closures.toArray());
