@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 the original author or authors.
+ * Copyright 2008-2011 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -85,11 +85,15 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
             boolean callSuper = memberHasValue(anno, "callSuper", true);
             boolean force = memberHasValue(anno, "force", true);
             List<String> excludes = tokenize((String) getMemberValue(anno, "excludes"));
-            createConstructor(cNode, includeFields, includeProperties, includeSuperFields, includeSuperProperties, callSuper, force, excludes);
+            List<String> includes = tokenize((String) getMemberValue(anno, "includes"));
+            if (includes != null && !includes.isEmpty() && excludes != null && !excludes.isEmpty()) {
+                addError("Error during " + MY_TYPE_NAME + " processing: Only one of 'includes' and 'excludes' should be supplied not both.", anno);
+            }
+            createConstructor(cNode, includeFields, includeProperties, includeSuperFields, includeSuperProperties, callSuper, force, excludes, includes);
         }
     }
 
-    public static void createConstructor(ClassNode cNode, boolean includeFields, boolean includeProperties, boolean includeSuperFields, boolean includeSuperProperties, boolean callSuper, boolean force, List<String> excludes) {
+    public static void createConstructor(ClassNode cNode, boolean includeFields, boolean includeProperties, boolean includeSuperFields, boolean includeSuperProperties, boolean callSuper, boolean force, List<String> excludes, List<String> includes) {
         // no processing if existing constructors found
         List<ConstructorNode> constructors = cNode.getDeclaredConstructors();
         if (constructors.size() > 1 && !force) return;
@@ -119,7 +123,7 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
         final BlockStatement body = new BlockStatement();
         for (FieldNode fNode : superList) {
             String name = fNode.getName();
-            if (excludes.contains(name) || name.contains("$")) continue;
+            if (shouldSkip(name, excludes, includes)) continue;
             params.add(createParam(fNode, name));
             if (callSuper) {
                 superParams.add(new VariableExpression(name));
@@ -132,7 +136,7 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
         }
         for (FieldNode fNode : list) {
             String name = fNode.getName();
-            if (excludes.contains(name) || name.contains("$")) continue;
+            if (shouldSkip(name, excludes, includes)) continue;
             params.add(createParam(fNode, name));
             body.addStatement(assignStatement(new PropertyExpression(VariableExpression.THIS_EXPRESSION, name), new VariableExpression(name)));
         }
@@ -143,6 +147,10 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
         Parameter param = new Parameter(fNode.getType(), name);
         param.setInitialExpression(providedOrDefaultInitialValue(fNode));
         return param;
+    }
+
+    private static boolean shouldSkip(String name, List<String> excludes, List<String> includes) {
+        return (excludes != null && excludes.contains(name)) || name.contains("$") || (includes != null && !includes.isEmpty() && !includes.contains(name));
     }
 
     private static Expression providedOrDefaultInitialValue(FieldNode fNode) {

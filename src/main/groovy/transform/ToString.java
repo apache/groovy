@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 the original author or authors.
+ * Copyright 2008-2011 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -86,9 +86,16 @@ import java.lang.annotation.Target;
 @GroovyASTTransformationClass("org.codehaus.groovy.transform.ToStringASTTransformation")
 public @interface ToString {
     /**
-     * Comma separated list of field and property names to exclude from generated toString
+     * Comma separated list of field and/or property names to exclude from generated toString.
+     * Must not be used if 'includes' is used.
      */
     String excludes() default "";
+
+    /**
+     * Comma separated list of field and/or property names to include within the generated toString.
+     * Must not be used if 'excludes' is used.
+     */
+    String includes() default "";
 
     /**
      * Whether to include super in generated toString
