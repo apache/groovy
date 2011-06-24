@@ -7,13 +7,6 @@
     <artifactId>groovy-examples</artifactId>
     <version>internal</version>
     <packaging>jar</packaging>
-    <repositories>
-        <repository>
-            <id>jboss repo</id>
-            <name>jboss maven2 repository</name>
-            <url>http://repository.jboss.org/maven2</url>
-        </repository>
-    </repositories>
     <dependencies>
         <dependency>
             <groupId>lucene</groupId>
@@ -24,13 +17,13 @@
         <dependency>
             <groupId>org.eclipse</groupId>
             <artifactId>osgi</artifactId>
-            <version>3.4.3.R34x_v20081215-1030</version>
+            <version>3.5.0.v20090520</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>commons-httpclient</groupId>
             <artifactId>commons-httpclient</artifactId>
-            <version>3.0.1</version>
+            <version>3.1</version>
             <scope>runtime</scope>
             <!-- exclude non-compile scoped dependencies manually for now -->
             <exclusions>
