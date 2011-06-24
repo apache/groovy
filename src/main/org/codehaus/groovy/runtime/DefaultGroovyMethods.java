@@ -2998,7 +2998,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closures an array of closures that map entries on keys
      * @return a new map grouped by keys on each criterion
      * @since 1.8.1
-     * @see Closure.IDENTITY
+     * @see Closure#IDENTITY
      */
     public static Map<Object, Map> groupBy(Map self, Object... closures) {
         @SuppressWarnings("unchecked")
