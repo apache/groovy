@@ -10,9 +10,9 @@
     <!-- intentionally leaving off scope here as scope is probably overkill for tools -->
     <dependencies>
         <dependency>
-            <groupId>com.google.code</groupId>
+            <groupId>com.googlecode.jarjar</groupId>
             <artifactId>jarjar</artifactId>
-            <version>1.0</version>
+            <version>1.1</version>
         </dependency>
         <dependency>
             <groupId>checkstyle</groupId>
@@ -73,11 +73,6 @@
         <repository>
             <id>aQute</id>
             <url>http://www.aQute.biz/repo</url>
-        </repository>
-        <repository>
-            <id>jboss repo</id>
-            <name>jboss maven2 repository</name>
-            <url>http://repository.jboss.org/maven2</url>
         </repository>
     </repositories>
 </project>
