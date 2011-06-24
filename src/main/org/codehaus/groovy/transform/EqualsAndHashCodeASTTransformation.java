@@ -61,12 +61,16 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
             }
             boolean includeFields = memberHasValue(anno, "includeFields", true);
             List<String> excludes = tokenize((String) getMemberValue(anno, "excludes"));
-            createHashCode(cNode, false, includeFields, callSuper, excludes);
-            createEquals(cNode, includeFields, callSuper, useCanEqual, excludes);
+            List<String> includes = tokenize((String) getMemberValue(anno, "includes"));
+            if (includes != null && !includes.isEmpty() && excludes != null && !excludes.isEmpty()) {
+                addError("Error during " + MY_TYPE_NAME + " processing: Only one of 'includes' and 'excludes' should be supplied not both.", anno);
+            }
+            createHashCode(cNode, false, includeFields, callSuper, excludes, includes);
+            createEquals(cNode, includeFields, callSuper, useCanEqual, excludes, includes);
         }
     }
 
-    public static void createHashCode(ClassNode cNode, boolean cacheResult, boolean includeFields, boolean callSuper, List<String> excludes) {
+    public static void createHashCode(ClassNode cNode, boolean cacheResult, boolean includeFields, boolean callSuper, List<String> excludes, List<String> includes) {
         // make a public method if none exists otherwise try a private method with leading underscore
         boolean hasExistingHashCode = hasDeclaredMethod(cNode, "hashCode", 0);
         if (hasExistingHashCode && hasDeclaredMethod(cNode, "_hashCode", 0)) return;
@@ -78,19 +82,19 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
             final Expression hash = new VariableExpression(hashField);
             body.addStatement(new IfStatement(
                     isZeroExpr(hash),
-                    calculateHashStatements(cNode, hash, includeFields, callSuper, excludes),
+                    calculateHashStatements(cNode, hash, includeFields, callSuper, excludes, includes),
                     new EmptyStatement()
             ));
             body.addStatement(new ReturnStatement(hash));
         } else {
-            body.addStatement(calculateHashStatements(cNode, null, includeFields, callSuper, excludes));
+            body.addStatement(calculateHashStatements(cNode, null, includeFields, callSuper, excludes, includes));
         }
 
         cNode.addMethod(new MethodNode(hasExistingHashCode ? "_hashCode" : "hashCode", hasExistingHashCode ? ACC_PRIVATE : ACC_PUBLIC,
                 ClassHelper.int_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, body));
     }
 
-    private static Statement calculateHashStatements(ClassNode cNode, Expression hash, boolean includeFields, boolean callSuper, List<String> excludes) {
+    private static Statement calculateHashStatements(ClassNode cNode, Expression hash, boolean includeFields, boolean callSuper, List<String> excludes, List<String> includes) {
         final List<PropertyNode> pList = getInstanceProperties(cNode);
         final List<FieldNode> fList = new ArrayList<FieldNode>();
         if (includeFields) {
@@ -103,7 +107,7 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
         body.addStatement(new ExpressionStatement(new DeclarationExpression(result, ASSIGN, init)));
 
         for (PropertyNode pNode : pList) {
-            if (excludes.contains(pNode.getName()) || pNode.getName().contains("$")) continue;
+            if (shouldSkip(pNode.getName(), excludes, includes)) continue;
             // _result = HashCodeHelper.updateHash(_result, getProperty())
             String getterName = "get" + Verifier.capitalize(pNode.getName());
             Expression getter = new MethodCallExpression(VariableExpression.THIS_EXPRESSION, getterName, MethodCallExpression.NO_ARGUMENTS);
@@ -113,7 +117,7 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
 
         }
         for (FieldNode fNode : fList) {
-            if (excludes.contains(fNode.getName()) || fNode.getName().contains("$")) continue;
+            if (shouldSkip(fNode.getName(), excludes, includes)) continue;
             // _result = HashCodeHelper.updateHash(_result, field)
             final Expression fieldExpr = new VariableExpression(fNode);
             final Expression args = new TupleExpression(result, fieldExpr);
@@ -135,6 +139,10 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
         return body;
     }
 
+    private static boolean shouldSkip(String name, List<String> excludes, List<String> includes) {
+        return (excludes != null && excludes.contains(name)) || name.contains("$") || (includes != null && !includes.isEmpty() && !includes.contains(name));
+    }
+
     private static void createCanEqual(ClassNode cNode) {
         boolean hasExistingCanEqual = hasDeclaredMethod(cNode, "canEqual", 1);
         if (hasExistingCanEqual && hasDeclaredMethod(cNode, "_canEqual", 1)) return;
@@ -148,7 +156,7 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
 
     }
 
-    public static void createEquals(ClassNode cNode, boolean includeFields, boolean callSuper, boolean useCanEqual, List<String> excludes) {
+    public static void createEquals(ClassNode cNode, boolean includeFields, boolean callSuper, boolean useCanEqual, List<String> excludes, List<String> includes) {
         if (useCanEqual) createCanEqual(cNode);
         // make a public method if none exists otherwise try a private method with leading underscore
         boolean hasExistingEquals = hasDeclaredMethod(cNode, "equals", 1);
@@ -175,7 +183,7 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
 
         List<PropertyNode> pList = getInstanceProperties(cNode);
         for (PropertyNode pNode : pList) {
-            if (excludes.contains(pNode.getName()) || pNode.getName().contains("$")) continue;
+            if (shouldSkip(pNode.getName(), excludes, includes)) continue;
             body.addStatement(returnFalseIfPropertyNotEqual(pNode, other));
         }
         List<FieldNode> fList = new ArrayList<FieldNode>();
@@ -183,7 +191,7 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
             fList.addAll(getInstanceNonPropertyFields(cNode));
         }
         for (FieldNode fNode : fList) {
-            if (excludes.contains(fNode.getName()) || fNode.getName().contains("$")) continue;
+            if (shouldSkip(fNode.getName(), excludes, includes)) continue;
             body.addStatement(returnFalseIfFieldNotEqual(fNode, other));
         }
         if (callSuper) {

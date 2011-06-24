@@ -113,6 +113,14 @@ class CanonicalComponentsTransformTest extends GroovyShellTestCase {
         assert p1.hashCode() == p2.hashCode()
     }
 
+    // GROOVY-4894
+    void testIncludesWithToString() {
+        def p1 = new PointIgnoreY(x:1, y:5)
+        def p2 = new PointIgnoreY(x:10, y:50)
+        assert p1.toString() == "org.codehaus.groovy.transform.PointIgnoreY(1)"
+        assert p2.toString() == "org.codehaus.groovy.transform.PointIgnoreY(10)"
+    }
+
     // GROOVY-4844
     void testToStringCustomGetter() {
         def p1 = new Point(1, 2)
@@ -230,6 +238,7 @@ class Customer5 {
 
 // GROOVY-4786
 @EqualsAndHashCode(excludes="y")
+@ToString(includes="x")
 class PointIgnoreY {
     int x
     int y // y coordinate excluded from Equals and hashCode

@@ -21,7 +21,7 @@ import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 
-import java.util.ArrayList;
+import java.util.List;
 
 import static org.codehaus.groovy.transform.EqualsAndHashCodeASTTransformation.createEquals;
 import static org.codehaus.groovy.transform.EqualsAndHashCodeASTTransformation.createHashCode;
@@ -45,8 +45,8 @@ public class CanonicalASTTransformation extends AbstractASTTransformation {
     public void visit(ASTNode[] nodes, SourceUnit source) {
         init(nodes, source);
         AnnotatedNode parent = (AnnotatedNode) nodes[1];
-        AnnotationNode node = (AnnotationNode) nodes[0];
-        if (!MY_TYPE.equals(node.getClassNode())) return;
+        AnnotationNode anno = (AnnotationNode) nodes[0];
+        if (!MY_TYPE.equals(anno.getClassNode())) return;
 
         if (parent instanceof ClassNode) {
             ClassNode cNode = (ClassNode) parent;
@@ -55,16 +55,21 @@ public class CanonicalASTTransformation extends AbstractASTTransformation {
                 addError(MY_TYPE_NAME + " class '" + cNode.getName() + "' can't also be " + ImmutableASTTransformation.MY_TYPE_NAME, parent);
             }
             checkNotInterface(cNode, MY_TYPE_NAME);
+            List<String> excludes = tokenize((String) getMemberValue(anno, "excludes"));
+            List<String> includes = tokenize((String) getMemberValue(anno, "includes"));
+            if (includes != null && !includes.isEmpty() && excludes != null && !excludes.isEmpty()) {
+                addError("Error during " + MY_TYPE_NAME + " processing: Only one of 'includes' and 'excludes' should be supplied not both.", anno);
+            }
             if (!hasAnnotation(cNode, TupleConstructorASTTransformation.MY_TYPE)) {
-                createConstructor(cNode, false, true, false, false, false, false, new ArrayList<String>());
+                createConstructor(cNode, false, true, false, false, false, false, excludes, includes);
             }
             if (!hasAnnotation(cNode, EqualsAndHashCodeASTTransformation.MY_TYPE)) {
-                createHashCode(cNode, false, false, false, new ArrayList<String>());
-                createEquals(cNode, false, false, true, new ArrayList<String>());
+                createHashCode(cNode, false, false, false, excludes, includes);
+                createEquals(cNode, false, false, true, excludes, includes);
             }
             if (!hasAnnotation(cNode, ToStringASTTransformation.MY_TYPE)) {
                 toStringInit(cNode, ConstantExpression.FALSE);
-                createToString(cNode, false, false, new ArrayList<String>());
+                createToString(cNode, false, false, excludes, includes);
             }
         }
     }

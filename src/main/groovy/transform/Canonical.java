@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 the original author or authors.
+ * Copyright 2008-2011 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -94,4 +94,16 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.SOURCE)
 @Target({ElementType.TYPE})
 @GroovyASTTransformationClass("org.codehaus.groovy.transform.CanonicalASTTransformation")
-public @interface Canonical {}
+public @interface Canonical {
+    /**
+     * Comma separated list of field and/or property names to exclude.
+     * Must not be used if 'includes' is used.
+     */
+    String excludes() default "";
+
+    /**
+     * Comma separated list of field and/or property names to include.
+     * Must not be used if 'excludes' is used.
+     */
+    String includes() default "";
+}

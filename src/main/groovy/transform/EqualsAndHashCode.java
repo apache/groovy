@@ -165,9 +165,16 @@ import java.lang.annotation.Target;
 @GroovyASTTransformationClass("org.codehaus.groovy.transform.EqualsAndHashCodeASTTransformation")
 public @interface EqualsAndHashCode {
     /**
-     * Comma separated list of field and property names to exclude from equals and hashCode calculations
+     * Comma separated list of field and/or property names to exclude from the equals and hashCode calculations.
+     * Must not be used if 'includes' is used.
      */
     String excludes() default "";
+
+    /**
+     * Comma separated list of field and/or property names to include within the equals and hashCode calculations.
+     * Must not be used if 'excludes' is used.
+     */
+    String includes() default "";
 
     /**
      * Whether to include super in equals and hashCode calculations

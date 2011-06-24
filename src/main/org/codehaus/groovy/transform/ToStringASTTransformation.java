@@ -84,12 +84,16 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
             boolean includeNames = memberHasValue(anno, "includeNames", true);
             boolean includeFields = memberHasValue(anno, "includeFields", true);
             List<String> excludes = tokenize((String) getMemberValue(anno, "excludes"));
+            List<String> includes = tokenize((String) getMemberValue(anno, "includes"));
+            if (includes != null && !includes.isEmpty() && excludes != null && !excludes.isEmpty()) {
+                addError("Error during " + MY_TYPE_NAME + " processing: Only one of 'includes' and 'excludes' should be supplied not both.", anno);
+            }
             toStringInit(cNode, new ConstantExpression(includeNames));
-            createToString(cNode, includeSuper, includeFields, excludes);
+            createToString(cNode, includeSuper, includeFields, excludes, includes);
         }
     }
 
-    public static void createToString(ClassNode cNode, boolean includeSuper, boolean includeFields, List<String> excludes) {
+    public static void createToString(ClassNode cNode, boolean includeSuper, boolean includeFields, List<String> excludes, List<String> includes) {
         // make a public method if none exists otherwise try a private method with leading underscore
         boolean hasExistingToString = hasDeclaredMethod(cNode, "toString", 0);
         if (hasExistingToString && hasDeclaredMethod(cNode, "_toString", 0)) return;
@@ -105,7 +109,7 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
         boolean first = true;
         List<PropertyNode> pList = getInstanceProperties(cNode);
         for (PropertyNode pNode : pList) {
-            if (excludes.contains(pNode.getName()) || pNode.getName().contains("$")) continue;
+            if (shouldSkip(pNode.getName(), excludes, includes)) continue;
             first = appendPrefix(cNode, body, result, first, pNode.getName());
             String getterName = "get" + Verifier.capitalize(pNode.getName());
             Expression getter = new MethodCallExpression(VariableExpression.THIS_EXPRESSION, getterName, MethodCallExpression.NO_ARGUMENTS);
@@ -116,7 +120,7 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
             fList.addAll(getInstanceNonPropertyFields(cNode));
         }
         for (FieldNode fNode : fList) {
-            if (excludes.contains(fNode.getName()) || fNode.getName().contains("$")) continue;
+            if (shouldSkip(fNode.getName(), excludes, includes)) continue;
             first = appendPrefix(cNode, body, result, first, fNode.getName());
             body.addStatement(append(result, new StaticMethodCallExpression(INVOKER_TYPE, "toString", new VariableExpression(fNode))));
         }
@@ -154,6 +158,10 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
 
     private static ExpressionStatement append(Expression result, Expression expr) {
         return new ExpressionStatement(new MethodCallExpression(result, "append", expr));
+    }
+
+    private static boolean shouldSkip(String name, List<String> excludes, List<String> includes) {
+        return (excludes != null && excludes.contains(name)) || name.contains("$") || (includes != null && !includes.isEmpty() && !includes.contains(name));
     }
 
     public static void toStringInit(ClassNode cNode, ConstantExpression fieldValue) {
