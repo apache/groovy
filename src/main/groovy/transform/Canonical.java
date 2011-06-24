@@ -98,12 +98,20 @@ public @interface Canonical {
     /**
      * Comma separated list of field and/or property names to exclude.
      * Must not be used if 'includes' is used.
+     *
+     * If the {@code @Canonical} behavior is customised by using it in conjunction with one of the more specific
+     * related annotations (i.e. {@code @ToString}, {@code @EqualsAndHashCode} or {@code @TupleConstructor}), then
+     * the value of this attribute can be overriden within the more specific annotation.
      */
     String excludes() default "";
 
     /**
      * Comma separated list of field and/or property names to include.
      * Must not be used if 'excludes' is used.
+     *
+     * If the {@code @Canonical} behavior is customised by using it in conjunction with one of the more specific
+     * related annotations (i.e. {@code @ToString}, {@code @EqualsAndHashCode} or {@code @TupleConstructor}), then
+     * the value of this attribute can be overriden within the more specific annotation.
      */
     String includes() default "";
 }
