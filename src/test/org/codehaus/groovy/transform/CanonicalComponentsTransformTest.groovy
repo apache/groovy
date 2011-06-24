@@ -121,6 +121,26 @@ class CanonicalComponentsTransformTest extends GroovyShellTestCase {
         assert p2.toString() == "org.codehaus.groovy.transform.PointIgnoreY(10)"
     }
 
+    // GROOVY-4894
+    void testNestedExcludes() {
+        def (s1, s2) = new GroovyShell().evaluate("""
+            import groovy.transform.*
+            @Canonical(excludes='foo, baz')
+            @ToString(includeNames=true)
+            class Hello {
+              String foo = 'A', bar = 'B', baz = 'C'
+            }
+            @Canonical(excludes='foo, baz')
+            @ToString(excludes='foo', includeNames=true)
+            class Goodbye {
+              String foo = 'A', bar = 'B', baz = 'C'
+            }
+            [new Hello().toString(), new Goodbye().toString()]
+        """)
+        assert s1 == 'Hello(bar:B)'
+        assert s2 == 'Goodbye(bar:B, baz:C)'
+    }
+
     // GROOVY-4844
     void testToStringCustomGetter() {
         def p1 = new Point(1, 2)
