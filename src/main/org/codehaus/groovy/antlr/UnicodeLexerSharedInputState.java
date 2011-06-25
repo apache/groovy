@@ -20,7 +20,6 @@ import antlr.LexerSharedInputState;
 /**
  * GRECLIPSE-805 Support for unicode escape sequences
  * @author Andrew Eisenberg
- * @created Mar 3, 2011
  */
 public class UnicodeLexerSharedInputState extends LexerSharedInputState {
     private final UnicodeEscapingReader escapingReader;
