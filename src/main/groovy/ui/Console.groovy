@@ -44,7 +44,6 @@ import javax.swing.text.StyleConstants
 import javax.swing.text.html.HTML
 import javax.swing.filechooser.FileFilter
 
-import org.codehaus.groovy.runtime.InvokerHelper
 import org.codehaus.groovy.runtime.StackTraceUtils
 import org.codehaus.groovy.control.ErrorCollector
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
@@ -1015,7 +1014,7 @@ options:
     }
 
     void showAbout(EventObject evt = null) {
-        def version = InvokerHelper.getVersion()
+        def version = GroovySystem.getVersion()
         def pane = swing.optionPane()
          // work around GROOVY-1048
         pane.setMessage('Welcome to the Groovy Console for evaluating Groovy scripts\nVersion ' + version)

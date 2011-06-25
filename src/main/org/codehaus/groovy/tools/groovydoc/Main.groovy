@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2011 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,6 @@
  */
 package org.codehaus.groovy.tools.groovydoc
 
-import org.codehaus.groovy.runtime.InvokerHelper
 import org.codehaus.groovy.tools.shell.util.Logger
 import org.codehaus.groovy.tools.shell.util.MessageSource
 import org.codehaus.groovy.tools.shell.IO
@@ -88,7 +87,7 @@ class Main {
         }
 
         if (options.version) {
-            io.out.println(messages.format('cli.info.version', InvokerHelper.version))
+            io.out.println(messages.format('cli.info.version', GroovySystem.version))
             return
         }
 
