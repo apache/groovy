@@ -18,7 +18,6 @@ package org.codehaus.groovy.tools
 import groovy.grape.Grape
 import org.apache.ivy.util.DefaultMessageLogger
 import org.apache.ivy.util.Message
-import org.codehaus.groovy.runtime.InvokerHelper
 import org.apache.commons.cli.*
 
 //commands
@@ -322,7 +321,7 @@ if (cmd.hasOption('h')) {
 }
 
 if (cmd.hasOption('v')) {
-    String version = InvokerHelper.getVersion();
+    String version = GroovySystem.getVersion();
     println "Groovy Version: $version JVM: ${System.getProperty('java.version')}"
     return
 }
