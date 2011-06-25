@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2011 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,13 +19,10 @@ package org.codehaus.groovy.tools.shell
 import jline.Terminal
 import jline.History
 
-import org.codehaus.groovy.runtime.InvokerHelper
 import org.codehaus.groovy.tools.shell.util.MessageSource
 import org.codehaus.groovy.tools.shell.util.XmlCommandRegistrar
 import org.codehaus.groovy.runtime.StackTraceUtils
 import org.codehaus.groovy.tools.shell.util.Preferences
-import org.codehaus.groovy.tools.shell.Parser
-import org.codehaus.groovy.tools.shell.ParseCode
 import org.fusesource.jansi.AnsiRenderer
 import org.fusesource.jansi.Ansi
 import org.fusesource.jansi.AnsiConsole
@@ -436,7 +433,7 @@ class Groovysh
                         width = 80
                     }
 
-                    io.out.println(messages.format('startup_banner.0', GroovySystem.getVersion(), System.properties['java.version']))
+                    io.out.println(messages.format('startup_banner.0', GroovySystem.version, System.properties['java.version']))
                     io.out.println(messages['startup_banner.1'])
                     io.out.println('-' * (width - 1))
                 }
