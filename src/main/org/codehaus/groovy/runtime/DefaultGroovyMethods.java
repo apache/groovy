@@ -3322,7 +3322,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * the 2-arg closure along with the first item. The result is passed back (injected) into
      * the closure along with the second item. The new result is injected back into
      * the closure along with the third item and so on until the entire collection
-     * has been used. Also known as <tt>foldLeft</tt> in functional parlance.
+     * has been used. Also known as <tt>foldLeft</tt> or <tt>reduce</tt> in functional parlance.
      *
      * Examples:
      * <pre class="groovyTestCase">
@@ -3360,6 +3360,41 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static <T, U extends T, V extends T> T inject(Collection self, U initialValue, Closure<V> closure) {
         return (T) inject(self.iterator(), initialValue, closure);
     }
+
+    /**
+     * Iterates through the given Map, passing in the initial value to
+     * the 2-arg Closure along with the first item (or 3-arg Closure along with the first key and value).
+     * The result is passed back (injected) into
+     * the closure along with the second item. The new result is injected back into
+     * the closure along with the third item and so on until the entire collection
+     * has been used. Also known as <tt>foldLeft</tt> or <tt>reduce</tt> in functional parlance.
+     *
+     * Examples:
+     * <pre class="groovyTestCase">
+     * def map = [a:1, b:2, c:3]
+     * assert map.inject([]) { list, k, v ->
+     *   list + [k] * v
+     * } == ['a', 'b', 'b', 'c', 'c', 'c']
+     * </pre>
+     *
+     * @param self         a Map
+     * @param initialValue some initial value
+     * @param closure      a 2 or 3 arg Closure
+     * @return the result of the last closure call
+     * @since 1.8.1
+     */
+    public static <T, U extends T, V extends T> T inject(Map<?, ?> self, U initialValue, Closure<V> closure) {
+        T value = initialValue;
+        for (Map.Entry<?, ?> entry : self.entrySet()) {
+            if (closure.getMaximumNumberOfParameters() == 3) {
+                value = closure.call(value, entry.getKey(), entry.getValue());
+            } else {
+                value = closure.call(value, entry);
+            }
+        }
+        return value;
+    }
+
 
     /**
      * Iterates through the given Iterator, passing in the initial value to
