@@ -37,6 +37,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -662,7 +663,12 @@ public class JavaStubGenerator {
         } else if (memberValue instanceof ConstantExpression) {
             ConstantExpression ce = (ConstantExpression) memberValue;
             Object constValue = ce.getValue();
-            if (constValue instanceof Number || constValue instanceof Boolean)
+            if (constValue instanceof AnnotationNode) {
+                StringWriter writer = new StringWriter();
+                PrintWriter out = new PrintWriter(writer);
+                printAnnotation(out, (AnnotationNode) constValue);
+                val = writer.toString();
+            } else if (constValue instanceof Number || constValue instanceof Boolean)
                 val = constValue.toString();
             else
                 val = "\"" + escapeStringAnnotationValue(constValue.toString()) + "\"";
