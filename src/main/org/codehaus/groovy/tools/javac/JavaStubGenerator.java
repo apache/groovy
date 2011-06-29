@@ -44,8 +44,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-public class JavaStubGenerator
-{
+public class JavaStubGenerator {
     private boolean java5 = false;
     private boolean requireSuperResolved = false;
     private File outputPath;
@@ -68,8 +67,8 @@ public class JavaStubGenerator
 
     private void mkdirs(File parent, String relativeFile) {
         int index = relativeFile.lastIndexOf('/');
-        if (index==-1) return;
-        File dir = new File(parent,relativeFile.substring(0,index));
+        if (index == -1) return;
+        File dir = new File(parent, relativeFile.substring(0, index));
         dir.mkdirs();
     }
 
@@ -87,7 +86,7 @@ public class JavaStubGenerator
         if ((classNode.getModifiers() & Opcodes.ACC_PRIVATE) != 0) return;
 
         String fileName = classNode.getName().replace('.', '/');
-        mkdirs(outputPath,fileName);
+        mkdirs(outputPath, fileName);
         toCompile.add(fileName);
 
         File file = new File(outputPath, fileName + ".java");
@@ -100,9 +99,8 @@ public class JavaStubGenerator
                 out.println("package " + packageName + ";\n");
             }
 
-            genImports(classNode, out);
-
-            genClassInner(classNode, out);
+            printImports(out, classNode);
+            printClassContents(out, classNode);
 
         } finally {
             try {
@@ -118,7 +116,7 @@ public class JavaStubGenerator
         }
     }
 
-    private void genClassInner(ClassNode classNode, PrintWriter out) throws FileNotFoundException {
+    private void printClassContents(PrintWriter out, ClassNode classNode) throws FileNotFoundException {
         if (classNode instanceof InnerClassNode && ((InnerClassNode) classNode).isAnonymous()) {
             // if it is an anonymous inner class, don't generate the stub code for it.
             return;
@@ -129,25 +127,27 @@ public class JavaStubGenerator
                 protected void addTimeStamp(ClassNode node) {}
                 protected void addInitialization(ClassNode node) {}
                 protected void addPropertyMethod(MethodNode method) {
-                	doAddMethod(method);
+                    doAddMethod(method);
                 }
                 protected void addReturnIfNeeded(MethodNode node) {}
                 protected void addMethod(ClassNode node, boolean shouldBeSynthetic, String name, int modifiers, ClassNode returnType, Parameter[] parameters, ClassNode[] exceptions, Statement code) {
-                	doAddMethod(new MethodNode(name, modifiers, returnType, parameters, exceptions, code));
+                    doAddMethod(new MethodNode(name, modifiers, returnType, parameters, exceptions, code));
                 }
+
                 protected void addConstructor(Parameter[] newParams, ConstructorNode ctor, Statement code, ClassNode node) {
-                	if(code instanceof ExpressionStatement) {//GROOVY-4508
-                		Statement temp = code;
-                		code = new BlockStatement();
-                		((BlockStatement)code).addStatement(temp);
-                	}
-                	ConstructorNode ctrNode = new ConstructorNode(ctor.getModifiers(), newParams, ctor.getExceptions(), code);
-                	ctrNode.setDeclaringClass(node);
-                	constructors.add(ctrNode);
+                    if (code instanceof ExpressionStatement) {//GROOVY-4508
+                        Statement temp = code;
+                        code = new BlockStatement();
+                        ((BlockStatement) code).addStatement(temp);
+                    }
+                    ConstructorNode ctrNode = new ConstructorNode(ctor.getModifiers(), newParams, ctor.getExceptions(), code);
+                    ctrNode.setDeclaringClass(node);
+                    constructors.add(ctrNode);
                 }
+
                 protected void addDefaultParameters(DefaultArgsAction action, MethodNode method) {
                     final Parameter[] parameters = method.getParameters();
-                    final Expression [] saved = new Expression[parameters.length];
+                    final Expression[] saved = new Expression[parameters.length];
                     for (int i = 0; i < parameters.length; i++) {
                         if (parameters[i].hasInitialExpression())
                             saved[i] = parameters[i].getInitialExpression();
@@ -158,47 +158,48 @@ public class JavaStubGenerator
                             parameters[i].setInitialExpression(saved[i]);
                     }
                 }
+
                 private void doAddMethod(MethodNode method) {
-                	String sig = method.getTypeDescriptor();
-                	
-                	if(propertyMethodsWithSigs.containsKey(sig)) return;
-                	
-                	propertyMethods.add(method);
-                	propertyMethodsWithSigs.put(sig, method);
+                    String sig = method.getTypeDescriptor();
+
+                    if (propertyMethodsWithSigs.containsKey(sig)) return;
+
+                    propertyMethods.add(method);
+                    propertyMethodsWithSigs.put(sig, method);
                 }
             };
             verifier.visitClass(classNode);
             currentModule = classNode.getModule();
 
             boolean isInterface = classNode.isInterface();
-            boolean isEnum = (classNode.getModifiers() & Opcodes.ACC_ENUM) !=0;
+            boolean isEnum = (classNode.getModifiers() & Opcodes.ACC_ENUM) != 0;
             boolean isAnnotationDefinition = classNode.isAnnotationDefinition();
             printAnnotations(out, classNode);
             printModifiers(out, classNode.getModifiers()
                     & ~(isInterface ? Opcodes.ACC_ABSTRACT : 0));
 
             if (isInterface) {
-            	if(isAnnotationDefinition) {
-            		out.print ("@");
-            	}
-                out.print ("interface ");
+                if (isAnnotationDefinition) {
+                    out.print("@");
+                }
+                out.print("interface ");
             } else if (isEnum) {
-                out.print ("enum ");
+                out.print("enum ");
             } else {
-                out.print ("class ");
+                out.print("class ");
             }
 
             String className = classNode.getNameWithoutPackage();
             if (classNode instanceof InnerClassNode)
-                className = className.substring(className.lastIndexOf("$")+1);
+                className = className.substring(className.lastIndexOf("$") + 1);
             out.println(className);
-            writeGenericsBounds(out, classNode, true);
+            printGenericsBounds(out, classNode, true);
 
             ClassNode superClass = classNode.getUnresolvedSuperClass(false);
 
             if (!isInterface && !isEnum) {
                 out.print("  extends ");
-                printType(superClass,out);
+                printType(out, superClass);
             }
 
             ClassNode[] interfaces = classNode.getInterfaces();
@@ -210,28 +211,27 @@ public class JavaStubGenerator
                 }
                 for (int i = 0; i < interfaces.length - 1; ++i) {
                     out.print("    ");
-                    printType(interfaces[i], out);
+                    printType(out, interfaces[i]);
                     out.print(",");
                 }
                 out.print("    ");
-                printType(interfaces[interfaces.length - 1],out);
+                printType(out, interfaces[interfaces.length - 1]);
             }
             out.println(" {");
 
-            genFields(classNode, out);
-            genMethods(classNode, out, isEnum);
+            printFields(out, classNode);
+            printMethods(out, classNode, isEnum);
 
-            for (Iterator<InnerClassNode> inner = classNode.getInnerClasses(); inner.hasNext();) {
+            for (Iterator<InnerClassNode> inner = classNode.getInnerClasses(); inner.hasNext(); ) {
                 // GROOVY-4004: Clear the methods from the outer class so that they don't get duplicated in inner ones
                 propertyMethods.clear();
                 propertyMethodsWithSigs.clear();
                 constructors.clear();
-                genClassInner(inner.next(), out);
+                printClassContents(out, inner.next());
             }
 
             out.println("}");
-        }
-        finally {
+        } finally {
             propertyMethods.clear();
             propertyMethodsWithSigs.clear();
             constructors.clear();
@@ -239,11 +239,11 @@ public class JavaStubGenerator
         }
     }
 
-    private void genMethods(ClassNode classNode, PrintWriter out, boolean isEnum) {
-        if (!isEnum) getConstructors(classNode, out);
+    private void printMethods(PrintWriter out, ClassNode classNode, boolean isEnum) {
+        if (!isEnum) printConstructors(out, classNode);
 
         @SuppressWarnings("unchecked")
-        List<MethodNode> methods = (List)propertyMethods.clone();
+        List<MethodNode> methods = (List) propertyMethods.clone();
         methods.addAll(classNode.getMethods());
         for (MethodNode method : methods) {
             if (isEnum && method.isSynthetic()) {
@@ -257,20 +257,22 @@ public class JavaStubGenerator
                     continue;
                 }
             }
-            genMethod(classNode, method, out);
+            printMethod(out, classNode, method);
         }
     }
 
-    private void getConstructors(ClassNode classNode, PrintWriter out) {
+    private void printConstructors(PrintWriter out, ClassNode classNode) {
+        @SuppressWarnings("unchecked")
         List<ConstructorNode> constrs = (List<ConstructorNode>) constructors.clone();
-        constrs.addAll(classNode.getDeclaredConstructors());
-        if (constrs != null)
+        if (constrs != null) {
+            constrs.addAll(classNode.getDeclaredConstructors());
             for (ConstructorNode constr : constrs) {
-                genConstructor(classNode, constr, out);
+                printConstructor(out, classNode, constr);
             }
+        }
     }
 
-    private void genFields(ClassNode classNode, PrintWriter out) {
+    private void printFields(PrintWriter out, ClassNode classNode) {
         boolean isInterface = classNode.isInterface();
         List<FieldNode> fields = classNode.getFields();
         if (fields == null) return;
@@ -284,15 +286,15 @@ public class JavaStubGenerator
                 normalFields.add(field);
             }
         }
-        genEnumFields(enumFields, out);
+        printEnumFields(out, enumFields);
         for (FieldNode normalField : normalFields) {
-            genField(normalField, out, isInterface);
+            printField(out, normalField, isInterface);
         }
     }
 
 
-    private void genEnumFields(List<FieldNode> fields, PrintWriter out) {
-        if (fields.size()==0) return;
+    private void printEnumFields(PrintWriter out, List<FieldNode> fields) {
+        if (fields.size() == 0) return;
         boolean first = true;
         for (FieldNode field : fields) {
             if (!first) {
@@ -305,15 +307,15 @@ public class JavaStubGenerator
         out.println(";");
     }
 
-    private void genField(FieldNode fieldNode, PrintWriter out, boolean isInterface) {
-        if ((fieldNode.getModifiers()&Opcodes.ACC_PRIVATE)!=0) return;
+    private void printField(PrintWriter out, FieldNode fieldNode, boolean isInterface) {
+        if ((fieldNode.getModifiers() & Opcodes.ACC_PRIVATE) != 0) return;
         printAnnotations(out, fieldNode);
         if (!isInterface) {
             printModifiers(out, fieldNode.getModifiers());
         }
 
         ClassNode type = fieldNode.getType();
-        printType(type, out);
+        printType(out, type);
 
         out.print(" ");
         out.print(fieldNode.getName());
@@ -329,8 +331,7 @@ public class JavaStubGenerator
         out.println(";");
     }
 
-    private ConstructorCallExpression getConstructorCallExpression(
-            ConstructorNode constructorNode) {
+    private ConstructorCallExpression getConstructorCallExpression(ConstructorNode constructorNode) {
         Statement code = constructorNode.getCode();
         if (!(code instanceof BlockStatement))
             return null;
@@ -351,24 +352,24 @@ public class JavaStubGenerator
         return (ConstructorCallExpression) expr;
     }
 
-    private void genConstructor(ClassNode clazz, ConstructorNode constructorNode, PrintWriter out) {
+    private void printConstructor(PrintWriter out, ClassNode clazz, ConstructorNode constructorNode) {
         printAnnotations(out, constructorNode);
         // printModifiers(out, constructorNode.getModifiers());
 
         out.print("public "); // temporary hack
         String className = clazz.getNameWithoutPackage();
         if (clazz instanceof InnerClassNode)
-            className = className.substring(className.lastIndexOf("$")+1);
+            className = className.substring(className.lastIndexOf("$") + 1);
         out.println(className);
 
-        printParams(constructorNode, out);
+        printParams(out, constructorNode);
 
         ConstructorCallExpression constrCall = getConstructorCallExpression(constructorNode);
         if (constrCall == null || !constrCall.isSpecialCall()) {
             out.println(" {}");
         } else {
             out.println(" {");
-            genSpecialConstructorArgs(out, constructorNode, constrCall);
+            printSpecialConstructorArgs(out, constructorNode, constrCall);
             out.println("}");
         }
     }
@@ -392,7 +393,7 @@ public class JavaStubGenerator
         return null;
     }
 
-    private void genSpecialConstructorArgs(PrintWriter out, ConstructorNode node, ConstructorCallExpression constrCall) {
+    private void printSpecialConstructorArgs(PrintWriter out, ConstructorNode node, ConstructorCallExpression constrCall) {
         // Select a constructor from our class, or super-class which is legal to call,
         // then write out an invoke w/nulls using casts to avoid ambiguous crapo
 
@@ -400,7 +401,7 @@ public class JavaStubGenerator
         if (params != null) {
             out.print("super (");
 
-            for (int i=0; i<params.length; i++) {
+            for (int i = 0; i < params.length; i++) {
                 printDefaultValue(out, params[i].getType());
                 if (i + 1 < params.length) {
                     out.print(", ");
@@ -416,8 +417,7 @@ public class JavaStubGenerator
 
         if (constrCall.isSuperCall()) {
             out.print("super(");
-        }
-        else {
+        } else {
             out.print("this(");
         }
 
@@ -462,7 +462,7 @@ public class JavaStubGenerator
         return vexp.getType();
     }
 
-    private void genMethod(ClassNode clazz, MethodNode methodNode, PrintWriter out) {
+    private void printMethod(PrintWriter out, ClassNode clazz, MethodNode methodNode) {
         if (methodNode.getName().equals("<clinit>")) return;
         if (methodNode.isPrivate() || !Utilities.isJavaIdentifier(methodNode.getName())) return;
         if (methodNode.isSynthetic() && methodNode.getName().equals("$getStaticMetaClass")) return;
@@ -470,23 +470,23 @@ public class JavaStubGenerator
         printAnnotations(out, methodNode);
         if (!clazz.isInterface()) printModifiers(out, methodNode.getModifiers());
 
-        writeGenericsBounds(out, methodNode.getGenericsTypes());
+        printGenericsBounds(out, methodNode.getGenericsTypes());
         out.print(" ");
-        printType(methodNode.getReturnType(), out);
+        printType(out, methodNode.getReturnType());
         out.print(" ");
         out.print(methodNode.getName());
 
-        printParams(methodNode, out);
+        printParams(out, methodNode);
 
         ClassNode[] exceptions = methodNode.getExceptions();
-        for (int i=0; i<exceptions.length; i++) {
+        for (int i = 0; i < exceptions.length; i++) {
             ClassNode exception = exceptions[i];
-            if (i==0) {
+            if (i == 0) {
                 out.print("throws ");
             } else {
                 out.print(", ");
             }
-            printType(exception,out);
+            printType(out, exception);
         }
 
         if ((methodNode.getModifiers() & Opcodes.ACC_ABSTRACT) != 0) {
@@ -513,12 +513,12 @@ public class JavaStubGenerator
     private void printDefaultValue(PrintWriter out, ClassNode type) {
         if (type.redirect() != ClassHelper.OBJECT_TYPE && type.redirect() != ClassHelper.boolean_TYPE) {
             out.print("(");
-            printType(type,out);
+            printType(out, type);
             out.print(")");
         }
 
         if (ClassHelper.isPrimitiveType(type)) {
-            if (type==ClassHelper.boolean_TYPE){
+            if (type == ClassHelper.boolean_TYPE) {
                 out.print("false");
             } else {
                 out.print("0");
@@ -528,34 +528,34 @@ public class JavaStubGenerator
         }
     }
 
-    private void printType(ClassNode type, PrintWriter out) {
+    private void printType(PrintWriter out, ClassNode type) {
         if (type.isArray()) {
-            printType(type.getComponentType(),out);
+            printType(out, type.getComponentType());
             out.print("[]");
         } else if (java5 && type.isGenericsPlaceHolder()) {
             out.print(type.getGenericsTypes()[0].getName());
         } else {
-            writeGenericsBounds(out,type,false);
+            printGenericsBounds(out, type, false);
         }
     }
 
-    private void printTypeName(ClassNode type, PrintWriter out) {
+    private void printTypeName(PrintWriter out, ClassNode type) {
         if (ClassHelper.isPrimitiveType(type)) {
-            if (type==ClassHelper.boolean_TYPE) {
+            if (type == ClassHelper.boolean_TYPE) {
                 out.print("boolean");
-            } else if (type==ClassHelper.char_TYPE) {
+            } else if (type == ClassHelper.char_TYPE) {
                 out.print("char");
-            } else if (type==ClassHelper.int_TYPE) {
+            } else if (type == ClassHelper.int_TYPE) {
                 out.print("int");
-            } else if (type==ClassHelper.short_TYPE) {
+            } else if (type == ClassHelper.short_TYPE) {
                 out.print("short");
-            } else if (type==ClassHelper.long_TYPE) {
+            } else if (type == ClassHelper.long_TYPE) {
                 out.print("long");
-            } else if (type==ClassHelper.float_TYPE) {
+            } else if (type == ClassHelper.float_TYPE) {
                 out.print("float");
-            } else if (type==ClassHelper.double_TYPE) {
+            } else if (type == ClassHelper.double_TYPE) {
                 out.print("double");
-            } else if (type==ClassHelper.byte_TYPE) {
+            } else if (type == ClassHelper.byte_TYPE) {
                 out.print("byte");
             } else {
                 out.print("void");
@@ -570,29 +570,29 @@ public class JavaStubGenerator
     }
 
 
-    private void writeGenericsBounds(PrintWriter out, ClassNode type, boolean skipName) {
-        if (!skipName) printTypeName(type,out);
+    private void printGenericsBounds(PrintWriter out, ClassNode type, boolean skipName) {
+        if (!skipName) printTypeName(out, type);
         if (!java5) return;
         if (!ClassHelper.isCachedType(type)) {
-            writeGenericsBounds(out,type.getGenericsTypes());
+            printGenericsBounds(out, type.getGenericsTypes());
         }
     }
 
-    private void writeGenericsBounds(PrintWriter out, GenericsType[] genericsTypes) {
-        if (genericsTypes==null || genericsTypes.length==0) return;
+    private void printGenericsBounds(PrintWriter out, GenericsType[] genericsTypes) {
+        if (genericsTypes == null || genericsTypes.length == 0) return;
         out.print('<');
         for (int i = 0; i < genericsTypes.length; i++) {
-            if (i!=0) out.print(", ");
-            writeGenericsBounds(out,genericsTypes[i]);
+            if (i != 0) out.print(", ");
+            printGenericsBounds(out, genericsTypes[i]);
         }
         out.print('>');
     }
 
-    private void writeGenericsBounds(PrintWriter out, GenericsType genericsType) {
+    private void printGenericsBounds(PrintWriter out, GenericsType genericsType) {
         if (genericsType.isPlaceholder()) {
             out.print(genericsType.getName());
         } else {
-            printType(genericsType.getType(),out);
+            printType(out, genericsType.getType());
         }
 
         ClassNode[] upperBounds = genericsType.getUpperBounds();
@@ -600,26 +600,24 @@ public class JavaStubGenerator
         if (upperBounds != null) {
             out.print(" extends ");
             for (int i = 0; i < upperBounds.length; i++) {
-                printType(upperBounds[i], out);
+                printType(out, upperBounds[i]);
                 if (i + 1 < upperBounds.length) out.print(" & ");
             }
         } else if (lowerBound != null) {
             out.print(" super ");
-            printType(lowerBound, out);
+            printType(out, lowerBound);
         }
     }
 
-    private void printParams(MethodNode methodNode, PrintWriter out) {
+    private void printParams(PrintWriter out, MethodNode methodNode) {
         out.print("(");
         Parameter[] parameters = methodNode.getParameters();
 
         if (parameters != null && parameters.length != 0) {
             for (int i = 0; i != parameters.length; ++i) {
-                printType(parameters[i].getType(), out);
-
+                printType(out, parameters[i].getType());
                 out.print(" ");
                 out.print(parameters[i].getName());
-
                 if (i + 1 < parameters.length) {
                     out.print(", ");
                 }
@@ -632,16 +630,20 @@ public class JavaStubGenerator
     private void printAnnotations(PrintWriter out, AnnotatedNode annotated) {
         if (!java5) return;
         for (AnnotationNode annotation : annotated.getAnnotations()) {
-            out.print("@" + annotation.getClassNode().getName() + "(");
-            boolean first = true;
-            Map<String, Expression> members = annotation.getMembers();
-            for (String key : members.keySet()) {
-                if (first) first = false;
-                else out.print(", ");
-                out.print(key + "=" + getAnnotationValue(members.get(key)));
-            }
-            out.print(") ");
+            printAnnotation(out, annotation);
         }
+    }
+
+    private void printAnnotation(PrintWriter out, AnnotationNode annotation) {
+        out.print("@" + annotation.getClassNode().getName() + "(");
+        boolean first = true;
+        Map<String, Expression> members = annotation.getMembers();
+        for (String key : members.keySet()) {
+            if (first) first = false;
+            else out.print(", ");
+            out.print(key + "=" + getAnnotationValue(members.get(key)));
+        }
+        out.print(") ");
     }
 
     private String getAnnotationValue(Object memberValue) {
@@ -663,12 +665,12 @@ public class JavaStubGenerator
             if (constValue instanceof Number || constValue instanceof Boolean)
                 val = constValue.toString();
             else
-				val = "\"" + escapeStringAnnotationValue(constValue.toString()) + "\"";
+                val = "\"" + escapeStringAnnotationValue(constValue.toString()) + "\"";
         } else if (memberValue instanceof PropertyExpression || memberValue instanceof VariableExpression) {
             // assume must be static class field or enum value or class that Java can resolve
             val = ((Expression) memberValue).getText();
         } else if (memberValue instanceof ClassExpression) {
-        	val = ((Expression) memberValue).getText() + ".class";
+            val = ((Expression) memberValue).getText() + ".class";
         }
         return val;
     }
@@ -693,7 +695,7 @@ public class JavaStubGenerator
             out.print("abstract ");
     }
 
-    private void genImports(ClassNode classNode, PrintWriter out) {
+    private void printImports(PrintWriter out, ClassNode classNode) {
         List<String> imports = new ArrayList<String>();
 
         ModuleNode moduleNode = classNode.getModule();
@@ -710,12 +712,11 @@ public class JavaStubGenerator
 
         for (String imp : imports) {
             String s = new StringBuilder()
-                .append("import ")
-                .append(imp)
-                .append((imp.charAt(imp.length() - 1) == '.') ? "*;" : ";")
-                .toString()
-                .replace('$', '.');
-
+                    .append("import ")
+                    .append(imp)
+                    .append((imp.charAt(imp.length() - 1) == '.') ? "*;" : ";")
+                    .toString()
+                    .replace('$', '.');
             out.println(s);
         }
         out.println();
@@ -727,7 +728,7 @@ public class JavaStubGenerator
         }
     }
 
-	private static String escapeStringAnnotationValue(String value) {
-		return value.replace("\n", "\\n").replace("\r", "\\r").replace("\"", "\\\"");
-	}
+    private static String escapeStringAnnotationValue(String value) {
+        return value.replace("\n", "\\n").replace("\r", "\\r").replace("\"", "\\\"");
+    }
 }
