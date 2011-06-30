@@ -591,10 +591,16 @@ public class JavaStubGenerator {
     private void printParams(PrintWriter out, MethodNode methodNode) {
         out.print("(");
         Parameter[] parameters = methodNode.getParameters();
-
         if (parameters != null && parameters.length != 0) {
+            int lastIndex = parameters.length - 1;
+            boolean vararg = parameters[lastIndex].getType().isArray();
             for (int i = 0; i != parameters.length; ++i) {
-                printType(out, parameters[i].getType());
+                if (i == lastIndex && vararg) {
+                    printType(out, parameters[i].getType().getComponentType());
+                    out.print("...");
+                } else {
+                    printType(out, parameters[i].getType());
+                }
                 out.print(" ");
                 out.print(parameters[i].getName());
                 if (i + 1 < parameters.length) {
@@ -602,7 +608,6 @@ public class JavaStubGenerator {
                 }
             }
         }
-
         out.print(")");
     }
 
