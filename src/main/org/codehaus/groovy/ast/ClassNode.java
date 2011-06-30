@@ -1054,15 +1054,19 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     }
 
     public MethodNode getSetterMethod(String setterName) {
+        return getSetterMethod(setterName, true);
+    }
+
+    public MethodNode getSetterMethod(String setterName, boolean voidOnly) {
         for (MethodNode method : getDeclaredMethods(setterName)) {
             if (setterName.equals(method.getName())
-                    && ClassHelper.VOID_TYPE==method.getReturnType()
+                    && (!voidOnly || ClassHelper.VOID_TYPE==method.getReturnType())
                     && method.getParameters().length == 1) {
                 return method;
             }
         }
         ClassNode parent = getSuperClass();
-        if (parent!=null) return parent.getSetterMethod(setterName);
+        if (parent!=null) return parent.getSetterMethod(setterName, voidOnly);
         return null;
     }
 
