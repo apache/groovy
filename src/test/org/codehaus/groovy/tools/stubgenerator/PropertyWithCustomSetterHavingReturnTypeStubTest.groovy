@@ -16,8 +16,8 @@
 package org.codehaus.groovy.tools.stubgenerator
 
 /**
- * Test that FQN appears in generated stub when an annotation node
- *  is used as an annotation member value.
+ * Test that a custom setter for a property with non-void return type takes
+ * precedence over default void fallback.
  *
  * @author Paul King
  */
