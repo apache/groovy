@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2009 the original author or authors.
+ * Copyright 2003-2011 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package groovy.inspect.swingui;
+package groovy.inspect.swingui
 
 
-import org.codehaus.groovy.ast.*;
-import org.codehaus.groovy.ast.expr.*;
-import org.codehaus.groovy.ast.stmt.*;
+import org.codehaus.groovy.ast.*
+import org.codehaus.groovy.ast.expr.*
+import org.codehaus.groovy.ast.stmt.*
 import org.codehaus.groovy.classgen.BytecodeExpression
 import org.codehaus.groovy.control.CompilePhase
 import java.lang.reflect.Modifier
@@ -27,7 +27,7 @@ import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.CompilationFailedException
 import org.codehaus.groovy.classgen.GeneratorContext
 import org.codehaus.groovy.control.SourceUnit
-import org.codehaus.groovy.control.CompilationUnit.PrimaryClassNodeOperation;
+import org.codehaus.groovy.control.CompilationUnit.PrimaryClassNodeOperation
 
 /**
  * This class takes Groovy source code, compiles it to a specific compile phase, and then decompiles it
@@ -52,7 +52,7 @@ where [filename] is a Groovy script
 and [compilephase] is a valid Integer based org.codehaus.groovy.control.CompilePhase"""
         } else {
             def file = new File((String) args[0])
-            def phase = CompilePhase.fromPhaseNumber(args[1])
+            def phase = CompilePhase.fromPhaseNumber(args[1] as int)
             if (!file.exists()) {
                 println "File ${args[0]} cannot be found."
             } else if (phase == null) {
