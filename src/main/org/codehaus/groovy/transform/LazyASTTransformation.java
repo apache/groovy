@@ -37,7 +37,7 @@ import java.util.Arrays;
 @GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
 public class LazyASTTransformation implements ASTTransformation, Opcodes {
 
-    private static final ClassNode SOFT_REF = ClassHelper.make(SoftReference.class);
+    private static final ClassNode SOFT_REF = ClassHelper.makeWithoutCaching(SoftReference.class, false);
     private static final Expression NULL_EXPR = ConstantExpression.NULL;
     private static final ClassNode OBJECT_TYPE = new ClassNode(Object.class);
     private static final Token ASSIGN = Token.newSymbol("=", -1, -1);

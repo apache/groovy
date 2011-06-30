@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 the original author or authors.
+ * Copyright 2008-2011 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -67,11 +67,11 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
     private static final ClassNode MY_TYPE = new ClassNode(MY_CLASS);
     private static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
     private static final ClassNode OBJECT_TYPE = new ClassNode(Object.class);
-    private static final ClassNode HASHMAP_TYPE = new ClassNode(HashMap.class);
-    private static final ClassNode MAP_TYPE = new ClassNode(Map.class);
+    private static final ClassNode HASHMAP_TYPE = ClassHelper.makeWithoutCaching(HashMap.class, false);
+    private static final ClassNode MAP_TYPE = ClassHelper.makeWithoutCaching(Map.class, false);
     private static final ClassNode DATE_TYPE = new ClassNode(Date.class);
     private static final ClassNode CLONEABLE_TYPE = new ClassNode(Cloneable.class);
-    private static final ClassNode COLLECTION_TYPE = new ClassNode(Collection.class);
+    private static final ClassNode COLLECTION_TYPE = ClassHelper.makeWithoutCaching(Collection.class, false);
     private static final ClassNode HASHUTIL_TYPE = new ClassNode(HashCodeHelper.class);
     private static final ClassNode STRINGBUFFER_TYPE = new ClassNode(StringBuffer.class);
     private static final ClassNode READONLYEXCEPTION_TYPE = new ClassNode(ReadOnlyPropertyException.class);
@@ -167,7 +167,7 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
         // make a public method if none exists otherwise try a private method with leading underscore
         boolean hasExistingToString = hasDeclaredMethod(cNode, "toString", 0);
         if (hasExistingToString && hasDeclaredMethod(cNode, "_toString", 0)) return;
-        
+
         final BlockStatement body = new BlockStatement();
         final List<PropertyNode> list = getInstanceProperties(cNode);
         // def _result = new StringBuffer()

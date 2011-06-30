@@ -51,7 +51,7 @@ public class IndexedPropertyASTTransformation implements ASTTransformation, Opco
     private static final Class MY_CLASS = IndexedProperty.class;
     private static final ClassNode MY_TYPE = new ClassNode(MY_CLASS);
     private static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
-    private static final ClassNode LIST_TYPE = new ClassNode(List.class);
+    private static final ClassNode LIST_TYPE = ClassHelper.makeWithoutCaching(List.class, false);
     private static final ClassNode OBJECT_TYPE = new ClassNode(Object.class);
     private static final Token ASSIGN = Token.newSymbol("=", -1, -1);
     private static final Token INDEX = Token.newSymbol("[", -1, -1);
