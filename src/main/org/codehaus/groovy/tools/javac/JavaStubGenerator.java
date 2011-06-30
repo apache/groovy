@@ -571,7 +571,6 @@ public class JavaStubGenerator {
         }
     }
 
-
     private void printGenericsBounds(PrintWriter out, ClassNode type, boolean skipName) {
         if (!skipName) printTypeName(out, type);
         if (!java5) return;
@@ -585,30 +584,9 @@ public class JavaStubGenerator {
         out.print('<');
         for (int i = 0; i < genericsTypes.length; i++) {
             if (i != 0) out.print(", ");
-            printGenericsBounds(out, genericsTypes[i]);
+            out.print(genericsTypes[i].toString());
         }
         out.print('>');
-    }
-
-    private void printGenericsBounds(PrintWriter out, GenericsType genericsType) {
-        if (genericsType.isPlaceholder()) {
-            out.print(genericsType.getName());
-        } else {
-            printType(out, genericsType.getType());
-        }
-
-        ClassNode[] upperBounds = genericsType.getUpperBounds();
-        ClassNode lowerBound = genericsType.getLowerBound();
-        if (upperBounds != null) {
-            out.print(" extends ");
-            for (int i = 0; i < upperBounds.length; i++) {
-                printType(out, upperBounds[i]);
-                if (i + 1 < upperBounds.length) out.print(" & ");
-            }
-        } else if (lowerBound != null) {
-            out.print(" super ");
-            printType(out, lowerBound);
-        }
     }
 
     private void printParams(PrintWriter out, MethodNode methodNode) {

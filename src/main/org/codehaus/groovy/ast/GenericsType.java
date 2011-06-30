@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2011 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,8 @@
 package org.codehaus.groovy.ast;
 
 /**
- * This class is used to describe generic type signatures
- * for ClassNodes. 
+ * This class is used to describe generic type signatures for ClassNodes.
+ *
  * @author Jochen Theodorou
  * @see ClassNode
  */
@@ -30,7 +30,7 @@ public class GenericsType extends ASTNode {
     private boolean placeholder;
     private boolean resolved;
     private boolean wildcard;
-    
+
     public GenericsType(ClassNode type, ClassNode[] upperBounds, ClassNode lowerBound) {
         this.type = type;
         this.name = type.isGenericsPlaceHolder() ? type.getUnresolvedName() : type.getName();
@@ -39,29 +39,29 @@ public class GenericsType extends ASTNode {
         placeholder = type.isGenericsPlaceHolder();
         resolved = false;
     }
-    
+
     public GenericsType(ClassNode basicType) {
-        this(basicType,null,null);
+        this(basicType, null, null);
     }
 
     public ClassNode getType() {
         return type;
     }
-    
+
     public void setType(ClassNode type) {
         this.type = type;
     }
-    
+
     public String toString() {
         String ret = name;
-        if (upperBounds!=null) {
+        if (upperBounds != null) {
             ret += " extends ";
             for (int i = 0; i < upperBounds.length; i++) {
-                ret += upperBounds[i].toString();
-                if (i+1<upperBounds.length) ret += " & ";
+                ret += upperBounds[i].getName();
+                if (i + 1 < upperBounds.length) ret += " & ";
             }
-        } else if (lowerBound!=null) {
-            ret += " super "+lowerBound;
+        } else if (lowerBound != null) {
+            ret += " super " + lowerBound.getName();
         }
         return ret;
     }
@@ -69,8 +69,8 @@ public class GenericsType extends ASTNode {
     public ClassNode[] getUpperBounds() {
         return upperBounds;
     }
-    
-    public String getName(){
+
+    public String getName() {
         return name;
     }
 
@@ -82,11 +82,11 @@ public class GenericsType extends ASTNode {
         this.placeholder = placeholder;
         type.setGenericsPlaceHolder(true);
     }
-    
+
     public boolean isResolved() {
         return resolved || placeholder;
     }
-    
+
     public void setResolved(boolean res) {
         resolved = res;
     }
@@ -102,7 +102,7 @@ public class GenericsType extends ASTNode {
     public void setWildcard(boolean wildcard) {
         this.wildcard = wildcard;
     }
-    
+
     public ClassNode getLowerBound() {
         return lowerBound;
     }
