@@ -85,7 +85,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
     private static final ClassNode READONLYEXCEPTION_TYPE = ClassHelper.make(ReadOnlyPropertyException.class);
     private static final ClassNode DGM_TYPE = ClassHelper.make(DefaultGroovyMethods.class);
     private static final ClassNode SELF_TYPE = ClassHelper.make(ImmutableASTTransformation.class);
-    private static final ClassNode HASHMAP_TYPE = ClassHelper.make(HashMap.class);
+    private static final ClassNode HASHMAP_TYPE = ClassHelper.makeWithoutCaching(HashMap.class, false);
     private static final ClassNode MAP_TYPE = ClassHelper.make(Map.class);
 
     public void visit(ASTNode[] nodes, SourceUnit source) {
