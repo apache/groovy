@@ -584,7 +584,8 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         }
         Statement setterBlock = node.getSetterBlock();
         if (setterBlock == null) {
-            MethodNode setter = classNode.getSetterMethod(setterName);
+            // 2nd arg false below: though not usual, allow setter with non-void return type
+            MethodNode setter = classNode.getSetterMethod(setterName, false);
             if (!node.isPrivate() &&
                     (propNodeModifiers & ACC_FINAL) == 0 &&
                     methodNeedsReplacement(setter)) {
