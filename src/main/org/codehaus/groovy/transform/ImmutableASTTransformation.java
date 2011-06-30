@@ -81,12 +81,12 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
     static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
     private static final ClassNode DATE_TYPE = ClassHelper.make(Date.class);
     private static final ClassNode CLONEABLE_TYPE = ClassHelper.make(Cloneable.class);
-    private static final ClassNode COLLECTION_TYPE = ClassHelper.make(Collection.class);
+    private static final ClassNode COLLECTION_TYPE = ClassHelper.makeWithoutCaching(Collection.class, false);
     private static final ClassNode READONLYEXCEPTION_TYPE = ClassHelper.make(ReadOnlyPropertyException.class);
     private static final ClassNode DGM_TYPE = ClassHelper.make(DefaultGroovyMethods.class);
     private static final ClassNode SELF_TYPE = ClassHelper.make(ImmutableASTTransformation.class);
-    private static final ClassNode HASHMAP_TYPE = ClassHelper.make(HashMap.class);
-    private static final ClassNode MAP_TYPE = ClassHelper.make(Map.class);
+    private static final ClassNode HASHMAP_TYPE = ClassHelper.makeWithoutCaching(HashMap.class, false);
+    private static final ClassNode MAP_TYPE = ClassHelper.makeWithoutCaching(Map.class, false);
 
     public void visit(ASTNode[] nodes, SourceUnit source) {
         init(nodes, source);
