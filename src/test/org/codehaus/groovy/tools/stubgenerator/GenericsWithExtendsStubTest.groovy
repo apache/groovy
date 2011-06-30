@@ -30,9 +30,9 @@ class GenericsWithExtendsStubTest extends StringSourcesStubTestCase {
                     public class Client {
                         {
                             new GroovyInterface4650() {
-                                @Override public List<? extends CharSequence> getThings1() { return null; }
-                                @Override public List<?> getThings2() { return null; }
-                                @Override public List<? super CharSequence> getThings3() { return null; }
+                                public List<? extends CharSequence> getThings1() { return null; }
+                                public List<?> getThings2() { return null; }
+                                public List<? super CharSequence> getThings3() { return null; }
                             };
                         }
                     }
