@@ -169,6 +169,11 @@ public class JavaStubGenerator {
                     propertyMethods.add(method);
                     propertyMethodsWithSigs.put(sig, method);
                 }
+
+                @Override
+                protected void addDefaultConstructor(ClassNode node) {
+                    // not required for stub generation
+                }
             };
             verifier.visitClass(classNode);
             currentModule = classNode.getModule();
