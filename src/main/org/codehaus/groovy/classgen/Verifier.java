@@ -166,7 +166,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         node.visitContents(this);
     }
 
-    private void addDefaultConstructor(ClassNode node) {
+    protected void addDefaultConstructor(ClassNode node) {
         if (!node.getDeclaredConstructors().isEmpty()) return;
 
         BlockStatement empty = new BlockStatement();
