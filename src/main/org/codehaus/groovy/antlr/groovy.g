@@ -1357,18 +1357,21 @@ classField!  {Token first = LT(1);}
         {#classField = #(create(INSTANCE_INIT,"INSTANCE_INIT",first,LT(1)), s4);}
     ;
 
-// Now the various things that can be defined inside a interface
+// Now the various things that can be defined inside an interface
 interfaceField!
-    :   // method, constructor, or variable declaration
+    :   // method or variable declaration or inner interface
         (declarationStart)=>
         d:declaration
         {#interfaceField = #d;}
+    |
+        (genericMethodStart)=>
+        dg:genericMethod
+        {#interfaceField = #dg;}
     |
         //TODO - unify typeDeclaration and typeDefinitionInternal names
         // type declaration
         (typeDeclarationStart)=>
         mods:modifiersOpt
-
         (   td:typeDefinitionInternal[#mods]
             {#interfaceField = #td;}
         )
