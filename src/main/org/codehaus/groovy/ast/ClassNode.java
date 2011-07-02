@@ -660,6 +660,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
 
     public boolean equals(Object o) {
         if (redirect!=null) return redirect().equals(o);
+        if (!(o instanceof ClassNode)) return false;
         ClassNode cn = (ClassNode) o;
         return (cn.getName().equals(getName()));
     }
