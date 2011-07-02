@@ -64,6 +64,7 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
         checkImplementsAndExtends(node);
         if (source != null && !source.getErrorCollector().hasErrors()) {
             checkClassForIncorrectModifiers(node);
+            checkInterfaceMethodVisibility(node);
             checkClassForOverwritingFinal(node);
             checkMethodsForIncorrectModifiers(node);
             checkMethodsForWeakerAccess(node);
@@ -72,6 +73,17 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
         }
         super.visitClass(node);
         currentClass = oldClass;
+    }
+
+    private void checkInterfaceMethodVisibility(ClassNode node) {
+        if (!node.isInterface()) return;
+        for (MethodNode method : node.getMethods()) {
+            if (method.isPrivate()) {
+                addError("Method '" + method.getName() + "' is private but should be public in " + getDescription(currentClass) + ".", method);
+            } else if (method.isProtected()) {
+                addError("Method '" + method.getName() + "' is protected but should be public in " + getDescription(currentClass) + ".", method);
+            }
+        }
     }
 
     private void checkNoAbstractMethodsNonabstractClass(ClassNode node) {
@@ -141,7 +153,7 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
         ClassNode superCN = cn.getSuperClass();
         if (superCN == null) return;
         if (!isFinal(superCN.getModifiers())) return;
-        StringBuffer msg = new StringBuffer();
+        StringBuilder msg = new StringBuilder();
         msg.append("You are not allowed to overwrite the final ");
         msg.append(getDescription(superCN));
         msg.append(".");
@@ -199,7 +211,7 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
     }
 
     private void addInvalidUseOfFinalError(MethodNode method, Parameter[] parameters, ClassNode superCN) {
-        StringBuffer msg = new StringBuffer();
+        StringBuilder msg = new StringBuilder();
         msg.append("You are not allowed to override the final method ").append(method.getName());
         msg.append("(");
         boolean needsComma = false;
@@ -217,7 +229,7 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
     }
 
     private void addWeakerAccessError(ClassNode cn, MethodNode method, Parameter[] parameters, MethodNode superMethod) {
-        StringBuffer msg = new StringBuffer();
+        StringBuilder msg = new StringBuilder();
         msg.append(method.getName());
         msg.append("(");
         boolean needsComma = false;
@@ -364,8 +376,9 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
 
     private void checkInterfaceFieldModifiers(FieldNode node) {
         if (!currentClass.isInterface()) return;
-        if ((node.getModifiers() & (Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL)) == 0) {
-            addError("The " + getDescription(node) + " is not 'public final static' but is defined in the " +
+        if ((node.getModifiers() & (Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL)) == 0 ||
+                (node.getModifiers() & (Opcodes.ACC_PRIVATE | Opcodes.ACC_PROTECTED)) != 0) {
+            addError("The " + getDescription(node) + " is not 'public static final' but is defined in " +
                     getDescription(currentClass) + ".", node);
         }
     }
