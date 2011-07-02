@@ -42,8 +42,9 @@ public class ClassCompletionVerifierTest extends TestSupport {
             "The method 'java.lang.Object yyy()' from interface 'zzz' must not be static. Only fields may be static in an interface.";
     private static final String EXPECTED_TRANSIENT_CLASS_ERROR_MESSAGE =
             "The class 'DodgyClass' has an incorrect modifier transient.";
-    private static final String EXPECTED_SYNCHRONIZED_CLASS_ERROR_MESSAGE =
-            "The class 'DodgyClass' has an incorrect modifier synchronized.";
+    // can't check synchronized here as it doubles up with ACC_SUPER
+    //private static final String EXPECTED_SYNCHRONIZED_CLASS_ERROR_MESSAGE =
+    //        "The class 'DodgyClass' has an incorrect modifier synchronized.";
     private static final String EXPECTED_NATIVE_CLASS_ERROR_MESSAGE =
             "The class 'DodgyClass' has an incorrect modifier native.";
     private static final String EXPECTED_VOLATILE_CLASS_ERROR_MESSAGE =
@@ -52,14 +53,23 @@ public class ClassCompletionVerifierTest extends TestSupport {
             "Repetitive method name/signature for method 'java.lang.Object xxx()' in class 'zzz'.";
     private static final String EXPECTED_DUPLICATE_METHOD_ERROR_INTERFACE_MESSAGE =
             "Repetitive method name/signature for method 'java.lang.Object xxx(java.lang.String)' in interface 'zzz'.";
-    private static final String EXPECTED_VOLATILE_METHOD_ERROR_MESSAGE =
-            "The method 'java.lang.Object vo()' has an incorrect modifier volatile.";
+    // can't check volatile here as it doubles up with bridge
+    //private static final String EXPECTED_VOLATILE_METHOD_ERROR_MESSAGE =
+    //        "The method 'java.lang.Object vo()' has an incorrect modifier volatile.";
     private static final String EXPECTED_STRICT_METHOD_ERROR_MESSAGE =
             "The method 'java.lang.Object st()' has an incorrect modifier strictfp.";
     private static final String EXPECTED_NATIVE_METHOD_ERROR_MESSAGE =
             "The method 'java.lang.Object na()' has an incorrect modifier native.";
     private static final String EXPECTED_SYNCHRONIZED_METHOD_ERROR_MESSAGE =
             "The method 'java.lang.Object sy()' has an incorrect modifier synchronized.";
+    private static final String EXPECTED_PROTECTED_FIELD_ERROR_MESSAGE =
+            "The field 'prof' is not 'public static final' but is defined in interface 'zzz'.";
+    private static final String EXPECTED_PRIVATE_FIELD_ERROR_MESSAGE =
+            "The field 'prif' is not 'public static final' but is defined in interface 'zzz'.";
+    private static final String EXPECTED_PROTECTED_METHOD_ERROR_MESSAGE =
+            "Method 'prom' is protected but should be public in interface 'zzz'.";
+    private static final String EXPECTED_PRIVATE_METHOD_ERROR_MESSAGE =
+            "Method 'prim' is private but should be public in interface 'zzz'.";
 
     protected void setUp() throws Exception {
         super.setUp();
@@ -109,8 +119,7 @@ public class ClassCompletionVerifierTest extends TestSupport {
         ClassNode node = new ClassNode("zzz", ACC_ABSTRACT | ACC_INTERFACE, ClassHelper.OBJECT_TYPE);
         node.addMethod(new MethodNode("xxx", ACC_PUBLIC | ACC_FINAL, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null));
         node.addMethod(new MethodNode("yyy", ACC_PUBLIC | ACC_STATIC, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null));
-        // constructors should not be treated as errors (they have no real meaning for interfaces anyway)
-        node.addMethod(new MethodNode("<clinit>", ACC_PUBLIC | ACC_STATIC, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null));
+        addDummyConstructor(node);
         verifier.visitClass(node);
         checkErrorCount(2);
         checkErrorMessage(EXPECTED_INTERFACE_FINAL_METHOD_ERROR_MESSAGE);
@@ -118,13 +127,12 @@ public class ClassCompletionVerifierTest extends TestSupport {
     }
 
     public void testDetectsIncorrectMethodModifiersInInterface() throws Exception {
-        // TODO: can't check volatile here as it doubles up with bridge
+        // can't check volatile here as it doubles up with bridge
         ClassNode node = new ClassNode("zzz", ACC_ABSTRACT | ACC_INTERFACE, ClassHelper.OBJECT_TYPE);
         node.addMethod(new MethodNode("st", ACC_STRICT, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null));
         node.addMethod(new MethodNode("na", ACC_NATIVE, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null));
         node.addMethod(new MethodNode("sy", ACC_SYNCHRONIZED, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null));
-        // constructors should not be treated as errors (they have no real meaning for interfaces anyway)
-        node.addMethod(new MethodNode("<clinit>", ACC_PUBLIC | ACC_STATIC, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null));
+        addDummyConstructor(node);
         verifier.visitClass(node);
         checkErrorCount(3);
         checkErrorMessage(EXPECTED_STRICT_METHOD_ERROR_MESSAGE);
@@ -132,16 +140,35 @@ public class ClassCompletionVerifierTest extends TestSupport {
         checkErrorMessage(EXPECTED_SYNCHRONIZED_METHOD_ERROR_MESSAGE);
     }
 
+    public void testDetectsIncorrectMemberVisibilityInInterface() throws Exception {
+        ClassNode node = new ClassNode("zzz", ACC_ABSTRACT | ACC_INTERFACE, ClassHelper.OBJECT_TYPE);
+        node.addMethod(new MethodNode("prim", ACC_PRIVATE, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null));
+        node.addMethod(new MethodNode("prom", ACC_PROTECTED, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null));
+        node.addField("prif", ACC_PRIVATE, ClassHelper.OBJECT_TYPE, null);
+        node.addField("prof", ACC_PROTECTED, ClassHelper.OBJECT_TYPE, null);
+        addDummyConstructor(node);
+        verifier.visitClass(node);
+        checkErrorCount(4);
+        checkErrorMessage(EXPECTED_PROTECTED_FIELD_ERROR_MESSAGE);
+        checkErrorMessage(EXPECTED_PRIVATE_FIELD_ERROR_MESSAGE);
+        checkErrorMessage(EXPECTED_PROTECTED_METHOD_ERROR_MESSAGE);
+        checkErrorMessage(EXPECTED_PRIVATE_METHOD_ERROR_MESSAGE);
+    }
+
     public void testDetectsCorrectMethodModifiersInClass() throws Exception {
-        // TODO: can't check volatile here as it doubles up with bridge
+        // can't check volatile here as it doubles up with bridge
         ClassNode node = new ClassNode("zzz", ACC_PUBLIC, ClassHelper.OBJECT_TYPE);
         node.addMethod(new MethodNode("st", ACC_STRICT, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null));
         node.addMethod(new MethodNode("na", ACC_NATIVE, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null));
         node.addMethod(new MethodNode("sy", ACC_SYNCHRONIZED, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null));
-        // constructors should not be treated as errors (they have no real meaning for interfaces anyway)
-        node.addMethod(new MethodNode("<clinit>", ACC_PUBLIC | ACC_STATIC, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null));
+        addDummyConstructor(node);
         verifier.visitClass(node);
         checkErrorCount(0);
+    }
+
+    private void addDummyConstructor(ClassNode node) {
+        // constructors should not be treated as errors (they have no real meaning for interfaces anyway)
+        node.addMethod(new MethodNode("<clinit>", ACC_PUBLIC | ACC_STATIC, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null));
     }
 
     private void checkErrorCount(int count) {
@@ -149,7 +176,7 @@ public class ClassCompletionVerifierTest extends TestSupport {
     }
 
     private String buildErrorMessage(int count) {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         sb.append("Expected ").append(count);
         sb.append(" error messages but found ");
         sb.append(source.getErrorCollector().getErrorCount()).append(":\n");
@@ -167,7 +194,7 @@ public class ClassCompletionVerifierTest extends TestSupport {
         assertTrue("Expected an error message but none found.", source.getErrorCollector().hasErrors());
         assertTrue("Expected message to contain <" + expectedErrorMessage +
                 "> but was <" + flattenErrorMessage() + ">.",
-                flattenErrorMessage().indexOf(expectedErrorMessage) != -1);
+                flattenErrorMessage().contains(expectedErrorMessage));
     }
 
     private String flattenErrorMessage() {
