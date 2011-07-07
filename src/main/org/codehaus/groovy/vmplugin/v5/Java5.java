@@ -315,7 +315,9 @@ public class Java5 implements VMPlugin {
         Field[] fields = clazz.getDeclaredFields();
         for (Field f : fields) {
             ClassNode ret = makeClassNode(compileUnit, f.getGenericType(), f.getType());
-            classNode.addField(f.getName(), f.getModifiers(), ret, null);
+            FieldNode fn = new FieldNode(f.getName(), f.getModifiers(), ret, classNode, null);
+            setAnnotationMetaData(f.getAnnotations(), fn);
+            classNode.addField(fn);
         }
         Method[] methods = clazz.getDeclaredMethods();
         for (Method m : methods) {
