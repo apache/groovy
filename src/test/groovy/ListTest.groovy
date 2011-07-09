@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2009 the original author or authors.
+ * Copyright 2003-2011 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,6 @@
  */
 package groovy
 
-// TODO: split a couple of Set tests into their own class?
 class ListTest extends GroovyTestCase {
 
     void testList() {
@@ -141,13 +140,6 @@ class ListTest extends GroovyTestCase {
         assert l1 + l2 == l3
     }
 
-    void testSetPlus() {
-        Set s1 = [6, 4, 5, 1, 7, 2]
-        def s2 = [6, 4, 5, 1, 7, [4,5]]
-        def s3 = s1 + s2
-        assert s3 == [1, 2, 4, 5, 6, 7, [4,5]] as Set
-    }
-
     void testPlusOneElement() {
         def l1 = [6, 4, 5, 1, 7, 2]
         def l2 = "erererer"
@@ -176,14 +168,6 @@ class ListTest extends GroovyTestCase {
         def l1 = [1, 1, 2, 2, 3, 3, 3, 4, 5, 3, 5]
         def l2 = [1, 2.0, 4L]
         assert l1 - l2 == [3, 3, 3, 5, 3, 5] 
-    }
-
-    void testSetSimpleMinus() {
-        Set s1 = [1, 1, 2, 2, 3, 3, 3, 4, 5, 3, 5]
-        def s2 = s1 - [1, 4]
-        assert s2 == [2, 3, 5] as Set
-        def s3 = s1 - 4.0
-        assert s3 == [1, 2, 3, 5] as Set
     }
 
     // GROOVY-1006
@@ -240,12 +224,6 @@ class ListTest extends GroovyTestCase {
         def flat = orig.flatten()
         assert flat == [4, 5, 6, 46, 7, "erer", null, 4, 3, 6, 78, 4]
     }
-    
-    void testSetFlatten() {
-        Set orig = [[[4, 5, 6, [46, 7, "erer"] as Set] as Set, 4, [3, 6, 78] as Set] as Set, 4]
-        Set flat = orig.flatten()
-        assert flat == [3, 4, 5, 6, 7, 46, 78, "erer"] as Set
-    }
 
     void testFlattenListOfMaps() {
         def orig = [[a:1, b:2], [c:3, d:4]]
@@ -273,14 +251,6 @@ class ListTest extends GroovyTestCase {
         assert flat == [1, 2, 3 ,4]
         flat = orig.flatten{ it instanceof Map ? it.keySet() : it }
         assert flat == ["a", "b", "c", "d"]
-    }
-
-    void testFlattenSetOfMapsWithClosure() {
-        Set orig = [[a:1, b:2], [c:3, d:4]] as Set
-        Set flat = orig.flatten{ it instanceof Map ? it.values() : it }
-        assert flat == [1, 2, 3 ,4] as Set
-        flat = orig.flatten{ it instanceof Map ? it.keySet() : it }
-        assert flat == ["a", "b", "c", "d"] as Set
     }
 
     void testFlattenWithRanges() {

@@ -8034,6 +8034,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         if (right == null) {
             return false;
         }
+        if (left == right) {
+            return true;
+        }
         if (left.length != right.length) {
             return false;
         }
@@ -8126,6 +8129,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         if (right == null) {
             return false;
         }
+        if (left == right) {
+            return true;
+        }
         if (left.size() != right.size()) {
             return false;
         }
@@ -8152,7 +8158,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * for example 2 == 2L.  If both sets are <code>null</code>, the result
      * is true; otherwise if either set is <code>null</code>, the result
      * is <code>false</code>. Example usage:
-     * <pre class="groovyTestCase">Set s1 = ["a", 2]
+     * <pre class="groovyTestCase">
+     * Set s1 = ["a", 2]
      * def s2 = [2, 'a'] as Set
      * Set s3 = [3, 'a']
      * def s4 = [2.0, 'a'] as Set
@@ -8167,29 +8174,34 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return <tt>true</tt> if the contents of both sets are identical
      * @since 1.8.0
      */
-    public static boolean equals(Set self, Set other) {
+    public static <T> boolean equals(Set<T> self, Set<T> other) {
         if (self == null) {
             return other == null;
         }
         if (other == null) {
             return false;
         }
+        if (self == other) {
+            return true;
+        }
         if (self.size() != other.size()) {
             return false;
         }
-        final Iterator it1 = self.iterator();
-        Collection otherItems = new HashSet(other);
+        final Iterator<T> it1 = self.iterator();
+        Collection<T> otherItems = new HashSet<T>(other);
         while (it1.hasNext()) {
             final Object o1 = it1.next();
-            final Iterator it2 = otherItems.iterator();
-            Object foundItem = null;
+            final Iterator<T> it2 = otherItems.iterator();
+            T foundItem = null;
+            boolean found = false;
             while (it2.hasNext() && foundItem == null) {
-                final Object o2 = it2.next();
+                final T o2 = it2.next();
                 if (coercedEquals(o1, o2)) {
                     foundItem = o2;
+                    found = true;
                 }
             }
-            if (foundItem == null) return false;
+            if (!found) return false;
             otherItems.remove(foundItem);
         }
         return otherItems.size() == 0;
@@ -8213,15 +8225,16 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         if (other == null) {
             return false;
         }
+        if (self == other) {
+            return true;
+        }
         if (self.size() != other.size()) {
             return false;
         }
         if (!self.keySet().equals(other.keySet())) {
             return false;
         }
-        final Iterator it = self.keySet().iterator();
-        while (it.hasNext()) {
-            final Object key = it.next();
+        for (Object key : self.keySet()) {
             if (!coercedEquals(self.get(key), other.get(key))) {
                 return false;
             }
