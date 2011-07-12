@@ -89,13 +89,13 @@ public class OptimizingStatementWriter extends StatementWriter {
         this.controller = controller;
     }
     
-    private boolean canNotDoFastPath(StatementMeta meta) {
+    private boolean notEnableFastPath(StatementMeta meta) {
         // return false if cannot do fast path and if are already on the path
         return fastPathBlocked || meta==null || !meta.optimize || controller.isFastPath();
     }
     
     private FastPathData writeGuards(StatementMeta meta, Statement statement) {
-        if (canNotDoFastPath(meta)) return null;
+        if (notEnableFastPath(meta)) return null;
         MethodVisitor mv = controller.getMethodVisitor();
         FastPathData fastPathData = new FastPathData();
         Label slowPath = new Label();
@@ -164,18 +164,22 @@ public class OptimizingStatementWriter extends StatementWriter {
     
     @Override
     public void writeDoWhileLoop(DoWhileStatement statement) {
-        StatementMeta meta = (StatementMeta) statement.getNodeMetaData(StatementMeta.class);
-        FastPathData fastPathData = writeGuards(meta, statement);
-
-        boolean oldFastPathBlock = fastPathBlocked;
-        fastPathBlocked = true;
-        super.writeDoWhileLoop(statement);
-        fastPathBlocked = oldFastPathBlock;
-        
-        if (fastPathData==null) return;
-        writeFastPathPrelude(fastPathData);
-        super.writeDoWhileLoop(statement);
-        writeFastPathEpilogue(fastPathData);
+        if (controller.isFastPath()) {
+            super.writeDoWhileLoop(statement);
+        } else {
+            StatementMeta meta = (StatementMeta) statement.getNodeMetaData(StatementMeta.class);
+            FastPathData fastPathData = writeGuards(meta, statement);
+    
+            boolean oldFastPathBlock = fastPathBlocked;
+            fastPathBlocked = true;
+            super.writeDoWhileLoop(statement);
+            fastPathBlocked = oldFastPathBlock;
+            
+            if (fastPathData==null) return;
+            writeFastPathPrelude(fastPathData);
+            super.writeDoWhileLoop(statement);
+            writeFastPathEpilogue(fastPathData);
+        }
     }
     
     @Override
@@ -198,66 +202,82 @@ public class OptimizingStatementWriter extends StatementWriter {
     
     @Override
     protected void writeForInLoop(ForStatement statement) {
-        StatementMeta meta = (StatementMeta) statement.getNodeMetaData(StatementMeta.class);
-        FastPathData fastPathData = writeGuards(meta, statement);
-
-        boolean oldFastPathBlock = fastPathBlocked;
-        fastPathBlocked = true;
-        super.writeForInLoop(statement);
-        fastPathBlocked = oldFastPathBlock;
-        
-        if (fastPathData==null) return;
-        writeFastPathPrelude(fastPathData);
-        super.writeForInLoop(statement);
-        writeFastPathEpilogue(fastPathData);
+        if (controller.isFastPath()) {
+            super.writeForInLoop(statement);
+        } else {
+            StatementMeta meta = (StatementMeta) statement.getNodeMetaData(StatementMeta.class);
+            FastPathData fastPathData = writeGuards(meta, statement);
+    
+            boolean oldFastPathBlock = fastPathBlocked;
+            fastPathBlocked = true;
+            super.writeForInLoop(statement);
+            fastPathBlocked = oldFastPathBlock;
+            
+            if (fastPathData==null) return;
+            writeFastPathPrelude(fastPathData);
+            super.writeForInLoop(statement);
+            writeFastPathEpilogue(fastPathData);
+        }
     }
 
     @Override
     protected void writeForLoopWithClosureList(ForStatement statement) {
-        StatementMeta meta = (StatementMeta) statement.getNodeMetaData(StatementMeta.class);
-        FastPathData fastPathData = writeGuards(meta, statement);
-
-        boolean oldFastPathBlock = fastPathBlocked;
-        fastPathBlocked = true;
-        super.writeForLoopWithClosureList(statement);
-        fastPathBlocked = oldFastPathBlock;
-        
-        if (fastPathData==null) return;
-        writeFastPathPrelude(fastPathData);
-        super.writeForLoopWithClosureList(statement);
-        writeFastPathEpilogue(fastPathData);
+        if (controller.isFastPath()) {
+            super.writeForLoopWithClosureList(statement);
+        } else {
+            StatementMeta meta = (StatementMeta) statement.getNodeMetaData(StatementMeta.class);
+            FastPathData fastPathData = writeGuards(meta, statement);
+            
+            boolean oldFastPathBlock = fastPathBlocked;
+            fastPathBlocked = true;
+            super.writeForLoopWithClosureList(statement);
+            fastPathBlocked = oldFastPathBlock;
+            
+            if (fastPathData==null) return;
+            writeFastPathPrelude(fastPathData);
+            super.writeForLoopWithClosureList(statement);
+            writeFastPathEpilogue(fastPathData);
+        }
     }
 
     @Override
     public void writeWhileLoop(WhileStatement statement) {
-        StatementMeta meta = (StatementMeta) statement.getNodeMetaData(StatementMeta.class);
-        FastPathData fastPathData = writeGuards(meta, statement);
-
-        boolean oldFastPathBlock = fastPathBlocked;
-        fastPathBlocked = true;
-        super.writeWhileLoop(statement);
-        fastPathBlocked = oldFastPathBlock;
-        
-        if (fastPathData==null) return;
-        writeFastPathPrelude(fastPathData);
-        super.writeWhileLoop(statement);
-        writeFastPathEpilogue(fastPathData);
+        if (controller.isFastPath()) {
+            super.writeWhileLoop(statement);
+        } else {
+            StatementMeta meta = (StatementMeta) statement.getNodeMetaData(StatementMeta.class);
+            FastPathData fastPathData = writeGuards(meta, statement);
+            
+            boolean oldFastPathBlock = fastPathBlocked;
+            fastPathBlocked = true;
+            super.writeWhileLoop(statement);
+            fastPathBlocked = oldFastPathBlock;
+            
+            if (fastPathData==null) return;
+            writeFastPathPrelude(fastPathData);
+            super.writeWhileLoop(statement);
+            writeFastPathEpilogue(fastPathData);
+        }
     }
 
     @Override
     public void writeIfElse(IfStatement statement) {
-        StatementMeta meta = (StatementMeta) statement.getNodeMetaData(StatementMeta.class);
-        FastPathData fastPathData = writeGuards(meta, statement);
-
-        boolean oldFastPathBlock = fastPathBlocked;
-        fastPathBlocked = true;
-        super.writeIfElse(statement);
-        fastPathBlocked = oldFastPathBlock;
-        
-        if (fastPathData==null) return;
-        writeFastPathPrelude(fastPathData);
-        super.writeIfElse(statement);
-        writeFastPathEpilogue(fastPathData);
+        if (controller.isFastPath()) {
+            super.writeIfElse(statement);
+        } else {
+            StatementMeta meta = (StatementMeta) statement.getNodeMetaData(StatementMeta.class);
+            FastPathData fastPathData = writeGuards(meta, statement);
+            
+            boolean oldFastPathBlock = fastPathBlocked;
+            fastPathBlocked = true;
+            super.writeIfElse(statement);
+            fastPathBlocked = oldFastPathBlock;
+            
+            if (fastPathData==null) return;
+            writeFastPathPrelude(fastPathData);
+            super.writeIfElse(statement);
+            writeFastPathEpilogue(fastPathData);
+        }
     }
     
     private boolean isNewPathFork(StatementMeta meta) {
@@ -272,55 +292,63 @@ public class OptimizingStatementWriter extends StatementWriter {
     
     @Override
     public void writeReturn(ReturnStatement statement) {
-        StatementMeta meta = (StatementMeta) statement.getNodeMetaData(StatementMeta.class);
-        if (isNewPathFork(meta) && writeDeclarationExtraction(statement)) {
-            FastPathData fastPathData = writeGuards(meta, statement);
-
-            boolean oldFastPathBlock = fastPathBlocked;
-            fastPathBlocked = true;
+        if (controller.isFastPath()) {
             super.writeReturn(statement);
-            fastPathBlocked = oldFastPathBlock;
-            
-            if (fastPathData==null) return;
-            writeFastPathPrelude(fastPathData);
-            super.writeReturn(statement);
-            writeFastPathEpilogue(fastPathData); 
         } else {
-            super.writeReturn(statement);
+            StatementMeta meta = (StatementMeta) statement.getNodeMetaData(StatementMeta.class);
+            if (isNewPathFork(meta) && writeDeclarationExtraction(statement)) {
+                FastPathData fastPathData = writeGuards(meta, statement);
+                
+                boolean oldFastPathBlock = fastPathBlocked;
+                fastPathBlocked = true;
+                super.writeReturn(statement);
+                fastPathBlocked = oldFastPathBlock;
+                
+                if (fastPathData==null) return;
+                writeFastPathPrelude(fastPathData);
+                super.writeReturn(statement);
+                writeFastPathEpilogue(fastPathData); 
+            } else {
+                super.writeReturn(statement);
+            }
         }
     }
 
     @Override
     public void writeExpressionStatement(ExpressionStatement statement) {
-        StatementMeta meta = (StatementMeta) statement.getNodeMetaData(StatementMeta.class);
-        // we have to have handle DelcarationExpressions special, since their 
-        // entry should be outside the optimization path, we have to do that of
-        // course only if we are actually going to do two different paths, 
-        // otherwise it is not needed
-        //
-        // there are several cases to be considered now.
-        // (1) no fast path possible, so just do super
-        // (2) fast path possible, and at path split point (meaning not in 
-        //     fast path and not in slow path). Here we have to extract the 
-        //     Declaration and replace by an assignment
-        // (3) fast path possible and in slow or fastPath. Nothing to do here.
-        //
-        // the only case we need to handle is then (2).
-        
-        if (isNewPathFork(meta) && writeDeclarationExtraction(statement)) {
-            FastPathData fastPathData = writeGuards(meta, statement);
-
-            boolean oldFastPathBlock = fastPathBlocked;
-            fastPathBlocked = true;
+        if (controller.isFastPath()) {
             super.writeExpressionStatement(statement);
-            fastPathBlocked = oldFastPathBlock;
-            
-            if (fastPathData==null) return;
-            writeFastPathPrelude(fastPathData);
-            super.writeExpressionStatement(statement);
-            writeFastPathEpilogue(fastPathData);            
         } else {
-            super.writeExpressionStatement(statement);
+            StatementMeta meta = (StatementMeta) statement.getNodeMetaData(StatementMeta.class);
+            // we have to have handle DelcarationExpressions special, since their 
+            // entry should be outside the optimization path, we have to do that of
+            // course only if we are actually going to do two different paths, 
+            // otherwise it is not needed
+            //
+            // there are several cases to be considered now.
+            // (1) no fast path possible, so just do super
+            // (2) fast path possible, and at path split point (meaning not in 
+            //     fast path and not in slow path). Here we have to extract the 
+            //     Declaration and replace by an assignment
+            // (3) fast path possible and in slow or fastPath. Nothing to do here.
+            //
+            // the only case we need to handle is then (2).
+            
+            if (isNewPathFork(meta) && writeDeclarationExtraction(statement)) {
+                FastPathData fastPathData = writeGuards(meta, statement);
+                
+                boolean oldFastPathBlock = fastPathBlocked;
+                fastPathBlocked = true;
+                super.writeExpressionStatement(statement);
+                fastPathBlocked = oldFastPathBlock;
+                
+                if (fastPathData==null) return;
+                writeFastPathPrelude(fastPathData);
+                super.writeExpressionStatement(statement);
+                writeFastPathEpilogue(fastPathData);            
+            } else {
+                super.writeExpressionStatement(statement);
+            }
         }
     }
 
@@ -380,6 +408,15 @@ public class OptimizingStatementWriter extends StatementWriter {
     private static class OptimizeFlags {
         private boolean canOptimize = false;
         private boolean shouldOptimize = false;
+        public String toString() {
+            if (shouldOptimize) {
+                return "should optimize, can = "+canOptimize;
+            } else if (canOptimize) {
+                return "can optimize";
+            } else {
+                return "don't optimize";
+            }
+        }
         /**
          * @return true iff we should Optimize - this is almost seen as must
          */
@@ -558,8 +595,12 @@ public class OptimizingStatementWriter extends StatementWriter {
                 statement.visit(this);
                 optAll = optAll && opt.canOptimize();
             }
-            if (optAll && !block.isEmpty()) addMeta(block);
-            opt.shouldOptimize = optAll;
+            if (block.isEmpty()) {
+                opt.canOptimize = true;
+            } else {
+                opt.shouldOptimize = optAll;                
+                if (optAll) addMeta(block);
+            }
         }
         
         @Override
