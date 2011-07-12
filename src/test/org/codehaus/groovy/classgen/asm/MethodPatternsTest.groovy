@@ -57,4 +57,75 @@ class MethodPatternsTest extends AbstractBytecodeTestCase {
             ])
     }
     
+    void testForLoopSettingArray() {
+        assert compile('''
+            int n = 10
+            int[] x = new int[n]
+            for (int i = 0; i < n; i++) x[i] = i + 1
+        ''').hasSequence([
+            'ILOAD',
+            'ILOAD',
+            'IF_ICMPGE',
+            'ICONST_1',
+            'GOTO',
+            'ICONST_0',
+            'IFEQ',
+            'ILOAD',
+            'LDC',
+            'IADD',
+            'ISTORE',
+            'ALOAD',
+            'ILOAD',
+            'ILOAD',
+            'INVOKESTATIC org/codehaus/groovy/runtime/BytecodeInterface8.intArraySet ([III)V',
+            'ILOAD',
+            'DUP',
+            'ISTORE',
+            'ICONST_1',
+            'IADD',
+            'DUP',
+            'ISTORE 11',
+            'POP',
+            'GOTO'
+        ])
+    }
+    
+    void testForLoopSettingArrayWithOperatorUsedInAssignmentAndArrayRHS() {
+        assert compile('''
+            int n = 10
+            int[] x = new int[n]
+            int[] y = new int[n]
+            for (int i = 0; i < n; i++) x[i] += y[i]
+        ''').hasSequence ([
+            'ILOAD',
+            'ILOAD',
+            'IF_ICMPGE',
+            'ICONST_1',
+            'GOTO',
+            'ICONST_0',
+            'IFEQ',
+            'ILOAD',
+            'ISTORE',
+            'ALOAD',
+            'DUP',
+            'ILOAD',
+            'INVOKESTATIC org/codehaus/groovy/runtime/BytecodeInterface8.intArrayGet ([II)I',
+            'ALOAD',
+            'ILOAD',
+            'INVOKESTATIC org/codehaus/groovy/runtime/BytecodeInterface8.intArrayGet ([II)I',
+            'IADD',
+            'DUP',
+            'ISTORE',
+            'ILOAD',
+            'SWAP',
+            'INVOKESTATIC org/codehaus/groovy/runtime/BytecodeInterface8.intArraySet ([III)V',
+            'ILOAD',
+            'DUP',
+            'ISTORE',
+            'ICONST_1',
+            'IADD',
+            'ISTORE',
+            'GOTO L14'
+        ])
+    }
 }
