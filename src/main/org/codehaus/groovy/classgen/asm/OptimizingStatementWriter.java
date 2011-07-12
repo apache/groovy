@@ -378,23 +378,38 @@ public class OptimizingStatementWriter extends StatementWriter {
     }
     
     private static class OptimizeFlags {
-        private boolean maybeOptimize = false;
+        private boolean canOptimize = false;
         private boolean shouldOptimize = false;
+        /**
+         * @return true iff we should Optimize - this is almost seen as must
+         */
         private boolean shouldOptimize() {
             return shouldOptimize;
         }
+        /**
+         * @return true iff we can optimize, but not have to
+         */
         private boolean canOptimize() {
-            return maybeOptimize || shouldOptimize;
+            return canOptimize || shouldOptimize;
         }
+        /**
+         * set optimization flags to false
+         */
         public void reset() {
-            maybeOptimize = false;
+            canOptimize = false;
             shouldOptimize = false;
         }
+        /**
+         * set "should" to true, if not already
+         */
         public void chainShouldOptimize(boolean opt) {
             shouldOptimize = shouldOptimize() || opt;
         }
-        public void chainMaybeOptimize(boolean opt) {
-            maybeOptimize = maybeOptimize || opt;
+        /**
+         * set "can" to true, if not already
+         */
+        public void chainCanOptimize(boolean opt) {
+            canOptimize = canOptimize || opt;
         }
     }
     
@@ -467,7 +482,7 @@ public class OptimizingStatementWriter extends StatementWriter {
                 // if right is a constant, then we optimize only if it makes
                 // a block complete, so we set a maybe
                 if (right instanceof ConstantExpression) {
-                    opt.chainMaybeOptimize(maybeOptimize);
+                    opt.chainCanOptimize(maybeOptimize);
                 } else {
                     opt.chainShouldOptimize(maybeOptimize);
                 }
