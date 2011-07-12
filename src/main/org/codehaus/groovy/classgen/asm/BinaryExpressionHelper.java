@@ -62,6 +62,10 @@ public class BinaryExpressionHelper {
         this.controller = wc;
     }
     
+    public WriterController getController(){
+        return controller;
+    }
+    
     public void eval(BinaryExpression expression) {
         switch (expression.getOperation().getType()) {
         case EQUAL: // = assignment
@@ -641,7 +645,7 @@ public class BinaryExpressionHelper {
         // at this point the receiver will be already on the stack.
         // in a[1]++ the method will be "++" aka "next" and the receiver a[1]
         
-        ClassNode BEType = BinaryIntExpressionHelper.getType(expression,controller.getClassNode());
+        ClassNode BEType = BinaryExpressionMultiTypeDispatcher.getType(expression,controller.getClassNode());
         Expression callSiteReceiverSwap = new BytecodeExpression(BEType) {
             @Override
             public void visit(MethodVisitor mv) {
