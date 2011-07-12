@@ -352,6 +352,7 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
 
         // array set: load sub, call arraySet []
         operandStack.load(ClassHelper.int_TYPE, subscriptValueId);
+        operandStack.swap();
         bew.arraySet(false);
         operandStack.remove(2);
 
