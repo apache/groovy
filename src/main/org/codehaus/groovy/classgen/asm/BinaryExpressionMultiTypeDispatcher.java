@@ -261,8 +261,8 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
     @Override
     protected void assignToArray(Expression orig, Expression receiver, Expression index, Expression rhsValueLoader) {
         ClassNode current = getController().getClassNode();
-        ClassNode arrayType = getType(receiver, current);
-        int operationType = getOperandType(arrayType);
+        ClassNode arrayComponentType = getType(receiver, current).getComponentType();
+        int operationType = getOperandType(arrayComponentType);
         BinaryExpressionWriter bew = binExpWriter[operationType];
         AsmClassGenerator acg = getController().getAcg();
         
@@ -278,7 +278,7 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
             
             // load rhs
             rhsValueLoader.visit(acg);
-            operandStack.doGroovyCast(arrayType);
+            operandStack.doGroovyCast(arrayComponentType);
             
             // store value in array
             bew.arraySet(false);
