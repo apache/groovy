@@ -136,13 +136,14 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
             /* 7: float  */ new BinaryFloatExpressionHelper(getController()),
     };
     
-    private static Map<ClassNode,Integer> typeMap = new HashMap<ClassNode,Integer>(14);
+    protected static Map<ClassNode,Integer> typeMap = new HashMap<ClassNode,Integer>(14);
     static {
         typeMap.put(int_TYPE,       1); typeMap.put(long_TYPE,      2);
         typeMap.put(double_TYPE,    3); typeMap.put(char_TYPE,      4);
         typeMap.put(byte_TYPE,      5); typeMap.put(short_TYPE,     6);
         typeMap.put(float_TYPE,     7); 
     }
+    protected final static String[] typeMapKeyNames = {"dummy", "int", "long", "double", "char", "byte", "short", "float"};
 
     public BinaryExpressionMultiTypeDispatcher(WriterController wc) {
         super(wc);
@@ -173,24 +174,24 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
         return type.redirect();
     }
     
-    private boolean isInt(ClassNode type) {
+    protected static boolean isIntCategory(ClassNode type) {
         return  type == int_TYPE    || type == char_TYPE    ||
                 type == byte_TYPE   || type == short_TYPE;
     }
     
-    private boolean isLong(ClassNode type) {
-        return  type == long_TYPE   || isInt(type);
+    protected static boolean isLongCategory(ClassNode type) {
+        return  type == long_TYPE   || isIntCategory(type);
     }
 
-    private boolean isDouble(ClassNode type) {
+    protected static boolean isDoubleCategory(ClassNode type) {
         return  type == float_TYPE  || type == double_TYPE  ||
-                isLong(type);
+                isLongCategory(type);
     }
     
     private int getOperandConversionType(ClassNode leftType, ClassNode rightType) {
-        if (isInt(leftType) && isInt(rightType)) return 1;
-        if (isLong(leftType) && isLong(rightType)) return 2;
-        if (isDouble(leftType) && isDouble(rightType)) return 3;
+        if (isIntCategory(leftType) && isIntCategory(rightType)) return 1;
+        if (isLongCategory(leftType) && isLongCategory(rightType)) return 2;
+        if (isDoubleCategory(leftType) && isDoubleCategory(rightType)) return 3;
         return 0;
     }
     
