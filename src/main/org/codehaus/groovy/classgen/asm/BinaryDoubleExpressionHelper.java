@@ -65,7 +65,7 @@ public class BinaryDoubleExpressionHelper extends BinaryLongExpressionHelper {
 
     @Override
     protected ClassNode getNormalOpResultType() {
-        return ClassHelper.long_TYPE;
+        return ClassHelper.double_TYPE;
     }
 
     @Override
