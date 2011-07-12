@@ -393,6 +393,9 @@ public class OptimizingStatementWriter extends StatementWriter {
         public void chainShouldOptimize(boolean opt) {
             shouldOptimize = shouldOptimize() || opt;
         }
+        public void chainMaybeOptimize(boolean opt) {
+            maybeOptimize = maybeOptimize || opt;
+        }
     }
     
     private static class OptVisitor extends ClassCodeVisitorSupport {
@@ -459,8 +462,16 @@ public class OptimizingStatementWriter extends StatementWriter {
             right.visit(this);
             boolean rightInt = BinaryIntExpressionHelper.isIntOperand(right, node);
             boolean leftInt = BinaryIntExpressionHelper.isIntOperand(expression.getLeftExpression(), node);
-            opt.chainShouldOptimize((leftInt && rightInt) &&
-                                    !(right instanceof ConstantExpression));
+            boolean maybeOptimize = leftInt && rightInt;
+            if (maybeOptimize) {
+                // if right is a constant, then we optimize only if it makes
+                // a block complete, so we set a maybe
+                if (right instanceof ConstantExpression) {
+                    opt.chainMaybeOptimize(maybeOptimize);
+                } else {
+                    opt.chainShouldOptimize(maybeOptimize);
+                }
+            }
             if (opt.shouldOptimize()) {
                 StatementMeta meta = addMeta(expression);
                 if (leftInt && rightInt) meta.type = ClassHelper.int_TYPE;
@@ -530,7 +541,7 @@ public class OptimizingStatementWriter extends StatementWriter {
             for (Statement statement : block.getStatements()) {
                 opt.reset();
                 statement.visit(this);
-                optAll = optAll && opt.shouldOptimize();
+                optAll = optAll && opt.canOptimize();
             }
             if (optAll && !block.isEmpty()) addMeta(block);
             opt.shouldOptimize = optAll;
