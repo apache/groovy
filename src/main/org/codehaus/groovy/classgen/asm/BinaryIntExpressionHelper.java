@@ -212,58 +212,47 @@ public class BinaryIntExpressionHelper extends BinaryExpressionWriter {
         return true;
     }
 
-    @Override
     protected void doubleTwoOperands(MethodVisitor mv) {
         mv.visitInsn(DUP2);
     }
 
-    @Override
     protected MethodCaller getArrayGetCaller() {
         return intArrayGet;
     }
 
-    @Override
     protected MethodCaller getArraySetCaller() {
         return intArraySet;
     }
 
-    @Override
     protected int getBitwiseOperationBytecode(int type) {
         return bitOp[type];
     }
 
-    @Override
     protected int getCompareCode() {
         return -1;
     }
 
-    @Override
     protected ClassNode getNormalOpResultType() {
         return ClassHelper.int_TYPE;
     }
 
-    @Override
     protected int getShiftOperationBytecode(int type) {
         return shiftOp[type];
     }
 
-    @Override
     protected int getStandardOperationBytecode(int type) {
         return stdOperations[type];
     }
 
-    @Override
     protected void removeTwoOperands(MethodVisitor mv) {
         mv.visitInsn(POP2);
     }
 
-    @Override
     protected void writeMinusMinus(MethodVisitor mv) {
         mv.visitInsn(ICONST_1);
         mv.visitInsn(ISUB);
     }
 
-    @Override
     protected void writePlusPlus(MethodVisitor mv) {
         mv.visitInsn(ICONST_1);
         mv.visitInsn(IADD);

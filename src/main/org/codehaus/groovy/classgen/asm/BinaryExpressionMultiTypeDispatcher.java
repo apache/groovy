@@ -46,47 +46,47 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
         public DummyHelper(WriterController controller) {
             super(controller);
         }
-        @Override public boolean writePostOrPrefixMethod(int operation, boolean simulate) {
+        public boolean writePostOrPrefixMethod(int operation, boolean simulate) {
             if (simulate) return false;
             throw new GroovyBugError("should not reach here");
         }
-        @Override public boolean write(int operation, boolean simulate) {
+        public boolean write(int operation, boolean simulate) {
             if (simulate) return false;
             throw new GroovyBugError("should not reach here");
         }
-        @Override public boolean arrayGet(int operation, boolean simulate) {
+        public boolean arrayGet(int operation, boolean simulate) {
             if (simulate) return false;
             throw new GroovyBugError("should not reach here");
         }
-        @Override public boolean arraySet(boolean simulate) {
+        public boolean arraySet(boolean simulate) {
             if (simulate) return false;
             throw new GroovyBugError("should not reach here");
         }
-        @Override protected void doubleTwoOperands(MethodVisitor mv) {}
-        @Override protected MethodCaller getArrayGetCaller() {
+        protected void doubleTwoOperands(MethodVisitor mv) {}
+        protected MethodCaller getArrayGetCaller() {
             return null;
         }
-        @Override protected MethodCaller getArraySetCaller() {
+        protected MethodCaller getArraySetCaller() {
             return null;
         }
-        @Override protected int getBitwiseOperationBytecode(int type) {
+        protected int getBitwiseOperationBytecode(int type) {
             return -1;
         }
-        @Override protected int getCompareCode() {
+        protected int getCompareCode() {
             return -1;
         }
-        @Override protected ClassNode getNormalOpResultType() {
+        protected ClassNode getNormalOpResultType() {
             return null;
         }
-        @Override protected int getShiftOperationBytecode(int type) {
+        protected int getShiftOperationBytecode(int type) {
             return -1;
         }
-        @Override protected int getStandardOperationBytecode(int type) {
+        protected int getStandardOperationBytecode(int type) {
             return -1;
         }
-        @Override protected void removeTwoOperands(MethodVisitor mv) {}
-        @Override protected void writePlusPlus(MethodVisitor mv) {}
-        @Override protected void writeMinusMinus(MethodVisitor mv) {}
+        protected void removeTwoOperands(MethodVisitor mv) {}
+        protected void writePlusPlus(MethodVisitor mv) {}
+        protected void writeMinusMinus(MethodVisitor mv) {}
     }
     
     private static class BinaryCharExpressionHelper extends BinaryIntExpressionHelper {
