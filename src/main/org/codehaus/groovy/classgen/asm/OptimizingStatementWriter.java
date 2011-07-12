@@ -499,7 +499,7 @@ public class OptimizingStatementWriter extends StatementWriter {
             if (isInt) {
                 StatementMeta meta = addMeta(expression);
                 meta.type = ClassHelper.int_TYPE;
-                opt.chainCanOptimize(true);
+                opt.chainShouldOptimize(true);
             }
         }
         
@@ -510,7 +510,7 @@ public class OptimizingStatementWriter extends StatementWriter {
             if (isInt) {
                 StatementMeta meta = addMeta(expression);
                 meta.type = ClassHelper.int_TYPE;
-                opt.chainCanOptimize(true);
+                opt.chainShouldOptimize(true);
             }
         }        
         
