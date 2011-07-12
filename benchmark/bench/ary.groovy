@@ -9,10 +9,10 @@
 
 
 public class ary {
-    public static void main(String args[]) {
+    public static void main(String[] args) {
 	int i, j, k, n = Integer.parseInt(args[0]);
-	int x[] = new int[n];
-	int y[] = new int[n];
+	int[] x = new int[n];
+	int[] y = new int[n];
 
 	for (i = 0; i < n; i++)
 	    x[i] = i + 1;

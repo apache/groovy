@@ -4,8 +4,8 @@ import org.codehaus.groovy.tools.FileSystemCompiler as Compiler
 def benchData = [
     hello           :   [1],
     ackermann       :   [5, 6, 7, 8],
-/*    ary             :   [1],
-    binarytrees     :   [1],
+    ary             :   [10,100,1000,1000000],
+/*    binarytrees     :   [1],
     chameneos       :   [1],
     echo            :   [1],
     except          :   [1],
@@ -58,7 +58,7 @@ println "Groovy benchmarking test"
 showJavaVersion()
 println "Groovy lib: $GROOVY_LIB"
 horizontalBreak()
-benchData.each { bench, input ->
+def executeBench= { bench, input ->
     println "Benchmark $bench"
     [".java", ".groovy"].each { ending ->
         println("\t$bench$ending :")
@@ -73,6 +73,12 @@ benchData.each { bench, input ->
     }
     horizontalBreak()
 }
+if (args.length==0) { 
+    benchData.each(executeBench)
+} else {
+    executeBench(args[0],benchData[args[0]])
+}
+
 
 void horizontalBreak() {
     println "-" * 80
