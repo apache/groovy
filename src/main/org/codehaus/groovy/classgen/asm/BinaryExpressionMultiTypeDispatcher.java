@@ -32,7 +32,7 @@ import org.codehaus.groovy.runtime.BytecodeInterface8;
 import org.objectweb.asm.MethodVisitor;
 
 import static org.codehaus.groovy.ast.ClassHelper.*;
-import static org.codehaus.groovy.syntax.Types.LEFT_SQUARE_BRACKET;
+import static org.codehaus.groovy.syntax.Types.*;
 
 /**
  * This class is for internal use only!
@@ -263,10 +263,113 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
         }
     }
     
+    private boolean isAssignmentToArray(BinaryExpression binExp) {
+        Expression leftExpression = binExp.getLeftExpression();
+        if (!(leftExpression instanceof BinaryExpression)) return false;
+        BinaryExpression leftBinExpr = (BinaryExpression) leftExpression;
+        if (leftBinExpr.getOperation().getType() != LEFT_SQUARE_BRACKET) return false;
+        return true;
+    }
+    
+    private int removeAssignment(int op) {
+        switch (op) {
+            case PLUS_EQUAL: return PLUS;
+            case MINUS_EQUAL: return MINUS;
+            case MULTIPLY_EQUAL: return MULTIPLY;
+            default: return op;
+        }
+    }
+    
+    @Override
+    protected void evaluateBinaryExpressionWithAssignment(String method, BinaryExpression binExp) {
+        if (!isAssignmentToArray(binExp)) {
+            super.evaluateBinaryExpressionWithAssignment(method, binExp);
+            return;
+        }
+        
+        // we need to handle only assignment to arrays combined with an operation
+        // special here. e.g x[a] += b
+        
+        ClassNode current =  getController().getClassNode();
+        int operation = removeAssignment(binExp.getOperation().getType());
+        
+        Expression leftExp = binExp.getLeftExpression();
+        ClassNode leftType = getType(leftExp, current);
+        Expression rightExp = binExp.getRightExpression();
+        ClassNode rightType = getType(rightExp, current);
+        
+        int operationType = getOperandConversionType(leftType,rightType);
+        BinaryExpressionWriter bew = binExpWriter[operationType];
+        
+        boolean simulationSuccess = bew.arrayGet(LEFT_SQUARE_BRACKET, true);
+        simulationSuccess = simulationSuccess && bew.write(operation, true);
+        simulationSuccess = simulationSuccess && bew.arraySet(true);
+        if (!simulationSuccess) {
+            super.evaluateBinaryExpressionWithAssignment(method, binExp);
+            return;
+        }
+        
+        AsmClassGenerator acg = getController().getAcg();
+        OperandStack operandStack = getController().getOperandStack();
+        CompileStack compileStack = getController().getCompileStack();
+               
+        // for x[a] += b we have the structure:
+        //   x = left(left(binExp))), b = right(binExp), a = right(left(binExp)))
+        // for array set we need these values on stack: array, index, right 
+        // for array get we need these values on stack: array, index
+        // to eval the expression we need x[a] = x[a]+b
+        // -> arraySet(x,a, x[a]+b) 
+        // -> arraySet(x,a, arrayGet(x,a,b))
+        // --> x,a, x,a, b as operands
+        // --> load x, load a, DUP2, call arrayGet, load b, call operation,call arraySet
+        // since we cannot DUP2 here easily we will save the subscript and DUP x
+        // --> sub=a, load x, DUP, load sub, call arrayGet, load b, call operation, load sub, call arraySet
+        
+        BinaryExpression arrayWithSubscript = (BinaryExpression) leftExp;
+        Expression subscript = arrayWithSubscript.getRightExpression();
+
+        // load array index: sub=a [load x, DUP, load sub, call arrayGet, load b, call operation, load sub, call arraySet]
+        subscript.visit(acg);
+        operandStack.doGroovyCast(int_TYPE);
+        int subscriptValueId = compileStack.defineTemporaryVariable("$sub", ClassHelper.int_TYPE, true);
+        operandStack.remove(1);
+        
+        // load array: load x and DUP [load sub, call arrayGet, load b, call operation, load sub, call arraySet] 
+        arrayWithSubscript.getLeftExpression().visit(acg);
+        operandStack.dup();
+        
+        // array get: load sub, call arrayGet [load b, call operation, load sub, call arraySet]
+        operandStack.load(ClassHelper.int_TYPE, subscriptValueId);
+        bew.arrayGet(LEFT_SQUARE_BRACKET, false);
+        operandStack.replace(leftType, 2);
+        
+        // complete rhs: load b, call operation [load sub, call arraySet]
+        binExp.getRightExpression().visit(acg);
+        bew.write(operation, false);
+        
+        // let us save that value for the return
+        operandStack.dup();
+        int resultValueId = compileStack.defineTemporaryVariable("$result", rightType, true);               
+        operandStack.remove(1);
+
+        // array set: load sub, call arraySet []
+        operandStack.load(ClassHelper.int_TYPE, subscriptValueId);
+        bew.arraySet(false);
+        operandStack.remove(2);
+
+        // load return value
+        operandStack.load(rightType, resultValueId);
+        
+        // cleanup
+        compileStack.removeVar(resultValueId);
+        compileStack.removeVar(subscriptValueId);
+    }
+    
     @Override
     protected void assignToArray(Expression orig, Expression receiver, Expression index, Expression rhsValueLoader) {
         ClassNode current = getController().getClassNode();
-        ClassNode arrayComponentType = getType(receiver, current).getComponentType();
+        ClassNode arrayType = getType(receiver, current);
+        ClassNode arrayComponentType = arrayType.getComponentType();
         int operationType = getOperandType(arrayComponentType);
         BinaryExpressionWriter bew = binExpWriter[operationType];
         AsmClassGenerator acg = getController().getAcg();
@@ -276,7 +379,8 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
             
             // load the array
             receiver.visit(acg);
-
+            operandStack.doGroovyCast(arrayType);
+            
             // load index
             index.visit(acg);
             operandStack.doGroovyCast(int_TYPE);

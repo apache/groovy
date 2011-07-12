@@ -450,7 +450,7 @@ public class BinaryExpressionHelper {
         compileStack.popLHS();        
     }
 
-    private void evaluateBinaryExpressionWithAssignment(String method, BinaryExpression expression) {
+    protected void evaluateBinaryExpressionWithAssignment(String method, BinaryExpression expression) {
         Expression leftExpression = expression.getLeftExpression();
         MethodVisitor mv  = controller.getMethodVisitor();
         AsmClassGenerator acg = controller.getAcg();
