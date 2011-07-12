@@ -32,6 +32,7 @@ import org.codehaus.groovy.runtime.BytecodeInterface8;
 import org.objectweb.asm.MethodVisitor;
 
 import static org.codehaus.groovy.ast.ClassHelper.*;
+import static org.codehaus.groovy.syntax.Types.LEFT_SQUARE_BRACKET;
 
 /**
  * This class is for internal use only!
@@ -231,9 +232,13 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
         ClassNode current =  getController().getClassNode();
 
         Expression leftExp = binExp.getLeftExpression();
-        ClassNode leftType = getType(leftExp, current);
+        ClassNode leftTypeOrig = getType(leftExp, current);
+        ClassNode leftType = leftTypeOrig;
         Expression rightExp = binExp.getRightExpression();
         ClassNode rightType = getType(rightExp, current);
+        if (operation==LEFT_SQUARE_BRACKET) {
+            leftType = leftTypeOrig.getComponentType();
+        }
 
         int operationType = getOperandConversionType(leftType,rightType);
         BinaryExpressionWriter bew = binExpWriter[operationType];
@@ -242,7 +247,7 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
         
         if (bew.arrayGet(operation, true)) {
             leftExp.visit(acg);
-            os.doGroovyCast(leftType);
+            os.doGroovyCast(leftTypeOrig);
             rightExp.visit(acg);
             os.doGroovyCast(int_TYPE);
             bew.arrayGet(operation, false);
