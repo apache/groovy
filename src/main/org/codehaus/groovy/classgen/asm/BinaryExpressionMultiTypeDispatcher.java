@@ -45,6 +45,10 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
         public DummyHelper(WriterController controller) {
             super(controller);
         }
+        @Override public boolean writePostOrPrefixMethod(int operation, boolean simulate) {
+            if (simulate) return false;
+            throw new GroovyBugError("should not reach here");
+        }
         @Override public boolean write(int operation, boolean simulate) {
             if (simulate) return false;
             throw new GroovyBugError("should not reach here");
