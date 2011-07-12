@@ -380,6 +380,9 @@ public class OptimizingStatementWriter extends StatementWriter {
     private static class OptimizeFlags {
         private boolean maybeOptimize = false;
         private boolean shouldOptimize = false;
+        private boolean shouldOptimize() {
+            return shouldOptimize;
+        }
         private boolean canOptimize() {
             return maybeOptimize || shouldOptimize;
         }
@@ -388,7 +391,7 @@ public class OptimizingStatementWriter extends StatementWriter {
             shouldOptimize = false;
         }
         public void chainShouldOptimize(boolean opt) {
-            shouldOptimize = canOptimize() || opt;
+            shouldOptimize = shouldOptimize() || opt;
         }
     }
     
@@ -407,7 +410,7 @@ public class OptimizingStatementWriter extends StatementWriter {
         @Override
         public void visitReturnStatement(ReturnStatement statement) {
             super.visitReturnStatement(statement);
-            if (opt.canOptimize()) addMeta(statement);
+            if (opt.shouldOptimize()) addMeta(statement);
         }
         
         @Override
@@ -458,7 +461,7 @@ public class OptimizingStatementWriter extends StatementWriter {
             boolean leftInt = BinaryIntExpressionHelper.isIntOperand(expression.getLeftExpression(), node);
             opt.chainShouldOptimize((leftInt && rightInt) &&
                                     !(right instanceof ConstantExpression));
-            if (opt.canOptimize()) {
+            if (opt.shouldOptimize()) {
                 StatementMeta meta = addMeta(expression);
                 if (leftInt && rightInt) meta.type = ClassHelper.int_TYPE;
             }
@@ -518,7 +521,7 @@ public class OptimizingStatementWriter extends StatementWriter {
         public void visitExpressionStatement(ExpressionStatement statement) {
             if (statement.getNodeMetaData(StatementMeta.class)!=null) return;
             super.visitExpressionStatement(statement);
-            if (opt.canOptimize()) addMeta(statement);
+            if (opt.shouldOptimize()) addMeta(statement);
         }
         
         @Override
@@ -527,7 +530,7 @@ public class OptimizingStatementWriter extends StatementWriter {
             for (Statement statement : block.getStatements()) {
                 opt.reset();
                 statement.visit(this);
-                optAll = optAll && opt.canOptimize();
+                optAll = optAll && opt.shouldOptimize();
             }
             if (optAll && !block.isEmpty()) addMeta(block);
             opt.shouldOptimize = optAll;
@@ -536,7 +539,7 @@ public class OptimizingStatementWriter extends StatementWriter {
         @Override
         public void visitIfElse(IfStatement statement) {
             super.visitIfElse(statement);
-            if (opt.canOptimize()) addMeta(statement);
+            if (opt.shouldOptimize()) addMeta(statement);
         }
         
         @Override
@@ -608,7 +611,7 @@ public class OptimizingStatementWriter extends StatementWriter {
         public void visitForLoop(ForStatement statement) {
             opt.reset();
             super.visitForLoop(statement);
-            if (opt.canOptimize()) addMeta(statement);
+            if (opt.shouldOptimize()) addMeta(statement);
         }
     }    
 
