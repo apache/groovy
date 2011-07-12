@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2009 the original author or authors.
+ * Copyright 2003-2011 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import org.apache.tools.ant.*;
 import org.apache.tools.ant.dispatch.DispatchUtils;
 import org.apache.tools.ant.helper.AntXMLContext;
 import org.apache.tools.ant.helper.ProjectHelper2;
-import org.apache.tools.ant.input.DefaultInputHandler;
 import org.codehaus.groovy.ant.FileScanner;
 import org.xml.sax.Attributes;
 import org.xml.sax.Locator;
@@ -28,11 +27,11 @@ import org.xml.sax.SAXParseException;
 import org.xml.sax.helpers.AttributesImpl;
 
 import java.io.InputStream;
+import java.io.PrintStream;
 import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Vector;
 import java.util.logging.Level;
@@ -40,17 +39,17 @@ import java.util.logging.Logger;
 
 /**
  * Allows <a href="http://ant.apache.org/manual/coretasklist.html">Ant tasks</a> to
- * be used with GroovyMarkup. Requires the ant.jar in your classpath which will
+ * be used with a Groovy builder-style markup. Requires that {{ant.jar}} is on your classpath which will
  * happen automatically if you are using the Groovy distribution but will be up
  * to you to organize if you are embedding Groovy. If you wish to use the
- * <a href="http://ant.apache.org/manual/optionaltasklist.html">optional tasks</a>
+ * <a href="http://ant.apache.org/manual/install#optionalTasks">optional tasks</a>
  * you will need to add one or more additional jars from the ant distribution to
- * your classpath.
+ * your classpath - see the <a href="http://ant.apache.org/manual/install.html#librarydependencies">library
+ * dependencies</a> for more details.
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @author Dierk Koenig (dk)
  * @author Marc Guillemot
- * @version $Revision$
  */
 public class AntBuilder extends BuilderSupport {
 
@@ -205,13 +204,17 @@ public class AntBuilder extends BuilderSupport {
             }
 
             // save original streams
-            InputStream savedIn = System.in;
             InputStream savedProjectInputStream = project.getDefaultInputStream();
+            InputStream savedIn = System.in;
+            PrintStream savedErr = System.err;
+            PrintStream savedOut = System.out;
 
             if (!(savedIn instanceof DemuxInputStream)) {
                 project.setDefaultInputStream(savedIn);
                 System.setIn(new DemuxInputStream(project));
             }
+            System.setOut(new PrintStream(new DemuxOutputStream(project, false)));
+            System.setErr(new PrintStream(new DemuxOutputStream(project, true)));
 
             try {
                 lastCompletedNode = performTask(task);
@@ -219,6 +222,8 @@ public class AntBuilder extends BuilderSupport {
                 // restore original streams
                 project.setDefaultInputStream(savedProjectInputStream);
                 System.setIn(savedIn);
+                System.setOut(savedOut);
+                System.setErr(savedErr);
             }
 
             // restore dummy collector target
@@ -311,8 +316,8 @@ public class AntBuilder extends BuilderSupport {
      */
     protected static Attributes buildAttributes(final Map attributes) {
         final AttributesImpl attr = new AttributesImpl();
-        for (final Iterator iter = attributes.entrySet().iterator(); iter.hasNext();) {
-            final Map.Entry entry = (Map.Entry) iter.next();
+        for (Object o : attributes.entrySet()) {
+            final Map.Entry entry = (Map.Entry) o;
             final String attributeName = (String) entry.getKey();
             final String attributeValue = String.valueOf(entry.getValue());
             attr.addAttribute(null, attributeName, attributeName, "CDATA", attributeValue);
