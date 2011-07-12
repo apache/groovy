@@ -332,7 +332,6 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
         subscript.visit(acg);
         operandStack.doGroovyCast(int_TYPE);
         int subscriptValueId = compileStack.defineTemporaryVariable("$sub", ClassHelper.int_TYPE, true);
-        operandStack.remove(1);
         
         // load array: load x and DUP [load sub, call arrayGet, load b, call operation, load sub, call arraySet] 
         arrayWithSubscript.getLeftExpression().visit(acg);
@@ -350,7 +349,6 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
         // let us save that value for the return
         operandStack.dup();
         int resultValueId = compileStack.defineTemporaryVariable("$result", rightType, true);               
-        operandStack.remove(1);
 
         // array set: load sub, call arraySet []
         operandStack.load(ClassHelper.int_TYPE, subscriptValueId);
