@@ -391,7 +391,7 @@ public class OptimizingStatementWriter extends StatementWriter {
         
         @Override
         public void visitReturnStatement(ReturnStatement statement) {
-            if (!optimizeInt) super.visitReturnStatement(statement);
+            super.visitReturnStatement(statement);
             if (optimizeInt) addMeta(statement);
         }
         
