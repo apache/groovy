@@ -264,4 +264,16 @@ public class BinaryIntExpressionHelper extends BinaryExpressionWriter {
     protected void removeTwoOperands(MethodVisitor mv) {
         mv.visitInsn(POP2);
     }
+
+    @Override
+    protected void writeMinusMinus(MethodVisitor mv) {
+        mv.visitInsn(ICONST_1);
+        mv.visitInsn(ISUB);
+    }
+
+    @Override
+    protected void writePlusPlus(MethodVisitor mv) {
+        mv.visitInsn(ICONST_1);
+        mv.visitInsn(IADD);
+    }
 }

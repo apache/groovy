@@ -102,4 +102,16 @@ public class BinaryFloatExpressionHelper extends BinaryExpressionWriter {
         mv.visitInsn(POP2);
     }
 
+    @Override
+    protected void writeMinusMinus(MethodVisitor mv) {
+        mv.visitInsn(FCONST_1);
+        mv.visitInsn(FSUB);
+    }
+
+    @Override
+    protected void writePlusPlus(MethodVisitor mv) {
+        mv.visitInsn(FCONST_1);
+        mv.visitInsn(FADD);
+    }
+
 }

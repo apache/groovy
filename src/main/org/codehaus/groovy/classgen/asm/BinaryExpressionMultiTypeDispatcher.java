@@ -80,6 +80,8 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
             return -1;
         }
         @Override protected void removeTwoOperands(MethodVisitor mv) {}
+        @Override protected void writePlusPlus(MethodVisitor mv) {}
+        @Override protected void writeMinusMinus(MethodVisitor mv) {}
     }
     
     private static class BinaryCharExpressionHelper extends BinaryIntExpressionHelper {
@@ -282,6 +284,22 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
             rhsValueLoader.visit(acg);
         } else {        
             super.assignToArray(orig, receiver, index, rhsValueLoader);
+        }
+    }
+    
+    @Override
+    protected void writePostOrPrefixMethod(int op, String method,  Expression expression, Expression orig) {
+        ClassNode type = getType(orig,getController().getClassNode());
+        int operationType = getOperandType(type);
+        BinaryExpressionWriter bew = binExpWriter[operationType];
+        if (bew.writePostOrPrefixMethod(op,true)) {
+            OperandStack operandStack   =   getController().getOperandStack();
+            // at this point the receiver will be already on the stack
+            operandStack.doGroovyCast(type);
+            bew.writePostOrPrefixMethod(op,false);
+            operandStack.replace(bew.getNormalOpResultType());
+        } else {
+            super.writePostOrPrefixMethod(op, method, expression, orig);
         }
     }
 }

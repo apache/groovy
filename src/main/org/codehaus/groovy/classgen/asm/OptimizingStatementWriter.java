@@ -494,18 +494,24 @@ public class OptimizingStatementWriter extends StatementWriter {
         
         @Override
         public void visitPrefixExpression(PrefixExpression expression) {
-            //TODO: implement int operations for this
             super.visitPrefixExpression(expression);
-            StatementMeta meta = addMeta(expression);
-            meta.type = ClassHelper.OBJECT_TYPE;
+            boolean isInt = BinaryIntExpressionHelper.isIntOperand(expression.getExpression(),node); 
+            if (isInt) {
+                StatementMeta meta = addMeta(expression);
+                meta.type = ClassHelper.int_TYPE;
+                opt.chainCanOptimize(true);
+            }
         }
         
         @Override
         public void visitPostfixExpression(PostfixExpression expression) {
-            //TODO: implement int operations for this
             super.visitPostfixExpression(expression);
-            StatementMeta meta = addMeta(expression);
-            meta.type = ClassHelper.OBJECT_TYPE;
+            boolean isInt = BinaryIntExpressionHelper.isIntOperand(expression.getExpression(),node); 
+            if (isInt) {
+                StatementMeta meta = addMeta(expression);
+                meta.type = ClassHelper.int_TYPE;
+                opt.chainCanOptimize(true);
+            }
         }        
         
         @Override

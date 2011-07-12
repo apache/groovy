@@ -556,7 +556,7 @@ public class BinaryExpressionHelper {
         return isCaseMethod;
     }
 
-    private void evaluatePostfixMethod(String method, Expression expression) {
+    private void evaluatePostfixMethod(int op, String method, Expression expression, Expression orig) {
         CompileStack compileStack = controller.getCompileStack();
         final OperandStack operandStack = controller.getOperandStack();
         
@@ -569,7 +569,7 @@ public class BinaryExpressionHelper {
         int tempIdx = compileStack.defineTemporaryVariable("postfix_" + method, expressionType, true);
         
         // execute Method
-        execMethodAndStoreForSubscriptOperator(method,expression,usesSubscript);
+        execMethodAndStoreForSubscriptOperator(op,method,expression,usesSubscript,orig);
         
         // remove the result of the method call
         operandStack.pop();        
@@ -581,33 +581,35 @@ public class BinaryExpressionHelper {
     }
 
     public void evaluatePostfixMethod(PostfixExpression expression) {
-        switch (expression.getOperation().getType()) {
+        int op = expression.getOperation().getType();
+        switch (op) {
             case Types.PLUS_PLUS:
-                evaluatePostfixMethod("next", expression.getExpression());
+                evaluatePostfixMethod(op, "next", expression.getExpression(), expression);
                 break;
             case Types.MINUS_MINUS:
-                evaluatePostfixMethod("previous", expression.getExpression());
+                evaluatePostfixMethod(op, "previous", expression.getExpression(), expression);
                 break;
         }
     }
 
     public void evaluatePrefixMethod(PrefixExpression expression) {
-        switch (expression.getOperation().getType()) {
+        int type = expression.getOperation().getType();
+        switch (type) {
             case Types.PLUS_PLUS:
-                evaluatePrefixMethod("next", expression.getExpression());
+                evaluatePrefixMethod(type, "next", expression.getExpression(), expression);
                 break;
             case Types.MINUS_MINUS:
-                evaluatePrefixMethod("previous", expression.getExpression());
+                evaluatePrefixMethod(type, "previous", expression.getExpression(), expression);
                 break;
         }
     }
     
-    private void evaluatePrefixMethod(String method, Expression expression) {
+    private void evaluatePrefixMethod(int op, String method, Expression expression, Expression orig) {
         // load Expressions
         VariableSlotLoader usesSubscript = loadWithSubscript(expression);
         
         // execute Method
-        execMethodAndStoreForSubscriptOperator(method,expression,usesSubscript);
+        execMethodAndStoreForSubscriptOperator(op,method,expression,usesSubscript,orig);
 
         // new value is already on stack, so nothing to do here
         if (usesSubscript!=null) controller.getCompileStack().removeVar(usesSubscript.getIndex());
@@ -640,7 +642,39 @@ public class BinaryExpressionHelper {
         return null;
     }
     
-    private void execMethodAndStoreForSubscriptOperator(String method, Expression expression, VariableSlotLoader usesSubscript) {
+    private void execMethodAndStoreForSubscriptOperator(int op, String method, Expression expression, VariableSlotLoader usesSubscript, Expression orig) {
+        final OperandStack operandStack = controller.getOperandStack();
+        writePostOrPrefixMethod(op,method,expression,orig);
+
+        // we need special code for arrays to store the result (like for a[1]++)
+        if (usesSubscript!=null) {
+            CompileStack compileStack = controller.getCompileStack();
+            BinaryExpression be = (BinaryExpression) expression;
+            
+            ClassNode methodResultType = operandStack.getTopOperand();
+            final int resultIdx = compileStack.defineTemporaryVariable("postfix_" + method, methodResultType, true);
+            BytecodeExpression methodResultLoader = new VariableSlotLoader(methodResultType, resultIdx, operandStack);
+            
+            // execute the assignment, this will leave the right side 
+            // (here the method call result) on the stack
+            assignToArray(be, be.getLeftExpression(), usesSubscript, methodResultLoader);
+
+            compileStack.removeVar(resultIdx);
+        } 
+        // here we handle a.b++ and a++
+        else if (expression instanceof VariableExpression ||
+            expression instanceof FieldExpression || 
+            expression instanceof PropertyExpression)
+        {
+            operandStack.dup();
+            controller.getCompileStack().pushLHS(true);
+            expression.visit(controller.getAcg());
+            controller.getCompileStack().popLHS();
+        }
+        // other cases don't need storing, so nothing to be done for them
+    }
+
+    protected void writePostOrPrefixMethod(int op, String method, Expression expression, Expression orig) {
         final OperandStack operandStack = controller.getOperandStack();
         // at this point the receiver will be already on the stack.
         // in a[1]++ the method will be "++" aka "next" and the receiver a[1]
@@ -677,31 +711,5 @@ public class BinaryExpressionHelper {
         // now rhs is completely done and we need only to store. In a[1]++ this 
         // would be a.getAt(1).next() for the rhs, "lhs" code is a.putAt(1, rhs)
          
-        // we need special code for arrays to store the result (like for a[1]++)
-        if (usesSubscript!=null) {
-            CompileStack compileStack = controller.getCompileStack();
-            BinaryExpression be = (BinaryExpression) expression;
-            
-            ClassNode methodResultType = operandStack.getTopOperand();
-            final int resultIdx = compileStack.defineTemporaryVariable("postfix_" + method, methodResultType, true);
-            BytecodeExpression methodResultLoader = new VariableSlotLoader(methodResultType, resultIdx, operandStack);
-            
-            // execute the assignment, this will leave the right side 
-            // (here the method call result) on the stack
-            assignToArray(be, be.getLeftExpression(), usesSubscript, methodResultLoader);
-
-            compileStack.removeVar(resultIdx);
-        } 
-        // here we handle a.b++ and a++
-        else if (expression instanceof VariableExpression ||
-            expression instanceof FieldExpression || 
-            expression instanceof PropertyExpression)
-        {
-            operandStack.dup();
-            controller.getCompileStack().pushLHS(true);
-            expression.visit(controller.getAcg());
-            controller.getCompileStack().popLHS();
-        }
-        // other cases don't need storing, so nothing to be done for them
     }
 }

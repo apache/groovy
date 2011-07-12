@@ -115,4 +115,16 @@ public class BinaryLongExpressionHelper extends BinaryExpressionWriter {
     protected int getStandardOperationBytecode(int type) {
         return stdOperations[type];
     }
+
+    @Override
+    protected void writeMinusMinus(MethodVisitor mv) {
+        mv.visitInsn(LCONST_1);
+        mv.visitInsn(LSUB);
+    }
+
+    @Override
+    protected void writePlusPlus(MethodVisitor mv) {
+        mv.visitInsn(LCONST_1);
+        mv.visitInsn(LADD);
+    }
 }

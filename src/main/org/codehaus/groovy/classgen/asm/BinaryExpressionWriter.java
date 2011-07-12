@@ -255,4 +255,19 @@ public abstract class BinaryExpressionWriter {
         return true;
     }
 
+    public boolean writePostOrPrefixMethod(int operation, boolean simulate) {
+        if (operation!=PLUS_PLUS && operation!=MINUS_MINUS) return false;
+        if (!simulate) {
+            MethodVisitor mv = controller.getMethodVisitor();
+            if (operation==PLUS_PLUS) {
+                writePlusPlus(mv);
+            } else {
+                writeMinusMinus(mv);
+            }
+        }
+        return true;
+    }
+
+    protected abstract void writePlusPlus(MethodVisitor mv);
+    protected abstract void writeMinusMinus(MethodVisitor mv);
 }
