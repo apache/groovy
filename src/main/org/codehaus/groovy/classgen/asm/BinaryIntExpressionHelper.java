@@ -17,7 +17,6 @@ package org.codehaus.groovy.classgen.asm;
 
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.runtime.BytecodeInterface8;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
@@ -103,13 +102,6 @@ public class BinaryIntExpressionHelper extends BinaryExpressionWriter {
     public BinaryIntExpressionHelper(WriterController wc) {
         super(wc);
         controller = wc;
-    }
-    
-    /**
-     * @return true if expression is an evals to an int
-     */
-    protected static boolean isIntOperand(Expression exp, ClassNode current) {
-        return BinaryExpressionMultiTypeDispatcher.getType(exp,current) == ClassHelper.int_TYPE;
     }
     
     /**
@@ -220,48 +212,49 @@ public class BinaryIntExpressionHelper extends BinaryExpressionWriter {
         return true;
     }
 
-    @Override
     protected void doubleTwoOperands(MethodVisitor mv) {
         mv.visitInsn(DUP2);
     }
 
-    @Override
     protected MethodCaller getArrayGetCaller() {
         return intArrayGet;
     }
 
-    @Override
     protected MethodCaller getArraySetCaller() {
         return intArraySet;
     }
 
-    @Override
     protected int getBitwiseOperationBytecode(int type) {
         return bitOp[type];
     }
 
-    @Override
     protected int getCompareCode() {
         return -1;
     }
 
-    @Override
     protected ClassNode getNormalOpResultType() {
         return ClassHelper.int_TYPE;
     }
 
-    @Override
     protected int getShiftOperationBytecode(int type) {
         return shiftOp[type];
     }
 
-    @Override
     protected int getStandardOperationBytecode(int type) {
         return stdOperations[type];
     }
 
-    @Override
     protected void removeTwoOperands(MethodVisitor mv) {
         mv.visitInsn(POP2);
+    }
+
+    protected void writeMinusMinus(MethodVisitor mv) {
+        mv.visitInsn(ICONST_1);
+        mv.visitInsn(ISUB);
+    }
+
+    protected void writePlusPlus(MethodVisitor mv) {
+        mv.visitInsn(ICONST_1);
+        mv.visitInsn(IADD);
     }
 }

@@ -32,6 +32,7 @@ import org.codehaus.groovy.runtime.BytecodeInterface8;
 import org.objectweb.asm.MethodVisitor;
 
 import static org.codehaus.groovy.ast.ClassHelper.*;
+import static org.codehaus.groovy.syntax.Types.*;
 
 /**
  * This class is for internal use only!
@@ -45,41 +46,47 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
         public DummyHelper(WriterController controller) {
             super(controller);
         }
-        @Override public boolean write(int operation, boolean simulate) {
+        public boolean writePostOrPrefixMethod(int operation, boolean simulate) {
             if (simulate) return false;
             throw new GroovyBugError("should not reach here");
         }
-        @Override public boolean arrayGet(int operation, boolean simulate) {
+        public boolean write(int operation, boolean simulate) {
             if (simulate) return false;
             throw new GroovyBugError("should not reach here");
         }
-        @Override public boolean arraySet(boolean simulate) {
+        public boolean arrayGet(int operation, boolean simulate) {
             if (simulate) return false;
             throw new GroovyBugError("should not reach here");
         }
-        @Override protected void doubleTwoOperands(MethodVisitor mv) {}
-        @Override protected MethodCaller getArrayGetCaller() {
+        public boolean arraySet(boolean simulate) {
+            if (simulate) return false;
+            throw new GroovyBugError("should not reach here");
+        }
+        protected void doubleTwoOperands(MethodVisitor mv) {}
+        protected MethodCaller getArrayGetCaller() {
             return null;
         }
-        @Override protected MethodCaller getArraySetCaller() {
+        protected MethodCaller getArraySetCaller() {
             return null;
         }
-        @Override protected int getBitwiseOperationBytecode(int type) {
+        protected int getBitwiseOperationBytecode(int type) {
             return -1;
         }
-        @Override protected int getCompareCode() {
+        protected int getCompareCode() {
             return -1;
         }
-        @Override protected ClassNode getNormalOpResultType() {
+        protected ClassNode getNormalOpResultType() {
             return null;
         }
-        @Override protected int getShiftOperationBytecode(int type) {
+        protected int getShiftOperationBytecode(int type) {
             return -1;
         }
-        @Override protected int getStandardOperationBytecode(int type) {
+        protected int getStandardOperationBytecode(int type) {
             return -1;
         }
-        @Override protected void removeTwoOperands(MethodVisitor mv) {}
+        protected void removeTwoOperands(MethodVisitor mv) {}
+        protected void writePlusPlus(MethodVisitor mv) {}
+        protected void writeMinusMinus(MethodVisitor mv) {}
     }
     
     private static class BinaryCharExpressionHelper extends BinaryIntExpressionHelper {
@@ -129,13 +136,14 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
             /* 7: float  */ new BinaryFloatExpressionHelper(getController()),
     };
     
-    private static Map<ClassNode,Integer> typeMap = new HashMap<ClassNode,Integer>(14);
+    protected static Map<ClassNode,Integer> typeMap = new HashMap<ClassNode,Integer>(14);
     static {
         typeMap.put(int_TYPE,       1); typeMap.put(long_TYPE,      2);
         typeMap.put(double_TYPE,    3); typeMap.put(char_TYPE,      4);
         typeMap.put(byte_TYPE,      5); typeMap.put(short_TYPE,     6);
         typeMap.put(float_TYPE,     7); 
     }
+    protected final static String[] typeMapKeyNames = {"dummy", "int", "long", "double", "char", "byte", "short", "float"};
 
     public BinaryExpressionMultiTypeDispatcher(WriterController wc) {
         super(wc);
@@ -166,24 +174,24 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
         return type.redirect();
     }
     
-    private boolean isInt(ClassNode type) {
+    protected static boolean isIntCategory(ClassNode type) {
         return  type == int_TYPE    || type == char_TYPE    ||
                 type == byte_TYPE   || type == short_TYPE;
     }
     
-    private boolean isLong(ClassNode type) {
-        return  type == long_TYPE   || isInt(type);
+    protected static boolean isLongCategory(ClassNode type) {
+        return  type == long_TYPE   || isIntCategory(type);
     }
 
-    private boolean isDouble(ClassNode type) {
+    protected static boolean isDoubleCategory(ClassNode type) {
         return  type == float_TYPE  || type == double_TYPE  ||
-                isLong(type);
+                isLongCategory(type);
     }
     
     private int getOperandConversionType(ClassNode leftType, ClassNode rightType) {
-        if (isInt(leftType) && isInt(rightType)) return 1;
-        if (isLong(leftType) && isLong(rightType)) return 2;
-        if (isDouble(leftType) && isDouble(rightType)) return 3;
+        if (isIntCategory(leftType) && isIntCategory(rightType)) return 1;
+        if (isLongCategory(leftType) && isLongCategory(rightType)) return 2;
+        if (isDoubleCategory(leftType) && isDoubleCategory(rightType)) return 3;
         return 0;
     }
     
@@ -225,9 +233,13 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
         ClassNode current =  getController().getClassNode();
 
         Expression leftExp = binExp.getLeftExpression();
-        ClassNode leftType = getType(leftExp, current);
+        ClassNode leftTypeOrig = getType(leftExp, current);
+        ClassNode leftType = leftTypeOrig;
         Expression rightExp = binExp.getRightExpression();
         ClassNode rightType = getType(rightExp, current);
+        if (operation==LEFT_SQUARE_BRACKET) {
+            leftType = leftTypeOrig.getComponentType();
+        }
 
         int operationType = getOperandConversionType(leftType,rightType);
         BinaryExpressionWriter bew = binExpWriter[operationType];
@@ -236,7 +248,7 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
         
         if (bew.arrayGet(operation, true)) {
             leftExp.visit(acg);
-            os.doGroovyCast(leftType);
+            os.doGroovyCast(leftTypeOrig);
             rightExp.visit(acg);
             os.doGroovyCast(int_TYPE);
             bew.arrayGet(operation, false);
@@ -252,11 +264,113 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
         }
     }
     
+    private boolean isAssignmentToArray(BinaryExpression binExp) {
+        Expression leftExpression = binExp.getLeftExpression();
+        if (!(leftExpression instanceof BinaryExpression)) return false;
+        BinaryExpression leftBinExpr = (BinaryExpression) leftExpression;
+        if (leftBinExpr.getOperation().getType() != LEFT_SQUARE_BRACKET) return false;
+        return true;
+    }
+    
+    private int removeAssignment(int op) {
+        switch (op) {
+            case PLUS_EQUAL: return PLUS;
+            case MINUS_EQUAL: return MINUS;
+            case MULTIPLY_EQUAL: return MULTIPLY;
+            default: return op;
+        }
+    }
+    
+    @Override
+    protected void evaluateBinaryExpressionWithAssignment(String method, BinaryExpression binExp) {
+        if (!isAssignmentToArray(binExp)) {
+            super.evaluateBinaryExpressionWithAssignment(method, binExp);
+            return;
+        }
+        
+        // we need to handle only assignment to arrays combined with an operation
+        // special here. e.g x[a] += b
+        
+        ClassNode current =  getController().getClassNode();
+        int operation = removeAssignment(binExp.getOperation().getType());
+        
+        Expression leftExp = binExp.getLeftExpression();
+        ClassNode leftType = getType(leftExp, current);
+        Expression rightExp = binExp.getRightExpression();
+        ClassNode rightType = getType(rightExp, current);
+        
+        int operationType = getOperandConversionType(leftType,rightType);
+        BinaryExpressionWriter bew = binExpWriter[operationType];
+        
+        boolean simulationSuccess = bew.arrayGet(LEFT_SQUARE_BRACKET, true);
+        simulationSuccess = simulationSuccess && bew.write(operation, true);
+        simulationSuccess = simulationSuccess && bew.arraySet(true);
+        if (!simulationSuccess) {
+            super.evaluateBinaryExpressionWithAssignment(method, binExp);
+            return;
+        }
+        
+        AsmClassGenerator acg = getController().getAcg();
+        OperandStack operandStack = getController().getOperandStack();
+        CompileStack compileStack = getController().getCompileStack();
+               
+        // for x[a] += b we have the structure:
+        //   x = left(left(binExp))), b = right(binExp), a = right(left(binExp)))
+        // for array set we need these values on stack: array, index, right 
+        // for array get we need these values on stack: array, index
+        // to eval the expression we need x[a] = x[a]+b
+        // -> arraySet(x,a, x[a]+b) 
+        // -> arraySet(x,a, arrayGet(x,a,b))
+        // --> x,a, x,a, b as operands
+        // --> load x, load a, DUP2, call arrayGet, load b, call operation,call arraySet
+        // since we cannot DUP2 here easily we will save the subscript and DUP x
+        // --> sub=a, load x, DUP, load sub, call arrayGet, load b, call operation, load sub, call arraySet
+        
+        BinaryExpression arrayWithSubscript = (BinaryExpression) leftExp;
+        Expression subscript = arrayWithSubscript.getRightExpression();
+
+        // load array index: sub=a [load x, DUP, load sub, call arrayGet, load b, call operation, load sub, call arraySet]
+        subscript.visit(acg);
+        operandStack.doGroovyCast(int_TYPE);
+        int subscriptValueId = compileStack.defineTemporaryVariable("$sub", ClassHelper.int_TYPE, true);
+        
+        // load array: load x and DUP [load sub, call arrayGet, load b, call operation, load sub, call arraySet] 
+        arrayWithSubscript.getLeftExpression().visit(acg);
+        operandStack.dup();
+        
+        // array get: load sub, call arrayGet [load b, call operation, load sub, call arraySet]
+        operandStack.load(ClassHelper.int_TYPE, subscriptValueId);
+        bew.arrayGet(LEFT_SQUARE_BRACKET, false);
+        operandStack.replace(leftType, 2);
+        
+        // complete rhs: load b, call operation [load sub, call arraySet]
+        binExp.getRightExpression().visit(acg);
+        bew.write(operation, false);
+        
+        // let us save that value for the return
+        operandStack.dup();
+        int resultValueId = compileStack.defineTemporaryVariable("$result", rightType, true);               
+
+        // array set: load sub, call arraySet []
+        operandStack.load(ClassHelper.int_TYPE, subscriptValueId);
+        operandStack.swap();
+        bew.arraySet(false);
+        operandStack.remove(2);
+
+        // load return value
+        operandStack.load(rightType, resultValueId);
+        
+        // cleanup
+        compileStack.removeVar(resultValueId);
+        compileStack.removeVar(subscriptValueId);
+    }
+    
     @Override
     protected void assignToArray(Expression orig, Expression receiver, Expression index, Expression rhsValueLoader) {
         ClassNode current = getController().getClassNode();
         ClassNode arrayType = getType(receiver, current);
-        int operationType = getOperandType(arrayType);
+        ClassNode arrayComponentType = arrayType.getComponentType();
+        int operationType = getOperandType(arrayComponentType);
         BinaryExpressionWriter bew = binExpWriter[operationType];
         AsmClassGenerator acg = getController().getAcg();
         
@@ -265,14 +379,15 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
             
             // load the array
             receiver.visit(acg);
-
+            operandStack.doGroovyCast(arrayType);
+            
             // load index
             index.visit(acg);
             operandStack.doGroovyCast(int_TYPE);
             
             // load rhs
             rhsValueLoader.visit(acg);
-            operandStack.doGroovyCast(arrayType);
+            operandStack.doGroovyCast(arrayComponentType);
             
             // store value in array
             bew.arraySet(false);
@@ -282,6 +397,22 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
             rhsValueLoader.visit(acg);
         } else {        
             super.assignToArray(orig, receiver, index, rhsValueLoader);
+        }
+    }
+    
+    @Override
+    protected void writePostOrPrefixMethod(int op, String method,  Expression expression, Expression orig) {
+        ClassNode type = getType(orig,getController().getClassNode());
+        int operationType = getOperandType(type);
+        BinaryExpressionWriter bew = binExpWriter[operationType];
+        if (bew.writePostOrPrefixMethod(op,true)) {
+            OperandStack operandStack   =   getController().getOperandStack();
+            // at this point the receiver will be already on the stack
+            operandStack.doGroovyCast(type);
+            bew.writePostOrPrefixMethod(op,false);
+            operandStack.replace(bew.getNormalOpResultType());
+        } else {
+            super.writePostOrPrefixMethod(op, method, expression, orig);
         }
     }
 }

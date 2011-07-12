@@ -127,12 +127,19 @@ public class DefaultTypeTransformation {
         if (object instanceof Character) {
             return Integer.valueOf(((Character) object).charValue());
         }
+        if (object instanceof GString) {
+            String c = ((GString) object).toString();
+            if (c.length() == 1) {
+                return Integer.valueOf(c.charAt(0));
+            } else {
+                throw new GroovyCastException(c, type);
+            }
+        }
         if (object instanceof String) {
             String c = (String) object;
             if (c.length() == 1) {
                 return Integer.valueOf(c.charAt(0));
-            }
-            else {
+            } else {
                 throw new GroovyCastException(c, type);
             }
         }

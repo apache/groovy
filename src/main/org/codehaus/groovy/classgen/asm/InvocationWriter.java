@@ -135,7 +135,8 @@ public class InvocationWriter {
             mv.visitInsn(ACONST_NULL);
         }
         argumentsToRemove += args.getExpressions().size();
-        controller.getOperandStack().replace(ret, argumentsToRemove);
+        controller.getOperandStack().remove(argumentsToRemove);
+        controller.getOperandStack().push(ret);
         return true;
     }
 

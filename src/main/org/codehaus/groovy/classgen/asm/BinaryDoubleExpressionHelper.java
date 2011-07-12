@@ -21,6 +21,7 @@ import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.runtime.BytecodeInterface8;
+import org.objectweb.asm.MethodVisitor;
 
 /**
  * @author <a href="mailto:blackdrag@gmx.org">Jochen "blackdrag" Theodorou</a>
@@ -36,44 +37,36 @@ public class BinaryDoubleExpressionHelper extends BinaryLongExpressionHelper {
         doubleArrayGet = MethodCaller.newStatic(BytecodeInterface8.class, "dArrayGet"),
         doubleArraySet = MethodCaller.newStatic(BytecodeInterface8.class, "dArraySet");
 
-    @Override
     protected MethodCaller getArrayGetCaller() {
         return doubleArrayGet;
     }
 
-    @Override
     protected MethodCaller getArraySetCaller() {
         return doubleArraySet;
     }
     
-    @Override
-    protected boolean writeBitwiseOp(int type, boolean simulate) {
+    protected boolean writeBitwiseOp(int op, boolean simulate) {
         if (!simulate) throw new GroovyBugError("should not reach here");
         return false;   
     }
     
-    @Override
-    protected int getBitwiseOperationBytecode(int type) {
+    protected int getBitwiseOperationBytecode(int op) {
         return -1;
     }
 
-    @Override
     protected int getCompareCode() {
         return DCMPG;
     }
 
-    @Override
     protected ClassNode getNormalOpResultType() {
-        return ClassHelper.long_TYPE;
+        return ClassHelper.double_TYPE;
     }
 
-    @Override
     protected boolean writeShiftOp(int type, boolean simulate) {
         if (!simulate) throw new GroovyBugError("should not reach here");
         return false;   
     }
     
-    @Override
     protected int getShiftOperationBytecode(int type) {
         return -1;
     }
@@ -87,8 +80,17 @@ public class BinaryDoubleExpressionHelper extends BinaryLongExpressionHelper {
         DREM,           //  MOD         203
     };
     
-    @Override
     protected int getStandardOperationBytecode(int type) {
         return stdOperations[type];
+    }
+    
+    protected void writeMinusMinus(MethodVisitor mv) {
+        mv.visitInsn(DCONST_1);
+        mv.visitInsn(DSUB);
+    }
+    
+    protected void writePlusPlus(MethodVisitor mv) {
+        mv.visitInsn(DCONST_1);
+        mv.visitInsn(DADD);
     }
 }

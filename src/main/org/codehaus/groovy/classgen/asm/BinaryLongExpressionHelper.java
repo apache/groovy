@@ -30,8 +30,7 @@ public class BinaryLongExpressionHelper extends BinaryExpressionWriter {
     public BinaryLongExpressionHelper(WriterController controller) {
         super(controller);
     }
- 
-    @Override
+
     protected void doubleTwoOperands(MethodVisitor mv) {
         /*
             since there is no DUP4 we have to do this:
@@ -49,8 +48,7 @@ public class BinaryLongExpressionHelper extends BinaryExpressionWriter {
         mv.visitInsn(POP2);
         mv.visitInsn(DUP2_X1);
     }
-    
-    @Override
+
     protected void removeTwoOperands(MethodVisitor mv) {
         mv.visitInsn(POP2);
         mv.visitInsn(POP2);
@@ -60,12 +58,10 @@ public class BinaryLongExpressionHelper extends BinaryExpressionWriter {
         longArrayGet = MethodCaller.newStatic(BytecodeInterface8.class, "lArrayGet"),
         longArraySet = MethodCaller.newStatic(BytecodeInterface8.class, "lArraySet");
 
-    @Override
     protected MethodCaller getArrayGetCaller() {
         return longArrayGet;
     }
 
-    @Override
     protected MethodCaller getArraySetCaller() {
         return longArraySet;
     }
@@ -75,18 +71,15 @@ public class BinaryLongExpressionHelper extends BinaryExpressionWriter {
         LAND,           //  BITWISE_AND         341
         LXOR,           //  BIWISE_XOR          342
     };
-    
-    @Override
+
     protected int getBitwiseOperationBytecode(int type) {
         return bitOp[type];
     }
 
-    @Override
     protected int getCompareCode() {
         return LCMP;
     }
 
-    @Override
     protected ClassNode getNormalOpResultType() {
         return ClassHelper.long_TYPE;
     }
@@ -97,7 +90,6 @@ public class BinaryLongExpressionHelper extends BinaryExpressionWriter {
         LUSHR           // RIGHT_SHIFT_UNSIGNED     282
     };
     
-    @Override
     protected int getShiftOperationBytecode(int type) {
         return shiftOp[type];
     }
@@ -111,8 +103,17 @@ public class BinaryLongExpressionHelper extends BinaryExpressionWriter {
         LREM,           //  MOD         203
     };
     
-    @Override
     protected int getStandardOperationBytecode(int type) {
         return stdOperations[type];
+    }
+
+    protected void writeMinusMinus(MethodVisitor mv) {
+        mv.visitInsn(LCONST_1);
+        mv.visitInsn(LSUB);
+    }
+
+    protected void writePlusPlus(MethodVisitor mv) {
+        mv.visitInsn(LCONST_1);
+        mv.visitInsn(LADD);
     }
 }
