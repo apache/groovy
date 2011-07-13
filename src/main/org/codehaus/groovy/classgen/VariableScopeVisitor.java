@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2009 the original author or authors.
+ * Copyright 2003-2011 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,7 +49,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
     private class StateStackElement {
         VariableScope scope;
         ClassNode clazz;
-        boolean inConstructor; 
+        boolean inConstructor;
 
         StateStackElement() {
             scope = VariableScopeVisitor.this.currentScope;
@@ -111,7 +111,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
             variableType = "property";
         }
 
-        StringBuffer msg = new StringBuffer();
+        StringBuilder msg = new StringBuilder();
         msg.append("The current ").append(scopeType);
         msg.append(" already contains a ").append(variableType);
         msg.append(" of the name ").append(var.getName());
@@ -228,7 +228,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
                     boolean staticMember = member.isInStaticContext();
                     // We don't allow a static context (e.g. a static method) to access
                     // a non-static variable (e.g. a non-static field).
-                    if (! (staticScope && ! staticMember))
+                    if (!(staticScope && !staticMember))
                         var = member;
                 }
                 break;
@@ -312,12 +312,10 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         // variable before its declaration
         expression.getRightExpression().visit(this);
 
-        // no need to visit left side, just get the variable name
         if (expression.isMultipleAssignmentDeclaration()) {
             TupleExpression list = expression.getTupleExpression();
             for (Expression e : list.getExpressions()) {
-                VariableExpression exp = (VariableExpression) e;
-                declare(exp);
+                declare((VariableExpression) e);
             }
         } else {
             declare(expression.getVariableExpression());
@@ -364,13 +362,13 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
 
         super.visitClosureExpression(expression);
         markClosureSharedVariables();
-        
+
         popState();
     }
 
     private void markClosureSharedVariables() {
         VariableScope scope = currentScope;
-        for (Iterator<Variable> it = scope.getReferencedLocalVariablesIterator(); it.hasNext();) {
+        for (Iterator<Variable> it = scope.getReferencedLocalVariablesIterator(); it.hasNext(); ) {
             it.next().setClosureSharedVariable(true);
         }
     }
@@ -402,7 +400,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
             InnerClassNode in = (InnerClassNode) node;
             if (in.isAnonymous()) return;
         }
-        
+
         pushState();
 
         currentClass = node;
@@ -416,7 +414,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         pushState(node.isStatic());
         inConstructor = isConstructor;
         node.setVariableScope(currentScope);
-        
+
         // GROOVY-2156
         Parameter[] parameters = node.getParameters();
         for (Parameter parameter : parameters) {
@@ -486,7 +484,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         markClosureSharedVariables();
         popState();
     }
-    
+
     public void visitProperty(PropertyNode node) {
         pushState(node.isStatic());
         super.visitProperty(node);
@@ -503,8 +501,8 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         List<AnnotationNode> annotations = node.getAnnotations();
         if (annotations.isEmpty()) return;
         for (AnnotationNode an : annotations) {
-        	// skip built-in properties
-        	if (an.isBuiltIn()) continue;
+            // skip built-in properties
+            if (an.isBuiltIn()) continue;
             for (Map.Entry<String, Expression> member : an.getMembers().entrySet()) {
                 Expression annMemberValue = member.getValue();
                 annMemberValue.visit(this);
