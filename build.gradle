@@ -27,12 +27,12 @@ configurations {
 dependencies {
 //    groovy files('/home/hd/tmp/groovy-all.jar') // files(sourceSets.main.classesDir)
     groovy files("$buildDir/classes")
-    groovy "asm:asm:3.2"
+    groovy "asm:asm:3.3.1"
     groovy "antlr:antlr:2.7.7"
-    groovy "asm:asm-commons:3.2"
-    groovy "asm:asm-util:3.2"
-    groovy "asm:asm-analysis:3.2"
-    groovy "asm:asm-tree:3.2"
+    groovy "asm:asm-commons:3.3.1"
+    groovy "asm:asm-util:3.3.1"
+    groovy "asm:asm-analysis:3.3.1"
+    groovy "asm:asm-tree:3.3.1"
 
     compile("bsf:bsf:2.4.0") {
         exclude(group: 'commons-logging', module: 'commons-logging')
@@ -48,7 +48,7 @@ dependencies {
     compile("jline:jline:0.9.94") {
         exclude(group: 'junit', module: 'junit')
     }
-    compile "org.fusesource.jansi:jansi:1.4"
+    compile "org.fusesource.jansi:jansi:1.6"
     compile("org.apache.ivy:ivy:2.2.0") {
         transitive = false
     }
@@ -74,23 +74,23 @@ dependencies {
     // todo this was provided
     compile "org.livetribe:livetribe-jsr223:2.0.6"
 
-    tools "com.google.code:jarjar:1.0"
+    tools "com.google.code:jarjar:1.1"
     tools("checkstyle:checkstyle:4.4") {
         exclude(module: 'junit')
     }
     tools "redhill:simian:2.2.4"
-    tools("net.sourceforge.cobertura:cobertura:1.9.3") {
+    tools("net.sourceforge.cobertura:cobertura:1.9.4.1") {
         exclude(module: 'asm')
         exclude(module: 'asm')
         exclude(module: 'ant')
     }
-    tools "asm:asm:3.2"
+    tools "asm:asm:3.3.1"
     tools "com.thoughtworks.qdox:qdox:1.12"
-    tools "biz.aQute:bnd:0.0.388"
+    tools "biz.aQute:bnd:0.0.401"
 
     examplesCompile "lucene:lucene:1.4.3"
-    examplesCompile "org.eclipse:osgi:3.4.3.R34x_v20081215-1030"
-    examplesRuntime("commons-httpclient:commons-httpclient:3.0.1") {
+    examplesCompile "org.eclipse:osgi:3.5.0.v20090520"
+    examplesRuntime("commons-httpclient:commons-httpclient:3.1") {
         exclude(module: 'junit')
         exclude(module: 'commons-logging')
         exclude(module: 'commons-codec')
