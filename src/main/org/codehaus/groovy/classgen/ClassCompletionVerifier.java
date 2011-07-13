@@ -137,7 +137,7 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
     }
 
     private void checkAbstractDeclaration(MethodNode methodNode) {
-        if (!isAbstract(methodNode.getModifiers())) return;
+        if (!methodNode.isAbstract()) return;
         if (isAbstract(currentClass.getModifiers())) return;
         addError("Can't have an abstract method in a non-abstract class." +
                 " The " + getDescription(currentClass) + " must be declared abstract or the method '" +
@@ -175,7 +175,7 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
                 addError("The " + getDescription(method) + " from " + getDescription(cn) +
                         " must not be final. It is by definition abstract.", method);
             }
-            if (isStatic(method.getModifiers()) && !isConstructor(method)) {
+            if (method.isStatic() && !isConstructor(method)) {
                 addError("The " + getDescription(method) + " from " + getDescription(cn) +
                         " must not be static. Only fields may be static in an interface.", method);
             }
@@ -243,7 +243,7 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
         msg.append(" in ");
         msg.append(superMethod.getDeclaringClass().getName());
         msg.append("; attempting to assign weaker access privileges; was ");
-        msg.append(isPublic(superMethod.getModifiers()) ? "public" : "protected");
+        msg.append(superMethod.isPublic() ? "public" : "protected");
         addError(msg.toString(), method);
     }
 
@@ -287,8 +287,8 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
         for (MethodNode superMethod : cn.getSuperClass().getMethods(mn.getName())) {
             Parameter[] superParams = superMethod.getParameters();
             if (!hasEqualParameterTypes(params, superParams)) continue;
-            if ((isPrivate(mn.getModifiers()) && !isPrivate(superMethod.getModifiers())) ||
-                    (isProtected(mn.getModifiers()) && isPublic(superMethod.getModifiers()))) {
+            if ((mn.isPrivate() && !superMethod.isPrivate()) ||
+                    (mn.isProtected() && superMethod.isPublic())) {
                 addWeakerAccessError(cn, mn, params, superMethod);
                 return;
             }
@@ -302,8 +302,7 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
         for (MethodNode method : currentClass.getMethods(node.getName())) {
             if (method == node) continue;
             if (!method.getDeclaringClass().equals(node.getDeclaringClass())) continue;
-            int modifiers = method.getModifiers();
-            if (isPublic(modifiers) || isProtected(modifiers)) {
+            if (method.isPublic() || method.isProtected()) {
                 hasPublic = true;
             } else {
                 hasPrivate = true;
@@ -427,14 +426,13 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
         }
         if (v instanceof FieldNode) {
             FieldNode fn = (FieldNode) v;
-            int modifiers = fn.getModifiers();
 
             /*
              *  if it is static final but not accessed inside a static constructor, or,
              *  if it is an instance final but not accessed inside a instance constructor, it is an error
              */
-            boolean isFinal = (modifiers & Opcodes.ACC_FINAL) != 0;
-            boolean isStatic = (modifiers & Opcodes.ACC_STATIC) != 0;
+            boolean isFinal = fn.isFinal();
+            boolean isStatic = fn.isStatic();
             boolean error = isFinal && ((isStatic && !inStaticConstructor) || (!isStatic && !inConstructor));
 
             if (error) addError("cannot modify" + (isStatic ? " static" : "") + " final field '" + fn.getName() +
