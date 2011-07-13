@@ -48,8 +48,8 @@ dependencies {
     compile("jline:jline:0.9.94") {
         exclude(group: 'junit', module: 'junit')
     }
-    compile "org.fusesource.jansi:jansi:1.2.1"
-    compile("org.apache.ivy:ivy:2.2.0-rc1") {
+    compile "org.fusesource.jansi:jansi:1.6"
+    compile("org.apache.ivy:ivy:2.2.0") {
         transitive = false
     }
     runtime "org.apache.ant:ant-junit:1.8.2"
@@ -75,23 +75,23 @@ dependencies {
     // todo this was provided
     compile "org.livetribe:livetribe-jsr223:2.0.6"
 
-    tools "com.google.code:jarjar:1.0"
+    tools "com.google.code:jarjar:1.1"
     tools("checkstyle:checkstyle:4.4") {
         exclude(module: 'junit')
     }
     tools "redhill:simian:2.2.4"
-    tools("net.sourceforge.cobertura:cobertura:1.9.3") {
+    tools("net.sourceforge.cobertura:cobertura:1.9.4.1") {
         exclude(module: 'asm')
         exclude(module: 'asm')
         exclude(module: 'ant')
     }
     tools "asm:asm:3.2"
     tools "com.thoughtworks.qdox:qdox:1.12"
-    tools "biz.aQute:bnd:0.0.388"
+    tools "biz.aQute:bnd:0.0.401"
 
     examplesCompile "lucene:lucene:1.4.3"
-    examplesCompile "org.eclipse:osgi:3.4.3.R34x_v20081215-1030"
-    examplesRuntime("commons-httpclient:commons-httpclient:3.0.1") {
+    examplesCompile "org.eclipse:osgi:3.5.0.v20090520"
+    examplesRuntime("commons-httpclient:commons-httpclient:3.1") {
         exclude(module: 'junit')
         exclude(module: 'commons-logging')
         exclude(module: 'commons-codec')
