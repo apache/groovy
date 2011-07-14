@@ -21,6 +21,8 @@ import groovy.io.FileVisitResult;
 import groovy.io.GroovyPrintWriter;
 import groovy.lang.*;
 import groovy.util.*;
+
+import org.codehaus.groovy.classgen.Verifier;
 import org.codehaus.groovy.reflection.ClassInfo;
 import org.codehaus.groovy.reflection.MixinInMetaClass;
 import org.codehaus.groovy.reflection.ReflectionCache;
@@ -16566,6 +16568,14 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
         if (self instanceof GroovyObject) {
             ((GroovyObject)self).setMetaClass(metaClass);
+            Field sdyn;
+            Class c = self.getClass();
+            try {
+                sdyn = c.getDeclaredField(Verifier.STATIC_METACLASS_BOOL);
+                sdyn.setBoolean(null, true);
+            } catch (Throwable e) {
+                //DO NOTHING
+            }
         } else if (self instanceof Class) {
             ((MetaClassRegistryImpl)GroovySystem.getMetaClassRegistry()).setMetaClass((Class)self, metaClass);
         } else {
