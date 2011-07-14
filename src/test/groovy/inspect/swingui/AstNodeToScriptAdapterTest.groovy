@@ -90,8 +90,8 @@ public class AstNodeToScriptAdapterTest extends GroovyTestCase {
         assert result.contains('protected void method4()')
         assert result.contains('public java.lang.Object method5(java.lang.Object parm1)')
         assert result.contains('public static java.lang.Object method6(java.lang.String parm1)')
-        assert result.contains('native public java.lang.Object method7(java.lang.Object parm1, java.lang.Object parm2)')
-        assert result.contains('public synchronized java.lang.Object method8(java.lang.String parm1, java.lang.String parm2)')
+        assert result.contains('native public java.lang.Object method7(java.lang.Object parm1, final java.lang.Object parm2)')
+        assert result.contains('public synchronized java.lang.Object method8(java.lang.String parm1, final java.lang.String parm2)')
         assert result.contains("public java.lang.Object method9(java.lang.String parm1 = this.getValue(), java.lang.String parm2 = 'somevalue')")
         assert result.contains('public java.lang.Integer[] method10(java.lang.String[] parm1, java.lang.Object[] parm2)')
     }
