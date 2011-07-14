@@ -620,6 +620,7 @@ public class AsmClassGenerator extends ClassGenerator {
         subExpression.visit(this);
         controller.getOperandStack().box();
         bitwiseNegate.call(controller.getMethodVisitor());
+        controller.getOperandStack().replace(ClassHelper.OBJECT_TYPE);
         controller.getAssertionWriter().record(expression);
     }
 
