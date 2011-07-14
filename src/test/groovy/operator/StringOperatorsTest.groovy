@@ -55,4 +55,11 @@ class StringOperatorsTest extends GroovyTestCase {
 
         assert "the quick brown".substring(4).substring(0, 5) == "quick"
     }
+
+    void testBitwiseNegate() {
+        String value="test"
+        String s = "^\\S+$value\$"
+        def p = ~s 
+        assert p instanceof java.util.regex.Pattern
+    }
 }
