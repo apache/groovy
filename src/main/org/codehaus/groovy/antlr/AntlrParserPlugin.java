@@ -1062,6 +1062,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
 
         configureAST(parameter, paramNode);
         parameter.addAnnotations(annotations);
+        parameter.setModifiers(modifiers);
         return parameter;
     }
 
