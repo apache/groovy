@@ -16,15 +16,15 @@
 
 package org.codehaus.groovy.vmplugin.v5;
 
-import java.lang.reflect.*;
-import java.lang.annotation.*;
-import java.util.List;
-
 import org.codehaus.groovy.GroovyBugError;
-import org.codehaus.groovy.vmplugin.VMPlugin;
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
+import org.codehaus.groovy.vmplugin.VMPlugin;
+
+import java.lang.annotation.*;
+import java.lang.reflect.*;
+import java.util.List;
 
 /**
  * java 5 based functions
@@ -322,7 +322,7 @@ public class Java5 implements VMPlugin {
         Method[] methods = clazz.getDeclaredMethods();
         for (Method m : methods) {
             ClassNode ret = makeClassNode(compileUnit, m.getGenericReturnType(), m.getReturnType());
-            Parameter[] params = makeParameters(compileUnit, m.getGenericParameterTypes(), m.getParameterTypes());
+            Parameter[] params = makeParameters(compileUnit, m.getGenericParameterTypes(), m.getParameterTypes(), m.getParameterAnnotations());
             ClassNode[] exceptions = makeClassNodes(compileUnit, m.getGenericExceptionTypes(), m.getExceptionTypes());
             MethodNode mn = new MethodNode(m.getName(), m.getModifiers(), ret, params, exceptions, null);
             setMethodDefaultValue(mn, m);
@@ -332,7 +332,7 @@ public class Java5 implements VMPlugin {
         }
         Constructor[] constructors = clazz.getDeclaredConstructors();
         for (Constructor ctor : constructors) {
-            Parameter[] params = makeParameters(compileUnit, ctor.getGenericParameterTypes(), ctor.getParameterTypes());
+            Parameter[] params = makeParameters(compileUnit, ctor.getGenericParameterTypes(), ctor.getParameterTypes(), ctor.getParameterAnnotations());
             ClassNode[] exceptions = makeClassNodes(compileUnit, ctor.getGenericExceptionTypes(), ctor.getExceptionTypes());
             classNode.addConstructor(ctor.getModifiers(), params, exceptions, null);
         }
@@ -382,20 +382,22 @@ public class Java5 implements VMPlugin {
         return back;
     }
 
-    private Parameter[] makeParameters(CompileUnit cu, Type[] types, Class[] cls) {
+    private Parameter[] makeParameters(CompileUnit cu, Type[] types, Class[] cls, Annotation[][] parameterAnnotations) {
         Parameter[] params = Parameter.EMPTY_ARRAY;
         if (types.length > 0) {
             params = new Parameter[types.length];
             for (int i = 0; i < params.length; i++) {
-                params[i] = makeParameter(cu, types[i], cls[i], i);
+                params[i] = makeParameter(cu, types[i], cls[i], parameterAnnotations[i], i);
             }
         }
         return params;
     }
 
-    private Parameter makeParameter(CompileUnit cu, Type type, Class cl, int idx) {
+    private Parameter makeParameter(CompileUnit cu, Type type, Class cl, Annotation[] annotations, int idx) {
         ClassNode cn = makeClassNode(cu, type, cl);
-        return new Parameter(cn, "param" + idx);
+        Parameter parameter = new Parameter(cn, "param" + idx);
+        setAnnotationMetaData(annotations, parameter);
+        return parameter;
     }
 }
 
