@@ -1182,9 +1182,16 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                         mv.visitVarInsn(ALOAD,0);
                         Parameter[] para = oldMethod.getParameters();
                         Parameter[] goal = overridingMethod.getParameters();
+                        int doubleSlotOffset = 0;
                         for (int i = 0; i < para.length; i++) {
-                            BytecodeHelper.load(mv, para[i].getType(), i+1);
-                            if (!para[i].getType().equals(goal[i].getType())) {
+                            ClassNode type = para[i].getType();
+                            BytecodeHelper.load(mv, type, i+1+doubleSlotOffset);
+                            if (type.redirect()==ClassHelper.double_TYPE ||
+                                type.redirect()==ClassHelper.long_TYPE)
+                            {
+                                doubleSlotOffset++;
+                            }
+                            if (!type.equals(goal[i].getType())) {
                                 BytecodeHelper.doCast(mv,goal[i].getType());
                             }
                         }
