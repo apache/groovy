@@ -16568,18 +16568,22 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
         if (self instanceof GroovyObject) {
             ((GroovyObject)self).setMetaClass(metaClass);
-            Field sdyn;
-            Class c = self.getClass();
-            try {
-                sdyn = c.getDeclaredField(Verifier.STATIC_METACLASS_BOOL);
-                sdyn.setBoolean(null, true);
-            } catch (Throwable e) {
-                //DO NOTHING
-            }
+            disablePrimitiveOptimization(self);
         } else if (self instanceof Class) {
             ((MetaClassRegistryImpl)GroovySystem.getMetaClassRegistry()).setMetaClass((Class)self, metaClass);
         } else {
             ((MetaClassRegistryImpl)GroovySystem.getMetaClassRegistry()).setMetaClass(self, metaClass);
+        }
+    }
+
+    private static void disablePrimitiveOptimization(Object self) {
+        Field sdyn;
+        Class c = self.getClass();
+        try {
+            sdyn = c.getDeclaredField(Verifier.STATIC_METACLASS_BOOL);
+            sdyn.setBoolean(null, true);
+        } catch (Throwable e) {
+            //DO NOTHING
         }
     }
 
