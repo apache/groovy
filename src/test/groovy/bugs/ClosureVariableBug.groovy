@@ -40,4 +40,22 @@ class ClosureVariableBug extends GroovyTestCase {
         collection.each { x = it }
         return x
     }
+
+    void testLocalVariableWithPrimitiveType() {
+        assertScript """
+            int x
+            1.times { x=2 }
+            assert x==2
+        """
+        assertScript """
+            long x
+            1.times { x=2 }
+            assert x==2
+        """
+        assertScript """
+            double x
+            1.times { x=2 }
+            assert x==2
+        """
+    }
 }
