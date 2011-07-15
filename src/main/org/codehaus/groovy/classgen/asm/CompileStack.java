@@ -587,6 +587,22 @@ public class CompileStack implements Opcodes {
         mv.visitVarInsn(ASTORE, reference.getIndex());
     }
     
+    private void pushInitValue(ClassNode type, MethodVisitor mv) {
+        if (ClassHelper.isPrimitiveType(type)) {
+            if (type==ClassHelper.long_TYPE) {
+                mv.visitInsn(LCONST_0);
+            } else if (type==ClassHelper.double_TYPE) {
+                mv.visitInsn(DCONST_0);
+            } else if (type==ClassHelper.float_TYPE) {
+                mv.visitInsn(FCONST_0);
+            } else {
+                mv.visitLdcInsn(0);
+            }
+        } else {
+            mv.visitInsn(ACONST_NULL);
+        }
+    }
+    
     /**
      * Defines a new Variable using an AST variable.
      * @param initFromStack if true the last element of the 
@@ -605,37 +621,19 @@ public class CompileStack implements Opcodes {
         MethodVisitor mv = controller.getMethodVisitor();
         Label startLabel  = new Label();
         answer.setStartLabel(startLabel);
+        ClassNode type = answer.getType().redirect();
+        OperandStack operandStack = controller.getOperandStack();
+
+        if (!initFromStack) pushInitValue(type, mv);
+        operandStack.push(answer.getType());
         if (answer.isHolder())  {
-            if (!initFromStack) {
-                mv.visitInsn(ACONST_NULL);
-            } else {
-                OperandStack operandStack = controller.getOperandStack();
-                operandStack.push(answer.getType());
-                operandStack.box();
-                operandStack.remove(1);
-            }
+            operandStack.box();
+            operandStack.remove(1);
             createReference(answer);
         } else {
-            if (!initFromStack) {
-                ClassNode type = answer.getType().redirect();
-                if (ClassHelper.isPrimitiveType(type)) {
-                    if (type==ClassHelper.long_TYPE) {
-                        mv.visitInsn(LCONST_0);
-                    } else if (type==ClassHelper.double_TYPE) {
-                        mv.visitInsn(DCONST_0);
-                    } else if (type==ClassHelper.float_TYPE) {
-                        mv.visitInsn(FCONST_0);
-                    } else {
-                        mv.visitLdcInsn(0);
-                    }
-                } else {
-                    mv.visitInsn(ACONST_NULL);
-                }
-            }
-            OperandStack operandStack = controller.getOperandStack();
-            operandStack.push(answer.getType());
             operandStack.storeVar(answer);
         } 
+        
         mv.visitLabel(startLabel);
         return answer;
     }
