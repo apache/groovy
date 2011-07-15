@@ -487,9 +487,11 @@ public class OptimizingStatementWriter extends StatementWriter {
 
         private ClassNode node;
         private OptimizeFlagsCollector opt = new OptimizeFlagsCollector();
+        private boolean optimizeMethodCall = true;
         
         @Override
         public void visitClass(ClassNode node) {
+            this.optimizeMethodCall = !node.implementsInterface(GROOVY_INTERCEPTABLE_TYPE);
             this.node = node;
             super.visitClass(node);
         }
@@ -699,6 +701,7 @@ public class OptimizingStatementWriter extends StatementWriter {
         
         private void setMethodTarget(Expression expression, String name, Expression callArgs) {
             if (name==null) return;
+            if (!optimizeMethodCall) return;
             // find method call target
             Parameter[] paraTypes = null;
             if (callArgs instanceof ArgumentListExpression) {
