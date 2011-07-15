@@ -82,6 +82,8 @@ public class ClassHelper {
         CLASS_Type = makeWithoutCaching(Class.class), COMPARABLE_TYPE = makeWithoutCaching(Comparable.class),        
         GENERATED_CLOSURE_Type = makeWithoutCaching(GeneratedClosure.class),
         GROOVY_OBJECT_SUPPORT_TYPE = makeWithoutCaching(GroovyObjectSupport.class),
+        GROOVY_OBJECT_TYPE = makeWithoutCaching(GroovyObject.class),
+        GROOVY_INTERCEPTABLE_TYPE = makeWithoutCaching(GroovyInterceptable.class),
         
         Enum_Type = new ClassNode("java.lang.Enum",0,OBJECT_TYPE),
         Annotation_TYPE = new ClassNode("java.lang.annotation.Annotation",0,OBJECT_TYPE),
@@ -105,7 +107,7 @@ public class ClassHelper {
         Double_TYPE, Float_TYPE, BigDecimal_TYPE, BigInteger_TYPE, 
         void_WRAPPER_TYPE, REFERENCE_TYPE, CLASS_Type, METACLASS_TYPE,
         Iterator_TYPE, GENERATED_CLOSURE_Type, GROOVY_OBJECT_SUPPORT_TYPE, 
-        Enum_Type, Annotation_TYPE
+        GROOVY_OBJECT_TYPE, GROOVY_INTERCEPTABLE_TYPE, Enum_Type, Annotation_TYPE
     };
 
     

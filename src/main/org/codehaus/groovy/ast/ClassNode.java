@@ -915,7 +915,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
      *         i.e. it implements GroovyObject
      */
     public boolean isDerivedFromGroovyObject() {
-        return implementsInterface(ClassHelper.make(GroovyObject.class));
+        return implementsInterface(ClassHelper.GROOVY_OBJECT_TYPE);
     }
 
     /**
