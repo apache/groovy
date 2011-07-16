@@ -58,8 +58,19 @@ class ModifiersTest extends CompilableTestSupport {
 
     public void testVariableInScript() {
         // control
-        shouldCompile("protected name")
+        shouldCompile("def name")
+        shouldCompile("String name")
         // erroneous
+        shouldNotCompile("abstract name")
+        shouldNotCompile("native name")
+        shouldNotCompile("private name")
+        shouldNotCompile("protected name")
+        shouldNotCompile("public name")
+        shouldNotCompile("static name")
+        shouldNotCompile("strictfp name")
+        shouldNotCompile("synchronized name")
+        shouldNotCompile("transient name")
+        shouldNotCompile("volatile name")
         shouldNotCompile("private protected name")
     }
 

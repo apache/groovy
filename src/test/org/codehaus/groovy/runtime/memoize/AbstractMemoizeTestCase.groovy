@@ -5,6 +5,8 @@ package org.codehaus.groovy.runtime.memoize
  */
 public abstract class AbstractMemoizeTestCase extends GroovyTestCase {
 
+    volatile int counter = 0
+
     AbstractMemoizeTestCase() {
         super()
     }
@@ -27,7 +29,6 @@ public abstract class AbstractMemoizeTestCase extends GroovyTestCase {
     }
 
     public void testNullResult() {
-        volatile int counter = 0
         Closure cl = {counter++; if (it == 5) return null else return 2}
         Closure mem = cl.memoize()
         assert counter == 0
