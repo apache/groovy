@@ -35,7 +35,7 @@ import static java.lang.reflect.Modifier.*;
 /**
  * ClassCompletionVerifier
  */
-public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
+public class ClassCompletionVerifier extends ClassCodeVisitorSupport implements Opcodes {
 
     private ClassNode currentClass;
     private SourceUnit source;
@@ -275,7 +275,7 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
     private void checkMethodModifiers(MethodNode node) {
         // don't check volatile here as it overlaps with ACC_BRIDGE
         // additional modifiers not allowed for interfaces
-        if ((this.currentClass.getModifiers() & Opcodes.ACC_INTERFACE) != 0) {
+        if ((this.currentClass.getModifiers() & ACC_INTERFACE) != 0) {
             checkMethodForModifier(node, isStrict(node.getModifiers()), "strictfp");
             checkMethodForModifier(node, isSynchronized(node.getModifiers()), "synchronized");
             checkMethodForModifier(node, isNative(node.getModifiers()), "native");
@@ -370,8 +370,8 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
 
     private void checkInterfaceFieldModifiers(FieldNode node) {
         if (!currentClass.isInterface()) return;
-        if ((node.getModifiers() & (Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL)) == 0 ||
-                (node.getModifiers() & (Opcodes.ACC_PRIVATE | Opcodes.ACC_PROTECTED)) != 0) {
+        if ((node.getModifiers() & (ACC_PUBLIC | ACC_STATIC | ACC_FINAL)) == 0 ||
+                (node.getModifiers() & (ACC_PRIVATE | ACC_PROTECTED)) != 0) {
             addError("The " + getDescription(node) + " is not 'public static final' but is defined in " +
                     getDescription(currentClass) + ".", node);
         }
@@ -470,8 +470,21 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
     public void visitDeclarationExpression(DeclarationExpression expression) {
         super.visitDeclarationExpression(expression);
         if (expression.isMultipleAssignmentDeclaration()) return;
-        if ((expression.getVariableExpression().getModifiers() & Opcodes.ACC_STATIC) != 0) {
-            addError("Variable definition has an incorrect modifier 'static'.", expression);
+        checkInvalidDeclarationModifier(expression, ACC_ABSTRACT, "abstract");
+        checkInvalidDeclarationModifier(expression, ACC_NATIVE, "native");
+        checkInvalidDeclarationModifier(expression, ACC_PRIVATE, "private");
+        checkInvalidDeclarationModifier(expression, ACC_PROTECTED, "protected");
+        checkInvalidDeclarationModifier(expression, ACC_PUBLIC, "public");
+        checkInvalidDeclarationModifier(expression, ACC_STATIC, "static");
+        checkInvalidDeclarationModifier(expression, ACC_STRICT, "strictfp");
+        checkInvalidDeclarationModifier(expression, ACC_SYNCHRONIZED, "synchronized");
+        checkInvalidDeclarationModifier(expression, ACC_TRANSIENT, "transient");
+        checkInvalidDeclarationModifier(expression, ACC_VOLATILE, "volatile");
+    }
+
+    private void checkInvalidDeclarationModifier(DeclarationExpression expression, int modifier, String modName) {
+        if ((expression.getVariableExpression().getModifiers() & modifier) != 0) {
+            addError("Modifier '" + modName + "' not allowed here.", expression);
         }
     }
 
