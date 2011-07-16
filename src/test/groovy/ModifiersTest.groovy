@@ -30,7 +30,7 @@ class ModifiersTest extends CompilableTestSupport {
         // control
         shouldCompile("class X { private method(x) { x = 1 } }")
         // erroneous
-        shouldNotCompile("class X { private public method(final x) { x = 1 } }")
+        shouldNotCompile("class X { private method(final x) { x = 1 } }")
     }
 
     public void testMethodsShouldNotBeVolatile() {
