@@ -26,6 +26,13 @@ class ModifiersTest extends CompilableTestSupport {
         shouldNotCompile("class X { private public method() {} }")
     }
 
+    public void testFinalMethodParametersShouldNotBeModified() {
+        // control
+        shouldCompile("class X { private method(x) { x = 1 } }")
+        // erroneous
+        shouldNotCompile("class X { private public method(final x) { x = 1 } }")
+    }
+
     public void testMethodsShouldNotBeVolatile() {
         // control
         shouldCompile("class X { def method() {} }")

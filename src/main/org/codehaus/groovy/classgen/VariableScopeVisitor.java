@@ -23,11 +23,14 @@ import org.codehaus.groovy.ast.stmt.CatchStatement;
 import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.control.SourceUnit;
+import org.codehaus.groovy.syntax.Types;
 
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+
+import static java.lang.reflect.Modifier.isFinal;
 
 /**
  * goes through an AST and initializes the scopes
@@ -319,6 +322,54 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
             }
         } else {
             declare(expression.getVariableExpression());
+        }
+    }
+
+    @Override
+    public void visitBinaryExpression(BinaryExpression be) {
+        super.visitBinaryExpression(be);
+        switch (be.getOperation().getType()) {
+            case Types.EQUAL: // = assignment
+            case Types.BITWISE_AND_EQUAL:
+            case Types.BITWISE_OR_EQUAL:
+            case Types.BITWISE_XOR_EQUAL:
+            case Types.PLUS_EQUAL:
+            case Types.MINUS_EQUAL:
+            case Types.MULTIPLY_EQUAL:
+            case Types.DIVIDE_EQUAL:
+            case Types.INTDIV_EQUAL:
+            case Types.MOD_EQUAL:
+            case Types.POWER_EQUAL:
+            case Types.LEFT_SHIFT_EQUAL:
+            case Types.RIGHT_SHIFT_EQUAL:
+            case Types.RIGHT_SHIFT_UNSIGNED_EQUAL:
+                checkFinalFieldAccess(be.getLeftExpression());
+                break;
+            default:
+                break;
+        }
+    }
+
+    private void checkFinalFieldAccess(Expression expression) {
+        // currently not looking for PropertyExpression: dealt with at runtime using ReadOnlyPropertyException
+        if (!(expression instanceof VariableExpression) && !(expression instanceof TupleExpression)) return;
+        if (expression instanceof TupleExpression) {
+            TupleExpression list = (TupleExpression) expression;
+            for (Expression e : list.getExpressions()) {
+                checkForFinal(expression, (VariableExpression) e);
+            }
+        } else {
+            checkForFinal(expression, (VariableExpression) expression);
+        }
+    }
+
+    // TODO handle local variables
+    private void checkForFinal(final Expression expression, VariableExpression ve) {
+        Variable v = ve.getAccessedVariable();
+        boolean isFinal = isFinal(v.getModifiers());
+        boolean isParameter = v instanceof Parameter;
+        if (isFinal && isParameter) {
+            addError("Cannot assign a value to final variable '" + v.getName() + "'", expression);
         }
     }
 
