@@ -2022,8 +2022,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static <T> Collection<T> collect(Collection<?> self, Collection<T> collection, Closure<? extends T> closure) {
-        for (Iterator iter = self.iterator(); iter.hasNext();) {
-            collection.add(closure.call(iter.next()));
+        for (Object next : self) {
+            collection.add(closure.call(next));
             if (closure.getDirective() == Closure.DONE) {
                 break;
             }
@@ -2032,25 +2032,45 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Alias for collectNested
+     *
+     * @deprecated Use collectNested instead
+     * @see #collectNested(Collection, Closure)
+     */
+    public static List collectAll(Collection self, Closure closure) {
+        return collectNested(self, closure);
+    }
+
+    /**
      * Recursively iterates through this collection transforming each non-Collection value
      * into a new value using the closure as a transformer. Returns a potentially nested
      * list of transformed values.
-     * <pre class="groovyTestCase">assert [2,[4,6],[8],[]] == [1,[2,3],[4],[]].collectAll { it * 2 }</pre>
+     * <pre class="groovyTestCase">assert [2,[4,6],[8],[]] == [1,[2,3],[4],[]].collectNested { it * 2 }</pre>
      *
      * @param self       a collection
      * @param closure    the closure used to transform each element of the collection
      * @return the resultant collection
      * @since 1.5.2
      */
-    public static List collectAll(Collection self, Closure closure) {
-        return (List) collectAll(self, new ArrayList(self.size()), closure);
+    public static List collectNested(Collection self, Closure closure) {
+        return (List) collectNested(self, new ArrayList(self.size()), closure);
+    }
+
+    /**
+     * Alias for collectNested
+     *
+     * @deprecated Use collectNested instead
+     * @see #collectNested(Collection, Collection, Closure)
+     */
+    public static Collection collectAll(Collection self, Collection collection, Closure closure) {
+        return collectNested(self, collection, closure);
     }
 
     /**
      * Recursively iterates through this collection transforming each non-Collection value
      * into a new value using the closure as a transformer. Returns a potentially nested
      * collection of transformed values.
-     * <pre class="groovyTestCase">def x = [1,[2,3],[4],[]].collectAll(new Vector()) { it * 2 }
+     * <pre class="groovyTestCase">def x = [1,[2,3],[4],[]].collectNested(new Vector()) { it * 2 }
      * assert x == [2,[4,6],[8],[]]
      * assert x instanceof Vector</pre>
      *
@@ -2060,14 +2080,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the resultant collection
      * @since 1.5.2
      */
-    public static Collection collectAll(Collection self, Collection collection, Closure closure) {
-        for (Iterator iter = self.iterator(); iter.hasNext();) {
-            final Object o = iter.next();
-            if (o instanceof Collection) {
-                Collection c = (Collection) o;
-                collection.add(collectAll(c, createSimilarCollection(collection, c.size()), closure));
+    public static Collection collectNested(Collection self, Collection collection, Closure closure) {
+        for (Object item : self) {
+            if (item instanceof Collection) {
+                Collection c = (Collection) item;
+                collection.add(collectNested(c, createSimilarCollection(collection, c.size()), closure));
             } else {
-                collection.add(closure.call(o));
+                collection.add(closure.call(item));
             }
             if (closure.getDirective() == Closure.DONE) {
                 break;
