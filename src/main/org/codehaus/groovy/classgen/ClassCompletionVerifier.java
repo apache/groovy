@@ -26,16 +26,15 @@ import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.CatchStatement;
 import org.codehaus.groovy.control.SourceUnit;
-import org.objectweb.asm.Opcodes;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.syntax.Types;
 
 import static java.lang.reflect.Modifier.*;
-
+import static org.objectweb.asm.Opcodes.*;
 /**
  * ClassCompletionVerifier
  */
-public class ClassCompletionVerifier extends ClassCodeVisitorSupport implements Opcodes {
+public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
 
     private ClassNode currentClass;
     private SourceUnit source;
