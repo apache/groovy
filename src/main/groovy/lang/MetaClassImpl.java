@@ -515,9 +515,9 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                 final Object[] data = methods.getArray();
                 for (int i = 0; i != len; ++i) {
                     MetaMethod method = (MetaMethod) data[i];
-                    if (method instanceof NewMetaMethod)
-                      continue;
-                    if (useThis ^ (method.getModifiers() & (Modifier.PUBLIC | Modifier.PROTECTED)) == 0) continue;
+                    if (method instanceof NewMetaMethod) continue;
+                    boolean isPrivate = Modifier.isPrivate(method.getModifiers());
+                    if (useThis ^ isPrivate) continue;
                     String mopName = method.getMopName();
                     int index = Arrays.binarySearch(mopMethods, mopName, CachedClass.CachedMethodComparatorWithString.INSTANCE);
                     if (index >= 0) {

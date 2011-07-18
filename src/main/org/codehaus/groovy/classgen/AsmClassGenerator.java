@@ -16,6 +16,7 @@
 
 package org.codehaus.groovy.classgen;
 
+import java.lang.reflect.Modifier;
 import groovy.lang.GroovyRuntimeException;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.*;
@@ -481,10 +482,12 @@ public class AsmClassGenerator extends ClassGenerator {
             MethodNode mn = (MethodNode) method;
             if ((mn.getModifiers() & ACC_ABSTRACT) != 0) continue;
             if (mn.isStatic()) continue;
-            // no this$ methods for protected/public isThis=true
-            // super$ method for protected/public isThis=false
+            // no this$ methods for non-private isThis=true
+            // super$ method for non-private isThis=false
             // --> results in XOR
-            if (isThis ^ (mn.getModifiers() & (ACC_PUBLIC | ACC_PROTECTED)) == 0) continue;
+            boolean isPrivate = Modifier.isPrivate(mn.getModifiers());
+            if (isThis ^ isPrivate) continue;
+
             String methodName = mn.getName();
             if (isMopMethod(methodName)) {
                 mops.put(new Key(methodName, mn.getParameters()), mn);
