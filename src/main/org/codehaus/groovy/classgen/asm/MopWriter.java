@@ -15,6 +15,7 @@
  */
 package org.codehaus.groovy.classgen.asm;
 
+import java.lang.reflect.Modifier;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -83,10 +84,11 @@ public class MopWriter {
             MethodNode mn = (MethodNode) method;
             if ((mn.getModifiers() & ACC_ABSTRACT) != 0) continue;
             if (mn.isStatic()) continue;
-            // no this$ methods for protected/public isThis=true
-            // super$ method for protected/public isThis=false
+            // no this$ methods for non-private isThis=true
+            // super$ method for non-private isThis=false
             // --> results in XOR
-            if (isThis ^ (mn.getModifiers() & (ACC_PUBLIC | ACC_PROTECTED)) == 0) continue;
+            boolean isPrivate = Modifier.isPrivate(mn.getModifiers());
+            if (isThis ^ isPrivate) continue;
             String methodName = mn.getName();
             if (isMopMethod(methodName)) {
                 mops.put(new MopKey(methodName, mn.getParameters()), mn);

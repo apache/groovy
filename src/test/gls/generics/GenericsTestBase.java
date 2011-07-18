@@ -85,7 +85,7 @@ public class GenericsTestBase extends GroovyTestCase {
         return signatures;
     }
     
-    void shouldNotCompile(String script) {
+    protected void shouldNotCompile(String script) {
         try {
             loader.parseClass(script);
         } catch (CompilationFailedException cfe) {
