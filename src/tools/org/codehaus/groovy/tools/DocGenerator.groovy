@@ -57,7 +57,7 @@ class DocGenerator {
             if (method.isPublic() && method.isStatic()) {
                 def parameters = method.getParameters()
                 def jdkClass = parameters[0].getType().toString()
-                if (jdkClass.equals('T') || jdkClass.equals('U') || jdkClass.equals('V')) {
+                if (jdkClass.equals('T') || jdkClass.equals('U') || jdkClass.equals('K') || jdkClass.equals('V') || jdkClass.equals('G')) {
                     jdkClass = 'java.lang.Object'
                 } else if (jdkClass.equals('T[]')) {
                     jdkClass = 'java.lang.Object[]'
