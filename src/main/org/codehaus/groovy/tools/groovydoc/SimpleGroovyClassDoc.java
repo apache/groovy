@@ -26,7 +26,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
     public static final Pattern TAG_REGEX = Pattern.compile("(?sm)\\s*@([a-zA-Z.]+)\\s+(.*?)(?=\\s+@)");
     public static final Pattern LINK_REGEX = Pattern.compile("(?m)[{]@(link)\\s+([^}]*)}");
     public static final Pattern CODE_REGEX = Pattern.compile("(?m)[{]@(code)\\s+([^}]*)}");
-    public static final Pattern REF_LABEL_REGEX = Pattern.compile("([\\w.#]*(\\(.*\\))?)(\\s(.*))?");
+    public static final Pattern REF_LABEL_REGEX = Pattern.compile("([\\w.#\\$]*(\\(.*\\))?)(\\s(.*))?");
     public static final Pattern NAME_ARGS_REGEX = Pattern.compile("([^(]+)\\(([^)]*)\\)");
     public static final Pattern SPLIT_ARGS_REGEX = Pattern.compile(",\\s*");
     private static final List<String> PRIMITIVES = Arrays.asList("void", "boolean", "byte", "short", "char", "int", "long", "float", "double");
@@ -413,7 +413,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
         final String[] target = type.split("#");
         String shortClassName = target[0].replaceAll(".*\\.", "");
         shortClassName += (target.length > 1 ? "#" + target[1].split("\\(")[0] : "");
-        String name = (full ? target[0] : shortClassName).replaceAll("#", ".");
+        String name = (full ? target[0] : shortClassName).replaceAll("#", ".").replace('$', '.');
 
         // last chance lookup for classes within the current codebase
         if (rootDoc != null) {
@@ -440,12 +440,20 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
         if (!relativeRoot.endsWith("/")) {
             relativeRoot += "/";
         }
-        String url = relativeRoot + target[0].replace('.', '/') + ".html" + (target.length > 1 ? "#" + target[1] : "");
+        String url = relativeRoot + target[0].replace('.', '/').replace('$', '.') + ".html" + (target.length > 1 ? "#" + target[1] : "");
         return "<a href='" + url + "' title='" + shortClassName + "'>" + shortClassName + "</a>";
     }
 
     private GroovyClassDoc resolveClass(GroovyRootDoc rootDoc, String name) {
         if (isPrimitiveType(name)) return null;
+        if (name.endsWith("[]")) {
+            GroovyClassDoc componentClass = resolveClass(rootDoc, name.substring(0, name.length() - 2));
+            if (componentClass != null) return new ArrayClassDocWrapper(componentClass);
+            return null;
+        }
+        if (name.equals("T") || name.equals("U") || name.equals("K") || name.equals("V") || name.equals("G")) {
+            name = "java/lang/Object";
+        }
         GroovyClassDoc doc = ((SimpleGroovyRootDoc)rootDoc).classNamedExact(name);
         if (doc != null) return doc;
         int slashIndex = name.lastIndexOf("/");
@@ -469,14 +477,46 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
         } else {
             c = resolveExternalClassFromImport(name);
         }
+        if (c == null) {
+            c = resolveFromJavaLang(name);
+        }
         if (c != null) {
             return new ExternalGroovyClassDoc(c);
+        }
+
+        if (name.contains("/")) {
+            // search for nested class
+            if (slashIndex > 0) {
+                String outerName = name.substring(0, slashIndex);
+                GroovyClassDoc gcd = resolveClass(rootDoc, outerName);
+                if (gcd instanceof ExternalGroovyClassDoc) {
+                    ExternalGroovyClassDoc egcd = (ExternalGroovyClassDoc) gcd;
+                    String innerName = name.substring(slashIndex+1);
+                    Class outerClass = egcd.externalClass();
+                    for (Class inner : outerClass.getDeclaredClasses()) {
+                        if (inner.getName().equals(outerClass.getName() + "$" + innerName)) {
+                            return new ExternalGroovyClassDoc(inner);
+                        }
+                    }
+                }
+            }
         }
 
         // and we can't find it
         SimpleGroovyClassDoc placeholder = new SimpleGroovyClassDoc(null, shortname);
         placeholder.setFullPathName(name);
         return placeholder;
+    }
+
+    private Class resolveFromJavaLang(String name) {
+        try {
+            return Class.forName("java.lang." + name);
+        } catch (NoClassDefFoundError e) {
+            // ignore
+        } catch (ClassNotFoundException e) {
+            // ignore
+        }
+        return null;
     }
 
     private static boolean isPrimitiveType(String name) {

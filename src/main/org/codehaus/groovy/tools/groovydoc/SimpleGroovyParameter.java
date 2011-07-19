@@ -25,6 +25,7 @@ public class SimpleGroovyParameter implements GroovyParameter {
     private String typeName;
     private String defaultValue;
     private GroovyType type;
+    private boolean vararg;
     private final List<GroovyAnnotationRef> annotationRefs;
 
     public SimpleGroovyParameter(String name) {
@@ -74,5 +75,13 @@ public class SimpleGroovyParameter implements GroovyParameter {
 
     public boolean isTypeAvailable() {
         return !(type == null);
+    }
+
+    public boolean vararg() {
+        return vararg;
+    }
+
+    public void setVararg(boolean vararg) {
+        this.vararg = vararg;
     }
 }
