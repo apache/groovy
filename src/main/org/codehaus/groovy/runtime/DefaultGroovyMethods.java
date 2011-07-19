@@ -2098,6 +2098,68 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Projects each item from a source collection to a collection and concatenates (flattens) the resulting collections into a single one.
+     *
+     * <pre class="groovyTestCase">
+     * def nums = 1..10
+     * def squaresAndCubesOfEvens = nums.collectMany{ it % 2 ? [] : [it**2, it**3] }
+     * assert squaresAndCubesOfEvens == [4, 8, 16, 64, 36, 216, 64, 512, 100, 1000]
+     *
+     * def animals = ['CAT', 'DOG', 'ELEPHANT'] as Set
+     * def smallAnimals = animals.collectMany{ it.size() > 3 ? [] : [it.toLowerCase()] }
+     * assert smallAnimals == ['cat', 'dog'] as Set
+     * </pre>
+     *
+     * @param self a collection
+     * @param closure a projecting Closure returning a collection of items
+     * @return the projected collections concatenated (flattened) together
+     * @see #sum(java.util.Collection, groovy.lang.Closure)
+     */
+    public static <T> Collection<T> collectMany(Collection self, Closure<Collection<T>> closure) {
+        Collection<T> result = createSimilarCollection(self);
+        for (Object next : self) {
+            result.addAll(closure.call(next));
+        }
+        return result;
+    }
+
+    /**
+     * Projects each item from a source array to a collection and concatenates (flattens) the resulting collections into a single one.
+     *
+     * <pre class="groovyTestCase">
+     * def nums = [1, 2, 3, 4, 5, 6] as Object[]
+     * def squaresAndCubesOfEvens = nums.collectMany{ it % 2 ? [] : [it**2, it**3] }
+     * assert squaresAndCubesOfEvens == [4, 8, 16, 64, 36, 216]
+     * </pre>
+     *
+     * @param self an object array
+     * @param closure a projecting Closure returning a collection of items
+     * @return the projected collections concatenated (flattened) together
+     * @see #sum(Object[], groovy.lang.Closure)
+     */
+    public static <T> Collection<T> collectMany(Object[] self, Closure<Collection<T>> closure) {
+        return collectMany(toList(self), closure);
+    }
+
+    /**
+     * Projects each item from a source iterator to a collection and concatenates (flattens) the resulting collections into a single one.
+     *
+     * <pre class="groovyTestCase">
+     * def numsIter = [1, 2, 3, 4, 5, 6].iterator()
+     * def squaresAndCubesOfEvens = numsIter.collectMany{ it % 2 ? [] : [it**2, it**3] }
+     * assert squaresAndCubesOfEvens == [4, 8, 16, 64, 36, 216]
+     * </pre>
+     *
+     * @param self an iterator
+     * @param closure a projecting Closure returning a collection of items
+     * @return the projected collections concatenated (flattened) together
+     * @see #sum(Iterator, groovy.lang.Closure)
+     */
+    public static <T> Collection<T> collectMany(Iterator<Object> self, Closure<Collection<T>> closure) {
+        return collectMany(toList(self), closure);
+    }
+
+    /**
      * Iterates through this Map transforming each entry into a new value using the closure
      * as a transformer, returning a list of transformed values.
      * <pre class="groovyTestCase">assert [a:1, b:2].collect( [] as HashSet ) { key, value -> key*value } == ["a", "bb"] as Set
