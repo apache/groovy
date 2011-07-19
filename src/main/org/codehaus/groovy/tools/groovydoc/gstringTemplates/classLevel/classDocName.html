@@ -19,14 +19,19 @@
     boolean fieldSummaryShown = hasFields
     boolean hasEnumConstants = classDoc.enumConstants().findAll(isVisible)
     def dolink = { t, boolean b ->
+        boolean isArray = false
         if (!t || t instanceof String) {
             return classDoc.getDocUrl(t, b)
         }
+        if (t instanceof org.codehaus.groovy.tools.groovydoc.ArrayClassDocWrapper) {
+            t = t.delegate
+            isArray = true
+        }
         if (t instanceof org.codehaus.groovy.tools.groovydoc.SimpleGroovyClassDoc) {
             if (t.fullPathName == 'def') return classDoc.getDocUrl("java.lang.Object def", b)
-            return "<a href='" + classDoc.relativeRootPath + t.fullPathName + ".html'>" + (b ? t.qualifiedTypeName() : t.name()) + "</a>"
+            return "<a href='" + classDoc.relativeRootPath + t.fullPathName + ".html'>" + (b ? t.qualifiedTypeName() : t.name()) + "</a>" + (isArray ? "[]" : "")
         }
-        return classDoc.getDocUrl(t.qualifiedTypeName(), b)
+        return classDoc.getDocUrl(t.qualifiedTypeName(), b) + (isArray ? "[]" : "")
     }
     def linkfull = { t -> dolink(t, true) }
     def linkable = { t -> dolink(t, false) }
@@ -51,7 +56,7 @@
     ]
     def isRequired = { f, v -> def req = f.constantValueExpression() == null; req.toString() == v }
     def upcase = { n -> n[0].toUpperCase() + n[1..-1] }
-    def paramsOf = { n, boolean brief -> n.parameters().collect{ param -> (brief?'':annotations(param, ' ')) + linkable(param.isTypeAvailable()?param.type():param.typeName()) + ' ' + param.name() + (param.defaultValue() ? " = " + param.defaultValue():"") }.join(", ") }
+    def paramsOf = { n, boolean brief -> n.parameters().collect{ param -> (brief?'':annotations(param, ' ')) + linkable(param.isTypeAvailable()?param.type():param.typeName()) + (param.vararg()?'... ':' ') + param.name() + (param.defaultValue() ? " = " + param.defaultValue():"") }.join(", ") }
     def nameFromParams = { n -> n.name() + '(' + n.parameters().collect{ param -> param.isTypeAvailable()?param.type().qualifiedTypeName():param.typeName() }.join(', ') + ')' }
     def nameFromJavaParams = { n -> n.name + '(' + n.parameterTypes.collect{ param -> param.name }.join(', ') + ')' }
 %>

@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2011 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import org.codehaus.groovy.antlr.parser.GroovyTokenTypes;
 import org.codehaus.groovy.antlr.treewalker.VisitorAdapter;
 import org.codehaus.groovy.control.ResolveVisitor;
 import org.codehaus.groovy.groovydoc.*;
+import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 
 import java.util.*;
 import java.util.regex.Matcher;
@@ -609,49 +610,50 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
     }
 
     private String getAsText(GroovySourceAST typeNode, String defaultText) {
-        String returnValue = defaultText;
-        GroovySourceAST child = (GroovySourceAST) typeNode.getFirstChild(); // assume type has only one child // todo type of "foo.bar.Wibble"
-        switch (child.getType()) {
+        GroovySourceAST child = (GroovySourceAST) typeNode.getFirstChild();
+        return getAsTextCurrent(child, defaultText);
+    }
+
+    private String getAsTextCurrent(GroovySourceAST node, String defaultText) {
+        switch (node.getType()) {
             // literals
             case LITERAL_boolean:
-                returnValue = "boolean";
-                break;
+                return "boolean";
             case LITERAL_byte:
-                returnValue = "byte";
-                break;
+                return "byte";
             case LITERAL_char:
-                returnValue = "char";
-                break;
+                return "char";
             // note: LITERAL_def never created
             case LITERAL_double:
-                returnValue = "double";
-                break;
+                return "double";
             case LITERAL_float:
-                returnValue = "float";
-                break;
+                return "float";
             case LITERAL_int:
-                returnValue = "int";
-                break;
+                return "int";
             case LITERAL_long:
-                returnValue = "long";
-                break;
+                return "long";
             case LITERAL_short:
-                returnValue = "short";
-                break;
+                return "short";
             case LITERAL_void:
-                returnValue = "void";
-                break;
+                return "void";
             case ARRAY_DECLARATOR:
-                String componentType = getAsText(child, defaultText);
-                if (!componentType.equals("def")) returnValue = componentType + "[]";
-                break;
-
+                String componentType = getAsText(node, defaultText);
+                if (!componentType.equals("def")) return componentType + "[]";
+                return "java/lang/Object[]";
             // identifiers
             case IDENT:
-                returnValue = child.getText();
-                break;
+                return node.getText();
+            case DOT:
+                List<String> result = new ArrayList<String>();
+                GroovySourceAST child = (GroovySourceAST) node.getFirstChild();
+                while (child != null) {
+                    if (child.getType() == IDENT) { result.add(child.getText()); }
+                    else if (child.getType() == DOT) { result.add(getAsTextCurrent(child, defaultText)); }
+                    child = (GroovySourceAST) child.getNextSibling();
+                }
+                return DefaultGroovyMethods.join(result, "/");
         }
-        return returnValue;
+        return defaultText;
     }
 
     private void addParametersTo(GroovySourceAST t, SimpleGroovyExecutableMemberDoc executableMemberDoc) {
@@ -663,6 +665,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
                 String parameterTypeName = getTypeOrDefault(currentNode);
                 String parameterName = getText(currentNode.childOfType(IDENT));
                 SimpleGroovyParameter parameter = new SimpleGroovyParameter(parameterName);
+                parameter.setVararg(currentNode.getType() == VARIABLE_PARAMETER_DEF);
                 parameter.setTypeName(parameterTypeName);
                 GroovySourceAST modifiers = currentNode.childOfType(MODIFIERS);
                 if (modifiers != null) {
