@@ -46,7 +46,8 @@ class InteractiveShellRunner
         this.prompt = prompt
         
         this.reader = new ConsoleReader(shell.io.inputStream, new PrintWriter(shell.io.outputStream, true))
-        
+
+        reader.addCompletor(new ReflectionCompletor(shell))
         this.completor = new CommandsMultiCompletor()
         
         reader.addCompletor(completor)
