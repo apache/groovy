@@ -282,7 +282,7 @@ class DocGenerator {
         }
         def target = type.split('#')
         def shortClassName = target[0].replaceAll(/.*\./, "")
-        def packageName = target[0][0..(-shortClassName.size() - 2)]
+        def packageName = (shortClassName.size() == target[0].size()) ? "DefaultPackage" : target[0][0..(-shortClassName.size() - 2)]
         shortClassName += (target.size() > 1 ? '#' + target[1].split('\\(')[0] : '')
         def apiBaseUrl, title
         if (inGdk) {
