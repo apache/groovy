@@ -528,8 +528,9 @@ $Date$
     </target>
 
     <target name="-createBaseJar" unless="testFailed">
+        <!-- TODO temp hack - some containers don't correctly handle package-info class files - remove for now -->
         <jar destfile="${targetDistDirectory}/groovy.jar" basedir="${mainClassesDirectory}"
-             excludes="*.groovy" manifest="${mainClassesDirectory}/META-INF/MANIFEST.MF"/>
+             excludes="*.groovy,**/package-info.class" manifest="${mainClassesDirectory}/META-INF/MANIFEST.MF"/>
         <jar destfile="${targetDistDirectory}/groovy-${groovyVersion}-sources.jar" basedir="${mainSourceDirectory}">
             <!-- TODO temp hack - remove once modules are in place -->
             <fileset dir="${jmxSourceDirectory}/main/java"/>
