@@ -86,6 +86,7 @@ jar {
         classesDir = sourceSets.main.classesDir
     }
     manifest commonOsgiManifest
+    exclude '**/package-info.class'
 }
 
 task jarAll(type: Jar, dependsOn: jar) {
