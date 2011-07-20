@@ -297,12 +297,13 @@ public class InnerClassVisitor extends InnerClassVisitorHelper implements Opcode
             ve.setUseReferenceDirectly(true);
             expressions.add(pCount, ve);
 
-            Parameter p = new Parameter(ClassHelper.REFERENCE_TYPE, "p" + pCount);
+            ClassNode rawReferenceType = ClassHelper.REFERENCE_TYPE.getPlainNodeReference();
+            Parameter p = new Parameter(rawReferenceType, "p" + pCount);
             parameters.add(pCount, p);
             p.setOriginType(var.getOriginType());
             final VariableExpression initial = new VariableExpression(p);
             initial.setUseReferenceDirectly(true);
-            final FieldNode pField = innerClass.addFieldFirst(ve.getName(), PUBLIC_SYNTHETIC, ClassHelper.REFERENCE_TYPE, initial);
+            final FieldNode pField = innerClass.addFieldFirst(ve.getName(), PUBLIC_SYNTHETIC,rawReferenceType, initial);
             pField.setHolder(true);
             pField.setOriginType(ClassHelper.getWrapper(var.getOriginType()));
         }
