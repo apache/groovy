@@ -109,7 +109,7 @@ class JsonLexerTest extends GroovyTestCase {
     }
 
     void testUnescapingWithLexer() {
-        def lexer = new JsonLexer(new StringReader('"\\u004A\\u0053\\u004F\\u004E"'))
+        def lexer = new JsonLexer(new StringReader('"\\' + 'u004A\\' + 'u0053\\' + 'u004F\\' + 'u004E"'))
 
         assert lexer.nextToken().value == 'JSON'
     }
@@ -124,7 +124,7 @@ class JsonLexerTest extends GroovyTestCase {
         assert JsonLexer.unescape('\\/') == '/'
         assert JsonLexer.unescape('\\"') == '"'
 
-        assert JsonLexer.unescape('\\u004A\\u0053\\u004F\\u004E') == 'JSON'
+        assert JsonLexer.unescape('\\' + 'u004A\\' + 'u0053\\' + 'u004F\\' + 'u004E') == 'JSON'
     }
 
     void testBackSlashEscaping() {
