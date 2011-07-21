@@ -457,8 +457,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                         MetaMethod method = (MetaMethod) e.methods;
                         if (method instanceof NewMetaMethod)
                           return;
-                        if (useThis ^ (method.getModifiers() & (Modifier.PUBLIC | Modifier.PROTECTED)) == 0)
-                          return;
+                        if (useThis ^ Modifier.isPrivate(method.getModifiers())) return;
                         String mopName = method.getMopName();
                         int index = Arrays.binarySearch(mopMethods, mopName, CachedClass.CachedMethodComparatorWithString.INSTANCE);
                         if (index >= 0) {
@@ -488,8 +487,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                         MetaMethod method = (MetaMethod) e.methodsForSuper;
                         if (method instanceof NewMetaMethod)
                           return;
-                        if (useThis ^ (method.getModifiers() & (Modifier.PUBLIC | Modifier.PROTECTED)) == 0)
-                          return;
+                        if (useThis ^ Modifier.isPrivate(method.getModifiers())) return;
                         String mopName = method.getMopName();
                         int index = Arrays.binarySearch(mopMethods, mopName, CachedClass.CachedMethodComparatorWithString.INSTANCE);
                         if (index >= 0) {
