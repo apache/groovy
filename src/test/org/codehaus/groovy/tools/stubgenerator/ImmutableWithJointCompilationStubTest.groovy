@@ -34,9 +34,6 @@ class ImmutableWithJointCompilationStubTest extends StringSourcesStubTestCase {
         ]
     }
 
-    /**
-     * Asserts an initialization value is provided for primitive fields
-     */
     void verifyStubs() {
         def stubSource = stubJavaSourceFor('Foo4825')
         // check that default constructor doesn't appear
