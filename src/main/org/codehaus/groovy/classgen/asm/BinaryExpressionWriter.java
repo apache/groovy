@@ -243,7 +243,6 @@ public abstract class BinaryExpressionWriter {
         
         if (!simulate) {
             getArrayGetCaller().call(controller.getMethodVisitor());
-            controller.getOperandStack().replace(getNormalOpResultType(),2);
         }
         return true;
     }
