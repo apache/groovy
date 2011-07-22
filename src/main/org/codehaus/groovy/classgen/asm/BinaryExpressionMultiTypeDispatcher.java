@@ -237,30 +237,37 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
         ClassNode leftType = leftTypeOrig;
         Expression rightExp = binExp.getRightExpression();
         ClassNode rightType = getType(rightExp, current);
-        if (operation==LEFT_SQUARE_BRACKET) {
-            leftType = leftTypeOrig.getComponentType();
-        }
-
-        int operationType = getOperandConversionType(leftType,rightType);
-        BinaryExpressionWriter bew = binExpWriter[operationType];
+        
         AsmClassGenerator acg = getController().getAcg();
         OperandStack os = getController().getOperandStack();
         
-        if (bew.arrayGet(operation, true)) {
-            leftExp.visit(acg);
-            os.doGroovyCast(leftTypeOrig);
-            rightExp.visit(acg);
-            os.doGroovyCast(int_TYPE);
-            bew.arrayGet(operation, false);
-            os.doGroovyCast(bew.getArrayGetResultType());
-        } else if (bew.write(operation, true)) {
-            leftExp.visit(acg);
-            os.doGroovyCast(bew.getNormalOpResultType());
-            rightExp.visit(acg);
-            os.doGroovyCast(bew.getNormalOpResultType());
-            bew.write(operation, false);
+        if (operation==LEFT_SQUARE_BRACKET) {
+            leftType = leftTypeOrig.getComponentType();
+            int operationType = getOperandType(leftType);
+            BinaryExpressionWriter bew = binExpWriter[operationType];
+            if (bew.arrayGet(operation, true)) {
+                leftExp.visit(acg);
+                os.doGroovyCast(leftTypeOrig);
+                rightExp.visit(acg);
+                os.doGroovyCast(int_TYPE);
+                bew.arrayGet(operation, false);
+                os.replace(leftType,2);
+            } else {
+                super.evaluateBinaryExpression(message, binExp);
+            }
         } else {
-            super.evaluateBinaryExpression(message, binExp);
+            int operationType = getOperandConversionType(leftType,rightType);
+            BinaryExpressionWriter bew = binExpWriter[operationType];
+            
+            if (bew.write(operation, true)) {
+                leftExp.visit(acg);
+                os.doGroovyCast(bew.getNormalOpResultType());
+                rightExp.visit(acg);
+                os.doGroovyCast(bew.getNormalOpResultType());
+                bew.write(operation, false);
+            } else {
+                super.evaluateBinaryExpression(message, binExp);
+            }
         }
     }
     
