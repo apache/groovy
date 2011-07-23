@@ -53,16 +53,29 @@ public class GenericsType extends ASTNode {
     }
 
     public String toString() {
-        String ret = (type == null || placeholder || wildcard) ? name : type.getName();
+        String ret = (type == null || placeholder || wildcard) ? name : genericsBounds(type);
         if (upperBounds != null) {
             ret += " extends ";
             for (int i = 0; i < upperBounds.length; i++) {
-                ret += upperBounds[i].getName();
+                ret += genericsBounds(upperBounds[i]);
                 if (i + 1 < upperBounds.length) ret += " & ";
             }
         } else if (lowerBound != null) {
-            ret += " super " + lowerBound.getName();
+            ret += " super " + genericsBounds(lowerBound);
         }
+        return ret;
+    }
+
+    private String genericsBounds(ClassNode theType) {
+        String ret = theType.getName();
+        GenericsType[] genericsTypes = theType.getGenericsTypes();
+        if (genericsTypes == null || genericsTypes.length == 0) return ret;
+        ret += "<";
+        for (int i = 0; i < genericsTypes.length; i++) {
+            if (i != 0) ret += ", ";
+            ret += genericsTypes[i].toString();
+        }
+        ret += ">";
         return ret;
     }
 
