@@ -400,7 +400,12 @@ public class ObservableList implements List {
         }
 
         public void remove() {
-            ObservableList.this.remove(cursor--);
+            int oldSize = ObservableList.this.size();
+            Object element = ObservableList.this.get(cursor);
+            iterDelegate.remove();
+            fireElementRemovedEvent(cursor, element);
+            fireSizeChangedEvent(oldSize, size());
+            cursor--;
         }
     }
 
