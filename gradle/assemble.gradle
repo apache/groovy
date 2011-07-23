@@ -165,7 +165,9 @@ distSpec = copySpec {
         from("src/bin") {
             filter(ReplaceTokens, tokens: [GROOVYJAR:jar.archiveName])
             fileMode = 0755
+            exclude = "groovy.icns"
         }
+        from("src/bin/groovy.icns")
         from("src/tools/org/codehaus/groovy/tools/groovy.ico")
     }
     into("embeddable") {
