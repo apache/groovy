@@ -204,6 +204,24 @@ class ObservableListTest extends GroovyTestCase {
         assert list.listIterator(2).collect { it } == [3, 4, 5]
         assert list.listIterator().collect { it } == [1, 2, 3, 4, 5]
     }
+
+    void testRetainAllBugGroovy4699() {
+        def list = new ObservableList(['test', 'test2'])
+        def listener = new SampleListPropertyChangeListener()
+        list.addPropertyChangeListener(listener)
+        list.retainAll { false }
+        assert list.isEmpty()
+
+        // we are storing one event, so will just see size change from second element removal
+        assertNotNull(listener.event)
+        listener.event.with {
+            assert it instanceof java.beans.PropertyChangeEvent
+            assert source == list
+            assert propertyName == 'size'
+            assert oldValue == 1
+            assert newValue == 0
+        }
+    }
 }
 
 class SampleListPropertyChangeListener implements PropertyChangeListener {

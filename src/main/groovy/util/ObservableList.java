@@ -325,7 +325,12 @@ public class ObservableList implements List {
       }
 
       public void remove() {
-         ObservableList.this.remove( cursor-- );
+          int oldSize = ObservableList.this.size();
+          Object element = ObservableList.this.get(cursor);
+          iterDelegate.remove();
+          pcs.firePropertyChange(new ElementRemovedEvent(ObservableList.this, element, cursor));
+          pcs.firePropertyChange(new PropertyChangeEvent(ObservableList.this, "size", oldSize, size()));
+          cursor--;
       }
    }
 
