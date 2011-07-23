@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2008 the original author or authors.
+ * Copyright 2003-2011 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -305,7 +305,7 @@ public class ObservableList implements List {
 
    private class ObservableIterator implements Iterator {
       private Iterator iterDelegate;
-      protected int cursor = 0;
+      protected int cursor = -1;
 
       public ObservableIterator( Iterator iterDelegate ) {
          this.iterDelegate = iterDelegate;
@@ -332,7 +332,7 @@ public class ObservableList implements List {
    private class ObservableListIterator extends ObservableIterator implements ListIterator {
       public ObservableListIterator( ListIterator iterDelegate, int index ) {
          super( iterDelegate );
-         cursor = index;
+         cursor = index - 1;
       }
 
       public ListIterator getListIterator() {
