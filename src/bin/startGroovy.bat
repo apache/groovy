@@ -237,17 +237,17 @@ set CP=%CLASSPATH%;%CP%
 set STARTER_MAIN_CLASS=org.codehaus.groovy.tools.GroovyStarter
 set STARTER_CONF=%GROOVY_HOME%\conf\groovy-starter.conf
 
-if "%JAVA_OPTS%" == "" set JAVA_OPTS="-Xmx128m"
-set JAVA_OPTS=%JAVA_OPTS% -Dprogram.name="%PROGNAME%"
-set JAVA_OPTS=%JAVA_OPTS% -Dgroovy.home="%GROOVY_HOME%"
-if not "%TOOLS_JAR%" == "" set JAVA_OPTS=%JAVA_OPTS% -Dtools.jar="%TOOLS_JAR%"
-set JAVA_OPTS=%JAVA_OPTS% -Dgroovy.starter.conf="%STARTER_CONF%"
-set JAVA_OPTS=%JAVA_OPTS% -Dscript.name="%GROOVY_SCRIPT_NAME%"
+set GROOVY_OPTS="-Xmx128m"
+set GROOVY_OPTS=%GROOVY_OPTS% -Dprogram.name="%PROGNAME%"
+set GROOVY_OPTS=%GROOVY_OPTS% -Dgroovy.home="%GROOVY_HOME%"
+if not "%TOOLS_JAR%" == "" set GROOVY_OPTS=%GROOVY_OPTS% -Dtools.jar="%TOOLS_JAR%"
+set GROOVY_OPTS=%GROOVY_OPTS% -Dgroovy.starter.conf="%STARTER_CONF%"
+set GROOVY_OPTS=%GROOVY_OPTS% -Dscript.name="%GROOVY_SCRIPT_NAME%"
 
 if exist "%USERPROFILE%/.groovy/postinit.bat" call "%USERPROFILE%/.groovy/postinit.bat"
 
 @rem Execute Groovy
-"%JAVA_EXE%" %JAVA_OPTS% -classpath "%STARTER_CLASSPATH%" %STARTER_MAIN_CLASS% --main %CLASS% --conf "%STARTER_CONF%" --classpath "%CP%" %CMD_LINE_ARGS%
+"%JAVA_EXE%" %GROOVY_OPTS% %JAVA_OPTS% -classpath "%STARTER_CLASSPATH%" %STARTER_MAIN_CLASS% --main %CLASS% --conf "%STARTER_CONF%" --classpath "%CP%" %CMD_LINE_ARGS%
 
 :end
 @rem End local scope for the variables with windows NT shell
