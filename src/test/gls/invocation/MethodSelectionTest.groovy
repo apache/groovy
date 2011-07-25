@@ -193,6 +193,21 @@ public class MethodSelectionTest extends CompilableTestSupport {
       """
   }
   
+  void testCachingForNullAndPrimitive(){
+      assertScript """
+          boolean shaky(boolean defaultValue) {false}
+          shaky(false)
+          try {
+              shaky(null)
+              assert false : "method caching allowed null for primitive"
+          } catch (MissingMethodException mme){
+              assert true
+          }
+      """
+  }
+  
+  
+  
   void testBDandBIToFloatAutoConversionInMethodSelection() {
     def foo = new Foo3977()
     
