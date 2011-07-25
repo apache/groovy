@@ -1134,7 +1134,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
     }
 
-    private static boolean sameClasses(Class[] params, Class[] arguments, boolean weakNullCheck) {
+    private static boolean sameClasses(Class[] params, Class[] arguments) {
         // we do here a null check because the params field might not have been set yet
         if (params == null) return false;
 
@@ -1144,10 +1144,8 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         for (int i = params.length - 1; i >= 0; i--) {
             Object arg = arguments[i];
             if (arg != null) {
-                if (params[i] != arguments[i])
-                    return false;
-            } else if (!weakNullCheck)
-                return false;
+                if (params[i] != arguments[i]) return false;
+            } else return false;
         }
 
         return true;
@@ -1169,8 +1167,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
           return null;
 
         cacheEntry = e.cachedMethod;
-        if (cacheEntry != null
-           && (sameClasses(cacheEntry.params, params, methods instanceof MetaMethod))) {
+        if (cacheEntry != null && (sameClasses(cacheEntry.params, params))) {
              return cacheEntry.method;
         }
 
@@ -2556,11 +2553,6 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                     };
 
                     final ClassLoader parent = theClass.getClassLoader();
-                    GroovyClassLoader gcl = (GroovyClassLoader) AccessController.doPrivileged(new PrivilegedAction() {
-                        public Object run() {
-                            return new GroovyClassLoader(parent);
-                        }
-                    });
                     CompilationUnit unit = new CompilationUnit();
                     unit.setClassgenCallback(search);
                     unit.addSource(url);
