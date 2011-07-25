@@ -10,7 +10,7 @@
 @rem
 
 @rem Set local scope for the variables with windows NT shell
-if "%OS%"=="Windows_NT" setlocal
+if "%OS%"=="Windows_NT" setlocal enabledelayedexpansion
 
 set DIRNAME=%~1
 shift
@@ -33,7 +33,24 @@ if exist "%SystemRoot%\command\find.exe" set FIND_EXE="%SystemRoot%\command\find
 :check_JAVA_HOME
 @rem Make sure we have a valid JAVA_HOME
 if not "%JAVA_HOME%" == "" goto have_JAVA_HOME
-for %%P in (%PATH%) do if exist %%P\..\bin\java.exe set JAVA_HOME=%%P\..
+set PATHTMP=%PATH%
+:loop
+for /f "delims=; tokens=1*" %%i in ("!PATHTMP!") do (
+    if exist "%%i\..\bin\java.exe" (
+        set "JAVA_HOME=%%i\.."
+        goto found_JAVA_HOME
+    )
+    set PATHTMP=%%j
+    goto loop
+)
+goto check_default_JAVA_EXE
+
+:found_JAVA_HOME
+@rem Remove trailing \bin\.. from JAVA_HOME
+if "%JAVA_HOME:~-7%"=="\bin\.." SET "JAVA_HOME=%JAVA_HOME:~0,-7%"
+set JAVA_EXE=%JAVA_HOME%\bin\java.exe
+
+:check_default_JAVA_EXE
 if not "%JAVA_HOME%" == "" goto valid_JAVA_HOME
 java -version 2>NUL
 if not ERRORLEVEL 1 goto default_JAVA_EXE
