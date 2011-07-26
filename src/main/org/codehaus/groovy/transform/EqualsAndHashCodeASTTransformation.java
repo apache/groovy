@@ -185,11 +185,14 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
             body.addStatement(returnFalseIfWrongType(cNode, other));
         }
 //        body.addStatement(new ExpressionStatement(new BinaryExpression(other, ASSIGN, new CastExpression(cNode, other))));
+        
+        VariableExpression otherTyped = new VariableExpression("otherTyped");
+        body.addStatement(new ExpressionStatement(new DeclarationExpression(otherTyped, ASSIGN, new CastExpression(cNode, other))));
 
         List<PropertyNode> pList = getInstanceProperties(cNode);
         for (PropertyNode pNode : pList) {
             if (shouldSkip(pNode.getName(), excludes, includes)) continue;
-            body.addStatement(returnFalseIfPropertyNotEqual(pNode, other));
+            body.addStatement(returnFalseIfPropertyNotEqual(pNode, otherTyped));
         }
         List<FieldNode> fList = new ArrayList<FieldNode>();
         if (includeFields) {
@@ -197,7 +200,7 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
         }
         for (FieldNode fNode : fList) {
             if (shouldSkip(fNode.getName(), excludes, includes)) continue;
-            body.addStatement(returnFalseIfFieldNotEqual(fNode, other));
+            body.addStatement(returnFalseIfFieldNotEqual(fNode, otherTyped));
         }
         if (callSuper) {
             body.addStatement(new IfStatement(
