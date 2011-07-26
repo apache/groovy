@@ -32,8 +32,8 @@ import org.codehaus.groovy.syntax.Token;
  * safe way to access the VariableExpression on the left hand side is to use 
  * "getLeftExpression()" with an instanceof check afterwards or to invoke the 
  * "isMultipleAssignmentDeclaration() : boolean" method. If "isMultipleAssignmentDeclaration" 
- * returns true then it is always safe to call "getVariableExpression()". If 
- * "isMultipleAssignmentDeclaration" returns false then it is never safe to call 
+ * returns false then it is always safe to call "getVariableExpression()". If 
+ * "isMultipleAssignmentDeclaration" returns true then it is never safe to call 
  * "getVariableExpression()". 
  * 
  * @author Jochen Theodorou
