@@ -19,6 +19,7 @@ package org.codehaus.groovy.tools.javac;
 import groovy.lang.GroovyClassLoader;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.classgen.GeneratorContext;
+import org.codehaus.groovy.classgen.VariableScopeVisitor;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilerConfiguration;
@@ -57,6 +58,14 @@ public class JavaStubCompilationUnit
 
         addPhaseOperation(new PrimaryClassNodeOperation() {
             @Override
+            public void call(SourceUnit source, GeneratorContext context, ClassNode node) throws CompilationFailedException {
+                VariableScopeVisitor scopeVisitor = new VariableScopeVisitor(source);
+                scopeVisitor.visitClass(node);
+                new JavaAwareResolveVisitor(JavaStubCompilationUnit.this).startResolving(node,source);
+            }
+        },Phases.CONVERSION);
+        addPhaseOperation(new PrimaryClassNodeOperation() {
+            @Override
             public void call(final SourceUnit source, final GeneratorContext context, final ClassNode node) throws CompilationFailedException {
                 try {
                     stubGenerator.generateClass(node);
@@ -66,7 +75,7 @@ public class JavaStubCompilationUnit
                     source.addException(e);
                 }
             }
-        },Phases.SEMANTIC_ANALYSIS);
+        },Phases.CONVERSION);
     }
 
     public JavaStubCompilationUnit(final CompilerConfiguration config, final GroovyClassLoader gcl) {
@@ -80,7 +89,7 @@ public class JavaStubCompilationUnit
     @Override
     public void compile() throws CompilationFailedException {
         stubCount = 0;
-        super.compile(Phases.SEMANTIC_ANALYSIS);
+        super.compile(Phases.CONVERSION);
     }
 
     @Override
