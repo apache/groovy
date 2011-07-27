@@ -43,8 +43,7 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
     static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
     private static final ClassNode HASHUTIL_TYPE = ClassHelper.make(HashCodeHelper.class);
     private static final Token ASSIGN = Token.newSymbol(Types.ASSIGN, -1, -1);
-    // TODO ClassHelper.make? or already defined?
-    private static final ClassNode OBJECT_TYPE = new ClassNode(Object.class);
+    private static final ClassNode OBJECT_TYPE = ClassHelper.make(Object.class);
 
     public void visit(ASTNode[] nodes, SourceUnit source) {
         init(nodes, source);
