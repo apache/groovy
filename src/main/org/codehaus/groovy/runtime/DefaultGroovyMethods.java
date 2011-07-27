@@ -897,6 +897,18 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * 'Case' implementation for a CharSequence, which simply calls the equivalent method for String.
+     *
+     * @param caseValue   the case value
+     * @param switchValue the switch value
+     * @return true if the switchValue's toString() equals the caseValue
+     * @since 1.8.2
+     */
+    public static boolean isCase(CharSequence caseValue, Object switchValue) {
+        return isCase(caseValue.toString(), switchValue);
+    }
+
+    /**
      * 'Case' implementation for a GString, which simply calls the equivalent method for String.
      *
      * @param caseValue   the case value
@@ -4288,6 +4300,17 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Provide the standard Groovy <code>size()</code> method for <code>CharSequence</code>.
+     *
+     * @param text a CharSequence
+     * @return the length of the CharSequence
+     * @since 1.8.2
+     */
+    public static int size(CharSequence text) {
+        return text.length();
+    }
+
+    /**
      * Provide the standard Groovy <code>size()</code> method for <code>StringBuffer</code>.
      *
      * @param buffer a StringBuffer
@@ -4472,6 +4495,18 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Creates a new CharSequence which is the reverse (backwards) of this string
+     *
+     * @param self a CharSequence
+     * @return a new CharSequence with all the characters reversed.
+     * @see #reverse(String)
+     * @since 1.8.2
+     */
+    public static CharSequence reverse(CharSequence self) {
+        return new StringBuilder(self).reverse().toString();
+    }
+
+    /**
      * <p>Strip leading whitespace/control characters followed by '|' from
      * every line in a String.</p>
      * <pre class="groovyTestCase">
@@ -4481,10 +4516,24 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * </pre>
      *
      * @param self The String to strip the margin from
+     * @return the stripped String
      * @see #stripMargin(String, char)
      * @since 1.7.3
      */
     public static String stripMargin(String self) {
+        return stripMargin(self, '|');
+    }
+
+    /**
+     * <p>Strip leading whitespace/control characters followed by '|' from
+     * every line in a CharSequence.</p>
+     *
+     * @param self The CharSequence to strip the margin from
+     * @return the stripped CharSequence
+     * @see #stripMargin(CharSequence, char)
+     * @since 1.8.2
+     */
+    public static CharSequence stripMargin(CharSequence self) {
         return stripMargin(self, '|');
     }
 
@@ -4494,6 +4543,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self       The String to strip the margin from
      * @param marginChar Any character that serves as margin delimiter
+     * @return the stripped String
      * @see #stripMargin(String, char)
      * @since 1.7.3
      */
@@ -4501,6 +4551,20 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         if (marginChar == null || marginChar.length() == 0) return stripMargin(self, '|');
         // TODO IllegalArgumentException for marginChar.length() > 1 ? Or support String as marker?
         return stripMargin(self, marginChar.charAt(0));
+    }
+
+    /**
+     * <p>Strip leading whitespace/control characters followed by <tt>marginChar</tt> from
+     * every line in a CharSequence.</p>
+     *
+     * @param self       The CharSequence to strip the margin from
+     * @param marginChar Any character that serves as margin delimiter
+     * @return the stripped CharSequence
+     * @see #stripMargin(String, String)
+     * @since 1.8.2
+     */
+    public static String stripMargin(CharSequence self, CharSequence marginChar) {
+        return stripMargin(self.toString(), marginChar.toString());
     }
 
     /**
@@ -4514,6 +4578,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self       The String to strip the margin from
      * @param marginChar Any character that serves as margin delimiter
+     * @return the stripped String
      * @since 1.7.3
      */
     public static String stripMargin(String self, char marginChar) {
@@ -4535,6 +4600,20 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return self;
     }
 
+    /**
+     * <p>Strip leading whitespace/control characters followed by <tt>marginChar</tt> from
+     * every line in a String.</p>
+     *
+     * @param self       The CharSequence to strip the margin from
+     * @param marginChar Any character that serves as margin delimiter
+     * @return the stripped CharSequence
+     * @see #stripMargin(String, char)
+     * @since 1.8.2
+     */
+    public static CharSequence stripMargin(CharSequence self, char marginChar) {
+        return stripMargin(self.toString(), marginChar);
+    }
+
     // TODO expose this for stream based stripping?
     private static String stripMarginFromLine(String line, char marginChar) {
         int length = line.length();
@@ -4553,6 +4632,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * </pre>
      *
      * @param self     The String to strip the leading spaces from
+     * @return the stripped String
      * @see #stripIndent(String, int)
      * @since 1.7.3
      */
@@ -4574,11 +4654,27 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * <p>Strip leading spaces from every line in a CharSequence. The
+     * line with the least number of leading spaces determines
+     * the number to remove. Lines only containing whitespace are
+     * ignored when calculating the number of leading spaces to strip.</p>
+     *
+     * @param self     The CharSequence to strip the leading spaces from
+     * @return the stripped CharSequence
+     * @see #stripIndent(String)
+     * @since 1.8.2
+     */
+    public static CharSequence stripIndent(CharSequence self) {
+        return stripIndent(self.toString());
+    }
+
+    /**
      * True if a String only contains whitespace characters.
      *
      * @param self The String to check the characters in
      * @return true If all characters are whitespace characters
      * @see Character#isWhitespace(char)
+     * @since 1.6
      */
     public static boolean isAllWhitespace(String self) {
         for (int i = 0; i < self.length(); i++) {
@@ -4586,6 +4682,18 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                 return false;
         }
         return true;
+    }
+
+    /**
+     * True if a CharSequence only contains whitespace characters.
+     *
+     * @param self The CharSequence to check the characters in
+     * @return true If all characters are whitespace characters
+     * @see #isAllWhitespace(String)
+     * @since 1.8.2
+     */
+    public static boolean isAllWhitespace(CharSequence self) {
+        return isAllWhitespace(self.toString());
     }
 
     // TODO expose this for stream based scenarios?
@@ -4605,6 +4713,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self     The String to strip the characters from
      * @param numChars The number of characters to strip
+     * @return the stripped String
      * @since 1.7.3
      */
     public static String stripIndent(String self, int numChars) {
@@ -4630,6 +4739,19 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return self;
     }
 
+    /**
+     * <p>Strip <tt>numChar</tt> leading characters from
+     * every line in a CharSequence.</p>
+     *
+     * @param self     The CharSequence to strip the characters from
+     * @param numChars The number of characters to strip
+     * @return the stripped CharSequence
+     * @since 1.8.2
+     */
+    public static CharSequence stripIndent(CharSequence self, int numChars) {
+        return stripIndent(self);
+    }
+
     // TODO expose this for stream based stripping?
     private static String stripIndentFromLine(String line, int numChars) {
         int length = line.length();
@@ -4649,6 +4771,18 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Transforms a CharSequence representing a URL into a URL object.
+     *
+     * @param self the CharSequence representing a URL
+     * @return a URL
+     * @throws MalformedURLException is thrown if the URL is not well formed.
+     * @since 1.8.2
+     */
+    public static URL toURL(CharSequence self) throws MalformedURLException {
+        return new URL(self.toString());
+    }
+
+    /**
      * Transforms a String representing a URI into a URI object.
      *
      * @param self the String representing a URI
@@ -4658,6 +4792,18 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static URI toURI(String self) throws URISyntaxException {
         return new URI(self);
+    }
+
+    /**
+     * Transforms a CharSequence representing a URI into a URI object.
+     *
+     * @param self the CharSequence representing a URI
+     * @return a URI
+     * @throws URISyntaxException is thrown if the URI is not well formed.
+     * @since 1.8.2
+     */
+    public static URI toURI(CharSequence self) throws URISyntaxException {
+        return new URI(self.toString());
     }
 
     /**
@@ -4672,26 +4818,55 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Turns a CharSequence into a regular expression Pattern
+     *
+     * @param self a String to convert into a regular expression
+     * @return the regular expression pattern
+     * @since 1.8.2
+     */
+    public static Pattern bitwiseNegate(CharSequence self) {
+        return Pattern.compile(self.toString());
+    }
+
+    /**
      * Replaces the first substring of a String that matches the given
      * compiled regular expression with the given replacement.
-     * <p>
+     * <p/>
      * Note that backslashes (<tt>\</tt>) and dollar signs (<tt>$</tt>) in the
      * replacement string may cause the results to be different than if it were
      * being treated as a literal replacement string; see
      * {@link java.util.regex.Matcher#replaceFirst}.
      * Use {@link java.util.regex.Matcher#quoteReplacement} to suppress the special
      * meaning of these characters, if desired.
+     * <p/>
+     * <pre class="groovyTestCase">
+     * assert "foo".replaceFirst('o', 'X') == 'fXo'
+     * </pre>
      *
      * @param   self the string that is to be matched
      * @param   pattern the regex Pattern to which the string of interest is to be matched
      * @param   replacement the string to be substituted for the first match
      * @return  The resulting <tt>String</tt>
      * @see java.lang.String#replaceFirst(java.lang.String, java.lang.String)
-     *
      * @since 1.6.1
      */
     public static String replaceFirst(String self, Pattern pattern, String replacement) {
         return pattern.matcher(self).replaceFirst(replacement);
+    }
+
+    /**
+     * Replaces the first substring of a CharSequence that matches the given
+     * compiled regular expression with the given replacement.
+     *
+     * @param   self the CharSequence that is to be matched
+     * @param   pattern the regex Pattern to which the CharSequence of interest is to be matched
+     * @param   replacement the CharSequence to be substituted for the first match
+     * @return  The resulting <tt>CharSequence</tt>
+     * @see #replaceFirst(String, Pattern, String)
+     * @since 1.8.2
+     */
+    public static CharSequence replaceFirst(CharSequence self, Pattern pattern, CharSequence replacement) {
+        return pattern.matcher(self).replaceFirst(replacement.toString());
     }
 
     /**
@@ -4704,6 +4879,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * {@link java.util.regex.Matcher#replaceAll}.
      * Use {@link java.util.regex.Matcher#quoteReplacement} to suppress the special
      * meaning of these characters, if desired.
+     * <p/>
+     * <pre class="groovyTestCase">
+     * assert "foo".replaceAll('o', 'X') == 'fXX'
+     * </pre>
      *
      * @param   self the string that is to be matched
      * @param   pattern the regex Pattern to which the string of interest is to be matched
@@ -4714,6 +4893,21 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static String replaceAll(String self, Pattern pattern, String replacement) {
         return pattern.matcher(self).replaceAll(replacement);
+    }
+
+    /**
+     * Replaces all substrings of a CharSequence that match the given
+     * compiled regular expression with the given replacement.
+     *
+     * @param   self the CharSequence that is to be matched
+     * @param   pattern the regex Pattern to which the CharSequence of interest is to be matched
+     * @param   replacement the CharSequence to be substituted for the first match
+     * @return  The resulting <tt>CharSequence</tt>
+     * @see #replaceAll(String, Pattern, String)
+     * @since 1.8.2
+     */
+    public static CharSequence replaceAll(CharSequence self, Pattern pattern, CharSequence replacement) {
+        return pattern.matcher(self).replaceAll(replacement.toString());
     }
 
     /**
@@ -4762,16 +4956,44 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Translates a string by replacing characters from the sourceSet with characters from replacementSet.
+     *
+     * @param   self the CharSequence that is to be translated
+     * @param   sourceSet the set of characters to translate from
+     * @param   replacementSet the set of replacement characters
+     * @return  The resulting translated <tt>CharSequence</tt>
+     * @see #tr(String, String, String)
+     * @since 1.8.2
+     */
+    public static CharSequence tr(final CharSequence self, CharSequence sourceSet, CharSequence replacementSet) throws ClassNotFoundException {
+        return tr(self.toString(), sourceSet.toString(), replacementSet.toString());
+    }
+
+    /**
      * Tells whether or not self matches the given
      * compiled regular expression Pattern.
      *
      * @param   self the string that is to be matched
      * @param   pattern the regex Pattern to which the string of interest is to be matched
-     * @return  The resulting <tt>String</tt>
+     * @return  true if the string matches
      * @see java.lang.String#matches(java.lang.String)
      * @since 1.6.1
      */
     public static boolean matches(String self, Pattern pattern) {
+        return pattern.matcher(self).matches();
+    }
+
+    /**
+     * Tells whether or not a CharSequence matches the given
+     * compiled regular expression Pattern.
+     *
+     * @param   self the CharSequence that is to be matched
+     * @param   pattern the regex Pattern to which the string of interest is to be matched
+     * @return  true if the CharSequence matches
+     * @see java.lang.String#matches(java.lang.String)
+     * @since 1.8.2
+     */
+    public static boolean matches(CharSequence self, Pattern pattern) {
         return pattern.matcher(self).matches();
     }
 
@@ -4802,6 +5024,19 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static String find(String self, String regex) {
         return find(self, Pattern.compile(regex));
+    }
+
+    /**
+     * Finds the first occurrence of a regular expression CharSequence within a CharSequence.
+     *
+     * @param self  a CharSequence
+     * @param regex the capturing regex
+     * @return a CharSequence containing the matched portion, or null if the regex doesn't match
+     * @see #find(String, Pattern)
+     * @since 1.8.2
+     */
+    public static CharSequence find(CharSequence self, CharSequence regex) {
+        return find(self.toString(), Pattern.compile(regex.toString()));
     }
 
     /**
@@ -4838,6 +5073,19 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             return matcher.group(0);
         }
         return null;
+    }
+
+    /**
+     * Finds the first occurrence of a compiled regular expression Pattern within a CharSequence.
+     *
+     * @param self    a CharSequence
+     * @param pattern the compiled regex Pattern
+     * @return a CharSequence containing the matched portion, or null if the regex pattern doesn't match
+     * @see #find(String, Pattern)
+     * @since 1.8.2
+     */
+    public static CharSequence find(CharSequence self, Pattern pattern) {
+        return find(self.toString(), pattern);
     }
 
     /**
@@ -4897,6 +5145,20 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static String find(String self, String regex, Closure closure) {
         return find(self, Pattern.compile(regex), closure);
+    }
+
+    /**
+     * Finds the first occurrence of a regular expression CharSequence within a CharSequence.
+     *
+     * @param self    a CharSequence
+     * @param regex   the capturing regex CharSequence
+     * @param closure the closure that will be passed the full match, plus each of the capturing groups
+     * @return a CharSequence containing the result of the closure, or null if the regex pattern doesn't match
+     * @see #find(String, Pattern, Closure)
+     * @since 1.8.2
+     */
+    public static CharSequence find(CharSequence self, CharSequence regex, Closure closure) {
+        return find(self.toString(), Pattern.compile(regex.toString()), closure);
     }
 
     /**
@@ -4972,6 +5234,20 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Finds the first occurrence of a compiled regular expression Pattern within a String.
+     *
+     * @param self    a CharSequence
+     * @param pattern the compiled regex Pattern
+     * @param closure the closure that will be passed the full match, plus each of the capturing groups
+     * @return a CharSequence containing the result of the closure, or null if the regex pattern doesn't match
+     * @see #find(String, java.util.regex.Pattern, groovy.lang.Closure)
+     * @since 1.8.2
+     */
+    public static CharSequence find(CharSequence self, Pattern pattern, Closure closure) {
+        return find(self.toString(), pattern, closure);
+    }
+
+    /**
      * Finds all occurrences of a regular expression string within a String.  A List is returned containing all full matches or
      * an empty list if there are no matches within the string.
      * <p/>
@@ -4995,6 +5271,19 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static List<String> findAll(String self, String regex) {
         return findAll(self, Pattern.compile(regex));
+    }
+
+    /**
+     * Finds all occurrences of a regular expression string within a CharSequence.
+     *
+     * @param self  a CharSequence
+     * @param regex the capturing regex CharSequence
+     * @return a List containing all full matches of the regex within the CharSequence, an empty list will be returned if there are no matches
+     * @see #findAll(String, String)
+     * @since 1.8.2
+     */
+    public static List<CharSequence> findAll(CharSequence self, CharSequence regex) {
+        return new ArrayList<CharSequence>(findAll(self.toString(), regex.toString()));
     }
 
     /**
@@ -5030,6 +5319,19 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Finds all occurrences of a regular expression Pattern within a CharSequence.
+     *
+     * @param self    a CharSequence
+     * @param pattern the compiled regex Pattern
+     * @return a List containing all full matches of the Pattern within the CharSequence, an empty list will be returned if there are no matches
+     * @see #findAll(String, Pattern)
+     * @since 1.8.2
+     */
+    public static List<CharSequence> findAll(CharSequence self, Pattern pattern) {
+        return new ArrayList<CharSequence>(findAll(self.toString(), pattern));
+    }
+
+    /**
      * Finds all occurrences of a regular expression string within a String.   Any matches are passed to the specified closure.  The closure
      * is expected to have the full match in the first parameter.  If there are any capture groups, they will be placed in subsequent parameters.
      * <p/>
@@ -5057,6 +5359,20 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <T> List<T> findAll(String self, String regex, Closure<T> closure) {
         return findAll(self, Pattern.compile(regex), closure);
+    }
+
+    /**
+     * Finds all occurrences of a capturing regular expression CharSequence within a CharSequence.
+     *
+     * @param self    a CharSequence
+     * @param regex   the capturing regex CharSequence
+     * @param closure will be passed the full match plus each of the capturing groups
+     * @return a List containing all full matches of the regex within the CharSequence, an empty list will be returned if there are no matches
+     * @see #findAll(String, String, Closure)
+     * @since 1.8.2
+     */
+    public static <T> List<T> findAll(CharSequence self, CharSequence regex, Closure<T> closure) {
+        return findAll(self.toString(), regex.toString(), closure);
     }
 
     /**
@@ -5088,6 +5404,20 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static <T> List<T> findAll(String self, Pattern pattern, Closure<T> closure) {
         Matcher matcher = pattern.matcher(self);
         return collect(matcher, closure);
+    }
+
+    /**
+     * Finds all occurrences of a compiled regular expression Pattern within a CharSequence.
+     *
+     * @param self    a CharSequence
+     * @param pattern the compiled regex Pattern
+     * @param closure will be passed the full match plus each of the capturing groups
+     * @return a List containing all full matches of the regex Pattern within the CharSequence, an empty list will be returned if there are no matches
+     * @see #findAll(String, Pattern, Closure)
+     * @since 1.8.2
+     */
+    public static <T> List<T> findAll(CharSequence self, Pattern pattern, Closure<T> closure) {
+        return findAll(self.toString(), pattern, closure);
     }
 
     /**
@@ -5130,6 +5460,21 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Replaces all occurrences of a captured group by the result of a closure on that text.
+     *
+     * @param self    a CharSequence
+     * @param regex   the capturing regex
+     * @param closure the closure to apply on each captured group
+     * @return a CharSequence with replaced content
+     * @throws java.util.regex.PatternSyntaxException if the regular expression's syntax is invalid
+     * @since 1.8.2
+     * @see #replaceAll(String, Pattern, Closure)
+     */
+    public static CharSequence replaceAll(final CharSequence self, final CharSequence regex, final Closure closure) {
+        return replaceAll(self.toString(), Pattern.compile(regex.toString()), closure);
+    }
+
+    /**
      * Replaces the first occurrence of a captured group by the result of a closure call on that text.
      * <p/>
      * <p> For example (with some replaceAll variants thrown in for comparison purposes),
@@ -5152,6 +5497,21 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static String replaceFirst(final String self, final String regex, final Closure closure) {
         return replaceFirst(self, Pattern.compile(regex), closure);
+    }
+
+    /**
+     * Replaces the first occurrence of a captured group by the result of a closure call on that text.
+     *
+     * @param self    a CharSequence
+     * @param regex   the capturing regex
+     * @param closure the closure to apply on the first captured group
+     * @return a CharSequence with replaced content
+     * @throws java.util.regex.PatternSyntaxException if the regular expression's syntax is invalid
+     * @see #replaceFirst(String, String, Closure)
+     * @since 1.8.2
+     */
+    public static String replaceFirst(final CharSequence self, final CharSequence regex, final Closure closure) {
+        return replaceFirst(self.toString(), regex.toString(), closure);
     }
 
     /**
@@ -5242,6 +5602,20 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Replaces all occurrences of a captured group by the result of a closure call on that text.
+     *
+     * @param self    a CharSequence
+     * @param pattern the capturing regex Pattern
+     * @param closure the closure to apply on each captured group
+     * @return a CharSequence with replaced content
+     * @since 1.8.2
+     * @see #replaceAll(String, Pattern, Closure)
+     */
+    public static String replaceAll(final CharSequence self, final Pattern pattern, final Closure closure) {
+        return replaceAll(self.toString(), pattern, closure);
+    }
+
+    /**
      * Replaces the first occurrence of a captured group by the result of a closure call on that text.
      * <p/>
      * <p> For example (with some replaceAll variants thrown in for comparison purposes),
@@ -5271,6 +5645,20 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         } else {
             return self;
         }
+    }
+
+    /**
+     * Replaces the first occurrence of a captured group by the result of a closure call on that text.
+     *
+     * @param self    a CharSequence
+     * @param pattern the capturing regex Pattern
+     * @param closure the closure to apply on the first captured group
+     * @return a CharSequence with replaced content
+     * @see #replaceFirst(String, Pattern, Closure)
+     * @since 1.8.2
+     */
+    public static String replaceFirst(final CharSequence self, final Pattern pattern, final Closure closure) {
+        return replaceFirst(self.toString(), pattern, closure);
     }
 
     private static String getPadding(String padding, int length) {
@@ -5319,6 +5707,20 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Pad a CharSequence to a minimum length specified by <tt>numberOfChars</tt>, adding the supplied padding CharSequence as many times as needed to the left.
+     *
+     * @param self          a CharSequence object
+     * @param numberOfChars the total minimum number of characters of the resulting CharSequence
+     * @param padding       the characters used for padding
+     * @return the CharSequence padded to the left
+     * @see #padLeft(String, Number, String)
+     * @since 1.8.2
+     */
+    public static CharSequence padLeft(CharSequence self, Number numberOfChars, CharSequence padding) {
+        return padLeft(self, numberOfChars, padding);
+    }
+
+    /**
      * Pad a String to a minimum length specified by <tt>numberOfChars</tt> by adding the space character to the left as many times as needed.
      *
      * If the String is already the same size or bigger than the target <tt>numberOfChars</tt>, then the original String is returned. An example:
@@ -5342,6 +5744,19 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static String padLeft(String self, Number numberOfChars) {
+        return padLeft(self, numberOfChars, " ");
+    }
+
+    /**
+     * Pad a CharSequence to a minimum length specified by <tt>numberOfChars</tt> by adding the space character to the left as many times as needed.
+     *
+     * @param self          a CharSequence object
+     * @param numberOfChars the total minimum number of characters of the resulting CharSequence
+     * @return the CharSequence padded to the left
+     * @see #padLeft(CharSequence, Number, CharSequence)
+     * @since 1.8.2
+     */
+    public static CharSequence padLeft(CharSequence self, Number numberOfChars) {
         return padLeft(self, numberOfChars, " ");
     }
 
@@ -5376,6 +5791,20 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Pad a CharSequence to a minimum length specified by <tt>numberOfChars</tt>, adding the supplied padding CharSequence as many times as needed to the right.
+     *
+     * @param self          a CharSequence object
+     * @param numberOfChars the total minimum number of characters of the resulting CharSequence
+     * @param padding       the characters used for padding
+     * @return the CharSequence padded to the right
+     * @see #padRight(String, Number, String)
+     * @since 1.8.2
+     */
+    public static CharSequence padRight(CharSequence self, Number numberOfChars, CharSequence padding) {
+        return padRight(self.toString(), numberOfChars, padding.toString());
+    }
+
+    /**
      * Pad a String to a minimum length specified by <tt>numberOfChars</tt> by adding the space character to the right as many times as needed.
      *
      * If the String is already the same size or bigger than the target <tt>numberOfChars</tt>, then the original String is returned. An example:
@@ -5397,6 +5826,19 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static String padRight(String self, Number numberOfChars) {
         return padRight(self, numberOfChars, " ");
+    }
+
+    /**
+     * Pad a CharSequence to a minimum length specified by <tt>numberOfChars</tt> by adding the space character to the right as many times as needed.
+     *
+     * @param self          a CharSequence object
+     * @param numberOfChars the total minimum number of characters of the resulting string
+     * @return the CharSequence padded to the right
+     * @see #padRight(String, Number)
+     * @since 1.8.2
+     */
+    public static CharSequence padRight(CharSequence self, Number numberOfChars) {
+        return padRight(self.toString(), numberOfChars);
     }
 
     /**
@@ -5437,6 +5879,20 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Pad a CharSequence to a minimum length specified by <tt>numberOfChars</tt>, appending the supplied padding CharSequence around the original as many times as needed keeping it centered.
+     *
+     * @param self          a CharSequence object
+     * @param numberOfChars the total minimum number of characters of the resulting CharSequence
+     * @param padding       the characters used for padding
+     * @return the CharSequence centered with padded characters around it
+     * @see #center(String, Number, String)
+     * @since 1.8.2
+     */
+    public static CharSequence center(CharSequence self, Number numberOfChars, CharSequence padding) {
+        return center(self.toString(), numberOfChars, padding.toString());
+    }
+
+    /**
      * Pad a String to a minimum length specified by <tt>numberOfChars</tt> by adding the space character around it as many times as needed so that it remains centered.
      *
      * If the String is already the same size or bigger than the target <tt>numberOfChars</tt>, then the original String is returned. An example:
@@ -5459,6 +5915,19 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static String center(String self, Number numberOfChars) {
         return center(self, numberOfChars, " ");
+    }
+
+    /**
+     * Pad a CharSequence to a minimum length specified by <tt>numberOfChars</tt> by adding the space character around it as many times as needed so that it remains centered.
+     *
+     * @param self          a CharSequence object
+     * @param numberOfChars the total minimum number of characters of the resulting CharSequence
+     * @return the CharSequence centered with padded characters around it
+     * @see #center(String, Number)
+     * @since 1.8.2
+     */
+    public static CharSequence center(CharSequence self, Number numberOfChars) {
+        return center(self.toString(), numberOfChars);
     }
 
     /**
@@ -8792,6 +9261,32 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return new StringBuffer(self).append(value);
     }
 
+    /**
+     * Overloads the left shift operator to provide an easy way to append multiple
+     * objects as string representations to a CharSequence.
+     *
+     * @param self  a CharSequence
+     * @param value an Object
+     * @return a StringBuilder built from this CharSequence
+     * @since 1.8.2
+     */
+    public static StringBuilder leftShift(CharSequence self, Object value) {
+        return new StringBuilder(self).append(value);
+    }
+
+    /**
+     * Overloads the left shift operator to provide syntactic sugar for appending to a StringBuilder.
+     *
+     * @param self  a StringBuilder
+     * @param value an Object
+     * @return the original StringBuilder
+     * @since 1.8.2
+     */
+    public static StringBuilder leftShift(StringBuilder self, Object value) {
+        self.append(value);
+        return self;
+    }
+
     protected static StringWriter createStringWriter(String self) {
         StringWriter answer = new StringWriter();
         answer.write(self);
@@ -9992,6 +10487,19 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Convenience method to split a CharSequence (with whitespace as delimiter)
+     * Like tokenize, but returns an Array of CharSequence instead of a List
+     *
+     * @param self the CharSequence to split
+     * @return CharSequence[] result of split
+     * @see #split(String)
+     * @since 1.8.2
+     */
+    public static CharSequence[] split(CharSequence self) {
+        return split(self.toString());
+    }
+
+    /**
      * Convenience method to capitalize the first letter of a string
      * (typically the first letter of a word). Example usage:
      * <pre class="groovyTestCase">
@@ -10003,12 +10511,24 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * </pre>
      *
      * @param self The string to capitalize
-     * @return String The capitalized String result of split
+     * @return The capitalized String
      * @since 1.7.3
      */
     public static String capitalize(String self) {
         if (self == null || self.length() == 0) return self;
         return Character.toUpperCase(self.charAt(0)) + self.substring(1);
+    }
+
+    /**
+     * Convenience method to capitalize the first letter of a CharSequence.
+     *
+     * @param self The CharSequence to capitalize
+     * @return The capitalized CharSequence
+     * @see #capitalize(String)
+     * @since 1.8.2
+     */
+    public static CharSequence capitalize(CharSequence self) {
+        return capitalize(self.toString());
     }
 
     /**
@@ -10021,6 +10541,18 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static String expand(String self) {
         return expand(self, 8);
+    }
+
+    /**
+     * Expands all tabs into spaces with tabStops of size 8.
+     *
+     * @param self A CharSequence to expand
+     * @return The expanded CharSequence
+     * @see #expand(java.lang.String)
+     * @since 1.8.2
+     */
+    public static CharSequence expand(CharSequence self) {
+        return expand(self.toString(), 8);
     }
 
     /**
@@ -10053,6 +10585,19 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Expands all tabs into spaces.
      *
+     * @param self A CharSequence to expand
+     * @param tabStop The number of spaces a tab represents
+     * @return The expanded CharSequence
+     * @see #expand(String, int)
+     * @since 1.8.2
+     */
+    public static CharSequence expand(CharSequence self, int tabStop) {
+        return expand(self.toString(), tabStop);
+    }
+
+    /**
+     * Expands all tabs into spaces.
+     *
      * @param self A line to expand
      * @param tabStop The number of spaces a tab represents
      * @return The expanded String
@@ -10071,6 +10616,19 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Expands all tabs into spaces.
+     *
+     * @param self A line to expand
+     * @param tabStop The number of spaces a tab represents
+     * @return The expanded CharSequence
+     * @see #expandLine(String, int)
+     * @since 1.8.2
+     */
+    public static CharSequence expandLine(CharSequence self, int tabStop) {
+        return expandLine(self.toString(), tabStop);
+    }
+
+    /**
      * Replaces sequences of whitespaces with tabs using tabStops of size 8.
      *
      * @param self A String to unexpand
@@ -10080,6 +10638,18 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static String unexpand(String self) {
         return unexpand(self, 8);
+    }
+
+    /**
+     * Replaces sequences of whitespaces with tabs using tabStops of size 8.
+     *
+     * @param self A CharSequence to unexpand
+     * @return The unexpanded CharSequence
+     * @see #unexpand(java.lang.String)
+     * @since 1.8.2
+     */
+    public static CharSequence unexpand(CharSequence self) {
+        return unexpand(self.toString());
     }
 
     /**
@@ -10107,6 +10677,19 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             /* ignore */
         }
         return self;
+    }
+
+    /**
+     * Replaces sequences of whitespaces with tabs.
+     *
+     * @param self A CharSequence to unexpand
+     * @param tabStop The number of spaces a tab represents
+     * @return The unexpanded CharSequence
+     * @see #unexpand(String, int)
+     * @since 1.8.2
+     */
+    public static CharSequence unexpand(CharSequence self, int tabStop) {
+        return unexpand(self.toString(), tabStop);
     }
 
     /**
@@ -10139,6 +10722,19 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Replaces sequences of whitespaces with tabs within a line.
+     *
+     * @param self A line to unexpand
+     * @param tabStop The number of spaces a tab represents
+     * @return The unexpanded CharSequence
+     * @see #unexpandLine(String, int)
+     * @since 1.8.2
+     */
+    public static CharSequence unexpandLine(CharSequence self, int tabStop) {
+        return unexpandLine(self.toString(), tabStop);
+    }
+
+    /**
      * Convenience method to split a GString (with whitespace as delimiter).
      *
      * @param self the GString to split
@@ -10165,6 +10761,19 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Tokenize a CharSequence based on the given CharSequence delimiter.
+     *
+     * @param self  a CharSequence
+     * @param token the delimiter
+     * @return a List of tokens
+     * @see #tokenize(String, String)
+     * @since 1.8.2
+     */
+    public static List<CharSequence> tokenize(CharSequence self, CharSequence token) {
+        return new ArrayList<CharSequence>(tokenize(self.toString(), token.toString()));
+    }
+
+    /**
      * Tokenize a String based on the given character delimiter.
      * For example:
      * <pre class="groovyTestCase">
@@ -10183,6 +10792,19 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Tokenize a CharSequence based on the given character delimiter.
+     *
+     * @param self  a CharSequence
+     * @param token the delimiter
+     * @return a List of tokens
+     * @see #tokenize(String, Character)
+     * @since 1.8.2
+     */
+    public static List<CharSequence> tokenize(CharSequence self, Character token) {
+        return tokenize(self, token.toString());
+    }
+
+    /**
      * Tokenize a String (with a whitespace as the delimiter).
      *
      * @param self a String
@@ -10196,6 +10818,18 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Tokenize a CharSequence (with a whitespace as the delimiter).
+     *
+     * @param self a CharSequence
+     * @return a List of tokens
+     * @see #tokenize(String)
+     * @since 1.8.2
+     */
+    public static List<CharSequence> tokenize(CharSequence self) {
+        return new ArrayList<CharSequence>(tokenize(self.toString()));
+    }
+
+    /**
      * Appends the String representation of the given operand to this string.
      *
      * @param left  a String
@@ -10204,6 +10838,18 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static String plus(String left, Object value) {
+        return left + toString(value);
+    }
+
+    /**
+     * Appends the String representation of the given operand to this string.
+     *
+     * @param left  a CharSequence
+     * @param value any Object
+     * @return the new CharSequence with the object appended
+     * @since 1.8.2
+     */
+    public static CharSequence plus(CharSequence left, Object value) {
         return left + toString(value);
     }
 
@@ -10258,6 +10904,20 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Remove a part of a CharSequence by replacing the first occurrence
+     * of target within self with '' and returns the result.
+     *
+     * @param self   a CharSequence
+     * @param target an object representing the part to remove
+     * @return a CharSequence minus the part to be removed
+     * @see #minus(String, Object)
+     * @since 1.8.2
+     */
+    public static CharSequence minus(CharSequence self, Object target) {
+        return minus(self.toString(), target);
+    }
+
+    /**
      * Provide an implementation of contains() like
      * {@link java.util.Collection#contains(java.lang.Object)} to make Strings more polymorphic.
      * This method is not required on JDK 1.5 onwards
@@ -10270,6 +10930,20 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static boolean contains(String self, String text) {
         int idx = self.indexOf(text);
         return idx >= 0;
+    }
+
+    /**
+     * Provide an implementation of contains() like
+     * {@link java.util.Collection#contains(java.lang.Object)} to make CharSequences more polymorphic.
+     *
+     * @param self a CharSequence
+     * @param text the CharSequence to look for
+     * @return true if this CharSequence contains the given text
+     * @see #contains(String, String)
+     * @since 1.8.2
+     */
+    public static boolean contains(CharSequence self, CharSequence text) {
+        return contains(self.toString(), text.toString());
     }
 
     /**
@@ -10291,6 +10965,19 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             }
         }
         return answer;
+    }
+
+    /**
+     * Count the number of occurrences of a sub CharSequence.
+     *
+     * @param self a CharSequence
+     * @param text a sub CharSequence
+     * @return the number of occurrences of the given CharSequence inside this CharSequence
+     * @see #count(String, String)
+     * @since 1.8.2
+     */
+    public static int count(CharSequence self, CharSequence text) {
+        return count(self.toString(), text.toString());
     }
 
     /**
@@ -10322,6 +11009,18 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * This method is called by the ++ operator for the class CharSequence.
+     *
+     * @param self a CharSequence
+     * @return an incremented CharSequence
+     * @see #next(String)
+     * @since 1.8.2
+     */
+    public static CharSequence next(CharSequence self) {
+        return next(self.toString());
+    }
+
+    /**
      * This method is called by the -- operator for the class String.
      * It decrements the last character in the given string. If the
      * character in the string is Character.MIN_VALUE it will be deleted.
@@ -10343,6 +11042,18 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             buffer.setCharAt(buffer.length() - 1, next);
         }
         return buffer.toString();
+    }
+
+    /**
+     * This method is called by the -- operator for the class CharSequence.
+     *
+     * @param self a CharSequence
+     * @return a CharSequence with a decremented digit at the end
+     * @see #previous(String)
+     * @since 1.8.2
+     */
+    public static CharSequence previous(CharSequence self) {
+        return previous(self.toString());
     }
 
     /**
@@ -10570,6 +11281,19 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             answer.append(self);
         }
         return answer.toString();
+    }
+
+    /**
+     * Repeat a CharSequence a certain number of times.
+     *
+     * @param self   a CharSequence to be repeated
+     * @param factor the number of times the CharSequence should be repeated
+     * @return a CharSequence composed of a repetition
+     * @throws IllegalArgumentException if the number of repetitions is &lt; 0
+     * @since 1.8.2
+     */
+    public static CharSequence multiply(CharSequence self, Number factor) {
+        return multiply(self.toString(), factor);
     }
 
     /**
@@ -12210,6 +12934,175 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Parse a CharSequence into an Integer
+     *
+     * @param self a CharSequence
+     * @return an Integer
+     * @see #toInteger(java.lang.String)
+     * @since 1.8.2
+     */
+    public static Integer toInteger(CharSequence self) {
+        return toInteger(self.toString());
+    }
+
+    /**
+     * Parse a CharSequence into a Long
+     *
+     * @param self a CharSequence
+     * @return a Long
+     * @see #toLong(java.lang.String)
+     * @since 1.8.2
+     */
+    public static Long toLong(CharSequence self) {
+        return toLong(self.toString());
+    }
+
+    /**
+     * Parse a CharSequence into a Short
+     *
+     * @param self a CharSequence
+     * @return a Short
+     * @see #toShort(java.lang.String)
+     * @since 1.8.2
+     */
+    public static Short toShort(CharSequence self) {
+        return toShort(self.toString());
+    }
+
+    /**
+     * Parse a CharSequence into a Float
+     *
+     * @param self a CharSequence
+     * @return a Float
+     * @see #toFloat(java.lang.String)
+     * @since 1.8.2
+     */
+    public static Float toFloat(CharSequence self) {
+        return toFloat(self.toString());
+    }
+
+    /**
+     * Parse a CharSequence into a Double
+     *
+     * @param self a CharSequence
+     * @return a Double
+     * @see #toDouble(java.lang.String)
+     * @since 1.8.2
+     */
+    public static Double toDouble(CharSequence self) {
+        return toDouble(self.toString());
+    }
+
+    /**
+     * Parse a CharSequence into a BigInteger
+     *
+     * @param self a CharSequence
+     * @return a BigInteger
+     * @see #toBigInteger(java.lang.String)
+     * @since 1.8.2
+     */
+    public static BigInteger toBigInteger(CharSequence self) {
+        return toBigInteger(self.toString());
+    }
+
+    /**
+     * Parse a CharSequence into a BigDecimal
+     *
+     * @param self a CharSequence
+     * @return a BigDecimal
+     * @see #toBigDecimal(java.lang.String)
+     * @since 1.8.2
+     */
+    public static BigDecimal toBigDecimal(CharSequence self) {
+        return toBigDecimal(self.toString());
+    }
+
+    /**
+     * Determine if a CharSequence can be parsed as an Integer.
+     *
+     * @param self a CharSequence
+     * @return true if the CharSequence can be parsed
+     * @see #isInteger(java.lang.String)
+     * @since 1.8.2
+     */
+    public static boolean isInteger(CharSequence self) {
+        return isInteger(self.toString());
+    }
+
+    /**
+     * Determine if a CharSequence can be parsed as a Long.
+     *
+     * @param self a CharSequence
+     * @return true if the CharSequence can be parsed
+     * @see #isLong(java.lang.String)
+     * @since 1.8.2
+     */
+    public static boolean isLong(CharSequence self) {
+        return isLong(self.toString());
+    }
+
+    /**
+     * Determine if a CharSequence can be parsed as a Float.
+     *
+     * @param self a CharSequence
+     * @return true if the CharSequence can be parsed
+     * @see #isFloat(java.lang.String)
+     * @since 1.8.2
+     */
+    public static boolean isFloat(CharSequence self) {
+        return isFloat(self.toString());
+    }
+
+    /**
+     * Determine if a CharSequence can be parsed as a Double.
+     *
+     * @param self a CharSequence
+     * @return true if the CharSequence can be parsed
+     * @see #isDouble(java.lang.String)
+     * @since 1.8.2
+     */
+    public static boolean isDouble(CharSequence self) {
+        return isDouble(self.toString());
+    }
+
+    /**
+     * Determine if a CharSequence can be parsed as a BigInteger.
+     *
+     * @param self a CharSequence
+     * @return true if the CharSequence can be parsed
+     * @see #isBigInteger(java.lang.String)
+     * @since 1.8.2
+     */
+    public static boolean isBigInteger(CharSequence self) {
+        return isBigInteger(self.toString());
+    }
+
+    /**
+     * Determine if a CharSequence can be parsed as a BigDecimal.
+     *
+     * @param self a CharSequence
+     * @return true if the CharSequence can be parsed
+     * @see #isBigDecimal(java.lang.String)
+     * @since 1.8.2
+     */
+    public static boolean isBigDecimal(CharSequence self) {
+        return isBigDecimal(self.toString());
+    }
+
+    /**
+     * Determine if a CharSequence can be parsed as a Number.
+     * Synonym for 'isBigDecimal()'.
+     *
+     * @param self a CharSequence
+     * @return true if the CharSequence can be parsed
+     * @see #isNumber(java.lang.String)
+     * @since 1.8.2
+     */
+    public static boolean isNumber(CharSequence self) {
+        return isNumber(self.toString());
+    }
+
+    /**
      * Determine if a Character is uppercase.
      * Synonym for 'Character.isUpperCase(this)'.
      *
@@ -12728,6 +13621,22 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Iterates through this CharSequence line by line.  Each line is passed
+     * to the given 1 or 2 arg closure. If a 2 arg closure is found
+     * the line count is passed as the second argument.
+     *
+     * @param self    a CharSequence
+     * @param closure a closure
+     * @return the last value returned by the closure
+     * @throws java.io.IOException if an error occurs
+     * @see #eachLine(java.lang.String, groovy.lang.Closure)
+     * @since 1.8.2
+     */
+    public static <T> T eachLine(CharSequence self, Closure<T> closure) throws IOException {
+        return eachLine(self.toString(), closure);
+    }
+
+    /**
      * Iterates through this String line by line.  Each line is passed
      * to the given 1 or 2 arg closure. If a 2 arg closure is found
      * the line count is passed as the second argument.
@@ -12747,6 +13656,23 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             count++;
         }
         return result;
+    }
+
+    /**
+     * Iterates through this CharSequence line by line.  Each line is passed
+     * to the given 1 or 2 arg closure. If a 2 arg closure is found
+     * the line count is passed as the second argument.
+     *
+     * @param self    a CharSequence
+     * @param firstLine the line number value used for the first line (default is 1, set to 0 to start counting from 0)
+     * @param closure a closure (arg 1 is line, optional arg 2 is line number)
+     * @return the last value returned by the closure
+     * @throws java.io.IOException if an error occurs
+     * @see #eachLine(java.lang.String, int, groovy.lang.Closure)
+     * @since 1.8.2
+     */
+    public static <T> T eachLine(CharSequence self, int firstLine, Closure<T> closure) throws IOException {
+        return eachLine(self.toString(), firstLine, closure);
     }
 
     /**
@@ -13339,6 +14265,24 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Iterates through the given CharSequence line by line, splitting each line using
+     * the given separator.  The list of tokens for each line is then passed to
+     * the given closure.
+     *
+     * @param self    a CharSequence
+     * @param regex   the delimiting regular expression
+     * @param closure a closure
+     * @return the last value returned by the closure
+     * @throws java.io.IOException if an error occurs
+     * @throws java.util.regex.PatternSyntaxException if the regular expression's syntax is invalid
+     * @see #splitEachLine(String, String, Closure)
+     * @since 1.8.2
+     */
+    public static <T> T splitEachLine(CharSequence self, CharSequence regex, Closure<T> closure) throws IOException {
+        return splitEachLine(self.toString(), regex.toString(), closure);
+    }
+
+    /**
      * Iterates through the given String line by line, splitting each line using
      * the given separator Pattern.  The list of tokens for each line is then passed to
      * the given closure.
@@ -13359,6 +14303,23 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             result = closure.call(vals);
         }
         return result;
+    }
+
+    /**
+     * Iterates through the given CharSequence line by line, splitting each line using
+     * the given separator Pattern.  The list of tokens for each line is then passed to
+     * the given closure.
+     *
+     * @param self    a CharSequence
+     * @param pattern the regular expression Pattern for the delimiter
+     * @param closure a closure
+     * @return the last value returned by the closure
+     * @throws java.io.IOException if an error occurs
+     * @see #splitEachLine(String, Pattern, Closure)
+     * @since 1.8.2
+     */
+    public static <T> T splitEachLine(CharSequence self, Pattern pattern, Closure<T> closure) throws IOException {
+        return splitEachLine(self.toString(), pattern, closure);
     }
 
     /**
@@ -13548,6 +14509,19 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Return a CharSequence with lines (separated by LF, CR/LF, or CR)
+     * terminated by the platform specific line separator.
+     *
+     * @param self a CharSequence object
+     * @return the denormalized CharSequence
+     * @see #denormalize(String)
+     * @since 1.8.2
+     */
+    public static CharSequence denormalize(final CharSequence self) {
+        return denormalize(self.toString());
+    }
+
+    /**
      * Return a String with linefeeds and carriage returns normalized to linefeeds.
      *
      * @param self a String object
@@ -13586,6 +14560,18 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Return a CharSequence with linefeeds and carriage returns normalized to linefeeds.
+     *
+     * @param self a CharSequence object
+     * @return the normalized CharSequence
+     * @see #normalize(String)
+     * @since 1.8.2
+     */
+    public static CharSequence normalize(final CharSequence self) {
+        return normalize(self.toString());
+    }
+
+    /**
      * Return the lines of a String as a List of Strings.
      *
      * @param self a String object
@@ -13595,6 +14581,18 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static List<String> readLines(String self) throws IOException {
         return readLines(new StringReader(self));
+    }
+
+    /**
+     * Return the lines of a CharSequence as a List of CharSequence.
+     *
+     * @param self a CharSequence object
+     * @return a list of lines
+     * @throws java.io.IOException if an error occurs
+     * @since 1.8.2
+     */
+    public static List<CharSequence> readLines(CharSequence self) throws IOException {
+        return new ArrayList<CharSequence>(readLines(self.toString()));
     }
 
     /**
@@ -16154,6 +17152,18 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Converts the given CharSequence into a List of CharSequence of one character.
+     *
+     * @param self a CharSequence
+     * @return a List of characters (a 1-character CharSequence)
+     * @see #toSet(String)
+     * @since 1.8.2
+     */
+    public static List<CharSequence> toList(CharSequence self) {
+        return new ArrayList<CharSequence>(toList(self.toString()));
+    }
+
+    /**
      * Converts the given String into a Set of unique strings of one character.
      * <p>
      * Example usage:
@@ -16171,6 +17181,18 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Converts the given CharSequence into a Set of unique CharSequence of one character.
+     *
+     * @param self a CharSequence
+     * @return a Set of unique character CharSequence (each a 1-character CharSequence)
+     * @see #toSet(String)
+     * @since 1.8.2
+     */
+    public static Set<CharSequence> toSet(CharSequence self) {
+        return new HashSet<CharSequence>(toList(self));
+    }
+
+    /**
      * Converts the given String into an array of characters.
      * Alias for toCharArray.
      *
@@ -16181,6 +17203,18 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static char[] getChars(String self) {
         return self.toCharArray();
+    }
+
+    /**
+     * Converts the given CharSequence into an array of characters.
+     *
+     * @param self a CharSequence
+     * @return an array of characters
+     * @see #getChars(String)
+     * @since 1.8.2
+     */
+    public static char[] getChars(CharSequence self) {
+        return getChars(self.toString());
     }
 
     /**
@@ -16260,6 +17294,20 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * <p>Provides a method to perform custom 'dynamic' type conversion
+     * to the given class using the <code>as</code> operator.
+     *
+     * @param self a CharSequence
+     * @param c    the desired class
+     * @return the converted object
+     * @see #asType(String, Class)
+     * @since 1.8.2
+     */
+    public static <T> T asType(CharSequence self, Class<T> c) {
+        return asType(self.toString(), c);
+    }
+
+    /**
      * Process each regex group matched substring of the given string. If the closure
      * parameter takes one argument, an array with all match groups is passed to it.
      * If the closure takes as many arguments as there are match groups, then each
@@ -16273,6 +17321,23 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static String eachMatch(String self, String regex, Closure closure) {
         return eachMatch(self, Pattern.compile(regex), closure);
+    }
+
+    /**
+     * Process each regex group matched substring of the given CharSequence. If the closure
+     * parameter takes one argument, an array with all match groups is passed to it.
+     * If the closure takes as many arguments as there are match groups, then each
+     * parameter will be one match group.
+     *
+     * @param self    the source CharSequence
+     * @param regex   a Regex CharSequence
+     * @param closure a closure with one parameter or as much parameters as groups
+     * @return the source CharSequence
+     * @see #eachMatch(String, String, groovy.lang.Closure)
+     * @since 1.8.2
+     */
+    public static String eachMatch(CharSequence self, CharSequence regex, Closure closure) {
+        return eachMatch(self.toString(), regex.toString(), closure);
     }
 
     /**
@@ -16291,6 +17356,23 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         Matcher m = pattern.matcher(self);
         each(m, closure);
         return self;
+    }
+
+    /**
+     * Process each regex group matched substring of the given pattern. If the closure
+     * parameter takes one argument, an array with all match groups is passed to it.
+     * If the closure takes as many arguments as there are match groups, then each
+     * parameter will be one match group.
+     *
+     * @param self    the source CharSequence
+     * @param pattern a regex Pattern
+     * @param closure a closure with one parameter or as much parameters as groups
+     * @return the source CharSequence
+     * @see #eachMatch(String, Pattern, groovy.lang.Closure)
+     * @since 1.8.2
+     */
+    public static String eachMatch(CharSequence self, Pattern pattern, Closure closure) {
+        return eachMatch(self.toString(), pattern, closure);
     }
 
     /**
