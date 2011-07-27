@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2011 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,20 +22,22 @@ import org.codehaus.groovy.syntax.Token;
 /**
  * Represents one or more local variables. Typically it is a single local variable
  * declared by name with an expression like "def foo" or with type "String foo". However, 
- * the multiple assignment feature allows you to create two or more variables using using
- * an expression like "def (x, y) = [1, 2]". <br/><br/>
- * 
- * You can access the left hand side of a declaration using either the 
- * "getLeftExpression() : Expression" or "getVariableExpression() : VariableExpression" API. 
- * If the declaration is a multiple assignment statement then getVariableExpression will 
- * throw a ClassCastException because the left hand side is not a VariableExpression. The
- * safe way to access the VariableExpression on the left hand side is to use 
- * "getLeftExpression()" with an instanceof check afterwards or to invoke the 
- * "isMultipleAssignmentDeclaration() : boolean" method. If "isMultipleAssignmentDeclaration" 
- * returns false then it is always safe to call "getVariableExpression()". If 
- * "isMultipleAssignmentDeclaration" returns true then it is never safe to call 
- * "getVariableExpression()". 
- * 
+ * the multiple assignment feature allows you to create two or more variables using
+ * an expression like: <code>def (x, y) = [1, 2]</code>.
+ * <p/>
+ * You can access the left hand side of a declaration using the
+ * "<code>Expression getLeftExpression()<code>" method. In which case you might then
+ * use <code>instanceof</code> and casting to perform operations specific to a
+ * single local variable (<code>VariableExpression</code>) or for the multiple
+ * assignment case (<code>TupleExpression</code>).
+ * <p/>
+ * Alternatively, if <code>isMultipleAssignmentDeclaration()</code> is <code>false</code>
+ * you can use the method "<code>VariableExpression getVariableExpression()</code>" method.
+ * Similarly, if <code>isMultipleAssignmentDeclaration()</code> is <code>true</code>
+ * you can use the method "<code>TupleExpression getTupleExpression()</code>" method.
+ * Calling either of these expression getters when the "isMultipleAssignment" condition
+ * is not appropriate is unsafe and will result in a <code>ClassCastException</code>.
+ *
  * @author Jochen Theodorou
  * @author Hamlet D'Arcy
  * @version $Revision$
