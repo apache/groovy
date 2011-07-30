@@ -5087,7 +5087,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Finds the first occurrence of a regular expression String within a String.
+     * Returns the result of calling a closure with the first occurrence of a regular expression found within a String.
      * If the regex doesn't match, the closure will not be called and find will return null.
      * <p/>
      * <p> For example, if the regex doesn't match, the result is null:
@@ -5146,7 +5146,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Finds the first occurrence of a regular expression CharSequence within a CharSequence.
+     * Returns the result of calling a closure with the first occurrence of a regular expression found within a CharSequence.
+     * If the regex doesn't match, the closure will not be called and find will return null.
      *
      * @param self    a CharSequence
      * @param regex   the capturing regex CharSequence
@@ -5160,8 +5161,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Finds the first occurrence of a compiled regular expression Pattern within a String.
-     * If the pattern doesn't match, the closure will not be called and find will return null.
+     * Returns the result of calling a closure with the first occurrence of a compiled regular expression found within a String.
+     * If the regex doesn't match, the closure will not be called and find will return null.
      * <p/>
      * <p> For example, if the pattern doesn't match, the result is null:
      * <pre>
@@ -5232,7 +5233,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Finds the first occurrence of a compiled regular expression Pattern within a String.
+     * Returns the result of calling a closure with the first occurrence of a regular expression found within a
+     * CharSequence.&nbsp;If the regex doesn't match, the closure will not be called and find will return null.
      *
      * @param self    a CharSequence
      * @param pattern the compiled regex Pattern
@@ -5246,8 +5248,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Finds all occurrences of a regular expression string within a String.  A List is returned containing all full matches or
-     * an empty list if there are no matches within the string.
+     * Returns a (possibly empty) list of all occurrences of a regular expression (in String format) found within a String.
      * <p/>
      * <p>For example, if the regex doesn't match, it returns an empty list:
      * <pre>
@@ -5272,7 +5273,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Finds all occurrences of a regular expression string within a CharSequence.
+     * Returns a (possibly empty) list of all occurrences of a regular expression (in CharSequence format) found within a CharSequence.
      *
      * @param self  a CharSequence
      * @param regex the capturing regex CharSequence
@@ -5285,8 +5286,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Finds all occurrences of a regular expression Pattern within a String.  A List is returned containing all full matches or
-     * an empty list if there are no matches within the string.
+     * Returns a (possibly empty) list of all occurrences of a regular expression (in Pattern format) found within a String.
      * <p/>
      * <p>For example, if the pattern doesn't match, it returns an empty list:
      * <pre>
@@ -5317,7 +5317,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Finds all occurrences of a regular expression Pattern within a CharSequence.
+     * Returns a (possibly empty) list of all occurrences of a regular expression (in Pattern format) found within a CharSequence.
      *
      * @param self    a CharSequence
      * @param pattern the compiled regex Pattern
@@ -5715,7 +5715,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.8.2
      */
     public static CharSequence padLeft(CharSequence self, Number numberOfChars, CharSequence padding) {
-        return padLeft(self, numberOfChars, padding);
+        return padLeft(self.toString(), numberOfChars, padding.toString());
     }
 
     /**
@@ -10485,8 +10485,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Convenience method to split a CharSequence (with whitespace as delimiter)
-     * Like tokenize, but returns an Array of CharSequence instead of a List
+     * Convenience method to split a CharSequence (with whitespace as delimiter).
+     * Similar to tokenize, but returns an Array of CharSequence instead of a List.
      *
      * @param self the CharSequence to split
      * @return CharSequence[] result of split
