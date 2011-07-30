@@ -22,15 +22,19 @@ package groovy
  */
 class GroovyCharSequenceMethodsTest extends GroovyTestCase {
 
+    def s1 = 'Today is Thu Jul 28 06:38:07 EST 2011'
     def cs1 = [
-            toString:{ -> 'Today is Thu Jul 28 06:38:07 EST 2011' },
-            length:{->37}
+            toString:{ -> s1 },
+            subSequence:{ int f, int t -> s1.substring(f, t) },
+            length:{ -> s1.length() },
+            charAt:{ int i -> s1.chars[i] },
     ] as CharSequence
+    def s2 = 'Foobar'
     def cs2 = [
-            toString:{ -> 'Foobar' },
-            subSequence:{int f, int t->'Foobar'.substring(f, t)},
-            length:{->6},
-            charAt:{ int i -> 'Foobar'.chars[i] }
+            toString:{ -> s2 },
+            subSequence:{ int f, int t -> s2.substring(f, t) },
+            length:{ -> s2.length() },
+            charAt:{ int i -> s2.chars[i] },
     ] as CharSequence
     def cs3 = [
             toString: { -> '''\
@@ -147,8 +151,226 @@ class GroovyCharSequenceMethodsTest extends GroovyTestCase {
         assert parts[2] == 'Thu'
     }
 
+    void testTokenize() {
+        def parts = cs1.tokenize()
+        assert parts instanceof List
+        assert parts.size() == 8
+        assert parts[2] == 'Thu'
+        parts = cs1.tokenize(':')
+        assert parts.size() == 3
+        assert parts[1] == '38'
+    }
+
+    void testCapitalize() {
+        def csfoo = [toString:{->'foo'}] as CharSequence
+        assert csfoo.capitalize() == 'Foo'
+        assert cs2.capitalize() == 'Foobar'
+    }
+
+    void testExpand() {
+        def csfoobar = [toString:{->'foo\tbar'}] as CharSequence
+        assert csfoobar.expand() == 'foo     bar'
+        assert csfoobar.expand(4) == 'foo bar'
+        csfoobar = [toString:{->'\tfoo\n\tbar'}] as CharSequence
+        assert csfoobar.expand(4) == '    foo\n    bar'
+    }
+
+    void testUnexpand() {
+        def csfoobar = [toString:{->'foo     bar'}] as CharSequence
+        assert csfoobar.unexpand() == 'foo\tbar'
+        assert csfoobar.unexpand(4) == 'foo\t\tbar'
+        csfoobar = [toString:{->'     foo\n    bar'}] as CharSequence
+        assert csfoobar.unexpand(4) == '\t foo\n\tbar'
+    }
+
+    void testPlus() {
+        assert cs2.plus(42) == 'Foobar42'
+        assert cs2 + 42 == 'Foobar42'
+    }
+
+    void testMinus() {
+        def csoo = [toString:{->'oo'}] as CharSequence
+        assert cs2.minus(42) == 'Foobar'
+        assert cs2.minus(csoo) == 'Fbar'
+        assert cs2 - csoo == 'Fbar'
+    }
+
+    void testContains() {
+        def csoo = [toString:{->'oo'}] as CharSequence
+        def csbaz = [toString:{->'baz'}] as CharSequence
+        assert cs2.contains(csoo)
+        assert !cs2.contains(csbaz)
+    }
+
+    void testCount() {
+        def cszero = [toString:{->'0'}] as CharSequence
+        def csbar = [toString:{->'|'}] as CharSequence
+        assert cs1.count(cszero) == 3
+        assert cs3.count(csbar) == 3
+    }
+
+    void testNext() {
+        assert cs2.next() == 'Foobas'
+        assert ++cs2 == 'Foobas'
+    }
+
+    void testPrevious() {
+        assert cs2.previous() == 'Foobaq'
+        assert --cs2 == 'Foobaq'
+    }
+
+    void testMultiply() {
+        assert cs2.multiply(2) == 'FoobarFoobar'
+        assert cs2 * 3 == 'FoobarFoobarFoobar'
+    }
+
+    void testToInteger() {
+        def csFourteen = [toString:{->'014'}] as CharSequence
+        assert csFourteen.isInteger()
+        def fourteen = csFourteen.toInteger()
+        assert fourteen instanceof Integer
+        assert fourteen == 14
+    }
+
+    void testToLong() {
+        def csFourteen = [toString:{->'014'}] as CharSequence
+        assert csFourteen.isLong()
+        def fourteen = csFourteen.toLong()
+        assert fourteen instanceof Long
+        assert fourteen == 14L
+    }
+
+    void testToShort() {
+        def csFourteen = [toString:{->'014'}] as CharSequence
+        def fourteen = csFourteen.toShort()
+        assert fourteen instanceof Short
+        assert fourteen == 14
+    }
+
+    void testToBigInteger() {
+        def csFourteen = [toString:{->'014'}] as CharSequence
+        assert csFourteen.isBigInteger()
+        def fourteen = csFourteen.toBigInteger()
+        assert fourteen instanceof BigInteger
+        assert fourteen == 14G
+    }
+
+    void testToFloat() {
+        def csThreePointFive = [toString:{->'3.5'}] as CharSequence
+        assert csThreePointFive.isFloat()
+        def threePointFive = csThreePointFive.toFloat()
+        assert threePointFive instanceof Float
+        assert threePointFive == 3.5
+    }
+
+    void testToDouble() {
+        def csThreePointFive = [toString:{->'3.5'}] as CharSequence
+        assert csThreePointFive.isDouble()
+        def threePointFive = csThreePointFive.toDouble()
+        assert threePointFive instanceof Double
+        assert threePointFive == 3.5D
+    }
+
+    void testToBigDecimal() {
+        def csThreePointFive = [toString:{->'3.5'}] as CharSequence
+        assert csThreePointFive.isBigDecimal()
+        assert csThreePointFive.isNumber()
+        def threePointFive = csThreePointFive.toBigDecimal()
+        assert threePointFive instanceof BigDecimal
+        assert threePointFive == 3.5G
+    }
+
+    void testEachLine() {
+        def result = []
+        cs3.eachLine{ line, num -> result << "$num:${line.size()}" }
+        assert result == ["0:20", "1:20", "2:17"]
+        result = []
+        cs3.eachLine(10){ line, num -> result << "$num:${line.size()}" }
+        assert result == ["10:20", "11:20", "12:17"]
+    }
+
+    void testSplitEachLine() {
+        def regexOp = /\s*\*\s*/
+        def csOp = [toString:{->regexOp}] as CharSequence
+        def csTwoLines = [toString:{->'10*15\n11 * 9'}] as CharSequence
+        def result = []
+        csTwoLines.splitEachLine(csOp){ left, right -> result << left.toInteger() * right.toInteger() }
+        assert result == [150, 99]
+        result = []
+        csTwoLines.splitEachLine(~regexOp){ left, right -> result << left.toInteger() * right.toInteger() }
+        assert result == [150, 99]
+    }
+
+    void testReadLines() {
+        def lines = cs3.readLines()
+        assert lines.size() == 3
+        assert lines[1].trim() == '|bar'
+    }
+
+    void testToList() {
+        def chars = cs2.toList()
+        assert chars.size() == 6
+        assert chars[0] == 'F'
+        assert chars[3] == 'b'
+        assert chars[-1] == 'r'
+    }
+
+    void testToSet() {
+        def chars = cs2.toSet()
+        assert chars.size() == 5
+        assert 'F' in chars
+        assert 'b' in chars
+    }
+
+    void testGetChars() {
+        def chars = cs2.chars
+        assert chars instanceof char[]
+        assert chars.size() == 6
+        assert chars[0] == 'F'
+        assert chars[3] == 'b'
+        assert chars[-1] == 'r'
+    }
+
+    private enum Coin { penny, nickel, dime, quarter }
+    void testAsType() {
+        def csDime = [toString:{->'dime'}] as CharSequence
+        def dime = csDime as Coin
+        assert dime instanceof Coin
+        assert dime == Coin.dime
+    }
+
+    void testEachMatch() {
+        def result = []
+        def regexDigits = /(\d)(.)(\d)/
+        def csDigits = [toString:{->regexDigits}] as CharSequence
+        assert cs1.eachMatch(csDigits) { all, first, delim, second -> result << "$first $delim $second" }
+        assert result == ['8   0', '6 : 3', '8 : 0', '2 0 1']
+        result = []
+        assert cs1.eachMatch(~regexDigits) { all, first, delim, second -> result << "$first $delim $second" }
+        assert result == ['8   0', '6 : 3', '8 : 0', '2 0 1']
+    }
+
     void testTr() {
         assert cs1.tr(':uoa', '/___') == 'T_d_y is Th_ J_l 28 06/38/07 EST 2011'
+    }
+
+    void testReplaceAllFirst() {
+        def csDigit = [toString:{->/\d/}] as CharSequence
+        def csUnder = [toString:{->/_/}] as CharSequence
+
+        assert cs1.replaceAll(~/\d/, csUnder) == 'Today is Thu Jul __ __:__:__ EST ____'
+        assert cs1.replaceAll(csDigit, csUnder) == 'Today is Thu Jul __ __:__:__ EST ____'
+        assert cs1.replaceAll(csDigit, { '_' }) == 'Today is Thu Jul __ __:__:__ EST ____'
+        assert cs1.replaceFirst(~/\d/, csUnder) == 'Today is Thu Jul _8 06:38:07 EST 2011'
+        assert cs1.replaceFirst(csDigit, csUnder) == 'Today is Thu Jul _8 06:38:07 EST 2011'
+        assert cs1.replaceFirst(csDigit, { '_' }) == 'Today is Thu Jul _8 06:38:07 EST 2011'
+    }
+
+    void testNormalizeDenormalize() {
+        def text = 'the quick brown\nfox jumped\r\nover the lazy dog'
+        def csText = [toString : { -> text }] as CharSequence
+        assert csText.normalize() == text.normalize()
+        assert csText.normalize().denormalize() == text.normalize().denormalize()
     }
 
 }

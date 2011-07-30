@@ -5475,6 +5475,22 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Replaces each substring of this CharSequence that matches the given
+     * regular expression with the given replacement.
+     *
+     * @param self        a CharSequence
+     * @param regex       the capturing regex
+     * @param replacement the capturing regex
+     * @return a CharSequence with replaced content
+     * @throws java.util.regex.PatternSyntaxException if the regular expression's syntax is invalid
+     * @see String#replaceAll(String, String)
+     * @since 1.8.2
+     */
+    public static CharSequence replaceAll(final CharSequence self, final CharSequence regex, final CharSequence replacement) {
+        return self.toString().replaceAll(regex.toString(), replacement.toString());
+    }
+
+    /**
      * Replaces the first occurrence of a captured group by the result of a closure call on that text.
      * <p/>
      * <p> For example (with some replaceAll variants thrown in for comparison purposes),
@@ -5497,6 +5513,22 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static String replaceFirst(final String self, final String regex, final Closure closure) {
         return replaceFirst(self, Pattern.compile(regex), closure);
+    }
+
+    /**
+     * Replaces the first substring of this CharSequence that matches the given
+     * regular expression with the given replacement.
+     *
+     * @param self        a CharSequence
+     * @param regex       the capturing regex
+     * @param replacement the capturing regex
+     * @return a CharSequence with replaced content
+     * @throws java.util.regex.PatternSyntaxException if the regular expression's syntax is invalid
+     * @see String#replaceAll(String, String)
+     * @since 1.8.2
+     */
+    public static String replaceFirst(final CharSequence self, final CharSequence regex, final CharSequence replacement) {
+        return self.toString().replaceFirst(regex.toString(), replacement.toString());
     }
 
     /**
@@ -10556,7 +10588,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Expands all tabs into spaces.
+     * Expands all tabs into spaces. If the String has multiple
+     * lines, expand each line - restarting tab stops at the start
+     * of each line.
      *
      * @param self A String to expand
      * @param tabStop The number of spaces a tab represents
@@ -10583,7 +10617,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Expands all tabs into spaces.
+     * Expands all tabs into spaces. If the CharSequence has multiple
+     * lines, expand each line - restarting tab stops at the start
+     * of each line.
      *
      * @param self A CharSequence to expand
      * @param tabStop The number of spaces a tab represents
@@ -10596,7 +10632,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Expands all tabs into spaces.
+     * Expands all tabs into spaces. Assumes the String represents a single line of text.
      *
      * @param self A line to expand
      * @param tabStop The number of spaces a tab represents
@@ -10616,7 +10652,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Expands all tabs into spaces.
+     * Expands all tabs into spaces. Assumes the CharSequence represents a single line of text.
      *
      * @param self A line to expand
      * @param tabStop The number of spaces a tab represents
