@@ -167,8 +167,11 @@ $Date$
         <java classname="org.codehaus.groovy.tools.DgmConverter"
               fork="yes"
               failonerror="true">
-            <classpath refid="compilePath"/>
-            <classpath path="${mainClassesDirectory}"/>
+            <classpath>
+                <pathelement path="${mainClassesDirectory}"/>
+                <path refid="compilePath"/>
+            </classpath>
+            <arg line="--info"/>
         </java>
         <antcall inheritrefs="true" target="-stagedcompile-groovy"/>
         <antcall target="-includeResources"/>

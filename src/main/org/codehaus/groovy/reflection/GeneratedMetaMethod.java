@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2011 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ public abstract class GeneratedMetaMethod extends MetaMethod {
     private final CachedClass declaringClass;
     private final Class returnType;
 
-    public GeneratedMetaMethod(String name, CachedClass declaringClass, Class returnType, Class [] parameters) {
+    public GeneratedMetaMethod(String name, CachedClass declaringClass, Class returnType, Class[] parameters) {
         this.name = name;
         this.declaringClass = declaringClass;
         this.returnType = returnType;
@@ -83,11 +83,10 @@ public abstract class GeneratedMetaMethod extends MetaMethod {
 
         private void createProxy() {
             try {
-                Class<?> aClass = getClass().getClassLoader().loadClass(className.replace('/','.'));
+                Class<?> aClass = getClass().getClassLoader().loadClass(className.replace('/', '.'));
                 Constructor<?> constructor = aClass.getConstructor(String.class, CachedClass.class, Class.class, Class[].class);
                 proxy = (MetaMethod) constructor.newInstance(getName(), getDeclaringClass(), getReturnType(), getNativeParameterTypes());
-            }
-            catch (Throwable t) {
+            } catch (Throwable t) {
                 t.printStackTrace();
                 throw new GroovyRuntimeException("Failed to create DGM method proxy : " + t, t);
             }
@@ -95,28 +94,28 @@ public abstract class GeneratedMetaMethod extends MetaMethod {
     }
 
     public static class DgmMethodRecord implements Serializable {
-        public String  className;
-        public String  methodName;
-        public Class   returnType;
+        public String className;
+        public String methodName;
+        public Class returnType;
         public Class[] parameters;
 
         private static final Class[] PRIMITIVE_CLASSES = {
-            Boolean.TYPE, Character.TYPE, Byte.TYPE, Short.TYPE,
-            Integer.TYPE, Long.TYPE, Double.TYPE, Float.TYPE, Void.TYPE,
+                Boolean.TYPE, Character.TYPE, Byte.TYPE, Short.TYPE,
+                Integer.TYPE, Long.TYPE, Double.TYPE, Float.TYPE, Void.TYPE,
 
-            boolean [].class, char [].class, byte [].class, short [].class,
-            int [].class, long [].class, double[].class, float [].class,
+                boolean[].class, char[].class, byte[].class, short[].class,
+                int[].class, long[].class, double[].class, float[].class,
 
-            Object [].class, String [].class, Class  [].class, Byte[].class
+                Object[].class, String[].class, Class[].class, Byte[].class, CharSequence[].class,
         };
 
         public static void saveDgmInfo(List<DgmMethodRecord> records, String file) throws IOException {
             DataOutputStream out = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(file)));
-            Map<String,Integer> classes = new LinkedHashMap<String,Integer> ();
+            Map<String, Integer> classes = new LinkedHashMap<String, Integer>();
 
             int nextClassId = 0;
-            for (int i = 0; i < PRIMITIVE_CLASSES.length; i++) {
-                classes.put(PRIMITIVE_CLASSES[i].getName(), nextClassId++);
+            for (Class primitive : PRIMITIVE_CLASSES) {
+                classes.put(primitive.getName(), nextClassId++);
             }
 
             for (DgmMethodRecord record : records) {
@@ -158,18 +157,18 @@ public abstract class GeneratedMetaMethod extends MetaMethod {
             out.close();
         }
 
-        public static List<DgmMethodRecord>  loadDgmInfo() throws IOException, ClassNotFoundException {
+        public static List<DgmMethodRecord> loadDgmInfo() throws IOException, ClassNotFoundException {
 
             ClassLoader loader = DgmMethodRecord.class.getClassLoader();
             DataInputStream in = new DataInputStream(new BufferedInputStream(loader.getResourceAsStream("META-INF/dgminfo")));
 
-            Map<Integer,Class> classes = new HashMap<Integer, Class>();
+            Map<Integer, Class> classes = new HashMap<Integer, Class>();
             for (int i = 0; i < PRIMITIVE_CLASSES.length; i++) {
                 classes.put(i, PRIMITIVE_CLASSES[i]);
             }
 
             int skip = 0;
-            for (;;) {
+            for (; ; ) {
                 String name = in.readUTF();
                 if (name.length() == 0)
                     break;

@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2011 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,29 +18,29 @@ package org.codehaus.groovy.tools;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.CachedMethod;
-import org.codehaus.groovy.reflection.ReflectionCache;
 import org.codehaus.groovy.reflection.GeneratedMetaMethod;
+import org.codehaus.groovy.reflection.ReflectionCache;
 import org.codehaus.groovy.runtime.DateGroovyMethods;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
-import org.codehaus.groovy.runtime.ProcessGroovyMethods;
-import org.codehaus.groovy.runtime.SwingGroovyMethods;
-import org.codehaus.groovy.runtime.SqlGroovyMethods;
-import org.codehaus.groovy.runtime.XmlGroovyMethods;
 import org.codehaus.groovy.runtime.EncodingGroovyMethods;
+import org.codehaus.groovy.runtime.ProcessGroovyMethods;
+import org.codehaus.groovy.runtime.SqlGroovyMethods;
+import org.codehaus.groovy.runtime.SwingGroovyMethods;
+import org.codehaus.groovy.runtime.XmlGroovyMethods;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
-import java.io.*;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class DgmConverter implements Opcodes{
+public class DgmConverter implements Opcodes {
 
-    public static void main(String[] args) throws IOException, ClassNotFoundException {
-        Class [] classes = new Class [] {
+    private static final Class[] CLASSES = new Class[]{
             DefaultGroovyMethods.class,
             SwingGroovyMethods.class,
             SqlGroovyMethods.class,
@@ -48,41 +48,44 @@ public class DgmConverter implements Opcodes{
             EncodingGroovyMethods.class,
             DateGroovyMethods.class,
             ProcessGroovyMethods.class
-        };
+    };
 
-        List<CachedMethod> cachedMethodsList = new ArrayList<CachedMethod> ();
-        for (Class aClass : classes) {
+    public static void main(String[] args) throws IOException, ClassNotFoundException {
+        boolean info = args.length == 1 && args[0].equals("--info");
+
+        List<CachedMethod> cachedMethodsList = new ArrayList<CachedMethod>();
+        for (Class aClass : CLASSES) {
             Collections.addAll(cachedMethodsList, ReflectionCache.getCachedClass(aClass).getMethods());
         }
         final CachedMethod[] cachedMethods = cachedMethodsList.toArray(new CachedMethod[cachedMethodsList.size()]);
 
-        List<GeneratedMetaMethod.DgmMethodRecord> records = new ArrayList<GeneratedMetaMethod.DgmMethodRecord> ();
+        List<GeneratedMetaMethod.DgmMethodRecord> records = new ArrayList<GeneratedMetaMethod.DgmMethodRecord>();
 
-        for (int i = 0, cur = 0; i < cachedMethods.length; i++) {
-            CachedMethod method = cachedMethods[i];
+        int cur = 0;
+        for (CachedMethod method : cachedMethods) {
             if (!method.isStatic() || !method.isPublic())
-              continue;
+                continue;
 
             if (method.getCachedMethod().getAnnotation(Deprecated.class) != null)
                 continue;
 
             if (method.getParameterTypes().length == 0)
-              continue;
+                continue;
 
             final Class returnType = method.getReturnType();
 
-            final String className = "org/codehaus/groovy/runtime/dgm$" + cur;
+            final String className = "org/codehaus/groovy/runtime/dgm$" + cur++;
 
-            GeneratedMetaMethod.DgmMethodRecord record = new GeneratedMetaMethod.DgmMethodRecord ();
+            GeneratedMetaMethod.DgmMethodRecord record = new GeneratedMetaMethod.DgmMethodRecord();
             records.add(record);
 
             record.methodName = method.getName();
             record.returnType = method.getReturnType();
             record.parameters = method.getNativeParameterTypes();
-            record.className  = className;
+            record.className = className;
 
             ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
-            cw.visit(V1_3,ACC_PUBLIC, className,null,"org/codehaus/groovy/reflection/GeneratedMetaMethod", null);
+            cw.visit(V1_3, ACC_PUBLIC, className, null, "org/codehaus/groovy/reflection/GeneratedMetaMethod", null);
 
             createConstructor(cw);
 
@@ -101,11 +104,11 @@ public class DgmConverter implements Opcodes{
             fileOutputStream.write(bytes);
             fileOutputStream.flush();
             fileOutputStream.close();
-
-            cur++;
         }
 
-        GeneratedMetaMethod.DgmMethodRecord.saveDgmInfo (records, "target/classes/META-INF/dgminfo");
+        GeneratedMetaMethod.DgmMethodRecord.saveDgmInfo(records, "target/classes/META-INF/dgminfo");
+        if (info)
+            System.out.println("Saved " + cur + " dgm records to: target/classes/META-INF/dgminfo");
     }
 
     private static void createConstructor(ClassWriter cw) {
@@ -160,7 +163,7 @@ public class DgmConverter implements Opcodes{
         mv = cw.visitMethod(ACC_PUBLIC + ACC_FINAL, "doMethodInvoke", "(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;", null, null);
         mv.visitCode();
         if (method.getParamsCount() == 2 && method.getParameterTypes()[0].isNumber && method.getParameterTypes()[1].isNumber) {
-            mv.visitVarInsn(ALOAD,1);
+            mv.visitVarInsn(ALOAD, 1);
             BytecodeHelper.doCast(mv, method.getParameterTypes()[0].getTheClass());
 
             mv.visitVarInsn(ALOAD, 0);
@@ -176,15 +179,14 @@ public class DgmConverter implements Opcodes{
             // for methods with primitive types
             Class type = method.getParameterTypes()[1].getTheClass();
             BytecodeHelper.doCast(mv, type);
-        }
-        else {
+        } else {
             mv.visitVarInsn(ALOAD, 0);
             mv.visitVarInsn(ALOAD, 2);
             mv.visitMethodInsn(INVOKEVIRTUAL, className, "coerceArgumentsToClasses", "([Ljava/lang/Object;)[Ljava/lang/Object;");
             mv.visitVarInsn(ASTORE, 2);
-            mv.visitVarInsn(ALOAD,1);
+            mv.visitVarInsn(ALOAD, 1);
             BytecodeHelper.doCast(mv, method.getParameterTypes()[0].getTheClass());
-            loadParameters(method,2,mv);
+            loadParameters(method, 2, mv);
         }
         mv.visitMethodInsn(INVOKESTATIC, BytecodeHelper.getClassInternalName(method.getDeclaringClass().getTheClass()), method.getName(), methodDescriptor);
         BytecodeHelper.box(mv, returnType);
@@ -200,9 +202,9 @@ public class DgmConverter implements Opcodes{
         MethodVisitor mv;
         mv = cw.visitMethod(ACC_PUBLIC, "invoke", "(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;", null, null);
         mv.visitCode();
-        mv.visitVarInsn(ALOAD,1);
+        mv.visitVarInsn(ALOAD, 1);
         BytecodeHelper.doCast(mv, method.getParameterTypes()[0].getTheClass());
-        loadParameters(method,2,mv);
+        loadParameters(method, 2, mv);
         mv.visitMethodInsn(INVOKESTATIC, BytecodeHelper.getClassInternalName(method.getDeclaringClass().getTheClass()), method.getName(), methodDescriptor);
         BytecodeHelper.box(mv, returnType);
         if (method.getReturnType() == void.class) {
@@ -215,7 +217,7 @@ public class DgmConverter implements Opcodes{
 
     protected static void loadParameters(CachedMethod method, int argumentIndex, MethodVisitor mv) {
         CachedClass[] parameters = method.getParameterTypes();
-        int size = parameters.length-1;
+        int size = parameters.length - 1;
         for (int i = 0; i < size; i++) {
             // unpack argument from Object[]
             mv.visitVarInsn(ALOAD, argumentIndex);
@@ -224,7 +226,7 @@ public class DgmConverter implements Opcodes{
 
             // cast argument to parameter class, inclusive unboxing
             // for methods with primitive types
-            Class type = parameters[i+1].getTheClass();
+            Class type = parameters[i + 1].getTheClass();
             BytecodeHelper.doCast(mv, type);
         }
     }
