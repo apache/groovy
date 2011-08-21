@@ -717,6 +717,7 @@ public class OptimizingStatementWriter extends StatementWriter {
                 }
             } else {
                 ClassNode type = BinaryExpressionMultiTypeDispatcher.getType(callArgs,node);
+                if (!validTypeForCall(type)) return;
                 paraTypes = new Parameter[]{new Parameter(type,"")};
             }
             
