@@ -68,6 +68,7 @@ public abstract class FactoryBuilderSupport extends Binding {
     public static final String PARENT_BUILDER = "_PARENT_BUILDER_";
     public static final String CURRENT_BUILDER = "_CURRENT_BUILDER_";
     public static final String CHILD_BUILDER = "_CHILD_BUILDER_";
+    public static final String SCRIPT_CLASS_NAME = "_SCRIPT_CLASS_NAME_";
     private static final Logger LOG = Logger.getLogger(FactoryBuilderSupport.class.getName());
 
     /**
@@ -1114,7 +1115,17 @@ public abstract class FactoryBuilderSupport extends Binding {
         MetaClass scriptMetaClass = script.getMetaClass();
         script.setMetaClass(new FactoryInterceptorMetaClass(scriptMetaClass, this));
         script.setBinding(this);
-        return script.run();
+        Object oldScriptName = getVariable(SCRIPT_CLASS_NAME);
+        try {
+            setVariable(SCRIPT_CLASS_NAME, script.getClass().getName());
+            return script.run();
+        } finally {
+            if(oldScriptName != null) {
+                setVariable(SCRIPT_CLASS_NAME, oldScriptName);
+            } else {
+                getVariables().remove(SCRIPT_CLASS_NAME);
+            }
+        }
     }
 
     public Object build(final String script, GroovyClassLoader loader) {
