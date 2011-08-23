@@ -103,6 +103,7 @@ public class BindFactory extends AbstractFactory {
     public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
         Object source = attributes.remove("source")
         Object target = attributes.remove("target")
+        Object update = attributes.get("update")
         Map bindContext = builder.context.get(CONTEXT_DATA_KEY) ?: [:]
         if (bindContext.isEmpty()) {
             builder.context.put(CONTEXT_DATA_KEY, bindContext)
@@ -111,14 +112,14 @@ public class BindFactory extends AbstractFactory {
         TargetBinding tb = null
         if (target != null) {
             String targetProperty = attributes.remove("targetProperty") ?: value
-            tb = new PropertyBinding(target, targetProperty)
+            tb = new PropertyBinding(target, targetProperty, update)
             if (source == null) {
                 // if we have a target but no source assume the build context is the source and return
                 def result
                 if (attributes.remove("mutual")) {
-                  result = new MutualPropertyBinding(null, null, tb, this.&getTriggerBinding)
+                    result = new MutualPropertyBinding(null, null, tb, this.&getTriggerBinding)
                 } else {
-                  result = tb
+                    result = tb
                 }
                 def newAttributes = [:]
                 newAttributes.putAll(attributes)
@@ -143,7 +144,7 @@ public class BindFactory extends AbstractFactory {
         } else if (spa && !(sea && sva)) {
             // partially property driven binding
             String property = attributes.remove("sourceProperty") ?: value
-            PropertyBinding pb = new PropertyBinding(source, property)
+            PropertyBinding pb = new PropertyBinding(source, property, update)
 
             TriggerBinding trigger
             if (sea) {
@@ -176,21 +177,23 @@ public class BindFactory extends AbstractFactory {
             // if no sourcing is defined then assume we are a closure binding and return
             def newAttributes = [:]
             newAttributes.putAll(attributes)
-            bindContext.put(tb, newAttributes)
+            def ctb = new ClosureTriggerBinding(syntheticBindings)
+            bindContext.put(ctb, newAttributes)
             attributes.clear()
-            return new ClosureTriggerBinding(syntheticBindings)
+            return ctb
         } else {
             throw new RuntimeException("Both sourceEvent: and sourceValue: cannot be specified along with sourceProperty: or a value argument")
         }
 
         if (attributes.containsKey("value")) {
-            bindContext.put(fb, [value:attributes.remove("value")])
+            bindContext.put(fb, [value: attributes.remove("value")])
         }
 
+        bindContext.get(fb, [:]).put('update', update)
+
         Object o = attributes.remove("bind")
-        if (    ((o == null) && !attributes.containsKey('group'))
-            || ((o instanceof Boolean) && ((Boolean)o).booleanValue()))
-        {
+        if (((o == null) && !attributes.containsKey('group'))
+                || ((o instanceof Boolean) && ((Boolean) o).booleanValue())) {
             fb.bind()
         }
 
@@ -217,6 +220,11 @@ public class BindFactory extends AbstractFactory {
                 // don't throw out to top
             }
         }
+    }
+
+    public boolean onHandleNodeAttributes(FactoryBuilderSupport builder, Object node, Map attributes) {
+        attributes.remove('update')
+        true
     }
 
     public boolean isLeaf() {
@@ -275,11 +283,12 @@ public class BindFactory extends AbstractFactory {
             if (bindAttrs.containsKey("value")) {
                 node."$property" = bindAttrs.remove("value")
             }
+            def update = bindAttrs.get('update')
 
             FullBinding fb
             if (value instanceof MutualPropertyBinding) {
                 fb = (FullBinding) value
-                PropertyBinding psb = new PropertyBinding(node, property)
+                PropertyBinding psb = new PropertyBinding(node, property, update)
                 if (fb.sourceBinding == null) {
                     fb.sourceBinding = psb
                     finishContextualBinding(fb, builder, bindAttrs, id)
@@ -288,13 +297,13 @@ public class BindFactory extends AbstractFactory {
                 }
             } else if (value instanceof FullBinding) {
                 fb = (FullBinding) value
-                fb.targetBinding = new PropertyBinding(node, property)
-            } else  if (value instanceof TargetBinding) {
-                PropertyBinding psb = new PropertyBinding(node, property)
+                fb.targetBinding = new PropertyBinding(node, property, update)
+            } else if (value instanceof TargetBinding) {
+                PropertyBinding psb = new PropertyBinding(node, property, update)
                 fb = getTriggerBinding(psb).createBinding(psb, value)
                 finishContextualBinding(fb, builder, bindAttrs, id)
             } else if (value instanceof ClosureTriggerBinding) {
-                PropertyBinding psb = new PropertyBinding(node, property)
+                PropertyBinding psb = new PropertyBinding(node, property, update)
                 fb = value.createBinding(value, psb);
                 finishContextualBinding(fb, builder, bindAttrs, id)
             } else {
@@ -315,22 +324,22 @@ public class BindFactory extends AbstractFactory {
         }
     }
 
-  private def finishContextualBinding(FullBinding fb, FactoryBuilderSupport builder, bindAttrs, id) {
+    private def finishContextualBinding(FullBinding fb, FactoryBuilderSupport builder, bindAttrs, id) {
+        bindAttrs.remove('update')
+        Object bindValue = bindAttrs.remove("bind")
+        bindAttrs.each {k, v -> fb."$k" = v}
 
-    Object bindValue = bindAttrs.remove("bind")
-    bindAttrs.each {k, v -> fb."$k" = v}
+        if ((bindValue == null)
+                || ((bindValue instanceof Boolean) && ((Boolean) bindValue).booleanValue())) {
+            fb.bind()
+        }
 
-    if ((bindValue == null)
-            || ((bindValue instanceof Boolean) && ((Boolean) bindValue).booleanValue())) {
-      fb.bind()
+        builder.addDisposalClosure(fb.&unbind)
+
+        // replaces ourselves in the variables
+        // id: is lost to us by now, so we just assume that any storage of us is a goner as well
+        //builder.getVariables().each{ Map.Entry me -> if (value.is(me.value)) me.setValue fb}
+        if (id) builder.setVariable(id, fb)
     }
-
-    builder.addDisposalClosure(fb.&unbind)
-
-    // replaces ourselves in the variables
-    // id: is lost to us by now, so we just assume that any storage of us is a goner as well
-    //builder.getVariables().each{ Map.Entry me -> if (value.is(me.value)) me.setValue fb}
-    if (id) builder.setVariable(id, fb)
-  }
 
 }
