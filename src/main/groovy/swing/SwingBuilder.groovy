@@ -24,6 +24,8 @@ import org.codehaus.groovy.runtime.MethodClosure
 import groovy.swing.factory.*
 import java.awt.*
 import javax.swing.*
+import java.util.concurrent.Executors
+import java.util.concurrent.ExecutorService
 
 /**
  * A helper class for creating Swing widgets using GroovyMarkup
@@ -32,6 +34,7 @@ import javax.swing.*
  * @version $Revision$
  */
 public class SwingBuilder extends FactoryBuilderSupport {
+    private static final ExecutorService DEFAULT_EXECUTOR_SERVICE = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors())
 
     // local fields
     private static final Logger LOG = Logger.getLogger(SwingBuilder.name)
@@ -324,7 +327,7 @@ public class SwingBuilder extends FactoryBuilderSupport {
             c = c.curry([this])
         }
         if( SwingUtilities.isEventDispatchThread() )
-            Thread.start(c)
+            DEFAULT_EXECUTOR_SERVICE.submit(c)
         else
             c.call()
         return this
