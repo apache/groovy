@@ -434,6 +434,10 @@ public class SwingBuilder extends FactoryBuilderSupport {
         def theID = attributes.remove(idAttr)
         if (theID) {
             builder.setVariable(theID, node)
+            if(node && node.metaClass.hasProperty(node, 'name')) {
+                def nameValue = node.name
+                if(!nameValue) node.name = theID
+            }
         }
     }
 

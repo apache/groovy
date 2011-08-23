@@ -2018,4 +2018,22 @@ class SwingBuilderTest extends GroovySwingTestCase {
 
       }
     }
+
+    void testAutomaticNameBasedOnIdAttribute() {
+      testInEDT {
+        def swing = new SwingBuilder()
+        
+        def node = swing.button(id: 'groovy')
+        assert node == swing.groovy
+        assert node.name == 'groovy'
+        
+        node = swing.button(id: 'groovy', name: 'java')
+        assert node == swing.groovy
+        assert node.name == 'java'
+        
+        node = swing.map(id: 'aMap')
+        assert node == swing.aMap
+        assert !node.name
+      }
+    }
 }
