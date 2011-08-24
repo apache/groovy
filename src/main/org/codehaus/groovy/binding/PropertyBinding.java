@@ -46,6 +46,7 @@ public class PropertyBinding implements SourceBinding, TargetBinding, TriggerBin
     String propertyName;
     boolean nonChangeCheck;
     UpdateStrategy updateStrategy;
+    private final Object[] lock = new Object[0];
 
     public PropertyBinding(Object bean, String propertyName) {
         this(bean, propertyName, (UpdateStrategy) null);
@@ -78,15 +79,16 @@ public class PropertyBinding implements SourceBinding, TargetBinding, TriggerBin
     }
 
     public void updateTargetValue(final Object newValue) {
-        if (nonChangeCheck) {
-            if (DefaultTypeTransformation.compareEqual(getSourceValue(), newValue)) {
-                // not a change, don't fire it
-                return;
-            }
-        }
-
         Runnable runnable = new Runnable() {
             public void run() {
+                Object sourceValue = getSourceValue();
+                // if (isNonChangeCheck()) {
+                if ((sourceValue == null && newValue == null) ||
+                        DefaultTypeTransformation.compareEqual(sourceValue, newValue)) {
+                    // not a change, don't fire it
+                    return;
+                }
+                // }
                 setBeanProperty(newValue);
             }
         };
@@ -144,11 +146,15 @@ public class PropertyBinding implements SourceBinding, TargetBinding, TriggerBin
     }
 
     public boolean isNonChangeCheck() {
-        return nonChangeCheck;
+        synchronized (lock) {
+            return nonChangeCheck;
+        }
     }
 
     public void setNonChangeCheck(boolean nonChangeCheck) {
-        this.nonChangeCheck = nonChangeCheck;
+        synchronized (lock) {
+            this.nonChangeCheck = nonChangeCheck;
+        }
     }
 
     public Object getSourceValue() {
