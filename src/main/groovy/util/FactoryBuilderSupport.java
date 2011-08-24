@@ -1115,15 +1115,15 @@ public abstract class FactoryBuilderSupport extends Binding {
         MetaClass scriptMetaClass = script.getMetaClass();
         script.setMetaClass(new FactoryInterceptorMetaClass(scriptMetaClass, this));
         script.setBinding(this);
-        Object oldScriptName = getVariable(SCRIPT_CLASS_NAME);
+        Object oldScriptName = getProxyBuilder().getVariables().get(SCRIPT_CLASS_NAME);
         try {
-            setVariable(SCRIPT_CLASS_NAME, script.getClass().getName());
+            getProxyBuilder().setVariable(SCRIPT_CLASS_NAME, script.getClass().getName());
             return script.run();
         } finally {
             if(oldScriptName != null) {
-                setVariable(SCRIPT_CLASS_NAME, oldScriptName);
+                getProxyBuilder().setVariable(SCRIPT_CLASS_NAME, oldScriptName);
             } else {
-                getVariables().remove(SCRIPT_CLASS_NAME);
+                getProxyBuilder().getVariables().remove(SCRIPT_CLASS_NAME);
             }
         }
     }
