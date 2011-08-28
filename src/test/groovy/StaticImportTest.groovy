@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2011 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -292,6 +292,10 @@ class StaticImportTest extends CompilableTestSupport {
         assert AttrName.class.name == 'java.util.jar.Attributes$Name'
     }
 
+    void testExplicitStaticMethodCallHasPrecedenceOverStaticImport() {
+        Bar4964.run()
+    }
+
     // TODO GROOVY-4287: reinstate next two tests
 //    void testStaticStarImportOfStaticInnerClassExternalClass() {
 //        assert Inner3.class.name == 'Outer3$Inner3'
@@ -328,4 +332,19 @@ class Outer1 {
 
 class Outer2 {
     static class Inner2 {}
+}
+
+class Foo4964 {
+    static doIt() { [k: 'foo'] }
+}
+
+import static Foo4964.*
+class Bar4964 {
+    static doIt() { [k: 'bar'] }
+    static run() {
+        assert doIt().k == 'foo'
+        assert doIt() == [k: 'foo']
+        assert Bar4964.doIt() == [k: 'bar']
+        assert Bar4964.doIt().k == 'bar'
+    }
 }
