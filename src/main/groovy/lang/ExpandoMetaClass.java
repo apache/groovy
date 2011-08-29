@@ -34,6 +34,7 @@ import org.codehaus.groovy.runtime.metaclass.MixedInMetaClass;
 import org.codehaus.groovy.runtime.metaclass.MixinInstanceMetaMethod;
 import org.codehaus.groovy.runtime.metaclass.OwnedMetaClass;
 import org.codehaus.groovy.runtime.metaclass.ThreadManagedMetaBeanProperty;
+import org.codehaus.groovy.runtime.wrappers.Wrapper;
 import org.codehaus.groovy.util.FastArray;
 
 import java.lang.reflect.Constructor;
@@ -1064,6 +1065,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
      */
     public Object invokeMethod(Class sender, Object object, String methodName, Object[] originalArguments, boolean isCallToSuper, boolean fromInsideClass) {
         if (invokeMethodMethod != null) {
+            MetaClassHelper.unwrap(originalArguments);
             return invokeMethodMethod.invoke(object, new Object[]{methodName, originalArguments});
         }
         return super.invokeMethod(sender, object, methodName, originalArguments, isCallToSuper, fromInsideClass);
@@ -1076,6 +1078,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
      */
     public Object invokeStaticMethod(Object object, String methodName, Object[] arguments) {
         if (invokeStaticMethodMethod != null) {
+            MetaClassHelper.unwrap(arguments);
             return invokeStaticMethodMethod.invoke(object, new Object[]{methodName, arguments});
         }
         return super.invokeStaticMethod(object, methodName, arguments);
