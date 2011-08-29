@@ -259,7 +259,15 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
             int operationType = getOperandConversionType(leftType,rightType);
             BinaryExpressionWriter bew = binExpWriter[operationType];
             
-            if (bew.write(operation, true)) {
+            if (   (operation==LEFT_SHIFT || operation==RIGHT_SHIFT) && 
+                    bew.write(operation, true)) 
+            {
+                leftExp.visit(acg);
+                os.doGroovyCast(bew.getNormalOpResultType());
+                rightExp.visit(acg);
+                os.doGroovyCast(int_TYPE);
+                bew.write(operation, false);
+            } else if (bew.write(operation, true)) {
                 leftExp.visit(acg);
                 os.doGroovyCast(bew.getNormalOpResultType());
                 rightExp.visit(acg);
