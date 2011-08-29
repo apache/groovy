@@ -13,3 +13,6 @@ src/main/org/codehaus/groovy/antlr/java/JavaTokenTypes.java
 src/main/org/codehaus/groovy/antlr/java/JavaTokenTypes.txt
 *~
 .gradle
+*.iml
+*.ipr
+*.iws

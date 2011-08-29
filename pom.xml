@@ -762,13 +762,21 @@
         <dependency>
             <groupId>com.thoughtworks.xstream</groupId>
             <artifactId>xstream</artifactId>
-            <version>1.3.1</version>
+            <version>1.4.1</version>
             <scope>compile</scope>
             <optional>true</optional>
             <exclusions>
                 <exclusion>
                     <groupId>xpp3</groupId>
                     <artifactId>xpp3_min</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>junit</groupId>
+                    <artifactId>junit</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>jmock</groupId>
+                    <artifactId>jmock</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
