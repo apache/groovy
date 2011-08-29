@@ -206,7 +206,18 @@ public class MethodSelectionTest extends CompilableTestSupport {
       """
   }
   
-  
+  void testSpreadOperatorAndVarargs(){
+      assertScript """
+          class SpreadBug {
+              def foo(String... args) {
+                  bar(*args)
+              }
+              def bar(String... args) {args.length}
+          }
+          def sb = new SpreadBug()
+          assert sb.foo("1","42")==2  
+      """
+  }
   
   void testBDandBIToFloatAutoConversionInMethodSelection() {
     def foo = new Foo3977()
