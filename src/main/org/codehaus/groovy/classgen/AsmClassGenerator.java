@@ -701,12 +701,67 @@ public class AsmClassGenerator extends ClassGenerator {
     
     private void visitSpecialConstructorCall(ConstructorCallExpression call) {
         if (controller.getClosureWriter().addGeneratedClosureConstructorCall(call)) return;
-        MethodVisitor mv = controller.getMethodVisitor();
-        OperandStack operandStack = controller.getOperandStack();
-
+            
         ClassNode callNode = controller.getClassNode();
         if (call.isSuperCall()) callNode = callNode.getSuperClass();
-        List constructors = sortConstructors(call, callNode);
+        List<ConstructorNode> constructors = sortConstructors(call, callNode);
+        if (!makeDirectConstructorCall(constructors, call, callNode)) {
+            makeMOPBasedConstructorCall(constructors, call, callNode);
+        }
+    }
+
+    // we match only on the number of arguments, not anything else
+    private static ConstructorNode getMatchingConstructor(List<ConstructorNode> constructors, List<Expression> argumentList) {
+        ConstructorNode lastMatch = null;
+        for (int i=0; i<constructors.size(); i++) {
+            ConstructorNode cn = constructors.get(i);
+            Parameter[] params = cn.getParameters();
+            // if number of parameters does not match we have no match
+            if (argumentList.size()!=params.length) continue;
+            if (lastMatch==null) {
+                lastMatch = cn;
+            } else {
+                // we already had a match so we don't make a direct call at all
+                return null;
+            }
+        }
+        return lastMatch;
+    }
+    
+    private boolean makeDirectConstructorCall(List<ConstructorNode> constructors, ConstructorCallExpression call, ClassNode callNode) {
+        if (!controller.isConstructor()) return false;        
+        
+        Expression arguments = call.getArguments();
+        List<Expression> argumentList;
+        if (arguments instanceof TupleExpression) {
+            argumentList = ((TupleExpression) arguments).getExpressions();
+        } else {
+            argumentList = new ArrayList();
+            argumentList.add(arguments);
+        }
+
+        ConstructorNode cn = getMatchingConstructor(constructors, argumentList);
+        if (cn==null) return false;
+        MethodVisitor mv = controller.getMethodVisitor();
+        OperandStack operandStack = controller.getOperandStack();
+        Parameter[] params = cn.getParameters();
+        
+        mv.visitVarInsn(ALOAD, 0);
+        for (int i=0; i<params.length; i++) {
+            argumentList.get(i).visit(this);
+            operandStack.doGroovyCast(params[i].getType());
+            operandStack.remove(1);
+        }
+        String descriptor = BytecodeHelper.getMethodDescriptor(ClassHelper.VOID_TYPE, params);        
+        mv.visitMethodInsn(INVOKESPECIAL, BytecodeHelper.getClassInternalName(callNode), "<init>", descriptor);
+        
+        return true;
+    }
+     
+    private void makeMOPBasedConstructorCall(List<ConstructorNode> constructors, ConstructorCallExpression call, ClassNode callNode) {
+        MethodVisitor mv = controller.getMethodVisitor();
+        OperandStack operandStack = controller.getOperandStack();
+        
         call.getArguments().visit(this);
         // keep Object[] on stack
         mv.visitInsn(DUP);
@@ -782,7 +837,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 mv.visitInsn(POP);
             }
 
-            ConstructorNode cn = (ConstructorNode) constructors.get(i);
+            ConstructorNode cn = constructors.get(i);
             String descriptor = BytecodeHelper.getMethodDescriptor(ClassHelper.VOID_TYPE, cn.getParameters());
             // unwrap the Object[] and make transformations if needed
             // that means, to duplicate the Object[], make a cast with possible
@@ -830,9 +885,9 @@ public class AsmClassGenerator extends ClassGenerator {
         mv.visitInsn(POP);
     }
 
-    private List sortConstructors(ConstructorCallExpression call, ClassNode callNode) {
+    private List<ConstructorNode> sortConstructors(ConstructorCallExpression call, ClassNode callNode) {
         // sort in a new list to prevent side effects
-        List constructors = new ArrayList(callNode.getDeclaredConstructors());
+        List<ConstructorNode> constructors = new ArrayList<ConstructorNode>(callNode.getDeclaredConstructors());
         Comparator comp = new Comparator() {
             public int compare(Object arg0, Object arg1) {
                 ConstructorNode c0 = (ConstructorNode) arg0;
