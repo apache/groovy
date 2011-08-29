@@ -714,6 +714,7 @@ public class OptimizingStatementWriter extends StatementWriter {
         private void setMethodTarget(Expression expression, String name, Expression callArgs) {
             if (name==null) return;
             if (!optimizeMethodCall) return;
+            if (AsmClassGenerator.containsSpreadExpression(callArgs)) return;
             // find method call target
             Parameter[] paraTypes = null;
             if (callArgs instanceof ArgumentListExpression) {
