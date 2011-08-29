@@ -178,7 +178,8 @@ $Date$
     </target>
 
     <target name="-stagedcompile-groovy" depends="-initGroovyc">
-        <groovyc srcdir="${mainSourcePath}" destdir="${mainClassesDirectory}" fork="true"
+        <groovyc srcdir="${mainSourcePath}" destdir="${mainClassesDirectory}" 
+                 fork="true" stacktrace="true"
                  memorymaximumsize="${groovycMain_mx}">
             <classpath>
                 <pathelement path="${mainClassesDirectory}"/>
@@ -225,6 +226,7 @@ $Date$
                  includes="${vm5GroovySourceFiles},${vm5JavaSourceFiles},${anotherGroovyExtTestFiles}"
                  excludes="${vm6GroovySourceFiles}"
                  fork="true"
+                 stacktrace="true"
                  memorymaximumsize="${groovycTest_mx}">
             <classpath>
                 <pathelement path="${testClassesDirectory}"/>
@@ -240,6 +242,7 @@ $Date$
                  destdir="${testClassesDirectory}"
                  includes="${vm6GroovySourceFiles}"
                  fork="true"
+                 stacktrace="true"
                  memorymaximumsize="${groovycTest_mx}">
             <classpath>
                 <pathelement path="${testClassesDirectory}"/>
@@ -259,7 +262,7 @@ $Date$
 
         <groovyc srcdir="${examplesSourceDirectory}/webapps/groovlet-examples/WEB-INF/groovy"
                  destdir="${examplesClassesDirectory}"
-                 fork="true"
+                 fork="true" stacktrace="true"
                  memorymaximumsize="${groovycExamples_mx}">
             <classpath>
                 <pathelement path="${mainClassesDirectory}"/>
@@ -281,7 +284,7 @@ $Date$
         </javac>
         <groovyc srcdir="${examplesSourceDirectory}"
                  destdir="${examplesClassesDirectory}"
-                 fork="true"
+                 fork="true" stacktrace="true"
                  memorymaximumsize="${groovycExamples_mx}"
                  excludes="webapps/groovlet-examples/WEB-INF/groovy/**/*.groovy,org/codehaus/groovy/grails/compiler/injection/**/*.java">
             <classpath>
