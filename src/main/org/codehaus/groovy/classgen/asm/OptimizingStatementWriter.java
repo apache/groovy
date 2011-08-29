@@ -488,18 +488,30 @@ public class OptimizingStatementWriter extends StatementWriter {
         private ClassNode node;
         private OptimizeFlagsCollector opt = new OptimizeFlagsCollector();
         private boolean optimizeMethodCall = true;
+        private VariableScope scope;
+        private final static VariableScope nonStaticScope = new VariableScope(); 
         
         @Override
         public void visitClass(ClassNode node) {
             this.optimizeMethodCall = !node.implementsInterface(GROOVY_INTERCEPTABLE_TYPE);
             this.node = node;
+            this.scope = nonStaticScope;
             super.visitClass(node);
+            this.scope=null;
+            this.node=null;
         }
         
         @Override
         public void visitMethod(MethodNode node) {
+            scope = node.getVariableScope();
             super.visitMethod(node);
             opt.reset();
+        }
+        
+        @Override
+        public void visitConstructor(ConstructorNode node) {
+            scope = node.getVariableScope();
+            super.visitConstructor(node);
         }
         
         @Override
@@ -724,6 +736,7 @@ public class OptimizingStatementWriter extends StatementWriter {
             MethodNode target = node.getMethod(name, paraTypes);
             if (target==null) return;
             if (!target.getDeclaringClass().equals(node)) return;
+            if (scope.isInStaticContext() && !target.isStatic()) return;
             StatementMeta meta = addMeta(expression);
             meta.target = target;
             meta.type = target.getReturnType().redirect();
