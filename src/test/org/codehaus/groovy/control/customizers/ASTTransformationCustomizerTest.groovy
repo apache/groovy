@@ -135,6 +135,16 @@ class ASTTransformationCustomizerTest extends GroovyTestCase {
         assert transformation.applied.get()
     }
 
+    void testLocalTransformationWithListOfClassAnnotationParameter() {
+        customizer = new ASTTransformationCustomizer(Newify, value: [Integer, Long])
+        configuration.addCompilationCustomizers(customizer)
+        def shell = new GroovyShell(configuration)
+        def result = shell.evaluate '''
+            Integer(11) + Long(31)
+        '''
+        assert result == 42
+    }
+
     @GroovyASTTransformation(phase=CompilePhase.CONVERSION)
     private static class TestTransformation implements ASTTransformation {
 
