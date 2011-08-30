@@ -60,8 +60,8 @@ public final class ComposedClosure<V> extends Closure<V> {
     private Closure<V> second;
 
     public ComposedClosure(Closure first, Closure<V> second) {
-        super(first);
-        this.first = (Closure) first.clone();
+        super((Closure) first.clone());
+        this.first = (Closure) getOwner();
         this.second = (Closure<V>) second.clone();
         maximumNumberOfParameters = first.getMaximumNumberOfParameters();
     }
