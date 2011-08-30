@@ -243,7 +243,7 @@ public class InvocationWriter {
         operandStack.replace(ClassHelper.OBJECT_TYPE,operandsToRemove);
     }
 
-    private ArgumentListExpression makeArgumentList(Expression arguments) {
+    public static ArgumentListExpression makeArgumentList(Expression arguments) {
         ArgumentListExpression ae;
         if (arguments instanceof ArgumentListExpression) {
             ae = (ArgumentListExpression) arguments;
