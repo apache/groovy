@@ -35,7 +35,7 @@ import static org.codehaus.groovy.syntax.Types.*;
 @GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
 public class StaticTypesTransformation implements ASTTransformation {
 
-    @Override
+//    @Override
     public void visit(ASTNode[] nodes, SourceUnit source) {
 //        AnnotationNode annotationInformation = (AnnotationNode) nodes[0];
         AnnotatedNode node = (AnnotatedNode) nodes[1];
@@ -64,7 +64,7 @@ public class StaticTypesTransformation implements ASTTransformation {
             this.classNode = cn;
         }
         
-        @Override
+//        @Override
         protected SourceUnit getSourceUnit() {
             return source;
         }
