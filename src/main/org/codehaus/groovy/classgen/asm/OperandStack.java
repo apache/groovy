@@ -115,18 +115,31 @@ public class OperandStack {
      * type needs to be a primitive type (not checked) 
      */
     private void primitive2b(MethodVisitor mv, ClassNode type) {
+        Label trueLabel = new Label();
+        Label falseLabel = new Label();
+        // for the various types we make first a 
+        // kind of conversion to int using a compare
+        // operation and then handle the result common
+        // for all cases. In case of long that is LCMP,
+        // for int nothing is to be done
         if (type==ClassHelper.double_TYPE) {
-            mv.visitInsn(D2I);
-            mv.visitInsn(I2B);
+            mv.visitInsn(DCONST_0);
+            mv.visitInsn(DCMPL);
         } else if (type==ClassHelper.long_TYPE) {
-            mv.visitInsn(L2I);
-            mv.visitInsn(I2B);
+            mv.visitInsn(LCONST_0);
+            mv.visitInsn(LCMP);
         } else if (type==ClassHelper.float_TYPE) {
-            mv.visitInsn(F2I);
-            mv.visitInsn(I2B);
+            mv.visitInsn(FCONST_0);
+            mv.visitInsn(FCMPL);
         } else if (type==ClassHelper.int_TYPE) {
-            mv.visitInsn(I2B);
-        } 
+            // nothing, see comment above
+        }
+        mv.visitJumpInsn(IFEQ, falseLabel);
+        mv.visitInsn(ICONST_1);
+        mv.visitJumpInsn(GOTO, trueLabel);
+        mv.visitLabel(falseLabel);
+        mv.visitInsn(ICONST_0);
+        mv.visitLabel(trueLabel);
         // other cases can be used directly
     }
     
