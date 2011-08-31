@@ -114,7 +114,7 @@ public class RootLoader extends URLClassLoader {
     /**
      * loads a class using the name of the class
      */
-    protected Class loadClass(final String name, boolean resolve) throws ClassNotFoundException {
+    protected synchronized Class loadClass(final String name, boolean resolve) throws ClassNotFoundException {
         Class c = this.findLoadedClass(name);
         if (c != null) return c;
         c = (Class) customClasses.get(name);
