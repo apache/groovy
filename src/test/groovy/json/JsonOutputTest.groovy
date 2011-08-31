@@ -132,6 +132,12 @@ class JsonOutputTest extends GroovyTestCase {
         assert toJson("\u0019") == '"\\u0019"'
     }
 
+    void testCharArray() {
+        char[] charArray = ['a', 'b', 'c']
+
+        assert toJson(charArray) == '["a","b","c"]'
+    }
+
     void testComplexObject() {
         assert toJson([name: 'Guillaume', age: 33, address: [line1: "1 main street", line2: "", zip: 1234], pets: ['dog', 'cat']]) ==
                 '{"name":"Guillaume","age":33,"address":{"line1":"1 main street","line2":"","zip":1234},"pets":["dog","cat"]}'

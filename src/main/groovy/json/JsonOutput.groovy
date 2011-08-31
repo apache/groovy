@@ -45,6 +45,13 @@ class JsonOutput {
     }
 
     /**
+     * @return a JSON string representation of the character
+     */
+    static String toJson(Character c) {
+        "\"$c\""
+    }
+
+    /**
      * @return a properly encoded string with escape sequences
      */
     static String toJson(String s) {
