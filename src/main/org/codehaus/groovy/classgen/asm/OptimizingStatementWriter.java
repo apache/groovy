@@ -33,9 +33,10 @@ import org.objectweb.asm.MethodVisitor;
 import static org.objectweb.asm.Opcodes.*;
 import static org.codehaus.groovy.classgen.asm.BinaryExpressionMultiTypeDispatcher.*;
 import static org.codehaus.groovy.ast.ClassHelper.*;
+import static org.codehaus.groovy.ast.tools.WideningCategories.*;
 
 /**
- * 
+ * A class to write out the optimized statements
  * @author <a href="mailto:blackdrag@gmx.org">Jochen "blackdrag" Theodorou</a>
  */
 public class OptimizingStatementWriter extends StatementWriter {
@@ -618,7 +619,7 @@ public class OptimizingStatementWriter extends StatementWriter {
                         break;
                     case Types.DIVIDE: case Types.DIVIDE_EQUAL:
                         if (isLongCategory(leftType) && isLongCategory(rightType)) {
-                            //resultType = BigDecimal_TYPE;
+                            resultType = BigDecimal_TYPE;
                         } else if (isDoubleCategory(leftType) && isDoubleCategory(rightType)) {
                             resultType = double_TYPE;
                         }
@@ -628,6 +629,7 @@ public class OptimizingStatementWriter extends StatementWriter {
                         break;
                     case Types.ASSIGN:
                         opt.chainCanOptimize(true);
+                        optimizeDevisionForAssignment(expression, rightType);
                         break;
                     default:
                         if (isIntCategory(leftType) && isIntCategory(rightType)) {
@@ -650,6 +652,10 @@ public class OptimizingStatementWriter extends StatementWriter {
             }
         }
         
+        private void optimizeDevisionForAssignment(BinaryExpression expression, ClassNode rightType) {
+            
+        }
+
         @Override
         public void visitExpressionStatement(ExpressionStatement statement) {
             if (statement.getNodeMetaData(StatementMeta.class)!=null) return;

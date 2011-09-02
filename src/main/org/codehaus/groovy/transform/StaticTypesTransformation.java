@@ -27,6 +27,7 @@ import org.codehaus.groovy.control.*;
 
 import static org.codehaus.groovy.ast.ClassHelper.*;
 import static org.codehaus.groovy.syntax.Types.*;
+import static org.codehaus.groovy.ast.tools.WideningCategories.*;
 
 /**
  * Handles the implementation of the @StaticTypes transformation
@@ -91,7 +92,7 @@ public class StaticTypesTransformation implements ASTTransformation {
             ClassNode type = getType(expression);
             ClassNode typeRe = type.redirect();
             ClassNode resultType;
-            if (isClassBigInt(typeRe)) {
+            if (isBigIntCategory(typeRe)) {
                 // allow any internal number that is not a floating point one
                 resultType = type;
             } else if (typeRe==STRING_TYPE  || typeRe==GSTRING_TYPE) {
@@ -121,7 +122,7 @@ public class StaticTypesTransformation implements ASTTransformation {
             ClassNode type = getType(expression);
             ClassNode typeRe = type.redirect();
             ClassNode resultType;
-            if (isClassBigDec(typeRe)) {
+            if (isBigDecCategory(typeRe)) {
                 resultType = type;
             } else if (typeRe==ArrayList_TYPE) {
                 resultType = ArrayList_TYPE;
@@ -189,17 +190,17 @@ public class StaticTypesTransformation implements ASTTransformation {
             // for primitives and their wrapper we use a fixed table here
             else if (isNumberType(leftRedirect) && isNumberType(rightRedirect)) {
                 if (isOperationInGroup(op)) {
-                    if (isClassInt(leftRedirect)    && isClassInt(rightRedirect))       return int_TYPE;
-                    if (isClassLong(leftRedirect)   && isClassLong(rightRedirect))      return Long_TYPE;
-                    if (isClassBigInt(leftRedirect) && isClassBigInt(rightRedirect))    return BigInteger_TYPE;
-                    if (isClassBigDec(leftRedirect) && isClassBigDec(rightRedirect))    return BigDecimal_TYPE;
-                    if (isClassDouble(leftRedirect) && isClassDouble(rightRedirect))    return double_TYPE;
+                    if (isIntCategory(leftRedirect)    && isIntCategory(rightRedirect))       return int_TYPE;
+                    if (isLongCategory(leftRedirect)   && isLongCategory(rightRedirect))      return Long_TYPE;
+                    if (isBigIntCategory(leftRedirect) && isBigIntCategory(rightRedirect))    return BigInteger_TYPE;
+                    if (isBigDecCategory(leftRedirect) && isBigDecCategory(rightRedirect))    return BigDecimal_TYPE;
+                    if (isDoubleCategory(leftRedirect) && isDoubleCategory(rightRedirect))    return double_TYPE;
                 } else if (isPowerOperator(op)) {
                     return Number_TYPE;
                 } else if (isBitOperator(op)) {
-                    if (isClassInt(leftRedirect)    && isClassInt(rightRedirect))       return int_TYPE;
-                    if (isClassLong(leftRedirect)   && isClassLong(rightRedirect))      return Long_TYPE;
-                    if (isClassBigInt(leftRedirect) && isClassBigInt(rightRedirect))    return BigInteger_TYPE;
+                    if (isIntCategory(leftRedirect)    && isIntCategory(rightRedirect))       return int_TYPE;
+                    if (isLongCategory(leftRedirect)   && isLongCategory(rightRedirect))      return Long_TYPE;
+                    if (isBigIntCategory(leftRedirect) && isBigIntCategory(rightRedirect))    return BigInteger_TYPE;
                 }  
             }
 
@@ -324,32 +325,6 @@ public class StaticTypesTransformation implements ASTTransformation {
             return  op==POWER           ||  op==POWER_EQUAL;
         }
 
-        private static boolean isClassInt(ClassNode type) {
-            return  type==byte_TYPE     ||  type==Byte_TYPE      ||
-                    type==char_TYPE     ||  type==Character_TYPE ||
-                    type==int_TYPE      ||  type==Integer_TYPE   ||
-                    type==short_TYPE    ||  type==Short_TYPE;
-        }
-        
-        private static boolean isClassLong(ClassNode type) {
-            return  type==long_TYPE     ||  type==Long_TYPE     ||
-                    isClassInt(type);
-        }
-        
-        private static boolean isClassBigInt(ClassNode type) {
-            return  type==BigInteger_TYPE || isClassLong(type);
-        }
-        
-        private static boolean isClassBigDec(ClassNode type) {
-            return  type==BigDecimal_TYPE || isClassBigInt(type);
-        }
-        
-        private static boolean isClassDouble(ClassNode type) {
-            return  type==float_TYPE    ||  type==Float_TYPE    ||
-                    type==double_TYPE   ||  type==Double_TYPE   ||
-                    isClassBigDec(type);
-        }
-        
         /**
          * Returns true for operations that are of the class, that given a 
          * common type class for left and right, the operation "left op right"
