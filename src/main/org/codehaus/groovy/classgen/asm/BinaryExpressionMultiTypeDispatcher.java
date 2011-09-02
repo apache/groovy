@@ -224,7 +224,7 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
     
     @Override
     protected void evaluateBinaryExpression(final String message, BinaryExpression binExp) {
-        int operation = binExp.getOperation().getType();
+        int operation = removeAssignment(binExp.getOperation().getType());
         ClassNode current =  getController().getClassNode();
 
         Expression leftExp = binExp.getLeftExpression();
@@ -297,18 +297,13 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
         }
     }
     
-    @Override
-    protected void evaluateBinaryExpressionWithAssignment(String method, BinaryExpression binExp) {
-        if (!isAssignmentToArray(binExp)) {
-            super.evaluateBinaryExpressionWithAssignment(method, binExp);
-            return;
-        }
-        
+    private boolean doAssignmentToArray(BinaryExpression binExp) {
+        if (!isAssignmentToArray(binExp)) return false;
         // we need to handle only assignment to arrays combined with an operation
         // special here. e.g x[a] += b
         
-        ClassNode current =  getController().getClassNode();
         int operation = removeAssignment(binExp.getOperation().getType());
+        ClassNode current =  getController().getClassNode();
         
         Expression leftExp = binExp.getLeftExpression();
         ClassNode leftType = getType(leftExp, current);
@@ -321,10 +316,7 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
         boolean simulationSuccess = bew.arrayGet(LEFT_SQUARE_BRACKET, true);
         simulationSuccess = simulationSuccess && bew.write(operation, true);
         simulationSuccess = simulationSuccess && bew.arraySet(true);
-        if (!simulationSuccess) {
-            super.evaluateBinaryExpressionWithAssignment(method, binExp);
-            return;
-        }
+        if (!simulationSuccess) return false;
         
         AsmClassGenerator acg = getController().getAcg();
         OperandStack operandStack = getController().getOperandStack();
@@ -379,8 +371,20 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
         // cleanup
         compileStack.removeVar(resultValueId);
         compileStack.removeVar(subscriptValueId);
+        return true;
     }
     
+    @Override
+    protected void evaluateBinaryExpressionWithAssignment(String method, BinaryExpression binExp) {
+        if (doAssignmentToArray(binExp)) return;        
+        evaluateBinaryExpression(method, binExp);
+
+        getController().getOperandStack().dup();
+        getController().getCompileStack().pushLHS(true);
+        binExp.getLeftExpression().visit(getController().getAcg());
+        getController().getCompileStack().popLHS();
+    }
+
     @Override
     protected void assignToArray(Expression orig, Expression receiver, Expression index, Expression rhsValueLoader) {
         ClassNode current = getController().getClassNode();
