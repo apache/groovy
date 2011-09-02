@@ -33,6 +33,7 @@ import org.objectweb.asm.MethodVisitor;
 
 import static org.codehaus.groovy.ast.ClassHelper.*;
 import static org.codehaus.groovy.syntax.Types.*;
+import static org.codehaus.groovy.ast.tools.WideningCategories.*;
 
 /**
  * This class is for internal use only!
@@ -134,16 +135,17 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
             /* 5: byte   */ new BinaryByteExpressionHelper(getController()),
             /* 6: short  */ new BinaryShortExpressionHelper(getController()),
             /* 7: float  */ new BinaryFloatExpressionHelper(getController()),
+            /* 8: BigD   */ new DummyHelper(getController()),
     };
     
     protected static Map<ClassNode,Integer> typeMap = new HashMap<ClassNode,Integer>(14);
     static {
-        typeMap.put(int_TYPE,       1); typeMap.put(long_TYPE,      2);
-        typeMap.put(double_TYPE,    3); typeMap.put(char_TYPE,      4);
-        typeMap.put(byte_TYPE,      5); typeMap.put(short_TYPE,     6);
-        typeMap.put(float_TYPE,     7); 
+        typeMap.put(int_TYPE,       1); typeMap.put(long_TYPE,          2);
+        typeMap.put(double_TYPE,    3); typeMap.put(char_TYPE,          4);
+        typeMap.put(byte_TYPE,      5); typeMap.put(short_TYPE,         6);
+        typeMap.put(float_TYPE,     7); typeMap.put(BigDecimal_TYPE,    8);
     }
-    protected final static String[] typeMapKeyNames = {"dummy", "int", "long", "double", "char", "byte", "short", "float"};
+    protected final static String[] typeMapKeyNames = {"dummy", "int", "long", "double", "char", "byte", "short", "float", "BigDecimal"};
 
     public BinaryExpressionMultiTypeDispatcher(WriterController wc) {
         super(wc);
@@ -174,7 +176,7 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
         return type.redirect();
     }
     
-    protected static boolean isIntCategory(ClassNode type) {
+    /*protected static boolean isIntCategory(ClassNode type) {
         return  type == int_TYPE    || type == char_TYPE    ||
                 type == byte_TYPE   || type == short_TYPE;
     }
@@ -186,7 +188,7 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
     protected static boolean isDoubleCategory(ClassNode type) {
         return  type == float_TYPE  || type == double_TYPE  ||
                 isLongCategory(type);
-    }
+    }*/
     
     private int getOperandConversionType(ClassNode leftType, ClassNode rightType) {
         if (isIntCategory(leftType) && isIntCategory(rightType)) return 1;
