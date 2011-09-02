@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 the original author or authors.
+ * Copyright 2008-2011 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ class GrapeIvyTest extends GroovyTestCase {
     public GrapeIvyTest() {
         // insure files are installed locally
         [[groupId:'log4j', artifactId:'log4j', version:'1.1.3'],
-            [groupId:'org.apache.poi', artifactId:'poi', version:'3.5-FINAL'],
+            [groupId:'org.apache.poi', artifactId:'poi', version:'3.7'],
             [groupId:'com.jidesoft', artifactId:'jide-oss', version:'[2.2.1,2.3)'],
             [groupId:'org.apache.ivy', artifactId:'ivy', version:'2.0.0', conf:['default', 'optional']],
             [groupId:'net.sf.json-lib', artifactId:'json-lib', version:'2.2.3', classifier:'jdk15']
@@ -50,28 +50,30 @@ class GrapeIvyTest extends GroovyTestCase {
         GroovyClassLoader loader = new GroovyClassLoader()
         GroovyShell shell = new GroovyShell(loader)
         shouldFail(CompilationFailedException) {
-            shell.evaluate("import org.apache.poi.hssf.model.Sheet; Sheet.class")
+            shell.evaluate("import org.apache.poi.POIDocument; POIDocument.class")
         }
 
-        Grape.grab(groupId:'org.apache.poi', artifactId:'poi', version:'3.5-FINAL', classLoader:loader)
+        Grape.grab(groupId:'org.apache.poi', artifactId:'poi', version:'3.7', classLoader:loader)
 
-        assert shell.evaluate("import org.apache.poi.hssf.model.Sheet; Sheet.class").name == 'org.apache.poi.hssf.model.Sheet'
+        assert shell.evaluate("import org.apache.poi.POIDocument; POIDocument.class").name == 'org.apache.poi.POIDocument'
     }
 
     public void testMultipleDependencies() {
         GroovyClassLoader loader = new GroovyClassLoader()
         GroovyShell shell = new GroovyShell(loader)
         shouldFail(CompilationFailedException) {
+            shell.evaluate("import org.apache.poi.POIDocument; POIDocument.class")
+        }
+        shouldFail(CompilationFailedException) {
             shell.evaluate("import com.jidesoft.swing.JideSplitButton; JideSplitButton.class")
-            shell.evaluate("import org.apache.poi.hssf.model.Sheet; Sheet.class")
         }
 
         Grape.grab(classLoader:loader,
-            [groupId:'org.apache.poi', artifactId:'poi', version:'3.5-FINAL'],
+            [groupId:'org.apache.poi', artifactId:'poi', version:'3.7'],
             [groupId:'com.jidesoft', artifactId:'jide-oss', version:'[2.2.1,2.3)'])
 
         assert shell.evaluate("import com.jidesoft.swing.JideSplitButton; JideSplitButton.class").name == 'com.jidesoft.swing.JideSplitButton';
-        assert shell.evaluate("import org.apache.poi.hssf.model.Sheet; Sheet.class").name == 'org.apache.poi.hssf.model.Sheet'
+        assert shell.evaluate("import org.apache.poi.POIDocument; POIDocument.class").name == 'org.apache.poi.POIDocument'
     }
 
     public void testListDependencies() {
@@ -79,16 +81,18 @@ class GrapeIvyTest extends GroovyTestCase {
         GroovyShell shell = new GroovyShell(loader)
         shouldFail(CompilationFailedException) {
             shell.evaluate("import com.jidesoft.swing.JideSplitButton; JideSplitButton.class")
-            shell.evaluate("import org.apache.poi.hssf.model.Sheet; Sheet.class")
+        }
+        shouldFail(CompilationFailedException) {
+            shell.evaluate("import org.apache.poi.POIDocument; POIDocument.class")
         }
 
         Grape.grab(classLoader:loader,
-            [groupId:'org.apache.poi', artifactId:'poi', version:'3.5-FINAL'],
+            [groupId:'org.apache.poi', artifactId:'poi', version:'3.7'],
             [groupId:'com.jidesoft', artifactId:'jide-oss', version:'[2.2.1,2.3)'])
 
         def loadedDependencies = Grape.listDependencies(loader)
         assert loadedDependencies == [
-            [group:'org.apache.poi', module:'poi', version:'3.5-FINAL'],
+            [group:'org.apache.poi', module:'poi', version:'3.7'],
             [group:'com.jidesoft', module:'jide-oss', version:'[2.2.1,2.3)']
         ]
     }
@@ -128,30 +132,34 @@ class GrapeIvyTest extends GroovyTestCase {
         GroovyClassLoader loader = new GroovyClassLoader()
         GroovyShell shell = new GroovyShell(loader)
         shouldFail(CompilationFailedException) {
-            shell.evaluate("import org.apache.poi.hssf.model.Sheet; Sheet.class")
+            shell.evaluate("import org.apache.poi.POIDocument; POIDocument.class")
+        }
+        shouldFail(CompilationFailedException) {
             shell.evaluate("import com.jidesoft.swing.JideSplitButton; JideSplitButton.class")
         }
         shell.evaluate("""new groovy.grape.Grape().grab([:],
-            [groupId:'org.apache.poi', artifactId:'poi', version:'3.5-FINAL'],
+            [groupId:'org.apache.poi', artifactId:'poi', version:'3.7'],
             [groupId:'com.jidesoft', artifactId:'jide-oss', version:'[2.2.1,2.3)'])""")
 
         assert shell.evaluate("import com.jidesoft.swing.JideSplitButton; JideSplitButton.class").name == 'com.jidesoft.swing.JideSplitButton';
-        assert shell.evaluate("import org.apache.poi.hssf.model.Sheet; Sheet.class").name == 'org.apache.poi.hssf.model.Sheet'
+        assert shell.evaluate("import org.apache.poi.POIDocument; POIDocument.class").name == 'org.apache.poi.POIDocument'
     }
 
     public void testGrabScriptClassMultiple() {
         GroovyClassLoader loader = new GroovyClassLoader()
         GroovyShell shell = new GroovyShell(loader)
         shouldFail(CompilationFailedException) {
-            shell.evaluate("import org.apache.poi.hssf.model.Sheet; Sheet.class")
+            shell.evaluate("import org.apache.poi.POIDocument; POIDocument.class")
+        }
+        shouldFail(CompilationFailedException) {
             shell.evaluate("import com.jidesoft.swing.JideSplitButton; JideSplitButton.class")
         }
         shell.evaluate("""new groovy.grape.Grape().grab(refObject: this,
-            [groupId:'org.apache.poi', artifactId:'poi', version:'3.5-FINAL'],
+            [groupId:'org.apache.poi', artifactId:'poi', version:'3.7'],
             [groupId:'com.jidesoft', artifactId:'jide-oss', version:'[2.2.1,2.3)'])""")
 
         assert shell.evaluate("import com.jidesoft.swing.JideSplitButton; JideSplitButton.class").name == 'com.jidesoft.swing.JideSplitButton';
-        assert shell.evaluate("import org.apache.poi.hssf.model.Sheet; Sheet.class").name == 'org.apache.poi.hssf.model.Sheet'
+        assert shell.evaluate("import org.apache.poi.POIDocument; POIDocument.class").name == 'org.apache.poi.POIDocument'
     }
 
     public void testGrabScriptLoaderMultiple() {
@@ -159,15 +167,17 @@ class GrapeIvyTest extends GroovyTestCase {
         GroovyShell shell = new GroovyShell(loader)
         shell.setVariable("loader", loader)
         shouldFail(CompilationFailedException) {
-            shell.evaluate("import org.apache.poi.hssf.model.Sheet; Sheet.class")
+            shell.evaluate("import org.apache.poi.POIDocument; POIDocument.class")
+        }
+        shouldFail(CompilationFailedException) {
             shell.evaluate("import com.jidesoft.swing.JideSplitButton; JideSplitButton.class")
         }
         shell.evaluate("""new groovy.grape.Grape().grab(classLoader:loader,
-            [groupId:'org.apache.poi', artifactId:'poi', version:'3.5-FINAL'],
+            [groupId:'org.apache.poi', artifactId:'poi', version:'3.7'],
             [groupId:'com.jidesoft', artifactId:'jide-oss', version:'[2.2.1,2.3)'])""")
 
         assert shell.evaluate("import com.jidesoft.swing.JideSplitButton; JideSplitButton.class").name == 'com.jidesoft.swing.JideSplitButton';
-        assert shell.evaluate("import org.apache.poi.hssf.model.Sheet; Sheet.class").name == 'org.apache.poi.hssf.model.Sheet'
+        assert shell.evaluate("import org.apache.poi.POIDocument; POIDocument.class").name == 'org.apache.poi.POIDocument'
     }
 
     public void testSerialGrabs() {
@@ -175,7 +185,7 @@ class GrapeIvyTest extends GroovyTestCase {
 
         Grape.grab(groupId:'log4j', artifactId:'log4j', version:'1.1.3', classLoader:loader)
 
-        Grape.grab(groupId:'org.apache.poi', artifactId:'poi', version:'3.5-FINAL', classLoader:loader)
+        Grape.grab(groupId:'org.apache.poi', artifactId:'poi', version:'3.7', classLoader:loader)
         def jars = loader.getURLs().collect {URL it -> it.getPath().split('/')[-1]}
         // because poi asks for log4j 1.2.13, but we already have 1.1.3 so it won't be loaded
         assert jars.contains ("log4j-1.1.3.jar")
