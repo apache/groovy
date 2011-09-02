@@ -55,6 +55,10 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
             if (simulate) return false;
             throw new GroovyBugError("should not reach here");
         }
+        protected boolean writeDivision(boolean simulate) {
+            if (simulate) return false;
+            throw new GroovyBugError("should not reach here");
+        }
         public boolean arrayGet(int operation, boolean simulate) {
             if (simulate) return false;
             throw new GroovyBugError("should not reach here");
@@ -77,6 +81,9 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
             return -1;
         }
         protected ClassNode getNormalOpResultType() {
+            return null;
+        }
+        protected ClassNode getDevisionOpResultType() {
             return null;
         }
         protected int getShiftOperationBytecode(int type) {
@@ -135,7 +142,7 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
             /* 5: byte   */ new BinaryByteExpressionHelper(getController()),
             /* 6: short  */ new BinaryShortExpressionHelper(getController()),
             /* 7: float  */ new BinaryFloatExpressionHelper(getController()),
-            /* 8: BigD   */ new DummyHelper(getController()),
+            /* 8: BigD    new DummyHelper(getController()),*/
     };
     
     protected static Map<ClassNode,Integer> typeMap = new HashMap<ClassNode,Integer>(14);
@@ -143,9 +150,9 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
         typeMap.put(int_TYPE,       1); typeMap.put(long_TYPE,          2);
         typeMap.put(double_TYPE,    3); typeMap.put(char_TYPE,          4);
         typeMap.put(byte_TYPE,      5); typeMap.put(short_TYPE,         6);
-        typeMap.put(float_TYPE,     7); typeMap.put(BigDecimal_TYPE,    8);
+        typeMap.put(float_TYPE,     7); /*typeMap.put(BigDecimal_TYPE,    8);*/
     }
-    protected final static String[] typeMapKeyNames = {"dummy", "int", "long", "double", "char", "byte", "short", "float", "BigDecimal"};
+    protected final static String[] typeMapKeyNames = {"dummy", "int", "long", "double", "char", "byte", "short", "float", /*"BigDecimal"*/};
 
     public BinaryExpressionMultiTypeDispatcher(WriterController wc) {
         super(wc);
@@ -175,20 +182,6 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
         }
         return type.redirect();
     }
-    
-    /*protected static boolean isIntCategory(ClassNode type) {
-        return  type == int_TYPE    || type == char_TYPE    ||
-                type == byte_TYPE   || type == short_TYPE;
-    }
-    
-    protected static boolean isLongCategory(ClassNode type) {
-        return  type == long_TYPE   || isIntCategory(type);
-    }
-
-    protected static boolean isDoubleCategory(ClassNode type) {
-        return  type == float_TYPE  || type == double_TYPE  ||
-                isLongCategory(type);
-    }*/
     
     private int getOperandConversionType(ClassNode leftType, ClassNode rightType) {
         if (isIntCategory(leftType) && isIntCategory(rightType)) return 1;
@@ -269,6 +262,12 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
                 rightExp.visit(acg);
                 os.doGroovyCast(int_TYPE);
                 bew.write(operation, false);
+            } else if (operation==DIVIDE && bew.writeDivision(true)) {
+                leftExp.visit(acg);
+                os.doGroovyCast(bew.getDevisionOpResultType());
+                rightExp.visit(acg);
+                os.doGroovyCast(bew.getDevisionOpResultType());
+                bew.writeDivision(false);
             } else if (bew.write(operation, true)) {
                 leftExp.visit(acg);
                 os.doGroovyCast(bew.getNormalOpResultType());

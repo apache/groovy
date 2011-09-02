@@ -622,6 +622,8 @@ public class OptimizingStatementWriter extends StatementWriter {
                             resultType = BigDecimal_TYPE;
                         } else if (isDoubleCategory(leftType) && isDoubleCategory(rightType)) {
                             resultType = double_TYPE;
+                        } else if (isBigDecCategory(leftType) && isBigDecCategory(rightType)) {
+                            resultType = BigDecimal_TYPE;
                         }
                         break;
                     case Types.POWER: case Types.POWER_EQUAL:
@@ -629,7 +631,6 @@ public class OptimizingStatementWriter extends StatementWriter {
                         break;
                     case Types.ASSIGN:
                         opt.chainCanOptimize(true);
-                        optimizeDevisionForAssignment(expression, rightType);
                         break;
                     default:
                         if (isIntCategory(leftType) && isIntCategory(rightType)) {
@@ -650,10 +651,6 @@ public class OptimizingStatementWriter extends StatementWriter {
                 opt.chainInvolvedType(leftType);
                 opt.chainInvolvedType(rightType);
             }
-        }
-        
-        private void optimizeDevisionForAssignment(BinaryExpression expression, ClassNode rightType) {
-            
         }
 
         @Override
