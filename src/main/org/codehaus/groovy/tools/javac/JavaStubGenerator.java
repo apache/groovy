@@ -589,7 +589,7 @@ public class JavaStubGenerator {
         out.print('<');
         for (int i = 0; i < genericsTypes.length; i++) {
             if (i != 0) out.print(", ");
-            out.print(genericsTypes[i].toString());
+            out.print(genericsTypes[i].toString().replace("$","."));
         }
         out.print('>');
     }
