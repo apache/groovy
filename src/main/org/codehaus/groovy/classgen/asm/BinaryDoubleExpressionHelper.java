@@ -75,7 +75,7 @@ public class BinaryDoubleExpressionHelper extends BinaryLongExpressionHelper {
         DADD,           //  PLUS        200
         DSUB,           //  MINUS       201
         DMUL,           //  MULTIPLY    202
-        0,              //  DIV, (203) but we don't want that one
+        DDIV,           //  DIV         203
         DDIV,           //  INTDIV      204
         DREM,           //  MOD         203
     };
@@ -92,5 +92,14 @@ public class BinaryDoubleExpressionHelper extends BinaryLongExpressionHelper {
     protected void writePlusPlus(MethodVisitor mv) {
         mv.visitInsn(DCONST_1);
         mv.visitInsn(DADD);
+    }
+    
+    protected ClassNode getDevisionOpResultType() {
+        return ClassHelper.double_TYPE;
+    }
+    
+    @Override
+    protected boolean supportsDivision() {
+        return true;
     }
 }

@@ -71,8 +71,9 @@ dependencies {
     testCompile "org.slf4j:jcl-over-slf4j:1.6.0"
     testCompile "com.thoughtworks.qdox:qdox:1.12"
     testCompile "org.apache.ant:ant-testutil:1.8.2"
-    runtime "org.codehaus.gpars:gpars:0.11"
-    runtime "org.coconut.forkjoin:jsr166y:070108"
+    runtime "org.codehaus.gpars:gpars:0.12"
+    runtime "org.codehaus.jsr166-mirror:jsr166y:1.7.0"
+    runtime "org.codehaus.jsr166-mirror:extra166y:1.7.0"
 
     // todo this was provided
     compile "org.livetribe:livetribe-jsr223:2.0.6"

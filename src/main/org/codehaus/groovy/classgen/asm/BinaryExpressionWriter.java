@@ -181,6 +181,22 @@ public abstract class BinaryExpressionWriter {
         return true;
     }
     
+    protected boolean writeDivision(boolean simulate) {
+        if (!supportsDivision()) return false;
+        if (!simulate) {
+            int bytecode = getStandardOperationBytecode(3 /*DIV*/);
+            controller.getMethodVisitor().visitInsn(bytecode);
+            controller.getOperandStack().replace(getDevisionOpResultType(), 2);
+        }
+        return true;
+    }
+    
+    protected boolean supportsDivision() {
+        return false;
+    }
+
+    protected abstract ClassNode getDevisionOpResultType();
+
     protected abstract int getBitwiseOperationBytecode(int type);
     
     /**

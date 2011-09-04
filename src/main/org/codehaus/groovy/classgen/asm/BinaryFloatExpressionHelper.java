@@ -102,4 +102,8 @@ public class BinaryFloatExpressionHelper extends BinaryExpressionWriter {
         mv.visitInsn(FADD);
     }
 
+    protected ClassNode getDevisionOpResultType() {
+        return ClassHelper.BigDecimal_TYPE;
+    }
+
 }
