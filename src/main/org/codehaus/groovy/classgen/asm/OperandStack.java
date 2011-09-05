@@ -361,6 +361,27 @@ public class OperandStack {
         controller.getMethodVisitor().visitInsn(convertCode);
         return true;
     }
+    
+    private boolean convertFromLong(ClassNode target) {
+        MethodVisitor mv = controller.getMethodVisitor();
+        if (target==ClassHelper.int_TYPE){
+            mv.visitInsn(L2I);
+            return true;
+        } else if ( target==ClassHelper.char_TYPE ||
+                    target==ClassHelper.byte_TYPE ||
+                    target==ClassHelper.short_TYPE)
+        {
+            mv.visitInsn(L2I);
+            return convertFromInt(target);
+        } else if (target==ClassHelper.double_TYPE){
+            mv.visitInsn(L2D);
+            return true;
+        } else if (target==ClassHelper.float_TYPE){
+            mv.visitInsn(L2F);
+            return true;
+        } 
+        return false;
+    }
 
     private boolean convertFromDouble(ClassNode target) {
         MethodVisitor mv = controller.getMethodVisitor();
@@ -418,6 +439,8 @@ public class OperandStack {
             return convertFromFloat(target);
         } else if ( top==ClassHelper.double_TYPE) {
             return convertFromDouble(target);
+        } else if ( top==ClassHelper.long_TYPE) {
+            return convertFromLong(target);
         }
         return false;
     }
