@@ -928,6 +928,7 @@ $Date$
                 <exclude name="classes/**"/>
                 <exclude name="cruise/**"/>
                 <exclude name=".clover/*"/>
+                <exclude name=".git/**"/>
                 <exclude name="local.build.properties"/>
                 <exclude name="cobertura.ser"/>
                 <exclude name="junitvmwatcher*.properties"/>
