@@ -71,10 +71,21 @@ public class StaticTypesTransformation implements ASTTransformation {
         }
         
         @Override
+        public void visitVariableExpression(VariableExpression vexp) {
+            super.visitVariableExpression(vexp);
+            if (    vexp!=VariableExpression.THIS_EXPRESSION && 
+                    vexp!=VariableExpression.SUPER_EXPRESSION) 
+            {
+                if (vexp.getName().equals("this")) storeType(vexp, classNode);
+                if (vexp.getName().equals("super")) storeType(vexp, classNode.getSuperClass());
+            }
+        }
+      
+        @Override
         public void visitBinaryExpression(BinaryExpression expression) {
             super.visitBinaryExpression(expression);
-            ClassNode lType = getType(expression.getLeftExpression());
-            ClassNode rType = getType(expression.getRightExpression());
+            ClassNode lType = getType(expression.getLeftExpression(), classNode);
+            ClassNode rType = getType(expression.getRightExpression(), classNode);
             int op = expression.getOperation().getType();
             ClassNode resultType = getResultType(lType, op, rType, expression);
             if (resultType==null) {
@@ -89,7 +100,7 @@ public class StaticTypesTransformation implements ASTTransformation {
         @Override
         public void visitBitwiseNegationExpression(BitwiseNegationExpression expression) {
             super.visitBitwiseNegationExpression(expression);
-            ClassNode type = getType(expression);
+            ClassNode type = getType(expression, classNode);
             ClassNode typeRe = type.redirect();
             ClassNode resultType;
             if (isBigIntCategory(typeRe)) {
@@ -119,7 +130,7 @@ public class StaticTypesTransformation implements ASTTransformation {
         }
         
         private void negativeOrPositiveUnary(Expression expression, String name) {
-            ClassNode type = getType(expression);
+            ClassNode type = getType(expression, classNode);
             ClassNode typeRe = type.redirect();
             ClassNode resultType;
             if (isBigDecCategory(typeRe)) {
@@ -136,34 +147,34 @@ public class StaticTypesTransformation implements ASTTransformation {
         @Override
         public void visitConstructorCallExpression(ConstructorCallExpression call) {
             super.visitConstructorCallExpression(call);
-            ClassNode[] args = getArgumentTypes(InvocationWriter.makeArgumentList(call.getArguments()));
+            ClassNode[] args = getArgumentTypes(InvocationWriter.makeArgumentList(call.getArguments()), classNode);
             findMethodOrFail(call, classNode, "init", args);
         }
         
-        private static ClassNode[] getArgumentTypes(ArgumentListExpression args) {
+        private static ClassNode[] getArgumentTypes(ArgumentListExpression args, ClassNode current) {
             List<Expression> arglist = args.getExpressions();
             ClassNode[] ret = new ClassNode[arglist.size()];
             int i=0;
             for (Expression exp : arglist) {
-                ret[i] = getType(exp);
+                ret[i] = getType(exp, current);
                 i++;
             }
             return ret;
         }
-
+        
         @Override
         public void visitMethodCallExpression(MethodCallExpression call) {
             super.visitMethodCallExpression(call);
             if (call.getMethodAsString()==null) {
                 addError("cannot resolve dynamic method name at compile time.", call.getMethod());
             } else {
-                ClassNode[] args = getArgumentTypes(InvocationWriter.makeArgumentList(call.getArguments()));
-                MethodNode mn = findMethodOrFail(call, classNode, call.getMethodAsString(), args);
+                ClassNode[] args = getArgumentTypes(InvocationWriter.makeArgumentList(call.getArguments()), classNode);
+                MethodNode mn = findMethodOrFail(call, getType(call.getObjectExpression(), classNode), call.getMethodAsString(), args);
                 if (mn==null) return;
                 storeType(call, mn.getReturnType());
             }
         }
-        
+
         private void storeType(Expression exp, ClassNode cn) {
             exp.setNodeMetaData(StaticTypesMarker.class, cn);
         }
@@ -288,8 +299,8 @@ public class StaticTypesTransformation implements ASTTransformation {
             }
             toBeAssignedTo = getWrapper(toBeAssignedTo);
             type = getWrapper(type);
-            if (    toBeAssignedTo.implementsInterface(Number_TYPE) && 
-                    type.implementsInterface(Number_TYPE))
+            if (    toBeAssignedTo.isDerivedFrom(Number_TYPE) && 
+                    type.isDerivedFrom(Number_TYPE))
             {
                 return true;
             }
@@ -371,9 +382,14 @@ public class StaticTypesTransformation implements ASTTransformation {
             }
         }
         
-        private static ClassNode getType(Expression exp) {
+        private static ClassNode getType(Expression exp, ClassNode current) {
             ClassNode cn = (ClassNode) exp.getNodeMetaData(StaticTypesMarker.class);
             if (cn!=null) return cn;
+            if (exp instanceof VariableExpression){
+                VariableExpression vexp = (VariableExpression) exp;
+                if (vexp==VariableExpression.THIS_EXPRESSION) return current;
+                if (vexp==VariableExpression.SUPER_EXPRESSION) return current.getSuperClass();
+            }            
             return exp.getType();
         }
         
