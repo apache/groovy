@@ -8,7 +8,7 @@
     <name>Groovy</name>
     <packaging>jar</packaging>
     
-    <version>1.8.2-SNAPSHOT</version>
+    <version>1.8.2</version>
 
     <description>
         Groovy: A powerful, dynamic language for the JVM
@@ -24,9 +24,9 @@
     <inceptionYear>2003</inceptionYear>
 
     <scm>
-        <connection>scm:svn:http://svn.groovy.codehaus.org/browse/groovy/trunk/groovy/groovy-core</connection>
-        <developerConnection>scm:svn:https://${maven.username}@svn.groovy.codehaus.org/browse/groovy/trunk/groovy/groovy-core</developerConnection>
-        <url>http://svn.groovy.codehaus.org/browse/groovy/trunk/groovy/groovy-core</url>
+        <connection>scm:git:git://git.codehaus.org/groovy-git.git</connection>
+        <developerConnection>scm:git:ssh://git@git.codehaus.org/groovy-git.git</developerConnection>
+        <url>http://git.codehaus.org/gitweb.cgi?p=groovy-git.git</url>
     </scm>
 
     <mailingLists>
