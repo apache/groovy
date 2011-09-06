@@ -19,6 +19,7 @@ import java.util.List;
 
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
@@ -26,6 +27,7 @@ import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.CastExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
+import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.StaticMethodCallExpression;
@@ -118,13 +120,7 @@ public class InvocationWriter {
             }
         }
         
-        // load arguments
-        Parameter[] para = target.getParameters();
-        List<Expression> argumentList = args.getExpressions();
-        for (int i=0; i<argumentList.size(); i++) {
-            argumentList.get(i).visit(controller.getAcg());
-            controller.getOperandStack().doGroovyCast(para[i].getType());
-        }
+        loadArguments(args.getExpressions(), target.getParameters());
 
         String owner = BytecodeHelper.getClassInternalName(target.getDeclaringClass());
         String desc = BytecodeHelper.getMethodDescriptor(target.getReturnType(), target.getParameters());
@@ -138,6 +134,14 @@ public class InvocationWriter {
         controller.getOperandStack().remove(argumentsToRemove);
         controller.getOperandStack().push(ret);
         return true;
+    }
+
+    // load arguments
+    private void loadArguments(List<Expression> argumentList, Parameter[] para) {
+        for (int i=0; i<argumentList.size(); i++) {
+            argumentList.get(i).visit(controller.getAcg());
+            controller.getOperandStack().doGroovyCast(para[i].getType());
+        }
     }
 
     private void makeCall(
@@ -340,5 +344,49 @@ public class InvocationWriter {
                 call.getArguments(),
                 InvocationWriter.invokeStaticMethod,
                 false, false, false);
+    }
+    
+    private boolean writeDirectConstructorCall(ConstructorCallExpression call) {
+        if (!controller.isFastPath()) return false;
+        
+        StatementMeta meta = (StatementMeta) call.getNodeMetaData(StatementMeta.class);
+        ConstructorNode cn = null;
+        if (meta!=null) cn = (ConstructorNode) meta.target;
+        if (cn==null) return false;
+        
+        String owner = BytecodeHelper.getClassInternalName(cn.getDeclaringClass());
+        String desc = BytecodeHelper.getMethodDescriptor(ClassHelper.VOID_TYPE, cn.getParameters());
+        MethodVisitor mv = controller.getMethodVisitor();
+        
+        mv.visitTypeInsn(NEW, owner);
+        mv.visitInsn(DUP);
+        
+        TupleExpression args = makeArgumentList(call.getArguments());
+        loadArguments(args.getExpressions(), cn.getParameters());
+        
+        mv.visitMethodInsn(INVOKESPECIAL, owner, "<init>", desc);
+        
+        controller.getOperandStack().remove(args.getExpressions().size());
+        controller.getOperandStack().push(cn.getDeclaringClass());
+        return true;
+    }
+
+    public void writeInvokeConstructor(ConstructorCallExpression call) {
+        if (writeDirectConstructorCall(call)) return;
+        
+        Expression arguments = call.getArguments();
+        if (arguments instanceof TupleExpression) {
+            TupleExpression tupleExpression = (TupleExpression) arguments;
+            int size = tupleExpression.getExpressions().size();
+            if (size == 0) {
+                arguments = MethodCallExpression.NO_ARGUMENTS;
+            }
+        }
+
+        Expression receiverClass = new ClassExpression(call.getType());
+        controller.getCallSiteWriter().makeCallSite(
+                receiverClass, CallSiteWriter.CONSTRUCTOR,
+                arguments, false, false, false,
+                false);
     }
 }

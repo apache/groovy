@@ -910,21 +910,7 @@ public class AsmClassGenerator extends ClassGenerator {
             controller.getCompileStack().pop();
             return;
         }
-
-        Expression arguments = call.getArguments();
-        if (arguments instanceof TupleExpression) {
-            TupleExpression tupleExpression = (TupleExpression) arguments;
-            int size = tupleExpression.getExpressions().size();
-            if (size == 0) {
-                arguments = MethodCallExpression.NO_ARGUMENTS;
-            }
-        }
-
-        Expression receiverClass = new ClassExpression(call.getType());
-        controller.getCallSiteWriter().makeCallSite(
-                receiverClass, CallSiteWriter.CONSTRUCTOR,
-                arguments, false, false, false,
-                false);
+        controller.getInvocationWriter().writeInvokeConstructor(call);
         controller.getAssertionWriter().record(call);
     }
 
