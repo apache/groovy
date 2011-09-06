@@ -785,28 +785,7 @@
         <dependency>
             <groupId>org.codehaus.gpars</groupId>
             <artifactId>gpars</artifactId>
-            <version>0.11</version>
-            <scope>runtime</scope>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>org.coconut.forkjoin</groupId>
-            <artifactId>jsr166y</artifactId>
-            <version>070108</version>
-            <scope>runtime</scope>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>org.codehaus.jsr166-mirror</groupId>
-            <artifactId>jsr166y</artifactId>
-            <version>1.7.0</version>
-            <scope>runtime</scope>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>org.codehaus.jsr166-mirror</groupId>
-            <artifactId>extra166y</artifactId>
-            <version>1.7.0</version>
+            <version>0.12</version>
             <scope>runtime</scope>
             <optional>true</optional>
         </dependency>
