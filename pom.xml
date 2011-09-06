@@ -789,20 +789,6 @@
             <scope>runtime</scope>
             <optional>true</optional>
         </dependency>
-        <dependency>
-            <groupId>org.codehaus.jsr166-mirror</groupId>
-            <artifactId>jsr166y</artifactId>
-            <version>1.7.0</version>
-            <scope>runtime</scope>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>org.codehaus.jsr166-mirror</groupId>
-            <artifactId>extra166y</artifactId>
-            <version>1.7.0</version>
-            <scope>runtime</scope>
-            <optional>true</optional>
-        </dependency>
 
 
         <!-- Used for richer interactive groovysh support -->
