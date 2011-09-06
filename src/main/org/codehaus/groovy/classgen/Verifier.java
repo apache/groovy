@@ -230,7 +230,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                         mv.visitMethodInsn(INVOKESTATIC, classInternalName, "$get$$class$" + classInternalName.replaceAll("\\/", "\\$"), "()Ljava/lang/Class;");
 
                         Label l1 = new Label();
-                        mv.visitJumpInsn(IF_ACMPNE, l1);
+                        mv.visitJumpInsn(IF_ACMPEQ, l1);
 
                         mv.visitVarInsn(ALOAD, 0);
                         mv.visitMethodInsn(INVOKESTATIC, "org/codehaus/groovy/runtime/ScriptBytecodeAdapter", "initMetaClass", "(Ljava/lang/Object;)Lgroovy/lang/MetaClass;");

@@ -72,8 +72,6 @@ dependencies {
     testCompile "com.thoughtworks.qdox:qdox:1.12"
     testCompile "org.apache.ant:ant-testutil:1.8.2"
     runtime "org.codehaus.gpars:gpars:0.12"
-    runtime "org.codehaus.jsr166-mirror:jsr166y:1.7.0"
-    runtime "org.codehaus.jsr166-mirror:extra166y:1.7.0"
 
     // todo this was provided
     compile "org.livetribe:livetribe-jsr223:2.0.6"
