@@ -284,13 +284,17 @@ public class DefaultMetaClassInfo {
         if (mch) {
             disabledStandardMC = true;
             origIntArrayWCH = false;
-            origIntRes = false;
+            origByteRes = origChar = origBoolean =false;
+            origShortRes = origIntRes = origLong = false;
+            origFloat = origDouble = false;
         } else {
             disabledStandardMC = categoryUsed;
-            origIntRes = origInt;
+            origByteRes = origByte; origCharRes = origChar;
+            origBooleanRes = origBoolean; origShortRes = origShort;
+            origIntRes = origInt; origLongRes = origLong;
+            origFloatRes = origFloat; origDoubleRes = origDouble; 
             origIntArrayWCH = origIntArray;
         }
-        
     }
 
     public static void setPrimitiveMeta(Class c, boolean orig) {
