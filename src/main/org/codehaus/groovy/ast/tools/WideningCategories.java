@@ -76,4 +76,8 @@ public class WideningCategories {
                 type==double_TYPE   ||  type==Double_TYPE   ||
                 isBigDecCategory(type);
     }
+    
+    public static boolean isNumberCategory(ClassNode type) {
+        return isBigDecCategory(type) || type.isDerivedFrom(Number_TYPE);
+    }
 }
