@@ -188,6 +188,8 @@ public class AsmClassGenerator extends ClassGenerator {
         } catch (GroovyRuntimeException e) {
             e.setModule(classNode.getModule());
             throw e;
+        } catch (NullPointerException npe) {
+            throw new GroovyRuntimeException("NPE while processing "+sourceFile, npe);
         }
     }
 
@@ -1022,7 +1024,7 @@ public class AsmClassGenerator extends ClassGenerator {
         int mark = operandStack.getStackLength()-1;
         MethodCallerMultiAdapter adapter;
         if (controller.getCompileStack().isLHS()) {
-            operandStack.box();
+            //operandStack.box();
             adapter = setProperty;
             if (isGroovyObject(objectExpression)) adapter = setGroovyObjectProperty;
             if (controller.isStaticContext() && isThisOrSuper(objectExpression)) adapter = setProperty;
