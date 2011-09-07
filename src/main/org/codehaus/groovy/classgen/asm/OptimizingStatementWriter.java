@@ -71,8 +71,9 @@ public class OptimizingStatementWriter extends StatementWriter {
     }
 
     private static MethodCaller[] guards = {
+        null,
         MethodCaller.newStatic(BytecodeInterface8.class, "isOrigInt"),
-        MethodCaller.newStatic(BytecodeInterface8.class, "isOrigZ"),
+        MethodCaller.newStatic(BytecodeInterface8.class, "isOrigL"),
         MethodCaller.newStatic(BytecodeInterface8.class, "isOrigD"),
         MethodCaller.newStatic(BytecodeInterface8.class, "isOrigC"),
         MethodCaller.newStatic(BytecodeInterface8.class, "isOrigB"),
@@ -719,8 +720,10 @@ public class OptimizingStatementWriter extends StatementWriter {
         public void visitConstructorCallExpression(ConstructorCallExpression call) {
             if (call.getNodeMetaData(StatementMeta.class)!=null) return;
             super.visitConstructorCallExpression(call);
-            
-            setMethodTarget(call, "<init>", call.getArguments(), false);
+
+            // we cannot a target for the constructor call, since we cannot easily
+            // check the meta class of the other class
+            // setMethodTarget(call, "<init>", call.getArguments(), false);
         }
         
         private void setMethodTarget(Expression expression, String name, Expression callArgs, boolean isMethod) {
@@ -768,9 +771,14 @@ public class OptimizingStatementWriter extends StatementWriter {
         
         private static MethodNode selectConstructor(ClassNode node, Parameter[] paraTypes) {
             List<ConstructorNode> cl = node.getDeclaredConstructors();
+            MethodNode res = null;
             for (ConstructorNode cn : cl) {
-                if (parametersEqual(cn.getParameters(), paraTypes)) return cn;
+                if (parametersEqual(cn.getParameters(), paraTypes)) {
+                    res = cn;
+                    break;
+                }
             }
+            if (res !=null && res.isPublic()) return res;
             return null;
         }
 

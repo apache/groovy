@@ -1,5 +1,7 @@
 package org.codehaus.groovy.classgen.asm
 
+import org.objectweb.asm.MethodVisitor;
+
 
 /**
  * @author Jochen Theodorou
@@ -129,7 +131,7 @@ class MethodPatternsTest extends AbstractBytecodeTestCase {
         ])
     }
     
-    void testRoghtShiftUnsignedWithLongArgument() {
+    void testRightShiftUnsignedWithLongArgument() {
         assert compile(method:"hashCode", '''
             class X{
                 long _tagReservationDate
@@ -155,6 +157,20 @@ class MethodPatternsTest extends AbstractBytecodeTestCase {
             'LXOR',
             'L2I',
             'IADD',
+        ])
+    }
+    
+    void testobjectArraySet() {
+        assert compile(method:"foo", '''
+            class X{
+              void foo() {
+                X[] xa = new X[1]
+                xa[0] = new X()
+              }
+            }
+        ''').hasSequence ([
+            'LDC 0',
+            'INVOKESTATIC org/codehaus/groovy/runtime/BytecodeInterface8.objectArraySet ([Ljava/lang/Object;ILjava/lang/Object;)V',
         ])
     }
 }
