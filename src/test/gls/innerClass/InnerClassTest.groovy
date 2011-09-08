@@ -380,6 +380,35 @@ class A {
      def u (i) { println i + s + field }
    }}"""
     }
+    
+    void testReferencedVariableInAIC() {
+        assertScript """
+            interface X{}
+            
+            final double delta = 0.1
+            (0 ..< 1).collect { n ->
+                new X () {
+                    Double foo () {
+                        delta
+                    }
+                }
+            }
+        """
+        assertScript """
+            interface X{}
+            
+            final double delta1 = 0.1
+            final double delta2 = 0.1
+            (0 ..< 1).collect { n ->
+                new X () {
+                    Double foo () {
+                        delta1 + delta2
+                    }
+                }
+            }
+        """
+    }
+     
 
 } 
 
