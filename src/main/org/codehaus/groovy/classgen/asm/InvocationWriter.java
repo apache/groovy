@@ -354,25 +354,35 @@ public class InvocationWriter {
         if (meta!=null) cn = (ConstructorNode) meta.target;
         if (cn==null) return false;
         
+        String ownerDescriptor = prepareConstructorCall(cn);
+        TupleExpression args = makeArgumentList(call.getArguments());
+        loadArguments(args.getExpressions(), cn.getParameters());
+        finnishConstructorCall(cn, ownerDescriptor, args.getExpressions().size());
+        
+        return true;
+    }
+    
+    private String prepareConstructorCall(ConstructorNode cn) {
         String owner = BytecodeHelper.getClassInternalName(cn.getDeclaringClass());
-        String desc = BytecodeHelper.getMethodDescriptor(ClassHelper.VOID_TYPE, cn.getParameters());
         MethodVisitor mv = controller.getMethodVisitor();
         
         mv.visitTypeInsn(NEW, owner);
         mv.visitInsn(DUP);
+        return owner;
+    }
+    
+    private void finnishConstructorCall(ConstructorNode cn, String ownerDescriptor, int argsToRemove) {
+        String desc = BytecodeHelper.getMethodDescriptor(ClassHelper.VOID_TYPE, cn.getParameters());
+        MethodVisitor mv = controller.getMethodVisitor();
+        mv.visitMethodInsn(INVOKESPECIAL, ownerDescriptor, "<init>", desc);
         
-        TupleExpression args = makeArgumentList(call.getArguments());
-        loadArguments(args.getExpressions(), cn.getParameters());
-        
-        mv.visitMethodInsn(INVOKESPECIAL, owner, "<init>", desc);
-        
-        controller.getOperandStack().remove(args.getExpressions().size());
+        controller.getOperandStack().remove(argsToRemove);
         controller.getOperandStack().push(cn.getDeclaringClass());
-        return true;
     }
 
     public void writeInvokeConstructor(ConstructorCallExpression call) {
         if (writeDirectConstructorCall(call)) return;
+        if (writeAICCall(call)) return;
         
         Expression arguments = call.getArguments();
         if (arguments instanceof TupleExpression) {
@@ -388,5 +398,39 @@ public class InvocationWriter {
                 receiverClass, CallSiteWriter.CONSTRUCTOR,
                 arguments, false, false, false,
                 false);
+    }
+
+    private boolean writeAICCall(ConstructorCallExpression call) {
+        if (!call.isUsingAnonymousInnerClass()) return false;
+        ConstructorNode cn = call.getType().getDeclaredConstructors().get(0);
+        OperandStack os = controller.getOperandStack();
+        
+        String ownerDescriptor = prepareConstructorCall(cn);
+        
+        List<Expression> args = makeArgumentList(call.getArguments()).getExpressions();
+        Parameter[] params = cn.getParameters(); 
+        for (int i=0; i<params.length; i++) {
+            Parameter p = params[i];
+            Expression arg = args.get(i);
+            if (arg instanceof VariableExpression) {
+                VariableExpression var = (VariableExpression) arg;
+                loadVariableWithReference(var);
+            } else {
+                arg.visit(controller.getAcg());
+            }
+            os.doGroovyCast(p.getType());
+        }
+        
+        finnishConstructorCall(cn, ownerDescriptor, args.size());
+        return true;
+    }
+    
+    private void loadVariableWithReference(VariableExpression var) {
+        String name = var.getName();
+        if (name.equals("this") || name.equals("super")) {
+            var.visit(controller.getAcg());
+        } else {
+            ClosureWriter.loadReference(var.getName(), controller);
+        }
     }
 }

@@ -1247,7 +1247,8 @@ public class AsmClassGenerator extends ClassGenerator {
                     "getThisObject",
                     "()Ljava/lang/Object;"
             );
-            controller.getOperandStack().push(controller.getClassNode().getOuterClass());
+            controller.getOperandStack().push(ClassHelper.OBJECT_TYPE);
+//            controller.getOperandStack().push(controller.getClassNode().getOuterClass());
         } else {
             controller.getOperandStack().push(controller.getClassNode());
         }
