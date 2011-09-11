@@ -5,8 +5,9 @@
    =========================================================================
 
    Groovy Language
-   Copyright 2003-2009 The respective authors and developers
+   Copyright 2003-2011 The respective authors and developers
    Developers and Contributors are listed in the project POM file
+   and Gradle build file
 
    This product includes software developed by
    The Groovy community (http://groovy.codehaus.org/).
