@@ -399,4 +399,27 @@ import java.util.concurrent.atomic.AtomicInteger
         type = cl.getClass().getMethod("doCall", List).genericParameterTypes[0]
         assert type.toString().contains("java.util.List<java.lang.String>")
     }
+
+    void testBoundedGenericsWithInheritanceGroovy4974() {
+        assertScript '''
+            class TestGenerics {
+                static interface Z {}
+                static class V implements Z {}
+                static class W extends V {}
+                static interface X extends Z {}
+                static class Y implements X {}
+
+                static class A <T extends Z> { def a(T t) { this } }
+                static class B extends A<W> {}
+                static class C extends A<V> {}
+                static class D extends A<Y> {}
+
+                static void main(String[] args) {
+                    assert new B().a(new W()) instanceof B
+                    assert new C().a(new W()) instanceof C
+                    assert new D().a(new Y()) instanceof D
+                }
+            }
+        '''
+    }
 }
