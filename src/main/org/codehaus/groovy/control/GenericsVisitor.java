@@ -105,7 +105,7 @@ public class GenericsVisitor extends ClassCodeVisitorSupport {
             ClassNode nType = nTypes[i].getType();
             ClassNode cnType = cnTypes[i].getType();
             if (!nType.isDerivedFrom(cnType)) {
-                if (cnType.isInterface() && nType.declaresInterface(cnType)) continue;
+                if (cnType.isInterface() && nType.implementsInterface(cnType)) continue;
                 addError("The type "+nTypes[i].getName()+
                          " is not a valid substitute for the bounded parameter <"+
                          getPrintName(cnTypes[i])+">",n);
