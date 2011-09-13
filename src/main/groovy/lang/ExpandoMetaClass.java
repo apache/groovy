@@ -30,6 +30,7 @@ import org.codehaus.groovy.runtime.callsite.StaticMetaClassSite;
 import org.codehaus.groovy.runtime.metaclass.ClosureMetaMethod;
 import org.codehaus.groovy.runtime.metaclass.ClosureStaticMetaMethod;
 import org.codehaus.groovy.runtime.metaclass.DefaultMetaClassInfo;
+import org.codehaus.groovy.runtime.metaclass.MethodSelectionException;
 import org.codehaus.groovy.runtime.metaclass.MixedInMetaClass;
 import org.codehaus.groovy.runtime.metaclass.MixinInstanceMetaMethod;
 import org.codehaus.groovy.runtime.metaclass.OwnedMetaClass;
@@ -363,7 +364,14 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
                     MetaMethod noParam = pickMethod(methodName, new Class[0]);
                     // if the current call itself is with empty arg class array, no need to recurse with 'new Class[0]'
                     if (noParam == null && arguments.length != 0) {
-                        findMixinMethod(methodName, new Class[0]);
+                        try {
+                            findMixinMethod(methodName, new Class[0]);
+                        } catch (MethodSelectionException msex) {
+                            /*
+                             * Here we just additionally tried to find another no-arg mixin method of the same name and register that as well, if found.
+                             * Safe to ignore a MethodSelectionException in this additional exercise. (GROOVY-4999)
+                             */
+                        }
                     }
                 }
 
