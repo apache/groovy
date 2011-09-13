@@ -3,7 +3,7 @@ package org.codehaus.groovy.classgen.asm
 /**
  * @author Guillaume Laforge
  */
-class BinaryIntOperationsTest extends AbstractBytecodeTestCase {
+class BinaryOperationsTest extends AbstractBytecodeTestCase {
     
     void testIntPlus() {
         assert compile("""\
@@ -37,5 +37,15 @@ class BinaryIntOperationsTest extends AbstractBytecodeTestCase {
             }
             true
         """
+    }
+    
+    void testLongLeftShift() {
+        assert compile("""\
+            long a = 1
+            long b = a << 32
+        """).hasStrictSequence([
+                "LDC 32",
+                "LSHL"
+        ])
     }
 }

@@ -516,7 +516,8 @@ public class SecureASTCustomizer extends CompilationCustomizer {
         if (!isPackageAllowed && ast.getPackage() != null) {
             throw new SecurityException("Package definitions are not allowed");
         }
-        if (!isMethodDefinitionAllowed && ast.getMethods()!=null && ast.getMethods().size()>0) {
+        final List<MethodNode> methods = ast.getMethods();
+        if (!isMethodDefinitionAllowed && methods !=null && methods.size()>0) {
             throw new SecurityException("Method definitions are not allowed");
         }
 
@@ -544,7 +545,14 @@ public class SecureASTCustomizer extends CompilationCustomizer {
             }
         }
 
-        ast.getStatementBlock().visit(new SecuringCodeVisitor());
+        final SecuringCodeVisitor visitor = new SecuringCodeVisitor();
+        ast.getStatementBlock().visit(visitor);
+
+        if (isMethodDefinitionAllowed && methods !=null) {
+            for (MethodNode method : methods) {
+                method.getCode().visit(visitor);
+            }
+        }
     }
 
     private void assertStarImportIsAllowed(final String packageName) {

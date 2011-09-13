@@ -13406,6 +13406,18 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Logical implication of two boolean operators
+     *
+     * @param left left operator
+     * @param right right operator
+     * @return result of logical implication
+     * @since 1.8.3
+     */
+    public static Boolean implies(Boolean left, Boolean right) {
+        return !left || right;
+    }
+
+    /**
      * Exclusive disjunction of two boolean operators
      *
      * @param left left operator

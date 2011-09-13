@@ -1,4 +1,5 @@
 apply plugin: 'groovy'
+apply plugin: 'idea'
 apply plugin: 'code-quality'
 
 group = 'org.codehaus.groovy'
@@ -25,7 +26,6 @@ configurations {
 }
 
 dependencies {
-//    groovy files('/home/hd/tmp/groovy-all.jar') // files(sourceSets.main.classesDir)
     groovy files("$buildDir/classes")
     groovy "asm:asm:3.2"
     groovy "antlr:antlr:2.7.7"
@@ -42,8 +42,10 @@ dependencies {
     compile "org.apache.ant:ant:1.8.2"
     compile "javax.servlet:servlet-api:2.4"
     compile "javax.servlet:jsp-api:2.0"
-    compile("com.thoughtworks.xstream:xstream:1.3.1") {
+    compile("com.thoughtworks.xstream:xstream:1.4.1") {
         exclude(group: 'xpp3', module: 'xpp3_min')
+        exclude(group: 'junit', module: 'junit')
+        exclude(group: 'jmock', module: 'jmock')
     }
     compile("jline:jline:0.9.94") {
         exclude(group: 'junit', module: 'junit')
@@ -69,8 +71,7 @@ dependencies {
     testCompile "org.slf4j:jcl-over-slf4j:1.6.0"
     testCompile "com.thoughtworks.qdox:qdox:1.12"
     testCompile "org.apache.ant:ant-testutil:1.8.2"
-    runtime "org.codehaus.gpars:gpars:0.11"
-    runtime "org.coconut.forkjoin:jsr166y:070108"
+    runtime "org.codehaus.gpars:gpars:0.12"
 
     // todo this was provided
     compile "org.livetribe:livetribe-jsr223:2.0.6"

@@ -333,6 +333,7 @@ public class BinaryExpressionHelper {
             int mark = operandStack.getStackLength();
             // to leave a copy of the rightExpression value on the stack after the assignment.
             rhsValueLoader.visit(acg);
+            operandStack.doGroovyCast(leftExpression.getType());
             leftExpression.visit(acg);
             operandStack.remove(operandStack.getStackLength()-mark);
         }

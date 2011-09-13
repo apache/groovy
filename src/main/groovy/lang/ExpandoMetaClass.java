@@ -30,10 +30,12 @@ import org.codehaus.groovy.runtime.callsite.StaticMetaClassSite;
 import org.codehaus.groovy.runtime.metaclass.ClosureMetaMethod;
 import org.codehaus.groovy.runtime.metaclass.ClosureStaticMetaMethod;
 import org.codehaus.groovy.runtime.metaclass.DefaultMetaClassInfo;
+import org.codehaus.groovy.runtime.metaclass.MethodSelectionException;
 import org.codehaus.groovy.runtime.metaclass.MixedInMetaClass;
 import org.codehaus.groovy.runtime.metaclass.MixinInstanceMetaMethod;
 import org.codehaus.groovy.runtime.metaclass.OwnedMetaClass;
 import org.codehaus.groovy.runtime.metaclass.ThreadManagedMetaBeanProperty;
+import org.codehaus.groovy.runtime.wrappers.Wrapper;
 import org.codehaus.groovy.util.FastArray;
 
 import java.lang.reflect.Constructor;
@@ -362,7 +364,14 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
                     MetaMethod noParam = pickMethod(methodName, new Class[0]);
                     // if the current call itself is with empty arg class array, no need to recurse with 'new Class[0]'
                     if (noParam == null && arguments.length != 0) {
-                        findMixinMethod(methodName, new Class[0]);
+                        try {
+                            findMixinMethod(methodName, new Class[0]);
+                        } catch (MethodSelectionException msex) {
+                            /*
+                             * Here we just additionally tried to find another no-arg mixin method of the same name and register that as well, if found.
+                             * Safe to ignore a MethodSelectionException in this additional exercise. (GROOVY-4999)
+                             */
+                        }
                     }
                 }
 
@@ -1064,6 +1073,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
      */
     public Object invokeMethod(Class sender, Object object, String methodName, Object[] originalArguments, boolean isCallToSuper, boolean fromInsideClass) {
         if (invokeMethodMethod != null) {
+            MetaClassHelper.unwrap(originalArguments);
             return invokeMethodMethod.invoke(object, new Object[]{methodName, originalArguments});
         }
         return super.invokeMethod(sender, object, methodName, originalArguments, isCallToSuper, fromInsideClass);
@@ -1076,6 +1086,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
      */
     public Object invokeStaticMethod(Object object, String methodName, Object[] arguments) {
         if (invokeStaticMethodMethod != null) {
+            MetaClassHelper.unwrap(arguments);
             return invokeStaticMethodMethod.invoke(object, new Object[]{methodName, arguments});
         }
         return super.invokeStaticMethod(object, methodName, arguments);

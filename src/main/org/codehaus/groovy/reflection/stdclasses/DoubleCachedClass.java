@@ -65,6 +65,9 @@ public class DoubleCachedClass extends NumberCachedClass { // Double, double
                 || classToTransformFrom == Byte.TYPE
                 || classToTransformFrom == Float.TYPE
                 || classToTransformFrom == BigDecimal.class
-                || classToTransformFrom == BigInteger.class;
+                || classToTransformFrom == BigInteger.class
+                || (classToTransformFrom!=null && BigDecimal.class.isAssignableFrom(classToTransformFrom))
+                || (classToTransformFrom!=null && BigInteger.class.isAssignableFrom(classToTransformFrom))
+                ;
     }
 }

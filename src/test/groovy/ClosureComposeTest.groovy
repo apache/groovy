@@ -80,6 +80,23 @@ class ClosureComposeTest extends GroovyTestCase {
         assert twiceBothPlus10(5, 10) == 40
     }
 
+    void testDelegate() {
+        // Groovy-4994 failed with MissingPropertyException
+        assertScript """
+            def a = { foo }
+            def b = { bar }
+
+            class O {
+                def foo = 'foo'
+                def bar = 'bar'
+            }
+
+            def ab = a >> b
+            ab.delegate = new O()
+            ab()
+        """
+    }
+
     class ComposeTestHelper {
         def closure1 = { 40 }
         def closure2 = { it * 40 }
