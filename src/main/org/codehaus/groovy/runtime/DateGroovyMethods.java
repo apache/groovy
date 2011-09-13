@@ -21,6 +21,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.TimeZone;
 
 /**
  * This class defines new groovy methods which appear on normal JDK
@@ -428,6 +429,35 @@ public class DateGroovyMethods {
      */
     public static String format(Date self, String format) {
         return new SimpleDateFormat(format).format(self);
+    }
+
+    /**
+     * <p>Create a String representation of this date according to the given
+     * format pattern and timezone.</p>
+     * <p/>
+     * <p>For example:
+     * <code>
+     * def d = new Date(0)
+     * def tz = TimeZone.getTimeZone('GMT')
+     * println d.format('dd/MMM/yyyy', tz)
+     * </code> would return the string
+     * <code>"01/Jan/1970"</code>. See documentation for {@link java.text.SimpleDateFormat}
+     * for format pattern use.</p>
+     * <p/>
+     * <p>Note that a new DateFormat instance is created for every
+     * invocation of this method (for thread safety).</p>
+     *
+     * @param self   a Date
+     * @param format the format pattern to use according to {@link java.text.SimpleDateFormat}
+     * @param tz     the TimeZone to use
+     * @return a string representation of this date.
+     * @see java.text.SimpleDateFormat
+     * @since 1.8.3
+     */
+    public static String format(Date self, String format, TimeZone tz) {
+        SimpleDateFormat sdf = new SimpleDateFormat(format);
+        sdf.setTimeZone(tz);
+        return sdf.format(self);
     }
 
     /**
