@@ -188,6 +188,8 @@ public class AsmClassGenerator extends ClassGenerator {
         } catch (GroovyRuntimeException e) {
             e.setModule(classNode.getModule());
             throw e;
+        } catch (NullPointerException npe) {
+            throw new GroovyRuntimeException("NPE while processing "+sourceFile, npe);
         }
     }
 
@@ -910,21 +912,7 @@ public class AsmClassGenerator extends ClassGenerator {
             controller.getCompileStack().pop();
             return;
         }
-
-        Expression arguments = call.getArguments();
-        if (arguments instanceof TupleExpression) {
-            TupleExpression tupleExpression = (TupleExpression) arguments;
-            int size = tupleExpression.getExpressions().size();
-            if (size == 0) {
-                arguments = MethodCallExpression.NO_ARGUMENTS;
-            }
-        }
-
-        Expression receiverClass = new ClassExpression(call.getType());
-        controller.getCallSiteWriter().makeCallSite(
-                receiverClass, CallSiteWriter.CONSTRUCTOR,
-                arguments, false, false, false,
-                false);
+        controller.getInvocationWriter().writeInvokeConstructor(call);
         controller.getAssertionWriter().record(call);
     }
 
@@ -1036,7 +1024,7 @@ public class AsmClassGenerator extends ClassGenerator {
         int mark = operandStack.getStackLength()-1;
         MethodCallerMultiAdapter adapter;
         if (controller.getCompileStack().isLHS()) {
-            operandStack.box();
+            //operandStack.box();
             adapter = setProperty;
             if (isGroovyObject(objectExpression)) adapter = setGroovyObjectProperty;
             if (controller.isStaticContext() && isThisOrSuper(objectExpression)) adapter = setProperty;
@@ -1259,7 +1247,8 @@ public class AsmClassGenerator extends ClassGenerator {
                     "getThisObject",
                     "()Ljava/lang/Object;"
             );
-            controller.getOperandStack().push(controller.getClassNode().getOuterClass());
+            controller.getOperandStack().push(ClassHelper.OBJECT_TYPE);
+//            controller.getOperandStack().push(controller.getClassNode().getOuterClass());
         } else {
             controller.getOperandStack().push(controller.getClassNode());
         }

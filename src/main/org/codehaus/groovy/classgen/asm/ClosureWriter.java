@@ -93,30 +93,9 @@ public class ClosureWriter {
         for (int i = 2; i < localVariableParams.length; i++) {
             Parameter param = localVariableParams[i];
             String name = param.getName();
-
-            // compileStack.containsVariable(name) means to ask if the variable is already declared
-            // compileStack.getScope().isReferencedClassVariable(name) means to ask if the variable is a field
-            // If it is no field and is not yet declared, then it is either a closure shared variable or
-            // an already declared variable.
-            if (!compileStack.containsVariable(name) && compileStack.getScope().isReferencedClassVariable(name)) {
-                acg.visitFieldExpression(new FieldExpression(classNode.getDeclaredField(name)));
-            } else {
-                BytecodeVariable v = compileStack.getVariable(name, !classNodeUsesReferences());
-                if (v == null) {
-                    // variable is not on stack because we are
-                    // inside a nested Closure and this variable
-                    // was not used before
-                    // then load it from the Closure field
-                    FieldNode field = classNode.getDeclaredField(name);
-                    mv.visitVarInsn(ALOAD, 0);
-                    mv.visitFieldInsn(GETFIELD, controller.getInternalClassName(), name, BytecodeHelper.getTypeDescription(field.getType()));
-                } else {
-                    mv.visitVarInsn(ALOAD, v.getIndex());
-                }
-                if (param.getNodeMetaData(ClosureWriter.UseExistingReference.class)==null) {
-                        param.setNodeMetaData(ClosureWriter.UseExistingReference.class,Boolean.TRUE);
-                }
-                controller.getOperandStack().push(ClassHelper.REFERENCE_TYPE);
+            loadReference(name, controller);
+            if (param.getNodeMetaData(ClosureWriter.UseExistingReference.class)==null) {
+                param.setNodeMetaData(ClosureWriter.UseExistingReference.class,Boolean.TRUE);
             }
         }
 
@@ -128,6 +107,35 @@ public class ClosureWriter {
                 "<init>",
                 BytecodeHelper.getMethodDescriptor(ClassHelper.VOID_TYPE, localVariableParams));
         controller.getOperandStack().replace(ClassHelper.CLOSURE_TYPE, localVariableParams.length);
+    }
+    
+    public static void loadReference(String name, WriterController controller) {
+        CompileStack compileStack = controller.getCompileStack();
+        MethodVisitor mv = controller.getMethodVisitor();
+        ClassNode classNode = controller.getClassNode();
+        AsmClassGenerator acg = controller.getAcg();
+        
+        // compileStack.containsVariable(name) means to ask if the variable is already declared
+        // compileStack.getScope().isReferencedClassVariable(name) means to ask if the variable is a field
+        // If it is no field and is not yet declared, then it is either a closure shared variable or
+        // an already declared variable.
+        if (!compileStack.containsVariable(name) && compileStack.getScope().isReferencedClassVariable(name)) {
+            acg.visitFieldExpression(new FieldExpression(classNode.getDeclaredField(name)));
+        } else {
+            BytecodeVariable v = compileStack.getVariable(name, !classNodeUsesReferences(controller.getClassNode()));
+            if (v == null) {
+                // variable is not on stack because we are
+                // inside a nested Closure and this variable
+                // was not used before
+                // then load it from the Closure field
+                FieldNode field = classNode.getDeclaredField(name);
+                mv.visitVarInsn(ALOAD, 0);
+                mv.visitFieldInsn(GETFIELD, controller.getInternalClassName(), name, BytecodeHelper.getTypeDescription(field.getType()));
+            } else {
+                mv.visitVarInsn(ALOAD, v.getIndex());
+            }
+            controller.getOperandStack().push(ClassHelper.REFERENCE_TYPE);
+        }
     }
 
     public ClassNode getOrAddClosureClass(ClosureExpression expression, int mods) {
@@ -141,8 +149,7 @@ public class ClosureWriter {
         return closureClass;
     }
 
-    private boolean classNodeUsesReferences() {
-        ClassNode classNode = controller.getClassNode();
+    private static boolean classNodeUsesReferences(ClassNode classNode) {
         boolean ret = classNode.getSuperClass() == ClassHelper.CLOSURE_TYPE;
         if (ret) return ret;
         if (classNode instanceof InnerClassNode) {

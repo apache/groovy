@@ -248,6 +248,22 @@ public class MethodSelectionTest extends CompilableTestSupport {
     foo.setMyFloat2 new BigInteger('1')
     assert foo.getMyFloat2() == 1.0
   }
+  
+  void testCallWithExendedBigDecimal() {
+      assertScript """
+        BigDecimal f (BigDecimal x) {
+            return x
+        }
+        
+        public class ExtendedBigDecimal extends java.math.BigDecimal {
+            public ExtendedBigDecimal (int i) {
+                super (i)
+            }
+        }
+        
+        assert f(new ExtendedBigDecimal(1)) == 1      
+      """
+  }
 }
 
 class Foo3977 {

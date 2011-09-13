@@ -74,7 +74,7 @@ public class BytecodeInterface8 {
      * @return true if byte has its default MetaClass
      */
     public static boolean isOrigB(){
-       return false; 
+       return DefaultMetaClassInfo.isOrigByte(); 
     }
 
     // ------------------ byte[] ------------------
@@ -115,7 +115,7 @@ public class BytecodeInterface8 {
      * @return true if short has its default MetaClass
      */
     public static boolean isOrigS(){
-       return false; 
+       return DefaultMetaClassInfo.isOrigShort(); 
     }
 
     // ------------------ short[] ------------------
@@ -156,7 +156,7 @@ public class BytecodeInterface8 {
      * @return true if char has its default MetaClass
      */
     public static boolean isOrigC(){
-       return false; 
+       return DefaultMetaClassInfo.isOrigChar(); 
     }
 
     // ------------------ char[] ------------------
@@ -197,7 +197,7 @@ public class BytecodeInterface8 {
      * @return true if long has its default MetaClass
      */
     public static boolean isOrigL(){
-       return false; 
+       return DefaultMetaClassInfo.isOrigLong(); 
     }
 
     // ------------------ long[] ------------------
@@ -238,7 +238,7 @@ public class BytecodeInterface8 {
      * @return true if boolean has its default MetaClass
      */
     public static boolean isOrigZ(){
-       return false; 
+       return DefaultMetaClassInfo.isOrigBool(); 
     }
 
     // ------------------ boolean[] ------------------
@@ -278,7 +278,7 @@ public class BytecodeInterface8 {
      * @return true if float has its default MetaClass
      */
     public static boolean isOrigF(){
-       return false; 
+       return DefaultMetaClassInfo.isOrigFloat(); 
     }
 
     // ------------------ float[] ------------------
@@ -318,7 +318,7 @@ public class BytecodeInterface8 {
      * @return true if double has its default MetaClass
      */
     public static boolean isOrigD(){
-       return false; 
+       return DefaultMetaClassInfo.isOrigDouble(); 
     }
 
     // ------------------ double[] ------------------
