@@ -2057,16 +2057,7 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     protected int getBytecodeVersion() {
-        ClassNode classNode = controller.getClassNode();
-        if ( !classNode.isUsingGenerics() &&
-             !classNode.isAnnotated()  &&
-             !classNode.isAnnotationDefinition() ) 
-        {
-            return Opcodes.V1_3;
-        }
-
-        final String target = getCompileUnit().getConfig().getTargetBytecode();
-        return CompilerConfiguration.POST_JDK5.equals(target) ? Opcodes.V1_5 : Opcodes.V1_3;
+        return Opcodes.V1_5;
     }
     
     public boolean addInnerClass(ClassNode innerClass) {
