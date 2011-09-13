@@ -16,6 +16,7 @@
 package org.codehaus.groovy.classgen.asm;
 
 import java.util.LinkedList;
+import java.util.List;
 
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
@@ -33,9 +34,10 @@ import org.objectweb.asm.MethodVisitor;
 import static org.objectweb.asm.Opcodes.*;
 import static org.codehaus.groovy.classgen.asm.BinaryExpressionMultiTypeDispatcher.*;
 import static org.codehaus.groovy.ast.ClassHelper.*;
+import static org.codehaus.groovy.ast.tools.WideningCategories.*;
 
 /**
- * 
+ * A class to write out the optimized statements
  * @author <a href="mailto:blackdrag@gmx.org">Jochen "blackdrag" Theodorou</a>
  */
 public class OptimizingStatementWriter extends StatementWriter {
@@ -69,8 +71,9 @@ public class OptimizingStatementWriter extends StatementWriter {
     }
 
     private static MethodCaller[] guards = {
+        null,
         MethodCaller.newStatic(BytecodeInterface8.class, "isOrigInt"),
-        MethodCaller.newStatic(BytecodeInterface8.class, "isOrigZ"),
+        MethodCaller.newStatic(BytecodeInterface8.class, "isOrigL"),
         MethodCaller.newStatic(BytecodeInterface8.class, "isOrigD"),
         MethodCaller.newStatic(BytecodeInterface8.class, "isOrigC"),
         MethodCaller.newStatic(BytecodeInterface8.class, "isOrigB"),
@@ -488,18 +491,30 @@ public class OptimizingStatementWriter extends StatementWriter {
         private ClassNode node;
         private OptimizeFlagsCollector opt = new OptimizeFlagsCollector();
         private boolean optimizeMethodCall = true;
+        private VariableScope scope;
+        private final static VariableScope nonStaticScope = new VariableScope(); 
         
         @Override
         public void visitClass(ClassNode node) {
             this.optimizeMethodCall = !node.implementsInterface(GROOVY_INTERCEPTABLE_TYPE);
             this.node = node;
+            this.scope = nonStaticScope;
             super.visitClass(node);
+            this.scope=null;
+            this.node=null;
         }
         
         @Override
         public void visitMethod(MethodNode node) {
+            scope = node.getVariableScope();
             super.visitMethod(node);
             opt.reset();
+        }
+        
+        @Override
+        public void visitConstructor(ConstructorNode node) {
+            scope = node.getVariableScope();
+            super.visitConstructor(node);
         }
         
         @Override
@@ -606,9 +621,11 @@ public class OptimizingStatementWriter extends StatementWriter {
                         break;
                     case Types.DIVIDE: case Types.DIVIDE_EQUAL:
                         if (isLongCategory(leftType) && isLongCategory(rightType)) {
-                            //resultType = BigDecimal_TYPE;
+                            resultType = BigDecimal_TYPE;
                         } else if (isDoubleCategory(leftType) && isDoubleCategory(rightType)) {
                             resultType = double_TYPE;
+                        } else if (isBigDecCategory(leftType) && isBigDecCategory(rightType)) {
+                            resultType = BigDecimal_TYPE;
                         }
                         break;
                     case Types.POWER: case Types.POWER_EQUAL:
@@ -637,7 +654,7 @@ public class OptimizingStatementWriter extends StatementWriter {
                 opt.chainInvolvedType(rightType);
             }
         }
-        
+
         @Override
         public void visitExpressionStatement(ExpressionStatement statement) {
             if (statement.getNodeMetaData(StatementMeta.class)!=null) return;
@@ -680,7 +697,7 @@ public class OptimizingStatementWriter extends StatementWriter {
             if (expression.getNodeMetaData(StatementMeta.class)!=null) return;
             super.visitStaticMethodCallExpression(expression);
 
-            setMethodTarget(expression,expression.getMethod(), expression.getArguments());
+            setMethodTarget(expression,expression.getMethod(), expression.getArguments(), true);
         }
         
         @Override
@@ -696,12 +713,23 @@ public class OptimizingStatementWriter extends StatementWriter {
             }
             
             if (!setTarget) return;
-            setMethodTarget(expression, expression.getMethodAsString(), expression.getArguments());
+            setMethodTarget(expression, expression.getMethodAsString(), expression.getArguments(), true);
         }
         
-        private void setMethodTarget(Expression expression, String name, Expression callArgs) {
+        @Override
+        public void visitConstructorCallExpression(ConstructorCallExpression call) {
+            if (call.getNodeMetaData(StatementMeta.class)!=null) return;
+            super.visitConstructorCallExpression(call);
+
+            // we cannot a target for the constructor call, since we cannot easily
+            // check the meta class of the other class
+            // setMethodTarget(call, "<init>", call.getArguments(), false);
+        }
+        
+        private void setMethodTarget(Expression expression, String name, Expression callArgs, boolean isMethod) {
             if (name==null) return;
             if (!optimizeMethodCall) return;
+            if (AsmClassGenerator.containsSpreadExpression(callArgs)) return;
             // find method call target
             Parameter[] paraTypes = null;
             if (callArgs instanceof ArgumentListExpression) {
@@ -720,14 +748,52 @@ public class OptimizingStatementWriter extends StatementWriter {
                 if (!validTypeForCall(type)) return;
                 paraTypes = new Parameter[]{new Parameter(type,"")};
             }
+
+            MethodNode target;
+            ClassNode type;
+            if (isMethod) {
+                target = node.getMethod(name, paraTypes);
+                if (target==null) return;
+                if (!target.getDeclaringClass().equals(node)) return;
+                if (scope.isInStaticContext() && !target.isStatic()) return;
+                type = target.getReturnType().redirect();
+            } else {
+                type = expression.getType();
+                target = selectConstructor(type, paraTypes);
+                if (target==null) return;
+            }
             
-            MethodNode target = node.getMethod(name, paraTypes);
-            if (target==null) return;
-            if (!target.getDeclaringClass().equals(node)) return;
             StatementMeta meta = addMeta(expression);
             meta.target = target;
-            meta.type = target.getReturnType().redirect();
+            meta.type = type;
             opt.chainShouldOptimize(true);
+        }
+        
+        private static MethodNode selectConstructor(ClassNode node, Parameter[] paraTypes) {
+            List<ConstructorNode> cl = node.getDeclaredConstructors();
+            MethodNode res = null;
+            for (ConstructorNode cn : cl) {
+                if (parametersEqual(cn.getParameters(), paraTypes)) {
+                    res = cn;
+                    break;
+                }
+            }
+            if (res !=null && res.isPublic()) return res;
+            return null;
+        }
+
+        private static boolean parametersEqual(Parameter[] a, Parameter[] b) {
+            if (a.length == b.length) {
+                boolean answer = true;
+                for (int i = 0; i < a.length; i++) {
+                    if (!a[i].getType().equals(b[i].getType())) {
+                        answer = false;
+                        break;
+                    }
+                }
+                return answer;
+            }
+            return false;
         }
         
         private static boolean validTypeForCall(ClassNode type) {

@@ -31,6 +31,7 @@ import org.codehaus.groovy.ast.expr.ClosureExpression
 import org.codehaus.groovy.ast.expr.ConstantExpression
 import org.codehaus.groovy.ast.expr.ClassExpression
 import org.codehaus.groovy.ast.Parameter
+import org.codehaus.groovy.ast.expr.ListExpression
 
 /**
  * This customizer allows applying an AST transformation to a source unit with
@@ -175,6 +176,10 @@ class ASTTransformationCustomizer extends CompilationCustomizer {
                 annotationNode.addMember(key, value)
             } else if (value instanceof Class) {
                 annotationNode.addMember(key, new ClassExpression(ClassHelper.make(value)))
+            } else if (value instanceof List) {
+                annotationNode.addMember(key, new ListExpression(value.collect {
+                    it instanceof Class ? new ClassExpression(ClassHelper.make(it)) : new ConstantExpression(it)
+                }))
             } else {
                 annotationNode.addMember(key, new ConstantExpression(value))
             }

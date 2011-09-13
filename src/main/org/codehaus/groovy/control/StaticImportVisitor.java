@@ -156,7 +156,7 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
                 return result;
             }
         } else {
-            left = transform(be.getLeftExpression());            
+            left = transform(be.getLeftExpression());
         }
         be.setLeftExpression(left);
         return be;
@@ -266,7 +266,7 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
                     if (inSpecialConstructorCall ||
                             (lookForPossibleStaticMethod && currentClass.hasPossibleStaticMethod(methodName, args))) {
                         StaticMethodCallExpression smce = new StaticMethodCallExpression(currentClass, methodName, args);
-                    	setSourcePosition(smce, mce);
+                        setSourcePosition(smce, mce);
                         return smce;
                     }
                 }
@@ -320,11 +320,16 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
         foundArgs = null;
         foundConstant = null;
         Expression objectExpression = transform(pe.getObjectExpression());
+        boolean candidate = false;
+        if (objectExpression instanceof MethodCallExpression) {
+            candidate = ((MethodCallExpression)objectExpression).isImplicitThis();
+        }
 
-        if (foundArgs != null && foundConstant != null) {
+        if (foundArgs != null && foundConstant != null && candidate) {
             Expression result = findStaticMethodImportFromModule(foundConstant, foundArgs);
             if (result != null) {
                 objectExpression = result;
+                objectExpression.setSourcePosition(pe);
             }
         }
         inPropertyExpression = oldInPropertyExpression;
@@ -361,7 +366,7 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
                 if (expression != null) return expression;
             }
         }
-        
+
         // look for one of these:
         //   import static MyClass.prop [as otherProp]
         // when resolving prop or field reference

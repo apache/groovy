@@ -7,6 +7,7 @@ import org.objectweb.asm.FieldVisitor
 import org.objectweb.asm.ClassReader
 import org.codehaus.groovy.control.Phases
 import org.objectweb.asm.commons.EmptyVisitor
+import java.util.List;
 
 /**
  * Abstract test case to extend to check the instructions we generate in the bytecode of groovy programs.
@@ -77,20 +78,18 @@ class InstructionSequence {
      */
     boolean hasSequence(List<String> pattern, int offset = 0, boolean strict = false) {
         if (pattern.size() == 0) return true
-
-        def idx = indexOf(pattern[0], offset)
-        if (idx > -1) {
+        def idx = offset
+        while (true) {
+            idx = indexOf(pattern[0], idx)
+            if (idx == -1) break
             // not the first call with offset 0 and check that the next instruction match
             // is the exact following instruction in the pattern and in the bytecode instructions
-            if (strict && offset > 0 && idx - offset > 1) {
-                return false
-            } else {
-                return hasSequence(pattern.tail(), idx, strict)
-            }
-        } else {
-            return false
-        }
-    }
+            if (strict && offset > 0 && idx != offset) return false
+            if (hasSequence(pattern.tail(), idx+1, strict)) return true
+            idx++
+        } 
+        return false
+    }    
 
     /**
      * Find a strict sub-sequence of instructions of the list of instructions.

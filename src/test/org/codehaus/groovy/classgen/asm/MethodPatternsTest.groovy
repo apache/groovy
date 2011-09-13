@@ -1,5 +1,7 @@
 package org.codehaus.groovy.classgen.asm
 
+import org.objectweb.asm.MethodVisitor;
+
 
 /**
  * @author Jochen Theodorou
@@ -126,6 +128,49 @@ class MethodPatternsTest extends AbstractBytecodeTestCase {
             'IADD',
             'ISTORE',
             'GOTO L14'
+        ])
+    }
+    
+    void testRightShiftUnsignedWithLongArgument() {
+        assert compile(method:"hashCode", '''
+            class X{
+                long _tagReservationDate
+                String userId, partnerItemId, trackingTag
+                public int hashCode() {
+                    final int prime = 31;
+                    int result = 1;
+                    result = prime * result + (partnerItemId?.hashCode() ?: 0)
+                    result = prime * result + (int) (_tagReservationDate ^ (_tagReservationDate >>> 32))
+                    result = prime * result + (trackingTag?.hashCode() ?: 0)
+                    result = prime * result + (userId?.hashCode() ?: 0)
+                    return result;
+                }
+            }
+        ''').hasSequence ([
+            'IMUL',
+            'ALOAD 0',
+            'GETFIELD X._tagReservationDate : J',
+            'ALOAD 0',
+            'GETFIELD X._tagReservationDate : J',
+            'LDC 32',
+            'LUSHR',
+            'LXOR',
+            'L2I',
+            'IADD',
+        ])
+    }
+    
+    void testobjectArraySet() {
+        assert compile(method:"foo", '''
+            class X{
+              void foo() {
+                X[] xa = new X[1]
+                xa[0] = new X()
+              }
+            }
+        ''').hasSequence ([
+            'LDC 0',
+            'INVOKESTATIC org/codehaus/groovy/runtime/BytecodeInterface8.objectArraySet ([Ljava/lang/Object;ILjava/lang/Object;)V',
         ])
     }
 }

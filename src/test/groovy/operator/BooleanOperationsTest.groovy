@@ -100,6 +100,12 @@ class BooleanOperationsTest extends GroovyTestCase {
         assert (!y) == true
     }
 
+    void testImplies() {
+        assert false.implies(true)
+        assert false.implies(false)
+        assert true.implies(true)
+        assert !true.implies(false)
+    }
 
     void testBooleanAssignOps() {
         boolean z = true

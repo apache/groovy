@@ -364,4 +364,16 @@ class SecureASTCustomizerTest extends GroovyTestCase {
         assert hasSecurityException {shell.evaluate('java.lang.Math.cos(2)')}
     }
 
+    // Testcase for GROOVY-4978
+    void testVisitMethodBody() {
+        def shell = new GroovyShell(configuration)
+        customizer.importsBlacklist = [
+                "java.lang.System",
+		        "groovy.lang.GroovyShell",
+                "groovy.lang.GroovyClassLoader"]
+        customizer.indirectImportCheckEnabled = true
+
+        assert hasSecurityException {shell.evaluate('System.println(1)')}
+        assert hasSecurityException {shell.evaluate('def x() { System.println(1) }')}
+    }
 }

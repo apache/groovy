@@ -257,4 +257,8 @@ public class BinaryIntExpressionHelper extends BinaryExpressionWriter {
         mv.visitInsn(ICONST_1);
         mv.visitInsn(IADD);
     }
+
+    protected ClassNode getDevisionOpResultType() {
+        return ClassHelper.BigDecimal_TYPE;
+    }
 }

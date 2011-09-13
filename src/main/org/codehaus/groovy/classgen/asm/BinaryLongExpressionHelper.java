@@ -116,4 +116,8 @@ public class BinaryLongExpressionHelper extends BinaryExpressionWriter {
         mv.visitInsn(LCONST_1);
         mv.visitInsn(LADD);
     }
+    
+    protected ClassNode getDevisionOpResultType() {
+        return ClassHelper.BigDecimal_TYPE;
+    }
 }

@@ -1,4 +1,5 @@
 target
+out
 src/main/org/codehaus/groovy/antlr/parser/GroovyLexer.java
 src/main/org/codehaus/groovy/antlr/parser/GroovyLexer.smap
 src/main/org/codehaus/groovy/antlr/parser/GroovyRecognizer.java
@@ -13,3 +14,6 @@ src/main/org/codehaus/groovy/antlr/java/JavaTokenTypes.java
 src/main/org/codehaus/groovy/antlr/java/JavaTokenTypes.txt
 *~
 .gradle
+*.iml
+*.ipr
+*.iws
