@@ -128,4 +128,26 @@ public class ConstructorSite extends MetaClassSite {
                 return CallSiteArray.defaultCallConstructor(this, receiver, args);
         }
     }
+    
+    public static class NoParamSiteInnerClass extends ConstructorSiteNoUnwrapNoCoerce {
+        private static final Object[] NO_ARGS = new Object[0];
+
+        public NoParamSiteInnerClass(CallSite site, MetaClassImpl metaClass, CachedConstructor constructor, Class[] params) {
+            super(site, metaClass, constructor, params);
+        }
+
+        public final Object callConstructor(Object receiver, Object[] args) throws Throwable {
+            if (checkCall(receiver, args)) {
+                final Object[] newArgs = new Object[] {args[0]};
+                final Object bean = constructor.invoke(newArgs);
+                try {
+                    ((MetaClassImpl) metaClass).setProperties(bean, (Map) args[1]);
+                } catch (GroovyRuntimeException gre) {
+                    throw ScriptBytecodeAdapter.unwrap(gre);
+                }
+                return bean;
+            } else
+                return CallSiteArray.defaultCallConstructor(this, receiver, args);
+        }
+    }
 }
