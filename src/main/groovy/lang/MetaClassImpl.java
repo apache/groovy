@@ -100,6 +100,7 @@ import java.util.Set;
  * @author Jochen Theodorou
  * @author Graeme Rocher
  * @author Alex Tkachman
+ * @author Roshan Dawrani
  * @version $Revision$
  * @see groovy.lang.MetaClass
  */
@@ -3035,6 +3036,15 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                     constructor = (CachedConstructor) chooseMethod("<init>", constructors, MetaClassHelper.EMPTY_TYPE_ARRAY);
                     if (constructor != null) {
                         return new ConstructorSite.NoParamSite(site, this,constructor,params);
+                    }
+                } else if (args.length == 2 && theClass.getEnclosingClass() != null && args[1] instanceof Map) {
+                    Class enclosingClass = theClass.getEnclosingClass();
+                    String enclosingInstanceParamType = args[0] != null ? args[0].getClass().getName() : "";
+                    if(enclosingClass.getName().equals(enclosingInstanceParamType)) {
+                        constructor = (CachedConstructor) chooseMethod("<init>", constructors, new Class[]{enclosingClass});
+                        if (constructor != null) {
+                            return new ConstructorSite.NoParamSiteInnerClass(site, this,constructor,params);
+                        }
                     }
                 }
             }
