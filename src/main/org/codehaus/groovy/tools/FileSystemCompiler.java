@@ -204,7 +204,7 @@ public class FileSystemCompiler {
                     errors = true;
                 }
             } else {
-                fileList.addAll(Arrays.asList(filenames));
+                fileList.add(filename);
             }
         }
         if (errors) {
