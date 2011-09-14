@@ -15,18 +15,27 @@
  */
 package org.codehaus.groovy.binding;
 
+import groovy.beans.DefaultPropertyAccessor;
+import groovy.beans.PropertyAccessor;
 import groovy.lang.GroovyRuntimeException;
 import groovy.lang.MissingMethodException;
+import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.InvokerInvocationException;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
-import javax.swing.*;
-import java.awt.*;
+import javax.swing.SwingUtilities;
+import java.awt.Component;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyVetoException;
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.net.URL;
+import java.util.Enumeration;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Level;
@@ -35,18 +44,68 @@ import java.util.logging.Logger;
 
 /**
  * @author <a href="mailto:shemnon@yahoo.com">Danno Ferrin</a>
+ * @author Andres Almiray
  * @version $Revision$
  * @since Groovy 1.1
  */
 public class PropertyBinding implements SourceBinding, TargetBinding, TriggerBinding {
     private static final ExecutorService DEFAULT_EXECUTOR_SERVICE = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
     private static final Logger LOG = Logger.getLogger(PropertyBinding.class.getName());
+    private static final Map<Class, Class<? extends PropertyAccessor>> ACCESSORS = new LinkedHashMap<Class, Class<? extends PropertyAccessor>>();
+
+    static {
+        Enumeration<URL> urls = fetchUrlsFor("META-INF/services/" + groovy.beans.PropertyAccessor.class.getName());
+        while (urls.hasMoreElements()) {
+            try {
+                registerPropertyAccessors(DefaultGroovyMethods.readLines(urls.nextElement()));
+            } catch (IOException e) {
+                // ignore
+                // TODO should use a low priority logger
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private static void registerPropertyAccessors(List<String> lines) {
+        ClassLoader cl = Thread.currentThread().getContextClassLoader();
+        for (String line : lines) {
+            line = line.trim();
+            if (line.startsWith("#")) return;
+            String[] parts = line.split("=");
+            if (parts.length == 2) {
+                try {
+                    ACCESSORS.put(cl.loadClass(parts[0].trim()), (Class<? extends PropertyAccessor>) cl.loadClass(parts[1].trim()));
+                } catch (ClassNotFoundException e) {
+                    // ignore
+                    // TODO should use a low priority logger
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+    private static Enumeration<URL> fetchUrlsFor(String path) {
+        try {
+            return Thread.currentThread().getContextClassLoader().getResources(path);
+        } catch (IOException e) {
+            return new Enumeration<URL>() {
+                public boolean hasMoreElements() {
+                    return false;
+                }
+
+                public URL nextElement() {
+                    return null;
+                }
+            };
+        }
+    }
 
     Object bean;
     String propertyName;
     boolean nonChangeCheck;
     UpdateStrategy updateStrategy;
     private final Object[] lock = new Object[0];
+    private PropertyAccessor propertyAccessor;
 
     public PropertyBinding(Object bean, String propertyName) {
         this(bean, propertyName, (UpdateStrategy) null);
@@ -62,6 +121,44 @@ public class PropertyBinding implements SourceBinding, TargetBinding, TriggerBin
         this.updateStrategy = pickUpdateStrategy(bean, updateStrategy);
         if (LOG.isLoggable(Level.FINER)) {
             LOG.finer("Updating with " + this.updateStrategy + " property '" + propertyName + "' of bean " + bean);
+        }
+        setupPropertyReaderAndWriter();
+    }
+
+    private void setupPropertyReaderAndWriter() {
+        synchronized (lock) {
+            propertyAccessor = fetchPropertyAccessor(bean != null ? bean.getClass() : null);
+        }
+    }
+
+    private PropertyAccessor propertyAccessor() {
+        synchronized (lock) {
+            return propertyAccessor;
+        }
+    }
+
+    private PropertyAccessor fetchPropertyAccessor(Class klass) {
+        if (klass == null) {
+            return DefaultPropertyAccessor.INSTANCE;
+        }
+
+        Class<? extends PropertyAccessor> accessorClass = ACCESSORS.get(klass);
+        if (accessorClass == null) {
+            for (Class c : klass.getInterfaces()) {
+                PropertyAccessor propertyAccessor = fetchPropertyAccessor(c);
+                if (propertyAccessor != DefaultPropertyAccessor.INSTANCE) {
+                    return propertyAccessor;
+                }
+            }
+            return fetchPropertyAccessor(klass.getSuperclass());
+        }
+
+        try {
+            return accessorClass.newInstance();
+        } catch (InstantiationException e) {
+            return DefaultPropertyAccessor.INSTANCE;
+        } catch (IllegalAccessException e) {
+            return DefaultPropertyAccessor.INSTANCE;
         }
     }
 
@@ -136,7 +233,7 @@ public class PropertyBinding implements SourceBinding, TargetBinding, TriggerBin
 
     private void setBeanProperty(Object newValue) {
         try {
-            InvokerHelper.setProperty(bean, propertyName, newValue);
+            propertyAccessor().write(bean, propertyName, newValue);
         } catch (InvokerInvocationException iie) {
             if (!(iie.getCause() instanceof PropertyVetoException)) {
                 throw iie;
@@ -158,7 +255,7 @@ public class PropertyBinding implements SourceBinding, TargetBinding, TriggerBin
     }
 
     public Object getSourceValue() {
-        return InvokerHelper.getPropertySafe(bean, propertyName);
+        return propertyAccessor().read(bean, propertyName);
     }
 
     public FullBinding createBinding(SourceBinding source, TargetBinding target) {
@@ -237,6 +334,7 @@ public class PropertyBinding implements SourceBinding, TargetBinding, TriggerBin
 
     public void setBean(Object bean) {
         this.bean = bean;
+        setupPropertyReaderAndWriter();
     }
 
     public String getPropertyName() {
