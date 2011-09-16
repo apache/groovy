@@ -63,6 +63,9 @@ class XmlNodePrinterTest extends GroovyTestCase {
     def attributeWithNewlineInput = "<Field Text=\"Some&#10;Text&#10;&#13;\"/>"
     def attributeWithNewlineExpectedOutput = "<Field Text=\"Some&#10;Text&#10;&#13;\"/>\n"
 
+    def emptyTagExpanded = "<tag></tag>\n"
+    def emptyTagCompact = "<tag/>\n"
+
     protected void setUp() {
         writer = new StringWriter()
         pw = new PrintWriter(writer)
@@ -113,6 +116,15 @@ class XmlNodePrinterTest extends GroovyTestCase {
     void testWithoutNamespacesCompactInPreserveOut() {
         printer.preserveWhitespace = true
         checkRoundtrip noNamespaceInputCompact, noNamespaceInputCompact
+    }
+
+    void testNoExpandOfEmptyElements() {
+        checkRoundtrip emptyTagExpanded, emptyTagCompact
+    }
+
+    void testExpandEmptyElements() {
+        printer.expandEmptyElements = true
+        checkRoundtrip emptyTagExpanded, emptyTagExpanded
     }
 
     void testWithoutNamespacesCompactInDefaultOut() {
