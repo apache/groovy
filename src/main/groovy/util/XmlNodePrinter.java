@@ -50,6 +50,7 @@ public class XmlNodePrinter {
     private String quote;
     private boolean namespaceAware = true;
     private boolean preserveWhitespace = false;
+    private boolean expandEmptyElements = false;
 
     public XmlNodePrinter(PrintWriter out) {
         this(out, "  ");
@@ -139,6 +140,28 @@ public class XmlNodePrinter {
         this.quote = quote;
     }
 
+    /**
+     * Whether empty elements are expanded from &lt;tagName/&gt; to &lt;tagName&gt;&lt;/tagName&gt;.
+     *
+     * @return <code>true</code>, if empty elements will be represented by an opening tag
+     *                            followed immediately by a closing tag.
+     */
+    public boolean isExpandEmptyElements() {
+        return expandEmptyElements;
+    }
+
+    /**
+     * Whether empty elements are expanded from <tagName/> to <tagName></tagName>.
+     *
+     * @param expandEmptyElements if <code>true</code>, empty
+     *                            elements will be represented by an opening tag
+     *                            followed immediately by a closing tag.
+     *                            Defaults to <code>false</code>.
+     */
+    public void setExpandEmptyElements(boolean expandEmptyElements) {
+        this.expandEmptyElements = expandEmptyElements;
+    }
+
     protected void print(Node node, NamespaceContext ctx) {
         /*
          * Handle empty elements like '<br/>', '<img/> or '<hr noshade="noshade"/>.
@@ -151,7 +174,13 @@ public class XmlNodePrinter {
                 printNamespace(node, ctx);
             }
             printNameAttributes(node.attributes(), ctx);
-            out.print("/>");
+            if (expandEmptyElements) {
+                out.print("></");
+                out.print(getName(node));
+                out.print(">");
+            } else {
+                out.print("/>");
+            }
             printLineEnd();
             out.flush();
             return;
