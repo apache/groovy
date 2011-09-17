@@ -375,7 +375,10 @@ public class XmlSlurper extends DefaultHandler {
     */
     public void endElement(final String namespaceURI, final String localName, final String qName) throws SAXException {
         addCdata();
-        currentNode = stack.pop();
+        Node oldCurrentNode = stack.pop();
+        if (oldCurrentNode != null) {
+            currentNode = oldCurrentNode;
+        }
     }
 
     /* (non-Javadoc)
