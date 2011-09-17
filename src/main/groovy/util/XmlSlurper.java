@@ -160,13 +160,18 @@ public class XmlSlurper extends DefaultHandler {
         final FileInputStream fis = new FileInputStream(file);
         final InputSource input = new InputSource(fis);
         input.setSystemId("file://" + file.getAbsolutePath());
-        return parse(input);
+        try {
+            return parse(input);
+        } finally {
+            fis.close();
+        }
     }
 
     /**
      * Parse the content of the specified input stream into an GPathResult Object.
      * Note that using this method will not provide the parser with any URI
-     * for which to find DTDs etc.
+     * for which to find DTDs etc. It is up to you to close the InputStream
+     * after parsing is complete (if required).
      *
      * @param input the InputStream to parse
      * @return An object which supports GPath expressions
@@ -181,7 +186,8 @@ public class XmlSlurper extends DefaultHandler {
     /**
      * Parse the content of the specified reader into a GPathResult Object.
      * Note that using this method will not provide the parser with any URI
-     * for which to find DTDs etc.
+     * for which to find DTDs etc. It is up to you to close the Reader
+     * after parsing is complete (if required).
      *
      * @param in the Reader to parse
      * @return An object which supports GPath expressions
