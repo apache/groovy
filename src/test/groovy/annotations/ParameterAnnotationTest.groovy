@@ -13,6 +13,7 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
+package groovy.annotations
 
 import org.codehaus.groovy.control.*
 
@@ -59,4 +60,11 @@ class ParameterAnnotationTest extends GroovyTestCase {
         // check if the AnnotationNode for 'ParameterAnnotation' has been created
         assert methodNode.getParameters()[0].getAnnotations().any { an -> an.classNode.nameWithoutPackage == 'ParameterAnnotation' }
     }
+
+    @Override
+    protected void tearDown() {
+        super.tearDown()
+        new File("MyInterfaceImpl.class").deleteOnExit()
+    }
+
 }
