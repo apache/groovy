@@ -543,9 +543,9 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
                     "directly. You are not suppposed to do this. " +
                     "Please create a new ClassNode refering to the old ClassNode " +
                     "and use the new ClassNode instead of the old one. Otherwise " +
-                    "the compiler will create wrong descriptors and potential " +
-                    "NullPointerException in TypeResolver in OpenJDK. If this is " +
-                    "not your own doing, please report this bug to the writer of the" +
+                    "the compiler will create wrong descriptors and a potential " +
+                    "NullPointerException in TypeResolver in the OpenJDK. If this is " +
+                    "not your own doing, please report this bug to the writer of the " +
                     "transform.",
                     ref);
         }
