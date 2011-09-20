@@ -64,16 +64,16 @@ public class SingletonASTTransformation implements ASTTransformation, Opcodes {
     }
 
     private void createNonLazy(ClassNode classNode) {
-        final FieldNode fieldNode = classNode.addField("instance", ACC_PUBLIC|ACC_FINAL|ACC_STATIC, classNode, new ConstructorCallExpression(classNode, new ArgumentListExpression()));
+        final FieldNode fieldNode = classNode.addField("instance", ACC_PUBLIC|ACC_FINAL|ACC_STATIC, classNode.getPlainNodeReference(), new ConstructorCallExpression(classNode, new ArgumentListExpression()));
         createConstructor(classNode, fieldNode);
 
         final BlockStatement body = new BlockStatement();
         body.addStatement(new ReturnStatement(new VariableExpression(fieldNode)));
-        classNode.addMethod("getInstance", ACC_STATIC|ACC_PUBLIC, classNode, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, body);
+        classNode.addMethod("getInstance", ACC_STATIC|ACC_PUBLIC, classNode.getPlainNodeReference(), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, body);
     }
 
     private void createLazy(ClassNode classNode) {
-        final FieldNode fieldNode = classNode.addField("instance", ACC_PRIVATE|ACC_STATIC|ACC_VOLATILE, classNode, null);
+        final FieldNode fieldNode = classNode.addField("instance", ACC_PRIVATE|ACC_STATIC|ACC_VOLATILE, classNode.getPlainNodeReference(), null);
         createConstructor(classNode, fieldNode);
 
         final BlockStatement body = new BlockStatement();
@@ -90,7 +90,7 @@ public class SingletonASTTransformation implements ASTTransformation, Opcodes {
                     )
             )
         ));
-        classNode.addMethod("getInstance", ACC_STATIC|ACC_PUBLIC, classNode, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, body);
+        classNode.addMethod("getInstance", ACC_STATIC|ACC_PUBLIC, classNode.getPlainNodeReference(), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, body);
     }
 
     private void createConstructor(ClassNode classNode, FieldNode field) {

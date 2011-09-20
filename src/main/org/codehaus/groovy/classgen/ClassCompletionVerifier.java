@@ -62,11 +62,13 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport implements 
             checkMethodsForWeakerAccess(node);
             checkMethodsForOverridingFinal(node);
             checkNoAbstractMethodsNonabstractClass(node);
+            checkGenericsUsage(node, node.getUnresolvedInterfaces());
+            checkGenericsUsage(node, node.getUnresolvedSuperClass());
         }
         super.visitClass(node);
         currentClass = oldClass;
     }
-
+    
     private void checkInterfaceMethodVisibility(ClassNode node) {
         if (!node.isInterface()) return;
         for (MethodNode method : node.getMethods()) {
@@ -269,6 +271,8 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport implements 
         checkRepetitiveMethod(node);
         checkOverloadingPrivateAndPublic(node);
         checkMethodModifiers(node);
+        checkGenericsUsage(node, node.getParameters());
+        checkGenericsUsage(node, node.getReturnType());
         super.visitMethod(node);
     }
 
@@ -343,11 +347,13 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport implements 
             addError("The " + getDescription(node) + " is declared multiple times.", node);
         }
         checkInterfaceFieldModifiers(node);
+        checkGenericsUsage(node, node.getType());
         super.visitField(node);
     }
 
     public void visitProperty(PropertyNode node) {
         checkDuplicateProperties(node);
+        checkGenericsUsage(node, node.getType());
         super.visitProperty(node);
     }
 
@@ -443,6 +449,7 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport implements 
     public void visitConstructor(ConstructorNode node) {
         inConstructor = true;
         inStaticConstructor = node.isStaticConstructor();
+        checkGenericsUsage(node, node.getParameters());
         super.visitConstructor(node);
     }
 
@@ -513,6 +520,53 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport implements 
                 addError("String too long. The given string is " + s.length() + " Unicode code units long, but only a maximum of 65535 is allowed.", expression);
             }
         }
+    }
+
+    private void checkGenericsUsage(ASTNode ref, ClassNode[] nodes) {
+        for (ClassNode node : nodes) {
+            checkGenericsUsage(ref, node);
+        }
+    }
+    
+    private void checkGenericsUsage(ASTNode ref, Parameter[] params) {
+        for (Parameter p : params) {
+            checkGenericsUsage(ref, p.getType());
+        }
+    }
+    
+    private void checkGenericsUsage(ASTNode ref, ClassNode node) {
+        if (node.isArray()) {
+            checkGenericsUsage(ref, node.getComponentType());
+        } else if (!node.isRedirectNode() && node.isUsingGenerics()) {
+            addError(   
+                    "A transform used a generics containing ClassNode "+ node + " " +
+                    "for "+getRefDescriptor(ref) + 
+                    "directly. You are not suppposed to do this. " +
+                    "Please create a new ClassNode refering to the old ClassNode " +
+                    "and use the new ClassNode instead of the old one. Otherwise " +
+                    "the compiler will create wrong descriptors and potential " +
+                    "NullPointerException in TypeResolver in OpenJDK. If this is " +
+                    "not your own doing, please report this bug to the writer of the" +
+                    "transform.",
+                    ref);
+        }
+    }
+
+    private String getRefDescriptor(ASTNode ref) {
+        if (ref instanceof FieldNode) {
+            FieldNode f = (FieldNode) ref;
+            return "the field "+f.getName()+" ";
+        } else if (ref instanceof PropertyNode) {
+            PropertyNode p = (PropertyNode) ref;
+            return "the property "+p.getName()+" ";
+        } else if (ref instanceof ConstructorNode) {
+            return "the constructor "+ref.getText()+" ";
+        } else if (ref instanceof MethodNode) {
+            return "the method "+ref.getText()+" ";
+        } else if (ref instanceof ClassNode) {
+            return "the super class "+ref+" ";
+        }
+        return "<unknown with class "+ref.getClass()+"> ";
     }
 
 }

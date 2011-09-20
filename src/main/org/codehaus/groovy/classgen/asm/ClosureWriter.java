@@ -181,7 +181,7 @@ public class ClosureWriter {
         Parameter[] localVariableParams = getClosureSharedVariables(expression);
         removeInitialValues(localVariableParams);
 
-        InnerClassNode answer = new InnerClassNode(classNode, name, mods, ClassHelper.CLOSURE_TYPE); // closures are local inners and not public
+        InnerClassNode answer = new InnerClassNode(classNode, name, mods, ClassHelper.CLOSURE_TYPE.getPlainNodeReference()); 
         answer.setEnclosingMethod(controller.getMethodNode());
         answer.setSynthetic(true);
         answer.setUsingGenerics(outerClass.isUsingGenerics());

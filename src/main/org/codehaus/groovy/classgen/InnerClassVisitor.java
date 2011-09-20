@@ -64,7 +64,7 @@ public class InnerClassVisitor extends InnerClassVisitorHelper implements Opcode
                 node instanceof InnerClassNode) {
             innerClass = (InnerClassNode) node;
             if (!isStatic(innerClass) && innerClass.getVariableScope() == null) {
-                thisField = innerClass.addField("this$0", PUBLIC_SYNTHETIC, node.getOuterClass(), null);
+                thisField = innerClass.addField("this$0", PUBLIC_SYNTHETIC, node.getOuterClass().getPlainNodeReference(), null);
             }
 
             if (innerClass.getVariableScope() == null &&
@@ -122,7 +122,7 @@ public class InnerClassVisitor extends InnerClassVisitorHelper implements Opcode
         Parameter[] params = node.getParameters();
         Parameter[] newParams = new Parameter[params.length + 1];
         System.arraycopy(params, 0, newParams, 1, params.length);
-        Parameter thisPara = new Parameter(classNode.getOuterClass(), getUniqueName(params, node));
+        Parameter thisPara = new Parameter(classNode.getOuterClass().getPlainNodeReference(), getUniqueName(params, node));
         newParams[0] = thisPara;
         node.setParameters(newParams);
 
@@ -281,7 +281,7 @@ public class InnerClassVisitor extends InnerClassVisitorHelper implements Opcode
         // this is saved in a field named this$0
         pCount = 0;
         expressions.add(pCount, VariableExpression.THIS_EXPRESSION);
-        ClassNode outerClassType = getClassNode(innerClass.getOuterClass(), isStatic);
+        ClassNode outerClassType = getClassNode(innerClass.getOuterClass(), isStatic).getPlainNodeReference();
         Parameter thisParameter = new Parameter(outerClassType, "p" + pCount);
         parameters.add(pCount, thisParameter);
 

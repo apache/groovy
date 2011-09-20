@@ -337,7 +337,7 @@ public class ClassHelper {
     }
 
     public static ClassNode makeReference() {
-        return make(Reference.class);
+        return REFERENCE_TYPE.getPlainNodeReference();
     }
 
     public static boolean isCachedType(ClassNode type) {
