@@ -419,7 +419,7 @@ class ImmutableTransformTest extends GroovyShellTestCase {
 
     void testImmutableUsageOnStaticInnerClasses() {
         shell.parse '''
-            @groovy.transform.Immutable
+            import groovy.transform.Immutable
 			class A4997 {
 			    @Immutable
 			    static class B4997 {}
