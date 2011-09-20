@@ -696,7 +696,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
                 // we have to handle an enum that defines a class for a constant
                 // for example the constant having overwriting a method. we need 
                 // to configure the inner class 
-                innerClass.setSuperClass(classNode);
+                innerClass.setSuperClass(classNode.getPlainNodeReference());
                 innerClass.setModifiers(classNode.getModifiers() | Opcodes.ACC_FINAL);
                 // we use a ClassExpression for transportation o EnumVisitor
                 init = new ClassExpression(innerClass);

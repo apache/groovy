@@ -69,15 +69,17 @@ public class EnumVisitor extends ClassCodeVisitorSupport{
         FieldNode minValue = null, maxValue = null, values = null;
        
         if(!isAic) {
+            ClassNode enumRef = enumClass.getPlainNodeReference();
+            
             // create values field
-            values = new FieldNode("$VALUES",PRIVATE_FS|Opcodes.ACC_SYNTHETIC,enumClass.makeArray(),enumClass,null);
+            values = new FieldNode("$VALUES",PRIVATE_FS|Opcodes.ACC_SYNTHETIC,enumRef.makeArray(),enumClass,null);
             values.setSynthetic(true);
             
             addMethods(enumClass, values);
             
             // create MIN_VALUE and MAX_VALUE fields
-            minValue = new FieldNode("MIN_VALUE", PUBLIC_FS, enumClass, enumClass, null);
-            maxValue = new FieldNode("MAX_VALUE", PUBLIC_FS, enumClass, enumClass, null);
+            minValue = new FieldNode("MIN_VALUE", PUBLIC_FS, enumRef, enumClass, null);
+            maxValue = new FieldNode("MAX_VALUE", PUBLIC_FS, enumRef, enumClass, null);
 
         }
         addInit(enumClass, minValue, maxValue, values, isAic);
@@ -94,10 +96,12 @@ public class EnumVisitor extends ClassCodeVisitorSupport{
             if (m.getName().equals("previous") && m.getParameters().length == 0) hasPrevious = true;
             if (hasNext && hasPrevious) break;
         }
+        
+        ClassNode enumRef = enumClass.getPlainNodeReference();
 
         {
             // create values() method
-            MethodNode valuesMethod = new MethodNode("values",PUBLIC_FS,enumClass.makeArray(),new Parameter[0],ClassNode.EMPTY_ARRAY,null);
+            MethodNode valuesMethod = new MethodNode("values",PUBLIC_FS,enumRef.makeArray(),new Parameter[0],ClassNode.EMPTY_ARRAY,null);
             valuesMethod.setSynthetic(true);
             BlockStatement code = new BlockStatement();
             MethodCallExpression cloneCall = new MethodCallExpression(new FieldExpression(values), "clone", MethodCallExpression.NO_ARGUMENTS);
@@ -116,7 +120,7 @@ public class EnumVisitor extends ClassCodeVisitorSupport{
             //     }
             Token assign = Token.newSymbol(Types.ASSIGN, -1, -1);
             Token ge = Token.newSymbol(Types.COMPARE_GREATER_THAN_EQUAL, -1, -1);
-            MethodNode nextMethod = new MethodNode("next", Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNTHETIC, enumClass, new Parameter[0], ClassNode.EMPTY_ARRAY, null);
+            MethodNode nextMethod = new MethodNode("next", Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNTHETIC, enumRef, new Parameter[0], ClassNode.EMPTY_ARRAY, null);
             nextMethod.setSynthetic(true);
             BlockStatement code = new BlockStatement();
             BlockStatement ifStatement = new BlockStatement();
@@ -175,7 +179,7 @@ public class EnumVisitor extends ClassCodeVisitorSupport{
             //    }
             Token assign = Token.newSymbol(Types.ASSIGN, -1, -1);
             Token lt = Token.newSymbol(Types.COMPARE_LESS_THAN, -1, -1);
-            MethodNode nextMethod = new MethodNode("previous", Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNTHETIC, enumClass, new Parameter[0], ClassNode.EMPTY_ARRAY, null);
+            MethodNode nextMethod = new MethodNode("previous", Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNTHETIC, enumRef, new Parameter[0], ClassNode.EMPTY_ARRAY, null);
             nextMethod.setSynthetic(true);
             BlockStatement code = new BlockStatement();
             BlockStatement ifStatement = new BlockStatement();
@@ -230,11 +234,11 @@ public class EnumVisitor extends ClassCodeVisitorSupport{
             nextMethod.setCode(code);
             enumClass.addMethod(nextMethod);
         }
-
+        
         {
             // create valueOf
             Parameter stringParameter = new Parameter(ClassHelper.STRING_TYPE,"name");
-            MethodNode valueOfMethod = new MethodNode("valueOf",PS,enumClass,new Parameter[]{stringParameter},ClassNode.EMPTY_ARRAY,null);
+            MethodNode valueOfMethod = new MethodNode("valueOf",PS,enumRef,new Parameter[]{stringParameter},ClassNode.EMPTY_ARRAY,null);
             ArgumentListExpression callArguments = new ArgumentListExpression();
             callArguments.addExpression(new ClassExpression(enumClass));
             callArguments.addExpression(new VariableExpression("name"));
@@ -266,9 +270,10 @@ public class EnumVisitor extends ClassCodeVisitorSupport{
         // code:
         // def $INIT(Object[] para) {
         //  return this(*para)
-        // }            
+        // }
+        ClassNode enumRef = enumClass.getPlainNodeReference();
         Parameter[] parameter = new Parameter[]{new Parameter(ClassHelper.OBJECT_TYPE.makeArray(), "para")};
-        MethodNode initMethod = new MethodNode("$INIT",PUBLIC_FS | Opcodes.ACC_SYNTHETIC,enumClass,parameter,ClassNode.EMPTY_ARRAY,null);
+        MethodNode initMethod = new MethodNode("$INIT",PUBLIC_FS | Opcodes.ACC_SYNTHETIC,enumRef,parameter,ClassNode.EMPTY_ARRAY,null);
         initMethod.setSynthetic(true);
         ConstructorCallExpression cce = new ConstructorCallExpression(
                 ClassNode.THIS,

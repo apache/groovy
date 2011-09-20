@@ -76,7 +76,7 @@ public class MethodPointerExpression extends Expression {
     }
 
     public ClassNode getType() {
-        return ClassHelper.CLOSURE_TYPE;
+        return ClassHelper.CLOSURE_TYPE.getPlainNodeReference();
     }
 
     public boolean isDynamic() {

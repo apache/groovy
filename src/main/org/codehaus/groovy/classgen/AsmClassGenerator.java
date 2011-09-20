@@ -24,7 +24,6 @@ import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.stmt.*;
 import org.codehaus.groovy.classgen.asm.*;
 
-import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
@@ -1283,7 +1282,7 @@ public class AsmClassGenerator extends ClassGenerator {
         ClassNode icl =  controller.getInterfaceClassLoadingClass();
         addInnerClass(icl);
         for (String staticFieldName : referencedClasses.keySet()) {            // generate a field node
-            icl.addField(staticFieldName, ACC_STATIC + ACC_SYNTHETIC, ClassHelper.CLASS_Type, new ClassExpression(referencedClasses.get(staticFieldName)));
+            icl.addField(staticFieldName, ACC_STATIC + ACC_SYNTHETIC, ClassHelper.CLASS_Type.getPlainNodeReference(), new ClassExpression(referencedClasses.get(staticFieldName)));
         }
     }
 
@@ -1293,7 +1292,7 @@ public class AsmClassGenerator extends ClassGenerator {
             // generate a field node
             FieldNode fn = controller.getClassNode().getDeclaredField(staticFieldName);
             if (fn != null) {
-                boolean type = fn.getType() == ClassHelper.CLASS_Type;
+                boolean type = fn.getType().redirect() == ClassHelper.CLASS_Type;
                 boolean modifiers = fn.getModifiers() == ACC_STATIC + ACC_SYNTHETIC;
                 if (!type || !modifiers) {
                     String text = "";

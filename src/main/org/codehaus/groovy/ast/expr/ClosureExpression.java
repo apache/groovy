@@ -36,7 +36,7 @@ public class ClosureExpression extends Expression {
     public ClosureExpression(Parameter[] parameters, Statement code) {
         this.parameters = parameters;
         this.code = code;
-        super.setType(ClassHelper.CLOSURE_TYPE);
+        super.setType(ClassHelper.CLOSURE_TYPE.getPlainNodeReference());
     }
     
     public void visit(GroovyCodeVisitor visitor) {

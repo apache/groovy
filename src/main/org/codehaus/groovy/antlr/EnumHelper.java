@@ -58,7 +58,7 @@ public class EnumHelper {
             list.addExpression(init);
             init = list;
         }
-        FieldNode fn = new FieldNode(name,modifiers,enumClass,enumClass,init);
+        FieldNode fn = new FieldNode(name,modifiers,enumClass.getPlainNodeReference(),enumClass,init);
         enumClass.addField(fn);
     }
 }

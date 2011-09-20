@@ -33,8 +33,6 @@ import org.objectweb.asm.Opcodes;
 import java.lang.reflect.Array;
 import java.util.*;
 
-import groovy.lang.GroovyObject;
-
 /**
  * Represents a class in the AST.<br/>
  * A ClassNode should be created using the methods in ClassHelper.
@@ -1363,7 +1361,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         if (ClassHelper.isPrimitiveType(this)) return this;
         ClassNode n = new ClassNode(getName(),getModifiers(),getSuperClass(),null,null);
         n.isPrimaryNode = false;
-        n.setRedirect(this.redirect);
+        n.setRedirect(redirect());
         n.componentType = redirect().getComponentType();
         return n;
     }
@@ -1436,5 +1434,9 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
             }
         }
         return transformInstances;
+    }
+    
+    public boolean isRedirectNode() {
+        return redirect!=null;
     }
 }
