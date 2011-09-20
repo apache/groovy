@@ -416,4 +416,14 @@ class ImmutableTransformTest extends GroovyShellTestCase {
             assert new Person(first: "Hamlet", last: "D'Arcy").toString() == "Person(first:Hamlet, last:D'Arcy)"
             '''
     }
+
+    void testImmutableUsageOnStaticInnerClasses() {
+        shell.parse '''
+            @groovy.transform.Immutable
+			class A4997 {
+			    @Immutable
+			    static class B4997 {}
+			}
+            '''
+    }
 }
