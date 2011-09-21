@@ -171,9 +171,8 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
     }
 
     private FieldNode checkFieldDoesNotExist(ClassNode node, String fieldName) {
-        for (ClassNode current = node; current!=null; current=current.getSuperClass()) {
-            FieldNode ret = current.getDeclaredField(fieldName);
-            if (ret == null) continue;
+        FieldNode ret = node.getDeclaredField(fieldName);
+        if (ret != null) {
             if (    Modifier.isPublic(ret.getModifiers()) &&
                     ret.getType().redirect()==ClassHelper.boolean_TYPE) {
                 return ret;
