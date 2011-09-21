@@ -1,0 +1,50 @@
+/*
+ * Copyright 2003-2011 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package groovy.bugs
+
+class Groovy5030Bug extends GroovyTestCase {
+    void testPrimitiveOptimizationGuardsMixupInInheritanceCase() {
+        assertScript """
+			def list = []
+			ClassUnderTest5030 cut = new ClassUnderTest5030()
+			cut.metaClass.getRemoteObject = { ->
+				return [method: {obj -> 
+					list << obj
+				}] as RemoteObject5030
+			}
+			  
+			String val = "Value" 
+			cut.someMethod(val)
+			assert list == [val]
+			
+			public class ClassUnderTest5030 extends RemoteObject5030 
+			{
+				public def someMethod(String someValue) {
+				   RemoteObject5030 object = getRemoteObject()
+				   object.method(someValue)
+				}
+				protected RemoteObject5030 getRemoteObject() {
+				   return new RemoteObject5030()
+				}
+			 }
+			 
+			 public class RemoteObject5030 {
+				public void method(obj) { /* Something */ }
+			 }
+        """
+    }
+}
