@@ -12,6 +12,7 @@ To build you will need:
 * [JDK 1.5+](http://www.oracle.com/technetwork/java/javase/downloads)
 
 Plus one of the following (Gradle will download itself if needed):
+
 * [Apache Ant 1.7+](http://ant.apache.org)
 * [Gradle 0.9.2+](http://gradle.org/)
 
