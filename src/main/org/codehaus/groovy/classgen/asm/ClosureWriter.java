@@ -262,7 +262,7 @@ public class ClosureWriter {
                 answer.addMethod(
                         "get" + methodName,
                         ACC_PUBLIC,
-                        realType,
+                        realType.getPlainNodeReference(),
                         Parameter.EMPTY_ARRAY,
                         ClassNode.EMPTY_ARRAY,
                         new ReturnStatement(fieldExp));
