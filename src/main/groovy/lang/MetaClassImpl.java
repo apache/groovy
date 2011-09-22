@@ -910,7 +910,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             final Closure closure = (Closure) object;
 
             final Object owner = closure.getOwner();
-            if (CLOSURE_DO_CALL_METHOD.equals(methodName)) {
+            if (CLOSURE_DO_CALL_METHOD.equals(methodName) || CLOSURE_CALL_METHOD.equals(methodName)) {
                 final Class objectClass = object.getClass();
                 if (objectClass == MethodClosure.class) {
                     final MethodClosure mc = (MethodClosure) object;
