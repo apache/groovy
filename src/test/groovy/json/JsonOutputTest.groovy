@@ -138,6 +138,20 @@ class JsonOutputTest extends GroovyTestCase {
         assert toJson(charArray) == '["a","b","c"]'
     }
 
+    void testDate() {
+        def d = Date.parse("yyyy/MM/dd HH:mm:ss Z", "2008/03/04 13:50:00 +0100")
+
+        assert toJson(d) == '"2008-03-04T13:50:00+0100"'
+    }
+
+    void testCalendar() {
+        def c = GregorianCalendar.getInstance(TimeZone.getTimeZone('GMT+1'))
+        c.clearTime()
+        c.set(year: 2008, month: Calendar.MARCH, date: 4, hourOfDay: 13, minute: 50)
+
+        assert toJson(c) == '"2008-03-04T13:50:00+0100"'
+    }
+
     void testComplexObject() {
         assert toJson([name: 'Guillaume', age: 33, address: [line1: "1 main street", line2: "", zip: 1234], pets: ['dog', 'cat']]) ==
                 '{"name":"Guillaume","age":33,"address":{"line1":"1 main street","line2":"","zip":1234},"pets":["dog","cat"]}'
