@@ -29,24 +29,24 @@ import org.codehaus.groovy.control.SourceUnit;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.net.URL;
+import java.util.Iterator;
 import java.util.Map;
 
 /**
  * Compilation unit to only generate stubs.
  *
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
+ * @author Guillaume Laforge
  */
-public class JavaStubCompilationUnit
-    extends CompilationUnit
-{
+public class JavaStubCompilationUnit extends CompilationUnit {
     private static final String DOT_GROOVY = ".groovy";
-    
+
     private final JavaStubGenerator stubGenerator;
 
     private int stubCount;
 
     public JavaStubCompilationUnit(final CompilerConfiguration config, final GroovyClassLoader gcl, File destDir) {
-        super(config,null,gcl);
+        super(config, null, gcl);
         assert config != null;
 
         Map options = config.getJointCompilationOptions();
@@ -105,7 +105,7 @@ public class JavaStubCompilationUnit
 
     @Override
     public SourceUnit addSource(final File file) {
-        if (file.getName().toLowerCase().endsWith(DOT_GROOVY)) {
+        if (hasAcceptedFileExtension(file.getName())) {
             return super.addSource(file);
         }
         return null;
@@ -113,10 +113,19 @@ public class JavaStubCompilationUnit
 
     @Override
     public SourceUnit addSource(URL url) {
-        if (url.getPath().toLowerCase().endsWith(DOT_GROOVY)) {
+        if (hasAcceptedFileExtension(url.getPath())) {
             return super.addSource(url);
         }
         return null;
+    }
+
+    private boolean hasAcceptedFileExtension(String name) {
+        String lowerCasedName = name.toLowerCase();
+        for (String extension : configuration.getScriptExtensions()) {
+            if (lowerCasedName.endsWith(extension))
+                return true;
+        }
+        return false;
     }
 
     @Deprecated
