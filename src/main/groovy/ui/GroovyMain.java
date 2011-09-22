@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2011 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 package groovy.ui;
 
+import groovy.lang.GroovyRuntimeException;
 import groovy.lang.GroovyShell;
 import groovy.lang.GroovySystem;
 import groovy.lang.MissingMethodException;
@@ -22,6 +23,8 @@ import groovy.lang.Script;
 
 import java.io.*;
 import java.math.BigInteger;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Iterator;
 import java.util.List;
 
@@ -356,11 +359,26 @@ public class GroovyMain {
         GroovyShell groovy = new GroovyShell(conf);
         //check the script is currently valid before starting a server against the script
         if (isScriptFile) {
-            groovy.parse(DefaultGroovyMethods.getText(huntForTheScriptFile(script)));
+            groovy.parse(getText(script));
         } else {
             groovy.parse(script);
         }
         new GroovySocketServer(groovy, isScriptFile, script, autoOutput, port);
+    }
+
+    public String getText(String urlOrFilename) throws IOException {
+        if (isScriptUrl(urlOrFilename)) {
+            try {
+                return DefaultGroovyMethods.getText(new URL(urlOrFilename));
+            } catch (Exception e) {
+                throw new GroovyRuntimeException("Unable to get script from URL: ", e);
+            }
+        }
+        return DefaultGroovyMethods.getText(huntForTheScriptFile(urlOrFilename));
+    }
+
+    private boolean isScriptUrl(String urlOrFilename) {
+        return urlOrFilename.startsWith("http://") || urlOrFilename.startsWith("https://") || urlOrFilename.startsWith("file:");
     }
 
     /**
@@ -398,7 +416,11 @@ public class GroovyMain {
         Script s;
 
         if (isScriptFile) {
-            s = groovy.parse(huntForTheScriptFile(script));
+            if (isScriptUrl(script)) {
+                s = groovy.parse(getText(script), script.substring(script.lastIndexOf("/") + 1));
+            } else {
+                s = groovy.parse(huntForTheScriptFile(script));
+            }
         } else {
             s = groovy.parse(script, "main");
         }
@@ -512,7 +534,7 @@ public class GroovyMain {
             // as it means no end() method is present
         }
     }
-    
+
     /**
      * Process the standard, single script with args.
      */
@@ -520,9 +542,12 @@ public class GroovyMain {
         GroovyShell groovy = new GroovyShell(conf);
 
         if (isScriptFile) {
-            groovy.run(huntForTheScriptFile(script), args);
-        }
-        else {
+            if (isScriptUrl(script)) {
+                groovy.run(getText(script), script.substring(script.lastIndexOf("/") + 1), args);
+            } else {
+                groovy.run(huntForTheScriptFile(script), args);
+            }
+        } else {
             groovy.run(script, "script_from_command_line", args);
         }
     }
