@@ -16,6 +16,8 @@
 package groovy.json
 
 import static JsonTokenType.*
+import java.text.SimpleDateFormat
+import java.text.DateFormat
 
 /**
  * Class responsible for the actual String serialization of the possible values of a JSON structure.
@@ -25,6 +27,13 @@ import static JsonTokenType.*
  * @since 1.8.0
  */
 class JsonOutput {
+
+    /**
+     * Date formatter for outputting dates to a string
+     * that can be parsed back from JavaScript with:
+     * <code>Date.parse(stringRepresentation)</code>
+     */
+    private static final DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ", Locale.US)
 
     /**
      * @return "true" or "false" for a boolean value
@@ -99,6 +108,26 @@ class JsonOutput {
             result.append('"')
             result.toString()
         }
+    }
+
+    /**
+     * Format a date that is parseable from JavaScript, according to ISO-8601.
+     *
+     * @param date the date to format to a JSON string
+     * @return a formatted date in the form of a string
+     */
+    static String toJson(Date date) {
+        "\"${dateFormat.format(date)}\""
+    }
+
+    /**
+     * Format a calendar instance that is parseable from JavaScript, according to ISO-8601.
+     *
+     * @param cal the calendar to format to a JSON string
+     * @return a formatted date in the form of a string
+     */
+    static String toJson(Calendar cal) {
+        "\"${dateFormat.format(cal.time)}\""
     }
 
     /**
