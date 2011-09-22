@@ -646,6 +646,10 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                 }
 
                 MethodNode newMethod = new MethodNode(method.getName(), method.getModifiers(), method.getReturnType(), newParams, method.getExceptions(), code);
+                List<AnnotationNode> annotations = method.getAnnotations();
+                if(annotations != null) {
+                    newMethod.addAnnotations(annotations);
+                }
                 MethodNode oldMethod = node.getDeclaredMethod(method.getName(), newParams);
                 if (oldMethod != null) {
                     throw new RuntimeParserException(
