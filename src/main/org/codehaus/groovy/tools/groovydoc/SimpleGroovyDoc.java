@@ -109,6 +109,8 @@ public class SimpleGroovyDoc implements GroovyDoc, GroovyTokenTypes {
     public static String calculateFirstSentence(String raw) {
         // remove all the * from beginning of lines
         String text = raw.replaceAll("(?m)^\\s*\\*", "").trim();
+        // assume an html tag on a new line signifies end of sentence
+        text = text.replaceFirst("(?ms)\\n\\s*<.*", "").trim();
         // assume completely blank line signifies end of sentence
         text = text.replaceFirst("(?ms)\\n\\s*\\n.*", "").trim();
         // assume @tag signifies end of sentence
