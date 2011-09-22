@@ -35,6 +35,10 @@ class JsonOutput {
      */
     private static final DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ", Locale.US)
 
+    static {
+        dateFormat.timeZone = TimeZone.getTimeZone('GMT')
+    }
+
     /**
      * @return "true" or "false" for a boolean value
      */
