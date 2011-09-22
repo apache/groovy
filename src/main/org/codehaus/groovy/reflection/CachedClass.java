@@ -96,7 +96,7 @@ public class CachedClass {
                 final CachedMethod cachedMethod = new CachedMethod(CachedClass.this, declaredMethods[i]);
                 final String name = cachedMethod.getName();
 
-                if (name.indexOf('+') >= 0) {
+                if (declaredMethods[i].isBridge() || name.indexOf('+') >= 0) {
                     // Skip Synthetic methods inserted by JDK 1.5 compilers and later
                     continue;
                 } /*else if (Modifier.isAbstract(reflectionMethod.getModifiers())) {
