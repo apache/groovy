@@ -160,7 +160,7 @@ class MethodPatternsTest extends AbstractBytecodeTestCase {
         ])
     }
     
-    void testobjectArraySet() {
+    void testObjectArraySet() {
         assert compile(method:"foo", '''
             class X{
               void foo() {
@@ -172,5 +172,57 @@ class MethodPatternsTest extends AbstractBytecodeTestCase {
             'LDC 0',
             'INVOKESTATIC org/codehaus/groovy/runtime/BytecodeInterface8.objectArraySet ([Ljava/lang/Object;ILjava/lang/Object;)V',
         ])
+    }
+    
+    void testBooleanArraySet() {
+        assert compile(method:"foo", '''
+            class X{
+              void foo() {
+                boolean[] xa = new boolean[1]
+                xa[0] = false
+              }
+            }
+        ''').hasSequence ([
+            'LDC 0',
+            'INVOKESTATIC org/codehaus/groovy/runtime/BytecodeInterface8.zArraySet ([ZIZ)V',
+        ])
+    }
+    
+    void testArray() {
+        def methods = [
+            "short"     :   [1, "sArraySet ([SIS)V", "sArrayGet ([SI)S"], 
+            "int"       :   [1, "intArraySet ([III)V", "intArrayGet ([II)I"],
+            "boolean"   :   [false, "zArraySet ([ZIZ)V", "zArrayGet ([ZI)Z"],
+            "long"      :   [1l, "lArraySet ([JIJ)V","lArrayGet ([JI)J"],
+            "float"     :   [1f, "fArraySet ([FIF)V", "fArrayGet ([FI)F"],
+            "byte"      :   [1, "bArraySet ([BIB)V", "bArrayGet ([BI)B"],
+            "char"      :   [1, "cArraySet ([CIC)V", "cArrayGet ([CI)C"],
+            "double"    :   [1d, "dArraySet ([DID)V", "dArrayGet ([DI)D"]
+        ]
+        methods.each {
+            assert compile(method:"foo", """
+                class X{
+                  void foo() {
+                    ${it.key}[] xa = new ${it.key}[1]
+                    xa[0] = ${it.value[0]}
+                  }
+                }
+            """).hasSequence ([
+                'LDC 0',
+                "INVOKESTATIC org/codehaus/groovy/runtime/BytecodeInterface8."+it.value[1],
+            ])
+            
+            assert compile(method:"foo", """
+                class X{
+                  ${it.key} foo() {
+                    ${it.key}[] xa = new ${it.key}[1]
+                    xa[0]
+                  }
+                }
+            """).hasSequence ([
+                'LDC 0',
+                "INVOKESTATIC org/codehaus/groovy/runtime/BytecodeInterface8.${it.value[2]}",
+            ])
+        }
     }
 }
