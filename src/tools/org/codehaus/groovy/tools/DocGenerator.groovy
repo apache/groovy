@@ -2,8 +2,6 @@ package org.codehaus.groovy.tools
 
 import org.codehaus.groovy.runtime.DefaultGroovyMethods
 import com.thoughtworks.qdox.JavaDocBuilder
-import java.io.File
-import java.util.*
 import org.codehaus.groovy.tools.shell.util.Logger
 
 /**
