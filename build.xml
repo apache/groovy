@@ -752,7 +752,7 @@ $Date$
 
     <target name="-docInit">
         <mkdir dir="${docsDirectory}"/>
-        <property name="docFooter" value="Copyright &amp;copy; 2003-2010 The Codehaus. All rights reserved."/>
+        <property name="docFooter" value="Copyright &amp;copy; 2003-2011 The Codehaus. All rights reserved."/>
         <property name="title" value="Groovy ${groovyVersion}"/>
     </target>
 
