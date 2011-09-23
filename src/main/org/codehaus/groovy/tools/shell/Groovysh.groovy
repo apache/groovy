@@ -33,9 +33,8 @@ import org.fusesource.jansi.AnsiConsole
  * @version $Id$
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
-class Groovysh
-    extends Shell
-{
+class Groovysh extends Shell {
+
     static {
         // Install the system adapters
         AnsiConsole.systemInstall()
@@ -191,10 +190,32 @@ class Groovysh
     // Prompt
     //
 
-    private String renderPrompt() {
-        def lineNum = formatLineNumber(buffers.current().size())
+    private AnsiRenderer prompt = new AnsiRenderer()
 
-        return AnsiRenderer.render("@|bold groovy:|@${lineNum}@|bold >|@ ")
+    /*
+        Builds the command prompt name in 1 of 3 ways:
+           1.  Checks the groovysh.prompt property passed into groovysh script.   -Dgroovysh.prompt="hello"
+           2.  Checks an environment variable called GROOVYSH_PROMPT.             export GROOVYSH_PROMPT
+           3.  If no value is defined returns the default groovy shell prompt.
+
+        The code will always assume you want the line number in the prompt.  To implement differently overhead the render
+        prompt variable.
+     */
+    private String buildPrompt(){
+       def lineNum = formatLineNumber(buffers.current().size())
+       def formattedPrompt = "@|bold groovy:|@${lineNum}@|bold >|@ "
+
+       def GROOVYSHELL_PROPERTY =  System.getProperty("groovysh.prompt")
+       def GROOVYSHELL_ENV      =  System.getenv("GROOVYSH_PROMPT")
+
+       if (GROOVYSHELL_PROPERTY)  return  "@|bold ${GROOVYSHELL_PROPERTY}:|@${lineNum}@|bold >|@ "
+       if (GROOVYSHELL_ENV)       return  "@|bold ${GROOVYSHELL_ENV}:|@${lineNum}@|bold >|@ "
+
+       return formattedPrompt
+    }
+
+    public String renderPrompt() {
+        return prompt.render( buildPrompt() )
     }
 
     /**
