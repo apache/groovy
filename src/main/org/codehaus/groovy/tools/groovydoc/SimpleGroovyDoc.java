@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2009 the original author or authors.
+ * Copyright 2003-2011 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -109,8 +109,8 @@ public class SimpleGroovyDoc implements GroovyDoc, GroovyTokenTypes {
     public static String calculateFirstSentence(String raw) {
         // remove all the * from beginning of lines
         String text = raw.replaceAll("(?m)^\\s*\\*", "").trim();
-        // assume an html tag on a new line signifies end of sentence
-        text = text.replaceFirst("(?ms)\\n\\s*<.*", "").trim();
+        // assume a <p> paragraph tag signifies end of sentence
+        text = text.replaceFirst("(?ms)<p>.*", "").trim();
         // assume completely blank line signifies end of sentence
         text = text.replaceFirst("(?ms)\\n\\s*\\n.*", "").trim();
         // assume @tag signifies end of sentence
