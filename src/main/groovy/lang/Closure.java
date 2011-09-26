@@ -42,9 +42,9 @@ import java.io.Writer;
  * </pre>
  * To be able to use a Closure in this way with your own
  * subclass, you need to provide a doCall method with any
- * signature you want to. This ensures that 
- * {@link #getMaximumNumberOfParameters()} and 
- * {@link #getParameterTypes()} will work too without any 
+ * signature you want to. This ensures that
+ * {@link #getMaximumNumberOfParameters()} and
+ * {@link #getParameterTypes()} will work too without any
  * additional code. If no doCall method is provided a
  * closure must be used in its long form like
  * <pre>
@@ -209,7 +209,7 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
             return args;
         }
     };
-    
+
     private Object delegate;
     private Object owner;
     private Object thisObject;
@@ -258,7 +258,7 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      * Gets the strategy which the closure users to resolve methods and properties
      *
      * @return The resolve strategy
-     * 
+     *
      * @see groovy.lang.Closure#DELEGATE_FIRST
      * @see groovy.lang.Closure#DELEGATE_ONLY
      * @see groovy.lang.Closure#OWNER_FIRST
@@ -422,7 +422,7 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
     public V call(final Object arguments) {
         return call(new Object[]{arguments});
     }
-    
+
     protected static Object throwRuntimeException(Throwable throwable) {
         if (throwable instanceof RuntimeException) {
             throw (RuntimeException) throwable;
@@ -455,7 +455,7 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
     public void setDelegate(Object delegate) {
         this.delegate = delegate;
     }
-    
+
     /**
      * @return the parameter types of the longest doCall method
      * of this closure
@@ -473,8 +473,8 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
     }
 
     /**
-     * @return a version of this closure which implements Writable.  Note that 
-     * the returned Writable also overrides {@link #toString()} in order 
+     * @return a version of this closure which implements Writable.  Note that
+     * the returned Writable also overrides {@link #toString()} in order
      * to allow rendering the result directly to a String.
      */
     public Closure asWritable() {
@@ -518,13 +518,24 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      * assert e() == 10
      * assert e(5) == 15
      * </pre>
-     * 
+     *
      *
      * @param arguments the arguments to bind
      * @return the new closure with its arguments bound
      */
     public Closure<V> curry(final Object... arguments) {
         return new CurriedClosure<V>(this, arguments);
+    }
+
+    /**
+     * Support for Closure currying.
+     *
+     * @param argument the argument to bind
+     * @return the new closure with the argument bound
+     * @see #curry(Object...)
+     */
+    public Closure<V> curry(final Object argument) {
+        return curry(new Object[]{argument});
     }
 
     /**
@@ -543,6 +554,17 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      */
     public Closure<V> rcurry(final Object... arguments) {
         return new CurriedClosure<V>(-arguments.length, this, arguments);
+    }
+
+    /**
+     * Support for Closure "right" currying.
+     *
+     * @param argument the argument to bind
+     * @return the new closure with the argument bound
+     * @see #rcurry(Object...)
+     */
+    public Closure<V> rcurry(final Object argument) {
+        return rcurry(new Object[]{argument});
     }
 
     /**
@@ -577,6 +599,17 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      */
     public Closure<V> ncurry(int n, final Object... arguments) {
         return new CurriedClosure<V>(n, this, arguments);
+    }
+
+    /**
+     * Support for Closure currying at a given index.
+     *
+     * @param argument the argument to bind
+     * @return the new closure with the argument bound
+     * @see #ncurry(int, Object...)
+     */
+    public Closure<V> ncurry(int n, final Object argument) {
+        return ncurry(n, new Object[]{argument});
     }
 
     /**
@@ -770,7 +803,7 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
     public Closure<V> trampoline() {
         return new TrampolineClosure<V>(this);
     }
-    
+
     /* (non-Javadoc)
      * @see java.lang.Object#clone()
      */
@@ -781,15 +814,15 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
             return null;
         }
     }
-    
+
     /*
-     * Implementation note: 
+     * Implementation note:
      *   This has to be an inner class!
-     * 
-     * Reason: 
+     *
+     * Reason:
      *   Closure.this.call will call the outer call method, but
      * with the inner class as executing object. This means any
-     * invokeMethod or getProperty call will be called on this 
+     * invokeMethod or getProperty call will be called on this
      * inner class instead of the outer!
      */
     private class WritableClosure extends Closure implements Writable {
@@ -848,7 +881,7 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
         public Object call(Object arguments) {
             return ((Closure) getOwner()).call(arguments);
         }
-        
+
         public Object call(Object... args) {
             return ((Closure) getOwner()).call(args);
         }
@@ -856,7 +889,7 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
         public Object doCall(Object... args) {
             return call(args);
         }
-        
+
         /* (non-Javadoc)
          * @see groovy.lang.Closure#getDelegate()
          */
@@ -877,7 +910,7 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
         public Class[] getParameterTypes() {
             return Closure.this.getParameterTypes();
         }
-        
+
         /* (non-Javadoc)
          * @see groovy.lang.Closure#getParameterTypes()
          */
@@ -934,7 +967,7 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
 
             return writer.toString();
         }
-        
+
         public Closure curry(final Object... arguments) {
             return (new CurriedClosure(this, arguments)).asWritable();
         }
@@ -942,7 +975,7 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
         public void setResolveStrategy(int resolveStrategy) {
             Closure.this.setResolveStrategy(resolveStrategy);
         }
-        
+
         public int getResolveStrategy() {
             return Closure.this.getResolveStrategy();
         }

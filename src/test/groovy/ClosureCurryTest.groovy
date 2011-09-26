@@ -204,4 +204,23 @@ class ClosureCurryTest extends GroovyTestCase {
             assert clos(args as Object[]) == expected
         }
     }
+
+    void testNullVariants() {
+        assert { x, y -> x ?: y }.curry(null)(null) == null
+        assert { x, y -> x ?: y }.curry(null)(2) == 2
+        assert { x, y -> x ?: y }.curry(1)(null) == 1
+        assert { x, y -> x ?: y }.curry(1)(2) == 1
+
+        assert { x, y -> x ?: y }.curry(null, null)() == null
+        assert { x, y -> x ?: y }.curry(null, 2)() == 2
+        assert { x, y -> x ?: y }.curry(1, null)() == 1
+        assert { x, y -> x ?: y }.curry(1, 2)() == 1
+
+        assert { x, y -> x ?: y }(null, null) == null
+        assert { x, y -> x ?: y }(null, 2) == 2
+        assert { x, y -> x ?: y }(1, null) == 1
+        assert { x, y -> x ?: y }(1, 2) == 1
+
+        assert { x, y -> x ?: y }.curry([null] as Object[])(2) == 2
+    }
 }
