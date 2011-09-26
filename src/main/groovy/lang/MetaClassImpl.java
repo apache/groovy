@@ -31,7 +31,6 @@ import org.codehaus.groovy.reflection.ReflectionCache;
 import org.codehaus.groovy.runtime.ConvertedClosure;
 import org.codehaus.groovy.runtime.CurriedClosure;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
-import org.codehaus.groovy.runtime.GeneratedClosure;
 import org.codehaus.groovy.runtime.GroovyCategorySupport;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.InvokerInvocationException;
@@ -77,6 +76,7 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
 import java.net.URL;
 import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
@@ -893,24 +893,24 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             throw new NullPointerException("Cannot invoke method: " + methodName + " on null object");
         }
 
-        String correctedMethodName = methodName;
-        if (object instanceof GeneratedClosure && CLOSURE_CALL_METHOD.equals(methodName)) {
-            correctedMethodName = CLOSURE_DO_CALL_METHOD;
-        }
-
         final Object[] arguments = originalArguments == null ? EMPTY_ARGUMENTS : originalArguments;
-        MetaMethod method = getMethodWithCaching(sender, correctedMethodName, arguments, isCallToSuper);
+//        final Class[] argClasses = MetaClassHelper.convertToTypeArray(arguments);
+//
+//        unwrap(arguments);
+
+        MetaMethod method = getMethodWithCaching(sender, methodName, arguments, isCallToSuper);
         MetaClassHelper.unwrap(arguments);
 
         if (method == null)
-            method = tryListParamMetaMethod(sender, correctedMethodName, isCallToSuper, arguments);
+            method = tryListParamMetaMethod(sender, methodName, isCallToSuper, arguments);
 
         final boolean isClosure = object instanceof Closure;
         if (isClosure) {
             final Closure closure = (Closure) object;
 
             final Object owner = closure.getOwner();
-            if (CLOSURE_DO_CALL_METHOD.equals(methodName) || CLOSURE_CALL_METHOD.equals(methodName)) {
+
+            if (CLOSURE_CALL_METHOD.equals(methodName) || CLOSURE_DO_CALL_METHOD.equals(methodName)) {
                 final Class objectClass = object.getClass();
                 if (objectClass == MethodClosure.class) {
                     final MethodClosure mc = (MethodClosure) object;
