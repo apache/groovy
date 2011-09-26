@@ -17,6 +17,7 @@ package groovy.bugs
 
 /**
  * @author Tim Yates
+ * @author Trygve Amundsens
  */
 class Groovy4857Bug extends GroovyTestCase {
     void testMissingMethodNotUnsupportedOperation() {
@@ -37,6 +38,15 @@ class Groovy4857Bug extends GroovyTestCase {
             assert e.message.contains('No signature of method: B.call()')
             assert e.class.name == 'groovy.lang.MissingMethodException'
         }
+    }
+
+    void testTrygveAmundsensExample() {
+        def val = new GroovyShell().evaluate """
+            [run: {}] as Runnable
+        """
+
+        assert val.toString()
+        assert val instanceof Runnable
     }
 }
 
