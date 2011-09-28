@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2011 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -185,7 +185,7 @@ public class ProcessGroovyMethods extends DefaultGroovyMethodsSupport {
      * data is thrown away, it might be difficult to track down when something goes wrong.
      * For this, two Threads are started, but join()ed, so we wait.
      * As implied by the waitFor... name, we also wait until we finish
-     * as well.
+     * as well. Finally, the output and error streams are closed.
      *
      * @param self a Process
      * @since 1.6.5
@@ -200,7 +200,7 @@ public class ProcessGroovyMethods extends DefaultGroovyMethodsSupport {
      * The processed stream data is appended to the supplied Appendable.
      * For this, two Threads are started, but join()ed, so we wait.
      * As implied by the waitFor... name, we also wait until we finish
-     * as well.
+     * as well. Finally, the output and error streams are closed.
      *
      * @param self a Process
      * @param output an Appendable to capture the process stdout
@@ -213,6 +213,8 @@ public class ProcessGroovyMethods extends DefaultGroovyMethodsSupport {
         try { tout.join(); } catch (InterruptedException ignore) {}
         try { terr.join(); } catch (InterruptedException ignore) {}
         try { self.waitFor(); } catch (InterruptedException ignore) {}
+        try { self.getErrorStream().close(); } catch (IOException ignore) {}
+        try { self.getInputStream().close(); } catch (IOException ignore) {}
     }
 
     /**
@@ -221,7 +223,7 @@ public class ProcessGroovyMethods extends DefaultGroovyMethodsSupport {
      * The processed stream data is appended to the supplied OutputStream.
      * For this, two Threads are started, but join()ed, so we wait.
      * As implied by the waitFor... name, we also wait until we finish
-     * as well.
+     * as well. Finally, the output and error streams are closed.
      *
      * @param self a Process
      * @param output an OutputStream to capture the process stdout
@@ -234,6 +236,8 @@ public class ProcessGroovyMethods extends DefaultGroovyMethodsSupport {
         try { tout.join(); } catch (InterruptedException ignore) {}
         try { terr.join(); } catch (InterruptedException ignore) {}
         try { self.waitFor(); } catch (InterruptedException ignore) {}
+        try { self.getErrorStream().close(); } catch (IOException ignore) {}
+        try { self.getInputStream().close(); } catch (IOException ignore) {}
     }
 
     /**
