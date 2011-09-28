@@ -254,6 +254,14 @@ class ClosureTest extends GroovyTestCase {
         def map = [a:1, b:2]
         assert map.collectEntries(IDENTITY) == map
     }
+    
+    void testEachWithArray() {
+        def l = []
+        l << ([1, 2] as Object[])
+        l.each {
+                assert it == [1,2] as Object[]
+        }
+    }
 }
 
 public class TinyAgent {
