@@ -528,17 +528,6 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
     }
 
     /**
-     * Support for Closure currying.
-     *
-     * @param argument the argument to bind
-     * @return the new closure with the argument bound
-     * @see #curry(Object...)
-     */
-    public Closure<V> curry(final Object argument) {
-        return curry(new Object[]{argument});
-    }
-
-    /**
      * Support for Closure "right" currying.
      * Parameters are supplied on the right rather than left as per the normal curry() method.
      * Typical usage:

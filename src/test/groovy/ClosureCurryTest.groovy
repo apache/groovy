@@ -205,6 +205,7 @@ class ClosureCurryTest extends GroovyTestCase {
         }
     }
 
+    /* reverted  for the sake of Grails
     void testNullVariants() {
         assert { x, y -> x ?: y }.curry(null)(null) == null
         assert { x, y -> x ?: y }.curry(null)(2) == 2
@@ -222,5 +223,5 @@ class ClosureCurryTest extends GroovyTestCase {
         assert { x, y -> x ?: y }(1, 2) == 1
 
         assert { x, y -> x ?: y }.curry([null] as Object[])(2) == 2
-    }
+    }*/
 }
