@@ -588,7 +588,7 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>4.8.2</version>
+            <version>4.10</version>
             <scope>compile</scope>
             <optional>true</optional>
         </dependency>
@@ -809,7 +809,7 @@
         <dependency>
             <groupId>org.fusesource.jansi</groupId>
             <artifactId>jansi</artifactId>
-            <version>1.6</version>
+            <version>1.7</version>
             <scope>compile</scope>
             <optional>true</optional>
         </dependency>
