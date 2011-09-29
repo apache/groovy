@@ -20,10 +20,12 @@ import java.util.Map;
 
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.DynamicVariable;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.Variable;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.classgen.asm.OptimizingStatementWriter.StatementMeta;
@@ -333,13 +335,30 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
     
     @Override
     protected void evaluateBinaryExpressionWithAssignment(String method, BinaryExpression binExp) {
-        if (doAssignmentToArray(binExp)) return;        
-        evaluateBinaryExpression(method, binExp);
+        if (doAssignmentToArray(binExp)) return;
+        if (doAssignmentToLocalVariable(method, binExp)) return;
+        super.evaluateBinaryExpressionWithAssignment(method, binExp);
+    }
 
+    private boolean doAssignmentToLocalVariable(String method, BinaryExpression binExp) {
+        Expression left = binExp.getLeftExpression();
+        if (left instanceof VariableExpression) {
+            VariableExpression ve = (VariableExpression) left;
+            Variable v = ve.getAccessedVariable();
+            if (v instanceof DynamicVariable) return false;
+            if (v instanceof PropertyExpression) return false;
+            /* field and declaration we don't return false */
+        } else {
+            return false;
+        }
+        
+        evaluateBinaryExpression(method, binExp);
         getController().getOperandStack().dup();
         getController().getCompileStack().pushLHS(true);
         binExp.getLeftExpression().visit(getController().getAcg());
         getController().getCompileStack().popLHS();
+        
+        return true;
     }
 
     @Override

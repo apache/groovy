@@ -79,6 +79,7 @@ public class OptimizingStatementWriter extends StatementWriter {
         MethodCaller.newStatic(BytecodeInterface8.class, "isOrigB"),
         MethodCaller.newStatic(BytecodeInterface8.class, "isOrigS"),
         MethodCaller.newStatic(BytecodeInterface8.class, "isOrigF"),
+        MethodCaller.newStatic(BytecodeInterface8.class, "isOrigZ"),
     };
     
     private static final MethodCaller disabledStandardMetaClass = MethodCaller.newStatic(BytecodeInterface8.class, "disabledStandardMetaClass");
