@@ -41,9 +41,9 @@ class Groovy4857Bug extends GroovyTestCase {
     }
 
     void testTrygveAmundsensExample() {
-        def val = new GroovyShell().evaluate """
+        def val = new GroovyShell().evaluate("""
             [run: {}] as Runnable
-        """
+        """)
 
         assert val.toString()
         assert val instanceof Runnable
