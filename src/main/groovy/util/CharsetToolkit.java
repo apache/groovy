@@ -27,15 +27,16 @@ import java.util.Collection;
  * with a Byte Order Marker are correctly discovered. For UTF-8 files with no BOM, if the buffer
  * is wide enough, the charset should also be discovered.</p>
  *
- * <p>A byte buffer of 4KB is usually sufficient to be able to guess the encoding.</p>
+ * <p>A byte buffer of 4KB is used to be able to guess the encoding.</p>
  *
  * <p>Usage:</p>
  * <pre>
+ * CharsetToolkit toolkit = new CharsetToolkit(file);
+ *
  * // guess the encoding
- * Charset guessedCharset = CharsetToolkit.guessEncoding(file, 4096);
+ * Charset guessedCharset = toolkit.getCharset();
  *
  * // create a reader with the correct charset
- * CharsetToolkit toolkit = new CharsetToolkit(file);
  * BufferedReader reader = toolkit.getReader();
  *
  * // read the file content
@@ -91,7 +92,7 @@ public class CharsetToolkit {
      * Defines the default <code>Charset</code> used in case the buffer represents
      * an 8-bit <code>Charset</code>.
      *
-     * @param defaultCharset the default <code>Charset</code> to be returned by <code>guessEncoding()</code>
+     * @param defaultCharset the default <code>Charset</code> to be returned
      * if an 8-bit <code>Charset</code> is encountered.
      */
     public void setDefaultCharset(Charset defaultCharset) {
@@ -376,8 +377,8 @@ public class CharsetToolkit {
 
     /**
      * Gets a <code>BufferedReader</code> (indeed a <code>LineNumberReader</code>) from the <code>File</code>
-     * specified in the constructor of <code>CharsetToolkit</code> using the charset discovered by the
-     * method <code>guessEncoding()</code>.
+     * specified in the constructor of <code>CharsetToolkit</code> using the charset discovered or the default
+     * charset if an 8-bit <code>Charset</code> is encountered.
      *
      * @return a <code>BufferedReader</code>
      * @throws FileNotFoundException if the file is not found.
