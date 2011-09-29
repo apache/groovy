@@ -224,5 +224,23 @@ class MethodPatternsTest extends AbstractBytecodeTestCase {
                 "INVOKESTATIC org/codehaus/groovy/runtime/BytecodeInterface8.${it.value[2]}",
             ])
         }
+        
+        assertScript """
+            a=[3:5]
+            class B {
+                int v;
+            }
+            B b = new B();
+            b.v = 3
+            
+            clos = {
+                if (it!=null) {
+                    a[it.v] += 3
+                }
+            }
+            clos.call(b)
+            assert b.v == 3
+            assert a[3] == 8        
+        """
     }
 }
