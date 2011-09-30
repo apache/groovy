@@ -184,4 +184,28 @@ class VArgsTest extends GroovyTestCase {
   void test3019() {
     assert foo3019(new Integer(1),1)==1
   }
+
+  // GROOVY-3547
+  void testCallObjectVarArgWithInt() {
+    assert foo3547(1).getClass() == Object[]
+  }
+
+  void testCallObjectVarArgWithStrings() {
+    assert foo3547("one", "two").getClass() == Object[]
+  }
+
+
+  void testCallSerializableVarArgWithString() {
+    assert bar3547("").getClass() == Serializable[]
+  }
+
+  def foo3547(Object... args) {
+    args
+  }
+
+  def bar3547(Serializable... args) {
+    args
+  }
+
+
 }  

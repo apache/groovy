@@ -264,6 +264,24 @@ public class MethodSelectionTest extends CompilableTestSupport {
         assert f(new ExtendedBigDecimal(1)) == 1      
       """
   }
+  
+  void testVargsClass() {
+      assertScript """
+        interface Parent {}
+        interface Child extends Parent {}
+        
+        class Child1 implements Child { }
+        def a = new Child1()
+        
+        class Child2 implements Child { }
+        def b = new Child2()
+        
+        def foo(Parent... values) { 
+          assert values.class == Parent[]
+        }
+        foo(a, b)
+      """
+  }
 }
 
 class Foo3977 {
