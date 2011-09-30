@@ -17,6 +17,7 @@ package org.codehaus.groovy.reflection;
 
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.runtime.MetaClassHelper;
+import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import org.codehaus.groovy.runtime.wrappers.Wrapper;
 
 import java.lang.reflect.Array;
@@ -170,14 +171,17 @@ public class ParameterTypes
      * @param argumentArray the arguments used to call the method
      * @param paramTypes    the types of the parameters the method takes
      */
-    private static Object[] fitToVargs(Object[] argumentArray, CachedClass[] paramTypes) {
-        Class vargsClass = ReflectionCache.autoboxType(paramTypes[paramTypes.length - 1].getTheClass().getComponentType());
+    private static Object[] fitToVargs(Object[] argumentArrayOrig, CachedClass[] paramTypes) {
+        Class vargsClassOrig = paramTypes[paramTypes.length - 1].getTheClass().getComponentType();
+        Class vargsClass = ReflectionCache.autoboxType(vargsClassOrig);
+        Object[] argumentArray = argumentArrayOrig.clone();
+        MetaClassHelper.unwrap(argumentArray);
 
         if (argumentArray.length == paramTypes.length - 1) {
             // the vargs argument is missing, so fill it with an empty array
             Object[] newArgs = new Object[paramTypes.length];
             System.arraycopy(argumentArray, 0, newArgs, 0, argumentArray.length);
-            Object vargs = MetaClassHelper.makeArray(null, vargsClass, 0);
+            Object vargs = Array.newInstance(vargsClass, 0);
             newArgs[newArgs.length - 1] = vargs;
             return newArgs;
         } else if (argumentArray.length == paramTypes.length) {
@@ -187,8 +191,7 @@ public class ParameterTypes
             Object lastArgument = argumentArray[argumentArray.length - 1];
             if (lastArgument != null && !lastArgument.getClass().isArray()) {
                 // no array so wrap it
-                Object wrapped = MetaClassHelper.makeArray(lastArgument, vargsClass, 1);
-                System.arraycopy(argumentArray, argumentArray.length - 1, wrapped, 0, 1);
+                Object wrapped = makeCommonArray(argumentArray, paramTypes.length - 1, vargsClass);
                 Object[] newArgs = new Object[paramTypes.length];
                 System.arraycopy(argumentArray, 0, newArgs, 0, paramTypes.length - 1);
                 newArgs[newArgs.length - 1] = wrapped;
@@ -204,15 +207,24 @@ public class ParameterTypes
             // copy arguments that are not a varg
             System.arraycopy(argumentArray, 0, newArgs, 0, paramTypes.length - 1);
             // create a new array for the vargs and copy them
-            int numberOfVargs = argumentArray.length - paramTypes.length;
-            Object vargs = MetaClassHelper.makeCommonArray(argumentArray, paramTypes.length - 1, vargsClass);
+            Object vargs = makeCommonArray(argumentArray, paramTypes.length - 1, vargsClass);
             newArgs[newArgs.length - 1] = vargs;
             return newArgs;
         } else {
             throw new GroovyBugError("trying to call a vargs method without enough arguments");
         }
     }
-
+    
+    private static Object makeCommonArray(Object[] arguments, int offset, Class baseClass) {
+        Object[] result = (Object[]) Array.newInstance(baseClass, arguments.length - offset);
+        for (int i=offset; i<arguments.length; i++) {
+            Object v = arguments[i];
+            v = DefaultTypeTransformation.castToType(v,baseClass);
+            result[i-offset] = v;
+        }
+        return result;
+    }
+    
     public boolean isValidMethod(Class[] arguments) {
         if (arguments == null) return true;
 
