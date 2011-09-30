@@ -2108,6 +2108,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure a projecting Closure returning a collection of items
      * @return the projected collections concatenated (flattened) together
      * @see #sum(java.util.Collection, groovy.lang.Closure)
+     * @since 1.8.1
      */
     public static <T> Collection<T> collectMany(Collection self, Closure<Collection<T>> closure) {
         Collection<T> result = createSimilarCollection(self);
@@ -2130,6 +2131,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure a projecting Closure returning a collection of items
      * @return the projected collections concatenated (flattened) together
      * @see #sum(Object[], groovy.lang.Closure)
+     * @since 1.8.1
      */
     public static <T> Collection<T> collectMany(Object[] self, Closure<Collection<T>> closure) {
         return collectMany(toList(self), closure);
@@ -2148,6 +2150,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure a projecting Closure returning a collection of items
      * @return the projected collections concatenated (flattened) together
      * @see #sum(Iterator, groovy.lang.Closure)
+     * @since 1.8.1
      */
     public static <T> Collection<T> collectMany(Iterator<Object> self, Closure<Collection<T>> closure) {
         return collectMany(toList(self), closure);
