@@ -8822,6 +8822,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.5.0
      */
     public static <T> Set<T> minus(Set<T> self, Collection operands) {
+        Comparator comparator = (self instanceof SortedSet) ? ((SortedSet) self).comparator() : null;
         final Set<T> ansSet = createSimilarSet(self);
         ansSet.addAll(self);
         if (operands != null && operands.size() > 0) {
@@ -8831,7 +8832,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                 final Iterator it2 = operands.iterator();
                 while (it2.hasNext()) {
                     final Object o2 = it2.next();
-                    if (coercedEquals(o1, o2)) {
+                    boolean areEqual = (comparator != null)? (comparator.compare(o1, o2) == 0) : coercedEquals(o1, o2);
+                    if (areEqual) {
                         ansSet.remove(o1);
                     }
                 }
@@ -8849,9 +8851,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.5.0
      */
     public static <T> Set<T> minus(Set<T> self, Object operand) {
+        Comparator comparator = (self instanceof SortedSet) ? ((SortedSet) self).comparator() : null;
         final Set<T> ansSet = createSimilarSet(self);
         for (T t : self) {
-            if (!coercedEquals(t, operand)) ansSet.add(t);
+            boolean areEqual = (comparator != null)? (comparator.compare(t, operand) == 0) : coercedEquals(t, operand);
+            if (!areEqual) ansSet.add(t);
         }
         return ansSet;
     }
