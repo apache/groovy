@@ -47,40 +47,41 @@ public class StaticTypesTransformation implements ASTTransformation {
             node.visit(visitor);
         }
     }
-    
+
     public final static class StaticTypesMarker{}
-    
+
     private static class Visitor extends ClassCodeVisitorSupport {
-        private final static ClassNode 
+        private static final String STATIC_ERROR_PREFIX = "[Static type checking] - ";
+        private final static ClassNode
             Collection_TYPE = makeWithoutCaching(Collection.class),
             Number_TYPE     = makeWithoutCaching(Number.class),
             Matcher_TYPE    = makeWithoutCaching(Matcher.class),
             ArrayList_TYPE  = makeWithoutCaching(ArrayList.class);
-        
+
         private SourceUnit source;
         private ClassNode classNode;
-        
+
         public Visitor(SourceUnit source, ClassNode cn){
             this.source = source;
             this.classNode = cn;
         }
-        
+
 //        @Override
         protected SourceUnit getSourceUnit() {
             return source;
         }
-        
+
         @Override
         public void visitVariableExpression(VariableExpression vexp) {
             super.visitVariableExpression(vexp);
-            if (    vexp!=VariableExpression.THIS_EXPRESSION && 
-                    vexp!=VariableExpression.SUPER_EXPRESSION) 
+            if (    vexp!=VariableExpression.THIS_EXPRESSION &&
+                    vexp!=VariableExpression.SUPER_EXPRESSION)
             {
                 if (vexp.getName().equals("this")) storeType(vexp, classNode);
                 if (vexp.getName().equals("super")) storeType(vexp, classNode.getSuperClass());
             }
         }
-      
+
         @Override
         public void visitBinaryExpression(BinaryExpression expression) {
             super.visitBinaryExpression(expression);
@@ -89,14 +90,14 @@ public class StaticTypesTransformation implements ASTTransformation {
             int op = expression.getOperation().getType();
             ClassNode resultType = getResultType(lType, op, rType, expression);
             if (resultType==null) {
-                addError("tbd...", expression);
+                addStaticTypeError("tbd...", expression);
                 resultType = lType;
-            } 
+            }
             storeType(expression, resultType);
             if (!isAssignment(op)) return;
             checkCompatibleAssignmenTypes(lType,resultType,expression);
         }
-        
+
         @Override
         public void visitBitwiseNegationExpression(BitwiseNegationExpression expression) {
             super.visitBitwiseNegationExpression(expression);
@@ -122,13 +123,13 @@ public class StaticTypesTransformation implements ASTTransformation {
             super.visitUnaryPlusExpression(expression);
             negativeOrPositiveUnary(expression, "positive");
         }
-        
+
         @Override
         public void visitUnaryMinusExpression(UnaryMinusExpression expression) {
             super.visitUnaryMinusExpression(expression);
             negativeOrPositiveUnary(expression, "negative");
         }
-        
+
         private void negativeOrPositiveUnary(Expression expression, String name) {
             ClassNode type = getType(expression, classNode);
             ClassNode typeRe = type.redirect();
@@ -147,10 +148,11 @@ public class StaticTypesTransformation implements ASTTransformation {
         @Override
         public void visitConstructorCallExpression(ConstructorCallExpression call) {
             super.visitConstructorCallExpression(call);
-            ClassNode[] args = getArgumentTypes(InvocationWriter.makeArgumentList(call.getArguments()), classNode);
-            findMethodOrFail(call, classNode, "init", args);
+            ClassNode receiver = call.getType();
+            ClassNode[] args = getArgumentTypes(InvocationWriter.makeArgumentList(call.getArguments()), receiver);
+            findMethodOrFail(call, receiver, "<init>", args);
         }
-        
+
         private static ClassNode[] getArgumentTypes(ArgumentListExpression args, ClassNode current) {
             List<Expression> arglist = args.getExpressions();
             ClassNode[] ret = new ClassNode[arglist.size()];
@@ -161,12 +163,12 @@ public class StaticTypesTransformation implements ASTTransformation {
             }
             return ret;
         }
-        
+
         @Override
         public void visitMethodCallExpression(MethodCallExpression call) {
             super.visitMethodCallExpression(call);
             if (call.getMethodAsString()==null) {
-                addError("cannot resolve dynamic method name at compile time.", call.getMethod());
+                addStaticTypeError("cannot resolve dynamic method name at compile time.", call.getMethod());
             } else {
                 ClassNode[] args = getArgumentTypes(InvocationWriter.makeArgumentList(call.getArguments()), classNode);
                 MethodNode mn = findMethodOrFail(call, getType(call.getObjectExpression(), classNode), call.getMethodAsString(), args);
@@ -212,10 +214,10 @@ public class StaticTypesTransformation implements ASTTransformation {
                     if (isIntCategory(leftRedirect)    && isIntCategory(rightRedirect))       return int_TYPE;
                     if (isLongCategory(leftRedirect)   && isLongCategory(rightRedirect))      return Long_TYPE;
                     if (isBigIntCategory(leftRedirect) && isBigIntCategory(rightRedirect))    return BigInteger_TYPE;
-                }  
+                }
             }
 
-            
+
             // try to find a method for the operation
             String operationName = getOperationName(op);
             MethodNode method = findMethodOrFail(expr, leftRedirect, operationName, leftRedirect, rightRedirect);
@@ -227,19 +229,20 @@ public class StaticTypesTransformation implements ASTTransformation {
             //TODO: other cases
             return null;
         }
-        
+
         private MethodNode findMethodOrFail(
                 Expression expr,
-                ClassNode receiver, String name, ClassNode... args) 
+                ClassNode receiver, String name, ClassNode... args)
         {
             List<MethodNode> methods = receiver.getMethods(name);
+            methods.addAll(receiver.getDeclaredConstructors());
             for (MethodNode m : methods) {
                 // we return the first method that may match
                 // we don't need the exact match here for now
                 Parameter[] params = m.getParameters();
                 if (params.length == args.length) {
                     if (    allParametersAndArgumentsMatch(params,args) ||
-                            lastArgMatchesVarg(params,args)) 
+                            lastArgMatchesVarg(params,args))
                     {
                         return m;
                     }
@@ -250,14 +253,14 @@ public class StaticTypesTransformation implements ASTTransformation {
                     // (2) last argument is put in the vargs array
                     //      that case is handled above already
                     // (3) there is more than one argument for the vargs array
-                    if (    params.length < args.length && 
+                    if (    params.length < args.length &&
                             excessArgumentsMatchesVargsParameter(params,args))
                     {
                         return m;
                     }
                 }
             }
-            addError("Cannot find matching method "+name,expr);
+            addStaticTypeError("Cannot find matching method " + toMethodParametersString(name, args), expr);
             return null;
         }
 
@@ -291,7 +294,7 @@ public class StaticTypesTransformation implements ASTTransformation {
             ClassNode arg = args[args.length-1];
             return isAssignableTo(ptype,arg);
         }
-        
+
         private static boolean isAssignableTo(ClassNode toBeAssignedTo, ClassNode type) {
             if (toBeAssignedTo.isDerivedFrom(type)) return true;
             if (toBeAssignedTo.redirect()==STRING_TYPE && type.redirect()==GSTRING_TYPE) {
@@ -299,7 +302,7 @@ public class StaticTypesTransformation implements ASTTransformation {
             }
             toBeAssignedTo = getWrapper(toBeAssignedTo);
             type = getWrapper(type);
-            if (    toBeAssignedTo.isDerivedFrom(Number_TYPE) && 
+            if (    toBeAssignedTo.isDerivedFrom(Number_TYPE) &&
                     type.isDerivedFrom(Number_TYPE))
             {
                 return true;
@@ -317,7 +320,7 @@ public class StaticTypesTransformation implements ASTTransformation {
         }
 
         private static boolean isCompareToBoolean(int op) {
-            return  op==COMPARE_GREATER_THAN        || 
+            return  op==COMPARE_GREATER_THAN        ||
                     op==COMPARE_GREATER_THAN_EQUAL  ||
                     op==COMPARE_LESS_THAN           ||
                     op==COMPARE_LESS_THAN_EQUAL;
@@ -337,10 +340,10 @@ public class StaticTypesTransformation implements ASTTransformation {
         }
 
         /**
-         * Returns true for operations that are of the class, that given a 
+         * Returns true for operations that are of the class, that given a
          * common type class for left and right, the operation "left op right"
-         * will have a result in the same type class 
-         * In Groovy on numbers that is +,-,* as well as their variants 
+         * will have a result in the same type class
+         * In Groovy on numbers that is +,-,* as well as their variants
          * with equals.
          */
         private static boolean isOperationInGroup(int op) {
@@ -349,7 +352,7 @@ public class StaticTypesTransformation implements ASTTransformation {
                 case MINUS:     case MINUS_EQUAL:
                 case MULTIPLY:  case MULTIPLY_EQUAL:
                     return true;
-                default: 
+                default:
                     return false;
             }
         }
@@ -360,11 +363,11 @@ public class StaticTypesTransformation implements ASTTransformation {
                 case BITWISE_AND_EQUAL:   case BITWISE_AND:
                 case BITWISE_XOR_EQUAL:   case BITWISE_XOR:
                     return true;
-                default: 
+                default:
                     return false;
             }
         }
-        
+
         private static boolean isAssignment(int op) {
             switch (op) {
                 case ASSIGN:
@@ -372,7 +375,7 @@ public class StaticTypesTransformation implements ASTTransformation {
                 case PLUS_EQUAL:          case MINUS_EQUAL:
                 case MULTIPLY_EQUAL:      case DIVIDE_EQUAL:
                 case INTDIV_EQUAL:        case MOD_EQUAL:
-                case POWER_EQUAL: 
+                case POWER_EQUAL:
                 case LEFT_SHIFT_EQUAL:    case RIGHT_SHIFT_EQUAL:
                 case RIGHT_SHIFT_UNSIGNED_EQUAL:
                 case BITWISE_OR_EQUAL:    case BITWISE_AND_EQUAL:
@@ -381,7 +384,7 @@ public class StaticTypesTransformation implements ASTTransformation {
                 default: return false;
             }
         }
-        
+
         private static ClassNode getType(Expression exp, ClassNode current) {
             ClassNode cn = (ClassNode) exp.getNodeMetaData(StaticTypesMarker.class);
             if (cn!=null) return cn;
@@ -389,31 +392,34 @@ public class StaticTypesTransformation implements ASTTransformation {
                 VariableExpression vexp = (VariableExpression) exp;
                 if (vexp==VariableExpression.THIS_EXPRESSION) return current;
                 if (vexp==VariableExpression.SUPER_EXPRESSION) return current.getSuperClass();
-            }            
+            } else if (exp instanceof PropertyExpression) {
+                PropertyExpression pexp = (PropertyExpression) exp;
+                if (pexp.getObjectExpression().getType().isEnum()) return pexp.getObjectExpression().getType();
+            }
             return exp.getType();
         }
-        
+
         private void checkCompatibleAssignmenTypes(ClassNode left, ClassNode right, Expression expr) {
             ClassNode leftRedirect = left.redirect();
             ClassNode rightRedirect = right.redirect();
             // on an assignment everything that can be done by a GroovyCast is allowed
-            
+
             // anything can be assigned to an Object, String, boolean, Boolean
             // or Class typed variable
-            if  (   leftRedirect==OBJECT_TYPE   || 
+            if  (   leftRedirect==OBJECT_TYPE   ||
                     leftRedirect==STRING_TYPE   ||
-                    leftRedirect==boolean_TYPE || 
+                    leftRedirect==boolean_TYPE ||
                     leftRedirect==Boolean_TYPE  ||
                     leftRedirect==CLASS_Type) {
                 return;
             }
-            
+
             // if left is Enum and right is String or GString we do valueOf
             if (    leftRedirect.isDerivedFrom(Enum_Type) &&
                     (rightRedirect==GSTRING_TYPE || rightRedirect==STRING_TYPE)) {
                 return;
             }
-            
+
             // if right is array, map or collection we try invoking the 
             // constructor
             if (    rightRedirect.implementsInterface(MAP_TYPE)         ||
@@ -422,17 +428,40 @@ public class StaticTypesTransformation implements ASTTransformation {
                 //TODO: in case of the array we could maybe make a partial check
                 return;
             }
-            
+
             // simple check on being subclass
             if (right.isDerivedFrom(left) || left.implementsInterface(right)) return;
-            
+
             // if left and right are primitives or numbers allow 
             if (isPrimitiveType(leftRedirect) && isPrimitiveType(rightRedirect)) return;
             if (isNumberType(leftRedirect) && isNumberType(rightRedirect)) return;
-            addError("Cannot assign value of type "+right+" to variable of type "+left, expr);
+            addStaticTypeError("Cannot assign value of type " + right + " to variable of type " + left, expr);
+        }
+
+        protected void addStaticTypeError(final String msg, final ASTNode expr) {
+            if (expr.getColumnNumber()>0 && expr.getLineNumber()>0) {
+                addError(STATIC_ERROR_PREFIX + msg, expr);
+            } else {
+                // ignore errors which are related to unknown source locations
+                // because they are likely related to generated code
+            }
+        }
+
+        private static String toMethodParametersString(String methodName, ClassNode... parameters) {
+            StringBuilder sb = new StringBuilder();
+            sb.append(methodName).append("(");
+            if (parameters!=null) {
+                for (int i = 0, parametersLength = parameters.length; i < parametersLength; i++) {
+                    final ClassNode parameter = parameters[i];
+                    sb.append(parameter.getName());
+                    if (i<parametersLength-1) sb.append(", ");
+                }
+            }
+            sb.append(")");
+            return sb.toString();
         }
     }
-    
+
     private static String getOperationName(int op) {
         switch (op) {
             case COMPARE_EQUAL:
@@ -440,55 +469,55 @@ public class StaticTypesTransformation implements ASTTransformation {
                 // this is only correct in this context here, normally
                 // we would have to compile against compareTo if available
                 // but since we don't compile here, this one is enough
-                return "equals"; 
-            
+                return "equals";
+
             case COMPARE_TO:
             case COMPARE_GREATER_THAN:
             case COMPARE_GREATER_THAN_EQUAL:
             case COMPARE_LESS_THAN:
             case COMPARE_LESS_THAN_EQUAL:
                 return "compareTo";
-            
+
             case BITWISE_AND:
             case BITWISE_AND_EQUAL:
                 return "and";
-            
+
             case BITWISE_OR:
             case BITWISE_OR_EQUAL:
                 return "or";
-            
+
             case BITWISE_XOR:
             case BITWISE_XOR_EQUAL:
                 return "xor";
-            
+
             case PLUS:
             case PLUS_EQUAL:
                 return "plus";
-            
+
             case MINUS:
             case MINUS_EQUAL:
                 return "minus";
-            
+
             case MULTIPLY:
             case MULTIPLY_EQUAL:
                 return "multiply";
-            
+
             case DIVIDE:
             case DIVIDE_EQUAL:
                 return "div";
-            
+
             case INTDIV:
             case INTDIV_EQUAL:
                 return "intdiv";
-            
+
             case MOD:
             case MOD_EQUAL:
                 return "mod";
-            
+
             case POWER:
             case POWER_EQUAL:
                 return "power";
-            
+
             case LEFT_SHIFT:
             case LEFT_SHIFT_EQUAL:
                 return "leftShift";
@@ -496,14 +525,14 @@ public class StaticTypesTransformation implements ASTTransformation {
             case RIGHT_SHIFT:
             case RIGHT_SHIFT_EQUAL:
                 return "rightShift";
-    
+
             case RIGHT_SHIFT_UNSIGNED:
             case RIGHT_SHIFT_UNSIGNED_EQUAL:
                 return "rightShiftUnsigned";
-                
+
             case KEYWORD_IN:
                 return "isCase";
-                
+
             default:
                 return null;
         }
