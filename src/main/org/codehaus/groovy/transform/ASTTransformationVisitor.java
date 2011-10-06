@@ -208,23 +208,27 @@ public final class ASTTransformationVisitor extends ClassCodeVisitorSupport {
                         + service.toExternalForm() + " because of exception " + ioe.toString(), null));
                     continue;
                 }
+                Set<String> disabledGlobalTransforms = compilationUnit.getConfiguration().getDisabledGlobalASTTransformations();
+                if (disabledGlobalTransforms==null) disabledGlobalTransforms=Collections.emptySet();
                 while (className != null) {
                     if (!className.startsWith("#") && className.length() > 0) {
-                        if (transformNames.containsKey(className)) {
-                            if (!service.equals(transformNames.get(className))) {
-                                compilationUnit.getErrorCollector().addWarning(
-                                        WarningMessage.POSSIBLE_ERRORS,
-                                        "The global transform for class " + className + " is defined in both "
-                                            + transformNames.get(className).toExternalForm()
-                                            + " and "
-                                            + service.toExternalForm()
-                                            + " - the former definition will be used and the latter ignored.",
-                                        null,
-                                        null);
-                            }
+                        if (!disabledGlobalTransforms.contains(className)) {
+                            if (transformNames.containsKey(className)) {
+                                if (!service.equals(transformNames.get(className))) {
+                                    compilationUnit.getErrorCollector().addWarning(
+                                            WarningMessage.POSSIBLE_ERRORS,
+                                            "The global transform for class " + className + " is defined in both "
+                                                    + transformNames.get(className).toExternalForm()
+                                                    + " and "
+                                                    + service.toExternalForm()
+                                                    + " - the former definition will be used and the latter ignored.",
+                                            null,
+                                            null);
+                                }
 
-                        } else {
-                            transformNames.put(className, service);
+                            } else {
+                                transformNames.put(className, service);
+                            }
                         }
                     }
                     try {

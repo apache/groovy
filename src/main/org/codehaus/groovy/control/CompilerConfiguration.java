@@ -22,15 +22,7 @@ import org.codehaus.groovy.control.messages.WarningMessage;
 
 import java.io.File;
 import java.io.PrintWriter;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.LinkedHashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
-import java.util.StringTokenizer;
+import java.util.*;
 
 /**
  * Compilation control flags and coordination stuff.
@@ -38,6 +30,7 @@ import java.util.StringTokenizer;
  * @author <a href="mailto:cpoirier@dreaming.org">Chris Poirier</a>
  * @author <a href="mailto:blackdrag@gmx.org">Jochen Theodorou</a>
  * @author <a href="mailto:jim@pagesmiths.com">Jim White</a>
+ * @author <a href="mailto:cedric.champeau@gmail.com">Cedric Champeau</a>
  * @version $Id$
  */
 
@@ -148,6 +141,13 @@ public class CompilerConfiguration {
     private Map<String, Boolean> optimizationOptions;
 
     private List<CompilationCustomizer> compilationCustomizers = new LinkedList<CompilationCustomizer>();
+
+    /**
+     * Sets a list of global AST transformations which should not be loaded even if they are
+     * defined in META-INF/org.codehaus.groovy.transform.ASTTransformation files. By default,
+     * none is disabled.
+     */
+    private Set<String> disabledGlobalASTTransformations;
 
     /**
      * Sets the Flags to defaults.
@@ -431,6 +431,14 @@ public class CompilerConfiguration {
             throw new ConfigurationException(e);
         }
         setMinimumRecompilationInterval(numeric);
+
+        // disabled global AST transformations
+        text = configuration.getProperty("groovy.disabled.global.ast.transformations");
+        if (text!=null) {
+            String[] classNames = text.split(",\\s*}");
+            Set<String> blacklist = new HashSet<String>(Arrays.asList(classNames));
+            setDisabledGlobalASTTransformations(blacklist);
+        }
     }
 
     /**
@@ -743,4 +751,26 @@ public class CompilerConfiguration {
         return compilationCustomizers;
     }
 
+    /**
+     * Returns the list of disabled global AST transformation class names.
+     * @return a list of global AST transformation fully qualified class names
+     */
+    public Set<String> getDisabledGlobalASTTransformations() {
+        return disabledGlobalASTTransformations;
+    }
+
+    /**
+     * Disables global AST transformations. In order to avoid classloading side effects, it is not recommanded
+     * to use MyASTTransformation.class.getName() by directly use the class name as a string. Disabled AST transformations
+     * only apply to automatically loaded global AST transformations, that is to say transformations defined in a
+     * META-INF/org.codehaus.groovy.transform.ASTTransformation file. If you explicitely add a global AST transformation
+     * in your compilation process, for example using the {@link org.codehaus.groovy.control.customizers.ASTTransformationCustomizer} or
+     * using a {@link org.codehaus.groovy.control.CompilationUnit.PrimaryClassNodeOperation}, then nothing will prevent
+     * the transformation from being loaded.
+     * @param disabledGlobalASTTransformations a set of fully qualified class names of global AST transformations
+     * which should not be loaded.
+     */
+    public void setDisabledGlobalASTTransformations(final Set<String> disabledGlobalASTTransformations) {
+        this.disabledGlobalASTTransformations = disabledGlobalASTTransformations;
+    }
 }
