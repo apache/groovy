@@ -18,6 +18,7 @@ package org.codehaus.groovy.control;
 import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyRuntimeException;
 
+import groovy.transform.CompilationUnitAware;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.ClassNode;
@@ -63,7 +64,7 @@ public class CompilationUnit extends ProcessingUnit {
     //---------------------------------------------------------------------------
     // CONSTRUCTION AND SUCH
 
-    private GroovyClassLoader transformLoader;  // Classloader for global and local transforms
+    protected ASTTransformationsContext astTransformationsContext; // AST transformations state data
 
     protected Map<String, SourceUnit> sources;    // The SourceUnits from which this unit is built
     protected Map summariesBySourceName;      // Summary of each SourceUnit
@@ -136,7 +137,8 @@ public class CompilationUnit extends ProcessingUnit {
     public CompilationUnit(CompilerConfiguration configuration, CodeSource security,
                            GroovyClassLoader loader, GroovyClassLoader transformLoader) {
         super(configuration, loader, null);
-        this.transformLoader = transformLoader;
+
+        this.astTransformationsContext = new ASTTransformationsContext(this, transformLoader);
         this.names = new ArrayList<String>();
         this.queuedSources = new LinkedList<SourceUnit>();
         this.sources = new HashMap<String, SourceUnit>();
@@ -218,7 +220,7 @@ public class CompilationUnit extends ProcessingUnit {
      * @return - the transform class loader
      */
     public GroovyClassLoader getTransformLoader() {
-        return transformLoader == null ? getClassLoader() : transformLoader;
+        return astTransformationsContext.getTransformLoader() == null ? getClassLoader() : astTransformationsContext.getTransformLoader();
     }
 
 
@@ -322,6 +324,13 @@ public class CompilationUnit extends ProcessingUnit {
             if (debug) e.printStackTrace();
         }
         return result[0];
+    }
+
+    /**
+     * @return the AST transformations current context
+     */
+    public ASTTransformationsContext getASTTransformationsContext() {
+        return astTransformationsContext;
     }
 
     //---------------------------------------------------------------------------
@@ -954,6 +963,9 @@ public class CompilationUnit extends ProcessingUnit {
                 ClassNode classNode = (ClassNode) classNodes.next();
                 context = classNode.getModule().getContext();
                 if (context == null || context.phase < phase || (context.phase == phase && !context.phaseComplete)) {
+                    if (body instanceof CompilationUnitAware) {
+                        ((CompilationUnitAware)body).setCompilationUnit(this);
+                    }
                     body.call(context, new GeneratorContext(this.ast), classNode);
                 }
             } catch (CompilationFailedException e) {
