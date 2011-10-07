@@ -57,7 +57,7 @@ abstract class StaticTypeCheckingTestCase extends GroovyTestCase {
                 throw new AssertionError("Expected error message was found, but compiler thrown more than one error : "+mce.toString())
             }
         }
-        if (!success) throw new AssertionError("Test should have failed with message [$message]")
+        if (!success) throw new AssertionError("Test should have failed with messages [$messages]")
     }
 
 }
