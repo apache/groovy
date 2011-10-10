@@ -116,6 +116,13 @@ class ProxyGeneratorTest extends GroovyTestCase {
         assertEquals 'some string', proxy.myMethodA()
         proxy.myMethodC()
     }
+
+    void testProxyWithToString() {
+        def map = [ toString: {'hello'} ]
+        def gen = new ProxyGenerator()
+        def proxy = gen.instantiateAggregateFromBaseClass(map, Object)
+        assert proxy.toString() == 'hello'
+    }
 }
 
 class TestClass {
