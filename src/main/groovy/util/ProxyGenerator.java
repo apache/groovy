@@ -187,7 +187,7 @@ public class ProxyGenerator {
         for (Method method : publicAndProtectedMethods) {
             if (method.getName().indexOf('$') != -1
                     || Modifier.isFinal(method.getModifiers())
-                    || ConversionHandler.isCoreObjectMethod(method)
+                    || (!"toString".equals(method.getName()) && ConversionHandler.isCoreObjectMethod(method))
                     || containsEquivalentMethod(selectedMethods.values(), method))
                 continue;
             if (map.containsKey(method.getName()) || closureIndicator) {
