@@ -814,34 +814,34 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         }
 
         statements.addAll(node.getObjectInitializerStatements());
-        if (!statements.isEmpty()) {
-            Statement code = constructorNode.getCode();
-            BlockStatement block = new BlockStatement();
-            List<Statement> otherStatements = block.getStatements();
-            if (code instanceof BlockStatement) {
-                block = (BlockStatement) code;
-                otherStatements = block.getStatements();
-            } else if (code != null) {
-                otherStatements.add(code);
-            }
-            if (!otherStatements.isEmpty()) {
-                if (first != null) {
-                    // it is super(..) since this(..) is already covered
-                    otherStatements.remove(0);
-                    statements.add(0, firstStatement);
-                }
-                Statement stmtThis$0 = getImplicitThis$0StmtIfInnerClass(otherStatements);
-                if (stmtThis$0 != null) {
-                    // since there can be field init statements that depend on method/property dispatching
-                    // that uses this$0, it needs to bubble up just after the constructor call.
-                    statements.add(1, stmtThis$0);
-                }
-                statements.addAll(otherStatements);
-            }
-            BlockStatement newBlock = new BlockStatement(statements, block.getVariableScope());
-            newBlock.setSourcePosition(block);
-            constructorNode.setCode(newBlock);
+
+        Statement code = constructorNode.getCode();
+        BlockStatement block = new BlockStatement();
+        List<Statement> otherStatements = block.getStatements();
+        if (code instanceof BlockStatement) {
+            block = (BlockStatement) code;
+            otherStatements = block.getStatements();
+        } else if (code != null) {
+            otherStatements.add(code);
         }
+        if (!otherStatements.isEmpty()) {
+            if (first != null) {
+                // it is super(..) since this(..) is already covered
+                otherStatements.remove(0);
+                statements.add(0, firstStatement);
+            }
+            Statement stmtThis$0 = getImplicitThis$0StmtIfInnerClass(otherStatements);
+            if (stmtThis$0 != null) {
+                // since there can be field init statements that depend on method/property dispatching
+                // that uses this$0, it needs to bubble up before the super call itself (GROOVY-4471)
+                statements.add(0, stmtThis$0);
+            }
+            statements.addAll(otherStatements);
+        }
+        BlockStatement newBlock = new BlockStatement(statements, block.getVariableScope());
+        newBlock.setSourcePosition(block);
+        constructorNode.setCode(newBlock);
+
 
 
         if (!staticStatements.isEmpty()) {
@@ -872,21 +872,28 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                 List<Statement> stmts = ((BlockStatement) stmt).getStatements();
                 for (Statement bstmt : stmts) {
                     if (bstmt instanceof ExpressionStatement) {
-                        Expression expr = ((ExpressionStatement) bstmt).getExpression();
-                        if (expr instanceof BinaryExpression) {
-                            Expression lExpr = ((BinaryExpression) expr).getLeftExpression();
-                            if (lExpr instanceof FieldExpression) {
-                                if ("this$0".equals(((FieldExpression) lExpr).getFieldName())) {
-                                    stmts.remove(bstmt); // remove from here and let the caller reposition it
-                                    return bstmt;
-                                }
-                            }
-                        }
+                        if (extractImplicitThis$0StmtIfInnerClassFromExpression(stmts, bstmt)) return bstmt;
                     }
                 }
+            } else if (stmt instanceof ExpressionStatement) {
+                if (extractImplicitThis$0StmtIfInnerClassFromExpression(otherStatements, stmt)) return stmt;
             }
         }
         return null;
+    }
+
+    private boolean extractImplicitThis$0StmtIfInnerClassFromExpression(final List<Statement> stmts, final Statement bstmt) {
+        Expression expr = ((ExpressionStatement) bstmt).getExpression();
+        if (expr instanceof BinaryExpression) {
+            Expression lExpr = ((BinaryExpression) expr).getLeftExpression();
+            if (lExpr instanceof FieldExpression) {
+                if ("this$0".equals(((FieldExpression) lExpr).getFieldName())) {
+                    stmts.remove(bstmt); // remove from here and let the caller reposition it
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     private ConstructorCallExpression getFirstIfSpecialConstructorCall(Statement code) {
