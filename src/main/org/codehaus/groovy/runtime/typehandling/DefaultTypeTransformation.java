@@ -158,8 +158,13 @@ public class DefaultTypeTransformation {
         if (object == null) {
             return false;
         }
-
-        // if the object is not null, try to call an asBoolean() method on the object
+        
+        // equality check is enough and faster than instanceof check, no need to check superclasses since Boolean is final
+        if (object.getClass() == Boolean.class) {   
+            return ((Boolean)object).booleanValue();
+        }
+        
+        // if the object is not null and no Boolean, try to call an asBoolean() method on the object
         return (Boolean)InvokerHelper.invokeMethod(object, "asBoolean", InvokerHelper.EMPTY_ARGS);
     }
     

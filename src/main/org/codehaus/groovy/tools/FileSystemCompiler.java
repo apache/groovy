@@ -244,6 +244,11 @@ public class FileSystemCompiler {
 
             configuration.setJointCompilationOptions(compilerOptions);
         }
+        
+        if (cli.hasOption("indy")) {
+            configuration.getOptimizationOptions().put("indy", true);
+        }
+        
         return configuration;
     }
 
@@ -277,6 +282,9 @@ public class FileSystemCompiler {
                         .hasArg()
                         .withDescription("passed to javac for joint compilation")
                         .create("F"));
+        
+        options.addOption(OptionBuilder.withLongOpt("indy").withDescription("enables compilation using invokedynamic").create());
+        
         return options;
     }
 
