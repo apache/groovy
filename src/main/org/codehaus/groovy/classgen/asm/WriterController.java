@@ -26,6 +26,7 @@ import org.codehaus.groovy.ast.InterfaceHelperClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.classgen.GeneratorContext;
+import org.codehaus.groovy.classgen.asm.indy.InvokeDynamicWriter;
 import org.codehaus.groovy.control.SourceUnit;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.MethodVisitor;
@@ -56,12 +57,14 @@ public class WriterController {
     
     public void init(AsmClassGenerator asmClassGenerator, GeneratorContext gcon, ClassVisitor cv, ClassNode cn) {
         Map<String,Boolean> optOptions = cn.getCompileUnit().getConfig().getOptimizationOptions();
+        boolean invokedynamic=false;
         if (optOptions.isEmpty()) {
             // IGNORE
         } else if (optOptions.get("all")==Boolean.FALSE) {
             optimizeForInt=false;
             // set other optimizations options to false here
         } else {
+            if (optOptions.get("indy")==Boolean.TRUE) invokedynamic=true;
             if (optOptions.get("int")==Boolean.FALSE) optimizeForInt=false;
             // set other optimizations options to false here
         }
@@ -69,14 +72,20 @@ public class WriterController {
         this.outermostClass = null;
         this.internalClassName = BytecodeHelper.getClassInternalName(classNode);
         this.callSiteWriter = new CallSiteWriter(this);
-        this.invocationWriter = new InvocationWriter(this);
-
+        
+        if (invokedynamic) {
+            this.invocationWriter = new InvokeDynamicWriter(this);
+        } else {
+            this.invocationWriter = new InvocationWriter(this);
+        }
+        
         this.binaryExpHelper = new BinaryExpressionHelper(this);
         if (optimizeForInt) {
             this.fastPathBinaryExpHelper = new BinaryExpressionMultiTypeDispatcher(this);            
         } else {
             this.fastPathBinaryExpHelper = this.binaryExpHelper;
         }
+
         this.operandStack = new OperandStack(this);
         this.assertionWriter = new AssertionWriter(this);
         this.closureWriter = new ClosureWriter(this);

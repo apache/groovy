@@ -23,7 +23,6 @@ import groovy.lang.Script;
 
 import java.io.*;
 import java.math.BigInteger;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Iterator;
 import java.util.List;
@@ -232,6 +231,10 @@ public class GroovyMain {
             .withDescription("split lines using splitPattern (default '\\s') using implicit 'split' variable")
             .withLongOpt("autosplit")
             .create('a'));
+        options.addOption(
+            OptionBuilder.withLongOpt("indy")
+            .withDescription("enables compilation using invokedynamic")
+            .create());
 
         return options;
     }
@@ -314,6 +317,10 @@ public class GroovyMain {
         String[] deopts = disabled.split(",");
         for (String deopt_i : deopts) {
             main.conf.getOptimizationOptions().put(deopt_i,false);
+        }
+        
+        if (line.hasOption("indy")) {
+            main.conf.getOptimizationOptions().put("indy", true);
         }
         
         main.args = args;
