@@ -505,7 +505,7 @@ public class AstBuilderFromSpecificationTest extends GroovyTestCase {
         // public static String foo = "a value"
         def result = new AstBuilder().buildFromSpec {
             field {
-                fieldNode "foo", ACC_PUBLIC & ACC_STATIC, String, this.class, {
+                fieldNode "foo", ACC_PUBLIC | ACC_STATIC, String, this.class, {
                     constant "a value"
                 }
             }
@@ -514,7 +514,7 @@ public class AstBuilderFromSpecificationTest extends GroovyTestCase {
         def expected = new FieldExpression(
                 new FieldNode(
                         "foo",
-                        ACC_PUBLIC & ACC_STATIC,
+                        ACC_PUBLIC | ACC_STATIC,
                         ClassHelper.make(String, false),
                         ClassHelper.make(this.class, false),
                         new ConstantExpression("a value")
