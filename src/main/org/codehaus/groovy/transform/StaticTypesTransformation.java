@@ -15,22 +15,31 @@
  */
 package org.codehaus.groovy.transform;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.lang.reflect.Method;
+import java.util.*;
 import java.util.regex.Matcher;
 
+import groovy.lang.GroovySystem;
+import groovy.lang.MetaClassRegistry;
+import groovy.lang.MetaMethod;
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
+import org.codehaus.groovy.ast.stmt.ExpressionStatement;
+import org.codehaus.groovy.ast.stmt.IfStatement;
+import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.classgen.asm.InvocationWriter;
 import org.codehaus.groovy.control.*;
+import org.codehaus.groovy.reflection.CachedClass;
+import org.codehaus.groovy.reflection.ReflectionCache;
+import org.codehaus.groovy.reflection.ReflectionUtils;
+import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 
 import static org.codehaus.groovy.ast.ClassHelper.*;
 import static org.codehaus.groovy.syntax.Types.*;
 import static org.codehaus.groovy.ast.tools.WideningCategories.*;
 
 /**
- * Handles the implementation of the @StaticTypes transformation
+ * Handles the implementation of the {@link groovy.transform.StaticTypes] transformation
  * @author <a href="mailto:blackdrag@gmx.org">Jochen "blackdrag" Theodorou</a>
  */
 @GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
@@ -52,6 +61,7 @@ public class StaticTypesTransformation implements ASTTransformation {
 
     private static class Visitor extends ClassCodeVisitorSupport {
         private static final String STATIC_ERROR_PREFIX = "[Static type checking] - ";
+        private final static Map<String,List<MethodNode>> VIRTUAL_DGM_METHODS = getDGMMethods();
         private final static ClassNode
             Collection_TYPE = makeWithoutCaching(Collection.class),
             Number_TYPE     = makeWithoutCaching(Number.class),
@@ -94,8 +104,9 @@ public class StaticTypesTransformation implements ASTTransformation {
                 resultType = lType;
             }
             storeType(expression, resultType);
-            if (!isAssignment(op)) return;
-            checkCompatibleAssignmenTypes(lType,resultType,expression);
+            // commented out because previous getResultType() call already performs assignment check
+//            if (!isAssignment(op)) return;
+//            checkCompatibleAssignmenTypes(lType,resultType,expression);
         }
 
         @Override
@@ -179,6 +190,9 @@ public class StaticTypesTransformation implements ASTTransformation {
 
         private void storeType(Expression exp, ClassNode cn) {
             exp.setNodeMetaData(StaticTypesMarker.class, cn);
+            if (exp instanceof DeclarationExpression) {
+                storeType(((DeclarationExpression) exp).getLeftExpression(), cn);
+            }
         }
 
         private ClassNode getResultType(ClassNode left, int op, ClassNode right, BinaryExpression expr) {
@@ -187,10 +201,10 @@ public class StaticTypesTransformation implements ASTTransformation {
 
             if (op==ASSIGN) {
                 checkCompatibleAssignmenTypes(leftRedirect,rightRedirect,expr);
-                // we don't check the other assignments here, because 
+                // we don't check the other assignments here, because
                 // we need first to check the operation itself.
                 // assignment return type is lhs type
-                return left;
+                return rightRedirect;
             } else if (isBoolIntrinsicOp(op)) {
                 return boolean_TYPE;
             } else if (isArrayOp(op)) {
@@ -220,7 +234,7 @@ public class StaticTypesTransformation implements ASTTransformation {
 
             // try to find a method for the operation
             String operationName = getOperationName(op);
-            MethodNode method = findMethodOrFail(expr, leftRedirect, operationName, leftRedirect, rightRedirect);
+            MethodNode method = findMethodOrFail(expr, leftRedirect, operationName, rightRedirect);
             if (method!=null) {
                 if (isCompareToBoolean(op)) return boolean_TYPE;
                 if (op==COMPARE_TO)         return int_TYPE;
@@ -230,12 +244,62 @@ public class StaticTypesTransformation implements ASTTransformation {
             return null;
         }
 
+        private static Map<String,List<MethodNode>> getDGMMethods() {
+            Map<String, List<MethodNode>> methods = new HashMap<String, List<MethodNode>>();
+            final CachedClass cachedClass = ReflectionCache.getCachedClass(DefaultGroovyMethods.class);
+            for (MetaMethod metaMethod : cachedClass.getMethods()) {
+                final CachedClass[] types = metaMethod.getParameterTypes();
+                if (metaMethod.isStatic() && metaMethod.isPublic() && types.length>0) {
+                Parameter[] parameters = new Parameter[types.length-1];
+                for (int i = 1; i < types.length; i++) {
+                    CachedClass type = types[i];
+                    parameters[i-1] = new Parameter(ClassHelper.make(type.getName()), "p"+i);
+                }
+                MethodNode node = new MethodNode(
+                        metaMethod.getName(),
+                        metaMethod.getModifiers(),
+                        ClassHelper.make(metaMethod.getReturnType()),
+                        parameters,
+                        new ClassNode[0], null);
+                    final ClassNode clazz = ClassHelper.make(types[0].getName());
+                    List<MethodNode> nodes = methods.get(clazz.getName());
+                    if (nodes==null) {
+                        nodes = new LinkedList<MethodNode>();
+                        methods.put(clazz.getName(), nodes);
+                    }
+                    nodes.add(node);
+                }
+            }
+            return methods;
+        }
+
+        private static Set<MethodNode> findDGMMethodsForClassNode(ClassNode clazz) {
+            Set<MethodNode> result = new HashSet<MethodNode>();
+            List<MethodNode> fromDGM = VIRTUAL_DGM_METHODS.get(clazz.getName());
+            if (fromDGM!=null) result.addAll(fromDGM);
+            for (ClassNode node : clazz.getInterfaces()) {
+                result.addAll(findDGMMethodsForClassNode(node));
+            }
+            if (clazz.getSuperClass()!=null) {
+                result.addAll(findDGMMethodsForClassNode(clazz.getSuperClass()));
+            } else if (!clazz.equals(ClassHelper.OBJECT_TYPE)) {
+                result.addAll(findDGMMethodsForClassNode(ClassHelper.OBJECT_TYPE));
+            }
+
+            return result;
+        }
+
         private MethodNode findMethodOrFail(
                 Expression expr,
                 ClassNode receiver, String name, ClassNode... args)
         {
-            List<MethodNode> methods = receiver.getMethods(name);
-            methods.addAll(receiver.getDeclaredConstructors());
+            List<MethodNode> methods = "<init>".equals(name)?new ArrayList<MethodNode>(receiver.getDeclaredConstructors()):receiver.getMethods(name);
+            Set<MethodNode> fromDGM = findDGMMethodsForClassNode(receiver);
+
+            for (MethodNode methodNode : fromDGM) {
+                if (methodNode.getName().equals(name)) methods.add(methodNode);
+            }
+
             for (MethodNode m : methods) {
                 // we return the first method that may match
                 // we don't need the exact match here for now
@@ -260,7 +324,7 @@ public class StaticTypesTransformation implements ASTTransformation {
                     }
                 }
             }
-            addStaticTypeError("Cannot find matching method " + toMethodParametersString(name, args), expr);
+            addStaticTypeError("Cannot find matching method "+receiver.getName()+"#" + toMethodParametersString(name, args), expr);
             return null;
         }
 
@@ -295,7 +359,7 @@ public class StaticTypesTransformation implements ASTTransformation {
             return isAssignableTo(ptype,arg);
         }
 
-        private static boolean isAssignableTo(ClassNode toBeAssignedTo, ClassNode type) {
+        private static boolean isAssignableTo(ClassNode type, ClassNode toBeAssignedTo) {
             if (toBeAssignedTo.isDerivedFrom(type)) return true;
             if (toBeAssignedTo.redirect()==STRING_TYPE && type.redirect()==GSTRING_TYPE) {
                 return true;
@@ -392,6 +456,10 @@ public class StaticTypesTransformation implements ASTTransformation {
                 VariableExpression vexp = (VariableExpression) exp;
                 if (vexp==VariableExpression.THIS_EXPRESSION) return current;
                 if (vexp==VariableExpression.SUPER_EXPRESSION) return current.getSuperClass();
+                final Variable variable = vexp.getAccessedVariable();
+                if (variable!=null && variable !=vexp && variable instanceof VariableExpression) {
+                    return getType((Expression) variable, current);
+                }
             } else if (exp instanceof PropertyExpression) {
                 PropertyExpression pexp = (PropertyExpression) exp;
                 if (pexp.getObjectExpression().getType().isEnum()) return pexp.getObjectExpression().getType();

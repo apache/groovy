@@ -51,7 +51,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         shouldFailWithMessages """
             int x = 2
             Set set = x
-        """, "Cannot assign value of type java.lang.Integer to variable of type java.util.Set"
+        """, "Cannot assign value of type int to variable of type java.util.Set"
     }
 
     void testAssignmentToEnum() {
