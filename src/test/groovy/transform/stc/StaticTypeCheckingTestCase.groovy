@@ -5,8 +5,6 @@ import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
 import groovy.transform.StaticTypes
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage
-import junit.framework.AssertionFailedError
-import org.codehaus.groovy.control.ErrorCollector
 
 /**
  * Support class for static type checking test cases.
