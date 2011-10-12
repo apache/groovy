@@ -76,7 +76,7 @@ dependencies {
     // todo this was provided
     compile "org.livetribe:livetribe-jsr223:2.0.6"
 
-    tools "com.google.code:jarjar:1.1"
+    tools "com.googlecode.jarjar:jarjar:1.1"
     tools("checkstyle:checkstyle:4.4") {
         exclude(module: 'junit')
     }
