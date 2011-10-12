@@ -33,7 +33,12 @@ import javax.swing.tree.TreeNode
 import javax.swing.tree.TreeSelectionModel
 import org.codehaus.groovy.control.Phases
 import static java.awt.GridBagConstraints.*
-import java.awt.Component
+import org.codehaus.groovy.ast.ClassNode
+import groovy.lang.GroovyClassLoader.ClassCollector
+import org.codehaus.groovy.control.CompilationUnit
+import org.codehaus.groovy.control.SourceUnit
+import org.objectweb.asm.ClassReader
+import org.objectweb.asm.util.TraceClassVisitor
 
 /**
  * This object is a GUI for looking at the AST that Groovy generates. 
@@ -48,15 +53,15 @@ import java.awt.Component
 
 public class AstBrowser {
 
-    private inputArea, rootElement, decompiledSource, jTree, propertyTable, splitterPane, mainSplitter
+    private inputArea, rootElement, decompiledSource, jTree, propertyTable, splitterPane, mainSplitter, bytecodeView
     boolean showScriptFreeForm, showScriptClass, showTreeView
-    GroovyClassLoader classLoader
+    GeneratedBytecodeAwareGroovyClassLoader classLoader
     def prefs = new AstBrowserUiPreferences()
 
     AstBrowser(inputArea, rootElement, classLoader) {
         this.inputArea = inputArea
         this.rootElement = rootElement
-        this.classLoader = classLoader
+        this.classLoader = new GeneratedBytecodeAwareGroovyClassLoader(classLoader)
     }
 
     def swing, frame
@@ -162,7 +167,10 @@ public class AstBrowser {
                 mainSplitter = splitPane(
                         orientation: JSplitPane.VERTICAL_SPLIT,
                         topComponent: splitterPane,
-                        bottomComponent: decompiledSource = new groovy.ui.ConsoleTextEditor(editable: false, showLineNumbers: false), 
+                        bottomComponent: tabbedPane {
+                            widget(decompiledSource = new groovy.ui.ConsoleTextEditor(editable: false, showLineNumbers: false), title:'Source')
+                            widget(bytecodeView = new groovy.ui.ConsoleTextEditor(editable: false, showLineNumbers: false), title:'Bytecode')
+                        },
                         constraints: gbc(gridx: 0, gridy: 2, gridwidth: 3, gridheight: 1, weightx: 1.0, weighty: 1.0, anchor: NORTHWEST, fill: BOTH, insets: [2, 2, 2, 2])) { }
 
             }
@@ -199,6 +207,23 @@ public class AstBrowser {
                         // but keep the caret at the same position
                         inputArea.moveCaretPosition(inputArea.getCaretPosition())
                     }
+                }
+
+                boolean classNode = node.properties.any { it[0]=='class' && it[1] in['class org.codehaus.groovy.ast.ClassNode', 'class org.codehaus.groovy.ast.InnerClassNode'] }
+                if (classNode) {
+                    def className = node.properties.find { it[0]=='name' }[1]
+                    def bytecode = classLoader.getBytecode(className)
+                    if (bytecode) {
+                        def writer = new StringWriter()
+                        def visitor = new TraceClassVisitor(new PrintWriter(writer));
+                        def reader = new ClassReader(bytecode)
+                        reader.accept(visitor, 0)
+                        bytecodeView.textEditor.text = writer.toString()
+                    } else {
+                        bytecodeView.textEditor.text = '// No bytecode available at this phase'
+                    }
+                } else {
+                    bytecodeView.textEditor.text = ''
                 }
             }
             propertyTable.model.fireTableDataChanged()
@@ -312,6 +337,7 @@ public class AstBrowser {
             try {
                 def nodeMaker = new SwingTreeNodeMaker()
                 def adapter = new ScriptToTreeNodeAdapter(classLoader, showScriptFreeForm, showScriptClass, nodeMaker)
+                classLoader.clearBytecodeTable()
                 def result = adapter.compile(script, compilePhase)
                 swing.doLater {
                     model.setRoot(result)
@@ -454,5 +480,45 @@ class SwingTreeNodeMaker implements AstBrowserNodeMaker<DefaultMutableTreeNode> 
 
     DefaultMutableTreeNode makeNodeWithProperties(Object userObject, List<List<String>> properties) {
         new TreeNodeWithProperties(userObject, properties)
+    }
+}
+
+class BytecodeCollector extends ClassCollector {
+
+    Map<String, byte[]> bytecode
+
+    BytecodeCollector(ClassCollector delegate, Map<String,byte[]> bytecode) {
+        super(delegate.cl, delegate.unit, delegate.su)
+        this.bytecode = bytecode
+    }
+
+    @Override
+    protected Class createClass(byte[] code, ClassNode classNode) {
+        bytecode[classNode.name] = code
+        return super.createClass(code, classNode)
+    }
+
+}
+
+class GeneratedBytecodeAwareGroovyClassLoader extends GroovyClassLoader {
+
+    private final Map<String, byte[]> bytecode = new HashMap<String, byte[]>();
+
+    GeneratedBytecodeAwareGroovyClassLoader(final GroovyClassLoader parent) {
+        super(parent)
+    }
+
+    @Override
+    protected ClassCollector createCollector(CompilationUnit unit, SourceUnit su) {
+        def collector = super.createCollector(unit, su)
+        new BytecodeCollector(collector, bytecode)
+    }
+
+    public void clearBytecodeTable() {
+        bytecode.clear()
+    }
+
+    public byte[] getBytecode(final String className) {
+        bytecode[className]
     }
 }

@@ -32,6 +32,8 @@ import org.codehaus.groovy.ast.expr.ConstantExpression
 import org.codehaus.groovy.ast.expr.ClassExpression
 import org.codehaus.groovy.ast.Parameter
 import org.codehaus.groovy.ast.expr.ListExpression
+import groovy.transform.CompilationUnitAware
+import org.codehaus.groovy.control.CompilationUnit
 
 /**
  * This customizer allows applying an AST transformation to a source unit with
@@ -78,9 +80,11 @@ import org.codehaus.groovy.ast.expr.ListExpression
  * @since 1.8.0
  * 
  */
-class ASTTransformationCustomizer extends CompilationCustomizer {
+class ASTTransformationCustomizer extends CompilationCustomizer implements CompilationUnitAware {
     private final AnnotationNode annotationNode;
     private final ASTTransformation transformation
+
+    protected CompilationUnit compilationUnit;
     private boolean applied = false; // used for global AST transformations
 
     ASTTransformationCustomizer(final Class<? extends Annotation> transformationAnnotation) {
@@ -109,6 +113,9 @@ class ASTTransformationCustomizer extends CompilationCustomizer {
         setAnnotationParameters(annotationParams)
     }
 
+    void setCompilationUnit(CompilationUnit unit) {
+        compilationUnit = unit
+    }
 
     private static Class<ASTTransformation> findASTTranformationClass(Class<? extends Annotation> anAnnotationClass) {
         final GroovyASTTransformationClass annotation = anAnnotationClass.getAnnotation(GroovyASTTransformationClass)
@@ -188,6 +195,9 @@ class ASTTransformationCustomizer extends CompilationCustomizer {
 
     @Override
     void call(SourceUnit source, GeneratorContext context, ClassNode classNode) {
+        if (transformation instanceof CompilationUnitAware) {
+            transformation.compilationUnit = compilationUnit
+        }
         if (annotationNode!=null) {
             // this is a local ast transformation which is applied on every class node
             annotationNode.sourcePosition = classNode

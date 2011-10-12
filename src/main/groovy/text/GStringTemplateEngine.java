@@ -177,12 +177,12 @@ public class GStringTemplateEngine extends TemplateEngine {
 
             templateExpressions.append("}.asWritable()}");
 
-            final GroovyClassLoader loader =
+            final GroovyClassLoader loader = parentLoader instanceof GroovyClassLoader?(GroovyClassLoader)parentLoader:(
                     (GroovyClassLoader) AccessController.doPrivileged(new PrivilegedAction() {
                         public Object run() {
                             return new GroovyClassLoader(parentLoader);
                         }
-                    });
+                    }));
             final Class groovyClass;
             try {
                 groovyClass = loader.parseClass(new GroovyCodeSource(templateExpressions.toString(), "GStringTemplateScript" + counter++ + ".groovy", "x"));

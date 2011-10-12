@@ -21,10 +21,12 @@ import groovy.lang.GrabResolver;
 import groovy.lang.Grapes;
 import groovy.lang.GrabExclude;
 import groovy.lang.GrabConfig;
+import groovy.transform.CompilationUnitAware;
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
+import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.transform.ASTTransformation;
@@ -40,7 +42,7 @@ import java.util.regex.Matcher;
  * Transformation for declarative dependency management.
  */
 @GroovyASTTransformation(phase=CompilePhase.CONVERSION)
-public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implements ASTTransformation {
+public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implements ASTTransformation, CompilationUnitAware {
     private static final String GRAB_CLASS_NAME = Grab.class.getName();
     private static final String GRAB_DOT_NAME = GRAB_CLASS_NAME.substring(GRAB_CLASS_NAME.lastIndexOf("."));
     private static final String GRAB_SHORT_NAME = GRAB_DOT_NAME.substring(1);
@@ -98,12 +100,17 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
     Set<String> grabResolverAliases;
     List<AnnotationNode> grabResolverAnnotations;
 
+    CompilationUnit compilationUnit;
     SourceUnit sourceUnit;
     ClassLoader loader;
     boolean initContextClassLoader;
 
     public SourceUnit getSourceUnit() {
         return sourceUnit;
+    }
+
+    public void setCompilationUnit(final CompilationUnit compilationUnit) {
+        this.compilationUnit = compilationUnit;
     }
 
     public void visit(ASTNode[] nodes, SourceUnit source) {
@@ -281,7 +288,9 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
             try {
                 Grape.grab(basicArgs, grabMaps.toArray(new Map[grabMaps.size()]));
                 // grab may have added more transformations through new URLs added to classpath, so do one more scan
-                ASTTransformationVisitor.addGlobalTransformsAfterGrab();
+                if (compilationUnit!=null) {
+                    ASTTransformationVisitor.addGlobalTransformsAfterGrab(compilationUnit.getASTTransformationsContext());
+                }
             } catch (RuntimeException re) {
                 // Decided against syntax exception since this is not a syntax error.
                 // The down side is we lose line number information for the offending
