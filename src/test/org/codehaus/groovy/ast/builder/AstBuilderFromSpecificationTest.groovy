@@ -1125,22 +1125,28 @@ public class AstBuilderFromSpecificationTest extends GroovyTestCase {
 
 
     public void testSpreadExpression() {
-        // todo: what source code generates this node type?
+        // ['foo', *['bar','baz']]
         def result = new AstBuilder().buildFromSpec {
-            spread {
-                list {
-                    constant 'foo'
-                    constant 'bar'
+            list {
+                constant 'foo'
+                spread {
+                    list {
+                        constant 'bar'
+                        constant 'baz'
+                    }
                 }
             }
         }
 
-        def expected = new SpreadExpression(
+        def expected = new ListExpression([
+            new ConstantExpression('foo'),
+            new SpreadExpression(
                 new ListExpression([
-                        new ConstantExpression('foo'),
                         new ConstantExpression('bar'),
+                        new ConstantExpression('baz'),
                 ])
-        )
+            )
+        ])
 
         AstAssert.assertSyntaxTree([expected], result)
     }
