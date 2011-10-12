@@ -611,12 +611,35 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     private void visitStdMethod(MethodNode node, boolean isConstructor, Parameter[] parameters, Statement code) {
+        final ClassNode superClass = classNode.getSuperClass();
         if (isConstructor && (code == null || !((ConstructorNode) node).firstStatementIsSpecialConstructorCall())) {
-            // invokes the super class constructor
-            mv.visitVarInsn(ALOAD, 0);
-            mv.visitMethodInsn(INVOKESPECIAL, BytecodeHelper.getClassInternalName(classNode.getSuperClass()), "<init>", "()V");
-        }
+            boolean hasCallToSuper = false;
+            if (code != null && classNode instanceof InnerClassNode) {
+                // if the class not is an inner class node, there are chances that the call to super is already added
+                // so we must ensure not to add it twice (see GROOVY-4471)
+                if (code instanceof BlockStatement) {
+                    for (Statement statement : ((BlockStatement) code).getStatements()) {
+                        if (statement instanceof ExpressionStatement) {
+                            final Expression expression = ((ExpressionStatement) statement).getExpression();
+                            if (expression instanceof ConstructorCallExpression) {
+                                ConstructorCallExpression call = (ConstructorCallExpression) expression;
+                                if (call.isSuperCall()) {
+                                    hasCallToSuper = true;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
 
+            if (!hasCallToSuper) {
+                // invokes the super class constructor
+                mv.visitVarInsn(ALOAD, 0);
+                mv.visitMethodInsn(INVOKESPECIAL, BytecodeHelper.getClassInternalName(superClass), "<init>", "()V");
+            }
+        }
+        
         compileStack.init(node.getVariableScope(), parameters, mv, classNode);
 
 
