@@ -94,6 +94,7 @@ class ScriptToTreeNodeAdapter {
         def scriptName = "script" + System.currentTimeMillis() + ".groovy"
         GroovyCodeSource codeSource = new GroovyCodeSource(script, scriptName, "/groovy/script")
         CompilationUnit cu = new CompilationUnit(CompilerConfiguration.DEFAULT, codeSource.codeSource, classLoader)
+        cu.setClassgenCallback(classLoader.createCollector(cu, null))
         TreeNodeBuildingNodeOperation operation = new TreeNodeBuildingNodeOperation(this, showScriptFreeForm, showScriptClass)
         cu.addPhaseOperation(operation, compilePhase)
         cu.addSource(codeSource.getName(), script);
