@@ -564,6 +564,15 @@ $Date$
             </fileset>
         </unzip>
         <unzip dest="${stagingDirectory}">
+            <patternset>
+                <include name="**/org/objectweb/asm/util/AbstractVisitor.class"/>
+                <include name="**/org/objectweb/asm/util/Trace*"/>
+            </patternset>
+            <fileset dir="${runtimeLibDirectory}">
+                <include name="asm-util*.jar"/>
+            </fileset>
+        </unzip>
+        <unzip dest="${stagingDirectory}">
             <fileset dir="${targetDistDirectory}">
                 <include name="groovy.jar"/>
             </fileset>
