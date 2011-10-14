@@ -30,6 +30,14 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         """
     }
 
+    void testGStringMethods() {
+        assertScript '''
+            def myname = 'Cedric'
+            "My upper case name is ${myname.toUpperCase()}"
+            println "My upper case name is ${myname}".toUpperCase()
+        '''
+    }
+
 
 }
 
