@@ -33,6 +33,7 @@ import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.ReflectionCache;
 import org.codehaus.groovy.reflection.ReflectionUtils;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
+import org.codehaus.groovy.syntax.SyntaxException;
 
 import static org.codehaus.groovy.ast.ClassHelper.*;
 import static org.codehaus.groovy.syntax.Types.*;
@@ -45,22 +46,27 @@ import static org.codehaus.groovy.ast.tools.WideningCategories.*;
 @GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
 public class StaticTypesTransformation implements ASTTransformation {
 
+    private static final String STATIC_ERROR_PREFIX = "[Static type checking] - ";
+
 //    @Override
     public void visit(ASTNode[] nodes, SourceUnit source) {
 //        AnnotationNode annotationInformation = (AnnotationNode) nodes[0];
         AnnotatedNode node = (AnnotatedNode) nodes[1];
-        Visitor visitor = new Visitor(source, (ClassNode) node);
         if (node instanceof ClassNode) {
+            Visitor visitor = new Visitor(source, (ClassNode) node);
             visitor.visitClass((ClassNode) node);
+        } else if (node instanceof MethodNode) {
+            MethodNode methodNode = (MethodNode)node;
+            Visitor visitor = new Visitor(source, methodNode.getDeclaringClass());
+            visitor.visitMethod(methodNode);
         } else {
-            node.visit(visitor);
+            source.addError(new SyntaxException(STATIC_ERROR_PREFIX + "Unimplemented node type", node.getLineNumber(), node.getColumnNumber()));
         }
     }
 
     public final static class StaticTypesMarker{}
 
     private static class Visitor extends ClassCodeVisitorSupport {
-        private static final String STATIC_ERROR_PREFIX = "[Static type checking] - ";
         private final static Map<String,List<MethodNode>> VIRTUAL_DGM_METHODS = getDGMMethods();
         private final static ClassNode
             Collection_TYPE = makeWithoutCaching(Collection.class),
