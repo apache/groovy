@@ -26,6 +26,7 @@ import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.IfStatement;
+import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.classgen.asm.InvocationWriter;
 import org.codehaus.groovy.control.*;
@@ -76,6 +77,7 @@ public class StaticTypesTransformation implements ASTTransformation {
 
         private SourceUnit source;
         private ClassNode classNode;
+        private MethodNode methodNode;
 
         public Visitor(SourceUnit source, ClassNode cn){
             this.source = source;
@@ -160,6 +162,22 @@ public class StaticTypesTransformation implements ASTTransformation {
                 resultType = mn.getReturnType();
             }
             storeType(expression, resultType);
+        }
+
+        @Override
+        protected void visitConstructorOrMethod(MethodNode node, boolean isConstructor) {
+            this.methodNode = node;
+            super.visitConstructorOrMethod(node, isConstructor);
+            this.methodNode = null;
+        }
+
+        @Override
+        public void visitReturnStatement(ReturnStatement statement) {
+            super.visitReturnStatement(statement);
+            ClassNode type = getType(statement.getExpression(), classNode);
+            if (methodNode != null) {
+                checkCompatibleAssignmenTypes(methodNode.getReturnType(), type, statement.getExpression());
+            }
         }
 
         @Override
@@ -482,7 +500,7 @@ public class StaticTypesTransformation implements ASTTransformation {
             // or Class typed variable
             if  (   leftRedirect==OBJECT_TYPE   ||
                     leftRedirect==STRING_TYPE   ||
-                    leftRedirect==boolean_TYPE ||
+                    leftRedirect==boolean_TYPE  ||
                     leftRedirect==Boolean_TYPE  ||
                     leftRedirect==CLASS_Type) {
                 return;
