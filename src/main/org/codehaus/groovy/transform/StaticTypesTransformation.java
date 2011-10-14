@@ -21,6 +21,7 @@ import java.util.regex.Matcher;
 import groovy.lang.MetaMethod;
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
+import org.codehaus.groovy.ast.stmt.EmptyStatement;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.classgen.asm.InvocationWriter;
 import org.codehaus.groovy.control.*;
@@ -28,6 +29,7 @@ import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.ReflectionCache;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.syntax.SyntaxException;
+import org.objectweb.asm.Opcodes;
 
 import static org.codehaus.groovy.ast.ClassHelper.*;
 import static org.codehaus.groovy.syntax.Types.*;
@@ -288,7 +290,7 @@ public class StaticTypesTransformation implements ASTTransformation {
                         metaMethod.getModifiers(),
                         ClassHelper.make(metaMethod.getReturnType()),
                         parameters,
-                        new ClassNode[0], null);
+                        ClassNode.EMPTY_ARRAY, null);
 
                     String name = types[0].getName();
                     List<MethodNode> nodes = methods.get(name);
@@ -322,7 +324,15 @@ public class StaticTypesTransformation implements ASTTransformation {
                 Expression expr,
                 ClassNode receiver, String name, ClassNode... args)
         {
-            List<MethodNode> methods = "<init>".equals(name)?new ArrayList<MethodNode>(receiver.getDeclaredConstructors()):receiver.getMethods(name);
+            List<MethodNode> methods;
+            if ("<init>".equals(name)) {
+                methods = new ArrayList<MethodNode>(receiver.getDeclaredConstructors());
+                if (methods.isEmpty()) {
+                    return new MethodNode("<init>", Opcodes.ACC_PUBLIC, receiver, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, EmptyStatement.INSTANCE);
+                }
+            } else {
+                methods = receiver.getMethods(name);
+            }
             Set<MethodNode> fromDGM = findDGMMethodsForClassNode(receiver);
 
             for (MethodNode methodNode : fromDGM) {
