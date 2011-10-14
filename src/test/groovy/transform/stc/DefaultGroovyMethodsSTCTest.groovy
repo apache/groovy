@@ -39,7 +39,6 @@ class DefaultGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
     void testVariousAssignmentsThenToInteger() {
         assertScript """
          class A {
-           A() {}
           void foo() {}
          }
         def name = new A()
