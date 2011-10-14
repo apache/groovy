@@ -67,7 +67,8 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
     private static final List<String> GRABEXCLUDE_REQUIRED = Arrays.asList("group", "module");
     private static final List<String> GRAPERESOLVER_REQUIRED = Arrays.asList("name", "root");
     private static final List<String> GRAB_REQUIRED = Arrays.asList("group", "module", "version");
-    private static final List<String> GRAB_OPTIONAL = Arrays.asList("classifier", "transitive", "conf", "ext", "type", "changing", "force");
+    private static final List<String> GRAB_OPTIONAL = Arrays.asList("classifier", "transitive", "conf", "ext", "type", "changing", "force", "initClass");
+    private static final List<String> GRAB_BOOLEAN = Arrays.asList("transitive", "changing", "force", "initClass");
     private static final Collection<String> GRAB_ALL = DefaultGroovyMethods.plus(GRAB_REQUIRED, GRAB_OPTIONAL);
     private static final Pattern IVY_PATTERN = Pattern.compile("([a-zA-Z0-9-/._+=]+)#([a-zA-Z0-9-/._+=]+)(;([a-zA-Z0-9-/.\\(\\)\\[\\]\\{\\}_+=,:@][a-zA-Z0-9-/.\\(\\)\\]\\{\\}_+=,:@]*))?(\\[([a-zA-Z0-9-/._+=,]*)\\])?");
     private static final Pattern ATTRIBUTES_PATTERN = Pattern.compile("(.*;|^)([a-zA-Z0-9]+)=([a-zA-Z0-9.*\\[\\]\\-\\(\\),]*)$");
@@ -390,8 +391,13 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
         while (!done) {
             Matcher attrs = ATTRIBUTES_PATTERN.matcher(allstr);
             if (attrs.find()) {
-                if (attrs.group(2) == null || attrs.group(3) == null) continue;
-                node.addMember(attrs.group(2), new ConstantExpression(attrs.group(3)));
+                String attrName = attrs.group(2);
+                String attrValue = attrs.group(3);
+                if (attrName == null || attrValue == null) continue;
+                boolean isBool = GRAB_BOOLEAN.contains(attrName);
+                ConstantExpression value = new ConstantExpression(isBool ? Boolean.valueOf(attrValue) : attrValue);
+                value.setSourcePosition(node);
+                node.addMember(attrName, value);
                 int lastSemi = allstr.lastIndexOf(';');
                 if (lastSemi == -1) {
                     allstr = "";
