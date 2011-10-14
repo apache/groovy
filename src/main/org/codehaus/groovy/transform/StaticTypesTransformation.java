@@ -112,7 +112,7 @@ public class StaticTypesTransformation implements ASTTransformation {
             storeType(expression, resultType);
             if (isAssignment(op)) {
                 ClassNode leftRedirect = expression.getLeftExpression().getType().redirect();
-                final boolean compatible = checkCompatibleAssignmentTypes(leftRedirect, resultType, expression);
+                final boolean compatible = checkCompatibleAssignmentTypes(leftRedirect, resultType);
                 if (!compatible) {
                     addStaticTypeError("Cannot assign value of type " + resultType + " to variable of type " + leftRedirect, expression);
                 }
@@ -179,7 +179,7 @@ public class StaticTypesTransformation implements ASTTransformation {
             super.visitReturnStatement(statement);
             ClassNode type = getType(statement.getExpression(), classNode);
             if (methodNode != null) {
-                if (!checkCompatibleAssignmentTypes(methodNode.getReturnType(), type, statement.getExpression())) {
+                if (!checkCompatibleAssignmentTypes(methodNode.getReturnType(), type)) {
                     addStaticTypeError("Cannot return value of type " + type + " on method returning type " + methodNode.getReturnType(), statement.getExpression());
                 }
             }
@@ -508,7 +508,16 @@ public class StaticTypesTransformation implements ASTTransformation {
             return exp.getType();
         }
 
-        private boolean checkCompatibleAssignmentTypes(ClassNode left, ClassNode right, Expression expr) {
+        /**
+         * Returns true or false depending on whether the right classnode can be assigned to the left classnode.
+         * This method should not add errors by itself: we let the caller decide what to do if an incompatible
+         * assignment is found.
+         *
+         * @param left the class to be assigned to
+         * @param right the assignee class
+         * @return false if types are incompatible
+         */
+        private static boolean checkCompatibleAssignmentTypes(ClassNode left, ClassNode right) {
             ClassNode leftRedirect = left.redirect();
             ClassNode rightRedirect = right.redirect();
             // on an assignment everything that can be done by a GroovyCast is allowed
