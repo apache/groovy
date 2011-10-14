@@ -375,6 +375,7 @@ public class StaticTypesTransformation implements ASTTransformation {
                     }
                 }
             }
+            if (receiver==ClassHelper.GSTRING_TYPE) return findMethodOrFail(expr, ClassHelper.STRING_TYPE, name, args);
             addStaticTypeError("Cannot find matching method "+receiver.getName()+"#" + toMethodParametersString(name, args), expr);
             return null;
         }
