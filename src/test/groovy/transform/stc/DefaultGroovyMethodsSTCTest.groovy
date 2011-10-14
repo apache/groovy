@@ -36,14 +36,18 @@ class DefaultGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
         """
     }
 
-/*    void testVariousAssignmentsThenToInteger() {
+    void testVariousAssignmentsThenToInteger() {
         assertScript """
-        def name = 1
-        name = new Object()
+         class A {
+           A() {}
+          void foo() {}
+         }
+        def name = new A()
+        name.foo()
+        name = 1
         name = '123'
         name.toInteger() // toInteger() is defined by DGM
         """
-    }*/
-
+    }
 }
 

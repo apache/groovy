@@ -134,6 +134,18 @@ public class ASTNode {
         Object old = metaDataMap.put(key,value);
         if (old!=null) throw new GroovyBugError("Tried to overwrite existing meta data "+this+".");
     }
+
+    /**
+     * Sets the node meta data but allows overwriting values.
+     *
+     * @param key - the meta data key
+     * @param value - the meta data value
+     * @throws GroovyBugError if key is null
+     */
+    public void putNodeMetaData(Object key, Object value) {
+        if (key==null) throw new GroovyBugError("Tried to set meta data with null key on "+this+".");
+        Object old = metaDataMap.put(key,value);
+    }
     
     /**
      * Removes a node meta data entry.
