@@ -16,11 +16,13 @@
 package groovy.grape
 
 import org.codehaus.groovy.control.CompilationFailedException
+import gls.CompilableTestSupport
 
 /**
  * @author Danno Ferrin
+ * @author Paul King
  */
-class GrapeIvyTest extends GroovyTestCase {
+class GrapeIvyTest extends CompilableTestSupport {
 
     public GrapeIvyTest() {
         // ensure files are installed locally
@@ -299,4 +301,27 @@ class GrapeIvyTest extends GroovyTestCase {
         assert jars == coreJars + optionalJars
     }
 
+    void testTransitiveShorthandControl() {
+        // BeanUtils is a transitive dependency for Digester
+        assertScript '''
+            @Grab('commons-digester:commons-digester:2.1')
+            import org.apache.commons.digester.Digester
+
+            assert Digester.name.size() == 36
+            assert org.apache.commons.beanutils.BeanUtils.name.size() == 38
+        '''
+    }
+
+    void testTransitiveShorthandExpectFailure() {
+        assertScript '''
+            @Grab('commons-digester:commons-digester:2.1;transitive=false')
+            import org.apache.commons.digester.Digester
+
+            assert Digester.name.size() == 36
+            try {
+                assert org.apache.commons.beanutils.BeanUtils.name.size() == 38
+                assert false
+            } catch(MissingPropertyException mpe) { }
+        '''
+    }
 }

@@ -60,12 +60,13 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
     private static final String GRABRESOLVER_CLASS_NAME = GrabResolver.class.getName();
     private static final String GRAPERESOLVER_DOT_NAME = dotName(GRABRESOLVER_CLASS_NAME);
     private static final String GRABRESOLVER_SHORT_NAME = shortName(GRAPERESOLVER_DOT_NAME);
-    
+
     private static final ClassNode THREAD_CLASSNODE = ClassHelper.make(Thread.class);
     private static final List<String> GRABEXCLUDE_REQUIRED = Arrays.asList("group", "module");
     private static final List<String> GRAPERESOLVER_REQUIRED = Arrays.asList("name", "root");
     private static final List<String> GRAB_REQUIRED = Arrays.asList("group", "module", "version");
-    private static final List<String> GRAB_OPTIONAL = Arrays.asList("classifier", "transitive", "conf", "ext", "type", "changing", "force");
+    private static final List<String> GRAB_OPTIONAL = Arrays.asList("classifier", "transitive", "conf", "ext", "type", "changing", "force", "initClass");
+    private static final List<String> GRAB_BOOLEAN = Arrays.asList("transitive", "changing", "force", "initClass");
     private static final Collection<String> GRAB_ALL = DefaultGroovyMethods.plus(GRAB_REQUIRED, GRAB_OPTIONAL);
     private static final Pattern IVY_PATTERN = Pattern.compile("([a-zA-Z0-9-/._+=]+)#([a-zA-Z0-9-/._+=]+)(;([a-zA-Z0-9-/.\\(\\)\\[\\]\\{\\}_+=,:@][a-zA-Z0-9-/.\\(\\)\\]\\{\\}_+=,:@]*))?(\\[([a-zA-Z0-9-/._+=,]*)\\])?");
     private static final Pattern ATTRIBUTES_PATTERN = Pattern.compile("(.*;|^)([a-zA-Z0-9]+)=([a-zA-Z0-9.*\\[\\]\\-\\(\\),]*)$");
@@ -97,7 +98,7 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
     boolean allowShortGrabResolver;
     Set<String> grabResolverAliases;
     List<AnnotationNode> grabResolverAnnotations;
-    
+
     SourceUnit sourceUnit;
     ClassLoader loader;
     boolean initContextClassLoader;
@@ -158,7 +159,7 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
             grabConfigAnnotations = new ArrayList<AnnotationNode>();
             grapesAnnotations = new ArrayList<AnnotationNode>();
             grabResolverAnnotations = new ArrayList<AnnotationNode>();
-            
+
             visitClass(classNode);
 
             ClassNode grapeClassNode = ClassHelper.make(Grape.class);
@@ -202,7 +203,7 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
                     Grape.addResolver(grapeResolverMap);
                 }
             }
-            
+
             if (!grapesAnnotations.isEmpty()) {
                 for (AnnotationNode node : grapesAnnotations) {
                     Expression init = node.getMember("initClass");
@@ -272,7 +273,7 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
                 }
             }
         }
-        
+
         if (!grabMaps.isEmpty()) {
             Map<String, Object> basicArgs = new HashMap<String, Object>();
             basicArgs.put("classLoader", loader != null ? loader : sourceUnit.getClassLoader());
@@ -381,8 +382,13 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
         while (!done) {
             Matcher attrs = ATTRIBUTES_PATTERN.matcher(allstr);
             if (attrs.find()) {
-                if (attrs.group(2) == null || attrs.group(3) == null) continue;
-                node.addMember(attrs.group(2), new ConstantExpression(attrs.group(3)));
+                String attrName = attrs.group(2);
+                String attrValue = attrs.group(3);
+                if (attrName == null || attrValue == null) continue;
+                boolean isBool = GRAB_BOOLEAN.contains(attrName);
+                ConstantExpression value = new ConstantExpression(isBool ? Boolean.valueOf(attrValue) : attrValue);
+                value.setSourcePosition(node);
+                node.addMember(attrName, value);
                 int lastSemi = allstr.lastIndexOf(';');
                 if (lastSemi == -1) {
                     allstr = "";
@@ -454,7 +460,7 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
                     || (allowShortGrabResolver && GRABRESOLVER_SHORT_NAME.equals(name))
                     || (grabResolverAliases.contains(name))) {
                 grabResolverAnnotations.add(annotation);
-            }            
+            }
         }
     }
 
