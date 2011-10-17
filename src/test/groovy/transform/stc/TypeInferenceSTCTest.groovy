@@ -15,14 +15,6 @@ package groovy.transform.stc
  */
 class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
 
-    /*
-    void testInstanceOf() {
-        assertScript """
-        Object o
-        if (o instanceof String) o.toUpperCase()
-        """
-    }*/
-
     void testStringToInteger() {
         assertScript """
         def name = "123" // we want type inference
@@ -71,5 +63,79 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    void testInstanceOf() {
+        assertScript """
+        Object o
+        if (o instanceof String) o.toUpperCase()
+        """
+    }
+
+    void testInstanceOfAfterEach() {
+        shouldFailWithMessages '''
+            Object o
+            if (o instanceof String) {
+               o.toUpperCase()
+            }
+            o.toUpperCase() // ensure that type information is lost after if()
+        ''', 'Cannot find matching method java.lang.Object#toUpperCase()'
+    }
+
+    void testInstanceOfInElseBranch() {
+        shouldFailWithMessages '''
+            Object o
+            if (o instanceof String) {
+               o.toUpperCase()
+            } else {
+                o.toUpperCase() // ensure that type information is lost in else()
+            }
+        ''', 'Cannot find matching method java.lang.Object#toUpperCase()'
+    }
+
+    void testMultipleInstanceOf() {
+        assertScript '''
+            class A {
+               void foo() { println 'ok' }
+            }
+
+            class B {
+               void foo() { println 'ok' }
+               void foo2() { println 'ok 2' }
+            }
+
+
+            def o = new A()
+
+            if (o instanceof A) {
+               o.foo()
+            }
+
+            if (o instanceof B) {
+               o.foo()
+            }
+
+            if (o instanceof A || o instanceof B) {
+              o.foo()
+            }
+
+        '''
+    }
+
+    void testInstanceOfInTernaryOp() {
+        assertScript '''
+            class A {
+               int foo() { 1 }
+            }
+
+            class B {
+               int foo2() { 2 }
+            }
+
+
+            def o = new A()
+
+            int result = o instanceof A?o.foo():(o instanceof B?o.foo2():3)
+
+        '''
+    }
 }
 
