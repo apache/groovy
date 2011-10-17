@@ -69,5 +69,31 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         ''', 'Cannot assign value of type java.lang.String into array of type [I'
     }
 
+    void testForLoopWithArrayAndUntypedVariable() {
+        assertScript '''
+            String[] arr = ['1','2','3']
+            for (i in arr) { }
+        '''
+    }
+
+    void testForLoopWithArrayAndWrongVariableType() {
+        shouldFailWithMessages '''
+            String[] arr = ['1','2','3']
+            for (int i in arr) { }
+        ''', 'Cannot loop with element of type int with collection of type [Ljava.lang.String;'
+    }
+    void testJava5StyleForLoopWithArray() {
+        assertScript '''
+            String[] arr = ['1','2','3']
+            for (String i : arr) { }
+        '''
+    }
+
+    void testJava5StyleForLoopWithArrayAndIncompatibleType() {
+        shouldFailWithMessages '''
+            String[] arr = ['1','2','3']
+            for (int i : arr) { }
+        ''', 'Cannot loop with element of type int with collection of type [Ljava.lang.String;'
+    }
 }
 

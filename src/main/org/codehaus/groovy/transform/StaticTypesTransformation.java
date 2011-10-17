@@ -22,6 +22,7 @@ import groovy.lang.MetaMethod;
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.stmt.EmptyStatement;
+import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.classgen.ReturnAdder;
 import org.codehaus.groovy.classgen.asm.InvocationWriter;
@@ -160,6 +161,15 @@ public class StaticTypesTransformation implements ASTTransformation {
 
         private static boolean isArrayAccessExpression(Expression expression) {
             return expression instanceof BinaryExpression && isArrayOp(((BinaryExpression)expression).getOperation().getType());
+        }
+
+        @Override
+        public void visitForLoop(final ForStatement forLoop) {
+            super.visitForLoop(forLoop);
+            final ClassNode collectionType = getType(forLoop.getCollectionExpression(), classNode);
+            if (!checkCompatibleAssignmentTypes(forLoop.getVariableType(), collectionType.getComponentType())) {
+                addStaticTypeError("Cannot loop with element of type "+forLoop.getVariableType() + " with collection of type "+collectionType, forLoop);
+            }
         }
 
         @Override
