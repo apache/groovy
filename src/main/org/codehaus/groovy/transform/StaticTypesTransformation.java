@@ -189,7 +189,15 @@ public class StaticTypesTransformation implements ASTTransformation {
         public void visitForLoop(final ForStatement forLoop) {
             super.visitForLoop(forLoop);
             final ClassNode collectionType = getType(forLoop.getCollectionExpression(), classNode);
-            if (!checkCompatibleAssignmentTypes(forLoop.getVariableType(), collectionType.getComponentType())) {
+            ClassNode componentType = collectionType.getComponentType();
+            if (componentType==null) {
+                if (componentType==ClassHelper.STRING_TYPE) {
+                    componentType = ClassHelper.Character_TYPE;
+                } else {
+                    componentType = ClassHelper.OBJECT_TYPE;
+                }
+            }
+            if (!checkCompatibleAssignmentTypes(forLoop.getVariableType(), componentType)) {
                 addStaticTypeError("Cannot loop with element of type "+forLoop.getVariableType() + " with collection of type "+collectionType, forLoop);
             }
         }
