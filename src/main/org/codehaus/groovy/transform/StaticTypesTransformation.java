@@ -109,7 +109,8 @@ public class StaticTypesTransformation implements ASTTransformation {
         public void visitBinaryExpression(BinaryExpression expression) {
             super.visitBinaryExpression(expression);
             ClassNode lType = getType(expression.getLeftExpression(), classNode);
-            ClassNode rType = getType(expression.getRightExpression(), classNode);
+            final Expression rightExpression = expression.getRightExpression();
+            ClassNode rType = getType(rightExpression, classNode);
             int op = expression.getOperation().getType();
             ClassNode resultType = getResultType(lType, op, rType, expression);
             if (resultType==null) {
@@ -120,13 +121,45 @@ public class StaticTypesTransformation implements ASTTransformation {
             // the type inference engine should return an Object (not a primitive type)
             storeType(expression, resultType);
             if (isAssignment(op)) {
-                ClassNode leftRedirect = expression.getLeftExpression().getType().redirect();
+                ClassNode leftRedirect;
+                if (isArrayAccessExpression(expression.getLeftExpression())) {
+                    // in case the left expression is in the form of an array access, we should use
+                    // the inferred type instead of the left expression type
+                    leftRedirect = lType;
+                }
+                else {
+                    leftRedirect = expression.getLeftExpression().getType().redirect();
+                }
                 final boolean compatible = checkCompatibleAssignmentTypes(leftRedirect, resultType);
                 if (!compatible) {
-                    addStaticTypeError("Cannot assign value of type " + resultType + " to variable of type " + leftRedirect, expression);
+                    addStaticTypeError("Cannot assign value of type " + resultType + " to variable of type " + lType, expression);
+                } else {
+                    // if left type is array, we should check the right component types
+                    if (lType.isArray()) {
+                        ClassNode leftComponentType = lType.getComponentType();
+                        ClassNode rightRedirect = rightExpression.getType().redirect();
+                        if (rightRedirect.isArray()) {
+                            ClassNode rightComponentType = rightRedirect.getComponentType();
+                            if (!checkCompatibleAssignmentTypes(leftComponentType, rightComponentType)) {
+                                addStaticTypeError("Cannot assign value of type " + rightComponentType + " into array of type " + lType, expression);
+                            }
+                        } else if (rightExpression instanceof ListExpression) {
+                            for (Expression element : ((ListExpression) rightExpression).getExpressions()) {
+                                ClassNode rightComponentType = element.getType().redirect();
+                                if (!checkCompatibleAssignmentTypes(leftComponentType, rightComponentType)) {
+                                    addStaticTypeError("Cannot assign value of type " + rightComponentType + " into array of type " + lType, expression);
+                                }
+                            }
+                        }
+                    }
                 }
+
                 storeType(expression.getLeftExpression(), resultType);
             }
+        }
+
+        private static boolean isArrayAccessExpression(Expression expression) {
+            return expression instanceof BinaryExpression && isArrayOp(((BinaryExpression)expression).getOperation().getType());
         }
 
         @Override
@@ -246,11 +279,12 @@ public class StaticTypesTransformation implements ASTTransformation {
             ClassNode rightRedirect = right.redirect();
 
             if (op==ASSIGN) {
-                return rightRedirect;
+                return leftRedirect.isArray() && !rightRedirect.isArray()?leftRedirect:rightRedirect;
             } else if (isBoolIntrinsicOp(op)) {
                 return boolean_TYPE;
             } else if (isArrayOp(op)) {
-                //TODO: do getAt and setAt
+                ClassNode arrayType = getType(expr.getLeftExpression(), classNode);
+                return arrayType.getComponentType();
             } else if (op==FIND_REGEX) {
                 // this case always succeeds the result is a Matcher
                 return Matcher_TYPE;
@@ -567,6 +601,9 @@ public class StaticTypesTransformation implements ASTTransformation {
                     rightRedirect.implementsInterface(Collection_TYPE)  ||
                     rightRedirect.isArray()) {
                 //TODO: in case of the array we could maybe make a partial check
+                if (leftRedirect.isArray() && rightRedirect.isArray()) {
+                    return checkCompatibleAssignmentTypes(leftRedirect.getComponentType(), rightRedirect.getComponentType());
+                }
                 return true;
             }
 
