@@ -95,5 +95,14 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
             for (int i : arr) { }
         ''', 'Cannot loop with element of type int with collection of type [Ljava.lang.String;'
     }
+
+    void testForEachLoopOnString() {
+        assertScript '''
+            String name = 'Guillaume'
+            for (String s in name) {
+                println s
+            }
+        '''
+    }
 }
 
