@@ -23,6 +23,7 @@ import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.stmt.EmptyStatement;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
+import org.codehaus.groovy.classgen.ReturnAdder;
 import org.codehaus.groovy.classgen.asm.InvocationWriter;
 import org.codehaus.groovy.control.*;
 import org.codehaus.groovy.reflection.CachedClass;
@@ -36,7 +37,7 @@ import static org.codehaus.groovy.syntax.Types.*;
 import static org.codehaus.groovy.ast.tools.WideningCategories.*;
 
 /**
- * Handles the implementation of the {@link groovy.transform.StaticTypes] transformation.
+ * Handles the implementation of the {@link groovy.transform.StaticTypes} transformation.
  *
  * @author <a href="mailto:blackdrag@gmx.org">Jochen "blackdrag" Theodorou</a>
  * @author Cedric Champeau
@@ -76,6 +77,12 @@ public class StaticTypesTransformation implements ASTTransformation {
         private SourceUnit source;
         private ClassNode classNode;
         private MethodNode methodNode;
+
+        private final ReturnAdder returnAdder = new ReturnAdder(new ReturnAdder.ReturnStatementListener() {
+            public void returnStatementAdded(final ReturnStatement returnStatement) {
+                checkReturnType(returnStatement);
+            }
+        });
 
         public Visitor(SourceUnit source, ClassNode cn){
             this.source = source;
@@ -173,12 +180,17 @@ public class StaticTypesTransformation implements ASTTransformation {
         protected void visitConstructorOrMethod(MethodNode node, boolean isConstructor) {
             this.methodNode = node;
             super.visitConstructorOrMethod(node, isConstructor);
+            if (!isConstructor) returnAdder.visitMethod(node);
             this.methodNode = null;
         }
 
         @Override
         public void visitReturnStatement(ReturnStatement statement) {
             super.visitReturnStatement(statement);
+            checkReturnType(statement);
+        }
+
+        private void checkReturnType(final ReturnStatement statement) {
             ClassNode type = getType(statement.getExpression(), classNode);
             if (methodNode != null) {
                 if (!checkCompatibleAssignmentTypes(methodNode.getReturnType(), type)) {

@@ -538,7 +538,8 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
     }
 
     protected void addReturnIfNeeded(MethodNode node) {
-        ReturnAdder.addReturnIfNeeded(node);
+        ReturnAdder adder = new ReturnAdder();
+        adder.visitMethod(node);
     }
 
     public void visitField(FieldNode node) {
