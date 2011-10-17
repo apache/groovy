@@ -137,5 +137,12 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
 
         '''
     }
+
+    void testShouldNotAllowDynamicVariable() {
+        shouldFailWithMessages '''
+            String name = 'Guillaume'
+            println naamme
+        ''', 'Variable [naamme] is undefined'
+    }
 }
 
