@@ -132,6 +132,23 @@ class ReturnsSTCTest extends StaticTypeCheckingTestCase {
          ''' // should not fail because default case overrides case 2 return type
      }
 
+    void testImplicitReturnToString() {
+        assertScript '''
+            // automatic toString works
+            String greeting(String name) {
+                def sb = new StringBuilder()
+                sb << "Hi" << name
+            }
+        '''
+    }
+
+    void testWrongReturnType() {
+        shouldFailWithMessages '''
+            double greeting(String name) {
+                new Object()
+            }
+        ''', 'Cannot return value of type java.lang.Object -> java.lang.Object on method returning type double'
+    }
 
 }
 

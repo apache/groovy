@@ -38,6 +38,38 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    void testAnnotationOnSingleMethod() {
+        GroovyShell shell = new GroovyShell()
+        shell.evaluate '''
+            // calling a method which has got some dynamic stuff in it
+
+            import groovy.transform.StaticTypes
+            import groovy.xml.MarkupBuilder
+
+            class Greeter {
+                @StaticTypes
+                String greeting(String name) {
+                    generateMarkup(name.toUpperCase())
+                }
+
+                // MarkupBuilder is dynamic so we won't do typechecking here
+                String generateMarkup(String name) {
+                    def sw = new StringWriter()
+                    def mkp = new MarkupBuilder()
+                    mkp.html {
+                        body {
+                            div name
+                        }
+                    }
+                    sw
+                }
+            }
+
+            def g = new Greeter()
+            g.greeting("Guillaume")
+
+        '''
+    }
 
 }
 
