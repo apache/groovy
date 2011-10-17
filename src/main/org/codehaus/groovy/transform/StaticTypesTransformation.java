@@ -111,6 +111,9 @@ public class StaticTypesTransformation implements ASTTransformation {
                 if (vexp.getName().equals("this")) storeType(vexp, classNode);
                 if (vexp.getName().equals("super")) storeType(vexp, classNode.getSuperClass());
             }
+            if (vexp.getAccessedVariable() instanceof DynamicVariable) {
+                addStaticTypeError("Variable ["+vexp.getName()+"] is undefined", vexp);
+            }
         }
 
         @Override
