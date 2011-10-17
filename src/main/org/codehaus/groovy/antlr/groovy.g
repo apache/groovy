@@ -2055,7 +2055,7 @@ expressionStatement[int prevToken]
     ;
 
 expressionStatementNoCheck
-        { boolean isPathExpr = false; }
+        { boolean isPathExpr = true; }
     :
         // Checks are now out of the way; here's the real rule:
         head:expression[LC_STMT]
@@ -2230,13 +2230,12 @@ commandArguments[AST head]
 
 commandArgumentsGreedy[AST head]
 { 
-	AST prev = null;
+	AST prev = #head;
 }
     :
-        { #prev = #head; }
-        
+       
         // argument to the already existing method name
-        (   ({#prev.getType()!=METHOD_CALL}? commandArgument)=> (   
+        (   ({#prev==null || #prev.getType()!=METHOD_CALL}? commandArgument)=> (   
                 first : commandArguments[head]!
                 { #prev = #first; }
             )
