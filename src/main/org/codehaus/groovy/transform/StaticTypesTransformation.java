@@ -136,6 +136,16 @@ public class StaticTypesTransformation implements ASTTransformation {
         public void visitBinaryExpression(BinaryExpression expression) {
             super.visitBinaryExpression(expression);
             final Expression leftExpression = expression.getLeftExpression();
+            if (leftExpression instanceof PropertyExpression) {
+                // check that property exists
+                PropertyExpression pexp = (PropertyExpression) leftExpression;
+                if (!existsProperty(pexp)) {
+                    Expression objectExpression = pexp.getObjectExpression();
+                    addStaticTypeError("No such property: " + pexp.getPropertyAsString() +
+                            " for class: " + findCurrentInstanceOfClass(objectExpression, objectExpression.getType()), leftExpression);
+                    return;
+                }
+            }
             ClassNode lType = getType(leftExpression, classNode);
             final Expression rightExpression = expression.getRightExpression();
             ClassNode rType = getType(rightExpression, classNode);
@@ -192,10 +202,7 @@ public class StaticTypesTransformation implements ASTTransformation {
                 storeType(leftExpression, resultType);
             } else if (op==KEYWORD_INSTANCEOF) {
                 final Map<Object, List<ClassNode>> tempo = temporaryIfBranchTypeInformation.peek();
-                Object key = leftExpression.getText();
-                if (leftExpression instanceof VariableExpression && rightExpression instanceof ClassExpression) {
-                    key = findTargetVariable((VariableExpression) leftExpression);
-                }
+                Object key = extractTemporaryTypeInfoKey(leftExpression);
                 List<ClassNode> potentialTypes = tempo.get(key);
                 if (potentialTypes==null) {
                     potentialTypes = new LinkedList<ClassNode>();
@@ -203,6 +210,76 @@ public class StaticTypesTransformation implements ASTTransformation {
                 }
                 potentialTypes.add(rightExpression.getType());
             }
+        }
+
+        /**
+         * When instanceof checks are found in the code, we store temporary type information
+         * data in the {@link #temporaryIfBranchTypeInformation} table. This method computes
+         * the key which must be used to store this type info.
+         * @param expression the expression for which to compute the key
+         * @return a key to be used for {@link #temporaryIfBranchTypeInformation}
+         */
+        private Object extractTemporaryTypeInfoKey(final Expression expression) {
+            return expression instanceof VariableExpression ?findTargetVariable((VariableExpression) expression): expression.getText();
+        }
+
+        /**
+         * A helper method which determines which receiver class should be used in error messages when
+         * a field or attribute is not found. The returned type class depends on whether we have
+         * temporary type information availble (due to instanceof checks) and whether there is a single
+         * candidate in that case.
+         * @param expr the expression for which an unknown field has been found
+         * @param type the type of the expression (used as fallback type)
+         * @return if temporary information is available and there's only one type, returns the temporary type class
+         * otherwise falls back to the provided type class.
+         */
+        private ClassNode findCurrentInstanceOfClass(final Expression expr, final ClassNode type) {
+            if (!temporaryIfBranchTypeInformation.empty()) {
+                Object key = extractTemporaryTypeInfoKey(expr);
+                List<ClassNode> nodes = temporaryIfBranchTypeInformation.peek().get(key);
+                if (nodes!=null && nodes.size()==1) return nodes.get(0);
+            }
+            return type;
+        }
+
+        /**
+         * Checks whether a property exists on the receiver, or on any of the
+         * possible receiver classes (found in the temporary type information table)
+         * @param pexp a property expression
+         * @return true if the property is defined in any of the possible receiver classes
+         */
+        private boolean existsProperty(final PropertyExpression pexp) {
+            Expression objectExpression = pexp.getObjectExpression();
+            ClassNode clazz = objectExpression.getType().redirect();
+            List<ClassNode> tests = new LinkedList<ClassNode>();
+            tests.add(clazz);
+            if (!temporaryIfBranchTypeInformation.empty()) {
+                Map<Object, List<ClassNode>> info = temporaryIfBranchTypeInformation.peek();
+                Object key = extractTemporaryTypeInfoKey(objectExpression);
+                List<ClassNode> classNodes = info.get(key);
+                if (classNodes!=null) tests.addAll(classNodes);
+            }
+            boolean hasProperty = false;
+            for (ClassNode testClass : tests) {
+                // maps have special handling for property expressions
+                if (!testClass.implementsInterface(ClassHelper.MAP_TYPE)) {
+                    String propertyName = pexp.getPropertyAsString();
+                    PropertyNode propertyNode = testClass.getProperty(propertyName);
+                    if (propertyNode == null) {
+                        FieldNode field = testClass.getDeclaredField(propertyName);
+                        if (field != null) {
+                            hasProperty = true;
+                            break;
+                        }
+                    } else {
+                        hasProperty = true;
+                        break;
+                    }
+                } else {
+                    hasProperty = true;
+                }
+            }
+            return hasProperty;
         }
 
         private static boolean isArrayAccessExpression(Expression expression) {
@@ -304,7 +381,7 @@ public class StaticTypesTransformation implements ASTTransformation {
             findMethodOrFail(call, receiver, "<init>", args);
         }
 
-        private static ClassNode[] getArgumentTypes(ArgumentListExpression args, ClassNode current) {
+        private ClassNode[] getArgumentTypes(ArgumentListExpression args, ClassNode current) {
             List<Expression> arglist = args.getExpressions();
             ClassNode[] ret = new ClassNode[arglist.size()];
             int i=0;
@@ -327,12 +404,9 @@ public class StaticTypesTransformation implements ASTTransformation {
                 final ClassNode receiver = getType(objectExpression, classNode);
                 MethodNode mn = findMethod(call, receiver, name, args);
                 if (mn==null && !temporaryIfBranchTypeInformation.isEmpty()) {
-                    Object key = objectExpression.getText();
+                    Object key = extractTemporaryTypeInfoKey(objectExpression);
                     final Map<Object, List<ClassNode>> tempo = temporaryIfBranchTypeInformation.peek();
-                    if (objectExpression instanceof VariableExpression) {
-                        VariableExpression variableExpression = (VariableExpression) objectExpression;
-                        key = findTargetVariable(variableExpression);
-                    }
+
                     List<ClassNode> potentialReceiverType = tempo.get(key);
                     if (potentialReceiverType != null) {
                         for (ClassNode potentialReceiver : potentialReceiverType) {
@@ -702,7 +776,7 @@ public class StaticTypesTransformation implements ASTTransformation {
             }
         }
 
-        private static ClassNode getType(Expression exp, ClassNode current) {
+        private ClassNode getType(Expression exp, ClassNode current) {
             ClassNode cn = (ClassNode) exp.getNodeMetaData(StaticTypesMarker.class);
             if (cn!=null) return cn;
             if (exp instanceof VariableExpression){
@@ -719,14 +793,20 @@ public class StaticTypesTransformation implements ASTTransformation {
                     return pexp.getObjectExpression().getType();
                 } else {
                     ClassNode clazz = pexp.getObjectExpression().getType().redirect();
-                    String propertyName = pexp.getPropertyAsString();
-                    PropertyNode propertyNode = clazz.getProperty(propertyName);
-                    if (propertyNode==null) {
-                        FieldNode field = clazz.getDeclaredField(propertyName);
-                        if (field!=null) return field.getType();
-                        return ClassHelper.OBJECT_TYPE;
+                    List<ClassNode> candidates = new LinkedList<ClassNode>();
+                    candidates.add(clazz);
+                    if (!temporaryIfBranchTypeInformation.empty()) {
+                        List<ClassNode> classNodes = temporaryIfBranchTypeInformation.peek().get(extractTemporaryTypeInfoKey(pexp.getObjectExpression()));
+                        if (classNodes!=null && !classNodes.isEmpty()) candidates.addAll(classNodes);
                     }
-                    return propertyNode.getType();
+                    String propertyName = pexp.getPropertyAsString();
+                    for (ClassNode candidate : candidates) {
+                        PropertyNode propertyNode = candidate.getProperty(propertyName);
+                        if (propertyNode!=null) return propertyNode.getType();
+                        FieldNode field = candidate.getDeclaredField(propertyName);
+                        if (field!=null) return field.getType();
+                    }
+                    return ClassHelper.OBJECT_TYPE;
                 }
             }
             return exp.getType();

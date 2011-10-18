@@ -46,7 +46,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
 
     void testMapDotPropertySyntax() {
         assertScript '''
-            Map map = [:]
+            HashMap map = [:]
             map['a'] = 1
             map.b = 2
         '''
@@ -94,6 +94,22 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
             def b = a.@name
             b.toUpperCase() // type of b should be inferred from field type
         '''
+    }
+
+    void testShouldComplainAboutMissingField() {
+        shouldFailWithMessages '''
+            Object o = new Object()
+            o.x = 0
+        ''', 'No such property: x for class: java.lang.Object'
+    }
+
+    void testShouldComplainAboutMissingField2() {
+        shouldFailWithMessages '''
+            class A {
+            }
+            A a = new A()
+            a.x = 0
+        ''', 'No such property: x for class: A'
     }
 }
 

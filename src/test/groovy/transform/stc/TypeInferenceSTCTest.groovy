@@ -180,5 +180,41 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
             }
         '''
     }
+
+    void testInstanceOfInferenceWithField() {
+        assertScript '''
+            class A {
+                int x
+            }
+            def a
+            if (a instanceof A) {
+                a.x = 2
+            }
+        '''
+    }
+
+    void testInstanceOfInferenceWithFieldAndAssignment() {
+        shouldFailWithMessages '''
+            class A {
+                int x
+            }
+            def a = new A()
+            if (a instanceof A) {
+                a.x = '2'
+            }
+        ''', 'Cannot assign value of type java.lang.String to variable of type int'
+    }
+
+    void testInstanceOfInferenceWithMissingField() {
+        shouldFailWithMessages '''
+            class A {
+                int x
+            }
+            def a
+            if (a instanceof A) {
+                a.y = 2
+            }
+        ''', 'No such property: y for class: A'
+    }
 }
 
