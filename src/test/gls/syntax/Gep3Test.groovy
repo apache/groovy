@@ -16,6 +16,7 @@ import static Temperature.*
  *  foo a1                 |  foo(a1)                  |  (same meaning)
  *  foo a1()               |  foo(a1())                |  (same meaning)
  *  foo a1 {c}             |  foo(a1({c}))             |  (same meaning)
+ *  foo a1(x) {c}          |  foo(a1(x,{c})            |  (same meaning)
  *  foo a1 a2              |  foo(a1).getA2()          |   not allowed
  *  foo a1() a2            |  foo(a1()).getA2()        |   not allowed
  *  foo a1 a2()            |  foo(a1).a2()             |   not allowed
@@ -325,6 +326,39 @@ class Gep3Test extends GroovyTestCase {
         turn left then right
 
         assert turned
+    }
+    
+    // case         task copy(type: Copy) { 10 }
+    // equivalent   task(copy(type:Copy,{10}))
+    void testInnerMethodWithClosure() {
+        // with simple expression
+        assertScript """
+            class Copy{}
+            def task(x) {
+                assert x == 2
+            }
+            def copy (map, closure) {
+                assert map.type == Copy
+                assert closure() == 10
+                2
+            }
+            task copy(type: Copy) { 10 }
+        """
+        // with nested gep3
+        assertScript """
+            class Copy{}
+            def task(x) {
+                assert x == 2
+            }
+            def copy (map, closure) {
+                assert map.type == Copy
+                assert closure() == 100
+                2
+            }
+            def a(x){this}
+            def b(x){x*10}
+            task copy(type: Copy) { a 10 b 10 }        
+        """
     }
 }
 
