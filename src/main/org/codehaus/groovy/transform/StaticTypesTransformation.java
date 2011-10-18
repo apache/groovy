@@ -119,7 +119,8 @@ public class StaticTypesTransformation implements ASTTransformation {
         @Override
         public void visitBinaryExpression(BinaryExpression expression) {
             super.visitBinaryExpression(expression);
-            ClassNode lType = getType(expression.getLeftExpression(), classNode);
+            final Expression leftExpression = expression.getLeftExpression();
+            ClassNode lType = getType(leftExpression, classNode);
             final Expression rightExpression = expression.getRightExpression();
             ClassNode rType = getType(rightExpression, classNode);
             int op = expression.getOperation().getType();
@@ -133,13 +134,13 @@ public class StaticTypesTransformation implements ASTTransformation {
             storeType(expression, resultType);
             if (isAssignment(op)) {
                 ClassNode leftRedirect;
-                if (isArrayAccessExpression(expression.getLeftExpression())) {
+                if (isArrayAccessExpression(leftExpression) || leftExpression instanceof PropertyExpression) {
                     // in case the left expression is in the form of an array access, we should use
                     // the inferred type instead of the left expression type
                     leftRedirect = lType;
                 }
                 else {
-                    leftRedirect = expression.getLeftExpression().getType().redirect();
+                    leftRedirect = leftExpression.getType().redirect();
                 }
                 final boolean compatible = checkCompatibleAssignmentTypes(leftRedirect, resultType);
                 if (!compatible) {
@@ -165,13 +166,12 @@ public class StaticTypesTransformation implements ASTTransformation {
                     }
                 }
 
-                storeType(expression.getLeftExpression(), resultType);
+                storeType(leftExpression, resultType);
             } else if (op==KEYWORD_INSTANCEOF) {
-                Expression left = expression.getLeftExpression();
                 final Map<Object, List<ClassNode>> tempo = temporaryIfBranchTypeInformation.peek();
-                Object key = left.getText();
-                if (left instanceof VariableExpression && rightExpression instanceof ClassExpression) {
-                    key = findTargetVariable((VariableExpression) left);
+                Object key = leftExpression.getText();
+                if (leftExpression instanceof VariableExpression && rightExpression instanceof ClassExpression) {
+                    key = findTargetVariable((VariableExpression) leftExpression);
                 }
                 List<ClassNode> potentialTypes = tempo.get(key);
                 if (potentialTypes==null) {
@@ -692,7 +692,16 @@ public class StaticTypesTransformation implements ASTTransformation {
                 }
             } else if (exp instanceof PropertyExpression) {
                 PropertyExpression pexp = (PropertyExpression) exp;
-                if (pexp.getObjectExpression().getType().isEnum()) return pexp.getObjectExpression().getType();
+                if (pexp.getObjectExpression().getType().isEnum()) {
+                    return pexp.getObjectExpression().getType();
+                } else {
+                    ClassNode clazz = pexp.getObjectExpression().getType().redirect();
+                    final PropertyNode propertyNode = clazz.getProperty(pexp.getPropertyAsString());
+                    if (propertyNode==null) {
+                        return ClassHelper.OBJECT_TYPE;
+                    }
+                    return propertyNode.getType();
+                }
             }
             return exp.getType();
         }
