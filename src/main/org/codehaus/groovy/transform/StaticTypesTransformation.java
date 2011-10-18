@@ -81,7 +81,7 @@ public class StaticTypesTransformation implements ASTTransformation {
          * Stores information which is only valid in the "if" branch of an if-then-else statement.
          * This is used when the if condition expression makes use of an instanceof check
          */
-        private Stack<Map<Expression, List<ClassNode>>> temporaryIfBranchTypeInformation;
+        private Stack<Map<Object, List<ClassNode>>> temporaryIfBranchTypeInformation;
 
 
         private final ReturnAdder returnAdder = new ReturnAdder(new ReturnAdder.ReturnStatementListener() {
@@ -93,7 +93,7 @@ public class StaticTypesTransformation implements ASTTransformation {
         public Visitor(SourceUnit source, ClassNode cn){
             this.source = source;
             this.classNode = cn;
-            this.temporaryIfBranchTypeInformation  = new Stack<Map<Expression, List<ClassNode>>>();
+            this.temporaryIfBranchTypeInformation  = new Stack<Map<Object, List<ClassNode>>>();
             pushTemporaryTypeInfo();
         }
 
@@ -168,16 +168,17 @@ public class StaticTypesTransformation implements ASTTransformation {
                 storeType(expression.getLeftExpression(), resultType);
             } else if (op==KEYWORD_INSTANCEOF) {
                 Expression left = expression.getLeftExpression();
+                final Map<Object, List<ClassNode>> tempo = temporaryIfBranchTypeInformation.peek();
+                Object key = left.getText();
                 if (left instanceof VariableExpression && rightExpression instanceof ClassExpression) {
-                    final Map<Expression, List<ClassNode>> tempo = temporaryIfBranchTypeInformation.peek();
-                    VariableExpression target = findTargetVariable((VariableExpression) left);
-                    List<ClassNode> potentialTypes = tempo.get(target);
-                    if (potentialTypes==null) {
-                        potentialTypes = new LinkedList<ClassNode>();
-                        tempo.put(target, potentialTypes);
-                    }
-                    potentialTypes.add(rightExpression.getType());
+                    key = findTargetVariable((VariableExpression) left);
                 }
+                List<ClassNode> potentialTypes = tempo.get(key);
+                if (potentialTypes==null) {
+                    potentialTypes = new LinkedList<ClassNode>();
+                    tempo.put(key, potentialTypes);
+                }
+                potentialTypes.add(rightExpression.getType());
             }
         }
 
@@ -302,18 +303,18 @@ public class StaticTypesTransformation implements ASTTransformation {
                 final Expression objectExpression = call.getObjectExpression();
                 final ClassNode receiver = getType(objectExpression, classNode);
                 MethodNode mn = findMethod(call, receiver, name, args);
-                if (mn==null) {
+                if (mn==null && !temporaryIfBranchTypeInformation.isEmpty()) {
+                    Object key = objectExpression.getText();
+                    final Map<Object, List<ClassNode>> tempo = temporaryIfBranchTypeInformation.peek();
                     if (objectExpression instanceof VariableExpression) {
                         VariableExpression variableExpression = (VariableExpression) objectExpression;
-                        if (!temporaryIfBranchTypeInformation.isEmpty()) {
-                            final Map<Expression, List<ClassNode>> tempo = temporaryIfBranchTypeInformation.peek();
-                            List<ClassNode> potentialReceiverType = tempo.get(findTargetVariable(variableExpression));
-                            if (potentialReceiverType!=null) {
-                                for (ClassNode potentialReceiver : potentialReceiverType) {
-                                    mn = findMethod(call, potentialReceiver, name, args);
-                                    if (mn!=null) break;
-                                }
-                            }
+                        key = findTargetVariable(variableExpression);
+                    }
+                    List<ClassNode> potentialReceiverType = tempo.get(key);
+                    if (potentialReceiverType != null) {
+                        for (ClassNode potentialReceiver : potentialReceiverType) {
+                            mn = findMethod(call, potentialReceiver, name, args);
+                            if (mn != null) break;
                         }
                     }
                     if (mn==null) {
@@ -325,13 +326,12 @@ public class StaticTypesTransformation implements ASTTransformation {
             }
         }
 
-        private static VariableExpression findTargetVariable(VariableExpression ve) {
-            VariableExpression result = ve;
-            final Variable accessedVariable = result.getAccessedVariable();
-            while (accessedVariable !=null && accessedVariable!=result && accessedVariable instanceof VariableExpression) {
-                result = (VariableExpression) result.getAccessedVariable();
+        private static Variable findTargetVariable(VariableExpression ve) {
+            final Variable accessedVariable = ve.getAccessedVariable();
+            if (accessedVariable !=ve) {
+                if (accessedVariable instanceof VariableExpression) return findTargetVariable((VariableExpression) accessedVariable);
             }
-            return result;
+            return accessedVariable;
         }
 
         @Override
@@ -371,7 +371,7 @@ public class StaticTypesTransformation implements ASTTransformation {
         }
 
         private void pushTemporaryTypeInfo() {
-            Map<Expression, List<ClassNode>> potentialTypes = new HashMap<Expression, List<ClassNode>>();
+            Map<Object, List<ClassNode>> potentialTypes = new HashMap<Object, List<ClassNode>>();
             temporaryIfBranchTypeInformation.push(potentialTypes);
         }
 
@@ -406,7 +406,8 @@ public class StaticTypesTransformation implements ASTTransformation {
                 return boolean_TYPE;
             } else if (isArrayOp(op)) {
                 ClassNode arrayType = getType(expr.getLeftExpression(), classNode);
-                return arrayType.getComponentType();
+                final ClassNode componentType = arrayType.getComponentType();
+                return componentType==null?ClassHelper.OBJECT_TYPE:componentType;
             } else if (op==FIND_REGEX) {
                 // this case always succeeds the result is a Matcher
                 return Matcher_TYPE;
