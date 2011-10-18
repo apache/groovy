@@ -139,5 +139,66 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         """
     }
 
+    void testPossibleLooseOfPrecision() {
+        shouldFailWithMessages '''
+            long a = Long.MAX_VALUE
+            int b = a
+        ''', 'Possible loose of precision from long to java.lang.Integer'
+    }
+
+    void testPossibleLooseOfPrecision2() {
+        assertScript '''
+            int b = 0L
+        '''
+    }
+
+    void testPossibleLooseOfPrecision3() {
+        assertScript '''
+            byte b = 127
+        '''
+    }
+
+    void testPossibleLooseOfPrecision4() {
+        shouldFailWithMessages '''
+            byte b = 128 // will not fit in a byte
+        ''', 'Possible loose of precision from int to java.lang.Byte'
+    }
+
+    void testPossibleLooseOfPrecision5() {
+        assertScript '''
+            short b = 128
+        '''
+    }
+
+    void testPossibleLooseOfPrecision6() {
+        shouldFailWithMessages '''
+            short b = 32768 // will not fit in a short
+        ''', 'Possible loose of precision from int to java.lang.Short'
+    }
+
+    void testPossibleLooseOfPrecision7() {
+        assertScript '''
+            int b = 32768L // mark it as a long, but it fits into an int
+        '''
+    }
+
+    void testPossibleLooseOfPrecision8() {
+        assertScript '''
+            int b = 32768.0f // mark it as a float, but it fits into an int
+        '''
+    }
+
+    void testPossibleLooseOfPrecision9() {
+        assertScript '''
+            int b = 32768.0d // mark it as a double, but it fits into an int
+        '''
+    }
+
+    void testPossibleLooseOfPrecision10() {
+        shouldFailWithMessages '''
+            int b = 32768.1d
+        ''', 'Possible loose of precision from double to java.lang.Integer'
+    }
+
 }
 

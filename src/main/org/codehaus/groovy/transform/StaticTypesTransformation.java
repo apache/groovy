@@ -73,6 +73,22 @@ public class StaticTypesTransformation implements ASTTransformation {
             Matcher_TYPE    = makeWithoutCaching(Matcher.class),
             ArrayList_TYPE  = makeWithoutCaching(ArrayList.class);
 
+        private final static Map<ClassNode, Integer> NUMBER_TYPES = Collections.unmodifiableMap(
+                new HashMap<ClassNode, Integer>(){{
+                    put(ClassHelper.byte_TYPE, 0);
+                    put(ClassHelper.Byte_TYPE, 0);
+                    put(ClassHelper.short_TYPE, 1);
+                    put(ClassHelper.Short_TYPE, 1);
+                    put(ClassHelper.int_TYPE, 2);
+                    put(ClassHelper.Integer_TYPE, 2);
+                    put(ClassHelper.Long_TYPE, 3);
+                    put(ClassHelper.long_TYPE, 3);
+                    put(ClassHelper.float_TYPE, 4);
+                    put(ClassHelper.Float_TYPE, 4);
+                    put(ClassHelper.double_TYPE, 5);
+                    put(ClassHelper.Double_TYPE, 5);
+                }});
+
         private SourceUnit source;
         private ClassNode classNode;
         private MethodNode methodNode;
@@ -142,12 +158,19 @@ public class StaticTypesTransformation implements ASTTransformation {
                 else {
                     leftRedirect = leftExpression.getType().redirect();
                 }
-                final boolean compatible = checkCompatibleAssignmentTypes(leftRedirect, resultType);
+                boolean compatible = checkCompatibleAssignmentTypes(leftRedirect, resultType);
                 if (!compatible) {
                     addStaticTypeError("Cannot assign value of type " + resultType + " to variable of type " + lType, expression);
                 } else {
+                    boolean possibleLooseOfPrecision = false;
+                    if (isNumberType(leftRedirect) && isNumberType(resultType)) {
+                        possibleLooseOfPrecision = checkPossibleLooseOfPrecision(leftRedirect, resultType, rightExpression);
+                        if (possibleLooseOfPrecision) {
+                            addStaticTypeError("Possible loose of precision from "+resultType+" to "+leftRedirect, rightExpression);
+                        }
+                    }
                     // if left type is array, we should check the right component types
-                    if (lType.isArray()) {
+                    if (!possibleLooseOfPrecision && lType.isArray()) {
                         ClassNode leftComponentType = lType.getComponentType();
                         ClassNode rightRedirect = rightExpression.getType().redirect();
                         if (rightRedirect.isArray()) {
@@ -696,8 +719,11 @@ public class StaticTypesTransformation implements ASTTransformation {
                     return pexp.getObjectExpression().getType();
                 } else {
                     ClassNode clazz = pexp.getObjectExpression().getType().redirect();
-                    final PropertyNode propertyNode = clazz.getProperty(pexp.getPropertyAsString());
+                    String propertyName = pexp.getPropertyAsString();
+                    PropertyNode propertyNode = clazz.getProperty(propertyName);
                     if (propertyNode==null) {
+                        FieldNode field = clazz.getDeclaredField(propertyName);
+                        if (field!=null) return field.getType();
                         return ClassHelper.OBJECT_TYPE;
                     }
                     return propertyNode.getType();
@@ -756,6 +782,74 @@ public class StaticTypesTransformation implements ASTTransformation {
             if (isNumberType(leftRedirect) && isNumberType(rightRedirect)) return true;
 
             return false;
+        }
+
+        private static boolean checkPossibleLooseOfPrecision(ClassNode left, ClassNode right, Expression rightExpr) {
+            if (left==right || left.equals(right)) return false; // identical types
+            int leftIndex = NUMBER_TYPES.get(left);
+            int rightIndex = NUMBER_TYPES.get(right);
+            if (leftIndex>=rightIndex) return false;
+            // here we must check if the right number is short enough to fit in the left type
+            if (rightExpr instanceof ConstantExpression) {
+                Object value = ((ConstantExpression) rightExpr).getValue();
+                if (!(value instanceof Number)) return true;
+                Number number = (Number) value;
+                switch (leftIndex) {
+                    case 0: { // byte
+                        byte val = number.byteValue();
+                        if (number instanceof Short) {
+                            return !Short.valueOf(val).equals(number);
+                        }
+                        if (number instanceof Integer) {
+                            return !Integer.valueOf(val).equals(number);
+                        }
+                        if (number instanceof Long) {
+                            return !Long.valueOf(val).equals(number);
+                        }
+                        if (number instanceof Float) {
+                            return !Float.valueOf(val).equals(number);
+                        }
+                        return !Double.valueOf(val).equals(number);
+                    }
+                    case 1: { // short
+                        short val = number.shortValue();
+                        if (number instanceof Integer) {
+                            return !Integer.valueOf(val).equals(number);
+                        }
+                        if (number instanceof Long) {
+                            return !Long.valueOf(val).equals(number);
+                        }
+                        if (number instanceof Float) {
+                            return !Float.valueOf(val).equals(number);
+                        }
+                        return !Double.valueOf(val).equals(number);
+                    }
+                    case 2: { // integer
+                        int val = number.intValue();
+                        if (number instanceof Long) {
+                            return !Long.valueOf(val).equals(number);
+                        }
+                        if (number instanceof Float) {
+                            return !Float.valueOf(val).equals(number);
+                        }
+                        return !Double.valueOf(val).equals(number);
+                    }
+                    case 3: { // long
+                        long val = number.longValue();
+                        if (number instanceof Float) {
+                            return !Float.valueOf(val).equals(number);
+                        }
+                        return !Double.valueOf(val).equals(number);
+                    }
+                    case 4: { // float
+                        float val = number.floatValue();
+                        return !Double.valueOf(val).equals(number);
+                    }
+                    default: // double
+                        return false; // no possible loose here
+                }
+            }
+            return true; // possible loose of precision
         }
 
         protected void addStaticTypeError(final String msg, final ASTNode expr) {
