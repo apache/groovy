@@ -360,6 +360,41 @@ class Gep3Test extends GroovyTestCase {
             task copy(type: Copy) { a 10 b 10 }        
         """
     }
+    
+    void testGradleDSL() {
+        assertScript """
+            def invokeMethod(String name, args) {
+                if (name ==~ "/c/.*") {
+                    def namedArgs = args[0]
+                    def closure = args[1]
+                    
+                    assert namedArgs instanceof Map
+                    assert namedArgs.controller == 'foo'
+                    assert namedArgs.action == 'bar'
+            
+                    closure()
+                }
+            }
+            
+            def constraints(Closure c) {
+                c.delegate = [authCode: { Map m -> println m }]
+                c.resolveStrategy = Closure.DELEGATE_FIRST
+                c() 
+            }
+            
+            def authCode(Map m) {
+                assert !m.blank
+            }
+            
+            def val = 'xyz'
+            
+            name xxx: "/c/$val"(controller: 'foo', action: 'bar') {
+                constraints {
+                    authCode blank: false 
+                }
+            }        
+        """
+    }
 }
 
 
