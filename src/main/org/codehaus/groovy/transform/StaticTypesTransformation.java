@@ -93,6 +93,14 @@ public class StaticTypesTransformation implements ASTTransformation {
         private ClassNode classNode;
         private MethodNode methodNode;
 
+        // whenever a "with" method call is detected, this list is updated
+        // with the receiver type of the with method
+        private LinkedList<ClassNode> withReceiverList = new LinkedList<ClassNode>();
+        /**
+         * The type of the last encountered "it" implicit parameter
+         */
+        private ClassNode lastImplicitItType;
+
         /**
          * Stores information which is only valid in the "if" branch of an if-then-else statement.
          * This is used when the if condition expression makes use of an instanceof check
@@ -128,7 +136,22 @@ public class StaticTypesTransformation implements ASTTransformation {
                 if (vexp.getName().equals("super")) storeType(vexp, classNode.getSuperClass());
             }
             if (vexp.getAccessedVariable() instanceof DynamicVariable) {
-                addStaticTypeError("The variable "+vexp.getName()+" is undeclared.",vexp);
+                // a dynamic variable is either an undeclared variable
+                // or a member of a class used in a 'with'
+                DynamicVariable dyn = (DynamicVariable) vexp.getAccessedVariable();
+                // first, we must check the 'with' context
+                String dynName = dyn.getName();
+                for (ClassNode node : withReceiverList) {
+                    if (node.getProperty(dynName)!=null) {
+                        storeType(vexp, node.getProperty(dynName).getType());
+                        return;
+                    }
+                    if (node.getField(dynName)!=null) {
+                        storeType(vexp, node.getField(dynName).getType());
+                        return;
+                    }
+                }
+                addStaticTypeError("The variable ["+vexp.getName()+"] is undeclared.",vexp);
             }
         }
 
@@ -160,9 +183,13 @@ public class StaticTypesTransformation implements ASTTransformation {
             storeType(expression, resultType);
             if (isAssignment(op)) {
                 ClassNode leftRedirect;
-                if (isArrayAccessExpression(leftExpression) || leftExpression instanceof PropertyExpression) {
+                if (isArrayAccessExpression(leftExpression) || leftExpression instanceof PropertyExpression
+                        || (leftExpression instanceof VariableExpression
+                            && ((VariableExpression) leftExpression).getAccessedVariable()instanceof DynamicVariable)) {
                     // in case the left expression is in the form of an array access, we should use
-                    // the inferred type instead of the left expression type
+                    // the inferred type instead of the left expression type.
+                    // In case we have a variable expression which accessed variable is a dynamic variable, we are
+                    // in the "with" case where the type must be taken from the inferred type
                     leftRedirect = lType;
                 }
                 else {
@@ -258,6 +285,11 @@ public class StaticTypesTransformation implements ASTTransformation {
                 Object key = extractTemporaryTypeInfoKey(objectExpression);
                 List<ClassNode> classNodes = info.get(key);
                 if (classNodes!=null) tests.addAll(classNodes);
+            }
+            if (lastImplicitItType!=null
+                    && pexp.getObjectExpression() instanceof VariableExpression
+                    && ((VariableExpression) pexp.getObjectExpression()).getName().equals("it")) {
+                tests.add(lastImplicitItType);
             }
             boolean hasProperty = false;
             for (ClassNode testClass : tests) {
@@ -394,16 +426,58 @@ public class StaticTypesTransformation implements ASTTransformation {
 
         @Override
         public void visitMethodCallExpression(MethodCallExpression call) {
-            super.visitMethodCallExpression(call);
             final String name = call.getMethodAsString();
             if (name==null) {
                 addStaticTypeError("cannot resolve dynamic method name at compile time.", call.getMethod());
-            } else {
-                ClassNode[] args = getArgumentTypes(InvocationWriter.makeArgumentList(call.getArguments()), classNode);
-                final Expression objectExpression = call.getObjectExpression();
-                final ClassNode receiver = getType(objectExpression, classNode);
+                return;
+            }
+
+            final Expression objectExpression = call.getObjectExpression();
+            objectExpression.visit(this);
+            call.getMethod().visit(this);
+
+            final ClassNode rememberLastItType = lastImplicitItType;
+            Expression callArguments = call.getArguments();
+            
+            boolean isWithCall = isWithCall(name, callArguments);
+
+            if (!isWithCall) {
+                // if it is not a "with" call, arguments should be visited first
+                callArguments.visit(this);
+            }
+
+            ClassNode[] args = getArgumentTypes(InvocationWriter.makeArgumentList(callArguments), classNode);
+            final ClassNode receiver = getType(objectExpression, classNode);
+
+            if (isWithCall) {
+                withReceiverList.add(0, receiver); // must be added first in the list
+                lastImplicitItType = receiver;
+                // if the provided closure uses an explicit parameter definition, we can
+                // also check that the provided type is correct
+                if (callArguments instanceof ArgumentListExpression) {
+                    ArgumentListExpression argList = (ArgumentListExpression) callArguments;
+                    ClosureExpression closure = (ClosureExpression) argList.getExpression(0);
+                    Parameter[] parameters = closure.getParameters();
+                    if (parameters.length>1) {
+                        addStaticTypeError("Unexpected number of parameters for a with call", argList);
+                    } else if (parameters.length==1) {
+                        Parameter param = parameters[0];
+                        if (!param.isDynamicTyped() && !isAssignableTo(param.getType().redirect(), receiver)) {
+                            addStaticTypeError("Expected parameter type: "+receiver+" but was: "+param.getType().redirect(), param);
+                        }
+                    }
+                }
+            }
+
+            try {
+                if (isWithCall) {
+                    // in case of a with call, arguments (the closure) should be visited now that we checked
+                    // the arguments
+                    callArguments.visit(this);
+                }
+
                 MethodNode mn = findMethod(call, receiver, name, args);
-                if (mn==null && !temporaryIfBranchTypeInformation.isEmpty()) {
+                if (mn == null && !temporaryIfBranchTypeInformation.isEmpty()) {
                     Object key = extractTemporaryTypeInfoKey(objectExpression);
                     final Map<Object, List<ClassNode>> tempo = temporaryIfBranchTypeInformation.peek();
 
@@ -414,13 +488,28 @@ public class StaticTypesTransformation implements ASTTransformation {
                             if (mn != null) break;
                         }
                     }
-                    if (mn==null) {
+                    if (mn == null) {
                         addStaticTypeError("Cannot find matching method " + receiver.getName() + "#" + toMethodParametersString(name, args), call);
                         return;
                     }
                 }
-                storeType(call, mn.getReturnType());
+                if (mn!=null) storeType(call, mn.getReturnType());
+            } finally {
+                if (isWithCall) {
+                    lastImplicitItType = rememberLastItType;
+                    withReceiverList.removeFirst();
+                }
             }
+        }
+
+        private static boolean isWithCall(final String name, final Expression callArguments) {
+            boolean isWithCall = "with".equals(name) && callArguments instanceof ArgumentListExpression;
+            if (isWithCall) {
+                ArgumentListExpression argList = (ArgumentListExpression) callArguments;
+                List<Expression> expressions = argList.getExpressions();
+                isWithCall = expressions.size()==1 && expressions.get(0) instanceof ClosureExpression;
+            }
+            return isWithCall;
         }
 
         private static Variable findTargetVariable(VariableExpression ve) {
