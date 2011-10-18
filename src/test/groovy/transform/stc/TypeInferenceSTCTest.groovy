@@ -144,5 +144,34 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
             println naamme
         ''', 'variable [naamme] is undeclared'
     }
+
+    void testInstanceOfInferenceWithImplicitIt() {
+        assertScript '''
+        ['a', 'b', 'c'].each {
+            if (it instanceof String) {
+                println it.toUpperCase()
+            }
+        }
+        '''
+    }
+
+    void testInstanceOfTypeInferenceWithDef() {
+        assertScript '''
+            def profile = ['Guillaume', 34, true]
+            def item = profile[0]
+            if (item instanceof String) {
+                println item.toUpperCase()
+            }
+        '''
+    }
+
+    void testInstanceOfTypeInferenceWithoutDef() {
+        assertScript '''
+            def profile = ['Guillaume', 34, true]
+            if (profile[0] instanceof String) {
+                println profile[0].toUpperCase()
+            }
+        '''
+    }
 }
 
