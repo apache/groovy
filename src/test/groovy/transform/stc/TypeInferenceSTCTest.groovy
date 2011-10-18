@@ -216,5 +216,85 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
             }
         ''', 'No such property: y for class: A'
     }
+
+    void testShouldNotFailWithWith() {
+        assertScript '''
+            class A {
+                int x
+            }
+            def a = new A()
+            a.with {
+                x = 2 // should be recognized as a.x at compile time
+            }
+        '''
+    }
+
+    void testShouldFailWithWith() {
+        shouldFailWithMessages '''
+            class A {
+                int x
+            }
+            def a = new A()
+            a.with {
+                x = '2' // should be recognized as a.x at compile time and fail because of wrong type
+            }
+        ''', 'Cannot assign value of type java.lang.String to variable of type int'
+    }
+
+    void testShouldNotFailWithWithTwoClasses() {
+        // we must make sure that type inference engine in this case
+        // takes the same property as at runtime
+        assertScript '''
+            class A {
+                int x
+            }
+            class B {
+                String x
+            }
+            def a = new A()
+            def b = new B()
+            a.with {
+                b.with {
+                    x = '2' // should be recognized as b.x at compile time
+                }
+            }
+        '''
+    }
+
+    void testShouldNotFailWithWithAndImplicitIt() {
+        assertScript '''
+            class A {
+                int x
+            }
+            def a = new A()
+            a.with {
+                it.x = 2 // should be recognized as a.x at compile time
+            }
+        '''
+    }
+
+    void testShouldNotFailWithWithAndExplicitIt() {
+        assertScript '''
+            class A {
+                int x
+            }
+            def a = new A()
+            a.with { it ->
+                it.x = 2 // should be recognized as a.x at compile time
+            }
+        '''
+    }
+
+    void testShouldNotFailWithWithAndExplicitTypedIt() {
+        shouldFailWithMessages '''
+            class A {
+                int x
+            }
+            def a = new A()
+            a.with { String it ->
+                it.x = 2 // should be recognized as a.x at compile time
+            }
+        ''', 'Expected parameter type: A but was: java.lang.String'
+    }
 }
 
