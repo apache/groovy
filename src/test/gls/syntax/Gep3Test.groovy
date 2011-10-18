@@ -362,7 +362,7 @@ class Gep3Test extends GroovyTestCase {
     }
     
     void testGradleDSL() {
-        assertScript """
+        assertScript '''
             def invokeMethod(String name, args) {
                 if (name ==~ "/c/.*") {
                     def namedArgs = args[0]
@@ -393,7 +393,7 @@ class Gep3Test extends GroovyTestCase {
                     authCode blank: false 
                 }
             }        
-        """
+        '''
     }
 }
 
