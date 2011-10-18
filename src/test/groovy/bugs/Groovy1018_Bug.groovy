@@ -15,6 +15,7 @@ class Groovy1018_Bug extends GroovyTestCase {
 
     // todo: GROOVY-1018
     void testGetPublicStaticField() {
+        Groovy1018_Bug.Class = 'bar'
         def a = new Groovy1018_Bug()
         println( a.Class )
         println( a.@Class )
