@@ -296,5 +296,21 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
             }
         ''', 'Expected parameter type: A but was: java.lang.String'
     }
+
+    void testShouldNotFailWithInheritanceAndWith() {
+         assertScript '''
+             class A {
+                 int x
+                 void method() { println x }
+             }
+             class B extends A {
+             }
+             def b = new B()
+             b.with {
+                 x = 2 // should be recognized as b.x at compile time
+             }
+         '''
+     }
+
 }
 
