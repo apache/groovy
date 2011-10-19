@@ -432,24 +432,30 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 callArguments.visit(this);
             }
 
-            MethodNode mn = findMethod(call, receiver, name, args);
-            if (mn == null && !temporaryIfBranchTypeInformation.isEmpty()) {
-                Object key = extractTemporaryTypeInfoKey(objectExpression);
+            // method call receivers are :
+            //   - possible "with" receivers
+            //   - the actual receiver as found in the method call expression
+            //   - any of the potential receivers found in the instanceof temporary table
+            // in that order
+            List<ClassNode> receivers = new LinkedList<ClassNode>();
+            if (!withReceiverList.isEmpty()) receivers.addAll(withReceiverList);
+            receivers.add(receiver);
+            if (!temporaryIfBranchTypeInformation.empty()) {
                 final Map<Object, List<ClassNode>> tempo = temporaryIfBranchTypeInformation.peek();
-
+                Object key = extractTemporaryTypeInfoKey(objectExpression);
                 List<ClassNode> potentialReceiverType = tempo.get(key);
-                if (potentialReceiverType != null) {
-                    for (ClassNode potentialReceiver : potentialReceiverType) {
-                        mn = findMethod(call, potentialReceiver, name, args);
-                        if (mn != null) break;
-                    }
-                }
-                if (mn == null) {
-                    addStaticTypeError("Cannot find matching method " + receiver.getName() + "#" + toMethodParametersString(name, args), call);
-                    return;
-                }
+                if (potentialReceiverType != null) receivers.addAll(potentialReceiverType);
             }
-            if (mn != null) storeType(call, mn.getReturnType());
+            MethodNode mn = null;
+            for (ClassNode currentReceiver : receivers) {
+                mn = findMethod(currentReceiver, name, args);
+                if (mn != null) break;
+            }
+            if (mn == null) {
+                addStaticTypeError("Cannot find matching method " + receiver.getName() + "#" + toMethodParametersString(name, args), call);
+            } else {
+                storeType(call, mn.getReturnType());
+            }
         } finally {
             if (isWithCall) {
                 lastImplicitItType = rememberLastItType;
@@ -560,7 +566,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     private MethodNode findMethodOrFail(
             Expression expr,
             ClassNode receiver, String name, ClassNode... args) {
-        final MethodNode method = findMethod(expr, receiver, name, args);
+        final MethodNode method = findMethod(receiver, name, args);
         if (method == null) {
             addStaticTypeError("Cannot find matching method " + receiver.getName() + "#" + toMethodParametersString(name, args), expr);
         }
@@ -568,7 +574,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     private MethodNode findMethod(
-            Expression expr,
             ClassNode receiver, String name, ClassNode... args) {
         List<MethodNode> methods;
         if ("<init>".equals(name)) {
@@ -619,7 +624,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 }
             }
         }
-        if (receiver == ClassHelper.GSTRING_TYPE) return findMethod(expr, ClassHelper.STRING_TYPE, name, args);
+        if (receiver == ClassHelper.GSTRING_TYPE) return findMethod(ClassHelper.STRING_TYPE, name, args);
         return null;
     }
 
