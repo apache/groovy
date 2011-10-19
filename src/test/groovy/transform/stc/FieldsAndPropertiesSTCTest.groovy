@@ -111,5 +111,75 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
             a.x = 0
         ''', 'No such property: x for class: A'
     }
+
+    void testFieldWithInheritance() {
+        assertScript '''
+            class A {
+                int x
+            }
+            class B extends A {
+            }
+            B b = new B()
+            b.x = 2
+        '''
+    }
+
+    void testAttributeWithInheritance() {
+        shouldFailWithMessages '''
+            class A {
+                int x
+            }
+            class B extends A {
+            }
+            B b = new B()
+            b.@x = 2
+        ''', 'No such property: x for class: B'
+    }
+
+    void testFieldTypeWithInheritance() {
+        shouldFailWithMessages '''
+            class A {
+                int x
+            }
+            class B extends A {
+            }
+            B b = new B()
+            b.x = '2'
+        ''', 'Cannot assign value of type java.lang.String to variable of type int'
+    }
+
+    void testFieldWithInheritanceFromAnotherSourceUnit() {
+        assertScript '''
+            class B extends groovy.transform.stc.FieldsAndPropertiesSTCTest.BaseClass {
+            }
+            B b = new B()
+            b.x = 2
+        '''
+    }
+
+    void testFieldWithInheritanceFromAnotherSourceUnit2() {
+        shouldFailWithMessages '''
+            class B extends groovy.transform.stc.FieldsAndPropertiesSTCTest.BaseClass {
+            }
+            B b = new B()
+            b.x = '2'
+        ''', 'Cannot assign value of type java.lang.String to variable of type int'
+    }
+
+    void testFieldWithSuperInheritanceFromAnotherSourceUnit() {
+        assertScript '''
+            class B extends groovy.transform.stc.FieldsAndPropertiesSTCTest.BaseClass2 {
+            }
+            B b = new B()
+            b.x = 2
+        '''
+    }
+
+    public static class BaseClass {
+        int x
+    }
+
+    public static class BaseClass2 extends BaseClass {
+    }
 }
 

@@ -243,20 +243,29 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             tests.add(lastImplicitItType);
         }
         boolean hasProperty = false;
+        String propertyName = pexp.getPropertyAsString();
+        boolean isAttributeExpression = pexp instanceof AttributeExpression;
         for (ClassNode testClass : tests) {
             // maps have special handling for property expressions
             if (!testClass.implementsInterface(ClassHelper.MAP_TYPE)) {
-                String propertyName = pexp.getPropertyAsString();
-                PropertyNode propertyNode = testClass.getProperty(propertyName);
-                if (propertyNode == null) {
-                    FieldNode field = testClass.getDeclaredField(propertyName);
-                    if (field != null) {
+                ClassNode current = testClass;
+                while (current!=null && !hasProperty) {
+                    current = current.redirect();
+                    PropertyNode propertyNode = current.getProperty(propertyName);
+                    if (propertyNode != null) {
                         hasProperty = true;
                         break;
                     }
-                } else {
-                    hasProperty = true;
-                    break;
+                    if (!isAttributeExpression) {
+                        FieldNode field = current.getDeclaredField(propertyName);
+                        if (field != null) {
+                            hasProperty = true;
+                            break;
+                        }
+                    }
+                    // if the property expression is an attribute expression (o.@attr), then
+                    // we stop now, otherwise we must check the parent class
+                    current = isAttributeExpression ?null:current.getSuperClass();
                 }
             } else {
                 hasProperty = true;
@@ -638,11 +647,19 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     if (classNodes != null && !classNodes.isEmpty()) candidates.addAll(classNodes);
                 }
                 String propertyName = pexp.getPropertyAsString();
+                boolean isAttributeExpression = pexp instanceof AttributeExpression;
                 for (ClassNode candidate : candidates) {
-                    PropertyNode propertyNode = candidate.getProperty(propertyName);
-                    if (propertyNode != null) return propertyNode.getType();
-                    FieldNode field = candidate.getDeclaredField(propertyName);
-                    if (field != null) return field.getType();
+                    ClassNode parent = candidate;
+                    while (parent!=null) {
+                        parent = parent.redirect();
+                        PropertyNode propertyNode = parent.getProperty(propertyName);
+                        if (propertyNode != null) return propertyNode.getType();
+                        if (!isAttributeExpression) {
+                            FieldNode field = parent.getDeclaredField(propertyName);
+                            if (field != null) return field.getType();
+                        }
+                        parent = isAttributeExpression?null:parent.getSuperClass();
+                    }
                 }
                 return ClassHelper.OBJECT_TYPE;
             }
