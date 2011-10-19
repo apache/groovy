@@ -618,6 +618,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             return boolean_TYPE;
         } else if (isArrayOp(op)) {
             ClassNode arrayType = getType(expr.getLeftExpression(), classNode);
+            if (ClassHelper.STRING_TYPE.equals(arrayType)) {
+                // special case here
+                return ClassHelper.STRING_TYPE;
+            }
             final ClassNode componentType = arrayType.getComponentType();
             return componentType == null ? ClassHelper.OBJECT_TYPE : componentType;
         } else if (op == FIND_REGEX) {
