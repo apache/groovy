@@ -44,6 +44,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     private ClassNode classNode;
     private MethodNode methodNode;
 
+    // used for closure return type inference
+    private ClosureExpression closureExpression;
+    private List<ClassNode> closureReturnTypes;
+
     // whenever a "with" method call is detected, this list is updated
     // with the receiver type of the with method
     private LinkedList<ClassNode> withReceiverList = new LinkedList<ClassNode>();
@@ -134,6 +138,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (isAssignment(op)) {
             typeCheckAssignment(expression, leftExpression, lType, rightExpression, resultType);
             storeType(leftExpression, resultType);
+
+            // if right expression is a ClosureExpression, store parameter type information
+            if (leftExpression instanceof VariableExpression && rightExpression instanceof ClosureExpression) {
+                Parameter[] parameters = ((ClosureExpression) rightExpression).getParameters();
+                leftExpression.putNodeMetaData(StaticTypesTransformation.StaticTypesMarker.CLOSURE_ARGUMENTS, parameters);
+            }
+
         } else if (op == KEYWORD_INSTANCEOF) {
             pushInstanceOfTypeInfo(leftExpression, rightExpression);
         }
@@ -177,6 +188,14 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (!compatible) {
             addStaticTypeError("Cannot assign value of type " + inferredRightExpressionType.getName() + " to variable of type " + leftExpressionType.getName(), assignmentExpression);
         } else {
+            // if closure expression on RHS, then copy the inferred closure return type
+            if (rightExpression instanceof ClosureExpression) {
+                Object type = rightExpression.getNodeMetaData(StaticTypesTransformation.StaticTypesMarker.CLOSURE_INFERRED_RETURN_TYPE);
+                if (type!=null) {
+                    leftExpression.putNodeMetaData(StaticTypesTransformation.StaticTypesMarker.CLOSURE_INFERRED_RETURN_TYPE ,type);
+                }
+            }
+
             boolean possibleLooseOfPrecision = false;
             if (isNumberType(leftRedirect) && isNumberType(inferredRightExpressionType)) {
                 possibleLooseOfPrecision = checkPossibleLooseOfPrecision(leftRedirect, inferredRightExpressionType, rightExpression);
@@ -430,6 +449,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     public void visitReturnStatement(ReturnStatement statement) {
         super.visitReturnStatement(statement);
         checkReturnType(statement);
+        if (closureExpression!=null) {
+            addClosureReturnType(getType(statement.getExpression(), classNode));
+        }
     }
 
     private void checkReturnType(final ReturnStatement statement) {
@@ -439,6 +461,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 addStaticTypeError("Cannot return value of type " + type + " on method returning type " + methodNode.getReturnType(), statement.getExpression());
             }
         }
+    }
+
+    private void addClosureReturnType(ClassNode returnType) {
+        if (closureReturnTypes==null) closureReturnTypes = new LinkedList<ClassNode>();
+        closureReturnTypes.add(returnType);
     }
 
     @Override
@@ -461,12 +488,30 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     @Override
+    public void visitClosureExpression(final ClosureExpression expression) {
+        ClosureExpression oldClosureExpr = closureExpression;
+        List<ClassNode> oldClosureReturnTypes = closureReturnTypes;
+        closureExpression = expression;
+        super.visitClosureExpression(expression);
+        MethodNode node = new MethodNode("dummy", 0, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, expression.getCode());
+        returnAdder.visitMethod(node);
+
+        if (closureReturnTypes!=null) {
+            expression.putNodeMetaData(StaticTypesTransformation.StaticTypesMarker.CLOSURE_INFERRED_RETURN_TYPE, firstCommonSuperType(closureReturnTypes));
+        }
+
+        closureExpression = oldClosureExpr;
+        closureReturnTypes = oldClosureReturnTypes;
+    }
+
+    @Override
     public void visitMethodCallExpression(MethodCallExpression call) {
         final String name = call.getMethodAsString();
         if (name == null) {
             addStaticTypeError("cannot resolve dynamic method name at compile time.", call.getMethod());
             return;
         }
+
 
         final Expression objectExpression = call.getObjectExpression();
         objectExpression.visit(this);
@@ -483,6 +528,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
 
         ClassNode[] args = getArgumentTypes(InvocationWriter.makeArgumentList(callArguments), classNode);
+        final boolean isCallOnClosure = isClosureCall(name, objectExpression);
         final ClassNode receiver = getType(objectExpression, classNode);
 
         if (isWithCall) {
@@ -534,13 +580,59 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             if (mn == null) {
                 addStaticTypeError("Cannot find matching method " + receiver.getName() + "#" + toMethodParametersString(name, args), call);
             } else {
-                storeType(call, mn.getReturnType());
+                if (isCallOnClosure) {
+                    // this is a closure.call() call
+                    if (objectExpression instanceof VariableExpression) {
+                        Variable variable = findTargetVariable((VariableExpression)objectExpression);
+                        if (variable instanceof Expression) {
+                            Object data = ((Expression) variable).getNodeMetaData(StaticTypesTransformation.StaticTypesMarker.CLOSURE_ARGUMENTS);
+                            if (data!=null) {
+                                Parameter[] parameters = (Parameter[]) data;
+                                typeCheckClosureCall(callArguments, args, parameters);
+                            }
+                            Object type = ((Expression) variable).getNodeMetaData(StaticTypesTransformation.StaticTypesMarker.CLOSURE_INFERRED_RETURN_TYPE);
+                            if (type!=null) {
+                                 storeType(call, (ClassNode) type);
+                            }
+                        }
+                    } else if (objectExpression instanceof ClosureExpression) {
+                        // we can get actual parameters directly
+                        Parameter[] parameters = ((ClosureExpression)objectExpression).getParameters();
+                        typeCheckClosureCall(callArguments, args, parameters);
+                        Object data = objectExpression.getNodeMetaData(StaticTypesTransformation.StaticTypesMarker.CLOSURE_INFERRED_RETURN_TYPE);
+                        if (data!=null) {
+                            storeType(call, (ClassNode) data);
+                        }
+                    }
+                } else {
+                    storeType(call, mn.getReturnType());
+                }
             }
         } finally {
             if (isWithCall) {
                 lastImplicitItType = rememberLastItType;
                 withReceiverList.removeFirst();
             }
+        }
+    }
+
+    private boolean isClosureCall(final String name, final Expression objectExpression) {
+        if (!"call".equals(name)) return false;
+        if (objectExpression instanceof ClosureExpression) return true;
+        return (getType(objectExpression, classNode).equals(CLOSURE_TYPE));
+    }
+
+    private void typeCheckClosureCall(final Expression callArguments, final ClassNode[] args, final Parameter[] parameters) {
+        if (!allParametersAndArgumentsMatch(parameters, args) &&
+            !lastArgMatchesVarg(parameters, args)) {
+            StringBuilder sb = new StringBuilder("[");
+            for (int i = 0, parametersLength = parameters.length; i < parametersLength; i++) {
+                final Parameter parameter = parameters[i];
+                sb.append(parameter.getType().getName());
+                if (i<parametersLength-1) sb.append(", ");
+            }
+            sb.append("]");
+            addStaticTypeError("Closure argument types: "+sb+" do not match with parameter types: "+ Arrays.toString(args), callArguments);
         }
     }
 
@@ -599,7 +691,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
 
     private void storeType(Expression exp, ClassNode cn) {
-        exp.putNodeMetaData(StaticTypesTransformation.StaticTypesMarker.class, cn);
+        exp.putNodeMetaData(StaticTypesTransformation.StaticTypesMarker.INFERRED_TYPE, cn);
         if (exp instanceof VariableExpression) {
             final Variable accessedVariable = ((VariableExpression) exp).getAccessedVariable();
             if (accessedVariable != null && accessedVariable != exp && accessedVariable instanceof VariableExpression) {
@@ -727,7 +819,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     private ClassNode getType(Expression exp, ClassNode current) {
-        ClassNode cn = (ClassNode) exp.getNodeMetaData(StaticTypesTransformation.StaticTypesMarker.class);
+        ClassNode cn = (ClassNode) exp.getNodeMetaData(StaticTypesTransformation.StaticTypesMarker.INFERRED_TYPE);
         if (cn != null) return cn;
         if (exp instanceof VariableExpression) {
             VariableExpression vexp = (VariableExpression) exp;

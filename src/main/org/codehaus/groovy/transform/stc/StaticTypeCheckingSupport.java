@@ -111,6 +111,11 @@ abstract class StaticTypeCheckingSupport {
         return firstCommonSuperType(superA, superB);
     }
 
+    static ClassNode firstCommonSuperType(List<ClassNode> nodes) {
+        if (nodes.size()==1) return nodes.get(0);
+        return firstCommonSuperType(nodes.get(0), firstCommonSuperType(nodes.subList(1, nodes.size())));
+    }
+
     /**
      * Returns a map which contains, as the key, the name of a class. The value
      * consists of a list of MethodNode, one for each default groovy method found

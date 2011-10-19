@@ -135,6 +135,7 @@ public class ListHashMap<K,V> implements Map<K,V> {
                 return null;
             } else {
                 innerMap = makeMap();
+                size++;
             }
         } 
         return innerMap.put(key,value);
