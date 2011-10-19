@@ -69,6 +69,15 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
     });
 
+    private final ReturnAdder closureReturnAdder = new ReturnAdder(new ReturnAdder.ReturnStatementListener() {
+        public void returnStatementAdded(final ReturnStatement returnStatement) {
+            checkReturnType(returnStatement);
+            if (closureExpression!=null) {
+                addClosureReturnType(getType(returnStatement.getExpression(), classNode));
+            }
+        }
+    });
+
     public StaticTypeCheckingVisitor(SourceUnit source, ClassNode cn) {
         this.source = source;
         this.classNode = cn;
@@ -494,7 +503,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         closureExpression = expression;
         super.visitClosureExpression(expression);
         MethodNode node = new MethodNode("dummy", 0, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, expression.getCode());
-        returnAdder.visitMethod(node);
+        closureReturnAdder.visitMethod(node);
 
         if (closureReturnTypes!=null) {
             expression.putNodeMetaData(StaticTypesTransformation.StaticTypesMarker.CLOSURE_INFERRED_RETURN_TYPE, firstCommonSuperType(closureReturnTypes));

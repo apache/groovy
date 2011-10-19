@@ -104,6 +104,19 @@ abstract class StaticTypeCheckingSupport {
     static ClassNode firstCommonSuperType(ClassNode a, ClassNode b) {
         if (a == null || b == null) return ClassHelper.OBJECT_TYPE;
         if (a == b || a.equals(b)) return a;
+        if (isPrimitiveType(a) && !isPrimitiveType(b)) {
+            if (isNumberType(a) && isNumberType(b)) {
+                return firstCommonSuperType(ClassHelper.getWrapper(a), b);
+            } else {
+                return OBJECT_TYPE;
+            }
+        } else if (isPrimitiveType(b) && !isPrimitiveType(a)) {
+            if (isNumberType(b) && isNumberType(a)) {
+                return firstCommonSuperType(ClassHelper.getWrapper(b), a);
+            } else {
+                return OBJECT_TYPE;
+            }
+        }
         ClassNode superA = a.getSuperClass();
         ClassNode superB = b.getSuperClass();
         if (a == superB || a.equals(superB)) return superB;
