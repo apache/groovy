@@ -200,5 +200,34 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         ''', 'Possible loose of precision from double to java.lang.Integer'
     }
 
+    void testCompatibleTypeCast() {
+        assertScript '''
+        String s = 'Hello'
+        ((CharSequence) s)
+        '''
+    }
+
+    void testIncompatibleTypeCast() {
+        shouldFailWithMessages '''
+            String s = 'Hello'
+            ((Set) s)
+        ''', 'Inconvertible types: cannot cast java.lang.String to java.util.Set'
+    }
+
+    void testIncompatibleTypeCastWithAsType() {
+        // If the user uses explicit type coercion, there's nothing we can do
+        assertScript '''
+            String s = 'Hello'
+            s as Set
+        '''
+    }
+
+    void testIncompatibleTypeCastWithTypeInference() {
+        shouldFailWithMessages '''
+            def s = 'Hello'
+            s = 1
+            ((Set) s)
+        ''', 'Inconvertible types: cannot cast int to java.util.Set'
+    }
 }
 
