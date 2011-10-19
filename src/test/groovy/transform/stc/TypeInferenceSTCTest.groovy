@@ -310,7 +310,50 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
                  x = 2 // should be recognized as b.x at compile time
              }
          '''
-     }
+    }
+
+    void testCallMethodInWithContext() {
+        assertScript '''
+            class A {
+                int method() { return 1 }
+            }
+            def a = new A()
+            a.with {
+                method()
+            }
+        '''
+    }
+
+
+   void testCallMethodInWithContextAndShadowing() {
+       // make sure that the method which is found in 'with' is actually the one from class A
+       // which returns a String
+       assertScript '''
+            class A {
+                String method() { return 'Cedric' }
+            }
+
+            int method() { 1 }
+
+            def a = new A()
+            a.with {
+                method().toUpperCase()
+            }
+        '''
+       // check that if we switch signatures, it fails
+       shouldFailWithMessages '''
+            class A {
+                int method() { 1 }
+            }
+
+            String method() { 'Cedric' }
+
+            def a = new A()
+            a.with {
+                method().toUpperCase()
+            }
+        ''', 'Cannot find matching method int#toUpperCase()'
+   }
 
 }
 
