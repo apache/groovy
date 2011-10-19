@@ -421,6 +421,8 @@ abstract class StaticTypeCheckingSupport {
         // constructor
         if (rightRedirect.implementsInterface(MAP_TYPE) ||
                 rightRedirect.implementsInterface(Collection_TYPE) ||
+                rightRedirect.equals(MAP_TYPE) ||
+                rightRedirect.equals(Collection_TYPE) ||
                 rightRedirect.isArray()) {
             //TODO: in case of the array we could maybe make a partial check
             if (leftRedirect.isArray() && rightRedirect.isArray()) {

@@ -146,7 +146,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
             boolean compatible = checkCompatibleAssignmentTypes(leftRedirect, resultType);
             if (!compatible) {
-                addStaticTypeError("Cannot assign value of type " + resultType + " to variable of type " + lType, expression);
+                addStaticTypeError("Cannot assign value of type " + resultType.getName() + " to variable of type " + lType.getName(), expression);
             } else {
                 boolean possibleLooseOfPrecision = false;
                 if (isNumberType(leftRedirect) && isNumberType(resultType)) {
@@ -173,6 +173,51 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         }
                     }
                 }
+
+                // if left type is not a list but right type is a list, then we're in the case of a groovy
+                // constructor type : Dimension d = [100,200]
+                // In that case, more checks can be performed
+                if (!leftRedirect.implementsInterface(ClassHelper.LIST_TYPE) && rightExpression instanceof ListExpression) {
+                    ArgumentListExpression argList = new ArgumentListExpression(((ListExpression) rightExpression).getExpressions());
+                    ClassNode[] args = getArgumentTypes(argList, classNode);
+                    checkGroovyStyleConstructor(leftRedirect, args);
+                } else if (resultType.implementsInterface(Collection_TYPE) && !isAssignableTo(leftRedirect, resultType)) {
+                    addStaticTypeError("Cannot assign value of type " + resultType.getName() + " to variable of type " + lType.getName(), expression);
+                }
+
+                // if left type is not a list but right type is a map, then we're in the case of a groovy
+                // constructor type : A a = [x:2, y:3]
+                // In this case, more checks can be performed
+                if (!leftRedirect.implementsInterface(ClassHelper.MAP_TYPE) && rightExpression instanceof MapExpression) {
+                    ArgumentListExpression argList = new ArgumentListExpression(rightExpression);
+                    ClassNode[] args = getArgumentTypes(argList, classNode);
+                    checkGroovyStyleConstructor(leftRedirect, args);
+                    // perform additional type checking on arguments
+                    MapExpression mapExpression = (MapExpression) rightExpression;
+                    for (MapEntryExpression entryExpression : mapExpression.getMapEntryExpressions()) {
+                        Expression keyExpr = entryExpression.getKeyExpression();
+                        if (!(keyExpr instanceof ConstantExpression) ) {
+                            addStaticTypeError("Dynamic keys in map-style constructors are unsupported in static type checking", keyExpr);
+                        } else {
+                            String property = keyExpr.getText();
+                            ClassNode currentNode = leftRedirect;
+                            PropertyNode propertyNode = null;
+                            while (propertyNode==null && currentNode!=null) {
+                                propertyNode = currentNode.getProperty(property);
+                                currentNode = currentNode.getSuperClass();
+                            }
+                            if (propertyNode==null) {
+                                addStaticTypeError("No such property: " + property +
+                                    " for class: " + leftRedirect.getName(), leftExpression);
+                            } else {
+                                ClassNode valueType = getType(entryExpression.getValueExpression(), classNode);
+                                if (!isAssignableTo(valueType, propertyNode.getType())) {
+                                    addStaticTypeError("Cannot assign value of type " + valueType.getName() + " to field of type " + propertyNode.getType().getName(), entryExpression);
+                                }
+                            }
+                        }
+                    }
+                }
             }
 
             storeType(leftExpression, resultType);
@@ -185,6 +230,24 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 tempo.put(key, potentialTypes);
             }
             potentialTypes.add(rightExpression.getType());
+        }
+    }
+
+    /**
+     * Checks that a constructor style expression is valid regarding the number of arguments and the argument types.
+     * @param node the class node for which we will try to find a matching constructor
+     * @param arguments the constructor arguments
+     */
+    private void checkGroovyStyleConstructor(final ClassNode node, final ClassNode[] arguments) {
+        if (node.equals(ClassHelper.OBJECT_TYPE) || node.equals(ClassHelper.DYNAMIC_TYPE)) {
+            // in that case, we are facing a list constructor assigned to a def or object
+            return;
+        }
+        List<ConstructorNode> constructors = node.getDeclaredConstructors();
+        if (constructors.isEmpty() && arguments.length==0) return;
+        MethodNode constructor = findMethod(node, "<init>", arguments);
+        if (constructor==null) {
+            addStaticTypeError("No matching constructor found: "+node+toMethodParametersString("<init>", arguments), classNode);
         }
     }
 
