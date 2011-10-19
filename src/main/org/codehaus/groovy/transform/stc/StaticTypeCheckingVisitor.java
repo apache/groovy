@@ -566,6 +566,18 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     @Override
+    public void visitCastExpression(final CastExpression expression) {
+        super.visitCastExpression(expression);
+        if (!expression.isCoerce()) {
+            ClassNode targetType = expression.getType();
+            ClassNode expressionType = getType(expression.getExpression(), classNode);
+            if (!isAssignableTo(expressionType, targetType)) {
+                addStaticTypeError("Inconvertible types: cannot cast "+expressionType.getName()+" to "+targetType.getName(), expression);
+            }
+        }
+    }
+
+    @Override
     public void visitTernaryExpression(final TernaryExpression expression) {
         // create a new temporary element in the if-then-else type info
         pushTemporaryTypeInfo();
