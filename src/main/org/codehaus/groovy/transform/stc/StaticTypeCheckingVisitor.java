@@ -639,6 +639,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 if (isIntCategory(leftRedirect) && isIntCategory(rightRedirect)) return int_TYPE;
                 if (isLongCategory(leftRedirect) && isLongCategory(rightRedirect)) return Long_TYPE;
                 if (isBigIntCategory(leftRedirect) && isBigIntCategory(rightRedirect)) return BigInteger_TYPE;
+            } else if (isCompareToBoolean(op) || op==COMPARE_EQUAL) {
+                return boolean_TYPE;
             }
         }
 
