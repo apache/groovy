@@ -15,6 +15,7 @@
  */
 package groovy.transform.stc
 
+import org.codehaus.groovy.util.ListHashMap
 
 /**
  * Unit tests for static type checking : miscellaneous tests.
@@ -52,6 +53,67 @@ class MiscSTCTest extends StaticTypeCheckingTestCase {
             g.salute()               // output "Hello World!"
         '''
     }
-}
 
+    void testClosureWithoutArguments() {
+        assertScript '''
+        def clos = { println "hello!" }
+
+        println "Executing the Closure:"
+        clos() //prints "hello!"
+        '''
+    }
+
+    void testClosureWithArguments() {
+        assertScript '''
+            def printSum = { int a, int b -> print a+b }
+            printSum( 5, 7 ) //prints "12"
+        '''
+
+        shouldFailWithMessages '''
+            def printSum = { int a, int b -> print a+b }
+            printSum( '5', '7' ) //prints "12"
+        ''', 'Closure argument types: [int, int] do not match with parameter types: [java.lang.String, java.lang.String]'
+    }
+
+    void testClosureWithArgumentsAndNoDef() {
+        assertScript '''
+            { int a, int b -> print a+b }(5,7)
+        '''
+    }
+
+    void testClosureWithArgumentsNoDefAndWrongType() {
+        shouldFailWithMessages '''
+            { int a, int b -> print a+b }('5',7)
+        ''', 'Closure argument types: [int, int] do not match with parameter types: [java.lang.String, int]'
+    }
+
+    void testClosureReturnTypeInferrence() {
+        assertScript '''
+            def closure = { int x, int y -> return x+y }
+            int total = closure(2,3)
+        '''
+
+        shouldFailWithMessages '''
+            def closure = { int x, int y -> return x+y }
+            int total = closure('2',3)
+        ''', 'Closure argument types: [int, int] do not match with parameter types: [java.lang.String, int]'
+    }
+
+    void testClosureReturnTypeInferrenceWithoutDef() {
+        assertScript '''
+            int total = { int x, int y -> return x+y }(2,3)
+        '''
+    }
+
+    void testListHashMap() {
+        def map = new ListHashMap()
+        map.put('a', 'a')
+        assert map.size()==1
+        map.put('b', 'b')
+        assert map.size()==2
+        map.put('c','c')
+        assert map.size()==3
+    }
+
+}
 

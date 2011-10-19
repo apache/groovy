@@ -48,5 +48,9 @@ public class StaticTypesTransformation implements ASTTransformation {
         }
     }
 
-    public final static class StaticTypesMarker{}
+    public static enum StaticTypesMarker {
+        INFERRED_TYPE, // used to store type information on class nodes
+        CLOSURE_INFERRED_RETURN_TYPE, // used to store closure argument types on a variable expression
+        CLOSURE_ARGUMENTS // used to store closure argument types on a variable expression
+    }
 }
