@@ -619,7 +619,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 }
             }
         }
-        if (receiver == ClassHelper.GSTRING_TYPE) return findMethodOrFail(expr, ClassHelper.STRING_TYPE, name, args);
+        if (receiver == ClassHelper.GSTRING_TYPE) return findMethod(expr, ClassHelper.STRING_TYPE, name, args);
         return null;
     }
 
