@@ -56,6 +56,49 @@ class STCnAryExpressionTest extends StaticTypeCheckingTestCase {
                 "tbd" // todo : remove when transformation will be fixed
     }
 
+    void testPrimitiveComparison() {
+        assertScript '''
+            1<2
+        '''
+
+        assertScript '''
+            1>2
+        '''
+
+        assertScript '''
+            1<=2
+        '''
+
+        assertScript '''
+            1>=2
+        '''
+
+        assertScript '''
+            1==2
+        '''
+    }
+
+    void testBoxedTypeComparison() {
+        assertScript '''
+            1<new Integer(2)
+        '''
+
+        assertScript '''
+            1>new Integer(2)
+        '''
+
+        assertScript '''
+            1<=new Integer(2)
+        '''
+
+        assertScript '''
+            1>=new Integer(2)
+        '''
+
+        assertScript '''
+            1==new Integer(2)
+        '''
+    }
 
 }
 
