@@ -132,104 +132,121 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         // the type inference engine should return an Object (not a primitive type)
         storeType(expression, resultType);
         if (isAssignment(op)) {
-            ClassNode leftRedirect;
-            if (isArrayAccessExpression(leftExpression) || leftExpression instanceof PropertyExpression
-                    || (leftExpression instanceof VariableExpression
-                    && ((VariableExpression) leftExpression).getAccessedVariable() instanceof DynamicVariable)) {
-                // in case the left expression is in the form of an array access, we should use
-                // the inferred type instead of the left expression type.
-                // In case we have a variable expression which accessed variable is a dynamic variable, we are
-                // in the "with" case where the type must be taken from the inferred type
-                leftRedirect = lType;
-            } else {
-                leftRedirect = leftExpression.getType().redirect();
-            }
-            boolean compatible = checkCompatibleAssignmentTypes(leftRedirect, resultType);
-            if (!compatible) {
-                addStaticTypeError("Cannot assign value of type " + resultType.getName() + " to variable of type " + lType.getName(), expression);
-            } else {
-                boolean possibleLooseOfPrecision = false;
-                if (isNumberType(leftRedirect) && isNumberType(resultType)) {
-                    possibleLooseOfPrecision = checkPossibleLooseOfPrecision(leftRedirect, resultType, rightExpression);
-                    if (possibleLooseOfPrecision) {
-                        addStaticTypeError("Possible loose of precision from " + resultType + " to " + leftRedirect, rightExpression);
-                    }
-                }
-                // if left type is array, we should check the right component types
-                if (!possibleLooseOfPrecision && lType.isArray()) {
-                    ClassNode leftComponentType = lType.getComponentType();
-                    ClassNode rightRedirect = rightExpression.getType().redirect();
-                    if (rightRedirect.isArray()) {
-                        ClassNode rightComponentType = rightRedirect.getComponentType();
-                        if (!checkCompatibleAssignmentTypes(leftComponentType, rightComponentType)) {
-                            addStaticTypeError("Cannot assign value of type " + rightComponentType + " into array of type " + lType, expression);
-                        }
-                    } else if (rightExpression instanceof ListExpression) {
-                        for (Expression element : ((ListExpression) rightExpression).getExpressions()) {
-                            ClassNode rightComponentType = element.getType().redirect();
-                            if (!checkCompatibleAssignmentTypes(leftComponentType, rightComponentType)) {
-                                addStaticTypeError("Cannot assign value of type " + rightComponentType + " into array of type " + lType, expression);
-                            }
-                        }
-                    }
-                }
-
-                // if left type is not a list but right type is a list, then we're in the case of a groovy
-                // constructor type : Dimension d = [100,200]
-                // In that case, more checks can be performed
-                if (!leftRedirect.implementsInterface(ClassHelper.LIST_TYPE) && rightExpression instanceof ListExpression) {
-                    ArgumentListExpression argList = new ArgumentListExpression(((ListExpression) rightExpression).getExpressions());
-                    ClassNode[] args = getArgumentTypes(argList, classNode);
-                    checkGroovyStyleConstructor(leftRedirect, args);
-                } else if (resultType.implementsInterface(Collection_TYPE) && !isAssignableTo(leftRedirect, resultType)) {
-                    addStaticTypeError("Cannot assign value of type " + resultType.getName() + " to variable of type " + lType.getName(), expression);
-                }
-
-                // if left type is not a list but right type is a map, then we're in the case of a groovy
-                // constructor type : A a = [x:2, y:3]
-                // In this case, more checks can be performed
-                if (!leftRedirect.implementsInterface(ClassHelper.MAP_TYPE) && rightExpression instanceof MapExpression) {
-                    ArgumentListExpression argList = new ArgumentListExpression(rightExpression);
-                    ClassNode[] args = getArgumentTypes(argList, classNode);
-                    checkGroovyStyleConstructor(leftRedirect, args);
-                    // perform additional type checking on arguments
-                    MapExpression mapExpression = (MapExpression) rightExpression;
-                    for (MapEntryExpression entryExpression : mapExpression.getMapEntryExpressions()) {
-                        Expression keyExpr = entryExpression.getKeyExpression();
-                        if (!(keyExpr instanceof ConstantExpression) ) {
-                            addStaticTypeError("Dynamic keys in map-style constructors are unsupported in static type checking", keyExpr);
-                        } else {
-                            String property = keyExpr.getText();
-                            ClassNode currentNode = leftRedirect;
-                            PropertyNode propertyNode = null;
-                            while (propertyNode==null && currentNode!=null) {
-                                propertyNode = currentNode.getProperty(property);
-                                currentNode = currentNode.getSuperClass();
-                            }
-                            if (propertyNode==null) {
-                                addStaticTypeError("No such property: " + property +
-                                    " for class: " + leftRedirect.getName(), leftExpression);
-                            } else {
-                                ClassNode valueType = getType(entryExpression.getValueExpression(), classNode);
-                                if (!isAssignableTo(valueType, propertyNode.getType())) {
-                                    addStaticTypeError("Cannot assign value of type " + valueType.getName() + " to field of type " + propertyNode.getType().getName(), entryExpression);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
+            typeCheckAssignment(expression, leftExpression, lType, rightExpression, resultType);
             storeType(leftExpression, resultType);
         } else if (op == KEYWORD_INSTANCEOF) {
-            final Map<Object, List<ClassNode>> tempo = temporaryIfBranchTypeInformation.peek();
-            Object key = extractTemporaryTypeInfoKey(leftExpression);
-            List<ClassNode> potentialTypes = tempo.get(key);
-            if (potentialTypes == null) {
-                potentialTypes = new LinkedList<ClassNode>();
-                tempo.put(key, potentialTypes);
+            pushInstanceOfTypeInfo(leftExpression, rightExpression);
+        }
+    }
+
+    /**
+     * Stores information about types when [objectOfInstanceof instanceof typeExpression] is visited
+     * @param objectOfInstanceOf the expression which must be checked against instanceof
+     * @param typeExpression the expression which represents the target type
+     */
+    private void pushInstanceOfTypeInfo(final Expression objectOfInstanceOf, final Expression typeExpression) {
+        final Map<Object, List<ClassNode>> tempo = temporaryIfBranchTypeInformation.peek();
+        Object key = extractTemporaryTypeInfoKey(objectOfInstanceOf);
+        List<ClassNode> potentialTypes = tempo.get(key);
+        if (potentialTypes == null) {
+            potentialTypes = new LinkedList<ClassNode>();
+            tempo.put(key, potentialTypes);
+        }
+        potentialTypes.add(typeExpression.getType());
+    }
+
+    private void typeCheckAssignment(
+            final BinaryExpression assignmentExpression,
+            final Expression leftExpression,
+            final ClassNode leftExpressionType,
+            final Expression rightExpression,
+            final ClassNode inferredRightExpressionType) {
+        ClassNode leftRedirect;
+        if (isArrayAccessExpression(leftExpression) || leftExpression instanceof PropertyExpression
+                || (leftExpression instanceof VariableExpression
+                && ((VariableExpression) leftExpression).getAccessedVariable() instanceof DynamicVariable)) {
+            // in case the left expression is in the form of an array access, we should use
+            // the inferred type instead of the left expression type.
+            // In case we have a variable expression which accessed variable is a dynamic variable, we are
+            // in the "with" case where the type must be taken from the inferred type
+            leftRedirect = leftExpressionType;
+        } else {
+            leftRedirect = leftExpression.getType().redirect();
+        }
+        boolean compatible = checkCompatibleAssignmentTypes(leftRedirect, inferredRightExpressionType);
+        if (!compatible) {
+            addStaticTypeError("Cannot assign value of type " + inferredRightExpressionType.getName() + " to variable of type " + leftExpressionType.getName(), assignmentExpression);
+        } else {
+            boolean possibleLooseOfPrecision = false;
+            if (isNumberType(leftRedirect) && isNumberType(inferredRightExpressionType)) {
+                possibleLooseOfPrecision = checkPossibleLooseOfPrecision(leftRedirect, inferredRightExpressionType, rightExpression);
+                if (possibleLooseOfPrecision) {
+                    addStaticTypeError("Possible loose of precision from " + inferredRightExpressionType + " to " + leftRedirect, rightExpression);
+                }
             }
-            potentialTypes.add(rightExpression.getType());
+            // if left type is array, we should check the right component types
+            if (!possibleLooseOfPrecision && leftExpressionType.isArray()) {
+                ClassNode leftComponentType = leftExpressionType.getComponentType();
+                ClassNode rightRedirect = rightExpression.getType().redirect();
+                if (rightRedirect.isArray()) {
+                    ClassNode rightComponentType = rightRedirect.getComponentType();
+                    if (!checkCompatibleAssignmentTypes(leftComponentType, rightComponentType)) {
+                        addStaticTypeError("Cannot assign value of type " + rightComponentType + " into array of type " + leftExpressionType, assignmentExpression);
+                    }
+                } else if (rightExpression instanceof ListExpression) {
+                    for (Expression element : ((ListExpression) rightExpression).getExpressions()) {
+                        ClassNode rightComponentType = element.getType().redirect();
+                        if (!checkCompatibleAssignmentTypes(leftComponentType, rightComponentType)) {
+                            addStaticTypeError("Cannot assign value of type " + rightComponentType + " into array of type " + leftExpressionType, assignmentExpression);
+                        }
+                    }
+                }
+            }
+
+            // if left type is not a list but right type is a list, then we're in the case of a groovy
+            // constructor type : Dimension d = [100,200]
+            // In that case, more checks can be performed
+            if (!leftRedirect.implementsInterface(ClassHelper.LIST_TYPE) && rightExpression instanceof ListExpression) {
+                ArgumentListExpression argList = new ArgumentListExpression(((ListExpression) rightExpression).getExpressions());
+                ClassNode[] args = getArgumentTypes(argList, classNode);
+                checkGroovyStyleConstructor(leftRedirect, args);
+            } else if (inferredRightExpressionType.implementsInterface(Collection_TYPE) && !isAssignableTo(leftRedirect, inferredRightExpressionType)) {
+                addStaticTypeError("Cannot assign value of type " + inferredRightExpressionType.getName() + " to variable of type " + leftExpressionType.getName(), assignmentExpression);
+            }
+
+            // if left type is not a list but right type is a map, then we're in the case of a groovy
+            // constructor type : A a = [x:2, y:3]
+            // In this case, more checks can be performed
+            if (!leftRedirect.implementsInterface(ClassHelper.MAP_TYPE) && rightExpression instanceof MapExpression) {
+                ArgumentListExpression argList = new ArgumentListExpression(rightExpression);
+                ClassNode[] args = getArgumentTypes(argList, classNode);
+                checkGroovyStyleConstructor(leftRedirect, args);
+                // perform additional type checking on arguments
+                MapExpression mapExpression = (MapExpression) rightExpression;
+                for (MapEntryExpression entryExpression : mapExpression.getMapEntryExpressions()) {
+                    Expression keyExpr = entryExpression.getKeyExpression();
+                    if (!(keyExpr instanceof ConstantExpression) ) {
+                        addStaticTypeError("Dynamic keys in map-style constructors are unsupported in static type checking", keyExpr);
+                    } else {
+                        String property = keyExpr.getText();
+                        ClassNode currentNode = leftRedirect;
+                        PropertyNode propertyNode = null;
+                        while (propertyNode==null && currentNode!=null) {
+                            propertyNode = currentNode.getProperty(property);
+                            currentNode = currentNode.getSuperClass();
+                        }
+                        if (propertyNode==null) {
+                            addStaticTypeError("No such property: " + property +
+                                " for class: " + leftRedirect.getName(), leftExpression);
+                        } else {
+                            ClassNode valueType = getType(entryExpression.getValueExpression(), classNode);
+                            if (!isAssignableTo(valueType, propertyNode.getType())) {
+                                addStaticTypeError("Cannot assign value of type " + valueType.getName() + " to field of type " + propertyNode.getType().getName(), entryExpression);
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 
