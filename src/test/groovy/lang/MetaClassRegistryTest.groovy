@@ -90,6 +90,24 @@ class MetaClassRegistryTest extends GroovyTestCase {
         assert "bar".foo() == "foo"
         assert events.size() == 1
         assert events[0].classToUpdate == String
+        assert events[0].oldMetaClass != events[0].newMetaClass
+        assert events[0].instance == null
+
+        MetaClass reference = events[0].newMetaClass
+        String.metaClass = null
+
+        assert events.size() == 2
+        assert events[1].classToUpdate == String
+        assert events[1].oldMetaClass == reference
+        assert events[1].instance == null
+
+        // now test per instance MC change
+        def str = 'foo'
+        str.metaClass.foo = { 'bar' }
+        assert str.foo() == 'bar'
+        assert events.size() == 3
+        assert events[2].classToUpdate == String
+        assert events[2].instance == str
 
         GroovySystem.metaClassRegistry.removeMetaClassRegistryChangeEventListener listener
         String.metaClass = null
