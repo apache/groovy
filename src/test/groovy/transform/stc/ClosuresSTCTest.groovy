@@ -15,8 +15,6 @@
  */
 package groovy.transform.stc
 
-import org.codehaus.groovy.util.ListHashMap
-
 /**
  * Unit tests for static type checking : closures.
  *

@@ -30,5 +30,5 @@ import org.codehaus.groovy.transform.GroovyASTTransformationClass;
             ElementType.LOCAL_VARIABLE, ElementType.PACKAGE
 })
 @GroovyASTTransformationClass("org.codehaus.groovy.transform.StaticTypesTransformation")
-public @interface StaticTypes {
+public @interface TypeChecked {
 }

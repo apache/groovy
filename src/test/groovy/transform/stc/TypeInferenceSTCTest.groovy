@@ -42,11 +42,11 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         shell.evaluate '''
             // calling a method which has got some dynamic stuff in it
 
-            import groovy.transform.StaticTypes
+            import groovy.transform.TypeChecked
             import groovy.xml.MarkupBuilder
 
             class Greeter {
-                @StaticTypes
+                @TypeChecked
                 String greeting(String name) {
                     generateMarkup(name.toUpperCase())
                 }
