@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 the original author or authors.
+ * Copyright 2008-2011 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,9 +49,9 @@ import java.lang.annotation.Target;
  * <li>The class is automatically made final.
  * <li>Properties must be of an immutable type or a type with a strategy for handling non-immutable
  * characteristics. Specifically, the type must be one of the primitive or wrapper types, Strings, enums,
- * other {@code @Immutable} classes or known immutables (e.g. java.awt.Color, java.net.URI). Also handled are
- * Cloneable classes, collections, maps and arrays, and other "effectively immutable" classes with
- * special handling (e.g. java.util.Date).
+ * other {@code @Immutable} classes or known immutables (e.g. java.awt.Color, java.net.URI, java.util.UUID).
+ * Also handled are Cloneable classes, collections, maps and arrays, and other "effectively immutable"
+ * classes with special handling (e.g. java.util.Date).
  * <li>Properties automatically have private, final backing fields with getters.
  * Attempts to update the property will result in a {@code ReadOnlyPropertyException}.
  * <li>A map-based constructor is provided which allows you to set properties by name.
