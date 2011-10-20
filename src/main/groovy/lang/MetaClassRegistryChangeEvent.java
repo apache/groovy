@@ -23,13 +23,17 @@ import java.util.EventObject;
  * @author <a href="mailto:blackdrag@gmx.org">Jochen Theodorou</a>
  */
 public class MetaClassRegistryChangeEvent extends EventObject {
-    private Class clazz;
-    private MetaClass metaClass;
+    private final Class clazz;
+    private final Object instance;
+    private final MetaClass metaClass;
+    private final MetaClass oldMetaClass;
 
-    public MetaClassRegistryChangeEvent(Object source, Class clazz, MetaClass metaClass) {
+    public MetaClassRegistryChangeEvent(Object source, Object instance, Class clazz, MetaClass oldMetaClass, MetaClass newMetaClass) {
         super(source);
         this.clazz = clazz;
-        this.metaClass = metaClass;
+        this.metaClass = newMetaClass;
+        this.oldMetaClass = oldMetaClass;
+        this.instance = instance;
     }
 
     public Class getClassToUpdate() {
@@ -40,4 +44,19 @@ public class MetaClassRegistryChangeEvent extends EventObject {
         return metaClass;
     }
 
+    public MetaClass getOldMetaClass() {
+        return oldMetaClass;
+    }
+
+    public boolean isPerInstanceMetaClassChange() {
+        return instance!=null;
+    }
+
+    public Object getInstance() {
+        return instance;
+    }
+
+    public MetaClassRegistry getRegistry() {
+        return (MetaClassRegistry) source;
+    }
 }
