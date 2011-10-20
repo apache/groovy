@@ -73,7 +73,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         public void returnStatementAdded(final ReturnStatement returnStatement) {
             checkReturnType(returnStatement);
             if (closureExpression!=null) {
-                addClosureReturnType(getType(returnStatement.getExpression(), classNode));
+                addClosureReturnType(getType(returnStatement.getExpression()));
             }
         }
     });
@@ -132,9 +132,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 return;
             }
         }
-        ClassNode lType = getType(leftExpression, classNode);
+        ClassNode lType = getType(leftExpression);
         final Expression rightExpression = expression.getRightExpression();
-        ClassNode rType = getType(rightExpression, classNode);
+        ClassNode rType = getType(rightExpression);
         int op = expression.getOperation().getType();
         ClassNode resultType = getResultType(lType, op, rType, expression);
         if (resultType == null) {
@@ -267,7 +267,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                             addStaticTypeError("No such property: " + property +
                                 " for class: " + leftRedirect.getName(), leftExpression);
                         } else {
-                            ClassNode valueType = getType(entryExpression.getValueExpression(), classNode);
+                            ClassNode valueType = getType(entryExpression.getValueExpression());
                             if (!isAssignableTo(valueType, propertyNode.getType())) {
                                 addStaticTypeError("Cannot assign value of type " + valueType.getName() + " to field of type " + propertyNode.getType().getName(), entryExpression);
                             }
@@ -385,7 +385,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     @Override
     public void visitForLoop(final ForStatement forLoop) {
         super.visitForLoop(forLoop);
-        final ClassNode collectionType = getType(forLoop.getCollectionExpression(), classNode);
+        final ClassNode collectionType = getType(forLoop.getCollectionExpression());
         ClassNode componentType = collectionType.getComponentType();
         if (componentType == null) {
             if (componentType == ClassHelper.STRING_TYPE) {
@@ -402,7 +402,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     @Override
     public void visitBitwiseNegationExpression(BitwiseNegationExpression expression) {
         super.visitBitwiseNegationExpression(expression);
-        ClassNode type = getType(expression, classNode);
+        ClassNode type = getType(expression);
         ClassNode typeRe = type.redirect();
         ClassNode resultType;
         if (isBigIntCategory(typeRe)) {
@@ -432,7 +432,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     private void negativeOrPositiveUnary(Expression expression, String name) {
-        ClassNode type = getType(expression, classNode);
+        ClassNode type = getType(expression);
         ClassNode typeRe = type.redirect();
         ClassNode resultType;
         if (isBigDecCategory(typeRe)) {
@@ -459,12 +459,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         super.visitReturnStatement(statement);
         checkReturnType(statement);
         if (closureExpression!=null) {
-            addClosureReturnType(getType(statement.getExpression(), classNode));
+            addClosureReturnType(getType(statement.getExpression()));
         }
     }
 
     private void checkReturnType(final ReturnStatement statement) {
-        ClassNode type = getType(statement.getExpression(), classNode);
+        ClassNode type = getType(statement.getExpression());
         if (methodNode != null) {
             if (!checkCompatibleAssignmentTypes(methodNode.getReturnType(), type)) {
                 addStaticTypeError("Cannot return value of type " + type + " on method returning type " + methodNode.getReturnType(), statement.getExpression());
@@ -490,7 +490,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         ClassNode[] ret = new ClassNode[arglist.size()];
         int i = 0;
         for (Expression exp : arglist) {
-            ret[i] = getType(exp, current);
+            ret[i] = getType(exp);
             i++;
         }
         return ret;
@@ -538,7 +538,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
         ClassNode[] args = getArgumentTypes(InvocationWriter.makeArgumentList(callArguments), classNode);
         final boolean isCallOnClosure = isClosureCall(name, objectExpression);
-        final ClassNode receiver = getType(objectExpression, classNode);
+        final ClassNode receiver = getType(objectExpression);
 
         if (isWithCall) {
             withReceiverList.add(0, receiver); // must be added first in the list
@@ -628,7 +628,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     private boolean isClosureCall(final String name, final Expression objectExpression) {
         if (!"call".equals(name)) return false;
         if (objectExpression instanceof ClosureExpression) return true;
-        return (getType(objectExpression, classNode).equals(CLOSURE_TYPE));
+        return (getType(objectExpression).equals(CLOSURE_TYPE));
     }
 
     private void typeCheckClosureCall(final Expression callArguments, final ClassNode[] args, final Parameter[] parameters) {
@@ -671,7 +671,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         super.visitCastExpression(expression);
         if (!expression.isCoerce()) {
             ClassNode targetType = expression.getType();
-            ClassNode expressionType = getType(expression.getExpression(), classNode);
+            ClassNode expressionType = getType(expression.getExpression());
             if (!isAssignableTo(expressionType, targetType)) {
                 addStaticTypeError("Inconvertible types: cannot cast "+expressionType.getName()+" to "+targetType.getName(), expression);
             }
@@ -688,8 +688,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         temporaryIfBranchTypeInformation.pop();
         expression.getFalseExpression().visit(this);
         // store type information
-        final ClassNode typeOfTrue = getType(expression.getTrueExpression(), classNode);
-        final ClassNode typeOfFalse = getType(expression.getFalseExpression(), classNode);
+        final ClassNode typeOfTrue = getType(expression.getTrueExpression());
+        final ClassNode typeOfFalse = getType(expression.getFalseExpression());
         storeType(expression, firstCommonSuperType(typeOfTrue, typeOfFalse));
     }
 
@@ -718,7 +718,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         } else if (isBoolIntrinsicOp(op)) {
             return boolean_TYPE;
         } else if (isArrayOp(op)) {
-            ClassNode arrayType = getType(expr.getLeftExpression(), classNode);
+            ClassNode arrayType = getType(expr.getLeftExpression());
             if (ClassHelper.STRING_TYPE.equals(arrayType)) {
                 // special case here
                 return ClassHelper.STRING_TYPE;
@@ -827,16 +827,16 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         return null;
     }
 
-    private ClassNode getType(Expression exp, ClassNode current) {
+    private ClassNode getType(Expression exp) {
         ClassNode cn = (ClassNode) exp.getNodeMetaData(StaticTypesTransformation.StaticTypesMarker.INFERRED_TYPE);
         if (cn != null) return cn;
         if (exp instanceof VariableExpression) {
             VariableExpression vexp = (VariableExpression) exp;
-            if (vexp == VariableExpression.THIS_EXPRESSION) return current;
-            if (vexp == VariableExpression.SUPER_EXPRESSION) return current.getSuperClass();
+            if (vexp == VariableExpression.THIS_EXPRESSION) return classNode;
+            if (vexp == VariableExpression.SUPER_EXPRESSION) return classNode.getSuperClass();
             final Variable variable = vexp.getAccessedVariable();
             if (variable != null && variable != vexp && variable instanceof VariableExpression) {
-                return getType((Expression) variable, current);
+                return getType((Expression) variable);
             }
         } else if (exp instanceof PropertyExpression) {
             PropertyExpression pexp = (PropertyExpression) exp;
