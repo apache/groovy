@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 the original author or authors.
+ * Copyright 2008-2011 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -282,6 +282,24 @@ class ImmutableTransformTest extends GroovyShellTestCase {
             assert baz1.hashCode() == -1
             assert baz2.hashCode() == -100
         """
+    }
+
+    void testBuiltinImmutables() {
+        assertScript '''
+            import java.awt.Color
+            import groovy.transform.Immutable
+
+            @Immutable class Person {
+                UUID id
+                String name
+                Date dob
+                Color favColor
+            }
+
+            def p = new Person(id: UUID.randomUUID(), name: 'Fred', dob: new Date(), favColor: Color.GREEN)
+            def propClasses = [p.id, p.name, p.dob, p.favColor]*.class.name
+            assert propClasses == ['java.util.UUID', 'java.lang.String', 'java.util.Date', 'java.awt.Color']
+        '''
     }
 
     void testPrivateFieldAssignedViaConstructor() {

@@ -76,7 +76,8 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
             "java.math.BigInteger",
             "java.math.BigDecimal",
             "java.awt.Color",
-            "java.net.URI"
+            "java.net.URI",
+            "java.util.UUID"
     );
     private static final Class MY_CLASS = groovy.transform.Immutable.class;
     static final ClassNode MY_TYPE = ClassHelper.make(MY_CLASS);
