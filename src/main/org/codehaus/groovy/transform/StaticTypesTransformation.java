@@ -21,7 +21,7 @@ import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor;
 
 /**
- * Handles the implementation of the {@link groovy.transform.StaticTypes} transformation.
+ * Handles the implementation of the {@link groovy.transform.TypeChecked} transformation.
  *
  * @author <a href="mailto:blackdrag@gmx.org">Jochen "blackdrag" Theodorou</a>
  * @author Cedric Champeau

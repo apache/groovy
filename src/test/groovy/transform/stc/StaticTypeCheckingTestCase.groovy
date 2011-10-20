@@ -17,7 +17,7 @@ package groovy.transform.stc
 
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
-import groovy.transform.StaticTypes
+import groovy.transform.TypeChecked
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage
 
@@ -34,7 +34,7 @@ abstract class StaticTypeCheckingTestCase extends GroovyTestCase {
     protected void setUp() {
         super.setUp()
         config = new CompilerConfiguration()
-        config.addCompilationCustomizers(new ASTTransformationCustomizer(StaticTypes))
+        config.addCompilationCustomizers(new ASTTransformationCustomizer(TypeChecked))
         shell = new GroovyShell(config)
     }
 
