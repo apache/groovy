@@ -37,15 +37,26 @@ public class StaticTypesTransformation implements ASTTransformation {
 //        AnnotationNode annotationInformation = (AnnotationNode) nodes[0];
         AnnotatedNode node = (AnnotatedNode) nodes[1];
         if (node instanceof ClassNode) {
-            StaticTypeCheckingVisitor visitor = new StaticTypeCheckingVisitor(source, (ClassNode) node);
+            StaticTypeCheckingVisitor visitor = newVisitor(source, (ClassNode) node);
             visitor.visitClass((ClassNode) node);
         } else if (node instanceof MethodNode) {
             MethodNode methodNode = (MethodNode)node;
-            StaticTypeCheckingVisitor visitor = new StaticTypeCheckingVisitor(source, methodNode.getDeclaringClass());
+            StaticTypeCheckingVisitor visitor = newVisitor(source, methodNode.getDeclaringClass());
             visitor.visitMethod(methodNode);
         } else {
             source.addError(new SyntaxException(STATIC_ERROR_PREFIX + "Unimplemented node type", node.getLineNumber(), node.getColumnNumber()));
         }
+    }
+
+    /**
+     * Allows subclasses to provide their own visitor. This is useful for example for transformations relying
+     * on the static type checker.
+     * @param unit the source unit
+     * @param node the current classnode
+     * @return a static type checking visitor
+     */
+    protected StaticTypeCheckingVisitor newVisitor(SourceUnit unit, ClassNode node) {
+        return new StaticTypeCheckingVisitor(unit, node);
     }
 
     public static enum StaticTypesMarker {
