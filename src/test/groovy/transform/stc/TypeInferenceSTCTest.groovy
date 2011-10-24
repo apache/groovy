@@ -157,7 +157,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         shouldFailWithMessages '''
             String name = 'Guillaume'
             println naamme
-        ''', 'Variable [naamme] is undefined'
+        ''', 'The variable [naamme] is undeclared'
     }
 
     void testInstanceOfInferenceWithImplicitIt() {
