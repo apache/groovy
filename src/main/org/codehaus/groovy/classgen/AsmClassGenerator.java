@@ -120,8 +120,15 @@ public class AsmClassGenerator extends ClassGenerator {
     //-------------------------------------------------------------------------
     public void visitClass(ClassNode classNode) {
         referencedClasses.clear();
-        this.controller = new WriterController();
+        WriterControllerFactory factory = (WriterControllerFactory) classNode.getNodeMetaData(WriterControllerFactory.class);
+        WriterController normalController = new WriterController();
+        if (factory!=null) {
+            this.controller = factory.makeController(normalController);
+        } else {
+            this.controller = normalController;
+        }
         this.controller.init(this, context, cv, classNode);
+        
         if (controller.shouldOptimizeForInt()) {
             OptimizingStatementWriter.setNodeMeta(classNode);
         }
