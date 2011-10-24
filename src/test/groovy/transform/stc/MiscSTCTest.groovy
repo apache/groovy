@@ -15,8 +15,6 @@
  */
 package groovy.transform.stc
 
-import org.codehaus.groovy.util.ListHashMap
-
 /**
  * Unit tests for static type checking : miscellaneous tests.
  *
@@ -51,6 +49,15 @@ class MiscSTCTest extends StaticTypeCheckingTestCase {
 
             def g = new Greet('world')  // create object
             g.salute()               // output "Hello World!"
+        '''
+    }
+
+    void testClosureReturnTypeShouldNotBeTestedAgainstMethodReturnType() {
+        assertScript '''
+        void method() {
+            def cl = { String it -> it.toUpperCase() }
+            assert cl('test')=='TEST'
+        }
         '''
     }
 }
