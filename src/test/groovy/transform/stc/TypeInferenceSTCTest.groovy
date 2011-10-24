@@ -15,6 +15,14 @@
  */
 package groovy.transform.stc
 
+import org.codehaus.groovy.ast.MethodNode
+import org.codehaus.groovy.control.customizers.CompilationCustomizer
+import org.codehaus.groovy.control.CompilePhase
+import org.codehaus.groovy.control.SourceUnit
+import org.codehaus.groovy.classgen.GeneratorContext
+import org.codehaus.groovy.ast.ClassNode
+import org.codehaus.groovy.ast.ClassHelper
+
 /**
  * Unit tests for static type checking : type inference.
  *
@@ -354,6 +362,54 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
             }
         ''', 'Cannot find matching method int#toUpperCase()'
    }
+
+    void testDeclarationTypeInference() {
+        MethodNode method
+        config.addCompilationCustomizers(new CompilationCustomizer(CompilePhase.CLASS_GENERATION) {
+            @Override
+            void call(SourceUnit source, GeneratorContext context, ClassNode classNode) {
+                method = classNode.methods.find { it.name == 'method' }
+            }
+
+        })
+        assertScript '''
+            void method() {
+                def o
+                o = 1
+                o = 'String'
+            }
+        '''
+        assert method.code.statements[0].expression.leftExpression.getNodeMetaData(org.codehaus.groovy.transform.StaticTypesTransformation.StaticTypesMarker.DECLARATION_INFERRED_TYPE) == ClassHelper.OBJECT_TYPE
+
+        assertScript '''
+            void method() {
+                def o
+                o = 1
+                o = 2
+            }
+        '''
+        assert method.code.statements[0].expression.leftExpression.getNodeMetaData(org.codehaus.groovy.transform.StaticTypesTransformation.StaticTypesMarker.DECLARATION_INFERRED_TYPE) == ClassHelper.int_TYPE
+
+        assertScript '''
+            void method() {
+                def o
+                o = 1L
+                o = 2
+            }
+        '''
+        assert method.code.statements[0].expression.leftExpression.getNodeMetaData(org.codehaus.groovy.transform.StaticTypesTransformation.StaticTypesMarker.DECLARATION_INFERRED_TYPE) == ClassHelper.Number_TYPE
+
+        assertScript '''
+            void method() {
+                def o
+                o = new HashSet()
+                o = new LinkedHashSet()
+            }
+        '''
+        assert method.code.statements[0].expression.leftExpression.getNodeMetaData(org.codehaus.groovy.transform.StaticTypesTransformation.StaticTypesMarker.DECLARATION_INFERRED_TYPE) == ClassHelper.make(HashSet)
+
+
+    }
 
 }
 

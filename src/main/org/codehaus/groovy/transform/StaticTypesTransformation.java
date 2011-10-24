@@ -61,6 +61,7 @@ public class StaticTypesTransformation implements ASTTransformation {
 
     public static enum StaticTypesMarker {
         INFERRED_TYPE, // used to store type information on class nodes
+        DECLARATION_INFERRED_TYPE, // in flow analysis, represents the type of the declaration node lhs
         CLOSURE_INFERRED_RETURN_TYPE, // used to store closure argument types on a variable expression
         CLOSURE_ARGUMENTS // used to store closure argument types on a variable expression
     }
