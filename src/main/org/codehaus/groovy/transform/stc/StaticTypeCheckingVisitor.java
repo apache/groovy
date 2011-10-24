@@ -72,9 +72,15 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     private final ReturnAdder closureReturnAdder = new ReturnAdder(new ReturnAdder.ReturnStatementListener() {
         public void returnStatementAdded(final ReturnStatement returnStatement) {
-            checkReturnType(returnStatement);
-            if (closureExpression!=null) {
-                addClosureReturnType(getType(returnStatement.getExpression()));
+            MethodNode currentNode = methodNode;
+            methodNode = null;
+            try {
+                checkReturnType(returnStatement);
+                if (closureExpression!=null) {
+                    addClosureReturnType(getType(returnStatement.getExpression()));
+                }
+            } finally {
+                methodNode = currentNode;
             }
         }
     });
