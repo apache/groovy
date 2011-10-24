@@ -394,9 +394,9 @@ public class OptimizingStatementWriter extends StatementWriter {
         return true;
     }
     
-    public static void setNodeMeta(ClassNode classNode) {
+    public static void setNodeMeta(TypeChooser chooser, ClassNode classNode) {
         if (classNode.getNodeMetaData(ClassNodeSkip.class)!=null) return;
-        new OptVisitor().visitClass(classNode);   
+        new OptVisitor(chooser).visitClass(classNode);
     }
     
     private static StatementMeta addMeta(ASTNode node) {
@@ -487,6 +487,12 @@ public class OptimizingStatementWriter extends StatementWriter {
     }
     
     private static class OptVisitor extends ClassCodeVisitorSupport {
+        private final TypeChooser typeChooser;
+
+        public OptVisitor(final TypeChooser chooser) {
+            this.typeChooser = chooser;
+        }
+
         @Override protected SourceUnit getSourceUnit() {return null;}
 
         private ClassNode node;
@@ -551,7 +557,7 @@ public class OptimizingStatementWriter extends StatementWriter {
         }
         
         private void addTypeInformation(Expression expression, Expression orig) {
-            ClassNode type = getType(expression,node);
+            ClassNode type = typeChooser.resolveType(expression, node);
             if (isPrimitiveType(type)) {
                 StatementMeta meta = addMeta(orig);
                 meta.type = type;
@@ -577,8 +583,8 @@ public class OptimizingStatementWriter extends StatementWriter {
             Expression right = expression.getRightExpression();
             right.visit(this);
             
-            ClassNode leftType = getType(expression.getLeftExpression(),node);
-            ClassNode rightType = getType(expression.getRightExpression(),node);
+            ClassNode leftType = typeChooser.resolveType(expression.getLeftExpression(), node);
+            ClassNode rightType = typeChooser.resolveType(expression.getRightExpression(), node);
             if (isPrimitiveType(leftType) && isPrimitiveType(rightType)) {
                 // if right is a constant, then we optimize only if it makes
                 // a block complete, so we set a maybe
@@ -588,7 +594,8 @@ public class OptimizingStatementWriter extends StatementWriter {
                     opt.chainShouldOptimize(true);
                 }
                 StatementMeta meta = addMeta(expression);
-                meta.type = leftType;
+                ClassNode declarationType = typeChooser.resolveType(expression, node);
+                meta.type = declarationType!=null?declarationType:leftType;
                 opt.chainInvolvedType(leftType);
                 opt.chainInvolvedType(rightType);
             }
@@ -599,8 +606,8 @@ public class OptimizingStatementWriter extends StatementWriter {
             if (expression.getNodeMetaData(StatementMeta.class)!=null) return;
             super.visitBinaryExpression(expression);
             
-            ClassNode leftType = getType(expression.getLeftExpression(),node);
-            ClassNode rightType = getType(expression.getRightExpression(),node);
+            ClassNode leftType = typeChooser.resolveType(expression.getLeftExpression(), node);
+            ClassNode rightType = typeChooser.resolveType(expression.getRightExpression(), node);
             ClassNode resultType = null;
             int operation = expression.getOperation().getType();
             
@@ -739,13 +746,13 @@ public class OptimizingStatementWriter extends StatementWriter {
                 paraTypes = new Parameter[size];
                 int i=0;
                 for (Expression exp: args.getExpressions()) {
-                    ClassNode type = BinaryExpressionMultiTypeDispatcher.getType(exp,node);
+                    ClassNode type = typeChooser.resolveType(exp, node);
                     if (!validTypeForCall(type)) return;
                     paraTypes[i] = new Parameter(type,"");
                     i++;
                 }
             } else {
-                ClassNode type = BinaryExpressionMultiTypeDispatcher.getType(callArgs,node);
+                ClassNode type = typeChooser.resolveType(callArgs, node);
                 if (!validTypeForCall(type)) return;
                 paraTypes = new Parameter[]{new Parameter(type,"")};
             }

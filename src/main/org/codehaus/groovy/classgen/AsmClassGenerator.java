@@ -130,7 +130,7 @@ public class AsmClassGenerator extends ClassGenerator {
         this.controller.init(this, context, cv, classNode);
         
         if (controller.shouldOptimizeForInt()) {
-            OptimizingStatementWriter.setNodeMeta(classNode);
+            OptimizingStatementWriter.setNodeMeta(controller.getTypeChooser(),classNode);
         }
         
         try {

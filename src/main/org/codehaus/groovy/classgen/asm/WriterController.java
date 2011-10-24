@@ -32,6 +32,7 @@ import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.MethodVisitor;
 
 public class WriterController {
+
     private AsmClassGenerator acg;
     private MethodVisitor methodVisitor;
     private CompileStack compileStack;
@@ -54,7 +55,8 @@ public class WriterController {
     public boolean optimizeForInt = true;
     private StatementWriter statementWriter;
     private boolean fastPath = false;
-    
+    private TypeChooser typeChooser;
+
     public void init(AsmClassGenerator asmClassGenerator, GeneratorContext gcon, ClassVisitor cv, ClassNode cn) {
         Map<String,Boolean> optOptions = cn.getCompileUnit().getConfig().getOptimizationOptions();
         boolean invokedynamic=false;
@@ -100,6 +102,7 @@ public class WriterController {
         } else {
             this.statementWriter = new StatementWriter(this);
         }
+        this.typeChooser = new StatementMetaTypeChooser();
     }
 
     public AsmClassGenerator getAcg() {
@@ -160,6 +163,10 @@ public class WriterController {
 
     public AssertionWriter getAssertionWriter() {
         return assertionWriter;
+    }
+
+    public TypeChooser getTypeChooser() {
+        return typeChooser;
     }
 
     public String getInternalBaseClassName() {
