@@ -50,7 +50,7 @@ abstract class StaticTypeCheckingTestCase extends GroovyTestCase {
         shell.evaluate(script, getTestClassName())
     }
 
-    protected void assertClass(String classCode) {
+    protected Class assertClass(String classCode) {
         GroovyClassLoader loader = new GroovyClassLoader(this.class.classLoader, config)
         loader.parseClass(classCode)
     }

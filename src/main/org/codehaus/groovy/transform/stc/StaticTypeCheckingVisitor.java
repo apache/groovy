@@ -143,8 +143,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
         // todo : if assignment of a primitive to an object (def, Object, whatever),
         // the type inference engine should return an Object (not a primitive type)
-        storeType(expression, resultType);
-        if (isAssignment(op)) {
+        boolean isEmptyDeclaration = expression instanceof DeclarationExpression && rightExpression instanceof EmptyExpression;
+        if (!isEmptyDeclaration) storeType(expression, resultType);
+        if (!isEmptyDeclaration && isAssignment(op)) {
             typeCheckAssignment(expression, leftExpression, lType, rightExpression, resultType);
             storeType(leftExpression, resultType);
 
@@ -700,7 +701,22 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
 
     private void storeType(Expression exp, ClassNode cn) {
-        exp.putNodeMetaData(StaticTypesTransformation.StaticTypesMarker.INFERRED_TYPE, cn);
+        ClassNode oldValue = (ClassNode) exp.putNodeMetaData(StaticTypesTransformation.StaticTypesMarker.INFERRED_TYPE, cn);
+        if (oldValue!=null) {
+            // this may happen when a variable declaration type is wider than the subsequent assignment values
+            // for example :
+            // def o = 1 // first, an int
+            // o = 'String' // then a string
+            // o = new Object() // and eventually an object !
+            // in that case, the INFERRED_TYPE corresponds to the current inferred type, while
+            // DECLARATION_INFERRED_TYPE is the type which should be used for the initial type declaration
+            ClassNode oldDIT = (ClassNode) exp.getNodeMetaData(StaticTypesTransformation.StaticTypesMarker.DECLARATION_INFERRED_TYPE);
+            if (oldDIT!=null) {
+                exp.putNodeMetaData(StaticTypesTransformation.StaticTypesMarker.DECLARATION_INFERRED_TYPE, firstCommonSuperType(oldDIT, cn));
+            } else {
+                exp.putNodeMetaData(StaticTypesTransformation.StaticTypesMarker.DECLARATION_INFERRED_TYPE, firstCommonSuperType(oldValue, cn));
+            }
+        }
         if (exp instanceof VariableExpression) {
             final Variable accessedVariable = ((VariableExpression) exp).getAccessedVariable();
             if (accessedVariable != null && accessedVariable != exp && accessedVariable instanceof VariableExpression) {
