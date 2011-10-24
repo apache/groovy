@@ -140,11 +140,12 @@ public class ASTNode {
      *
      * @param key - the meta data key
      * @param value - the meta data value
+     * @return the old node meta data value for this key
      * @throws GroovyBugError if key is null
      */
-    public void putNodeMetaData(Object key, Object value) {
+    public Object putNodeMetaData(Object key, Object value) {
         if (key==null) throw new GroovyBugError("Tried to set meta data with null key on "+this+".");
-        Object old = metaDataMap.put(key,value);
+        return metaDataMap.put(key,value);
     }
     
     /**
