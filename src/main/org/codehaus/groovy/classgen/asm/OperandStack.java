@@ -324,23 +324,27 @@ public class OperandStack {
         } else if (primTop) {
             // top is primitive, target is not
             // so box and do groovy cast
-            box();
-            (new ClassExpression(targetType)).visit(controller.getAcg());
-            remove(1);
-            castToTypeMethod.call(mv);
+            ClassNode boxedType = box();
+            castToTypeIfNecessary(boxedType, targetType);
         } else if (primTarget) {
             // top is not primitive so unbox
             // leave that BH#doCast later
-        } else if (!(top.isDerivedFrom(targetType))) {
-            // top and target are not primitive and top is not derived from target
-            (new ClassExpression(targetType)).visit(controller.getAcg());
-            remove(1);
-            castToTypeMethod.call(mv);
+        } else {
+            castToTypeIfNecessary(top, targetType);
         }
         BytecodeHelper.doCast(mv,targetType);
         replace(targetType);
     }
-    
+
+    private void castToTypeIfNecessary(final ClassNode sourceType, final ClassNode targetType) {
+        if (!sourceType.isDerivedFrom(targetType) && !sourceType.implementsInterface(targetType)) {
+            MethodVisitor mv = controller.getMethodVisitor();
+            (new ClassExpression(targetType)).visit(controller.getAcg());
+            remove(1);
+            castToTypeMethod.call(mv);
+        }
+    }
+
     private boolean convertFromInt(ClassNode target) {
         int convertCode = 0;
         if (target==ClassHelper.char_TYPE){
