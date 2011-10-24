@@ -39,6 +39,7 @@ import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.*;
  * @author Jochen Theodorou
  */
 public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
+    private final static List<MethodNode> EMPTY_METHODNODE_LIST = Collections.emptyList();
 
     private SourceUnit source;
     private ClassNode classNode;
@@ -291,8 +292,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
         List<ConstructorNode> constructors = node.getDeclaredConstructors();
         if (constructors.isEmpty() && arguments.length==0) return;
-        MethodNode constructor = findMethod(node, "<init>", arguments);
-        if (constructor==null) {
+        List<MethodNode> constructorList = findMethod(node, "<init>", arguments);
+        if (constructorList.isEmpty()) {
             addStaticTypeError("No matching constructor found: "+node+toMethodParametersString("<init>", arguments), classNode);
         }
     }
@@ -522,7 +523,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             return;
         }
 
-
         final Expression objectExpression = call.getObjectExpression();
         objectExpression.visit(this);
         call.getMethod().visit(this);
@@ -582,12 +582,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 List<ClassNode> potentialReceiverType = tempo.get(key);
                 if (potentialReceiverType != null) receivers.addAll(potentialReceiverType);
             }
-            MethodNode mn = null;
+            List<MethodNode> mn = null;
             for (ClassNode currentReceiver : receivers) {
                 mn = findMethod(currentReceiver, name, args);
-                if (mn != null) break;
+                if (!mn.isEmpty()) break;
             }
-            if (mn == null) {
+            if (mn.isEmpty()) {
                 addStaticTypeError("Cannot find matching method " + receiver.getName() + "#" + toMethodParametersString(name, args), call);
             } else {
                 if (isCallOnClosure) {
@@ -615,7 +615,14 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         }
                     }
                 } else {
-                    storeType(call, mn.getReturnType());
+                    if (mn.size()==1) {
+                        MethodNode directMethodCallCandidate = mn.get(0);
+                        ClassNode returnType = directMethodCallCandidate.getReturnType();
+                        storeType(call, returnType);
+                        call.putNodeMetaData(StaticTypesTransformation.StaticTypesMarker.DIRECT_METHOD_CALL_TARGET, directMethodCallCandidate);
+                    } else {
+                        addStaticTypeError("Reference to method is ambiguous. Cannot choose between "+mn, call);
+                    }
                 }
             }
         } finally {
@@ -633,8 +640,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     private void typeCheckClosureCall(final Expression callArguments, final ClassNode[] args, final Parameter[] parameters) {
-        if (!allParametersAndArgumentsMatch(parameters, args) &&
-            !lastArgMatchesVarg(parameters, args)) {
+        if (allParametersAndArgumentsMatch(parameters, args)<0 &&
+            lastArgMatchesVarg(parameters, args)<0) {
             StringBuilder sb = new StringBuilder("[");
             for (int i = 0, parametersLength = parameters.length; i < parametersLength; i++) {
                 final Parameter parameter = parameters[i];
@@ -781,34 +788,62 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     private MethodNode findMethodOrFail(
             Expression expr,
             ClassNode receiver, String name, ClassNode... args) {
-        final MethodNode method = findMethod(receiver, name, args);
-        if (method == null) {
-            addStaticTypeError("Cannot find matching method " + receiver.getName() + "#" + toMethodParametersString(name, args), expr);
+        final List<MethodNode> methods = findMethod(receiver, name, args);
+        if (methods.isEmpty()) {
+            addStaticTypeError("Cannot find matching methods " + receiver.getName() + "#" + toMethodParametersString(name, args), expr);
+        } else if (methods.size()==1) {
+            return methods.get(0);
+        } else {
+            addStaticTypeError("Reference to method is ambiguous. Cannot choose between "+methods, expr);
         }
-        return method;
+        return null;
     }
 
-    private MethodNode findMethod(
+    private List<MethodNode> findMethod(
             ClassNode receiver, String name, ClassNode... args) {
         List<MethodNode> methods;
         if ("<init>".equals(name)) {
             methods = new ArrayList<MethodNode>(receiver.getDeclaredConstructors());
             if (methods.isEmpty()) {
-                return new MethodNode("<init>", Opcodes.ACC_PUBLIC, receiver, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, EmptyStatement.INSTANCE);
+                return Collections.singletonList(
+                        new MethodNode("<init>", Opcodes.ACC_PUBLIC, receiver, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, EmptyStatement.INSTANCE)
+                );
             }
         } else {
             methods = receiver.getMethods(name);
         }
+
+        List<MethodNode> chosen = chooseBestBethod(receiver, methods, args);
+        if (!chosen.isEmpty()) return chosen;
+        // perform a lookup in DGM methods
+        methods.clear();
         Set<MethodNode> fromDGM = findDGMMethodsForClassNode(receiver);
 
         for (MethodNode methodNode : fromDGM) {
             if (methodNode.getName().equals(name)) methods.add(methodNode);
         }
+        chosen = chooseBestBethod(receiver, methods, args);
+        if (!chosen.isEmpty()) {
+            return chosen;
+        }
 
+        if (receiver == ClassHelper.GSTRING_TYPE) return findMethod(ClassHelper.STRING_TYPE, name, args);
+        return EMPTY_METHODNODE_LIST;
+    }
+
+    /**
+     * Given a list of candidate methods, returns the one which best matches the argument types
+     *
+     * @param receiver
+     * @param methods candidate methods
+     * @param args argument types
+     * @return the list of methods which best matches the argument types. It is still possible that multiple
+     * methods match the argument types.
+     */
+    private List<MethodNode> chooseBestBethod(final ClassNode receiver, Collection<MethodNode> methods, ClassNode... args) {
+        List<MethodNode> bestChoices = new LinkedList<MethodNode>();
+        int bestDist = Integer.MAX_VALUE;
         for (MethodNode m : methods) {
-            // we return the first method that may match
-            // we don't need the exact match here for now
-
             // todo : corner case
             /*
                 class B extends A {}
@@ -822,25 +857,42 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
             Parameter[] params = m.getParameters();
             if (params.length == args.length) {
-                if (allParametersAndArgumentsMatch(params, args) ||
-                        lastArgMatchesVarg(params, args)) {
-                    return m;
+                int dist = Math.max(allParametersAndArgumentsMatch(params, args), lastArgMatchesVarg(params, args));
+                if (!receiver.equals(m.getDeclaringClass())) dist++;
+                if (dist>=0 && dist<bestDist) {
+                    bestChoices.clear();
+                    bestChoices.add(m);
+                    bestDist = dist;
+                } else if (dist>=0 && dist==bestDist) {
+                    bestChoices.add(m);
                 }
             } else if (isVargs(params)) {
                 // there are three case for vargs
                 // (1) varg part is left out
-                if (params.length == args.length + 1) return m;
+                if (params.length == args.length + 1) {
+                    bestChoices.add(m);
+                    if (bestDist>0) {
+                        bestChoices.clear();
+                        bestDist = 0;
+                    }
+                }
                 // (2) last argument is put in the vargs array
                 //      that case is handled above already
                 // (3) there is more than one argument for the vargs array
-                if (params.length < args.length &&
-                        excessArgumentsMatchesVargsParameter(params, args)) {
-                    return m;
+                int dist = excessArgumentsMatchesVargsParameter(params, args);
+                if (!receiver.equals(m.getDeclaringClass())) dist++;
+                if (params.length < args.length && dist>=0) {
+                    if (dist >= 0 && dist < bestDist) {
+                        bestChoices.clear();
+                        bestChoices.add(m);
+                        bestDist = dist;
+                    } else if (dist >= 0 && dist == bestDist) {
+                        bestChoices.add(m);
+                    }
                 }
             }
         }
-        if (receiver == ClassHelper.GSTRING_TYPE) return findMethod(ClassHelper.STRING_TYPE, name, args);
-        return null;
+        return bestChoices;
     }
 
     private ClassNode getType(Expression exp) {
