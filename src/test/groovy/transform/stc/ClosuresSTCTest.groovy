@@ -86,5 +86,10 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         ''', 'Cannot assign value of type java.lang.Number to variable of type java.lang.Byte'
     }
 
+    void testClosureWithoutParam() {
+        assertScript '''
+            { -> println 'Hello' }()
+        '''
+    }
 }
 

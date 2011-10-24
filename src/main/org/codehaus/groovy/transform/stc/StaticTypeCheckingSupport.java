@@ -193,6 +193,7 @@ abstract class StaticTypeCheckingSupport {
      * @return
      */
     static boolean allParametersAndArgumentsMatch(Parameter[] params, ClassNode[] args) {
+        if (params==null) return args.length==0;
         // we already know the lengths are equal
         for (int i = 0; i < params.length; i++) {
             if (!isAssignableTo(params[i].getType(), args[i])) return false;
