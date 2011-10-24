@@ -95,7 +95,7 @@ public class ListHashMap<K,V> implements Map<K,V> {
     public V get(Object key) {
         if(size==0) return null;
         if (size<maxListFill) {
-            for (int i=0; i<maxListFill; i++) {
+            for (int i=0; i<size; i++) {
                 if (listKeys[i].equals(key)) return (V) listValues[i];
             }
             return null;
@@ -135,6 +135,7 @@ public class ListHashMap<K,V> implements Map<K,V> {
                 return null;
             } else {
                 innerMap = makeMap();
+                size++;
             }
         } 
         return innerMap.put(key,value);
