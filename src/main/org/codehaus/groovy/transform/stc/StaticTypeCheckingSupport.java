@@ -152,6 +152,7 @@ abstract class StaticTypeCheckingSupport {
                         ClassHelper.make(metaMethod.getReturnType()),
                         parameters,
                         ClassNode.EMPTY_ARRAY, null);
+                node.setDeclaringClass(ClassHelper.make(types[0].getTheClass()));
 
                 String name = types[0].getName();
                 List<MethodNode> nodes = methods.get(name);
@@ -190,30 +191,50 @@ abstract class StaticTypeCheckingSupport {
      * Checks that arguments and parameter types match.
      * @param params
      * @param args
-     * @return
+     * @return -1 if arguments do not match, 0 if arguments are of the exact type and >0 when one or more argument is
+     * not of the exact type but still match
      */
-    static boolean allParametersAndArgumentsMatch(Parameter[] params, ClassNode[] args) {
-        if (params==null) return args.length==0;
+    static int allParametersAndArgumentsMatch(Parameter[] params, ClassNode[] args) {
+        if (params==null) return args.length==0?0:-1;
+        int dist = 0;
         // we already know the lengths are equal
         for (int i = 0; i < params.length; i++) {
-            if (!isAssignableTo(params[i].getType(), args[i])) return false;
+            if (!isAssignableTo(params[i].getType(), args[i])) return -1;
+            else {
+                if (!params[i].getType().equals(args[i])) dist++;
+            }
         }
-        return true;
+        return dist;
     }
 
-    static boolean excessArgumentsMatchesVargsParameter(Parameter[] params, ClassNode[] args) {
+    /**
+     * Checks that excess arguments match the vararg signature parameter.
+     * @param params
+     * @param args
+     * @return -1 if no match, 0 if all arguments matches the vararg type and >0 if one or more vararg argument is
+     * assignable to the vararg type, but still not an exact match
+     */
+    static int excessArgumentsMatchesVargsParameter(Parameter[] params, ClassNode[] args) {
         // we already know parameter length is bigger zero and last is a vargs
         // the excess arguments are all put in an array for the vargs call
         // so check against the component type
+        int dist = 0;
         ClassNode vargsBase = params[params.length - 1].getType().getComponentType();
         for (int i = params.length; i < args.length; i++) {
-            if (!isAssignableTo(vargsBase, args[i])) return false;
+            if (!isAssignableTo(vargsBase, args[i])) return -1;
+            else if (!args[i].equals(vargsBase)) dist++;
         }
-        return true;
+        return dist;
     }
 
-    static boolean lastArgMatchesVarg(Parameter[] params, ClassNode... args) {
-        if (!isVargs(params)) return false;
+    /**
+     * Checks if the last argument matches the vararg type.
+     * @param params
+     * @param args
+     * @return -1 if no match, 0 if the last argument is exactly the vararg type and 1 if of an assignable type
+     */
+    static int lastArgMatchesVarg(Parameter[] params, ClassNode... args) {
+        if (!isVargs(params)) return -1;
         // case length ==0 handled already
         // we have now two cases,
         // the argument is wrapped in the vargs array or
@@ -221,7 +242,7 @@ abstract class StaticTypeCheckingSupport {
         // we test only the wrapping part, since the non wrapping is done already
         ClassNode ptype = params[params.length - 1].getType().getComponentType();
         ClassNode arg = args[args.length - 1];
-        return isAssignableTo(ptype, arg);
+        return isAssignableTo(ptype, arg)?(ptype.equals(arg)?0:1):-1;
     }
 
     /**

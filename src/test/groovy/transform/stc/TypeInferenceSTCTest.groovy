@@ -411,5 +411,14 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
 
     }
 
+    void testChooseMethodWithTypeInference() {
+        assertScript '''
+            void method(Object o) { println 'Object' }
+            void method(int i) { println 'int' }
+            def obj = 1
+            method(obj)
+        '''
+    }
+
 }
 
