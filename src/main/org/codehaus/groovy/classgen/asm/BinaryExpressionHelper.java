@@ -323,9 +323,10 @@ public class BinaryExpressionHelper {
         // single declaration
         else if (defineVariable) {
             VariableExpression var = (VariableExpression) leftExpression;
+            ClassNode type = controller.getTypeChooser().resolveType(var, controller.getClassNode());
             rhsValueLoader.visit(acg);
-            operandStack.doGroovyCast(var);
-            compileStack.defineVariable(var, true);
+            operandStack.doGroovyCast(type);
+            compileStack.defineVariable(var, type, true);
             operandStack.remove(1);
         } 
         // normal assignment
@@ -680,7 +681,7 @@ public class BinaryExpressionHelper {
         // at this point the receiver will be already on the stack.
         // in a[1]++ the method will be "++" aka "next" and the receiver a[1]
         
-        ClassNode BEType = BinaryExpressionMultiTypeDispatcher.getType(expression,controller.getClassNode());
+        ClassNode BEType = controller.getTypeChooser().resolveType(expression, controller.getClassNode());
         Expression callSiteReceiverSwap = new BytecodeExpression(BEType) {
             @Override
             public void visit(MethodVisitor mv) {
