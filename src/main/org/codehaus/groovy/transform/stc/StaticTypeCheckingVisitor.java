@@ -490,7 +490,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         super.visitConstructorCallExpression(call);
         ClassNode receiver = call.getType();
         ClassNode[] args = getArgumentTypes(InvocationWriter.makeArgumentList(call.getArguments()), receiver);
-        findMethodOrFail(call, receiver, "<init>", args);
+        MethodNode node = findMethodOrFail(call, receiver, "<init>", args);
+        if (node!=null) {
+            storeTargetMethod(call, node);
+        }
     }
 
     private ClassNode[] getArgumentTypes(ArgumentListExpression args, ClassNode current) {
@@ -625,7 +628,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         MethodNode directMethodCallCandidate = mn.get(0);
                         ClassNode returnType = directMethodCallCandidate.getReturnType();
                         storeType(call, returnType);
-                        call.putNodeMetaData(StaticTypesTransformation.StaticTypesMarker.DIRECT_METHOD_CALL_TARGET, directMethodCallCandidate);
+                        storeTargetMethod(call, directMethodCallCandidate);
                     } else {
                         addStaticTypeError("Reference to method is ambiguous. Cannot choose between "+mn, call);
                     }
@@ -637,6 +640,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 withReceiverList.removeFirst();
             }
         }
+    }
+
+    private void storeTargetMethod(final Expression call, final MethodNode directMethodCallCandidate) {
+        call.putNodeMetaData(StaticTypesTransformation.StaticTypesMarker.DIRECT_METHOD_CALL_TARGET, directMethodCallCandidate);
     }
 
     private boolean isClosureCall(final String name, final Expression objectExpression) {

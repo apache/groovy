@@ -48,6 +48,7 @@ public class ConstructorCallExpression extends Expression {
         ConstructorCallExpression ret = new ConstructorCallExpression(getType(), args);
         ret.setSourcePosition(this);
         ret.setUsingAnonymousInnerClass(isUsingAnonymousInnerClass());
+        ret.copyNodeMetaData(this);
         return ret;
     }
 
