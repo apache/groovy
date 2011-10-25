@@ -16,6 +16,7 @@
 package org.codehaus.groovy.classgen.asm.sc;
 
 import org.codehaus.groovy.ast.ConstructorNode;
+import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.classgen.asm.InvocationWriter;
@@ -29,10 +30,17 @@ public class StaticInvocationWriter extends InvocationWriter {
 
     @Override
     public void writeInvokeConstructor(final ConstructorCallExpression call) {
-        ConstructorNode cn = (ConstructorNode) call.getNodeMetaData(StaticTypesTransformation.StaticTypesMarker.DIRECT_METHOD_CALL_TARGET);
-        if (cn==null) {
+        MethodNode mn = (MethodNode) call.getNodeMetaData(StaticTypesTransformation.StaticTypesMarker.DIRECT_METHOD_CALL_TARGET);
+        if (mn==null) {
             super.writeInvokeConstructor(call);
             return;
+        }
+        ConstructorNode cn;
+        if (mn instanceof ConstructorNode) {
+            cn = (ConstructorNode) mn;
+        } else {
+            cn = new ConstructorNode(mn.getModifiers(), mn.getParameters(), mn.getExceptions(), mn.getCode());
+            cn.setDeclaringClass(mn.getDeclaringClass());
         }
 
         String ownerDescriptor = prepareConstructorCall(cn);
