@@ -94,42 +94,6 @@ abstract class StaticTypeCheckingSupport {
     }
 
     /**
-     * Given two class nodes, returns the first common supertype, or the class itself
-     * if there are equal. For example, Double and Float would return Number, while
-     * Set and String would return Object.
-     * @param a first class node
-     * @param b second class node
-     * @return first common supertype
-     */
-    static ClassNode firstCommonSuperType(ClassNode a, ClassNode b) {
-        if (a == null || b == null) return ClassHelper.OBJECT_TYPE;
-        if (a == b || a.equals(b)) return a;
-        if (isPrimitiveType(a) && !isPrimitiveType(b)) {
-            if (isNumberType(a) && isNumberType(b)) {
-                return firstCommonSuperType(ClassHelper.getWrapper(a), b);
-            } else {
-                return OBJECT_TYPE;
-            }
-        } else if (isPrimitiveType(b) && !isPrimitiveType(a)) {
-            if (isNumberType(b) && isNumberType(a)) {
-                return firstCommonSuperType(ClassHelper.getWrapper(b), a);
-            } else {
-                return OBJECT_TYPE;
-            }
-        }
-        ClassNode superA = a.getSuperClass();
-        ClassNode superB = b.getSuperClass();
-        if (a == superB || a.equals(superB)) return superB;
-        if (b == superA || b.equals(superA)) return superA;
-        return firstCommonSuperType(superA, superB);
-    }
-
-    static ClassNode firstCommonSuperType(List<ClassNode> nodes) {
-        if (nodes.size()==1) return nodes.get(0);
-        return firstCommonSuperType(nodes.get(0), firstCommonSuperType(nodes.subList(1, nodes.size())));
-    }
-
-    /**
      * Returns a map which contains, as the key, the name of a class. The value
      * consists of a list of MethodNode, one for each default groovy method found
      * which is applicable for this class.
