@@ -343,7 +343,11 @@ public class OperandStack {
         } else {
             castToTypeIfNecessary(top, targetType);
         }
-        BytecodeHelper.doCast(mv,targetType);
+        if (ClassHelper.isNumberType(top) && primTarget && ClassHelper.isNumberType(targetType)) {
+            BytecodeHelper.doCastToPrimitive(mv, top, targetType);
+        } else {
+            BytecodeHelper.doCast(mv,targetType);
+        }
         replace(targetType);
     }
 

@@ -518,7 +518,24 @@ public class BytecodeHelper implements Opcodes {
                             BytecodeHelper.getClassInternalName(type.getName()));
         }
     }
-    
+
+    /**
+     * Given a wrapped number type (Byte, Integer, Short, ...), generates bytecode
+     * to convert it to a primitive number (int, long, double) using calls to
+     * wrapped.[targetType]Value()
+     * @param mv method visitor
+     * @param sourceType the wrapped number type
+     * @param targetType the primitive target type
+     */
+    public static void doCastToPrimitive(MethodVisitor mv, ClassNode sourceType, ClassNode targetType) {
+        mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                BytecodeHelper.getClassInternalName(sourceType),
+                targetType.getName()+"Value",
+                "()"+BytecodeHelper.getTypeDescription(targetType)
+        );
+    }
+
     public static void doCast(MethodVisitor mv, Class type) {
         if (type == Object.class) return;
         if (type.isPrimitive() && type != Void.TYPE) {
