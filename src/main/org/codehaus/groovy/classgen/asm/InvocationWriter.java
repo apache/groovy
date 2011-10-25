@@ -137,7 +137,7 @@ public class InvocationWriter {
     }
 
     // load arguments
-    private void loadArguments(List<Expression> argumentList, Parameter[] para) {
+    protected void loadArguments(List<Expression> argumentList, Parameter[] para) {
         for (int i=0; i<argumentList.size(); i++) {
             argumentList.get(i).visit(controller.getAcg());
             controller.getOperandStack().doGroovyCast(para[i].getType());
@@ -362,7 +362,7 @@ public class InvocationWriter {
         return true;
     }
     
-    private String prepareConstructorCall(ConstructorNode cn) {
+    protected String prepareConstructorCall(ConstructorNode cn) {
         String owner = BytecodeHelper.getClassInternalName(cn.getDeclaringClass());
         MethodVisitor mv = controller.getMethodVisitor();
         
@@ -371,7 +371,7 @@ public class InvocationWriter {
         return owner;
     }
     
-    private void finnishConstructorCall(ConstructorNode cn, String ownerDescriptor, int argsToRemove) {
+    protected void finnishConstructorCall(ConstructorNode cn, String ownerDescriptor, int argsToRemove) {
         String desc = BytecodeHelper.getMethodDescriptor(ClassHelper.VOID_TYPE, cn.getParameters());
         MethodVisitor mv = controller.getMethodVisitor();
         mv.visitMethodInsn(INVOKESPECIAL, ownerDescriptor, "<init>", desc);
