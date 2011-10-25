@@ -818,9 +818,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if ("<init>".equals(name)) {
             methods = new ArrayList<MethodNode>(receiver.getDeclaredConstructors());
             if (methods.isEmpty()) {
-                return Collections.singletonList(
-                        new MethodNode("<init>", Opcodes.ACC_PUBLIC, receiver, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, EmptyStatement.INSTANCE)
-                );
+                MethodNode node = new MethodNode("<init>", Opcodes.ACC_PUBLIC, receiver, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, EmptyStatement.INSTANCE);
+                node.setDeclaringClass(receiver);
+                return Collections.singletonList(node);
             }
         } else {
             methods = receiver.getMethods(name);
