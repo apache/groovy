@@ -194,7 +194,7 @@ public class TimedInterruptibleASTTransformation implements ASTTransformation {
                               ),
                               'convert',
                               new ArgumentListExpression(
-                                      new ConstantExpression(maximum),
+                                      new ConstantExpression(maximum, true),
                                       unit
                               )
                       )
