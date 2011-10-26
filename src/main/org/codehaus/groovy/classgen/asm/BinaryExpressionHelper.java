@@ -22,6 +22,7 @@ import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
+import org.codehaus.groovy.ast.expr.ElvisOperatorExpression;
 import org.codehaus.groovy.ast.expr.EmptyExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.FieldExpression;
@@ -29,8 +30,10 @@ import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.PostfixExpression;
 import org.codehaus.groovy.ast.expr.PrefixExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
+import org.codehaus.groovy.ast.expr.TernaryExpression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
+import org.codehaus.groovy.ast.tools.WideningCategories;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.classgen.BytecodeExpression;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
@@ -713,5 +716,108 @@ public class BinaryExpressionHelper {
         // now rhs is completely done and we need only to store. In a[1]++ this 
         // would be a.getAt(1).next() for the rhs, "lhs" code is a.putAt(1, rhs)
          
+    }
+    
+    private void evaluateElvisOperatorExpression(ElvisOperatorExpression expression) {
+        MethodVisitor mv = controller.getMethodVisitor();
+        CompileStack compileStack = controller.getCompileStack();
+        OperandStack operandStack = controller.getOperandStack();
+        TypeChooser typeChooser = controller.getTypeChooser();
+        
+        Expression boolPart = expression.getBooleanExpression().getExpression();
+        Expression falsePart = expression.getFalseExpression();
+        
+        ClassNode truePartType = typeChooser.resolveType(boolPart, controller.getClassNode());
+        ClassNode falsePartType = typeChooser.resolveType(falsePart, controller.getClassNode());
+        ClassNode common = WideningCategories.firstCommonSuperType(truePartType, falsePartType);
+        
+        // x?:y is equal to x?x:y, which evals to 
+        //      var t=x; boolean(t)?t:y
+        // first we load x, dup it, convert the dupped to boolean, then 
+        // jump depending on the value. For true we are done, for false we
+        // have to load y, thus we first remove x and then load y. 
+        // But since x and y may have different stack lengths, this cannot work
+        // Thus we have to have to do the following:
+        // Be X the type of x, Y the type of y and S the common supertype of 
+        // X and Y, then we have to see x?:y as  
+        //      var t=x;boolean(t)?S(t):S(y)
+        // so we load x, dup it, store the value in a local variable (t), then 
+        // do boolean conversion. In the true part load t and cast it to S, 
+        // in the false part load y and cast y to S 
+
+        // load x, dup it, store one in $t and cast the remaining one to boolean
+        int mark = operandStack.getStackLength();
+        boolPart.visit(controller.getAcg());
+        operandStack.dup();
+        int retValueId = compileStack.defineTemporaryVariable("$t", truePartType, true);
+        operandStack.castToBool(mark,true);
+        
+        Label l0 = operandStack.jump(IFEQ);
+        // true part: load $t and cast to S
+        operandStack.load(truePartType, retValueId);
+        operandStack.doGroovyCast(common);
+        Label l1 = new Label();
+        mv.visitJumpInsn(GOTO, l1);
+        
+        // false part: load false expression and cast to S
+        mv.visitLabel(l0);
+        falsePart.visit(controller.getAcg());        
+        operandStack.doGroovyCast(common);
+        
+        // finish and cleanup
+        mv.visitLabel(l1);
+        compileStack.removeVar(retValueId);
+        controller.getOperandStack().replace(common, 2);        
+        
+    }
+    
+    private void evaluateNormalTernary(TernaryExpression expression) {
+        MethodVisitor mv = controller.getMethodVisitor();
+        OperandStack operandStack = controller.getOperandStack();
+        TypeChooser typeChooser = controller.getTypeChooser();
+        
+        Expression boolPart = expression.getBooleanExpression();
+        Expression truePart = expression.getTrueExpression();
+        Expression falsePart = expression.getFalseExpression();
+        
+        ClassNode truePartType = typeChooser.resolveType(truePart, controller.getClassNode());
+        ClassNode falsePartType = typeChooser.resolveType(falsePart, controller.getClassNode());
+        ClassNode common = WideningCategories.firstCommonSuperType(truePartType, falsePartType);
+        
+        // we compile b?x:y as 
+        //      boolean(b)?S(x):S(y), S = common super type of x,y
+        // so we load b, do boolean conversion. 
+        // In the true part load x and cast it to S, 
+        // in the false part load y and cast y to S 
+
+        // load b and convert to boolean
+        int mark = operandStack.getStackLength();
+        boolPart.visit(controller.getAcg());
+        operandStack.castToBool(mark,true);
+        
+        Label l0 = operandStack.jump(IFEQ);
+        // true part: load x and cast to S
+        truePart.visit(controller.getAcg());
+        operandStack.doGroovyCast(common);
+        Label l1 = new Label();
+        mv.visitJumpInsn(GOTO, l1);
+        
+        // false part: load y and cast to S
+        mv.visitLabel(l0);
+        falsePart.visit(controller.getAcg());        
+        operandStack.doGroovyCast(common);
+        
+        // finish and cleanup
+        mv.visitLabel(l1);
+        controller.getOperandStack().replace(common, 2);        
+        
+    }
+
+    public void evaluateTernary(TernaryExpression expression) {
+        if (expression instanceof ElvisOperatorExpression) {
+            evaluateElvisOperatorExpression((ElvisOperatorExpression) expression);
+        } else {
+            evaluateNormalTernary(expression);
+        }
     }
 }
