@@ -488,55 +488,7 @@ public class AsmClassGenerator extends ClassGenerator {
 
     public void visitTernaryExpression(TernaryExpression expression) {
         onLineNumber(expression, "visitTernaryExpression");
-        MethodVisitor mv = controller.getMethodVisitor();
-        
-        Expression boolPart = expression.getBooleanExpression();
-        Expression truePart = expression.getTrueExpression();
-        Expression falsePart = expression.getFalseExpression();
-        final OperandStack operandStack = controller.getOperandStack();
-        int numberOfOperandParts = 2;
-        
-        if (expression instanceof ElvisOperatorExpression) {
-            truePart.visit(this);
-            operandStack.box();
-            int mark = operandStack.getStackLength();
-            operandStack.dup();
-            operandStack.castToBool(mark,true);
-            boolPart = BytecodeExpression.NOP;
-            truePart = BytecodeExpression.NOP;
-            final Expression oldFalse = falsePart;
-            falsePart = new BytecodeExpression() {
-                public void visit(MethodVisitor mv) {
-                    operandStack.pop();
-                    oldFalse.visit(AsmClassGenerator.this);
-                    operandStack.box();
-                }
-            };
-        }
-
-        if (boolPart!=BytecodeExpression.NOP) {
-            boolPart.visit(this);
-            operandStack.doGroovyCast(ClassHelper.boolean_TYPE);
-        }
-        Label l0 = operandStack.jump(IFEQ);
-        
-        controller.getCompileStack().pushBooleanExpression();
-        if (truePart!=BytecodeExpression.NOP) {
-            truePart.visit(this);
-            operandStack.box();
-        }
-        controller.getCompileStack().pop();
-        Label l1 = new Label();
-        mv.visitJumpInsn(GOTO, l1);
-
-        mv.visitLabel(l0);
-        controller.getCompileStack().pushBooleanExpression();
-        falsePart.visit(this);
-        operandStack.box();
-        controller.getCompileStack().pop();
-
-        mv.visitLabel(l1);
-        controller.getOperandStack().replace(ClassHelper.OBJECT_TYPE,numberOfOperandParts);
+        controller.getBinaryExpHelper().evaluateTernary(expression);
     }
     
     public void visitDeclarationExpression(DeclarationExpression expression) {
