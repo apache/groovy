@@ -120,16 +120,14 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         shouldFailWithMessages """
             int i = 0
             i += '1'
-        """, "Cannot find matching method int#plus(java.lang.String)",
-             "tbd..." // todo : remove when transformation will be complete
+        """, "Cannot find matching method int#plus(java.lang.String)"
     }
 
     void testIntMinusEqualsString() {
         shouldFailWithMessages """
             int i = 0
             i -= '1'
-        """, "Cannot find matching method int#minus(java.lang.String)",
-             "tbd..." // todo : remove when transformation will be complete
+        """, "Cannot find matching method int#minus(java.lang.String)"
     }
 
     void testStringPlusEqualsString() {

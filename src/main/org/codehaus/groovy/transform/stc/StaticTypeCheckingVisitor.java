@@ -145,7 +145,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         int op = expression.getOperation().getType();
         ClassNode resultType = getResultType(lType, op, rType, expression);
         if (resultType == null) {
-            addStaticTypeError("tbd...", expression);
             resultType = lType;
         }
         // todo : if assignment of a primitive to an object (def, Object, whatever),

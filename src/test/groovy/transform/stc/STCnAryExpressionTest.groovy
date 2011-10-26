@@ -43,8 +43,7 @@ class STCnAryExpressionTest extends StaticTypeCheckingTestCase {
             def str = new Object()
             int str2 = 2
             str+str2
-        """, "Cannot find matching method plus(java.lang.Object, java.lang.Integer)",
-                "tbd" // todo : remove when transformation will be fixed
+        """, "Cannot find matching method java.lang.Object#plus(int)"
     }
 
     void testBinaryIntPlusObject() {
@@ -52,8 +51,7 @@ class STCnAryExpressionTest extends StaticTypeCheckingTestCase {
             def str = new Object()
             int str2 = 2
             str2+str
-        """, "Cannot find matching method plus(java.lang.Integer, java.lang.Object)",
-                "tbd" // todo : remove when transformation will be fixed
+        """, "Cannot find matching method int#plus(java.lang.Object)"
     }
 
     void testPrimitiveComparison() {
