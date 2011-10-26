@@ -23,7 +23,7 @@ class BinaryOperationsTest extends AbstractBytecodeTestCase {
             if (i < 100) println "true"
         """).hasSequence([
                 "ILOAD",
-                "LDC 100",
+                "BIPUSH 100",
                 "IF_ICMPGE"
         ])
     }
@@ -44,8 +44,39 @@ class BinaryOperationsTest extends AbstractBytecodeTestCase {
             long a = 1
             long b = a << 32
         """).hasStrictSequence([
-                "LDC 32",
+                "BIPUSH 32",
                 "LSHL"
         ])
+    }
+
+    void testIntConstants() {
+        (0..5).each {
+            assert compile("""\
+                int a = $it
+            """).hasStrictSequence([
+                    "ICONST_$it",
+            ])
+        }
+        [-1, 6,Byte.MIN_VALUE,Byte.MAX_VALUE].each {
+            assert compile("""\
+                    int a = $it
+                """).hasStrictSequence([
+                    "BIPUSH",
+            ])
+        }
+        [Byte.MIN_VALUE-1,Byte.MAX_VALUE+1,Short.MIN_VALUE,Short.MAX_VALUE].each {
+            assert compile("""\
+                    int a = $it
+                """).hasStrictSequence([
+                    "SIPUSH",
+            ])
+        }
+        [Short.MAX_VALUE+1,Integer.MAX_VALUE].each {
+            assert compile("""\
+                    int a = $it
+                """).hasStrictSequence([
+                    "LDC",
+            ])
+        }
     }
 }

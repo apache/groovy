@@ -107,6 +107,8 @@ public class WideningCategories {
             } else {
                 return OBJECT_TYPE;
             }
+        } else if (isPrimitiveType(a) && isPrimitiveType(b)) {
+            return firstCommonSuperType(ClassHelper.getWrapper(a), ClassHelper.getWrapper(b));
         }
         ClassNode superA = a.getSuperClass();
         ClassNode superB = b.getSuperClass();
