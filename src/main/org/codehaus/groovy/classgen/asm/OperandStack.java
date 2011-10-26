@@ -196,9 +196,15 @@ public class OperandStack {
         MethodVisitor mv = controller.getMethodVisitor();
         int size = stack.size();
         ClassNode type = stack.get(size-1);
-        if (BytecodeHelper.box(mv, type)) {
-            type = ClassHelper.getWrapper(type);
-            BytecodeHelper.doCast(mv, type);
+        if (ClassHelper.isPrimitiveType(type) && ClassHelper.VOID_TYPE!=type) {
+            ClassNode wrapper = ClassHelper.getWrapper(type);
+            BytecodeHelper.doCastToWrappedType(mv, type, wrapper);
+            type = wrapper;
+        } else {
+            if (BytecodeHelper.box(mv, type)) {
+                type = ClassHelper.getWrapper(type);
+                BytecodeHelper.doCast(mv, type);
+            }
         }
         stack.set(size-1, type);
         return type;
