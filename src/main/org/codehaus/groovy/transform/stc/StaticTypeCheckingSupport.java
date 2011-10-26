@@ -335,6 +335,10 @@ abstract class StaticTypeCheckingSupport {
         }
     }
 
+    static boolean isShiftOperation(String name) {
+        return "leftShift".equals(name) || "rightShift".equals(name) || "rightShiftUnsigned".equals(name);
+    }
+
     /**
      * Returns true for operations that are of the class, that given a common type class for left and right, the
      * operation "left op right" will have a result in the same type class In Groovy on numbers that is +,-,* as well as

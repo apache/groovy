@@ -100,5 +100,39 @@ class STCnAryExpressionTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    void testShiftOnPrimitives() {
+        assertScript '''
+            1 << 8
+        '''
+
+        assertScript '''
+            1 >> 8
+        '''
+
+        assertScript '''
+            1 >>> 8
+        '''
+    }
+
+    void testShiftOnPrimitivesThroughVariables() {
+        assertScript '''
+            int x = 1
+            int y = 8
+            x << y
+        '''
+
+        assertScript '''
+            int x = 1
+            int y = 8
+            x >> y
+        '''
+
+        assertScript '''
+            int x = 1
+            int y = 8
+            x >>> y
+        '''
+    }
+
 }
 

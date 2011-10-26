@@ -788,6 +788,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
         // try to find a method for the operation
         String operationName = getOperationName(op);
+        if (isShiftOperation(operationName) && isNumberCategory(leftRedirect) && (isIntCategory(rightRedirect) || isLongCategory(rightRedirect))) {
+            return leftRedirect;
+        }
         MethodNode method = findMethodOrFail(expr, leftRedirect, operationName, rightRedirect);
         if (method != null) {
             if (isCompareToBoolean(op)) return boolean_TYPE;
@@ -803,7 +806,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             ClassNode receiver, String name, ClassNode... args) {
         final List<MethodNode> methods = findMethod(receiver, name, args);
         if (methods.isEmpty()) {
-            addStaticTypeError("Cannot find matching methods " + receiver.getName() + "#" + toMethodParametersString(name, args), expr);
+            addStaticTypeError("Cannot find matching method " + receiver.getName() + "#" + toMethodParametersString(name, args), expr);
         } else if (methods.size()==1) {
             return methods.get(0);
         } else {
