@@ -20,38 +20,38 @@ class MethodPatternsTest extends AbstractBytecodeTestCase {
             ''').hasSequence([
                 // if (x==0) return y+1
                 'ILOAD 1',
-                'LDC 0',
+                'ICONST_0',
                 'IF_ICMPNE',
                 'ICONST_1',
                 'ICONST_0',
                 'IFEQ',     // x==0 and branching till here
                 'ILOAD 2',
-                'LDC 1',
+                'ICONST_1',
                 'IADD',     // y+1
                 'IRETURN',  // return
                 // if (y==0) return A(x-1,1)
                 'ILOAD 2',
-                'LDC 0',
+                'ICONST_0',
                 'IF_ICMPNE',
                 'ICONST_1',
                 'ICONST_0',
                 'IFEQ',     // y==0 and branching till here
                 'ALOAD 0',
                 'ILOAD 1',
-                'LDC 1',
+                'ICONST_1',
                 'ISUB',     // x-1 argument
-                'LDC 1',
+                'ICONST_1',
                 'INVOKEVIRTUAL script.A (II)I', // A(x-1,1)
                 'IRETURN',  //return
                 // return A(x-1,A(x,y-1))
                 'ALOAD 0',
                 'ILOAD 1',
-                'LDC 1',
+                'ICONST_1',
                 'ISUB',     // outer A x-1 argument
                 'ALOAD 0',
                 'ILOAD 1',  // inner A x argument
                 'ILOAD 2',
-                'LDC 1',
+                'ICONST_1',
                 'ISUB',     //inner A y-1 argument
                 'INVOKEVIRTUAL script.A (II)I', // inner A
                 'INVOKEVIRTUAL script.A (II)I', // outer A
@@ -73,7 +73,7 @@ class MethodPatternsTest extends AbstractBytecodeTestCase {
             'ICONST_0',
             'IFEQ',
             'ILOAD',
-            'LDC',
+            'ICONST_1',
             'IADD',
             'ISTORE',
             'ALOAD',
@@ -152,7 +152,7 @@ class MethodPatternsTest extends AbstractBytecodeTestCase {
             'GETFIELD X._tagReservationDate : J',
             'ALOAD 0',
             'GETFIELD X._tagReservationDate : J',
-            'LDC 32',
+            'BIPUSH 32',
             'LUSHR',
             'LXOR',
             'L2I',
@@ -169,7 +169,7 @@ class MethodPatternsTest extends AbstractBytecodeTestCase {
               }
             }
         ''').hasSequence ([
-            'LDC 0',
+            'ICONST_0',
             'INVOKESTATIC org/codehaus/groovy/runtime/BytecodeInterface8.objectArraySet ([Ljava/lang/Object;ILjava/lang/Object;)V',
         ])
     }
@@ -183,7 +183,7 @@ class MethodPatternsTest extends AbstractBytecodeTestCase {
               }
             }
         ''').hasSequence ([
-            'LDC 0',
+            'ICONST_0',
             'INVOKESTATIC org/codehaus/groovy/runtime/BytecodeInterface8.zArraySet ([ZIZ)V',
         ])
     }
@@ -208,7 +208,7 @@ class MethodPatternsTest extends AbstractBytecodeTestCase {
                   }
                 }
             """).hasSequence ([
-                'LDC 0',
+                'ICONST_0',
                 "INVOKESTATIC org/codehaus/groovy/runtime/BytecodeInterface8."+it.value[1],
             ])
             
@@ -220,7 +220,7 @@ class MethodPatternsTest extends AbstractBytecodeTestCase {
                   }
                 }
             """).hasSequence ([
-                'LDC 0',
+                'ICONST_0',
                 "INVOKESTATIC org/codehaus/groovy/runtime/BytecodeInterface8.${it.value[2]}",
             ])
         }
