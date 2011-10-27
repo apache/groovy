@@ -31,14 +31,11 @@ import org.codehaus.groovy.transform.StaticTypesTransformation;
 public class StaticTypesTypeChooser extends StatementMetaTypeChooser {
     @Override
     public ClassNode resolveType(final Expression exp, final ClassNode current) {
-        Expression target = exp instanceof VariableExpression?getTarget((VariableExpression) exp):exp;
+        Expression target = exp instanceof VariableExpression ? getTarget((VariableExpression) exp) : exp;
+        ClassNode dif = (ClassNode) exp.getNodeMetaData(StaticTypesTransformation.StaticTypesMarker.DECLARATION_INFERRED_TYPE);
+        if (dif != null) return dif;
         ClassNode inferredType = (ClassNode) target.getNodeMetaData(StaticTypesTransformation.StaticTypesMarker.INFERRED_TYPE);
-        if (inferredType!=null) {
-            if (exp instanceof DeclarationExpression) {
-                // perform special check for DECLARATION_INFERRED_TYPE
-                ClassNode dif = (ClassNode) target.getNodeMetaData(StaticTypesTransformation.StaticTypesMarker.DECLARATION_INFERRED_TYPE);
-                if (dif!=null) return dif;
-            }
+        if (inferredType != null) {
             return inferredType;
         }
         return super.resolveType(exp, current);
