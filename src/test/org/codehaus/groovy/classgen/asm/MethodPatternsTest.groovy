@@ -81,14 +81,18 @@ class MethodPatternsTest extends AbstractBytecodeTestCase {
             'ILOAD',
             'INVOKESTATIC org/codehaus/groovy/runtime/BytecodeInterface8.intArraySet ([III)V',
             'ILOAD',
+            'POP',
+            'ILOAD',
             'DUP',
             'ISTORE',
             'ICONST_1',
             'IADD',
             'DUP',
-            'ISTORE 11',
+            'ISTORE',
             'POP',
-            'GOTO'
+            'ILOAD',
+            'POP',
+            'GOTO',
         ])
     }
     
