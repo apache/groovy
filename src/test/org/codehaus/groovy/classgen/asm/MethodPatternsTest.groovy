@@ -243,4 +243,34 @@ class MethodPatternsTest extends AbstractBytecodeTestCase {
             assert a[3] == 8        
         """
     }
+    
+    void testFib() {
+        assert compile(method:"fib", """
+          int fib(int i) {
+              i < 2 ? 1 : fib(i - 2) + fib(i - 1)
+          }
+      """).hasSequence ([
+          'ILOAD 1',
+          'ICONST_2',
+          'IF_ICMPGE',
+          'ICONST_1',
+          'GOTO',
+          'ICONST_0',
+          'IFEQ',
+          'ICONST_1',
+          'GOTO',
+          'ALOAD 0',
+          'ILOAD 1',
+          'ICONST_2',
+          'ISUB',
+          'INVOKEVIRTUAL script.fib (I)I',
+          'ALOAD 0',
+          'ILOAD 1',
+          'ICONST_1',
+          'ISUB',
+          'INVOKEVIRTUAL script.fib (I)I',
+          'IADD',
+          'IRETURN'
+      ])
+    }
 }
