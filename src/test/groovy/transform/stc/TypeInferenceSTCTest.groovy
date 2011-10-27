@@ -420,5 +420,39 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    void testStarOperatorOnMap() {
+        assertScript '''
+            List keys = [x:1,y:2,z:3]*.key
+            List values = [x:1,y:2,z:3]*.value
+        '''
+    }
+
+    void testStarOperatorOnMap2() {
+        assertScript '''
+            List keys = [x:1,y:2,z:3]*.key
+            List values = [x:'1',y:'2',z:'3']*.value
+            keys*.toUpperCase()
+            values*.toUpperCase()
+        '''
+        
+        shouldFailWithMessages '''
+            List values = [x:1,y:2,z:3]*.value
+            values*.toUpperCase()
+        ''', 'Cannot find matching method java.lang.Integer#toUpperCase()'
+    }
+
+    void testStarOperatorOnMap3() {
+        assertScript '''
+            def keys = [x:1,y:2,z:3]*.key
+            def values = [x:'1',y:'2',z:'3']*.value
+            keys*.toUpperCase()
+            values*.toUpperCase()
+        '''
+
+        shouldFailWithMessages '''
+            def values = [x:1,y:2,z:3]*.value
+            values*.toUpperCase()
+        ''', 'Cannot find matching method java.lang.Integer#toUpperCase()'
+    }
 }
 

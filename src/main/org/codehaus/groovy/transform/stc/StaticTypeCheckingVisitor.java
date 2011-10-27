@@ -532,8 +532,36 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
 
         final Expression objectExpression = call.getObjectExpression();
+
         objectExpression.visit(this);
         call.getMethod().visit(this);
+
+        // if the call expression is a spread operator call, then we must make sure that
+        // the call is made on a collection type
+        if (call.isSpreadSafe()) {
+            ClassNode expressionType = getType(objectExpression);
+            if (!(expressionType.equals(Collection_TYPE)||expressionType.implementsInterface(Collection_TYPE))) {
+                addStaticTypeError("Spread operator can only be used on collection types", expressionType);
+                return;
+            } else {
+                // type check call as if it was made on component type
+                ClassNode componentType = inferComponentType(expressionType);
+                MethodCallExpression subcall = new MethodCallExpression(
+                        new CastExpression(componentType, EmptyExpression.INSTANCE),
+                        name,
+                        call.getArguments()
+                );
+                subcall.setLineNumber(call.getLineNumber());
+                subcall.setColumnNumber(call.getColumnNumber());
+                visitMethodCallExpression(subcall);
+                // the inferred type here should be a list of what the subcall returns
+                ClassNode subcallReturnType = getType(subcall);
+                ClassNode listNode = new ClassNode(List.class);
+                listNode.setGenericsTypes(new GenericsType[]{new GenericsType(subcallReturnType)});
+                storeType(call, listNode);
+                return;
+            }
+        }
 
         final ClassNode rememberLastItType = lastImplicitItType;
         Expression callArguments = call.getArguments();
@@ -696,6 +724,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 addStaticTypeError("Inconvertible types: cannot cast "+expressionType.getName()+" to "+targetType.getName(), expression);
             }
         }
+        storeType(expression, expression.getType());
     }
 
     @Override
@@ -751,8 +780,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (op == ASSIGN) {
             if (leftRedirect.isArray() && !rightRedirect.isArray()) return leftRedirect;
             if (leftRedirect.implementsInterface(Collection_TYPE) && rightRedirect.implementsInterface(Collection_TYPE)) {
-                // do not return redirect not to loose generic information
-                return left;
+                return right;
             }
             if (rightRedirect.implementsInterface(Collection_TYPE) && rightRedirect.isDerivedFrom(leftRedirect)) {
                 // ex : def foos = ['a','b','c']
@@ -767,17 +795,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 // special case here
                 return ClassHelper.STRING_TYPE;
             }
-            final ClassNode componentType = arrayType.getComponentType();
-            if (componentType==null) {
-                // check if any generic information could help
-                GenericsType[] types = arrayType.getGenericsTypes();
-                if (types!=null && types.length==1) {
-                    return types[0].getType();
-                }
-                return OBJECT_TYPE;
-            } else {
-                return componentType;
-            }
+            return inferComponentType(arrayType);
         } else if (op == FIND_REGEX) {
             // this case always succeeds the result is a Matcher
             return Matcher_TYPE;
@@ -816,6 +834,21 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
         //TODO: other cases
         return null;
+    }
+
+    private ClassNode inferComponentType(final ClassNode containerType) {
+        ClassNode redirect = containerType.redirect();
+        final ClassNode componentType = redirect.getComponentType();
+        if (componentType == null) {
+            // check if any generic information could help
+            GenericsType[] types = redirect.getGenericsTypes();
+            if (types != null && types.length == 1) {
+                return types[0].getType();
+            }
+            return OBJECT_TYPE;
+        } else {
+            return componentType;
+        }
     }
 
     private MethodNode findMethodOrFail(
@@ -941,10 +974,36 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
         } else if (exp instanceof PropertyExpression) {
             PropertyExpression pexp = (PropertyExpression) exp;
-            if (pexp.getObjectExpression().getType().isEnum()) {
-                return pexp.getObjectExpression().getType();
+            ClassNode objectExpType = getType(pexp.getObjectExpression());
+            if ((LIST_TYPE.equals(objectExpType)|| objectExpType.implementsInterface(LIST_TYPE)) && pexp.isSpreadSafe()) {
+                // list*.property syntax
+                // todo : type inferrence on list content when possible
+                return LIST_TYPE;
+            } else if ((objectExpType.equals(MAP_TYPE) || objectExpType.implementsInterface(MAP_TYPE)) && pexp.isSpreadSafe()) {
+                // map*.property syntax
+                // only "key" and "value" are allowed
+                String propertyName = pexp.getPropertyAsString();
+                GenericsType[] types = objectExpType.getGenericsTypes();
+                if ("key".equals(propertyName)) {
+                    if (types.length==2) {
+                        ClassNode listKey = new ClassNode(List.class);
+                        listKey.setGenericsTypes(new GenericsType[]{types[0]});
+                        return listKey;
+                    }
+                } else if ("value".equals(propertyName)) {
+                    if (types.length==2) {
+                        ClassNode listValue = new ClassNode(List.class);
+                        listValue.setGenericsTypes(new GenericsType[]{types[1]});
+                        return listValue;
+                    }
+                } else {
+                    addStaticTypeError("Spread operator on map only allows one of [key,value]", pexp);
+                }
+                return LIST_TYPE;
+            } else if (objectExpType.isEnum()) {
+                return objectExpType;
             } else {
-                ClassNode clazz = pexp.getObjectExpression().getType().redirect();
+                ClassNode clazz = objectExpType.redirect();
                 List<ClassNode> candidates = new LinkedList<ClassNode>();
                 candidates.add(clazz);
                 if (!temporaryIfBranchTypeInformation.empty()) {
@@ -970,33 +1029,69 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
         }
         if (exp instanceof ListExpression) {
-            ListExpression list = (ListExpression) exp;
-            List<Expression> expressions = list.getExpressions();
-            GenericsType[] genericsTypes = exp.getType().getGenericsTypes();
-            if ((genericsTypes==null
-                    || genericsTypes.length==0
-                    || (genericsTypes.length==1 && OBJECT_TYPE.equals(genericsTypes[0].getType())))
-                && (!expressions.isEmpty())) {
-                // maybe we can infer the component type
-                List<ClassNode> nodes = new LinkedList<ClassNode>();
-                for (Expression expression : expressions) {
-                    nodes.add(getType(expression));
-                }
-                ClassNode superType = firstCommonSuperType(nodes);
-                if (!OBJECT_TYPE.equals(superType)) {
-                    ClassNode orig = exp.getType();
-                    ClassNode inferred = new ClassNode(
-                            orig.getName(),
-                            orig.getModifiers(),
-                            orig.getSuperClass(),
-                            orig.getInterfaces(),
-                            orig.getMixins());
-                    inferred.setGenericsTypes(new GenericsType[]{new GenericsType(superType)});
-                    return inferred;
-                }
-            }
+            return inferListExpressionType((ListExpression)exp);
+        } else if (exp instanceof MapExpression) {
+            return inferMapExpressionType((MapExpression) exp);
         }
         return exp.getType();
+    }
+
+    private ClassNode inferListExpressionType(final ListExpression list) {
+        List<Expression> expressions = list.getExpressions();
+        ClassNode listType = list.getType();
+        GenericsType[] genericsTypes = listType.getGenericsTypes();
+        if ((genericsTypes == null
+                || genericsTypes.length == 0
+                || (genericsTypes.length == 1 && OBJECT_TYPE.equals(genericsTypes[0].getType())))
+                && (!expressions.isEmpty())) {
+            // maybe we can infer the component type
+            List<ClassNode> nodes = new LinkedList<ClassNode>();
+            for (Expression expression : expressions) {
+                nodes.add(getType(expression));
+            }
+            ClassNode superType = getWrapper(firstCommonSuperType(nodes)); // to be used in generics, type must be boxed
+            if (!OBJECT_TYPE.equals(superType)) {
+                ClassNode inferred = new ClassNode(
+                        listType.getName(),
+                        listType.getModifiers(),
+                        listType.getSuperClass(),
+                        listType.getInterfaces(),
+                        listType.getMixins());
+                inferred.setGenericsTypes(new GenericsType[]{new GenericsType(superType)});
+                return inferred;
+            }
+        }
+        return listType;
+    }
+
+    private ClassNode inferMapExpressionType(final MapExpression map) {
+        ClassNode mapType = map.getType();
+        List<MapEntryExpression> entryExpressions = map.getMapEntryExpressions();
+        if (entryExpressions.isEmpty()) return mapType;
+        GenericsType[] genericsTypes = mapType.getGenericsTypes();
+        if (genericsTypes ==null
+            || genericsTypes.length<2
+            || (genericsTypes.length==2 && OBJECT_TYPE.equals(genericsTypes[0].getType()) && OBJECT_TYPE.equals(genericsTypes[1].getType()))) {
+            List<ClassNode> keyTypes = new LinkedList<ClassNode>();
+            List<ClassNode> valueTypes = new LinkedList<ClassNode>();
+            for (MapEntryExpression entryExpression : entryExpressions) {
+                keyTypes.add(getType(entryExpression.getKeyExpression()));
+                valueTypes.add(getType(entryExpression.getValueExpression()));
+            }
+            ClassNode keyType = getWrapper(firstCommonSuperType(keyTypes));  // to be used in generics, type must be boxed
+            ClassNode valueType = getWrapper(firstCommonSuperType(valueTypes));  // to be used in generics, type must be boxed
+            if (!OBJECT_TYPE.equals(keyType) || !OBJECT_TYPE.equals(valueType)) {
+                ClassNode inferred = new ClassNode(
+                        mapType.getName(),
+                        mapType.getModifiers(),
+                        mapType.getSuperClass(),
+                        mapType.getInterfaces(),
+                        mapType.getMixins());
+                inferred.setGenericsTypes(new GenericsType[]{new GenericsType(keyType), new GenericsType(valueType)});
+                return inferred;
+            }
+        }
+        return mapType;
     }
 
     protected void addStaticTypeError(final String msg, final ASTNode expr) {

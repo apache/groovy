@@ -128,5 +128,19 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         println bars[0].substring(1)
         '''
     }
+
+    void testListStarProperty() {
+        assertScript '''
+            List list = ['a','b','c']
+            List classes = list*.class
+        '''
+    }
+
+    void testListStarMethod() {
+        assertScript '''
+            List list = ['a','b','c']
+            List classes = list*.toUpperCase()
+        '''
+    }
 }
 
