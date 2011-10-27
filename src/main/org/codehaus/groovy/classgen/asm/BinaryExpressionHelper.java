@@ -287,7 +287,16 @@ public class BinaryExpressionHelper {
             //rhsType = getCastType(rightExpression);
             rhsType = controller.getOperandStack().getTopOperand();
         }
-        int rhsValueId = compileStack.defineTemporaryVariable("$rhs", rhsType, true);
+        boolean directAssignment = defineVariable && !(leftExpression instanceof TupleExpression);
+        int rhsValueId;
+        if (directAssignment) {
+            VariableExpression var = (VariableExpression) leftExpression;
+            rhsType = controller.getTypeChooser().resolveType(var, controller.getClassNode());
+            operandStack.doGroovyCast(rhsType);
+            rhsValueId = compileStack.defineVariable(var, rhsType, true).getIndex();
+        } else {
+            rhsValueId = compileStack.defineTemporaryVariable("$rhs", rhsType, true);
+        }
         //TODO: if rhs is VariableSlotLoader already, then skip crating a new one
         BytecodeExpression rhsValueLoader = new VariableSlotLoader(rhsType,rhsValueId,operandStack); 
         
@@ -325,12 +334,10 @@ public class BinaryExpressionHelper {
         } 
         // single declaration
         else if (defineVariable) {
-            VariableExpression var = (VariableExpression) leftExpression;
-            ClassNode type = controller.getTypeChooser().resolveType(var, controller.getClassNode());
             rhsValueLoader.visit(acg);
-            operandStack.doGroovyCast(type);
-            compileStack.defineVariable(var, type, true);
             operandStack.remove(1);
+            compileStack.popLHS();
+            return;
         } 
         // normal assignment
         else {
