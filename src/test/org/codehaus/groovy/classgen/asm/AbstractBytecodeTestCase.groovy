@@ -84,7 +84,9 @@ abstract class AbstractBytecodeTestCase extends GroovyTestCase {
         cr.accept(tcf, 0)
 
         def code = output.toString()
-        return new InstructionSequence(instructions: code.split('\n')*.trim())
+        final InstructionSequence sequence = new InstructionSequence(instructions: code.split('\n')*.trim())
+        println sequence.toSequence()
+        return sequence
     }
 }
 
@@ -148,5 +150,13 @@ class InstructionSequence {
 
     String toString() {
         instructions.join('\n')
+    }
+
+    String toSequence() {
+        def sb = new StringBuilder()
+        instructions*.trim().each {
+            sb << "'${it}'," << '\n'
+        }
+        sb.toString()
     }
 }
