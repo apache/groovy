@@ -749,7 +749,16 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         ClassNode rightRedirect = right.redirect();
 
         if (op == ASSIGN) {
-            return leftRedirect.isArray() && !rightRedirect.isArray() ? leftRedirect : rightRedirect;
+            if (leftRedirect.isArray() && !rightRedirect.isArray()) return leftRedirect;
+            if (leftRedirect.implementsInterface(Collection_TYPE) && rightRedirect.implementsInterface(Collection_TYPE)) {
+                // do not return redirect not to loose generic information
+                return left;
+            }
+            if (rightRedirect.implementsInterface(Collection_TYPE) && rightRedirect.isDerivedFrom(leftRedirect)) {
+                // ex : def foos = ['a','b','c']
+                return right;
+            }
+            return rightRedirect;
         } else if (isBoolIntrinsicOp(op)) {
             return boolean_TYPE;
         } else if (isArrayOp(op)) {
@@ -759,7 +768,16 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 return ClassHelper.STRING_TYPE;
             }
             final ClassNode componentType = arrayType.getComponentType();
-            return componentType == null ? ClassHelper.OBJECT_TYPE : componentType;
+            if (componentType==null) {
+                // check if any generic information could help
+                GenericsType[] types = arrayType.getGenericsTypes();
+                if (types!=null && types.length==1) {
+                    return types[0].getType();
+                }
+                return OBJECT_TYPE;
+            } else {
+                return componentType;
+            }
         } else if (op == FIND_REGEX) {
             // this case always succeeds the result is a Matcher
             return Matcher_TYPE;
@@ -949,6 +967,33 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     }
                 }
                 return ClassHelper.OBJECT_TYPE;
+            }
+        }
+        if (exp instanceof ListExpression) {
+            ListExpression list = (ListExpression) exp;
+            List<Expression> expressions = list.getExpressions();
+            GenericsType[] genericsTypes = exp.getType().getGenericsTypes();
+            if ((genericsTypes==null
+                    || genericsTypes.length==0
+                    || (genericsTypes.length==1 && OBJECT_TYPE.equals(genericsTypes[0].getType())))
+                && (!expressions.isEmpty())) {
+                // maybe we can infer the component type
+                List<ClassNode> nodes = new LinkedList<ClassNode>();
+                for (Expression expression : expressions) {
+                    nodes.add(getType(expression));
+                }
+                ClassNode superType = firstCommonSuperType(nodes);
+                if (!OBJECT_TYPE.equals(superType)) {
+                    ClassNode orig = exp.getType();
+                    ClassNode inferred = new ClassNode(
+                            orig.getName(),
+                            orig.getModifiers(),
+                            orig.getSuperClass(),
+                            orig.getInterfaces(),
+                            orig.getMixins());
+                    inferred.setGenericsTypes(new GenericsType[]{new GenericsType(superType)});
+                    return inferred;
+                }
             }
         }
         return exp.getType();

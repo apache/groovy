@@ -112,5 +112,21 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
             }
         '''
     }
+
+    void testSliceInference() {
+        assertScript '''
+        List<String> foos = ['aa','bb','cc']
+        foos[0].substring(1)
+        def bars = foos[0..1]
+        println bars[0].substring(1)
+        '''
+
+        assertScript '''
+        def foos = ['aa','bb','cc']
+        foos[0].substring(1)
+        def bars = foos[0..1]
+        println bars[0].substring(1)
+        '''
+    }
 }
 
