@@ -277,4 +277,22 @@ class MethodPatternsTest extends AbstractBytecodeTestCase {
           'IRETURN'
       ])
     }
+    
+    void testNoBoxUnbox() {
+        assert compile(method:"someCode", """
+            public boolean someCall() {
+                return true;
+            }
+            
+            public boolean someCode() {
+                boolean val = someCall()
+            }        
+        """).hasSequence([
+            'ALOAD',
+            'INVOKEVIRTUAL script.someCall ()Z',
+            'ISTORE',
+            'ILOAD',
+            'IRETURN',
+        ])
+    }
 }

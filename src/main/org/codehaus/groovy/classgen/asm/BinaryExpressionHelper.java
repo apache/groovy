@@ -18,6 +18,7 @@ package org.codehaus.groovy.classgen.asm;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.Variable;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
@@ -344,7 +345,20 @@ public class BinaryExpressionHelper {
             int mark = operandStack.getStackLength();
             // to leave a copy of the rightExpression value on the stack after the assignment.
             rhsValueLoader.visit(acg);
-            operandStack.doGroovyCast(leftExpression.getType());
+            TypeChooser typeChooser = controller.getTypeChooser();
+            ClassNode targetType = typeChooser.resolveType(leftExpression, controller.getClassNode());
+            operandStack.doGroovyCast(targetType);
+            // with flow typing, a variable may change of type
+            // and we can make sure to avoid unnecessary calls to castToType
+            // by specifying the current type
+            if (leftExpression instanceof VariableExpression) {
+                VariableExpression var = (VariableExpression) leftExpression;
+                String varName = var.getName();
+                if (!"this".equals(varName) && !"super".equals(varName)) {
+                    BytecodeVariable variable = controller.getCompileStack().getVariable(varName, false);
+                    if (variable!=null) variable.setType(targetType);
+                }
+            }
             leftExpression.visit(acg);
             operandStack.remove(operandStack.getStackLength()-mark);
         }
