@@ -7,7 +7,13 @@ import org.objectweb.asm.FieldVisitor
 import org.objectweb.asm.ClassReader
 import org.codehaus.groovy.control.Phases
 import org.objectweb.asm.commons.EmptyVisitor
-import java.util.List;
+import java.util.List
+import org.objectweb.asm.util.TraceMethodVisitor
+import net.sf.cglib.proxy.Enhancer
+import org.jmock.cglib.CGLIBCoreMock
+import net.sf.cglib.proxy.MethodInterceptor
+import java.lang.reflect.Method
+import net.sf.cglib.proxy.MethodProxy
 
 /**
  * Abstract test case to extend to check the instructions we generate in the bytecode of groovy programs.
@@ -33,28 +39,51 @@ abstract class AbstractBytecodeTestCase extends GroovyTestCase {
         
         
         def output = new StringWriter()
+        
         def tcf = new TraceClassVisitor(new PrintWriter(output)) {
             MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
                 if (options.method == name) {
-                    super.visitMethod(access, name, desc, signature, exceptions)
+                    text << '--BEGIN--'
+                    def res = super.visitMethod(access, name, desc, signature, exceptions)
+                    text << '--END--'
+                    res
                 } else {
                     new EmptyVisitor()
                 }
             }
             FieldVisitor visitField(int access, String name, String desc, String signature, Object value) {
                 if (options.field == name) {
-                    super.visitField(access, name, desc, signature, value)
+                    text << '--BEGIN--'
+                    def res = super.visitField(access, name, desc, signature, value)
+                    text << '--END--'
+                    res
                 } else {
                     new EmptyVisitor()
                 }
             }
-            
+
+            @Override
+            void visitEnd() {
+                Iterator it = text.iterator()
+                boolean drop = true
+                while (it.hasNext()) {
+                    Object o = it.next();
+                    if ('--BEGIN--'==o) {
+                        drop = false
+                        it.remove()
+                    } else if ('--END--'==o) {
+                        drop = true
+                    }
+                    if (drop) it.remove()
+                }
+                super.visitEnd()
+            }
+
         }
         def cr = new ClassReader(cu.classes[0].bytes)
         cr.accept(tcf, 0)
 
         def code = output.toString()
-
         return new InstructionSequence(instructions: code.split('\n')*.trim())
     }
 }
