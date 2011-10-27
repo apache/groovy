@@ -18,6 +18,7 @@ package org.codehaus.groovy.classgen.asm;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.Variable;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
@@ -344,7 +345,8 @@ public class BinaryExpressionHelper {
             int mark = operandStack.getStackLength();
             // to leave a copy of the rightExpression value on the stack after the assignment.
             rhsValueLoader.visit(acg);
-            operandStack.doGroovyCast(leftExpression.getType());
+            ClassNode type = controller.getTypeChooser().resolveType(leftExpression, controller.getClassNode());
+            operandStack.doGroovyCast(type);
             leftExpression.visit(acg);
             operandStack.remove(operandStack.getStackLength()-mark);
         }

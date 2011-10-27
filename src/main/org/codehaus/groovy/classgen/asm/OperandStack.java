@@ -572,6 +572,13 @@ public class OperandStack {
             } else {
                 mv.visitLdcInsn(value);
             }
+        } else if (ClassHelper.boolean_TYPE.equals(type)) {
+            boolean b = (Boolean) value;
+            if (b) {
+                mv.visitInsn(ICONST_1);
+            } else {
+                mv.visitInsn(ICONST_0);
+            }
         } else {
             mv.visitLdcInsn(value);
         }
