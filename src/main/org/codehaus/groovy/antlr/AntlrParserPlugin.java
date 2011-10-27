@@ -2055,7 +2055,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     }
 
     protected Expression literalExpression(AST node, Object value) {
-        ConstantExpression constantExpression = new ConstantExpression(value);
+        ConstantExpression constantExpression = new ConstantExpression(value, value instanceof Boolean);
         configureAST(constantExpression, node);
         return constantExpression;
     }
