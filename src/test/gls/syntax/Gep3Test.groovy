@@ -395,6 +395,25 @@ class Gep3Test extends GroovyTestCase {
             }        
         '''
     }
+    
+    void testUsageOfInnerClass() {
+        assertScript """
+            class Demo  {
+               void doit() {
+                   execute new Runnable(){
+                       void run() {
+                           println 'hello'
+                       }
+                   }
+               }
+               
+               void execute(arg) {
+                   arg.run()
+               }
+            }
+            new Demo().doit()
+        """
+    }
 }
 
 
