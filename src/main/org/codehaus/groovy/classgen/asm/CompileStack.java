@@ -354,7 +354,9 @@ public class CompileStack implements Opcodes {
            
             for (Iterator iterator = usedVariables.iterator(); iterator.hasNext();) {
                 BytecodeVariable v = (BytecodeVariable) iterator.next();
-                String type = BytecodeHelper.getTypeDescription(v.getType());
+                ClassNode t = v.getType();
+                if (v.isHolder()) t = ClassHelper.REFERENCE_TYPE;
+                String type = BytecodeHelper.getTypeDescription(t);
                 Label start = v.getStartLabel();
                 Label end = v.getEndLabel();
                 mv.visitLocalVariable(v.getName(), type, null, start, end, v.getIndex());
