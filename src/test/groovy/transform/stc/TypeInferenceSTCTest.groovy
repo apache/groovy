@@ -454,5 +454,14 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
             values*.toUpperCase()
         ''', 'Cannot find matching method java.lang.Integer#toUpperCase()'
     }
+
+    void testFlowTypingWithStringVariable() {
+        // as anything can be assigned to a string, flow typing engine
+        // could "erase" the type of the original variable although is must not
+        assertScript '''
+            String str = new Object() // type checker will not complain, anything assignable to a String
+            str.toUpperCase() // should not complain
+        '''
+    }
 }
 

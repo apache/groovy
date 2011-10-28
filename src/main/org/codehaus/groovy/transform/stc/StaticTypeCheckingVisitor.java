@@ -777,6 +777,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         ClassNode leftRedirect = left.redirect();
         ClassNode rightRedirect = right.redirect();
 
+        Expression leftExpression = expr.getLeftExpression();
         if (op == ASSIGN) {
             if (leftRedirect.isArray() && !rightRedirect.isArray()) return leftRedirect;
             if (leftRedirect.implementsInterface(Collection_TYPE) && rightRedirect.implementsInterface(Collection_TYPE)) {
@@ -786,11 +787,25 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 // ex : def foos = ['a','b','c']
                 return right;
             }
+            if (leftExpression instanceof VariableExpression) {
+                VariableExpression target = (VariableExpression) leftExpression;
+                if (target.getAccessedVariable() instanceof VariableExpression && target.getAccessedVariable()!=leftExpression) {
+                    target = (VariableExpression) target.getAccessedVariable();
+                }
+                ClassNode initialType = target.getType().redirect();
+                // as anything can be assigned to a String, Class or boolean, return the left type instead
+                if (STRING_TYPE.equals(initialType)
+                        || CLASS_Type.equals(initialType)
+                        || Boolean_TYPE.equals(initialType)
+                        || isPrimitiveType(initialType)) {
+                    return initialType;
+                }
+            }
             return rightRedirect;
         } else if (isBoolIntrinsicOp(op)) {
             return boolean_TYPE;
         } else if (isArrayOp(op)) {
-            ClassNode arrayType = getType(expr.getLeftExpression());
+            ClassNode arrayType = getType(leftExpression);
             if (ClassHelper.STRING_TYPE.equals(arrayType)) {
                 // special case here
                 return ClassHelper.STRING_TYPE;
