@@ -15,9 +15,11 @@
  */
 package org.codehaus.groovy.classgen.asm;
 
+import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.Variable;
+import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 
@@ -31,6 +33,7 @@ import static org.codehaus.groovy.ast.ClassHelper.OBJECT_TYPE;
  */
 public class StatementMetaTypeChooser implements TypeChooser {
     public ClassNode resolveType(final Expression exp, final ClassNode current) {
+        if (exp instanceof ClassExpression) return ClassHelper.CLASS_Type;
         OptimizingStatementWriter.StatementMeta meta = (OptimizingStatementWriter.StatementMeta) exp.getNodeMetaData(OptimizingStatementWriter.StatementMeta.class);
         ClassNode type = null;
         if (meta!=null) type = meta.type;
