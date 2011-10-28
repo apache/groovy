@@ -142,5 +142,13 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
             List classes = list*.toUpperCase()
         '''
     }
+
+    void testInferredMapDotProperty() {
+        assertScript '''
+            def map = [:]
+            map['a'] = 1
+            map.b = 2
+        '''
+    }
 }
 

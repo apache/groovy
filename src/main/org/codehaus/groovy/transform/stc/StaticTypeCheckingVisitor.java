@@ -343,7 +343,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
      */
     private boolean existsProperty(final PropertyExpression pexp) {
         Expression objectExpression = pexp.getObjectExpression();
-        ClassNode clazz = objectExpression.getType().redirect();
+        ClassNode clazz = getType(objectExpression);
         List<ClassNode> tests = new LinkedList<ClassNode>();
         tests.add(clazz);
         if (!temporaryIfBranchTypeInformation.empty()) {
@@ -362,7 +362,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         boolean isAttributeExpression = pexp instanceof AttributeExpression;
         for (ClassNode testClass : tests) {
             // maps have special handling for property expressions
-            if (!testClass.implementsInterface(ClassHelper.MAP_TYPE)) {
+            if (!implementsInterfaceOrIsSubclassOf(testClass,  MAP_TYPE)) {
                 ClassNode current = testClass;
                 while (current!=null && !hasProperty) {
                     current = current.redirect();
