@@ -530,4 +530,8 @@ abstract class StaticTypeCheckingSupport {
         sb.append(")");
         return sb.toString();
     }
+
+    static boolean implementsInterfaceOrIsSubclassOf(ClassNode type, ClassNode superOrInterface) {
+        return type.equals(superOrInterface) || type.isDerivedFrom(superOrInterface) || type.implementsInterface(superOrInterface);
+    }
 }
