@@ -217,6 +217,20 @@ class DelegateTransformTest extends CompilableTestSupport {
     void testDelegateSuperInterfaces_Groovy4619() {
         assert 'doSomething' in SomeClass4619.class.methods*.name
     }
+
+    // GROOVY-5112
+    void testGenericsOnArray() {
+        assertScript '''
+            class ListWrapper {
+              @Delegate
+              List myList
+
+              @Delegate
+              URL homepage
+            }
+            new ListWrapper()
+        '''
+    }
 }
 
 interface DelegateFoo {
