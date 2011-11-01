@@ -1118,17 +1118,21 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     }
 
     public String toString() {
+        return toString(true);
+    }
+
+    public String toString(boolean showRedirect) {
         String ret = getName();
         if (genericsTypes != null) {
             ret += " <";
             for (int i = 0; i < genericsTypes.length; i++) {
                 if (i != 0) ret += ", ";
                 GenericsType genericsType = genericsTypes[i];
-                ret += genericTypeAsString(genericsType);
+                ret += genericTypeAsString(genericsType, showRedirect);
             }
             ret += ">";
         }
-        if (redirect != null) {
+        if (redirect != null && showRedirect) {
             ret += " -> " + redirect().toString();
         }
         return ret;
@@ -1138,9 +1142,10 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
      * This exists to avoid a recursive definition of toString. The default toString
      * in GenericsType calls ClassNode.toString(), which calls GenericsType.toString(), etc. 
      * @param genericsType
+     * @param showRedirect
      * @return
      */
-    private String genericTypeAsString(GenericsType genericsType) {
+    private String genericTypeAsString(GenericsType genericsType, boolean showRedirect) {
         String ret = genericsType.getName();
         if (genericsType.getUpperBounds() != null) {
             ret += " extends ";
@@ -1149,7 +1154,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
                 if (classNode.equals(this)) {
                     ret += classNode.getName();
                 } else {
-                    ret += classNode.toString();
+                    ret += classNode.toString(showRedirect);
                 }
                 if (i + 1 < genericsType.getUpperBounds().length) ret += " & ";
             }

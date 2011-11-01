@@ -25,6 +25,7 @@ import org.codehaus.groovy.transform.StaticTypesTransformation;
 import org.objectweb.asm.Opcodes;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.codehaus.groovy.ast.ClassHelper.*;
 import static org.codehaus.groovy.ast.tools.WideningCategories.*;
@@ -147,8 +148,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (resultType == null) {
             resultType = lType;
         }
-        // todo : if assignment of a primitive to an object (def, Object, whatever),
-        // the type inference engine should return an Object (not a primitive type)
         boolean isEmptyDeclaration = expression instanceof DeclarationExpression && rightExpression instanceof EmptyExpression;
         if (!isEmptyDeclaration) storeType(expression, resultType);
         if (!isEmptyDeclaration && isAssignment(op)) {
@@ -241,11 +240,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             // if left type is not a list but right type is a list, then we're in the case of a groovy
             // constructor type : Dimension d = [100,200]
             // In that case, more checks can be performed
-            if (!leftRedirect.implementsInterface(ClassHelper.LIST_TYPE) && rightExpression instanceof ListExpression) {
+            if (!implementsInterfaceOrIsSubclassOf(leftRedirect,LIST_TYPE) && rightExpression instanceof ListExpression) {
                 ArgumentListExpression argList = new ArgumentListExpression(((ListExpression) rightExpression).getExpressions());
                 ClassNode[] args = getArgumentTypes(argList, classNode);
                 checkGroovyStyleConstructor(leftRedirect, args);
-            } else if (inferredRightExpressionType.implementsInterface(Collection_TYPE) && !isAssignableTo(leftRedirect, inferredRightExpressionType)) {
+            } else if (!implementsInterfaceOrIsSubclassOf(inferredRightExpressionType, leftRedirect)
+                    && implementsInterfaceOrIsSubclassOf(inferredRightExpressionType, LIST_TYPE)) {
                 addStaticTypeError("Cannot assign value of type " + inferredRightExpressionType.getName() + " to variable of type " + leftExpressionType.getName(), assignmentExpression);
             }
 
@@ -280,6 +280,38 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                             }
                         }
                     }
+                }
+            }
+
+            // last, check generic type information to ensure that inferred types are compatible
+            if (leftExpressionType.isUsingGenerics() && !leftExpressionType.isEnum()) {
+                final AtomicBoolean ok = new AtomicBoolean(false);
+                GenericsUtils.ClassNodeCollector collector = new GenericsUtils.ClassNodeCollector() {
+                    public boolean collect(final ClassNode node) {
+                        if (node.equals(leftExpressionType)) {
+                            boolean check = true;
+                            GenericsType[] nodeGenericsTypes = node.getGenericsTypes();
+                            GenericsType[] genericsTypes = leftExpressionType.getGenericsTypes();
+                            if (nodeGenericsTypes==null || genericsTypes==null) return true; // continue search
+                            if (nodeGenericsTypes.length!=genericsTypes.length) return true; // continue search
+                            for (int i = 0; i < genericsTypes.length; i++) {
+                                ClassNode genericsType = getWrapper(genericsTypes[i].getType());
+                                ClassNode nodeType = getWrapper(nodeGenericsTypes[i].getType());
+                                check = check && (genericsType.equals(nodeType) || nodeType.isDerivedFrom(genericsType));
+                            }
+                            if (check) {
+                                ok.set(true);
+                                return false;
+                            }
+                        }
+                        return true;
+                    }
+                };
+                GenericsUtils.collectParameterizedClassInfo(inferredRightExpressionType, collector);
+                if (!ok.get()) {
+                    addStaticTypeError("Incompatible generic argument types. Cannot assign "
+                    + inferredRightExpressionType.toString(false)
+                    + " to: "+leftExpressionType.toString(false), assignmentExpression);
                 }
             }
         }
@@ -591,7 +623,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 } else if (parameters.length == 1) {
                     Parameter param = parameters[0];
                     if (!param.isDynamicTyped() && !isAssignableTo(param.getType().redirect(), receiver)) {
-                        addStaticTypeError("Expected parameter type: " + receiver + " but was: " + param.getType().redirect(), param);
+                        addStaticTypeError("Expected parameter type: " + receiver.toString(false) + " but was: " + param.getType().redirect().toString(false), param);
                     }
                 }
             }
@@ -621,7 +653,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             List<MethodNode> mn = null;
             for (ClassNode currentReceiver : receivers) {
                 mn = findMethod(currentReceiver, name, args);
-                if (!mn.isEmpty()) break;
+                if (!mn.isEmpty()) {
+                    typeCheckMethodsWithGenerics(currentReceiver, args, mn, call);
+                    break;
+                }
             }
             if (mn.isEmpty()) {
                 addStaticTypeError("Cannot find matching method " + receiver.getName() + "#" + toMethodParametersString(name, args), call);
@@ -781,6 +816,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (op == ASSIGN) {
             if (leftRedirect.isArray() && !rightRedirect.isArray()) return leftRedirect;
             if (leftRedirect.implementsInterface(Collection_TYPE) && rightRedirect.implementsInterface(Collection_TYPE)) {
+                // because of type inferrence, we must perform an additional check if the right expression
+                // is an empty list expression ([]). In that case and only in that case, the inferred type
+                // will be wrong, so we will prefer the left type
+                if (expr.getRightExpression() instanceof ListExpression) {
+                    List<Expression> list = ((ListExpression) expr.getRightExpression()).getExpressions();
+                    if (list.isEmpty()) return left;
+                }
                 return right;
             }
             if (rightRedirect.implementsInterface(Collection_TYPE) && rightRedirect.isDerivedFrom(leftRedirect)) {
@@ -801,7 +843,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     return initialType;
                 }
             }
-            return rightRedirect;
+            return right;
         } else if (isBoolIntrinsicOp(op)) {
             return boolean_TYPE;
         } else if (isArrayOp(op)) {
@@ -1053,6 +1095,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     private ClassNode inferListExpressionType(final ListExpression list) {
         List<Expression> expressions = list.getExpressions();
+        if (expressions.isEmpty()) {
+            // cannot infer, return list type
+            return list.getType();
+        }
         ClassNode listType = list.getType();
         GenericsType[] genericsTypes = listType.getGenericsTypes();
         if ((genericsTypes == null
@@ -1107,6 +1153,53 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
         }
         return mapType;
+    }
+
+    private void typeCheckMethodsWithGenerics(ClassNode receiver, ClassNode[] arguments, List<MethodNode> candidateMethods, Expression location) {
+        if (!receiver.isUsingGenerics()) return;
+        int failure=0;
+        GenericsType[] methodGenericTypes = null;
+        for (MethodNode method : candidateMethods) {
+            ClassNode methodNodeReceiver = method.getDeclaringClass();
+            if (!implementsInterfaceOrIsSubclassOf(receiver, methodNodeReceiver) || !methodNodeReceiver.isUsingGenerics()) continue;
+            // both candidate method and receiver have generic information so a check is possible
+            Parameter[] parameters = method.getParameters();
+            int argNum = 0;
+            for (Parameter parameter : parameters) {
+                ClassNode type = parameter.getType();
+                if (type.isUsingGenerics()) {
+                    methodGenericTypes =
+                            GenericsUtils.alignGenericTypes(
+                                    receiver.redirect().getGenericsTypes(),
+                                    receiver.getGenericsTypes(),
+                                    type.getGenericsTypes());
+                    if (methodGenericTypes.length==1) {
+                        ClassNode nodeType = getWrapper(methodGenericTypes[0].getType());
+                        ClassNode actualType = getWrapper(arguments[argNum]);
+                        if (!actualType.isDerivedFrom(nodeType)) {
+                            failure++;
+                        }
+                    } else {
+                        // not sure this is possible !
+                    }
+                }
+                argNum++;
+            }
+        }
+        if (failure==candidateMethods.size()) {
+            if (failure==1) {
+                MethodNode method = candidateMethods.get(0);
+                ClassNode[] parameterTypes = new ClassNode[methodGenericTypes.length];
+                for (int i = 0; i < methodGenericTypes.length; i++) {
+                    parameterTypes[i] = methodGenericTypes[i].getType();
+                }
+                addStaticTypeError("Cannot call " + receiver.getName()+"#"+
+                        toMethodParametersString(method.getName(), parameterTypes) +
+                        " with arguments " + Arrays.asList(arguments), location);
+            } else {
+                addStaticTypeError("No matching method found for arguments "+Arrays.asList(arguments), location);
+            }
+        }
     }
 
     protected void addStaticTypeError(final String msg, final ASTNode expr) {
