@@ -110,8 +110,10 @@ abstract class StaticTypeCheckingSupport {
                         metaMethod.getReturnType(),
                         parameters,
                         ClassNode.EMPTY_ARRAY, null);
-                String declaringClassName = types[0].getType().getName();
-                node.setDeclaringClass(ClassHelper.make(declaringClassName));
+                node.setGenericsTypes(metaMethod.getGenericsTypes());
+                ClassNode declaringClass = types[0].getType();
+                String declaringClassName = declaringClass.getName();
+                node.setDeclaringClass(declaringClass);
 
                 List<MethodNode> nodes = methods.get(declaringClassName);
                 if (nodes == null) {
@@ -527,5 +529,14 @@ abstract class StaticTypeCheckingSupport {
 
     static boolean implementsInterfaceOrIsSubclassOf(ClassNode type, ClassNode superOrInterface) {
         return type.equals(superOrInterface) || type.isDerivedFrom(superOrInterface) || type.implementsInterface(superOrInterface);
+    }
+
+    static ClassNode[] extractParameterTypes(Parameter[] parameters) {
+        if (parameters==null) return null;
+        ClassNode[] nodes = new ClassNode[parameters.length];
+        for (int i = 0; i < nodes.length; i++) {
+            nodes[i] = parameters[i].getType();
+        }
+        return nodes;
     }
 }
