@@ -82,6 +82,7 @@ public class GenericsUtils {
      */
     public static GenericsType[] alignGenericTypes(final GenericsType[] redirectGenericTypes, final GenericsType[] parameterizedTypes, final GenericsType[] alignmentTarget) {
         if (alignmentTarget==null) return EMPTY_GENERICS_ARRAY;
+        if (parameterizedTypes==null) return alignmentTarget;
         GenericsType[] generics = new GenericsType[alignmentTarget.length];
         for (int i = 0, scgtLength = alignmentTarget.length; i < scgtLength; i++) {
             final GenericsType superGenericType = alignmentTarget[i];
