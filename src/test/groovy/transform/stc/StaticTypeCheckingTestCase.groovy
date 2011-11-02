@@ -35,8 +35,11 @@ abstract class StaticTypeCheckingTestCase extends GroovyTestCase {
         super.setUp()
         config = new CompilerConfiguration()
         config.addCompilationCustomizers(new ASTTransformationCustomizer(TypeChecked))
+        configure()
         shell = new GroovyShell(config)
     }
+
+    protected void configure() {}
 
     @Override
     protected void tearDown() {

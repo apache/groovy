@@ -996,6 +996,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     bestChoices.add(m);
                     if (bestDist>0) {
                         bestChoices.clear();
+                        bestChoices.add(m);
                         bestDist = 0;
                     }
                 }
@@ -1178,6 +1179,24 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         ClassNode actualType = getWrapper(arguments[argNum]);
                         if (!actualType.isDerivedFrom(nodeType)) {
                             failure++;
+                        }
+                    } else {
+                        // not sure this is possible !
+                    }
+                } else if (type.isArray() && type.getComponentType().isUsingGenerics()) {
+                    ClassNode componentType = type.getComponentType();
+                    methodGenericTypes =
+                            GenericsUtils.alignGenericTypes(
+                                    receiver.redirect().getGenericsTypes(),
+                                    receiver.getGenericsTypes(),
+                                    componentType.getGenericsTypes());
+                    if (methodGenericTypes.length==1) {
+                        ClassNode nodeType = getWrapper(methodGenericTypes[0].getType());
+                        ClassNode actualType = getWrapper(arguments[argNum].getComponentType());
+                        if (!actualType.equals(nodeType)) {
+                            failure++;
+                            // for proper error message
+                            methodGenericTypes[0].setType(methodGenericTypes[0].getType().makeArray());
                         }
                     } else {
                         // not sure this is possible !
