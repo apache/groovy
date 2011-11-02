@@ -242,7 +242,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             // In that case, more checks can be performed
             if (!implementsInterfaceOrIsSubclassOf(leftRedirect,LIST_TYPE) && rightExpression instanceof ListExpression) {
                 ArgumentListExpression argList = new ArgumentListExpression(((ListExpression) rightExpression).getExpressions());
-                ClassNode[] args = getArgumentTypes(argList, classNode);
+                ClassNode[] args = getArgumentTypes(argList);
                 checkGroovyStyleConstructor(leftRedirect, args);
             } else if (!implementsInterfaceOrIsSubclassOf(inferredRightExpressionType, leftRedirect)
                     && implementsInterfaceOrIsSubclassOf(inferredRightExpressionType, LIST_TYPE)) {
@@ -254,7 +254,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             // In this case, more checks can be performed
             if (!leftRedirect.implementsInterface(ClassHelper.MAP_TYPE) && rightExpression instanceof MapExpression) {
                 ArgumentListExpression argList = new ArgumentListExpression(rightExpression);
-                ClassNode[] args = getArgumentTypes(argList, classNode);
+                ClassNode[] args = getArgumentTypes(argList);
                 checkGroovyStyleConstructor(leftRedirect, args);
                 // perform additional type checking on arguments
                 MapExpression mapExpression = (MapExpression) rightExpression;
@@ -520,14 +520,14 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     public void visitConstructorCallExpression(ConstructorCallExpression call) {
         super.visitConstructorCallExpression(call);
         ClassNode receiver = call.getType();
-        ClassNode[] args = getArgumentTypes(InvocationWriter.makeArgumentList(call.getArguments()), receiver);
+        ClassNode[] args = getArgumentTypes(InvocationWriter.makeArgumentList(call.getArguments()));
         MethodNode node = findMethodOrFail(call, receiver, "<init>", args);
         if (node!=null) {
             storeTargetMethod(call, node);
         }
     }
 
-    private ClassNode[] getArgumentTypes(ArgumentListExpression args, ClassNode current) {
+    private ClassNode[] getArgumentTypes(ArgumentListExpression args) {
         List<Expression> arglist = args.getExpressions();
         ClassNode[] ret = new ClassNode[arglist.size()];
         int i = 0;
@@ -605,7 +605,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             callArguments.visit(this);
         }
 
-        ClassNode[] args = getArgumentTypes(InvocationWriter.makeArgumentList(callArguments), classNode);
+        ClassNode[] args = getArgumentTypes(InvocationWriter.makeArgumentList(callArguments));
         final boolean isCallOnClosure = isClosureCall(name, objectExpression);
         final ClassNode receiver = getType(objectExpression);
 
