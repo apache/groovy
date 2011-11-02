@@ -15,11 +15,8 @@
  */
 package org.codehaus.groovy.transform.stc;
 
-import groovy.lang.MetaMethod;
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
-import org.codehaus.groovy.reflection.CachedClass;
-import org.codehaus.groovy.reflection.ReflectionCache;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 
 import java.util.*;
@@ -101,28 +98,25 @@ abstract class StaticTypeCheckingSupport {
      */
     private static Map<String, List<MethodNode>> getDGMMethods() {
         Map<String, List<MethodNode>> methods = new HashMap<String, List<MethodNode>>();
-        CachedClass cachedClass = ReflectionCache.getCachedClass(DefaultGroovyMethods.class);
-        for (MetaMethod metaMethod : cachedClass.getMethods()) {
-            CachedClass[] types = metaMethod.getParameterTypes();
+        ClassNode cn = ClassHelper.makeWithoutCaching(DefaultGroovyMethods.class, true);
+        for (MethodNode metaMethod : cn.getMethods()) {
+            Parameter[] types = metaMethod.getParameters();
             if (metaMethod.isStatic() && metaMethod.isPublic() && types.length > 0) {
                 Parameter[] parameters = new Parameter[types.length - 1];
-                for (int i = 1; i < types.length; i++) {
-                    CachedClass type = types[i];
-                    parameters[i - 1] = new Parameter(ClassHelper.make(type.getTheClass()), "p" + i);
-                }
+                System.arraycopy(types, 1, parameters, 0, parameters.length);
                 MethodNode node = new MethodNode(
                         metaMethod.getName(),
                         metaMethod.getModifiers(),
-                        ClassHelper.make(metaMethod.getReturnType()),
+                        metaMethod.getReturnType(),
                         parameters,
                         ClassNode.EMPTY_ARRAY, null);
-                node.setDeclaringClass(ClassHelper.make(types[0].getTheClass()));
+                String declaringClassName = types[0].getType().getName();
+                node.setDeclaringClass(ClassHelper.make(declaringClassName));
 
-                String name = types[0].getName();
-                List<MethodNode> nodes = methods.get(name);
+                List<MethodNode> nodes = methods.get(declaringClassName);
                 if (nodes == null) {
                     nodes = new LinkedList<MethodNode>();
-                    methods.put(name, nodes);
+                    methods.put(declaringClassName, nodes);
                 }
                 nodes.add(node);
             }
