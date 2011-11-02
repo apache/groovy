@@ -940,12 +940,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (!chosen.isEmpty()) return chosen;
         // perform a lookup in DGM methods
         methods.clear();
-        Set<MethodNode> fromDGM = findDGMMethodsForClassNode(receiver);
-
-        for (MethodNode methodNode : fromDGM) {
-            if (methodNode.getName().equals(name)) methods.add(methodNode);
-        }
-        chosen = chooseBestBethod(receiver, methods, args);
+        chosen = findDGMMethodsByNameAndArguments(receiver, name, args, methods);
         if (!chosen.isEmpty()) {
             return chosen;
         }
@@ -953,6 +948,17 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (receiver == ClassHelper.GSTRING_TYPE) return findMethod(ClassHelper.STRING_TYPE, name, args);
         return EMPTY_METHODNODE_LIST;
     }
+
+    private List<MethodNode> findDGMMethodsByNameAndArguments(final ClassNode receiver, final String name, final ClassNode[] args, final List<MethodNode> methods) {
+        final List<MethodNode> chosen;
+        Set<MethodNode> fromDGM = findDGMMethodsForClassNode(receiver);
+
+        for (MethodNode methodNode : fromDGM) {
+            if (methodNode.getName().equals(name)) methods.add(methodNode);
+        }
+        chosen = chooseBestBethod(receiver, methods, args);
+            return chosen;
+        }
 
     /**
      * Given a list of candidate methods, returns the one which best matches the argument types
@@ -981,7 +987,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             Parameter[] params = m.getParameters();
             if (params.length == args.length) {
                 int dist = Math.max(allParametersAndArgumentsMatch(params, args), lastArgMatchesVarg(params, args));
-                if (!receiver.equals(m.getDeclaringClass())) dist++;
+                if (dist>=0 && !receiver.equals(m.getDeclaringClass())) dist++;
                 if (dist>=0 && dist<bestDist) {
                     bestChoices.clear();
                     bestChoices.add(m);
@@ -1004,7 +1010,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 //      that case is handled above already
                 // (3) there is more than one argument for the vargs array
                 int dist = excessArgumentsMatchesVargsParameter(params, args);
-                if (!receiver.equals(m.getDeclaringClass())) dist++;
+                if (dist>=0 && !receiver.equals(m.getDeclaringClass())) dist++;
                 if (params.length < args.length && dist>=0) {
                     if (dist >= 0 && dist < bestDist) {
                         bestChoices.clear();
