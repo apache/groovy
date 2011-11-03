@@ -105,6 +105,7 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
     private int getOperandConversionType(ClassNode leftType, ClassNode rightType) {
         if (isIntCategory(leftType) && isIntCategory(rightType)) return 1;
         if (isLongCategory(leftType) && isLongCategory(rightType)) return 2;
+        if (isBigDecCategory(leftType) && isBigDecCategory(rightType)) return 0;
         if (isDoubleCategory(leftType) && isDoubleCategory(rightType)) return 3;
         return 0;
     }
