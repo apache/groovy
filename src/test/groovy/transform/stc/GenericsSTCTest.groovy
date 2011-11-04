@@ -45,7 +45,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         shouldFailWithMessages '''
             List<String> list = []
             list.add(1)
-        ''', "Cannot call java.util.List#add(java.lang.String) with arguments [int]"
+        ''', "Cannot find matching method java.util.List#add(int)"
     }
 
     void testAddOnList2() {
@@ -58,6 +58,30 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             List<Integer> list = []
             list.add 1
         '''
+    }
+
+    /*
+
+        // UNSUPPORTED
+
+    void testAddOnListWithDiamond() {
+        assertScript '''
+            List<String> list = new LinkedList<>()
+            list.add 'Hello'
+        '''
+    }
+     */
+
+    void testLinkedListWithListArgument() {
+        assertScript '''
+            List<String> list = new LinkedList<String>(['1','2','3'])
+        '''
+    }
+
+    void testLinkedListWithListArgumentAndWrongElementTypes() {
+        shouldFailWithMessages '''
+            List<String> list = new LinkedList<String>([1,2,3])
+        ''', 'Cannot find matching method java.util.LinkedList#<init>(java.util.List <java.lang.Integer>)'
     }
 
     void testCompatibleGenericAssignmentWithInferrence() {

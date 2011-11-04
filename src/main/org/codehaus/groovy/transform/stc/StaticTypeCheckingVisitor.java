@@ -275,7 +275,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                                 " for class: " + leftRedirect.getName(), leftExpression);
                         } else {
                             ClassNode valueType = getType(entryExpression.getValueExpression());
-                            if (!isAssignableTo(valueType, propertyNode.getType())) {
+                            if (!isAssignableTo(propertyNode.getType(), valueType)) {
                                 addStaticTypeError("Cannot assign value of type " + valueType.getName() + " to field of type " + propertyNode.getType().getName(), entryExpression);
                             }
                         }
@@ -622,7 +622,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     addStaticTypeError("Unexpected number of parameters for a with call", argList);
                 } else if (parameters.length == 1) {
                     Parameter param = parameters[0];
-                    if (!param.isDynamicTyped() && !isAssignableTo(param.getType().redirect(), receiver)) {
+                    if (!param.isDynamicTyped() && !isAssignableTo(receiver, param.getType().redirect())) {
                         addStaticTypeError("Expected parameter type: " + receiver.toString(false) + " but was: " + param.getType().redirect().toString(false), param);
                     }
                 }
@@ -847,12 +847,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         } else if (isBoolIntrinsicOp(op)) {
             return boolean_TYPE;
         } else if (isArrayOp(op)) {
-            ClassNode arrayType = getType(leftExpression);
-            if (ClassHelper.STRING_TYPE.equals(arrayType)) {
+            if (ClassHelper.STRING_TYPE.equals(left)) {
                 // special case here
                 return ClassHelper.STRING_TYPE;
             }
-            return inferComponentType(arrayType);
+            return inferComponentType(left);
         } else if (op == FIND_REGEX) {
             // this case always succeeds the result is a Matcher
             return Matcher_TYPE;
@@ -894,11 +893,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     private ClassNode inferComponentType(final ClassNode containerType) {
-        ClassNode redirect = containerType.redirect();
-        final ClassNode componentType = redirect.getComponentType();
+        final ClassNode componentType = containerType.getComponentType();
         if (componentType == null) {
             // check if any generic information could help
-            GenericsType[] types = redirect.getGenericsTypes();
+            GenericsType[] types = containerType.getGenericsTypes();
             if (types != null && types.length == 1) {
                 return types[0].getType();
             }
@@ -984,7 +982,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 Person p = foo(b)
              */
 
-            Parameter[] params = m.getParameters();
+            Parameter[] params = parameterizeArguments(receiver, m);
             if (params.length == args.length) {
                 int dist = Math.max(allParametersAndArgumentsMatch(params, args), lastArgMatchesVarg(params, args));
                 if (dist>=0 && !receiver.equals(m.getDeclaringClass())) dist++;
@@ -1023,6 +1021,55 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
         }
         return bestChoices;
+    }
+
+    /**
+     * Given a receiver and a method node, parameterize the method arguments using
+     * available generic type information.
+     * @param receiver
+     * @param m
+     * @return
+     */
+    private Parameter[] parameterizeArguments(final ClassNode receiver, final MethodNode m) {
+        GenericsType[] redirectReceiverTypes = receiver.redirect().getGenericsTypes();
+        if (redirectReceiverTypes==null) {
+            // we must perform an additional check for methods like Collections#sort which define generics
+            // at the method level
+            redirectReceiverTypes = m.getGenericsTypes();
+        }
+        if (redirectReceiverTypes==null) return m.getParameters();
+        Parameter[] methodParameters = m.getParameters();
+        Parameter[] params = new Parameter[methodParameters.length];
+        GenericsType[] receiverParameterizedTypes = receiver.getGenericsTypes();
+        if (receiverParameterizedTypes==null) {
+            receiverParameterizedTypes = redirectReceiverTypes;
+        }
+        for (int i = 0; i < methodParameters.length; i++) {
+            Parameter methodParameter = methodParameters[i];
+            ClassNode paramType = methodParameter.getType();
+            if (paramType.isUsingGenerics()) {
+                GenericsType[] alignmentTypes = paramType.getGenericsTypes();
+                GenericsType[] genericsTypes = GenericsUtils.alignGenericTypes(redirectReceiverTypes, receiverParameterizedTypes, alignmentTypes);
+                if (genericsTypes.length==1) {
+                    ClassNode parameterizedCN;
+                    if (paramType.equals(OBJECT_TYPE)) {
+                        parameterizedCN = genericsTypes[0].getType();
+                    } else {
+                        parameterizedCN= paramType.getPlainNodeReference();
+                        parameterizedCN.setGenericsTypes(genericsTypes);
+                    }
+                    params[i] = new Parameter(
+                            parameterizedCN,
+                            methodParameter.getName()
+                    );
+                } else {
+                    params[i] = methodParameter;
+                }
+            } else {
+                params[i] = methodParameter;
+            }
+        }
+        return params;
     }
 
     private ClassNode getType(Expression exp) {
@@ -1119,12 +1166,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
             ClassNode superType = getWrapper(firstCommonSuperType(nodes)); // to be used in generics, type must be boxed
             if (!OBJECT_TYPE.equals(superType)) {
-                ClassNode inferred = new ClassNode(
-                        listType.getName(),
-                        listType.getModifiers(),
-                        listType.getSuperClass(),
-                        listType.getInterfaces(),
-                        listType.getMixins());
+                ClassNode inferred = listType.getPlainNodeReference();
                 inferred.setGenericsTypes(new GenericsType[]{new GenericsType(superType)});
                 return inferred;
             }
@@ -1149,12 +1191,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             ClassNode keyType = getWrapper(firstCommonSuperType(keyTypes));  // to be used in generics, type must be boxed
             ClassNode valueType = getWrapper(firstCommonSuperType(valueTypes));  // to be used in generics, type must be boxed
             if (!OBJECT_TYPE.equals(keyType) || !OBJECT_TYPE.equals(valueType)) {
-                ClassNode inferred = new ClassNode(
-                        mapType.getName(),
-                        mapType.getModifiers(),
-                        mapType.getSuperClass(),
-                        mapType.getInterfaces(),
-                        mapType.getMixins());
+                ClassNode inferred = mapType.getPlainNodeReference();
                 inferred.setGenericsTypes(new GenericsType[]{new GenericsType(keyType), new GenericsType(valueType)});
                 return inferred;
             }

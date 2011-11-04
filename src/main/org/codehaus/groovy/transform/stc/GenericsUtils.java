@@ -90,7 +90,7 @@ public class GenericsUtils {
             if (redirectGenericTypes!=null) {
                 for (int j = 0; j < redirectGenericTypes.length && match == null; j++) {
                     GenericsType redirectGenericType = redirectGenericTypes[j];
-                    if (redirectGenericType.getName().equals(superGenericType.getName())) {
+                    if (redirectGenericType.isCompatibleWith(superGenericType.getType())) {
                         match = parameterizedTypes[j];
                     }
                 }

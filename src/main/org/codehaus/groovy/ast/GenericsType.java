@@ -238,9 +238,6 @@ public class GenericsType extends ASTNode {
                 // to compare their parameterized generics, or the bound is a regular class and we
                 // must compare the bound with a superclass
                 if (bound.isInterface()) {
-                    if (classNode.isInterface()) {
-                        return compareGenericsWithBound(classNode.getUnresolvedSuperClass(), bound);
-                    }
                     Set<ClassNode> interfaces = classNode.getAllInterfaces();
                     // iterate over all interfaces to check if any corresponds to the bound we are
                     // comparing to
@@ -273,6 +270,11 @@ public class GenericsType extends ASTNode {
                 return compareGenericsWithBound(classNode.getUnresolvedSuperClass(), bound);
             }
             GenericsType[] cnTypes = classNode.getGenericsTypes();
+            if (cnTypes==null && classNode.isRedirectNode()) cnTypes=classNode.redirect().getGenericsTypes();
+            if (cnTypes==null) {
+                // should not happen
+                return false;
+            }
             GenericsType[] uBTypes = bound.getGenericsTypes();
             Map<String, ClassNode> resolvedPlaceholders = placeholderToParameterizedType();
             boolean match = true;
@@ -283,7 +285,7 @@ public class GenericsType extends ASTNode {
                     String name = cnType.getName();
                     if (resolvedPlaceholders.containsKey(name)) cnType=new GenericsType(resolvedPlaceholders.get(name));
                 }
-                match = uBType.isWildcard() || cnType.isCompatibleWith(uBType.getType());
+                match = uBType.isWildcard() || uBType.isPlaceholder() || cnType.isCompatibleWith(uBType.getType());
             }
             if (!match) return false;
             return true;

@@ -117,7 +117,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         assertScript '''
             int[] arr = [3,2,1]
             Arrays.sort(arr)
-            assert arr == [1,2,3]
+            assert arr == [1,2,3] as int[]
         '''
     }
 
@@ -125,7 +125,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         assertScript '''
             String[] arr = ['3','2','1']
             Arrays.sort(arr)
-            assert arr == ['1','2','3']
+            assert arr == ['1','2','3']  as String[]
         '''
     }
 

@@ -149,8 +149,8 @@ abstract class StaticTypeCheckingSupport {
 
     /**
      * Checks that arguments and parameter types match.
-     * @param params
-     * @param args
+     * @param params method parameters
+     * @param args type arguments
      * @return -1 if arguments do not match, 0 if arguments are of the exact type and >0 when one or more argument is
      * not of the exact type but still match
      */
@@ -159,7 +159,7 @@ abstract class StaticTypeCheckingSupport {
         int dist = 0;
         // we already know the lengths are equal
         for (int i = 0; i < params.length; i++) {
-            if (!isAssignableTo(params[i].getType(), args[i])) return -1;
+            if (!isAssignableTo(args[i],params[i].getType())) return -1;
             else {
                 if (!params[i].getType().equals(args[i])) dist++;
             }
@@ -181,7 +181,7 @@ abstract class StaticTypeCheckingSupport {
         int dist = 0;
         ClassNode vargsBase = params[params.length - 1].getType().getComponentType();
         for (int i = params.length; i < args.length; i++) {
-            if (!isAssignableTo(vargsBase, args[i])) return -1;
+            if (!isAssignableTo(args[i],vargsBase)) return -1;
             else if (!args[i].equals(vargsBase)) dist++;
         }
         return dist;
@@ -202,7 +202,7 @@ abstract class StaticTypeCheckingSupport {
         // we test only the wrapping part, since the non wrapping is done already
         ClassNode ptype = params[params.length - 1].getType().getComponentType();
         ClassNode arg = args[args.length - 1];
-        return isAssignableTo(ptype, arg)?(ptype.equals(arg)?0:1):-1;
+        return isAssignableTo(arg, ptype)?(ptype.equals(arg)?0:1):-1;
     }
 
     /**
@@ -213,20 +213,25 @@ abstract class StaticTypeCheckingSupport {
      * @return
      */
     static boolean isAssignableTo(ClassNode type, ClassNode toBeAssignedTo) {
-        if (toBeAssignedTo.isDerivedFrom(type)) return true;
         if (toBeAssignedTo.redirect() == STRING_TYPE && type.redirect() == GSTRING_TYPE) {
             return true;
         }
-        toBeAssignedTo = getWrapper(toBeAssignedTo);
-        type = getWrapper(type);
-        if (toBeAssignedTo.isDerivedFrom(ClassHelper.Number_TYPE) &&
-                type.isDerivedFrom(ClassHelper.Number_TYPE)) {
+        if (isPrimitiveType(toBeAssignedTo)) toBeAssignedTo = getWrapper(toBeAssignedTo);
+        if (isPrimitiveType(type)) type = getWrapper(type);
+        if (implementsInterfaceOrIsSubclassOf(type, toBeAssignedTo)) {
+            if (OBJECT_TYPE.equals(toBeAssignedTo)) return true;
+            if (toBeAssignedTo.isUsingGenerics()) {
+                // perform additional check on generics
+                // ? extends toBeAssignedTo
+                ClassNode base = ClassHelper.makeWithoutCaching("?");
+                GenericsType gt = new GenericsType(base, new ClassNode[]{toBeAssignedTo}, null);
+                gt.setWildcard(true);
+                return gt.isCompatibleWith(type);
+            }
             return true;
+        } else {
+            return false;
         }
-        if (toBeAssignedTo.isInterface() && type.implementsInterface(toBeAssignedTo)) {
-            return true;
-        }
-        return false;
     }
 
     static boolean isVargs(Parameter[] params) {
@@ -519,7 +524,7 @@ abstract class StaticTypeCheckingSupport {
         if (parameters != null) {
             for (int i = 0, parametersLength = parameters.length; i < parametersLength; i++) {
                 final ClassNode parameter = parameters[i];
-                sb.append(parameter.getName());
+                sb.append(parameter.toString(false));
                 if (i < parametersLength - 1) sb.append(", ");
             }
         }
