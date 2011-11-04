@@ -223,9 +223,7 @@ abstract class StaticTypeCheckingSupport {
             if (toBeAssignedTo.isUsingGenerics()) {
                 // perform additional check on generics
                 // ? extends toBeAssignedTo
-                ClassNode base = ClassHelper.makeWithoutCaching("?");
-                GenericsType gt = new GenericsType(base, new ClassNode[]{toBeAssignedTo}, null);
-                gt.setWildcard(true);
+                GenericsType gt = GenericsUtils.buildWildcardType(toBeAssignedTo);
                 return gt.isCompatibleWith(type);
             }
             return true;
@@ -534,14 +532,5 @@ abstract class StaticTypeCheckingSupport {
 
     static boolean implementsInterfaceOrIsSubclassOf(ClassNode type, ClassNode superOrInterface) {
         return type.equals(superOrInterface) || type.isDerivedFrom(superOrInterface) || type.implementsInterface(superOrInterface);
-    }
-
-    static ClassNode[] extractParameterTypes(Parameter[] parameters) {
-        if (parameters==null) return null;
-        ClassNode[] nodes = new ClassNode[parameters.length];
-        for (int i = 0; i < nodes.length; i++) {
-            nodes[i] = parameters[i].getType();
-        }
-        return nodes;
     }
 }

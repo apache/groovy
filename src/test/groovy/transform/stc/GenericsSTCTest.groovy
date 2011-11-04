@@ -87,7 +87,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     void testCompatibleGenericAssignmentWithInferrence() {
         shouldFailWithMessages '''
             List<String> elements = ['a','b', 1]
-        ''', 'Cannot assign java.util.List <E extends java.lang.Object> to: java.util.List <String>'
+        ''', 'Incompatible generic argument types. Cannot assign java.util.List <java.lang.Object> to: java.util.List <String>'
     }
 
     void testGenericAssignmentWithSubClass() {

@@ -19,8 +19,6 @@ import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GenericsType;
 
-import java.util.Set;
-
 /**
  * Utility methods to deal with generic types.
  *
@@ -28,47 +26,6 @@ import java.util.Set;
  */
 public class GenericsUtils {
     public static final GenericsType[] EMPTY_GENERICS_ARRAY = new GenericsType[0];
-
-    /**
-     * Given a {@link ClassNode}, collects all super classes and interfaces with generic type information.
-     * For example, if a class node represents a <pre>LinkedList&lt;String&gt;</pre>, then this method
-     * will collect implemented interfaces like <pre>List&lt;String&gt;, Collection&lt;String&gt;</pre>, ...
-     * @param classNode the class node for which to collect generic types
-     * @param collector a set where to store generic types.
-     */
-    public static void collectParameterizedClassInfo(ClassNode classNode, ClassNodeCollector collector) {
-        if (classNode == null || ClassHelper.OBJECT_TYPE.equals(classNode)) return;
-        if (!collector.collect(classNode)) return;
-        ClassNode classNodeRedirect = classNode.redirect();
-        GenericsType[] redirectGenericTypes = classNodeRedirect.getGenericsTypes();
-        ClassNode[] unresolvedInterfaces = classNode.getUnresolvedInterfaces();
-        GenericsType[] parameterizedTypes = classNode.getGenericsTypes();
-        if (parameterizedTypes == null) parameterizedTypes = EMPTY_GENERICS_ARRAY;
-        for (ClassNode unresolvedInterface : unresolvedInterfaces) {
-            if (unresolvedInterface.isUsingGenerics()) {
-                ClassNode copy = ClassHelper.makeWithoutCaching(unresolvedInterface.getTypeClass(), false);
-                GenericsType[] generics = alignGenericTypes(redirectGenericTypes, parameterizedTypes, unresolvedInterface.getGenericsTypes());
-                copy.setGenericsTypes(generics);
-                collectParameterizedClassInfo(copy, collector);
-            }
-        }
-        ClassNode superClass = classNode.getUnresolvedSuperClass();
-        if (superClass != null) {
-            if (superClass.isUsingGenerics()) {
-                if (redirectGenericTypes != null) {
-                    ClassNode copy = ClassHelper.makeWithoutCaching(superClass.getTypeClass(), false);
-                    GenericsType[] generics = alignGenericTypes(redirectGenericTypes, parameterizedTypes, superClass.getGenericsTypes());
-                    copy.setGenericsTypes(generics);
-                    copy.setGenericsPlaceHolder(true);
-                    collectParameterizedClassInfo(copy, collector);
-                } else {
-                    collectParameterizedClassInfo(superClass, collector);
-                }
-            } else {
-                collectParameterizedClassInfo(superClass, collector);
-            }
-        }
-    }
 
     /**
      * Given a parameterized type and a generic type information, aligns actual type parameters. For example, if a
@@ -103,12 +60,16 @@ public class GenericsUtils {
         return generics;
     }
 
-    public interface ClassNodeCollector {
-        /**
-         * Collects a class node.
-         * @param node the node to be collected
-         * @return true if collection should continue, false if collection should be stopped
-         */
-        boolean collect(ClassNode node);
+    /**
+     * Generates a wildcard generic type in order to be used for checks against class nodes.
+     * See {@link GenericsType#isCompatibleWith(org.codehaus.groovy.ast.ClassNode)}.
+     * @param type the type to be used as the wildcard upper bound
+     * @return a wildcard generics type
+     */
+    public static GenericsType buildWildcardType(final ClassNode type) {
+        ClassNode base = ClassHelper.makeWithoutCaching("?");
+        GenericsType gt = new GenericsType(base, new ClassNode[]{type}, null);
+        gt.setWildcard(true);
+        return gt;
     }
 }

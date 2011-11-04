@@ -25,7 +25,6 @@ import org.codehaus.groovy.transform.StaticTypesTransformation;
 import org.objectweb.asm.Opcodes;
 
 import java.util.*;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.codehaus.groovy.ast.ClassHelper.*;
 import static org.codehaus.groovy.ast.tools.WideningCategories.*;
@@ -285,30 +284,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
             // last, check generic type information to ensure that inferred types are compatible
             if (leftExpressionType.isUsingGenerics() && !leftExpressionType.isEnum()) {
-                final AtomicBoolean ok = new AtomicBoolean(false);
-                GenericsUtils.ClassNodeCollector collector = new GenericsUtils.ClassNodeCollector() {
-                    public boolean collect(final ClassNode node) {
-                        if (node.equals(leftExpressionType)) {
-                            boolean check = true;
-                            GenericsType[] nodeGenericsTypes = node.getGenericsTypes();
-                            GenericsType[] genericsTypes = leftExpressionType.getGenericsTypes();
-                            if (nodeGenericsTypes==null || genericsTypes==null) return true; // continue search
-                            if (nodeGenericsTypes.length!=genericsTypes.length) return true; // continue search
-                            for (int i = 0; i < genericsTypes.length; i++) {
-                                ClassNode genericsType = getWrapper(genericsTypes[i].getType());
-                                ClassNode nodeType = getWrapper(nodeGenericsTypes[i].getType());
-                                check = check && (genericsType.equals(nodeType) || nodeType.isDerivedFrom(genericsType));
-                            }
-                            if (check) {
-                                ok.set(true);
-                                return false;
-                            }
-                        }
-                        return true;
-                    }
-                };
-                GenericsUtils.collectParameterizedClassInfo(inferredRightExpressionType, collector);
-                if (!ok.get()) {
+                GenericsType gt = GenericsUtils.buildWildcardType(leftExpressionType);
+                if (!gt.isCompatibleWith(inferredRightExpressionType)) {
                     addStaticTypeError("Incompatible generic argument types. Cannot assign "
                     + inferredRightExpressionType.toString(false)
                     + " to: "+leftExpressionType.toString(false), assignmentExpression);
@@ -1165,11 +1142,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 nodes.add(getType(expression));
             }
             ClassNode superType = getWrapper(firstCommonSuperType(nodes)); // to be used in generics, type must be boxed
-            if (!OBJECT_TYPE.equals(superType)) {
-                ClassNode inferred = listType.getPlainNodeReference();
-                inferred.setGenericsTypes(new GenericsType[]{new GenericsType(superType)});
-                return inferred;
-            }
+            ClassNode inferred = listType.getPlainNodeReference();
+            inferred.setGenericsTypes(new GenericsType[]{new GenericsType(superType)});
+            return inferred;
         }
         return listType;
     }
