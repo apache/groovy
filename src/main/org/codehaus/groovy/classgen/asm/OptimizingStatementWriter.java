@@ -630,10 +630,10 @@ public class OptimizingStatementWriter extends StatementWriter {
                     case Types.DIVIDE: case Types.DIVIDE_EQUAL:
                         if (isLongCategory(leftType) && isLongCategory(rightType)) {
                             resultType = BigDecimal_TYPE;
-                        } else if (isDoubleCategory(leftType) && isDoubleCategory(rightType)) {
-                            resultType = double_TYPE;
                         } else if (isBigDecCategory(leftType) && isBigDecCategory(rightType)) {
                             resultType = BigDecimal_TYPE;
+                        } else if (isDoubleCategory(leftType) && isDoubleCategory(rightType)) {
+                            resultType = double_TYPE;
                         }
                         break;
                     case Types.POWER: case Types.POWER_EQUAL:
