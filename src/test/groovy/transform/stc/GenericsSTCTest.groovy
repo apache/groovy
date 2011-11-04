@@ -60,17 +60,73 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    /*
-
-        // UNSUPPORTED
-
     void testAddOnListWithDiamond() {
         assertScript '''
             List<String> list = new LinkedList<>()
             list.add 'Hello'
         '''
     }
-     */
+
+    void testAddOnListWithDiamondAndWrongType() {
+        shouldFailWithMessages '''
+            List<Integer> list = new LinkedList<>()
+            list.add 'Hello'
+        ''', 'Cannot find matching method java.util.LinkedList#add(java.lang.String)'
+    }
+
+    void testReturnTypeInference() {
+        assertScript '''
+            class Foo<U> {
+                U method() { }
+            }
+            Foo<Integer> foo = new Foo<Integer>()
+            Integer result = foo.method()
+        '''
+    }
+
+    void testReturnTypeInferenceWithDiamond() {
+        assertScript '''
+            class Foo<U> {
+                U method() { }
+            }
+            Foo<Integer> foo = new Foo<>()
+            Integer result = foo.method()
+        '''
+    }
+
+    void testReturnTypeInferenceWithMethodGenerics() {
+        assertScript '''
+            List<Long> list = Arrays.asList([0L,0L] as Long[])
+        '''
+    }
+
+    void testReturnTypeInferenceWithMethodGenericsAndVarArg() {
+        assertScript '''
+            List<Long> list = Arrays.asList(0L,0L)
+        '''
+    }
+
+    void testDiamondInferrenceFromConstructor() {
+        assertScript '''
+            Set< Long > s2 = new HashSet<>()
+        '''
+    }
+
+    void testDiamondInferrenceFromConstructor2() {
+        shouldFailWithMessages '''
+            Set< Number > s3 = new HashSet<>(Arrays.asList(0L,0L));
+        ''', 'Cannot assign java.util.HashSet <java.lang.Long> to: java.util.Set <Number>'
+    }
+
+    /*
+        todo: this one should not fail
+        
+    void testDiamondInferrenceFromConstructor3() {
+        assertScript '''
+            Set<Number> s4 = new HashSet<Number>(Arrays.asList(0L,0L))
+        '''
+    }*/
+
 
     void testLinkedListWithListArgument() {
         assertScript '''

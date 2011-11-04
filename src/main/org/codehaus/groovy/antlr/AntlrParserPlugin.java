@@ -2854,9 +2854,8 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
 
     private ClassNode addTypeArguments(ClassNode basicType, AST node) {
         List<GenericsType> typeArgumentList = getTypeArgumentsList(node);
-        if (typeArgumentList.size() > 0) {
-            basicType.setGenericsTypes(typeArgumentList.toArray(new GenericsType[typeArgumentList.size()]));
-        }
+        // a 0-length type argument list means we face the diamond operator
+        basicType.setGenericsTypes(typeArgumentList.toArray(new GenericsType[typeArgumentList.size()]));
         return basicType;
     }
 

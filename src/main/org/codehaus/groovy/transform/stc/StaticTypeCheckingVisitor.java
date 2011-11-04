@@ -150,6 +150,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         boolean isEmptyDeclaration = expression instanceof DeclarationExpression && rightExpression instanceof EmptyExpression;
         if (!isEmptyDeclaration) storeType(expression, resultType);
         if (!isEmptyDeclaration && isAssignment(op)) {
+            if (rightExpression instanceof ConstructorCallExpression) {
+                inferDiamondType((ConstructorCallExpression) rightExpression, lType);
+            }
+
             typeCheckAssignment(expression, leftExpression, lType, rightExpression, resultType);
             storeType(leftExpression, resultType);
 
@@ -159,8 +163,45 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 leftExpression.putNodeMetaData(StaticTypesTransformation.StaticTypesMarker.CLOSURE_ARGUMENTS, parameters);
             }
 
+
         } else if (op == KEYWORD_INSTANCEOF) {
             pushInstanceOfTypeInfo(leftExpression, rightExpression);
+        }
+    }
+
+    private void inferDiamondType(final ConstructorCallExpression cce, final ClassNode lType) {
+        // check if constructor call expression makes use of the diamond operator
+        ClassNode node = cce.getType();
+        if (node.isUsingGenerics() && node.getGenericsTypes().length==0) {
+            ArgumentListExpression argumentListExpression = InvocationWriter.makeArgumentList(cce.getArguments());
+            if (argumentListExpression.getExpressions().isEmpty()) {
+                GenericsType[] genericsTypes = lType.getGenericsTypes();
+                GenericsType[] copy = new GenericsType[genericsTypes.length];
+                for (int i = 0; i < genericsTypes.length; i++) {
+                    GenericsType genericsType = genericsTypes[i];
+                    copy[i] = new GenericsType(
+                            genericsType.getType(),
+                            genericsType.getUpperBounds(),
+                            genericsType.getLowerBound()
+                    );
+                }
+                node.setGenericsTypes(copy);
+            } else {
+                ClassNode type = getType(argumentListExpression.getExpression(0));
+                if (type.isUsingGenerics()) {
+                    GenericsType[] genericsTypes = type.getGenericsTypes();
+                    GenericsType[] copy = new GenericsType[genericsTypes.length];
+                    for (int i = 0; i < genericsTypes.length; i++) {
+                        GenericsType genericsType = genericsTypes[i];
+                        copy[i] = new GenericsType(
+                                genericsType.getType(),
+                                genericsType.getUpperBounds(),
+                                genericsType.getLowerBound()
+                        );
+                    }
+                    node.setGenericsTypes(copy);
+                }
+            }
         }
     }
 
@@ -628,10 +669,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 if (potentialReceiverType != null) receivers.addAll(potentialReceiverType);
             }
             List<MethodNode> mn = null;
+            ClassNode chosenReceiver = null;
             for (ClassNode currentReceiver : receivers) {
                 mn = findMethod(currentReceiver, name, args);
                 if (!mn.isEmpty()) {
                     typeCheckMethodsWithGenerics(currentReceiver, args, mn, call);
+                    chosenReceiver = currentReceiver;
                     break;
                 }
             }
@@ -666,6 +709,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     if (mn.size()==1) {
                         MethodNode directMethodCallCandidate = mn.get(0);
                         ClassNode returnType = directMethodCallCandidate.getReturnType();
+                        if (returnType.isUsingGenerics()) {
+                            returnType = inferReturnTypeGenerics(chosenReceiver, directMethodCallCandidate, callArguments);
+                        }
                         storeType(call, returnType);
                         storeTargetMethod(call, directMethodCallCandidate);
                     } else {
@@ -1172,6 +1218,81 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
         }
         return mapType;
+    }
+
+    /**
+     * If a method call returns a parameterized type, then we can perform additional inference on the
+     * return type, so that the type gets actual type parameters. For example, the method
+     * Arrays.asList(T...) is generified with type T which can be deduced from actual type
+     * arguments.
+     *
+     * @param method the method node
+     * @param arguments the method call arguments
+     * @return parameterized, infered, class node
+     */
+    private ClassNode inferReturnTypeGenerics(final ClassNode receiver, final MethodNode method, final Expression arguments) {
+        ClassNode returnType = method.getReturnType();
+        GenericsType[] returnTypeGenerics = returnType.getGenericsTypes();
+        List<GenericsType> placeholders = new LinkedList<GenericsType>();
+        for (GenericsType returnTypeGeneric : returnTypeGenerics) {
+            if (returnTypeGeneric.isPlaceholder() || returnTypeGeneric.isWildcard()) {
+                placeholders.add(returnTypeGeneric);
+            }
+        }
+        if (placeholders.isEmpty()) return returnType; // nothing to infer
+        Map<String,ClassNode> resolvedPlaceholders = new HashMap<String, ClassNode>();
+        if (receiver.isUsingGenerics()) {
+            // first, resolve placeholders from receiver class
+            ClassNode redirect = receiver.redirect();
+            GenericsType[] redirectGenericsType = redirect.getGenericsTypes();
+            GenericsType[] receiverGenericsTypes = receiver.getGenericsTypes();
+            for (int i = 0; i < receiverGenericsTypes.length; i++) {
+                if (redirectGenericsType[i].isPlaceholder() || redirectGenericsType[i].isWildcard()) {
+                    String name = redirectGenericsType[i].getName();
+                    resolvedPlaceholders.put(name, receiverGenericsTypes[i].getType());
+                }
+            }
+        }
+        // then resolve receivers from method arguments
+        Parameter[] parameters = method.getParameters();
+        boolean isVargs = isVargs(parameters);
+        ArgumentListExpression argList = InvocationWriter.makeArgumentList(arguments);
+        List<Expression> expressions = argList.getExpressions();
+        int paramLength = parameters.length;
+        for (int i = 0; i < paramLength; i++) {
+            boolean lastArg = i== paramLength -1;
+            ClassNode type = parameters[i].getType();
+            if (!type.isUsingGenerics() && type.isArray()) type=type.getComponentType();
+            if (type.isUsingGenerics()) {
+                GenericsType[] genericsTypes = type.getGenericsTypes();
+                for (GenericsType genericsType : genericsTypes) {
+                    if (genericsType.isPlaceholder() || genericsType.isWildcard()) {
+                        ClassNode actualType = getType(expressions.get(i));
+                        if (isVargs && lastArg && actualType.isArray()) {
+                            actualType=actualType.getComponentType();
+                        }
+                        resolvedPlaceholders.put(genericsType.getName(), actualType);
+                    }
+                }
+            }
+        }
+        GenericsType[] copy = new GenericsType[returnTypeGenerics.length];
+        for (int i = 0; i < copy.length; i++) {
+            GenericsType returnTypeGeneric = returnTypeGenerics[i];
+            if (returnTypeGeneric.isPlaceholder() || returnTypeGeneric.isWildcard()) {
+                ClassNode resolved = resolvedPlaceholders.get(returnTypeGeneric.getName());
+                if (resolved==null) resolved = returnTypeGeneric.getType();
+                copy[i] = new GenericsType(resolved);
+            } else {
+                copy[i] = returnTypeGeneric;
+            }
+        }
+        if (returnType.equals(OBJECT_TYPE)) {
+            return copy[0].getType();
+        }
+        returnType = returnType.getPlainNodeReference();
+        returnType.setGenericsTypes(copy);
+        return returnType;
     }
 
     private void typeCheckMethodsWithGenerics(ClassNode receiver, ClassNode[] arguments, List<MethodNode> candidateMethods, Expression location) {

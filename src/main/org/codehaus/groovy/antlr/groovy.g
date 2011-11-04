@@ -765,6 +765,7 @@ wildcardType
 typeArgumentsDiamond
 {Token first = LT(1);}
     :   LT! GT! nls!
+    {#typeArgumentsDiamond = #(create(TYPE_ARGUMENTS, "TYPE_ARGUMENTS",first,LT(1)), #typeArgumentsDiamond);}
     ;
 
 // Type arguments to a class or interface type
