@@ -288,6 +288,13 @@ public class MetaClassHelper {
 
             // add one to dist to be sure interfaces are preferred
             objectDistance += PRIMITIVES.length + 1;
+
+            // GROOVY-5114 : if we have to choose between two methods
+            // foo(Object[]) and foo(Object) and that the argument is an array type
+            // then the array version should be preferred
+            if (argument.isArray() && !parameter.isArray) {
+                objectDistance+=4;
+            }
             Class clazz = ReflectionCache.autoboxType(argument);
             while (clazz != null) {
                 if (clazz == parameter.getTheClass()) break;
