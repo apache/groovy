@@ -292,31 +292,33 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             // if left type is not a list but right type is a map, then we're in the case of a groovy
             // constructor type : A a = [x:2, y:3]
             // In this case, more checks can be performed
-            if (!leftRedirect.implementsInterface(ClassHelper.MAP_TYPE) && rightExpression instanceof MapExpression) {
-                ArgumentListExpression argList = new ArgumentListExpression(rightExpression);
-                ClassNode[] args = getArgumentTypes(argList);
-                checkGroovyStyleConstructor(leftRedirect, args);
-                // perform additional type checking on arguments
-                MapExpression mapExpression = (MapExpression) rightExpression;
-                for (MapEntryExpression entryExpression : mapExpression.getMapEntryExpressions()) {
-                    Expression keyExpr = entryExpression.getKeyExpression();
-                    if (!(keyExpr instanceof ConstantExpression) ) {
-                        addStaticTypeError("Dynamic keys in map-style constructors are unsupported in static type checking", keyExpr);
-                    } else {
-                        String property = keyExpr.getText();
-                        ClassNode currentNode = leftRedirect;
-                        PropertyNode propertyNode = null;
-                        while (propertyNode==null && currentNode!=null) {
-                            propertyNode = currentNode.getProperty(property);
-                            currentNode = currentNode.getSuperClass();
-                        }
-                        if (propertyNode==null) {
-                            addStaticTypeError("No such property: " + property +
-                                " for class: " + leftRedirect.getName(), leftExpression);
+            if (!implementsInterfaceOrIsSubclassOf(leftRedirect,MAP_TYPE) && rightExpression instanceof MapExpression) {
+                if (!(leftExpression instanceof VariableExpression) || !((VariableExpression) leftExpression).isDynamicTyped()) {
+                    ArgumentListExpression argList = new ArgumentListExpression(rightExpression);
+                    ClassNode[] args = getArgumentTypes(argList);
+                    checkGroovyStyleConstructor(leftRedirect, args);
+                    // perform additional type checking on arguments
+                    MapExpression mapExpression = (MapExpression) rightExpression;
+                    for (MapEntryExpression entryExpression : mapExpression.getMapEntryExpressions()) {
+                        Expression keyExpr = entryExpression.getKeyExpression();
+                        if (!(keyExpr instanceof ConstantExpression)) {
+                            addStaticTypeError("Dynamic keys in map-style constructors are unsupported in static type checking", keyExpr);
                         } else {
-                            ClassNode valueType = getType(entryExpression.getValueExpression());
-                            if (!isAssignableTo(propertyNode.getType(), valueType)) {
-                                addStaticTypeError("Cannot assign value of type " + valueType.getName() + " to field of type " + propertyNode.getType().getName(), entryExpression);
+                            String property = keyExpr.getText();
+                            ClassNode currentNode = leftRedirect;
+                            PropertyNode propertyNode = null;
+                            while (propertyNode == null && currentNode != null) {
+                                propertyNode = currentNode.getProperty(property);
+                                currentNode = currentNode.getSuperClass();
+                            }
+                            if (propertyNode == null) {
+                                addStaticTypeError("No such property: " + property +
+                                        " for class: " + leftRedirect.getName(), leftExpression);
+                            } else if (propertyNode != null) {
+                                ClassNode valueType = getType(entryExpression.getValueExpression());
+                                if (!isAssignableTo(propertyNode.getType(), valueType)) {
+                                    addStaticTypeError("Cannot assign value of type " + valueType.getName() + " to field of type " + propertyNode.getType().getName(), entryExpression);
+                                }
                             }
                         }
                     }

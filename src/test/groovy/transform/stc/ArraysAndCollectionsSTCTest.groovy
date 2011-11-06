@@ -150,5 +150,22 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
             map.b = 2
         '''
     }
+
+    void testInlineMap() {
+
+        assertScript '''
+            Map map = [a:1, b:2]
+        '''
+
+        assertScript '''
+            def map = [a:1, b:2]
+            map = [b:2, c:3]
+        '''
+
+        assertScript '''
+            Map map = ['a':1, 'b':2]
+        '''
+    }
+
 }
 
