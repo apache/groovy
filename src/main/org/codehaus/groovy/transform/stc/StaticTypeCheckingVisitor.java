@@ -452,6 +452,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 hasProperty = true;
             }
         }
+        if (!hasProperty && pexp.getObjectExpression() instanceof ClassExpression) {
+            return CLASS_Type.getProperty(propertyName)!=null || CLASS_Type.getDeclaredField(propertyName)!=null;
+        }
         return hasProperty;
     }
 
@@ -678,6 +681,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             List<ClassNode> receivers = new LinkedList<ClassNode>();
             if (!withReceiverList.isEmpty()) receivers.addAll(withReceiverList);
             receivers.add(receiver);
+            if (objectExpression instanceof ClassExpression) {
+                receivers.add(CLASS_Type);
+            }
             if (!temporaryIfBranchTypeInformation.empty()) {
                 final Map<Object, List<ClassNode>> tempo = temporaryIfBranchTypeInformation.peek();
                 Object key = extractTemporaryTypeInfoKey(objectExpression);

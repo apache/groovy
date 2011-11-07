@@ -60,5 +60,31 @@ class MiscSTCTest extends StaticTypeCheckingTestCase {
         }
         '''
     }
+
+    void testPropertyOnClass() {
+        assertScript '''
+            Class clazz = String
+            assert clazz.name=='java.lang.String'
+        '''
+    }
+
+    void testDirectPropertyOnClass() {
+        assertScript '''
+            assert String.name=='java.lang.String'
+        '''
+    }
+
+    void testMethodOnClass() {
+        assertScript '''
+            Class clazz = String
+            clazz.getDeclaredFields()
+        '''
+    }
+
+    void testDirectMethodOnClass() {
+        assertScript '''
+            String.getDeclaredFields()
+        '''
+    }
 }
 
