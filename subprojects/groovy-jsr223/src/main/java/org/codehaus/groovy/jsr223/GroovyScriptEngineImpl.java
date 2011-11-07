@@ -91,10 +91,10 @@ public class GroovyScriptEngineImpl
     private static boolean debug = false;
 
     // script-string-to-generated Class map
-    private Map<String, Class> classMap;
+    private Map<String, Class> classMap = Collections.synchronizedMap(new HashMap<String, Class>());
     // global closures map - this is used to simulate a single
     // global functions namespace 
-    private Map<String, Closure> globalClosures;
+    private Map<String, Closure> globalClosures = Collections.synchronizedMap(new HashMap<String, Closure>());
     // class loader for Groovy generated classes
     private GroovyClassLoader loader;
     // lazily initialized factory
@@ -108,10 +108,12 @@ public class GroovyScriptEngineImpl
     }
 
     public GroovyScriptEngineImpl() {
-        classMap = Collections.synchronizedMap(new HashMap<String, Class>());
-        globalClosures = Collections.synchronizedMap(new HashMap<String, Closure>());
-        loader = new GroovyClassLoader(getParentLoader(),
-                new CompilerConfiguration());
+        this.loader = new GroovyClassLoader(getParentLoader(), new CompilerConfiguration());
+    }
+
+    public GroovyScriptEngineImpl(GroovyClassLoader classLoader) {
+        if (classLoader == null) throw new IllegalArgumentException("GroovyClassLoader is null");
+        this.loader = classLoader;
     }
 
     public Object eval(Reader reader, ScriptContext ctx)
@@ -355,7 +357,7 @@ public class GroovyScriptEngineImpl
         return clazz;
     }
 
-    public void setClassLoader(final GroovyClassLoader classLoader) {
+    public void setClassLoader(GroovyClassLoader classLoader) {
         this.loader = classLoader;
     }
 
