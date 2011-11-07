@@ -254,4 +254,11 @@ class JsonBuilderTest extends GroovyTestCase {
             builder.elem(a: 1, b: 2, "ABCD")
         }
     }
+
+    void testSupportForUUID() {
+        def id = UUID.randomUUID()
+        def json = new groovy.json.JsonBuilder()
+        json { uuid id }
+        assert json.toString() == "{\"uuid\":\"${id.toString()}\"}"
+    }
 }
