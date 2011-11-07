@@ -1009,7 +1009,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
             Parameter[] params = parameterizeArguments(receiver, m);
             if (params.length == args.length) {
-                int dist = Math.max(allParametersAndArgumentsMatch(params, args), lastArgMatchesVarg(params, args));
+                int allPMatch = allParametersAndArgumentsMatch(params, args);
+                int lastArgMatch = isVargs(params)?lastArgMatchesVarg(params, args):-1;
+                if (lastArgMatch>=0) lastArgMatch++; // ensure exact matches are preferred over vargs
+                int dist = allPMatch>=0?Math.max(allPMatch, lastArgMatch):lastArgMatch;
                 if (dist>=0 && !receiver.equals(m.getDeclaringClass())) dist++;
                 if (dist>=0 && dist<bestDist) {
                     bestChoices.clear();
@@ -1022,25 +1025,29 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 // there are three case for vargs
                 // (1) varg part is left out
                 if (params.length == args.length + 1) {
-                    bestChoices.add(m);
-                    if (bestDist>0) {
+                    if (bestDist>1) {
                         bestChoices.clear();
                         bestChoices.add(m);
-                        bestDist = 0;
+                        bestDist = 1;
                     }
-                }
-                // (2) last argument is put in the vargs array
-                //      that case is handled above already
-                // (3) there is more than one argument for the vargs array
-                int dist = excessArgumentsMatchesVargsParameter(params, args);
-                if (dist>=0 && !receiver.equals(m.getDeclaringClass())) dist++;
-                if (params.length < args.length && dist>=0) {
-                    if (dist >= 0 && dist < bestDist) {
-                        bestChoices.clear();
-                        bestChoices.add(m);
-                        bestDist = dist;
-                    } else if (dist >= 0 && dist == bestDist) {
-                        bestChoices.add(m);
+                } else {
+                    // (2) last argument is put in the vargs array
+                    //      that case is handled above already
+                    // (3) there is more than one argument for the vargs array
+                    int dist = excessArgumentsMatchesVargsParameter(params, args);
+                    if (dist >= 0 && !receiver.equals(m.getDeclaringClass())) dist++;
+                    // varargs methods must not be preferred to methods without varargs
+                    // for example :
+                    // int sum(int x) should be preferred to int sum(int x, int... y)
+                    dist++;
+                    if (params.length < args.length && dist >= 0) {
+                        if (dist >= 0 && dist < bestDist) {
+                            bestChoices.clear();
+                            bestChoices.add(m);
+                            bestDist = dist;
+                        } else if (dist >= 0 && dist == bestDist) {
+                            bestChoices.add(m);
+                        }
                     }
                 }
             }

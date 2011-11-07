@@ -167,5 +167,25 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    void testAmbiguousCallWithVargs() {
+        assertScript '''
+            int sum(int x) { 1 }
+            int sum(int... args) {
+                0
+            }
+            assert sum(1) == 1
+        '''
+    }
+
+    void testAmbiguousCallWithVargs2() {
+        assertScript '''
+            int sum(int x) { 1 }
+            int sum(int y, int... args) {
+                0
+            }
+            assert sum(1) == 1
+        '''
+    }
+
 }
 

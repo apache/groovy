@@ -202,6 +202,7 @@ abstract class StaticTypeCheckingSupport {
         // we test only the wrapping part, since the non wrapping is done already
         ClassNode ptype = params[params.length - 1].getType().getComponentType();
         ClassNode arg = args[args.length - 1];
+        if (isNumberType(ptype) && isNumberType(arg) && !ptype.equals(arg)) return -1;
         return isAssignableTo(arg, ptype)?(ptype.equals(arg)?0:1):-1;
     }
 
@@ -218,6 +219,9 @@ abstract class StaticTypeCheckingSupport {
         }
         if (isPrimitiveType(toBeAssignedTo)) toBeAssignedTo = getWrapper(toBeAssignedTo);
         if (isPrimitiveType(type)) type = getWrapper(type);
+        if (type.isArray() && toBeAssignedTo.isArray()) {
+            return type.getComponentType().equals(toBeAssignedTo.getComponentType());
+        }
         if (implementsInterfaceOrIsSubclassOf(type, toBeAssignedTo)) {
             if (OBJECT_TYPE.equals(toBeAssignedTo)) return true;
             if (toBeAssignedTo.isUsingGenerics()) {
