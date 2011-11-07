@@ -135,6 +135,13 @@ class JsonOutput {
     }
 
     /**
+     * @return the string representation of an uuid
+     */
+    static String toJson(UUID uuid) {
+        "\"${uuid.toString()}\""
+    }
+
+    /**
      * @return an object representation of a closure
      */
     static String toJson(Closure closure) {
