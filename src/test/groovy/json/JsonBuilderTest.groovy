@@ -158,14 +158,14 @@ class JsonBuilderTest extends GroovyTestCase {
                 sectionId: "world",
                 sectionName: "World news",
                 webPublicationDate: "2011-01-19T15:01:09Z",
-                webTitle: "Tunisia protests continue � in pictures ",
+                webTitle: "Tunisia protests continue in pictures ",
                 webUrl: "http://www.guardian.co.uk/world/gallery/2011/jan/19/tunisia-protests-pictures",
                 apiUrl: "http://content.guardianapis.com/world/gallery/2011/jan/19/tunisia-protests-pictures"
             ])
         }
 
         assert json.toString() ==
-                '''{"response":{"status":"ok","userTier":"free","total":2413,"startIndex":1,"pageSize":10,"currentPage":1,"pages":242,"orderBy":"newest","results":[{"id":"world\\/video\\/2011\\/jan\\/19\\/tunisia-demonstrators-democracy-video","sectionId":"world","sectionName":"World news","webPublicationDate":"2011-01-19T15:12:46Z","webTitle":"Tunisian demonstrators demand new democracy - video","webUrl":"http:\\/\\/www.guardian.co.uk\\/world\\/video\\/2011\\/jan\\/19\\/tunisia-demonstrators-democracy-video","apiUrl":"http:\\/\\/content.guardianapis.com\\/world\\/video\\/2011\\/jan\\/19\\/tunisia-demonstrators-democracy-video"},{"id":"world\\/gallery\\/2011\\/jan\\/19\\/tunisia-protests-pictures","sectionId":"world","sectionName":"World news","webPublicationDate":"2011-01-19T15:01:09Z","webTitle":"Tunisia protests continue � in pictures ","webUrl":"http:\\/\\/www.guardian.co.uk\\/world\\/gallery\\/2011\\/jan\\/19\\/tunisia-protests-pictures","apiUrl":"http:\\/\\/content.guardianapis.com\\/world\\/gallery\\/2011\\/jan\\/19\\/tunisia-protests-pictures"}]}}'''
+                '''{"response":{"status":"ok","userTier":"free","total":2413,"startIndex":1,"pageSize":10,"currentPage":1,"pages":242,"orderBy":"newest","results":[{"id":"world/video/2011/jan/19/tunisia-demonstrators-democracy-video","sectionId":"world","sectionName":"World news","webPublicationDate":"2011-01-19T15:12:46Z","webTitle":"Tunisian demonstrators demand new democracy - video","webUrl":"http://www.guardian.co.uk/world/video/2011/jan/19/tunisia-demonstrators-democracy-video","apiUrl":"http://content.guardianapis.com/world/video/2011/jan/19/tunisia-demonstrators-democracy-video"},{"id":"world/gallery/2011/jan/19/tunisia-protests-pictures","sectionId":"world","sectionName":"World news","webPublicationDate":"2011-01-19T15:01:09Z","webTitle":"Tunisia protests continue in pictures ","webUrl":"http://www.guardian.co.uk/world/gallery/2011/jan/19/tunisia-protests-pictures","apiUrl":"http://content.guardianapis.com/world/gallery/2011/jan/19/tunisia-protests-pictures"}]}}'''
     }
 
     void testNestedListMap() {
@@ -253,5 +253,38 @@ class JsonBuilderTest extends GroovyTestCase {
         shouldFail(JsonException) {
             builder.elem(a: 1, b: 2, "ABCD")
         }
+    }
+
+    void testSupportForUUID() {
+        def id = UUID.randomUUID()
+        def json = new groovy.json.JsonBuilder()
+        json { uuid id }
+        assert json.toString() == "{\"uuid\":\"${id.toString()}\"}"
+    }
+
+    // GROOVY-4988
+    void testStringEscape() {
+        def original, serialized, deserialized
+
+        original = [elem:"\\n"]
+        serialized = (new JsonBuilder(original)).toString()
+        deserialized = (new JsonSlurper()).parseText(serialized)
+        assert original.elem == deserialized.elem
+
+        original = [elem: "\\t"]
+        serialized = (new JsonBuilder(original)).toString()
+        deserialized = (new JsonSlurper()).parseText(serialized)
+        assert original.elem == deserialized.elem
+
+        original = [elem: "\\\\n"]
+        serialized = (new JsonBuilder(original)).toString()
+        deserialized = (new JsonSlurper()).parseText(serialized)
+        assert original.elem == deserialized.elem
+
+        original = [elem: "\\u000A"]
+        serialized = (new JsonBuilder(original)).toString()
+        deserialized = (new JsonSlurper()).parseText(serialized)
+        assert original.elem == deserialized.elem
+
     }
 }
