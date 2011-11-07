@@ -134,4 +134,15 @@ class DateGDKTest extends GroovyTestCase {
         assert calendarNow.get(Calendar.SECOND) == 0
         assert calendarNow.get(Calendar.MILLISECOND) == 0
     }
+
+    /** GROOVY-4789 */
+    void testStaticParseToStringDate() {
+        TimeZone tz = TimeZone.getDefault()
+        TimeZone.setDefault(TimeZone.getTimeZone("CET"))
+        Date date = new Date(0)
+        String toStringRepresentation = date.toString()
+        assert toStringRepresentation == "Thu Jan 01 01:00:00 CET 1970"
+        assert date == Date.parseToStringDate(toStringRepresentation)
+        TimeZone.setDefault(tz)
+    }
 }
