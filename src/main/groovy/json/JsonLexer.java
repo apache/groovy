@@ -169,29 +169,7 @@ public class JsonLexer implements Iterator<JsonToken> {
      * @return input text without the escaping
      */
     public static String unescape(String input) {
-        // presence of a backslash
-        if (input.indexOf(92) > -1) {
-            Matcher m = p.matcher(input
-                    .replaceAll("\\\\b", "\b")
-                    .replaceAll("\\\\f", "\f")
-                    .replaceAll("\\\\n", "\n")
-                    .replaceAll("\\\\r", "\r")
-                    .replaceAll("\\\\t", "\t")
-                    .replaceAll("\\\\\\\\", "\\\\")
-                    .replaceAll("\\\\/", "/")
-                    .replaceAll("\\\\\"", "\""));
-
-            // replace unicode escapes
-            StringBuffer sb = new StringBuffer();
-            while (m.find()) {
-                m.appendReplacement(sb, new String(new char[] { (char)Integer.valueOf(m.group(1), 16).intValue() }));
-            }
-            m.appendTail(sb);
-
-            return sb.toString();
-        } else {
-            return input;
-        }
+        return StringEscapeUtils.unescapeJavaScript(input);
     }
 
     /**
