@@ -120,7 +120,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         shouldFailWithMessages """
             int i = 0
             i += '1'
-        """, "Cannot find matching method int#plus(java.lang.String)"
+        """, "Cannot assign value of type java.lang.String to variable of type int"
     }
 
     void testIntMinusEqualsString() {
@@ -226,6 +226,13 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
             s = 1
             ((Set) s)
         ''', 'Inconvertible types: cannot cast int to java.util.Set'
+    }
+
+    void testArrayLength() {
+        assertScript '''
+            String arr = [1,2,3]
+            int len = arr.length
+        '''
     }
 }
 

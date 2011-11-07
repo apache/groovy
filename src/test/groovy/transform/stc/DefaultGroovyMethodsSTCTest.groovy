@@ -56,5 +56,15 @@ class DefaultGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
         name.toInteger() // toInteger() is defined by DGM
         """
     }
+
+    void testMethodsOnPrimitiveTypes() {
+        assertScript '''
+            1.times { it }
+        '''
+
+        assertScript '''
+            true.equals { it }
+        '''
+    }
 }
 

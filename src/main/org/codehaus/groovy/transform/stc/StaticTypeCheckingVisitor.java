@@ -947,6 +947,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     private List<MethodNode> findMethod(
             ClassNode receiver, String name, ClassNode... args) {
+        if (isPrimitiveType(receiver)) receiver=getWrapper(receiver);
         List<MethodNode> methods;
         if ("<init>".equals(name)) {
             methods = new ArrayList<MethodNode>(receiver.getDeclaredConstructors());
