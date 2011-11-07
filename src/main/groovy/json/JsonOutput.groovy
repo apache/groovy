@@ -68,50 +68,7 @@ class JsonOutput {
      * @return a properly encoded string with escape sequences
      */
     static String toJson(String s) {
-        if (!s) {
-            '""'
-        } else {
-            def result = new StringBuilder('"')
-
-            s.each { c ->
-                switch (c) {
-                    case '"':
-                        result.append('\\"')
-                        break
-                    case '\\':
-                        result.append('\\\\')
-                        break
-                    case '/':
-                        result.append('\\/')
-                        break
-                    case '\b':
-                        result.append('\\b')
-                        break
-                    case '\f':
-                        result.append('\\f')
-                        break
-                    case '\n':
-                        result.append('\\n')
-                        break
-                    case '\r':
-                        result.append('\\r')
-                        break
-                    case '\t':
-                        result.append('\\t')
-                        break
-                    default:
-                        // control chars below space
-                        if (c < ' ') {
-                            result.append('\\u' + Integer.toHexString((int)c).padLeft(4, '0'))
-                        } else {
-                            result.append(c)
-                        }
-                }
-            }
-
-            result.append('"')
-            result.toString()
-        }
+        "\"${StringEscapeUtils.escapeJava(s)}\""
     }
 
     /**
