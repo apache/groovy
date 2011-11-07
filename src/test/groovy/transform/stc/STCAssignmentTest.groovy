@@ -230,7 +230,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
 
     void testArrayLength() {
         assertScript '''
-            String arr = [1,2,3]
+            String[] arr = [1,2,3]
             int len = arr.length
         '''
     }

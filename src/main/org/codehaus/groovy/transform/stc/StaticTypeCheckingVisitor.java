@@ -15,6 +15,7 @@
  */
 package org.codehaus.groovy.transform.stc;
 
+import org.apache.tools.ant.taskdefs.Property;
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.stmt.*;
@@ -126,19 +127,29 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     @Override
+    public void visitPropertyExpression(final PropertyExpression pexp) {
+        super.visitPropertyExpression(pexp);
+        if (!existsProperty(pexp)) {
+            Expression objectExpression = pexp.getObjectExpression();
+            addStaticTypeError("No such property: " + pexp.getPropertyAsString() +
+                    " for class: " + findCurrentInstanceOfClass(objectExpression, objectExpression.getType()), pexp);
+        }
+    }
+
+    @Override
+    public void visitAttributeExpression(final AttributeExpression expression) {
+        super.visitAttributeExpression(expression);
+        if (!existsProperty(expression)) {
+            Expression objectExpression = expression.getObjectExpression();
+            addStaticTypeError("No such property: " + expression.getPropertyAsString() +
+                    " for class: " + findCurrentInstanceOfClass(objectExpression, objectExpression.getType()), expression);
+        }
+    }
+
+    @Override
     public void visitBinaryExpression(BinaryExpression expression) {
         super.visitBinaryExpression(expression);
         final Expression leftExpression = expression.getLeftExpression();
-        if (leftExpression instanceof PropertyExpression) {
-            // check that property exists
-            PropertyExpression pexp = (PropertyExpression) leftExpression;
-            if (!existsProperty(pexp)) {
-                Expression objectExpression = pexp.getObjectExpression();
-                addStaticTypeError("No such property: " + pexp.getPropertyAsString() +
-                        " for class: " + findCurrentInstanceOfClass(objectExpression, objectExpression.getType()), leftExpression);
-                return;
-            }
-        }
         ClassNode lType = getType(leftExpression);
         final Expression rightExpression = expression.getRightExpression();
         ClassNode rType = getType(rightExpression);
@@ -396,6 +407,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     private boolean existsProperty(final PropertyExpression pexp) {
         Expression objectExpression = pexp.getObjectExpression();
         ClassNode clazz = getType(objectExpression);
+        if (clazz.isArray() && "length".equals(pexp.getPropertyAsString())) {
+            return true;
+        }
         List<ClassNode> tests = new LinkedList<ClassNode>();
         tests.add(clazz);
         if (!temporaryIfBranchTypeInformation.empty()) {
@@ -413,8 +427,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         String propertyName = pexp.getPropertyAsString();
         boolean isAttributeExpression = pexp instanceof AttributeExpression;
         for (ClassNode testClass : tests) {
-            // maps have special handling for property expressions
-            if (!implementsInterfaceOrIsSubclassOf(testClass,  MAP_TYPE)) {
+            // maps and lists have special handling for property expressions
+            if (!implementsInterfaceOrIsSubclassOf(testClass,  MAP_TYPE) && !implementsInterfaceOrIsSubclassOf(testClass, LIST_TYPE)) {
                 ClassNode current = testClass;
                 while (current!=null && !hasProperty) {
                     current = current.redirect();
@@ -1157,6 +1171,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 String propertyName = pexp.getPropertyAsString();
                 boolean isAttributeExpression = pexp instanceof AttributeExpression;
                 for (ClassNode candidate : candidates) {
+                    if ("length".equals(propertyName) && candidate.isArray()) return int_TYPE;
                     ClassNode parent = candidate;
                     while (parent!=null) {
                         parent = parent.redirect();
