@@ -900,7 +900,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (!expression.isCoerce()) {
             ClassNode targetType = expression.getType();
             ClassNode expressionType = getType(expression.getExpression());
-            if (isNumberCategory(targetType) && isNumberCategory(expressionType)) {
+            if (isNumberCategory(getWrapper(targetType)) && isNumberCategory(getWrapper(expressionType))) {
                 // ex: short s = (short) 0
             } else if (!isAssignableTo(expressionType, targetType)) {
                 addStaticTypeError("Inconvertible types: cannot cast "+expressionType.getName()+" to "+targetType.getName(), expression);

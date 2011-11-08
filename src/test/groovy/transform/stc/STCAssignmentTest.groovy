@@ -204,6 +204,12 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    void testCastIntToFloat() {
+        assertScript '''
+            float f = (float) 1
+        '''
+    }
+    
     void testCompatibleTypeCast() {
         assertScript '''
         String s = 'Hello'
