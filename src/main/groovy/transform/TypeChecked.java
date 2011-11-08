@@ -25,9 +25,8 @@ import org.codehaus.groovy.transform.GroovyASTTransformationClass;
  */
 @java.lang.annotation.Documented
 @Retention(RetentionPolicy.SOURCE)
-@Target({   ElementType.METHOD,         ElementType.TYPE, 
-            ElementType.CONSTRUCTOR,    ElementType.FIELD,
-            ElementType.LOCAL_VARIABLE, ElementType.PACKAGE
+@Target({   ElementType.METHOD,         ElementType.TYPE,
+            ElementType.CONSTRUCTOR
 })
 @GroovyASTTransformationClass("org.codehaus.groovy.transform.StaticTypesTransformation")
 public @interface TypeChecked {
