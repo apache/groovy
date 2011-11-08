@@ -53,13 +53,6 @@ public class FileSystemCompiler {
         } else {
             unit = new CompilationUnit(configuration);
         }
-
-        // in command line we don't need to do script lookups
-        unit.getClassLoader().setResourceLoader(new GroovyResourceLoader() {
-            public URL loadGroovySource(String filename) throws MalformedURLException {
-                return null;
-            }
-        });
     }
 
     public void compile(String[] paths) throws Exception {
@@ -80,7 +73,7 @@ public class FileSystemCompiler {
     public static void displayVersion() {
         String version = GroovySystem.getVersion();
         System.err.println("Groovy compiler version " + version);
-        System.err.println("Copyright 2003-2010 The Codehaus. http://groovy.codehaus.org/");
+        System.err.println("Copyright 2003-2011 The Codehaus. http://groovy.codehaus.org/");
         System.err.println("");
     }
 
@@ -112,6 +105,14 @@ public class FileSystemCompiler {
      * the VM to exit.
      */
     public static void commandLineCompile(String[] args) throws Exception {
+        commandLineCompile(args, true);
+    }
+    
+    /**
+     * Same as main(args) except that exceptions are thrown out instead of causing
+     * the VM to exit and the lookup for .groovy files can be controlled
+     */
+    public static void commandLineCompile(String[] args, boolean lookupUnnamedFiles) throws Exception {
         Options options = createCompilationOptions();
 
         PosixParser cliParser = new PosixParser();
@@ -145,7 +146,7 @@ public class FileSystemCompiler {
         fileNameErrors = fileNameErrors && !validateFiles(filenames);
 
         if (!fileNameErrors) {
-            doCompilation(configuration, null, filenames);
+            doCompilation(configuration, null, filenames, lookupUnnamedFiles);
         }
     }
 
@@ -154,12 +155,28 @@ public class FileSystemCompiler {
      * (using the groovyc script).
      *
      * If calling inside a process and you don't want the JVM to exit on an
-     * error call commandLineCompile(String[]), which this method simply wraps 
+     * error call commandLineCompile(String[]), which this method simply wraps
+     * 
+     * @param args command line arguments
      */
     public static void main(String[] args) {
-
+        commandLineCompileWithErrorHandling(args,true);
+    }
+    
+    /**
+     * Primary entry point for compiling from the command line
+     * (using the groovyc script).
+     *
+     * If calling inside a process and you don't want the JVM to exit on an
+     * error call commandLineCompile(String[]), which this method simply wraps
+     * 
+     * @param   args command line arguments
+     * @param   lookupUnnamedFiles do a lookup for .groovy files not part of 
+     *          the given list of files to compile
+     */
+    public static void commandLineCompileWithErrorHandling(String[] args, boolean lookupUnnamedFiles) {
         try {
-            commandLineCompile(args);
+            commandLineCompile(args, lookupUnnamedFiles);
         } catch( Throwable e ) {
             new ErrorReporter( e, displayStackTraceOnError).write( System.err );
             System.exit(1);
@@ -167,6 +184,10 @@ public class FileSystemCompiler {
     }
 
     public static void doCompilation(CompilerConfiguration configuration, CompilationUnit unit, String[] filenames) throws Exception {
+        doCompilation(configuration, unit, filenames, true);
+    }
+    
+    public static void doCompilation(CompilerConfiguration configuration, CompilationUnit unit, String[] filenames, boolean lookupUnnamedFiles) throws Exception {
         File tmpDir = null;
         // if there are any joint compilation options set stubDir if not set
         try {
@@ -177,6 +198,21 @@ public class FileSystemCompiler {
                 configuration.getJointCompilationOptions().put("stubDir", tmpDir);
             }
             FileSystemCompiler compiler = new FileSystemCompiler(configuration, unit);
+            if (lookupUnnamedFiles) {
+                for (String filename : filenames) {
+                    File file = new File(filename);
+                    if (file.isFile()) {
+                        URL url = file.getAbsoluteFile().getParentFile().toURI().toURL();
+                        compiler.unit.getClassLoader().addURL(url);
+                    }
+                }
+            } else {
+                compiler.unit.getClassLoader().setResourceLoader(new GroovyResourceLoader() {
+                    public URL loadGroovySource(String filename) throws MalformedURLException {
+                        return null;
+                    }
+                });
+            }  
             compiler.compile(filenames);
         } finally {
             try {

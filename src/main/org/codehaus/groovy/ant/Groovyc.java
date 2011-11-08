@@ -797,7 +797,7 @@ public class Groovyc extends MatchingTask {
                     	if(tmpExtension.startsWith("*.")) tmpExtension = tmpExtension.substring(1);
                     	commandLineList.add("-Dgroovy.default.scriptExtension=" + tmpExtension);
                     }
-                    commandLineList.add("org.codehaus.groovy.tools.FileSystemCompiler");
+                    commandLineList.add(FileSystemCompilerFacade.class.getName());
                 }
                 commandLineList.add("--classpath");
                 commandLineList.add(classpath.toString());
@@ -902,7 +902,7 @@ public class Groovyc extends MatchingTask {
                         }
                         
                         if (!fileNameErrors) {
-                            FileSystemCompiler.doCompilation(configuration, makeCompileUnit(), filenames);
+                            FileSystemCompiler.doCompilation(configuration, makeCompileUnit(), filenames, false);
                         }
 
                     } catch (Exception re) {
