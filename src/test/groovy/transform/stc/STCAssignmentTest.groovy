@@ -198,6 +198,12 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         ''', 'Possible loose of precision from double to java.lang.Integer'
     }
 
+    void testCastIntToShort() {
+        assertScript '''
+            short s = (short) 0
+        '''
+    }
+
     void testCompatibleTypeCast() {
         assertScript '''
         String s = 'Hello'
