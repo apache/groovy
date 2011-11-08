@@ -86,5 +86,17 @@ class MiscSTCTest extends StaticTypeCheckingTestCase {
             String.getDeclaredFields()
         '''
     }
+
+    void testFieldsFromClass() {
+        assertScript '''
+            String.class.fields
+        '''
+    }
+
+    void testDirectFieldsFromClass() {
+        assertScript '''
+            String.fields
+        '''
+    }
 }
 

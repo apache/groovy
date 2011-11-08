@@ -21,9 +21,12 @@ import org.codehaus.groovy.ast.stmt.*;
 import org.codehaus.groovy.classgen.ReturnAdder;
 import org.codehaus.groovy.classgen.asm.InvocationWriter;
 import org.codehaus.groovy.control.SourceUnit;
+import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.transform.StaticTypesTransformation;
+import org.codehaus.groovy.util.StringUtil;
 import org.objectweb.asm.Opcodes;
 
+import java.beans.Introspector;
 import java.util.*;
 
 import static org.codehaus.groovy.ast.ClassHelper.*;
@@ -437,6 +440,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
         List<ClassNode> tests = new LinkedList<ClassNode>();
         tests.add(clazz);
+        if (objectExpression instanceof ClassExpression) tests.add(CLASS_Type);
         if (!temporaryIfBranchTypeInformation.empty()) {
             Map<Object, List<ClassNode>> info = temporaryIfBranchTypeInformation.peek();
             Object key = extractTemporaryTypeInfoKey(objectExpression);
@@ -450,6 +454,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
         boolean hasProperty = false;
         String propertyName = pexp.getPropertyAsString();
+        if (propertyName==null) return false;
         boolean isAttributeExpression = pexp instanceof AttributeExpression;
         for (ClassNode testClass : tests) {
             // maps and lists have special handling for property expressions
@@ -467,6 +472,19 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         if (field != null) {
                             hasProperty = true;
                             break;
+                        }
+                    }
+                    {
+                        String pname = MetaClassHelper.capitalize(propertyName);
+                        List<MethodNode> nodes = current.getMethods("get"+pname);
+                        if (nodes.isEmpty()) nodes = current.getMethods("is"+pname);
+                        if (!nodes.isEmpty()) {
+                            for (MethodNode node : nodes) {
+                                Parameter[] parameters = node.getParameters();
+                                if (node.getReturnType()!=VOID_TYPE && (parameters==null || parameters.length==0)) {
+                                    return true;
+                                }
+                            }
                         }
                     }
                     // if the property expression is an attribute expression (o.@attr), then
