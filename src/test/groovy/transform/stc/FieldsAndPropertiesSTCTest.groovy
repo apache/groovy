@@ -175,6 +175,16 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    void testMethodUsageForProperty() {
+        assertScript '''
+            class Foo {
+                String name
+            }
+            def name = new Foo().getName()
+            name?.toUpperCase()
+        '''
+    }
+
     public static class BaseClass {
         int x
     }

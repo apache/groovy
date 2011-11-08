@@ -15,7 +15,6 @@
  */
 package org.codehaus.groovy.transform.stc;
 
-import org.apache.tools.ant.taskdefs.Property;
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.stmt.*;
@@ -1004,7 +1003,26 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
         } else {
             methods = receiver.getMethods(name);
+            if (methods.isEmpty() && args==null || args.length==0) {
+                // check if it's a property
+                String pname = null;
+                if (name.startsWith("get")) {
+                    pname = java.beans.Introspector.decapitalize(name.substring(3));
+                } else if (name.startsWith("is")) {
+                    pname  = java.beans.Introspector.decapitalize(name.substring(2));
+                }
+                if (pname!=null) {
+                    // we don't use property exists there because findMethod is called on super clases recursively
+                    PropertyNode property = receiver.getProperty(pname);
+                    if (property!=null) {
+                        return Collections.singletonList(
+                                new MethodNode(name, Opcodes.ACC_PUBLIC, property.getType(), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, EmptyStatement.INSTANCE));
+
+                    }
+                }
+            }
         }
+
 
         List<MethodNode> chosen = chooseBestBethod(receiver, methods, args);
         if (!chosen.isEmpty()) return chosen;
