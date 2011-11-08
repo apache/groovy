@@ -133,5 +133,19 @@ class MiscSTCTest extends StaticTypeCheckingTestCase {
             }
         ''', 'The variable [name] is undeclared.' // todo: can we provide a better error message ?
     }
+
+    void testFindMethodFromSameClass() {
+        assertScript '''
+        class Foo {
+            int foo() {
+                1
+            }
+            int bar(int x) {
+                foo()
+            }
+        }
+        new Foo().bar(2)
+        '''
+    }
 }
 

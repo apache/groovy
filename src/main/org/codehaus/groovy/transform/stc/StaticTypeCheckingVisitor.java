@@ -110,6 +110,15 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     @Override
+    public void visitClass(final ClassNode node) {
+        ClassNode oldCN = classNode;
+        classNode = node;
+        super.visitClass(node);
+        classNode = oldCN;
+    }
+
+
+    @Override
     public void visitVariableExpression(VariableExpression vexp) {
         super.visitVariableExpression(vexp);
         if (vexp != VariableExpression.THIS_EXPRESSION &&
@@ -817,7 +826,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     if (mn.size()==1) {
                         MethodNode directMethodCallCandidate = mn.get(0);
                         // visit the method to obtain inferred return type
+                        ClassNode currentClassNode = classNode;
+                        classNode = directMethodCallCandidate.getDeclaringClass();
                         visitMethod(directMethodCallCandidate);
+                        classNode = currentClassNode;
                         ClassNode returnType = getType(directMethodCallCandidate);
                         if (returnType.isUsingGenerics()) {
                             returnType = inferReturnTypeGenerics(chosenReceiver, directMethodCallCandidate, callArguments);

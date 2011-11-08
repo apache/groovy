@@ -193,5 +193,18 @@ class ReturnsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    void testReturnTypeInferrenceInSingleClass() {
+        assertScript '''
+        class Foo {
+            int square(int i) { i*i }
+
+            int foo(int i) {
+                square(i)
+            }
+        }
+        new Foo().foo(2)
+        '''
+    }
+
 }
 
