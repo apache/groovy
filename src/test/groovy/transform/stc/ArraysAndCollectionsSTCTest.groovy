@@ -34,7 +34,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         shouldFailWithMessages '''
             String[] strings = ['a','b','c']
             int str = strings[0]
-        ''', 'Cannot assign value of type java.lang.String to variable of type java.lang.Integer'
+        ''', 'Cannot assign value of type java.lang.String to variable of type int'
     }
 
     void testWrongComponentTypeInArray() {

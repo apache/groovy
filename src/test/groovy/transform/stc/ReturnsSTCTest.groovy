@@ -28,7 +28,7 @@ class ReturnsSTCTest extends StaticTypeCheckingTestCase {
             }
 
             int x = method()
-        ''', 'Cannot assign value of type void to variable of type java.lang.Integer'
+        ''', 'Cannot assign value of type void to variable of type int'
     }
 
     void testIncompatibleExplicitReturn() {
@@ -38,7 +38,7 @@ class ReturnsSTCTest extends StaticTypeCheckingTestCase {
             }
 
             int x = method()
-        ''', 'Cannot assign value of type java.lang.String to variable of type java.lang.Integer'
+        ''', 'Cannot assign value of type java.lang.String to variable of type int'
     }
 
     void testIncompatibleExplicitReturn2() {
@@ -64,7 +64,7 @@ class ReturnsSTCTest extends StaticTypeCheckingTestCase {
             }
 
             int x = method()
-        ''', 'Cannot assign value of type java.lang.String to variable of type java.lang.Integer'
+        ''', 'Cannot assign value of type java.lang.String to variable of type int'
     }
 
     void testImplicitReturnFailureWithIfElse() {

@@ -25,7 +25,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
     void testAssignmentFailure() {
         shouldFailWithMessages """
             int x = new Object()
-        """, "Cannot assign value of type java.lang.Object to variable of type java.lang.Integer"
+        """, "Cannot assign value of type java.lang.Object to variable of type int"
     }
 
     void testAssignmentFailure2() {
@@ -44,7 +44,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         shouldFailWithMessages """
             def o = new Object()
             int x = o
-        """, "Cannot assign value of type java.lang.Object to variable of type java.lang.Integer"
+        """, "Cannot assign value of type java.lang.Object to variable of type int"
     }
 
     void testIndirectAssignment2() {

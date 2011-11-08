@@ -1242,7 +1242,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         } else if (exp instanceof MapExpression) {
             return inferMapExpressionType((MapExpression) exp);
         }
-        return exp.getType();
+        return exp instanceof VariableExpression?((VariableExpression) exp).getOriginType():exp.getType();
     }
 
     private ClassNode inferListExpressionType(final ListExpression list) {
