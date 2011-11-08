@@ -23,11 +23,10 @@ import org.codehaus.groovy.classgen.asm.InvocationWriter;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.transform.StaticTypesTransformation;
-import org.codehaus.groovy.util.StringUtil;
 import org.objectweb.asm.Opcodes;
 
-import java.beans.Introspector;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.codehaus.groovy.ast.ClassHelper.*;
 import static org.codehaus.groovy.ast.tools.WideningCategories.*;
@@ -131,7 +130,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     @Override
     public void visitPropertyExpression(final PropertyExpression pexp) {
         super.visitPropertyExpression(pexp);
-        if (!existsProperty(pexp)) {
+        if (!existsProperty(pexp, true)) {
             Expression objectExpression = pexp.getObjectExpression();
             addStaticTypeError("No such property: " + pexp.getPropertyAsString() +
                     " for class: " + findCurrentInstanceOfClass(objectExpression, objectExpression.getType()), pexp);
@@ -141,7 +140,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     @Override
     public void visitAttributeExpression(final AttributeExpression expression) {
         super.visitAttributeExpression(expression);
-        if (!existsProperty(expression)) {
+        if (!existsProperty(expression, true)) {
             Expression objectExpression = expression.getObjectExpression();
             addStaticTypeError("No such property: " + expression.getPropertyAsString() +
                     " for class: " + findCurrentInstanceOfClass(objectExpression, objectExpression.getType()), expression);
@@ -280,7 +279,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
         boolean compatible = checkCompatibleAssignmentTypes(leftRedirect, inferredRightExpressionType);
         if (!compatible) {
-            addStaticTypeError("Cannot assign value of type " + inferredRightExpressionType.getName() + " to variable of type " + leftExpressionType.getName(), assignmentExpression);
+            // if leftRedirect is of void type, then it means we are on a missing property
+            if ((leftRedirect == VOID_TYPE) && (leftExpression instanceof PropertyExpression)) {
+                addStaticTypeError("Cannot set read-only property: "+((PropertyExpression)leftExpression).getPropertyAsString(), leftExpression);
+            } else {
+                addStaticTypeError("Cannot assign value of type " + inferredRightExpressionType.getName() + " to variable of type " + leftExpressionType.getName(), assignmentExpression);
+            }
         } else {
             // if closure expression on RHS, then copy the inferred closure return type
             if (rightExpression instanceof ClosureExpression) {
@@ -425,17 +429,27 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         return type;
     }
 
+    private boolean existsProperty(final PropertyExpression pexp, final boolean checkForReadOnly) {
+        return existsProperty(pexp, checkForReadOnly, null);
+    }
+
     /**
      * Checks whether a property exists on the receiver, or on any of the possible receiver classes (found in the
      * temporary type information table)
      *
      * @param pexp a property expression
+     * @param checkForReadOnly also lookup for read only properties
+     * @param visitor if not null, when the property node is found, visit it with the provided visitor
      * @return true if the property is defined in any of the possible receiver classes
      */
-    private boolean existsProperty(final PropertyExpression pexp) {
+    private boolean existsProperty(final PropertyExpression pexp, final boolean checkForReadOnly, final ClassCodeVisitorSupport visitor) {
         Expression objectExpression = pexp.getObjectExpression();
         ClassNode clazz = getType(objectExpression);
         if (clazz.isArray() && "length".equals(pexp.getPropertyAsString())) {
+            if (visitor!=null) {
+                PropertyNode node = new PropertyNode("length", Opcodes.ACC_PUBLIC| Opcodes.ACC_FINAL, ClassHelper.int_TYPE, clazz, null, null, null);
+                visitor.visitProperty(node);
+            }
             return true;
         }
         List<ClassNode> tests = new LinkedList<ClassNode>();
@@ -452,7 +466,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 && ((VariableExpression) pexp.getObjectExpression()).getName().equals("it")) {
             tests.add(lastImplicitItType);
         }
-        boolean hasProperty = false;
         String propertyName = pexp.getPropertyAsString();
         if (propertyName==null) return false;
         boolean isAttributeExpression = pexp instanceof AttributeExpression;
@@ -460,21 +473,21 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             // maps and lists have special handling for property expressions
             if (!implementsInterfaceOrIsSubclassOf(testClass,  MAP_TYPE) && !implementsInterfaceOrIsSubclassOf(testClass, LIST_TYPE)) {
                 ClassNode current = testClass;
-                while (current!=null && !hasProperty) {
+                while (current!=null) {
                     current = current.redirect();
                     PropertyNode propertyNode = current.getProperty(propertyName);
                     if (propertyNode != null) {
-                        hasProperty = true;
-                        break;
+                        if (visitor!=null) visitor.visitProperty(propertyNode);
+                        return true;
                     }
                     if (!isAttributeExpression) {
                         FieldNode field = current.getDeclaredField(propertyName);
                         if (field != null) {
-                            hasProperty = true;
-                            break;
+                            if (visitor!=null) visitor.visitField(field);
+                            return true;
                         }
                     }
-                    {
+                    if (checkForReadOnly) {
                         String pname = MetaClassHelper.capitalize(propertyName);
                         List<MethodNode> nodes = current.getMethods("get"+pname);
                         if (nodes.isEmpty()) nodes = current.getMethods("is"+pname);
@@ -482,6 +495,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                             for (MethodNode node : nodes) {
                                 Parameter[] parameters = node.getParameters();
                                 if (node.getReturnType()!=VOID_TYPE && (parameters==null || parameters.length==0)) {
+                                    if (visitor!=null) visitor.visitMethod(node);
                                     return true;
                                 }
                             }
@@ -492,13 +506,15 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     current = isAttributeExpression ?null:current.getSuperClass();
                 }
             } else {
-                hasProperty = true;
+                if (visitor!=null) {
+                    // todo : type inferrence on maps and lists, if possible
+                    PropertyNode node = new PropertyNode(propertyName, Opcodes.ACC_PUBLIC, OBJECT_TYPE, clazz, null, null, null);
+                    visitor.visitProperty(node);
+                }
+                return true;
             }
         }
-        if (!hasProperty && pexp.getObjectExpression() instanceof ClassExpression) {
-            return CLASS_Type.getProperty(propertyName)!=null || CLASS_Type.getDeclaredField(propertyName)!=null;
-        }
-        return hasProperty;
+        return false;
     }
 
     @Override
@@ -1229,30 +1245,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             } else if (objectExpType.isEnum()) {
                 return objectExpType;
             } else {
-                ClassNode clazz = objectExpType.redirect();
-                List<ClassNode> candidates = new LinkedList<ClassNode>();
-                candidates.add(clazz);
-                if (!temporaryIfBranchTypeInformation.empty()) {
-                    List<ClassNode> classNodes = temporaryIfBranchTypeInformation.peek().get(extractTemporaryTypeInfoKey(pexp.getObjectExpression()));
-                    if (classNodes != null && !classNodes.isEmpty()) candidates.addAll(classNodes);
-                }
-                String propertyName = pexp.getPropertyAsString();
-                boolean isAttributeExpression = pexp instanceof AttributeExpression;
-                for (ClassNode candidate : candidates) {
-                    if ("length".equals(propertyName) && candidate.isArray()) return int_TYPE;
-                    ClassNode parent = candidate;
-                    while (parent!=null) {
-                        parent = parent.redirect();
-                        PropertyNode propertyNode = parent.getProperty(propertyName);
-                        if (propertyNode != null) return propertyNode.getType();
-                        if (!isAttributeExpression) {
-                            FieldNode field = parent.getDeclaredField(propertyName);
-                            if (field != null) return field.getType();
-                        }
-                        parent = isAttributeExpression?null:parent.getSuperClass();
-                    }
-                }
-                return ClassHelper.OBJECT_TYPE;
+                final AtomicReference<ClassNode> result = new AtomicReference<ClassNode>(ClassHelper.VOID_TYPE);
+                existsProperty(pexp, false, new PropertyLookupVisitor(result));
+                return result.get();
             }
         }
         if (exp instanceof ListExpression) {
@@ -1462,4 +1457,35 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
     }
 
+    /**
+     * A visitor used as a callback to {@link StaticTypeCheckingVisitor#existsProperty(org.codehaus.groovy.ast.expr.PropertyExpression, boolean, org.codehaus.groovy.ast.ClassCodeVisitorSupport)}
+     * which will return set the type of the found property in the provided reference.
+     */
+    private static class PropertyLookupVisitor extends ClassCodeVisitorSupport {
+        private final AtomicReference<ClassNode> result;
+
+        public PropertyLookupVisitor(final AtomicReference<ClassNode> result) {
+            this.result = result;
+        }
+
+        @Override
+        protected SourceUnit getSourceUnit() {
+            return null;
+        }
+
+        @Override
+        public void visitMethod(final MethodNode node) {
+            result.set(node.getReturnType());
+        }
+
+        @Override
+        public void visitProperty(final PropertyNode node) {
+            result.set(node.getType());
+        }
+
+        @Override
+        public void visitField(final FieldNode field) {
+            result.set(field.getType());
+        }
+    }
 }

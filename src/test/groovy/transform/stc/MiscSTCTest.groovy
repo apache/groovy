@@ -98,5 +98,40 @@ class MiscSTCTest extends StaticTypeCheckingTestCase {
             String.fields
         '''
     }
+
+    void testMissingSetter() {
+        shouldFailWithMessages '''
+            class Foo {
+                String getName() { 'Hello' }
+            }
+            Foo foo = new Foo()
+            foo.name = 'Error'
+        ''', 'Cannot set read-only property: name'
+    }
+
+    void testMissingSetterThroughPath() {
+        shouldFailWithMessages '''
+            class Foo {
+                String getName() { 'Hello' }
+            }
+            class Bar {
+                Foo foo = new Foo()
+            }
+            Bar bar = new Bar()
+            bar.foo.name = 'Error'
+        ''', 'Cannot set read-only property: name'
+    }
+
+    void testMissingSetterAndWith() {
+        shouldFailWithMessages '''
+            class Foo {
+                String getName() { 'Hello' }
+            }
+            Foo foo = new Foo()
+            foo.with {
+                name = 'Error'
+            }
+        ''', 'The variable [name] is undeclared.' // todo: can we provide a better error message ?
+    }
 }
 
