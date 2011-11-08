@@ -23,7 +23,7 @@ package org.codehaus.groovy.transform.stc;
 public enum StaticTypesMarker {
     INFERRED_TYPE, // used to store type information on class nodes
     DECLARATION_INFERRED_TYPE, // in flow analysis, represents the type of the declaration node lhs
-    CLOSURE_INFERRED_RETURN_TYPE, // used to store closure argument types on a variable expression
+    INFERRED_RETURN_TYPE, // used to store inferred return type for methods and closures
     CLOSURE_ARGUMENTS, // used to store closure argument types on a variable expression
     DIRECT_METHOD_CALL_TARGET // used to store the MethodNode a MethodCallExpression should target
 }

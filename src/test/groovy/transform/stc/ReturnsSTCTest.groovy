@@ -157,5 +157,41 @@ class ReturnsSTCTest extends StaticTypeCheckingTestCase {
         ''', 'Cannot return value of type java.lang.Object -> java.lang.Object on method returning type double'
     }
 
+    void testReturnTypeInference() {
+        assertScript '''
+            def foo() { 1 }
+            int x = foo()
+        '''
+    }
+
+    void testRecursiveTypeInferrence() {
+        assertScript '''
+            def fib(int i) {
+                i < 2 ? 1 : (fib(i - 2) as int) + (fib(i - 1) as int)
+            }
+            fib(2)
+        '''
+    }
+
+    void testMethodTypeInferrence() {
+        assertScript '''
+            def square(int i) { i*i }
+            int squarePlusOne(int i) {
+                1+square(i)
+            }
+            assert squarePlusOne(2)==5
+        '''
+    }
+
+    void testFindMethodWithInferredReturnType() {
+        assertScript '''
+            def square(int i) { i*i }
+            int foo(int i) {
+                square(i)
+            }
+            assert foo(square(2))==16
+        '''
+    }
+
 }
 

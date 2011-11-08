@@ -20,6 +20,8 @@ import org.codehaus.groovy.control.*;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor;
 
+import java.util.Collections;
+
 /**
  * Handles the implementation of the {@link groovy.transform.TypeChecked} transformation.
  *
@@ -37,11 +39,13 @@ public class StaticTypesTransformation implements ASTTransformation {
 //        AnnotationNode annotationInformation = (AnnotationNode) nodes[0];
         AnnotatedNode node = (AnnotatedNode) nodes[1];
         if (node instanceof ClassNode) {
-            StaticTypeCheckingVisitor visitor = newVisitor(source, (ClassNode) node);
-            visitor.visitClass((ClassNode) node);
+            ClassNode classNode = (ClassNode) node;
+            StaticTypeCheckingVisitor visitor = newVisitor(source, classNode);
+            visitor.visitClass(classNode);
         } else if (node instanceof MethodNode) {
             MethodNode methodNode = (MethodNode)node;
             StaticTypeCheckingVisitor visitor = newVisitor(source, methodNode.getDeclaringClass());
+            visitor.setMethodsToBeVisited(Collections.singleton(methodNode));
             visitor.visitMethod(methodNode);
         } else {
             source.addError(new SyntaxException(STATIC_ERROR_PREFIX + "Unimplemented node type", node.getLineNumber(), node.getColumnNumber()));
