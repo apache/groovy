@@ -147,5 +147,26 @@ class MiscSTCTest extends StaticTypeCheckingTestCase {
         new Foo().bar(2)
         '''
     }
+
+    void testCallToSuperConstructor() {
+        assertScript '''
+            class MyException extends Exception {
+                MyException(String message) { super(message) }
+            }
+            1
+        '''
+    }
+
+    void testCallToThisConstructor() {
+        assertScript '''
+            class MyException extends Exception {
+                MyException(int errNo, String message) {
+                    this(message)
+                }
+                MyException(String message) { super(message) }
+            }
+            1
+        '''
+    }
 }
 

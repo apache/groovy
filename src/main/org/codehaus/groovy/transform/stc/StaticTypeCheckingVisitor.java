@@ -635,7 +635,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     @Override
     public void visitConstructorCallExpression(ConstructorCallExpression call) {
         super.visitConstructorCallExpression(call);
-        ClassNode receiver = call.getType();
+        ClassNode receiver = call.isThisCall()?classNode:
+                call.isSuperCall()?classNode.getSuperClass():call.getType();
         ClassNode[] args = getArgumentTypes(InvocationWriter.makeArgumentList(call.getArguments()));
         MethodNode node = findMethodOrFail(call, receiver, "<init>", args);
         if (node!=null) {
