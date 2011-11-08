@@ -172,7 +172,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             // if right expression is a ClosureExpression, store parameter type information
             if (leftExpression instanceof VariableExpression && rightExpression instanceof ClosureExpression) {
                 Parameter[] parameters = ((ClosureExpression) rightExpression).getParameters();
-                leftExpression.putNodeMetaData(StaticTypesTransformation.StaticTypesMarker.CLOSURE_ARGUMENTS, parameters);
+                leftExpression.putNodeMetaData(StaticTypesMarker.CLOSURE_ARGUMENTS, parameters);
             }
 
 
@@ -288,9 +288,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         } else {
             // if closure expression on RHS, then copy the inferred closure return type
             if (rightExpression instanceof ClosureExpression) {
-                Object type = rightExpression.getNodeMetaData(StaticTypesTransformation.StaticTypesMarker.CLOSURE_INFERRED_RETURN_TYPE);
+                Object type = rightExpression.getNodeMetaData(StaticTypesMarker.CLOSURE_INFERRED_RETURN_TYPE);
                 if (type!=null) {
-                    leftExpression.putNodeMetaData(StaticTypesTransformation.StaticTypesMarker.CLOSURE_INFERRED_RETURN_TYPE ,type);
+                    leftExpression.putNodeMetaData(StaticTypesMarker.CLOSURE_INFERRED_RETURN_TYPE ,type);
                 }
             }
 
@@ -644,7 +644,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         closureReturnAdder.visitMethod(node);
 
         if (closureReturnTypes!=null) {
-            expression.putNodeMetaData(StaticTypesTransformation.StaticTypesMarker.CLOSURE_INFERRED_RETURN_TYPE, firstCommonSuperType(closureReturnTypes));
+            expression.putNodeMetaData(StaticTypesMarker.CLOSURE_INFERRED_RETURN_TYPE, firstCommonSuperType(closureReturnTypes));
         }
 
         closureExpression = oldClosureExpr;
@@ -767,12 +767,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     if (objectExpression instanceof VariableExpression) {
                         Variable variable = findTargetVariable((VariableExpression)objectExpression);
                         if (variable instanceof Expression) {
-                            Object data = ((Expression) variable).getNodeMetaData(StaticTypesTransformation.StaticTypesMarker.CLOSURE_ARGUMENTS);
+                            Object data = ((Expression) variable).getNodeMetaData(StaticTypesMarker.CLOSURE_ARGUMENTS);
                             if (data!=null) {
                                 Parameter[] parameters = (Parameter[]) data;
                                 typeCheckClosureCall(callArguments, args, parameters);
                             }
-                            Object type = ((Expression) variable).getNodeMetaData(StaticTypesTransformation.StaticTypesMarker.CLOSURE_INFERRED_RETURN_TYPE);
+                            Object type = ((Expression) variable).getNodeMetaData(StaticTypesMarker.CLOSURE_INFERRED_RETURN_TYPE);
                             if (type!=null) {
                                  storeType(call, (ClassNode) type);
                             }
@@ -781,7 +781,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         // we can get actual parameters directly
                         Parameter[] parameters = ((ClosureExpression)objectExpression).getParameters();
                         typeCheckClosureCall(callArguments, args, parameters);
-                        Object data = objectExpression.getNodeMetaData(StaticTypesTransformation.StaticTypesMarker.CLOSURE_INFERRED_RETURN_TYPE);
+                        Object data = objectExpression.getNodeMetaData(StaticTypesMarker.CLOSURE_INFERRED_RETURN_TYPE);
                         if (data!=null) {
                             storeType(call, (ClassNode) data);
                         }
@@ -809,7 +809,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     private void storeTargetMethod(final Expression call, final MethodNode directMethodCallCandidate) {
-        call.putNodeMetaData(StaticTypesTransformation.StaticTypesMarker.DIRECT_METHOD_CALL_TARGET, directMethodCallCandidate);
+        call.putNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET, directMethodCallCandidate);
     }
 
     private boolean isClosureCall(final String name, final Expression objectExpression) {
@@ -890,7 +890,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
 
     private void storeType(Expression exp, ClassNode cn) {
-        ClassNode oldValue = (ClassNode) exp.putNodeMetaData(StaticTypesTransformation.StaticTypesMarker.INFERRED_TYPE, cn);
+        ClassNode oldValue = (ClassNode) exp.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, cn);
         if (oldValue!=null) {
             // this may happen when a variable declaration type is wider than the subsequent assignment values
             // for example :
@@ -899,11 +899,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             // o = new Object() // and eventually an object !
             // in that case, the INFERRED_TYPE corresponds to the current inferred type, while
             // DECLARATION_INFERRED_TYPE is the type which should be used for the initial type declaration
-            ClassNode oldDIT = (ClassNode) exp.getNodeMetaData(StaticTypesTransformation.StaticTypesMarker.DECLARATION_INFERRED_TYPE);
+            ClassNode oldDIT = (ClassNode) exp.getNodeMetaData(StaticTypesMarker.DECLARATION_INFERRED_TYPE);
             if (oldDIT!=null) {
-                exp.putNodeMetaData(StaticTypesTransformation.StaticTypesMarker.DECLARATION_INFERRED_TYPE, firstCommonSuperType(oldDIT, cn));
+                exp.putNodeMetaData(StaticTypesMarker.DECLARATION_INFERRED_TYPE, firstCommonSuperType(oldDIT, cn));
             } else {
-                exp.putNodeMetaData(StaticTypesTransformation.StaticTypesMarker.DECLARATION_INFERRED_TYPE, firstCommonSuperType(oldValue, cn));
+                exp.putNodeMetaData(StaticTypesMarker.DECLARATION_INFERRED_TYPE, firstCommonSuperType(oldValue, cn));
             }
         }
         if (exp instanceof VariableExpression) {
@@ -1206,7 +1206,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     private ClassNode getType(Expression exp) {
-        ClassNode cn = (ClassNode) exp.getNodeMetaData(StaticTypesTransformation.StaticTypesMarker.INFERRED_TYPE);
+        ClassNode cn = (ClassNode) exp.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
         if (cn != null) return cn;
         if (exp instanceof VariableExpression) {
             VariableExpression vexp = (VariableExpression) exp;

@@ -22,6 +22,7 @@ import org.codehaus.groovy.control.SourceUnit
 import org.codehaus.groovy.classgen.GeneratorContext
 import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.ClassHelper
+import org.codehaus.groovy.transform.stc.StaticTypesMarker
 
 /**
  * Unit tests for static type checking : type inference.
@@ -379,7 +380,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
                 o = 'String'
             }
         '''
-        assert method.code.statements[0].expression.leftExpression.getNodeMetaData(org.codehaus.groovy.transform.StaticTypesTransformation.StaticTypesMarker.DECLARATION_INFERRED_TYPE) == ClassHelper.OBJECT_TYPE
+        assert method.code.statements[0].expression.leftExpression.getNodeMetaData(StaticTypesMarker.DECLARATION_INFERRED_TYPE) == ClassHelper.OBJECT_TYPE
 
         assertScript '''
             void method() {
@@ -388,7 +389,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
                 o = 2
             }
         '''
-        assert method.code.statements[0].expression.leftExpression.getNodeMetaData(org.codehaus.groovy.transform.StaticTypesTransformation.StaticTypesMarker.DECLARATION_INFERRED_TYPE) == ClassHelper.int_TYPE
+        assert method.code.statements[0].expression.leftExpression.getNodeMetaData(StaticTypesMarker.DECLARATION_INFERRED_TYPE) == ClassHelper.int_TYPE
 
         assertScript '''
             void method() {
@@ -397,7 +398,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
                 o = 2
             }
         '''
-        assert method.code.statements[0].expression.leftExpression.getNodeMetaData(org.codehaus.groovy.transform.StaticTypesTransformation.StaticTypesMarker.DECLARATION_INFERRED_TYPE) == ClassHelper.Number_TYPE
+        assert method.code.statements[0].expression.leftExpression.getNodeMetaData(StaticTypesMarker.DECLARATION_INFERRED_TYPE) == ClassHelper.Number_TYPE
 
         assertScript '''
             void method() {
@@ -406,7 +407,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
                 o = new LinkedHashSet()
             }
         '''
-        assert method.code.statements[0].expression.leftExpression.getNodeMetaData(org.codehaus.groovy.transform.StaticTypesTransformation.StaticTypesMarker.DECLARATION_INFERRED_TYPE) == ClassHelper.make(HashSet)
+        assert method.code.statements[0].expression.leftExpression.getNodeMetaData(StaticTypesMarker.DECLARATION_INFERRED_TYPE) == ClassHelper.make(HashSet)
 
 
     }
