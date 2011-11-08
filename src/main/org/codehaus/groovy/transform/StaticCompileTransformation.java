@@ -26,6 +26,7 @@ import org.codehaus.groovy.classgen.asm.sc.StaticTypesWriterControllerFactoryImp
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor;
+import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 
 /**
  * Handles the implementation of the {@link groovy.transform.CompileStatic} transformation.

@@ -22,6 +22,7 @@ import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.classgen.asm.InvocationWriter;
 import org.codehaus.groovy.classgen.asm.WriterController;
 import org.codehaus.groovy.transform.StaticTypesTransformation;
+import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 
 public class StaticInvocationWriter extends InvocationWriter {
     public StaticInvocationWriter(WriterController wc) {
@@ -30,7 +31,7 @@ public class StaticInvocationWriter extends InvocationWriter {
 
     @Override
     public void writeInvokeConstructor(final ConstructorCallExpression call) {
-        MethodNode mn = (MethodNode) call.getNodeMetaData(StaticTypesTransformation.StaticTypesMarker.DIRECT_METHOD_CALL_TARGET);
+        MethodNode mn = (MethodNode) call.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET);
         if (mn==null) {
             super.writeInvokeConstructor(call);
             return;
