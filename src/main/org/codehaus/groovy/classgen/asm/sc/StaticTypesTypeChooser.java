@@ -21,6 +21,7 @@ import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.classgen.asm.StatementMetaTypeChooser;
 import org.codehaus.groovy.transform.StaticTypesTransformation;
+import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 
 /**
  * A {@link org.codehaus.groovy.classgen.asm.TypeChooser} which reads type information from node metadata
@@ -32,9 +33,9 @@ public class StaticTypesTypeChooser extends StatementMetaTypeChooser {
     @Override
     public ClassNode resolveType(final Expression exp, final ClassNode current) {
         Expression target = exp instanceof VariableExpression ? getTarget((VariableExpression) exp) : exp;
-        ClassNode dif = (ClassNode) exp.getNodeMetaData(StaticTypesTransformation.StaticTypesMarker.DECLARATION_INFERRED_TYPE);
+        ClassNode dif = (ClassNode) exp.getNodeMetaData(StaticTypesMarker.DECLARATION_INFERRED_TYPE);
         if (dif != null) return dif;
-        ClassNode inferredType = (ClassNode) target.getNodeMetaData(StaticTypesTransformation.StaticTypesMarker.INFERRED_TYPE);
+        ClassNode inferredType = (ClassNode) target.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
         if (inferredType != null) {
             return inferredType;
         }
