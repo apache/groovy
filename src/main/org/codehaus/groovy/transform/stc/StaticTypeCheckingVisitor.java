@@ -250,6 +250,32 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         } else {
             leftRedirect = leftExpression.getType().redirect();
         }
+        if (leftExpression instanceof TupleExpression) {
+            // multiple assignment
+            if (!(rightExpression instanceof ListExpression)) {
+                addStaticTypeError("Multiple assignments without list expressions on the right hand side are unsupported in static type checking mode", rightExpression);
+                return;
+            }
+            TupleExpression tuple = (TupleExpression) leftExpression;
+            ListExpression list = (ListExpression) rightExpression;
+            List<Expression> listExpressions = list.getExpressions();
+            List<Expression> tupleExpressions = tuple.getExpressions();
+            if (listExpressions.size()< tupleExpressions.size()) {
+                addStaticTypeError("Incorrect number of values. Expected:"+ tupleExpressions.size()+" Was:"+listExpressions.size(), list);
+                return;
+            }
+            for (int i = 0, tupleExpressionsSize = tupleExpressions.size(); i < tupleExpressionsSize; i++) {
+                Expression tupleExpression = tupleExpressions.get(i);
+                Expression listExpression = listExpressions.get(i);
+                ClassNode elemType = getType(listExpression);
+                ClassNode tupleType = getType(tupleExpression);
+                if (!isAssignableTo(elemType, tupleType)) {
+                    addStaticTypeError("Cannot assign value of type " + elemType.getName() + " to variable of type " + tupleType.getName(), rightExpression);
+                    break; // avoids too many errors
+                }
+            }
+            return;
+        }
         boolean compatible = checkCompatibleAssignmentTypes(leftRedirect, inferredRightExpressionType);
         if (!compatible) {
             addStaticTypeError("Cannot assign value of type " + inferredRightExpressionType.getName() + " to variable of type " + leftExpressionType.getName(), assignmentExpression);

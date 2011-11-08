@@ -234,5 +234,51 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
             int len = arr.length
         '''
     }
+
+    void testMultipleAssignment1() {
+        assertScript '''
+            def (x,y) = [1,2]
+        '''
+    }
+
+    void testMultipleAssignmentWithExplicitTypes() {
+        assertScript '''
+            int x
+            int y
+            (x,y) = [1,2]
+        '''
+    }
+
+    void testMultipleAssignmentWithIncompatibleTypes() {
+        shouldFailWithMessages '''
+            List x
+            List y
+            (x,y) = [1,2]
+        ''', 'Cannot assign value of type int to variable of type java.util.List'
+    }
+
+    void testMultipleAssignmentWithoutEnoughArgs() {
+        shouldFailWithMessages '''
+            int x
+            int y
+            (x,y) = [1]
+        ''', 'Incorrect number of values. Expected:2 Was:1'
+    }
+
+    void testMultipleAssignmentTooManyArgs() {
+        assertScript '''
+            int x
+            int y
+            (x,y) = [1,2,3]
+        '''
+    }
+
+    void testMultipleAssignmentFromVariable() {
+        shouldFailWithMessages '''
+            def list = [1,2,3]
+            def (x,y) = list
+        ''', 'Multiple assignments without list expressions on the right hand side are unsupported in static type checking mode'
+    }
+
 }
 
