@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2009 the original author or authors.
+ * Copyright 2003-2011 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -180,14 +180,14 @@ public class CompilerConfiguration {
         }
         String tmpDefaultScriptExtension = null;
         try {
-        	tmpDefaultScriptExtension = System.getProperty("groovy.default.scriptExtension");
+            tmpDefaultScriptExtension = System.getProperty("groovy.default.scriptExtension");
         } catch (Exception e) {
-        	// IGNORE
+            // IGNORE
         }
         if(tmpDefaultScriptExtension != null) {
-        	setDefaultScriptExtension(tmpDefaultScriptExtension);
+            setDefaultScriptExtension(tmpDefaultScriptExtension);
         } else {
-        	setDefaultScriptExtension(".groovy");
+            setDefaultScriptExtension(".groovy");
         }
 
         //
@@ -354,7 +354,7 @@ public class CompilerConfiguration {
                 numeric = WarningMessage.PARANOIA;
             }
             else {
-                throw new ConfigurationException("unrecogized groovy.warnings: " + text);
+                throw new ConfigurationException("unrecognized groovy.warnings: " + text);
             }
         }
         setWarningLevel(numeric);
@@ -363,7 +363,10 @@ public class CompilerConfiguration {
         // Source file encoding 
         // 
         text = configuration.getProperty("groovy.source.encoding");
-        if (text != null) setSourceEncoding(text);
+        if (text == null) {
+            text = configuration.getProperty("file.encoding", "US-ASCII");
+        }
+        setSourceEncoding(text);
 
         //
         // Target directory for classes
@@ -540,10 +543,10 @@ public class CompilerConfiguration {
     
     /**
      * sets the classpath using a list of Strings
-     * @param l list of strings containg the classpathparts
+     * @param parts list of strings containing the classpath parts
      */
-    public void setClasspathList(List<String> l) {
-        this.classpath = new LinkedList<String>(l);
+    public void setClasspathList(List<String> parts) {
+        this.classpath = new LinkedList<String>(parts);
     }
 
     /**
@@ -618,21 +621,21 @@ public class CompilerConfiguration {
     }
 
     public void setScriptExtensions(Set<String> scriptExtensions) {
-    	if(scriptExtensions == null) scriptExtensions = new LinkedHashSet<String>();
+        if(scriptExtensions == null) scriptExtensions = new LinkedHashSet<String>();
         this.scriptExtensions = scriptExtensions;
     }
     
     public Set<String> getScriptExtensions() {
-    	if(scriptExtensions == null || scriptExtensions.isEmpty()) {
-    		/*
-    		 *  this happens 
-    		 *  *	when groovyc calls FileSystemCompiler in forked mode, or
-    		 *  *	when FileSystemCompiler is run from the command line directly, or
-    		 *  *	when groovy was not started using groovyc or FileSystemCompiler either
-    		 */
-    		scriptExtensions = SourceExtensionHandler.getRegisteredExtensions(
-    				this.getClass().getClassLoader());
-    	}
+        if(scriptExtensions == null || scriptExtensions.isEmpty()) {
+            /*
+             *  this happens 
+             *  *    when groovyc calls FileSystemCompiler in forked mode, or
+             *  *    when FileSystemCompiler is run from the command line directly, or
+             *  *    when groovy was not started using groovyc or FileSystemCompiler either
+             */
+            scriptExtensions = SourceExtensionHandler.getRegisteredExtensions(
+                    this.getClass().getClassLoader());
+        }
         return scriptExtensions;
     }
     
@@ -760,10 +763,10 @@ public class CompilerConfiguration {
     }
 
     /**
-     * Disables global AST transformations. In order to avoid classloading side effects, it is not recommanded
+     * Disables global AST transformations. In order to avoid classloading side effects, it is not recommended
      * to use MyASTTransformation.class.getName() by directly use the class name as a string. Disabled AST transformations
      * only apply to automatically loaded global AST transformations, that is to say transformations defined in a
-     * META-INF/org.codehaus.groovy.transform.ASTTransformation file. If you explicitely add a global AST transformation
+     * META-INF/org.codehaus.groovy.transform.ASTTransformation file. If you explicitly add a global AST transformation
      * in your compilation process, for example using the {@link org.codehaus.groovy.control.customizers.ASTTransformationCustomizer} or
      * using a {@link org.codehaus.groovy.control.CompilationUnit.PrimaryClassNodeOperation}, then nothing will prevent
      * the transformation from being loaded.
