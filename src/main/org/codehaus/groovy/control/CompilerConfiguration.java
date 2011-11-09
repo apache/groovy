@@ -621,9 +621,9 @@ public class CompilerConfiguration {
         if(scriptExtensions == null || scriptExtensions.isEmpty()) {
             /*
              *  this happens 
-             *  *    when groovyc calls FileSystemCompiler in forked mode, or
-             *  *    when FileSystemCompiler is run from the command line directly, or
-             *  *    when groovy was not started using groovyc or FileSystemCompiler either
+             *  * when groovyc calls FileSystemCompiler in forked mode, or
+             *  * when FileSystemCompiler is run from the command line directly, or
+             *  * when groovy was not started using groovyc or FileSystemCompiler either
              */
             scriptExtensions = SourceExtensionHandler.getRegisteredExtensions(
                     this.getClass().getClassLoader());
