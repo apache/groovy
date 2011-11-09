@@ -204,6 +204,13 @@ public class CompilationUnit extends ProcessingUnit {
                 iv.visitClass(classNode);
             }
         }, Phases.CANONICALIZATION);
+        addPhaseOperation(new PrimaryClassNodeOperation() {
+            public void call(SourceUnit source, GeneratorContext context,
+                             ClassNode classNode) throws CompilationFailedException {
+                EnumCompletionVisitor ecv = new EnumCompletionVisitor(CompilationUnit.this, source);
+                ecv.visitClass(classNode);
+            }
+        }, Phases.CANONICALIZATION);
 
         // apply configuration customizers if any
         if (configuration != null) {

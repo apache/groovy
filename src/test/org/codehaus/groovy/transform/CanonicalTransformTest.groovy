@@ -501,4 +501,16 @@ class CanonicalTransformTest extends GroovyShellTestCase {
             assert baz2.hashCode() == -100
         """
     }
+
+    void testTupleConstructorWithEnum() {
+        assertScript """
+            @groovy.transform.TupleConstructor
+            enum Operator {
+                PLUS('+'), MINUS('-')
+                String symbol
+            }
+            assert Operator.PLUS.next() == Operator.MINUS
+        """
+    }
+
 }
