@@ -25,8 +25,8 @@ import java.net.URI;
  */
 public class Grape {
 
-    private static boolean enableGrapes = Boolean.valueOf(System.getProperties().getProperty("groovy.grape.enable", "true"));
-    private static boolean enableAutoDownload = Boolean.valueOf(System.getProperties().getProperty("groovy.grape.autoDownload", "true"));
+    private static boolean enableGrapes = Boolean.valueOf(System.getProperty("groovy.grape.enable", "true"));
+    private static boolean enableAutoDownload = Boolean.valueOf(System.getProperty("groovy.grape.autoDownload", "true"));
     protected static GrapeEngine instance;
 
     /**
