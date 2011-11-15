@@ -17,6 +17,7 @@ package org.codehaus.groovy.transform.stc;
 
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
+import org.codehaus.groovy.ast.tools.GenericsUtils;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 
 import java.util.*;

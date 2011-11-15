@@ -16,8 +16,6 @@
 
 package org.codehaus.groovy.ast;
 
-import org.codehaus.groovy.transform.stc.GenericsUtils;
-
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -250,7 +248,7 @@ public class GenericsType extends ASTNode {
                             // new class node with the parameterized types that the current class node
                             // has defined.
                             Map<String,GenericsType> parameters = new HashMap<String, GenericsType>();
-                            GenericsUtils.extractPlaceholders(classNode, parameters);
+                            org.codehaus.groovy.ast.tools.GenericsUtils.extractPlaceholders(classNode, parameters);
                             ClassNode node = anInterface.getPlainNodeReference();
                             GenericsType[] interfaceGTs = anInterface.getGenericsTypes();
                             GenericsType[] types = new GenericsType[interfaceGTs.length];
@@ -278,8 +276,8 @@ public class GenericsType extends ASTNode {
                 return false;
             }
             GenericsType[] redirectBoundGenericTypes = bound.redirect().getGenericsTypes();
-            Map<String, GenericsType> classNodePlaceholders = GenericsUtils.extractPlaceholders(classNode);
-            Map<String, GenericsType> boundPlaceHolders = GenericsUtils.extractPlaceholders(bound);
+            Map<String, GenericsType> classNodePlaceholders = org.codehaus.groovy.ast.tools.GenericsUtils.extractPlaceholders(classNode);
+            Map<String, GenericsType> boundPlaceHolders = org.codehaus.groovy.ast.tools.GenericsUtils.extractPlaceholders(bound);
             boolean match = true;
             for (int i = 0; i < redirectBoundGenericTypes.length && match; i++) {
                 GenericsType redirectBoundType = redirectBoundGenericTypes[i];

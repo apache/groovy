@@ -21,8 +21,8 @@ import org.codehaus.groovy.control.CompilePhase
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.SourceUnit
 import org.codehaus.groovy.control.customizers.CompilationCustomizer
-import org.codehaus.groovy.ast.tools.WideningCategories
-import org.codehaus.groovy.transform.stc.GenericsUtils
+
+import org.codehaus.groovy.ast.tools.GenericsUtils
 
 /**
  * Various tests aimed at testing the {@link GenericsType} class.
