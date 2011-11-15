@@ -940,7 +940,13 @@ public class CompilationUnit extends ProcessingUnit {
                 ClassNode classNode = (ClassNode) classNodes.next();
                 context = classNode.getModule().getContext();
                 if (context == null || context.phase < phase || (context.phase == phase && !context.phaseComplete)) {
-                    body.call(context, new GeneratorContext(this.ast), classNode);
+                    int offset = 1;
+                    Iterator<InnerClassNode> iterator = classNode.getInnerClasses();
+                    while (iterator.hasNext()) {
+                        iterator.next();
+                        offset++;
+                    }
+                    body.call(context, new GeneratorContext(this.ast, offset), classNode);
                 }
             } catch (CompilationFailedException e) {
                 // fall through, getErrorReporter().failIfErrors() will trigger
