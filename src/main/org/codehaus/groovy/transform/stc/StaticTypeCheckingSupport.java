@@ -444,7 +444,7 @@ abstract class StaticTypeCheckingSupport {
         }
 
         // simple check on being subclass
-        if (right.isDerivedFrom(left) || left.implementsInterface(right)) return true;
+        if (right.isDerivedFrom(left) || (left.isInterface() && right.implementsInterface(left))) return true;
 
         // if left and right are primitives or numbers allow
         if (isPrimitiveType(leftRedirect) && isPrimitiveType(rightRedirect)) return true;

@@ -292,5 +292,16 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         ''', 'Multiple assignments without list expressions on the right hand side are unsupported in static type checking mode'
     }
 
+    void testAssignmentToInterface() {
+        assertScript '''
+            Serializable ser = 'Hello'
+        '''
+    }
+
+    void testAssignmentToIncompatibleInterface() {
+        shouldFailWithMessages '''
+            Collection ser = 'Hello'
+        ''', 'Cannot assign value of type java.lang.String to variable of type java.util.Collection'
+    }
 }
 
