@@ -30,16 +30,22 @@ import org.codehaus.groovy.ast.MethodNode;
 public class GeneratorContext {
 
     private int innerClassIdx = 1;
+    private int closureClassIdx = 1;
     private CompileUnit compileUnit;
     
     public GeneratorContext(CompileUnit compileUnit) {
         this.compileUnit = compileUnit;
     }
 
+    public GeneratorContext(CompileUnit compileUnit, int innerClassOffset) {
+        this.compileUnit = compileUnit;
+        this.innerClassIdx = innerClassOffset;
+    }
+
     public int getNextInnerClassIdx() {
         return innerClassIdx++;
     }
-    
+
     public CompileUnit getCompileUnit() {
         return compileUnit;
     }
@@ -73,6 +79,6 @@ public class GeneratorContext {
             methodName = methodName.replace('>', '_');
             methodName = methodName.replaceAll(" ", "_");
         }
-        return "_" + classShortName + methodName + "closure" + getNextInnerClassIdx();
+        return "_" + classShortName + methodName + "closure" + closureClassIdx++;
     }
 }
