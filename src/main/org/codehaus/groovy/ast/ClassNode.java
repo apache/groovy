@@ -1308,6 +1308,13 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         return componentType;
     }
 
+    /**
+     * Returns the concrete class this classnode relates to. However, this method
+     * is inherently unsafe as it may return null depending on the compile phase you are
+     * using. AST transformations should never use this method directly, but rather obtain
+     * a new class node using {@link #getPlainNodeReference()}.
+     * @return the class this classnode relates to. May return null.
+     */
     public Class getTypeClass(){
         Class c = redirect().clazz;
         if (c!=null) return c;

@@ -217,7 +217,7 @@ public class DelegateASTTransformation implements ASTTransformation, Opcodes {
             nonGen.setUsingGenerics(false);
             return nonGen;
         } else if (type.isArray() && type.getComponentType().isUsingGenerics()) {
-            return ClassHelper.makeWithoutCaching(type.getTypeClass(), false);
+            return type.getComponentType().getPlainNodeReference().makeArray();
         } else {
             return type;
         }
