@@ -163,11 +163,11 @@ public class InnerClassVisitor extends InnerClassVisitorHelper implements Opcode
         if (cce.isThisCall()) {
             pass = true;
         } else if (cce.isSuperCall()) {
-            // if the super class is another non-static inner class in the same outer class, implicit this
+            // if the super class is another non-static inner class in the same outer class hierarchy, implicit this
             // needs to be passed
             if (!superCN.isEnum() && !superCN.isInterface() && superCN instanceof InnerClassNode) {
                 InnerClassNode superInnerCN = (InnerClassNode) superCN;
-                if (!isStatic(superInnerCN) && superCN.getOuterClass().equals(classNode.getOuterClass())) {
+                if (!isStatic(superInnerCN) && classNode.getOuterClass().isDerivedFrom(superCN.getOuterClass())) {
                     pass = true;
                 }
             }
