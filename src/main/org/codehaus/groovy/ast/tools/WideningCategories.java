@@ -20,7 +20,7 @@ import static org.codehaus.groovy.ast.ClassHelper.*;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 
-import java.util.List;
+import java.util.*;
 
 /**
  * This class provides helper methods to determine the type from a widening 
@@ -36,6 +36,7 @@ import java.util.List;
  * in the list is long, and since both apply to long, the result type is a long.<br/>
  * 
  * @author <a href="mailto:blackdrag@gmx.org">Jochen "blackdrag" Theodorou</a>
+ * @author Cedric Champeau
  */
 public class WideningCategories {
     /**
@@ -93,8 +94,9 @@ public class WideningCategories {
      * @return first common supertype
      */
     public static ClassNode firstCommonSuperType(ClassNode a, ClassNode b) {
-        if (a == null || b == null) return ClassHelper.OBJECT_TYPE;
+        if (a == null || b == null) return OBJECT_TYPE;
         if (a == b || a.equals(b)) return a;
+        if (OBJECT_TYPE.equals(a)||OBJECT_TYPE.equals(b)) return OBJECT_TYPE;
         if (isPrimitiveType(a) && !isPrimitiveType(b)) {
             if (isNumberType(a) && isNumberType(b)) {
                 return firstCommonSuperType(ClassHelper.getWrapper(a), b);

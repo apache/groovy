@@ -21,6 +21,8 @@ import org.codehaus.groovy.control.CompilePhase
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.SourceUnit
 import org.codehaus.groovy.control.customizers.CompilationCustomizer
+import org.codehaus.groovy.ast.tools.WideningCategories
+import org.codehaus.groovy.transform.stc.GenericsUtils
 
 /**
  * Various tests aimed at testing the {@link GenericsType} class.
@@ -47,6 +49,7 @@ public class GenericsTypeTest extends GroovyTestCase {
         assert generics.toString() == '? super java.lang.Number'
         assert generics.isCompatibleWith(ClassHelper.Number_TYPE)
         assert !generics.isCompatibleWith(ClassHelper.Integer_TYPE)
+        assert !generics.isCompatibleWith(ClassHelper.STRING_TYPE)
         assert generics.isCompatibleWith(ClassHelper.OBJECT_TYPE)
 
     }
@@ -131,6 +134,28 @@ public class GenericsTypeTest extends GroovyTestCase {
         assert generics.isCompatibleWith(ClassHelper.MAP_TYPE)
         assert generics.isCompatibleWith(correctType)
         assert !generics.isCompatibleWith(incorrectType)
+    }
+
+    void testPlaceholderExtract() {
+        def type = extractTypesFromCode("List<String> type").type
+        def placeholders = GenericsUtils.extractPlaceholders(type)
+        assert placeholders.E?.type == ClassHelper.STRING_TYPE
+    }
+
+    void testPlaceholderExtract2() {
+        def type = extractTypesFromCode("Map<String,Integer> type").type
+        def placeholders = GenericsUtils.extractPlaceholders(type)
+        assert placeholders.K?.type == ClassHelper.STRING_TYPE
+        assert placeholders.V?.type == ClassHelper.Integer_TYPE
+    }
+
+    void testPlaceholderExtract3() {
+        def type = extractTypesFromCode("List<Map<String,Integer>> type").type
+        def placeholders = GenericsUtils.extractPlaceholders(type)
+        assert placeholders.E?.type == ClassHelper.MAP_TYPE
+        placeholders = GenericsUtils.extractPlaceholders(placeholders.E.type)
+        assert placeholders.K?.type == ClassHelper.STRING_TYPE
+        assert placeholders.V?.type == ClassHelper.Integer_TYPE
     }
 
     // ------------------ Support methods -------------------------

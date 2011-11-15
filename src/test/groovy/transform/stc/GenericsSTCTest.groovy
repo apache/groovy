@@ -112,20 +112,23 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    void testDiamondInferrenceFromConstructorWithoutAssignment() {
+        assertScript '''
+            new HashSet<>(Arrays.asList(0L,0L));
+        '''
+    }
+
     void testDiamondInferrenceFromConstructor2() {
         shouldFailWithMessages '''
             Set< Number > s3 = new HashSet<>(Arrays.asList(0L,0L));
         ''', 'Cannot assign java.util.HashSet <java.lang.Long> to: java.util.Set <Number>'
     }
 
-    /*
-        todo: this one should not fail
-        
     void testDiamondInferrenceFromConstructor3() {
         assertScript '''
             Set<Number> s4 = new HashSet<Number>(Arrays.asList(0L,0L))
         '''
-    }*/
+    }
 
 
     void testLinkedListWithListArgument() {
@@ -166,6 +169,12 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             list.add 'the'
             list.add 'world'
         '''
+    }
+
+    void testAssignmentShouldFailBecauseOfLowerBound() {
+        shouldFailWithMessages '''
+            List<? super Number> list = ['string']
+        ''', 'Number'
     }
     
     static class MyList extends LinkedList<String> {}

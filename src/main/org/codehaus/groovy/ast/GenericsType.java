@@ -16,6 +16,8 @@
 
 package org.codehaus.groovy.ast;
 
+import org.codehaus.groovy.transform.stc.GenericsUtils;
+
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -247,9 +249,9 @@ public class GenericsType extends ASTNode {
                             // class node are not parameterized. This means that we must create a
                             // new class node with the parameterized types that the current class node
                             // has defined.
-                            Map<String,ClassNode> parameters = new HashMap<String, ClassNode>();
-                            collectParameter(classNode, parameters);
-                            ClassNode node = ClassHelper.makeWithoutCaching(anInterface.getTypeClass(), false);
+                            Map<String,GenericsType> parameters = new HashMap<String, GenericsType>();
+                            GenericsUtils.extractPlaceholders(classNode, parameters);
+                            ClassNode node = anInterface.getPlainNodeReference();
                             GenericsType[] interfaceGTs = anInterface.getGenericsTypes();
                             GenericsType[] types = new GenericsType[interfaceGTs.length];
                             for (int i = 0; i < interfaceGTs.length; i++) {
@@ -258,7 +260,7 @@ public class GenericsType extends ASTNode {
                                 if (interfaceGT.isPlaceholder()) {
                                     String name = interfaceGT.getName();
                                     if (parameters.containsKey(name)) {
-                                        types[i] = new GenericsType(parameters.get(name));
+                                        types[i] = parameters.get(name);
                                     }
                                 }
                             }
@@ -275,61 +277,78 @@ public class GenericsType extends ASTNode {
                 // should not happen
                 return false;
             }
-            GenericsType[] uBTypes = bound.getGenericsTypes();
-            Map<String, ClassNode> resolvedPlaceholders = placeholderToParameterizedType();
+            GenericsType[] redirectBoundGenericTypes = bound.redirect().getGenericsTypes();
+            Map<String, GenericsType> classNodePlaceholders = GenericsUtils.extractPlaceholders(classNode);
+            Map<String, GenericsType> boundPlaceHolders = GenericsUtils.extractPlaceholders(bound);
             boolean match = true;
-            for (int i = 0; i < uBTypes.length && match; i++) {
-                GenericsType uBType = uBTypes[i];
-                GenericsType cnType = cnTypes[i];
-                if (cnType.isPlaceholder()) {
-                    String name = cnType.getName();
-                    if (resolvedPlaceholders.containsKey(name)) cnType=new GenericsType(resolvedPlaceholders.get(name));
+            for (int i = 0; i < redirectBoundGenericTypes.length && match; i++) {
+                GenericsType redirectBoundType = redirectBoundGenericTypes[i];
+                GenericsType classNodeType = cnTypes[i];
+                if (classNodeType.isWildcard()) {
+                    match = true;
+                } else if (classNodeType.isPlaceholder()) {
+                    if (redirectBoundType.isPlaceholder()) {
+                        match = classNodeType.getName().equals(redirectBoundType.getName());
+                    } else {
+                        String name = classNodeType.getName();
+                        if (classNodePlaceholders.containsKey(name)) classNodeType=classNodePlaceholders.get(name);
+                        match = classNodeType.isCompatibleWith(redirectBoundType.getType());
+                    }
+                } else {
+                    if (redirectBoundType.isPlaceholder()) {
+                        if (classNodeType.isPlaceholder()) {
+                            match = classNodeType.getName().equals(redirectBoundType.getName());
+                        } else {
+                            String name = redirectBoundType.getName();
+                            if (boundPlaceHolders.containsKey(name)) {
+                                redirectBoundType = boundPlaceHolders.get(name);
+                                boolean wildcard = redirectBoundType.isWildcard();
+                                boolean placeholder = redirectBoundType.isPlaceholder();
+                                if (placeholder || wildcard) {
+                                    // placeholder aliases, like Map<U,V> -> Map<K,V>
+//                                    redirectBoundType = classNodePlaceholders.get(name);
+                                    if (wildcard) {
+                                        // ex: Comparable<Integer> <=> Comparable<? super T>
+                                        if (redirectBoundType.lowerBound!=null) {
+                                            GenericsType gt = new GenericsType(redirectBoundType.lowerBound);
+                                            if (gt.isPlaceholder()) {
+                                                // check for recursive generic typedef, like in
+                                                // <T extends Comparable<? super T>>
+                                                if (classNodePlaceholders.containsKey(gt.getName())) {
+                                                    gt = classNodePlaceholders.get(gt.getName());
+                                                }
+                                            }
+                                            match = gt.getType().isDerivedFrom(classNodeType.getType());
+                                        }
+                                        if (match && redirectBoundType.upperBounds!=null) {
+                                            for (ClassNode upperBound : redirectBoundType.upperBounds) {
+                                                GenericsType gt = new GenericsType(upperBound);
+                                                if (gt.isPlaceholder()) {
+                                                    // check for recursive generic typedef, like in
+                                                    // <T extends Comparable<? super T>>
+                                                    if (classNodePlaceholders.containsKey(gt.getName())) {
+                                                        gt = classNodePlaceholders.get(gt.getName());
+                                                    }
+                                                }
+                                                match = match && classNodeType.getType().isDerivedFrom(gt.getType());
+                                            }
+                                        }
+                                        return match;
+                                    } else {
+                                        redirectBoundType = classNodePlaceholders.get(name);
+                                    }
+
+                                }
+                            }
+                            match = redirectBoundType.isCompatibleWith(classNodeType.getType());
+                        }
+                    } else {
+                        match = classNodeType.isCompatibleWith(redirectBoundType.getType());
+                    }
                 }
-                match = uBType.isWildcard() || uBType.isPlaceholder() || cnType.isCompatibleWith(uBType.getType());
             }
             if (!match) return false;
             return true;
-        }
-
-        /**
-         * Iterates through the type, its upper and lower bounds, and returns a map
-         * which has for key a placeholder name, and as a value the corresponding
-         * parameterized type. For example, E -> java.lang.String
-         * @return
-         */
-        private Map<String,ClassNode> placeholderToParameterizedType() {
-            Map<String, ClassNode> result = new HashMap<String, ClassNode>();
-            collectParameter(type, result);
-            if (upperBounds!=null) {
-                for (ClassNode upperBound : upperBounds) {
-                    collectParameter(upperBound, result);
-                }
-            }
-            if (lowerBound!=null) {
-                collectParameter(lowerBound, result);
-            }
-            return result;
-        }
-
-        /**
-         * For a given classnode, fills in the supplied map with the parameterized
-         * types it defines.
-         * @param node
-         * @param map
-         */
-        private void collectParameter(ClassNode node, Map<String, ClassNode> map) {
-            if (node == null) return;
-            if (!node.isUsingGenerics() || !node.isRedirectNode()) return;
-            GenericsType[] parameterized = node.getGenericsTypes();
-            if (parameterized == null) return;
-            GenericsType[] genericsTypes = node.redirect().getGenericsTypes();
-            for (int i = 0; i < genericsTypes.length; i++) {
-                GenericsType genericsType = genericsTypes[i];
-                if (genericsType.isPlaceholder()) {
-                    String name = genericsType.getName();
-                    map.put(name, parameterized[i].getType());
-                }
-            }
         }
     }
 }

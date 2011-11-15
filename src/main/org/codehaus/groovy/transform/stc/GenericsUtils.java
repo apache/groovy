@@ -19,6 +19,9 @@ import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GenericsType;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * Utility methods to deal with generic types.
  *
@@ -42,18 +45,33 @@ public class GenericsUtils {
         if (parameterizedTypes==null || parameterizedTypes.length==0) return alignmentTarget;
         GenericsType[] generics = new GenericsType[alignmentTarget.length];
         for (int i = 0, scgtLength = alignmentTarget.length; i < scgtLength; i++) {
-            final GenericsType superGenericType = alignmentTarget[i];
+            final GenericsType currentTarget = alignmentTarget[i];
             GenericsType match = null;
             if (redirectGenericTypes!=null) {
                 for (int j = 0; j < redirectGenericTypes.length && match == null; j++) {
                     GenericsType redirectGenericType = redirectGenericTypes[j];
-                    if (redirectGenericType.isCompatibleWith(superGenericType.getType())) {
+                    if (redirectGenericType.isCompatibleWith(currentTarget.getType())) {
                         match = parameterizedTypes[j];
+                        if (currentTarget.isWildcard()) {
+                            // if alignment target is a wildcard type
+                            // then we must make best effort to return a parameterized
+                            // wildcard
+                            ClassNode lower = currentTarget.getLowerBound()!=null?match.getType():null;
+                            ClassNode[] currentUpper = currentTarget.getUpperBounds();
+                            ClassNode[] upper = currentUpper !=null?new ClassNode[currentUpper.length]:null;
+                            if (upper!=null) {
+                                for (int k = 0; k < upper.length; k++) {
+                                    upper[k] = currentUpper[k].isGenericsPlaceHolder()?match.getType():currentUpper[k];
+                                }
+                            }
+                            match = new GenericsType(ClassHelper.makeWithoutCaching("?"), upper, lower);
+                            match.setWildcard(true);
+                        }
                     }
                 }
             }
             if (match == null) {
-                match = superGenericType;
+                match = currentTarget;
             }
             generics[i]=match;
         }
@@ -71,5 +89,32 @@ public class GenericsUtils {
         GenericsType gt = new GenericsType(base, new ClassNode[]{type}, null);
         gt.setWildcard(true);
         return gt;
+    }
+
+    public static Map<String, GenericsType> extractPlaceholders(ClassNode cn) {
+        HashMap<String, GenericsType> ret = new HashMap<String, GenericsType>();
+        extractPlaceholders(cn, ret);
+        return ret;
+    }
+
+    /**
+     * For a given classnode, fills in the supplied map with the parameterized
+     * types it defines.
+     * @param node
+     * @param map
+     */
+    public static void extractPlaceholders(ClassNode node, Map<String, GenericsType> map) {
+        if (node == null) return;
+        if (!node.isUsingGenerics() || !node.isRedirectNode()) return;
+        GenericsType[] parameterized = node.getGenericsTypes();
+        if (parameterized == null) return;
+        GenericsType[] redirectGenericsTypes = node.redirect().getGenericsTypes();
+        for (int i = 0; i < redirectGenericsTypes.length; i++) {
+            GenericsType redirectType = redirectGenericsTypes[i];
+            if (redirectType.isPlaceholder()) {
+                String name = redirectType.getName();
+                if (!map.containsKey(name)) map.put(name, parameterized[i]);
+            }
+        }
     }
 }
