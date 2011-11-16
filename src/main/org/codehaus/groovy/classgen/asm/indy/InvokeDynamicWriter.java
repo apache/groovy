@@ -19,6 +19,9 @@ import org.codehaus.groovy.classgen.asm.InvocationWriter;
 import org.codehaus.groovy.classgen.asm.WriterController;
 
 /**
+ * This Writer is used to generate the call invocation byte codes
+ * for usage by invokedynamic.
+ * 
  * @author <a href="mailto:blackdrag@gmx.org">Jochen "blackdrag" Theodorou</a>
  */
 public class InvokeDynamicWriter extends InvocationWriter {
