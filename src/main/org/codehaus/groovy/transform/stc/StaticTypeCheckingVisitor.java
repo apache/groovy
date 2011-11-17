@@ -1408,6 +1408,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         if (isVargs && lastArg && actualType.isArray()) {
                             actualType=actualType.getComponentType();
                         }
+                        if (isPrimitiveType(actualType)) {
+                            // as we are in generics, we must wrap it
+                            actualType = ClassHelper.getWrapper(actualType);
+                        }
                         resolvedPlaceholders.put(genericsType.getName(), actualType);
                     }
                 }
