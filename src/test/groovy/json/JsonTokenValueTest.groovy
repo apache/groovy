@@ -44,14 +44,15 @@ class JsonTokenValueTest extends GroovyTestCase {
 
         assert new JsonToken(type: NUMBER, text: '100000000000000000000000').value instanceof BigInteger
 
-        assert new JsonToken(type: NUMBER, text: '1.234').value instanceof Float
-        assert new JsonToken(type: NUMBER, text: '1.234e13').value instanceof Float
-        assert new JsonToken(type: NUMBER, text: '1E+13').value instanceof Float
-        assert new JsonToken(type: NUMBER, text: '-1E-13').value instanceof Float
-
-        assert new JsonToken(type: NUMBER, text: '1.234e135').value instanceof Double
-
+        assert new JsonToken(type: NUMBER, text: '1.234').value instanceof BigDecimal
+        assert new JsonToken(type: NUMBER, text: '1.234e13').value instanceof BigDecimal
+        assert new JsonToken(type: NUMBER, text: '1E+13').value instanceof BigDecimal
+        assert new JsonToken(type: NUMBER, text: '-1E-13').value instanceof BigDecimal
+        assert new JsonToken(type: NUMBER, text: '1.234e135').value instanceof BigDecimal
         assert new JsonToken(type: NUMBER, text: '1.234e1357').value instanceof BigDecimal
+
+        assert new JsonToken(type: NUMBER, text: '123456.123456789').value instanceof BigDecimal
+        assert new JsonToken(type: NUMBER, text: '123456.123456789').value == 123456.123456789
     }
 
     void testWeirdTheoricalValue() {
