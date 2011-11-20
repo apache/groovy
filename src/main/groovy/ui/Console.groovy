@@ -861,11 +861,14 @@ options:
     void addClasspathJar(EventObject evt = null) {
         def fc = new JFileChooser(currentClasspathJarDir)
         fc.fileSelectionMode = JFileChooser.FILES_ONLY
+        fc.multiSelectionEnabled = true
         fc.acceptAllFileFilterUsed = true
         if (fc.showDialog(frame, "Add") == JFileChooser.APPROVE_OPTION) {
             currentClasspathJarDir = fc.currentDirectory
             Preferences.userNodeForPackage(Console).put('currentClasspathJarDir', currentClasspathJarDir.path)
-            shell.getClassLoader().addURL(fc.selectedFile.toURL())
+            fc.selectedFiles?.each { file ->
+	            shell.getClassLoader().addURL(file.toURL())
+            }
         }
     }
 
