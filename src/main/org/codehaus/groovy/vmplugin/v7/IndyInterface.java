@@ -63,7 +63,6 @@ public class IndyInterface {
         }
         
         public static Object selectMethod(MutableCallSite callSite, Class sender, String methodName, Object receiver, Object[] arguments) {
-            System.err.println(""+methodName+""+callSite.type());
             MetaClassImpl mc = null;
             if (receiver instanceof GroovyObject) {
                 mc = (MetaClassImpl) ((GroovyObject) receiver).getMetaClass(); 
