@@ -76,7 +76,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             ClassNode returnType = checkReturnType(returnStatement);
             if (methodNode!=null) {
                 ClassNode previousType = (ClassNode) methodNode.getNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE);
-                ClassNode inferred = previousType==null?returnType:firstCommonSuperType(returnType,previousType);
+                ClassNode inferred = previousType==null?returnType: lowestUpperBound(returnType, previousType);
                 methodNode.putNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE, inferred);
             }
         }
@@ -666,7 +666,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         closureReturnAdder.visitMethod(node);
 
         if (closureReturnTypes!=null) {
-            expression.putNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE, firstCommonSuperType(closureReturnTypes));
+            expression.putNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE, lowestUpperBound(closureReturnTypes));
         }
 
         closureExpression = oldClosureExpr;
@@ -923,7 +923,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         // store type information
         final ClassNode typeOfTrue = getType(expression.getTrueExpression());
         final ClassNode typeOfFalse = getType(expression.getFalseExpression());
-        storeType(expression, firstCommonSuperType(typeOfTrue, typeOfFalse));
+        storeType(expression, lowestUpperBound(typeOfTrue, typeOfFalse));
     }
 
     private void pushTemporaryTypeInfo() {
@@ -944,9 +944,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             // DECLARATION_INFERRED_TYPE is the type which should be used for the initial type declaration
             ClassNode oldDIT = (ClassNode) exp.getNodeMetaData(StaticTypesMarker.DECLARATION_INFERRED_TYPE);
             if (oldDIT!=null) {
-                exp.putNodeMetaData(StaticTypesMarker.DECLARATION_INFERRED_TYPE, firstCommonSuperType(oldDIT, cn));
+                exp.putNodeMetaData(StaticTypesMarker.DECLARATION_INFERRED_TYPE, lowestUpperBound(oldDIT, cn));
             } else {
-                exp.putNodeMetaData(StaticTypesMarker.DECLARATION_INFERRED_TYPE, firstCommonSuperType(oldValue, cn));
+                exp.putNodeMetaData(StaticTypesMarker.DECLARATION_INFERRED_TYPE, lowestUpperBound(oldValue, cn));
             }
         }
         if (exp instanceof VariableExpression) {
@@ -1324,7 +1324,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             for (Expression expression : expressions) {
                 nodes.add(getType(expression));
             }
-            ClassNode superType = getWrapper(firstCommonSuperType(nodes)); // to be used in generics, type must be boxed
+            ClassNode superType = getWrapper(lowestUpperBound(nodes)); // to be used in generics, type must be boxed
             ClassNode inferred = listType.getPlainNodeReference();
             inferred.setGenericsTypes(new GenericsType[]{new GenericsType(superType)});
             return inferred;
@@ -1346,8 +1346,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 keyTypes.add(getType(entryExpression.getKeyExpression()));
                 valueTypes.add(getType(entryExpression.getValueExpression()));
             }
-            ClassNode keyType = getWrapper(firstCommonSuperType(keyTypes));  // to be used in generics, type must be boxed
-            ClassNode valueType = getWrapper(firstCommonSuperType(valueTypes));  // to be used in generics, type must be boxed
+            ClassNode keyType = getWrapper(lowestUpperBound(keyTypes));  // to be used in generics, type must be boxed
+            ClassNode valueType = getWrapper(lowestUpperBound(valueTypes));  // to be used in generics, type must be boxed
             if (!OBJECT_TYPE.equals(keyType) || !OBJECT_TYPE.equals(valueType)) {
                 ClassNode inferred = mapType.getPlainNodeReference();
                 inferred.setGenericsTypes(new GenericsType[]{new GenericsType(keyType), new GenericsType(valueType)});

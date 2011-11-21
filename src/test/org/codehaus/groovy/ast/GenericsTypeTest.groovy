@@ -15,19 +15,12 @@
  */
 package org.codehaus.groovy.ast
 
-import org.codehaus.groovy.ast.expr.VariableExpression
-import org.codehaus.groovy.classgen.GeneratorContext
-import org.codehaus.groovy.control.CompilePhase
-import org.codehaus.groovy.control.CompilerConfiguration
-import org.codehaus.groovy.control.SourceUnit
-import org.codehaus.groovy.control.customizers.CompilationCustomizer
-
 import org.codehaus.groovy.ast.tools.GenericsUtils
 
 /**
  * Various tests aimed at testing the {@link GenericsType} class.
  */
-public class GenericsTypeTest extends GroovyTestCase {
+public class GenericsTypeTest extends GenericsTestCase {
 
     void testSimpleGenericsType() {
         // <Number>
@@ -160,62 +153,11 @@ public class GenericsTypeTest extends GroovyTestCase {
 
     // ------------------ Support methods -------------------------
 
-    def extractTypesFromCode(String string) {
-        def result = [generics:[], type:null]
-        CompilerConfiguration config = new CompilerConfiguration()
-        config.addCompilationCustomizers(new CompilationCustomizer(CompilePhase.CANONICALIZATION) {
-            @Override
-            void call(SourceUnit source, GeneratorContext context, ClassNode classNode) {
-                def visitor = new GenericsVisitorSupport(source)
-                visitor.visitClass(classNode)
-                result = visitor.result
-            }
-
-        })
-
-        new GroovyShell(config).evaluate(string)
-
-        result
-    }
-
     protected static class StringList extends LinkedList<String> {}
     protected static class IntegerList extends LinkedList<Integer> {}
     protected static class WeirdComparable implements Comparable<Integer> {
         int compareTo(Integer o) {
             return 0
         }
-    }
-    private static class GenericsVisitorSupport extends ClassCodeVisitorSupport {
-
-        private final SourceUnit sourceUnit
-        private final Map result = [:]
-
-        private GenericsVisitorSupport(SourceUnit unit) {
-            sourceUnit = unit
-        }
-
-        @Override
-        protected SourceUnit getSourceUnit() {
-            return sourceUnit
-        }
-
-        @Override
-        void visitVariableExpression(VariableExpression expression) {
-            super.visitVariableExpression(expression)
-            if (expression.name=='type') {
-                result.generics = expression.type.genericsTypes
-                result.type = expression.type
-            }
-        }
-
-        @Override
-        void visitMethod(MethodNode node) {
-            super.visitMethod(node)
-            if (node.name=='type') {
-                result.generics = node.genericsTypes
-                result.type = node.returnType
-            }
-        }
-
     }
 }
