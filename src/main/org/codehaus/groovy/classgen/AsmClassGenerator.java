@@ -135,7 +135,7 @@ public class AsmClassGenerator extends ClassGenerator {
         
         try {
             cv.visit(
-                    getBytecodeVersion(),
+                    controller.getBytecodeVersion(),
                     adjustedClassModifiers(classNode.getModifiers()),
                     controller.getInternalClassName(),
                     BytecodeHelper.getGenericsSignature(classNode),
@@ -2034,10 +2034,6 @@ public class AsmClassGenerator extends ClassGenerator {
             answer = context.getCompileUnit();
         }
         return answer;
-    }
-
-    protected int getBytecodeVersion() {
-        return Opcodes.V1_5;
     }
     
     public boolean addInnerClass(ClassNode innerClass) {

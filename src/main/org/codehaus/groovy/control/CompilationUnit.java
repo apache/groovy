@@ -797,7 +797,7 @@ public class CompilationUnit extends ProcessingUnit {
 
 
     protected ClassVisitor createClassVisitor() {
-        return new ClassWriter(ClassWriter.COMPUTE_MAXS);
+        return new ClassWriter(ClassWriter.COMPUTE_FRAMES+ClassWriter.COMPUTE_MAXS);
     }
 
     //---------------------------------------------------------------------------

@@ -30,6 +30,7 @@ import org.codehaus.groovy.classgen.asm.indy.InvokeDynamicWriter;
 import org.codehaus.groovy.control.SourceUnit;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
 
 public class WriterController {
 
@@ -56,6 +57,7 @@ public class WriterController {
     private StatementWriter statementWriter;
     private boolean fastPath = false;
     private TypeChooser typeChooser;
+    private int bytecodeVersion = Opcodes.V1_5; 
 
     public void init(AsmClassGenerator asmClassGenerator, GeneratorContext gcon, ClassVisitor cv, ClassNode cn) {
         Map<String,Boolean> optOptions = cn.getCompileUnit().getConfig().getOptimizationOptions();
@@ -76,6 +78,7 @@ public class WriterController {
         this.callSiteWriter = new CallSiteWriter(this);
         
         if (invokedynamic) {
+            bytecodeVersion = Opcodes.V1_7;
             this.invocationWriter = new InvokeDynamicWriter(this);
         } else {
             this.invocationWriter = new InvocationWriter(this);
@@ -308,5 +311,9 @@ public class WriterController {
 
     public boolean isFastPath() {
         return fastPath;
+    }
+    
+    public int getByecodeVersion() {
+        return bytecodeVersion;
     }
 }
