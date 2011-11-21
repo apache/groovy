@@ -245,6 +245,7 @@ class StaticCompilationTest extends AbstractBytecodeTestCase {
         ''').hasStrictSequence([
                 "ICONST",
                 "INVOKESTATIC java/lang/Integer.valueOf (I)Ljava/lang/Integer;",
+                "CHECKCAST java/lang/Comparable",
                 "ASTORE",
                 "L1",
                 "ALOAD 2",
@@ -262,6 +263,7 @@ class StaticCompilationTest extends AbstractBytecodeTestCase {
                 "L3",
                 "LINENUMBER",
                 "ALOAD 2",
+                "CHECKCAST java/lang/String",
                 "INVOKEVIRTUAL java/lang/String.toUpperCase ()Ljava/lang/String;",
                 "ARETURN",
                 "L4"
