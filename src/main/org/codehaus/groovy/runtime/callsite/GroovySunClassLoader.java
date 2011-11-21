@@ -16,7 +16,6 @@
 package org.codehaus.groovy.runtime.callsite;
 
 import org.objectweb.asm.ClassReader;
-import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
 import org.codehaus.groovy.reflection.SunClassLoader;
 
@@ -57,13 +56,12 @@ public class GroovySunClassLoader extends SunClassLoader {
     private void loadAbstract() throws IOException {
         final InputStream asStream = GroovySunClassLoader.class.getClass().getClassLoader().getResourceAsStream(resName("org.codehaus.groovy.runtime.callsite.AbstractCallSite"));
         ClassReader reader = new ClassReader(asStream);
-        final ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
-        final ClassVisitor cv = new ClassVisitor(4, cw) {
+        final ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS) {
             public void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
                 super.visit(version, access, name, signature, "sun/reflect/GroovyMagic", interfaces);
-            }            
+            }
         };
-        reader.accept(cv, ClassWriter.COMPUTE_MAXS);
+        reader.accept(cw, ClassWriter.COMPUTE_MAXS);
         asStream.close();
         define(cw.toByteArray(), "org.codehaus.groovy.runtime.callsite.AbstractCallSite");
     }
