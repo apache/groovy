@@ -144,6 +144,10 @@ class JsonOutputTest extends GroovyTestCase {
         assert toJson(d) == '"2008-03-04T12:50:00+0000"'
     }
 
+    void testURL() {
+        assert toJson(new URL("http://glaforge.appspot.com")) == '"http://glaforge.appspot.com"'
+    }
+
     void testCalendar() {
         def c = GregorianCalendar.getInstance(TimeZone.getTimeZone('GMT+1'))
         c.clearTime()

@@ -68,14 +68,7 @@ public class JsonToken {
         } else if (type == NUMBER) {
             if (text.contains(".") || text.contains("e") || text.contains("E")) {
                 // a decimal number
-                BigDecimal v = new BigDecimal(text);
-                if(v.compareTo(MAX_FLOAT) <= 0 && v.compareTo(MIN_FLOAT) >= 0) {
-                    return new Float(text);
-                } else if(v.compareTo(MAX_DOUBLE) <= 0 && v.compareTo(MIN_DOUBLE) >= 0) {
-                    return new Double(text);
-                } else {
-                    return v;
-                }
+                return new BigDecimal(text);
             } else {
                 // an integer number
                 BigInteger v = new BigInteger(text);

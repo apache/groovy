@@ -208,7 +208,7 @@ runSelectionAction = action(
 )
 
 addClasspathJar = action(
-    name: 'Add Jar to ClassPath',
+    name: 'Add Jar(s) to ClassPath',
     closure: controller.&addClasspathJar,
     mnemonic: 'J',
 )
