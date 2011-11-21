@@ -170,6 +170,9 @@ public class WideningCategories {
         if (isPrimitiveB && !isPrimitiveA) {
             return lowestUpperBound(a, getWrapper(b), null, null);
         }
+        if (isPrimitiveA && isPrimitiveB) {
+            return a.equals(b)?a:lowestUpperBound(getWrapper(a), getWrapper(b), null, null);
+        }
 
         // handle interfaces
         boolean isInterfaceA = a.isInterface();

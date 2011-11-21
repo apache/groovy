@@ -179,6 +179,20 @@ class WideningCategoriesTest extends GenericsTestCase {
         assert type.interfaces as Set == [make(CharSequence), make(Comparable), make(Serializable)] as Set
     }
 
+    void testDistinctPrimitiveTypes() {
+        ClassNode a = int_TYPE // primitive int
+        ClassNode b = long_TYPE // primitive long
+        assert lowestUpperBound(a,b) == Number_TYPE
+        assert lowestUpperBound(b,a) == Number_TYPE
+    }
+
+    void testIdenticalPrimitiveTypes() {
+        ClassNode a = int_TYPE // primitive int
+        ClassNode b = int_TYPE // primitive int
+        assert lowestUpperBound(a,b) == int_TYPE
+        assert lowestUpperBound(b,a) == int_TYPE
+    }
+
     void testCommonAssignableType() {
         def typeA = extractTypesFromCode('LinkedList type').type
         def typeB = extractTypesFromCode('List type').type
