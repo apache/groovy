@@ -313,7 +313,7 @@ public class WriterController {
         return fastPath;
     }
     
-    public int getByecodeVersion() {
+    public int getBytecodeVersion() {
         return bytecodeVersion;
     }
 }
