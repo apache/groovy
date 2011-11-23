@@ -18,6 +18,7 @@ package org.codehaus.groovy.ast.tools;
 import static org.codehaus.groovy.ast.ClassHelper.*;
 
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.GenericsType;
 
 import java.util.*;
 
@@ -131,15 +132,104 @@ public class WideningCategories {
      * Calls to this method are supposed to be made with resolved generics. This means
      * that you can have wildcards, but no placeholder.
      *
-     * todo : handle generics too, so that the LUB of List&lt;String&gt; and List&lt;Integer&gt;
-     * is List&lt;? extends Serializable&gt;
-     * 
      * @param a first class node
      * @param b second class node
      * @return first common supertype
      */
     public static ClassNode lowestUpperBound(ClassNode a, ClassNode b) {
-        return lowestUpperBound(a, b, null, null);
+        ClassNode lub = lowestUpperBound(a, b, null, null);
+        if (lub==null || !lub.isUsingGenerics()) return lub;
+        // types may be parameterized. If so, we must ensure that generic type arguments
+        // are made compatible
+
+        if (lub instanceof LowestUpperBoundClassNode) {
+            // no parent super class representing both types could be found
+            // or both class nodes implement common interfaces which may have
+            // been parameterized differently.
+            // We must create a classnode for which the "superclass" is potentially parameterized
+            // plus the interfaces
+            ClassNode superClass = lub.getSuperClass();
+            ClassNode psc = superClass.isUsingGenerics()?parameterizeLowestUpperBound(superClass, a, b, lub):superClass;
+
+            ClassNode[] interfaces = lub.getInterfaces();
+            ClassNode[] pinterfaces = new ClassNode[interfaces.length];
+            for (int i = 0, interfacesLength = interfaces.length; i < interfacesLength; i++) {
+                final ClassNode icn = interfaces[i];
+                if (icn.isUsingGenerics()) {
+                    pinterfaces[i] = parameterizeLowestUpperBound(icn, a, b, lub);
+                } else {
+                    pinterfaces[i] = icn;
+                }
+            }
+
+            return new LowestUpperBoundClassNode(((LowestUpperBoundClassNode)lub).name, psc, pinterfaces);
+        } else {
+            return parameterizeLowestUpperBound(lub, a, b, lub);
+
+        }
+    }
+
+    /**
+     * Given a lowest upper bound computed without generic type information but which requires to be parameterized
+     * and the two implementing classnodes which are parameterized with potentially two different types, returns
+     * a parameterized lowest upper bound.
+     *
+     * For example, if LUB is Set&lt;T&gt; and a is Set&lt;String&gt; and b is Set&lt;StringBuffer&gt;, this
+     * will return a LUB which parameterized type matches Set&lt;? extends CharSequence&gt;
+     * @param lub the type to be parameterized
+     * @param a parameterized type a
+     * @param b parameterized type b
+     * @param fallback if we detect a recursive call, use this LUB as the parameterized type instead of computing a value
+     * @return
+     */
+    private static ClassNode parameterizeLowestUpperBound(final ClassNode lub, final ClassNode a, final ClassNode b, final ClassNode fallback) {
+        if (!lub.isUsingGenerics()) return lub;
+        // a common super type exists, all we have to do is to parameterize
+        // it according to the types provided by the two class nodes
+        ClassNode holderForA = findGenericsTypeHolderForClass(a, lub);
+        ClassNode holderForB = findGenericsTypeHolderForClass(b, lub);
+        // lets compare their generics type
+        GenericsType[] agt = holderForA.getGenericsTypes();
+        GenericsType[] bgt = holderForB.getGenericsTypes();
+        if (agt==null || bgt==null || agt.length!=bgt.length) {
+            return lub;
+        }
+        GenericsType[] lubgt = new GenericsType[agt.length];
+        for (int i = 0; i < agt.length; i++) {
+            ClassNode t1 = agt[i].getType();
+            ClassNode t2 = bgt[i].getType();
+            ClassNode basicType;
+            if (areEqualWithGenerics(t1, a) && areEqualWithGenerics(t2,b)) {
+                // we are facing a self referencing type !
+                basicType = fallback;
+            } else {
+                 basicType = lowestUpperBound(t1, t2);
+            }
+            if (t1.equals(t2)) {
+                lubgt[i] = new GenericsType(basicType);
+            } else {
+                lubgt[i] = GenericsUtils.buildWildcardType(basicType);
+            }
+        }
+        ClassNode plain = lub.getPlainNodeReference();
+        plain.setGenericsTypes(lubgt);
+        return plain;
+    }
+
+    private static ClassNode findGenericsTypeHolderForClass(ClassNode source, ClassNode type) {
+        if (isPrimitiveType(source)) source = getWrapper(source);
+        if (source.equals(type)) return source;
+        if (type.isInterface()) {
+            for (ClassNode interfaceNode : source.getAllInterfaces()) {
+                if (interfaceNode.equals(type)) {
+                    ClassNode parameterizedInterface = GenericsUtils.parameterizeInterfaceGenerics(source, interfaceNode);
+                    return parameterizedInterface;
+                }
+            }
+        }
+        ClassNode superClass = source.getUnresolvedSuperClass();
+        if (superClass!=null) return findGenericsTypeHolderForClass(superClass, type);
+        return null;
     }
 
     private static ClassNode lowestUpperBound(ClassNode a, ClassNode b, List<ClassNode> interfacesImplementedByA, List<ClassNode> interfacesImplementedByB) {
@@ -368,12 +458,17 @@ public class WideningCategories {
      * to return a name and a type class.
      *
      */
-    private static class LowestUpperBoundClassNode extends ClassNode {
+    protected static class LowestUpperBoundClassNode extends ClassNode {
         private final ClassNode compileTimeClassNode;
+        protected final String name;
 
         public LowestUpperBoundClassNode(String name, ClassNode upper, ClassNode... interfaces) {
             super(name, ACC_PUBLIC|ACC_FINAL, upper, interfaces, null);
             compileTimeClassNode = upper.equals(OBJECT_TYPE) && interfaces.length>0?interfaces[0]:upper;
+            this.name = name;
+            if (upper.isUsingGenerics()) {
+                setGenericsTypes(upper.getGenericsTypes());
+            }
         }
 
         @Override
@@ -390,5 +485,45 @@ public class WideningCategories {
         public Class getTypeClass() {
             return compileTimeClassNode.getTypeClass();
         }
+    }
+
+    /**
+     * Compares two class nodes, but including their generics types.
+     * @param a
+     * @param b
+     * @return
+     */
+    private static boolean areEqualWithGenerics(ClassNode a, ClassNode b) {
+        if (a==null) return b==null;
+        if (!a.equals(b)) return false;
+        if (a.isUsingGenerics() && !b.isUsingGenerics()) return false;
+        GenericsType[] gta = a.getGenericsTypes();
+        GenericsType[] gtb = b.getGenericsTypes();
+        if (gta==null && gtb!=null) return false;
+        if (gtb==null && gta!=null) return false;
+        if (gta!=null && gtb!=null) {
+            if (gta.length!=gtb.length) return false;
+            for (int i = 0; i < gta.length; i++) {
+                GenericsType ga = gta[i];
+                GenericsType gb = gtb[i];
+                boolean result = ga.isPlaceholder()==gb.isPlaceholder() && ga.isWildcard()==gb.isWildcard();
+                result = result && ga.isResolved() && gb.isResolved();
+                result = result && ga.getName().equals(gb.getName());
+                result = result && areEqualWithGenerics(ga.getType(), gb.getType());
+                result = result && areEqualWithGenerics(ga.getLowerBound(), gb.getLowerBound());
+                if (result) {
+                    ClassNode[] upA = ga.getUpperBounds();
+                    if (upA!=null) {
+                        ClassNode[] upB = gb.getUpperBounds();
+                        if (upB==null || upB.length!=upA.length) return false;
+                        for (int j = 0; j < upA.length; j++) {
+                            if (!areEqualWithGenerics(upA[j],upB[j])) return false;
+                        }
+                    }
+                }
+                if (!result) return false;
+            }
+        }
+        return true;
     }
 }

@@ -16,7 +16,8 @@
 
 package org.codehaus.groovy.ast;
 
-import java.util.HashMap;
+import org.codehaus.groovy.ast.tools.GenericsUtils;
+
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -247,22 +248,7 @@ public class GenericsType extends ASTNode {
                             // class node are not parameterized. This means that we must create a
                             // new class node with the parameterized types that the current class node
                             // has defined.
-                            Map<String,GenericsType> parameters = new HashMap<String, GenericsType>();
-                            org.codehaus.groovy.ast.tools.GenericsUtils.extractPlaceholders(classNode, parameters);
-                            ClassNode node = anInterface.getPlainNodeReference();
-                            GenericsType[] interfaceGTs = anInterface.getGenericsTypes();
-                            GenericsType[] types = new GenericsType[interfaceGTs.length];
-                            for (int i = 0; i < interfaceGTs.length; i++) {
-                                GenericsType interfaceGT = interfaceGTs[i];
-                                types[i] = interfaceGT;
-                                if (interfaceGT.isPlaceholder()) {
-                                    String name = interfaceGT.getName();
-                                    if (parameters.containsKey(name)) {
-                                        types[i] = parameters.get(name);
-                                    }
-                                }
-                            }
-                            node.setGenericsTypes(types);
+                            ClassNode node = GenericsUtils.parameterizeInterfaceGenerics(classNode, anInterface);
                             return compareGenericsWithBound(node, bound);
                         }
                     }
@@ -283,7 +269,10 @@ public class GenericsType extends ASTNode {
                 GenericsType redirectBoundType = redirectBoundGenericTypes[i];
                 GenericsType classNodeType = cnTypes[i];
                 if (classNodeType.isWildcard()) {
-                    match = true;
+                    for (ClassNode node : classNodeType.getUpperBounds()) {
+                        match = compareGenericsWithBound(node, bound);
+                        if (!match) return false;
+                    }
                 } else if (classNodeType.isPlaceholder()) {
                     if (redirectBoundType.isPlaceholder()) {
                         match = classNodeType.getName().equals(redirectBoundType.getName());

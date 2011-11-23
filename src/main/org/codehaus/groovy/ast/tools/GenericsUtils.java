@@ -81,12 +81,12 @@ public class GenericsUtils {
     /**
      * Generates a wildcard generic type in order to be used for checks against class nodes.
      * See {@link GenericsType#isCompatibleWith(org.codehaus.groovy.ast.ClassNode)}.
-     * @param type the type to be used as the wildcard upper bound
+     * @param types the type to be used as the wildcard upper bound
      * @return a wildcard generics type
      */
-    public static GenericsType buildWildcardType(final ClassNode type) {
+    public static GenericsType buildWildcardType(final ClassNode... types) {
         ClassNode base = ClassHelper.makeWithoutCaching("?");
-        GenericsType gt = new GenericsType(base, new ClassNode[]{type}, null);
+        GenericsType gt = new GenericsType(base, types, null);
         gt.setWildcard(true);
         return gt;
     }
@@ -116,5 +116,34 @@ public class GenericsUtils {
                 if (!map.containsKey(name)) map.put(name, parameterized[i]);
             }
         }
+    }
+
+    /**
+     * Interface class nodes retrieved from {@link org.codehaus.groovy.ast.ClassNode#getInterfaces()}
+     * or {@link org.codehaus.groovy.ast.ClassNode#getAllInterfaces()} are returned with generic type
+     * arguments. This method allows returning a parameterized interface given the parameterized class
+     * node which implements this interface.
+     * @param classNode the class node where generics types are parameterized
+     * @param anInterface the interface we want to parameterize generics types
+     * @return a parameterized interface class node
+     */
+    public static ClassNode parameterizeInterfaceGenerics(final ClassNode classNode, final ClassNode anInterface) {
+        Map<String,GenericsType> parameters = new HashMap<String, GenericsType>();
+        extractPlaceholders(classNode, parameters);
+        ClassNode node = anInterface.getPlainNodeReference();
+        GenericsType[] interfaceGTs = anInterface.getGenericsTypes();
+        GenericsType[] types = new GenericsType[interfaceGTs.length];
+        for (int i = 0; i < interfaceGTs.length; i++) {
+            GenericsType interfaceGT = interfaceGTs[i];
+            types[i] = interfaceGT;
+            if (interfaceGT.isPlaceholder()) {
+                String name = interfaceGT.getName();
+                if (parameters.containsKey(name)) {
+                    types[i] = parameters.get(name);
+                }
+            }
+        }
+        node.setGenericsTypes(types);
+        return node;
     }
 }

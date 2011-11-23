@@ -303,5 +303,11 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
             Collection ser = 'Hello'
         ''', 'Cannot assign value of type java.lang.String to variable of type java.util.Collection'
     }
+
+    void testTernaryOperatorAssignementShouldFailBecauseOfIncompatibleGenericTypes() {
+        shouldFailWithMessages '''
+            List<Integer> foo = true?new LinkedList<String>():new LinkedList<Integer>();
+        ''', 'Incompatible generic argument types. Cannot assign java.util.LinkedList <? extends java.lang.Comparable> to: java.util.List <Integer>'
+    }
 }
 
