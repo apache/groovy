@@ -1974,6 +1974,20 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Iterates through this object transforming each value into a new value using Closure.IDENTITY
+     * as a transformer, basically returning a list of items copied from the original object.
+     * <pre class="groovyTestCase">assert [1,2,3] == [1,2,3].iterator().collect()</pre>
+     *
+     * @param self    an aggregate Object with an Iterator returning its values
+     * @return a List of the transformed values
+     * @since 1.8.5
+     * @see Closure#IDENTITY
+     */
+    public static Collection collect(Object self) {
+        return collect(self, Closure.IDENTITY);
+    }
+
+    /**
      * Iterates through this object transforming each object into a new value using the closure
      * as a transformer and adding it to the collection, returning the resulting collection.
      *
@@ -2002,6 +2016,20 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <T> List<T> collect(Collection<?> self, Closure<T> closure) {
         return (List<T>) collect(self, new ArrayList<T>(self.size()), closure);
+    }
+
+    /**
+     * Iterates through this collection transforming each entry into a new value using Closure.IDENTITY
+     * as a transformer, basically returning a list of items copied from the original collection.
+     * <pre class="groovyTestCase">assert [1,2,3] == [1,2,3].collect()</pre>
+     *
+     * @param self    a collection
+     * @return a List of the transformed values
+     * @since 1.8.5
+     * @see Closure#IDENTITY
+     */
+    public static <T> List<T> collect(Collection<T> self) {
+        return (List<T>) collect(self, Closure.IDENTITY);
     }
 
     /**
