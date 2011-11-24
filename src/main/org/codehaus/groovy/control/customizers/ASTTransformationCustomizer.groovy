@@ -83,25 +83,53 @@ class ASTTransformationCustomizer extends CompilationCustomizer {
     private final ASTTransformation transformation
     private boolean applied = false; // used for global AST transformations
 
-    ASTTransformationCustomizer(final Class<? extends Annotation> transformationAnnotation) {
-        super(findPhase(transformationAnnotation))
-        final Class<ASTTransformation> clazz = findASTTranformationClass(transformationAnnotation)
+    /**
+     * Creates an AST transformation customizer using the specified annotation. The transformation classloader can
+     * be used if the transformation class cannot be loaded from the same class loader as the annotation class.
+     * @param transformationAnnotation
+     * @param transformationClassLoader
+     */
+    ASTTransformationCustomizer(final Class<? extends Annotation> transformationAnnotation, ClassLoader transformationClassLoader) {
+        super(findPhase(transformationAnnotation, transformationClassLoader))
+        final Class<ASTTransformation> clazz = findASTTranformationClass(transformationAnnotation, transformationClassLoader)
         this.transformation = clazz.newInstance()
         this.annotationNode = new AnnotationNode(ClassHelper.make(transformationAnnotation))
     }
 
+    /**
+     * Creates an AST transformation customizer using the specified annotation.
+     * @param transformationAnnotation
+     */
+    ASTTransformationCustomizer(final Class<? extends Annotation> transformationAnnotation) {
+        this(transformationAnnotation, transformationAnnotation.classLoader)
+    }
+
+    /**
+     * Creates an AST transformation customizer using the specified transformation.
+     */
     ASTTransformationCustomizer(final ASTTransformation transformation) {
         super(findPhase(transformation))
         this.transformation = transformation
         this.annotationNode = null
     }
 
-    ASTTransformationCustomizer(final Map annotationParams, final Class<? extends Annotation> transformationAnnotation) {
-        super(findPhase(transformationAnnotation))
-        final Class<ASTTransformation> clazz = findASTTranformationClass(transformationAnnotation)
+    /**
+     * Creates an AST transformation customizer using the specified annotation. The transformation classloader can
+     * be used if the transformation class cannot be loaded from the same class loader as the annotation class.
+     * Additionally, you can pass a map of parameters that will be used to parameterize the annotation.
+     * @param transformationAnnotation
+     * @param transformationClassLoader
+     */
+    ASTTransformationCustomizer(final Map annotationParams, final Class<? extends Annotation> transformationAnnotation, ClassLoader transformationClassLoader) {
+        super(findPhase(transformationAnnotation, transformationClassLoader))
+        final Class<ASTTransformation> clazz = findASTTranformationClass(transformationAnnotation, transformationClassLoader)
         this.transformation = clazz.newInstance()
         this.annotationNode = new AnnotationNode(ClassHelper.make(transformationAnnotation))
         setAnnotationParameters(annotationParams)
+    }
+
+    ASTTransformationCustomizer(final Map annotationParams, final Class<? extends Annotation> transformationAnnotation) {
+        this(annotationParams, transformationAnnotation, transformationAnnotation.classLoader)
     }
 
     ASTTransformationCustomizer(final Map annotationParams, final ASTTransformation transformation) {
@@ -110,7 +138,7 @@ class ASTTransformationCustomizer extends CompilationCustomizer {
     }
 
 
-    private static Class<ASTTransformation> findASTTranformationClass(Class<? extends Annotation> anAnnotationClass) {
+    private static Class<ASTTransformation> findASTTranformationClass(Class<? extends Annotation> anAnnotationClass, ClassLoader transformationClassLoader) {
         final GroovyASTTransformationClass annotation = anAnnotationClass.getAnnotation(GroovyASTTransformationClass)
         if (annotation==null) throw new IllegalArgumentException("Provided class doesn't look like an AST @interface")
 
@@ -119,7 +147,7 @@ class ASTTransformationCustomizer extends CompilationCustomizer {
         if (classes.length+classesAsStrings.length>1) {
             throw new IllegalArgumentException("AST transformation customizer doesn't support AST transforms with multiple classes")
         }
-        return classes?classes[0]:Class.forName(classesAsStrings[0])
+        return classes?classes[0]:Class.forName(classesAsStrings[0], true, transformationClassLoader?:anAnnotationClass.classLoader)
     }
 
     private static CompilePhase findPhase(ASTTransformation transformation) {
@@ -131,8 +159,8 @@ class ASTTransformationCustomizer extends CompilationCustomizer {
         annotation.phase()
     }
 
-    private static CompilePhase findPhase(Class<? extends Annotation> annotationClass) {
-        Class<ASTTransformation> clazz = findASTTranformationClass(annotationClass);
+    private static CompilePhase findPhase(Class<? extends Annotation> annotationClass, ClassLoader transformationClassLoader) {
+        Class<ASTTransformation> clazz = findASTTranformationClass(annotationClass, transformationClassLoader);
 
         findPhase(clazz.newInstance())
     }
