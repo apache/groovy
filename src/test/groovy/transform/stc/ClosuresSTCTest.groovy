@@ -91,5 +91,23 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
             { -> println 'Hello' }()
         '''
     }
+
+    // GROOVY-5145
+    void testCollect() {
+        assertScript '''
+            List<String> strings = [1,2,3].collect { it.toString() }
+        '''
+    }
+
+    // GROOVY-5145
+    void testCollectWithSubclass() {
+        assertScript '''
+            class StringClosure extends Closure<String> {
+                StringClosure() { super(null,null) }
+                void doCall(int x) { x }
+            }
+            List<String> strings = [1,2,3].collect(new StringClosure())
+        '''
+    }
 }
 

@@ -613,7 +613,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     public void visitReturnStatement(ReturnStatement statement) {
         super.visitReturnStatement(statement);
         checkReturnType(statement);
-        if (closureExpression!=null) {
+        if (closureExpression!=null && statement.getExpression()!=ConstantExpression.NULL) {
             addClosureReturnType(getType(statement.getExpression()));
         }
     }
@@ -1134,6 +1134,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
      * methods match the argument types.
      */
     private List<MethodNode> chooseBestBethod(final ClassNode receiver, Collection<MethodNode> methods, ClassNode... args) {
+        if (methods.isEmpty()) return Collections.emptyList();
         List<MethodNode> bestChoices = new LinkedList<MethodNode>();
         int bestDist = Integer.MAX_VALUE;
         for (MethodNode m : methods) {
@@ -1301,6 +1302,14 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             ClassNode ret = (ClassNode) exp.getNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE);
             return ret!=null?ret:((MethodNode)exp).getReturnType();
         }
+        if (exp instanceof ClosureExpression) {
+            ClassNode irt = (ClassNode) exp.getNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE);
+            if (irt!=null) {
+                ClassNode result = CLOSURE_TYPE.getPlainNodeReference();
+                result.setGenericsTypes(new GenericsType[]{new GenericsType(irt)});
+                return result;
+            }
+        }
         return exp instanceof VariableExpression?((VariableExpression) exp).getOriginType():((Expression)exp).getType();
     }
 
@@ -1374,19 +1383,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
         }
         if (placeholders.isEmpty()) return returnType; // nothing to infer
-        Map<String,ClassNode> resolvedPlaceholders = new HashMap<String, ClassNode>();
-        if (receiver.isUsingGenerics()) {
-            // first, resolve placeholders from receiver class
-            ClassNode redirect = receiver.redirect();
-            GenericsType[] redirectGenericsType = redirect.getGenericsTypes();
-            GenericsType[] receiverGenericsTypes = receiver.getGenericsTypes();
-            for (int i = 0; i < receiverGenericsTypes.length; i++) {
-                if (redirectGenericsType[i].isPlaceholder() || redirectGenericsType[i].isWildcard()) {
-                    String name = redirectGenericsType[i].getName();
-                    resolvedPlaceholders.put(name, receiverGenericsTypes[i].getType());
-                }
-            }
-        }
+        Map<String,GenericsType> resolvedPlaceholders = new HashMap<String, GenericsType>();
+        GenericsUtils.extractPlaceholders(receiver, resolvedPlaceholders);
+        GenericsUtils.extractPlaceholders(method.getReturnType(), resolvedPlaceholders);
         // then resolve receivers from method arguments
         Parameter[] parameters = method.getParameters();
         boolean isVargs = isVargs(parameters);
@@ -1398,29 +1397,52 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             ClassNode type = parameters[i].getType();
             if (!type.isUsingGenerics() && type.isArray()) type=type.getComponentType();
             if (type.isUsingGenerics()) {
-                GenericsType[] genericsTypes = type.getGenericsTypes();
-                for (GenericsType genericsType : genericsTypes) {
-                    if (genericsType.isPlaceholder() || genericsType.isWildcard()) {
-                        ClassNode actualType = getType(expressions.get(i));
-                        if (isVargs && lastArg && actualType.isArray()) {
-                            actualType=actualType.getComponentType();
+                ClassNode actualType = getType(expressions.get(i));
+                if (isVargs && lastArg && actualType.isArray()) {
+                    actualType=actualType.getComponentType();
+                }
+                if (isPrimitiveType(actualType)) {
+                    // as we are in generics, we must wrap it
+                    actualType = ClassHelper.getWrapper(actualType);
+                }
+                Map<String, GenericsType> typePlaceholders = GenericsUtils.extractPlaceholders(type.isArray()?type.getComponentType():type);
+                if (OBJECT_TYPE.equals(type)) {
+                    // special case for handing Object<E> -> Object
+                    for (String key : typePlaceholders.keySet()) {
+                        resolvedPlaceholders.put(key, new GenericsType(actualType));
+                    }
+                } else {
+                    while (!actualType.equals(type)) {
+                        Set<ClassNode> interfaces = actualType.getAllInterfaces();
+                        boolean intf = false;
+                        for (ClassNode anInterface : interfaces) {
+                            if (anInterface.equals(type)) {
+                                intf = true;
+                                actualType = GenericsUtils.parameterizeInterfaceGenerics(actualType, anInterface);
+                            }
                         }
-                        if (isPrimitiveType(actualType)) {
-                            // as we are in generics, we must wrap it
-                            actualType = ClassHelper.getWrapper(actualType);
+                        if (!intf) actualType = actualType.getUnresolvedSuperClass();
+                    }
+                    Map<String, GenericsType> actualTypePlaceholders = GenericsUtils.extractPlaceholders(actualType);
+                    for (Map.Entry<String, GenericsType> typeEntry : actualTypePlaceholders.entrySet()) {
+                        String key = typeEntry.getKey();
+                        GenericsType value = typeEntry.getValue();
+                        GenericsType alias = typePlaceholders.get(key);
+                        if (alias != null && alias.isPlaceholder()) {
+                            resolvedPlaceholders.put(alias.getName(), value);
                         }
-                        resolvedPlaceholders.put(genericsType.getName(), actualType);
                     }
                 }
+
             }
         }
         GenericsType[] copy = new GenericsType[returnTypeGenerics.length];
         for (int i = 0; i < copy.length; i++) {
             GenericsType returnTypeGeneric = returnTypeGenerics[i];
             if (returnTypeGeneric.isPlaceholder() || returnTypeGeneric.isWildcard()) {
-                ClassNode resolved = resolvedPlaceholders.get(returnTypeGeneric.getName());
-                if (resolved==null) resolved = returnTypeGeneric.getType();
-                copy[i] = new GenericsType(resolved);
+                GenericsType resolved = resolvedPlaceholders.get(returnTypeGeneric.getName());
+                if (resolved==null) resolved = returnTypeGeneric;
+                copy[i] = resolved;
             } else {
                 copy[i] = returnTypeGeneric;
             }
