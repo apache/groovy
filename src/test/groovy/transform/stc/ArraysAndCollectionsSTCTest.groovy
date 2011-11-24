@@ -187,5 +187,10 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    void testCollectMethodCallOnList() {
+        assertScript '''
+            [1,2,3].collect { it.toString() }
+        '''
+    }
 }
 

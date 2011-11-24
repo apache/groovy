@@ -52,6 +52,32 @@ abstract class StaticTypeCheckingSupport {
             }});
 
     /**
+     * This comparator is used when we return the list of methods from DGM which name correspond to a given
+     * name. As we also lookup for DGM methods of superclasses or interfaces, it may be possible to find
+     * two methods which have the same name and the same arguments. In that case, we should not add the method
+     * from superclass or interface otherwise the system won't be able to select the correct method, resulting
+     * in an ambiguous method selection for similar methods.
+     */
+    private static final Comparator<MethodNode> DGM_METHOD_NODE_COMPARATOR = new Comparator<MethodNode>() {
+        public int compare(final MethodNode o1, final MethodNode o2) {
+            if (o1.getName().equals(o2.getName())) {
+                Parameter[] o1ps = o1.getParameters();
+                Parameter[] o2ps = o2.getParameters();
+                if (o1ps.length == o2ps.length) {
+                    boolean allEqual = true;
+                    for (int i = 0; i < o1ps.length && allEqual; i++) {
+                        allEqual = o1ps[i].getType().equals(o2ps[i].getType());
+                    }
+                    if (allEqual) return 0;
+                } else {
+                    return o1ps.length - o2ps.length;
+                }
+            }
+            return 1;
+        }
+    };
+
+    /**
      * Returns true for expressions of the form x[...]
      * @param expression an expression
      * @return true for array access expressions
@@ -127,25 +153,28 @@ abstract class StaticTypeCheckingSupport {
         return methods;
     }
 
-    /**
-     * Returns a list of method nodes corresponding to DGM methods for this classnode.
-     * @param clazz the class for which to return method nodes
-     * @return the list of methods defined in DGM
-     */
-    static Set<MethodNode> findDGMMethodsForClassNode(ClassNode clazz) {
-        Set<MethodNode> result = new HashSet<MethodNode>();
+
+    static Set<MethodNode> findDGMMethodsForClassNode(ClassNode clazz, String name) {
+        TreeSet<MethodNode> accumulator = new TreeSet<MethodNode>(DGM_METHOD_NODE_COMPARATOR);
+        findDGMMethodsForClassNode(clazz, name, accumulator);
+        return accumulator;
+    }
+
+    static void findDGMMethodsForClassNode(ClassNode clazz, String name, TreeSet<MethodNode> accumulator) {
         List<MethodNode> fromDGM = VIRTUAL_DGM_METHODS.get(clazz.getName());
-        if (fromDGM != null) result.addAll(fromDGM);
+        if (fromDGM != null) {
+            for (MethodNode node : fromDGM) {
+                if (node.getName().equals(name)) accumulator.add(node);
+            }
+        }
         for (ClassNode node : clazz.getInterfaces()) {
-            result.addAll(findDGMMethodsForClassNode(node));
+            findDGMMethodsForClassNode(node, name, accumulator);
         }
         if (clazz.getSuperClass() != null) {
-            result.addAll(findDGMMethodsForClassNode(clazz.getSuperClass()));
+            findDGMMethodsForClassNode(clazz.getSuperClass(), name, accumulator);
         } else if (!clazz.equals(ClassHelper.OBJECT_TYPE)) {
-            result.addAll(findDGMMethodsForClassNode(ClassHelper.OBJECT_TYPE));
+            findDGMMethodsForClassNode(ClassHelper.OBJECT_TYPE, name, accumulator);
         }
-
-        return result;
     }
 
     /**

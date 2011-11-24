@@ -1118,11 +1118,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     private List<MethodNode> findDGMMethodsByNameAndArguments(final ClassNode receiver, final String name, final ClassNode[] args, final List<MethodNode> methods) {
         final List<MethodNode> chosen;
-        Set<MethodNode> fromDGM = findDGMMethodsForClassNode(receiver);
+        methods.addAll(findDGMMethodsForClassNode(receiver, name));
 
-        for (MethodNode methodNode : fromDGM) {
-            if (methodNode.getName().equals(name)) methods.add(methodNode);
-        }
         chosen = chooseBestBethod(receiver, methods, args);
             return chosen;
         }
