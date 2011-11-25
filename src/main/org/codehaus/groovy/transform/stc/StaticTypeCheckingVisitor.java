@@ -42,6 +42,8 @@ import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.*;
  * @author Jochen Theodorou
  */
 public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
+    private final static ClassNode READONLY_PROPERTY_RETURN = ClassHelper.make("<readonly>");
+
     private final static List<MethodNode> EMPTY_METHODNODE_LIST = Collections.emptyList();
 
     private SourceUnit source;
@@ -269,7 +271,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             // in the "with" case where the type must be taken from the inferred type
             leftRedirect = leftExpressionType;
         } else {
-            leftRedirect = leftExpression.getType().redirect();
+            if (leftExpression instanceof VariableExpression && isPrimitiveType(((VariableExpression)leftExpression).getOriginType())) {
+                leftRedirect = leftExpressionType;
+            } else {
+                leftRedirect = leftExpression.getType().redirect();
+            }
         }
         if (leftExpression instanceof TupleExpression) {
             // multiple assignment
@@ -297,10 +303,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
             return;
         }
-        boolean compatible = checkCompatibleAssignmentTypes(leftRedirect, inferredRightExpressionType);
+        boolean compatible = checkCompatibleAssignmentTypes(leftRedirect, inferredRightExpressionType, rightExpression);
         if (!compatible) {
-            // if leftRedirect is of void type, then it means we are on a missing property
-            if ((leftRedirect == VOID_TYPE) && (leftExpression instanceof PropertyExpression)) {
+            // if leftRedirect is of READONLY_PROPERTY_RETURN type, then it means we are on a missing property
+            if ((leftRedirect == READONLY_PROPERTY_RETURN) && (leftExpression instanceof PropertyExpression)) {
                 addStaticTypeError("Cannot set read-only property: "+((PropertyExpression)leftExpression).getPropertyAsString(), leftExpression);
             } else {
                 addStaticTypeError("Cannot assign value of type " + inferredRightExpressionType.getName() + " to variable of type " + leftExpressionType.getName(), assignmentExpression);
@@ -507,23 +513,32 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                             return true;
                         }
                     }
-                    if (checkForReadOnly) {
+                    // if the property expression is an attribute expression (o.@attr), then
+                    // we stop now, otherwise we must check the parent class
+                    current = isAttributeExpression ?null:current.getSuperClass();
+                }
+                if (checkForReadOnly) {
+                    current = testClass;
+                    while (current != null) {
+                        current = current.redirect();
+
                         String pname = MetaClassHelper.capitalize(propertyName);
-                        List<MethodNode> nodes = current.getMethods("get"+pname);
-                        if (nodes.isEmpty()) nodes = current.getMethods("is"+pname);
+                        List<MethodNode> nodes = current.getMethods("get" + pname);
+                        if (nodes.isEmpty()) nodes = current.getMethods("is" + pname);
                         if (!nodes.isEmpty()) {
                             for (MethodNode node : nodes) {
                                 Parameter[] parameters = node.getParameters();
-                                if (node.getReturnType()!=VOID_TYPE && (parameters==null || parameters.length==0)) {
-                                    if (visitor!=null) visitor.visitMethod(node);
+                                if (node.getReturnType() != VOID_TYPE && (parameters == null || parameters.length == 0)) {
+                                    if (visitor != null) visitor.visitMethod(node);
+                                    storeType(pexp, READONLY_PROPERTY_RETURN);
                                     return true;
                                 }
                             }
                         }
+                        // if the property expression is an attribute expression (o.@attr), then
+                        // we stop now, otherwise we must check the parent class
+                        current = isAttributeExpression ? null : current.getSuperClass();
                     }
-                    // if the property expression is an attribute expression (o.@attr), then
-                    // we stop now, otherwise we must check the parent class
-                    current = isAttributeExpression ?null:current.getSuperClass();
                 }
             } else {
                 if (visitor!=null) {
@@ -621,7 +636,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     private ClassNode checkReturnType(final ReturnStatement statement) {
         ClassNode type = getType(statement.getExpression());
         if (methodNode != null) {
-            if (!checkCompatibleAssignmentTypes(methodNode.getReturnType(), type)) {
+            if (!methodNode.isVoidMethod() && !checkCompatibleAssignmentTypes(methodNode.getReturnType(), type)) {
                 addStaticTypeError("Cannot return value of type " + type + " on method returning type " + methodNode.getReturnType(), statement.getExpression());
             }
         }
@@ -901,8 +916,16 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         super.visitCastExpression(expression);
         if (!expression.isCoerce()) {
             ClassNode targetType = expression.getType();
-            ClassNode expressionType = getType(expression.getExpression());
-            if (isNumberCategory(getWrapper(targetType)) && isNumberCategory(getWrapper(expressionType))) {
+            Expression source = expression.getExpression();
+            boolean sourceIsNull = source instanceof ConstantExpression && ((ConstantExpression) source).getValue()==null;
+            ClassNode expressionType = getType(source);
+            if (targetType.equals(char_TYPE) && expressionType==STRING_TYPE
+                    && source instanceof ConstantExpression && source.getText().length()==1) {
+                // ex: (char) 'c'
+            } else if (targetType.equals(Character_TYPE) && (expressionType==STRING_TYPE||sourceIsNull)
+                    && (sourceIsNull || source instanceof ConstantExpression && source.getText().length()==1)) {
+                // ex : (Character) 'c'
+            } else if (isNumberCategory(getWrapper(targetType)) && isNumberCategory(getWrapper(expressionType))) {
                 // ex: short s = (short) 0
             } else if (!isAssignableTo(expressionType, targetType)) {
                 addStaticTypeError("Inconvertible types: cannot cast "+expressionType.getName()+" to "+targetType.getName(), expression);
