@@ -2118,7 +2118,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Projects each item from a source collection to a collection and concatenates (flattens) the resulting collections into a single one.
+     * Projects each item from a source collection to a collection and concatenates (flattens) the resulting collections into a single list.
      *
      * <pre class="groovyTestCase">
      * def nums = 1..10
@@ -2128,16 +2128,21 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * def animals = ['CAT', 'DOG', 'ELEPHANT'] as Set
      * def smallAnimals = animals.collectMany{ it.size() > 3 ? [] : [it.toLowerCase()] }
      * assert smallAnimals == ['cat', 'dog'] as Set
+     *
+     * def orig = nums as Set
+     * def origPlusIncrements = orig.collectMany{ [it, it+1] }
+     * assert origPlusIncrements.size() == orig.size() * 2
+     * assert origPlusIncrements.unique().size() == orig.size() + 1
      * </pre>
      *
      * @param self a collection
      * @param closure a projecting Closure returning a collection of items
-     * @return the projected collections concatenated (flattened) together
+     * @return a list created from the projected collections concatenated (flattened) together
      * @see #sum(java.util.Collection, groovy.lang.Closure)
      * @since 1.8.1
      */
-    public static <T> Collection<T> collectMany(Collection self, Closure<Collection<T>> closure) {
-        Collection<T> result = createSimilarCollection(self);
+    public static <T> List<T> collectMany(Collection self, Closure<Collection<T>> closure) {
+        List<T> result = new ArrayList<T>();
         for (Object next : self) {
             result.addAll(closure.call(next));
         }
@@ -2145,7 +2150,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Projects each item from a source array to a collection and concatenates (flattens) the resulting collections into a single one.
+     * Projects each item from a source array to a collection and concatenates (flattens) the resulting collections into a single list.
      *
      * <pre class="groovyTestCase">
      * def nums = [1, 2, 3, 4, 5, 6] as Object[]
@@ -2155,16 +2160,16 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self an object array
      * @param closure a projecting Closure returning a collection of items
-     * @return the projected collections concatenated (flattened) together
+     * @return a list created from the projected collections concatenated (flattened) together
      * @see #sum(Object[], groovy.lang.Closure)
      * @since 1.8.1
      */
-    public static <T> Collection<T> collectMany(Object[] self, Closure<Collection<T>> closure) {
+    public static <T> List<T> collectMany(Object[] self, Closure<Collection<T>> closure) {
         return collectMany(toList(self), closure);
     }
 
     /**
-     * Projects each item from a source iterator to a collection and concatenates (flattens) the resulting collections into a single one.
+     * Projects each item from a source iterator to a collection and concatenates (flattens) the resulting collections into a single list.
      *
      * <pre class="groovyTestCase">
      * def numsIter = [1, 2, 3, 4, 5, 6].iterator()
@@ -2174,11 +2179,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self an iterator
      * @param closure a projecting Closure returning a collection of items
-     * @return the projected collections concatenated (flattened) together
+     * @return a list created from the projected collections concatenated (flattened) together
      * @see #sum(Iterator, groovy.lang.Closure)
      * @since 1.8.1
      */
-    public static <T> Collection<T> collectMany(Iterator<Object> self, Closure<Collection<T>> closure) {
+    public static <T> List<T> collectMany(Iterator<Object> self, Closure<Collection<T>> closure) {
         return collectMany(toList(self), closure);
     }
 
