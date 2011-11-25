@@ -2129,7 +2129,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * def animals = ['CAT', 'DOG', 'ELEPHANT'] as Set
      * def smallAnimals = animals.collectMany{ it.size() > 3 ? [] : [it.toLowerCase()] }
-     * assert smallAnimals == ['cat', 'dog'] as Set
+     * assert smallAnimals == ['cat', 'dog']
      *
      * def orig = nums as Set
      * def origPlusIncrements = orig.collectMany{ [it, it+1] }
