@@ -438,8 +438,23 @@ abstract class StaticTypeCheckingSupport {
      * @return false if types are incompatible
      */
     public static boolean checkCompatibleAssignmentTypes(ClassNode left, ClassNode right) {
+        return checkCompatibleAssignmentTypes(left, right, null);
+    }
+
+    public static boolean checkCompatibleAssignmentTypes(ClassNode left, ClassNode right, Expression rightExpression) {
         ClassNode leftRedirect = left.redirect();
         ClassNode rightRedirect = right.redirect();
+
+        if (right==VOID_TYPE||right==void_WRAPPER_TYPE) {
+            return left==VOID_TYPE||left==void_WRAPPER_TYPE;
+        }
+
+        // if rightExpression is null and leftExpression is not a primitive type, it's ok
+        boolean rightExpressionIsNull = rightExpression instanceof ConstantExpression && ((ConstantExpression) rightExpression).getValue()==null;
+        if (rightExpressionIsNull && !isPrimitiveType(left)) {
+            return true;
+        }
+
         // on an assignment everything that can be done by a GroovyCast is allowed
 
         // anything can be assigned to an Object, String, boolean, Boolean
@@ -450,6 +465,17 @@ abstract class StaticTypeCheckingSupport {
                 leftRedirect == Boolean_TYPE ||
                 leftRedirect == CLASS_Type) {
             return true;
+        }
+
+        // char as left expression
+        if (leftRedirect == char_TYPE && rightRedirect==STRING_TYPE) {
+            if (rightExpression!=null && rightExpression instanceof ConstantExpression) {
+                String value = rightExpression.getText();
+                return value.length()==1;
+            }
+        }
+        if (leftRedirect == Character_TYPE && (rightRedirect==STRING_TYPE||rightExpressionIsNull)) {
+            return rightExpressionIsNull || (rightExpression instanceof ConstantExpression && rightExpression.getText().length()==1);
         }
 
         // if left is Enum and right is String or GString we do valueOf

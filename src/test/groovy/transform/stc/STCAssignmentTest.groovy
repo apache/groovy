@@ -141,7 +141,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         shouldFailWithMessages '''
             long a = Long.MAX_VALUE
             int b = a
-        ''', 'Possible loose of precision from long to java.lang.Integer'
+        ''', 'Possible loose of precision from long to int'
     }
 
     void testPossibleLooseOfPrecision2() {
@@ -159,7 +159,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
     void testPossibleLooseOfPrecision4() {
         shouldFailWithMessages '''
             byte b = 128 // will not fit in a byte
-        ''', 'Possible loose of precision from int to java.lang.Byte'
+        ''', 'Possible loose of precision from int to byte'
     }
 
     void testPossibleLooseOfPrecision5() {
@@ -171,7 +171,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
     void testPossibleLooseOfPrecision6() {
         shouldFailWithMessages '''
             short b = 32768 // will not fit in a short
-        ''', 'Possible loose of precision from int to java.lang.Short'
+        ''', 'Possible loose of precision from int to short'
     }
 
     void testPossibleLooseOfPrecision7() {
@@ -195,7 +195,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
     void testPossibleLooseOfPrecision10() {
         shouldFailWithMessages '''
             int b = 32768.1d
-        ''', 'Possible loose of precision from double to java.lang.Integer'
+        ''', 'Possible loose of precision from double to int'
     }
 
     void testCastIntToShort() {
@@ -308,6 +308,78 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         shouldFailWithMessages '''
             List<Integer> foo = true?new LinkedList<String>():new LinkedList<Integer>();
         ''', 'Incompatible generic argument types. Cannot assign java.util.LinkedList <? extends java.lang.Comparable> to: java.util.List <Integer>'
+    }
+
+    void testCastStringToChar() {
+        assertScript '''
+            char c = 'a'
+        '''
+    }
+
+    void testCastStringLongerThan1CharToChar() {
+        shouldFailWithMessages '''
+            char c = 'aa'
+        ''','Cannot assign value of type java.lang.String to variable of type char'
+    }
+
+    void testCastNullToChar() {
+        shouldFailWithMessages '''
+            char c = null
+        ''', 'Cannot assign value of type java.lang.Object to variable of type char'
+    }
+
+    void testCastStringToCharacter() {
+        assertScript '''
+            Character c = 'a'
+        '''
+    }
+
+    void testCastStringLongerThan1CharToCharacter() {
+        shouldFailWithMessages '''
+            Character c = 'aa'
+        ''','Cannot assign value of type java.lang.String to variable of type java.lang.Character'
+    }
+
+    void testAssignNullToCharacter() {
+        assertScript '''
+            Character c = null
+        '''
+    }
+
+    void testCastStringToCharWithCast() {
+        assertScript '''
+            def c = (char) 'a'
+        '''
+    }
+
+    void testCastStringLongerThan1ToCharWithCast() {
+        shouldFailWithMessages '''
+            def c = (char) 'aa'
+        ''', 'Inconvertible types: cannot cast java.lang.String to char'
+    }
+
+    void testCastNullToCharWithCast() {
+        shouldFailWithMessages '''
+            def c = (char) null
+        ''', 'Inconvertible types: cannot cast java.lang.Object to char'
+    }
+
+    void testCastStringToCharacterWithCast() {
+        assertScript '''
+            def c = (Character) 'a'
+        '''
+    }
+
+    void testCastStringLongerThan1ToCharacterWithCast() {
+        shouldFailWithMessages '''
+            def c = (Character) 'aa'
+        ''', 'Inconvertible types: cannot cast java.lang.String to java.lang.Character'
+    }
+
+    void testCastNullToCharacterWithCast() {
+        assertScript '''
+            def c = (Character) null
+        '''
     }
 }
 
