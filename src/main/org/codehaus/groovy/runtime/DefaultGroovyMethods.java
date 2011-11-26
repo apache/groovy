@@ -2056,9 +2056,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Deprecated alias for collectNested
      *
-     * @see #collectNested(Collection, Closure)
-     * @since 1.5.2
      * @deprecated Use collectNested instead
+     * @see #collectNested(Collection, Closure)
      */
     public static List collectAll(Collection self, Closure transform) {
         return collectNested(self, transform);
@@ -2084,9 +2083,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Deprecated alias for collectNested
      *
-     * @see #collectNested(Collection, Collection, Closure)
-     * @since 1.5.2
      * @deprecated Use collectNested instead
+     * @see #collectNested(Collection, Collection, Closure)
      */
     public static Collection collectAll(Collection self, Collection collector, Closure transform) {
         return collectNested(self, collector, transform);
