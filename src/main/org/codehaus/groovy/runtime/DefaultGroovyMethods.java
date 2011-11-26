@@ -2126,11 +2126,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * def nums = 1..10
      * def squaresAndCubesOfEvens = nums.collectMany{ it % 2 ? [] : [it**2, it**3] }
      * assert squaresAndCubesOfEvens == [4, 8, 16, 64, 36, 216, 64, 512, 100, 1000]
-     * <p/>
+     *
      * def animals = ['CAT', 'DOG', 'ELEPHANT'] as Set
      * def smallAnimals = animals.collectMany{ it.size() > 3 ? [] : [it.toLowerCase()] }
      * assert smallAnimals == ['cat', 'dog']
-     * <p/>
+     *
      * def orig = nums as Set
      * def origPlusIncrements = orig.collectMany{ [it, it+1] }
      * assert origPlusIncrements.size() == orig.size() * 2
@@ -2155,7 +2155,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * def animals = ['CAT', 'DOG', 'ELEPHANT'] as Set
      * def smallAnimals = animals.collectMany(['ant', 'bee']){ it.size() > 3 ? [] : [it.toLowerCase()] }
      * assert smallAnimals == ['ant', 'bee', 'cat', 'dog']
-     * <p/>
+     *
      * def nums = 1..5
      * def origPlusIncrements = nums.collectMany([] as Set){ [it, it+1] }
      * assert origPlusIncrements.size() == nums.size() + 1
