@@ -8216,7 +8216,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         }
         if (clazz == Set.class) {
             if (col instanceof Set) return (T) col;
-            return (T) new HashSet(col);
+            return (T) new LinkedHashSet(col);
         }
         if (clazz == SortedSet.class) {
             if (col instanceof SortedSet) return (T) col;
