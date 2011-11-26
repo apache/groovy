@@ -2043,17 +2043,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the collector with all transformed values added to it
      * @since 1.0
      */
-<<<<<<< HEAD
-    public static <T> Collection<T> collect(Collection<?> self, Collection<T> collection, Closure<? extends T> closure) {
-        for (Iterator iter = self.iterator(); iter.hasNext();) {
-            collection.add(closure.call(iter.next()));
-            if (closure.getDirective() == Closure.DONE) {
-=======
     public static <T> Collection<T> collect(Collection<?> self, Collection<T> collector, Closure<? extends T> transform) {
         for (Object item : self) {
             collector.add(transform.call(item));
             if (transform.getDirective() == Closure.DONE) {
->>>>>>> 7e3e9e8... tweaks to GROOVY-5142 plus javadoc refinements
                 break;
             }
         }
@@ -2063,12 +2056,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Deprecated alias for collectNested
      *
-     * @see #collectNested(Collection, Closure)
-     * @since 1.5.2
-<<<<<<< HEAD
-=======
      * @deprecated Use collectNested instead
->>>>>>> 7e3e9e8... tweaks to GROOVY-5142 plus javadoc refinements
+     * @see #collectNested(Collection, Closure)
      */
     public static List collectAll(Collection self, Closure transform) {
         return collectNested(self, transform);
@@ -2094,12 +2083,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Deprecated alias for collectNested
      *
-     * @see #collectNested(Collection, Collection, Closure)
-     * @since 1.5.2
-<<<<<<< HEAD
-=======
      * @deprecated Use collectNested instead
->>>>>>> 7e3e9e8... tweaks to GROOVY-5142 plus javadoc refinements
+     * @see #collectNested(Collection, Collection, Closure)
      */
     public static Collection collectAll(Collection self, Collection collector, Closure transform) {
         return collectNested(self, collector, transform);
@@ -2113,17 +2098,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * assert x == [2,[4,6],[8],[]]
      * assert x instanceof Vector</pre>
      *
-<<<<<<< HEAD
-     * @param self       a collection
-     * @param collection an initial Collection to which the transformed values are added
-     * @param closure    the closure used to transform each element of the collection
-     * @return the resultant collection
-=======
      * @param self      a collection
      * @param collector an initial Collection to which the transformed values are added
      * @param transform the closure used to transform each element of the collection
      * @return the collector with all transformed values added to it
->>>>>>> 7e3e9e8... tweaks to GROOVY-5142 plus javadoc refinements
      * @since 1.8.1
      */
     public static Collection collectNested(Collection self, Collection collector, Closure transform) {
