@@ -40,7 +40,7 @@ public class VariableExpression extends Expression implements Variable {
     private Variable accessedVariable;
     boolean closureShare=false;
     boolean useRef=false;
-    private ClassNode originType;
+    private final ClassNode originType;
 
     public Variable getAccessedVariable() {
         return accessedVariable;
@@ -103,6 +103,13 @@ public class VariableExpression extends Expression implements Variable {
         this.inStaticContext = inStaticContext;
     }
 
+    /**
+     * Set the type of this variable. If you call this method from an AST transformation and that
+     * the {@link #getAccessedVariable() accessed variable} is ({@link #isClosureSharedVariable() shared},
+     * this operation is unsafe and may lead to a verify error at compile time. Instead, set the type of
+     * the {@link #getAccessedVariable() accessed variable}
+     * @param cn the type to be set on this variable
+     */
     public void setType(ClassNode cn){
         super.setType(cn);
         isDynamicTyped |= ClassHelper.DYNAMIC_TYPE==cn;
@@ -113,11 +120,29 @@ public class VariableExpression extends Expression implements Variable {
         return isDynamicTyped;
     }
 
+    /**
+     * Tells if this variable or the accessed variable is used in a closure context, like in the following
+     * example :
+     * <pre>def str = 'Hello'
+     * def cl = { println str }
+     * </pre>
+     * The "str" variable is closure shared.
+     * @return true if this variable is used in a closure
+     */
     public boolean isClosureSharedVariable() {
         if (accessedVariable!=null && accessedVariable!=this) return accessedVariable.isClosureSharedVariable();
         return closureShare;
     }
-    
+
+    /**
+     * Use this method to tell if a variable is used in a closure, like in the following example:
+     * <pre>def str = 'Hello'
+     * def cl = { println str }
+     * </pre>
+     * The "str" variable is closure shared. The variable expression inside the closure references an
+     * accessed variable "str" which must have the closure shared flag set.
+     * @param inClosure tells if this variable is later referenced in a closure
+     */
     public void setClosureSharedVariable(boolean inClosure) {
         closureShare = inClosure;        
     }
@@ -126,10 +151,19 @@ public class VariableExpression extends Expression implements Variable {
         return modifiers;
     }
 
+    /**
+     * For internal use only. This flag is used by compiler internals and should probably
+     * be converted to a node metadata in future.
+     * @param useRef
+     */
     public void setUseReferenceDirectly(boolean useRef) {
         this.useRef = useRef;        
     }
     
+    /**
+     * For internal use only. This flag is used by compiler internals and should probably
+     * be converted to a node metadata in future.
+     */
     public boolean isUseReferenceDirectly() {
         return useRef;
     }
@@ -139,6 +173,11 @@ public class VariableExpression extends Expression implements Variable {
         return super.getType();
     }
 
+    /**
+     * Returns the type which was used when this variable expression was created. For example,
+     * {@link #getType()} may return a boxed type while this method would return the primitive type.
+     * @return the type which was used to define this variable expression
+     */
     public ClassNode getOriginType() {
         if (accessedVariable!=null && accessedVariable!=this) return accessedVariable.getOriginType();
         return originType;

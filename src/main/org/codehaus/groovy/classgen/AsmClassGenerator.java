@@ -721,6 +721,9 @@ public class AsmClassGenerator extends ClassGenerator {
             argumentList = new ArrayList();
             argumentList.add(arguments);
         }
+        for (Expression expression : argumentList) {
+            if (expression instanceof SpreadExpression) return false;
+        }
 
         ConstructorNode cn = getMatchingConstructor(constructors, argumentList);
         if (cn==null) return false;

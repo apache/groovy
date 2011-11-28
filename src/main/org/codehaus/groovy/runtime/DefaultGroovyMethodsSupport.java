@@ -174,10 +174,7 @@ public class DefaultGroovyMethodsSupport {
         if (orig instanceof SortedSet) {
             return new TreeSet<T>(((SortedSet)orig).comparator());
         }
-        if (orig instanceof LinkedHashSet) {
-            return new LinkedHashSet<T>();
-        }
-        return new HashSet<T>();
+        return new LinkedHashSet<T>();
     }
 
     protected static <K, V> Map<K, V> createSimilarMap(Map<K, V> orig) {
