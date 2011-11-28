@@ -28,7 +28,6 @@ import java.math.BigInteger;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.reflection.CachedMethod;
 import org.codehaus.groovy.runtime.InvokerHelper;
-import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.runtime.wrappers.Wrapper;
 
 /**
@@ -169,7 +168,8 @@ public class IndyInterface {
             if (ci.useMetaClass) return;
             for (int i=0; i<ci.args.length; i++) {
                 if (ci.args[i] instanceof Wrapper) { 
-                    ci.handle = MethodHandles.filterArguments(ci.handle, i+1, UNWRAP_METHOD);
+                    MethodType mt = MethodType.methodType(ci.handle.type().parameterType(i+1),ci.targetType.parameterType(i+1));
+                    ci.handle = MethodHandles.filterArguments(ci.handle, i+1, UNWRAP_METHOD.asType(mt));
                 }
             }
         }
@@ -205,7 +205,6 @@ public class IndyInterface {
             callInfo.handle = callInfo.handle.asType(callInfo.targetType);
             callSite.setTarget(callInfo.handle);
             
-            MetaClassHelper.unwrap(arguments);
             return callInfo.handle.invokeWithArguments(repack(receiver, arguments));
         }
         

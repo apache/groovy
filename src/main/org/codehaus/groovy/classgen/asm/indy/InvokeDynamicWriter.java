@@ -34,6 +34,7 @@ import org.codehaus.groovy.classgen.asm.InvocationWriter;
 import org.codehaus.groovy.classgen.asm.MethodCallerMultiAdapter;
 import org.codehaus.groovy.classgen.asm.OperandStack;
 import org.codehaus.groovy.classgen.asm.WriterController;
+import org.codehaus.groovy.runtime.wrappers.Wrapper;
 import org.codehaus.groovy.vmplugin.v7.IndyInterface;
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.MethodVisitor;
@@ -107,7 +108,13 @@ public class InvokeDynamicWriter extends InvocationWriter {
                 ArgumentListExpression ae = makeArgumentList(arguments);
                 for (Expression arg : ae.getExpressions()) {
                     arg.visit(controller.getAcg());
-                    sig += getTypeDescription(operandStack.getTopOperand());
+                    if (arg instanceof CastExpression) {
+                        operandStack.box();
+                        acg.loadWrapper(arg);
+                        sig += getTypeDescription(Wrapper.class);
+                    } else {
+                        sig += getTypeDescription(operandStack.getTopOperand());
+                    }
                     numberOfArguments++;
                 }
                 sig += ")Ljava/lang/Object;";
