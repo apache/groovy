@@ -748,7 +748,11 @@ public class Groovyc extends MatchingTask {
                                     StringTokenizer st = new StringTokenizer(value, " ");
                                     while (st.hasMoreTokens()) {
                                         String optionStr = st.nextToken();
-                                        jointOptions.add(optionStr.replace("-X", "-FX"));
+                                        String replaced = optionStr.replace("-X", "-FX");
+                                        if(optionStr == replaced) {
+                                        	replaced = optionStr.replace("-W", "-FW"); // GROOVY-5063
+                                        }
+                                        jointOptions.add(replaced);
                                     }
                                 }
                             }
