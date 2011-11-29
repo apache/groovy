@@ -620,6 +620,32 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
 
     protected void addPropertyMethod(MethodNode method) {
         classNode.addMethod(method);
+        // GROOVY-4415 / GROOVY-4645: check that there's no abstract method which corresponds to this one
+        List<MethodNode> abstractMethods = classNode.getAbstractMethods();
+        if (abstractMethods==null) return;
+        String methodName = method.getName();
+        Parameter[] parameters = method.getParameters();
+        ClassNode methodReturnType = method.getReturnType();
+        for (MethodNode node : abstractMethods) {
+            if (node.getName().equals(methodName)
+                    && node.getParameters().length==parameters.length) {
+                if (parameters.length==1) {
+                    // setter
+                    ClassNode abstractMethodParameterType = node.getParameters()[0].getType();
+                    ClassNode methodParameterType = parameters[0].getType();
+                    if (!methodParameterType.isDerivedFrom(abstractMethodParameterType) && !methodParameterType.implementsInterface(abstractMethodParameterType)) {
+                        continue;
+                    }
+                }
+                ClassNode nodeReturnType = node.getReturnType();
+                if (!methodReturnType.isDerivedFrom(nodeReturnType) && !methodReturnType.implementsInterface(nodeReturnType)) {
+                    continue;
+                }
+                // matching method, remove abstract status and use the same body
+                node.setModifiers(node.getModifiers() ^ ACC_ABSTRACT);
+                node.setCode(method.getCode());
+            }
+        }
     }
 
     // Implementation methods
