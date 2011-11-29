@@ -16,6 +16,9 @@
 
 package org.codehaus.groovy.ast;
 
+import java.util.HashSet;
+import java.util.Set;
+
 /**
  * This class is used to describe generic type signatures for ClassNodes.
  *
@@ -53,27 +56,39 @@ public class GenericsType extends ASTNode {
     }
 
     public String toString() {
-        String ret = (type == null || placeholder || wildcard) ? name : genericsBounds(type);
+        Set<String> visited = new HashSet<String>();
+        return toString(visited);
+    }
+    private String toString(Set<String> visited) {
+        if (placeholder) visited.add(name);
+        String ret = (type == null || placeholder || wildcard) ? name : genericsBounds(type, visited);
         if (upperBounds != null) {
             ret += " extends ";
             for (int i = 0; i < upperBounds.length; i++) {
-                ret += genericsBounds(upperBounds[i]);
+                ret += genericsBounds(upperBounds[i], visited);
                 if (i + 1 < upperBounds.length) ret += " & ";
             }
         } else if (lowerBound != null) {
-            ret += " super " + genericsBounds(lowerBound);
+            ret += " super " + genericsBounds(lowerBound, visited);
         }
         return ret;
     }
 
-    private String genericsBounds(ClassNode theType) {
-        String ret = theType.getName();
+    private String genericsBounds(ClassNode theType, Set<String> visited) {
+        String ret = theType.isArray()?theType.getComponentType().getName()+"[]":theType.getName();
         GenericsType[] genericsTypes = theType.getGenericsTypes();
         if (genericsTypes == null || genericsTypes.length == 0) return ret;
         ret += "<";
         for (int i = 0; i < genericsTypes.length; i++) {
             if (i != 0) ret += ", ";
-            ret += genericsTypes[i].toString();
+
+            GenericsType type = genericsTypes[i];
+            if (type.isPlaceholder() && visited.contains(type.getName())) {
+                ret += type.getName();
+        }
+            else {
+                ret += type.toString(visited);
+            }
         }
         ret += ">";
         return ret;
