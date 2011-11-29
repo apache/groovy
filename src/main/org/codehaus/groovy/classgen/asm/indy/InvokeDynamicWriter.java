@@ -100,7 +100,9 @@ public class InvokeDynamicWriter extends InvocationWriter {
             if (methodName != null) {
                 compileStack.pushLHS(false);
 
-                String sig = "(";
+                // load a dummy receiver to avoid NPE
+                new ConstantExpression(0, false).visit(controller.getAcg());
+                String sig = "(Ljava/lang/Integer;";
                 receiver.visit(controller.getAcg());
                 sig += getTypeDescription(operandStack.getTopOperand());
                 int numberOfArguments = 1;
@@ -125,7 +127,7 @@ public class InvokeDynamicWriter extends InvocationWriter {
 //                        adapter == invokeMethodOnCurrent, 
 //                        adapter == invokeStaticMethod);
                 
-                operandStack.replace(ClassHelper.OBJECT_TYPE, numberOfArguments);
+                operandStack.replace(ClassHelper.OBJECT_TYPE, numberOfArguments+1);
                 compileStack.popLHS();
                 return;
             }
