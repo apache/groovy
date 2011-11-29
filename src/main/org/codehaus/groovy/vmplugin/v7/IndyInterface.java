@@ -49,8 +49,8 @@ public class IndyInterface {
      *          insert 
      */
     
-        private static MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
-        private static MethodHandle SELECT_METHOD;
+        private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
+        private static final MethodHandle SELECT_METHOD;
         static {
             MethodType mt = MethodType.methodType(Object.class, MutableCallSite.class, Class.class, String.class, Object.class, Object[].class);
             try {
@@ -59,21 +59,21 @@ public class IndyInterface {
                 throw new GroovyBugError(e);
             }
         }
-        private static MethodType GENERAL_INVOKER_SIGNATURE = MethodType.methodType(Object.class, Object.class, Object[].class);
-        private static MethodType INVOKE_METHOD_SIGNATURE = MethodType.methodType(Object.class, String.class, Object[].class);
-        private static MethodType O2O = MethodType.methodType(Object.class, Object.class);
-        private static MethodHandle UNWRAP_METHOD, TO_STRING, TO_BYTE, TO_BIGINT, REPLACE_NULL;
+        private static final MethodType GENERAL_INVOKER_SIGNATURE = MethodType.methodType(Object.class, Object.class, Object[].class);
+        private static final MethodType INVOKE_METHOD_SIGNATURE = MethodType.methodType(Object.class, String.class, Object[].class);
+        private static final MethodType O2O = MethodType.methodType(Object.class, Object.class);
+        private static final MethodHandle UNWRAP_METHOD, TO_STRING, TO_BYTE, TO_BIGINT;
         static {
             try {
                 UNWRAP_METHOD = LOOKUP.findStatic(IndyInterface.class, "unwrap", O2O);
                 TO_STRING = LOOKUP.findStatic(IndyInterface.class, "coerceToString", O2O);
                 TO_BYTE = LOOKUP.findStatic(IndyInterface.class, "coerceToByte", O2O);
                 TO_BIGINT = LOOKUP.findStatic(IndyInterface.class, "coerceToBigInt", O2O);
-                REPLACE_NULL = LOOKUP.findStatic(IndyInterface.class, "replaceNull", MethodType.methodType(NullObject.class, Object.class));
             } catch (Exception e) {
                 throw new GroovyBugError(e);
             }
         }
+        private static final MethodHandle NULL_REF = MethodHandles.constant(NullObject.class, NullObject.getNullObject());
         
         public static CallSite bootstrap(Lookup caller, String name, MethodType type) {
             // since indy does not give us the runtime types
@@ -180,13 +180,6 @@ public class IndyInterface {
             return new BigInteger(String.valueOf((Number) o));
         }
         
-        /**
-         * called by handle
-         */
-        public static NullObject replaceNull(Object o) {
-            return NullObject.getNullObject();
-        }
-        
         private static void correctWrapping(CallInfo ci) {
             if (ci.useMetaClass) return;
             for (int i=1; i<ci.args.length; i++) {
@@ -214,7 +207,8 @@ public class IndyInterface {
         
         private static void correctNullReceiver(CallInfo ci){
             if (ci.args[0]!=null || ci.useMetaClass) return;
-            ci.handle = MethodHandles.filterArguments(ci.handle, 0, REPLACE_NULL);
+            MethodHandle nullReceiverDroppingHandle = MethodHandles.dropArguments(NULL_REF, 0, ci.handle.type().parameterType(0));
+            ci.handle = MethodHandles.filterArguments(ci.handle, 0, nullReceiverDroppingHandle);
         }
         
         private static void dropDummyReceiver(CallInfo ci) {
