@@ -18,6 +18,7 @@ package org.codehaus.groovy.ast;
 
 import org.codehaus.groovy.ast.tools.GenericsUtils;
 
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -59,10 +60,11 @@ public class GenericsType extends ASTNode {
     }
 
     public String toString() {
-        Set<Integer> visited = new HashSet<Integer>();
+        Set<String> visited = new HashSet<String>();
         return toString(visited);
     }
-    private String toString(Set<Integer> visited) {
+    private String toString(Set<String> visited) {
+        if (placeholder) visited.add(name);
         String ret = (type == null || placeholder || wildcard) ? name : genericsBounds(type, visited);
         if (upperBounds != null) {
             ret += " extends ";
@@ -76,18 +78,21 @@ public class GenericsType extends ASTNode {
         return ret;
     }
 
-    private String genericsBounds(ClassNode theType, Set<Integer> visited) {
-        if (visited.contains(System.identityHashCode(theType))) {
-            return "...";
-        }
-        visited.add(System.identityHashCode(theType));
-        String ret = theType.getName();
+    private String genericsBounds(ClassNode theType, Set<String> visited) {
+        String ret = theType.isArray()?theType.getComponentType().getName()+"[]":theType.getName();
         GenericsType[] genericsTypes = theType.getGenericsTypes();
         if (genericsTypes == null || genericsTypes.length == 0) return ret;
         ret += "<";
         for (int i = 0; i < genericsTypes.length; i++) {
             if (i != 0) ret += ", ";
-            ret += genericsTypes[i].toString(visited);
+
+            GenericsType type = genericsTypes[i];
+            if (type.isPlaceholder() && visited.contains(type.getName())) {
+                ret += type.getName();
+            }
+            else {
+                ret += type.toString(visited);
+            }
         }
         ret += ">";
         return ret;
