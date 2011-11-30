@@ -950,7 +950,13 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             if (fieldNode.isStatic()) {
                 // GROOVY-3311: pre-defined constants added by groovy compiler for numbers/characters should be
                 // initialized first so that code dependent on it does not see their values as empty
-                if (expression instanceof ConstantExpression) {
+                Expression initialValueExpression = fieldNode.getInitialValueExpression();
+                if (initialValueExpression instanceof ConstantExpression) {
+                    ConstantExpression cexp = (ConstantExpression) initialValueExpression;
+                    cexp = transformToPrimitiveConstantIfPossible(cexp);
+                    if (ClassHelper.isStaticConstantInitializerType(cexp.getType()) && cexp.getType().equals(fieldNode.getType())) {
+                        return; // GROOVY-5150: primitive type constants will be initialized directly
+                    }
                     staticList.add(0, statement);
                 } else {
                     staticList.add(statement);
@@ -1386,6 +1392,35 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         }
 
         return true;
+    }
+
+    /**
+     * When constant expressions are created, the value is always wrapped to a non primitive type.
+     * Some constant expressions are optimized to return primitive types, but not all primitives are
+     * handled. This method guarantees to return a similar constant expression but with a primitive type
+     * instead of a boxed type.
+     *
+     * Additionaly, single char strings are converted to 'char' types.
+     *
+     * @param constantExpression a constant expression
+     * @return the same instance of constant expression if the type is already primitive, or a primitive
+     * constant if possible.
+     */
+    public static ConstantExpression transformToPrimitiveConstantIfPossible(ConstantExpression constantExpression) {
+        Object value = constantExpression.getValue();
+        if (value ==null) return constantExpression;
+        ConstantExpression result;
+        ClassNode type = constantExpression.getType();
+        if (ClassHelper.isPrimitiveType(type)) return constantExpression;
+        if (value instanceof String && ((String)value).length()==1) {
+            result = new ConstantExpression(((String)value).charAt(0));
+            result.setType(ClassHelper.char_TYPE);
+        } else {
+            type = ClassHelper.getUnwrapper(type);
+            result = new ConstantExpression(value, true);
+            result.setType(type);
+        }
+        return result;
     }
 
 }
