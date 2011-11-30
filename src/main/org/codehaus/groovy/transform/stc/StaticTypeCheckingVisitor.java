@@ -1126,7 +1126,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
 
 
-        List<MethodNode> chosen = chooseBestBethod(receiver, methods, args);
+        List<MethodNode> chosen = chooseBestMethod(receiver, methods, args);
         if (!chosen.isEmpty()) return chosen;
         // perform a lookup in DGM methods
         methods.clear();
@@ -1143,7 +1143,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         final List<MethodNode> chosen;
         methods.addAll(findDGMMethodsForClassNode(receiver, name));
 
-        chosen = chooseBestBethod(receiver, methods, args);
+        chosen = chooseBestMethod(receiver, methods, args);
             return chosen;
         }
 
@@ -1156,7 +1156,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
      * @return the list of methods which best matches the argument types. It is still possible that multiple
      * methods match the argument types.
      */
-    private List<MethodNode> chooseBestBethod(final ClassNode receiver, Collection<MethodNode> methods, ClassNode... args) {
+    private List<MethodNode> chooseBestMethod(final ClassNode receiver, Collection<MethodNode> methods, ClassNode... args) {
         if (methods.isEmpty()) return Collections.emptyList();
         List<MethodNode> bestChoices = new LinkedList<MethodNode>();
         int bestDist = Integer.MAX_VALUE;
