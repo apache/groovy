@@ -321,6 +321,30 @@ public class ClassHelper {
                 cn == VOID_TYPE;
     }
 
+    /**
+     * Test to determine if a ClassNode is a type belongs to the list of types which
+     * are allowed to initialize constants directly in bytecode instead of using &lt;cinit&gt;
+     *
+     * Note: this only works for ClassNodes created using a
+     * predefined ClassNode
+     *
+     * @see #make(Class)
+     * @see #make(String)
+     * @param cn the ClassNode to be tested
+     * @return true if the ClassNode is of int, float, long, double or String type
+     */
+    public static boolean isStaticConstantInitializerType(ClassNode cn) {
+        return  cn == int_TYPE ||
+                cn == float_TYPE ||
+                cn == long_TYPE ||
+                cn == double_TYPE ||
+                cn == STRING_TYPE ||
+                // the next items require conversion to int when initializing
+                cn == byte_TYPE ||
+                cn == char_TYPE ||
+                cn == short_TYPE;
+    }
+
     public static boolean isNumberType(ClassNode cn) {
         return  cn == Byte_TYPE ||
                 cn == Short_TYPE ||
