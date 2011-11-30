@@ -34,16 +34,16 @@ class PrintTest extends GroovyTestCase {
     }
 
     void testInspect() {
-        assertInspect("hello", '"hello"')
+        assertInspect("hello", "'hello'")
 
         assertInspect([], "[]")
-        assertInspect([1, 2, "hello"], '[1, 2, "hello"]')
+        assertInspect([1, 2, "hello"], "[1, 2, 'hello']")
 
-        assertInspect([1: 20, 2: 40, 3: 'cheese'], '[1:20, 2:40, 3:"cheese"]')
+        assertInspect([1: 20, 2: 40, 3: 'cheese'], "[1:20, 2:40, 3:'cheese']")
         assertInspect([:], "[:]")
 
-        assertInspect([['bob': 'drools', 'james': 'geronimo']], '[["bob":"drools", "james":"geronimo"]]')
-        assertInspect([5, ["bob", "james"], ["bob": "drools", "james": "geronimo"], "cheese"], '[5, ["bob", "james"], ["bob":"drools", "james":"geronimo"], "cheese"]')
+        assertInspect([['bob': 'drools', 'james': 'geronimo']], "[['bob':'drools', 'james':'geronimo']]")
+        assertInspect([5, ["bob", "james"], ["bob": "drools", "james": "geronimo"], "cheese"], "[5, ['bob', 'james'], ['bob':'drools', 'james':'geronimo'], 'cheese']")
     }
 
     void testCPlusPlusStylePrinting() {

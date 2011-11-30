@@ -538,9 +538,9 @@ public class InvokerHelper {
                 arg = arg.replaceAll("\\r", "\\\\r");      // carriage return
                 arg = arg.replaceAll("\\t", "\\\\t");      // tab
                 arg = arg.replaceAll("\\f", "\\\\f");      // form feed
-                arg = arg.replaceAll("\\\"", "\\\\\"");    // double quotation mark
+                arg = arg.replaceAll("'", "\\\\'");    // single quotation mark
                 arg = arg.replaceAll("\\\\", "\\\\");      // backslash
-                return "\"" + arg + "\"";
+                return "\'" + arg + "\'";
             } else {
                 return (String) arguments;
             }

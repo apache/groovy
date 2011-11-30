@@ -142,10 +142,10 @@ class RangeTest extends GroovyTestCase {
     }
     
     void testObjectRangeToString() {
-        assertToString('a'..'d', 'a..d', '"a".."d"')
-        assertToString('a'..<'d', 'a..c', '"a".."c"')
-        assertToString('z'..'x', 'z..x', '"z".."x"')
-        assertToString('z'..<'x', 'z..y', '"z".."y"')
+        assertToString('a'..'d', 'a..d', "'a'..'d'")
+        assertToString('a'..<'d', 'a..c', "'a'..'c'")
+        assertToString('z'..'x', 'z..x', "'z'..'x'")
+        assertToString('z'..<'x', 'z..y', "'z'..'y'")
     }
     
     void testRangeSize() {
@@ -172,7 +172,7 @@ class RangeTest extends GroovyTestCase {
         (0..<0).step(1){assert false}
         for (i in 0..<0) assert false
         assertToString(0..<0, '0..<0', '0..<0')
-        assertToString('a'..<'a', 'a..<a', '"a"..<"a"')
+        assertToString('a'..<'a', 'a..<a', "'a'..<'a'")
         assertToString(null..<null, 'null..<null', 'null..<null')
         assertStep(0..<0, 3, [])
         assertIterate(0..<0, [])
