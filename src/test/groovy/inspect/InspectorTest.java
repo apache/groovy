@@ -178,7 +178,7 @@ public class InspectorTest extends MockObjectTestCase implements Serializable {
         assertEquals(5, fields.length); // 3 from JMock
         String[] names = {"someField", "SOME_CONST", "ANYTHING", "NULL", "NOT_NULL"};
         assertNameEquals(names, fields);
-        String[] details = {"JAVA", "public", "InspectorTest", "String", "someField", "\"only for testing\""};
+        String[] details = {"JAVA", "public", "InspectorTest", "String", "someField", "'only for testing'"};
         assertContains(fields, details);
     }
 

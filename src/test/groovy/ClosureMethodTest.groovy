@@ -255,7 +255,7 @@ class ClosureMethodTest extends GroovyTestCase {
     void testInspect() {
         def text = [1, 2, 'three'].inspect()
         println("Inspecting ${text}")
-        assert text == '[1, 2, "three"]'
+        assert text == "[1, 2, 'three']"
     }
 
     void testTokenize() {
