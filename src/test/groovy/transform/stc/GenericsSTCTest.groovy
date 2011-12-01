@@ -176,7 +176,68 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             List<? super Number> list = ['string']
         ''', 'Number'
     }
-    
+
+    void testGroovy5154() {
+        assertScript '''
+            class Foo {
+                def say() {
+                    FooWithGenerics f
+                    FooBound fb
+                    f.say(fb)
+                }
+            }
+
+            class FooWithGenerics {
+                def <T extends FooBound> void say(T p) {
+                }
+            }
+            class FooBound {
+            }
+            new Foo()
+        '''
+    }
+
+    void testGroovy5154WithSubclass() {
+        assertScript '''
+            class Foo {
+                def say() {
+                    FooWithGenerics f
+                    FooBound2 fb
+                    f.say(fb)
+                }
+            }
+
+            class FooWithGenerics {
+                def <T extends FooBound> void say(T p) {
+                }
+            }
+            class FooBound {
+            }
+            class FooBound2 extends FooBound {}
+            new Foo()
+        '''
+    }
+
+    void testGroovy5154WithIncorrectType() {
+        shouldFailWithMessages '''
+            class Foo {
+                def say() {
+                    FooWithGenerics f
+                    Object fb
+                    f.say(fb)
+                }
+            }
+
+            class FooWithGenerics {
+                def <T extends FooBound> void say(T p) {
+                }
+            }
+            class FooBound {
+            }
+            new Foo()
+        ''', 'Cannot find matching method FooWithGenerics#say(java.lang.Object)'
+    }
+
     static class MyList extends LinkedList<String> {}
 }
 
