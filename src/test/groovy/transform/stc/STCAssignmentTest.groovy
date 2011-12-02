@@ -381,5 +381,69 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
             def c = (Character) null
         '''
     }
+
+    void testIfElseBranch() {
+        shouldFailWithMessages '''
+            def x
+            def y = 'foo'
+            if (y) {
+                x = new HashSet()
+            } else {
+                x = '123'
+            }
+            x.toInteger()
+        ''', 'Cannot find matching method java.io.Serializable#toInteger()'
+    }
+
+    void testIfOnly() {
+        shouldFailWithMessages '''
+            def x = '123'
+            def y = 'foo'
+            if (y) {
+                x = new HashSet()
+            }
+            x.toInteger()
+        ''', 'Cannot find matching method java.io.Serializable#toInteger()'
+    }
+
+    void testIfWithCommonInterface() {
+        assertScript '''
+            interface Foo { void foo() }
+            class A implements Foo { void foo() { println 'A' } }
+            class B implements Foo { void foo() { println 'B' } }
+            def x = new A()
+            def y = 'foo'
+            if (y) {
+                x = new B()
+            }
+            x.foo()
+        '''
+    }
+
+    void testForLoopWithNewAssignment() {
+        shouldFailWithMessages '''
+            def x = '123'
+            for (int i=0; i<5;i++) { x = new HashSet() }
+            x.toInteger()
+        ''', 'Cannot find matching method java.io.Serializable#toInteger()'
+    }
+
+    void testWhileLoopWithNewAssignment() {
+        shouldFailWithMessages '''
+            def x = '123'
+            while (false) { x = new HashSet() }
+            x.toInteger()
+        ''', 'Cannot find matching method java.io.Serializable#toInteger()'
+    }
+
+    void testTernaryWithNewAssignment() {
+        shouldFailWithMessages '''
+            def x = '123'
+            def cond = false
+            cond?(x = new HashSet()):3
+            x.toInteger()
+        ''', 'Cannot find matching method java.io.Serializable#toInteger()'
+    }
+
 }
 

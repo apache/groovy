@@ -64,6 +64,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     private ClassNode lastImplicitItType;
 
     /**
+     * This field is used to track assignments in if/else branches, for loops and while loops. For example, in the following code:
+     * if (cond) { x = 1 } else { x = '123' }
+     * the inferred type of x after the if/else statement should be the LUB of (int, String)
+     */
+    private Map<VariableExpression, List<ClassNode>> ifElseForWhileAssignmentTracker = null;
+
+    /**
      * Stores information which is only valid in the "if" branch of an if-then-else statement. This is used when the if
      * condition expression makes use of an instanceof check
      */
@@ -176,6 +183,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         ClassNode lType = getType(leftExpression);
         final Expression rightExpression = expression.getRightExpression();
         ClassNode rType = getType(rightExpression);
+        if (rightExpression instanceof ConstantExpression && ((ConstantExpression) rightExpression).getValue()==null) {
+            if (!isPrimitiveType(lType)) rType = lType; // primitive types should be ignored as they will result in another failure
+        }
         int op = expression.getOperation().getType();
         ClassNode resultType = getResultType(lType, op, rType, expression);
         if (resultType == null) {
@@ -189,6 +199,22 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
 
             typeCheckAssignment(expression, leftExpression, lType, rightExpression, resultType);
+
+            // if we are in an if/else branch, keep track of assignment
+            if (ifElseForWhileAssignmentTracker !=null && leftExpression instanceof VariableExpression) {
+                Variable accessedVariable = ((VariableExpression) leftExpression).getAccessedVariable();
+                if (accessedVariable instanceof VariableExpression) {
+                    VariableExpression var = (VariableExpression) accessedVariable;
+                    List<ClassNode> types = ifElseForWhileAssignmentTracker.get(var);
+                    if (types == null) {
+                        types = new LinkedList<ClassNode>();
+                        ClassNode type = (ClassNode) var.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
+                        if (type!=null) types.add(type);
+                        ifElseForWhileAssignmentTracker.put(var, types);
+                    }
+                    types.add(resultType);
+                }
+            }
             storeType(leftExpression, resultType);
 
             // if right expression is a ClosureExpression, store parameter type information
@@ -554,7 +580,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     @Override
     public void visitForLoop(final ForStatement forLoop) {
+        Map<VariableExpression, List<ClassNode>> oldTracker = pushAssignmentTracking();
         super.visitForLoop(forLoop);
+        popAssignmentTracking(oldTracker);
         final ClassNode collectionType = getType(forLoop.getCollectionExpression());
         ClassNode componentType = collectionType.getComponentType();
         if (componentType == null) {
@@ -567,6 +595,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (!checkCompatibleAssignmentTypes(forLoop.getVariableType(), componentType)) {
             addStaticTypeError("Cannot loop with element of type " + forLoop.getVariableType() + " with collection of type " + collectionType, forLoop);
         }
+    }
+
+    @Override
+    public void visitWhileLoop(final WhileStatement loop) {
+        Map<VariableExpression, List<ClassNode>> oldTracker = pushAssignmentTracking();
+        super.visitWhileLoop(loop);
+        popAssignmentTracking(oldTracker);
     }
 
     @Override
@@ -892,23 +927,45 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     @Override
     public void visitIfElse(final IfStatement ifElse) {
-        // create a new temporary element in the if-then-else type info
-        pushTemporaryTypeInfo();
-        visitStatement(ifElse);
-        ifElse.getBooleanExpression().visit(this);
-        ifElse.getIfBlock().visit(this);
+        Map<VariableExpression, List<ClassNode>> oldTracker = pushAssignmentTracking();
 
-        // pop if-then-else temporary type info
-        temporaryIfBranchTypeInformation.pop();
+        try {
+            // create a new temporary element in the if-then-else type info
+            pushTemporaryTypeInfo();
+            visitStatement(ifElse);
+            ifElse.getBooleanExpression().visit(this);
+            ifElse.getIfBlock().visit(this);
 
-        Statement elseBlock = ifElse.getElseBlock();
-        if (elseBlock instanceof EmptyStatement) {
-            // dispatching to EmptyStatement will not call back visitor,
-            // must call our visitEmptyStatement explicitly
-            visitEmptyStatement((EmptyStatement) elseBlock);
-        } else {
-            elseBlock.visit(this);
+            // pop if-then-else temporary type info
+            temporaryIfBranchTypeInformation.pop();
+
+            Statement elseBlock = ifElse.getElseBlock();
+            if (elseBlock instanceof EmptyStatement) {
+                // dispatching to EmptyStatement will not call back visitor,
+                // must call our visitEmptyStatement explicitly
+                visitEmptyStatement((EmptyStatement) elseBlock);
+            } else {
+                elseBlock.visit(this);
+            }
+        } finally {
+            popAssignmentTracking(oldTracker);
         }
+    }
+
+    private void popAssignmentTracking(final Map<VariableExpression, List<ClassNode>> oldTracker) {
+        if (!ifElseForWhileAssignmentTracker.isEmpty()) {
+            for (Map.Entry<VariableExpression, List<ClassNode>> entry : ifElseForWhileAssignmentTracker.entrySet()) {
+                storeType(entry.getKey(), lowestUpperBound(entry.getValue()));
+            }
+        }
+        ifElseForWhileAssignmentTracker = oldTracker;
+    }
+
+    private Map<VariableExpression, List<ClassNode>> pushAssignmentTracking() {
+        // memorize current assignment context
+        Map<VariableExpression,List<ClassNode>> oldTracker = ifElseForWhileAssignmentTracker;
+        ifElseForWhileAssignmentTracker = new HashMap<VariableExpression, List<ClassNode>>();
+        return oldTracker;
     }
 
     @Override
@@ -936,6 +993,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     @Override
     public void visitTernaryExpression(final TernaryExpression expression) {
+        Map<VariableExpression, List<ClassNode>> oldTracker = pushAssignmentTracking();
         // create a new temporary element in the if-then-else type info
         pushTemporaryTypeInfo();
         expression.getBooleanExpression().visit(this);
@@ -947,6 +1005,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         final ClassNode typeOfTrue = getType(expression.getTrueExpression());
         final ClassNode typeOfFalse = getType(expression.getFalseExpression());
         storeType(expression, lowestUpperBound(typeOfTrue, typeOfFalse));
+        popAssignmentTracking(oldTracker);
     }
 
     private void pushTemporaryTypeInfo() {
