@@ -111,7 +111,7 @@ public interface MetaObjectProtocol {
      * argument values to establish the chosen MetaMethod
      *
      * @param name The name of the MetaMethod
-     * @param args The argument types
+     * @param args Array containing - 1) the argument values (using which their types are then inferred), or 2) the corresponding argument types
      * @return A MetaMethod or null if it doesn't exist
      */
     MetaMethod getMetaMethod(String name, Object[] args);
