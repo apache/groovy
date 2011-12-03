@@ -104,12 +104,11 @@ public class ObjectRange extends AbstractList implements Range {
             to = ((Float) to).doubleValue();
         }
 
-        // TODO: Should we align to like types?
-//        if (from instanceof Integer && to instanceof Long) {
-//            from = Long.valueOf(((Integer) from).longValue());
-//        } else if (to instanceof Integer && from instanceof Long) {
-//            to = Long.valueOf(((Integer) to).longValue());
-//        }
+        if (from instanceof Integer && to instanceof Long) {
+            from = Long.valueOf(((Integer) from).longValue());
+        } else if (to instanceof Integer && from instanceof Long) {
+            to = Long.valueOf(((Integer) to).longValue());
+        }
 
         // TODO: should we care about different types here?
         if (from.getClass() == to.getClass()) {

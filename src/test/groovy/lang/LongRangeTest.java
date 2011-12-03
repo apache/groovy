@@ -40,4 +40,10 @@ public class LongRangeTest extends NumberRangeTest {
     public void testSizeWithLongTo() {
         assertEquals(3, new ObjectRange(new Integer(Integer.MAX_VALUE), new Long(Integer.MAX_VALUE + 2L)).size());
     }
+
+    // GROOVY-4973: Range made-up of from: Integer and to: Long should have 'from' promoted to type Long.
+    protected void checkRangeValues(Integer from, Comparable to, Range range) {
+        assertEquals("wrong 'from' value", Long.valueOf(from.longValue()), range.getFrom());
+        assertEquals("wrong 'to' value", to, range.getTo());
+    }
 }
