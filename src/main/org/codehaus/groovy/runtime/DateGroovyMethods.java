@@ -15,6 +15,7 @@
  */
 package org.codehaus.groovy.runtime;
 
+import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -324,6 +325,22 @@ public class DateGroovyMethods {
     }
 
     /**
+     * Add number of days to this Timestamp and returns the new Timestamp object.
+     *
+     * @param self a Timestamp
+     * @param days the number of days to increase
+     * @return the new Timestamp
+     */
+    public static Timestamp plus(Timestamp self, int days) {
+        Calendar calendar = (Calendar) Calendar.getInstance().clone();
+        calendar.setTime(self);
+        calendar.add(Calendar.DAY_OF_YEAR, days);
+        Timestamp ts = new Timestamp(calendar.getTime().getTime());
+        ts.setNanos(self.getNanos());
+        return ts;
+    }
+    
+    /**
      * Subtract a number of days from this date and returns the new date.
      *
      * @param self a Date
@@ -347,6 +364,17 @@ public class DateGroovyMethods {
         return new java.sql.Date(minus((Date) self, days).getTime());
     }
 
+    /**
+     * Subtract a number of days from this Timestamp and returns the new Timestamp object.
+     *
+     * @param self a Timestamp
+     * @param days the number of days to subtract
+     * @return the new Timestamp
+     */
+    public static Timestamp minus(Timestamp self, int days) {
+        return plus(self, -days);
+    }
+    
     /**
      * Subtract another date from this one and return the number of days of the difference.
      * <p/>
