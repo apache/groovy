@@ -281,6 +281,12 @@ class JsonOutputTest extends GroovyTestCase {
                 ]
             }'''.stripIndent()
     }
+
+    void testMapWithNullKey() {
+        shouldFail IllegalArgumentException, {
+            toJson([(null): 1])
+        }
+    }
 }
 
 @Canonical

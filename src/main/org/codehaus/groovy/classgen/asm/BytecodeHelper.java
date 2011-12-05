@@ -36,6 +36,7 @@ public class BytecodeHelper implements Opcodes {
 
     public static String getClassInternalName(ClassNode t) {
         if (t.isPrimaryClassNode()) {
+            if (t.isArray()) return "[L"+getClassInternalName(t.getComponentType())+";";
             return getClassInternalName(t.getName());
         }
         return getClassInternalName(t.getTypeClass());

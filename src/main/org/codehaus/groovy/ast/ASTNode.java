@@ -158,6 +158,5 @@ public class ASTNode {
     public void removeNodeMetaData(Object key) {
         if (key==null) throw new GroovyBugError("Tried to remove meta data with null key "+this+".");
         metaDataMap.remove(key);
-        if (metaDataMap.size()==0) metaDataMap=null;
     }
 }

@@ -400,12 +400,30 @@ public class AsmClassGenerator extends ClassGenerator {
         onLineNumber(fieldNode, "visitField: " + fieldNode.getName());
         ClassNode t = fieldNode.getType();
         String signature = BytecodeHelper.getGenericsBounds(t);
+
+        Expression initialValueExpression = fieldNode.getInitialValueExpression();
+        ConstantExpression cexp = initialValueExpression instanceof ConstantExpression? (ConstantExpression) initialValueExpression :null;
+        if (cexp!=null) {
+            cexp = Verifier.transformToPrimitiveConstantIfPossible(cexp);
+        }
+        Object value = cexp!=null && ClassHelper.isStaticConstantInitializerType(cexp.getType())
+                && cexp.getType().equals(t)
+                ?cexp.getValue() // GROOVY-5150
+                :null;
+        if (value!=null) {
+            // byte, char and short require an extra cast
+            if (ClassHelper.byte_TYPE.equals(t) || ClassHelper.short_TYPE.equals(t)) {
+                value = ((Number) value).intValue();
+            } else if (ClassHelper.char_TYPE.equals(t)) {
+                value = Integer.valueOf((Character)value);
+            }
+        }
         FieldVisitor fv = cv.visitField(
                 fieldNode.getModifiers(),
                 fieldNode.getName(),
                 BytecodeHelper.getTypeDescription(t),
                 signature, 
-                null);
+                value);
         visitAnnotations(fieldNode, fv);
         fv.visitEnd();
     }
