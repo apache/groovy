@@ -16,6 +16,8 @@
 package org.codehaus.groovy.transform;
 
 import org.codehaus.groovy.ast.*;
+import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.control.*;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor;
@@ -38,18 +40,22 @@ public class StaticTypesTransformation implements ASTTransformation {
     public void visit(ASTNode[] nodes, SourceUnit source) {
 //        AnnotationNode annotationInformation = (AnnotationNode) nodes[0];
         AnnotatedNode node = (AnnotatedNode) nodes[1];
+		StaticTypeCheckingVisitor visitor = null;
         if (node instanceof ClassNode) {
             ClassNode classNode = (ClassNode) node;
-            StaticTypeCheckingVisitor visitor = newVisitor(source, classNode);
+            visitor = newVisitor(source, classNode);
             visitor.visitClass(classNode);
         } else if (node instanceof MethodNode) {
             MethodNode methodNode = (MethodNode)node;
-            StaticTypeCheckingVisitor visitor = newVisitor(source, methodNode.getDeclaringClass());
+            visitor = newVisitor(source, methodNode.getDeclaringClass());
             visitor.setMethodsToBeVisited(Collections.singleton(methodNode));
             visitor.visitMethod(methodNode);
         } else {
             source.addError(new SyntaxException(STATIC_ERROR_PREFIX + "Unimplemented node type", node.getLineNumber(), node.getColumnNumber()));
         }
+		if (visitor!=null) {
+			visitor.performSecondPass();
+		}
     }
 
     /**

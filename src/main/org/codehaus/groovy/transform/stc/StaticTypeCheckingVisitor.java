@@ -24,6 +24,7 @@ import org.codehaus.groovy.classgen.asm.InvocationWriter;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.transform.StaticTypesTransformation;
+import org.codehaus.groovy.util.ListHashMap;
 import org.objectweb.asm.Opcodes;
 
 import java.util.*;
@@ -78,6 +79,19 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     private Set<MethodNode> alreadyVisitedMethods = new HashSet<MethodNode>();
 
+	/**
+	 * Some expressions need to be visited twice, because type information may be insufficient at some
+	 * point. For example, for closure shared variables, we need a first pass to collect every type which
+	 * is assigned to a closure shared variable, then a second pass to ensure that every method call on
+	 * such a variable is made on a LUB.
+	 */
+	private final LinkedHashSet<Expression> secondPassExpressions = new LinkedHashSet<Expression>();
+
+	/**
+	 * A map used to store every type used in closure shared variable assignments. In a second pass, we will
+	 * compute the LUB of each type and check that method calls on those variables are valid.
+	 */
+	private final Map<VariableExpression, List<ClassNode>> closureSharedVariablesAssignmentTypes = new HashMap<VariableExpression, List<ClassNode>>();
 
     private final ReturnAdder returnAdder = new ReturnAdder(new ReturnAdder.ReturnStatementListener() {
         public void returnStatementAdded(final ReturnStatement returnStatement) {
@@ -714,6 +728,17 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     @Override
     public void visitClosureExpression(final ClosureExpression expression) {
+		// first, collect closure shared variables and reinitialize types
+		SharedVariableCollector collector = new SharedVariableCollector(getSourceUnit());
+		collector.visitClosureExpression(expression);
+		Set<VariableExpression> closureSharedExpressions = collector.getClosureSharedExpressions();
+		Map<VariableExpression, ListHashMap> typesBeforeVisit = null;
+		if (!closureSharedExpressions.isEmpty()) {
+			typesBeforeVisit = new HashMap<VariableExpression, ListHashMap>();
+			saveVariableExpressionMetadata(closureSharedExpressions, typesBeforeVisit);
+		}
+
+		// perform visit
         ClosureExpression oldClosureExpr = closureExpression;
         List<ClassNode> oldClosureReturnTypes = closureReturnTypes;
         closureExpression = expression;
@@ -727,9 +752,43 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
         closureExpression = oldClosureExpr;
         closureReturnTypes = oldClosureReturnTypes;
-    }
+		
+		// restore original metadata
+		restoreVariableExpressionMetadata(typesBeforeVisit);
+	}
 
-    @Override
+	private void restoreVariableExpressionMetadata(final Map<VariableExpression, ListHashMap> typesBeforeVisit) {
+		if (typesBeforeVisit!=null) {
+			for (Map.Entry<VariableExpression, ListHashMap> entry : typesBeforeVisit.entrySet()) {
+				VariableExpression ve = entry.getKey();
+				ListHashMap metadata = entry.getValue();
+				for (StaticTypesMarker marker : StaticTypesMarker.values()) {
+					ve.removeNodeMetaData(marker);
+					Object value = metadata.get(marker);
+					if (value!=null) ve.setNodeMetaData(marker, value);
+				}
+			}
+		}
+	}
+
+	private void saveVariableExpressionMetadata(final Set<VariableExpression> closureSharedExpressions, final Map<VariableExpression, ListHashMap> typesBeforeVisit) {
+		for (VariableExpression ve : closureSharedExpressions) {
+			ListHashMap<StaticTypesMarker,Object> metadata = new ListHashMap<StaticTypesMarker, Object>();
+			for (StaticTypesMarker marker : StaticTypesMarker.values()) {
+				Object value = ve.getNodeMetaData(marker);
+				if (value!=null) {
+					metadata.put(marker, value);
+				}
+			}
+			typesBeforeVisit.put(ve, metadata);
+			Variable accessedVariable = ve.getAccessedVariable();
+			if (accessedVariable!=ve && accessedVariable instanceof VariableExpression) {
+				saveVariableExpressionMetadata(Collections.singleton((VariableExpression)accessedVariable), typesBeforeVisit);
+			}
+		}
+	}
+
+	@Override
     public void visitMethod(final MethodNode node) {
         // alreadyVisitedMethods prevents from visiting the same method multiple times
         // and prevents from infinite loops
@@ -894,6 +953,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         }
                         storeType(call, returnType);
                         storeTargetMethod(call, directMethodCallCandidate);
+
+						// if the object expression is a closure shared variable, we will have to perform a second pass
+						if (objectExpression instanceof VariableExpression) {
+							VariableExpression var = (VariableExpression) objectExpression;
+							if (var.isClosureSharedVariable()) secondPassExpressions.add(call);
+						}
+
                     } else {
                         addStaticTypeError("Reference to method is ambiguous. Cannot choose between "+mn, call);
                     }
@@ -1038,10 +1104,20 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
         }
         if (exp instanceof VariableExpression) {
-            final Variable accessedVariable = ((VariableExpression) exp).getAccessedVariable();
+			VariableExpression var = (VariableExpression) exp;
+			final Variable accessedVariable = var.getAccessedVariable();
             if (accessedVariable != null && accessedVariable != exp && accessedVariable instanceof VariableExpression) {
                 storeType((Expression) accessedVariable, cn);
             }
+			if (var.isClosureSharedVariable()) {
+				List<ClassNode> assignedTypes = closureSharedVariablesAssignmentTypes.get(var);
+				if (assignedTypes==null) {
+					assignedTypes = new LinkedList<ClassNode>();
+					closureSharedVariablesAssignmentTypes.put(var, assignedTypes);
+				}
+				assignedTypes.add(cn);
+			}
+
         }
     }
 
@@ -1621,7 +1697,42 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         this.methodsToBeVisited = methodsToBeVisited;
     }
 
-    /**
+	public void performSecondPass() {
+		for (Expression expression : secondPassExpressions) {
+			if (expression instanceof MethodCallExpression) {
+				MethodCallExpression call = (MethodCallExpression) expression;
+				Expression objectExpression = call.getObjectExpression();
+			 	if (objectExpression instanceof VariableExpression) {
+					 // this should always be the case, but adding a test is safer
+					 Variable target = findTargetVariable((VariableExpression) objectExpression);
+					 if (target instanceof VariableExpression) {
+						 VariableExpression var = (VariableExpression) target;
+						 List<ClassNode> classNodes = closureSharedVariablesAssignmentTypes.get(var);
+						 if (classNodes!=null && classNodes.size()>1) {
+							 ClassNode lub = lowestUpperBound(classNodes);
+							 MethodNode methodNode = (MethodNode) call.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET);
+							 // we must check that such a method exists on the LUB
+							 Parameter[] parameters = methodNode.getParameters();
+							 ClassNode[] params = new ClassNode[parameters.length];
+							 for (int i = 0; i < params.length; i++) {
+								 params[i] = parameters[i].getType();								 
+							 }
+							 List<MethodNode> method = findMethod(lub, methodNode.getName(), params);
+							 if (method.size()!=1) {
+								 addStaticTypeError("A closure shared variable ["+target.getName()+"] has been assigned with various types and the method" +
+								" ["+toMethodParametersString(methodNode.getName(), params)+"]"+
+								 " does not exist in the lowest upper bound of those types: ["+
+								 lub.toString(false)+"]. In general, this is a bad practice (variable reuse) because the compiler cannot"+
+								 " determine safely what is the type of the variable at the moment of the call in a multithreaded context.", call);
+							 }
+						 }
+					 }
+				 }
+			}
+		}
+	}
+
+	/**
      * A visitor used as a callback to {@link StaticTypeCheckingVisitor#existsProperty(org.codehaus.groovy.ast.expr.PropertyExpression, boolean, org.codehaus.groovy.ast.ClassCodeVisitorSupport)}
      * which will return set the type of the found property in the provided reference.
      */

@@ -109,5 +109,22 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
             List<String> strings = [1,2,3].collect(new StringClosure())
         '''
     }
+
+    void testClosureShouldNotChangeInferredType() {
+        assertScript '''
+            def x = '123';
+            { -> x = new StringBuffer() }
+            x.charAt(0)
+        '''
+    }
+
+    void testClosureSharedVariableWithIncompatibleType() {
+        shouldFailWithMessages '''
+            def x = '123';
+            { -> x = 1 }
+            x.charAt(0)
+        ''', 'A closure shared variable [x] has been assigned with various types and the method [charAt(int)] does not exist in the lowest upper bound'
+    }
+
 }
 
