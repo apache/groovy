@@ -18,7 +18,6 @@ package org.codehaus.groovy.classgen.asm;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.Variable;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
@@ -472,7 +471,7 @@ public class BinaryExpressionHelper {
 
         // ensure VariableArguments are read, not stored
         compileStack.pushLHS(false);
-        controller.getCallSiteWriter().makeInvocation(receiver, message, arguments);
+        controller.getInvocationWriter().makeSingleArgumentCall(receiver, message, arguments);
         compileStack.popLHS();        
     }
 
