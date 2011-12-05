@@ -125,31 +125,33 @@ abstract class StaticTypeCheckingSupport {
      */
     private static Map<String, List<MethodNode>> getDGMMethods() {
         Map<String, List<MethodNode>> methods = new HashMap<String, List<MethodNode>>();
-        ClassNode cn = ClassHelper.makeWithoutCaching(DefaultGroovyMethods.class, true);
-        for (MethodNode metaMethod : cn.getMethods()) {
-            Parameter[] types = metaMethod.getParameters();
-            if (metaMethod.isStatic() && metaMethod.isPublic() && types.length > 0) {
-                Parameter[] parameters = new Parameter[types.length - 1];
-                System.arraycopy(types, 1, parameters, 0, parameters.length);
-                MethodNode node = new MethodNode(
-                        metaMethod.getName(),
-                        metaMethod.getModifiers(),
-                        metaMethod.getReturnType(),
-                        parameters,
-                        ClassNode.EMPTY_ARRAY, null);
-                node.setGenericsTypes(metaMethod.getGenericsTypes());
-                ClassNode declaringClass = types[0].getType();
-                String declaringClassName = declaringClass.getName();
-                node.setDeclaringClass(declaringClass);
+		for (Class dgmLikeClass : DefaultGroovyMethods.DGM_LIKE_CLASSES) {
+			ClassNode cn = ClassHelper.makeWithoutCaching(dgmLikeClass, true);
+			for (MethodNode metaMethod : cn.getMethods()) {
+				Parameter[] types = metaMethod.getParameters();
+				if (metaMethod.isStatic() && metaMethod.isPublic() && types.length > 0) {
+					Parameter[] parameters = new Parameter[types.length - 1];
+					System.arraycopy(types, 1, parameters, 0, parameters.length);
+					MethodNode node = new MethodNode(
+							metaMethod.getName(),
+							metaMethod.getModifiers(),
+							metaMethod.getReturnType(),
+							parameters,
+							ClassNode.EMPTY_ARRAY, null);
+					node.setGenericsTypes(metaMethod.getGenericsTypes());
+					ClassNode declaringClass = types[0].getType();
+					String declaringClassName = declaringClass.getName();
+					node.setDeclaringClass(declaringClass);
 
-                List<MethodNode> nodes = methods.get(declaringClassName);
-                if (nodes == null) {
-                    nodes = new LinkedList<MethodNode>();
-                    methods.put(declaringClassName, nodes);
-                }
-                nodes.add(node);
-            }
-        }
+					List<MethodNode> nodes = methods.get(declaringClassName);
+					if (nodes == null) {
+						nodes = new LinkedList<MethodNode>();
+						methods.put(declaringClassName, nodes);
+					}
+					nodes.add(node);
+				}
+			}
+		}
         return methods;
     }
 

@@ -131,7 +131,17 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             DoubleArrayPutAtMetaMethod.class,
     };
 
-    /**
+	public static final Class[] DGM_LIKE_CLASSES = new Class[]{
+            DefaultGroovyMethods.class,
+            SwingGroovyMethods.class,
+            SqlGroovyMethods.class,
+            XmlGroovyMethods.class,
+            EncodingGroovyMethods.class,
+            DateGroovyMethods.class,
+            ProcessGroovyMethods.class
+    };
+
+	/**
      * Identity check. Since == is overridden in Groovy with the meaning of equality
      * we need some fallback to check for object identity.  Invoke using the
      * 'is' method, like so: <code>def same = this.is(that)</code>
