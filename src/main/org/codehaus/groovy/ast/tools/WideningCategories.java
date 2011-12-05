@@ -19,6 +19,8 @@ import static org.codehaus.groovy.ast.ClassHelper.*;
 
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GenericsType;
+import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.vmplugin.VMPluginFactory;
 
 import java.util.*;
 
@@ -461,7 +463,7 @@ public class WideningCategories {
     protected static class LowestUpperBoundClassNode extends ClassNode {
         private final ClassNode compileTimeClassNode;
         protected final String name;
-
+		
         public LowestUpperBoundClassNode(String name, ClassNode upper, ClassNode... interfaces) {
             super(name, ACC_PUBLIC|ACC_FINAL, upper, interfaces, null);
             compileTimeClassNode = upper.equals(OBJECT_TYPE) && interfaces.length>0?interfaces[0]:upper;
@@ -469,6 +471,11 @@ public class WideningCategories {
             if (upper.isUsingGenerics()) {
                 setGenericsTypes(upper.getGenericsTypes());
             }
+			for (ClassNode anInterface : interfaces) {
+				for (MethodNode methodNode : anInterface.getMethods()) {
+					addMethod(methodNode.getName(), methodNode.getModifiers(), methodNode.getReturnType(), methodNode.getParameters(), methodNode.getExceptions(), methodNode.getCode());
+				}
+			}
         }
 
         @Override
@@ -485,7 +492,11 @@ public class WideningCategories {
         public Class getTypeClass() {
             return compileTimeClassNode.getTypeClass();
         }
-    }
+
+		/*public ClassNode[] getInterfaces() {
+			return interfaces;
+		}*/
+	}
 
     /**
      * Compares two class nodes, but including their generics types.
