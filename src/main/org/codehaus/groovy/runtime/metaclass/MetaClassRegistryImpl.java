@@ -113,6 +113,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
             public void updateConstantMetaClass(MetaClassRegistryChangeEvent cmcu) {
                 synchronized (metaClassInfo) {
                    metaClassInfo.add(cmcu.getNewMetaClass());
+                   DefaultMetaClassInfo.getNewConstantMetaClassVersioning();
                    Class c = cmcu.getClassToUpdate();
                    DefaultMetaClassInfo.setPrimitiveMeta(c, cmcu.getNewMetaClass()==null);
                    Field sdyn;

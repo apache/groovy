@@ -317,4 +317,27 @@ public class DefaultMetaClassInfo {
         }
         
     }
+    
+    //---------------------------------------------
+    //         GlobalMetaClassVersioning
+    //---------------------------------------------
+    public static class ConstantMetaClassVersioning {
+        private boolean valid = true; 
+        public boolean isValid(){return valid;}
+    }
+    private static ConstantMetaClassVersioning constantMetaClassVersioning = new ConstantMetaClassVersioning();
+    private static Object constantMetaClassVersioningLock = new Object();
+    
+    public static ConstantMetaClassVersioning getCurrentConstantMetaClassVersioning() {
+        return constantMetaClassVersioning;
+    }
+    
+    public static ConstantMetaClassVersioning getNewConstantMetaClassVersioning() {
+        synchronized (constantMetaClassVersioningLock) {
+            constantMetaClassVersioning.valid = false;
+            constantMetaClassVersioning = new ConstantMetaClassVersioning();
+            return constantMetaClassVersioning;
+        }
+    }
+    
 }
