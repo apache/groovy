@@ -432,4 +432,8 @@ public class InvocationWriter {
             ClosureWriter.loadReference(var.getName(), controller);
         }
     }
+
+    public void makeSingleArgumentCall(Expression receiver, String message, Expression arguments) {
+        controller.getCallSiteWriter().makeSingleArgumentCall(receiver, message, arguments);
+    }
 }
