@@ -667,10 +667,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     @Override
     protected void visitConstructorOrMethod(MethodNode node, boolean isConstructor) {
-        this.methodNode = node;
+        MethodNode old = this.methodNode;
+		this.methodNode = node;
         super.visitConstructorOrMethod(node, isConstructor);
-        if (!isConstructor) returnAdder.visitMethod(node);
-        this.methodNode = null;
+        if (!isConstructor) {
+			returnAdder.visitMethod(node);
+		}
+        this.methodNode = old;
     }
 
     @Override
@@ -685,7 +688,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     private ClassNode checkReturnType(final ReturnStatement statement) {
         ClassNode type = getType(statement.getExpression());
         if (methodNode != null) {
-            if (!methodNode.isVoidMethod() && !checkCompatibleAssignmentTypes(methodNode.getReturnType(), type)) {
+            if (!methodNode.isVoidMethod() 
+					&& !type.equals(void_WRAPPER_TYPE) 
+					&& !type.equals(VOID_TYPE)
+					&& !checkCompatibleAssignmentTypes(methodNode.getReturnType(), type)) {
                 addStaticTypeError("Cannot return value of type " + type + " on method returning type " + methodNode.getReturnType(), statement.getExpression());
             }
         }

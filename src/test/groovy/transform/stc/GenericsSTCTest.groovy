@@ -238,6 +238,15 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         ''', 'Cannot find matching method FooWithGenerics#say(java.lang.Object)'
     }
 
+    void testVoidReturnTypeInferrence() {
+      assertScript '''
+        Object m() {
+          def s = '1234'
+          println 'Hello'
+        }
+      '''
+    }
+  
     static class MyList extends LinkedList<String> {}
 }
 
