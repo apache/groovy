@@ -329,6 +329,21 @@ public class DefaultTypeTransformation {
                 return InvokerHelper.invokeConstructorOf(type, args);
             } catch (InvokerInvocationException iie){
                 throw iie;
+            } catch (GroovyRuntimeException e) {
+                if(e.getMessage().contains("Could not find matching constructor for")) {
+                    try {
+                        return InvokerHelper.invokeConstructorOf(type, object);
+                    } catch (InvokerInvocationException iie){
+                        throw iie;
+                    } catch (Exception ex) {
+                        // let's ignore exception and return the original object
+                        // as the caller has more context to be able to throw a more
+                        // meaningful exception (but stash to get message later)
+                        nested = e;
+                    }
+                } else {
+                	nested = e;
+                }
             } catch (Exception e) {
                 // let's ignore exception and return the original object
                 // as the caller has more context to be able to throw a more
