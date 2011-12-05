@@ -66,5 +66,13 @@ class DefaultGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
             true.equals { it }
         '''
     }
+  
+    void testShouldAcceptMethodFromDefaultDateMethods() {
+      assertScript '''
+        def s = new Date()
+        println s.year
+        println s.format("yyyyMMdd")
+      '''
+    }
 }
 
