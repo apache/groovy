@@ -29,6 +29,8 @@ import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.reflection.CachedMethod;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.NullObject;
+import org.codehaus.groovy.runtime.metaclass.DefaultMetaClassInfo;
+import org.codehaus.groovy.runtime.metaclass.DefaultMetaClassInfo.ConstantMetaClassVersioning;
 import org.codehaus.groovy.runtime.wrappers.Wrapper;
 
 /**
@@ -74,6 +76,15 @@ public class IndyInterface {
             }
         }
         private static final MethodHandle NULL_REF = MethodHandles.constant(NullObject.class, NullObject.getNullObject());
+
+        private static final MethodHandle VALID_MC_VERSION;
+        static {
+            try {
+                VALID_MC_VERSION = LOOKUP.findVirtual(ConstantMetaClassVersioning.class, "isValid", MethodType.methodType(boolean.class));
+            } catch (Exception e) {
+                throw new GroovyBugError(e);
+            }
+        }
         
         public static CallSite bootstrap(Lookup caller, String name, MethodType type) {
             // since indy does not give us the runtime types
@@ -81,16 +92,21 @@ public class IndyInterface {
             // that does the method selection including the the direct call to the 
             // real method.
             MutableCallSite mc = new MutableCallSite(type);
-            MethodHandle mh = SELECT_METHOD.
-                                bindTo(mc).
-                                bindTo(caller.lookupClass()).
-                                bindTo(name).
-                                asCollector(Object[].class, type.parameterCount()-1).
-                                asType(type);
+            MethodHandle mh = makeFallBack(mc,caller.lookupClass(),name,type);
             mc.setTarget(mh);
             return mc;
         }
         
+        private static MethodHandle makeFallBack(MutableCallSite mc, Class<?> sender, String name, MethodType type) {
+            MethodHandle mh = SELECT_METHOD.
+                                    bindTo(mc).
+                                    bindTo(sender).
+                                    bindTo(name).
+                                    asCollector(Object[].class, type.parameterCount()-1).
+                                    asType(type);
+            return mh;
+        }
+
         private static MetaClass getMetaClass(Object receiver) {
             if (receiver == null) {
                 return NullObject.getNullObject().getMetaClass();
@@ -108,6 +124,8 @@ public class IndyInterface {
             public String methodName;
             public MethodHandle handle;
             public boolean useMetaClass = false;
+            public MutableCallSite callSite;
+            public Class sender;
         }
         
         private static void setHandleForMetaMethod(CallInfo info) {
@@ -126,7 +144,7 @@ public class IndyInterface {
                     throw new GroovyBugError(e);
                 }
                 info.handle = info.handle.bindTo(info.method).
-                                asCollector(Object[].class, info.targetType.parameterCount()-1);
+                                asCollector(Object[].class, info.targetType.parameterCount()-2);
             }
         }
         
@@ -148,7 +166,7 @@ public class IndyInterface {
                 throw new GroovyBugError(e);
             }
             ci.handle = ci.handle.bindTo(mc).
-                        asCollector(Object[].class, ci.targetType.parameterCount()-1);
+                        asCollector(Object[].class, ci.targetType.parameterCount()-2);
         }
         
         /**
@@ -215,11 +233,31 @@ public class IndyInterface {
             ci.handle = MethodHandles.dropArguments(ci.handle, 0, Integer.class);
         }
         
+        private static void setGuards(CallInfo ci, Object receiver) {
+            if (ci.handle==null) return;
+            
+            //TODO: handle null case
+            if (receiver==null) return;
+            //TODO: handle per instance meta class
+            if (receiver instanceof GroovyObject) return;
+            
+            // handle constant meta class
+            ConstantMetaClassVersioning mcv = DefaultMetaClassInfo.getCurrentConstantMetaClassVersioning();
+            MethodHandle test = VALID_MC_VERSION.bindTo(mcv);
+            MethodHandle fallback = makeFallBack(ci.callSite, ci.sender, ci.methodName, ci.targetType);
+            ci.handle = MethodHandles.guardWithTest(test, ci.handle, fallback);
+        }
+        
         public static Object selectMethod(MutableCallSite callSite, Class sender, String methodName, Object dummyReceiver, Object[] arguments) throws Throwable {
+            //TODO: handle GroovyInterceptable and meta class changes
             CallInfo callInfo = new CallInfo();
             callInfo.targetType = callSite.type();
             callInfo.methodName = methodName;
             callInfo.args = arguments;
+            callInfo.callSite = callSite;
+            callInfo.sender = sender;
+            
+//            setInterceptableHandle(callInfo);
             MetaClass mc = getMetaClass(callInfo.args[0]);
             chooseMethod(mc, callInfo);
             setHandleForMetaMethod(callInfo);
@@ -230,6 +268,9 @@ public class IndyInterface {
             dropDummyReceiver(callInfo);
             
             callInfo.handle = callInfo.handle.asType(callInfo.targetType);
+            
+            setGuards(callInfo, callInfo.args[0]);
+            
             callSite.setTarget(callInfo.handle);
             
             return callInfo.handle.invokeWithArguments(repack(dummyReceiver,callInfo.args));
