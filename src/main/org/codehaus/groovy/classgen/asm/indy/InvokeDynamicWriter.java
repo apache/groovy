@@ -37,7 +37,6 @@ import org.codehaus.groovy.classgen.asm.WriterController;
 import org.codehaus.groovy.runtime.wrappers.Wrapper;
 import org.codehaus.groovy.vmplugin.v7.IndyInterface;
 import org.objectweb.asm.Handle;
-import org.objectweb.asm.MethodVisitor;
 
 import static org.objectweb.asm.Opcodes.*;
 import static org.codehaus.groovy.classgen.asm.BytecodeHelper.*;
@@ -91,44 +90,13 @@ public class InvokeDynamicWriter extends InvocationWriter {
         OperandStack operandStack = controller.getOperandStack();
         CompileStack compileStack = controller.getCompileStack();
         AsmClassGenerator acg = controller.getAcg();
-        MethodVisitor mv = controller.getMethodVisitor();
         
         // fixed number of arguments && name is a real String and no GString
         if ((adapter == invokeMethod || adapter == invokeMethodOnCurrent || adapter == invokeStaticMethod) && !spreadSafe) {
             String methodName = getMethodName(message);
             
             if (methodName != null) {
-                compileStack.pushLHS(false);
-
-                // load a dummy receiver to avoid NPE
-                new ConstantExpression(0, false).visit(controller.getAcg());
-                String sig = "(Ljava/lang/Integer;";
-                receiver.visit(controller.getAcg());
-                sig += getTypeDescription(operandStack.getTopOperand());
-                int numberOfArguments = 1;
-                
-                ArgumentListExpression ae = makeArgumentList(arguments);
-                for (Expression arg : ae.getExpressions()) {
-                    arg.visit(controller.getAcg());
-                    if (arg instanceof CastExpression) {
-                        operandStack.box();
-                        acg.loadWrapper(arg);
-                        sig += getTypeDescription(Wrapper.class);
-                    } else {
-                        sig += getTypeDescription(operandStack.getTopOperand());
-                    }
-                    numberOfArguments++;
-                }
-                sig += ")Ljava/lang/Object;";
-                
-                mv.visitInvokeDynamicInsn(methodName, sig, BSM);
-//                controller.getCallSiteWriter().makeCallSite(
-//                        receiver, methodName, arguments, safe, implicitThis, 
-//                        adapter == invokeMethodOnCurrent, 
-//                        adapter == invokeStaticMethod);
-                
-                operandStack.replace(ClassHelper.OBJECT_TYPE, numberOfArguments+1);
-                compileStack.popLHS();
+                makeIndyCall(receiver, methodName, arguments);
                 return;
             }
         }
@@ -185,5 +153,43 @@ public class InvokeDynamicWriter extends InvocationWriter {
 
         compileStack.popLHS();
         operandStack.replace(ClassHelper.OBJECT_TYPE,operandsToRemove);
+    }
+    
+    private void makeIndyCall(Expression receiver, String methodName, Expression arguments) {
+        CompileStack compileStack = controller.getCompileStack();
+        OperandStack operandStack = controller.getOperandStack();
+        
+        compileStack.pushLHS(false);
+
+        // load a dummy receiver to avoid NPE
+        new ConstantExpression(0, false).visit(controller.getAcg());
+        String sig = "(Ljava/lang/Integer;";
+        receiver.visit(controller.getAcg());
+        sig += getTypeDescription(operandStack.getTopOperand());
+        int numberOfArguments = 1;
+        
+        ArgumentListExpression ae = makeArgumentList(arguments);
+        for (Expression arg : ae.getExpressions()) {
+            arg.visit(controller.getAcg());
+            if (arg instanceof CastExpression) {
+                operandStack.box();
+                controller.getAcg().loadWrapper(arg);
+                sig += getTypeDescription(Wrapper.class);
+            } else {
+                sig += getTypeDescription(operandStack.getTopOperand());
+            }
+            numberOfArguments++;
+        }
+        sig += ")Ljava/lang/Object;";
+        
+        controller.getMethodVisitor().visitInvokeDynamicInsn(methodName, sig, BSM);
+        
+        operandStack.replace(ClassHelper.OBJECT_TYPE, numberOfArguments+1);
+        compileStack.popLHS();
+    }
+
+    @Override
+    public void makeSingleArgumentCall(Expression receiver, String message, Expression arguments) {
+        makeIndyCall(receiver, message, arguments);
     }
 }
