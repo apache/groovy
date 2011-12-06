@@ -64,13 +64,16 @@ public class IndyInterface {
         private static final MethodType GENERAL_INVOKER_SIGNATURE = MethodType.methodType(Object.class, Object.class, Object[].class);
         private static final MethodType INVOKE_METHOD_SIGNATURE = MethodType.methodType(Object.class, String.class, Object[].class);
         private static final MethodType O2O = MethodType.methodType(Object.class, Object.class);
-        private static final MethodHandle UNWRAP_METHOD, TO_STRING, TO_BYTE, TO_BIGINT;
+        private static final MethodHandle UNWRAP_METHOD, TO_STRING, TO_BYTE, TO_BIGINT, SAME_MC, IS_NULL, IS_NOT_NULL;
         static {
             try {
                 UNWRAP_METHOD = LOOKUP.findStatic(IndyInterface.class, "unwrap", O2O);
                 TO_STRING = LOOKUP.findStatic(IndyInterface.class, "coerceToString", O2O);
                 TO_BYTE = LOOKUP.findStatic(IndyInterface.class, "coerceToByte", O2O);
                 TO_BIGINT = LOOKUP.findStatic(IndyInterface.class, "coerceToBigInt", O2O);
+                SAME_MC = LOOKUP.findStatic(IndyInterface.class, "isSameMetaClass", MethodType.methodType(boolean.class, MetaClassImpl.class, Object.class));
+                IS_NULL = LOOKUP.findStatic(IndyInterface.class, "isNull", MethodType.methodType(boolean.class, Object.class));
+                IS_NOT_NULL = LOOKUP.findStatic(IndyInterface.class, "isNotNull", MethodType.methodType(boolean.class, Object.class));
             } catch (Exception e) {
                 throw new GroovyBugError(e);
             }
@@ -168,6 +171,13 @@ public class IndyInterface {
             ci.handle = ci.handle.bindTo(mc).
                         asCollector(Object[].class, ci.targetType.parameterCount()-2);
         }
+
+        /**
+         * called by handle
+         */
+        public static boolean isSameMetaClass(MetaClassImpl mc, Object receiver) {
+            return receiver instanceof GroovyObject && mc==((GroovyObject)receiver).getMetaClass(); 
+        }
         
         /**
          * called by handle
@@ -198,6 +208,20 @@ public class IndyInterface {
             return new BigInteger(String.valueOf((Number) o));
         }
         
+        /**
+         * check for null - called by handle
+         */
+        public static boolean isNull(Object o) {
+            return o == null;
+        }
+        
+        /**
+         * check for != null - called by handle
+         */
+        public static boolean isNotNull(Object o) {
+            return o != null;
+        }
+        
         private static void correctWrapping(CallInfo ci) {
             if (ci.useMetaClass) return;
             for (int i=1; i<ci.args.length; i++) {
@@ -212,7 +236,9 @@ public class IndyInterface {
             if (ci.useMetaClass) return;
             Class[] parameters = ci.targetType.parameterArray();
             for (int i=1; i<ci.args.length; i++) {
-                Class got = ci.args[i].getClass(); 
+                Object arg = ci.args[i];
+                if (arg==null) continue;
+                Class got = arg.getClass(); 
                 if (got == GString.class && parameters[i+1] == String.class) {
                     ci.handle = MethodHandles.filterArguments(ci.handle, i, TO_STRING);                    
                 } else if (parameters[i+1] == Byte.class && got != Byte.class) {
@@ -236,16 +262,31 @@ public class IndyInterface {
         private static void setGuards(CallInfo ci, Object receiver) {
             if (ci.handle==null) return;
             
-            //TODO: handle null case
-            if (receiver==null) return;
-            //TODO: handle per instance meta class
-            if (receiver instanceof GroovyObject) return;
-            
-            // handle constant meta class
-            ConstantMetaClassVersioning mcv = DefaultMetaClassInfo.getCurrentConstantMetaClassVersioning();
-            MethodHandle test = VALID_MC_VERSION.bindTo(mcv);
             MethodHandle fallback = makeFallBack(ci.callSite, ci.sender, ci.methodName, ci.targetType);
-            ci.handle = MethodHandles.guardWithTest(test, ci.handle, fallback);
+            
+            if (receiver==null) {
+                MethodHandle test = IS_NULL.asType(MethodType.methodType(boolean.class,ci.targetType.parameterType(1)));
+                test = MethodHandles.dropArguments(test, 0, ci.targetType.parameterType(0));
+                ci.handle = MethodHandles.guardWithTest(test, ci.handle, fallback);
+            } else if (receiver instanceof GroovyObject) {
+                GroovyObject go = (GroovyObject) receiver;
+                MetaClassImpl mc = (MetaClassImpl) go.getMetaClass();
+                MethodHandle test = SAME_MC.bindTo(mc); 
+                // drop dummy receiver
+                test = test.asType(MethodType.methodType(boolean.class,ci.targetType.parameterType(1)));
+                test = MethodHandles.dropArguments(test, 0, ci.targetType.parameterType(0));
+                ci.handle = MethodHandles.guardWithTest(test, ci.handle, fallback);
+            } else {
+                // handle constant meta class
+                ConstantMetaClassVersioning mcv = DefaultMetaClassInfo.getCurrentConstantMetaClassVersioning();
+                MethodHandle test = VALID_MC_VERSION.bindTo(mcv);
+                ci.handle = MethodHandles.guardWithTest(test, ci.handle, fallback);
+                // check for not being null
+                test = IS_NOT_NULL.asType(MethodType.methodType(boolean.class,ci.targetType.parameterType(1)));
+                test = MethodHandles.dropArguments(test, 0, ci.targetType.parameterType(0));
+                ci.handle = MethodHandles.guardWithTest(test, ci.handle, fallback);
+            }
+            
         }
         
         public static Object selectMethod(MutableCallSite callSite, Class sender, String methodName, Object dummyReceiver, Object[] arguments) throws Throwable {
