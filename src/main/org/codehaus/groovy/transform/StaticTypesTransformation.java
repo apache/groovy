@@ -31,7 +31,7 @@ import java.util.Collections;
  * @author Cedric Champeau
  * @author Guillaume Laforge
  */
-@GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
+@GroovyASTTransformation(phase = CompilePhase.INSTRUCTION_SELECTION)
 public class StaticTypesTransformation implements ASTTransformation {
 
     public static final String STATIC_ERROR_PREFIX = "[Static type checking] - ";
