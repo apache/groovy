@@ -190,6 +190,19 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         ''', 'Cannot call groovy.transform.stc.MethodCallsSTCTest$MyMethodCallTestClass2#identity([Ljava.lang.Integer;) with arguments [[Ljava.lang.String;]'
     }
 
+    void testMethodCallFromSuperOwner() {
+        assertScript '''
+            class Child extends groovy.transform.stc.MethodCallsSTCTest.GroovyPage {
+                void foo() {
+                    createTagBody(1) { ->
+                        printHtmlPart(2)
+                    }
+                }
+            }
+            new Child()
+        '''
+    }
+
     static class MyMethodCallTestClass {
 
         static int mul(int... args) { args.toList().inject(1) { x,y -> x*y } }
@@ -208,4 +221,9 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     static class MyMethodCallTestClass3 extends MyMethodCallTestClass2<String> {}
+
+    static class GroovyPage {
+        public final void printHtmlPart(final int partNumber) {}
+        public final void createTagBody(int bodyClosureIndex, Closure<?> bodyClosure) {}
+    }
 }
