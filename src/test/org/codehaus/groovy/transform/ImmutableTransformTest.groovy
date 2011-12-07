@@ -421,27 +421,34 @@ class ImmutableTransformTest extends GroovyShellTestCase {
         '''
     }
 
-    void testImmutableToString_TracksNamedParameters() {
+    void testImmutableToStringVariants() {
         assertScript '''
-            @groovy.transform.Immutable
-            class Person {
-                String first, last
-            }
+            import groovy.transform.*
 
-            // normal toString
-            assert new Person("Hamlet", "D'Arcy").toString() == "Person(Hamlet, D'Arcy)"
-            // instance created with named parameters has special toString
-            assert new Person(first: "Hamlet", last: "D'Arcy").toString() == "Person(first:Hamlet, last:D'Arcy)"
+            @Immutable
+            class Person1 { String first, last }
+
+            @Immutable
+            @ToString(includeNames=true)
+            class Person2 { String first, last }
+
+            @Immutable
+            @ToString(excludes="last")
+            class Person3 { String first, last }
+
+            assert new Person1("Hamlet", "D'Arcy").toString() == "Person1(Hamlet, D'Arcy)"
+            assert new Person2(first: "Hamlet", last: "D'Arcy").toString() == "Person2(first:Hamlet, last:D'Arcy)"
+            assert new Person3("Hamlet", "D'Arcy").toString() == "Person3(Hamlet)"
             '''
     }
 
     void testImmutableUsageOnStaticInnerClasses() {
         shell.parse '''
             import groovy.transform.Immutable
-			class A4997 {
-			    @Immutable
-			    static class B4997 {}
-			}
+            class A4997 {
+                @Immutable
+                static class B4997 {}
+            }
             '''
     }
 }

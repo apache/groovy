@@ -76,8 +76,11 @@ import java.lang.annotation.Target;
  * <pre>
  * AgedThing(age:5, super:NamedThing(Lassie))
  * </pre>
+ * {@code @ToString} can also be used in conjunction with {@code @Canonical} and {@code @Immutable}.
  *
  * @author Paul King
+ * @see Immutable
+ * @see Canonical
  * @since 1.8.0
  */
 @java.lang.annotation.Documented

@@ -539,7 +539,6 @@ public class AstNodeToScriptAdapterTest extends GroovyTestCase {
         String script = '@groovy.transform.Immutable class Event { }'
 
         String result = compileToScript(script, CompilePhase.CANONICALIZATION)
-        assert result.contains('private boolean $print$names')
         assert result.contains('private int $hash$code')
         assert result.contains('public Event(java.util.HashMap args)')
 

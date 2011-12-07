@@ -87,7 +87,13 @@ import java.lang.annotation.Target;
  * </ul>
  * <p/>
  * Immutable classes are particularly useful for functional and concurrent styles of programming
- * and for use as key values within maps.
+ * and for use as key values within maps. If you want similar functionality to what this annotation
+ * provides but don't need immutability then consider using {@code @Canonical}.
+ * <p/>
+ * Customising behaviour:
+ * <p/>
+ * You can customise the toString() method provided for you by {@code @Immutable}
+ * by also adding the {@code @ToString} annotation to your class definition.
  * <p/>
  * Limitations:
  * <ul>
@@ -113,6 +119,8 @@ import java.lang.annotation.Target;
  * </ul>
  *
  * @author Paul King
+ * @see ToString
+ * @see Canonical
  * @since 1.7
  */
 @java.lang.annotation.Documented
