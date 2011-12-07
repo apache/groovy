@@ -254,7 +254,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 for (int i = 0; i < genericsTypes.length; i++) {
                     GenericsType genericsType = genericsTypes[i];
                     copy[i] = new GenericsType(
-                            genericsType.getType(),
+                            wrapTypeIfNecessary(genericsType.getType()),
                             genericsType.getUpperBounds(),
                             genericsType.getLowerBound()
                     );
@@ -268,7 +268,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     for (int i = 0; i < genericsTypes.length; i++) {
                         GenericsType genericsType = genericsTypes[i];
                         copy[i] = new GenericsType(
-                                genericsType.getType(),
+                                wrapTypeIfNecessary(genericsType.getType()),
                                 genericsType.getUpperBounds(),
                                 genericsType.getLowerBound()
                         );
@@ -838,7 +838,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 // the inferred type here should be a list of what the subcall returns
                 ClassNode subcallReturnType = getType(subcall);
                 ClassNode listNode = new ClassNode(List.class);
-                listNode.setGenericsTypes(new GenericsType[]{new GenericsType(subcallReturnType)});
+                listNode.setGenericsTypes(new GenericsType[]{new GenericsType(wrapTypeIfNecessary(subcallReturnType))});
                 storeType(call, listNode);
                 return;
             }
@@ -1469,6 +1469,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (exp instanceof ClosureExpression) {
             ClassNode irt = (ClassNode) exp.getNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE);
             if (irt!=null) {
+                irt = wrapTypeIfNecessary(irt);
                 ClassNode result = CLOSURE_TYPE.getPlainNodeReference();
                 result.setGenericsTypes(new GenericsType[]{new GenericsType(irt)});
                 return result;
@@ -1496,7 +1497,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
             ClassNode superType = getWrapper(lowestUpperBound(nodes)); // to be used in generics, type must be boxed
             ClassNode inferred = listType.getPlainNodeReference();
-            inferred.setGenericsTypes(new GenericsType[]{new GenericsType(superType)});
+            inferred.setGenericsTypes(new GenericsType[]{new GenericsType(wrapTypeIfNecessary(superType))});
             return inferred;
         }
         return listType;
@@ -1520,7 +1521,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             ClassNode valueType = getWrapper(lowestUpperBound(valueTypes));  // to be used in generics, type must be boxed
             if (!OBJECT_TYPE.equals(keyType) || !OBJECT_TYPE.equals(valueType)) {
                 ClassNode inferred = mapType.getPlainNodeReference();
-                inferred.setGenericsTypes(new GenericsType[]{new GenericsType(keyType), new GenericsType(valueType)});
+                inferred.setGenericsTypes(new GenericsType[]{new GenericsType(wrapTypeIfNecessary(keyType)), new GenericsType(wrapTypeIfNecessary(valueType))});
                 return inferred;
             }
         }
@@ -1565,10 +1566,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 if (isVargs && lastArg && actualType.isArray()) {
                     actualType=actualType.getComponentType();
                 }
-                if (isPrimitiveType(actualType)) {
-                    // as we are in generics, we must wrap it
-                    actualType = ClassHelper.getWrapper(actualType);
-                }
+                actualType = wrapTypeIfNecessary(actualType);
                 Map<String, GenericsType> typePlaceholders = GenericsUtils.extractPlaceholders(type.isArray()?type.getComponentType():type);
                 if (OBJECT_TYPE.equals(type)) {
                     // special case for handing Object<E> -> Object
@@ -1731,6 +1729,18 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 			}
 		}
 	}
+
+    /**
+     * Returns a wrapped type if, and only if, the provided class node is a primitive type.
+     * This method differs from {@link ClassHelper#getWrapper(org.codehaus.groovy.ast.ClassNode)} as it will
+     * return the same instance if the provided type is not a generic type.
+     * @param type
+     * @return
+     */
+    private static ClassNode wrapTypeIfNecessary(ClassNode type) {
+        if (isPrimitiveType(type)) return getWrapper(type);
+        return type;
+    }
 
 	/**
      * A visitor used as a callback to {@link StaticTypeCheckingVisitor#existsProperty(org.codehaus.groovy.ast.expr.PropertyExpression, boolean, org.codehaus.groovy.ast.ClassCodeVisitorSupport)}
