@@ -144,6 +144,42 @@ class Groovy5150Bug extends GroovyTestCase {
         }
     }
 
+    void testAccessConstantStringFromJavaClass() {
+        def config = new CompilerConfiguration()
+        config.with {
+            targetDirectory = createTempDir()
+            jointCompilationOptions = [stubDir: createTempDir()]
+        }
+
+        File parentDir = createTempDir()
+        try {
+            def a = new File(parentDir, 'A.groovy')
+            a.write '''
+                class A {
+                    public static final String CONSTANT = "hello, world!"
+                }
+            '''
+            def b = new File(parentDir, 'B.java')
+            b.write '''
+            public class B {
+                public static void main(String...args) {
+                    if (!"hello, world!".equals(A.CONSTANT)) throw new RuntimeException("Constant should not be: ["+A.CONSTANT+"]");
+                }
+            }
+        '''
+            def loader = new GroovyClassLoader(this.class.classLoader)
+            def cu = new JavaAwareCompilationUnit(config, loader)
+            cu.addSources([a,b] as File[])
+            cu.compile()
+            Class clazz = loader.loadClass("B")
+            clazz.newInstance().main()
+        } finally {
+            parentDir.deleteDir()
+            config.targetDirectory.deleteDir()
+            config.jointCompilationOptions.stubDir.deleteDir()
+        }
+    }
+
     private static File createTempDir() {
         def dir = new File(System.getProperty('java.io.tmpdir'), "groovyTest${System.currentTimeMillis()}")
         dir.delete()

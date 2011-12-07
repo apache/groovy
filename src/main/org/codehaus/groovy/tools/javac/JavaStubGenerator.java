@@ -337,7 +337,7 @@ public class JavaStubGenerator {
                     && valueExpr.getType().equals(fieldNode.getType())) {
                 // GROOVY-5150 : Initialize value with a dummy constant so that Java cross compiles correctly
                 if (ClassHelper.STRING_TYPE.equals(valueExpr.getType())) {
-                    out.print("\"\"");
+                    out.print("\""+valueExpr.getText().replaceAll("\\\"", "\\\\\"")+"\"");
                 } else if (ClassHelper.char_TYPE.equals(valueExpr.getType())) {
                     out.print("'"+valueExpr.getText()+"'");
                 } else {
