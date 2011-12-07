@@ -290,7 +290,7 @@ public class IndyInterface {
         }
         
         public static Object selectMethod(MutableCallSite callSite, Class sender, String methodName, Object dummyReceiver, Object[] arguments) throws Throwable {
-            //TODO: handle GroovyInterceptable and meta class changes
+            //TODO: handle GroovyInterceptable 
             CallInfo callInfo = new CallInfo();
             callInfo.targetType = callSite.type();
             callInfo.methodName = methodName;
