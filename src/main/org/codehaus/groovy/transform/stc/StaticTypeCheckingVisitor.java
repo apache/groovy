@@ -93,6 +93,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 	 */
 	private final Map<VariableExpression, List<ClassNode>> closureSharedVariablesAssignmentTypes = new HashMap<VariableExpression, List<ClassNode>>();
 
+    /**
+     * The plugin factory used to extend the type checker capabilities.
+     */
+    private final TypeCheckerPluginFactory pluginFactory;
+
     private final ReturnAdder returnAdder = new ReturnAdder(new ReturnAdder.ReturnStatementListener() {
         public void returnStatementAdded(final ReturnStatement returnStatement) {
             if (returnStatement.getExpression().equals(ConstantExpression.NULL)) return;
@@ -121,10 +126,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
     });
 
-    public StaticTypeCheckingVisitor(SourceUnit source, ClassNode cn) {
+    public StaticTypeCheckingVisitor(SourceUnit source, ClassNode cn, TypeCheckerPluginFactory pluginFactory) {
         this.source = source;
         this.classNode = cn;
         this.temporaryIfBranchTypeInformation = new Stack<Map<Object, List<ClassNode>>>();
+        this.pluginFactory = pluginFactory;
         pushTemporaryTypeInfo();
     }
 
@@ -166,6 +172,19 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     return;
                 }
             }
+            
+            // lookup with plugin
+            if (pluginFactory!=null) {
+                TypeCheckerPlugin plugin = pluginFactory.getTypeCheckerPlugin(classNode);
+                if (plugin!=null) {
+                    ClassNode type = plugin.resolveDynamicVariableType(dyn);
+                    if (type != null) {
+                        storeType(vexp, type);
+                        return;
+                    }
+                }
+            }
+            
             addStaticTypeError("The variable [" + vexp.getName() + "] is undeclared.", vexp);
         }
     }
@@ -571,6 +590,17 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                                 if (node.getReturnType() != VOID_TYPE && (parameters == null || parameters.length == 0)) {
                                     if (visitor != null) visitor.visitMethod(node);
                                     storeType(pexp, READONLY_PROPERTY_RETURN);
+                                    return true;
+                                }
+                            }
+                        }
+                        if (pluginFactory!=null) {
+                            TypeCheckerPlugin plugin = pluginFactory.getTypeCheckerPlugin(classNode);
+                            if (plugin!=null) {
+                                PropertyNode result = plugin.resolveProperty(current, propertyName);
+                                if (result!=null) {
+                                    if (visitor != null) visitor.visitProperty(result);
+                                    storeType(pexp, result.getType());
                                     return true;
                                 }
                             }
@@ -1277,6 +1307,15 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
 
         if (receiver == ClassHelper.GSTRING_TYPE) return findMethod(ClassHelper.STRING_TYPE, name, args);
+        
+        if (pluginFactory!=null) {
+            TypeCheckerPlugin plugin = pluginFactory.getTypeCheckerPlugin(classNode);
+            if (plugin!=null) {
+                List<MethodNode> methodNodes = plugin.findMethod(receiver, name, args);
+                if (methodNodes!=null && !methodNodes.isEmpty()) return methodNodes;
+            }
+        }
+        
         return EMPTY_METHODNODE_LIST;
     }
 
