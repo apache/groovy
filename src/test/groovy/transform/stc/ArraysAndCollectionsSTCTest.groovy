@@ -204,5 +204,20 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
             }
         '''
     }
+
+    // GROOVY-5177
+    void testShouldNotAllowArrayAssignment() {
+        shouldFailWithMessages '''
+            class Foo {
+                def say() {
+                    FooAnother foo1 = new Foo[13] // but FooAnother foo1 = new Foo() reports a STC                        Error
+                }
+            }
+            class FooAnother {
+
+            }
+        ''', 'Cannot assign value of type Foo[] to variable of type FooAnother'
+    }
+
 }
 

@@ -496,6 +496,8 @@ abstract class StaticTypeCheckingSupport {
             //TODO: in case of the array we could maybe make a partial check
             if (leftRedirect.isArray() && rightRedirect.isArray()) {
                 return checkCompatibleAssignmentTypes(leftRedirect.getComponentType(), rightRedirect.getComponentType());
+            } else if (rightRedirect.isArray() && !leftRedirect.isArray()) {
+                return false;
             }
             return true;
         }
