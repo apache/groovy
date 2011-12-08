@@ -33,6 +33,8 @@ class GenericsWithExtendsStubTest extends StringSourcesStubTestCase {
                                 public List<? extends CharSequence> getThings1() { return null; }
                                 public List<?> getThings2() { return null; }
                                 public List<? super CharSequence> getThings3() { return null; }
+                                public <T> List<T> getThings4(Collection c, groovy.lang.Closure<Collection<? extends T>> cl) { return null; }
+                                public <T> void getThings5(List<? extends List<T>> arg) { }
                             };
                         }
                     }
@@ -42,6 +44,8 @@ class GenericsWithExtendsStubTest extends StringSourcesStubTestCase {
                         List<? extends CharSequence> getThings1()
                         List<?> getThings2()
                         List<? super CharSequence> getThings3()
+                        public <T> List<T> getThings4(Collection c, groovy.lang.Closure<Collection<? extends T>> cl)
+                        public <T> void getThings5(List<? extends List<T>> arg)
                     }
             '''
         ]
@@ -52,5 +56,7 @@ class GenericsWithExtendsStubTest extends StringSourcesStubTestCase {
         assert stubSource.contains('java.util.List<? extends java.lang.CharSequence> getThings1()')
         assert stubSource.contains('java.util.List<?> getThings2()')
         assert stubSource.contains('java.util.List<? super java.lang.CharSequence> getThings3()')
+        assert stubSource.contains('<T> java.util.List<T> getThings4(java.util.Collection c, groovy.lang.Closure<java.util.Collection<? extends T>> cl)')
+        assert stubSource.contains('<T> void getThings5(java.util.List<? extends java.util.List<T>> arg)')
     }
 }
