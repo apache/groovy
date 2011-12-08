@@ -192,5 +192,17 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
             [1,2,3].collect { it.toString() }
         '''
     }
+
+    void testForInLoop() {
+        assertScript '''
+            class A {
+                String name
+            }
+            List<A> myList = [new A(name:'Cedric'), new A(name:'Yakari')] as LinkedList<A>
+            for (element in myList) {
+                element.name.toUpperCase()
+            }
+        '''
+    }
 }
 
