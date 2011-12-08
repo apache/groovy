@@ -52,6 +52,12 @@ abstract class StaticTypeCheckingSupport {
             }});
 
     /**
+     * This is for internal use only. When an argument method is null, we cannot determine its type, so
+     * we use this one as a wildcard.
+     */
+    final static ClassNode UNKNOWN_PARAMETER_TYPE = ClassHelper.make("<unknown parameter type>");
+    
+    /**
      * This comparator is used when we return the list of methods from DGM which name correspond to a given
      * name. As we also lookup for DGM methods of superclasses or interfaces, it may be possible to find
      * two methods which have the same name and the same arguments. In that case, we should not add the method
@@ -246,6 +252,7 @@ abstract class StaticTypeCheckingSupport {
      * @return
      */
     static boolean isAssignableTo(ClassNode type, ClassNode toBeAssignedTo) {
+        if (UNKNOWN_PARAMETER_TYPE==type) return true;
         if (toBeAssignedTo.redirect() == STRING_TYPE && type.redirect() == GSTRING_TYPE) {
             return true;
         }

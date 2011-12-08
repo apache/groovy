@@ -738,7 +738,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         ClassNode[] ret = new ClassNode[arglist.size()];
         int i = 0;
         for (Expression exp : arglist) {
-            ret[i] = getType(exp);
+            if (exp instanceof ConstantExpression && ((ConstantExpression)exp).getValue()==null) {
+                ret[i] = UNKNOWN_PARAMETER_TYPE;
+            } else {
+                ret[i] = getType(exp);
+            }
             i++;
         }
         return ret;
@@ -1074,6 +1078,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 // ex : (Character) 'c'
             } else if (isNumberCategory(getWrapper(targetType)) && isNumberCategory(getWrapper(expressionType))) {
                 // ex: short s = (short) 0
+            } else if (sourceIsNull && !isPrimitiveType(targetType)) {
+                // ex: (Date)null
             } else if (!isAssignableTo(expressionType, targetType)) {
                 addStaticTypeError("Inconvertible types: cannot cast "+expressionType.getName()+" to "+targetType.getName(), expression);
             }
