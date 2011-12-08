@@ -16,9 +16,6 @@
 
 package org.codehaus.groovy.ast;
 
-import org.codehaus.groovy.ast.tools.GenericsUtils;
-
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 
