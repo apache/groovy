@@ -192,5 +192,32 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
             [1,2,3].collect { it.toString() }
         '''
     }
+
+    void testForInLoop() {
+        assertScript '''
+            class A {
+                String name
+            }
+            List<A> myList = [new A(name:'Cedric'), new A(name:'Yakari')] as LinkedList<A>
+            for (element in myList) {
+                element.name.toUpperCase()
+            }
+        '''
+    }
+
+    // GROOVY-5177
+    void testShouldNotAllowArrayAssignment() {
+        shouldFailWithMessages '''
+            class Foo {
+                def say() {
+                    FooAnother foo1 = new Foo[13] // but FooAnother foo1 = new Foo() reports a STC                        Error
+                }
+            }
+            class FooAnother {
+
+            }
+        ''', 'Cannot assign value of type Foo[] to variable of type FooAnother'
+    }
+
 }
 

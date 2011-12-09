@@ -18,7 +18,6 @@ package org.codehaus.groovy.ast;
 
 import org.codehaus.groovy.ast.tools.GenericsUtils;
 
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -63,6 +62,7 @@ public class GenericsType extends ASTNode {
         Set<String> visited = new HashSet<String>();
         return toString(visited);
     }
+
     private String toString(Set<String> visited) {
         if (placeholder) visited.add(name);
         String ret = (type == null || placeholder || wildcard) ? name : genericsBounds(type, visited);
@@ -82,6 +82,10 @@ public class GenericsType extends ASTNode {
         String ret = theType.isArray()?theType.getComponentType().getName()+"[]":theType.getName();
         GenericsType[] genericsTypes = theType.getGenericsTypes();
         if (genericsTypes == null || genericsTypes.length == 0) return ret;
+        // TODO instead of catching Object<T> here stop it from being placed into type in first place
+        if (genericsTypes.length == 1 && genericsTypes[0].isPlaceholder() && theType.getName().equals("java.lang.Object")) {
+            return genericsTypes[0].getName();
+        }
         ret += "<";
         for (int i = 0; i < genericsTypes.length; i++) {
             if (i != 0) ret += ", ";

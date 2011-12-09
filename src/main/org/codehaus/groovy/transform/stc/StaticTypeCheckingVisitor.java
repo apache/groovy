@@ -43,8 +43,8 @@ import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.*;
  * @author Jochen Theodorou
  */
 public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
+    private static final ClassNode ITERABLE_TYPE = ClassHelper.make(Iterable.class);
     private final static ClassNode READONLY_PROPERTY_RETURN = ClassHelper.make("<readonly>");
-
     private final static List<MethodNode> EMPTY_METHODNODE_LIST = Collections.emptyList();
 
     private SourceUnit source;
@@ -98,6 +98,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
      */
     private final TypeCheckerPluginFactory pluginFactory;
 
+    private Map<Parameter, ClassNode> forLoopVariableTypes = new HashMap<Parameter, ClassNode>();
+    
     private final ReturnAdder returnAdder = new ReturnAdder(new ReturnAdder.ReturnStatementListener() {
         public void returnStatementAdded(final ReturnStatement returnStatement) {
             if (returnStatement.getExpression().equals(ConstantExpression.NULL)) return;
@@ -625,20 +627,36 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     @Override
     public void visitForLoop(final ForStatement forLoop) {
         Map<VariableExpression, List<ClassNode>> oldTracker = pushAssignmentTracking();
-        super.visitForLoop(forLoop);
-        popAssignmentTracking(oldTracker);
         final ClassNode collectionType = getType(forLoop.getCollectionExpression());
         ClassNode componentType = collectionType.getComponentType();
         if (componentType == null) {
-            if (componentType == ClassHelper.STRING_TYPE) {
+            if (collectionType.implementsInterface(ITERABLE_TYPE)) {
+                ClassNode intf = ITERABLE_TYPE;
+                for (ClassNode node : collectionType.getAllInterfaces()) {
+                    if (ITERABLE_TYPE.equals(node)) {
+                        intf = node;
+                        break;
+                    }
+                }
+                intf = GenericsUtils.parameterizeInterfaceGenerics(collectionType, intf);
+                GenericsType[] genericsTypes = intf.getGenericsTypes();
+                componentType = genericsTypes[0].getType();
+            } else if (collectionType == ClassHelper.STRING_TYPE) {
                 componentType = ClassHelper.Character_TYPE;
             } else {
                 componentType = ClassHelper.OBJECT_TYPE;
             }
         }
+        forLoopVariableTypes.put(forLoop.getVariable(), componentType);
         if (!checkCompatibleAssignmentTypes(forLoop.getVariableType(), componentType)) {
             addStaticTypeError("Cannot loop with element of type " + forLoop.getVariableType() + " with collection of type " + collectionType, forLoop);
         }
+        try {
+            super.visitForLoop(forLoop);
+        } finally {
+            forLoopVariableTypes.remove(forLoop.getVariable());
+        }
+        popAssignmentTracking(oldTracker);
     }
 
     @Override
@@ -750,7 +768,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         ClassNode[] ret = new ClassNode[arglist.size()];
         int i = 0;
         for (Expression exp : arglist) {
-            ret[i] = getType(exp);
+            if (exp instanceof ConstantExpression && ((ConstantExpression)exp).getValue()==null) {
+                ret[i] = UNKNOWN_PARAMETER_TYPE;
+            } else {
+                ret[i] = getType(exp);
+            }
             i++;
         }
         return ret;
@@ -1086,6 +1108,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 // ex : (Character) 'c'
             } else if (isNumberCategory(getWrapper(targetType)) && isNumberCategory(getWrapper(expressionType))) {
                 // ex: short s = (short) 0
+            } else if (sourceIsNull && !isPrimitiveType(targetType)) {
+                // ex: (Date)null
             } else if (!isAssignableTo(expressionType, targetType)) {
                 addStaticTypeError("Inconvertible types: cannot cast "+expressionType.getName()+" to "+targetType.getName(), expression);
             }
@@ -1459,6 +1483,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             final Variable variable = vexp.getAccessedVariable();
             if (variable != null && variable != vexp && variable instanceof VariableExpression) {
                 return getType((Expression) variable);
+            }
+            if (variable instanceof Parameter) {
+                Parameter parameter = (Parameter) variable;
+                ClassNode type = forLoopVariableTypes.get(parameter);
+                if (type!=null) return type;
             }
         } else if (exp instanceof PropertyExpression) {
             PropertyExpression pexp = (PropertyExpression) exp;

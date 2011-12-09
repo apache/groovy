@@ -647,6 +647,8 @@ public class OptimizingStatementWriter extends StatementWriter {
                             resultType = int_TYPE;
                         } else if (isLongCategory(leftType) && isLongCategory(rightType)) {
                             resultType = long_TYPE;
+                        } else if (isBigDecCategory(leftType) && isBigDecCategory(rightType)) {
+                            resultType = BigDecimal_TYPE;
                         } else if (isDoubleCategory(leftType) && isDoubleCategory(rightType)) {
                             resultType = double_TYPE;
                         }
