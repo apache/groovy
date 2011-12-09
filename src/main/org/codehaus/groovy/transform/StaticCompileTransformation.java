@@ -27,6 +27,7 @@ import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor;
 import org.codehaus.groovy.transform.stc.StaticTypesMarker;
+import org.codehaus.groovy.transform.stc.TypeCheckerPluginFactory;
 
 /**
  * Handles the implementation of the {@link groovy.transform.CompileStatic} transformation.
@@ -47,8 +48,8 @@ public class StaticCompileTransformation extends StaticTypesTransformation {
     }
 
     @Override
-    protected StaticTypeCheckingVisitor newVisitor(final SourceUnit unit, final ClassNode node) {
-        return new StaticTypeCheckingVisitor(unit, node) {
+    protected StaticTypeCheckingVisitor newVisitor(final SourceUnit unit, final ClassNode node, final TypeCheckerPluginFactory pluginFactory) {
+        return new StaticTypeCheckingVisitor(unit, node, pluginFactory) {
             @Override
             public void visitMethodCallExpression(final MethodCallExpression call) {
                 super.visitMethodCallExpression(call);
