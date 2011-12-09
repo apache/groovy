@@ -254,6 +254,139 @@ class ClosureTest extends GroovyTestCase {
         def map = [a:1, b:2]
         assert map.collectEntries(IDENTITY) == map
     }
+
+    void testEachWithArray() {
+        def l = []
+        l << ([1, 2] as Object[])
+        l.each {
+                assert it == [1,2] as Object[]
+        }
+    }
+
+    void testClosureDehydrateAndRehydrate() {
+        def closure = { 'Hello' }
+        assert closure.delegate !=null
+        assert closure.owner != null
+        assert closure.thisObject != null
+        assert closure() == 'Hello'
+
+        def serializable = closure.dehydrate()
+        assert !serializable.is(closure)
+        assert serializable.delegate == null
+        assert serializable.owner == null
+        assert serializable.thisObject == null
+        assert serializable() == 'Hello'
+
+        def rehydrate = serializable.rehydrate(closure.delegate, closure.owner, closure.thisObject)
+        assert !rehydrate.is(serializable)
+        assert !rehydrate.is(closure)
+        assert rehydrate.delegate.is(closure.delegate)
+        assert rehydrate.owner.is(closure.owner)
+        assert rehydrate.thisObject.is(closure.thisObject)
+        assert rehydrate() == 'Hello'
+
+    }
+
+    // GROOVY-5151
+    void testClosureSerialization() {
+        // without dehydrate, as Controller is not serializable, the serialization will fail
+        shouldFail(NotSerializableException) {
+            assertScript '''
+            class Controller { // not Serializable
+                def action = { 'Hello' }
+                def action2 = { action() } // call to other closure
+            }
+            def ctrl = new Controller()
+            def bos = new ByteArrayOutputStream()
+            bos.withObjectOutputStream {
+                it << ctrl.action
+            }
+        '''
+        }
+
+        // dehydrated action1 should be serializable
+        assertScript '''
+            class Controller { // not Serializable
+                def action = { 'Hello' }
+                def action2 = { action() } // call to other closure
+            }
+            def ctrl = new Controller()
+            def a1 = ctrl.action.dehydrate()
+            def bos = new ByteArrayOutputStream()
+            bos.withObjectOutputStream {
+                it << a1
+            }
+        '''
+
+        // dehydrated action2 should be serializable
+        assertScript '''
+            class Controller { // not Serializable
+                def action = { 'Hello' }
+                def action2 = { action() } // call to other closure
+            }
+            def ctrl = new Controller()
+            def a2 = ctrl.action2.dehydrate()
+            def bos = new ByteArrayOutputStream()
+            bos.withObjectOutputStream {
+                it << a2
+            }
+        '''
+
+        // restore action
+        assertScript '''
+            class Controller { // not Serializable
+                def action = { 'Hello' }
+                def action2 = { action() } // call to other closure
+            }
+            def ctrl = new Controller()
+            def a1 = ctrl.action.dehydrate()
+            def bos = new ByteArrayOutputStream()
+            bos.withObjectOutputStream {
+                it << a1
+            }
+            byte[] arr = bos.toByteArray()
+            def rehyd
+            new ByteArrayInputStream(arr).withObjectInputStream(this.class.classLoader) {
+                it.eachObject { o -> rehyd = o }
+            }
+            assert rehyd() == 'Hello'
+        '''
+
+        // restore action2
+        assertScript '''
+            class Controller { // not Serializable
+                def action = { 'Hello' }
+                def action2 = { action() } // call to other closure
+            }
+            def ctrl = new Controller()
+            def a2 = ctrl.action2.dehydrate()
+            def bos = new ByteArrayOutputStream()
+            bos.withObjectOutputStream {
+                it << a2
+            }
+            byte[] arr = bos.toByteArray()
+            def rehyd
+            new ByteArrayInputStream(arr).withObjectInputStream(this.class.classLoader) {
+                it.eachObject { o -> rehyd = o }
+            }
+            ctrl = new Controller() // assert new instance
+            rehyd = rehyd.rehydrate(ctrl,ctrl,ctrl)
+            assert rehyd() == 'Hello'
+        '''
+
+        shouldFail(NotSerializableException) {
+            assertScript '''
+            class X{}
+            def x = new X ()
+            def cl = {x}
+            def dehyd = cl.dehydrate() // true means to dehydrate non serializable fields too
+            def bos = new ByteArrayOutputStream()
+            bos.withObjectOutputStream {
+              it << dehyd
+            }
+            '''
+        }
+    }
 }
 
 public class TinyAgent {
