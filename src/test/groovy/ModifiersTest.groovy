@@ -74,4 +74,14 @@ class ModifiersTest extends CompilableTestSupport {
         shouldNotCompile("private protected name")
     }
 
+    public void testInvalidModifiersOnConstructor() {
+        // control
+        shouldCompile("class Foo { Foo() {}}")
+        // erroneous
+        shouldNotCompile("class Foo { static Foo() {}}")
+        shouldNotCompile("class Foo { final Foo() {}}")
+        shouldNotCompile("class Foo { abstract Foo() {}}")
+        shouldNotCompile("class Foo { native Foo() {}}")
+    }
+
 }
