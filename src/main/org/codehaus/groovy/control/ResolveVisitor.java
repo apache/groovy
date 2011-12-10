@@ -1222,10 +1222,15 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
 
     public void visitClass(ClassNode node) {
         ClassNode oldNode = currentClass;
-        Map<String, GenericsType> oldPNames = genericParameterNames;
-        genericParameterNames = new HashMap<String, GenericsType>(genericParameterNames);
-        currentClass = node;
 
+        if (node instanceof InnerClassNode) {
+            if (Modifier.isStatic(node.getModifiers())) {
+                genericParameterNames = new HashMap<String, GenericsType>();
+            }
+        } else {
+            genericParameterNames = new HashMap<String, GenericsType>();
+        }
+        currentClass = node;
         resolveGenericsHeader(node.getGenericsTypes());
 
         ModuleNode module = node.getModule();
@@ -1277,8 +1282,6 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         checkCyclicInheritence(node, node.getUnresolvedSuperClass(), node.getInterfaces());
         
         super.visitClass(node);
-
-        genericParameterNames = oldPNames;
 
         currentClass = oldNode;
     }
