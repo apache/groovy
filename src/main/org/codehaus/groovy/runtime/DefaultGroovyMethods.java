@@ -2301,6 +2301,25 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * A variant of collectEntries using the identity closure as the transform.
+     * The source collection should be a list of <code>[key, value]</code> tuples or a <code>Map.Entry</code>.
+     * <pre class="groovyTestCase">
+     * def nums = [1, 10, 100, 1000]
+     * def tuples = nums.collect{ [it, it.toString().size()] }
+     * assert tuples == [[1, 1], [10, 2], [100, 3], [1000, 4]]
+     * def map = tuples.collectEntries()
+     * assert map == [1:1, 10:2, 100:3, 1000:4]
+     * </pre>
+     *
+     * @param self      a Collection
+     * @return a Map of the transformed entries
+     * @see #collectEntries(Collection, Closure)
+     */
+    public static <K, V> Map<K, V> collectEntries(Collection<?> self) {
+        return collectEntries(self, new LinkedHashMap<K, V>(), Closure.IDENTITY);
+    }
+
+    /**
      * Iterates through this Collection transforming each item using the closure
      * as a transformer into a map entry, returning a map of the transformed entries.
      * <pre class="groovyTestCase">
@@ -2324,6 +2343,18 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             addEntry(collector, transform.call(next));
         }
         return collector;
+    }
+
+    /**
+     * A variant of collectEntries using the identity closure as the transform.
+     *
+     * @param self      a Collection
+     * @param collector the Map into which the transformed entries are put
+     * @return the collector with all transformed values added to it
+     * @see #collectEntries(Collection, Map, Closure)
+     */
+    public static <K, V> Map<K, V> collectEntries(Collection<?> self, Map<K, V> collector) {
+        return collectEntries(self, collector, Closure.IDENTITY);
     }
 
     /**
