@@ -32,14 +32,16 @@ import org.codehaus.groovy.control.CompilationFailedException
  * Your subclass has to implement <code>void verifyStubs()</code>.
  * <p/>
  *
- * All the sample Java and Groovy sources to be joint-compiled must be put in <code>src/test-resources/stubgenerator</code>,
+ * All the sample Java and Groovy sources to be joint-compiled must be either:
+ * <ul>
+ * <li>put in <code>src/test-resources/stubgenerator</code>,
  * under a directory whose name is the name of the subclass you created, with the first letter lowercase,
  * and the suffix Test removed.
- * <p/>
- *
  * Example: for the test <code>CircularLanguageReferenceTest</code>,
  * you should put your resources in <code>src/test-resources/stubgenerator/circularLanguageReference</code>.
- * <p/>
+ * <li>provided via the <code>Map<String, String> provideSources()</code> method. Example: see one of the
+ * existing tests which use this approach, e.g. <code>DuplicateMethodAdditionInStubsTest</code>.
+ * </ul>
  *
  * From within the <code>verifyStubs()</code> method, you can make various assertions on the stubs.
  * QDox is used for parsing the Java sources (both the generated stub Java sources, as well as the original Java source,
