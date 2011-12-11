@@ -112,7 +112,11 @@ dependencies {
 sourceSets {
     main {
         java {
-            srcDirs = ["$projectDir/src/main"]
+            srcDirs = [
+                    "$projectDir/src/main",
+                    "$projectDir/subprojects/groovy-jmx/src/main/java",
+                    "$projectDir/subprojects/groovy-bsf/src/main/java",
+            ]
             fileTree("$projectDir/src/main/groovy/ui").matching {
                 exclude 'GroovyMain.java', 'GroovySocketServer.java'
             }.visit {details ->
@@ -120,7 +124,10 @@ sourceSets {
             }
         }
         groovy {
-            srcDirs = ["$projectDir/src/main"]
+            srcDirs = [
+                    "$projectDir/src/main",
+                    "$projectDir/subprojects/groovy-jmx/src/main/groovy",
+            ]
         }
         resources {
             srcDirs = ["$projectDir/src/main", "$projectDir/src/tools"]
@@ -137,11 +144,20 @@ sourceSets {
     }
     test {
         groovy {
-            srcDirs = ["$projectDir/src/test"]
+            srcDirs = [
+                    "$projectDir/src/test",
+                    "$projectDir/subprojects/groovy-bsf/src/test/groovy",
+                    "$projectDir/subprojects/groovy-jmx/src/test/groovy",
+                    "$projectDir/subprojects/groovy-bsf/src/test/java",
+                    "$projectDir/subprojects/groovy-jmx/src/test/java"
+            ]
             if (!isJava16()) {
                 exclude "groovy/**/vm6/*Test.groovy"
                 exclude "org/codehaus/groovy/**/vm6/*Test.groovy"
             }
+        }
+        resources {
+            srcDirs = ["$projectDir/src/test-resources"]
         }
         output.classesDir = "$buildDir/test-classes" as File
     }
@@ -175,7 +191,7 @@ processResources.doLast {
             include "groovy/inspect/swingui/AstBrowserProperties.groovy",
                     "org/codehaus/groovy/tools/groovydoc/gstringTemplates/GroovyDocTemplateInfo.java"
         }
-        into sourceSets.main.classesDir
+        into sourceSets.main.output.classesDir
     }
 }
 
@@ -204,7 +220,7 @@ task ensureGrammars {
 compileJava {
     dependsOn ensureGrammars
     doLast {
-        mkdir "$sourceSets.main.classesDir/META-INF"
+        mkdir "$sourceSets.main.output.classesDir/META-INF"
         ant {
             java(classname: "org.codehaus.groovy.tools.DgmConverter",
                     fork: "true",
