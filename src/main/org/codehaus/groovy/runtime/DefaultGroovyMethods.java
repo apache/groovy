@@ -2291,6 +2291,28 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Iterates through this Collection transforming each item using the <code>transform</code> closure
+     * and returning a map of the resulting transformed entries.
+     * <pre class="groovyTestCase">
+     * def letters = "abc"
+     * // collect letters with index using list style
+     * assert (0..2).collectEntries { index -> [index, letters[index]] } == [0:'a', 1:'b', 2:'c']
+     * // collect letters with index using map style
+     * assert (0..2).collectEntries { index -> [(index): letters[index]] } == [0:'a', 1:'b', 2:'c']
+     * </pre>
+     *
+     * @param self      a Collection
+     * @param transform the closure used for transforming, which has an item from self as the parameter and
+     *                  should return a Map.Entry, a Map or a two-element list containing the resulting key and value
+     * @return a Map of the transformed entries
+     * @see #collectEntries(Collection, Map, Closure)
+     * @since 1.7.9
+     */
+    public static <K, V> Map<K, V> collectEntries(Collection<?> self, Closure<?> transform) {
+        return collectEntries(self, new LinkedHashMap<K, V>(), transform);
+    }
+
+    /**
      * A variant of collectEntries using the identity closure as the transform.
      * The source collection should be a list of <code>[key, value]</code> tuples or a <code>Map.Entry</code>.
      * <pre class="groovyTestCase">
@@ -2304,6 +2326,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self      a Collection
      * @return a Map of the transformed entries
      * @see #collectEntries(Collection, Closure)
+     * @since 1.8.5
      */
     public static <K, V> Map<K, V> collectEntries(Collection<?> self) {
         return collectEntries(self, new LinkedHashMap<K, V>(), Closure.IDENTITY);
@@ -2342,6 +2365,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param collector the Map into which the transformed entries are put
      * @return the collector with all transformed values added to it
      * @see #collectEntries(Collection, Map, Closure)
+     * @since 1.8.5
      */
     public static <K, V> Map<K, V> collectEntries(Collection<?> self, Map<K, V> collector) {
         return collectEntries(self, collector, Closure.IDENTITY);
@@ -2359,7 +2383,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *     [(index+1): letters[index]] } == [1:'a', 2:'b', 3:'c', 4:'d']
      * </pre>
      *
-     * @param self      a Collection
+     * @param self      an Object array
      * @param collector the Map into which the transformed entries are put
      * @param transform the closure used for transforming, which has an item from self as the parameter and
      *                  should return a Map.Entry, a Map or a two-element list containing the resulting key and value
@@ -2372,25 +2396,16 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Iterates through this Collection transforming each item using the <code>transform</code> closure
-     * and returning a map of the resulting transformed entries.
-     * <pre class="groovyTestCase">
-     * def letters = "abc"
-     * // collect letters with index using list style
-     * assert (0..2).collectEntries { index -> [index, letters[index]] } == [0:'a', 1:'b', 2:'c']
-     * // collect letters with index using map style
-     * assert (0..2).collectEntries { index -> [(index): letters[index]] } == [0:'a', 1:'b', 2:'c']
-     * </pre>
+     * A variant of collectEntries using the identity closure as the transform.
      *
-     * @param self      a Collection
-     * @param transform the closure used for transforming, which has an item from self as the parameter and
-     *                  should return a Map.Entry, a Map or a two-element list containing the resulting key and value
-     * @return a Map of the transformed entries
-     * @see #collectEntries(Collection, Map, Closure)
-     * @since 1.7.9
+     * @param self      an Object array
+     * @param collector the Map into which the transformed entries are put
+     * @return the collector with all transformed values added to it
+     * @see #collectEntries(Object[], Map, Closure)
+     * @since 1.8.5
      */
-    public static <K, V> Map<K, V> collectEntries(Collection<?> self, Closure<?> transform) {
-        return collectEntries(self, new LinkedHashMap<K, V>(), transform);
+    public static <K, V> Map<K, V> collectEntries(Object[] self, Map<K, V> collector) {
+        return collectEntries(self, collector, Closure.IDENTITY);
     }
 
     /**
@@ -2414,6 +2429,18 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <K, V> Map<K, V> collectEntries(Object[] self, Closure<?> transform) {
         return collectEntries(toList(self), new LinkedHashMap<K, V>(), transform);
+    }
+
+    /**
+     * A variant of collectEntries using the identity closure as the transform.
+     *
+     * @param self      an Object array
+     * @return the collector with all transformed values added to it
+     * @see #collectEntries(Object[], Closure)
+     * @since 1.8.5
+     */
+    public static <K, V> Map<K, V> collectEntries(Object[] self) {
+        return collectEntries(self, Closure.IDENTITY);
     }
 
     private static <K, V> void addEntry(Map<K, V> result, Object newEntry) {
