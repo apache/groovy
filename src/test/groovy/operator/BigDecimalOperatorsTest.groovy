@@ -155,4 +155,25 @@ class BigDecimalOperatorsTest extends GroovyTestCase {
     }
     // -------------------------------------------------------
 
+    // GROOVY-5173
+    public void testBDPrimOptFields() {
+        assertScript """
+            class BigDecimalBug {
+                
+                  BigDecimal advancePaid = 100.00
+                  BigDecimal advanceApplied = 10.00
+                  BigDecimal advanceHeld = 20.00
+                  BigDecimal advanceAdj = 50.00
+                
+                  void testAdvanceAvailable() {
+                    def tmp = advancePaid + advanceApplied + advanceHeld + advanceAdj;
+                    assert tmp.getClass() == BigDecimal
+                  }  
+            }
+            def bug = new BigDecimalBug()
+            bug.testAdvanceAvailable()
+        """
+    }
+
+
 }
