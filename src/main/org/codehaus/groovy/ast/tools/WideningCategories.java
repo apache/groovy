@@ -104,7 +104,16 @@ public class WideningCategories {
                 type==double_TYPE   ||  type==Double_TYPE   ||
                 isBigDecCategory(type);
     }
-    
+
+    /**
+     * It is of a floating category, if the provided type is a
+     * a float, double or a wrapper of those. C(type)=double
+     */
+    public static boolean isFloatingCategory(ClassNode type) {
+        return  type==float_TYPE    ||  type==Float_TYPE    ||
+                type==double_TYPE   ||  type==Double_TYPE;
+    }
+
     public static boolean isNumberCategory(ClassNode type) {
         return isBigDecCategory(type) || type.isDerivedFrom(Number_TYPE);
     }
