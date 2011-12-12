@@ -20,7 +20,9 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GenericsType;
 
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Utility methods to deal with generic types.
@@ -129,10 +131,27 @@ public class GenericsUtils {
      * @return a parameterized interface class node
      */
     public static ClassNode parameterizeInterfaceGenerics(final ClassNode classNode, final ClassNode anInterface) {
+        ClassNode interfaceFromClassNode = null;
+        ClassNode[] interfaces = classNode.getInterfaces();
+        for (ClassNode node : interfaces) {
+            if (node.equals(anInterface)) {
+                interfaceFromClassNode = node;
+                break;
+            } else if (node.implementsInterface(anInterface)) {
+                // ex: classNode = LinkedList<A> , node=List<E> , anInterface = Iterable<T>
+                return parameterizeInterfaceGenerics(parameterizeInterfaceGenerics(classNode, node), anInterface);
+            }
+        }
+        if (interfaceFromClassNode==null && classNode.getUnresolvedSuperClass()!=null) {
+            return parameterizeInterfaceGenerics(classNode.getUnresolvedSuperClass(), anInterface);
+        }
+        if (interfaceFromClassNode==null) {
+            return anInterface;
+        }
         Map<String,GenericsType> parameters = new HashMap<String, GenericsType>();
         extractPlaceholders(classNode, parameters);
-        ClassNode node = anInterface.getPlainNodeReference();
-        GenericsType[] interfaceGTs = anInterface.getGenericsTypes();
+        ClassNode node = interfaceFromClassNode.getPlainNodeReference();
+        GenericsType[] interfaceGTs = interfaceFromClassNode.getGenericsTypes();
         GenericsType[] types = new GenericsType[interfaceGTs.length];
         for (int i = 0; i < interfaceGTs.length; i++) {
             GenericsType interfaceGT = interfaceGTs[i];

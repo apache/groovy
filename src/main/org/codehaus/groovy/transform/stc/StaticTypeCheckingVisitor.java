@@ -23,6 +23,7 @@ import org.codehaus.groovy.classgen.ReturnAdder;
 import org.codehaus.groovy.classgen.asm.InvocationWriter;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.runtime.MetaClassHelper;
+import org.codehaus.groovy.runtime.typehandling.FloatingPointMath;
 import org.codehaus.groovy.transform.StaticTypesTransformation;
 import org.codehaus.groovy.util.ListHashMap;
 import org.objectweb.asm.Opcodes;
@@ -631,14 +632,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         ClassNode componentType = collectionType.getComponentType();
         if (componentType == null) {
             if (collectionType.implementsInterface(ITERABLE_TYPE)) {
-                ClassNode intf = ITERABLE_TYPE;
-                for (ClassNode node : collectionType.getAllInterfaces()) {
-                    if (ITERABLE_TYPE.equals(node)) {
-                        intf = node;
-                        break;
-                    }
-                }
-                intf = GenericsUtils.parameterizeInterfaceGenerics(collectionType, intf);
+                ClassNode intf = GenericsUtils.parameterizeInterfaceGenerics(collectionType, ITERABLE_TYPE);
                 GenericsType[] genericsTypes = intf.getGenericsTypes();
                 componentType = genericsTypes[0].getType();
             } else if (collectionType == ClassHelper.STRING_TYPE) {
@@ -1249,6 +1243,14 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (isShiftOperation(operationName) && isNumberCategory(leftRedirect) && (isIntCategory(rightRedirect) || isLongCategory(rightRedirect))) {
             return leftRedirect;
         }
+
+        // Divisions may produce different results depending on operand types
+        if (DIVIDE==op || DIVIDE_EQUAL==op) {
+            if (isFloatingCategory(leftRedirect) || isFloatingCategory(rightRedirect)) {
+                return Double_TYPE;
+            }
+
+        }
         MethodNode method = findMethodOrFail(expr, leftRedirect, operationName, rightRedirect);
         if (method != null) {
             if (isCompareToBoolean(op)) return boolean_TYPE;
@@ -1542,6 +1544,22 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 result.setGenericsTypes(new GenericsType[]{new GenericsType(irt)});
                 return result;
             }
+        }
+        if (exp instanceof RangeExpression) {
+            ClassNode plain = ClassHelper.RANGE_TYPE.getPlainNodeReference();
+            RangeExpression re = (RangeExpression) exp;
+            ClassNode fromType = getType(re.getFrom());
+            ClassNode toType = getType(re.getTo());
+            if (fromType.equals(toType)) {
+                plain.setGenericsTypes(new GenericsType[] {
+                        new GenericsType(wrapTypeIfNecessary(fromType))
+                });
+            } else {
+                plain.setGenericsTypes(new GenericsType[]{
+                        new GenericsType(wrapTypeIfNecessary(lowestUpperBound(fromType, toType)))
+                });
+            }
+            return plain;
         }
         return exp instanceof VariableExpression?((VariableExpression) exp).getOriginType():((Expression)exp).getType();
     }

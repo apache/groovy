@@ -131,7 +131,10 @@ abstract class StaticTypeCheckingSupport {
      */
     private static Map<String, List<MethodNode>> getDGMMethods() {
         Map<String, List<MethodNode>> methods = new HashMap<String, List<MethodNode>>();
-		for (Class dgmLikeClass : DefaultGroovyMethods.DGM_LIKE_CLASSES) {
+        List<Class> classes = new LinkedList<Class>();
+        Collections.addAll(classes, DefaultGroovyMethods.DGM_LIKE_CLASSES);
+        Collections.addAll(classes, DefaultGroovyMethods.additionals);
+		for (Class dgmLikeClass : classes) {
 			ClassNode cn = ClassHelper.makeWithoutCaching(dgmLikeClass, true);
 			for (MethodNode metaMethod : cn.getMethods()) {
 				Parameter[] types = metaMethod.getParameters();
