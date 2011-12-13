@@ -18,6 +18,7 @@ package org.codehaus.groovy.transform.stc;
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.tools.GenericsUtils;
+import org.codehaus.groovy.ast.tools.WideningCategories;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 
 import java.util.*;
@@ -518,6 +519,11 @@ abstract class StaticTypeCheckingSupport {
         // if left and right are primitives or numbers allow
         if (isPrimitiveType(leftRedirect) && isPrimitiveType(rightRedirect)) return true;
         if (isNumberType(leftRedirect) && isNumberType(rightRedirect)) return true;
+
+        // left is a float/double and right is a BigDecimal
+        if (WideningCategories.isFloatingCategory(leftRedirect) && BigDecimal_TYPE.equals(rightRedirect)) {
+            return true;
+        }
 
         return false;
     }
