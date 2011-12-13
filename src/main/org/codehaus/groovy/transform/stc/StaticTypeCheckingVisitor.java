@@ -1248,9 +1248,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (DIVIDE==op || DIVIDE_EQUAL==op) {
             if (isFloatingCategory(leftRedirect) || isFloatingCategory(rightRedirect)) {
                 return Double_TYPE;
+            } else if (BigDecimal_TYPE.equals(leftRedirect)||BigDecimal_TYPE.equals(rightRedirect)) {
+                return BigDecimal_TYPE;
             }
-
+        } else if (isOperationInGroup(op) && isNumberCategory(leftRedirect) && isNumberCategory(rightRedirect)) {
+            return getGroupOperationResultType(leftRedirect, rightRedirect);
         }
+
         MethodNode method = findMethodOrFail(expr, leftRedirect, operationName, rightRedirect);
         if (method != null) {
             if (isCompareToBoolean(op)) return boolean_TYPE;
@@ -1261,6 +1265,25 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         return null;
     }
 
+    private static ClassNode getGroupOperationResultType(ClassNode a, ClassNode b) {
+        if (BigDecimal_TYPE.equals(a)||BigDecimal_TYPE.equals(b)) return BigDecimal_TYPE;
+        if (double_TYPE.equals(a) || double_TYPE.equals(b)) return double_TYPE;
+        if (Double_TYPE.equals(a) || Double_TYPE.equals(b)) return Double_TYPE;
+        if (float_TYPE.equals(a) || float_TYPE.equals(b)) return float_TYPE;
+        if (Float_TYPE.equals(a) || Float_TYPE.equals(b)) return Float_TYPE;
+        if (long_TYPE.equals(a) || long_TYPE.equals(b)) return long_TYPE;
+        if (Long_TYPE.equals(a) || Long_TYPE.equals(b)) return Long_TYPE;
+        if (int_TYPE.equals(a) || int_TYPE.equals(b)) return int_TYPE;
+        if (Integer_TYPE.equals(a) || Integer_TYPE.equals(b)) return Integer_TYPE;
+        if (short_TYPE.equals(a) || short_TYPE.equals(b)) return short_TYPE;
+        if (Short_TYPE.equals(a) || Short_TYPE.equals(b)) return Short_TYPE;
+        if (byte_TYPE.equals(a) || byte_TYPE.equals(b)) return byte_TYPE;
+        if (Byte_TYPE.equals(a) || Byte_TYPE.equals(b)) return Byte_TYPE;
+        if (char_TYPE.equals(a) || char_TYPE.equals(b)) return char_TYPE;
+        if (Character_TYPE.equals(a) || Character_TYPE.equals(b)) return Character_TYPE;
+        return Number_TYPE;
+    }
+    
     private ClassNode inferComponentType(final ClassNode containerType) {
         final ClassNode componentType = containerType.getComponentType();
         if (componentType == null) {
