@@ -462,6 +462,16 @@ abstract class StaticTypeCheckingSupport {
             return left==VOID_TYPE||left==void_WRAPPER_TYPE;
         }
 
+        if ((isNumberType(rightRedirect)||WideningCategories.isNumberCategory(rightRedirect))) {
+           if (BigDecimal_TYPE==leftRedirect) {
+               // any number can be assigned to a big decimal
+               return true;
+           }
+            if (BigInteger_TYPE==leftRedirect) {
+                return WideningCategories.isBigIntCategory(rightRedirect);
+            }
+        }
+        
         // if rightExpression is null and leftExpression is not a primitive type, it's ok
         boolean rightExpressionIsNull = rightExpression instanceof ConstantExpression && ((ConstantExpression) rightExpression).getValue()==null;
         if (rightExpressionIsNull && !isPrimitiveType(left)) {

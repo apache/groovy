@@ -28,6 +28,7 @@ import org.codehaus.groovy.transform.StaticTypesTransformation;
 import org.codehaus.groovy.util.ListHashMap;
 import org.objectweb.asm.Opcodes;
 
+import java.lang.reflect.Modifier;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -215,7 +216,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 inferDiamondType((ConstructorCallExpression) rightExpression, lType);
             }
 
-            typeCheckAssignment(expression, leftExpression, lType, rightExpression, resultType);
+            typeCheckAssignment(expression, leftExpression, lType, rightExpression, rType);
 
             // if we are in an if/else branch, keep track of assignment
             if (ifElseForWhileAssignmentTracker !=null && leftExpression instanceof VariableExpression) {
@@ -1170,7 +1171,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 if (STRING_TYPE.equals(initialType)
                         || CLASS_Type.equals(initialType)
                         || Boolean_TYPE.equals(initialType)
-                        || isPrimitiveType(initialType)) {
+                        || isPrimitiveType(initialType)
+                        || BigDecimal_TYPE==initialType
+                        || BigInteger_TYPE==initialType) {
                     return initialType;
                 }
             }
@@ -1195,8 +1198,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 if (isLongCategory(leftRedirect) && isLongCategory(rightRedirect)) return long_TYPE;
                 if (isFloat(leftRedirect) && isFloat(rightRedirect)) return float_TYPE;
                 if (isDouble(leftRedirect) && isDouble(rightRedirect)) return double_TYPE;
-                if (isBigIntCategory(leftRedirect) && isBigIntCategory(rightRedirect)) return BigInteger_TYPE;
-                if (isBigDecCategory(leftRedirect) && isBigDecCategory(rightRedirect)) return BigDecimal_TYPE;
             } else if (isPowerOperator(op)) {
                 return Number_TYPE;
             } else if (isBitOperator(op)) {
@@ -1222,8 +1223,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             } else if (BigDecimal_TYPE.equals(leftRedirect)||BigDecimal_TYPE.equals(rightRedirect)) {
                 return BigDecimal_TYPE;
             }
-        } else if (isOperationInGroup(op) && isNumberCategory(leftRedirect) && isNumberCategory(rightRedirect)) {
-            return getGroupOperationResultType(leftRedirect, rightRedirect);
+        } else if (isOperationInGroup(op)) {
+            if (isNumberCategory(getWrapper(leftRedirect)) && isNumberCategory(getWrapper(rightRedirect))) {
+                return getGroupOperationResultType(leftRedirect, rightRedirect);
+            }
         }
 
         MethodNode method = findMethodOrFail(expr, leftRedirect, operationName, rightRedirect);
@@ -1237,7 +1240,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     private static ClassNode getGroupOperationResultType(ClassNode a, ClassNode b) {
+        if (isBigIntCategory(a) && isBigIntCategory(b)) return BigInteger_TYPE;
+        if (isBigDecCategory(a) && isBigDecCategory(b)) return BigDecimal_TYPE;        
         if (BigDecimal_TYPE.equals(a)||BigDecimal_TYPE.equals(b)) return BigDecimal_TYPE;
+        if (BigInteger_TYPE.equals(a)||BigInteger_TYPE.equals(b)) {
+            if (isBigIntCategory(a) && isBigIntCategory(b)) return BigInteger_TYPE;
+            return BigDecimal_TYPE;
+        }
         if (double_TYPE.equals(a) || double_TYPE.equals(b)) return double_TYPE;
         if (Double_TYPE.equals(a) || Double_TYPE.equals(b)) return Double_TYPE;
         if (float_TYPE.equals(a) || float_TYPE.equals(b)) return float_TYPE;
