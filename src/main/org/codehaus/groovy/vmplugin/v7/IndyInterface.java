@@ -17,12 +17,15 @@ package org.codehaus.groovy.vmplugin.v7;
 
 import groovy.lang.GString;
 import groovy.lang.GroovyObject;
+import groovy.lang.GroovySystem;
 import groovy.lang.MetaClass;
 import groovy.lang.MetaClassImpl;
 import groovy.lang.MetaMethod;
 
 import java.lang.invoke.*;
 import java.lang.invoke.MethodHandles.Lookup;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.math.BigInteger;
 
 import org.codehaus.groovy.GroovyBugError;
@@ -62,7 +65,7 @@ public class IndyInterface {
             }
         }
         private static final MethodType GENERAL_INVOKER_SIGNATURE = MethodType.methodType(Object.class, Object.class, Object[].class);
-        private static final MethodType INVOKE_METHOD_SIGNATURE = MethodType.methodType(Object.class, String.class, Object[].class);
+        private static final MethodType INVOKE_METHOD_SIGNATURE = MethodType.methodType(Object.class, Class.class, Object.class, String.class, Object[].class, boolean.class, boolean.class);
         private static final MethodType O2O = MethodType.methodType(Object.class, Object.class);
         private static final MethodHandle UNWRAP_METHOD, TO_STRING, TO_BYTE, TO_BIGINT, SAME_MC, IS_NULL, IS_NOT_NULL;
         static {
@@ -110,13 +113,18 @@ public class IndyInterface {
             return mh;
         }
 
+        private static Class getClass(Object x) {
+            if (x instanceof Class) return (Class) x;
+            return x.getClass();
+        }
+        
         private static MetaClass getMetaClass(Object receiver) {
             if (receiver == null) {
                 return NullObject.getNullObject().getMetaClass();
             } else if (receiver instanceof GroovyObject) {
                 return ((GroovyObject) receiver).getMetaClass(); 
             } else {
-                return InvokerHelper.getMetaClass(receiver);
+                return GroovySystem.getMetaClassRegistry().getMetaClass(getClass(receiver));
             }
         }
         
@@ -131,15 +139,24 @@ public class IndyInterface {
             public Class sender;
         }
         
+        private static boolean isStatic(Method m) {
+            int mods = m.getModifiers();
+            return (mods & Modifier.STATIC) != 0;
+        }
+        
         private static void setHandleForMetaMethod(CallInfo info) {
             if (info.method instanceof CachedMethod) {
                 CachedMethod cm = (CachedMethod) info.method;
                 try {
-                    info.handle = LOOKUP.unreflect(cm.getCachedMethod());
+                    Method m = cm.getCachedMethod();
+                    info.handle = LOOKUP.unreflect(m);
+                    if (isStatic(m)) {
+                        info.handle = MethodHandles.dropArguments(info.handle, 0, Class.class);
+                    }
                 } catch (IllegalAccessException e) {
                     throw new GroovyBugError(e);
                 }
-            } else {
+            } else if (info.method != null) {
                 // receiver, args
                 try {
                     info.handle = LOOKUP.findVirtual(info.method.getClass(), "invoke", GENERAL_INVOKER_SIGNATURE);
@@ -156,7 +173,7 @@ public class IndyInterface {
                 MetaClassImpl mci = (MetaClassImpl) mc;
                 Object receiver = ci.args[0];
                 if (receiver==null) receiver = NullObject.getNullObject();
-                ci.method = mci.getMethodWithCaching(receiver.getClass(), ci.methodName, removeRealReceiver(ci.args), false);
+                ci.method = mci.getMethodWithCaching(getClass(receiver), ci.methodName, removeRealReceiver(ci.args), false);
             }
         }
         
@@ -167,9 +184,11 @@ public class IndyInterface {
                 ci.handle = LOOKUP.findVirtual(mc.getClass(), "invokeMethod", INVOKE_METHOD_SIGNATURE);
             } catch (Exception e) {
                 throw new GroovyBugError(e);
-            }
-            ci.handle = ci.handle.bindTo(mc).
-                        asCollector(Object[].class, ci.targetType.parameterCount()-2);
+            }            
+            ci.handle = ci.handle.bindTo(mc).bindTo(ci.sender);
+            ci.handle = MethodHandles.insertArguments(ci.handle, ci.handle.type().parameterCount()-2, true, false);
+            ci.handle = MethodHandles.insertArguments(ci.handle, 1, ci.methodName);
+            ci.handle = ci.handle.asCollector(Object[].class, ci.targetType.parameterCount()-2);
         }
 
         /**
@@ -307,8 +326,12 @@ public class IndyInterface {
             correctCoerce(callInfo);
             correctNullReceiver(callInfo);
             dropDummyReceiver(callInfo);
-            
-            callInfo.handle = callInfo.handle.asType(callInfo.targetType);
+            try {
+                callInfo.handle = callInfo.handle.asType(callInfo.targetType);
+            } catch (Exception e) {
+                System.err.println("ERROR while processing "+methodName);
+                throw e;
+            }
             
             setGuards(callInfo, callInfo.args[0]);
             
