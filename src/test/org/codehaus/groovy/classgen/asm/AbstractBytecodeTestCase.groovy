@@ -2,12 +2,10 @@ package org.codehaus.groovy.classgen.asm
 
 import org.codehaus.groovy.control.CompilationUnit
 import org.objectweb.asm.util.TraceClassVisitor
-import org.objectweb.asm.MethodVisitor
-import org.objectweb.asm.FieldVisitor
-import org.objectweb.asm.ClassReader
+import org.objectweb.asm.tree.*
+import org.objectweb.asm.*
 import org.codehaus.groovy.control.Phases
-import org.objectweb.asm.commons.EmptyVisitor
-import java.util.List;
+import java.util.List
 
 /**
  * Abstract test case to extend to check the instructions we generate in the bytecode of groovy programs.
@@ -33,23 +31,23 @@ abstract class AbstractBytecodeTestCase extends GroovyTestCase {
         
         
         def output = new StringWriter()
-        def tcf = new TraceClassVisitor(new PrintWriter(output)) {
-            MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
+        def tcf = new TraceClassVisitor(new ClassVisitor(Opcodes.ASM4) {
+            MethodVisitor visitMethod(int access, String name, String desc, String signature, String... exceptions) {
                 if (options.method == name) {
                     super.visitMethod(access, name, desc, signature, exceptions)
                 } else {
-                    new EmptyVisitor()
+                    null
                 }
             }
             FieldVisitor visitField(int access, String name, String desc, String signature, Object value) {
                 if (options.field == name) {
                     super.visitField(access, name, desc, signature, value)
                 } else {
-                    new EmptyVisitor()
+                    null
                 }
             }
-            
-        }
+
+        }, new PrintWriter(output))
         def cr = new ClassReader(cu.classes[0].bytes)
         cr.accept(tcf, 0)
 
