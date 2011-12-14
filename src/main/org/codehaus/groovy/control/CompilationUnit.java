@@ -760,7 +760,7 @@ public class CompilationUnit extends ProcessingUnit {
             //
             // Prep the generator machinery
             //
-            ClassVisitor visitor = createClassVisitor();
+            ClassVisitor visitor = createClassVisitor(context);
 
             String sourceName = (source == null ? classNode.getModule().getDescription() : source.getName());
             // only show the file name and its extension like javac does in its stacktraces rather than the full path
@@ -794,9 +794,42 @@ public class CompilationUnit extends ProcessingUnit {
         }
     };
 
-
-    protected ClassVisitor createClassVisitor() {
-        return new ClassWriter(ClassWriter.COMPUTE_FRAMES+ClassWriter.COMPUTE_MAXS);
+    protected ClassVisitor createClassVisitor(final GeneratorContext context) {
+        return new ClassWriter(ClassWriter.COMPUTE_FRAMES+ClassWriter.COMPUTE_MAXS) {
+            /*private ClassNode getClassNode(String name, CompileUnit cu) {
+                ClassNode cn = cu.getClass(name);
+                if (cn!=null) return cn;
+                try {
+                    cn = ClassHelper.make(
+                            cu.getClassLoader().loadClass(name,false,true),
+                            false);
+                } catch (Exception e) {
+                    throw new GroovyBugError(e);
+                }
+                return cn;
+            }
+            private ClassNode getCommonSuperClassNode(ClassNode c, ClassNode d) {
+                /** adapted from ClassWriter code **/
+                /*if (c.isDerivedFrom(d)) return c;
+                if (d.isDerivedFrom(c)) return d;
+                if (c.isInterface() || d.isInterface()) return ClassHelper.OBJECT_TYPE;
+                do {
+                    c = c.getSuperClass();
+                } while (c!=null && !c.isDerivedFrom(d));
+                if (c==null) return ClassHelper.OBJECT_TYPE;
+                return c;
+            }*/
+            @Override
+            protected String getCommonSuperClass(String arg1, String arg2) {
+                /*arg1 = arg1.replace('/','.');
+                arg2 = arg2.replace('/','.');
+                CompileUnit cu = context.getCompileUnit();
+                ClassNode c = getClassNode(arg1, cu);
+                ClassNode d = getClassNode(arg2, cu);
+                return getCommonSuperClassNode(c, d).getName().replace('.','/');*/
+                return ClassHelper.OBJECT_TYPE.getName().replace('.','/');
+            }
+        };
     }
 
     //---------------------------------------------------------------------------
