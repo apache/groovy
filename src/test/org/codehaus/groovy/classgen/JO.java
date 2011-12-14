@@ -17,7 +17,7 @@ package org.codehaus.groovy.classgen;
 
 import groovy.lang.MetaClass;
 import org.codehaus.groovy.runtime.InvokerHelper;
-import org.objectweb.asm.util.ASMifierClassVisitor;
+import org.objectweb.asm.util.ASMifier;
 
 import java.lang.ref.SoftReference;
 
@@ -34,7 +34,7 @@ public class JO {
     }
 
     public static void main(String[] args) throws Exception {
-        ASMifierClassVisitor.main(new String[]{"target/classes/groovy/swing/SwingBuilder.class"});
+        ASMifier.main(new String[]{"target/classes/groovy/swing/SwingBuilder.class"});
 //        ASMifierClassVisitor.main(new String[]{"target/classes/org/codehaus/groovy/tools/shell/util/HelpFormatter.class"});
 //        ASMifierClassVisitor.main(new String[]{"target/classes/org/codehaus/groovy/runtime/callsite/PogoMetaMethodSite.class"});
 //        ASMifierClassVisitor.main(new String[]{"target/test-classes/spectralnorm.class"});

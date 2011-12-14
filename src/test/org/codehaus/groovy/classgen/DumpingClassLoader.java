@@ -23,8 +23,9 @@ import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.SourceUnit;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.util.ASMifierClassVisitor;
+import org.objectweb.asm.util.ASMifier;
 import org.objectweb.asm.util.CheckClassAdapter;
+import org.objectweb.asm.util.TraceClassVisitor;
 
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
@@ -71,8 +72,8 @@ public class DumpingClassLoader extends GroovyClassLoader implements Opcodes {
         return new DebugCollector(this, unit, null);
     }
 
-    protected ASMifierClassVisitor dumpVisitor = new ASMifierClassVisitor(new PrintWriter(new OutputStreamWriter(System.out)));
-    protected ASMifierClassVisitor invisibleDumpVisitor = new ASMifierClassVisitor(new PrintWriter(new StringWriter()));
+    protected TraceClassVisitor dumpVisitor = new TraceClassVisitor(null, new ASMifier(), new PrintWriter(new OutputStreamWriter(System.out)));
+    protected TraceClassVisitor invisibleDumpVisitor = new TraceClassVisitor(null, new ASMifier(), new PrintWriter(new StringWriter()));
     protected CompileUnit unit = new CompileUnit(this, new CompilerConfiguration());
     protected ClassGenerator checker =
             new AsmClassGenerator(null,new GeneratorContext(unit), new CheckClassAdapter(invisibleDumpVisitor), null);
