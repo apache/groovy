@@ -64,6 +64,30 @@ public class WideningCategories {
     };
 
     /**
+     * Used to check if a type is an int or Integer.
+     * @param type the type to check
+     */
+    public static boolean isInt(ClassNode type) {
+        return int_TYPE == type || Integer_TYPE == type;
+    }
+
+    /**
+     * Used to check if a type is an double or Double.
+     * @param type the type to check
+     */
+    public static boolean isDouble(ClassNode type) {
+        return double_TYPE == type || Double_TYPE == type;
+    }
+
+    /**
+     * Used to check if a type is a float or Float.
+     * @param type the type to check
+     */
+    public static boolean isFloat(ClassNode type) {
+        return float_TYPE == type || Float_TYPE == type;
+    }
+
+    /**
      * It is of an int category, if the provided type is a
      * byte, char, short, int or any of the wrapper.   
      */
