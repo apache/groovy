@@ -86,7 +86,7 @@ dependencies {
         exclude(module: 'asm')
         exclude(module: 'ant')
     }
-    tools "asm:asm:3.3.1"
+    tools "asm:asm-all:4.0.0"
     tools "com.thoughtworks.qdox:qdox:1.12"
     tools "biz.aQute:bnd:0.0.401"
 
