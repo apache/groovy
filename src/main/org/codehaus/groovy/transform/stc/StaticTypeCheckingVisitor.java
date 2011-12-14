@@ -1192,10 +1192,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         else if (isNumberType(leftRedirect) && isNumberType(rightRedirect)) {
             if (isOperationInGroup(op)) {
                 if (isIntCategory(leftRedirect) && isIntCategory(rightRedirect)) return int_TYPE;
-                if (isLongCategory(leftRedirect) && isLongCategory(rightRedirect)) return Long_TYPE;
+                if (isLongCategory(leftRedirect) && isLongCategory(rightRedirect)) return long_TYPE;
+                if (isFloat(leftRedirect) && isFloat(rightRedirect)) return float_TYPE;
+                if (isDouble(leftRedirect) && isDouble(rightRedirect)) return double_TYPE;
                 if (isBigIntCategory(leftRedirect) && isBigIntCategory(rightRedirect)) return BigInteger_TYPE;
                 if (isBigDecCategory(leftRedirect) && isBigDecCategory(rightRedirect)) return BigDecimal_TYPE;
-                if (isDoubleCategory(leftRedirect) && isDoubleCategory(rightRedirect)) return double_TYPE;
             } else if (isPowerOperator(op)) {
                 return Number_TYPE;
             } else if (isBitOperator(op)) {

@@ -445,5 +445,13 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         ''', 'Cannot find matching method java.io.Serializable#toInteger()'
     }
 
+    void testFloatSum() {
+        assertScript '''
+            float x = 1.0f
+            float y = 1.0f
+            float z = x+y
+        '''
+    }
+
 }
 
