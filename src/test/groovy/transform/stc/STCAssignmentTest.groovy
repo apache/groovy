@@ -127,7 +127,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         shouldFailWithMessages """
             int i = 0
             i -= '1'
-        """, "Cannot find matching method int#minus(java.lang.String)"
+        """, "Cannot find matching method int#minus(java.lang.String)", 'Cannot assign value of type java.lang.String to variable of type int'
     }
 
     void testStringPlusEqualsString() {
@@ -445,6 +445,60 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         ''', 'Cannot find matching method java.io.Serializable#toInteger()'
     }
 
+    void testFloatSub() {
+        assertScript '''
+            float x = 1.0f
+            float y = 1.0f
+            float z = x-y
+        '''
+    }
+
+    void testDoubleMinusInt() {
+        assertScript '''
+            double m() {
+                double a = 10d
+                int b = 1
+                double c = a-b
+            }
+            assert m()==9d
+        '''
+    }
+
+    void testDoubleMinusFloat() {
+        assertScript '''
+            double m() {
+                double a = 10d
+                float b = 1f
+                double c = a-b
+            }
+            assert m()==9d
+        '''
+    }
+
+    void testBigDecimalSub() {
+        assertScript '''
+            BigDecimal m() {
+                BigDecimal a = 10
+                BigDecimal b = 10
+                BigDecimal c = a-b
+            }
+            assert m()==0
+            assert m().getClass() == BigDecimal
+        '''
+    }
+
+    void testBigDecimalMinusDouble() {
+        assertScript '''
+            BigDecimal m() {
+                BigDecimal a = 10
+                double b = 10d
+                BigDecimal c = a-b
+            }
+            assert m()==0
+            assert m().getClass() == BigDecimal
+        '''
+    }
+
     void testFloatSum() {
         assertScript '''
             float x = 1.0f
@@ -453,5 +507,114 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    void testDoublePlusInt() {
+        assertScript '''
+            double m() {
+                double a = 10d
+                int b = 1
+                double c = a+b
+            }
+            assert m()==11d
+        '''
+    }
+
+    void testDoublePlusFloat() {
+        assertScript '''
+            double m() {
+                double a = 10d
+                float b = 1f
+                double c = a+b
+            }
+            assert m()==11d
+        '''
+    }
+
+    void testBigDecimalSum() {
+        assertScript '''
+            BigDecimal m() {
+                BigDecimal a = 10
+                BigDecimal b = 10
+                BigDecimal c = a+b
+            }
+            assert m()==20
+            assert m().getClass() == BigDecimal
+        '''
+    }
+
+    void testBigDecimalPlusDouble() {
+        assertScript '''
+            BigDecimal m() {
+                BigDecimal a = 10
+                double b = 10d
+                BigDecimal c = a+b
+            }
+            assert m()==20
+            assert m().getClass() == BigDecimal
+        '''
+    }
+    
+    void testBigIntegerAssignment() {
+        assertScript '''
+            BigInteger bigInt = 6666666666666666666666666666666666666
+            assert bigInt.toString()=='6666666666666666666666666666666666666'
+            assert bigInt.class == BigInteger
+        '''
+    }
+
+    void testBigIntegerSum() {
+        assertScript '''
+            BigInteger a = 6666666666666666666666666666666666666
+            BigInteger b = 6666666666666666666666666666666666666
+            BigInteger c = a + b
+            assert c.toString()=='13333333333333333333333333333333333332'
+            assert c.class == BigInteger
+        '''
+    }
+
+    void testBigIntegerSub() {
+        assertScript '''
+            BigInteger a = 6666666666666666666666666666666666666
+            BigInteger b = 6666666666666666666666666666666666666
+            BigInteger c = a - b
+            assert c.toString()=='0'
+            assert c.class == BigInteger
+        '''
+    }
+
+    void testBigIntegerMult() {
+        assertScript '''
+            BigInteger a = 6666666666666666666666666666666666666
+            BigInteger b = 2
+            BigInteger c = a * b
+            assert c.toString()=='13333333333333333333333333333333333332'
+            assert c.class == BigInteger
+        '''
+    }
+
+    void testBigIntegerMultDouble() {
+        assertScript '''
+            BigInteger a = 333
+            double b = 2d
+            BigDecimal c = a * b
+            assert c == 666
+            assert c.getClass() == BigDecimal
+        '''
+
+        shouldFailWithMessages '''
+            BigInteger a = 333
+            double b = 2d
+            BigInteger c = a * b
+        ''', 'Cannot assign value of type java.math.BigDecimal to variable of type java.math.BigInteger'
+    }
+
+    void testBigIntegerMultInteger() {
+        assertScript '''
+            BigInteger a = 333
+            int b = 2
+            BigDecimal c = a * b
+            assert c == 666
+            assert c.getClass() == BigDecimal
+        '''
+    }
 }
 
