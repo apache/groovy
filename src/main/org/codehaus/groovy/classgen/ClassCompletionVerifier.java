@@ -301,8 +301,8 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport implements 
 
     private void checkOverloadingPrivateAndPublic(MethodNode node) {
         if (isConstructor(node)) return;
-        boolean hasPrivate = false;
-        boolean hasPublic = false;
+        boolean hasPrivate = node.isPrivate();
+        boolean hasPublic = node.isPublic();
         for (MethodNode method : currentClass.getMethods(node.getName())) {
             if (method == node) continue;
             if (!method.getDeclaringClass().equals(node.getDeclaringClass())) continue;
