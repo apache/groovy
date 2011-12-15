@@ -190,6 +190,95 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         ''', 'Cannot call groovy.transform.stc.MethodCallsSTCTest$MyMethodCallTestClass2#identity([Ljava.lang.Integer;) with arguments [[Ljava.lang.String;]'
     }
 
+    void testMethodCallFromSuperOwner() {
+        assertScript '''
+            class Child extends groovy.transform.stc.MethodCallsSTCTest.GroovyPage {
+                void foo() {
+                    createTagBody(1) { ->
+                        printHtmlPart(2)
+                    }
+                }
+            }
+            new Child()
+        '''
+    }
+
+    // GROOVY-5175
+    void testCallMethodAcceptingArrayWithNull() {
+        assertClass '''
+            class Foo {
+                def say() {
+                    methodWithArrayParam(null) // STC Error
+                }
+                def methodWithArrayParam(String[] s) {
+
+                }
+            }
+        '''
+    }
+
+    // GROOVY-5175
+    void testCallMethodWithNull() {
+        assertClass '''
+            class Foo {
+                def say() {
+                    methodWithArrayParam(null)
+                }
+                def methodWithArrayParam(Date date) {
+
+                }
+            }
+        '''
+    }
+
+    // GROOVY-5175
+    void testCallMethodWithNullAndAnotherParameter() {
+        assertClass '''
+            class Foo {
+                def say() {
+                    methodWithArrayParam(null, new Date())
+                }
+                def methodWithArrayParam(Date date1, Date date2) {
+
+                }
+            }
+        '''
+    }
+
+    // GROOVY-5175
+    void testAmbiguousCallMethodWithNullAndAnotherParameter() {
+        shouldFailWithMessages '''
+            class Foo {
+                def say() {
+                    methodWithArrayParam(null, new Date())
+                }
+                def methodWithArrayParam(Date date1, Date date2) {
+
+                }
+                def methodWithArrayParam(String o, Date date2) {
+
+                }
+            }
+        ''', 'Reference to method is ambiguous'
+    }
+
+    // GROOVY-5175
+    void testDisambiguateCallMethodWithNullAndAnotherParameter() {
+        assertClass '''
+            class Foo {
+                def say() {
+                    methodWithArrayParam((Date)null, new Date())
+                }
+                def methodWithArrayParam(Date date1, Date date2) {
+
+                }
+                def methodWithArrayParam(String o, Date date2) {
+
+                }
+            }
+        '''
+    }
+
     static class MyMethodCallTestClass {
 
         static int mul(int... args) { args.toList().inject(1) { x,y -> x*y } }
@@ -208,4 +297,9 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     static class MyMethodCallTestClass3 extends MyMethodCallTestClass2<String> {}
+
+    static class GroovyPage {
+        public final void printHtmlPart(final int partNumber) {}
+        public final void createTagBody(int bodyClosureIndex, Closure<?> bodyClosure) {}
+    }
 }

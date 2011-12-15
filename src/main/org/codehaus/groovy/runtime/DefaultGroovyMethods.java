@@ -131,7 +131,17 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             DoubleArrayPutAtMetaMethod.class,
     };
 
-    /**
+	public static final Class[] DGM_LIKE_CLASSES = new Class[]{
+            DefaultGroovyMethods.class,
+            SwingGroovyMethods.class,
+            SqlGroovyMethods.class,
+            XmlGroovyMethods.class,
+            EncodingGroovyMethods.class,
+            DateGroovyMethods.class,
+            ProcessGroovyMethods.class
+    };
+
+	/**
      * Identity check. Since == is overridden in Groovy with the meaning of equality
      * we need some fallback to check for object identity.  Invoke using the
      * 'is' method, like so: <code>def same = this.is(that)</code>
@@ -1957,141 +1967,171 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Iterates through this object transforming each value into a new value using the
-     * closure as a transformer, returning a list of transformed values.
+     * Iterates through this aggregate Object transforming each item into a new value using the
+     * <code>transform</code> closure, returning a list of transformed values.
      * Example:
      * <pre class="groovyTestCase">def list = [1, 'a', 1.23, true ]
      * def types = list.collect { it.class }
      * assert types == [Integer, String, BigDecimal, Boolean]</pre>
      *
-     * @param self    the values of the object to transform
-     * @param closure the closure used to transform each element of the collection
+     * @param self      an aggregate Object with an Iterator returning its items
+     * @param transform the closure used to transform each item of the aggregate object
      * @return a List of the transformed values
      * @since 1.0
      */
-    public static <T> List<T> collect(Object self, Closure<T> closure) {
-        return (List<T>) collect(self, new ArrayList<T>(), closure);
+    public static <T> List<T> collect(Object self, Closure<T> transform) {
+        return (List<T>) collect(self, new ArrayList<T>(), transform);
     }
 
     /**
-     * Iterates through this object transforming each object into a new value using the closure
-     * as a transformer and adding it to the collection, returning the resulting collection.
+     * Iterates through this aggregate Object transforming each item into a new value using Closure.IDENTITY
+     * as a transformer, basically returning a list of items copied from the original object.
+     * <pre class="groovyTestCase">assert [1,2,3] == [1,2,3].iterator().collect()</pre>
      *
-     * @param self       the values of the object to transform
-     * @param collection the Collection to which the transformed values are added
-     * @param closure    the closure used to map each element of the collection
-     * @return the given collection after the transformed values are added
+     * @param self an aggregate Object with an Iterator returning its items
+     * @return a List of the transformed values
+     * @see Closure#IDENTITY
+     * @since 1.8.5
+     */
+    public static Collection collect(Object self) {
+        return collect(self, Closure.IDENTITY);
+    }
+
+    /**
+     * Iterates through this aggregate Object transforming each item into a new value using the <code>transform</code> closure
+     * and adding it to the supplied <code>collector</code>.
+     *
+     * @param self      an aggregate Object with an Iterator returning its items
+     * @param collector the Collection to which the transformed values are added
+     * @param transform the closure used to transform each item of the aggregate object
+     * @return the collector with all transformed values added to it
      * @since 1.0
      */
-    public static <T> Collection<T> collect(Object self, Collection<T> collection, Closure<? extends T> closure) {
-        for (Iterator iter = InvokerHelper.asIterator(self); iter.hasNext();) {
-            collection.add(closure.call(iter.next()));
+    public static <T> Collection<T> collect(Object self, Collection<T> collector, Closure<? extends T> transform) {
+        for (Iterator iter = InvokerHelper.asIterator(self); iter.hasNext(); ) {
+            collector.add(transform.call(iter.next()));
         }
-        return collection;
+        return collector;
     }
 
     /**
-     * Iterates through this collection transforming each entry into a new value using the closure
-     * as a transformer, returning a list of transformed values.
+     * Iterates through this collection transforming each entry into a new value using the <code>transform</code> closure
+     * returning a list of transformed values.
      * <pre class="groovyTestCase">assert [2,4,6] == [1,2,3].collect { it * 2 }</pre>
      *
-     * @param self    a collection
-     * @param closure the closure used for mapping
+     * @param self      a collection
+     * @param transform the closure used to transform each item of the collection
      * @return a List of the transformed values
      * @since 1.0
      */
-    public static <T> List<T> collect(Collection<?> self, Closure<T> closure) {
-        return (List<T>) collect(self, new ArrayList<T>(self.size()), closure);
+    public static <T> List<T> collect(Collection<?> self, Closure<T> transform) {
+        return (List<T>) collect(self, new ArrayList<T>(self.size()), transform);
     }
 
     /**
-     * Iterates through this collection transforming each value into a new value using the closure
-     * as a transformer, returning an initial collection plus the transformed values.
+     * Iterates through this collection transforming each entry into a new value using Closure.IDENTITY
+     * as a transformer, basically returning a list of items copied from the original collection.
+     * <pre class="groovyTestCase">assert [1,2,3] == [1,2,3].collect()</pre>
+     *
+     * @param self    a collection
+     * @return a List of the transformed values
+     * @since 1.8.5
+     * @see Closure#IDENTITY
+     */
+    public static <T> List<T> collect(Collection<T> self) {
+        return (List<T>) collect(self, Closure.IDENTITY);
+    }
+
+    /**
+     * Iterates through this collection transforming each value into a new value using the <code>transform</code> closure
+     * and adding it to the supplied <code>collector</code>.
      * <pre class="groovyTestCase">assert [1,2,3] as HashSet == [2,4,5,6].collect(new HashSet()) { (int)(it / 2) }</pre>
      *
-     * @param self       a collection
-     * @param collection an initial Collection to which the transformed values are added
-     * @param closure    the closure used to transform each element of the collection
-     * @return the resulting collection of transformed values
+     * @param self      a collection
+     * @param collector the Collection to which the transformed values are added
+     * @param transform the closure used to transform each item of the collection
+     * @return the collector with all transformed values added to it
      * @since 1.0
      */
-    public static <T> Collection<T> collect(Collection<?> self, Collection<T> collection, Closure<? extends T> closure) {
-        for (Object next : self) {
-            collection.add(closure.call(next));
-            if (closure.getDirective() == Closure.DONE) {
+    public static <T> Collection<T> collect(Collection<?> self, Collection<T> collector, Closure<? extends T> transform) {
+        for (Object item : self) {
+            collector.add(transform.call(item));
+            if (transform.getDirective() == Closure.DONE) {
                 break;
             }
         }
-        return collection;
+        return collector;
     }
 
     /**
-     * Alias for collectNested
+     * Deprecated alias for collectNested
      *
      * @deprecated Use collectNested instead
      * @see #collectNested(Collection, Closure)
      */
-    public static List collectAll(Collection self, Closure closure) {
-        return collectNested(self, closure);
+    public static List collectAll(Collection self, Closure transform) {
+        return collectNested(self, transform);
     }
 
     /**
      * Recursively iterates through this collection transforming each non-Collection value
      * into a new value using the closure as a transformer. Returns a potentially nested
      * list of transformed values.
-     * <pre class="groovyTestCase">assert [2,[4,6],[8],[]] == [1,[2,3],[4],[]].collectNested { it * 2 }</pre>
+     * <pre class="groovyTestCase">
+     * assert [2,[4,6],[8],[]] == [1,[2,3],[4],[]].collectNested { it * 2 }
+     * </pre>
      *
-     * @param self       a collection
-     * @param closure    the closure used to transform each element of the collection
+     * @param self      a collection
+     * @param transform the closure used to transform each item of the collection
      * @return the resultant collection
-     * @since 1.5.2
+     * @since 1.8.1
      */
-    public static List collectNested(Collection self, Closure closure) {
-        return (List) collectNested(self, new ArrayList(self.size()), closure);
+    public static List collectNested(Collection self, Closure transform) {
+        return (List) collectNested(self, new ArrayList(self.size()), transform);
     }
 
     /**
-     * Alias for collectNested
+     * Deprecated alias for collectNested
      *
      * @deprecated Use collectNested instead
      * @see #collectNested(Collection, Collection, Closure)
      */
-    public static Collection collectAll(Collection self, Collection collection, Closure closure) {
-        return collectNested(self, collection, closure);
+    public static Collection collectAll(Collection self, Collection collector, Closure transform) {
+        return collectNested(self, collector, transform);
     }
 
     /**
      * Recursively iterates through this collection transforming each non-Collection value
-     * into a new value using the closure as a transformer. Returns a potentially nested
+     * into a new value using the <code>transform</code> closure. Returns a potentially nested
      * collection of transformed values.
      * <pre class="groovyTestCase">def x = [1,[2,3],[4],[]].collectNested(new Vector()) { it * 2 }
      * assert x == [2,[4,6],[8],[]]
      * assert x instanceof Vector</pre>
      *
-     * @param self       a collection
-     * @param collection an initial Collection to which the transformed values are added
-     * @param closure    the closure used to transform each element of the collection
-     * @return the resultant collection
-     * @since 1.5.2
+     * @param self      a collection
+     * @param collector an initial Collection to which the transformed values are added
+     * @param transform the closure used to transform each element of the collection
+     * @return the collector with all transformed values added to it
+     * @since 1.8.1
      */
-    public static Collection collectNested(Collection self, Collection collection, Closure closure) {
+    public static Collection collectNested(Collection self, Collection collector, Closure transform) {
         for (Object item : self) {
             if (item instanceof Collection) {
                 Collection c = (Collection) item;
-                collection.add(collectNested(c, createSimilarCollection(collection, c.size()), closure));
+                collector.add(collectNested(c, createSimilarCollection(collector, c.size()), transform));
             } else {
-                collection.add(closure.call(item));
+                collector.add(transform.call(item));
             }
-            if (closure.getDirective() == Closure.DONE) {
+            if (transform.getDirective() == Closure.DONE) {
                 break;
             }
         }
-        return collection;
+        return collector;
     }
 
     /**
-     * Projects each item from a source collection to a collection and concatenates (flattens) the resulting collections into a single one.
-     *
+     * Projects each item from a source collection to a collection and concatenates (flattens) the resulting collections into a single list.
+     * <p/>
      * <pre class="groovyTestCase">
      * def nums = 1..10
      * def squaresAndCubesOfEvens = nums.collectMany{ it % 2 ? [] : [it**2, it**3] }
@@ -2099,137 +2139,207 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * def animals = ['CAT', 'DOG', 'ELEPHANT'] as Set
      * def smallAnimals = animals.collectMany{ it.size() > 3 ? [] : [it.toLowerCase()] }
-     * assert smallAnimals == ['cat', 'dog'] as Set
+     * assert smallAnimals == ['cat', 'dog']
+     *
+     * def orig = nums as Set
+     * def origPlusIncrements = orig.collectMany{ [it, it+1] }
+     * assert origPlusIncrements.size() == orig.size() * 2
+     * assert origPlusIncrements.unique().size() == orig.size() + 1
      * </pre>
      *
-     * @param self a collection
-     * @param closure a projecting Closure returning a collection of items
-     * @return the projected collections concatenated (flattened) together
+     * @param self       a collection
+     * @param projection a projecting Closure returning a collection of items
+     * @return a list created from the projected collections concatenated (flattened) together
      * @see #sum(java.util.Collection, groovy.lang.Closure)
      * @since 1.8.1
      */
-    public static <T> Collection<T> collectMany(Collection self, Closure<Collection<T>> closure) {
-        Collection<T> result = createSimilarCollection(self);
-        for (Object next : self) {
-            result.addAll(closure.call(next));
-        }
-        return result;
+    public static <T> List<T> collectMany(Collection self, Closure<Collection<? extends T>> projection) {
+        return (List<T>) collectMany(self, new ArrayList<T>(), projection);
     }
 
     /**
-     * Projects each item from a source array to a collection and concatenates (flattens) the resulting collections into a single one.
+     * Projects each item from a source collection to a result collection and concatenates (flattens) the resulting
+     * collections adding them into the <code>collector</code>.
+     * <p/>
+     * <pre class="groovyTestCase">
+     * def animals = ['CAT', 'DOG', 'ELEPHANT'] as Set
+     * def smallAnimals = animals.collectMany(['ant', 'bee']){ it.size() > 3 ? [] : [it.toLowerCase()] }
+     * assert smallAnimals == ['ant', 'bee', 'cat', 'dog']
      *
+     * def nums = 1..5
+     * def origPlusIncrements = nums.collectMany([] as Set){ [it, it+1] }
+     * assert origPlusIncrements.size() == nums.size() + 1
+     * </pre>
+     *
+     * @param self       a collection
+     * @param collector  an initial collection to add the projected items to
+     * @param projection a projecting Closure returning a collection of items
+     * @return the collector with the projected collections concatenated (flattened) to it
+     * @since 1.8.5
+     */
+    public static <T> Collection<T> collectMany(Collection self, Collection<T> collector, Closure<Collection<? extends T>> projection) {
+        for (Object next : self) {
+            collector.addAll(projection.call(next));
+        }
+        return collector;
+    }
+
+    /**
+     * Projects each item from a source array to a collection and concatenates (flattens) the resulting collections into a single list.
+     * <p/>
      * <pre class="groovyTestCase">
      * def nums = [1, 2, 3, 4, 5, 6] as Object[]
      * def squaresAndCubesOfEvens = nums.collectMany{ it % 2 ? [] : [it**2, it**3] }
      * assert squaresAndCubesOfEvens == [4, 8, 16, 64, 36, 216]
      * </pre>
      *
-     * @param self an object array
-     * @param closure a projecting Closure returning a collection of items
-     * @return the projected collections concatenated (flattened) together
+     * @param self       an object array
+     * @param projection a projecting Closure returning a collection of items
+     * @return a list created from the projected collections concatenated (flattened) together
      * @see #sum(Object[], groovy.lang.Closure)
      * @since 1.8.1
      */
-    public static <T> Collection<T> collectMany(Object[] self, Closure<Collection<T>> closure) {
-        return collectMany(toList(self), closure);
+    public static <T> List<T> collectMany(Object[] self, Closure<Collection<? extends T>> projection) {
+        return collectMany(toList(self), projection);
     }
 
     /**
-     * Projects each item from a source iterator to a collection and concatenates (flattens) the resulting collections into a single one.
-     *
+     * Projects each item from a source iterator to a collection and concatenates (flattens) the resulting collections into a single list.
+     * <p/>
      * <pre class="groovyTestCase">
      * def numsIter = [1, 2, 3, 4, 5, 6].iterator()
      * def squaresAndCubesOfEvens = numsIter.collectMany{ it % 2 ? [] : [it**2, it**3] }
      * assert squaresAndCubesOfEvens == [4, 8, 16, 64, 36, 216]
      * </pre>
      *
-     * @param self an iterator
-     * @param closure a projecting Closure returning a collection of items
-     * @return the projected collections concatenated (flattened) together
+     * @param self       an iterator
+     * @param projection a projecting Closure returning a collection of items
+     * @return a list created from the projected collections concatenated (flattened) together
      * @see #sum(Iterator, groovy.lang.Closure)
      * @since 1.8.1
      */
-    public static <T> Collection<T> collectMany(Iterator<Object> self, Closure<Collection<T>> closure) {
-        return collectMany(toList(self), closure);
+    public static <T> List<T> collectMany(Iterator<Object> self, Closure<Collection<? extends T>> projection) {
+        return collectMany(toList(self), projection);
     }
 
     /**
-     * Iterates through this Map transforming each entry into a new value using the closure
-     * as a transformer, returning a list of transformed values.
+     * Iterates through this Map transforming each map entry into a new value using the <code>transform</code> closure
+     * returning the <code>collector</code> with all transformed vakues added to it.
      * <pre class="groovyTestCase">assert [a:1, b:2].collect( [] as HashSet ) { key, value -> key*value } == ["a", "bb"] as Set
      * assert [3:20, 2:30].collect( [] as HashSet ) { entry -> entry.key * entry.value } == [60] as Set</pre>
      *
-     * @param self       a Map
-     * @param collection the Collection to which the mapped values are added
-     * @param closure    the closure used for mapping, which can take one (Map.Entry) or two (key, value) parameters
-     * @return a List of the mapped values
+     * @param self      a Map
+     * @param collector the Collection to which transformed values are added
+     * @param transform the transformation closure which can take one (Map.Entry) or two (key, value) parameters
+     * @return the collector with all transformed values added to it
      * @since 1.0
      */
-    public static <T> Collection<T> collect(Map<?, ?> self, Collection<T> collection, Closure<? extends T> closure) {
+    public static <T> Collection<T> collect(Map<?, ?> self, Collection<T> collector, Closure<? extends T> transform) {
         for (Map.Entry<?, ?> entry : self.entrySet()) {
-            collection.add(callClosureForMapEntry(closure, entry));
+            collector.add(callClosureForMapEntry(transform, entry));
         }
-        return collection;
+        return collector;
     }
 
     /**
-     * Iterates through this Map transforming each entry into a new value using the closure
-     * as a transformer, returning a list of transformed values.
+     * Iterates through this Map transforming each map entry into a new value using the <code>transform</code> closure
+     * returning a list of transformed values.
      * <pre class="groovyTestCase">assert [a:1, b:2].collect { key, value -> key*value } == ["a", "bb"]
      * assert [3:20, 2:30].collect { entry -> entry.key * entry.value } == [60, 60]</pre>
      *
      * @param self    a Map
-     * @param closure the closure used to map each element of the collection
-     * @return the resultant collection
+     * @param transform the transformation closure which can take one (Map.Entry) or two (key, value) parameters
+     * @return the resultant list of transformed values
      * @since 1.0
      */
-    public static <T> List<T> collect(Map self, Closure<T> closure) {
-        return (List<T>) collect(self, new ArrayList<T>(self.size()), closure);
+    public static <T> List<T> collect(Map self, Closure<T> transform) {
+        return (List<T>) collect(self, new ArrayList<T>(self.size()), transform);
     }
 
     /**
-     * Iterates through this Map transforming each entry using the closure
-     * as a transformer, returning a map of the transformed entries.
+     * Iterates through this Map transforming each map entry using the <code>transform</code> closure
+     * returning a map of the transformed entries.
      * <pre class="groovyTestCase">
      * assert [a:1, b:2].collectEntries( [:] ) { k, v -> [v, k] } == [1:'a', 2:'b']
      * assert [a:1, b:2].collectEntries( [30:'C'] ) { key, value ->
      *     [(value*10): key.toUpperCase()] } == [10:'A', 20:'B', 30:'C']
      * </pre>
      *
-     * @param self    a Map
-     * @param result  the Map into which the mapped entries are put
-     * @param closure the closure used for mapping, which can take one (Map.Entry) or two (key, value) parameters and
-     *                should return a Map.Entry, a Map or a two-element list containing the resulting key and value
-     * @return a Map of the transformed entries
+     * @param self      a Map
+     * @param collector the Map into which the transformed entries are put
+     * @param transform the closure used for transforming, which can take one (Map.Entry) or two (key, value) parameters and
+     *                  should return a Map.Entry, a Map or a two-element list containing the resulting key and value
+     * @return the collector with all transformed values added to it
      * @see #collect(Map, Collection, Closure)
      * @since 1.7.9
      */
-    public static <K, V> Map<K, V> collectEntries(Map<?, ?> self, Map<K, V> result, Closure<?> closure) {
+    public static <K, V> Map<K, V> collectEntries(Map<?, ?> self, Map<K, V> collector, Closure<?> transform) {
         for (Map.Entry<?, ?> entry : self.entrySet()) {
-            addEntry(result, callClosureForMapEntry(closure, entry));
+            addEntry(collector, callClosureForMapEntry(transform, entry));
         }
-        return result;
+        return collector;
     }
 
     /**
-     * Iterates through this Map transforming each entry using the closure
-     * as a transformer, returning a map of the transformed entries.
+     * Iterates through this Map transforming each entry using the <code>transform</code> closure
+     * and returning a map of the transformed entries.
      * <pre class="groovyTestCase">
      * assert [a:1, b:2].collectEntries { key, value -> [value, key] } == [1:'a', 2:'b']
      * assert [a:1, b:2].collectEntries { key, value ->
      *     [(value*10): key.toUpperCase()] } == [10:'A', 20:'B']
      * </pre>
      *
-     * @param self    a Map
-     * @param closure the closure used for mapping, which can take one (Map.Entry) or two (key, value) parameters and
-     *                should return a Map.Entry, a Map or a two-element list containing the resulting key and value
+     * @param self      a Map
+     * @param transform the closure used for transforming, which can take one (Map.Entry) or two (key, value) parameters and
+     *                  should return a Map.Entry, a Map or a two-element list containing the resulting key and value
      * @return a Map of the transformed entries
      * @see #collect(Map, Collection, Closure)
      * @since 1.7.9
      */
-    public static Map<?, ?> collectEntries(Map<?, ?> self, Closure<?> closure) {
-        return collectEntries(self, createSimilarMap(self), closure);
+    public static Map<?, ?> collectEntries(Map<?, ?> self, Closure<?> transform) {
+        return collectEntries(self, createSimilarMap(self), transform);
+    }
+
+    /**
+     * Iterates through this Collection transforming each item using the <code>transform</code> closure
+     * and returning a map of the resulting transformed entries.
+     * <pre class="groovyTestCase">
+     * def letters = "abc"
+     * // collect letters with index using list style
+     * assert (0..2).collectEntries { index -> [index, letters[index]] } == [0:'a', 1:'b', 2:'c']
+     * // collect letters with index using map style
+     * assert (0..2).collectEntries { index -> [(index): letters[index]] } == [0:'a', 1:'b', 2:'c']
+     * </pre>
+     *
+     * @param self      a Collection
+     * @param transform the closure used for transforming, which has an item from self as the parameter and
+     *                  should return a Map.Entry, a Map or a two-element list containing the resulting key and value
+     * @return a Map of the transformed entries
+     * @see #collectEntries(Collection, Map, Closure)
+     * @since 1.7.9
+     */
+    public static <K, V> Map<K, V> collectEntries(Collection<?> self, Closure<?> transform) {
+        return collectEntries(self, new LinkedHashMap<K, V>(), transform);
+    }
+
+    /**
+     * A variant of collectEntries using the identity closure as the transform.
+     * The source collection should be a list of <code>[key, value]</code> tuples or a <code>Map.Entry</code>.
+     * <pre class="groovyTestCase">
+     * def nums = [1, 10, 100, 1000]
+     * def tuples = nums.collect{ [it, it.toString().size()] }
+     * assert tuples == [[1, 1], [10, 2], [100, 3], [1000, 4]]
+     * def map = tuples.collectEntries()
+     * assert map == [1:1, 10:2, 100:3, 1000:4]
+     * </pre>
+     *
+     * @param self      a Collection
+     * @return a Map of the transformed entries
+     * @see #collectEntries(Collection, Closure)
+     * @since 1.8.5
+     */
+    public static <K, V> Map<K, V> collectEntries(Collection<?> self) {
+        return collectEntries(self, new LinkedHashMap<K, V>(), Closure.IDENTITY);
     }
 
     /**
@@ -2243,24 +2353,37 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *     [(index+1): letters[index]] } == [1:'a', 2:'b', 3:'c', 4:'d']
      * </pre>
      *
-     * @param self    a Collection
-     * @param result  the Map into which the collected entries are put
-     * @param closure the closure used for mapping, which has an item from self as the parameter and
-     *                should return a Map.Entry, a Map or a two-element list containing the resulting key and value
-     * @return a Map of the transformed entries
+     * @param self      a Collection
+     * @param collector the Map into which the transformed entries are put
+     * @param transform the closure used for transforming, which has an item from self as the parameter and
+     *                  should return a Map.Entry, a Map or a two-element list containing the resulting key and value
+     * @return the collector with all transformed values added to it
      * @see #collect(Map, Collection, Closure)
      * @since 1.7.9
      */
-    public static <K, V> Map<K, V> collectEntries(Collection<?> self, Map<K, V> result, Closure<?> closure) {
+    public static <K, V> Map<K, V> collectEntries(Collection<?> self, Map<K, V> collector, Closure<?> transform) {
         for (Object next : self) {
-            addEntry(result, closure.call(next));
+            addEntry(collector, transform.call(next));
         }
-        return result;
+        return collector;
     }
 
     /**
-     * Iterates through this array transforming each item using the closure
-     * as a transformer into a map entry, returning a map of the transformed entries.
+     * A variant of collectEntries using the identity closure as the transform.
+     *
+     * @param self      a Collection
+     * @param collector the Map into which the transformed entries are put
+     * @return the collector with all transformed values added to it
+     * @see #collectEntries(Collection, Map, Closure)
+     * @since 1.8.5
+     */
+    public static <K, V> Map<K, V> collectEntries(Collection<?> self, Map<K, V> collector) {
+        return collectEntries(self, collector, Closure.IDENTITY);
+    }
+
+    /**
+     * Iterates through this array transforming each item using the <code>transform</code> closure
+     * and returning a map of the resulting transformed entries.
      * <pre class="groovyTestCase">
      * def letters = "abc"
      * def nums = [0, 1, 2] as Integer[]
@@ -2270,43 +2393,34 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *     [(index+1): letters[index]] } == [1:'a', 2:'b', 3:'c', 4:'d']
      * </pre>
      *
-     * @param self    a Collection
-     * @param result  the Map into which the collected entries are put
-     * @param closure the closure used for mapping, which has an item from self as the parameter and
-     *                should return a Map.Entry, a Map or a two-element list containing the resulting key and value
-     * @return a Map of the transformed entries
+     * @param self      an Object array
+     * @param collector the Map into which the transformed entries are put
+     * @param transform the closure used for transforming, which has an item from self as the parameter and
+     *                  should return a Map.Entry, a Map or a two-element list containing the resulting key and value
+     * @return the collector with all transformed values added to it
      * @see #collect(Map, Collection, Closure)
      * @since 1.7.9
      */
-    public static <K, V> Map<K, V> collectEntries(Object[] self, Map<K, V> result, Closure<?> closure) {
-        return collectEntries(toList(self), result, closure);
+    public static <K, V> Map<K, V> collectEntries(Object[] self, Map<K, V> collector, Closure<?> transform) {
+        return collectEntries(toList(self), collector, transform);
     }
 
     /**
-     * Iterates through this Collection transforming each item using the closure
-     * as a transformer into a map entry, returning a map of the transformed entries.
-     * <pre class="groovyTestCase">
-     * def letters = "abc"
-     * // collect letters with index using list style
-     * assert (0..2).collectEntries { index -> [index, letters[index]] } == [0:'a', 1:'b', 2:'c']
-     * // collect letters with index using map style
-     * assert (0..2).collectEntries { index -> [(index): letters[index]] } == [0:'a', 1:'b', 2:'c']
-     * </pre>
+     * A variant of collectEntries using the identity closure as the transform.
      *
-     * @param self    a Collection
-     * @param closure the closure used for mapping, which has an item from self as the parameter and
-     *                should return a Map.Entry, a Map or a two-element list containing the resulting key and value
-     * @return a Map of the transformed entries
-     * @see #collectEntries(Collection, Map, Closure)
-     * @since 1.7.9
+     * @param self      an Object array
+     * @param collector the Map into which the transformed entries are put
+     * @return the collector with all transformed values added to it
+     * @see #collectEntries(Object[], Map, Closure)
+     * @since 1.8.5
      */
-    public static <K, V> Map<K, V> collectEntries(Collection<?> self, Closure<?> closure) {
-        return collectEntries(self, new LinkedHashMap<K, V>(), closure);
+    public static <K, V> Map<K, V> collectEntries(Object[] self, Map<K, V> collector) {
+        return collectEntries(self, collector, Closure.IDENTITY);
     }
 
     /**
-     * Iterates through this array transforming each item using the closure
-     * as a transformer into a map entry, returning a map of the transformed entries.
+     * Iterates through this array transforming each item using the <code>transform</code> closure
+     * and returning a map of the resulting transformed entries.
      * <pre class="groovyTestCase">
      * def letters = "abc"
      * def nums = [0, 1, 2] as Integer[]
@@ -2316,15 +2430,27 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * assert nums.collectEntries { index -> [(index): letters[index]] } == [0:'a', 1:'b', 2:'c']
      * </pre>
      *
-     * @param self    a Collection
-     * @param closure the closure used for mapping, which has an item from self as the parameter and
-     *                should return a Map.Entry, a Map or a two-element list containing the resulting key and value
+     * @param self      a Collection
+     * @param transform the closure used for transforming, which has an item from self as the parameter and
+     *                  should return a Map.Entry, a Map or a two-element list containing the resulting key and value
      * @return a Map of the transformed entries
      * @see #collectEntries(Collection, Map, Closure)
      * @since 1.7.9
      */
-    public static <K, V> Map<K, V> collectEntries(Object[] self, Closure<?> closure) {
-        return collectEntries(toList(self), new LinkedHashMap<K, V>(), closure);
+    public static <K, V> Map<K, V> collectEntries(Object[] self, Closure<?> transform) {
+        return collectEntries(toList(self), new LinkedHashMap<K, V>(), transform);
+    }
+
+    /**
+     * A variant of collectEntries using the identity closure as the transform.
+     *
+     * @param self      an Object array
+     * @return the collector with all transformed values added to it
+     * @see #collectEntries(Object[], Closure)
+     * @since 1.8.5
+     */
+    public static <K, V> Map<K, V> collectEntries(Object[] self) {
+        return collectEntries(self, Closure.IDENTITY);
     }
 
     private static <K, V> void addEntry(Map<K, V> result, Object newEntry) {
@@ -8158,7 +8284,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         }
         if (clazz == Set.class) {
             if (col instanceof Set) return (T) col;
-            return (T) new HashSet(col);
+            return (T) new LinkedHashSet(col);
         }
         if (clazz == SortedSet.class) {
             if (col instanceof SortedSet) return (T) col;

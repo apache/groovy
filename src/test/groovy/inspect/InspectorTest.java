@@ -88,7 +88,7 @@ public class InspectorTest extends MockObjectTestCase implements Serializable {
         String[] names = {"sleep", "sleep", "println", "println", "println", "find", "find", "findResult", "findResult",
                 "print", "print", "each", "invokeMethod", "asType", "inspect", "is", "isCase", "identity", "getAt",
                 "putAt", "dump", "getMetaPropertyValues", "getProperties", "use", "use", "use", "printf", "printf",
-                "eachWithIndex", "every", "every", "any", "any", "grep", "grep", "collect", "collect", "findAll","findAll",
+                "eachWithIndex", "every", "every", "any", "any", "grep", "grep", "collect", "collect", "collect", "findAll","findAll",
                 "split", "findIndexOf", "findIndexOf", "findLastIndexOf", "findLastIndexOf", "findIndexValues", "findIndexValues",
                 "iterator", "addShutdownHook", "sprintf", "sprintf", "with", "inject", "getMetaClass", "setMetaClass",
                 "metaClass", "respondsTo", "respondsTo", "hasProperty", "toString", "asBoolean"
@@ -178,7 +178,7 @@ public class InspectorTest extends MockObjectTestCase implements Serializable {
         assertEquals(5, fields.length); // 3 from JMock
         String[] names = {"someField", "SOME_CONST", "ANYTHING", "NULL", "NOT_NULL"};
         assertNameEquals(names, fields);
-        String[] details = {"JAVA", "public", "InspectorTest", "String", "someField", "\"only for testing\""};
+        String[] details = {"JAVA", "public", "InspectorTest", "String", "someField", "'only for testing'"};
         assertContains(fields, details);
     }
 

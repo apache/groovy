@@ -20,13 +20,7 @@ import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.CachedMethod;
 import org.codehaus.groovy.reflection.GeneratedMetaMethod;
 import org.codehaus.groovy.reflection.ReflectionCache;
-import org.codehaus.groovy.runtime.DateGroovyMethods;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
-import org.codehaus.groovy.runtime.EncodingGroovyMethods;
-import org.codehaus.groovy.runtime.ProcessGroovyMethods;
-import org.codehaus.groovy.runtime.SqlGroovyMethods;
-import org.codehaus.groovy.runtime.SwingGroovyMethods;
-import org.codehaus.groovy.runtime.XmlGroovyMethods;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
@@ -40,21 +34,11 @@ import java.util.List;
 
 public class DgmConverter implements Opcodes {
 
-    private static final Class[] CLASSES = new Class[]{
-            DefaultGroovyMethods.class,
-            SwingGroovyMethods.class,
-            SqlGroovyMethods.class,
-            XmlGroovyMethods.class,
-            EncodingGroovyMethods.class,
-            DateGroovyMethods.class,
-            ProcessGroovyMethods.class
-    };
-
-    public static void main(String[] args) throws IOException, ClassNotFoundException {
+	public static void main(String[] args) throws IOException, ClassNotFoundException {
         boolean info = args.length == 1 && args[0].equals("--info");
 
         List<CachedMethod> cachedMethodsList = new ArrayList<CachedMethod>();
-        for (Class aClass : CLASSES) {
+        for (Class aClass : DefaultGroovyMethods.DGM_LIKE_CLASSES) {
             Collections.addAll(cachedMethodsList, ReflectionCache.getCachedClass(aClass).getMethods());
         }
         final CachedMethod[] cachedMethods = cachedMethodsList.toArray(new CachedMethod[cachedMethodsList.size()]);

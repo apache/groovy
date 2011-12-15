@@ -57,6 +57,18 @@ class ASTTransformationCustomizerTest extends GroovyTestCase {
         assert result.log.class == Logger
     }
 
+    void testLocalTransformationAndCustomClassLoader() {
+        ClassLoader loader = new URLClassLoader([]as URL[]) {
+            @Override
+            Class<?> loadClass(String name) {
+                null
+            }
+        }
+        shouldFail(ClassNotFoundException) {
+            customizer = new ASTTransformationCustomizer(Log, loader)
+        }
+    }
+
     void testLocalTransformationWithAnnotationParameter() {
         customizer = new ASTTransformationCustomizer(Log)
         customizer.annotationParameters = [value: 'logger']

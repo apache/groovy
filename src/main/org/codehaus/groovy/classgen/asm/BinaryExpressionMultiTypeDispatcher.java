@@ -38,6 +38,7 @@ import static org.codehaus.groovy.ast.tools.WideningCategories.*;
  * This class will dispatch to the right type adapters according to the 
  * kind of binary expression that is provided.
  * @author <a href="mailto:blackdrag@gmx.org">Jochen "blackdrag" Theodorou</a>
+ * @author Roshan Dawrani
  */
 public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper {
     
@@ -168,7 +169,11 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
                 rightExp.visit(acg);
                 os.doGroovyCast(int_TYPE);
                 bew.arrayGet(operation, false);
-                os.replace(leftType,2);
+                if(bew instanceof BinaryObjectExpressionHelper) {
+                    os.replace(ClassHelper.OBJECT_TYPE,2);
+                } else {
+                    os.replace(leftType,2);
+                }
             } else {
                 super.evaluateBinaryExpression(message, binExp);
             }

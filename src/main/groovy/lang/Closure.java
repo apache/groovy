@@ -29,6 +29,8 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Represents any closure object in Groovy.
@@ -995,4 +997,41 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
         this.directive = directive;
     }
 
+    /**
+     * Returns a copy of this closure where the "owner", "delegate" and "thisObject"
+     * fields are null, allowing proper serialization when one of them is not serializable.
+     *
+     * @return a serializable closure.
+     *
+     * @since 1.8.5
+     */
+    @SuppressWarnings("unchecked")
+    public Closure<V> dehydrate() {
+        Closure<V> result = (Closure<V>) this.clone();
+        result.delegate = null;
+        result.owner = null;
+        result.thisObject = null;
+        return result;
+    }
+
+    /**
+     * Returns a copy of this closure for which the delegate, owner and thisObject are
+     * replaced with the supplied parameters. Use this when you want to rehydrate a
+     * closure which has been made serializable thanks to the {@link #dehydrate()}
+     * method.
+     * @param delegate the closure delegate
+     * @param owner the closure owner
+     * @param thisObject the closure "this" object
+     * @return a copy of this closure where owner, delegate and thisObject are replaced
+     *
+     * @since 1.8.5
+     */
+    @SuppressWarnings("unchecked")
+    public Closure<V> rehydrate(Object delegate, Object owner, Object thisObject) {
+        Closure<V> result = (Closure<V>) this.clone();
+        result.delegate = delegate;
+        result.owner = owner;
+        result.thisObject = thisObject;
+        return result;
+    }
 }

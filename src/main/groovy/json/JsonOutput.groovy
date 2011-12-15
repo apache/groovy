@@ -24,6 +24,7 @@ import java.text.DateFormat
  * This class can also be used as a category, so as to add <code>toJson()</code> methods to various types.
  *
  * @author Guillaume Laforge
+ * @author Roshan Dawrani
  * @since 1.8.0
  */
 class JsonOutput {
@@ -99,6 +100,13 @@ class JsonOutput {
     }
 
     /**
+     * @return the string representation of the URL
+     */
+    static String toJson(URL url) {
+        "\"${url.toString()}\""
+    }
+
+    /**
      * @return an object representation of a closure
      */
     static String toJson(Closure closure) {
@@ -131,6 +139,9 @@ class JsonOutput {
      * @return a JSON object representation for a map
      */
     static String toJson(Map m) {
+        if(m.containsKey(null)) {
+            throw new IllegalArgumentException('Null key for a Map not allowed')
+        }
         "{" + m.collect { k, v -> toJson(k.toString()) + ':' + toJson(v) }.join(',') + "}"
     }
 

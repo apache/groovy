@@ -15,17 +15,12 @@
  */
 package org.codehaus.groovy.ast
 
-import org.codehaus.groovy.ast.expr.VariableExpression
-import org.codehaus.groovy.classgen.GeneratorContext
-import org.codehaus.groovy.control.CompilePhase
-import org.codehaus.groovy.control.CompilerConfiguration
-import org.codehaus.groovy.control.SourceUnit
-import org.codehaus.groovy.control.customizers.CompilationCustomizer
+import org.codehaus.groovy.ast.tools.GenericsUtils
 
 /**
  * Various tests aimed at testing the {@link GenericsType} class.
  */
-public class GenericsTypeTest extends GroovyTestCase {
+public class GenericsTypeTest extends GenericsTestCase {
 
     void testSimpleGenericsType() {
         // <Number>
@@ -47,6 +42,7 @@ public class GenericsTypeTest extends GroovyTestCase {
         assert generics.toString() == '? super java.lang.Number'
         assert generics.isCompatibleWith(ClassHelper.Number_TYPE)
         assert !generics.isCompatibleWith(ClassHelper.Integer_TYPE)
+        assert !generics.isCompatibleWith(ClassHelper.STRING_TYPE)
         assert generics.isCompatibleWith(ClassHelper.OBJECT_TYPE)
 
     }
@@ -133,25 +129,29 @@ public class GenericsTypeTest extends GroovyTestCase {
         assert !generics.isCompatibleWith(incorrectType)
     }
 
-    // ------------------ Support methods -------------------------
-
-    def extractTypesFromCode(String string) {
-        def result = [generics:[], type:null]
-        CompilerConfiguration config = new CompilerConfiguration()
-        config.addCompilationCustomizers(new CompilationCustomizer(CompilePhase.CANONICALIZATION) {
-            @Override
-            void call(SourceUnit source, GeneratorContext context, ClassNode classNode) {
-                def visitor = new GenericsVisitorSupport(source)
-                visitor.visitClass(classNode)
-                result = visitor.result
-            }
-
-        })
-
-        new GroovyShell(config).evaluate(string)
-
-        result
+    void testPlaceholderExtract() {
+        def type = extractTypesFromCode("List<String> type").type
+        def placeholders = GenericsUtils.extractPlaceholders(type)
+        assert placeholders.E?.type == ClassHelper.STRING_TYPE
     }
+
+    void testPlaceholderExtract2() {
+        def type = extractTypesFromCode("Map<String,Integer> type").type
+        def placeholders = GenericsUtils.extractPlaceholders(type)
+        assert placeholders.K?.type == ClassHelper.STRING_TYPE
+        assert placeholders.V?.type == ClassHelper.Integer_TYPE
+    }
+
+    void testPlaceholderExtract3() {
+        def type = extractTypesFromCode("List<Map<String,Integer>> type").type
+        def placeholders = GenericsUtils.extractPlaceholders(type)
+        assert placeholders.E?.type == ClassHelper.MAP_TYPE
+        placeholders = GenericsUtils.extractPlaceholders(placeholders.E.type)
+        assert placeholders.K?.type == ClassHelper.STRING_TYPE
+        assert placeholders.V?.type == ClassHelper.Integer_TYPE
+    }
+
+    // ------------------ Support methods -------------------------
 
     protected static class StringList extends LinkedList<String> {}
     protected static class IntegerList extends LinkedList<Integer> {}
@@ -159,38 +159,5 @@ public class GenericsTypeTest extends GroovyTestCase {
         int compareTo(Integer o) {
             return 0
         }
-    }
-    private static class GenericsVisitorSupport extends ClassCodeVisitorSupport {
-
-        private final SourceUnit sourceUnit
-        private final Map result = [:]
-
-        private GenericsVisitorSupport(SourceUnit unit) {
-            sourceUnit = unit
-        }
-
-        @Override
-        protected SourceUnit getSourceUnit() {
-            return sourceUnit
-        }
-
-        @Override
-        void visitVariableExpression(VariableExpression expression) {
-            super.visitVariableExpression(expression)
-            if (expression.name=='type') {
-                result.generics = expression.type.genericsTypes
-                result.type = expression.type
-            }
-        }
-
-        @Override
-        void visitMethod(MethodNode node) {
-            super.visitMethod(node)
-            if (node.name=='type') {
-                result.generics = node.genericsTypes
-                result.type = node.returnType
-            }
-        }
-
     }
 }

@@ -127,7 +127,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         shouldFailWithMessages """
             int i = 0
             i -= '1'
-        """, "Cannot find matching method int#minus(java.lang.String)"
+        """, "Cannot find matching method int#minus(java.lang.String)", 'Cannot assign value of type java.lang.String to variable of type int'
     }
 
     void testStringPlusEqualsString() {
@@ -141,7 +141,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         shouldFailWithMessages '''
             long a = Long.MAX_VALUE
             int b = a
-        ''', 'Possible loose of precision from long to java.lang.Integer'
+        ''', 'Possible loose of precision from long to int'
     }
 
     void testPossibleLooseOfPrecision2() {
@@ -159,7 +159,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
     void testPossibleLooseOfPrecision4() {
         shouldFailWithMessages '''
             byte b = 128 // will not fit in a byte
-        ''', 'Possible loose of precision from int to java.lang.Byte'
+        ''', 'Possible loose of precision from int to byte'
     }
 
     void testPossibleLooseOfPrecision5() {
@@ -171,7 +171,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
     void testPossibleLooseOfPrecision6() {
         shouldFailWithMessages '''
             short b = 32768 // will not fit in a short
-        ''', 'Possible loose of precision from int to java.lang.Short'
+        ''', 'Possible loose of precision from int to short'
     }
 
     void testPossibleLooseOfPrecision7() {
@@ -195,7 +195,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
     void testPossibleLooseOfPrecision10() {
         shouldFailWithMessages '''
             int b = 32768.1d
-        ''', 'Possible loose of precision from double to java.lang.Integer'
+        ''', 'Possible loose of precision from double to int'
     }
 
     void testCastIntToShort() {
@@ -292,5 +292,329 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         ''', 'Multiple assignments without list expressions on the right hand side are unsupported in static type checking mode'
     }
 
+    void testAssignmentToInterface() {
+        assertScript '''
+            Serializable ser = 'Hello'
+        '''
+    }
+
+    void testAssignmentToIncompatibleInterface() {
+        shouldFailWithMessages '''
+            Collection ser = 'Hello'
+        ''', 'Cannot assign value of type java.lang.String to variable of type java.util.Collection'
+    }
+
+    void testTernaryOperatorAssignementShouldFailBecauseOfIncompatibleGenericTypes() {
+        shouldFailWithMessages '''
+            List<Integer> foo = true?new LinkedList<String>():new LinkedList<Integer>();
+        ''', 'Incompatible generic argument types. Cannot assign java.util.LinkedList <? extends java.lang.Comparable> to: java.util.List <Integer>'
+    }
+
+    void testCastStringToChar() {
+        assertScript '''
+            char c = 'a'
+        '''
+    }
+
+    void testCastStringLongerThan1CharToChar() {
+        shouldFailWithMessages '''
+            char c = 'aa'
+        ''','Cannot assign value of type java.lang.String to variable of type char'
+    }
+
+    void testCastNullToChar() {
+        shouldFailWithMessages '''
+            char c = null
+        ''', 'Cannot assign value of type java.lang.Object to variable of type char'
+    }
+
+    void testCastStringToCharacter() {
+        assertScript '''
+            Character c = 'a'
+        '''
+    }
+
+    void testCastStringLongerThan1CharToCharacter() {
+        shouldFailWithMessages '''
+            Character c = 'aa'
+        ''','Cannot assign value of type java.lang.String to variable of type java.lang.Character'
+    }
+
+    void testAssignNullToCharacter() {
+        assertScript '''
+            Character c = null
+        '''
+    }
+
+    void testCastStringToCharWithCast() {
+        assertScript '''
+            def c = (char) 'a'
+        '''
+    }
+
+    void testCastStringLongerThan1ToCharWithCast() {
+        shouldFailWithMessages '''
+            def c = (char) 'aa'
+        ''', 'Inconvertible types: cannot cast java.lang.String to char'
+    }
+
+    void testCastNullToCharWithCast() {
+        shouldFailWithMessages '''
+            def c = (char) null
+        ''', 'Inconvertible types: cannot cast java.lang.Object to char'
+    }
+
+    void testCastStringToCharacterWithCast() {
+        assertScript '''
+            def c = (Character) 'a'
+        '''
+    }
+
+    void testCastStringLongerThan1ToCharacterWithCast() {
+        shouldFailWithMessages '''
+            def c = (Character) 'aa'
+        ''', 'Inconvertible types: cannot cast java.lang.String to java.lang.Character'
+    }
+
+    void testCastNullToCharacterWithCast() {
+        assertScript '''
+            def c = (Character) null
+        '''
+    }
+
+    void testIfElseBranch() {
+        shouldFailWithMessages '''
+            def x
+            def y = 'foo'
+            if (y) {
+                x = new HashSet()
+            } else {
+                x = '123'
+            }
+            x.toInteger()
+        ''', 'Cannot find matching method java.io.Serializable#toInteger()'
+    }
+
+    void testIfOnly() {
+        shouldFailWithMessages '''
+            def x = '123'
+            def y = 'foo'
+            if (y) {
+                x = new HashSet()
+            }
+            x.toInteger()
+        ''', 'Cannot find matching method java.io.Serializable#toInteger()'
+    }
+
+    void testIfWithCommonInterface() {
+        assertScript '''
+            interface Foo { void foo() }
+            class A implements Foo { void foo() { println 'A' } }
+            class B implements Foo { void foo() { println 'B' } }
+            def x = new A()
+            def y = 'foo'
+            if (y) {
+                x = new B()
+            }
+            x.foo()
+        '''
+    }
+
+    void testForLoopWithNewAssignment() {
+        shouldFailWithMessages '''
+            def x = '123'
+            for (int i=0; i<5;i++) { x = new HashSet() }
+            x.toInteger()
+        ''', 'Cannot find matching method java.io.Serializable#toInteger()'
+    }
+
+    void testWhileLoopWithNewAssignment() {
+        shouldFailWithMessages '''
+            def x = '123'
+            while (false) { x = new HashSet() }
+            x.toInteger()
+        ''', 'Cannot find matching method java.io.Serializable#toInteger()'
+    }
+
+    void testTernaryWithNewAssignment() {
+        shouldFailWithMessages '''
+            def x = '123'
+            def cond = false
+            cond?(x = new HashSet()):3
+            x.toInteger()
+        ''', 'Cannot find matching method java.io.Serializable#toInteger()'
+    }
+
+    void testFloatSub() {
+        assertScript '''
+            float x = 1.0f
+            float y = 1.0f
+            float z = x-y
+        '''
+    }
+
+    void testDoubleMinusInt() {
+        assertScript '''
+            double m() {
+                double a = 10d
+                int b = 1
+                double c = a-b
+            }
+            assert m()==9d
+        '''
+    }
+
+    void testDoubleMinusFloat() {
+        assertScript '''
+            double m() {
+                double a = 10d
+                float b = 1f
+                double c = a-b
+            }
+            assert m()==9d
+        '''
+    }
+
+    void testBigDecimalSub() {
+        assertScript '''
+            BigDecimal m() {
+                BigDecimal a = 10
+                BigDecimal b = 10
+                BigDecimal c = a-b
+            }
+            assert m()==0
+            assert m().getClass() == BigDecimal
+        '''
+    }
+
+    void testBigDecimalMinusDouble() {
+        assertScript '''
+            BigDecimal m() {
+                BigDecimal a = 10
+                double b = 10d
+                BigDecimal c = a-b
+            }
+            assert m()==0
+            assert m().getClass() == BigDecimal
+        '''
+    }
+
+    void testFloatSum() {
+        assertScript '''
+            float x = 1.0f
+            float y = 1.0f
+            float z = x+y
+        '''
+    }
+
+    void testDoublePlusInt() {
+        assertScript '''
+            double m() {
+                double a = 10d
+                int b = 1
+                double c = a+b
+            }
+            assert m()==11d
+        '''
+    }
+
+    void testDoublePlusFloat() {
+        assertScript '''
+            double m() {
+                double a = 10d
+                float b = 1f
+                double c = a+b
+            }
+            assert m()==11d
+        '''
+    }
+
+    void testBigDecimalSum() {
+        assertScript '''
+            BigDecimal m() {
+                BigDecimal a = 10
+                BigDecimal b = 10
+                BigDecimal c = a+b
+            }
+            assert m()==20
+            assert m().getClass() == BigDecimal
+        '''
+    }
+
+    void testBigDecimalPlusDouble() {
+        assertScript '''
+            BigDecimal m() {
+                BigDecimal a = 10
+                double b = 10d
+                BigDecimal c = a+b
+            }
+            assert m()==20
+            assert m().getClass() == BigDecimal
+        '''
+    }
+    
+    void testBigIntegerAssignment() {
+        assertScript '''
+            BigInteger bigInt = 6666666666666666666666666666666666666
+            assert bigInt.toString()=='6666666666666666666666666666666666666'
+            assert bigInt.class == BigInteger
+        '''
+    }
+
+    void testBigIntegerSum() {
+        assertScript '''
+            BigInteger a = 6666666666666666666666666666666666666
+            BigInteger b = 6666666666666666666666666666666666666
+            BigInteger c = a + b
+            assert c.toString()=='13333333333333333333333333333333333332'
+            assert c.class == BigInteger
+        '''
+    }
+
+    void testBigIntegerSub() {
+        assertScript '''
+            BigInteger a = 6666666666666666666666666666666666666
+            BigInteger b = 6666666666666666666666666666666666666
+            BigInteger c = a - b
+            assert c.toString()=='0'
+            assert c.class == BigInteger
+        '''
+    }
+
+    void testBigIntegerMult() {
+        assertScript '''
+            BigInteger a = 6666666666666666666666666666666666666
+            BigInteger b = 2
+            BigInteger c = a * b
+            assert c.toString()=='13333333333333333333333333333333333332'
+            assert c.class == BigInteger
+        '''
+    }
+
+    void testBigIntegerMultDouble() {
+        assertScript '''
+            BigInteger a = 333
+            double b = 2d
+            BigDecimal c = a * b
+            assert c == 666
+            assert c.getClass() == BigDecimal
+        '''
+
+        shouldFailWithMessages '''
+            BigInteger a = 333
+            double b = 2d
+            BigInteger c = a * b
+        ''', 'Cannot assign value of type java.math.BigDecimal to variable of type java.math.BigInteger'
+    }
+
+    void testBigIntegerMultInteger() {
+        assertScript '''
+            BigInteger a = 333
+            int b = 2
+            BigDecimal c = a * b
+            assert c == 666
+            assert c.getClass() == BigDecimal
+        '''
+    }
 }
 

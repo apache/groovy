@@ -749,7 +749,7 @@ public class BinaryExpressionHelper {
         
         ClassNode truePartType = typeChooser.resolveType(boolPart, controller.getClassNode());
         ClassNode falsePartType = typeChooser.resolveType(falsePart, controller.getClassNode());
-        ClassNode common = WideningCategories.firstCommonSuperType(truePartType, falsePartType);
+        ClassNode common = WideningCategories.lowestUpperBound(truePartType, falsePartType);
         
         // x?:y is equal to x?x:y, which evals to 
         //      var t=x; boolean(t)?t:y
@@ -802,7 +802,7 @@ public class BinaryExpressionHelper {
         
         ClassNode truePartType = typeChooser.resolveType(truePart, controller.getClassNode());
         ClassNode falsePartType = typeChooser.resolveType(falsePart, controller.getClassNode());
-        ClassNode common = WideningCategories.firstCommonSuperType(truePartType, falsePartType);
+        ClassNode common = WideningCategories.lowestUpperBound(truePartType, falsePartType);
         
         // we compile b?x:y as 
         //      boolean(b)?S(x):S(y), S = common super type of x,y

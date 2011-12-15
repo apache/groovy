@@ -100,6 +100,10 @@ public abstract class NumberRangeTest extends TestCase {
         final Comparable to = createValue(5);
         final Range range = new ObjectRange(from, to);
 
+        checkRangeValues(from, to, range);
+    }
+
+    protected void checkRangeValues(Integer from, Comparable to, Range range) {
         assertEquals("wrong 'from' value", from, range.getFrom());
         assertEquals("wrong 'to' value", to, range.getTo());
     }

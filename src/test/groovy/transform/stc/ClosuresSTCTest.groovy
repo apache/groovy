@@ -91,5 +91,40 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
             { -> println 'Hello' }()
         '''
     }
+
+    // GROOVY-5145
+    void testCollect() {
+        assertScript '''
+            List<String> strings = [1,2,3].collect { it.toString() }
+        '''
+    }
+
+    // GROOVY-5145
+    void testCollectWithSubclass() {
+        assertScript '''
+            class StringClosure extends Closure<String> {
+                StringClosure() { super(null,null) }
+                void doCall(int x) { x }
+            }
+            List<String> strings = [1,2,3].collect(new StringClosure())
+        '''
+    }
+
+    void testClosureShouldNotChangeInferredType() {
+        assertScript '''
+            def x = '123';
+            { -> x = new StringBuffer() }
+            x.charAt(0)
+        '''
+    }
+
+    void testClosureSharedVariableWithIncompatibleType() {
+        shouldFailWithMessages '''
+            def x = '123';
+            { -> x = 1 }
+            x.charAt(0)
+        ''', 'A closure shared variable [x] has been assigned with various types and the method [charAt(int)] does not exist in the lowest upper bound'
+    }
+
 }
 

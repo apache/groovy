@@ -28,6 +28,7 @@ import org.codehaus.groovy.control.CompilationFailedException
 import org.codehaus.groovy.classgen.GeneratorContext
 import org.codehaus.groovy.control.SourceUnit
 import org.codehaus.groovy.control.CompilationUnit.PrimaryClassNodeOperation
+import org.codehaus.groovy.classgen.Verifier
 
 /**
  * This class takes Groovy source code, compiles it to a specific compile phase, and then decompiles it
@@ -443,7 +444,24 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
         visitModifiers(node.modifiers)
         visitType node.type
         print " $node.name "
-        // do not print initial expression, as this is executed as part of the constructor.
+        // do not print initial expression, as this is executed as part of the constructor, unless on static constant
+        Expression exp = node.initialValueExpression
+        if (exp instanceof ConstantExpression) exp = Verifier.transformToPrimitiveConstantIfPossible(exp)
+        ClassNode type = exp?.type
+        if (Modifier.isStatic(node.modifiers)
+                && exp instanceof ConstantExpression
+                && type == node.type
+                && ClassHelper.isStaticConstantInitializerType(type)) {
+            // GROOVY-5150: final constants may be initialized directly
+            print " = "
+            if (ClassHelper.STRING_TYPE == type) {
+                print "'"+node.initialValueExpression.text.replaceAll("'", "\\\\'")+"'"
+            } else if (ClassHelper.char_TYPE == type) {
+                print "'${node.initialValueExpression.text}'"
+            } else {
+                print node.initialValueExpression.text
+            }
+        }
         printLineBreak()
     }
 

@@ -326,9 +326,24 @@ public class JavaStubGenerator {
 
         out.print(" ");
         out.print(fieldNode.getName());
-        if (isInterface) {
+        if (isInterface || (fieldNode.getModifiers() & Opcodes.ACC_FINAL) != 0) {
             out.print(" = ");
-            if (ClassHelper.isPrimitiveType(type)) {
+            Expression valueExpr = fieldNode.getInitialValueExpression();
+            if (valueExpr instanceof ConstantExpression) {
+                valueExpr = Verifier.transformToPrimitiveConstantIfPossible((ConstantExpression) valueExpr);
+            }
+            if (valueExpr instanceof ConstantExpression
+                    && ClassHelper.isStaticConstantInitializerType(valueExpr.getType())
+                    && valueExpr.getType().equals(fieldNode.getType())) {
+                // GROOVY-5150 : Initialize value with a dummy constant so that Java cross compiles correctly
+                if (ClassHelper.STRING_TYPE.equals(valueExpr.getType())) {
+                    out.print("\""+valueExpr.getText().replaceAll("\\\"", "\\\\\"")+"\"");
+                } else if (ClassHelper.char_TYPE.equals(valueExpr.getType())) {
+                    out.print("'"+valueExpr.getText()+"'");
+                } else {
+                    out.print(valueExpr.getText());
+                }
+            } else if (ClassHelper.isPrimitiveType(type)) {
                 String val = type == ClassHelper.boolean_TYPE ? "false" : "0";
                 out.print("new " + ClassHelper.getWrapper(type) + "((" + type + ")" + val + ")");
             } else {
@@ -689,6 +704,9 @@ public class JavaStubGenerator {
 
         if ((modifiers & Opcodes.ACC_SYNCHRONIZED) != 0)
             out.print("synchronized ");
+
+        if ((modifiers & Opcodes.ACC_FINAL) != 0)
+            out.print("final ");
 
         if ((modifiers & Opcodes.ACC_ABSTRACT) != 0)
             out.print("abstract ");

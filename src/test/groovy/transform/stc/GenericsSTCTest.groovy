@@ -112,20 +112,23 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    void testDiamondInferrenceFromConstructorWithoutAssignment() {
+        assertScript '''
+            new HashSet<>(Arrays.asList(0L,0L));
+        '''
+    }
+
     void testDiamondInferrenceFromConstructor2() {
         shouldFailWithMessages '''
             Set< Number > s3 = new HashSet<>(Arrays.asList(0L,0L));
         ''', 'Cannot assign java.util.HashSet <java.lang.Long> to: java.util.Set <Number>'
     }
 
-    /*
-        todo: this one should not fail
-        
     void testDiamondInferrenceFromConstructor3() {
         assertScript '''
             Set<Number> s4 = new HashSet<Number>(Arrays.asList(0L,0L))
         '''
-    }*/
+    }
 
 
     void testLinkedListWithListArgument() {
@@ -143,7 +146,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     void testCompatibleGenericAssignmentWithInferrence() {
         shouldFailWithMessages '''
             List<String> elements = ['a','b', 1]
-        ''', 'Incompatible generic argument types. Cannot assign java.util.List <java.lang.Object> to: java.util.List <String>'
+        ''', 'Incompatible generic argument types. Cannot assign java.util.List <java.lang.Comparable> to: java.util.List <String>'
     }
 
     void testGenericAssignmentWithSubClass() {
@@ -167,7 +170,83 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             list.add 'world'
         '''
     }
-    
+
+    void testAssignmentShouldFailBecauseOfLowerBound() {
+        shouldFailWithMessages '''
+            List<? super Number> list = ['string']
+        ''', 'Number'
+    }
+
+    void testGroovy5154() {
+        assertScript '''
+            class Foo {
+                def say() {
+                    FooWithGenerics f
+                    FooBound fb
+                    f.say(fb)
+                }
+            }
+
+            class FooWithGenerics {
+                def <T extends FooBound> void say(T p) {
+                }
+            }
+            class FooBound {
+            }
+            new Foo()
+        '''
+    }
+
+    void testGroovy5154WithSubclass() {
+        assertScript '''
+            class Foo {
+                def say() {
+                    FooWithGenerics f
+                    FooBound2 fb
+                    f.say(fb)
+                }
+            }
+
+            class FooWithGenerics {
+                def <T extends FooBound> void say(T p) {
+                }
+            }
+            class FooBound {
+            }
+            class FooBound2 extends FooBound {}
+            new Foo()
+        '''
+    }
+
+    void testGroovy5154WithIncorrectType() {
+        shouldFailWithMessages '''
+            class Foo {
+                def say() {
+                    FooWithGenerics f
+                    Object fb
+                    f.say(fb)
+                }
+            }
+
+            class FooWithGenerics {
+                def <T extends FooBound> void say(T p) {
+                }
+            }
+            class FooBound {
+            }
+            new Foo()
+        ''', 'Cannot find matching method FooWithGenerics#say(java.lang.Object)'
+    }
+
+    void testVoidReturnTypeInferrence() {
+      assertScript '''
+        Object m() {
+          def s = '1234'
+          println 'Hello'
+        }
+      '''
+    }
+  
     static class MyList extends LinkedList<String> {}
 }
 

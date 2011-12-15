@@ -17,6 +17,8 @@ package org.codehaus.groovy.transform.stc;
 
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
+import org.codehaus.groovy.ast.tools.GenericsUtils;
+import org.codehaus.groovy.ast.tools.WideningCategories;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 
 import java.util.*;
@@ -49,6 +51,38 @@ abstract class StaticTypeCheckingSupport {
                 put(ClassHelper.double_TYPE, 5);
                 put(ClassHelper.Double_TYPE, 5);
             }});
+
+    /**
+     * This is for internal use only. When an argument method is null, we cannot determine its type, so
+     * we use this one as a wildcard.
+     */
+    final static ClassNode UNKNOWN_PARAMETER_TYPE = ClassHelper.make("<unknown parameter type>");
+    
+    /**
+     * This comparator is used when we return the list of methods from DGM which name correspond to a given
+     * name. As we also lookup for DGM methods of superclasses or interfaces, it may be possible to find
+     * two methods which have the same name and the same arguments. In that case, we should not add the method
+     * from superclass or interface otherwise the system won't be able to select the correct method, resulting
+     * in an ambiguous method selection for similar methods.
+     */
+    private static final Comparator<MethodNode> DGM_METHOD_NODE_COMPARATOR = new Comparator<MethodNode>() {
+        public int compare(final MethodNode o1, final MethodNode o2) {
+            if (o1.getName().equals(o2.getName())) {
+                Parameter[] o1ps = o1.getParameters();
+                Parameter[] o2ps = o2.getParameters();
+                if (o1ps.length == o2ps.length) {
+                    boolean allEqual = true;
+                    for (int i = 0; i < o1ps.length && allEqual; i++) {
+                        allEqual = o1ps[i].getType().equals(o2ps[i].getType());
+                    }
+                    if (allEqual) return 0;
+                } else {
+                    return o1ps.length - o2ps.length;
+                }
+            }
+            return 1;
+        }
+    };
 
     /**
      * Returns true for expressions of the form x[...]
@@ -98,53 +132,61 @@ abstract class StaticTypeCheckingSupport {
      */
     private static Map<String, List<MethodNode>> getDGMMethods() {
         Map<String, List<MethodNode>> methods = new HashMap<String, List<MethodNode>>();
-        ClassNode cn = ClassHelper.makeWithoutCaching(DefaultGroovyMethods.class, true);
-        for (MethodNode metaMethod : cn.getMethods()) {
-            Parameter[] types = metaMethod.getParameters();
-            if (metaMethod.isStatic() && metaMethod.isPublic() && types.length > 0) {
-                Parameter[] parameters = new Parameter[types.length - 1];
-                System.arraycopy(types, 1, parameters, 0, parameters.length);
-                MethodNode node = new MethodNode(
-                        metaMethod.getName(),
-                        metaMethod.getModifiers(),
-                        metaMethod.getReturnType(),
-                        parameters,
-                        ClassNode.EMPTY_ARRAY, null);
-                node.setGenericsTypes(metaMethod.getGenericsTypes());
-                ClassNode declaringClass = types[0].getType();
-                String declaringClassName = declaringClass.getName();
-                node.setDeclaringClass(declaringClass);
+        List<Class> classes = new LinkedList<Class>();
+        Collections.addAll(classes, DefaultGroovyMethods.DGM_LIKE_CLASSES);
+        Collections.addAll(classes, DefaultGroovyMethods.additionals);
+		for (Class dgmLikeClass : classes) {
+			ClassNode cn = ClassHelper.makeWithoutCaching(dgmLikeClass, true);
+			for (MethodNode metaMethod : cn.getMethods()) {
+				Parameter[] types = metaMethod.getParameters();
+				if (metaMethod.isStatic() && metaMethod.isPublic() && types.length > 0) {
+					Parameter[] parameters = new Parameter[types.length - 1];
+					System.arraycopy(types, 1, parameters, 0, parameters.length);
+					MethodNode node = new MethodNode(
+							metaMethod.getName(),
+							metaMethod.getModifiers(),
+							metaMethod.getReturnType(),
+							parameters,
+							ClassNode.EMPTY_ARRAY, null);
+					node.setGenericsTypes(metaMethod.getGenericsTypes());
+					ClassNode declaringClass = types[0].getType();
+					String declaringClassName = declaringClass.getName();
+					node.setDeclaringClass(declaringClass);
 
-                List<MethodNode> nodes = methods.get(declaringClassName);
-                if (nodes == null) {
-                    nodes = new LinkedList<MethodNode>();
-                    methods.put(declaringClassName, nodes);
-                }
-                nodes.add(node);
-            }
-        }
+					List<MethodNode> nodes = methods.get(declaringClassName);
+					if (nodes == null) {
+						nodes = new LinkedList<MethodNode>();
+						methods.put(declaringClassName, nodes);
+					}
+					nodes.add(node);
+				}
+			}
+		}
         return methods;
     }
 
-    /**
-     * Returns a list of method nodes corresponding to DGM methods for this classnode.
-     * @param clazz the class for which to return method nodes
-     * @return the list of methods defined in DGM
-     */
-    static Set<MethodNode> findDGMMethodsForClassNode(ClassNode clazz) {
-        Set<MethodNode> result = new HashSet<MethodNode>();
+
+    static Set<MethodNode> findDGMMethodsForClassNode(ClassNode clazz, String name) {
+        TreeSet<MethodNode> accumulator = new TreeSet<MethodNode>(DGM_METHOD_NODE_COMPARATOR);
+        findDGMMethodsForClassNode(clazz, name, accumulator);
+        return accumulator;
+    }
+
+    static void findDGMMethodsForClassNode(ClassNode clazz, String name, TreeSet<MethodNode> accumulator) {
         List<MethodNode> fromDGM = VIRTUAL_DGM_METHODS.get(clazz.getName());
-        if (fromDGM != null) result.addAll(fromDGM);
+        if (fromDGM != null) {
+            for (MethodNode node : fromDGM) {
+                if (node.getName().equals(name)) accumulator.add(node);
+            }
+        }
         for (ClassNode node : clazz.getInterfaces()) {
-            result.addAll(findDGMMethodsForClassNode(node));
+            findDGMMethodsForClassNode(node, name, accumulator);
         }
         if (clazz.getSuperClass() != null) {
-            result.addAll(findDGMMethodsForClassNode(clazz.getSuperClass()));
+            findDGMMethodsForClassNode(clazz.getSuperClass(), name, accumulator);
         } else if (!clazz.equals(ClassHelper.OBJECT_TYPE)) {
-            result.addAll(findDGMMethodsForClassNode(ClassHelper.OBJECT_TYPE));
+            findDGMMethodsForClassNode(ClassHelper.OBJECT_TYPE, name, accumulator);
         }
-
-        return result;
     }
 
     /**
@@ -214,6 +256,7 @@ abstract class StaticTypeCheckingSupport {
      * @return
      */
     static boolean isAssignableTo(ClassNode type, ClassNode toBeAssignedTo) {
+        if (UNKNOWN_PARAMETER_TYPE==type) return true;
         if (toBeAssignedTo.redirect() == STRING_TYPE && type.redirect() == GSTRING_TYPE) {
             return true;
         }
@@ -408,8 +451,33 @@ abstract class StaticTypeCheckingSupport {
      * @return false if types are incompatible
      */
     public static boolean checkCompatibleAssignmentTypes(ClassNode left, ClassNode right) {
+        return checkCompatibleAssignmentTypes(left, right, null);
+    }
+
+    public static boolean checkCompatibleAssignmentTypes(ClassNode left, ClassNode right, Expression rightExpression) {
         ClassNode leftRedirect = left.redirect();
         ClassNode rightRedirect = right.redirect();
+
+        if (right==VOID_TYPE||right==void_WRAPPER_TYPE) {
+            return left==VOID_TYPE||left==void_WRAPPER_TYPE;
+        }
+
+        if ((isNumberType(rightRedirect)||WideningCategories.isNumberCategory(rightRedirect))) {
+           if (BigDecimal_TYPE==leftRedirect) {
+               // any number can be assigned to a big decimal
+               return true;
+           }
+            if (BigInteger_TYPE==leftRedirect) {
+                return WideningCategories.isBigIntCategory(rightRedirect);
+            }
+        }
+        
+        // if rightExpression is null and leftExpression is not a primitive type, it's ok
+        boolean rightExpressionIsNull = rightExpression instanceof ConstantExpression && ((ConstantExpression) rightExpression).getValue()==null;
+        if (rightExpressionIsNull && !isPrimitiveType(left)) {
+            return true;
+        }
+
         // on an assignment everything that can be done by a GroovyCast is allowed
 
         // anything can be assigned to an Object, String, boolean, Boolean
@@ -420,6 +488,17 @@ abstract class StaticTypeCheckingSupport {
                 leftRedirect == Boolean_TYPE ||
                 leftRedirect == CLASS_Type) {
             return true;
+        }
+
+        // char as left expression
+        if (leftRedirect == char_TYPE && rightRedirect==STRING_TYPE) {
+            if (rightExpression!=null && rightExpression instanceof ConstantExpression) {
+                String value = rightExpression.getText();
+                return value.length()==1;
+            }
+        }
+        if (leftRedirect == Character_TYPE && (rightRedirect==STRING_TYPE||rightExpressionIsNull)) {
+            return rightExpressionIsNull || (rightExpression instanceof ConstantExpression && rightExpression.getText().length()==1);
         }
 
         // if left is Enum and right is String or GString we do valueOf
@@ -438,16 +517,23 @@ abstract class StaticTypeCheckingSupport {
             //TODO: in case of the array we could maybe make a partial check
             if (leftRedirect.isArray() && rightRedirect.isArray()) {
                 return checkCompatibleAssignmentTypes(leftRedirect.getComponentType(), rightRedirect.getComponentType());
+            } else if (rightRedirect.isArray() && !leftRedirect.isArray()) {
+                return false;
             }
             return true;
         }
 
         // simple check on being subclass
-        if (right.isDerivedFrom(left) || left.implementsInterface(right)) return true;
+        if (right.isDerivedFrom(left) || (left.isInterface() && right.implementsInterface(left))) return true;
 
         // if left and right are primitives or numbers allow
         if (isPrimitiveType(leftRedirect) && isPrimitiveType(rightRedirect)) return true;
         if (isNumberType(leftRedirect) && isNumberType(rightRedirect)) return true;
+
+        // left is a float/double and right is a BigDecimal
+        if (WideningCategories.isFloatingCategory(leftRedirect) && BigDecimal_TYPE.equals(rightRedirect)) {
+            return true;
+        }
 
         return false;
     }
