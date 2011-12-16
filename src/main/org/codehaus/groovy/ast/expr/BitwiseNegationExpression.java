@@ -40,6 +40,7 @@ public class BitwiseNegationExpression extends Expression {
     public Expression transformExpression(ExpressionTransformer transformer) {
         Expression ret = new BitwiseNegationExpression(transformer.transform(expression));
         ret.setSourcePosition(this);
+        ret.copyNodeMetaData(this);
         return ret;
     }
 

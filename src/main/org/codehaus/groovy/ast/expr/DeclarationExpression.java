@@ -140,6 +140,7 @@ public class DeclarationExpression extends BinaryExpression {
         ret.setSourcePosition(this);
         ret.addAnnotations(getAnnotations());
         ret.setDeclaringClass(getDeclaringClass());
+        ret.copyNodeMetaData(this);
         return ret;
     }
     

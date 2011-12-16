@@ -40,6 +40,7 @@ public class UnaryMinusExpression extends Expression {
     public Expression transformExpression(ExpressionTransformer transformer) {
         Expression ret = new UnaryMinusExpression(transformer.transform(expression));
         ret.setSourcePosition(this);
+        ret.copyNodeMetaData(this);
         return ret;
     }
 

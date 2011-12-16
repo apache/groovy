@@ -43,7 +43,9 @@ public class BooleanExpression extends Expression {
     public Expression transformExpression(ExpressionTransformer transformer) {
         Expression ret = new BooleanExpression(transformer.transform(expression));
         ret.setSourcePosition(this);
-        return ret;    }
+        ret.copyNodeMetaData(this);
+        return ret;
+    }
     
     public String getText() {
         return expression.getText();
