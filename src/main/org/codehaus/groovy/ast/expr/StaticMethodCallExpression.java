@@ -46,6 +46,7 @@ public class StaticMethodCallExpression extends Expression {
     public Expression transformExpression(ExpressionTransformer transformer) {
         Expression ret = new StaticMethodCallExpression(getOwnerType(), method, transformer.transform(arguments));
         ret.setSourcePosition(this);
+        ret.copyNodeMetaData(this);
         return ret;
     }
 

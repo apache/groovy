@@ -7910,7 +7910,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Drops the given number of key/value pairs from the head of this map if they are available.
-     * If the map instance does not have ordered keys,then this function could return a random <code>n<code>
+     * If the map instance does not have ordered keys,then this function could return a random <code>n</code>
      * entries.  Groovy by default used LinkedHashMap, so this shouldn't be an issue in the main.
      * <pre class="groovyTestCase">
      *     def strings = [ 'a':10, 'b':20, 'c':30 ]

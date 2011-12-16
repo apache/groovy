@@ -42,6 +42,7 @@ public class AttributeExpression extends PropertyExpression {
         AttributeExpression ret = new AttributeExpression(transformer.transform(getObjectExpression()),transformer.transform(getProperty()),isSafe());
         ret.setSourcePosition(this);
         ret.setSpreadSafe(isSpreadSafe());
+        ret.copyNodeMetaData(this);
         return ret;
     }
 }

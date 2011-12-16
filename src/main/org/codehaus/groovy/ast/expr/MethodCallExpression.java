@@ -75,6 +75,7 @@ public class MethodCallExpression extends Expression {
         answer.setImplicitThis(implicitThis);
         answer.setSourcePosition(this);
         answer.setMethodTarget(target);
+        answer.copyNodeMetaData(this);
         return answer;
     }
 

@@ -46,6 +46,7 @@ public class PrefixExpression extends Expression {
     public Expression transformExpression(ExpressionTransformer transformer) {
         Expression ret = new PrefixExpression(operation, transformer.transform(expression)); 
         ret.setSourcePosition(this);
+        ret.copyNodeMetaData(this);
         return ret;
     }
 

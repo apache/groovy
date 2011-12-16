@@ -60,6 +60,7 @@ public class MapExpression extends Expression {
     public Expression transformExpression(ExpressionTransformer transformer) {
         Expression ret = new MapExpression(transformExpressions(getMapEntryExpressions(), transformer, MapEntryExpression.class));
         ret.setSourcePosition(this);
+        ret.copyNodeMetaData(this);
         return ret;
     }
 

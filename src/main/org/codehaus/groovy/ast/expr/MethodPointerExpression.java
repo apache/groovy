@@ -64,6 +64,7 @@ public class MethodPointerExpression extends Expression {
             ret = new MethodPointerExpression(transformer.transform(expression), mname);
         }
         ret.setSourcePosition(this);
+        ret.copyNodeMetaData(this);
         return ret;
     }
 
