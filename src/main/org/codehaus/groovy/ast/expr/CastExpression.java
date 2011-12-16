@@ -70,6 +70,7 @@ public class CastExpression extends Expression {
         CastExpression ret =  new CastExpression(getType(), transformer.transform(expression));
         ret.setSourcePosition(this);
         ret.setCoerce(this.isCoerce());
+        ret.copyNodeMetaData(this);
         return ret;
     }
     

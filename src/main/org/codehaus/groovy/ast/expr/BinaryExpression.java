@@ -52,6 +52,7 @@ public class BinaryExpression extends Expression {
     public Expression transformExpression(ExpressionTransformer transformer) {
         Expression ret = new BinaryExpression(transformer.transform(leftExpression), operation, transformer.transform(rightExpression));
         ret.setSourcePosition(this);
+        ret.copyNodeMetaData(this);
         return ret;
     }
 

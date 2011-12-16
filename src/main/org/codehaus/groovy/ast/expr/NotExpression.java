@@ -37,6 +37,7 @@ public class NotExpression extends BooleanExpression {
     public Expression transformExpression(ExpressionTransformer transformer) {
         Expression ret = new NotExpression(transformer.transform(getExpression()));
         ret.setSourcePosition(this);
+        ret.copyNodeMetaData(this);
         return ret;
     }
 }

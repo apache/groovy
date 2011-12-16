@@ -56,6 +56,7 @@ public class GStringExpression extends Expression {
                 transformExpressions(strings, transformer, ConstantExpression.class),
                 transformExpressions(values, transformer));
         ret.setSourcePosition(this);
+        ret.copyNodeMetaData(this);
         return ret;        
     }
 
