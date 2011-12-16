@@ -65,6 +65,7 @@ public class ListExpression extends Expression {
     public Expression transformExpression(ExpressionTransformer transformer) {
         Expression ret = new ListExpression(transformExpressions(getExpressions(), transformer));
         ret.setSourcePosition(this);
+        ret.copyNodeMetaData(this);
         return ret;
     }
 

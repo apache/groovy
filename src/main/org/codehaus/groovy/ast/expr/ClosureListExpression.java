@@ -56,6 +56,7 @@ public class ClosureListExpression extends ListExpression {
     public Expression transformExpression(ExpressionTransformer transformer) {
         Expression ret = new ClosureListExpression(transformExpressions(getExpressions(), transformer));
         ret.setSourcePosition(this);
+        ret.copyNodeMetaData(this);
         return ret;       
     }
     

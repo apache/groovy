@@ -81,6 +81,7 @@ public class TupleExpression extends Expression {
     public Expression transformExpression(ExpressionTransformer transformer) {
         Expression ret = new TupleExpression(transformExpressions(getExpressions(), transformer)); 
         ret.setSourcePosition(this);
+        ret.copyNodeMetaData(this);
         return ret;
     }
 

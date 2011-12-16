@@ -44,6 +44,7 @@ public class SpreadMapExpression extends Expression {
     public Expression transformExpression(ExpressionTransformer transformer) {
         Expression ret = new SpreadMapExpression(transformer.transform(expression));
         ret.setSourcePosition(this);
+        ret.copyNodeMetaData(this);
         return ret;
     }
 
