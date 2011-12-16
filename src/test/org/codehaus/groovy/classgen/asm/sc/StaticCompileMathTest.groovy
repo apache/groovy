@@ -136,4 +136,22 @@ class StaticCompileMathTest extends AbstractBytecodeTestCase {
         '''
     }
 
+    void testStaticCompilePiComputationWithPrimitives() {
+        assertScript '''@groovy.transform.CompileStatic
+            def doIt() {
+                final int n = 100000000i // 10 times fewer due to speed issues.
+                final double delta = 1.0d / n
+                final startTime = System.nanoTime()
+                double sum = 0.0d
+                for (int i = 0; i < n; i++) { sum += 1.0d / (1.0d + ((i - 0.5d) * delta) ** 2i) }
+                final double pi = 4.0d * sum * delta
+                final elapseTime = (System.nanoTime() - startTime) / 1e9
+                println("==== Groovy Sequential Primitives pi = " + pi)
+                println("==== Groovy Sequential Primitives iteration count = " + n)
+                println("==== Groovy Sequential Primitives elapse = " + elapseTime)
+            }
+
+            doIt()
+        '''
+    }
 }

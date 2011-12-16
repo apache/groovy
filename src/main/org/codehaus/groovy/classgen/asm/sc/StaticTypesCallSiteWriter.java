@@ -27,6 +27,8 @@ import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
+import java.math.BigDecimal;
+
 /**
  * A call site writer which is able to switch between two modes :
  * <ul>
@@ -75,26 +77,92 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
     public void makeSingleArgumentCall(final Expression receiver, final String message, final Expression arguments) {
         TypeChooser typeChooser = controller.getTypeChooser();
         ClassNode classNode = controller.getClassNode();
-        ClassNode rType = ClassHelper.getWrapper(typeChooser.resolveType(receiver, classNode));
-        ClassNode aType = ClassHelper.getWrapper(typeChooser.resolveType(arguments, classNode));
-        if (rType.isDerivedFrom(ClassHelper.Number_TYPE) && aType.isDerivedFrom(ClassHelper.Number_TYPE)) {
-            OperandStack operandStack = controller.getOperandStack();
-            int m1 = operandStack.getStackLength();
-            //slow Path
-            prepareSiteAndReceiver(receiver, message, false, controller.getCompileStack().isLHS());
-            visitBoxedArgument(arguments);
-            int m2 = operandStack.getStackLength();
-            MethodVisitor mv = controller.getMethodVisitor();
-            mv.visitMethodInsn(INVOKESTATIC,
-                    "org/codehaus/groovy/runtime/dgmimpl/NumberNumber"+ MetaClassHelper.capitalize(message),
-                    message,
-                    "(Ljava/lang/Number;Ljava/lang/Number;)Ljava/lang/Number;");
-            controller.getOperandStack().replace(ClassHelper.Number_TYPE, m2-m1);
+        ClassNode rType = typeChooser.resolveType(receiver, classNode);
+        ClassNode aType = typeChooser.resolveType(arguments, classNode);
+        if (ClassHelper.getWrapper(rType).isDerivedFrom(ClassHelper.Number_TYPE)
+                && ClassHelper.getWrapper(aType).isDerivedFrom(ClassHelper.Number_TYPE)) {
+            if ("plus".equals(message) || "minus".equals(message) || "multiply".equals(message) || "div".equals(message)) {
+                writeNumberNumberCall(receiver, message, arguments);
+                return;
+            } else if ("power".equals(message)) {
+                writePowerCall(receiver, arguments, rType, aType);
+                return;
+            }
+        } else if (ClassHelper.STRING_TYPE.equals(rType) && "plus".equals(message)) {
+            writeStringPlusCall(receiver, message, arguments);
             return;
         }
 
         // todo: more cases
         throw new GroovyBugError("This method should not have been called. Please try to create a simple example reproducing this error and file" +
                 "a bug report at http://jira.codehaus.org/browse/GROOVY");
+    }
+
+    private void writePowerCall(Expression receiver, Expression arguments, final ClassNode rType, ClassNode aType) {
+        OperandStack operandStack = controller.getOperandStack();
+        int m1 = operandStack.getStackLength();
+        //slow Path
+        prepareSiteAndReceiver(receiver, "power", false, controller.getCompileStack().isLHS());
+        visitBoxedArgument(arguments);
+        int m2 = operandStack.getStackLength();
+        MethodVisitor mv = controller.getMethodVisitor();
+        if (ClassHelper.BigDecimal_TYPE.equals(rType) && ClassHelper.Integer_TYPE.equals(ClassHelper.getWrapper(aType))) {
+            mv.visitMethodInsn(INVOKESTATIC,
+                    "org/codehaus/groovy/runtime/DefaultGroovyMethods",
+                    "power",
+                    "(Ljava/math/BigDecimal;Ljava/lang/Integer;)Ljava/lang/Number;");
+        } else if (ClassHelper.BigInteger_TYPE.equals(rType) && ClassHelper.Integer_TYPE.equals(ClassHelper.getWrapper(aType))) {
+            mv.visitMethodInsn(INVOKESTATIC,
+                    "org/codehaus/groovy/runtime/DefaultGroovyMethods",
+                    "power",
+                    "(Ljava/math/BigInteger;Ljava/lang/Integer;)Ljava/lang/Number;");
+        } else if (ClassHelper.Long_TYPE.equals(ClassHelper.getWrapper(rType)) && ClassHelper.Integer_TYPE.equals(ClassHelper.getWrapper(aType))) {
+            mv.visitMethodInsn(INVOKESTATIC,
+                    "org/codehaus/groovy/runtime/DefaultGroovyMethods",
+                    "power",
+                    "(Ljava/lang/Integer;Ljava/lang/Integer;)Ljava/lang/Number;");
+        } else if (ClassHelper.Integer_TYPE.equals(ClassHelper.getWrapper(rType)) && ClassHelper.Integer_TYPE.equals(ClassHelper.getWrapper(aType))) {
+            mv.visitMethodInsn(INVOKESTATIC,
+                    "org/codehaus/groovy/runtime/DefaultGroovyMethods",
+                    "power",
+                    "(Ljava/lang/Long;Ljava/lang/Integer;)Ljava/lang/Number;");
+        } else {
+            mv.visitMethodInsn(INVOKESTATIC,
+                    "org/codehaus/groovy/runtime/DefaultGroovyMethods",
+                    "power",
+                    "(Ljava/lang/Number;Ljava/lang/Number;)Ljava/lang/Number;");
+        }
+        controller.getOperandStack().replace(ClassHelper.Number_TYPE, m2 - m1);
+    }
+
+    private void writeStringPlusCall(final Expression receiver, final String message, final Expression arguments) {
+        // todo: performance would be better if we created a StringBuilder
+        OperandStack operandStack = controller.getOperandStack();
+        int m1 = operandStack.getStackLength();
+        //slow Path
+        prepareSiteAndReceiver(receiver, message, false, controller.getCompileStack().isLHS());
+        visitBoxedArgument(arguments);
+        int m2 = operandStack.getStackLength();
+        MethodVisitor mv = controller.getMethodVisitor();
+        mv.visitMethodInsn(INVOKESTATIC,
+                "org/codehaus/groovy/runtime/DefaultGroovyMethods",
+                "plus",
+                "(Ljava/lang/String;Ljava/lang/Object;)Ljava/lang/String;");
+        controller.getOperandStack().replace(ClassHelper.STRING_TYPE, m2-m1);
+    }
+
+    private void writeNumberNumberCall(final Expression receiver, final String message, final Expression arguments) {
+        OperandStack operandStack = controller.getOperandStack();
+        int m1 = operandStack.getStackLength();
+        //slow Path
+        prepareSiteAndReceiver(receiver, message, false, controller.getCompileStack().isLHS());
+        visitBoxedArgument(arguments);
+        int m2 = operandStack.getStackLength();
+        MethodVisitor mv = controller.getMethodVisitor();
+        mv.visitMethodInsn(INVOKESTATIC,
+                "org/codehaus/groovy/runtime/dgmimpl/NumberNumber" + MetaClassHelper.capitalize(message),
+                message,
+                "(Ljava/lang/Number;Ljava/lang/Number;)Ljava/lang/Number;");
+        controller.getOperandStack().replace(ClassHelper.Number_TYPE, m2 - m1);
     }
 }
