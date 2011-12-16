@@ -20,7 +20,6 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
-import org.codehaus.groovy.classgen.asm.OptimizingStatementWriter;
 import org.codehaus.groovy.classgen.asm.WriterControllerFactory;
 import org.codehaus.groovy.classgen.asm.sc.StaticTypesWriterControllerFactoryImpl;
 import org.codehaus.groovy.control.CompilePhase;

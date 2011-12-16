@@ -104,10 +104,10 @@ abstract class AbstractBytecodeTestCase extends GroovyTestCase {
                 boolean drop = true
                 while (it.hasNext()) {
                     Object o = it.next();
-                    if ('--BEGIN--' == o) {
+                    if ('--BEGIN--'==o) {
                         drop = false
                         it.remove()
-                    } else if ('--END--' == o) {
+                    } else if ('--END--'==o) {
                         drop = true
                     }
                     if (drop) it.remove()
