@@ -221,7 +221,7 @@ public class CallSiteWriter {
         prepareSiteAndReceiver(receiver, methodName, implicitThis, false);
     }
     
-    private void prepareSiteAndReceiver(Expression receiver, String methodName, boolean implicitThis, boolean lhs) {
+    protected void prepareSiteAndReceiver(Expression receiver, String methodName, boolean implicitThis, boolean lhs) {
         //site
         prepareCallSite(methodName);
 
@@ -235,7 +235,7 @@ public class CallSiteWriter {
         compileStack.popImplicitThis();
     }
     
-    private void visitBoxedArgument(Expression exp) {
+    protected void visitBoxedArgument(Expression exp) {
         exp.visit(controller.getAcg());
         if (!(exp instanceof TupleExpression)) {
             // we are not in a tuple, so boxing might be missing for

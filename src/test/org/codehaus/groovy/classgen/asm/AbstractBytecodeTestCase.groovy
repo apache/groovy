@@ -7,13 +7,8 @@ import org.objectweb.asm.FieldVisitor
 import org.objectweb.asm.ClassReader
 import org.codehaus.groovy.control.Phases
 import org.objectweb.asm.commons.EmptyVisitor
-import java.util.List
-import org.objectweb.asm.util.TraceMethodVisitor
-import net.sf.cglib.proxy.Enhancer
-import org.jmock.cglib.CGLIBCoreMock
-import net.sf.cglib.proxy.MethodInterceptor
-import java.lang.reflect.Method
-import net.sf.cglib.proxy.MethodProxy
+import org.codehaus.groovy.control.CompilerConfiguration
+import java.security.CodeSource
 
 /**
  * Abstract test case to extend to check the instructions we generate in the bytecode of groovy programs.
@@ -21,6 +16,41 @@ import net.sf.cglib.proxy.MethodProxy
  * @author Guillaume Laforge
  */
 abstract class AbstractBytecodeTestCase extends GroovyTestCase {
+
+    Map extractionOptions
+    InstructionSequence sequence
+
+    @Override
+    protected void setUp() {
+        super.setUp()
+        extractionOptions = [method: 'run']
+    }
+
+
+    protected void assertScript(final String script) throws Exception {
+        GroovyShell shell = new GroovyShell();
+        def unit
+        shell.loader = new GroovyClassLoader() {
+            @Override
+            protected CompilationUnit createCompilationUnit(final CompilerConfiguration config, final CodeSource source) {
+                unit = super.createCompilationUnit(config, source)
+
+                unit
+            }
+        }
+        try {
+            shell.evaluate(script, getTestClassName());
+        } finally {
+            if (unit) {
+                try {
+                    sequence = extractSequence(unit.classes[0].bytes, extractionOptions)
+                    if (extractionOptions.print) println sequence
+                } catch (e) {
+                    // probably an error in the script
+                }
+            }
+        }
+    }
 
     /**
      * Compiles a script into bytecode and returns the decompiled string equivalent using ASM.
@@ -36,10 +66,15 @@ abstract class AbstractBytecodeTestCase extends GroovyTestCase {
             options.conversionAction(su)
         }
         cu.compile(Phases.CLASS_GENERATION)
-        
-        
+
+        sequence = extractSequence(cu.classes[0].bytes, options)
+        return sequence
+    }
+
+    private InstructionSequence extractSequence(byte[] bytes, Map options=[method:"run"]) {
+        InstructionSequence sequence
         def output = new StringWriter()
-        
+
         def tcf = new TraceClassVisitor(new PrintWriter(output)) {
             MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
                 if (options.method == name) {
@@ -51,6 +86,7 @@ abstract class AbstractBytecodeTestCase extends GroovyTestCase {
                     new EmptyVisitor()
                 }
             }
+
             FieldVisitor visitField(int access, String name, String desc, String signature, Object value) {
                 if (options.field == name) {
                     text << '--BEGIN--'
@@ -68,10 +104,10 @@ abstract class AbstractBytecodeTestCase extends GroovyTestCase {
                 boolean drop = true
                 while (it.hasNext()) {
                     Object o = it.next();
-                    if ('--BEGIN--'==o) {
+                    if ('--BEGIN--' == o) {
                         drop = false
                         it.remove()
-                    } else if ('--END--'==o) {
+                    } else if ('--END--' == o) {
                         drop = true
                     }
                     if (drop) it.remove()
@@ -80,12 +116,11 @@ abstract class AbstractBytecodeTestCase extends GroovyTestCase {
             }
 
         }
-        def cr = new ClassReader(cu.classes[0].bytes)
+        def cr = new ClassReader(bytes)
         cr.accept(tcf, 0)
 
         def code = output.toString()
-        final InstructionSequence sequence = new InstructionSequence(instructions: code.split('\n')*.trim())
-        println sequence.toSequence()
+        sequence = new InstructionSequence(instructions: code.split('\n')*.trim())
         return sequence
     }
 }

@@ -15,8 +15,17 @@
  */
 package org.codehaus.groovy.classgen.asm.sc;
 
+import org.codehaus.groovy.GroovyBugError;
+import org.codehaus.groovy.ast.ClassHelper;
+import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.classgen.asm.CallSiteWriter;
+import org.codehaus.groovy.classgen.asm.OperandStack;
+import org.codehaus.groovy.classgen.asm.TypeChooser;
+import org.codehaus.groovy.classgen.asm.WriterController;
+import org.codehaus.groovy.runtime.MetaClassHelper;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
 
 /**
  * A call site writer which is able to switch between two modes :
@@ -28,10 +37,13 @@ import org.codehaus.groovy.classgen.asm.CallSiteWriter;
  *
  * @author Cedric Champeau
  */
-public class StaticTypesCallSiteWriter extends CallSiteWriter {
+public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes {
+
+    private WriterController controller;
 
     public StaticTypesCallSiteWriter(final StaticTypesWriterController controller) {
         super(controller);
+        this.controller = controller;
     }
 
     @Override
@@ -57,5 +69,32 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
 
     @Override
     public void prepareCallSite(final String message) {
+    }
+
+    @Override
+    public void makeSingleArgumentCall(final Expression receiver, final String message, final Expression arguments) {
+        TypeChooser typeChooser = controller.getTypeChooser();
+        ClassNode classNode = controller.getClassNode();
+        ClassNode rType = ClassHelper.getWrapper(typeChooser.resolveType(receiver, classNode));
+        ClassNode aType = ClassHelper.getWrapper(typeChooser.resolveType(arguments, classNode));
+        if (rType.isDerivedFrom(ClassHelper.Number_TYPE) && aType.isDerivedFrom(ClassHelper.Number_TYPE)) {
+            OperandStack operandStack = controller.getOperandStack();
+            int m1 = operandStack.getStackLength();
+            //slow Path
+            prepareSiteAndReceiver(receiver, message, false, controller.getCompileStack().isLHS());
+            visitBoxedArgument(arguments);
+            int m2 = operandStack.getStackLength();
+            MethodVisitor mv = controller.getMethodVisitor();
+            mv.visitMethodInsn(INVOKESTATIC,
+                    "org/codehaus/groovy/runtime/dgmimpl/NumberNumber"+ MetaClassHelper.capitalize(message),
+                    message,
+                    "(Ljava/lang/Number;Ljava/lang/Number;)Ljava/lang/Number;");
+            controller.getOperandStack().replace(ClassHelper.Number_TYPE, m2-m1);
+            return;
+        }
+
+        // todo: more cases
+        throw new GroovyBugError("This method should not have been called. Please try to create a simple example reproducing this error and file" +
+                "a bug report at http://jira.codehaus.org/browse/GROOVY");
     }
 }
