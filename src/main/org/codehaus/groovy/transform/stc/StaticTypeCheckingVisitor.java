@@ -15,6 +15,8 @@
  */
 package org.codehaus.groovy.transform.stc;
 
+import groovy.lang.IntRange;
+import groovy.lang.ObjectRange;
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.stmt.*;
@@ -210,6 +212,18 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             Expression objectExpression = expression.getObjectExpression();
             addStaticTypeError("No such property: " + expression.getPropertyAsString() +
                     " for class: " + findCurrentInstanceOfClass(objectExpression, objectExpression.getType()), expression);
+        }
+    }
+
+    @Override
+    public void visitRangeExpression(final RangeExpression expression) {
+        super.visitRangeExpression(expression);
+        ClassNode fromType = getWrapper(getType(expression.getFrom()));
+        ClassNode toType = getWrapper(getType(expression.getTo()));
+        if (Integer_TYPE.equals(fromType) && Integer_TYPE.equals(toType)) {
+            storeType(expression, ClassHelper.make(IntRange.class));
+        } else {
+            storeType(expression, ClassHelper.make(ObjectRange.class));
         }
     }
 
