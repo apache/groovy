@@ -15,8 +15,19 @@
  */
 package org.codehaus.groovy.classgen.asm.sc;
 
+import org.codehaus.groovy.ast.ClassHelper;
+import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.Parameter;
+import org.codehaus.groovy.ast.expr.ArgumentListExpression;
+import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
-import org.codehaus.groovy.classgen.asm.StatementWriter;
+import org.codehaus.groovy.ast.stmt.ForStatement;
+import org.codehaus.groovy.classgen.asm.*;
+import org.objectweb.asm.Label;
+import org.objectweb.asm.MethodVisitor;
+
+import static org.objectweb.asm.Opcodes.*;
 
 /**
  * A class to write out the optimized statements
@@ -24,6 +35,7 @@ import org.codehaus.groovy.classgen.asm.StatementWriter;
  */
 public class StaticTypesStatementWriter extends StatementWriter {
 
+    private static final ClassNode ITERABLE_CLASSNODE = ClassHelper.make(Iterable.class);
     private StaticTypesWriterController controller;
 
     public StaticTypesStatementWriter(StaticTypesWriterController controller) {
@@ -38,4 +50,63 @@ public class StaticTypesStatementWriter extends StatementWriter {
         controller.switchToSlowPath();
     }
 
+    @Override
+    protected void writeForInLoop(final ForStatement loop) {
+        controller.getAcg().onLineNumber(loop,"visitForLoop");
+        writeStatementLabel(loop);
+
+        CompileStack compileStack = controller.getCompileStack();
+        MethodVisitor mv = controller.getMethodVisitor();
+        OperandStack operandStack = controller.getOperandStack();
+
+        compileStack.pushLoop(loop.getVariableScope(), loop.getStatementLabel());
+
+        // Declare the loop counter.
+        BytecodeVariable variable = compileStack.defineVariable(loop.getVariable(), false);
+
+        // Identify type of collection
+        TypeChooser typeChooser = controller.getTypeChooser();
+        Expression collectionExpression = loop.getCollectionExpression();
+        ClassNode collectionType = typeChooser.resolveType(collectionExpression, controller.getClassNode());
+
+        if (collectionType.implementsInterface(ITERABLE_CLASSNODE)) {
+            MethodCallExpression iterator = new MethodCallExpression(collectionExpression, "iterator", new ArgumentListExpression());
+            iterator.setMethodTarget(collectionType.getMethod("iterator", Parameter.EMPTY_ARRAY));
+            iterator.visit(controller.getAcg());
+        } else {
+            collectionExpression.visit(controller.getAcg());
+            mv.visitMethodInsn(
+                    INVOKESTATIC,
+                    "org/codehaus/groovy/runtime/DefaultGroovyMethods",
+                    "iterator",
+                    "(Ljava/lang/Object;)Ljava/util/Iterator;"
+            );
+        }
+
+        // Then get the iterator and generate the loop control
+
+        final int iteratorIdx = compileStack.defineTemporaryVariable("iterator", ClassHelper.Iterator_TYPE, true);
+
+        Label continueLabel = compileStack.getContinueLabel();
+        Label breakLabel = compileStack.getBreakLabel();
+
+        mv.visitLabel(continueLabel);
+        mv.visitVarInsn(ALOAD, iteratorIdx);
+        writeIteratorHasNext(mv);
+        // note: ifeq tests for ==0, a boolean is 0 if it is false
+        mv.visitJumpInsn(IFEQ, breakLabel);
+
+        mv.visitVarInsn(ALOAD, iteratorIdx);
+        writeIteratorNext(mv);
+        operandStack.push(ClassHelper.OBJECT_TYPE);
+        operandStack.storeVar(variable);
+
+        // Generate the loop body
+        loop.getLoopBlock().visit(controller.getAcg());
+
+        mv.visitJumpInsn(GOTO, continueLabel);
+        mv.visitLabel(breakLabel);
+
+        compileStack.pop();
+    }
 }
