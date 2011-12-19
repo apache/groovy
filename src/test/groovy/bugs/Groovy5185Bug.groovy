@@ -10,7 +10,7 @@ class Groovy5185Bug extends GroovyTestCase {
             }
 
             List<Closure> closures = []
-            5000.times { int index ->
+            500.times { int index ->
                 closures << {
                     100.times {
                         String key = "bar"
