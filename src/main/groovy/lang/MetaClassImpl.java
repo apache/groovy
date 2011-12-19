@@ -1171,9 +1171,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
              return cacheEntry.method;
         }
 
-        cacheEntry = new MetaMethodIndex.CacheEntry ();
-        cacheEntry.params = params;
-        cacheEntry.method = (MetaMethod) chooseMethod(e.name, methods, params);
+        cacheEntry = new MetaMethodIndex.CacheEntry (params, (MetaMethod) chooseMethod(e.name, methods, params));
         e.cachedMethod = cacheEntry;
         return cacheEntry.method;
     }
@@ -1192,11 +1190,9 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             if (method!=null) return method;
         }
 
-        cacheEntry = new MetaMethodIndex.CacheEntry ();
         final Class[] classes = MetaClassHelper.convertToTypeArray(arguments);
-        cacheEntry.params = classes;
-        cacheEntry.method = (MetaMethod) chooseMethod(e.name, e.methodsForSuper, classes);
-        if (cacheEntry.method.isAbstract()) cacheEntry.method = null;
+        MetaMethod method = (MetaMethod) chooseMethod(e.name, e.methodsForSuper, classes);
+        cacheEntry = new MetaMethodIndex.CacheEntry (classes, method.isAbstract()?null:method);
 
         e.cachedMethodForSuper = cacheEntry;
 
@@ -1218,11 +1214,9 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             if (method!=null) return method;
         }
 
-        cacheEntry = new MetaMethodIndex.CacheEntry ();
         final Class[] classes = MetaClassHelper.convertToTypeArray(arguments);
-        cacheEntry.params = classes;
-        cacheEntry.method = (MetaMethod) chooseMethod(e.name, methods, classes);
-        
+        cacheEntry = new MetaMethodIndex.CacheEntry (classes, (MetaMethod) chooseMethod(e.name, methods, classes));
+
         e.cachedMethod = cacheEntry;
         
         return cacheEntry.method;
@@ -1252,11 +1246,9 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                  return cacheEntry.method;
             }
 
-            cacheEntry = new MetaMethodIndex.CacheEntry ();
             final Class[] classes = MetaClassHelper.convertToTypeArray(arguments);
-            cacheEntry.params = classes;
-            cacheEntry.method = pickStaticMethod(methodName, classes);
-            
+            cacheEntry = new MetaMethodIndex.CacheEntry (classes, pickStaticMethod(methodName, classes));
+
             e.cachedStaticMethod = cacheEntry;
             
             return cacheEntry.method;
