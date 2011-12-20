@@ -70,6 +70,9 @@ abstract class AbstractBytecodeTestCase extends GroovyTestCase {
 
         sequence = extractSequence(cu.classes[0].bytes, options)
         clazz = cu.classLoader.defineClass(cu.classes[0].name, cu.classes[0].bytes)
+        cu.classes[1..<cu.classes.size()].each {
+            cu.classLoader.defineClass(it.name, it.bytes)
+        }
         return sequence
     }
 

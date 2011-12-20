@@ -15,18 +15,27 @@
  */
 package org.codehaus.groovy.classgen.asm.sc;
 
-import org.codehaus.groovy.ast.ConstructorNode;
-import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
+import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
-import org.codehaus.groovy.classgen.asm.InvocationWriter;
-import org.codehaus.groovy.classgen.asm.WriterController;
-import org.codehaus.groovy.transform.StaticTypesTransformation;
+import org.codehaus.groovy.classgen.asm.*;
+import org.codehaus.groovy.transform.stc.ExtensionMethodNode;
 import org.codehaus.groovy.transform.stc.StaticTypesMarker;
+import org.objectweb.asm.MethodVisitor;
+
+import java.util.LinkedList;
+import java.util.List;
+
+import static org.objectweb.asm.Opcodes.*;
+import static org.objectweb.asm.Opcodes.ACONST_NULL;
 
 public class StaticInvocationWriter extends InvocationWriter {
+    private final WriterController controller;
+    
     public StaticInvocationWriter(WriterController wc) {
         super(wc);
+        controller = wc;
     }
 
     @Override
@@ -49,5 +58,36 @@ public class StaticInvocationWriter extends InvocationWriter {
         loadArguments(args.getExpressions(), cn.getParameters());
         finnishConstructorCall(cn, ownerDescriptor, args.getExpressions().size());
 
+    }
+
+    @Override
+    protected boolean writeDirectMethodCall(final MethodNode target, final boolean implicitThis, final Expression receiver, final TupleExpression args) {
+        if (target instanceof ExtensionMethodNode) {            
+            MethodNode node = ((ExtensionMethodNode)target).getExtensionMethodNode();
+            String methodName = target.getName();
+
+            MethodVisitor mv = controller.getMethodVisitor();
+
+            int argumentsToRemove = 0;
+            List<Expression> argumentList = new LinkedList<Expression> (args.getExpressions());
+            argumentList.add(0, receiver);
+            Parameter[] parameters = node.getParameters();
+            loadArguments(argumentList, parameters);
+
+            String owner = BytecodeHelper.getClassInternalName(node.getDeclaringClass());
+            String desc = BytecodeHelper.getMethodDescriptor(target.getReturnType(), parameters);
+            mv.visitMethodInsn(INVOKESTATIC, owner, methodName, desc);
+            ClassNode ret = target.getReturnType().redirect();
+            if (ret== ClassHelper.VOID_TYPE) {
+                ret = ClassHelper.OBJECT_TYPE;
+                mv.visitInsn(ACONST_NULL);
+            }
+            argumentsToRemove += argumentList.size();
+            controller.getOperandStack().remove(argumentsToRemove);
+            controller.getOperandStack().push(ret);
+            return true;
+        } else {
+            return super.writeDirectMethodCall(target, implicitThis, receiver, args);
+        }
     }
 }

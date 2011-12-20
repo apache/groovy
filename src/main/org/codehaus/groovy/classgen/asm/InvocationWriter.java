@@ -90,7 +90,7 @@ public class InvocationWriter {
                 adapter, safe, spreadSafe, implicitThis);
     }
     
-    private boolean writeDirectMethodCall(MethodNode target, boolean implicitThis,  Expression receiver, TupleExpression args) {
+    protected boolean writeDirectMethodCall(MethodNode target, boolean implicitThis,  Expression receiver, TupleExpression args) {
         if (target==null) return false;
         
         String methodName = target.getName();

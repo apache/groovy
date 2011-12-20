@@ -142,7 +142,8 @@ abstract class StaticTypeCheckingSupport {
 				if (metaMethod.isStatic() && metaMethod.isPublic() && types.length > 0) {
 					Parameter[] parameters = new Parameter[types.length - 1];
 					System.arraycopy(types, 1, parameters, 0, parameters.length);
-					MethodNode node = new MethodNode(
+					MethodNode node = new ExtensionMethodNode(
+                            metaMethod,
 							metaMethod.getName(),
 							metaMethod.getModifiers(),
 							metaMethod.getReturnType(),
