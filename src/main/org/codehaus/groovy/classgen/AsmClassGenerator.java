@@ -518,23 +518,13 @@ public class AsmClassGenerator extends ClassGenerator {
     
     public void visitDeclarationExpression(DeclarationExpression expression) {
         onLineNumber(expression, "visitDeclarationExpression: \"" + expression.getText() + "\"");
-        try {
         controller.getBinaryExpHelper().evaluateEqual(expression,true);
-        } catch (Throwable e) {
-            e.printStackTrace();
-            System.out.println("expression = " + expression.getText());
-        }
     }
 
     public void visitBinaryExpression(BinaryExpression expression) {
         onLineNumber(expression, "visitBinaryExpression: \"" + expression.getOperation().getText() + "\" ");
-        try {
         controller.getBinaryExpHelper().eval(expression);
         controller.getAssertionWriter().record(expression.getOperation());
-        } catch (Throwable e) {
-            e.printStackTrace();
-            System.out.println("expression = " + expression.getText());
-        }
     }
 
     public void visitPostfixExpression(PostfixExpression expression) {
@@ -663,12 +653,7 @@ public class AsmClassGenerator extends ClassGenerator {
         int mark = controller.getOperandStack().getStackLength(); 
         Expression inner = expression.getExpression();
         inner.visit(this);
-        try {
-            controller.getOperandStack().castToBool(mark, true);
-        } catch (Throwable e) {
-            e.printStackTrace();
-            System.out.println("expression = " + expression.getText());
-        }
+        controller.getOperandStack().castToBool(mark, true);
         controller.getCompileStack().pop();
     }
 
