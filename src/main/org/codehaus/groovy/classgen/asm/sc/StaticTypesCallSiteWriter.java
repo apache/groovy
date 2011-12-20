@@ -30,12 +30,9 @@ import org.objectweb.asm.Opcodes;
 import java.math.BigDecimal;
 
 /**
- * A call site writer which is able to switch between two modes :
- * <ul>
- *     <li>dynamic</li> mode which makes use of call site caching
- *     <li>static</li> mode which produces optimized bytecode with direct method calls
- * </ul>
- * The static mode is used when a method is annotated with {@link groovy.transform.CompileStatic}.
+ * A call site writer which replaces call site caching with static calls. This means that the generated code
+ * looks more like Java code than dynamic Groovy code. Best effort is made to use JVM instructions instead of
+ * calls to helper methods.
  *
  * @author Cedric Champeau
  */
@@ -58,6 +55,17 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
 
     @Override
     public void makeGetPropertySite(final Expression receiver, final String methodName, final boolean safe, final boolean implicitThis) {
+        TypeChooser typeChooser = controller.getTypeChooser();
+        ClassNode classNode = controller.getClassNode();
+        ClassNode receiverType = typeChooser.resolveType(receiver, classNode);
+        MethodVisitor mv = controller.getMethodVisitor();
+        if (receiverType.isArray() && methodName.equals("length")) {
+            receiver.visit(controller.getAcg());
+            mv.visitInsn(ARRAYLENGTH);
+            controller.getOperandStack().replace(ClassHelper.int_TYPE);
+            return;
+        }
+        throw new UnsupportedOperationException("Operation not yet implemented: "+receiver.getText());
     }
 
     @Override
@@ -91,11 +99,28 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         } else if (ClassHelper.STRING_TYPE.equals(rType) && "plus".equals(message)) {
             writeStringPlusCall(receiver, message, arguments);
             return;
+        } else if (rType.isArray() && "getAt".equals(message)) {
+            writeArrayGet(receiver, arguments, rType, aType);
+            return;
         }
 
         // todo: more cases
         throw new GroovyBugError("This method should not have been called. Please try to create a simple example reproducing this error and file" +
                 "a bug report at http://jira.codehaus.org/browse/GROOVY");
+    }
+
+    private void writeArrayGet(final Expression receiver, final Expression arguments, final ClassNode rType, final ClassNode aType) {
+        OperandStack operandStack = controller.getOperandStack();
+        int m1 = operandStack.getStackLength();
+        // visit receiver
+        receiver.visit(controller.getAcg());
+        // visit arguments as array index
+        arguments.visit(controller.getAcg());
+        operandStack.doGroovyCast(ClassHelper.int_TYPE);
+        int m2 = operandStack.getStackLength();
+        // array access
+        controller.getMethodVisitor().visitInsn(AALOAD);
+        operandStack.replace(rType.getComponentType(), m2-m1);
     }
 
     private void writePowerCall(Expression receiver, Expression arguments, final ClassNode rType, ClassNode aType) {

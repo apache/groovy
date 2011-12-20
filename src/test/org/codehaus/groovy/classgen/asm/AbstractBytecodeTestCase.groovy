@@ -19,6 +19,7 @@ abstract class AbstractBytecodeTestCase extends GroovyTestCase {
 
     Map extractionOptions
     InstructionSequence sequence
+    Class clazz
 
     @Override
     protected void setUp() {
@@ -68,6 +69,7 @@ abstract class AbstractBytecodeTestCase extends GroovyTestCase {
         cu.compile(Phases.CLASS_GENERATION)
 
         sequence = extractSequence(cu.classes[0].bytes, options)
+        clazz = cu.classLoader.defineClass(cu.classes[0].name, cu.classes[0].bytes)
         return sequence
     }
 

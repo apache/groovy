@@ -52,7 +52,7 @@ public class StaticTypesWriterController extends DelegatingController {
         this.statementWriter = new StaticTypesStatementWriter(this);
         this.typeChooser = new StaticTypesTypeChooser();
         this.invocationWriter = new StaticInvocationWriter(this);
-        this.binaryExprHelper = new BinaryExpressionMultiTypeDispatcher(this);
+        this.binaryExprHelper = new StaticTypesBinaryExpressionMultiTypeDispatcher(this);
     }
 
     @Override

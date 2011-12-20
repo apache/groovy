@@ -154,33 +154,6 @@ class StaticCompilationTest extends AbstractBytecodeTestCase {
         ])
     }
 
-    void testArrayGet() {
-        assert compile([method:'m'],'''
-        @groovy.transform.CompileStatic
-        void m(int[] arr) {
-            arr[0]
-        }''').hasStrictSequence([
-                "ALOAD 1",
-                "ICONST_0",
-                "INVOKESTATIC org/codehaus/groovy/runtime/BytecodeInterface8.intArrayGet ([II)I"
-        ])
-    }
-
-    void testArraySet() {
-        assert compile([method:'m'],'''
-        @groovy.transform.CompileStatic
-        void m(int[] arr) {
-            arr[0] = 0
-        }''').hasStrictSequence([
-                "ICONST_0",
-                "ISTORE 2",
-                "ALOAD 1",
-                "ICONST_0",
-                "ILOAD 2",
-                "INVOKESTATIC org/codehaus/groovy/runtime/BytecodeInterface8.intArraySet ([III)V"
-        ])
-    }
-
 /*    void testPlusPlus() {
         assert compile([method:'m'],'''
         @groovy.transform.CompileStatic
