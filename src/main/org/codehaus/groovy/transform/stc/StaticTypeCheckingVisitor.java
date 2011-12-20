@@ -517,7 +517,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         ClassNode clazz = getType(objectExpression);
         if (clazz.isArray() && "length".equals(pexp.getPropertyAsString())) {
             if (visitor!=null) {
-                PropertyNode node = new PropertyNode("length", Opcodes.ACC_PUBLIC| Opcodes.ACC_FINAL, ClassHelper.int_TYPE, clazz, null, null, null);
+                PropertyNode node = new PropertyNode("length", Opcodes.ACC_PUBLIC| Opcodes.ACC_FINAL, int_TYPE, clazz, null, null, null);
+                storeType(pexp, int_TYPE);
                 visitor.visitProperty(node);
             }
             return true;
@@ -548,12 +549,14 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     PropertyNode propertyNode = current.getProperty(propertyName);
                     if (propertyNode != null) {
                         if (visitor!=null) visitor.visitProperty(propertyNode);
+                        storeType(pexp, propertyNode.getOriginType());
                         return true;
                     }
                     if (!isAttributeExpression) {
                         FieldNode field = current.getDeclaredField(propertyName);
                         if (field != null) {
                             if (visitor!=null) visitor.visitField(field);
+                            storeType(pexp, field.getOriginType());
                             return true;
                         }
                     }
