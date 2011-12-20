@@ -1,0 +1,13 @@
+apply plugin: 'java'
+apply plugin: 'code-quality'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile("bsf:bsf:2.4.0") {
+        exclude(group: 'commons-logging', module: 'commons-logging')
+    }
+    compile project(':')
+}

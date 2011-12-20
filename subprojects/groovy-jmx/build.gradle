@@ -1,0 +1,6 @@
+apply plugin: 'groovy'
+apply plugin: 'code-quality'
+
+dependencies {
+    compile project(':')
+}

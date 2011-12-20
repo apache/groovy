@@ -352,6 +352,8 @@ $Date$
                 <pathelement path="${jmxSourceDirectory}/test/groovy"/>
                 <pathelement path="${jmxSourceDirectory}/test/java"/>
                 <pathelement path="${bsfSourceDirectory}/test/java"/>
+                <pathelement path="${jsr223SourceDirectory}/test/groovy"/>
+                <pathelement path="${jsr223SourceDirectory}/test/java"/>
                 <path refid="groovyMainClasses"/>
                 <path refid="testLibPath"/>
                 <pathelement path="${testClassesDirectory}"/>
@@ -409,6 +411,8 @@ $Date$
                 <pathelement path="${jmxSourceDirectory}/test/groovy"/>
                 <pathelement path="${jmxSourceDirectory}/test/java"/>
                 <pathelement path="${bsfSourceDirectory}/test/java"/>
+                <pathelement path="${jsr223SourceDirectory}/test/groovy"/>
+                <pathelement path="${jsr223SourceDirectory}/test/java"/>
                 <path refid="groovyMainClasses"/>
                 <path refid="testLibPath"/>
                 <pathelement path="${testClassesDirectory}"/>
@@ -541,6 +545,7 @@ $Date$
             <!-- TODO temp hack - remove once modules are in place -->
             <fileset dir="${jmxSourceDirectory}/main/java"/>
             <fileset dir="${jmxSourceDirectory}/main/groovy"/>
+            <fileset dir="${jsr223SourceDirectory}/main/java"/>
             <fileset dir="${bsfSourceDirectory}/main/java"/>
         </jar>
     </target>
@@ -784,6 +789,7 @@ $Date$
             <!-- TODO temp hack - remove once modules are in place -->
             <fileset dir="${jmxSourceDirectory}/main/java" includes="**/*.java"/>
             <fileset dir="${bsfSourceDirectory}/main/java" includes="**/*.java"/>
+            <fileset dir="${jsr223SourceDirectory}/main/java" includes="**/*.java"/>
             <link href="http://java.sun.com/javase/6/docs/api"/>
             <link href="http://www.dpml.net/api/ant/1.7.0"/>
             <link href="http://junit.sourceforge.net/junit3.8.1/javadoc"/>

@@ -10,6 +10,9 @@ targetCompatibility = 1.5
 
 buildDir = 'target'
 
+//evaluationDependsOn(':subprojects:groovy-bsf')
+//childrenDependOnMe()
+
 repositories {
     // todo Some repos are needed only for some configs. Declare them just for the configuration once Gradle allows this.
     mavenRepo url: "http://repo2.maven.org/maven2" // default, tools
@@ -34,9 +37,6 @@ dependencies {
     groovy "asm:asm-analysis:3.3.1"
     groovy "asm:asm-tree:3.3.1"
 
-    compile("bsf:bsf:2.4.0") {
-        exclude(group: 'commons-logging', module: 'commons-logging')
-    }
     compile "junit:junit:4.10"
     compile "commons-cli:commons-cli:1.2"
     compile "org.apache.ant:ant:1.8.2"
@@ -72,9 +72,6 @@ dependencies {
     testCompile "com.thoughtworks.qdox:qdox:1.12"
     testCompile "org.apache.ant:ant-testutil:1.8.2"
     runtime "org.codehaus.gpars:gpars:0.12"
-
-    // todo this was provided
-    compile "org.livetribe:livetribe-jsr223:2.0.6"
 
     tools "com.googlecode.jarjar:jarjar:1.1"
     tools("checkstyle:checkstyle:4.4") {
@@ -114,8 +111,8 @@ sourceSets {
         java {
             srcDirs = [
                     "$projectDir/src/main",
-                    "$projectDir/subprojects/groovy-jmx/src/main/java",
-                    "$projectDir/subprojects/groovy-bsf/src/main/java",
+//                    "$projectDir/subprojects/groovy-jmx/src/main/java",
+//                    "$projectDir/subprojects/groovy-bsf/src/main/java",
             ]
             fileTree("$projectDir/src/main/groovy/ui").matching {
                 exclude 'GroovyMain.java', 'GroovySocketServer.java'
@@ -146,10 +143,10 @@ sourceSets {
         groovy {
             srcDirs = [
                     "$projectDir/src/test",
-                    "$projectDir/subprojects/groovy-bsf/src/test/groovy",
-                    "$projectDir/subprojects/groovy-jmx/src/test/groovy",
-                    "$projectDir/subprojects/groovy-bsf/src/test/java",
-                    "$projectDir/subprojects/groovy-jmx/src/test/java"
+//                    "$projectDir/subprojects/groovy-bsf/src/test/groovy",
+//                    "$projectDir/subprojects/groovy-jmx/src/test/groovy",
+//                    "$projectDir/subprojects/groovy-bsf/src/test/java",
+//                    "$projectDir/subprojects/groovy-jmx/src/test/java"
             ]
             if (!isJava16()) {
                 exclude "groovy/**/vm6/*Test.groovy"
