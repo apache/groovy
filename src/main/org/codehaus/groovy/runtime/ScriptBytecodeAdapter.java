@@ -647,10 +647,7 @@ public class ScriptBytecodeAdapter {
             }
         }
 
-        if (from instanceof Integer && to instanceof Integer)
-            return new IntRange(DefaultTypeTransformation.intUnbox(from), DefaultTypeTransformation.intUnbox(to));
-        else
-            return new ObjectRange((Comparable) from, (Comparable) to);
+        return new ObjectRange((Comparable) from, (Comparable) to);
     }
 
     //assert
