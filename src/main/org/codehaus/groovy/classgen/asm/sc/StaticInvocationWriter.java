@@ -16,11 +16,10 @@
 package org.codehaus.groovy.classgen.asm.sc;
 
 import org.codehaus.groovy.ast.*;
-import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
-import org.codehaus.groovy.ast.expr.Expression;
-import org.codehaus.groovy.ast.expr.TupleExpression;
+import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.classgen.asm.*;
 import org.codehaus.groovy.transform.stc.ExtensionMethodNode;
+import org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor;
 import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 import org.objectweb.asm.MethodVisitor;
 
@@ -87,6 +86,11 @@ public class StaticInvocationWriter extends InvocationWriter {
             controller.getOperandStack().push(ret);
             return true;
         } else {
+            if (target == StaticTypeCheckingVisitor.CLOSURE_CALL_VARGS) {
+                // wrap arguments into an array
+                ArrayExpression arr = new ArrayExpression(ClassHelper.OBJECT_TYPE, args.getExpressions());
+                return super.writeDirectMethodCall(target, implicitThis, receiver, new ArgumentListExpression(arr));
+            }
             return super.writeDirectMethodCall(target, implicitThis, receiver, args);
         }
     }

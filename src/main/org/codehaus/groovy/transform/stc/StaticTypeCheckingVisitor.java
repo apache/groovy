@@ -50,6 +50,20 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     private static final ClassNode ITERABLE_TYPE = ClassHelper.make(Iterable.class);
     private final static ClassNode READONLY_PROPERTY_RETURN = ClassHelper.make("<readonly>");
     private final static List<MethodNode> EMPTY_METHODNODE_LIST = Collections.emptyList();
+    public static final MethodNode CLOSURE_CALL_NO_ARG;
+    public static final MethodNode CLOSURE_CALL_ONE_ARG;
+    public static final MethodNode CLOSURE_CALL_VARGS;
+
+    static {
+        // Cache closure call methods
+        CLOSURE_CALL_NO_ARG = CLOSURE_TYPE.getDeclaredMethod("call", Parameter.EMPTY_ARRAY);
+        CLOSURE_CALL_ONE_ARG = CLOSURE_TYPE.getDeclaredMethod("call", new Parameter[]{
+                new Parameter(OBJECT_TYPE, "arg")
+        });
+        CLOSURE_CALL_VARGS = CLOSURE_TYPE.getDeclaredMethod("call", new Parameter[]{
+                new Parameter(OBJECT_TYPE.makeArray(), "args")
+        });
+    }
 
     private SourceUnit source;
     private ClassNode classNode;
@@ -1003,6 +1017,18 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                             storeType(call, (ClassNode) data);
                         }
                     }
+                    int nbOfArgs = 0;
+                    if (callArguments instanceof ArgumentListExpression) {
+                        ArgumentListExpression list = (ArgumentListExpression) callArguments;
+                        nbOfArgs = list.getExpressions().size();
+                    } else {
+                        // todo : other cases
+                        nbOfArgs = 0;
+                    }
+                    storeTargetMethod(call,
+                            nbOfArgs==0?CLOSURE_CALL_NO_ARG:
+                            nbOfArgs==1?CLOSURE_CALL_ONE_ARG:
+                            CLOSURE_CALL_VARGS);
                 } else {
                     if (mn.size()==1) {
                         MethodNode directMethodCallCandidate = mn.get(0);
