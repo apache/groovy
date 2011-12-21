@@ -1381,7 +1381,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 int lastArgMatch = isVargs(params)?lastArgMatchesVarg(params, args):-1;
                 if (lastArgMatch>=0) lastArgMatch++; // ensure exact matches are preferred over vargs
                 int dist = allPMatch>=0?Math.max(allPMatch, lastArgMatch):lastArgMatch;
-                if (dist>=0 && !receiver.equals(m.getDeclaringClass())) dist++;
+                if (dist>=0 && !receiver.equals(m.getDeclaringClass())) dist+=getDistance(receiver, m.getDeclaringClass());
                 if (dist>=0 && dist<bestDist) {
                     bestChoices.clear();
                     bestChoices.add(m);
@@ -1421,6 +1421,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
         }
         return bestChoices;
+    }
+
+    private int getDistance(final ClassNode receiver, final ClassNode compare) {
+        if (receiver.equals(compare)) return 0;
+        ClassNode superClass = compare.getSuperClass();
+        if (superClass ==null) return 1;
+        return 1+getDistance(receiver, superClass);
     }
 
     /**

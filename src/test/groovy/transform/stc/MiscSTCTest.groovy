@@ -168,5 +168,15 @@ class MiscSTCTest extends StaticTypeCheckingTestCase {
             1
         '''
     }
+    
+    void testCompareEnumToNull() {
+        assertScript '''
+            enum MyEnum { a,b }
+            MyEnum val = null
+            if (val == null) {
+                val = MyEnum.a
+            }
+        '''
+    }
 }
 
