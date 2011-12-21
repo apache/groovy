@@ -2,7 +2,7 @@ package org.codehaus.groovy.classgen.asm.sc
 
 import org.codehaus.groovy.classgen.asm.AbstractBytecodeTestCase
 
-class StaticCompileDGMMethod extends AbstractBytecodeTestCase {
+class StaticCompileDGMMethodTest extends AbstractBytecodeTestCase {
     void testShouldCallToIntegerOnString() {
         def bytecode = compile([method:'m'],'''
             @groovy.transform.CompileStatic
