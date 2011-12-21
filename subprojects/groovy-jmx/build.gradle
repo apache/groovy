@@ -3,4 +3,5 @@ apply plugin: 'code-quality'
 
 dependencies {
     compile project(':')
+    testCompile project(':')
 }
