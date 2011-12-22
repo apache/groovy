@@ -1234,6 +1234,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
         MethodNode method = findMethodOrFail(expr, leftRedirect, operationName, rightRedirect);
         if (method != null) {
+            typeCheckMethodsWithGenerics(left, new ClassNode[]{right}, Collections.singletonList(method), expr );
             if (isCompareToBoolean(op)) return boolean_TYPE;
             if (op == COMPARE_TO) return int_TYPE;
             return getType(method);
