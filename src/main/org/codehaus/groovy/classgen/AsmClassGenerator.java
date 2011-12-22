@@ -1008,6 +1008,7 @@ public class AsmClassGenerator extends ClassGenerator {
         } else if (adapter == getGroovyObjectProperty && !expression.isSpreadSafe() && propName != null) {
             controller.getCallSiteWriter().makeGroovyObjectGetPropertySite(objectExpression, propName, expression.isSafe(), expression.isImplicitThis());
         } else {
+            // todo: for improved modularity and extensibility, this should be moved into a writer
             if (controller.getCompileStack().isLHS()) controller.getOperandStack().box();
             controller.getInvocationWriter().makeCall(
                     expression,

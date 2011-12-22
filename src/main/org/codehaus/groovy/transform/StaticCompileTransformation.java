@@ -56,7 +56,7 @@ public class StaticCompileTransformation extends StaticTypesTransformation {
                 MethodNode target = (MethodNode) call.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET);
                 if (target!=null) call.setMethodTarget(target);
 
-                if (call.getMethodTarget()==null) {
+                if (call.getMethodTarget()==null && call.getLineNumber()>0) {
                     addError("Target method for method call expression hasn't been set", call);
                 }
             }
@@ -66,7 +66,7 @@ public class StaticCompileTransformation extends StaticTypesTransformation {
                 super.visitConstructorCallExpression(call);
 
                 MethodNode target = (MethodNode) call.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET);
-                if (target==null) {
+                if (target==null && call.getLineNumber()>0) {
                     addError("Target constructor for constructor call expression hasn't been set", call);
                 }
             }

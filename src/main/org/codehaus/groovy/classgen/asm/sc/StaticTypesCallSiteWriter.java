@@ -16,18 +16,12 @@
 package org.codehaus.groovy.classgen.asm.sc;
 
 import org.codehaus.groovy.GroovyBugError;
-import org.codehaus.groovy.ast.ClassHelper;
-import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.expr.Expression;
-import org.codehaus.groovy.classgen.asm.CallSiteWriter;
-import org.codehaus.groovy.classgen.asm.OperandStack;
-import org.codehaus.groovy.classgen.asm.TypeChooser;
-import org.codehaus.groovy.classgen.asm.WriterController;
+import org.codehaus.groovy.ast.*;
+import org.codehaus.groovy.ast.expr.*;
+import org.codehaus.groovy.classgen.asm.*;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
-
-import java.math.BigDecimal;
 
 /**
  * A call site writer which replaces call site caching with static calls. This means that the generated code
@@ -38,6 +32,7 @@ import java.math.BigDecimal;
  */
 public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes {
 
+    private static final MethodNode GROOVYOBJECT_GETPROPERTY_METHOD = ClassHelper.GROOVY_OBJECT_TYPE.getMethod("getProperty", new Parameter[]{new Parameter(ClassHelper.STRING_TYPE, "propertyName")});
     private WriterController controller;
 
     public StaticTypesCallSiteWriter(final StaticTypesWriterController controller) {
@@ -65,13 +60,82 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
             controller.getOperandStack().replace(ClassHelper.int_TYPE);
             return;
         }
-        throw new UnsupportedOperationException("Operation not yet implemented: "+receiver.getText());
+        if (makeGetPublicField(receiver, receiverType, methodName, implicitThis, samePackages(receiverType.getPackageName(), classNode.getPackageName()))) return;
+        if (makeGetPropertyWithGetter(receiver, receiverType, methodName)) return;
+
+        throw new UnsupportedOperationException("Operation not yet implemented: "+receiver.getText()+"."+methodName);
     }
 
     @Override
     public void makeGroovyObjectGetPropertySite(final Expression receiver, final String methodName, final boolean safe, final boolean implicitThis) {
+        TypeChooser typeChooser = controller.getTypeChooser();
+        ClassNode classNode = controller.getClassNode();
+        ClassNode receiverType = typeChooser.resolveType(receiver, classNode);
+        if (makeGetPublicField(receiver, receiverType, methodName, implicitThis, samePackages(receiverType.getPackageName(), classNode.getPackageName()))) return;
+        if (makeGetPropertyWithGetter(receiver, receiverType, methodName)) return;
+
+        MethodCallExpression call = new MethodCallExpression(
+                receiver,
+                "getProperty",
+                new ArgumentListExpression(new ConstantExpression(methodName))
+        );
+        call.setMethodTarget(GROOVYOBJECT_GETPROPERTY_METHOD);
+        call.visit(controller.getAcg());
+        return;
     }
 
+    private boolean makeGetPropertyWithGetter(final Expression receiver, final ClassNode receiverType, final String methodName) {
+        // does a getter exists ?
+        String getterName = "get" + MetaClassHelper.capitalize(methodName);
+        MethodNode getterNode = receiverType.getGetterMethod(getterName);
+        if (getterNode==null) {
+            getterName = "is" + MetaClassHelper.capitalize(methodName);
+            getterNode = receiverType.getGetterMethod(getterName);
+        }
+        if (getterNode!=null) {
+            MethodCallExpression call = new MethodCallExpression(
+                    receiver,
+                    getterName,
+                    new ArgumentListExpression()
+            );
+            call.setMethodTarget(getterNode);
+            call.visit(controller.getAcg());
+            return true;
+        }
+        return false;
+    }
+
+    private boolean makeGetPublicField(final Expression receiver, final ClassNode receiverType, final String fieldName, final boolean implicitThis, final boolean samePackage) {
+        FieldNode field = receiverType.getField(fieldName);
+        // is direct access possible ?
+        if (field !=null && (field.isPublic() || (samePackage && field.isProtected()))) {
+            CompileStack compileStack = controller.getCompileStack();
+            if (implicitThis) {
+                compileStack.pushImplicitThis(implicitThis);
+            }
+            receiver.visit(controller.getAcg());
+            if (implicitThis) compileStack.popImplicitThis();
+            MethodVisitor mv = controller.getMethodVisitor();
+            mv.visitFieldInsn(GETFIELD, BytecodeHelper.getClassInternalName(receiverType), fieldName, BytecodeHelper.getTypeDescription(field.getOriginType()));
+            controller.getOperandStack().replace(field.getOriginType());
+            return true;
+        }
+        ClassNode superClass = receiverType.getSuperClass();
+        if (superClass !=null) {
+            String receiverTypePackageName = receiverType.getPackageName();
+            String superClassPackageName = superClass.getPackageName();
+            boolean same = samePackage && samePackages(receiverTypePackageName, superClassPackageName);
+            return makeGetPublicField(receiver, superClass, fieldName, implicitThis, same);
+        }
+        return false;
+    }
+
+    private static boolean samePackages(final String pkg1, final String pkg2) {
+        return (
+                (pkg1 ==null && pkg2 ==null)
+                || pkg1 !=null && pkg1.equals(pkg2)
+                );
+    }
 
     @Override
     public void makeSiteEntry() {

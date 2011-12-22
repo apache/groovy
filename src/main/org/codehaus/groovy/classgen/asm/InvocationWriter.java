@@ -103,6 +103,8 @@ public class InvocationWriter {
             opcode = INVOKESTATIC;
         } else if (target.isPrivate()) {
             opcode = INVOKESPECIAL;
+        } else if (target.getDeclaringClass().isInterface()) {
+            opcode = INVOKEINTERFACE;
         }
 
         // handle receiver

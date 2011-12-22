@@ -60,6 +60,8 @@ abstract class AbstractBytecodeTestCase extends GroovyTestCase {
      * @return the decompiled <code>InstructionSequence</code>
      */
     InstructionSequence compile(Map options=[method:"run"], String scriptText) {
+        sequence = null
+        clazz = null
         def cu = new CompilationUnit()
         def su = cu.addSource("script", scriptText)
         cu.compile(Phases.CONVERSION)
@@ -68,15 +70,29 @@ abstract class AbstractBytecodeTestCase extends GroovyTestCase {
         }
         cu.compile(Phases.CLASS_GENERATION)
 
-        sequence = extractSequence(cu.classes[0].bytes, options)
-        clazz = cu.classLoader.defineClass(cu.classes[0].name, cu.classes[0].bytes)
-        cu.classes[1..<cu.classes.size()].each {
-            cu.classLoader.defineClass(it.name, it.bytes)
+        cu.classes.each {
+            if (it.name==~'.*script') {
+                sequence = extractSequence(it.bytes, options)
+            }
+        }
+        if (sequence==null && cu.classes.size()>0) {
+            sequence = extractSequence(cu.classes[0].bytes, options)
+        }
+        cu.classes.each {
+            try {
+                def dep = cu.classLoader.defineClass(it.name, it.bytes)
+                if (Script.class.isAssignableFrom(dep)) {
+                    clazz = dep
+                }
+            } catch (Throwable e) {
+                System.err.println(sequence)
+                e.printStackTrace()
+            }
         }
         return sequence
     }
 
-    private InstructionSequence extractSequence(byte[] bytes, Map options=[method:"run"]) {
+    InstructionSequence extractSequence(byte[] bytes, Map options=[method:"run"]) {
         InstructionSequence sequence
         def output = new StringWriter()
 
