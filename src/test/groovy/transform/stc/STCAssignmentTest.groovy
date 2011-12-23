@@ -116,18 +116,18 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         """
     }
 
-    void testIntPlusEqualsString() {
+    void testIntPlusEqualsObject() {
         shouldFailWithMessages """
             int i = 0
-            i += '1'
-        """, "Cannot assign value of type java.lang.String to variable of type int"
+            i += new Object()
+        """, "Cannot find matching method int#plus(java.lang.Object)"
     }
 
-    void testIntMinusEqualsString() {
+    void testIntMinusEqualsObject() {
         shouldFailWithMessages """
             int i = 0
-            i -= '1'
-        """, "Cannot find matching method int#minus(java.lang.String)", 'Cannot assign value of type java.lang.String to variable of type int'
+            i -= new Object()
+        """, "Cannot find matching method int#minus(java.lang.Object)"
     }
 
     void testStringPlusEqualsString() {
@@ -592,7 +592,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
     }
 
     void testBigIntegerMultDouble() {
-        assertScript '''
+       assertScript '''
             BigInteger a = 333
             double b = 2d
             BigDecimal c = a * b

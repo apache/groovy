@@ -66,12 +66,45 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             list.add 'Hello'
         '''
     }
+    
+    void testAddOnListUsingLeftShift() {
+        shouldFailWithMessages '''
+            List<String> list = []
+            list << 1
+        ''', "Cannot call java.util.List#leftShift(java.lang.String) with arguments [int]"
+    }
+
+    void testAddOnList2UsingLeftShift() {
+        assertScript '''
+            List<String> list = []
+            list << 'Hello'
+        '''
+
+        assertScript '''
+            List<Integer> list = []
+            list << 1
+        '''
+    }
+
+    void testAddOnListWithDiamondUsingLeftShift() {
+        assertScript '''
+            List<String> list = new LinkedList<>()
+            list << 'Hello'
+        '''
+    }
 
     void testAddOnListWithDiamondAndWrongType() {
         shouldFailWithMessages '''
             List<Integer> list = new LinkedList<>()
             list.add 'Hello'
         ''', 'Cannot find matching method java.util.LinkedList#add(java.lang.String)'
+    }
+
+    void testAddOnListWithDiamondAndWrongTypeUsingLeftShift() {
+        shouldFailWithMessages '''
+            List<Integer> list = new LinkedList<>()
+            list << 'Hello'
+        ''', 'Cannot call java.util.LinkedList#leftShift(java.lang.Integer) with arguments [java.lang.String]'
     }
 
     void testReturnTypeInference() {
