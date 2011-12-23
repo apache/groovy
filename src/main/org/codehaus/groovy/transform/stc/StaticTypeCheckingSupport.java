@@ -201,9 +201,10 @@ abstract class StaticTypeCheckingSupport {
         int dist = 0;
         // we already know the lengths are equal
         for (int i = 0; i < params.length; i++) {
-            if (!isAssignableTo(args[i],params[i].getType())) return -1;
+            ClassNode paramType = params[i].getType();
+            if (!isAssignableTo(args[i], paramType)) return -1;
             else {
-                if (!params[i].getType().equals(args[i])) dist++;
+                if (!paramType.equals(args[i])) dist+=getDistance(args[i], paramType);
             }
         }
         return dist;
@@ -622,5 +623,12 @@ abstract class StaticTypeCheckingSupport {
 
     static boolean implementsInterfaceOrIsSubclassOf(ClassNode type, ClassNode superOrInterface) {
         return type.equals(superOrInterface) || type.isDerivedFrom(superOrInterface) || type.implementsInterface(superOrInterface);
+    }
+
+    static int getDistance(final ClassNode receiver, final ClassNode compare) {
+        if (receiver.equals(compare) || compare.isInterface() && receiver.implementsInterface(compare)) return 0;
+        ClassNode superClass = compare.getSuperClass();
+        if (superClass ==null) return 1;
+        return 1+getDistance(receiver, superClass);
     }
 }
