@@ -237,5 +237,22 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         ''', 'Cannot assign value of type Foo[] to variable of type FooAnother'
     }
 
+    void testListPlusEquals() {
+        /*assertScript '''
+            List<String> list = ['a','b']
+            list += ['c']
+            assert list == ['a','b','c']
+        '''*/
+
+        assertScript '''
+            Collection<String> list = ['a','b']
+            list += 'c'
+            assert list == ['a','b','c']
+        '''
+
+
+
+    }
+
 }
 

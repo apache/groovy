@@ -23,12 +23,10 @@ import org.codehaus.groovy.classgen.ReturnAdder;
 import org.codehaus.groovy.classgen.asm.InvocationWriter;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.runtime.MetaClassHelper;
-import org.codehaus.groovy.runtime.typehandling.FloatingPointMath;
 import org.codehaus.groovy.transform.StaticTypesTransformation;
 import org.codehaus.groovy.util.ListHashMap;
 import org.objectweb.asm.Opcodes;
 
-import java.lang.reflect.Modifier;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -235,7 +233,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 inferDiamondType((ConstructorCallExpression) rightExpression, lType);
             }
 
-            typeCheckAssignment(expression, leftExpression, lType, rightExpression, rType);
+            ClassNode originType = getOriginalDeclarationType(leftExpression);
+            typeCheckAssignment(expression, leftExpression, originType, rightExpression, resultType);
+            // if assignment succeeds but result type is not a subtype of original type, then we are in a special cast handling
+            // and we must update the result type
+            if (!implementsInterfaceOrIsSubclassOf(getWrapper(resultType),getWrapper(originType))) {
+                resultType = originType;
+            }
 
             // if we are in an if/else branch, keep track of assignment
             if (ifElseForWhileAssignmentTracker !=null && leftExpression instanceof VariableExpression) {
@@ -264,6 +268,18 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         } else if (op == KEYWORD_INSTANCEOF) {
             pushInstanceOfTypeInfo(leftExpression, rightExpression);
         }
+    }
+    
+    private ClassNode getOriginalDeclarationType(Expression lhs) {
+        if (lhs instanceof VariableExpression) {
+            Variable var = findTargetVariable((VariableExpression) lhs);     
+            if (var instanceof DynamicVariable) return getType(lhs);
+            return var.getOriginType();
+        }
+        if (lhs instanceof FieldExpression) {
+            return ((FieldExpression) lhs).getField().getOriginType();
+        }
+        return getType(lhs);
     }
 
     private void inferDiamondType(final ConstructorCallExpression cce, final ClassNode lType) {
@@ -1195,18 +1211,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 return right;
             }
             if (leftExpression instanceof VariableExpression) {
-                VariableExpression target = (VariableExpression) leftExpression;
-                if (target.getAccessedVariable() instanceof VariableExpression && target.getAccessedVariable()!=leftExpression) {
-                    target = (VariableExpression) target.getAccessedVariable();
-                }
-                ClassNode initialType = target.getType().redirect();
+                ClassNode initialType = getOriginalDeclarationType(leftExpression).redirect();
                 // as anything can be assigned to a String, Class or boolean, return the left type instead
                 if (STRING_TYPE.equals(initialType)
                         || CLASS_Type.equals(initialType)
-                        || Boolean_TYPE.equals(initialType)
-                        || isPrimitiveType(initialType)
-                        || BigDecimal_TYPE==initialType
-                        || BigInteger_TYPE==initialType) {
+                        || Boolean_TYPE.equals(initialType)) {
                     return initialType;
                 }
             }
@@ -1264,9 +1273,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
         MethodNode method = findMethodOrFail(expr, leftRedirect, operationName, rightRedirect);
         if (method != null) {
+            typeCheckMethodsWithGenerics(left, new ClassNode[]{right}, Collections.singletonList(method), expr );
+            if (isAssignment(op)) return left;
             if (isCompareToBoolean(op)) return boolean_TYPE;
             if (op == COMPARE_TO) return int_TYPE;
-            return getType(method);
+            return inferReturnTypeGenerics(left, method, new ArgumentListExpression(expr.getRightExpression()));
         }
         //TODO: other cases
         return null;
@@ -1429,31 +1440,40 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     bestChoices.add(m);
                 }
             } else if (isVargs(params)) {
-                // there are three case for vargs
-                // (1) varg part is left out
-                if (params.length == args.length + 1) {
-                    if (bestDist>1) {
-                        bestChoices.clear();
-                        bestChoices.add(m);
-                        bestDist = 1;
-                    }
-                } else {
-                    // (2) last argument is put in the vargs array
-                    //      that case is handled above already
-                    // (3) there is more than one argument for the vargs array
-                    int dist = excessArgumentsMatchesVargsParameter(params, args);
-                    if (dist >= 0 && !receiver.equals(m.getDeclaringClass())) dist++;
-                    // varargs methods must not be preferred to methods without varargs
-                    // for example :
-                    // int sum(int x) should be preferred to int sum(int x, int... y)
-                    dist++;
-                    if (params.length < args.length && dist >= 0) {
-                        if (dist >= 0 && dist < bestDist) {
+                boolean firstParamMatches = true;
+                // check first parameters
+                if (args.length > 0) {
+                    Parameter[] firstParams = new Parameter[params.length - 1];
+                    System.arraycopy(params, 0, firstParams, 0, firstParams.length);
+                    firstParamMatches = allParametersAndArgumentsMatch(firstParams, args) >= 0;
+                }
+                if (firstParamMatches) {
+                    // there are three case for vargs
+                    // (1) varg part is left out
+                    if (params.length == args.length + 1) {
+                        if (bestDist > 1) {
                             bestChoices.clear();
                             bestChoices.add(m);
-                            bestDist = dist;
-                        } else if (dist >= 0 && dist == bestDist) {
-                            bestChoices.add(m);
+                            bestDist = 1;
+                        }
+                    } else {
+                        // (2) last argument is put in the vargs array
+                        //      that case is handled above already
+                        // (3) there is more than one argument for the vargs array
+                        int dist = excessArgumentsMatchesVargsParameter(params, args);
+                        if (dist >= 0 && !receiver.equals(m.getDeclaringClass())) dist++;
+                        // varargs methods must not be preferred to methods without varargs
+                        // for example :
+                        // int sum(int x) should be preferred to int sum(int x, int... y)
+                        dist++;
+                        if (params.length < args.length && dist >= 0) {
+                            if (dist >= 0 && dist < bestDist) {
+                                bestChoices.clear();
+                                bestChoices.add(m);
+                                bestDist = dist;
+                            } else if (dist >= 0 && dist == bestDist) {
+                                bestChoices.add(m);
+                            }
                         }
                     }
                 }
@@ -1669,6 +1689,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
      */
     private ClassNode inferReturnTypeGenerics(final ClassNode receiver, final MethodNode method, final Expression arguments) {
         ClassNode returnType = method.getReturnType();
+        if (!returnType.isUsingGenerics()) return returnType;
         GenericsType[] returnTypeGenerics = returnType.getGenericsTypes();
         List<GenericsType> placeholders = new LinkedList<GenericsType>();
         for (GenericsType returnTypeGeneric : returnTypeGenerics) {
