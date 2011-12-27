@@ -19,32 +19,32 @@ package groovy.bugs
 class Groovy5030Bug extends GroovyTestCase {
     void testPrimitiveOptimizationGuardsMixupInInheritanceCase() {
         assertScript """
-			def list = []
-			ClassUnderTest5030 cut = new ClassUnderTest5030()
-			cut.metaClass.getRemoteObject = { ->
-				return [method: {obj -> 
-					list << obj
-				}] as RemoteObject5030
-			}
-			  
-			String val = "Value" 
-			cut.someMethod(val)
-			assert list == [val]
-			
-			public class ClassUnderTest5030 extends RemoteObject5030 
-			{
-				public def someMethod(String someValue) {
-				   RemoteObject5030 object = getRemoteObject()
-				   object.method(someValue)
-				}
-				protected RemoteObject5030 getRemoteObject() {
-				   return new RemoteObject5030()
-				}
-			 }
-			 
-			 public class RemoteObject5030 {
-				public void method(obj) { /* Something */ }
-			 }
+            def list = []
+            ClassUnderTest5030 cut = new ClassUnderTest5030()
+            cut.metaClass.getRemoteObject = { ->
+                return [method: {obj -> 
+                    list << obj
+                }] as RemoteObject5030
+            }
+              
+            String val = "Value" 
+            cut.someMethod(val)
+            assert list == [val]
+            
+            public class ClassUnderTest5030 extends RemoteObject5030 
+            {
+                public def someMethod(String someValue) {
+                   RemoteObject5030 object = getRemoteObject()
+                   object.method(someValue)
+                }
+                protected RemoteObject5030 getRemoteObject() {
+                   return new RemoteObject5030()
+                }
+             }
+             
+             public class RemoteObject5030 {
+                public void method(obj) { /* Something */ }
+             }
         """
     }
 }

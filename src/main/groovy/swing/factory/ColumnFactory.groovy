@@ -28,40 +28,40 @@ import groovy.util.logging.Log
 @Log
 class ColumnFactory extends AbstractFactory {
 
-	Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) {
-		if(value instanceof TableColumn) {
+    Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) {
+        if(value instanceof TableColumn) {
             return value
         }
 
-		TableColumn node
-		Class jxTableClass = null
-		try {
-			jxTableClass = Class.forName("org.jdesktop.swingx.JXTable")
-		} catch (ClassNotFoundException ex) {
-		}
+        TableColumn node
+        Class jxTableClass = null
+        try {
+            jxTableClass = Class.forName("org.jdesktop.swingx.JXTable")
+        } catch (ClassNotFoundException ex) {
+        }
 
-		if(jxTableClass != null && builder.current instanceof TableColumnModel) {
-			node = Class.forName("org.jdesktop.swingx.table.TableColumnExt").newInstance()
-		} else {
+        if(jxTableClass != null && builder.current instanceof TableColumnModel) {
+            node = Class.forName("org.jdesktop.swingx.table.TableColumnExt").newInstance()
+        } else {
             node = new javax.swing.table.TableColumn()
         }
 
-		if(value != null) {
-  		    node.identifier = value.toString()
+        if(value != null) {
+            node.identifier = value.toString()
             attributes.remove('identifier')
         }
 
-		if(attributes.width) {
-			if(attributes.width instanceof Collection) {
-				// 3 values: min, pref, max
-				// 2 values: min, pref
-				// 1 value:  pref
-				def (min, pref, max) = attributes.width
-				if(!pref && !max) {
-					node.minWidth = 0
+        if(attributes.width) {
+            if(attributes.width instanceof Collection) {
+                // 3 values: min, pref, max
+                // 2 values: min, pref
+                // 1 value:  pref
+                def (min, pref, max) = attributes.width
+                if(!pref && !max) {
+                    node.minWidth = 0
                     node.preferredWidth = min as Integer
                     node.maxWidth = Integer.MAX_VALUE
-				} else {
+                } else {
                   if(min) {
                       node.minWidth = min as Integer
                   }
@@ -72,15 +72,15 @@ class ColumnFactory extends AbstractFactory {
                       node.maxWidth = max as Integer
                   }
                 }
-			} else if(attributes.width instanceof Number) {
-				node.minWidth = attributes.width.intValue()
-				node.preferredWidth = attributes.width.intValue()
-				node.maxWidth = attributes.width.intValue()
-			}
-			attributes.remove('width')
-		}
-		return node
-	}
+            } else if(attributes.width instanceof Number) {
+                node.minWidth = attributes.width.intValue()
+                node.preferredWidth = attributes.width.intValue()
+                node.maxWidth = attributes.width.intValue()
+            }
+            attributes.remove('width')
+        }
+        return node
+    }
 
     void onNodeCompleted(FactoryBuilderSupport builder, Object parent, Object node) {
         if (!(parent instanceof TableColumnModel)) {

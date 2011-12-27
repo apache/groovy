@@ -17,50 +17,50 @@
 package groovy.bugs
 
 class Groovy5056Bug extends GroovyTestCase {
-	void testASortedSetMinusACollection() {
-		def comparator = [compare: {a,b->
-				def retVal = a.x.compareTo(b.x)
-				return retVal
-			}
-		] as Comparator
+    void testASortedSetMinusACollection() {
+        def comparator = [compare: {a,b->
+                def retVal = a.x.compareTo(b.x)
+                return retVal
+            }
+        ] as Comparator
 
-		def ts1 = new TreeSet(comparator)
-		ts1.addAll([
-			new ToCompare(x:"1"),
-			new ToCompare(x:"2"),
-			new ToCompare(x:"3")
-		])
+        def ts1 = new TreeSet(comparator)
+        ts1.addAll([
+            new ToCompare(x:"1"),
+            new ToCompare(x:"2"),
+            new ToCompare(x:"3")
+        ])
 
-		def ts2 = new TreeSet(comparator)
-		ts2.addAll([
-			new ToCompare(x:"1"),
-			new ToCompare(x:"2"),
-			new ToCompare(x:"3")
-		])
+        def ts2 = new TreeSet(comparator)
+        ts2.addAll([
+            new ToCompare(x:"1"),
+            new ToCompare(x:"2"),
+            new ToCompare(x:"3")
+        ])
 
-		def difference = ts1 - ts2
-		assert difference.size() == 0
-	}
+        def difference = ts1 - ts2
+        assert difference.size() == 0
+    }
 
-	void testASortedSetMinusAnItem() {
-		def comparator = [compare: {a,b->
-				def retVal = a.x.compareTo(b.x)
-				return retVal
-			}
-		] as Comparator
+    void testASortedSetMinusAnItem() {
+        def comparator = [compare: {a,b->
+                def retVal = a.x.compareTo(b.x)
+                return retVal
+            }
+        ] as Comparator
 
-		def ts1 = new TreeSet(comparator)
-		ts1.addAll([
-			new ToCompare(x:"1"),
-			new ToCompare(x:"2"),
-			new ToCompare(x:"3")
-		])
+        def ts1 = new TreeSet(comparator)
+        ts1.addAll([
+            new ToCompare(x:"1"),
+            new ToCompare(x:"2"),
+            new ToCompare(x:"3")
+        ])
 
-		def difference = ts1 - new ToCompare(x:"3")
-		assert difference.size() == 2
-	}
+        def difference = ts1 - new ToCompare(x:"3")
+        assert difference.size() == 2
+    }
 }
 
 class ToCompare {
-	String x
+    String x
 }
