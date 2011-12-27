@@ -126,5 +126,48 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         ''', 'A closure shared variable [x] has been assigned with various types and the method [charAt(int)] does not exist in the lowest upper bound'
     }
 
+    void testClosureCallAsAMethod() {
+        assertScript '''
+            Closure cl = { 'foo' }
+            assert cl() == 'foo'
+        '''
+    }
+
+    void testClosureCallWithOneArgAsAMethod() {
+        assertScript '''
+            Closure cl = { int x -> "foo$x" }
+            assert cl(1) == 'foo1'
+        '''
+    }
+
+    void testRecurseClosureCallAsAMethod() {
+        assertScript '''
+            Closure<Integer> cl
+            cl = { int x-> x==0?x:1+cl(x-1) }
+        '''
+    }
+
+    void testFibClosureCallAsAMethod() {
+        assertScript '''
+            Closure<Integer> fib
+            fib = { int x-> x<1?x:fib(x-1)+fib(x-2) }
+            fib(2)
+        '''
+    }
+
+    void testFibClosureCallAsAMethodFromWithinClass() {
+        assertScript '''
+            class FibUtil {
+                private Closure<Integer> fibo
+                FibUtil() {
+                    fibo = { int x-> x<1?x:fibo(x-1)+fibo(x-2) }
+                }
+
+                int fib(int n) { fibo(n) }
+            }
+            FibUtil fib = new FibUtil()
+            fib.fib(2)
+        '''
+    }
 }
 
