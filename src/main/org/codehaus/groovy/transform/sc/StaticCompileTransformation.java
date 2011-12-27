@@ -13,19 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.codehaus.groovy.transform;
+package org.codehaus.groovy.transform.sc;
 
+import groovy.transform.CompileStatic;
 import org.codehaus.groovy.ast.ASTNode;
+import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.MethodNode;
-import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
-import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.classgen.asm.WriterControllerFactory;
 import org.codehaus.groovy.classgen.asm.sc.StaticTypesWriterControllerFactoryImpl;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
+import org.codehaus.groovy.transform.GroovyASTTransformation;
+import org.codehaus.groovy.transform.StaticTypesTransformation;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor;
-import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 import org.codehaus.groovy.transform.stc.TypeCheckerPluginFactory;
 
 /**
@@ -36,6 +36,7 @@ import org.codehaus.groovy.transform.stc.TypeCheckerPluginFactory;
 @GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
 public class StaticCompileTransformation extends StaticTypesTransformation {
 
+    public static final ClassNode COMPILE_STATIC_ANNOTATION = ClassHelper.make(CompileStatic.class);
     private final StaticTypesWriterControllerFactoryImpl factory = new StaticTypesWriterControllerFactoryImpl();
 
     @Override
@@ -48,29 +49,7 @@ public class StaticCompileTransformation extends StaticTypesTransformation {
 
     @Override
     protected StaticTypeCheckingVisitor newVisitor(final SourceUnit unit, final ClassNode node, final TypeCheckerPluginFactory pluginFactory) {
-        return new StaticTypeCheckingVisitor(unit, node, pluginFactory) {
-            @Override
-            public void visitMethodCallExpression(final MethodCallExpression call) {
-                super.visitMethodCallExpression(call);
-
-                MethodNode target = (MethodNode) call.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET);
-                if (target!=null) call.setMethodTarget(target);
-
-                if (call.getMethodTarget()==null && call.getLineNumber()>0) {
-                    addError("Target method for method call expression hasn't been set", call);
-                }
-            }
-
-            @Override
-            public void visitConstructorCallExpression(final ConstructorCallExpression call) {
-                super.visitConstructorCallExpression(call);
-
-                MethodNode target = (MethodNode) call.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET);
-                if (target==null && call.getLineNumber()>0) {
-                    addError("Target constructor for constructor call expression hasn't been set", call);
-                }
-            }
-        };
+        return new StaticCompilationVisitor(unit, node, pluginFactory);
     }
 
 }

@@ -24,6 +24,8 @@ import org.codehaus.groovy.ast.stmt.*;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 import org.codehaus.groovy.classgen.asm.MopWriter;
 import org.codehaus.groovy.classgen.asm.OptimizingStatementWriter.ClassNodeSkip;
+import org.codehaus.groovy.classgen.asm.WriterController;
+import org.codehaus.groovy.classgen.asm.WriterControllerFactory;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.syntax.RuntimeParserException;
 import org.codehaus.groovy.syntax.Token;
@@ -1366,14 +1368,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                 name, mods, ClassHelper.VOID_TYPE,
                 Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, methodCode);
 
-        methodCode.addStatement(new BytecodeSequence(new BytecodeInstruction() {
-            @Override
-            public void visit(MethodVisitor mv) {
-                final String classInternalName = BytecodeHelper.getClassInternalName(node);
-                mv.visitInsn(ACONST_NULL);
-                mv.visitFieldInsn(PUTSTATIC, classInternalName, "$callSiteArray", "Ljava/lang/ref/SoftReference;");
-            }
-        }));
+        methodCode.addStatement(new SwapInitStatement());
         for (FieldNode fn : node.getFields()) {
             if (!fn.isStatic() || !fn.isSynthetic() || !fn.getName().startsWith("$const$")) continue;
             if (fn.getInitialExpression()==null) continue;
@@ -1421,6 +1416,34 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             result.setType(type);
         }
         return result;
+    }
+
+    private static class SwapInitStatement extends BytecodeSequence {
+
+        private WriterController controller;
+
+        public SwapInitStatement() {
+            super(new SwapInitInstruction());
+            ((SwapInitInstruction)getInstructions().get(0)).statement = this;
+        }
+
+        @Override
+        public void visit(final GroovyCodeVisitor visitor) {
+            if (visitor instanceof AsmClassGenerator) {
+                AsmClassGenerator generator = (AsmClassGenerator) visitor;
+                controller = generator.getController();
+            }
+            super.visit(visitor);
+        }
+
+        private static class SwapInitInstruction extends BytecodeInstruction {
+            SwapInitStatement statement;
+
+            @Override
+            public void visit(final MethodVisitor mv) {
+                statement.controller.getCallSiteWriter().makeCallSiteArrayInitializer();
+            }
+        }
     }
 
 }

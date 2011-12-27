@@ -32,6 +32,6 @@ import java.lang.annotation.*;
             ElementType.CONSTRUCTOR,    ElementType.FIELD,
             ElementType.LOCAL_VARIABLE, ElementType.PACKAGE
 })
-@GroovyASTTransformationClass("org.codehaus.groovy.transform.StaticCompileTransformation")
+@GroovyASTTransformationClass("org.codehaus.groovy.transform.sc.StaticCompileTransformation")
 public @interface CompileStatic {
 }

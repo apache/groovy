@@ -116,6 +116,10 @@ public class AsmClassGenerator extends ClassGenerator {
         return source;
     }
 
+    public WriterController getController() {
+        return controller;
+    }
+
     // GroovyClassVisitor interface
     //-------------------------------------------------------------------------
     public void visitClass(ClassNode classNode) {

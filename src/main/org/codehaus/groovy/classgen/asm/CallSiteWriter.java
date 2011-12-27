@@ -355,4 +355,10 @@ public class CallSiteWriter {
         return callSites;
     }
 
+    public void makeCallSiteArrayInitializer() {
+        final String classInternalName = BytecodeHelper.getClassInternalName(controller.getClassNode());
+        MethodVisitor mv = controller.getMethodVisitor();
+        mv.visitInsn(ACONST_NULL);
+        mv.visitFieldInsn(PUTSTATIC, classInternalName, "$callSiteArray", "Ljava/lang/ref/SoftReference;");
+    }
 }

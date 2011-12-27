@@ -84,6 +84,10 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         return;
     }
 
+    @Override
+    public void makeCallSiteArrayInitializer() {
+    }
+
     private boolean makeGetPropertyWithGetter(final Expression receiver, final ClassNode receiverType, final String methodName) {
         // does a getter exists ?
         String getterName = "get" + MetaClassHelper.capitalize(methodName);

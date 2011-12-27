@@ -15,15 +15,18 @@
  */
 package org.codehaus.groovy.classgen.asm.sc;
 
-import groovy.transform.CompileStatic;
-import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.classgen.GeneratorContext;
 import org.codehaus.groovy.classgen.asm.*;
+import org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys;
+import org.codehaus.groovy.transform.sc.StaticCompileTransformation;
 import org.objectweb.asm.ClassVisitor;
+
+import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.*;
+import static org.codehaus.groovy.transform.sc.StaticCompileTransformation.COMPILE_STATIC_ANNOTATION;
 
 /**
  * An alternative {@link org.codehaus.groovy.classgen.asm.WriterController} which handles static types and method
@@ -33,6 +36,7 @@ import org.objectweb.asm.ClassVisitor;
  * @author Cedric Champeau
  */
 public class StaticTypesWriterController extends DelegatingController {
+
     protected boolean isInStaticallyCheckedMethod;
     private StaticTypesCallSiteWriter callSiteWriter;
     private StaticTypesStatementWriter statementWriter;
@@ -57,13 +61,26 @@ public class StaticTypesWriterController extends DelegatingController {
 
     @Override
     public void setMethodNode(final MethodNode mn) {
-        isInStaticallyCheckedMethod = mn != null && !mn.getAnnotations(ClassHelper.make(CompileStatic.class)).isEmpty();
+        updateStaticCompileFlag(mn);
         super.setMethodNode(mn);
+    }
+
+    private void updateStaticCompileFlag(final MethodNode mn) {
+        ClassNode classNode = mn!=null?mn.getDeclaringClass():null;
+        isInStaticallyCheckedMethod = mn != null && (
+                !mn.getAnnotations(COMPILE_STATIC_ANNOTATION).isEmpty() ||
+                        !classNode.getAnnotations(COMPILE_STATIC_ANNOTATION).isEmpty() ||
+                        classNode.getNodeMetaData(STATIC_COMPILE_NODE) != null);
+        if (isInStaticallyCheckedMethod) {
+            System.out.println("Entering statically compiled method: "+mn.getDeclaringClass()+"#"+mn);
+        } else if (mn!=null) {
+            System.out.println("Entering dynamically compiled method: "+mn.getDeclaringClass()+"#"+mn);
+        }
     }
 
     @Override
     public void setConstructorNode(final ConstructorNode cn) {
-        isInStaticallyCheckedMethod = false;
+        updateStaticCompileFlag(cn);
         super.setConstructorNode(cn);
     }
     
