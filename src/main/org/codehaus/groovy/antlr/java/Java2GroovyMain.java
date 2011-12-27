@@ -40,38 +40,38 @@ import antlr.collections.AST;
 
 public class Java2GroovyMain {
 
-	public static void main(String[] args) {
-		try{
-			Options options = new Options();
-			PosixParser cliParser = new PosixParser();
-			CommandLine cli = cliParser.parse(options, args);
+    public static void main(String[] args) {
+        try{
+            Options options = new Options();
+            PosixParser cliParser = new PosixParser();
+            CommandLine cli = cliParser.parse(options, args);
             String[] filenames = cli.getArgs();
             if( filenames.length == 0 ) {
-            	System.err.println("Needs at least one filename");
+                System.err.println("Needs at least one filename");
             }
             List filenameList = Arrays.asList(filenames);
             Iterator i = filenameList.iterator();
             while (i.hasNext()) {
-            	String filename = (String) i.next();
-            	File f = new File(filename);
-            	String text = DefaultGroovyMethods.getText(f);
-            	System.out.println(convert(filename, text, true, true));
+                String filename = (String) i.next();
+                File f = new File(filename);
+                String text = DefaultGroovyMethods.getText(f);
+                System.out.println(convert(filename, text, true, true));
             }
-		} catch (Throwable t) {
-			t.printStackTrace();
-		}
-	}
+        } catch (Throwable t) {
+            t.printStackTrace();
+        }
+    }
 
-	public static String convert(String filename, String input) throws Exception{
-		return convert(filename, input, false, false);
-	}
-	
-	public static String convert(String filename, String input,boolean withHeader, boolean withNewLines) throws Exception{
+    public static String convert(String filename, String input) throws Exception{
+        return convert(filename, input, false, false);
+    }
+
+    public static String convert(String filename, String input,boolean withHeader, boolean withNewLines) throws Exception{
         JavaRecognizer parser = getJavaParser(input);
         String[] tokenNames = parser.getTokenNames();
         parser.compilationUnit();
         AST ast = parser.getAST();
-        
+
         // output AST in format suitable for opening in http://freemind.sourceforge.net
         // which is a really nice way of seeing the AST, folding nodes etc
         if ("mindmap".equals(System.getProperty("antlr.ast"))) {
@@ -84,76 +84,76 @@ public class Java2GroovyMain {
                 System.out.println("Cannot create " + filename + ".mm");
             }
         }
-        
+
         // modify the Java AST into a Groovy AST
         modifyJavaASTintoGroovyAST(tokenNames, ast);
         String[] groovyTokenNames = getGroovyTokenNames(input);
         // groovify the fat Java-Like Groovy AST
         groovifyFatJavaLikeGroovyAST(ast, groovyTokenNames);
 
-        // now output        
+        // now output
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         Visitor visitor = new SourcePrinter(new PrintStream(baos),groovyTokenNames, withNewLines);
         AntlrASTProcessor traverser = new SourceCodeTraversal(visitor);
 
         traverser.process(ast);
-        
+
         String header = "";
         if (withHeader) {
-	        header = "/*\n" +
-	        				"  Automatically Converted from Java Source \n" +
-	        				"  \n" +
-	        				"  by java2groovy v0.0.1   Copyright Jeremy Rayner 2007\n" +
-	        				"  \n" +
-	        				"  !! NOT FIT FOR ANY PURPOSE !! \n" +
-	        				"  'java2groovy' cannot be used to convert one working program into another" +
-	        				"  */\n\n";
+            header = "/*\n" +
+                            "  Automatically Converted from Java Source \n" +
+                            "  \n" +
+                            "  by java2groovy v0.0.1   Copyright Jeremy Rayner 2007\n" +
+                            "  \n" +
+                            "  !! NOT FIT FOR ANY PURPOSE !! \n" +
+                            "  'java2groovy' cannot be used to convert one working program into another" +
+                            "  */\n\n";
         }
         return header + new String(baos.toByteArray());
     }
 
-	/**
-	 * @param ast
-	 * @param groovyTokenNames
-	 */
-	private static void groovifyFatJavaLikeGroovyAST(AST ast, String[] groovyTokenNames) {
-		Visitor groovifier = new Groovifier(groovyTokenNames);
+    /**
+     * @param ast
+     * @param groovyTokenNames
+     */
+    private static void groovifyFatJavaLikeGroovyAST(AST ast, String[] groovyTokenNames) {
+        Visitor groovifier = new Groovifier(groovyTokenNames);
         AntlrASTProcessor groovifierTraverser = new PreOrderTraversal(groovifier);
         groovifierTraverser.process(ast);
-	}
+    }
 
-	/**
-	 * @param tokenNames
-	 * @param ast
-	 */
-	private static void modifyJavaASTintoGroovyAST(String[] tokenNames, AST ast) {
-		// mutate the tree when in Javaland
-		Visitor preJava2groovyConverter = new PreJava2GroovyConverter(tokenNames);
-		AntlrASTProcessor preJava2groovyTraverser = new PreOrderTraversal(preJava2groovyConverter);
-		preJava2groovyTraverser.process(ast);
+    /**
+     * @param tokenNames
+     * @param ast
+     */
+    private static void modifyJavaASTintoGroovyAST(String[] tokenNames, AST ast) {
+        // mutate the tree when in Javaland
+        Visitor preJava2groovyConverter = new PreJava2GroovyConverter(tokenNames);
+        AntlrASTProcessor preJava2groovyTraverser = new PreOrderTraversal(preJava2groovyConverter);
+        preJava2groovyTraverser.process(ast);
 
         // map the nodes to Groovy types
         Visitor java2groovyConverter = new Java2GroovyConverter(tokenNames);
         AntlrASTProcessor java2groovyTraverser = new PreOrderTraversal(java2groovyConverter);
         java2groovyTraverser.process(ast);
-	}
+    }
 
-	/**
-	 * @param input
-	 * @return
-	 */
-	private static JavaRecognizer getJavaParser(String input) {
-		JavaRecognizer parser = null;
+    /**
+     * @param input
+     * @return
+     */
+    private static JavaRecognizer getJavaParser(String input) {
+        JavaRecognizer parser = null;
         SourceBuffer sourceBuffer = new SourceBuffer();
         UnicodeEscapingReader unicodeReader = new UnicodeEscapingReader(new StringReader(input),sourceBuffer);
         JavaLexer lexer = new JavaLexer(unicodeReader);
         unicodeReader.setLexer(lexer);
         parser = JavaRecognizer.make(lexer);
         parser.setSourceBuffer(sourceBuffer);
-		return parser;
-	}
+        return parser;
+    }
 
-	public static String mindmap(String input) throws Exception{
+    public static String mindmap(String input) throws Exception{
         JavaRecognizer parser = getJavaParser(input);
         String[] tokenNames = parser.getTokenNames();
         parser.compilationUnit();
@@ -164,17 +164,17 @@ public class Java2GroovyMain {
         // groovify the fat Java-Like Groovy AST
         groovifyFatJavaLikeGroovyAST(ast, groovyTokenNames);
 
-        // now output        
+        // now output
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         Visitor visitor = new MindMapPrinter(new PrintStream(baos),groovyTokenNames);
         AntlrASTProcessor traverser = new SourceCodeTraversal(visitor);
 
         traverser.process(ast);
-        
+
         return new String(baos.toByteArray());
     }
 
-	public static String nodePrinter(String input) throws Exception{
+    public static String nodePrinter(String input) throws Exception{
         JavaRecognizer parser = getJavaParser(input);
         String[] tokenNames = parser.getTokenNames();
         parser.compilationUnit();
@@ -185,17 +185,17 @@ public class Java2GroovyMain {
         // groovify the fat Java-Like Groovy AST
         groovifyFatJavaLikeGroovyAST(ast, groovyTokenNames);
 
-        // now output        
+        // now output
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         Visitor visitor = new NodePrinter(new PrintStream(baos),groovyTokenNames);
         AntlrASTProcessor traverser = new SourceCodeTraversal(visitor);
 
         traverser.process(ast);
-        
+
         return new String(baos.toByteArray());
     }
 
-	private static String[] getGroovyTokenNames(String input) {
+    private static String[] getGroovyTokenNames(String input) {
         GroovyRecognizer groovyParser = null;
         SourceBuffer groovySourceBuffer = new SourceBuffer();
         UnicodeEscapingReader groovyUnicodeReader = new UnicodeEscapingReader(new StringReader(input),groovySourceBuffer);
@@ -203,6 +203,6 @@ public class Java2GroovyMain {
         groovyUnicodeReader.setLexer(groovyLexer);
         groovyParser = GroovyRecognizer.make(groovyLexer);
         return groovyParser.getTokenNames();
-	}
-	
+    }
+
 }

@@ -34,7 +34,7 @@ import java.util.List;
 
 public class DgmConverter implements Opcodes {
 
-	public static void main(String[] args) throws IOException, ClassNotFoundException {
+    public static void main(String[] args) throws IOException, ClassNotFoundException {
         boolean info = args.length == 1 && args[0].equals("--info");
 
         List<CachedMethod> cachedMethodsList = new ArrayList<CachedMethod>();

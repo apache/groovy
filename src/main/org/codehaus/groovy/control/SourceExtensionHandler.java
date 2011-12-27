@@ -32,7 +32,7 @@ import java.util.Set;
 
 public class SourceExtensionHandler {
 
-	public static Set<String> getRegisteredExtensions(ClassLoader loader) {
+    public static Set<String> getRegisteredExtensions(ClassLoader loader) {
         Set<String> extensions = new LinkedHashSet<String>();
         extensions.add("groovy");
         URL service = null;
@@ -45,17 +45,17 @@ public class SourceExtensionHandler {
 
                 extension = svcIn.readLine();
                 while (extension != null) {
-                	extension = extension.trim();
+                    extension = extension.trim();
                     if (!extension.startsWith("#") && extension.length() > 0) {
-                    	extensions.add(extension);
+                        extensions.add(extension);
                     }
                     extension = svcIn.readLine();
                 }
             }
         } catch (IOException ex) {
-        	throw new GroovyRuntimeException("IO Exception attempting to load source extension registerers. Exception: " + 
-        			ex.toString() + (service == null ? "" : service.toExternalForm()));
+            throw new GroovyRuntimeException("IO Exception attempting to load source extension registerers. Exception: " +
+                    ex.toString() + (service == null ? "" : service.toExternalForm()));
         }
         return extensions;
-	}
+    }
 }

@@ -26,24 +26,24 @@ public class PreJava2GroovyConverter extends VisitorAdapter{
     private String[] tokenNames;
     private Stack stack;
 
-	public PreJava2GroovyConverter(String[] tokenNames) {
-		this.tokenNames = tokenNames;
-		this.stack = new Stack();
-	}
-	
+    public PreJava2GroovyConverter(String[] tokenNames) {
+        this.tokenNames = tokenNames;
+        this.stack = new Stack();
+    }
+
     public void visitDefault(GroovySourceAST t,int visit) {
         if (visit == OPENING_VISIT) {
-        	if (t.getType() == JavaTokenTypes.LITERAL_do) {
-        		visitJavaLiteralDo(t);        		
-        	} else if (t.getType() == JavaTokenTypes.ARRAY_INIT) {
-        		visitJavaArrayInit(t);
-        	}
+            if (t.getType() == JavaTokenTypes.LITERAL_do) {
+                visitJavaLiteralDo(t);
+            } else if (t.getType() == JavaTokenTypes.ARRAY_INIT) {
+                visitJavaArrayInit(t);
+            }
         }
     }
-    
+
     private void visitJavaLiteralDo(GroovySourceAST t) {
-    	// todo - incomplete, as body of do...while... should be executed at least once, which this doesn't provide.
-    	swapTwoChildren(t);        		    	
+        // todo - incomplete, as body of do...while... should be executed at least once, which this doesn't provide.
+        swapTwoChildren(t);
     }
 
     /**
@@ -51,81 +51,81 @@ public class PreJava2GroovyConverter extends VisitorAdapter{
      *
      * <pre>
      * String[] myArray = new String[] {"a","b","c"};
-     * 
+     *
      * becomes
-     * 
+     *
      * String[] myArray = ["a", "b", "c"]
-     * 
+     *
      * ---
-     * 
+     *
      * To convert node (t) and surrounding nodes into the right structure for List Constructor
-     * 
+     *
      * (a) java/EXPR
      *  |
      *  +- (b) java/new
      *      |
      *      + (t) java/ARRAY_INIT
-     *    
+     *
      *  becomes
-     *  
+     *
      * (a) groovy/LIST_CONSTRUCTOR (via ARRAY_INIT as temporary marker type)
      *  |
      *  +- (t) groovy/ELIST
-     *  
+     *
      *  * note: node (b) is thrown away...
      * </pre>
      */
-	private void visitJavaArrayInit(GroovySourceAST t) {
-		// given that we might have a grandParent...
-		if (stack.size() > 2) {
-			GroovySourceAST grandParent = getGrandParentNode();
-			if (grandParent.getType() == JavaTokenTypes.EXPR) {
-				grandParent.setType(JavaTokenTypes.ARRAY_INIT); //set type as indicator for Java2GroovyConvertor to turn into LIST_CONSTRUCTOR
-				grandParent.setFirstChild(t);
-				t.setType(JavaTokenTypes.ELIST);
-			}
-		}
-	}
-
-	/** To swap two children of node t...
-	 * 
-	 *<pre>
-	 *   (t)
-	 *    |
-	 *    |
-	 *   (a) -- (b)
-	 * 
-	 * t.down = firstNode
-	 * a.right = b
-	 * b.right = null
-	 *</pre> 
-	 * becomes
-	 *<pre>
-	 *   (t)
-	 *    |
-	 *    |
-	 *   (b) -- (a)
-	 *   
-	 * t.down = b
-	 * a.right = null
-	 * b.right = a
-	 *</pre>
-	 *
-	 * todo - build API of basic tree mutations like this method.
-	 */
-    public void swapTwoChildren(GroovySourceAST t) {
-		// this swaps the two child nodes, see javadoc above for explanation of implementation
-		GroovySourceAST a = (GroovySourceAST) t.getFirstChild();
-		GroovySourceAST b = (GroovySourceAST) a.getNextSibling();
-
-		t.setFirstChild(b);
-		a.setNextSibling(null);
-		b.setNextSibling(a);
+    private void visitJavaArrayInit(GroovySourceAST t) {
+        // given that we might have a grandParent...
+        if (stack.size() > 2) {
+            GroovySourceAST grandParent = getGrandParentNode();
+            if (grandParent.getType() == JavaTokenTypes.EXPR) {
+                grandParent.setType(JavaTokenTypes.ARRAY_INIT); //set type as indicator for Java2GroovyConvertor to turn into LIST_CONSTRUCTOR
+                grandParent.setFirstChild(t);
+                t.setType(JavaTokenTypes.ELIST);
+            }
+        }
     }
-    
-    
-    
-    
+
+    /** To swap two children of node t...
+     *
+     *<pre>
+     *   (t)
+     *    |
+     *    |
+     *   (a) -- (b)
+     *
+     * t.down = firstNode
+     * a.right = b
+     * b.right = null
+     *</pre>
+     * becomes
+     *<pre>
+     *   (t)
+     *    |
+     *    |
+     *   (b) -- (a)
+     *
+     * t.down = b
+     * a.right = null
+     * b.right = a
+     *</pre>
+     *
+     * todo - build API of basic tree mutations like this method.
+     */
+    public void swapTwoChildren(GroovySourceAST t) {
+        // this swaps the two child nodes, see javadoc above for explanation of implementation
+        GroovySourceAST a = (GroovySourceAST) t.getFirstChild();
+        GroovySourceAST b = (GroovySourceAST) a.getNextSibling();
+
+        t.setFirstChild(b);
+        a.setNextSibling(null);
+        b.setNextSibling(a);
+    }
+
+
+
+
     public void push(GroovySourceAST t) {
         stack.push(t);
     }

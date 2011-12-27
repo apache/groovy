@@ -22,7 +22,7 @@ import org.codehaus.groovy.ast.MethodNode;
 
 /**
  * A method call on an object or class
- * 
+ *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
@@ -40,13 +40,13 @@ public class MethodCallExpression extends Expression {
     private boolean usesGenerics = false;
 
     private MethodNode target;
-    
+
     public static final Expression NO_ARGUMENTS = new TupleExpression();
 
     public MethodCallExpression(Expression objectExpression, String method, Expression arguments) {
         this(objectExpression,new ConstantExpression(method),arguments);
     }
-    
+
     public MethodCallExpression(Expression objectExpression, Expression method, Expression arguments) {
         this.objectExpression = objectExpression;
         this.method = method;
@@ -147,7 +147,7 @@ public class MethodCallExpression extends Expression {
     }
 
     /**
-     * @return true if no object expression was specified otherwise if 
+     * @return true if no object expression was specified otherwise if
      * some expression was specified for the object on which to evaluate
      * the method then return false
      */
@@ -181,11 +181,11 @@ public class MethodCallExpression extends Expression {
 
     public boolean isUsingGenerics() {
         return usesGenerics;
-	}
+    }
 
     /**
-     * Sets a method call target for a direct method call. 
-     * WARNING: A method call made this way will run outside of the MOP! 
+     * Sets a method call target for a direct method call.
+     * WARNING: A method call made this way will run outside of the MOP!
      * @param mn the target as MethodNode, mn==null means no target
      */
     public void setMethodTarget(MethodNode mn) {
@@ -196,7 +196,7 @@ public class MethodCallExpression extends Expression {
             setType(ClassHelper.OBJECT_TYPE);
         }
     }
-    
+
     /**
      * @return the target as method node if set
      */

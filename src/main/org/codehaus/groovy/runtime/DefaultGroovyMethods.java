@@ -131,7 +131,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             DoubleArrayPutAtMetaMethod.class,
     };
 
-	public static final Class[] DGM_LIKE_CLASSES = new Class[]{
+    public static final Class[] DGM_LIKE_CLASSES = new Class[]{
             DefaultGroovyMethods.class,
             SwingGroovyMethods.class,
             SqlGroovyMethods.class,
@@ -141,7 +141,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             ProcessGroovyMethods.class
     };
 
-	/**
+    /**
      * Identity check. Since == is overridden in Groovy with the meaning of equality
      * we need some fallback to check for object identity.  Invoke using the
      * 'is' method, like so: <code>def same = this.is(that)</code>
@@ -157,7 +157,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Allows the closure to be called for the object reference self. 
+     * Allows the closure to be called for the object reference self.
      * Synonym for 'with()'.
      *
      * @param self    the object to have a closure act upon
@@ -171,18 +171,18 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Allows the closure to be called for the object reference self. <br/><br/>
-     * Any method invoked inside the closure will first be invoked on the 
+     * Any method invoked inside the closure will first be invoked on the
      * self reference. For instance, the following method calls to the append()
-     * method are invoked on the StringBuilder instance: 
+     * method are invoked on the StringBuilder instance:
      * <pre>
      * def b = new StringBuilder().with {
      *   append('foo')
      *   append('bar')
      *   return it
      * }
-     * assert b.toString() == 'foobar' 
+     * assert b.toString() == 'foobar'
      * </pre>
-     * This is commonly used to simplify object creation, such as this example: 
+     * This is commonly used to simplify object creation, such as this example:
      * <pre>
      * def p = new Person().with {
      *   firstName = 'John'
@@ -3090,9 +3090,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Adds GroovyCollections#transpose(List) as a method on lists. <br/>
-     * A TransposeFunction takes a collection of columns and returns a collection of 
-     * rows. The first row consists of the first element from each column. Successive 
-     * rows are constructed similarly.      
+     * A TransposeFunction takes a collection of columns and returns a collection of
+     * rows. The first row consists of the first element from each column. Successive
+     * rows are constructed similarly.
      * <p>
      * Example usage:
      * <pre class="groovyTestCase">def result = [['a', 'b'], [1, 2]].transpose()
@@ -7941,7 +7941,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         }
         return ret ;
     }
-    
+
     /**
      * Drops the given number of elements from the head of this iterator if they are available.
      * The original iterator is stepped along by <code>num</code> elements.
@@ -8300,7 +8300,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             stack.addAll(col);
             return (T) stack;
         }
-        
+
         if (clazz!=String[].class && ReflectionCache.isArray(clazz)) {
             try {
                 return (T) asArrayType(col, clazz);
@@ -11945,7 +11945,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Power of a BigDecimal to an integer certain exponent.  If the
      * exponent is positive, call the BigDecimal.pow(int) method to
      * maintain precision. Called by the '**' operator.
-     * 
+     *
      * @param self     a BigDecimal
      * @param exponent an Integer exponent
      * @return a Number to the power of a the exponent
@@ -11962,7 +11962,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Power of a BigInteger to an integer certain exponent.  If the
      * exponent is positive, call the BigInteger.pow(int) method to
      * maintain precision. Called by the '**' operator.
-     * 
+     *
      *  @param self     a BigInteger
      *  @param exponent an Integer exponent
      *  @return a Number to the power of a the exponent
@@ -11980,7 +11980,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * exponent is positive, convert to a BigInteger and call
      * BigInteger.pow(int) method to maintain precision. Called by the
      * '**' operator.
-     * 
+     *
      *  @param self     an Integer
      *  @param exponent an Integer exponent
      *  @return a Number to the power of a the exponent
@@ -17226,7 +17226,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see java.net.ServerSocket#accept()
      * @since 1.7.6
      */
-    public static Socket accept(ServerSocket serverSocket, final boolean runInANewThread, 
+    public static Socket accept(ServerSocket serverSocket, final boolean runInANewThread,
             final Closure closure) throws IOException {
         final Socket socket = serverSocket.accept();
         if(runInANewThread) {
@@ -17240,7 +17240,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         }
         return socket;
     }
-    
+
     private static void invokeClosureWithSocket(Socket socket, Closure closure) {
         try {
             closure.call(socket);

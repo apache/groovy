@@ -78,22 +78,22 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     private Set<MethodNode> alreadyVisitedMethods = new HashSet<MethodNode>();
 
-	/**
-	 * Some expressions need to be visited twice, because type information may be insufficient at some
-	 * point. For example, for closure shared variables, we need a first pass to collect every type which
-	 * is assigned to a closure shared variable, then a second pass to ensure that every method call on
-	 * such a variable is made on a LUB.
-	 */
-	private final LinkedHashSet<Expression> secondPassExpressions = new LinkedHashSet<Expression>();
+    /**
+     * Some expressions need to be visited twice, because type information may be insufficient at some
+     * point. For example, for closure shared variables, we need a first pass to collect every type which
+     * is assigned to a closure shared variable, then a second pass to ensure that every method call on
+     * such a variable is made on a LUB.
+     */
+    private final LinkedHashSet<Expression> secondPassExpressions = new LinkedHashSet<Expression>();
 
-	/**
-	 * A map used to store every type used in closure shared variable assignments. In a second pass, we will
-	 * compute the LUB of each type and check that method calls on those variables are valid.
-	 */
-	private final Map<VariableExpression, List<ClassNode>> closureSharedVariablesAssignmentTypes = new HashMap<VariableExpression, List<ClassNode>>();
+    /**
+     * A map used to store every type used in closure shared variable assignments. In a second pass, we will
+     * compute the LUB of each type and check that method calls on those variables are valid.
+     */
+    private final Map<VariableExpression, List<ClassNode>> closureSharedVariablesAssignmentTypes = new HashMap<VariableExpression, List<ClassNode>>();
 
     private Map<Parameter, ClassNode> forLoopVariableTypes = new HashMap<Parameter, ClassNode>();
-    
+
     private final ReturnAdder returnAdder = new ReturnAdder(new ReturnAdder.ReturnStatementListener() {
         public void returnStatementAdded(final ReturnStatement returnStatement) {
             if (returnStatement.getExpression().equals(ConstantExpression.NULL)) return;
@@ -763,11 +763,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     @Override
     protected void visitConstructorOrMethod(MethodNode node, boolean isConstructor) {
         MethodNode old = this.methodNode;
-		this.methodNode = node;
+        this.methodNode = node;
         super.visitConstructorOrMethod(node, isConstructor);
         if (!isConstructor) {
-			returnAdder.visitMethod(node);
-		}
+            returnAdder.visitMethod(node);
+        }
         this.methodNode = old;
     }
 
@@ -783,10 +783,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     private ClassNode checkReturnType(final ReturnStatement statement) {
         ClassNode type = getType(statement.getExpression());
         if (methodNode != null) {
-            if (!methodNode.isVoidMethod() 
-					&& !type.equals(void_WRAPPER_TYPE) 
-					&& !type.equals(VOID_TYPE)
-					&& !checkCompatibleAssignmentTypes(methodNode.getReturnType(), type)) {
+            if (!methodNode.isVoidMethod()
+                    && !type.equals(void_WRAPPER_TYPE)
+                    && !type.equals(VOID_TYPE)
+                    && !checkCompatibleAssignmentTypes(methodNode.getReturnType(), type)) {
                 addStaticTypeError("Cannot return value of type " + type + " on method returning type " + methodNode.getReturnType(), statement.getExpression());
             }
         }
@@ -837,17 +837,17 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     @Override
     public void visitClosureExpression(final ClosureExpression expression) {
-		// first, collect closure shared variables and reinitialize types
-		SharedVariableCollector collector = new SharedVariableCollector(getSourceUnit());
-		collector.visitClosureExpression(expression);
-		Set<VariableExpression> closureSharedExpressions = collector.getClosureSharedExpressions();
-		Map<VariableExpression, ListHashMap> typesBeforeVisit = null;
-		if (!closureSharedExpressions.isEmpty()) {
-			typesBeforeVisit = new HashMap<VariableExpression, ListHashMap>();
-			saveVariableExpressionMetadata(closureSharedExpressions, typesBeforeVisit);
-		}
+        // first, collect closure shared variables and reinitialize types
+        SharedVariableCollector collector = new SharedVariableCollector(getSourceUnit());
+        collector.visitClosureExpression(expression);
+        Set<VariableExpression> closureSharedExpressions = collector.getClosureSharedExpressions();
+        Map<VariableExpression, ListHashMap> typesBeforeVisit = null;
+        if (!closureSharedExpressions.isEmpty()) {
+            typesBeforeVisit = new HashMap<VariableExpression, ListHashMap>();
+            saveVariableExpressionMetadata(closureSharedExpressions, typesBeforeVisit);
+        }
 
-		// perform visit
+        // perform visit
         ClosureExpression oldClosureExpr = closureExpression;
         List<ClassNode> oldClosureReturnTypes = closureReturnTypes;
         closureExpression = expression;
@@ -861,43 +861,43 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
         closureExpression = oldClosureExpr;
         closureReturnTypes = oldClosureReturnTypes;
-		
-		// restore original metadata
-		restoreVariableExpressionMetadata(typesBeforeVisit);
-	}
 
-	private void restoreVariableExpressionMetadata(final Map<VariableExpression, ListHashMap> typesBeforeVisit) {
-		if (typesBeforeVisit!=null) {
-			for (Map.Entry<VariableExpression, ListHashMap> entry : typesBeforeVisit.entrySet()) {
-				VariableExpression ve = entry.getKey();
-				ListHashMap metadata = entry.getValue();
-				for (StaticTypesMarker marker : StaticTypesMarker.values()) {
-					ve.removeNodeMetaData(marker);
-					Object value = metadata.get(marker);
-					if (value!=null) ve.setNodeMetaData(marker, value);
-				}
-			}
-		}
-	}
+        // restore original metadata
+        restoreVariableExpressionMetadata(typesBeforeVisit);
+    }
 
-	private void saveVariableExpressionMetadata(final Set<VariableExpression> closureSharedExpressions, final Map<VariableExpression, ListHashMap> typesBeforeVisit) {
-		for (VariableExpression ve : closureSharedExpressions) {
-			ListHashMap<StaticTypesMarker,Object> metadata = new ListHashMap<StaticTypesMarker, Object>();
-			for (StaticTypesMarker marker : StaticTypesMarker.values()) {
-				Object value = ve.getNodeMetaData(marker);
-				if (value!=null) {
-					metadata.put(marker, value);
-				}
-			}
-			typesBeforeVisit.put(ve, metadata);
-			Variable accessedVariable = ve.getAccessedVariable();
-			if (accessedVariable!=ve && accessedVariable instanceof VariableExpression) {
-				saveVariableExpressionMetadata(Collections.singleton((VariableExpression)accessedVariable), typesBeforeVisit);
-			}
-		}
-	}
+    private void restoreVariableExpressionMetadata(final Map<VariableExpression, ListHashMap> typesBeforeVisit) {
+        if (typesBeforeVisit!=null) {
+            for (Map.Entry<VariableExpression, ListHashMap> entry : typesBeforeVisit.entrySet()) {
+                VariableExpression ve = entry.getKey();
+                ListHashMap metadata = entry.getValue();
+                for (StaticTypesMarker marker : StaticTypesMarker.values()) {
+                    ve.removeNodeMetaData(marker);
+                    Object value = metadata.get(marker);
+                    if (value!=null) ve.setNodeMetaData(marker, value);
+                }
+            }
+        }
+    }
 
-	@Override
+    private void saveVariableExpressionMetadata(final Set<VariableExpression> closureSharedExpressions, final Map<VariableExpression, ListHashMap> typesBeforeVisit) {
+        for (VariableExpression ve : closureSharedExpressions) {
+            ListHashMap<StaticTypesMarker,Object> metadata = new ListHashMap<StaticTypesMarker, Object>();
+            for (StaticTypesMarker marker : StaticTypesMarker.values()) {
+                Object value = ve.getNodeMetaData(marker);
+                if (value!=null) {
+                    metadata.put(marker, value);
+                }
+            }
+            typesBeforeVisit.put(ve, metadata);
+            Variable accessedVariable = ve.getAccessedVariable();
+            if (accessedVariable!=ve && accessedVariable instanceof VariableExpression) {
+                saveVariableExpressionMetadata(Collections.singleton((VariableExpression)accessedVariable), typesBeforeVisit);
+            }
+        }
+    }
+
+    @Override
     public void visitMethod(final MethodNode node) {
         // alreadyVisitedMethods prevents from visiting the same method multiple times
         // and prevents from infinite loops
@@ -1372,8 +1372,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
         }
         if (exp instanceof VariableExpression) {
-			VariableExpression var = (VariableExpression) exp;
-			final Variable accessedVariable = var.getAccessedVariable();
+            VariableExpression var = (VariableExpression) exp;
+            final Variable accessedVariable = var.getAccessedVariable();
             if (accessedVariable != null && accessedVariable != exp && accessedVariable instanceof VariableExpression) {
                 storeType((Expression) accessedVariable, cn);
             }
@@ -1492,7 +1492,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     private static ClassNode getGroupOperationResultType(ClassNode a, ClassNode b) {
         if (isBigIntCategory(a) && isBigIntCategory(b)) return BigInteger_TYPE;
-        if (isBigDecCategory(a) && isBigDecCategory(b)) return BigDecimal_TYPE;        
+        if (isBigDecCategory(a) && isBigDecCategory(b)) return BigDecimal_TYPE;
         if (BigDecimal_TYPE.equals(a)||BigDecimal_TYPE.equals(b)) return BigDecimal_TYPE;
         if (BigInteger_TYPE.equals(a)||BigInteger_TYPE.equals(b)) {
             if (isBigIntCategory(a) && isBigIntCategory(b)) return BigInteger_TYPE;
@@ -1514,7 +1514,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (Character_TYPE.equals(a) || Character_TYPE.equals(b)) return Character_TYPE;
         return Number_TYPE;
     }
-    
+
     private ClassNode inferComponentType(final ClassNode containerType) {
         final ClassNode componentType = containerType.getComponentType();
         if (componentType == null) {
@@ -1931,40 +1931,40 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         this.methodsToBeVisited = methodsToBeVisited;
     }
 
-	public void performSecondPass() {
-		for (Expression expression : secondPassExpressions) {
-			if (expression instanceof MethodCallExpression) {
-				MethodCallExpression call = (MethodCallExpression) expression;
-				Expression objectExpression = call.getObjectExpression();
-			 	if (objectExpression instanceof VariableExpression) {
-					 // this should always be the case, but adding a test is safer
-					 Variable target = findTargetVariable((VariableExpression) objectExpression);
-					 if (target instanceof VariableExpression) {
-						 VariableExpression var = (VariableExpression) target;
-						 List<ClassNode> classNodes = closureSharedVariablesAssignmentTypes.get(var);
-						 if (classNodes!=null && classNodes.size()>1) {
-							 ClassNode lub = lowestUpperBound(classNodes);
-							 MethodNode methodNode = (MethodNode) call.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET);
-							 // we must check that such a method exists on the LUB
-							 Parameter[] parameters = methodNode.getParameters();
-							 ClassNode[] params = new ClassNode[parameters.length];
-							 for (int i = 0; i < params.length; i++) {
-								 params[i] = parameters[i].getType();								 
-							 }
-							 List<MethodNode> method = findMethod(lub, methodNode.getName(), params);
-							 if (method.size()!=1) {
-								 addStaticTypeError("A closure shared variable ["+target.getName()+"] has been assigned with various types and the method" +
-								" ["+toMethodParametersString(methodNode.getName(), params)+"]"+
-								 " does not exist in the lowest upper bound of those types: ["+
-								 lub.toString(false)+"]. In general, this is a bad practice (variable reuse) because the compiler cannot"+
-								 " determine safely what is the type of the variable at the moment of the call in a multithreaded context.", call);
-							 }
-						 }
-					 }
-				 }
-			}
-		}
-	}
+    public void performSecondPass() {
+        for (Expression expression : secondPassExpressions) {
+            if (expression instanceof MethodCallExpression) {
+                MethodCallExpression call = (MethodCallExpression) expression;
+                Expression objectExpression = call.getObjectExpression();
+                if (objectExpression instanceof VariableExpression) {
+                     // this should always be the case, but adding a test is safer
+                     Variable target = findTargetVariable((VariableExpression) objectExpression);
+                     if (target instanceof VariableExpression) {
+                         VariableExpression var = (VariableExpression) target;
+                         List<ClassNode> classNodes = closureSharedVariablesAssignmentTypes.get(var);
+                         if (classNodes!=null && classNodes.size()>1) {
+                             ClassNode lub = lowestUpperBound(classNodes);
+                             MethodNode methodNode = (MethodNode) call.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET);
+                             // we must check that such a method exists on the LUB
+                             Parameter[] parameters = methodNode.getParameters();
+                             ClassNode[] params = new ClassNode[parameters.length];
+                             for (int i = 0; i < params.length; i++) {
+                                 params[i] = parameters[i].getType();
+                             }
+                             List<MethodNode> method = findMethod(lub, methodNode.getName(), params);
+                             if (method.size()!=1) {
+                                 addStaticTypeError("A closure shared variable ["+target.getName()+"] has been assigned with various types and the method" +
+                                " ["+toMethodParametersString(methodNode.getName(), params)+"]"+
+                                 " does not exist in the lowest upper bound of those types: ["+
+                                 lub.toString(false)+"]. In general, this is a bad practice (variable reuse) because the compiler cannot"+
+                                 " determine safely what is the type of the variable at the moment of the call in a multithreaded context.", call);
+                             }
+                         }
+                     }
+                 }
+            }
+        }
+    }
 
     /**
      * Returns a wrapped type if, and only if, the provided class node is a primitive type.

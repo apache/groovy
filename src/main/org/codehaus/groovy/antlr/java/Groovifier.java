@@ -27,48 +27,48 @@ public class Groovifier extends VisitorAdapter implements GroovyTokenTypes {
 
     public Groovifier(String[] tokenNames) {
         this(tokenNames, true);
-	}
+    }
 
     public Groovifier(String[] tokenNames, boolean cleanRedundantPublic) {
         this.tokenNames = tokenNames;
-		this.cleanRedundantPublic = cleanRedundantPublic;
-	}
+        this.cleanRedundantPublic = cleanRedundantPublic;
+    }
 
     public void visitClassDef(GroovySourceAST t,int visit) {
         if (visit == OPENING_VISIT) {
-        	currentClassName = t.childOfType(GroovyTokenTypes.IDENT).getText();
+            currentClassName = t.childOfType(GroovyTokenTypes.IDENT).getText();
         }
     }
     public void visitDefault(GroovySourceAST t,int visit) {
         if (visit == OPENING_VISIT) {
             // only want to do this once per node...
 
-        	// remove 'public' when implied already if requested
-        	if (t.getType() == LITERAL_public && cleanRedundantPublic) {
-        		t.setType(EXPR);
-        	}
-        	
-        	// constructors are not distinguished from methods in java ast
-        	if (t.getType() == METHOD_DEF) {
-        		String methodName = t.childOfType(IDENT).getText();
-        		if (methodName != null && methodName.length() > 0) {
-        			if (methodName.equals(currentClassName)) {
-        				t.setType(CTOR_IDENT);
-        			}
-        		}
-        	}
+            // remove 'public' when implied already if requested
+            if (t.getType() == LITERAL_public && cleanRedundantPublic) {
+                t.setType(EXPR);
+            }
 
-        	
-/*        	if (t.getType() == MODIFIERS) {
-       			GroovySourceAST publicNode = t.childOfType(LITERAL_public);
-       			if (t.getNumberOfChildren() > 1 && publicNode != null) {
-       				// has more than one modifier, and one of them is public
-       				
-       				// delete 'public' node
-       				publicNode.setType(EXPR); // near enough the same as delete for now...
-       			}
-        	}*/
-        	// ----        	
+            // constructors are not distinguished from methods in java ast
+            if (t.getType() == METHOD_DEF) {
+                String methodName = t.childOfType(IDENT).getText();
+                if (methodName != null && methodName.length() > 0) {
+                    if (methodName.equals(currentClassName)) {
+                        t.setType(CTOR_IDENT);
+                    }
+                }
+            }
+
+
+/*          if (t.getType() == MODIFIERS) {
+                GroovySourceAST publicNode = t.childOfType(LITERAL_public);
+                if (t.getNumberOfChildren() > 1 && publicNode != null) {
+                    // has more than one modifier, and one of them is public
+
+                    // delete 'public' node
+                    publicNode.setType(EXPR); // near enough the same as delete for now...
+                }
+            }*/
+            // ----
         }
     }
 }
