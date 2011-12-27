@@ -926,62 +926,80 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 callArguments.visit(this);
             }
 
-            // method call receivers are :
-            //   - possible "with" receivers
-            //   - the actual receiver as found in the method call expression
-            //   - any of the potential receivers found in the instanceof temporary table
-            // in that order
-            List<ClassNode> receivers = new LinkedList<ClassNode>();
-            if (!withReceiverList.isEmpty()) receivers.addAll(withReceiverList);
-            receivers.add(receiver);
-            if (objectExpression instanceof ClassExpression) {
-                receivers.add(CLASS_Type);
-            }
-            if (!temporaryIfBranchTypeInformation.empty()) {
-                final Map<Object, List<ClassNode>> tempo = temporaryIfBranchTypeInformation.peek();
-                Object key = extractTemporaryTypeInfoKey(objectExpression);
-                List<ClassNode> potentialReceiverType = tempo.get(key);
-                if (potentialReceiverType != null) receivers.addAll(potentialReceiverType);
-            }
-            List<MethodNode> mn = null;
-            ClassNode chosenReceiver = null;
-            for (ClassNode currentReceiver : receivers) {
-                mn = findMethod(currentReceiver, name, args);
-                if (!mn.isEmpty()) {
-                    typeCheckMethodsWithGenerics(currentReceiver, args, mn, call);
-                    chosenReceiver = currentReceiver;
-                    break;
-                }
-            }
-            if (mn.isEmpty()) {
-                addStaticTypeError("Cannot find matching method " + receiver.getName() + "#" + toMethodParametersString(name, args), call);
-            } else {
-                if (isCallOnClosure) {
-                    // this is a closure.call() call
-                    if (objectExpression instanceof VariableExpression) {
-                        Variable variable = findTargetVariable((VariableExpression)objectExpression);
-                        if (variable instanceof Expression) {
-                            Object data = ((Expression) variable).getNodeMetaData(StaticTypesMarker.CLOSURE_ARGUMENTS);
-                            if (data!=null) {
-                                Parameter[] parameters = (Parameter[]) data;
-                                typeCheckClosureCall(callArguments, args, parameters);
-                            }
-                            Object type = ((Expression) variable).getNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE);
-                            if (type!=null) {
-                                 storeType(call, (ClassNode) type);
+            if (isCallOnClosure) {
+                // this is a closure.call() call
+                if (objectExpression==VariableExpression.THIS_EXPRESSION) {
+                    // isClosureCall() check verified earlier that a field exists
+                    FieldNode field = classNode.getDeclaredField(name);
+                    ClassNode closureReturnType = field.getType().getGenericsTypes()[0].getType();
+                    Object data = field.getNodeMetaData(StaticTypesMarker.CLOSURE_ARGUMENTS);
+                    if (data != null) {
+                        Parameter[] parameters = (Parameter[]) data;
+                        typeCheckClosureCall(callArguments, args, parameters);
+                    }
+                    storeType(call, closureReturnType);
+                } else if (objectExpression instanceof VariableExpression) {
+                    Variable variable = findTargetVariable((VariableExpression) objectExpression);
+                    if (variable instanceof Expression) {
+                        Object data = ((Expression) variable).getNodeMetaData(StaticTypesMarker.CLOSURE_ARGUMENTS);
+                        if (data != null) {
+                            Parameter[] parameters = (Parameter[]) data;
+                            typeCheckClosureCall(callArguments, args, parameters);
+                        }
+                        Object type = ((Expression) variable).getNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE);
+                        if (type == null) {
+                            // if variable was declared as a closure and inferred type is unknown, we
+                            // may face a recursive call. In that case, we will use the type of the
+                            // generic return type of the closure declaration
+                            if (variable.getType().equals(CLOSURE_TYPE)) {
+                                type = variable.getType().getGenericsTypes()[0].getType();
                             }
                         }
-                    } else if (objectExpression instanceof ClosureExpression) {
-                        // we can get actual parameters directly
-                        Parameter[] parameters = ((ClosureExpression)objectExpression).getParameters();
-                        typeCheckClosureCall(callArguments, args, parameters);
-                        Object data = objectExpression.getNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE);
-                        if (data!=null) {
-                            storeType(call, (ClassNode) data);
+                        if (type != null) {
+                            storeType(call, (ClassNode) type);
                         }
                     }
+                } else if (objectExpression instanceof ClosureExpression) {
+                    // we can get actual parameters directly
+                    Parameter[] parameters = ((ClosureExpression) objectExpression).getParameters();
+                    typeCheckClosureCall(callArguments, args, parameters);
+                    Object data = objectExpression.getNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE);
+                    if (data != null) {
+                        storeType(call, (ClassNode) data);
+                    }
+                }
+            } else {
+                // method call receivers are :
+                //   - possible "with" receivers
+                //   - the actual receiver as found in the method call expression
+                //   - any of the potential receivers found in the instanceof temporary table
+                // in that order
+                List<ClassNode> receivers = new LinkedList<ClassNode>();
+                if (!withReceiverList.isEmpty()) receivers.addAll(withReceiverList);
+                receivers.add(receiver);
+                if (objectExpression instanceof ClassExpression) {
+                    receivers.add(CLASS_Type);
+                }
+                if (!temporaryIfBranchTypeInformation.empty()) {
+                    final Map<Object, List<ClassNode>> tempo = temporaryIfBranchTypeInformation.peek();
+                    Object key = extractTemporaryTypeInfoKey(objectExpression);
+                    List<ClassNode> potentialReceiverType = tempo.get(key);
+                    if (potentialReceiverType != null) receivers.addAll(potentialReceiverType);
+                }
+                List<MethodNode> mn = null;
+                ClassNode chosenReceiver = null;
+                for (ClassNode currentReceiver : receivers) {
+                    mn = findMethod(currentReceiver, name, args);
+                    if (!mn.isEmpty()) {
+                        typeCheckMethodsWithGenerics(currentReceiver, args, mn, call);
+                        chosenReceiver = currentReceiver;
+                        break;
+                    }
+                }
+                if (mn.isEmpty()) {
+                    addStaticTypeError("Cannot find matching method " + receiver.getName() + "#" + toMethodParametersString(name, args), call);
                 } else {
-                    if (mn.size()==1) {
+                    if (mn.size() == 1) {
                         MethodNode directMethodCallCandidate = mn.get(0);
                         // visit the method to obtain inferred return type
                         ClassNode currentClassNode = classNode;
@@ -995,14 +1013,14 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         storeType(call, returnType);
                         storeTargetMethod(call, directMethodCallCandidate);
 
-						// if the object expression is a closure shared variable, we will have to perform a second pass
-						if (objectExpression instanceof VariableExpression) {
-							VariableExpression var = (VariableExpression) objectExpression;
-							if (var.isClosureSharedVariable()) secondPassExpressions.add(call);
-						}
+                        // if the object expression is a closure shared variable, we will have to perform a second pass
+                        if (objectExpression instanceof VariableExpression) {
+                            VariableExpression var = (VariableExpression) objectExpression;
+                            if (var.isClosureSharedVariable()) secondPassExpressions.add(call);
+                        }
 
                     } else {
-                        addStaticTypeError("Reference to method is ambiguous. Cannot choose between "+mn, call);
+                        addStaticTypeError("Reference to method is ambiguous. Cannot choose between " + mn, call);
                     }
                 }
             }
@@ -1019,8 +1037,17 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     private boolean isClosureCall(final String name, final Expression objectExpression) {
-        if (!"call".equals(name)) return false;
+        //if (!"call".equals(name)) return false;
         if (objectExpression instanceof ClosureExpression) return true;
+        if (objectExpression==VariableExpression.THIS_EXPRESSION) {
+            FieldNode fieldNode = classNode.getDeclaredField(name);
+            if (fieldNode!=null) {
+                ClassNode type = fieldNode.getType();
+                if (CLOSURE_TYPE.equals(type)) {
+                    return true;
+                }
+            }
+        }
         return (getType(objectExpression).equals(CLOSURE_TYPE));
     }
 
