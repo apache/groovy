@@ -146,6 +146,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         ClassNode oldCN = classNode;
         classNode = node;
         super.visitClass(node);
+        Iterator<InnerClassNode> innerClasses = classNode.getInnerClasses();
+        while (innerClasses.hasNext()) {
+            InnerClassNode innerClassNode = innerClasses.next();
+            visitClass(innerClassNode);
+        }
         classNode = oldCN;
     }
 
