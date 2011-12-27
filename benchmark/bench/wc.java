@@ -20,7 +20,7 @@ public class wc {
             byte[] buff = new byte[4096];
             boolean inword = false;
             int length;
-	    char c;
+            char c;
 
             while ((length = System.in.read(buff)) != -1) {
                 nc += length;

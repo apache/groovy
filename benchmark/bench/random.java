@@ -13,20 +13,20 @@ public class random {
     public static final int IC = 29573;
 
     public static void main(String args[]) {
-	int N = Integer.parseInt(args[0]) - 1;
-	NumberFormat nf = NumberFormat.getInstance();
-	nf.setMaximumFractionDigits(9);
-	nf.setMinimumFractionDigits(9);
-	nf.setGroupingUsed(false);
+        int N = Integer.parseInt(args[0]) - 1;
+        NumberFormat nf = NumberFormat.getInstance();
+        nf.setMaximumFractionDigits(9);
+        nf.setMinimumFractionDigits(9);
+        nf.setGroupingUsed(false);
 
-	while (N-- > 0) {
-	    gen_random(100);
-	}
-	System.out.println(nf.format(gen_random(100)));
+        while (N-- > 0) {
+            gen_random(100);
+        }
+        System.out.println(nf.format(gen_random(100)));
     }
 
     public static int last = 42;
     public static double gen_random(double max) {
-	return( max * (last = (last * IA + IC) % IM) / IM );
+        return( max * (last = (last * IA + IC) % IM) / IM );
     }
 }
