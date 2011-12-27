@@ -183,7 +183,8 @@ public class JavaStubGenerator {
             boolean isAnnotationDefinition = classNode.isAnnotationDefinition();
             printAnnotations(out, classNode);
             printModifiers(out, classNode.getModifiers()
-                    & ~(isInterface ? Opcodes.ACC_ABSTRACT : 0));
+                    & ~(isInterface ? Opcodes.ACC_ABSTRACT : 0)
+                    & ~(isEnum ? Opcodes.ACC_FINAL : 0));
 
             if (isInterface) {
                 if (isAnnotationDefinition) {
