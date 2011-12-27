@@ -176,7 +176,7 @@ class ClassToExtend {
 //}
 //
 //class ObjToTestCategory {
-//    def static getValue (ObjToTest self) {
+//    static getValue (ObjToTest self) {
 //        "changed"
 //    }
 }

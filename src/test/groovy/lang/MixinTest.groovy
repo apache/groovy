@@ -336,7 +336,7 @@ class MixinTest extends GroovyTestCase {
         assertScript """
             class Groovy3474A {
                 int counter = 1
-                protected def final foo() {
+                protected final foo() {
                     bar { counter }
                 }
                 private final String bar(Closure code) { 
@@ -398,7 +398,7 @@ class ObjToTest {
 }
 
 class ObjToTestCategory {
-    def static getValue(ObjToTest self) {
+    static getValue(ObjToTest self) {
         "changed by category"
     }
 }
@@ -474,7 +474,7 @@ class NoDuplicateCollection {
 
 class WPM_A {
 
-    def final foo() {
+    final foo() {
         bar()
     }
 

@@ -47,7 +47,7 @@ import org.codehaus.groovy.control.CompilationFailedException
  */
 class ScriptToTreeNodeAdapter {
 
-    def static Properties classNameToStringForm
+    static Properties classNameToStringForm
     boolean showScriptFreeForm, showScriptClass
     final GroovyClassLoader classLoader
     final AstBrowserNodeMaker nodeMaker
