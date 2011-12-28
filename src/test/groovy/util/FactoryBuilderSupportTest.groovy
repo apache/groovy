@@ -10,56 +10,58 @@ class FactoryBuilderSupportTest extends GroovyTestCase {
     void testSimpleNode() {
         def b = new SpoofFactoryBuilder()
         assert b.@log == [
-            'register', 'foo', 'Meta',
-            'register', 'bar', 'Meta',
-            'register', 'outest', 'Layers',
-            'register', 'outer', 'Layers',
-            'register', 'inner', 'Layers',
+                'register', 'outest', 'Layers',
+                'register', 'outer', 'Layers',
+                'register', 'inner', 'Layers',
+                'register', 'foo', 'Meta',
+                'register', 'bar', 'Meta',
         ]
         def node = b.foo()
         def log = b.@log
-        def expected = [ 'register', 'foo', 'Meta',
-                           'register', 'bar', 'Meta',
-                           'register', 'outest', 'Layers',
-                           'register', 'outer', 'Layers',
-                           'register', 'inner', 'Layers',
-                           'new_instance','foo', null,
-                           'handle_node_attributes', node,
-                           'node_completed',null, node, 
-                           'post_node_completion',null, node
-                        ]
+        def expected = [
+                'register', 'outest', 'Layers',
+                'register', 'outer', 'Layers',
+                'register', 'inner', 'Layers',
+                'register', 'foo', 'Meta',
+                'register', 'bar', 'Meta',
+                'new_instance', 'foo', null,
+                'handle_node_attributes', node,
+                'node_completed', null, node,
+                'post_node_completion', null, node
+        ]
         assert log == expected
     }
 
     void testSimpleNodeWithValue() {
         def b = new SpoofFactoryBuilder()
         def node = b.foo('value')
-        assert b.@log == [ 'register', 'foo', 'Meta',
-                           'register', 'bar', 'Meta',
-                           'register', 'outest', 'Layers',
-                           'register', 'outer', 'Layers',
-                           'register', 'inner', 'Layers',
-                           'new_instance','foo', 'value',
-                           'handle_node_attributes', node,
-                           'node_completed',null,node,
-                           'post_node_completion',null, node
-                        ]
+        assert b.@log == [
+                'register', 'outest', 'Layers',
+                'register', 'outer', 'Layers',
+                'register', 'inner', 'Layers',
+                'register', 'foo', 'Meta',
+                'register', 'bar', 'Meta',
+                'new_instance', 'foo', 'value',
+                'handle_node_attributes', node,
+                'node_completed', null, node,
+                'post_node_completion', null, node
+        ]
     }
 
     void testSimpleNodeWithOneAttribute() {
         def b = new SpoofFactoryBuilder()
         def node = b.foo(name:'value')
         assert b.@log == [
-                           'register', 'foo', 'Meta',
-                           'register', 'bar', 'Meta',
-                           'register', 'outest', 'Layers',
-                           'register', 'outer', 'Layers',
-                           'register', 'inner', 'Layers',
-                           'new_instance','foo',null,'name','value',
-                           'handle_node_attributes',node,'name','value', 
-                           'node_completed',null, node,
-                           'post_node_completion',null, node 
-                        ]
+                'register', 'outest', 'Layers',
+                'register', 'outer', 'Layers',
+                'register', 'inner', 'Layers',
+                'register', 'foo', 'Meta',
+                'register', 'bar', 'Meta',
+                'new_instance', 'foo', null, 'name', 'value',
+                'handle_node_attributes', node, 'name', 'value',
+                'node_completed', null, node,
+                'post_node_completion', null, node
+        ]
     }
 
     void testSimpleNodeWithClosure() {
@@ -69,22 +71,22 @@ class FactoryBuilderSupportTest extends GroovyTestCase {
         }
         def log = b.@log
         def expected = [
-            'register', 'foo', 'Meta',
-            'register', 'bar', 'Meta',
-            'register', 'outest', 'Layers',
-            'register', 'outer', 'Layers',
-            'register', 'inner', 'Layers',
-            'new_instance','foo',null,
-            'handle_node_attributes','x',
-                'new_instance','bar',null,
-                'handle_node_attributes','x',
-            'set_parent', 'x', 'x',
-            'set_child', 'x', 'x',
-                'node_completed','x','x',
+                'register', 'outest', 'Layers',
+                'register', 'outer', 'Layers',
+                'register', 'inner', 'Layers',
+                'register', 'foo', 'Meta',
+                'register', 'bar', 'Meta',
+                'new_instance', 'foo', null,
+                'handle_node_attributes', 'x',
+                'new_instance', 'bar', null,
+                'handle_node_attributes', 'x',
+                'set_parent', 'x', 'x',
+                'set_child', 'x', 'x',
+                'node_completed', 'x', 'x',
                 'post_node_completion', 'x', 'x',
-            'node_completed',null,'x',
-            'post_node_completion',null, 'x'
-            ]
+                'node_completed', null, 'x',
+                'post_node_completion', null, 'x'
+        ]
         assert log == expected
     }
 
@@ -92,75 +94,75 @@ class FactoryBuilderSupportTest extends GroovyTestCase {
         def b = new SpoofFactoryBuilder()
         def node = b.foo(bar:'baz', 'value')
         assert b.@log == [
-                          'register', 'foo', 'Meta',
-                          'register', 'bar', 'Meta',
-                          'register', 'outest', 'Layers',
-                          'register', 'outer', 'Layers',
-                          'register', 'inner', 'Layers',
-                          'new_instance', 'foo', 'value', 'bar','baz',
-                          'handle_node_attributes',node,'bar','baz',
-                          'node_completed',null,node,
-                          'post_node_completion',null, node
-                        ]
+                'register', 'outest', 'Layers',
+                'register', 'outer', 'Layers',
+                'register', 'inner', 'Layers',
+                'register', 'foo', 'Meta',
+                'register', 'bar', 'Meta',
+                'new_instance', 'foo', 'value', 'bar', 'baz',
+                'handle_node_attributes', node, 'bar', 'baz',
+                'node_completed', null, node,
+                'post_node_completion', null, node
+        ]
     }
 
     void testSimpleNodeWithValueAndOneAttribute() {
         def b = new SpoofFactoryBuilder()
         def node = b.foo('value', bar:'baz')
         assert b.@log == [
-                          'register', 'foo', 'Meta',
-                          'register', 'bar', 'Meta',
-                          'register', 'outest', 'Layers',
-                          'register', 'outer', 'Layers',
-                          'register', 'inner', 'Layers',
-                          'new_instance', 'foo', 'value', 'bar','baz',
-                          'handle_node_attributes',node,'bar','baz',
-                          'node_completed',null,node,
-                          'post_node_completion',null, node
-                        ]
+                'register', 'outest', 'Layers',
+                'register', 'outer', 'Layers',
+                'register', 'inner', 'Layers',
+                'register', 'foo', 'Meta',
+                'register', 'bar', 'Meta',
+                'new_instance', 'foo', 'value', 'bar', 'baz',
+                'handle_node_attributes', node, 'bar', 'baz',
+                'node_completed', null, node,
+                'post_node_completion', null, node
+        ]
     }
 
     void testSimpleNodeWithOneAttributeAndValueAndClosure() {
         def b = new SpoofFactoryBuilder()
         def node = b.foo(bar:'baz', 'value') { 1 }
         assert b.@log == [
-                          'register', 'foo', 'Meta',
-                          'register', 'bar', 'Meta',
-                          'register', 'outest', 'Layers',
-                          'register', 'outer', 'Layers',
-                          'register', 'inner', 'Layers',
-                          'new_instance', 'foo', 'value', 'bar','baz',
-                          'handle_node_attributes',node,'bar','baz',
-                          'node_completed',null,node,
-                          'post_node_completion',null, node
-                        ]
+                'register', 'outest', 'Layers',
+                'register', 'outer', 'Layers',
+                'register', 'inner', 'Layers',
+                'register', 'foo', 'Meta',
+                'register', 'bar', 'Meta',
+                'new_instance', 'foo', 'value', 'bar', 'baz',
+                'handle_node_attributes', node, 'bar', 'baz',
+                'node_completed', null, node,
+                'post_node_completion', null, node
+        ]
     }
 
     void testSimpleNodeWithValueAndOneAttributeAndClosure() {
         def b = new SpoofFactoryBuilder()
         def node = b.foo('value', bar:'baz') { 1 }
         assert b.@log == [
-                          'register', 'foo', 'Meta',
-                          'register', 'bar', 'Meta',
-                          'register', 'outest', 'Layers',
-                          'register', 'outer', 'Layers',
-                          'register', 'inner', 'Layers',
-                          'new_instance', 'foo', 'value', 'bar','baz',
-                          'handle_node_attributes',node,'bar','baz',
-                          'node_completed',null,node,
-                          'post_node_completion',null, node
-                        ]
+                'register', 'outest', 'Layers',
+                'register', 'outer', 'Layers',
+                'register', 'inner', 'Layers',
+                'register', 'foo', 'Meta',
+                'register', 'bar', 'Meta',
+                'new_instance', 'foo', 'value', 'bar', 'baz',
+                'handle_node_attributes', node, 'bar', 'baz',
+                'node_completed', null, node,
+                'post_node_completion', null, node
+        ]
     }
 
     void testSimpleNodeTwoValues() {
         def b = new SpoofFactoryBuilder()
         def node = b.foo('arg1', 'arg2')
         assert b.@log == [
-                'register', 'foo', 'Meta',
-                'register', 'bar', 'Meta',
                 'register', 'outest', 'Layers',
                 'register', 'outer', 'Layers',
                 'register', 'inner', 'Layers',
+                'register', 'foo', 'Meta',
+                'register', 'bar', 'Meta',
                 'new_instance', 'foo', ['arg1', 'arg2'],
                 'handle_node_attributes',node,
                 'node_completed',null,node,
@@ -172,11 +174,11 @@ class FactoryBuilderSupportTest extends GroovyTestCase {
         def b = new SpoofFactoryBuilder()
         def node = b.foo('arg1', 'arg2') { 1 }
         assert b.@log == [
-                'register', 'foo', 'Meta',
-                'register', 'bar', 'Meta',
                 'register', 'outest', 'Layers',
                 'register', 'outer', 'Layers',
                 'register', 'inner', 'Layers',
+                'register', 'foo', 'Meta',
+                'register', 'bar', 'Meta',
                 'new_instance', 'foo', ['arg1', 'arg2'],
                 'handle_node_attributes',node,
                 'node_completed',null,node,
@@ -188,11 +190,11 @@ class FactoryBuilderSupportTest extends GroovyTestCase {
         def b = new SpoofFactoryBuilder()
         def node = b.foo('arg1', 'arg2', 'arg3')
         assert b.@log == [
-                'register', 'foo', 'Meta',
-                'register', 'bar', 'Meta',
                 'register', 'outest', 'Layers',
                 'register', 'outer', 'Layers',
                 'register', 'inner', 'Layers',
+                'register', 'foo', 'Meta',
+                'register', 'bar', 'Meta',
                 'new_instance', 'foo', ['arg1', 'arg2', 'arg3'],
                 'handle_node_attributes',node,
                 'node_completed',null,node,
@@ -204,11 +206,11 @@ class FactoryBuilderSupportTest extends GroovyTestCase {
         def b = new SpoofFactoryBuilder()
         def node = b.foo('arg1', 'arg2', 'arg3', 'arg4')
         assert b.@log == [
-                'register', 'foo', 'Meta',
-                'register', 'bar', 'Meta',
                 'register', 'outest', 'Layers',
                 'register', 'outer', 'Layers',
                 'register', 'inner', 'Layers',
+                'register', 'foo', 'Meta',
+                'register', 'bar', 'Meta',
                 'new_instance', 'foo', ['arg1', 'arg2', 'arg3', 'arg4'],
                 'handle_node_attributes',node,
                 'node_completed',null,node,
@@ -293,79 +295,87 @@ class FactoryBuilderSupportTest extends GroovyTestCase {
     void testNestedBuilderSimpleNode() {
         def n = new SpoofFactoryBuilder()
         def b = new SpoofFactoryBuilder(proxyBuilder:n)
-        assert b.@log == [ 'register', 'foo', 'Meta',
-                           'register', 'bar', 'Meta',
-                           'register', 'outest', 'Layers',
-                           'register', 'outer', 'Layers',
-                           'register', 'inner', 'Layers',
-                         ]
-        assert n.@log == [ 'register', 'foo', 'Meta',
-                           'register', 'bar', 'Meta',
-                           'register', 'outest', 'Layers',
-                           'register', 'outer', 'Layers',
-                           'register', 'inner', 'Layers',
-                         ]
+        assert b.@log == [
+                'register', 'outest', 'Layers',
+                'register', 'outer', 'Layers',
+                'register', 'inner', 'Layers',
+                'register', 'foo', 'Meta',
+                'register', 'bar', 'Meta',
+        ]
+        assert n.@log == [
+                'register', 'outest', 'Layers',
+                'register', 'outer', 'Layers',
+                'register', 'inner', 'Layers',
+                'register', 'foo', 'Meta',
+                'register', 'bar', 'Meta',
+        ]
         def node = b.foo()
-        assert b.@log == [ 'register', 'foo', 'Meta',
-                           'register', 'bar', 'Meta',
-                           'register', 'outest', 'Layers',
-                           'register', 'outer', 'Layers',
-                           'register', 'inner', 'Layers',
-                         ]
-        assert n.@log == [ 'register', 'foo', 'Meta',
-                           'register', 'bar', 'Meta',
-                           'register', 'outest', 'Layers',
-                           'register', 'outer', 'Layers',
-                           'register', 'inner', 'Layers',
-                           'new_instance','foo', null,
-                           'handle_node_attributes', node,
-                           'node_completed',null, node, 
-                           'post_node_completion',null, node
-                        ]
+        assert b.@log == [
+                'register', 'outest', 'Layers',
+                'register', 'outer', 'Layers',
+                'register', 'inner', 'Layers',
+                'register', 'foo', 'Meta',
+                'register', 'bar', 'Meta',
+        ]
+        assert n.@log == [
+                'register', 'outest', 'Layers',
+                'register', 'outer', 'Layers',
+                'register', 'inner', 'Layers',
+                'register', 'foo', 'Meta',
+                'register', 'bar', 'Meta',
+                'new_instance', 'foo', null,
+                'handle_node_attributes', node,
+                'node_completed', null, node,
+                'post_node_completion', null, node
+        ]
     }
 
     void testNestedBuilderSimpleNodeWithValue() {
         def n = new SpoofFactoryBuilder()
         def b = new SpoofFactoryBuilder(proxyBuilder:n)
         def node = b.foo('value')
-        assert b.@log == [ 'register', 'foo', 'Meta',
-                           'register', 'bar', 'Meta',
-                           'register', 'outest', 'Layers',
-                           'register', 'outer', 'Layers',
-                           'register', 'inner', 'Layers',
-                         ]
-        assert n.@log == [ 'register', 'foo', 'Meta',
-                           'register', 'bar', 'Meta',
-                           'register', 'outest', 'Layers',
-                           'register', 'outer', 'Layers',
-                           'register', 'inner', 'Layers',
-                           'new_instance','foo', 'value',
-                           'handle_node_attributes', node,
-                           'node_completed',null,node,
-                           'post_node_completion',null, node
-                        ]
+        assert b.@log == [
+                'register', 'outest', 'Layers',
+                'register', 'outer', 'Layers',
+                'register', 'inner', 'Layers',
+                'register', 'foo', 'Meta',
+                'register', 'bar', 'Meta',
+        ]
+        assert n.@log == [
+                'register', 'outest', 'Layers',
+                'register', 'outer', 'Layers',
+                'register', 'inner', 'Layers',
+                'register', 'foo', 'Meta',
+                'register', 'bar', 'Meta',
+                'new_instance', 'foo', 'value',
+                'handle_node_attributes', node,
+                'node_completed', null, node,
+                'post_node_completion', null, node
+        ]
     }
 
     void testNestedBuilderSimpleNodeWithOneAttribute() {
         def n = new SpoofFactoryBuilder()
         def b = new SpoofFactoryBuilder(proxyBuilder:n)
         def node = b.foo(name:'value')
-        assert b.@log == [ 'register', 'foo', 'Meta',
-                           'register', 'bar', 'Meta',
-                           'register', 'outest', 'Layers',
-                           'register', 'outer', 'Layers',
-                           'register', 'inner', 'Layers',
-                         ]
-        assert n.@log == [ 'register', 'foo', 'Meta',
-                           'register', 'bar', 'Meta',
-                           'register', 'outest', 'Layers',
-                           'register', 'outer', 'Layers',
-                           'register', 'inner', 'Layers',
-                           'new_instance','foo',null,'name','value',
-                           'handle_node_attributes',node,'name','value', 
-                           'node_completed',null, node,
-                           'post_node_completion',null, node 
-                        ]
+        assert b.@log == [
+                'register', 'outest', 'Layers',
+                'register', 'outer', 'Layers',
+                'register', 'inner', 'Layers',
+                'register', 'foo', 'Meta',
+                'register', 'bar', 'Meta',
+        ]
+        assert n.@log == [
+                'register', 'outest', 'Layers',
+                'register', 'outer', 'Layers',
+                'register', 'inner', 'Layers',
+                'register', 'foo', 'Meta',
+                'register', 'bar', 'Meta',
+                'new_instance', 'foo', null, 'name', 'value',
+                'handle_node_attributes', node, 'name', 'value',
+                'node_completed', null, node,
+                'post_node_completion', null, node
+        ]
     }
 
     void testNestedBuilderSimpleNodeWithClosure() {
@@ -374,117 +384,126 @@ class FactoryBuilderSupportTest extends GroovyTestCase {
         b.foo(){
             b.bar()
         }
-        assert b.@log == [ 'register', 'foo', 'Meta',
-                           'register', 'bar', 'Meta',
-                           'register', 'outest', 'Layers',
-                           'register', 'outer', 'Layers',
-                           'register', 'inner', 'Layers',
-                         ]
+        assert b.@log == [
+                'register', 'outest', 'Layers',
+                'register', 'outer', 'Layers',
+                'register', 'inner', 'Layers',
+                'register', 'foo', 'Meta',
+                'register', 'bar', 'Meta',
+        ]
         assert n.@log == [
-            'register', 'foo', 'Meta',
-            'register', 'bar', 'Meta',
-            'register', 'outest', 'Layers',
-            'register', 'outer', 'Layers',
-            'register', 'inner', 'Layers',
-            'new_instance','foo',null,
-            'handle_node_attributes','x',
-                'new_instance','bar',null,
-                'handle_node_attributes','x',
-            'set_parent', 'x', 'x',
-            'set_child', 'x', 'x',
-                'node_completed','x','x',
+                'register', 'outest', 'Layers',
+                'register', 'outer', 'Layers',
+                'register', 'inner', 'Layers',
+                'register', 'foo', 'Meta',
+                'register', 'bar', 'Meta',
+                'new_instance', 'foo', null,
+                'handle_node_attributes', 'x',
+                'new_instance', 'bar', null,
+                'handle_node_attributes', 'x',
+                'set_parent', 'x', 'x',
+                'set_child', 'x', 'x',
+                'node_completed', 'x', 'x',
                 'post_node_completion', 'x', 'x',
-            'node_completed',null,'x',
-            'post_node_completion',null, 'x'
-            ]
+                'node_completed', null, 'x',
+                'post_node_completion', null, 'x'
+        ]
     }
 
     void testNestedBuilderSimpleNodeWithOneAttributeAndValue() {
         def n = new SpoofFactoryBuilder()
         def b = new SpoofFactoryBuilder(proxyBuilder:n)
         def node = b.foo(bar:'baz', 'value')
-        assert b.@log == [ 'register', 'foo', 'Meta',
-                           'register', 'bar', 'Meta',
-                           'register', 'outest', 'Layers',
-                           'register', 'outer', 'Layers',
-                           'register', 'inner', 'Layers',
-                         ]
-        assert n.@log == [ 'register', 'foo', 'Meta',
-                           'register', 'bar', 'Meta',
-                           'register', 'outest', 'Layers',
-                           'register', 'outer', 'Layers',
-                           'register', 'inner', 'Layers',
-                           'new_instance', 'foo', 'value', 'bar','baz',
-                           'handle_node_attributes',node,'bar','baz',
-                           'node_completed',null,node,
-                           'post_node_completion',null, node
-                         ]
+        assert b.@log == [
+                'register', 'outest', 'Layers',
+                'register', 'outer', 'Layers',
+                'register', 'inner', 'Layers',
+                'register', 'foo', 'Meta',
+                'register', 'bar', 'Meta',
+        ]
+        assert n.@log == [
+                'register', 'outest', 'Layers',
+                'register', 'outer', 'Layers',
+                'register', 'inner', 'Layers',
+                'register', 'foo', 'Meta',
+                'register', 'bar', 'Meta',
+                'new_instance', 'foo', 'value', 'bar', 'baz',
+                'handle_node_attributes', node, 'bar', 'baz',
+                'node_completed', null, node,
+                'post_node_completion', null, node
+        ]
     }
 
     void testNestedBuilderSimpleNodeWithValueAndOneAttribute() {
         def n = new SpoofFactoryBuilder()
         def b = new SpoofFactoryBuilder(proxyBuilder:n)
         def node = b.foo('value', bar:'baz')
-        assert b.@log == [ 'register', 'foo', 'Meta',
-                           'register', 'bar', 'Meta',
-                           'register', 'outest', 'Layers',
-                           'register', 'outer', 'Layers',
-                           'register', 'inner', 'Layers',
-                         ]
-        assert n.@log == [ 'register', 'foo', 'Meta',
-                           'register', 'bar', 'Meta',
-                           'register', 'outest', 'Layers',
-                           'register', 'outer', 'Layers',
-                           'register', 'inner', 'Layers',
-                          'new_instance', 'foo', 'value', 'bar','baz',
-                          'handle_node_attributes',node,'bar','baz',
-                          'node_completed',null,node,
-                          'post_node_completion',null, node
-                        ]
+        assert b.@log == [
+                'register', 'outest', 'Layers',
+                'register', 'outer', 'Layers',
+                'register', 'inner', 'Layers',
+                'register', 'foo', 'Meta',
+                'register', 'bar', 'Meta',
+        ]
+        assert n.@log == [
+                'register', 'outest', 'Layers',
+                'register', 'outer', 'Layers',
+                'register', 'inner', 'Layers',
+                'register', 'foo', 'Meta',
+                'register', 'bar', 'Meta',
+                'new_instance', 'foo', 'value', 'bar', 'baz',
+                'handle_node_attributes', node, 'bar', 'baz',
+                'node_completed', null, node,
+                'post_node_completion', null, node
+        ]
     }
 
     void testNestedBuilderSimpleNodeWithOneAttributeAndValueAndClosure() {
         def n = new SpoofFactoryBuilder()
         def b = new SpoofFactoryBuilder(proxyBuilder:n)
         def node = b.foo(bar:'baz', 'value') { 1 }
-        assert b.@log == [ 'register', 'foo', 'Meta',
-                           'register', 'bar', 'Meta',
-                           'register', 'outest', 'Layers',
-                           'register', 'outer', 'Layers',
-                           'register', 'inner', 'Layers',
-                         ]
-        assert n.@log == [ 'register', 'foo', 'Meta',
-                           'register', 'bar', 'Meta',
-                           'register', 'outest', 'Layers',
-                           'register', 'outer', 'Layers',
-                           'register', 'inner', 'Layers',
-                           'new_instance', 'foo', 'value', 'bar','baz',
-                           'handle_node_attributes',node,'bar','baz',
-                           'node_completed',null,node,
-                           'post_node_completion',null, node
-                        ]
+        assert b.@log == [
+                'register', 'outest', 'Layers',
+                'register', 'outer', 'Layers',
+                'register', 'inner', 'Layers',
+                'register', 'foo', 'Meta',
+                'register', 'bar', 'Meta',
+        ]
+        assert n.@log == [
+                'register', 'outest', 'Layers',
+                'register', 'outer', 'Layers',
+                'register', 'inner', 'Layers',
+                'register', 'foo', 'Meta',
+                'register', 'bar', 'Meta',
+                'new_instance', 'foo', 'value', 'bar', 'baz',
+                'handle_node_attributes', node, 'bar', 'baz',
+                'node_completed', null, node,
+                'post_node_completion', null, node
+        ]
     }
 
     void testNestedBuilderSimpleNodeWithValueAndOneAttributeAndClosure() {
         def n = new SpoofFactoryBuilder()
         def b = new SpoofFactoryBuilder(proxyBuilder:n)
         def node = b.foo('value', bar:'baz') { 1 }
-        assert b.@log == [ 'register', 'foo', 'Meta',
-                           'register', 'bar', 'Meta',
-                           'register', 'outest', 'Layers',
-                           'register', 'outer', 'Layers',
-                           'register', 'inner', 'Layers',
-                         ]
-        assert n.@log == [ 'register', 'foo', 'Meta',
-                           'register', 'bar', 'Meta',
-                           'register', 'outest', 'Layers',
-                           'register', 'outer', 'Layers',
-                           'register', 'inner', 'Layers',
-                           'new_instance', 'foo', 'value', 'bar','baz',
-                           'handle_node_attributes',node,'bar','baz',
-                           'node_completed',null,node,
-                           'post_node_completion',null, node
-                        ]
+        assert b.@log == [
+                'register', 'outest', 'Layers',
+                'register', 'outer', 'Layers',
+                'register', 'inner', 'Layers',
+                'register', 'foo', 'Meta',
+                'register', 'bar', 'Meta',
+        ]
+        assert n.@log == [
+                'register', 'outest', 'Layers',
+                'register', 'outer', 'Layers',
+                'register', 'inner', 'Layers',
+                'register', 'foo', 'Meta',
+                'register', 'bar', 'Meta',
+                'new_instance', 'foo', 'value', 'bar', 'baz',
+                'handle_node_attributes', node, 'bar', 'baz',
+                'node_completed', null, node,
+                'post_node_completion', null, node
+        ]
     }
 
     void testWithBuilder() {
@@ -502,41 +521,41 @@ class FactoryBuilderSupportTest extends GroovyTestCase {
             }
         }
         assert b.@log == [
-            'register', 'foo', 'Meta',
-            'register', 'bar', 'Meta',
-            'register', 'outest', 'Layers',
-            'register', 'outer', 'Layers',
-            'register', 'inner', 'Layers',
-            'new_instance','foo',null,
-            'handle_node_attributes','x',
-                'new_instance','bar',null,
-                'handle_node_attributes','x',
-            'set_parent', 'x', 'x',
-            'set_child', 'x', 'x',
-                'node_completed','x','x',
+                'register', 'outest', 'Layers',
+                'register', 'outer', 'Layers',
+                'register', 'inner', 'Layers',
+                'register', 'foo', 'Meta',
+                'register', 'bar', 'Meta',
+                'new_instance', 'foo', null,
+                'handle_node_attributes', 'x',
+                'new_instance', 'bar', null,
+                'handle_node_attributes', 'x',
+                'set_parent', 'x', 'x',
+                'set_child', 'x', 'x',
+                'node_completed', 'x', 'x',
                 'post_node_completion', 'x', 'x',
-            'node_completed',null,'x',
-            'post_node_completion',null, 'x'
-            ]
+                'node_completed', null, 'x',
+                'post_node_completion', null, 'x'
+        ]
         assert c.@log == [
-            'register', 'foo', 'Meta',
-            'register', 'bar', 'Meta',
-            'register', 'outest', 'Layers',
-            'register', 'outer', 'Layers',
-            'register', 'inner', 'Layers',
-            'register', 'fooz', '',
-            'register', 'baz', '',
-            'new_instance','fooz',null,
-            'handle_node_attributes','x',
-                'new_instance','baz',null,
-                'handle_node_attributes','x',
-            'set_parent', 'x', 'x',
-            'set_child', 'x', 'x',
-                'node_completed','x','x',
+                'register', 'outest', 'Layers',
+                'register', 'outer', 'Layers',
+                'register', 'inner', 'Layers',
+                'register', 'foo', 'Meta',
+                'register', 'bar', 'Meta',
+                'register', 'fooz', '',
+                'register', 'baz', '',
+                'new_instance', 'fooz', null,
+                'handle_node_attributes', 'x',
+                'new_instance', 'baz', null,
+                'handle_node_attributes', 'x',
+                'set_parent', 'x', 'x',
+                'set_child', 'x', 'x',
+                'node_completed', 'x', 'x',
                 'post_node_completion', 'x', 'x',
-            'node_completed',null,'x',
-            'post_node_completion',null, 'x'
-            ]
+                'node_completed', null, 'x',
+                'post_node_completion', null, 'x'
+        ]
     }
 
     void testWithBuilderAndName() {
@@ -555,47 +574,47 @@ class FactoryBuilderSupportTest extends GroovyTestCase {
         }
 
         assert b.@log == [
-            'register', 'foo', 'Meta',
-            'register', 'bar', 'Meta',
-            'register', 'outest', 'Layers',
-            'register', 'outer', 'Layers',
-            'register', 'inner', 'Layers',
-            'new_instance','foo',null,
-            'handle_node_attributes','x',
-                'new_instance','bar',null,
-                'handle_node_attributes','x',
+                'register', 'outest', 'Layers',
+                'register', 'outer', 'Layers',
+                'register', 'inner', 'Layers',
+                'register', 'foo', 'Meta',
+                'register', 'bar', 'Meta',
+                'new_instance', 'foo', null,
+                'handle_node_attributes', 'x',
+                'new_instance', 'bar', null,
+                'handle_node_attributes', 'x',
                 'set_parent', 'x', 'x',
                 'set_child', 'x', 'x',
-                'node_completed','x','x',
+                'node_completed', 'x', 'x',
                 'post_node_completion', 'x', 'x',
-                'new_instance','foo','x',
-                'handle_node_attributes','x',
+                'new_instance', 'foo', 'x',
+                'handle_node_attributes', 'x',
                 'set_parent', 'x', 'x',
                 'set_child', 'x', 'x',
-                'node_completed','x','x',
+                'node_completed', 'x', 'x',
                 'post_node_completion', 'x', 'x',
-            'node_completed',null,'x',
-            'post_node_completion',null, 'x'
-            ]
+                'node_completed', null, 'x',
+                'post_node_completion', null, 'x'
+        ]
         assert c.@log == [
-            'register', 'foo', 'Meta',
-            'register', 'bar', 'Meta',
-            'register', 'outest', 'Layers',
-            'register', 'outer', 'Layers',
-            'register', 'inner', 'Layers',
-            'register', 'fooz', '',
-            'register', 'baz', '',
-            'new_instance','fooz',null,
-            'handle_node_attributes','x',
-                'new_instance','baz',null,
-                'handle_node_attributes','x',
+                'register', 'outest', 'Layers',
+                'register', 'outer', 'Layers',
+                'register', 'inner', 'Layers',
+                'register', 'foo', 'Meta',
+                'register', 'bar', 'Meta',
+                'register', 'fooz', '',
+                'register', 'baz', '',
+                'new_instance', 'fooz', null,
+                'handle_node_attributes', 'x',
+                'new_instance', 'baz', null,
+                'handle_node_attributes', 'x',
                 'set_parent', 'x', 'x',
                 'set_child', 'x', 'x',
-                'node_completed','x','x',
+                'node_completed', 'x', 'x',
                 'post_node_completion', 'x', 'x',
-            'node_completed',null,'x',
-            'post_node_completion',null, 'x'
-            ]
+                'node_completed', null, 'x',
+                'post_node_completion', null, 'x'
+        ]
     }
 
     void testWithBuilderAndNameAndAttributes() {
@@ -614,47 +633,47 @@ class FactoryBuilderSupportTest extends GroovyTestCase {
         }
 
         assert b.@log == [
-            'register', 'foo', 'Meta',
-            'register', 'bar', 'Meta',
-            'register', 'outest', 'Layers',
-            'register', 'outer', 'Layers',
-            'register', 'inner', 'Layers',
-            'new_instance','foo',null,
-            'handle_node_attributes','x',
-                'new_instance','bar',null,
-                'handle_node_attributes','x',
+                'register', 'outest', 'Layers',
+                'register', 'outer', 'Layers',
+                'register', 'inner', 'Layers',
+                'register', 'foo', 'Meta',
+                'register', 'bar', 'Meta',
+                'new_instance', 'foo', null,
+                'handle_node_attributes', 'x',
+                'new_instance', 'bar', null,
+                'handle_node_attributes', 'x',
                 'set_parent', 'x', 'x',
                 'set_child', 'x', 'x',
-                'node_completed','x','x',
+                'node_completed', 'x', 'x',
                 'post_node_completion', 'x', 'x',
-                'new_instance','foo','x','bar','baz',
-                'handle_node_attributes','x','bar','baz',
+                'new_instance', 'foo', 'x', 'bar', 'baz',
+                'handle_node_attributes', 'x', 'bar', 'baz',
                 'set_parent', 'x', 'x',
                 'set_child', 'x', 'x',
-                'node_completed','x','x',
+                'node_completed', 'x', 'x',
                 'post_node_completion', 'x', 'x',
-            'node_completed',null,'x',
-            'post_node_completion',null, 'x'
-            ]
+                'node_completed', null, 'x',
+                'post_node_completion', null, 'x'
+        ]
         assert c.@log == [
-            'register', 'foo', 'Meta',
-            'register', 'bar', 'Meta',
-            'register', 'outest', 'Layers',
-            'register', 'outer', 'Layers',
-            'register', 'inner', 'Layers',
-            'register', 'fooz', '',
-            'register', 'baz', '',
-            'new_instance','fooz',null,
-            'handle_node_attributes','x',
-                'new_instance','baz',null,
-                'handle_node_attributes','x',
+                'register', 'outest', 'Layers',
+                'register', 'outer', 'Layers',
+                'register', 'inner', 'Layers',
+                'register', 'foo', 'Meta',
+                'register', 'bar', 'Meta',
+                'register', 'fooz', '',
+                'register', 'baz', '',
+                'new_instance', 'fooz', null,
+                'handle_node_attributes', 'x',
+                'new_instance', 'baz', null,
+                'handle_node_attributes', 'x',
                 'set_parent', 'x', 'x',
                 'set_child', 'x', 'x',
-                'node_completed','x','x',
+                'node_completed', 'x', 'x',
                 'post_node_completion', 'x', 'x',
-            'node_completed',null,'x',
-            'post_node_completion',null, 'x'
-            ]
+                'node_completed', null, 'x',
+                'post_node_completion', null, 'x'
+        ]
     }
 
     void testWithBuilderAndThrowAnException() {
@@ -671,30 +690,30 @@ class FactoryBuilderSupportTest extends GroovyTestCase {
         }
 
         assert b.@log == [
-            'register', 'foo', 'Meta',
-            'register', 'bar', 'Meta',
-            'register', 'outest', 'Layers',
-            'register', 'outer', 'Layers',
-            'register', 'inner', 'Layers',
-            'new_instance','foo',null,
-            'handle_node_attributes','x',
-                'new_instance','bar',null,
-                'handle_node_attributes','x',
+                'register', 'outest', 'Layers',
+                'register', 'outer', 'Layers',
+                'register', 'inner', 'Layers',
+                'register', 'foo', 'Meta',
+                'register', 'bar', 'Meta',
+                'new_instance', 'foo', null,
+                'handle_node_attributes', 'x',
+                'new_instance', 'bar', null,
+                'handle_node_attributes', 'x',
                 'set_parent', 'x', 'x',
                 'set_child', 'x', 'x',
-                'node_completed','x','x',
+                'node_completed', 'x', 'x',
                 'post_node_completion', 'x', 'x'/*,
             'node_completed',null,'x',
             'post_node_completion',null, 'x'*/
-            // node foo() was not completed successfuly
-            ]
+                // node foo() was not completed successfuly
+        ]
         assert c.@log == [
-            'register', 'foo', 'Meta',
-            'register', 'bar', 'Meta',
-            'register', 'outest', 'Layers',
-            'register', 'outer', 'Layers',
-            'register', 'inner', 'Layers',
-            ]
+                'register', 'outest', 'Layers',
+                'register', 'outer', 'Layers',
+                'register', 'inner', 'Layers',
+                'register', 'foo', 'Meta',
+                'register', 'bar', 'Meta',
+        ]
     }
 
     void testHandlesChildren() {
@@ -704,23 +723,23 @@ class FactoryBuilderSupportTest extends GroovyTestCase {
             b.bar()
         }
         assert b.@log == [
-            'register', 'foo', 'Meta',
-            'register', 'bar', 'Meta',
-            'register', 'outest', 'Layers',
-            'register', 'outer', 'Layers',
-            'register', 'inner', 'Layers',
-            'new_instance','foo',null,
-            'handle_node_attributes','x',
-            'node_children', 'foo',
-                'new_instance','bar',null,
-                'handle_node_attributes','x',
-            'set_parent', 'x', 'x',
-            'set_child', 'x', 'x',
-                'node_completed','x','x',
+                'register', 'outest', 'Layers',
+                'register', 'outer', 'Layers',
+                'register', 'inner', 'Layers',
+                'register', 'foo', 'Meta',
+                'register', 'bar', 'Meta',
+                'new_instance', 'foo', null,
+                'handle_node_attributes', 'x',
+                'node_children', 'foo',
+                'new_instance', 'bar', null,
+                'handle_node_attributes', 'x',
+                'set_parent', 'x', 'x',
+                'set_child', 'x', 'x',
+                'node_completed', 'x', 'x',
                 'post_node_completion', 'x', 'x',
-            'node_completed',null,'x',
-            'post_node_completion',null, 'x'
-            ]
+                'node_completed', null, 'x',
+                'post_node_completion', null, 'x'
+        ]
     }
 
     void testInteceptsChildren() {
@@ -731,17 +750,17 @@ class FactoryBuilderSupportTest extends GroovyTestCase {
             b.bar()
         }
         assert b.@log == [
-            'register', 'foo', 'Meta',
-            'register', 'bar', 'Meta',
-            'register', 'outest', 'Layers',
-            'register', 'outer', 'Layers',
-            'register', 'inner', 'Layers',
-            'new_instance','foo',null,
-            'handle_node_attributes','x',
-            'node_children', 'foo',
-            'node_completed',null,'x',
-            'post_node_completion',null, 'x'
-            ]
+                'register', 'outest', 'Layers',
+                'register', 'outer', 'Layers',
+                'register', 'inner', 'Layers',
+                'register', 'foo', 'Meta',
+                'register', 'bar', 'Meta',
+                'new_instance', 'foo', null,
+                'handle_node_attributes', 'x',
+                'node_children', 'foo',
+                'node_completed', null, 'x',
+                'post_node_completion', null, 'x'
+        ]
     }
 
     void testErrorMessage_checkValueIsType() {
