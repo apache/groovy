@@ -1208,10 +1208,8 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
                 statement = variableDef(node);
                 break;
 
-
             case LABELED_STAT:
-                statement = labelledStatement(node);
-                break;
+                return labelledStatement(node);
 
             case LITERAL_assert:
                 statement = assertStatement(node);
