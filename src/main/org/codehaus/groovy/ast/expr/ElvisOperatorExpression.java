@@ -62,6 +62,7 @@ public class ElvisOperatorExpression extends TernaryExpression {
                 transformer.transform(getTrueExpression()),
                 transformer.transform(getFalseExpression()));
         ret.setSourcePosition(this);
+        ret.copyNodeMetaData(this);
         return ret; 
     }
 }

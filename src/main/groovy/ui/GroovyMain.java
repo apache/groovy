@@ -46,6 +46,7 @@ import org.codehaus.groovy.runtime.StackTraceUtils;
  *
  * @author Jeremy Rayner
  * @author Yuri Schimke
+ * @author Roshan Dawrani
  * @version $Revision$
  */
 public class GroovyMain {
@@ -110,7 +111,8 @@ public class GroovyMain {
                 printHelp(out, options);
             } else if (cmd.hasOption('v')) {
                 String version = GroovySystem.getVersion();
-                out.println("Groovy Version: " + version + " JVM: " + System.getProperty("java.version"));
+                out.println("Groovy Version: " + version + " JVM: " + System.getProperty("java.version") + 
+                        " Vendor: " + System.getProperty("java.vm.vendor")  + " OS: " + System.getProperty("os.name"));
             } else {
                 // If we fail, then exit with an error so scripting frameworks can catch it
                 // TODO: pass printstream(s) down through process

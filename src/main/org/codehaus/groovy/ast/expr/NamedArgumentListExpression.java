@@ -36,6 +36,7 @@ public class NamedArgumentListExpression extends MapExpression {
         Expression ret = new NamedArgumentListExpression(
             transformExpressions(getMapEntryExpressions(), transformer, MapEntryExpression.class)); 
         ret.setSourcePosition(this);
+        ret.copyNodeMetaData(this);
         return ret;        
     }
     

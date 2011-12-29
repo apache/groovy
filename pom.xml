@@ -8,7 +8,7 @@
     <name>Groovy</name>
     <packaging>jar</packaging>
     
-    <version>2.0.0-beta-2-SNAPSHOT</version>
+    <version>2.0.0-beta-3-SNAPSHOT</version>
 
     <description>
         Groovy: A powerful, dynamic language for the JVM
@@ -24,9 +24,9 @@
     <inceptionYear>2003</inceptionYear>
 
     <scm>
-        <connection>scm:svn:http://svn.groovy.codehaus.org/browse/groovy/trunk/groovy/groovy-core</connection>
-        <developerConnection>scm:svn:https://${maven.username}@svn.groovy.codehaus.org/browse/groovy/trunk/groovy/groovy-core</developerConnection>
-        <url>http://svn.groovy.codehaus.org/browse/groovy/trunk/groovy/groovy-core</url>
+        <connection>scm:git:git://git@git.codehaus.org/groovy-git.git</connection>
+        <developerConnection>scm:svn:ssh://git@git.codehaus.org/groovy-git.git</developerConnection>
+        <url>http://git.codehaus.org/gitweb.cgi?p=groovy-git.git</url>
     </scm>
 
     <mailingLists>
@@ -48,12 +48,12 @@
         <repository>
             <id>codehaus.org</id>
             <name>Groovy Central Repository</name>
-            <url>dav:https://dav.codehaus.org/repository/groovy/</url>
+            <url>dav:https://dav.codehaus.org/repository/groovy</url>
         </repository>
         <snapshotRepository>
             <id>codehaus.org</id>
             <name>Groovy Central Development Repository</name>
-            <url>dav:https://dav.codehaus.org/snapshots.repository/groovy/</url>
+            <url>dav:https://dav.codehaus.org/snapshots.repository/groovy</url>
             <uniqueVersion>false</uniqueVersion>
         </snapshotRepository>
         <!-- not currently used -->

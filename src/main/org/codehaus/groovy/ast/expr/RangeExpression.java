@@ -44,6 +44,7 @@ public class RangeExpression extends Expression {
     public Expression transformExpression(ExpressionTransformer transformer) {
         Expression ret = new RangeExpression(transformer.transform(from), transformer.transform(to), inclusive); 
         ret.setSourcePosition(this);
+        ret.copyNodeMetaData(this);
         return ret;
     }
 

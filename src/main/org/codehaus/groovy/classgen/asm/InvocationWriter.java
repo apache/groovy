@@ -426,10 +426,14 @@ public class InvocationWriter {
     }
     
     private void loadVariableWithReference(VariableExpression var) {
-        if (!var.isClosureSharedVariable()) {
+        if (!var.isUseReferenceDirectly()) {
             var.visit(controller.getAcg());
         } else {
             ClosureWriter.loadReference(var.getName(), controller);
         }
+    }
+
+    public void makeSingleArgumentCall(Expression receiver, String message, Expression arguments) {
+        controller.getCallSiteWriter().makeSingleArgumentCall(receiver, message, arguments);
     }
 }

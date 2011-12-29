@@ -18,6 +18,7 @@ package org.codehaus.groovy.transform.stc;
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.tools.GenericsUtils;
+import org.codehaus.groovy.ast.tools.WideningCategories;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 
 import java.util.*;
@@ -131,7 +132,10 @@ abstract class StaticTypeCheckingSupport {
      */
     private static Map<String, List<MethodNode>> getDGMMethods() {
         Map<String, List<MethodNode>> methods = new HashMap<String, List<MethodNode>>();
-		for (Class dgmLikeClass : DefaultGroovyMethods.DGM_LIKE_CLASSES) {
+        List<Class> classes = new LinkedList<Class>();
+        Collections.addAll(classes, DefaultGroovyMethods.DGM_LIKE_CLASSES);
+        Collections.addAll(classes, DefaultGroovyMethods.additionals);
+		for (Class dgmLikeClass : classes) {
 			ClassNode cn = ClassHelper.makeWithoutCaching(dgmLikeClass, true);
 			for (MethodNode metaMethod : cn.getMethods()) {
 				Parameter[] types = metaMethod.getParameters();
@@ -197,9 +201,10 @@ abstract class StaticTypeCheckingSupport {
         int dist = 0;
         // we already know the lengths are equal
         for (int i = 0; i < params.length; i++) {
-            if (!isAssignableTo(args[i],params[i].getType())) return -1;
+            ClassNode paramType = params[i].getType();
+            if (!isAssignableTo(args[i], paramType)) return -1;
             else {
-                if (!params[i].getType().equals(args[i])) dist++;
+                if (!paramType.equals(args[i])) dist+=getDistance(args[i], paramType);
             }
         }
         return dist;
@@ -458,6 +463,16 @@ abstract class StaticTypeCheckingSupport {
             return left==VOID_TYPE||left==void_WRAPPER_TYPE;
         }
 
+        if ((isNumberType(rightRedirect)||WideningCategories.isNumberCategory(rightRedirect))) {
+           if (BigDecimal_TYPE==leftRedirect) {
+               // any number can be assigned to a big decimal
+               return true;
+           }
+            if (BigInteger_TYPE==leftRedirect) {
+                return WideningCategories.isBigIntCategory(rightRedirect);
+            }
+        }
+        
         // if rightExpression is null and leftExpression is not a primitive type, it's ok
         boolean rightExpressionIsNull = rightExpression instanceof ConstantExpression && ((ConstantExpression) rightExpression).getValue()==null;
         if (rightExpressionIsNull && !isPrimitiveType(left)) {
@@ -515,6 +530,11 @@ abstract class StaticTypeCheckingSupport {
         // if left and right are primitives or numbers allow
         if (isPrimitiveType(leftRedirect) && isPrimitiveType(rightRedirect)) return true;
         if (isNumberType(leftRedirect) && isNumberType(rightRedirect)) return true;
+
+        // left is a float/double and right is a BigDecimal
+        if (WideningCategories.isFloatingCategory(leftRedirect) && BigDecimal_TYPE.equals(rightRedirect)) {
+            return true;
+        }
 
         return false;
     }
@@ -603,5 +623,12 @@ abstract class StaticTypeCheckingSupport {
 
     static boolean implementsInterfaceOrIsSubclassOf(ClassNode type, ClassNode superOrInterface) {
         return type.equals(superOrInterface) || type.isDerivedFrom(superOrInterface) || type.implementsInterface(superOrInterface);
+    }
+
+    static int getDistance(final ClassNode receiver, final ClassNode compare) {
+        if (receiver.equals(compare) || compare.isInterface() && receiver.implementsInterface(compare)) return 0;
+        ClassNode superClass = compare.getSuperClass();
+        if (superClass ==null) return 1;
+        return 1+getDistance(receiver, superClass);
     }
 }

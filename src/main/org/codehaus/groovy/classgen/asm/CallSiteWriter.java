@@ -244,7 +244,7 @@ public class CallSiteWriter {
         }
     }
 
-    public void makeInvocation(Expression receiver, String message, Expression arguments) {
+    public void makeSingleArgumentCall(Expression receiver, String message, Expression arguments) {
         OperandStack operandStack = controller.getOperandStack();
         int m1 = operandStack.getStackLength();
         //slow Path

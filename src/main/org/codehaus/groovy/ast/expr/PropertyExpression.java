@@ -66,6 +66,7 @@ public class PropertyExpression extends Expression {
         ret.setStatic(isStatic);
         ret.setImplicitThis(implicitThis);
         ret.setSourcePosition(this);
+        ret.copyNodeMetaData(this);
         return ret;
     }
 

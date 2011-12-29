@@ -214,6 +214,8 @@ public class DefaultTypeTransformation {
             if (aClass.isArray()) {
                 if (type.isAssignableFrom(ArrayList.class) && (Modifier.isAbstract(modifiers) || Modifier.isInterface(modifiers))) {
                     answer = new ArrayList();
+                } else if (type.isAssignableFrom(HashSet.class) && (Modifier.isAbstract(modifiers) || Modifier.isInterface(modifiers))) {
+                    answer = new HashSet();
                 } else {
                     // let's call the collections constructor
                     // passing in the list wrapper

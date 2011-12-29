@@ -101,7 +101,7 @@ class ConfigObject extends LinkedHashMap implements Writable {
      * @return The result of the merge
      */
     Map merge(ConfigObject other) {
-        return merge(this,other)
+        return doMerge(this,other)
     }
 
 
@@ -128,7 +128,7 @@ class ConfigObject extends LinkedHashMap implements Writable {
         return props
     }
 
-    private merge(Map config, Map other) {
+    private doMerge(Map config, Map other) {
         for(entry in other) {
 
             def configEntry = config[entry.key]
@@ -139,7 +139,7 @@ class ConfigObject extends LinkedHashMap implements Writable {
             else {
                 if(configEntry instanceof Map && configEntry.size() > 0 && entry.value instanceof Map) {
                     // recur
-                    merge(configEntry, entry.value)
+                    doMerge(configEntry, entry.value)
                }
                else {
                     config[entry.key] = entry.value

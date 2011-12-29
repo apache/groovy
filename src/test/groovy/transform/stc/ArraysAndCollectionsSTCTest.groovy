@@ -205,6 +205,24 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    void testForInLoopWithDefaultListType() {
+        assertScript '''
+            class A {
+                String name
+            }
+            List<A> myList = [new A(name:'Cedric'), new A(name:'Yakari')]
+            for (element in myList) {
+                element.name.toUpperCase()
+            }
+        '''
+    }
+
+    void testForInLoopWithRange() {
+        assertScript '''
+            for (int i in 1..10) { i*2 }
+        '''
+    }
+
     // GROOVY-5177
     void testShouldNotAllowArrayAssignment() {
         shouldFailWithMessages '''
@@ -217,6 +235,23 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
 
             }
         ''', 'Cannot assign value of type Foo[] to variable of type FooAnother'
+    }
+
+    void testListPlusEquals() {
+        /*assertScript '''
+            List<String> list = ['a','b']
+            list += ['c']
+            assert list == ['a','b','c']
+        '''*/
+
+        assertScript '''
+            Collection<String> list = ['a','b']
+            list += 'c'
+            assert list == ['a','b','c']
+        '''
+
+
+
     }
 
 }

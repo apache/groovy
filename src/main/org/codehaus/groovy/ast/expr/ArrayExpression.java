@@ -96,6 +96,7 @@ public class ArrayExpression extends Expression {
         if (sizeExpression != null) sizes = transformExpressions(sizeExpression, transformer);
         Expression ret = new ArrayExpression(elementType, exprList, sizes);
         ret.setSourcePosition(this);
+        ret.copyNodeMetaData(this);
         return ret;
     }
 

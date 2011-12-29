@@ -49,6 +49,7 @@ public class TernaryExpression extends Expression {
                 transformer.transform(trueExpression),
                 transformer.transform(falseExpression)); 
         ret.setSourcePosition(this);
+        ret.copyNodeMetaData(this);
         return ret; 
     }
 
