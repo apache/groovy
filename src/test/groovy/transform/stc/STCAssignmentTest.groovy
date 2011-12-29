@@ -361,7 +361,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
     void testCastNullToCharWithCast() {
         shouldFailWithMessages '''
             def c = (char) null
-        ''', 'Inconvertible types: cannot cast java.lang.Object to char'
+        ''', 'Inconvertible types: cannot cast null to char'
     }
 
     void testCastStringToCharacterWithCast() {
@@ -379,6 +379,16 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
     void testCastNullToCharacterWithCast() {
         assertScript '''
             def c = (Character) null
+        '''
+    }
+    
+    void testCastObjectToSubclass() {
+        assertScript '''
+            Object o = null
+            try {
+                ((Integer)o).intValue()
+            } catch (NullPointerException e) {
+            }
         '''
     }
 

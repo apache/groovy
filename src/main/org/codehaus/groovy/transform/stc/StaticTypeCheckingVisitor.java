@@ -1156,7 +1156,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 // ex: short s = (short) 0
             } else if (sourceIsNull && !isPrimitiveType(targetType)) {
                 // ex: (Date)null
-            } else if (!isAssignableTo(expressionType, targetType)) {
+            } else if (sourceIsNull && isPrimitiveType(targetType)) {
+                addStaticTypeError("Inconvertible types: cannot cast null to "+targetType.getName(), expression);
+            } else if (!isAssignableTo(targetType, expressionType) && !implementsInterfaceOrIsSubclassOf(expressionType,targetType)) {
                 addStaticTypeError("Inconvertible types: cannot cast "+expressionType.getName()+" to "+targetType.getName(), expression);
             }
         }
