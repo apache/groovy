@@ -51,7 +51,6 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
     public void visitClass(final ClassNode node) {
         super.visitClass(node);
         if (isStaticallyCompiled(node)) {
-            System.out.println("Setting static compilation class node metadata for "+node.getName());
             node.putNodeMetaData(STATIC_COMPILE_NODE, Boolean.TRUE);
             Iterator<MethodNode> it = node.getMethods().iterator();
             while (it.hasNext()) {

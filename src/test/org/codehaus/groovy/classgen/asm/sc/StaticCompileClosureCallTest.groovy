@@ -58,4 +58,43 @@ class StaticCompileClosureCallTest extends AbstractBytecodeTestCase {
         clazz.newInstance().run()
     }
 
+    void testStaticCompilationOfClosures() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            class A {
+              final static int VAL = 333
+              void m() {
+                 def cl = { println 'Hello' }
+                 cl()
+              }
+              String mString() {
+                 def cl = { 'Hello' }
+                 cl()
+              }
+              int mInt() {
+                 def cl = { 666 }
+                 cl()
+              }
+              int mEmbedInt() {
+                  def cl = {
+                      def cl2 = { 666 }
+                      cl2()
+                  }
+                  cl()
+              }
+              int mConst() {
+                  def cl = { VAL }
+                  cl()
+              }
+            }
+
+            def a = new A()
+            a.m()
+            assert a.mString() == 'Hello'
+            assert a.mInt()==666
+            assert a.mEmbedInt() == 666
+            assert a.mConst() == 333
+        '''
+    }
+
 }

@@ -15,6 +15,7 @@
  */
 package org.codehaus.groovy.classgen.asm.sc;
 
+import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.MethodNode;
@@ -43,6 +44,7 @@ public class StaticTypesWriterController extends DelegatingController {
     private StaticTypesTypeChooser typeChooser;
     private StaticInvocationWriter invocationWriter;
     private BinaryExpressionMultiTypeDispatcher binaryExprHelper;
+    private ClosureWriter closureWriter;
 
     public StaticTypesWriterController(WriterController normalController) {
         super(normalController);
@@ -57,6 +59,7 @@ public class StaticTypesWriterController extends DelegatingController {
         this.typeChooser = new StaticTypesTypeChooser();
         this.invocationWriter = new StaticInvocationWriter(this);
         this.binaryExprHelper = new StaticTypesBinaryExpressionMultiTypeDispatcher(this);
+        this.closureWriter = new ClosureWriter(this);
     }
 
     @Override
@@ -66,16 +69,19 @@ public class StaticTypesWriterController extends DelegatingController {
     }
 
     private void updateStaticCompileFlag(final MethodNode mn) {
-        ClassNode classNode = mn!=null?mn.getDeclaringClass():null;
+        ClassNode classNode = getClassNode();
+        if (classNode.implementsInterface(ClassHelper.GENERATED_CLOSURE_Type)) {
+            classNode = classNode.getOuterClass();
+        }
         isInStaticallyCheckedMethod = mn != null && (
                 !mn.getAnnotations(COMPILE_STATIC_ANNOTATION).isEmpty() ||
                         !classNode.getAnnotations(COMPILE_STATIC_ANNOTATION).isEmpty() ||
                         classNode.getNodeMetaData(STATIC_COMPILE_NODE) != null);
-        if (isInStaticallyCheckedMethod) {
+/*        if (isInStaticallyCheckedMethod) {
             System.out.println("Entering statically compiled method: "+mn.getDeclaringClass()+"#"+mn);
         } else if (mn!=null) {
             System.out.println("Entering dynamically compiled method: "+mn.getDeclaringClass()+"#"+mn);
-        }
+        }*/
     }
 
     @Override
@@ -98,7 +104,7 @@ public class StaticTypesWriterController extends DelegatingController {
             return super.getCallSiteWriter();
         }
     }
-        
+
     @Override
     public StatementWriter getStatementWriter() {
         if (isInStaticallyCheckedMethod) {
@@ -133,5 +139,13 @@ public class StaticTypesWriterController extends DelegatingController {
         } else {
             return super.getBinaryExpHelper();
         }
+    }
+
+    @Override
+    public ClosureWriter getClosureWriter() {
+        if (isInStaticallyCheckedMethod) {
+            return closureWriter;
+        }
+        return super.getClosureWriter();
     }
 }

@@ -30,7 +30,7 @@ import static org.codehaus.groovy.syntax.Types.*;
 /**
  * Static support methods for {@link StaticTypeCheckingVisitor}.
  */
-abstract class StaticTypeCheckingSupport {
+public abstract class StaticTypeCheckingSupport {
     final static Map<String, List<MethodNode>> VIRTUAL_DGM_METHODS = getDGMMethods();
     final static ClassNode
             Collection_TYPE = makeWithoutCaching(Collection.class);
@@ -197,7 +197,7 @@ abstract class StaticTypeCheckingSupport {
      * @return -1 if arguments do not match, 0 if arguments are of the exact type and >0 when one or more argument is
      * not of the exact type but still match
      */
-    static int allParametersAndArgumentsMatch(Parameter[] params, ClassNode[] args) {
+    public static int allParametersAndArgumentsMatch(Parameter[] params, ClassNode[] args) {
         if (params==null) return args.length==0?0:-1;
         int dist = 0;
         // we already know the lengths are equal

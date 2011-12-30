@@ -34,6 +34,7 @@ import org.codehaus.groovy.reflection.ClassInfo;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -666,6 +667,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         addDefaultParameters(methods, new DefaultArgsAction() {
             public void call(ArgumentListExpression arguments, Parameter[] newParams, MethodNode method) {
                 MethodCallExpression expression = new MethodCallExpression(VariableExpression.THIS_EXPRESSION, method.getName(), arguments);
+                expression.setMethodTarget(method);
                 expression.setImplicitThis(true);
                 Statement code = null;
                 if (method.isVoidMethod()) {
