@@ -7,6 +7,5 @@ repositories {
 
 dependencies {
     groovy project(':')
-    compile project(':')
-    testCompile project(':subprojects:groovy-test')
+    compile "junit:junit:4.10"
 }

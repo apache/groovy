@@ -2,8 +2,10 @@ apply plugin: 'groovy'
 apply plugin: 'idea'
 apply plugin: 'code-quality'
 
-group = 'org.codehaus.groovy'
-version = groovyVersion
+allprojects {
+    group = 'org.codehaus.groovy'
+    version = groovyVersion
+}
 
 sourceCompatibility = 1.5
 targetCompatibility = 1.5
@@ -15,8 +17,8 @@ buildDir = 'target'
 
 repositories {
     // todo Some repos are needed only for some configs. Declare them just for the configuration once Gradle allows this.
-    mavenRepo url: "http://repo2.maven.org/maven2" // default, tools
-    mavenRepo url: "http://www.aQute.biz/repo" // examples
+    mavenCentral() // default, tools
+    mavenRepo url: "http://www.aQute.biz/repo" // tools
     mavenRepo url: "http://repository.jboss.org/maven2" // examples, tools
 }
 
@@ -37,7 +39,6 @@ dependencies {
     groovy "asm:asm-analysis:3.3.1"
     groovy "asm:asm-tree:3.3.1"
 
-    compile "junit:junit:4.10"
     compile "commons-cli:commons-cli:1.2"
     compile "org.apache.ant:ant:1.8.2"
     compile "javax.servlet:servlet-api:2.4"
@@ -104,6 +105,11 @@ dependencies {
     }
 
     antlr "org.apache.ant:ant-antlr:1.8.2"
+
+    testCompile project(':subprojects:groovy-test')
+    testCompile project(':subprojects:groovy-jsr223')
+    testCompile project(':subprojects:groovy-bsf')
+    testCompile project(':subprojects:groovy-jmx')
 }
 
 sourceSets {

@@ -1,4 +1,4 @@
-package groovy.util
+
 
 /**
     Testing the notYetImplemented feature of GroovyTestCase.

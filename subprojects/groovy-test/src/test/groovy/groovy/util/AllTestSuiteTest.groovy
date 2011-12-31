@@ -1,7 +1,6 @@
 package groovy.util
 
 import java.util.logging.Level
-import junit.framework.Test
 
 /**
     Testing groovy.util.AllTestSuite.

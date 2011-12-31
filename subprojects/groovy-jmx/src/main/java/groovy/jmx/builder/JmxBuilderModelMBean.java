@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 the original author or authors.
+ * Copyright 2008-2011 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -67,13 +67,13 @@ public class JmxBuilderModelMBean extends RequiredModelMBean implements Notifica
      *
      * @param descriptor MetaMap descriptor containing description of operation call listeners
      */
-    public void addOperationCallListeners(Map<String, Map> descriptor) {
+    public void addOperationCallListeners(Map<String, Map<String, Map<String, Object>>> descriptor) {
         if (descriptor == null) return;
-        for (Map.Entry<String, Map> item : descriptor.entrySet()) {
+        for (Map.Entry<String, Map<String, Map<String, Object>>> item : descriptor.entrySet()) {
             // set up method listeners (such as attributeListener and Operation Listeners)
             // item -> [Map[methodListener:[target:"", tpe:"", callback:&Closure], ... ,]]
             if (item.getValue().containsKey("methodListener")) {
-                Map listener = (Map) item.getValue().get("methodListener");
+                Map<String, Object> listener = item.getValue().get("methodListener");
                 String target = (String) listener.get("target");
                 methodListeners.add(target);
                 String listenerType = (String) listener.get("type");
@@ -105,8 +105,8 @@ public class JmxBuilderModelMBean extends RequiredModelMBean implements Notifica
      * @param server     the MBeanServer is to be registered.
      * @param descriptor a map containing info about the event
      */
-    public void addEventListeners(MBeanServer server, Map<String, Map> descriptor) {
-        for (Map.Entry<String, Map> item : descriptor.entrySet()) {
+    public void addEventListeners(MBeanServer server, Map<String, Map<String, Object>> descriptor) {
+        for (Map.Entry<String, Map<String, Object>> item : descriptor.entrySet()) {
             Map<String, Object> listener = item.getValue();
 
             // register with server
@@ -175,7 +175,7 @@ public class JmxBuilderModelMBean extends RequiredModelMBean implements Notifica
         /**
          * Returns an instance of the AttributeChangedListener.
          *
-         * @return
+         * @return the listener
          */
         public static synchronized AttributeChangedListener getListener() {
             if (listener == null) {

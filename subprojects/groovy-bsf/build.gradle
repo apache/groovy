@@ -10,4 +10,5 @@ dependencies {
         exclude(group: 'commons-logging', module: 'commons-logging')
     }
     compile project(':')
+    testCompile project(':subprojects:groovy-test')
 }
