@@ -25,11 +25,15 @@ $Date: 2007-03-11 19:14:07 +1000 (Sun, 11 Mar 2007) $
     <property name="wikiPdfDirectory" value="src"/>
     <property name="mainSourceDirectory" location="${sourceDirectory}/main"/>
     <property name="testSourceDirectory" value="${sourceDirectory}/test"/>
+
     <!-- TODO temp hack - remove once modules are in place -->
-    <property name="jmxSourceDirectory" location="subprojects/groovy-jmx/src"/>
     <property name="bsfSourceDirectory" location="subprojects/groovy-bsf/src"/>
-    <property name="mainSourcePath" value="${sourceDirectory}/main:${jmxSourceDirectory}/main/java:${jmxSourceDirectory}/main/groovy:${bsfSourceDirectory}/main/java"/>
-    <property name="testSourcePath" value="${sourceDirectory}/test:${jmxSourceDirectory}/test/java:${jmxSourceDirectory}/test/groovy:${bsfSourceDirectory}/test/java"/>
+    <property name="jmxSourceDirectory" location="subprojects/groovy-jmx/src"/>
+    <property name="jsr223SourceDirectory" location="subprojects/groovy-jsr223/src"/>
+    <property name="groovyTestSourceDirectory" location="subprojects/groovy-test/src"/>
+    <property name="mainSourcePath" value="${sourceDirectory}/main:${bsfSourceDirectory}/main/java:${jmxSourceDirectory}/main/java:${jmxSourceDirectory}/main/groovy:${jsr223SourceDirectory}/main/java:${groovyTestSourceDirectory}/main/java:${groovyTestSourceDirectory}/main/groovy"/>
+    <property name="testSourcePath" value="${sourceDirectory}/test:${bsfSourceDirectory}/test/java:${jmxSourceDirectory}/test/java:${jmxSourceDirectory}/test/groovy:${jsr223SourceDirectory}/test/java:${jsr223SourceDirectory}/test/groovy:${groovyTestSourceDirectory}/test/groovy"/>
+
     <property name="toolsSourceDirectory" location="${sourceDirectory}/tools"/>
     <property name="examplesSourceDirectory" location="${sourceDirectory}/examples"/>
     

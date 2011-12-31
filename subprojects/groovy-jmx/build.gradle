@@ -1,0 +1,12 @@
+apply plugin: 'groovy'
+apply plugin: 'code-quality'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    groovy project(':')
+    compile project(':')
+    testCompile project(':subprojects:groovy-test')
+}

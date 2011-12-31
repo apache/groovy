@@ -1,6 +1,7 @@
 project.pomConfigureClosure = {
     // todo The maven pom builder is not fully compatible with the 2.x Maven model shipped with Gradle. As soon as we update
     // to Maven 3 we can also add the distribution management in builder notation
+/*
     model.distributionManagement = configure(new org.apache.maven.model.DistributionManagement()) {
         repository = configure(new org.apache.maven.model.DeploymentRepository()) {
             id = 'codehaus.org'
@@ -18,7 +19,7 @@ project.pomConfigureClosure = {
             url = 'dav:https://dav.codehaus.org/groovy'
         }
     }
-
+*/
     project {
         modelVersion '4.0.0'
         groupId 'org.codehaus.groovy'
