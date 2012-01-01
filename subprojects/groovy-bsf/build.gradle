@@ -1,6 +1,9 @@
 apply plugin: 'java'
 apply plugin: 'code-quality'
 
+// TODO set these using subprojects?
+checkstyleConfigFileName = "../../config/checkstyle/checkstyle.xml"
+
 repositories {
     mavenCentral()
 }

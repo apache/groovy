@@ -1,10 +1,14 @@
 apply plugin: 'groovy'
 apply plugin: 'idea'
 apply plugin: 'code-quality'
+// TODO use antlr plugin
+//apply plugin: 'antlr'
 
-allprojects {
+allprojects { p ->
     group = 'org.codehaus.groovy'
     version = groovyVersion
+    tasks.withType(Checkstyle).all { t -> t.ignoreFailures = true }
+    tasks.withType(CodeNarc).all { t -> t.ignoreFailures = true }
 }
 
 sourceCompatibility = 1.5
@@ -31,6 +35,8 @@ configurations {
 }
 
 dependencies {
+// TODO use antlr plugin
+//    antlr "antlr:antlr:2.7.7"
     groovy files("$buildDir/classes")
     groovy "asm:asm:3.3.1"
     groovy "antlr:antlr:2.7.7"

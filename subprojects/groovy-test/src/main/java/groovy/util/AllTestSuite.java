@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,14 +19,14 @@ package groovy.util;
 import groovy.lang.GroovyClassLoader;
 import groovy.lang.Script;
 import junit.framework.Test;
+import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.runtime.ScriptTestAdapter;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Collection;
-import java.util.Iterator;
+import java.util.List;
 import java.util.logging.Logger;
 
 /**
@@ -37,24 +37,28 @@ import java.util.logging.Logger;
  * The files are assumed to be Groovy source files and be either a TestCase or a Script that can
  * be wrapped transparently into a TestCase.
  * The directory and the pattern can be set via System properties (see this classes' constants for details.)
- *
+ * <p/>
  * When setting the loglevel of this class to FINEST, all file loading will be logged.
- *
+ * <p/>
  * See also groovy.util.AllTestSuiteTest.groovy
- * @author Dierk Koenig based on a prototype by Andrew Glover
+ *
+ * @author Andrew Glover
+ * @author Dierk Koenig
  * @author Paul King
- * todo: dk: make FileNameFinder injectable
+ *         todo: dk: make FileNameFinder injectable
  */
 public class AllTestSuite extends TestSuite {
 
-    /** The System Property to set as base directory for collection of Test Cases.
+    /**
+     * The System Property to set as base directory for collection of Test Cases.
      * The pattern will be used as an Ant fileset include basedir.
      * Key is "groovy.test.dir".
      * Default value is "./test/".
      */
     public static final String SYSPROP_TEST_DIR = "groovy.test.dir";
 
-    /** The System Property to set as the filename pattern for collection of Test Cases.
+    /**
+     * The System Property to set as the filename pattern for collection of Test Cases.
      * The pattern will be used as Regular Expression pattern applied with the find
      * operator against each candidate file.path.
      * Key is "groovy.test.pattern".
@@ -62,7 +66,8 @@ public class AllTestSuite extends TestSuite {
      */
     public static final String SYSPROP_TEST_PATTERN = "groovy.test.pattern";
 
-    /** The System Property to set as a filename excludes pattern for collection of Test Cases.
+    /**
+     * The System Property to set as a filename excludes pattern for collection of Test Cases.
      * When non-empty, the pattern will be used as Regular Expression pattern applied with the
      * find operator against each candidate file.path.
      * Key is "groovy.test.excludesPattern".
@@ -90,8 +95,8 @@ public class AllTestSuite extends TestSuite {
         String basedir = System.getProperty(SYSPROP_TEST_DIR, "./test/");
         String pattern = System.getProperty(SYSPROP_TEST_PATTERN, "**/*Test.groovy");
         String excludesPattern = System.getProperty(SYSPROP_TEST_EXCLUDES_PATTERN, "");
-        return suite(basedir, pattern);
-    }    
+        return suite(basedir, pattern, excludesPattern);
+    }
 
     public static Test suite(String basedir, String pattern) {
         return suite(basedir, pattern, "");
@@ -99,35 +104,36 @@ public class AllTestSuite extends TestSuite {
 
     public static Test suite(String basedir, String pattern, String excludesPattern) {
         AllTestSuite suite = new AllTestSuite();
-        String fileName = "";
-        try {
-            Collection filenames = excludesPattern.length() > 0
-                    ? finder.getFileNames(basedir, pattern, excludesPattern)
-                    : finder.getFileNames(basedir, pattern);
-            for (Iterator iter = filenames.iterator(); iter.hasNext();) {
-                fileName = (String) iter.next();
-                LOG.finest("trying to load "+ fileName);
-                suite.loadTest(fileName);
+        List<String> filenames = excludesPattern.length() > 0
+                ? finder.getFileNames(basedir, pattern, excludesPattern)
+                : finder.getFileNames(basedir, pattern);
+        for (String filename : filenames) {
+            LOG.finest("trying to load " + filename);
+            try {
+                suite.loadTest(filename);
+            } catch (CompilationFailedException cfe) {
+                cfe.printStackTrace();
+                throw new RuntimeException("CompilationFailedException when loading " + filename, cfe);
+            } catch (IOException ioe) {
+                throw new RuntimeException("IOException when loading " + filename, ioe);
             }
-        } catch (CompilationFailedException e1) {
-            e1.printStackTrace();
-            throw new RuntimeException("CompilationFailedException when loading "+fileName, e1);
-        } catch (IOException e2) {
-            throw new RuntimeException("IOException when loading "+fileName, e2);
         }
         return suite;
     }
 
-    protected void loadTest(String fileName) throws CompilationFailedException, IOException {
-        Class type = compile(fileName);
-        if (!Test.class.isAssignableFrom(type) && Script.class.isAssignableFrom(type)) {
+    @SuppressWarnings("unchecked")
+    protected void loadTest(String filename) throws CompilationFailedException, IOException {
+        Class type = compile(filename);
+        if (TestCase.class.isAssignableFrom(type)) {
+            addTestSuite((Class<? extends TestCase>)type);
+        } else if (Script.class.isAssignableFrom(type)) {
             addTest(new ScriptTestAdapter(type, EMPTY_ARGS));
         } else {
-            addTestSuite(type);
+            throw new RuntimeException("Don't know how to treat " + filename + " as a JUnit test");
         }
     }
 
-    protected Class compile(String fileName) throws CompilationFailedException, IOException {
-        return GROOVY_LOADER.parseClass(new File(fileName));
+    protected Class compile(String filename) throws CompilationFailedException, IOException {
+        return GROOVY_LOADER.parseClass(new File(filename));
     }
 }
