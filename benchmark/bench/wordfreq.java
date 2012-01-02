@@ -1,8 +1,9 @@
-/* The Great Computer Language Shootout 
-   http://shootout.alioth.debian.org/
-
-   contributed by James McIlree
-*/
+/*
+ * The Great Computer Language Shootout
+ * http://shootout.alioth.debian.org/
+ *
+ * contributed by James McIlree
+ */
 
 import java.io.*;
 import java.util.*;
@@ -47,7 +48,7 @@ public class wordfreq {
     String[] padding = { "error!", " ", "  ", "   ", "    ", "     ", "      ", "error!" };
     StringBuffer output = new StringBuffer();
     Iterator it = list.iterator();
-    while(it.hasNext()) {
+    while (it.hasNext()) {
       Map.Entry entry = (Map.Entry)it.next();
       String word = (String)entry.getKey();
       String count = String.valueOf(((Counter)entry.getValue()).count);

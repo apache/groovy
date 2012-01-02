@@ -1,7 +1,9 @@
-/* The Computer Language Benchmarks Game
-   http://shootout.alioth.debian.org/
-   contributed by Brian Schlining
-*/
+/*
+ * The Computer Language Benchmarks Game
+ * http://shootout.alioth.debian.org/
+ *
+ * contributed by Brian Schlining
+ */
 
 def n = 7
 if (args.length > 0) {
@@ -9,7 +11,6 @@ if (args.length > 0) {
 }
 println("Pfannkuchen(" + n + ") = " + fannkuch(n))
 
-    
 def fannkuch(int n) {
     int check = 0
     int[] perm = new int[n]
@@ -36,7 +37,7 @@ def fannkuch(int n) {
 
         while (r != 1) { 
             count[r - 1] = r
-            r-- 
+            r--
         }
         if (!(perm1[0] == 0 || perm1[m] == m)) {
             for (i in 0..<n) {

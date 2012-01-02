@@ -1,11 +1,8 @@
 /*
-	The Computer Language Shootout
-	http://shootout.alioth.debian.org/
+ * The Computer Language Shootout
+ * http://shootout.alioth.debian.org/
+ *
+ * contributed by Jochen Hinrichsen
+ */
 
-	contributed by Jochen Hinrichsen
-*/
-
-println "hello world"
-
-// EOF
-
+println 'hello world'
