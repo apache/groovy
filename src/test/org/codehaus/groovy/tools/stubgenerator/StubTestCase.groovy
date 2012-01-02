@@ -123,7 +123,7 @@ abstract class StubTestCase extends GroovyTestCase {
         // TODO following works for gradle build - find something that works for both
 //        return new File("target/resources/test/stubgenerator/${folder}")
         def testDirectory = new File(StubTestCase.class.classLoader.getResource('.').toURI())
-        return new File(testDirectory, "../../resources/test/stubgenerator/${folder}")
+        return new File(testDirectory, "../../src/test-resources/stubgenerator/${folder}")
     }
 
     /**
