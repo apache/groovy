@@ -1,4 +1,4 @@
-package swing.binding.caricature
+package groovy.swing.binding.caricature
 
 import groovy.swing.SwingBuilder
 import java.awt.Color

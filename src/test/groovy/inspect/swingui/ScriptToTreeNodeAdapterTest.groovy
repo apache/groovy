@@ -18,6 +18,8 @@ package groovy.inspect.swingui
 import org.codehaus.groovy.control.Phases
 import javax.swing.tree.TreeNode
 import junit.framework.AssertionFailedError
+import inspect.swingui.swingui.SwingTreeNodeMaker
+import inspect.swingui.swingui.ScriptToTreeNodeAdapter
 
 /**
  * Unit test for ScriptToTreeNodeAdapter.

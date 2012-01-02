@@ -1,1 +1,3 @@
-include 'subprojects:groovy-bsf', 'subprojects:groovy-jmx', 'subprojects:groovy-jsr223', 'subprojects:groovy-test'
+include 'subprojects:groovy-bsf', 'subprojects:groovy-console', 'subprojects:groovy-jmx',
+        'subprojects:groovy-jsr223', 'subprojects:groovy-shell', 'subprojects:groovy-swing',
+        'subprojects:groovy-test'

@@ -1,4 +1,4 @@
-package swing.timelog
+package groovy.swing.timelog
 
 import groovy.beans.Bindable
 
