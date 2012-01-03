@@ -4,7 +4,7 @@
  * Date: Apr 26, 2008
  * Time: 8:32:03 AM
  */
-package swing.greet
+package groovy.swing.greet
 
 import groovy.beans.Bindable
 import groovy.swing.SwingBuilder

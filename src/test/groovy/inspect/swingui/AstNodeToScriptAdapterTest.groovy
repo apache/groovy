@@ -20,6 +20,8 @@ import org.codehaus.groovy.ast.stmt.BlockStatement
 import org.codehaus.groovy.ast.stmt.DoWhileStatement
 import org.codehaus.groovy.control.CompilePhase
 import org.codehaus.groovy.ast.expr.*
+import inspect.swingui.swingui.AstNodeToScriptVisitor
+import inspect.swingui.swingui.AstNodeToScriptAdapter
 
 /**
  * Unit test for ScriptToTreeNodeAdapter.

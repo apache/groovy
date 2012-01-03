@@ -1,0 +1,20 @@
+apply plugin: 'groovy'
+apply plugin: 'code-quality'
+
+// TODO set these using subprojects?
+checkstyleConfigFileName = "../../config/checkstyle/checkstyle.xml"
+codeNarcConfigFileName = "../../config/codenarc/codenarc.groovy"
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile project(':')
+    groovy project(':')
+    compile project(':subprojects:groovy-swing')
+    testCompile project(':subprojects:groovy-test')
+}
+
+// Required for MessageSourceTest
+sourceSets.test.runtimeClasspath += files(sourceSets.test.groovy.srcDirs)
