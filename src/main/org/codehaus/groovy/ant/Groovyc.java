@@ -124,6 +124,7 @@ public class Groovyc extends MatchingTask {
     private List<File> temporaryFiles = new ArrayList<File>(2);
     private File stubDir;
     private boolean keepStubs;
+    private boolean useIndy;
 
     private Set<String> scriptExtensions = new LinkedHashSet<String>();
 
@@ -1062,5 +1063,21 @@ public class Groovyc extends MatchingTask {
             }
             scriptExtensions.addAll(SourceExtensionHandler.getRegisteredExtensions(loader));
         }
+    }
+    
+    /**
+     * Set the indy flag.
+     * @param useIndy the indy flag
+     */
+    public void setIndy(boolean useIndy){
+        this.useIndy = useIndy;
+    }
+    
+    /**
+     * Get the value of the indy flag.
+     * @return if to use indy
+     */
+    public boolean getIndy() {
+        return this.useIndy;
     }
 }
