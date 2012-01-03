@@ -31,7 +31,6 @@ import org.codehaus.groovy.runtime.dgmimpl.NumberNumberMinus;
 import org.codehaus.groovy.runtime.dgmimpl.NumberNumberMultiply;
 import org.codehaus.groovy.runtime.dgmimpl.NumberNumberPlus;
 import org.codehaus.groovy.runtime.dgmimpl.arrays.*;
-import org.codehaus.groovy.runtime.metaclass.ClosureMetaClass;
 import org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl;
 import org.codehaus.groovy.runtime.metaclass.MissingPropertyExceptionNoStack;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
@@ -133,9 +132,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     public static final Class[] DGM_LIKE_CLASSES = new Class[]{
             DefaultGroovyMethods.class,
-            // TODO provide alternative way for this to be registered
+            // TODO provide alternative way for these to be registered
             //SwingGroovyMethods.class,
-            SqlGroovyMethods.class,
+//            SqlGroovyMethods.class,
             XmlGroovyMethods.class,
             EncodingGroovyMethods.class,
             DateGroovyMethods.class,

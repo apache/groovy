@@ -72,7 +72,6 @@ dependencies {
     testCompile "jmock:jmock:1.2.0"
     testCompile "jmock:jmock-cglib:1.2.0"
     testCompile "xmlunit:xmlunit:1.3"
-    testCompile "hsqldb:hsqldb:1.8.0.10"
     testCompile "ch.qos.logback:logback-classic:0.9.21"
     testCompile "log4j:log4j:1.2.16"
     testCompile "org.slf4j:jcl-over-slf4j:1.6.0"
@@ -112,10 +111,11 @@ dependencies {
 
     antlr "org.apache.ant:ant-antlr:1.8.2"
 
-    testCompile project(':subprojects:groovy-test')
-    testCompile project(':subprojects:groovy-jsr223')
     testCompile project(':subprojects:groovy-bsf')
+    testCompile project(':subprojects:groovy-jsr223')
     testCompile project(':subprojects:groovy-jmx')
+    testCompile project(':subprojects:groovy-sql')
+    testCompile project(':subprojects:groovy-test')
 }
 
 sourceSets {

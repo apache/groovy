@@ -12,9 +12,9 @@ repositories {
 dependencies {
     compile project(':')
     groovy project(':')
-    compile project(':subprojects:groovy-swing')
+    testCompile "hsqldb:hsqldb:1.8.0.10"
     testCompile project(':subprojects:groovy-test')
 }
 
-// Required for MessageSourceTest
-sourceSets.test.runtimeClasspath += files(sourceSets.test.groovy.srcDirs)
+// required for DataSet tests
+sourceSets.test.runtimeClasspath += files('src/test/groovy')
