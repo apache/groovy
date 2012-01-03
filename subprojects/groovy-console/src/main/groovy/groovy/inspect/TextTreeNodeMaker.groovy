@@ -21,7 +21,7 @@
  */
 package groovy.inspect
 
-import inspect.swingui.swingui.AstBrowserNodeMaker
+import groovy.inspect.swingui.AstBrowserNodeMaker
 
 class TextTreeNodeMaker implements AstBrowserNodeMaker<TextNode> {
     TextNode makeNode(Object userObject) {

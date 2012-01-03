@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,9 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package groovy.inspect.swingui;
 
-
-package inspect.swingui.swingui;
+import javax.swing.event.TableModelEvent;
+import javax.swing.event.TableModelListener;
+import javax.swing.table.AbstractTableModel;
+import javax.swing.table.TableModel;
 
 /**
  * In a chain of data manipulators some behaviour is common. TableMap
@@ -27,21 +30,16 @@ package inspect.swingui.swingui;
  * should have no effect.
  *
  * @version 1.11 01/23/03
- * @author Philip Milne */
-
-import javax.swing.table.*;
-import javax.swing.event.TableModelListener;
-import javax.swing.event.TableModelEvent;
-
-public class TableMap extends AbstractTableModel implements TableModelListener
-{
+ * @author Philip Milne
+ */
+public class TableMap extends AbstractTableModel implements TableModelListener {
     protected TableModel model;
 
-    public TableModel  getModel() {
+    public TableModel getModel() {
         return model;
     }
 
-    public void  setModel(TableModel model) {
+    public void setModel(TableModel model) {
         this.model = model;
         model.addTableModelListener(this);
     }
@@ -74,7 +72,7 @@ public class TableMap extends AbstractTableModel implements TableModelListener
     }
 
     public boolean isCellEditable(int row, int column) {
-         return model.isCellEditable(row, column);
+        return model.isCellEditable(row, column);
     }
 //
 // Implementation of the TableModelListener interface,

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package inspect.swingui.swingui
+package groovy.inspect.swingui
 
 import groovy.swing.SwingBuilder
 import java.awt.Cursor
@@ -336,7 +336,7 @@ public class AstBrowser {
         swing.doOutside {
             try {
                 def nodeMaker = new SwingTreeNodeMaker()
-                def adapter = new inspect.swingui.swingui.ScriptToTreeNodeAdapter(classLoader, showScriptFreeForm, showScriptClass, nodeMaker)
+                def adapter = new ScriptToTreeNodeAdapter(classLoader, showScriptFreeForm, showScriptClass, nodeMaker)
                 classLoader.clearBytecodeTable()
                 def result = adapter.compile(script, compilePhase)
                 swing.doLater {

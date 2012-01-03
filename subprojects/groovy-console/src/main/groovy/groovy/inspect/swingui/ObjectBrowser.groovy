@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package inspect.swingui.swingui
+package groovy.inspect.swingui
 
 import java.awt.*
 import javax.swing.*

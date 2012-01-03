@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package inspect.swingui.swingui;
+package groovy.inspect.swingui;
 
 /**
  * A sorter for TableModels. The sorter has a model (conforming to TableModel)

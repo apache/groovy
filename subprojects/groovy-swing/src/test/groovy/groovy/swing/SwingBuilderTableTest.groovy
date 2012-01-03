@@ -20,7 +20,7 @@ import groovy.model.DefaultTableColumn
 import groovy.model.DefaultTableModel
 import groovy.model.PropertyModel
 import groovy.model.ValueHolder
-import inspect.swingui.swingui.TableSorter
+import groovy.inspect.swingui.TableSorter
 
 class SwingBuilderTableTest extends GroovySwingTestCase {
 

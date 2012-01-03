@@ -15,8 +15,8 @@
  */
 package groovy.ui
 
-import inspect.swingui.swingui.ObjectBrowser
-import inspect.swingui.swingui.AstBrowser
+import groovy.inspect.swingui.ObjectBrowser
+import groovy.inspect.swingui.AstBrowser
 import groovy.swing.SwingBuilder
 import groovy.ui.text.FindReplaceUtility
 

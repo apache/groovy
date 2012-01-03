@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package inspect.swingui.swingui
+package groovy.inspect.swingui
 
 import groovy.text.GStringTemplateEngine
 import groovy.text.Template

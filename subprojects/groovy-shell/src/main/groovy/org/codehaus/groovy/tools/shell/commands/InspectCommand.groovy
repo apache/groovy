@@ -16,7 +16,7 @@
 
 package org.codehaus.groovy.tools.shell.commands
 
-import inspect.swingui.swingui.ObjectBrowser
+import groovy.inspect.swingui.ObjectBrowser
 
 import java.awt.HeadlessException
 import javax.swing.UIManager
