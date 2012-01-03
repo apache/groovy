@@ -279,6 +279,151 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    void testMethodCallArgumentUsingInstanceOf() {
+        assertScript '''
+            void foo(String str) { 'String' }
+            def o
+            if (o instanceof String) {
+                foo(o)
+            }
+        '''
+    }
+
+
+    void testShouldFindStaticMethod() {
+        assertScript '''
+                static String foo(String s) {
+                    'String'
+                }
+                foo('String')
+            '''
+    }
+
+    void testShouldFailWithNoMatchingMethod() {
+        shouldFailWithMessages '''
+                static String foo(String s) {
+                    'String'
+                }
+                static String foo(Integer s) {
+                    'Integer'
+                }
+                static String foo(Boolean s) {
+                    'Boolean'
+                }
+                ['foo',123,true].each { foo(it) }
+            ''', 'Cannot find matching method'
+    }
+
+    void testShouldNotFailThanksToInstanceOfChecks() {
+        assertScript '''
+                static String foo(String s) {
+                    'String'
+                }
+                static String foo(Integer s) {
+                    'Integer'
+                }
+                static String foo(Boolean s) {
+                    'Boolean'
+                }
+                ['foo',123,true].each {
+                    if (it instanceof String) {
+                        foo((String)it)
+                    } else if (it instanceof Boolean) {
+                        foo((Boolean)it)
+                    } else if (it instanceof Integer) {
+                        foo((Integer)it)
+                    }
+                }
+            '''
+    }
+
+    void testShouldNotFailThanksToInstanceOfChecksAndWithoutExplicitCasts() {
+        assertScript '''
+                static String foo(String s) {
+                    'String'
+                }
+                static String foo(Integer s) {
+                    'Integer'
+                }
+                static String foo(Boolean s) {
+                    'Boolean'
+                }
+                ['foo',123,true].each {
+                    if (it instanceof String) {
+                        foo(it)
+                    } else if (it instanceof Boolean) {
+                        foo(it)
+                    } else if (it instanceof Integer) {
+                        foo(it)
+                    }
+                }
+            '''
+    }
+
+    void testShouldFailWithMultiplePossibleMethods() {
+        shouldFailWithMessages '''
+                static String foo(String s) {
+                    'String'
+                }
+                static String foo(Integer s) {
+                    'Integer'
+                }
+                static String foo(Boolean s) {
+                    'Boolean'
+                }
+                ['foo',123,true].each {
+                    if (it instanceof String || it instanceof Boolean || it instanceof Integer) {
+                        foo(it)
+                    }
+                }
+            ''', 'Reference to method is ambiguous'
+    }
+
+    void testShouldFailBecauseVariableIsReassigned() {
+        shouldFailWithMessages '''
+                static String foo(String s) {
+                    'String'
+                }
+                def it
+                if (it instanceof String) {
+                    it = new Date()
+                    foo(it)
+                }
+            ''', 'foo(java.util.Date)'
+    }
+
+    void testShouldNotFailEvenIfVariableIsReassigned() {
+        assertScript '''
+                static String foo(int val) {
+                    'int'
+                }
+                def it
+                if (it instanceof String) {
+                    it = 123
+                    foo(it)
+                }
+            '''
+    }
+
+    void testShouldNotFailEvenIfVariableIsReassignedAndInstanceOfIsEmbed() {
+        assertScript '''
+                static String foo(int val) {
+                    'int'
+                }
+                static String foo(Date val) {
+                    'Date'
+                }
+                def it
+                if (it instanceof String) {
+                    it = 123
+                    foo(it)
+                    if (it instanceof Date) {
+                        foo(it)
+                    }
+                }
+            '''
+    }
+
     static class MyMethodCallTestClass {
 
         static int mul(int... args) { args.toList().inject(1) { x,y -> x*y } }
