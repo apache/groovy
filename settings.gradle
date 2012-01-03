@@ -1,0 +1,1 @@
+include 'subprojects:groovy-bsf', 'subprojects:groovy-jmx', 'subprojects:groovy-jsr223', 'subprojects:groovy-test'

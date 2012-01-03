@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 package groovy.util;
 
 import groovy.lang.GroovyObject;
-import org.codehaus.groovy.classgen.TestSupport;
 
 import javax.management.MBeanServer;
 import javax.management.MBeanServerFactory;
@@ -29,12 +28,13 @@ import javax.management.ObjectName;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class MBeanTest extends TestSupport {
+public class MBeanTest extends GroovyTestCase {
 
     public void testGetProperty() throws Exception {
         MBeanServer mbeanServer = MBeanServerFactory.createMBeanServer();
         ObjectName name = new ObjectName("groovy.test:role=TestMBean,type=Dummy");
-        mbeanServer.registerMBean(new Dummy(), name);
+        // use Class.forName instead of new Dummy() to allow separate compilation
+        mbeanServer.registerMBean(Class.forName("groovy.util.Dummy").newInstance(), name);
 
         assertEquals("JMX value of Name", "James", mbeanServer.getAttribute(name, "Name"));
 

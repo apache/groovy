@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,8 +31,8 @@ import java.security.PrivilegedAction;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Vector;
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * A Caching implementation of the GroovyEngine
@@ -43,8 +43,8 @@ public class CachingGroovyEngine extends GroovyEngine {
     private static final Logger LOG = Logger.getLogger(CachingGroovyEngine.class.getName());
     private static final Object[] EMPTY_ARGS = new Object[]{new String[]{}};
 
-    private Map evalScripts;
-    private Map execScripts;
+    private Map<Object, Class> evalScripts;
+    private Map<Object, Class> execScripts;
     private Binding context;
     private GroovyClassLoader loader;
 
@@ -53,7 +53,7 @@ public class CachingGroovyEngine extends GroovyEngine {
      */
     public Object eval(String source, int lineNo, int columnNo, Object script) throws BSFException {
         try {
-            Class scriptClass = (Class) evalScripts.get(script);
+            Class scriptClass = evalScripts.get(script);
             if (scriptClass == null) {
                 scriptClass = loader.parseClass(script.toString(), source);
                 evalScripts.put(script, scriptClass);
@@ -76,7 +76,7 @@ public class CachingGroovyEngine extends GroovyEngine {
         try {
             //          shell.run(script.toString(), source, EMPTY_ARGS);
 
-            Class scriptClass = (Class) execScripts.get(script);
+            Class scriptClass = execScripts.get(script);
             if (scriptClass == null) {
                 scriptClass = loader.parseClass(script.toString(), source);
                 execScripts.put(script, scriptClass);
@@ -98,17 +98,9 @@ public class CachingGroovyEngine extends GroovyEngine {
         ClassLoader parent = mgr.getClassLoader();
         if (parent == null)
             parent = GroovyShell.class.getClassLoader();
-        final ClassLoader finalParent = parent;
-        this.loader =
-                (GroovyClassLoader) AccessController.doPrivileged(new PrivilegedAction() {
-                    public Object run() {
-                        CompilerConfiguration configuration = new CompilerConfiguration();
-                        configuration.setClasspath(mgr.getClassPath());
-                        return new GroovyClassLoader(finalParent, configuration);
-                    }
-                });
-        execScripts = new HashMap();
-        evalScripts = new HashMap();
+        setLoader(mgr, parent);
+        execScripts = new HashMap<Object, Class>();
+        evalScripts = new HashMap<Object, Class>();
         context = shell.getContext();
         // create a shell
         // register the mgr with object name "bsf"
@@ -117,5 +109,17 @@ public class CachingGroovyEngine extends GroovyEngine {
         for (int i = 0; i < size; i++) {
             declareBean((BSFDeclaredBean) declaredBeans.elementAt(i));
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void setLoader(final BSFManager mgr, final ClassLoader finalParent) {
+        this.loader =
+                (GroovyClassLoader) AccessController.doPrivileged(new PrivilegedAction() {
+                    public Object run() {
+                        CompilerConfiguration configuration = new CompilerConfiguration();
+                        configuration.setClasspath(mgr.getClassPath());
+                        return new GroovyClassLoader(finalParent, configuration);
+                    }
+                });
     }
 }

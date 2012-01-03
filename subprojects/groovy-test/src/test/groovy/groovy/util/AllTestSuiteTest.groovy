@@ -1,16 +1,30 @@
+/*
+ * Copyright 2003-2012 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package groovy.util
 
 import java.util.logging.Level
-import junit.framework.Test
 
 /**
-    Testing groovy.util.AllTestSuite.
-    The suite() method must properly collect Test files under the given dir and pattern,
-    add found files to the log,
-    produce a proper TestSuite,
-    and wrap Scripts into TestCases.
-    @author Dierk Koenig
-*/
+ * Testing groovy.util.AllTestSuite.
+ * The suite() method must properly collect Test files under the given dir and pattern,
+ * add found files to the log,
+ * produce a proper TestSuite,
+ * and wrap Scripts into TestCases.
+ * @author Dierk Koenig
+ */
 class AllTestSuiteTest extends GroovyLogTestCase {
 
     def suite
@@ -21,18 +35,18 @@ class AllTestSuiteTest extends GroovyLogTestCase {
 
     void testSuiteForThisFileOnly() {
         def result = stringLog(Level.FINEST, 'groovy.util.AllTestSuite') {
-            withProps('src/test/groovy/util','AllTestSuiteTest.groovy') {
+            withProps('src/test/groovy/groovy/util', 'AllTestSuiteTest.groovy') {
                 suite = AllTestSuite.suite()
             }
         }
         assertTrue result, result.contains('AllTestSuiteTest.groovy')
-        assertEquals 1+1, result.count("\n")   // only one entry in the log
+        assertEquals 1 + 1, result.count("\n")   // only one entry in the log
         assert suite, 'Resulting suite should not be null'
         assertEquals 2, suite.countTestCases() // the 2 test methods in this file
     }
 
     void testAddingScriptsThatDoNotInheritFromTestCase() {
-        withProps('src/test/groovy/util','suite/*.groovy') {
+        withProps('src/test/groovy/groovy/util', 'suite/*.groovy') {
             suite = AllTestSuite.suite()
         }
         assert suite

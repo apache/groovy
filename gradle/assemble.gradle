@@ -1,7 +1,6 @@
 import java.util.jar.Manifest
-import org.apache.commons.io.FileUtils
 import org.apache.tools.ant.filters.ReplaceTokens
-import org.apache.tools.ant.taskdefs.Replace
+//import org.apache.tools.ant.taskdefs.Replace
 import java.text.SimpleDateFormat
 
 apply plugin: 'osgi'
@@ -83,7 +82,7 @@ jar {
     manifest = osgiManifest {
         symbolicName = 'groovy'
         instruction 'Import-Package', "antlr", "org.objectweb.asm", "*;resolution:=optional"
-        classesDir = sourceSets.main.classesDir
+        classesDir = sourceSets.main.output.classesDir
     }
     manifest commonOsgiManifest
     exclude '**/package-info.class'
@@ -157,7 +156,8 @@ distSpec = copySpec {
     }
     into("lib") {
         from configurations.runtime.fileCollection {dep ->
-            !(dep instanceof FileCollectionDependency) && !dep.name.startsWith('livetribe')
+            System.err.println dep.dump()
+//            !(dep instanceof FileCollectionDependency) && !dep.name.startsWith('livetribe')
         }, jar.archivePath
     }
     into("conf") {
