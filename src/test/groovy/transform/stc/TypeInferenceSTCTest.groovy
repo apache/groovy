@@ -86,6 +86,39 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         """
     }
 
+    void testEmbeddedInstanceOf() {
+        assertScript """
+        Object o
+        if (o instanceof Object) {
+            if (o instanceof String) {
+                o.toUpperCase()
+            }
+        }
+        """
+    }
+
+    void testEmbeddedInstanceOf2() {
+        assertScript """
+        Object o
+        if (o instanceof String) {
+            if (true) {
+                o.toUpperCase()
+            }
+        }
+        """
+    }
+
+    void testEmbeddedInstanceOf3() {
+        shouldFailWithMessages '''
+        Object o
+        if (o instanceof String) {
+            if (o instanceof Object) { // causes the inferred type of 'o' to be overwritten
+                o.toUpperCase()
+            }
+        }
+        ''', 'Cannot find matching method java.lang.Object#toUpperCase()'
+    }
+
     void testInstanceOfAfterEach() {
         shouldFailWithMessages '''
             Object o

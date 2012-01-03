@@ -485,7 +485,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (constructors.isEmpty() && arguments.length==0) return;
         List<MethodNode> constructorList = findMethod(node, "<init>", arguments);
         if (constructorList.isEmpty()) {
-            addStaticTypeError("No matching constructor found: "+node+toMethodParametersString("<init>", arguments), classNode);
+            addStaticTypeError("No matching constructor found: " + node + toMethodParametersString("<init>", arguments), classNode);
         }
     }
 
@@ -512,9 +512,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
      *         otherwise falls back to the provided type class.
      */
     private ClassNode findCurrentInstanceOfClass(final Expression expr, final ClassNode type) {
-        if (!temporaryIfBranchTypeInformation.empty()) {
-            Object key = extractTemporaryTypeInfoKey(expr);
-            List<ClassNode> nodes = temporaryIfBranchTypeInformation.peek().get(key);
+        if (!temporaryIfBranchTypeInformation.empty()) {            
+            List<ClassNode> nodes = getTemporaryTypesForExpression(expr);
             if (nodes != null && nodes.size() == 1) return nodes.get(0);
         }
         return type;
@@ -547,10 +546,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         List<ClassNode> tests = new LinkedList<ClassNode>();
         tests.add(clazz);
         if (objectExpression instanceof ClassExpression) tests.add(CLASS_Type);
-        if (!temporaryIfBranchTypeInformation.empty()) {
-            Map<Object, List<ClassNode>> info = temporaryIfBranchTypeInformation.peek();
-            Object key = extractTemporaryTypeInfoKey(objectExpression);
-            List<ClassNode> classNodes = info.get(key);
+        if (!temporaryIfBranchTypeInformation.empty()) {            
+            List<ClassNode> classNodes = getTemporaryTypesForExpression(objectExpression);
             if (classNodes != null) tests.addAll(classNodes);
         }
         if (lastImplicitItType != null
@@ -756,11 +753,21 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         List<Expression> arglist = args.getExpressions();
         ClassNode[] ret = new ClassNode[arglist.size()];
         int i = 0;
+        Map<Object, List<ClassNode>> info = temporaryIfBranchTypeInformation.empty()?null:temporaryIfBranchTypeInformation.peek();
         for (Expression exp : arglist) {
             if (exp instanceof ConstantExpression && ((ConstantExpression)exp).getValue()==null) {
                 ret[i] = UNKNOWN_PARAMETER_TYPE;
             } else {
                 ret[i] = getType(exp);
+                if (exp instanceof VariableExpression && info!=null) {
+                    List<ClassNode> classNodes = getTemporaryTypesForExpression(exp);
+                    if (classNodes!=null && !classNodes.isEmpty()) {
+                        ArrayList<ClassNode> arr = new ArrayList<ClassNode>(classNodes.size()+1);
+                        arr.add(ret[i]);
+                        arr.addAll(classNodes);
+                        ret[i] = new UnionTypeClassNode(arr.toArray(new ClassNode[arr.size()]));
+                    }
+                }
             }
             i++;
         }
@@ -843,6 +850,101 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         // may use this visitor without the annotation being explicitely set
         if (!methodsToBeVisited.isEmpty() && !methodsToBeVisited.contains(node)) return;
         super.visitMethod(node);
+    }
+
+    @Override
+    public void visitStaticMethodCallExpression(final StaticMethodCallExpression call) {
+        final String name = call.getMethod();
+        if (name == null) {
+            addStaticTypeError("cannot resolve dynamic method name at compile time.", call);
+            return;
+        }
+
+        final ClassNode rememberLastItType = lastImplicitItType;
+        Expression callArguments = call.getArguments();
+
+        boolean isWithCall = isWithCall(name, callArguments);
+
+        if (!isWithCall) {
+            // if it is not a "with" call, arguments should be visited first
+            callArguments.visit(this);
+        }
+
+        ClassNode[] args = getArgumentTypes(InvocationWriter.makeArgumentList(callArguments));
+        final ClassNode receiver = call.getOwnerType();
+
+        if (isWithCall) {
+            withReceiverList.add(0, receiver); // must be added first in the list
+            lastImplicitItType = receiver;
+            // if the provided closure uses an explicit parameter definition, we can
+            // also check that the provided type is correct
+            if (callArguments instanceof ArgumentListExpression) {
+                ArgumentListExpression argList = (ArgumentListExpression) callArguments;
+                ClosureExpression closure = (ClosureExpression) argList.getExpression(0);
+                Parameter[] parameters = closure.getParameters();
+                if (parameters.length > 1) {
+                    addStaticTypeError("Unexpected number of parameters for a with call", argList);
+                } else if (parameters.length == 1) {
+                    Parameter param = parameters[0];
+                    if (!param.isDynamicTyped() && !isAssignableTo(receiver, param.getType().redirect())) {
+                        addStaticTypeError("Expected parameter type: " + receiver.toString(false) + " but was: " + param.getType().redirect().toString(false), param);
+                    }
+                }
+            }
+        }
+
+        try {
+            if (isWithCall) {
+                // in case of a with call, arguments (the closure) should be visited now that we checked
+                // the arguments
+                callArguments.visit(this);
+            }
+
+                // method call receivers are :
+                //   - possible "with" receivers
+                //   - the actual receiver as found in the method call expression
+                //   - any of the potential receivers found in the instanceof temporary table
+                // in that order
+                List<ClassNode> receivers = new LinkedList<ClassNode>();
+                if (!withReceiverList.isEmpty()) receivers.addAll(withReceiverList);
+                receivers.add(receiver);
+                List<MethodNode> mn = null;
+                ClassNode chosenReceiver = null;
+                for (ClassNode currentReceiver : receivers) {
+                    mn = findMethod(currentReceiver, name, args);
+                    if (!mn.isEmpty()) {
+                        typeCheckMethodsWithGenerics(currentReceiver, args, mn, call);
+                        chosenReceiver = currentReceiver;
+                        break;
+                    }
+                }
+                if (mn.isEmpty()) {
+                    addStaticTypeError("Cannot find matching method " + receiver.getName() + "#" + toMethodParametersString(name, args), call);
+                } else {
+                    if (mn.size() == 1) {
+                        MethodNode directMethodCallCandidate = mn.get(0);
+                        // visit the method to obtain inferred return type
+                        ClassNode currentClassNode = classNode;
+                        classNode = directMethodCallCandidate.getDeclaringClass();
+                        visitMethod(directMethodCallCandidate);
+                        classNode = currentClassNode;
+                        ClassNode returnType = getType(directMethodCallCandidate);
+                        if (returnType.isUsingGenerics() && !returnType.isEnum()) {
+                            returnType = inferReturnTypeGenerics(chosenReceiver, directMethodCallCandidate, callArguments);
+                        }
+                        storeType(call, returnType);
+                        storeTargetMethod(call, directMethodCallCandidate);
+
+                    } else {
+                        addStaticTypeError("Reference to method is ambiguous. Cannot choose between " + mn, call);
+                    }
+                }
+        } finally {
+            if (isWithCall) {
+                lastImplicitItType = rememberLastItType;
+                withReceiverList.removeFirst();
+            }
+        }
     }
 
     @Override
@@ -981,9 +1083,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     receivers.add(CLASS_Type);
                 }
                 if (!temporaryIfBranchTypeInformation.empty()) {
-                    final Map<Object, List<ClassNode>> tempo = temporaryIfBranchTypeInformation.peek();
-                    Object key = extractTemporaryTypeInfoKey(objectExpression);
-                    List<ClassNode> potentialReceiverType = tempo.get(key);
+                    List<ClassNode> potentialReceiverType = getTemporaryTypesForExpression(objectExpression);
                     if (potentialReceiverType != null) receivers.addAll(potentialReceiverType);
                 }
                 List<MethodNode> mn = null;
@@ -1030,6 +1130,17 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 withReceiverList.removeFirst();
             }
         }
+    }
+
+    private List<ClassNode> getTemporaryTypesForExpression(final Expression objectExpression) {
+        List<ClassNode> classNodes = null;
+        int depth = temporaryIfBranchTypeInformation.size();
+        while (classNodes==null && depth>0) {
+            final Map<Object, List<ClassNode>> tempo = temporaryIfBranchTypeInformation.get(--depth);
+            Object key = extractTemporaryTypeInfoKey(objectExpression);
+            classNodes = tempo.get(key);
+        }
+        return classNodes;
     }
 
     private void storeTargetMethod(final Expression call, final MethodNode directMethodCallCandidate) {
@@ -1189,7 +1300,14 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 				}
 				assignedTypes.add(cn);
 			}
-
+            if (!temporaryIfBranchTypeInformation.empty()) {
+                List<ClassNode> temporaryTypesForExpression = getTemporaryTypesForExpression(exp);
+                if (temporaryTypesForExpression!=null && !temporaryTypesForExpression.isEmpty()) {
+                    // a type inference has been made on a variable which type was defined in an instanceof block
+                    // we erase available information with the new type
+                    temporaryTypesForExpression.clear();
+                }
+            }
         }
     }
 
