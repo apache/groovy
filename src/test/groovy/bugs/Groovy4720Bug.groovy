@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2011 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ class Groovy4720Bug extends GroovyTestCase {
     void testBug() {
         def instanceMethods = [DummyApi1.getMethod('test', java.io.Serializable), DummyApi2.getMethod('test', java.io.Serializable)]
 
-        Dummy.metaClass {
+        Dummy4720.metaClass {
             for (method in instanceMethods) {
                 def apiInstance = method.getDeclaringClass().newInstance()
                 def methodName = method.name
@@ -36,28 +36,26 @@ class Groovy4720Bug extends GroovyTestCase {
                         def call(Object[] args) {
                             apiInstance."$methodName"(* args)
                         }
-
                         Class[] getParameterTypes() { parameterTypes }
                     })
                 }
             }
         }
 
-        assert new Dummy().test(1) == "overrided"
+        assert new Dummy4720().test(1) == "overrided"
     }
 }
 
-class Dummy {}
+class Dummy4720 {}
 
 class DummyApi1 {
     def test(Serializable id) {
         "original"
     }
 }
+
 class DummyApi2 {
     def test(Serializable id) {
         "overrided"
     }
 }
-
-

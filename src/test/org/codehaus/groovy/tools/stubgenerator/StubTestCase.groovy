@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -120,6 +120,8 @@ abstract class StubTestCase extends GroovyTestCase {
         def nameWithoutTest = this.class.simpleName - 'Test'
         def folder = nameWithoutTest[0].toLowerCase() + nameWithoutTest[1..-1]
 
+        // TODO following works for gradle build - find something that works for both
+//        return new File("target/resources/test/stubgenerator/${folder}")
         def testDirectory = new File(StubTestCase.class.classLoader.getResource('.').toURI())
         return new File(testDirectory, "../../src/test-resources/stubgenerator/${folder}")
     }

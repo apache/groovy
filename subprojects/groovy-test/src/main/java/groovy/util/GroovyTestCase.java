@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -206,6 +206,7 @@ public class GroovyTestCase extends TestCase {
         shell.evaluate(script, getTestClassName());
     }
 
+    // TODO should this be synchronised?
     protected String getTestClassName() {
         return TEST_SCRIPT_NAME_PREFIX + getMethodName() + (counter++) + ".groovy";
     }
