@@ -46,7 +46,6 @@ import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.*;
  */
 public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     private static final ClassNode ITERABLE_TYPE = ClassHelper.make(Iterable.class);
-    private final static ClassNode READONLY_PROPERTY_RETURN = ClassHelper.make("<readonly>");
     private final static List<MethodNode> EMPTY_METHODNODE_LIST = Collections.emptyList();
     public static final MethodNode CLOSURE_CALL_NO_ARG;
     public static final MethodNode CLOSURE_CALL_ONE_ARG;
@@ -416,13 +415,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             return;
         }
         boolean compatible = checkCompatibleAssignmentTypes(leftRedirect, inferredRightExpressionType, rightExpression);
+        // if leftRedirect is of READONLY_PROPERTY_RETURN type, then it means we are on a missing property
+        if (leftExpression.getNodeMetaData(StaticTypesMarker.READONLY_PROPERTY)!=null && (leftExpression instanceof PropertyExpression)) {
+            addStaticTypeError("Cannot set read-only property: "+((PropertyExpression)leftExpression).getPropertyAsString(), leftExpression);
+        }
         if (!compatible) {
-            // if leftRedirect is of READONLY_PROPERTY_RETURN type, then it means we are on a missing property
-            if ((leftRedirect == READONLY_PROPERTY_RETURN) && (leftExpression instanceof PropertyExpression)) {
-                addStaticTypeError("Cannot set read-only property: "+((PropertyExpression)leftExpression).getPropertyAsString(), leftExpression);
-            } else {
-                addStaticTypeError("Cannot assign value of type " + inferredRightExpressionType.getName() + " to variable of type " + leftExpressionType.getName(), assignmentExpression);
-            }
+          addStaticTypeError("Cannot assign value of type " + inferredRightExpressionType.getName() + " to variable of type " + leftExpressionType.getName(), assignmentExpression);
         } else {
             // if closure expression on RHS, then copy the inferred closure return type
             if (rightExpression instanceof ClosureExpression) {
@@ -604,6 +602,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
         String propertyName = pexp.getPropertyAsString();
         if (propertyName==null) return false;
+        String capName = MetaClassHelper.capitalize(propertyName);
         boolean isAttributeExpression = pexp instanceof AttributeExpression;
         for (ClassNode testClass : tests) {
             // maps and lists have special handling for property expressions
@@ -616,6 +615,17 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         if (visitor!=null) visitor.visitProperty(propertyNode);
                         storeType(pexp, propertyNode.getOriginType());
                         return true;
+                    }
+                    MethodNode getter = current.getGetterMethod("get" + capName);
+                    if (getter==null) getter = current.getGetterMethod("is"+capName);
+                    if (getter!=null) {
+                        // check that a setter also exists
+                        MethodNode setterMethod = current.getSetterMethod("set" + capName);
+                        if (setterMethod!=null) {
+                            if (visitor!=null) visitor.visitMethod(getter);
+                            storeType(pexp, getter.getReturnType());
+                            return true;
+                        }
                     }
                     if (!isAttributeExpression) {
                         FieldNode field = current.getDeclaredField(propertyName);
@@ -634,18 +644,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     while (current != null) {
                         current = current.redirect();
 
-                        String pname = MetaClassHelper.capitalize(propertyName);
-                        List<MethodNode> nodes = current.getMethods("get" + pname);
-                        if (nodes.isEmpty()) nodes = current.getMethods("is" + pname);
-                        if (!nodes.isEmpty()) {
-                            for (MethodNode node : nodes) {
-                                Parameter[] parameters = node.getParameters();
-                                if (node.getReturnType() != VOID_TYPE && (parameters == null || parameters.length == 0)) {
-                                    if (visitor != null) visitor.visitMethod(node);
-                                    storeType(pexp, READONLY_PROPERTY_RETURN);
-                                    return true;
-                                }
-                            }
+                        MethodNode getter = current.getGetterMethod("get" + capName);
+                        if (getter==null) getter = current.getGetterMethod("is"+capName);
+                        if (getter!=null) {
+                            if (visitor != null) visitor.visitMethod(getter);
+                            pexp.putNodeMetaData(StaticTypesMarker.READONLY_PROPERTY, Boolean.TRUE);
+                            storeType(pexp, getter.getReturnType());
+                            return true;
                         }
                         if (pluginFactory!=null) {
                             TypeCheckerPlugin plugin = pluginFactory.getTypeCheckerPlugin(classNode);

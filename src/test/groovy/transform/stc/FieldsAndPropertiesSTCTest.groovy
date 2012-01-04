@@ -185,6 +185,14 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    void testDateProperties() {
+        assertScript '''
+            Date d = new Date()
+            def time = d.time
+            d.time = 0
+        '''
+    }
+
     public static class BaseClass {
         int x
     }
