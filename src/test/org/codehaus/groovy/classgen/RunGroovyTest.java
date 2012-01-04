@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2011 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,6 @@
 package org.codehaus.groovy.classgen;
 
 import groovy.lang.GroovyObject;
-import groovy.lang.MissingMethodException;
-
-import java.awt.HeadlessException;
 
 /**
  * Tests dynamically compiling and running a new class
@@ -32,7 +29,6 @@ public class RunGroovyTest extends TestSupport {
         GroovyObject object = compile("src/test/groovy/ToArrayBugTest.groovy");
         object.invokeMethod("testToArrayBug", null);
     }
-
 
     public void testPostfix() throws Exception {
         GroovyObject object = compile("src/test/groovy/PostfixTest.groovy");
@@ -58,15 +54,5 @@ public class RunGroovyTest extends TestSupport {
         GroovyObject object = compile("src/test/groovy/OptionalReturnTest.groovy");
         object.invokeMethod("testSingleExpression", null);
         object.invokeMethod("testLastExpressionIsSimple", null);
-    }
-
-    public void testConsole() throws Exception {
-        try {
-            GroovyObject object = compile("src/main/groovy/ui/Console.groovy");
-        } catch (MissingMethodException mme) {
-            // ignore due to missing ivy dependencies in class loader
-        } catch (HeadlessException he) {
-            // ignore to deal with headless environments
-        }
     }
 }

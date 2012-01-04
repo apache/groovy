@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2011 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,6 @@
  */
 import groovy.inspect.InspectorTest;
 import groovy.lang.*;
-import groovy.servlet.GroovyServletTest;
 import groovy.text.TemplateTest;
 import groovy.text.XmlTemplateEngineTest;
 import groovy.tree.NodePrinterTest;
@@ -42,7 +41,6 @@ public class JavaSourceGroovyPackagesNonSecuritySuite {
         suite.addTestSuite(ScriptTest.class);
         suite.addTestSuite(SequenceTest.class);
         suite.addTestSuite(TupleTest.class);
-        suite.addTestSuite(GroovyServletTest.class);
         suite.addTestSuite(TemplateTest.class);
         suite.addTestSuite(XmlTemplateEngineTest.class);
         suite.addTestSuite(NodePrinterTest.class);

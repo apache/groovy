@@ -47,8 +47,6 @@ dependencies {
 
     compile "commons-cli:commons-cli:1.2"
     compile "org.apache.ant:ant:1.8.2"
-    compile "javax.servlet:servlet-api:2.4"
-    compile "javax.servlet:jsp-api:2.0"
     compile("com.thoughtworks.xstream:xstream:1.4.1") {
         exclude(group: 'xpp3', module: 'xpp3_min')
         exclude(group: 'junit', module: 'junit')

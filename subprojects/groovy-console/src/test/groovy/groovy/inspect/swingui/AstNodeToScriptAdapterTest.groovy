@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2011 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,6 @@ import org.codehaus.groovy.ast.stmt.BlockStatement
 import org.codehaus.groovy.ast.stmt.DoWhileStatement
 import org.codehaus.groovy.control.CompilePhase
 import org.codehaus.groovy.ast.expr.*
-import inspect.swingui.swingui.AstNodeToScriptVisitor
-import inspect.swingui.swingui.AstNodeToScriptAdapter
 
 /**
  * Unit test for ScriptToTreeNodeAdapter.
@@ -73,17 +71,17 @@ public class AstNodeToScriptAdapterTest extends GroovyTestCase {
     public void testMethods() {
 
         String script = """
-       def method1() {}
-       private Object method2() {}
-       public String method3() throws Exception, RuntimeException {}
-       protected void method4() {}
-       @Package def method5(parm1) {}
-       static def method6(String parm1) {}
-       native method7(parm1, final parm2) {};
-       synchronized def method8(String parm1, final String parm2) {}
-       def method9(String parm1 = getValue(), String parm2 = "somevalue") {}
-       Integer[] method10(String[] parm1, Object[] parm2) {}
-       """
+            def method1() {}
+            private Object method2() {}
+            public String method3() throws Exception, RuntimeException {}
+            protected void method4() {}
+            @Package def method5(parm1) {}
+            static def method6(String parm1) {}
+            native method7(parm1, final parm2) {};
+            synchronized def method8(String parm1, final String parm2) {}
+            def method9(String parm1 = getValue(), String parm2 = "somevalue") {}
+            Integer[] method10(String[] parm1, Object[] parm2) {}
+        """
 
         String result = compileToScript(script)
         assert result.contains('public java.lang.Object method1()')

@@ -1,0 +1,19 @@
+apply plugin: 'groovy'
+apply plugin: 'code-quality'
+
+// TODO set these using subprojects?
+checkstyleConfigFileName = "../../config/checkstyle/checkstyle.xml"
+codeNarcConfigFileName = "../../config/codenarc/codenarc.groovy"
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile "javax.servlet:servlet-api:2.4"
+    compile "javax.servlet:jsp-api:2.0"
+    compile project(':')
+    groovy project(':')
+    testCompile "jmock:jmock:1.2.0"
+    testCompile project(':subprojects:groovy-test')
+}

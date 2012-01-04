@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2009 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ import org.codehaus.groovy.util.StringUtil
  * @author Dinko Srkoc
  * @version $Revision$
  */
-class GroovyMethodsTest extends GroovySwingTestCase {
+class GroovyMethodsTest extends GroovyTestCase {
     void testCollect() {
         assert [2, 4, 6].collect {it * 2} == [4, 8, 12]
         def answer = [2, 4, 6].collect(new Vector()) {it * 2}
@@ -71,7 +71,7 @@ class GroovyMethodsTest extends GroovySwingTestCase {
     }
 
     void testAsCoercion() {
-        if (headless) return
+        if (HeadlessTestSupport.headless) return
 
         def d0 = new Dimension(100, 200)
         assert d0 == new Dimension(width: 100, height: 200)

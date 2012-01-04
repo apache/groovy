@@ -977,7 +977,7 @@ class SwingBuilderTest extends GroovySwingTestCase {
     }
 
     void testEDT() {
-        if (headless) return
+        if (HeadlessTestSupport.headless) return
         def swing = new SwingBuilder()
 
         boolean pass = false
@@ -994,7 +994,7 @@ class SwingBuilderTest extends GroovySwingTestCase {
     }
 
     void testDoLater() {
-        if (headless) return
+        if (HeadlessTestSupport.headless) return
         def swing = new SwingBuilder()
 
         boolean pass = false
@@ -1078,7 +1078,7 @@ class SwingBuilderTest extends GroovySwingTestCase {
     }
 
     void testJumbledThreading() {
-        if (headless) return;
+        if (HeadlessTestSupport.headless) return;
 
         def swing = new SwingBuilder()
         Closure threadTest = {c ->
@@ -1159,7 +1159,7 @@ class SwingBuilderTest extends GroovySwingTestCase {
     }
 
     void testParallelBuild() {
-        if (headless) return;
+        if (HeadlessTestSupport.headless) return;
 
         def swing = new SwingBuilder()
         def p

@@ -1,6 +1,5 @@
 /*
- *
- * Copyright 2007-2009 the original author or authors.
+ * Copyright 2007-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +16,8 @@
  */
 package org.codehaus.groovy.tools.groovydoc;
 
-import groovy.util.GroovySwingTestCase;
+import groovy.util.GroovyTestCase;
+import groovy.util.HeadlessTestSupport;
 import org.codehaus.groovy.groovydoc.GroovyClassDoc;
 import org.codehaus.groovy.groovydoc.GroovyMethodDoc;
 import org.codehaus.groovy.groovydoc.GroovyRootDoc;
@@ -29,7 +29,7 @@ import java.util.Properties;
 /**
  * @author Jeremy Rayner
  */
-public class GroovyDocToolTest extends GroovySwingTestCase {
+public class GroovyDocToolTest extends GroovyTestCase {
     private static final String MOCK_DIR = "mock/doc";
     private static final String TEMPLATES_DIR = "main/org/codehaus/groovy/tools/groovydoc/gstringTemplates";
 
@@ -87,7 +87,7 @@ public class GroovyDocToolTest extends GroovySwingTestCase {
     }
 
     public void testGroovyDocTheCategoryMethodClass() throws Exception {
-        if (isHeadless()) {
+        if (HeadlessTestSupport.isHeadless()) {
             return;
         }
         List<String> srcList = new ArrayList<String>();
@@ -122,7 +122,7 @@ public class GroovyDocToolTest extends GroovySwingTestCase {
     }
 
     public void testConstructors() throws Exception {
-        if (isHeadless()) {
+        if (HeadlessTestSupport.isHeadless()) {
             return;
         }
         List<String> srcList = new ArrayList<String>();
@@ -262,7 +262,7 @@ public class GroovyDocToolTest extends GroovySwingTestCase {
     }
 
     public void testStaticModifier() throws Exception {
-        if (isHeadless()) {
+        if (HeadlessTestSupport.isHeadless()) {
             return;
         }
         List<String> srcList = new ArrayList<String>();
@@ -275,7 +275,7 @@ public class GroovyDocToolTest extends GroovySwingTestCase {
     }
 
     public void testAnonymousInnerClassMethodsNotIncluded() throws Exception {
-        if (isHeadless()) {
+        if (HeadlessTestSupport.isHeadless()) {
             return;
         }
         List<String> srcList = new ArrayList<String>();

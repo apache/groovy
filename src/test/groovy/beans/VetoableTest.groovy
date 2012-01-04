@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2009 the original author or authors.
+ * Copyright 2008-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import org.codehaus.groovy.control.CompilationFailedException
 /**
  * @author Danno Ferrin (shemnon)
  */
-class VetoableTest extends GroovySwingTestCase {
+class VetoableTest extends GroovyTestCase {
 
     public void testSimpleConstrainedProperty() {
         GroovyShell shell = new GroovyShell()
@@ -225,27 +225,7 @@ class VetoableTest extends GroovySwingTestCase {
         }
     }
 
-    public void testExtendsComponent() {
-        testInEDT {
-            GroovyShell shell = new GroovyShell()
-            shell.evaluate("""
-                import groovy.beans.Vetoable
-
-                class VetoableTestBean7 extends javax.swing.JPanel {
-                    @Vetoable String testField
-                }
-
-                sb = new VetoableTestBean7()
-                sb.testField = "bar"
-                changed = false
-                sb.vetoableChange = {changed = true}
-                sb.testField = "foo"
-                assert changed
-            """)
-        }
-    }
-
-    public void testPrimitaveTypes() {
+    public void testPrimitiveTypes() {
         GroovyShell shell = new GroovyShell()
         shell.evaluate("""
                 import groovy.beans.Vetoable

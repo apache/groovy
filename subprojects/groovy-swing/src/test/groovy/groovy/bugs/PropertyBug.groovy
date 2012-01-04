@@ -13,27 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package groovy.util
+package groovy.bugs
 
-import javax.swing.SwingUtilities
+import javax.swing.JButton
+import javax.swing.JPanel
 
-public abstract class GroovySwingTestCase extends GroovyTestCase {
+/**
+ * @version $Revision$
+ */
+class PropertyBug extends GroovySwingTestCase {
 
-    public static void testInEDT(Closure test) {
-        Throwable exception = null
-        if (HeadlessTestSupport.headless) {
-            return
-        }
-        SwingUtilities.invokeAndWait {
-            try {
-                test()
-            } catch (Throwable t) {
-                exception = t
-            }
-        }
-        if (exception != null) {
-            throw exception;
+    void testBug() {
+        testInEDT {
+            def panel = new JPanel()
+            def bean = new JButton()
+
+            panel.add(bean)
+
+            def value = bean.parent
+            assert value != null
         }
     }
-
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2009 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ package groovy
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-class PropertyTest extends GroovySwingTestCase {
+class PropertyTest extends GroovyTestCase {
 
     void testNormalPropertyGettersAndSetters() {
         def foo = new Foo()
@@ -45,7 +45,7 @@ class PropertyTest extends GroovySwingTestCase {
 
     // GROOVY-1809
     void testClassWithPrivateFieldAndGetter() {
-        if (headless) return
+        if (HeadlessTestSupport.headless) return
         assert java.awt.Font.getName() == 'java.awt.Font'
         assert java.awt.Font.name == 'java.awt.Font'
     }
