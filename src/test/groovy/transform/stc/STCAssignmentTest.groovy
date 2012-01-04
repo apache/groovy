@@ -626,5 +626,72 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
             assert c.getClass() == BigDecimal
         '''
     }
+    
+    void testPostfixOnInt() {
+        assertScript '''
+            int i = 0
+            i++
+        '''
+        assertScript '''
+            int i = 0
+            i--
+        '''
+    }
+
+    void testPostfixOnDate() {
+        assertScript '''
+            Date d = new Date()
+            d++
+        '''
+        assertScript '''
+            Date d = new Date()
+            d--
+        '''
+    }
+
+    void testPostfixOnObject() {
+        shouldFailWithMessages '''
+            Object o = new Object()
+            o++
+        ''', 'Cannot find matching method java.lang.Object#next()'
+        shouldFailWithMessages '''
+            Object o = new Object()
+            o--
+        ''', 'Cannot find matching method java.lang.Object#previous()'
+    }
+
+    void testPrefixOnInt() {
+        assertScript '''
+            int i = 0
+            ++i
+        '''
+        assertScript '''
+            int i = 0
+            --i
+        '''
+    }
+
+    void testPrefixOnDate() {
+        assertScript '''
+            Date d = new Date()
+            ++d
+        '''
+        assertScript '''
+            Date d = new Date()
+            --d
+        '''
+    }
+
+    void testPrefixOnObject() {
+        shouldFailWithMessages '''
+            Object o = new Object()
+            ++o
+        ''', 'Cannot find matching method java.lang.Object#next()'
+        shouldFailWithMessages '''
+            Object o = new Object()
+            --o
+        ''', 'Cannot find matching method java.lang.Object#previous()'
+    }
+
 }
 

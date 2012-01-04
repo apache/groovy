@@ -684,6 +684,52 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         negativeOrPositiveUnary(expression, "negative");
     }
 
+    @Override
+    public void visitPostfixExpression(final PostfixExpression expression) {
+        super.visitPostfixExpression(expression);
+        Expression inner = expression.getExpression();
+        ClassNode exprType = getType(inner);
+        int type = expression.getOperation().getType();
+        if (isPrimitiveType(exprType) || isPrimitiveType(getUnwrapper(exprType))) {
+            if (type==PLUS_PLUS || type==MINUS_MINUS) return;
+            addStaticTypeError("Unsupported postfix operation type ["+expression.getOperation()+"]", expression);
+            return;
+        }
+        // not a primitive type. We must find a method which is called next
+        String name = type==PLUS_PLUS?"next":type==MINUS_MINUS?"previous":null;
+        if (name==null) {
+            addStaticTypeError("Unsupported postfix operation type ["+expression.getOperation()+"]", expression);
+            return;
+        }
+        MethodNode node = findMethodOrFail(inner, exprType, name);
+        if (node!=null) {
+            storeTargetMethod(expression, node);
+        }
+    }
+
+    @Override
+    public void visitPrefixExpression(final PrefixExpression expression) {
+        super.visitPrefixExpression(expression);
+        Expression inner = expression.getExpression();
+        ClassNode exprType = getType(inner);
+        int type = expression.getOperation().getType();
+        if (isPrimitiveType(exprType) || isPrimitiveType(getUnwrapper(exprType))) {
+            if (type==PLUS_PLUS || type==MINUS_MINUS) return;
+            addStaticTypeError("Unsupported prefix operation type ["+expression.getOperation()+"]", expression);
+            return;
+        }
+        // not a primitive type. We must find a method which is called next or previous
+        String name = type==PLUS_PLUS?"next":type==MINUS_MINUS?"previous":null;
+        if (name==null) {
+            addStaticTypeError("Unsupported prefix operation type ["+expression.getOperation()+"]", expression);
+            return;
+        }
+        MethodNode node = findMethodOrFail(inner, exprType, name);
+        if (node!=null) {
+            storeTargetMethod(expression, node);
+        }
+    }
+
     private void negativeOrPositiveUnary(Expression expression, String name) {
         ClassNode type = getType(expression);
         ClassNode typeRe = type.redirect();
