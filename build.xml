@@ -179,7 +179,7 @@ $Date$
 
     <target name="-stagedcompile-groovy" depends="-initGroovyc">
         <groovyc srcdir="${mainSourcePath}" destdir="${mainClassesDirectory}" 
-                 fork="true" stacktrace="true"
+                 fork="true" stacktrace="true" indy="${useIndy}"
                  memorymaximumsize="${groovycMain_mx}">
             <classpath>
                 <pathelement path="${mainClassesDirectory}"/>
