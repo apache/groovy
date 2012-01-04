@@ -168,10 +168,17 @@ public class IndyInterface {
         }
         
         private static void chooseMethod(MetaClass mc, CallInfo ci) {
-            if (mc instanceof MetaClassImpl) {
-                MetaClassImpl mci = (MetaClassImpl) mc;
-                Object receiver = ci.args[0];
-                if (receiver==null) receiver = NullObject.getNullObject();
+            if (!(mc instanceof MetaClassImpl)) {return;}
+            
+            MetaClassImpl mci = (MetaClassImpl) mc;
+            Object receiver = ci.args[0];
+            if (receiver==null) {
+                receiver = NullObject.getNullObject();
+            } 
+            
+            if (receiver instanceof Class) {
+                ci.method = mci.retrieveStaticMethod(ci.methodName, removeRealReceiver(ci.args));
+            } else {
                 ci.method = mci.getMethodWithCaching(getClass(receiver), ci.methodName, removeRealReceiver(ci.args), false);
             }
         }
