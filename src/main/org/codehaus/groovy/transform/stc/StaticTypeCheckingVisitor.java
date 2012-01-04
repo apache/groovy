@@ -1514,7 +1514,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
     }
 
-    private MethodNode findMethodOrFail(
+    protected MethodNode findMethodOrFail(
             Expression expr,
             ClassNode receiver, String name, ClassNode... args) {
         final List<MethodNode> methods = findMethod(receiver, name, args);

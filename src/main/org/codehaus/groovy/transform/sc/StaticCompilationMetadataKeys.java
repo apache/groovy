@@ -21,5 +21,6 @@ package org.codehaus.groovy.transform.sc;
  * @author Cedric Champeau
  */
 public enum StaticCompilationMetadataKeys {
-    STATIC_COMPILE_NODE // used to mark a section of code as to be statically compiled
+    STATIC_COMPILE_NODE, // used to mark a section of code as to be statically compiled
+    BINARY_EXP_TARGET // use to tell which method should be used in a binary expression
 }

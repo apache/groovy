@@ -18,15 +18,15 @@ package org.codehaus.groovy.transform.sc;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.MethodNode;
-import org.codehaus.groovy.ast.expr.ClassExpression;
-import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
-import org.codehaus.groovy.ast.expr.MethodCallExpression;
+import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor;
 import org.codehaus.groovy.transform.stc.TypeCheckerPluginFactory;
 
+import java.util.Arrays;
 import java.util.Iterator;
 
+import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.BINARY_EXP_TARGET;
 import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.STATIC_COMPILE_NODE;
 import static org.codehaus.groovy.transform.sc.StaticCompileTransformation.COMPILE_STATIC_ANNOTATION;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.DIRECT_METHOD_CALL_TARGET;
@@ -95,5 +95,14 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
         if (target==null && call.getLineNumber()>0) {
             addError("Target constructor for constructor call expression hasn't been set", call);
         }
+    }
+
+    @Override
+    protected MethodNode findMethodOrFail(final Expression expr, final ClassNode receiver, final String name, final ClassNode... args) {
+        MethodNode methodNode = super.findMethodOrFail(expr, receiver, name, args);
+        if (expr instanceof BinaryExpression && methodNode!=null) {
+            expr.putNodeMetaData(BINARY_EXP_TARGET, new Object[] {methodNode, name});
+        }
+        return methodNode;
     }
 }

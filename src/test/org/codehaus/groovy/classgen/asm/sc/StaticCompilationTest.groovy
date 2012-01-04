@@ -229,13 +229,15 @@ class StaticCompilationTest extends AbstractBytecodeTestCase {
                 "CHECKCAST java/lang/String",
                 "ASTORE 3",
                 "ALOAD 3",
-                "CHECKCAST java/lang/String",
+                "CHECKCAST java/lang/Comparable",
                 "ASTORE 2",
                 "ALOAD 3",
                 "POP",
                 "L3",
                 "LINENUMBER",
                 "ALOAD 2",
+                "LDC Ljava/lang/String;.class",
+                "INVOKESTATIC org/codehaus/groovy/runtime/ScriptBytecodeAdapter.castToType",
                 "CHECKCAST java/lang/String",
                 "INVOKEVIRTUAL java/lang/String.toUpperCase ()Ljava/lang/String;",
                 "ARETURN",
@@ -259,4 +261,84 @@ class StaticCompilationTest extends AbstractBytecodeTestCase {
                 "ISTORE"
         ])
     }*/
+
+    void testBinaryExpressionAsMethodCall() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            class Groovy {
+
+              public static void main(String[] args) {
+                def absoluteResult = []
+                def before = System.currentTimeMillis()
+                for (times in 1..10000) {
+                  def result = ['foo', 23, true]
+                  for (y in result) {
+                    if (y instanceof String) {
+                        absoluteResult << foo(y)
+                    } else if (y instanceof Integer) {
+                        absoluteResult << foo(y)
+                    } else if (y instanceof Boolean) {
+                        absoluteResult << foo(y)
+                    }
+                  }
+                }
+                println("Took : "+(System.currentTimeMillis() - before)
+                  +" ms, number of elements : "+absoluteResult.size);
+                assert absoluteResult.size() == 30000
+              }
+
+              static String foo(String s) {
+                'String'
+              }
+
+              static String foo(Boolean s) {
+                'Boolean'
+              }
+
+              static String foo(Integer s) {
+                'Integer'
+              }
+            }
+        '''
+    }
+
+    void testBinaryExpressionAsMethodCallUsingPlusEquals() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            class Groovy {
+
+              public static void main(String[] args) {
+                def absoluteResult = []
+                def before = System.currentTimeMillis()
+                for (times in 1..10000) {
+                  def result = ['foo', 23, true]
+                  for (y in result) {
+                    if (y instanceof String) {
+                        absoluteResult += foo(y)
+                    } else if (y instanceof Integer) {
+                        absoluteResult += foo(y)
+                    } else if (y instanceof Boolean) {
+                        absoluteResult += foo(y)
+                    }
+                  }
+                }
+                println("Took : "+(System.currentTimeMillis() - before)
+                  +" ms, number of elements : "+absoluteResult.size);
+                assert absoluteResult.size() == 30000
+              }
+
+              static String foo(String s) {
+                'String'
+              }
+
+              static String foo(Boolean s) {
+                'Boolean'
+              }
+
+              static String foo(Integer s) {
+                'Integer'
+              }
+            }
+        '''
+    }
 }

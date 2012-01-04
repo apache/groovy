@@ -420,7 +420,7 @@ public abstract class StaticTypeCheckingSupport {
         }
     }
 
-    static boolean isAssignment(int op) {
+    public static boolean isAssignment(int op) {
         switch (op) {
             case ASSIGN:
             case LOGICAL_OR_EQUAL:

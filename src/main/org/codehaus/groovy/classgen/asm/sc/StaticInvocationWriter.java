@@ -66,7 +66,6 @@ public class StaticInvocationWriter extends InvocationWriter {
             String methodName = target.getName();
 
             MethodVisitor mv = controller.getMethodVisitor();
-
             int argumentsToRemove = 0;
             List<Expression> argumentList = new LinkedList<Expression> (args.getExpressions());
             argumentList.add(0, receiver);

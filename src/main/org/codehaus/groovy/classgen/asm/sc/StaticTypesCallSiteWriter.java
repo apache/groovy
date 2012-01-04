@@ -18,10 +18,14 @@ package org.codehaus.groovy.classgen.asm.sc;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
+import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.classgen.asm.*;
 import org.codehaus.groovy.runtime.MetaClassHelper;
+import org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
+
+import java.util.Collection;
 
 /**
  * A call site writer which replaces call site caching with static calls. This means that the generated code
@@ -33,6 +37,9 @@ import org.objectweb.asm.Opcodes;
 public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes {
 
     private static final MethodNode GROOVYOBJECT_GETPROPERTY_METHOD = ClassHelper.GROOVY_OBJECT_TYPE.getMethod("getProperty", new Parameter[]{new Parameter(ClassHelper.STRING_TYPE, "propertyName")});
+    private static final ClassNode COLLECTION_TYPE = ClassHelper.make(Collection.class);
+    private static final MethodNode COLLECTION_SIZE_METHOD = COLLECTION_TYPE.getMethod("size", Parameter.EMPTY_ARRAY);
+
     private WriterController controller;
 
     public StaticTypesCallSiteWriter(final StaticTypesWriterController controller) {
@@ -58,6 +65,15 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
             receiver.visit(controller.getAcg());
             mv.visitInsn(ARRAYLENGTH);
             controller.getOperandStack().replace(ClassHelper.int_TYPE);
+            return;
+        } else if (receiverType.implementsInterface(COLLECTION_TYPE) && ("size".equals(methodName) || "length".equals(methodName))) {
+            MethodCallExpression expr = new MethodCallExpression(
+                    receiver,
+                    "size",
+                    ArgumentListExpression.EMPTY_ARGUMENTS
+            );
+            expr.setMethodTarget(COLLECTION_SIZE_METHOD);
+            expr.visit(controller.getAcg());
             return;
         }
         if (makeGetPublicField(receiver, receiverType, methodName, implicitThis, samePackages(receiverType.getPackageName(), classNode.getPackageName()))) return;
