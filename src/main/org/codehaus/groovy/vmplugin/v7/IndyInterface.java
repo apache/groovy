@@ -187,14 +187,21 @@ public class IndyInterface {
             if (ci.handle!=null) return;
             try {
                 ci.useMetaClass = true;
-                ci.handle = LOOKUP.findVirtual(mc.getClass(), "invokeMethod", INVOKE_METHOD_SIGNATURE);
+                Object receiver = ci.args[0];
+                if (receiver instanceof Class) {
+                    ci.handle = LOOKUP.findVirtual(mc.getClass(), "invokeStaticMethod", MethodType.methodType(Object.class, Object.class, String.class, Object[].class));
+                    ci.handle = ci.handle.bindTo(mc).bindTo(ci.sender).bindTo(ci.methodName);
+                    ci.handle = ci.handle.asCollector(Object[].class, ci.targetType.parameterCount()-2);
+                } else {
+                    ci.handle = LOOKUP.findVirtual(mc.getClass(), "invokeMethod", INVOKE_METHOD_SIGNATURE);
+                    ci.handle = ci.handle.bindTo(mc).bindTo(ci.sender);
+                    ci.handle = MethodHandles.insertArguments(ci.handle, ci.handle.type().parameterCount()-2, true, false);
+                    ci.handle = MethodHandles.insertArguments(ci.handle, 1, ci.methodName);
+                    ci.handle = ci.handle.asCollector(Object[].class, ci.targetType.parameterCount()-2);
+                }
             } catch (Exception e) {
                 throw new GroovyBugError(e);
             }            
-            ci.handle = ci.handle.bindTo(mc).bindTo(ci.sender);
-            ci.handle = MethodHandles.insertArguments(ci.handle, ci.handle.type().parameterCount()-2, true, false);
-            ci.handle = MethodHandles.insertArguments(ci.handle, 1, ci.methodName);
-            ci.handle = ci.handle.asCollector(Object[].class, ci.targetType.parameterCount()-2);
         }
 
         /**
