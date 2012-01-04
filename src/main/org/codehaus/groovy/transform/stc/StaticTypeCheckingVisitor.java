@@ -15,6 +15,8 @@
  */
 package org.codehaus.groovy.transform.stc;
 
+import groovy.lang.IntRange;
+import groovy.lang.ObjectRange;
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.stmt.*;
@@ -46,6 +48,20 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     private static final ClassNode ITERABLE_TYPE = ClassHelper.make(Iterable.class);
     private final static ClassNode READONLY_PROPERTY_RETURN = ClassHelper.make("<readonly>");
     private final static List<MethodNode> EMPTY_METHODNODE_LIST = Collections.emptyList();
+    public static final MethodNode CLOSURE_CALL_NO_ARG;
+    public static final MethodNode CLOSURE_CALL_ONE_ARG;
+    public static final MethodNode CLOSURE_CALL_VARGS;
+
+    static {
+        // Cache closure call methods
+        CLOSURE_CALL_NO_ARG = CLOSURE_TYPE.getDeclaredMethod("call", Parameter.EMPTY_ARRAY);
+        CLOSURE_CALL_ONE_ARG = CLOSURE_TYPE.getDeclaredMethod("call", new Parameter[]{
+                new Parameter(OBJECT_TYPE, "arg")
+        });
+        CLOSURE_CALL_VARGS = CLOSURE_TYPE.getDeclaredMethod("call", new Parameter[]{
+                new Parameter(OBJECT_TYPE.makeArray(), "args")
+        });
+    }
 
     private SourceUnit source;
     private ClassNode classNode;
@@ -93,6 +109,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 	 */
 	private final Map<VariableExpression, List<ClassNode>> closureSharedVariablesAssignmentTypes = new HashMap<VariableExpression, List<ClassNode>>();
 
+    /**
+     * The plugin factory used to extend the type checker capabilities.
+     */
+    private final TypeCheckerPluginFactory pluginFactory;
+
     private Map<Parameter, ClassNode> forLoopVariableTypes = new HashMap<Parameter, ClassNode>();
     
     private final ReturnAdder returnAdder = new ReturnAdder(new ReturnAdder.ReturnStatementListener() {
@@ -123,10 +144,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
     });
 
-    public StaticTypeCheckingVisitor(SourceUnit source, ClassNode cn) {
+    public StaticTypeCheckingVisitor(SourceUnit source, ClassNode cn, TypeCheckerPluginFactory pluginFactory) {
         this.source = source;
         this.classNode = cn;
         this.temporaryIfBranchTypeInformation = new Stack<Map<Object, List<ClassNode>>>();
+        this.pluginFactory = pluginFactory;
         pushTemporaryTypeInfo();
     }
 
@@ -173,6 +195,19 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     return;
                 }
             }
+            
+            // lookup with plugin
+            if (pluginFactory!=null) {
+                TypeCheckerPlugin plugin = pluginFactory.getTypeCheckerPlugin(classNode);
+                if (plugin!=null) {
+                    ClassNode type = plugin.resolveDynamicVariableType(dyn);
+                    if (type != null) {
+                        storeType(vexp, type);
+                        return;
+                    }
+                }
+            }
+            
             addStaticTypeError("The variable [" + vexp.getName() + "] is undeclared.", vexp);
         }
     }
@@ -194,6 +229,18 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             Expression objectExpression = expression.getObjectExpression();
             addStaticTypeError("No such property: " + expression.getPropertyAsString() +
                     " for class: " + findCurrentInstanceOfClass(objectExpression, objectExpression.getType()), expression);
+        }
+    }
+
+    @Override
+    public void visitRangeExpression(final RangeExpression expression) {
+        super.visitRangeExpression(expression);
+        ClassNode fromType = getWrapper(getType(expression.getFrom()));
+        ClassNode toType = getWrapper(getType(expression.getTo()));
+        if (Integer_TYPE.equals(fromType) && Integer_TYPE.equals(toType)) {
+            storeType(expression, ClassHelper.make(IntRange.class));
+        } else {
+            storeType(expression, ClassHelper.make(ObjectRange.class));
         }
     }
 
@@ -603,6 +650,17 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                                 }
                             }
                         }
+                        if (pluginFactory!=null) {
+                            TypeCheckerPlugin plugin = pluginFactory.getTypeCheckerPlugin(classNode);
+                            if (plugin!=null) {
+                                PropertyNode result = plugin.resolveProperty(current, propertyName);
+                                if (result!=null) {
+                                    if (visitor != null) visitor.visitProperty(result);
+                                    storeType(pexp, result.getType());
+                                    return true;
+                                }
+                            }
+                        }
                         // if the property expression is an attribute expression (o.@attr), then
                         // we stop now, otherwise we must check the parent class
                         current = isAttributeExpression ? null : current.getSuperClass();
@@ -968,6 +1026,18 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         storeType(call, (ClassNode) data);
                     }
                 }
+                int nbOfArgs = 0;
+                if (callArguments instanceof ArgumentListExpression) {
+                    ArgumentListExpression list = (ArgumentListExpression) callArguments;
+                    nbOfArgs = list.getExpressions().size();
+                } else {
+                    // todo : other cases
+                    nbOfArgs = 0;
+                }
+                storeTargetMethod(call,
+                        nbOfArgs==0?CLOSURE_CALL_NO_ARG:
+                        nbOfArgs==1?CLOSURE_CALL_ONE_ARG:
+                                    CLOSURE_CALL_VARGS);
             } else {
                 // method call receivers are :
                 //   - possible "with" receivers
@@ -1384,6 +1454,15 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
 
         if (receiver == ClassHelper.GSTRING_TYPE) return findMethod(ClassHelper.STRING_TYPE, name, args);
+        
+        if (pluginFactory!=null) {
+            TypeCheckerPlugin plugin = pluginFactory.getTypeCheckerPlugin(classNode);
+            if (plugin!=null) {
+                List<MethodNode> methodNodes = plugin.findMethod(receiver, name, args);
+                if (methodNodes!=null && !methodNodes.isEmpty()) return methodNodes;
+            }
+        }
+        
         return EMPTY_METHODNODE_LIST;
     }
 
@@ -1475,6 +1554,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
         }
         return bestChoices;
+    }
+
+    private int getDistance(final ClassNode receiver, final ClassNode compare) {
+        if (receiver.equals(compare)) return 0;
+        ClassNode superClass = compare.getSuperClass();
+        if (superClass ==null) return 1;
+        return 1+getDistance(receiver, superClass);
     }
 
     /**

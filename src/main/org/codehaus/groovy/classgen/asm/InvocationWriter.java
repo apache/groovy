@@ -90,7 +90,7 @@ public class InvocationWriter {
                 adapter, safe, spreadSafe, implicitThis);
     }
     
-    private boolean writeDirectMethodCall(MethodNode target, boolean implicitThis,  Expression receiver, TupleExpression args) {
+    protected boolean writeDirectMethodCall(MethodNode target, boolean implicitThis,  Expression receiver, TupleExpression args) {
         if (target==null) return false;
         
         String methodName = target.getName();
@@ -103,6 +103,8 @@ public class InvocationWriter {
             opcode = INVOKESTATIC;
         } else if (target.isPrivate()) {
             opcode = INVOKESPECIAL;
+        } else if (target.getDeclaringClass().isInterface()) {
+            opcode = INVOKEINTERFACE;
         }
 
         // handle receiver
@@ -137,7 +139,7 @@ public class InvocationWriter {
     }
 
     // load arguments
-    private void loadArguments(List<Expression> argumentList, Parameter[] para) {
+    protected void loadArguments(List<Expression> argumentList, Parameter[] para) {
         for (int i=0; i<argumentList.size(); i++) {
             argumentList.get(i).visit(controller.getAcg());
             controller.getOperandStack().doGroovyCast(para[i].getType());
@@ -362,7 +364,7 @@ public class InvocationWriter {
         return true;
     }
     
-    private String prepareConstructorCall(ConstructorNode cn) {
+    protected String prepareConstructorCall(ConstructorNode cn) {
         String owner = BytecodeHelper.getClassInternalName(cn.getDeclaringClass());
         MethodVisitor mv = controller.getMethodVisitor();
         
@@ -371,7 +373,7 @@ public class InvocationWriter {
         return owner;
     }
     
-    private void finnishConstructorCall(ConstructorNode cn, String ownerDescriptor, int argsToRemove) {
+    protected void finnishConstructorCall(ConstructorNode cn, String ownerDescriptor, int argsToRemove) {
         String desc = BytecodeHelper.getMethodDescriptor(ClassHelper.VOID_TYPE, cn.getParameters());
         MethodVisitor mv = controller.getMethodVisitor();
         mv.visitMethodInsn(INVOKESPECIAL, ownerDescriptor, "<init>", desc);

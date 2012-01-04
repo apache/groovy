@@ -15,21 +15,23 @@
  */
 package groovy.transform;
 
+import org.codehaus.groovy.transform.GroovyASTTransformationClass;
+
 import java.lang.annotation.*;
 
-import org.codehaus.groovy.transform.GroovyASTTransformationClass;
-import org.codehaus.groovy.transform.stc.TypeCheckerPluginFactory;
-
 /**
- * This will let the Groovy compiler use compile time checks in the style of Java.
+ * This will let the Groovy compiler use compile time checks in the style of Java
+ * then perform static compilation, thus bypassing the Groovy meta object protocol.
+ *
  * @author <a href="mailto:blackdrag@gmx.org">Jochen "blackdrag" Theodorou</a>
+ * @author Cedric Champeau
  */
-@java.lang.annotation.Documented
+@Documented
 @Retention(RetentionPolicy.SOURCE)
 @Target({   ElementType.METHOD,         ElementType.TYPE,
-            ElementType.CONSTRUCTOR
+            ElementType.CONSTRUCTOR,    ElementType.FIELD,
+            ElementType.LOCAL_VARIABLE, ElementType.PACKAGE
 })
-@GroovyASTTransformationClass("org.codehaus.groovy.transform.StaticTypesTransformation")
-public @interface TypeChecked {
-    Class<? extends TypeCheckerPluginFactory> pluginFactory() default TypeCheckerPluginFactory.class;
+@GroovyASTTransformationClass("org.codehaus.groovy.transform.sc.StaticCompileTransformation")
+public @interface CompileStatic {
 }

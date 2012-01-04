@@ -22,7 +22,6 @@ import groovy.io.LineColumnReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.Iterator;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
