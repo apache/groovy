@@ -76,7 +76,12 @@ public class InvokeDynamicWriter extends InvocationWriter {
     ) {
         // direct method call
         boolean containsSpreadExpression = AsmClassGenerator.containsSpreadExpression(arguments);
-        if (!containsSpreadExpression && origin instanceof MethodCallExpression) {
+        if (containsSpreadExpression) {
+            super.makeCall(origin, receiver, message, arguments, adapter, safe, spreadSafe, implicitThis);
+            return;
+        }
+        
+        if (origin instanceof MethodCallExpression) {
             MethodCallExpression mce = (MethodCallExpression) origin;
             MethodNode target = mce.getMethodTarget();
             if (writeDirectMethodCall(target, implicitThis, receiver, makeArgumentList(arguments))) return;
