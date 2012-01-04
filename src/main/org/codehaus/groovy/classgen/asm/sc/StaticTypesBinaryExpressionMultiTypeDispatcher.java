@@ -15,7 +15,12 @@
  */
 package org.codehaus.groovy.classgen.asm.sc;
 
+import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.expr.ArgumentListExpression;
+import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.classgen.asm.*;
+import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 import org.objectweb.asm.Opcodes;
 
 /**
@@ -27,5 +32,23 @@ import org.objectweb.asm.Opcodes;
 public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpressionMultiTypeDispatcher implements Opcodes {
     public StaticTypesBinaryExpressionMultiTypeDispatcher(WriterController wc) {
         super(wc);
+    }
+
+    @Override
+    protected void writePostOrPrefixMethod(int op, String method, Expression expression, Expression orig) {
+        MethodNode mn = (MethodNode) orig.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET);
+        if (mn!=null) {
+            WriterController controller = getController();
+            controller.getOperandStack().pop();
+            MethodCallExpression call = new MethodCallExpression(
+                    expression,
+                    method,
+                    ArgumentListExpression.EMPTY_ARGUMENTS
+            );
+            call.setMethodTarget(mn);
+            call.visit(controller.getAcg());
+        } else {
+            super.writePostOrPrefixMethod(op, method, expression, orig);
+        }
     }
 }
