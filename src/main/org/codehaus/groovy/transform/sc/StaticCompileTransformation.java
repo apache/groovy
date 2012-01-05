@@ -54,7 +54,7 @@ public class StaticCompileTransformation extends StaticTypesTransformation {
         BinaryExpressionTransformer transformer = new BinaryExpressionTransformer(source);
 
         AnnotatedNode node = (AnnotatedNode) nodes[1];
-        StaticTypeCheckingVisitor visitor;
+        StaticTypeCheckingVisitor visitor = null;
         if (node instanceof ClassNode) {
             ClassNode classNode = (ClassNode) node;
             classNode.putNodeMetaData(WriterControllerFactory.class, factory);
@@ -74,7 +74,9 @@ public class StaticCompileTransformation extends StaticTypesTransformation {
         } else {
             source.addError(new SyntaxException(STATIC_ERROR_PREFIX + "Unimplemented node type", node.getLineNumber(), node.getColumnNumber()));
         }
-        super.visit(nodes, source);
+        if (visitor!=null) {
+            visitor.performSecondPass();
+        }
         if (node instanceof ClassNode) {
             transformer.visitClass((ClassNode)node);
         } else if (node instanceof MethodNode) {
