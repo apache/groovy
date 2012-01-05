@@ -24,6 +24,7 @@ import groovy.lang.MetaMethod;
 
 import java.lang.invoke.*;
 import java.lang.invoke.MethodHandles.Lookup;
+import java.lang.reflect.Array;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.math.BigInteger;
@@ -136,6 +137,7 @@ public class IndyInterface {
             public boolean useMetaClass = false;
             public MutableCallSite callSite;
             public Class sender;
+            public boolean isVargs;
         }
         
         private static boolean isStatic(Method m) {
@@ -146,6 +148,7 @@ public class IndyInterface {
         private static void setHandleForMetaMethod(CallInfo info) {
             if (info.method instanceof CachedMethod) {
                 CachedMethod cm = (CachedMethod) info.method;
+                info.isVargs = cm.isVargsMethod();
                 try {
                     Method m = cm.getCachedMethod();
                     info.handle = LOOKUP.unreflect(m);
@@ -266,6 +269,9 @@ public class IndyInterface {
         private static void correctCoerce(CallInfo ci) {
             if (ci.useMetaClass) return;
             Class[] parameters = ci.handle.type().parameterArray();
+            if (ci.args.length != parameters.length) {
+                throw new GroovyBugError("at this point argument array length and parameter array length should be the same");
+            }
             for (int i=1; i<ci.args.length; i++) {
                 Object arg = ci.args[i];
                 if (arg==null) continue;
@@ -317,6 +323,42 @@ public class IndyInterface {
                 test = MethodHandles.dropArguments(test, 0, ci.targetType.parameterType(0));
                 ci.handle = MethodHandles.guardWithTest(test, ci.handle, fallback);
             }
+        }
+        
+        private static void correctParameterLenth(CallInfo info) {
+            Class[] params = info.handle.type().parameterArray();
+            
+            if (info.handle==null) return;
+            if (!info.isVargs) {
+                if (params.length != info.args.length) {
+                  //TODO: add null argument
+                }
+                return;
+            }
+
+            Class lastParam = params[params.length-1];
+            Object lastArg = info.args[info.args.length-1];
+            if (params.length == info.args.length) {
+                // may need rewrap
+                if (lastParam == lastArg || lastArg == null) return;
+                if (lastParam.isInstance(lastArg)) return;
+                // arg is not null and not assignment compatible
+                // so we really need to rewrap
+                info.handle = info.handle.asCollector(lastParam, 1);
+            } else if (params.length > info.args.length) {
+                // we depend on the method selection having done a good 
+                // job before already, so the only case for this here is, that
+                // we have no argument for the array, meaning params.length is
+                // args.length+1. In that case we have to fill in an empty array
+                info.handle = MethodHandles.insertArguments(info.handle, params.length-1, Array.newInstance(lastParam.getComponentType(), 0));
+            } else { //params.length < args.length
+                // we depend on the method selection having done a good 
+                // job before already, so the only case for this here is, that
+                // all trailing arguments belong into the vargs array
+                info.handle = info.handle.asCollector(
+                        lastParam,
+                        info.args.length - params.length + 1);
+            }
             
         }
         
@@ -335,6 +377,7 @@ public class IndyInterface {
             setHandleForMetaMethod(callInfo);
             setMetaClassCallHandleIfNedded(mc, callInfo);
             correctWrapping(callInfo);
+            correctParameterLenth(callInfo);
             correctCoerce(callInfo);
             correctNullReceiver(callInfo);
             dropDummyReceiver(callInfo);
