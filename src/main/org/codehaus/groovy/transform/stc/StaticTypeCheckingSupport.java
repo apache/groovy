@@ -631,4 +631,147 @@ abstract class StaticTypeCheckingSupport {
         if (superClass ==null) return 1;
         return 1+getDistance(receiver, superClass);
     }
+
+    public static List<MethodNode> findDGMMethodsByNameAndArguments(final ClassNode receiver, final String name, final ClassNode[] args) {
+        return findDGMMethodsByNameAndArguments(receiver, name, args, new LinkedList<MethodNode>());
+    }
+
+    public static List<MethodNode> findDGMMethodsByNameAndArguments(final ClassNode receiver, final String name, final ClassNode[] args, final List<MethodNode> methods) {
+        final List<MethodNode> chosen;
+        methods.addAll(findDGMMethodsForClassNode(receiver, name));
+
+        chosen = chooseBestMethod(receiver, methods, args);
+            return chosen;
+        }
+
+    /**
+     * Given a list of candidate methods, returns the one which best matches the argument types
+     *
+     * @param receiver
+     * @param methods candidate methods
+     * @param args argument types
+     * @return the list of methods which best matches the argument types. It is still possible that multiple
+     * methods match the argument types.
+     */
+    public static List<MethodNode> chooseBestMethod(final ClassNode receiver, Collection<MethodNode> methods, ClassNode... args) {
+        if (methods.isEmpty()) return Collections.emptyList();
+        List<MethodNode> bestChoices = new LinkedList<MethodNode>();
+        int bestDist = Integer.MAX_VALUE;
+        for (MethodNode m : methods) {
+            // todo : corner case
+            /*
+                class B extends A {}
+
+                Animal foo(A o) {...}
+                Person foo(B i){...}
+
+                B  a = new B()
+                Person p = foo(b)
+             */
+
+            Parameter[] params = parameterizeArguments(receiver, m);
+            if (params.length == args.length) {
+                int allPMatch = allParametersAndArgumentsMatch(params, args);
+                int lastArgMatch = isVargs(params)?lastArgMatchesVarg(params, args):-1;
+                if (lastArgMatch>=0) lastArgMatch++; // ensure exact matches are preferred over vargs
+                int dist = allPMatch>=0?Math.max(allPMatch, lastArgMatch):lastArgMatch;
+                if (dist>=0 && !receiver.equals(m.getDeclaringClass())) dist+=getDistance(receiver, m.getDeclaringClass());
+                if (dist>=0 && dist<bestDist) {
+                    bestChoices.clear();
+                    bestChoices.add(m);
+                    bestDist = dist;
+                } else if (dist>=0 && dist==bestDist) {
+                    bestChoices.add(m);
+                }
+            } else if (isVargs(params)) {
+                boolean firstParamMatches = true;
+                // check first parameters
+                if (args.length > 0) {
+                    Parameter[] firstParams = new Parameter[params.length - 1];
+                    System.arraycopy(params, 0, firstParams, 0, firstParams.length);
+                    firstParamMatches = allParametersAndArgumentsMatch(firstParams, args) >= 0;
+                }
+                if (firstParamMatches) {
+                    // there are three case for vargs
+                    // (1) varg part is left out
+                    if (params.length == args.length + 1) {
+                        if (bestDist > 1) {
+                            bestChoices.clear();
+                            bestChoices.add(m);
+                            bestDist = 1;
+                        }
+                    } else {
+                        // (2) last argument is put in the vargs array
+                        //      that case is handled above already
+                        // (3) there is more than one argument for the vargs array
+                        int dist = excessArgumentsMatchesVargsParameter(params, args);
+                        if (dist >= 0 && !receiver.equals(m.getDeclaringClass())) dist++;
+                        // varargs methods must not be preferred to methods without varargs
+                        // for example :
+                        // int sum(int x) should be preferred to int sum(int x, int... y)
+                        dist++;
+                        if (params.length < args.length && dist >= 0) {
+                            if (dist >= 0 && dist < bestDist) {
+                                bestChoices.clear();
+                                bestChoices.add(m);
+                                bestDist = dist;
+                            } else if (dist >= 0 && dist == bestDist) {
+                                bestChoices.add(m);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return bestChoices;
+    }
+
+    /**
+     * Given a receiver and a method node, parameterize the method arguments using
+     * available generic type information.
+     * @param receiver
+     * @param m
+     * @return
+     */
+    public static Parameter[] parameterizeArguments(final ClassNode receiver, final MethodNode m) {
+        GenericsType[] redirectReceiverTypes = receiver.redirect().getGenericsTypes();
+        if (redirectReceiverTypes==null) {
+            // we must perform an additional check for methods like Collections#sort which define generics
+            // at the method level
+            redirectReceiverTypes = m.getGenericsTypes();
+        }
+        if (redirectReceiverTypes==null) return m.getParameters();
+        Parameter[] methodParameters = m.getParameters();
+        Parameter[] params = new Parameter[methodParameters.length];
+        GenericsType[] receiverParameterizedTypes = receiver.getGenericsTypes();
+        if (receiverParameterizedTypes==null) {
+            receiverParameterizedTypes = redirectReceiverTypes;
+        }
+        for (int i = 0; i < methodParameters.length; i++) {
+            Parameter methodParameter = methodParameters[i];
+            ClassNode paramType = methodParameter.getType();
+            if (paramType.isUsingGenerics()) {
+                GenericsType[] alignmentTypes = paramType.getGenericsTypes();
+                GenericsType[] genericsTypes = GenericsUtils.alignGenericTypes(redirectReceiverTypes, receiverParameterizedTypes, alignmentTypes);
+                if (genericsTypes.length==1) {
+                    ClassNode parameterizedCN;
+                    if (paramType.equals(OBJECT_TYPE)) {
+                        parameterizedCN = genericsTypes[0].getType();
+                    } else {
+                        parameterizedCN= paramType.getPlainNodeReference();
+                        parameterizedCN.setGenericsTypes(genericsTypes);
+                    }
+                    params[i] = new Parameter(
+                            parameterizedCN,
+                            methodParameter.getName()
+                    );
+                } else {
+                    params[i] = methodParameter;
+                }
+            } else {
+                params[i] = methodParameter;
+            }
+        }
+        return params;
+    }
 }
