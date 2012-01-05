@@ -211,6 +211,41 @@ abstract class StaticTypeCheckingSupport {
     }
 
     /**
+     * Checks that arguments and parameter types match, expecting that the number of parameters is strictly greater
+     * than the number of arguments, allowing possible inclusion of default parameters.
+     * @param params method parameters
+     * @param args type arguments
+     * @return -1 if arguments do not match, 0 if arguments are of the exact type and >0 when one or more argument is
+     * not of the exact type but still match
+     */
+    static int allParametersAndArgumentsMatchWithDefaultParams(Parameter[] params, ClassNode[] args) {
+        int dist = 0;
+        ClassNode ptype = null;
+        // we already know the lengths are equal
+        for (int i = 0, j=0; i < params.length; i++) {
+            Parameter param = params[i];
+            ClassNode paramType = param.getType();
+            ClassNode arg = j>=args.length?null:args[j];
+            if (arg==null || !isAssignableTo(arg, paramType)){
+                if (!param.hasInitialExpression() && (ptype==null || !ptype.equals(paramType))) {
+                    return -1; // no default value
+                }
+                // a default value exists, we can skip this param
+                ptype = null;
+            } else {
+                j++;
+                if (!paramType.equals(arg)) dist+=getDistance(arg, paramType);
+                if (param.hasInitialExpression()) {
+                    ptype = arg;
+                } else {
+                    ptype = null;
+                }
+            }
+        }
+        return dist;
+    }
+
+    /**
      * Checks that excess arguments match the vararg signature parameter.
      * @param params
      * @param args
@@ -671,7 +706,18 @@ abstract class StaticTypeCheckingSupport {
              */
 
             Parameter[] params = parameterizeArguments(receiver, m);
-            if (params.length == args.length) {
+            if (params.length > args.length && ! isVargs(params)) {
+                // GROOVY-5231
+                int dist = allParametersAndArgumentsMatchWithDefaultParams(params, args);
+                if (dist>=0 && !receiver.equals(m.getDeclaringClass())) dist+=getDistance(receiver, m.getDeclaringClass());
+                if (dist>=0 && dist<bestDist) {
+                    bestChoices.clear();
+                    bestChoices.add(m);
+                    bestDist = dist;
+                } else if (dist>=0 && dist==bestDist) {
+                    bestChoices.add(m);
+                }
+            } else if (params.length == args.length) {
                 int allPMatch = allParametersAndArgumentsMatch(params, args);
                 int lastArgMatch = isVargs(params)?lastArgMatchesVarg(params, args):-1;
                 if (lastArgMatch>=0) lastArgMatch++; // ensure exact matches are preferred over vargs
