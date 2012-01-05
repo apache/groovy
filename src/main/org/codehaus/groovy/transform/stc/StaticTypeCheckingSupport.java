@@ -627,9 +627,10 @@ public abstract class StaticTypeCheckingSupport {
     }
 
     static int getDistance(final ClassNode receiver, final ClassNode compare) {
-        if (receiver.equals(compare) || compare.isInterface() && receiver.implementsInterface(compare)) return 0;
+        if (receiver.equals(compare)) return 0;
+        if (compare.isInterface() && receiver.implementsInterface(compare)) return 1;
         ClassNode superClass = compare.getSuperClass();
-        if (superClass ==null) return 1;
+        if (superClass ==null) return 2;
         return 1+getDistance(receiver, superClass);
     }
 
