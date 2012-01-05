@@ -25,14 +25,18 @@ import org.codehaus.groovy.classgen.asm.sc.StaticTypesWriterControllerFactoryImp
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.OptimizerVisitor;
 import org.codehaus.groovy.control.SourceUnit;
+import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.transform.GroovyASTTransformation;
 import org.codehaus.groovy.transform.StaticTypesTransformation;
 import org.codehaus.groovy.transform.stc.*;
 
+import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 
 import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.BINARY_EXP_TARGET;
+import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.STATIC_COMPILE_NODE;
 
 /**
  * Handles the implementation of the {@link groovy.transform.CompileStatic} transformation.
@@ -48,13 +52,33 @@ public class StaticCompileTransformation extends StaticTypesTransformation {
     @Override
     public void visit(final ASTNode[] nodes, final SourceUnit source) {
         BinaryExpressionTransformer transformer = new BinaryExpressionTransformer(source);
-        List<ClassNode> classes = source.getAST().getClasses();
-        for (ClassNode classNode : classes) {
+
+        AnnotatedNode node = (AnnotatedNode) nodes[1];
+        StaticTypeCheckingVisitor visitor;
+        if (node instanceof ClassNode) {
+            ClassNode classNode = (ClassNode) node;
             classNode.putNodeMetaData(WriterControllerFactory.class, factory);
+            node.putNodeMetaData(STATIC_COMPILE_NODE, Boolean.TRUE);
+            visitor = newVisitor(source, classNode, null);
+            visitor.visitClass(classNode);
+        } else if (node instanceof MethodNode) {
+            MethodNode methodNode = (MethodNode)node;
+            methodNode.putNodeMetaData(STATIC_COMPILE_NODE, Boolean.TRUE);
+            ClassNode declaringClass = methodNode.getDeclaringClass();
+            if (declaringClass.getNodeMetaData(WriterControllerFactory.class)==null) {
+                declaringClass.putNodeMetaData(WriterControllerFactory.class, factory);
+            }
+            visitor = newVisitor(source, declaringClass, null);
+            visitor.setMethodsToBeVisited(Collections.singleton(methodNode));
+            visitor.visitMethod(methodNode);
+        } else {
+            source.addError(new SyntaxException(STATIC_ERROR_PREFIX + "Unimplemented node type", node.getLineNumber(), node.getColumnNumber()));
         }
         super.visit(nodes, source);
-        for (ClassNode classNode : classes) {
-            transformer.visitClass(classNode);
+        if (node instanceof ClassNode) {
+            transformer.visitClass((ClassNode)node);
+        } else if (node instanceof MethodNode) {
+            transformer.visitMethod((MethodNode)node);
         }
     }
 

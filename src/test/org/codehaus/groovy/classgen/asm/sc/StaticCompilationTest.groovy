@@ -1,6 +1,9 @@
 package org.codehaus.groovy.classgen.asm.sc
 
 import org.codehaus.groovy.classgen.asm.AbstractBytecodeTestCase
+import org.codehaus.groovy.control.CompilerConfiguration
+import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
+import groovy.transform.CompileStatic
 
 class StaticCompilationTest extends AbstractBytecodeTestCase {
     void testEmptyMethod() {
@@ -214,11 +217,10 @@ class StaticCompilationTest extends AbstractBytecodeTestCase {
             obj = str
             obj.toUpperCase()
         }
-        m 'Cedric'
+        assert m('Cedric') == 'CEDRIC'
         ''').hasStrictSequence([
                 "ICONST",
                 "INVOKESTATIC java/lang/Integer.valueOf (I)Ljava/lang/Integer;",
-                "CHECKCAST java/lang/Comparable",
                 "ASTORE",
                 "L1",
                 "ALOAD 2",
@@ -226,10 +228,8 @@ class StaticCompilationTest extends AbstractBytecodeTestCase {
                 "L2",
                 "LINENUMBER",
                 "ALOAD 1",
-                "CHECKCAST java/lang/String",
                 "ASTORE 3",
                 "ALOAD 3",
-                "CHECKCAST java/lang/Comparable",
                 "ASTORE 2",
                 "ALOAD 3",
                 "POP",
@@ -243,6 +243,7 @@ class StaticCompilationTest extends AbstractBytecodeTestCase {
                 "ARETURN",
                 "L4"
         ])
+        clazz.newInstance().main()
     }
 /*
     void testInstanceOf() {

@@ -15,9 +15,7 @@
  */
 package org.codehaus.groovy.transform.sc;
 
-import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.InnerClassNode;
-import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor;
@@ -47,30 +45,13 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
         super(unit, node, pluginFactory);
     }
 
-    @Override
-    public void visitClass(final ClassNode node) {
-        super.visitClass(node);
-        if (isStaticallyCompiled(node)) {
-            node.putNodeMetaData(STATIC_COMPILE_NODE, Boolean.TRUE);
-            Iterator<MethodNode> it = node.getMethods().iterator();
-            while (it.hasNext()) {
-                MethodNode next = it.next();
-                if (isRemovableMethod(next)) it.remove();
-            }
+    public static boolean isStaticallyCompiled(AnnotatedNode node) {
+        if (node.getNodeMetaData(STATIC_COMPILE_NODE)!=null) return true;
+        if (node instanceof MethodNode) {
+            return isStaticallyCompiled(node.getDeclaringClass());
         }
-    }
-
-    private boolean isRemovableMethod(final MethodNode node) {
-        if (!node.isSynthetic()) return false;
-        if (node.getName().contains("this$dist$")) return true;
-        return false;
-    }
-
-
-    private static boolean isStaticallyCompiled(ClassNode node) {
-        if (!node.getAnnotations(COMPILE_STATIC_ANNOTATION).isEmpty()) return true;
         if (node instanceof InnerClassNode) {
-            return isStaticallyCompiled(node.getOuterClass());
+            return isStaticallyCompiled(((InnerClassNode)node).getOuterClass());
         }
         return false;
     }

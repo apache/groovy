@@ -27,7 +27,7 @@ class StaticCompileDGMMethodTest extends AbstractBytecodeTestCase {
             assert m() == 123
         ''')
         assert bytecode.hasStrictSequence(
-                ['CHECKCAST java/lang/CharSequence', 'INVOKESTATIC org/codehaus/groovy/runtime/DefaultGroovyMethods.toInteger','INVOKEVIRTUAL java/lang/Integer.intValue','IRETURN']
+                ['INVOKESTATIC org/codehaus/groovy/runtime/DefaultGroovyMethods.toInteger','INVOKEVIRTUAL java/lang/Integer.intValue','IRETURN']
         )
         clazz.newInstance().run()
     }
