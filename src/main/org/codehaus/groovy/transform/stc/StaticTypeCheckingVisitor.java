@@ -1623,7 +1623,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
 
         if (receiver == ClassHelper.GSTRING_TYPE) return findMethod(ClassHelper.STRING_TYPE, name, args);
-        
+
         if (pluginFactory!=null) {
             TypeCheckerPlugin plugin = pluginFactory.getTypeCheckerPlugin(classNode);
             if (plugin!=null) {
