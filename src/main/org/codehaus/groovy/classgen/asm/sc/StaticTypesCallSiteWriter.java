@@ -22,10 +22,12 @@ import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.classgen.asm.*;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys;
+import org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
 import java.util.Collection;
+import java.util.List;
 
 /**
  * A call site writer which replaces call site caching with static calls. This means that the generated code
@@ -187,7 +189,18 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
             writeArrayGet(receiver, arguments, rType, aType);
             return;
         }
-
+        List<MethodNode> nodes = StaticTypeCheckingSupport.findDGMMethodsByNameAndArguments(rType, message, new ClassNode[]{aType});
+        if (nodes.size()==1) {
+            MethodNode methodNode = nodes.get(0);
+            MethodCallExpression call = new MethodCallExpression(
+                    receiver,
+                    message,
+                    arguments
+            );
+            call.setMethodTarget(methodNode);
+            call.visit(controller.getAcg());
+            return;
+        }
         // todo: more cases
         throw new GroovyBugError("This method should not have been called. Please try to create a simple example reproducing this error and file" +
                 "a bug report at http://jira.codehaus.org/browse/GROOVY");

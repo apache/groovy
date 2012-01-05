@@ -166,7 +166,7 @@ public class ClosureWriter {
         return false;
     }
     
-    private ClassNode createClosureClass(ClosureExpression expression, int mods) {
+    protected ClassNode createClosureClass(ClosureExpression expression, int mods) {
         ClassNode classNode = controller.getClassNode();
         ClassNode outerClass = controller.getOutermostClass();
         MethodNode methodNode = controller.getMethodNode();

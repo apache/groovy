@@ -57,7 +57,7 @@ public class StaticTypesWriterController extends DelegatingController {
         this.typeChooser = new StaticTypesTypeChooser();
         this.invocationWriter = new StaticInvocationWriter(this);
         this.binaryExprHelper = new StaticTypesBinaryExpressionMultiTypeDispatcher(this);
-        this.closureWriter = new ClosureWriter(this);
+        this.closureWriter = new StaticTypesClosureWriter(this);
     }
 
     @Override
@@ -75,9 +75,9 @@ public class StaticTypesWriterController extends DelegatingController {
 
         isInStaticallyCheckedMethod = mn != null && StaticCompilationVisitor.isStaticallyCompiled(node);
 
-      if (isInStaticallyCheckedMethod) {
+/*      if (isInStaticallyCheckedMethod) {
             System.out.println("Entering statically compiled method: "+mn.getDeclaringClass()+"#"+mn);
-        }/* else if (mn!=null) {
+        } else if (mn!=null) {
             System.out.println("Entering dynamically compiled method: "+mn.getDeclaringClass()+"#"+mn);
         }*/
     }
