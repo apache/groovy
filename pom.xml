@@ -7,7 +7,7 @@
     <artifactId>groovy</artifactId>
     <name>Groovy</name>
     <packaging>jar</packaging>
-    
+
     <version>2.0.0-beta-3-SNAPSHOT</version>
 
     <description>
@@ -43,6 +43,14 @@
             <archive>http://dir.gmane.org/gmane.comp.lang.groovy.user</archive>
         </mailingList>
     </mailingLists>
+
+    <licenses>
+        <license>
+            <name>The Apache Software License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
 
     <distributionManagement>
         <repository>
