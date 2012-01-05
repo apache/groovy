@@ -467,6 +467,13 @@ project.pomConfigureClosure = {
                 archive 'http://dir.gmane.org/gmane.comp.lang.groovy.user'
             }
         }
+        licenses {
+            license {
+                name 'The Apache Software License, Version 2.0'
+                url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                distribution 'repo'
+            }
+        }
         scm {
             connection 'scm:svn:http://svn.groovy.codehaus.org/browse/groovy/trunk/groovy/groovy-core'
             developerConnection 'scm:svn:https://${maven.username}@svn.groovy.codehaus.org/browse/groovy/trunk/groovy/groovy-core'
