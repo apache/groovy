@@ -22,7 +22,7 @@ import org.codehaus.groovy.runtime.MetaClassHelper;
 /**
  * A temporary implementation of MethodKey used to perform a fast lookup
  * for a method using a set of arguments to a method
- * 
+ *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
@@ -45,7 +45,7 @@ public class TemporaryMethodKey extends MethodKey {
     public Class getParameterType(int index) {
         Object value = parameterValues[index];
 
-        if (value != null ) {
+        if (value != null) {
             Class type = (Class)((value.getClass() == java.lang.Class.class) ?
                     value :
                     value.getClass());
