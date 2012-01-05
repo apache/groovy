@@ -101,7 +101,7 @@ public class InvokeDynamicWriter extends InvocationWriter {
             String methodName = getMethodName(message);
             
             if (methodName != null) {
-                makeIndyCall(receiver, methodName, arguments);
+                makeIndyCall(receiver, implicitThis, methodName, arguments);
                 return;
             }
         }
@@ -160,7 +160,7 @@ public class InvokeDynamicWriter extends InvocationWriter {
         operandStack.replace(ClassHelper.OBJECT_TYPE,operandsToRemove);
     }
     
-    private void makeIndyCall(Expression receiver, String methodName, Expression arguments) {
+    private void makeIndyCall(Expression receiver, boolean implicitThis, String methodName, Expression arguments) {
         CompileStack compileStack = controller.getCompileStack();
         OperandStack operandStack = controller.getOperandStack();
         
@@ -169,7 +169,11 @@ public class InvokeDynamicWriter extends InvocationWriter {
         // load a dummy receiver to avoid NPE
         new ConstantExpression(0, false).visit(controller.getAcg());
         String sig = "(Ljava/lang/Integer;";
+        
+        // load normal receiver as first argument
+        compileStack.pushImplicitThis(implicitThis);
         receiver.visit(controller.getAcg());
+        compileStack.popImplicitThis();
         sig += getTypeDescription(operandStack.getTopOperand());
         int numberOfArguments = 1;
         
@@ -195,6 +199,6 @@ public class InvokeDynamicWriter extends InvocationWriter {
 
     @Override
     public void makeSingleArgumentCall(Expression receiver, String message, Expression arguments) {
-        makeIndyCall(receiver, message, arguments);
+        makeIndyCall(receiver, false, message, arguments);
     }
 }
