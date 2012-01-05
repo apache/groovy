@@ -423,6 +423,82 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
                 }
             '''
     }
+    
+    void testOneDefaultParam() {
+        assertScript '''
+            String m(String val = 'hello') {
+                return val.toUpperCase()
+            }
+            assert m() == 'HELLO'
+            assert m('bye') == 'BYE'
+        '''
+    }
+
+    void testOneDefaultParamWithWrongArgType() {
+        shouldFailWithMessages '''
+            String m(String val = 'hello') {
+                return val.toUpperCase()
+            }
+            assert m(123) == 'HELLO'
+        ''', '#m(int)'
+    }
+
+    void testOneDefaultParamAndOneWithout() {
+        assertScript '''
+            String m(String val = 'hello', int append) {
+                return val.toUpperCase() + append
+            }
+            assert m(1) == 'HELLO1'
+            assert m('bye',2) == 'BYE2'
+        '''
+    }
+
+    void testOneDefaultParamAndOneWithoutWithWrongArgType() {
+        shouldFailWithMessages '''
+            String m(String val = 'hello', int append) {
+                return val.toUpperCase() + append
+            }
+            m('test', new Object())
+        ''', 'm(java.lang.String, java.lang.Object)'
+    }
+    
+    void testMultipleDefaultArgs() {
+        assertScript '''
+            String m(String first = 'first', String second, String third = 'third') {
+                return first.toUpperCase() + ' ' + second.toUpperCase() + ' ' + third.toUpperCase()
+            }
+            assert m('hello') == 'FIRST HELLO THIRD'
+        '''
+    }
+
+    void testMultipleDefaultArgsWithMixedTypes() {
+        assertScript '''
+            String m(String first = 'first', int second, String third = 'third') {
+                return first.toUpperCase() + ' ' + second + ' ' + third.toUpperCase()
+            }
+            assert m(123) == 'FIRST 123 THIRD'
+            assert m('f',123) == 'F 123 THIRD'
+            assert m('f',123,'s') == 'F 123 S'
+        '''
+    }
+
+    void testMultipleDefaultArgsWithMixedTypesAndTooManyArgs() {
+        shouldFailWithMessages '''
+            String m(String first = 'first', int second, String third = 'third') {
+                return first.toUpperCase() + ' ' + second + ' ' + third.toUpperCase()
+            }
+            m('f',123,'s', 'too many args')
+        ''', '#m(java.lang.String, int, java.lang.String, java.lang.String)'
+    }
+
+    void testMultipleDefaultArgsWithMixedTypesAndWrongType() {
+        shouldFailWithMessages '''
+            String m(String first = 'first', int second, String third = 'third') {
+                return first.toUpperCase() + ' ' + second + ' ' + third.toUpperCase()
+            }
+            m('hello') // no value set for "second"
+        ''', '#m(java.lang.String)'
+    }
 
     static class MyMethodCallTestClass {
 
