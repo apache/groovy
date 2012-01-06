@@ -169,7 +169,17 @@ public class GenericsType extends ASTNode {
                 // if the classnode we compare to is a generics placeholder (like <E>) then we
                 // only need to check that the names are equal
                 GenericsType[] genericsTypes = classNode.getGenericsTypes();
-                return genericsTypes==null||genericsTypes[0].getName().equals(name);
+                if (genericsTypes==null) return true;
+                if (isWildcard()) {
+                    if (lowerBound!=null) return genericsTypes[0].getName().equals(lowerBound.getUnresolvedName());
+                    if (upperBounds!=null) {
+                        for (ClassNode upperBound : upperBounds) {
+                            if (genericsTypes[0].getName().equals(upperBound.getUnresolvedName())) return true;
+                        }
+                        return false;
+                    }
+                }
+                return genericsTypes[0].getName().equals(name);
             }
             if (wildcard || placeholder) {
                 // if the current generics spec is a wildcard spec or a placeholder spec
