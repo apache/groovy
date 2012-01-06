@@ -284,9 +284,11 @@ public class IndyInterface {
         
         private static void correctWrapping(CallInfo ci) {
             if (ci.useMetaClass) return;
+            Class[] pt = ci.handle.type().parameterArray();
             for (int i=1; i<ci.args.length; i++) {
-                if (ci.args[i] instanceof Wrapper) { 
-                    MethodType mt = MethodType.methodType(ci.handle.type().parameterType(i),ci.targetType.parameterType(i));
+                if (ci.args[i] instanceof Wrapper) {
+                    Class type = pt[i];
+                    MethodType mt = MethodType.methodType(type, Object.class);
                     ci.handle = MethodHandles.filterArguments(ci.handle, i, UNWRAP_METHOD.asType(mt));
                 }
             }
