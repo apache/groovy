@@ -43,7 +43,7 @@ import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.STA
  *
  * @author Cedric Champeau
  */
-@GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
+@GroovyASTTransformation(phase = CompilePhase.INSTRUCTION_SELECTION)
 public class StaticCompileTransformation extends StaticTypesTransformation {
 
     public static final ClassNode COMPILE_STATIC_ANNOTATION = ClassHelper.make(CompileStatic.class);
