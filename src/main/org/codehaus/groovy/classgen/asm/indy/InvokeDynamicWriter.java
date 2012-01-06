@@ -58,7 +58,14 @@ public class InvokeDynamicWriter extends InvocationWriter {
                         CallSite.class, Lookup.class, String.class, MethodType.class
                 ).toMethodDescriptorString());
 
-    
+    private static final Handle BSM_SAFE = 
+        new Handle(
+                H_INVOKESTATIC,
+                IndyInterface.class.getName().replace('.', '/'),
+                "bootstrapSafe",
+                MethodType.methodType(
+                        CallSite.class, Lookup.class, String.class, MethodType.class
+                ).toMethodDescriptorString());
     
     private WriterController controller;
 
@@ -101,7 +108,7 @@ public class InvokeDynamicWriter extends InvocationWriter {
             String methodName = getMethodName(message);
             
             if (methodName != null) {
-                makeIndyCall(receiver, implicitThis, methodName, arguments);
+                makeIndyCall(receiver, implicitThis, safe, methodName, arguments);
                 return;
             }
         }
@@ -160,7 +167,7 @@ public class InvokeDynamicWriter extends InvocationWriter {
         operandStack.replace(ClassHelper.OBJECT_TYPE,operandsToRemove);
     }
     
-    private void makeIndyCall(Expression receiver, boolean implicitThis, String methodName, Expression arguments) {
+    private void makeIndyCall(Expression receiver, boolean implicitThis, boolean safe, String methodName, Expression arguments) {
         CompileStack compileStack = controller.getCompileStack();
         OperandStack operandStack = controller.getOperandStack();
         
@@ -191,7 +198,7 @@ public class InvokeDynamicWriter extends InvocationWriter {
         }
         sig += ")Ljava/lang/Object;";
         
-        controller.getMethodVisitor().visitInvokeDynamicInsn(methodName, sig, BSM);
+        controller.getMethodVisitor().visitInvokeDynamicInsn(methodName, sig, safe?BSM_SAFE:BSM);
         
         operandStack.replace(ClassHelper.OBJECT_TYPE, numberOfArguments+1);
         compileStack.popLHS();
@@ -199,6 +206,6 @@ public class InvokeDynamicWriter extends InvocationWriter {
 
     @Override
     public void makeSingleArgumentCall(Expression receiver, String message, Expression arguments) {
-        makeIndyCall(receiver, false, message, arguments);
+        makeIndyCall(receiver, false, false, message, arguments);
     }
 }

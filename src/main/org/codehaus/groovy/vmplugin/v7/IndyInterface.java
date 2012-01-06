@@ -59,7 +59,7 @@ public class IndyInterface {
         private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
         private static final MethodHandle SELECT_METHOD;
         static {
-            MethodType mt = MethodType.methodType(Object.class, MutableCallSite.class, Class.class, String.class, Object.class, Object[].class);
+            MethodType mt = MethodType.methodType(Object.class, MutableCallSite.class, Class.class, String.class, Boolean.class, Object.class, Object[].class);
             try {
                 SELECT_METHOD = LOOKUP.findStatic(IndyInterface.class, "selectMethod", mt);
             } catch (Exception e) {
@@ -87,7 +87,8 @@ public class IndyInterface {
                 throw new GroovyBugError(e);
             }
         }
-        private static final MethodHandle NULL_REF = MethodHandles.constant(NullObject.class, NullObject.getNullObject());
+        private static final MethodHandle NULL_REF = MethodHandles.constant(Object.class, null);
+        private static final MethodHandle NULLOBJECT_REF = MethodHandles.constant(NullObject.class, NullObject.getNullObject());
 
         private static final MethodHandle VALID_MC_VERSION;
         static {
@@ -99,21 +100,31 @@ public class IndyInterface {
         }
         
         public static CallSite bootstrap(Lookup caller, String name, MethodType type) {
+            return realBootstrap(caller, name, type, false);
+        }
+        
+        public static CallSite bootstrapSafe(Lookup caller, String name, MethodType type) {
+            return realBootstrap(caller, name, type, true);
+        }
+        
+        private static CallSite realBootstrap(Lookup caller, String name, MethodType type, boolean safe) {
             // since indy does not give us the runtime types
             // we produce first a dummy call site, which then changes the target to one,
             // that does the method selection including the the direct call to the 
             // real method.
             MutableCallSite mc = new MutableCallSite(type);
-            MethodHandle mh = makeFallBack(mc,caller.lookupClass(),name,type);
+            MethodHandle mh = makeFallBack(mc,caller.lookupClass(),name,type,safe);
             mc.setTarget(mh);
-            return mc;
+            return mc;            
         }
         
-        private static MethodHandle makeFallBack(MutableCallSite mc, Class<?> sender, String name, MethodType type) {
+        
+        private static MethodHandle makeFallBack(MutableCallSite mc, Class<?> sender, String name, MethodType type, boolean safeNavigation) {
             MethodHandle mh = SELECT_METHOD.
                                     bindTo(mc).
                                     bindTo(sender).
                                     bindTo(name).
+                                    bindTo(safeNavigation).
                                     asCollector(Object[].class, type.parameterCount()-1).
                                     asType(type);
             return mh;
@@ -144,6 +155,7 @@ public class IndyInterface {
             public MutableCallSite callSite;
             public Class sender;
             public boolean isVargs;
+            public boolean safeNavigation;
         }
         
         private static boolean isStatic(Method m) {
@@ -302,7 +314,7 @@ public class IndyInterface {
         
         private static void correctNullReceiver(CallInfo ci){
             if (ci.args[0]!=null || ci.useMetaClass) return;
-            MethodHandle nullReceiverDroppingHandle = MethodHandles.dropArguments(NULL_REF, 0, ci.handle.type().parameterType(0));
+            MethodHandle nullReceiverDroppingHandle = MethodHandles.dropArguments(NULLOBJECT_REF, 0, ci.handle.type().parameterType(0));
             ci.handle = MethodHandles.filterArguments(ci.handle, 0, nullReceiverDroppingHandle);
         }
         
@@ -313,30 +325,28 @@ public class IndyInterface {
         private static void setGuards(CallInfo ci, Object receiver) {
             if (ci.handle==null) return;
             
-            MethodHandle fallback = makeFallBack(ci.callSite, ci.sender, ci.methodName, ci.targetType);
-            
+            MethodHandle fallback = makeFallBack(ci.callSite, ci.sender, ci.methodName, ci.targetType, ci.safeNavigation);
+            MethodHandle test;
             if (receiver==null) {
-                MethodHandle test = IS_NULL.asType(MethodType.methodType(boolean.class,ci.targetType.parameterType(1)));
+                test = IS_NULL.asType(MethodType.methodType(boolean.class,ci.targetType.parameterType(1)));
                 test = MethodHandles.dropArguments(test, 0, ci.targetType.parameterType(0));
-                ci.handle = MethodHandles.guardWithTest(test, ci.handle, fallback);
             } else if (receiver instanceof GroovyObject) {
                 GroovyObject go = (GroovyObject) receiver;
                 MetaClassImpl mc = (MetaClassImpl) go.getMetaClass();
-                MethodHandle test = SAME_MC.bindTo(mc); 
+                test = SAME_MC.bindTo(mc); 
                 // drop dummy receiver
                 test = test.asType(MethodType.methodType(boolean.class,ci.targetType.parameterType(1)));
                 test = MethodHandles.dropArguments(test, 0, ci.targetType.parameterType(0));
-                ci.handle = MethodHandles.guardWithTest(test, ci.handle, fallback);
             } else {
                 // handle constant meta class
                 ConstantMetaClassVersioning mcv = DefaultMetaClassInfo.getCurrentConstantMetaClassVersioning();
-                MethodHandle test = VALID_MC_VERSION.bindTo(mcv);
+                test = VALID_MC_VERSION.bindTo(mcv);
                 ci.handle = MethodHandles.guardWithTest(test, ci.handle, fallback);
                 // check for not being null
                 test = IS_NOT_NULL.asType(MethodType.methodType(boolean.class,ci.targetType.parameterType(1)));
                 test = MethodHandles.dropArguments(test, 0, ci.targetType.parameterType(0));
-                ci.handle = MethodHandles.guardWithTest(test, ci.handle, fallback);
             }
+            ci.handle = MethodHandles.guardWithTest(test, ci.handle, fallback);
         }
         
         private static void correctParameterLenth(CallInfo info) {
@@ -380,9 +390,16 @@ public class IndyInterface {
             if (info.handle==null) return;
             MethodType returnType = MethodType.methodType(info.handle.type().returnType(), GroovyRuntimeException.class); 
             info.handle = MethodHandles.catchException(info.handle, GroovyRuntimeException.class, UNWRAP_EXCEPTION.asType(returnType));
+            
         }
         
-        public static Object selectMethod(MutableCallSite callSite, Class sender, String methodName, Object dummyReceiver, Object[] arguments) throws Throwable {
+        private static boolean setNullForSafeNavigation(CallInfo info) {
+            if (!info.safeNavigation) return false;
+            info.handle = MethodHandles.dropArguments(NULL_REF,0,info.targetType.parameterArray());
+            return true;
+        }
+        
+        public static Object selectMethod(MutableCallSite callSite, Class sender, String methodName, Boolean safeNavigation, Object dummyReceiver, Object[] arguments) throws Throwable {
             //TODO: handle GroovyInterceptable 
             CallInfo callInfo = new CallInfo();
             callInfo.targetType = callSite.type();
@@ -390,27 +407,30 @@ public class IndyInterface {
             callInfo.args = arguments;
             callInfo.callSite = callSite;
             callInfo.sender = sender;
-            
-//            setInterceptableHandle(callInfo);
-            MetaClass mc = getMetaClass(callInfo.args[0]);
-            chooseMethod(mc, callInfo);
-            setHandleForMetaMethod(callInfo);
-            setMetaClassCallHandleIfNedded(mc, callInfo);
-            correctWrapping(callInfo);
-            correctParameterLenth(callInfo);
-            correctCoerce(callInfo);
-            correctNullReceiver(callInfo);
-            dropDummyReceiver(callInfo);
-            try {
-                callInfo.handle = callInfo.handle.asType(callInfo.targetType);
-            } catch (Exception e) {
-                System.err.println("ERROR while processing "+methodName);
-                throw e;
+            callInfo.safeNavigation = safeNavigation && arguments[0]==null;
+                        
+            if (!setNullForSafeNavigation(callInfo)) {
+                //            setInterceptableHandle(callInfo);
+                MetaClass mc = getMetaClass(callInfo.args[0]);
+                chooseMethod(mc, callInfo);
+                setHandleForMetaMethod(callInfo);
+                setMetaClassCallHandleIfNedded(mc, callInfo);
+                correctWrapping(callInfo);
+                correctParameterLenth(callInfo);
+                correctCoerce(callInfo);
+                correctNullReceiver(callInfo);
+                dropDummyReceiver(callInfo);
+
+                try {
+                    callInfo.handle = callInfo.handle.asType(callInfo.targetType);
+                } catch (Exception e) {
+                    System.err.println("ERROR while processing "+methodName);
+                    throw e;
+                }
+
+                addExceptionHandler(callInfo);
             }
-            
-            addExceptionHandler(callInfo);
             setGuards(callInfo, callInfo.args[0]);
-            
             callSite.setTarget(callInfo.handle);
             
             return callInfo.handle.invokeWithArguments(repack(dummyReceiver,callInfo.args));
