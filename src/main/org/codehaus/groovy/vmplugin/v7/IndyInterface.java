@@ -72,7 +72,7 @@ public class IndyInterface {
         private static final MethodHandle   
             UNWRAP_METHOD,  TO_STRING,          TO_BYTE,        
             TO_BIGINT,      SAME_MC,            IS_NULL,
-            IS_NOT_NULL,    UNWRAP_EXCEPTION;
+            IS_NOT_NULL,    UNWRAP_EXCEPTION,   SAME_CLASS;
         static {
             try {
                 UNWRAP_METHOD = LOOKUP.findStatic(IndyInterface.class, "unwrap", O2O);
@@ -83,6 +83,7 @@ public class IndyInterface {
                 IS_NULL = LOOKUP.findStatic(IndyInterface.class, "isNull", MethodType.methodType(boolean.class, Object.class));
                 IS_NOT_NULL = LOOKUP.findStatic(IndyInterface.class, "isNotNull", MethodType.methodType(boolean.class, Object.class));
                 UNWRAP_EXCEPTION = LOOKUP.findStatic(IndyInterface.class, "unwrap", MethodType.methodType(Object.class, GroovyRuntimeException.class));
+                SAME_CLASS = LOOKUP.findStatic(IndyInterface.class, "sameClass", MethodType.methodType(boolean.class, Class.class, Object.class));
             } catch (Exception e) {
                 throw new GroovyBugError(e);
             }
@@ -98,6 +99,7 @@ public class IndyInterface {
                 throw new GroovyBugError(e);
             }
         }
+        
         
         public static CallSite bootstrap(Lookup caller, String name, MethodType type) {
             return realBootstrap(caller, name, type, false);
@@ -282,6 +284,14 @@ public class IndyInterface {
             return o != null;
         }
         
+        /**
+         * called by handle
+         */
+        public static boolean sameClass(Class c, Object o) {
+            if (o==null) return false;
+            return o.getClass() == c;
+        }
+        
         private static void correctWrapping(CallInfo ci) {
             if (ci.useMetaClass) return;
             Class[] pt = ci.handle.type().parameterArray();
@@ -328,6 +338,8 @@ public class IndyInterface {
             if (ci.handle==null) return;
             
             MethodHandle fallback = makeFallBack(ci.callSite, ci.sender, ci.methodName, ci.targetType, ci.safeNavigation);
+            
+            // guards for receiver
             MethodHandle test;
             if (receiver==null) {
                 test = IS_NULL.asType(MethodType.methodType(boolean.class,ci.targetType.parameterType(1)));
@@ -349,6 +361,25 @@ public class IndyInterface {
                 test = MethodHandles.dropArguments(test, 0, ci.targetType.parameterType(0));
             }
             ci.handle = MethodHandles.guardWithTest(test, ci.handle, fallback);
+            
+            // guards for parameter
+            Class[] pt = ci.handle.type().parameterArray();
+            for (int i=1; i<ci.args.length; i++) {
+                Object arg = ci.args[i];
+                if (arg==null) {
+                    test = IS_NULL.asType(MethodType.methodType(boolean.class, pt[i+1]));
+                } else {
+                    Class argClass = arg.getClass();
+                    test = SAME_CLASS.
+                                bindTo(argClass).
+                                asType(MethodType.methodType(boolean.class, pt[i+1]));
+                    Class[] drops = new Class[i+1];
+                    for (int j=0; j<drops.length; j++) drops[j] = pt[j];
+                    test = MethodHandles.dropArguments(test, 0, drops);
+                }
+                ci.handle = MethodHandles.guardWithTest(test, ci.handle, fallback);
+            }
+            
         }
         
         private static void correctParameterLenth(CallInfo info) {
