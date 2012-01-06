@@ -1538,7 +1538,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
         } else {
             methods = receiver.getMethods(name);
-            if (methods.isEmpty() && args==null || args.length==0) {
+            if (methods.isEmpty() && (args==null || args.length==0)) {
                 // check if it's a property
                 String pname = null;
                 if (name.startsWith("get")) {
@@ -1553,6 +1553,21 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         return Collections.singletonList(
                                 new MethodNode(name, Opcodes.ACC_PUBLIC, property.getType(), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, EmptyStatement.INSTANCE));
 
+                    }
+                }
+            } else if (methods.isEmpty() && args!=null && args.length==1) {
+                // maybe we are looking for a setter ?
+                if (name.startsWith("set")) {
+                    String pname = java.beans.Introspector.decapitalize(name.substring(3));
+                    PropertyNode property = receiver.getProperty(pname);
+                    if (property != null) {
+                        ClassNode type = property.getOriginType();
+                        if (implementsInterfaceOrIsSubclassOf(args[0], type)) {
+                            return Collections.singletonList(
+                                    new MethodNode(name, Opcodes.ACC_PUBLIC, VOID_TYPE, new Parameter[]{
+                                            new Parameter(type, "arg")
+                                    }, ClassNode.EMPTY_ARRAY, EmptyStatement.INSTANCE));
+                        }
                     }
                 }
             }
