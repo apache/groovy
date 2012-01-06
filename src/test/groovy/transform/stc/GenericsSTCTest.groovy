@@ -279,6 +279,19 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         }
       '''
     }
+
+    // GROOVY-5237
+    void testGenericTypeArgumentAsField() {
+        assertScript '''
+            class Container<T> {
+                private T initialValue
+                Container(T initialValue) { this.initialValue = initialValue }
+                T get() { initialValue }
+            }
+            Container<Date> c = new Container<Date>(new Date())
+            long time = c.get().time
+        '''
+    }
   
     static class MyList extends LinkedList<String> {}
 }
