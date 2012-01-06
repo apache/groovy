@@ -977,7 +977,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         // visit the method to obtain inferred return type
                         ClassNode currentClassNode = classNode;
                         classNode = directMethodCallCandidate.getDeclaringClass();
-                        visitMethod(directMethodCallCandidate);
+                        for (ClassNode node: source.getAST().getClasses()) {
+                            if (isClassInnerClassOrEqualTo(classNode, node)) {
+                                // visit is authorized because the classnode belongs to the same source unit
+                                visitMethod(directMethodCallCandidate);
+                                break;
+                            }
+                        }
                         classNode = currentClassNode;
                         ClassNode returnType = getType(directMethodCallCandidate);
                         if (returnType.isUsingGenerics() && !returnType.isEnum()) {
@@ -1155,7 +1161,17 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         // visit the method to obtain inferred return type
                         ClassNode currentClassNode = classNode;
                         classNode = directMethodCallCandidate.getDeclaringClass();
-                        visitMethod(directMethodCallCandidate);
+                        for (ClassNode node: source.getAST().getClasses()) {
+                            if (isClassInnerClassOrEqualTo(classNode, node)) {
+                                // visit is authorized because the classnode belongs to the same source unit
+                                visitMethod(directMethodCallCandidate);
+                                break;
+                            }
+                        }
+                        // todo: if no visit was done, we should try to obtain type information in a different
+                        // manner, for example creating a dedicated visitor. But this is not necessarily trivial:
+                        // choose the correct visitor type, make use AST doesn't get polluted with type info or
+                        // even transformed... Deal with precompiled classes...
                         classNode = currentClassNode;
                         ClassNode returnType = getType(directMethodCallCandidate);
                         if (returnType.isUsingGenerics()) {
@@ -1910,6 +1926,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         return type;
     }
 
+    private static boolean isClassInnerClassOrEqualTo(ClassNode toBeChecked, ClassNode start) {
+        if (start==toBeChecked) return true;
+        if (start instanceof InnerClassNode) {
+            return isClassInnerClassOrEqualTo(toBeChecked, start.getOuterClass());
+        }
+        return false;
+    }
 	/**
      * A visitor used as a callback to {@link StaticTypeCheckingVisitor#existsProperty(org.codehaus.groovy.ast.expr.PropertyExpression, boolean, org.codehaus.groovy.ast.ClassCodeVisitorSupport)}
      * which will return set the type of the found property in the provided reference.
