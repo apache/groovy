@@ -17,6 +17,7 @@ package org.codehaus.groovy.vmplugin.v7;
 
 import groovy.lang.GString;
 import groovy.lang.GroovyObject;
+import groovy.lang.GroovyRuntimeException;
 import groovy.lang.GroovySystem;
 import groovy.lang.MetaClass;
 import groovy.lang.MetaClassImpl;
@@ -32,6 +33,7 @@ import java.math.BigInteger;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.reflection.CachedMethod;
 import org.codehaus.groovy.runtime.NullObject;
+import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 import org.codehaus.groovy.runtime.metaclass.DefaultMetaClassInfo;
 import org.codehaus.groovy.runtime.metaclass.DefaultMetaClassInfo.ConstantMetaClassVersioning;
 import org.codehaus.groovy.runtime.wrappers.Wrapper;
@@ -67,7 +69,10 @@ public class IndyInterface {
         private static final MethodType GENERAL_INVOKER_SIGNATURE = MethodType.methodType(Object.class, Object.class, Object[].class);
         private static final MethodType INVOKE_METHOD_SIGNATURE = MethodType.methodType(Object.class, Class.class, Object.class, String.class, Object[].class, boolean.class, boolean.class);
         private static final MethodType O2O = MethodType.methodType(Object.class, Object.class);
-        private static final MethodHandle UNWRAP_METHOD, TO_STRING, TO_BYTE, TO_BIGINT, SAME_MC, IS_NULL, IS_NOT_NULL;
+        private static final MethodHandle   
+            UNWRAP_METHOD,  TO_STRING,          TO_BYTE,        
+            TO_BIGINT,      SAME_MC,            IS_NULL,
+            IS_NOT_NULL,    UNWRAP_EXCEPTION;
         static {
             try {
                 UNWRAP_METHOD = LOOKUP.findStatic(IndyInterface.class, "unwrap", O2O);
@@ -77,6 +82,7 @@ public class IndyInterface {
                 SAME_MC = LOOKUP.findStatic(IndyInterface.class, "isSameMetaClass", MethodType.methodType(boolean.class, MetaClassImpl.class, Object.class));
                 IS_NULL = LOOKUP.findStatic(IndyInterface.class, "isNull", MethodType.methodType(boolean.class, Object.class));
                 IS_NOT_NULL = LOOKUP.findStatic(IndyInterface.class, "isNotNull", MethodType.methodType(boolean.class, Object.class));
+                UNWRAP_EXCEPTION = LOOKUP.findStatic(IndyInterface.class, "unwrap", MethodType.methodType(Object.class, GroovyRuntimeException.class));
             } catch (Exception e) {
                 throw new GroovyBugError(e);
             }
@@ -207,9 +213,17 @@ public class IndyInterface {
         }
 
         /**
+         * called by handle 
+         */
+        public static Object unwrap(GroovyRuntimeException gre) throws Throwable {
+            throw ScriptBytecodeAdapter.unwrap(gre);
+        }
+        
+        /**
          * called by handle
          */
         public static boolean isSameMetaClass(MetaClassImpl mc, Object receiver) {
+            //TODO: remove this method if possible by switchpoint usage
             return receiver instanceof GroovyObject && mc==((GroovyObject)receiver).getMetaClass(); 
         }
         
@@ -362,6 +376,12 @@ public class IndyInterface {
             
         }
         
+        private static void addExceptionHandler(CallInfo info) {
+            if (info.handle==null) return;
+            MethodType returnType = MethodType.methodType(info.handle.type().returnType(), GroovyRuntimeException.class); 
+            info.handle = MethodHandles.catchException(info.handle, GroovyRuntimeException.class, UNWRAP_EXCEPTION.asType(returnType));
+        }
+        
         public static Object selectMethod(MutableCallSite callSite, Class sender, String methodName, Object dummyReceiver, Object[] arguments) throws Throwable {
             //TODO: handle GroovyInterceptable 
             CallInfo callInfo = new CallInfo();
@@ -388,6 +408,7 @@ public class IndyInterface {
                 throw e;
             }
             
+            addExceptionHandler(callInfo);
             setGuards(callInfo, callInfo.args[0]);
             
             callSite.setTarget(callInfo.handle);
