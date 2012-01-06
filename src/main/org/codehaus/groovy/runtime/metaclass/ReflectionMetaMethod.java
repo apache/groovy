@@ -65,4 +65,8 @@ public class ReflectionMetaMethod extends MetaMethod {
     protected Class[] getPT() {
         return method.getNativeParameterTypes();
     }
+
+    public MetaMethod getCachedMethod() {
+        return method;
+    }
 }

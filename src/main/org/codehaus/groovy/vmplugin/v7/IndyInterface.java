@@ -35,6 +35,8 @@ import org.codehaus.groovy.reflection.CachedMethod;
 import org.codehaus.groovy.runtime.NullObject;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 import org.codehaus.groovy.runtime.metaclass.DefaultMetaClassInfo;
+import org.codehaus.groovy.runtime.metaclass.NewInstanceMetaMethod;
+import org.codehaus.groovy.runtime.metaclass.ReflectionMetaMethod;
 import org.codehaus.groovy.runtime.metaclass.DefaultMetaClassInfo.ConstantMetaClassVersioning;
 import org.codehaus.groovy.runtime.wrappers.Wrapper;
 
@@ -72,7 +74,8 @@ public class IndyInterface {
         private static final MethodHandle   
             UNWRAP_METHOD,  TO_STRING,          TO_BYTE,        
             TO_BIGINT,      SAME_MC,            IS_NULL,
-            IS_NOT_NULL,    UNWRAP_EXCEPTION,   SAME_CLASS;
+            IS_NOT_NULL,    UNWRAP_EXCEPTION,   SAME_CLASS,
+            META_METHOD_INVOKER;
         static {
             try {
                 UNWRAP_METHOD = LOOKUP.findStatic(IndyInterface.class, "unwrap", O2O);
@@ -84,6 +87,7 @@ public class IndyInterface {
                 IS_NOT_NULL = LOOKUP.findStatic(IndyInterface.class, "isNotNull", MethodType.methodType(boolean.class, Object.class));
                 UNWRAP_EXCEPTION = LOOKUP.findStatic(IndyInterface.class, "unwrap", MethodType.methodType(Object.class, GroovyRuntimeException.class));
                 SAME_CLASS = LOOKUP.findStatic(IndyInterface.class, "sameClass", MethodType.methodType(boolean.class, Class.class, Object.class));
+                META_METHOD_INVOKER = LOOKUP.findVirtual(MetaMethod.class, "invoke", GENERAL_INVOKER_SIGNATURE);
             } catch (Exception e) {
                 throw new GroovyBugError(e);
             }
@@ -166,27 +170,32 @@ public class IndyInterface {
         }
         
         private static void setHandleForMetaMethod(CallInfo info) {
-            if (info.method instanceof CachedMethod) {
-                CachedMethod cm = (CachedMethod) info.method;
+            MetaMethod metaMethod = info.method;
+            boolean isCategoryTypeMethod = metaMethod instanceof NewInstanceMetaMethod;
+            
+            if (metaMethod instanceof ReflectionMetaMethod) {
+                ReflectionMetaMethod rmm = (ReflectionMetaMethod) metaMethod;
+                metaMethod = rmm.getCachedMethod();
+            }
+            
+            if (metaMethod instanceof CachedMethod) {
+                CachedMethod cm = (CachedMethod) metaMethod;
                 info.isVargs = cm.isVargsMethod();
                 try {
                     Method m = cm.getCachedMethod();
                     info.handle = LOOKUP.unreflect(m);
-                    if (isStatic(m)) {
+                    if (!isCategoryTypeMethod && isStatic(m)) {
                         info.handle = MethodHandles.dropArguments(info.handle, 0, Class.class);
                     }
                 } catch (IllegalAccessException e) {
                     throw new GroovyBugError(e);
                 }
             } else if (info.method != null) {
-                // receiver, args
-                try {
-                    info.handle = LOOKUP.findVirtual(info.method.getClass(), "invoke", GENERAL_INVOKER_SIGNATURE);
-                } catch (Exception e) {
-                    throw new GroovyBugError(e);
-                }
+                info.handle = META_METHOD_INVOKER;
                 info.handle = info.handle.bindTo(info.method).
                                 asCollector(Object[].class, info.targetType.parameterCount()-2);
+                //TODO: there might be a missing argument for which we have to place
+                // a null value here!
             }
         }
         
