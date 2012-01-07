@@ -359,12 +359,9 @@ public class IndyInterface {
             
             MethodHandle fallback = makeFallBack(ci.callSite, ci.sender, ci.methodName, ci.targetType, ci.safeNavigation);
             
-            // guards for receiver
+            // special guards for receiver
             MethodHandle test;
-            if (receiver==null) {
-                test = IS_NULL.asType(MethodType.methodType(boolean.class,ci.targetType.parameterType(1)));
-                test = MethodHandles.dropArguments(test, 0, ci.targetType.parameterType(0));
-            } else if (receiver instanceof GroovyObject) {
+            if (receiver instanceof GroovyObject) {
                 GroovyObject go = (GroovyObject) receiver;
                 MetaClassImpl mc = (MetaClassImpl) go.getMetaClass();
                 test = SAME_MC.bindTo(mc); 
@@ -382,9 +379,9 @@ public class IndyInterface {
             }
             ci.handle = MethodHandles.guardWithTest(test, ci.handle, fallback);
             
-            // guards for parameter
+            // guards for receiver and parameter
             Class[] pt = ci.handle.type().parameterArray();
-            for (int i=1; i<ci.args.length; i++) {
+            for (int i=0; i<ci.args.length; i++) {
                 Object arg = ci.args[i];
                 if (arg==null) {
                     test = IS_NULL.asType(MethodType.methodType(boolean.class, pt[i+1]));
