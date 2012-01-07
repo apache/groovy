@@ -192,10 +192,21 @@ public class IndyInterface {
                 }
             } else if (info.method != null) {
                 info.handle = META_METHOD_INVOKER;
-                info.handle = info.handle.bindTo(info.method).
-                                asCollector(Object[].class, info.targetType.parameterCount()-2);
-                //TODO: there might be a missing argument for which we have to place
-                // a null value here!
+                info.handle = info.handle.bindTo(info.method);
+                if (info.method.getNativeParameterTypes().length==1 && 
+                    info.args.length==1) 
+                {
+                    // the method expects a parameter but we don't provide an 
+                    // argument for that. So we give in a Object[], containing 
+                    // a null value
+                    // since MethodHandles.insertArguments is a vargs method giving
+                    // only the array would be like just giving a null value, so
+                    // we need to wrap the array that represents our argument in
+                    // another one for the vargs call
+                    info.handle = MethodHandles.insertArguments(info.handle, 1, new Object[]{new Object[]{null}});
+                } else {
+                    info.handle = info.handle.asCollector(Object[].class, info.targetType.parameterCount()-2);
+                }
             }
         }
         
@@ -382,10 +393,10 @@ public class IndyInterface {
                     test = SAME_CLASS.
                                 bindTo(argClass).
                                 asType(MethodType.methodType(boolean.class, pt[i+1]));
-                    Class[] drops = new Class[i+1];
-                    for (int j=0; j<drops.length; j++) drops[j] = pt[j];
-                    test = MethodHandles.dropArguments(test, 0, drops);
                 }
+                Class[] drops = new Class[i+1];
+                for (int j=0; j<drops.length; j++) drops[j] = pt[j];
+                test = MethodHandles.dropArguments(test, 0, drops);
                 ci.handle = MethodHandles.guardWithTest(test, ci.handle, fallback);
             }
             
