@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,16 +15,16 @@
  */
 package org.codehaus.groovy.ant;
 
-import java.io.File;
-import java.util.Iterator;
-import java.util.NoSuchElementException;
-
 import org.apache.tools.ant.DirectoryScanner;
 import org.apache.tools.ant.Project;
 import org.apache.tools.ant.types.FileSet;
 
-/** 
- * <p><code>FileIterator</code> is an iterator over a 
+import java.io.File;
+import java.util.Iterator;
+import java.util.NoSuchElementException;
+
+/**
+ * <p><code>FileIterator</code> is an iterator over a
  * number of files from a collection of FileSet instances.
  *
  * @author <a href="mailto:jstrachan@apache.org">James Strachan</a>
@@ -32,59 +32,59 @@ import org.apache.tools.ant.types.FileSet;
  */
 public class FileIterator implements Iterator {
 
-    /** The iterator over the FileSet objects */
+    /* The iterator over the FileSet objects */
     private Iterator fileSetIterator;
-    
-    /** The Ant project */
+
+    /* The Ant project */
     private Project project;
-    
-    /** The directory scanner */
+
+    /* The directory scanner */
     private DirectoryScanner ds;
-    
-    /** The file names in the current FileSet scan */
+
+    /* The file names in the current FileSet scan */
     private String[] files;
-    
-    /** The current index into the file name array */
+
+    /* The current index into the file name array */
     private int fileIndex = -1;
-    
-    /** The next File object we'll iterate over */
+
+    /* The next File object we'll iterate over */
     private File nextFile;
 
-    /** Have we set a next object? */
+    /* Have we set a next object? */
     private boolean nextObjectSet = false;
 
-    /** Return only directories? */
+    /* Return only directories? */
     private boolean iterateDirectories = false;
 
-    public FileIterator(Project project,
-                        Iterator fileSetIterator) {
-        this( project, fileSetIterator, false);
+    public FileIterator(Project project, Iterator fileSetIterator) {
+        this(project, fileSetIterator, false);
     }
 
-    public FileIterator(Project project,
-                        Iterator fileSetIterator,
-                        boolean iterateDirectories) {
+    public FileIterator(Project project, Iterator fileSetIterator, boolean iterateDirectories) {
         this.project = project;
         this.fileSetIterator = fileSetIterator;
         this.iterateDirectories = iterateDirectories;
     }
-    
+
     // Iterator interface
     //-------------------------------------------------------------------------
-    
-    /** @return true if there is another object that matches the given predicate */
+
+    /**
+     * @return true if there is another object that matches the given predicate
+     */
     public boolean hasNext() {
-        if ( nextObjectSet ) {
+        if (nextObjectSet) {
             return true;
-        } 
-        else {
+        } else {
             return setNextObject();
         }
     }
 
-    /** @return the next object which matches the given predicate */
+    /**
+     * @return the next object which matches the given predicate
+     */
     public Object next() {
-        if ( !nextObjectSet ) {
+        if (!nextObjectSet) {
             if (!setNextObject()) {
                 throw new NoSuchElementException();
             }
@@ -92,9 +92,9 @@ public class FileIterator implements Iterator {
         nextObjectSet = false;
         return nextFile;
     }
-    
+
     /**
-     * throws UnsupportedOperationException 
+     * throws UnsupportedOperationException
      */
     public void remove() {
         throw new UnsupportedOperationException();
@@ -103,14 +103,14 @@ public class FileIterator implements Iterator {
     // Implementation methods
     //-------------------------------------------------------------------------
 
-    /**
-     * Set nextObject to the next object. If there are no more 
+    /*
+     * Set nextObject to the next object. If there are no more
      * objects then return false. Otherwise, return true.
      */
     private boolean setNextObject() {
         while (true) {
             while (ds == null) {
-                if ( ! fileSetIterator.hasNext() ) {
+                if (!fileSetIterator.hasNext()) {
                     return false;
                 }
                 FileSet fs = (FileSet) fileSetIterator.next();
@@ -118,26 +118,23 @@ public class FileIterator implements Iterator {
                 ds.scan();
                 if (iterateDirectories) {
                     files = ds.getIncludedDirectories();
-                } 
-                else {
+                } else {
                     files = ds.getIncludedFiles();
                 }
-                if ( files.length > 0 ) {
+                if (files.length > 0) {
                     fileIndex = -1;
                     break;
-                }
-                else {
+                } else {
                     ds = null;
                 }
             }
-        
-            if ( ds != null && files != null ) {
-                if ( ++fileIndex < files.length ) {
-                    nextFile = new File( ds.getBasedir(), files[fileIndex] );
+
+            if (ds != null && files != null) {
+                if (++fileIndex < files.length) {
+                    nextFile = new File(ds.getBasedir(), files[fileIndex]);
                     nextObjectSet = true;
                     return true;
-                }
-                else {
+                } else {
                     ds = null;
                 }
             }
