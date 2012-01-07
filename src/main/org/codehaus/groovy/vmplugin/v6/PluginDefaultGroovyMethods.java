@@ -15,6 +15,7 @@
  */
 
 package org.codehaus.groovy.vmplugin.v6;
+// TODO M12N move this to groovy-jsr223
 
 import groovy.lang.Binding;
 import org.codehaus.groovy.runtime.DefaultGroovyMethodsSupport;

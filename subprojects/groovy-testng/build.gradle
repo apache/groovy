@@ -1,0 +1,15 @@
+apply plugin: 'groovy'
+apply plugin: 'code-quality'
+
+// TODO set these using subprojects?
+checkstyleConfigFileName = "../../config/checkstyle/checkstyle.xml"
+codeNarcConfigFileName = "../../config/codenarc/codenarc.groovy"
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    groovy project(':')
+    compile "junit:junit:4.10"
+}

@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 package org.codehaus.groovy.vmplugin;
-
-import org.codehaus.groovy.vmplugin.v4.Java4;
 
 /**
  * factory class to get functionality based on the VM version.
@@ -59,7 +57,7 @@ public class VMPluginFactory {
                 loader.loadClass(JDK5_CLASSNAME_CHECK);
                 plugin = (VMPlugin) loader.loadClass(JDK5_PLUGIN_NAME).newInstance();
             } catch(Exception ex) {
-                plugin = new Java4();
+                throw new IllegalStateException("Groovy requires Java 5 or above!");
             }
         }
     }
