@@ -98,7 +98,7 @@ class AntTest extends GroovyTestCase {
         project.executeTarget(project.defaultTarget);
 
         def expectedSpoof =
-        """SpoofTaskContainer ctor
+            """SpoofTaskContainer ctor
 in addTask
 configuring UnknownElement
 SpoofTask ctor
@@ -131,7 +131,7 @@ end SpoofTaskContainer execute
         def antNS = new AntBuilder()
         SpoofTaskContainer.resetSpoof()
 
-        // and now run it with the AntBuilder        
+        // and now run it with the AntBuilder
         antNS.path(id: PATH) {antNS.pathelement(location: 'classes')}
         ['spoofcontainer': SpoofTaskContainer, 'spoof': SpoofTask].each { pair ->
             antNS.taskdef(name: pair.key, classname: pair.value.name, classpathref: PATH,
@@ -200,7 +200,7 @@ end SpoofTaskContainer execute
         project.executeTarget("testAntBuilderWithinGroovyTask");
 
         def expectedSpoof =
-        """started: taskdef[name:groovy, classname:org.codehaus.groovy.ant.Groovy]
+            """started: taskdef[name:groovy, classname:org.codehaus.groovy.ant.Groovy]
 finished: taskdef[name:groovy, classname:org.codehaus.groovy.ant.Groovy]
 started: echo[message:before groovy task]
 finished: echo[message:before groovy task]
