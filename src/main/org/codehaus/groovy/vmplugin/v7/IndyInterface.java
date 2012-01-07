@@ -93,7 +93,6 @@ public class IndyInterface {
             }
         }
         private static final MethodHandle NULL_REF = MethodHandles.constant(Object.class, null);
-        private static final MethodHandle NULLOBJECT_REF = MethodHandles.constant(NullObject.class, NullObject.getNullObject());
 
         private static final MethodHandle VALID_MC_VERSION;
         static {
@@ -346,8 +345,8 @@ public class IndyInterface {
         
         private static void correctNullReceiver(CallInfo ci){
             if (ci.args[0]!=null || ci.useMetaClass) return;
-            MethodHandle nullReceiverDroppingHandle = MethodHandles.dropArguments(NULLOBJECT_REF, 0, ci.handle.type().parameterType(0));
-            ci.handle = MethodHandles.filterArguments(ci.handle, 0, nullReceiverDroppingHandle);
+            ci.handle = ci.handle.bindTo(NullObject.getNullObject());
+            ci.handle = MethodHandles.dropArguments(ci.handle, 0, ci.targetType.parameterType(1));
         }
         
         private static void dropDummyReceiver(CallInfo ci) {
@@ -360,7 +359,7 @@ public class IndyInterface {
             MethodHandle fallback = makeFallBack(ci.callSite, ci.sender, ci.methodName, ci.targetType, ci.safeNavigation);
             
             // special guards for receiver
-            MethodHandle test;
+            MethodHandle test=null;
             if (receiver instanceof GroovyObject) {
                 GroovyObject go = (GroovyObject) receiver;
                 MetaClassImpl mc = (MetaClassImpl) go.getMetaClass();
@@ -368,7 +367,7 @@ public class IndyInterface {
                 // drop dummy receiver
                 test = test.asType(MethodType.methodType(boolean.class,ci.targetType.parameterType(1)));
                 test = MethodHandles.dropArguments(test, 0, ci.targetType.parameterType(0));
-            } else {
+            } else if (receiver != null) {
                 // handle constant meta class
                 ConstantMetaClassVersioning mcv = DefaultMetaClassInfo.getCurrentConstantMetaClassVersioning();
                 test = VALID_MC_VERSION.bindTo(mcv);
@@ -377,7 +376,9 @@ public class IndyInterface {
                 test = IS_NOT_NULL.asType(MethodType.methodType(boolean.class,ci.targetType.parameterType(1)));
                 test = MethodHandles.dropArguments(test, 0, ci.targetType.parameterType(0));
             }
-            ci.handle = MethodHandles.guardWithTest(test, ci.handle, fallback);
+            if (test!=null) {
+                ci.handle = MethodHandles.guardWithTest(test, ci.handle, fallback);
+            }
             
             // guards for receiver and parameter
             Class[] pt = ci.handle.type().parameterArray();
