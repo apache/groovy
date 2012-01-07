@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2011 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -70,12 +70,9 @@ public class TestSupport extends GroovyTestCase implements Opcodes {
         PropertyDescriptor descriptor = getDescriptor(bean, property);
         Method method = descriptor.getWriteMethod();
         assertTrue("has setter method", method != null);
-
         Object[] args = {newValue};
         Object value = invokeMethod(bean, method, args);
-
         assertEquals("should return null", null, value);
-
         assertGetProperty(bean, property, newValue);
     }
 
@@ -84,8 +81,7 @@ public class TestSupport extends GroovyTestCase implements Opcodes {
         Method method = descriptor.getReadMethod();
         assertTrue("has getter method", method != null);
 
-        Object[] args = {
-        };
+        Object[] args = { };
         Object value = invokeMethod(bean, method, args);
 
         /*
@@ -112,8 +108,7 @@ public class TestSupport extends GroovyTestCase implements Opcodes {
     protected PropertyDescriptor getDescriptor(Object bean, String property) throws Exception {
         BeanInfo info = Introspector.getBeanInfo(bean.getClass());
         PropertyDescriptor[] descriptors = info.getPropertyDescriptors();
-        for (int i = 0; i < descriptors.length; i++) {
-            PropertyDescriptor descriptor = descriptors[i];
+        for (PropertyDescriptor descriptor : descriptors) {
             if (descriptor.getName().equals(property)) {
                 return descriptor;
             }
@@ -124,7 +119,6 @@ public class TestSupport extends GroovyTestCase implements Opcodes {
 
     protected void assertField(Class aClass, String name, int modifiers, ClassNode type) throws Exception {
         Field field = aClass.getDeclaredField(name);
-
         assertTrue("Found field called: " + name, field != null);
         assertEquals("Name", name, field.getName());
         assertEquals("Type", type.getName(), field.getType().getName());
@@ -161,7 +155,6 @@ public class TestSupport extends GroovyTestCase implements Opcodes {
 
     protected void assertScriptFile(String fileName) throws Exception {
         log.info("About to execute script: " + fileName);
-
         Class groovyClass = loader.parseClass(new GroovyCodeSource(new File(fileName)));
         Script script = InvokerHelper.createScript(groovyClass, new Binding());
         script.run();
@@ -169,11 +162,8 @@ public class TestSupport extends GroovyTestCase implements Opcodes {
 
     protected GroovyObject compile(String fileName) throws Exception {
         Class groovyClass = loader.parseClass(new GroovyCodeSource(new File(fileName)));
-
         GroovyObject object = (GroovyObject) groovyClass.newInstance();
-
         assertTrue(object != null);
-
         return object;
     }
 }

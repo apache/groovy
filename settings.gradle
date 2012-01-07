@@ -1,4 +1,4 @@
-include 'subprojects:groovy-bsf', 'subprojects:groovy-console', 'subprojects:groovy-jmx',
-        'subprojects:groovy-json', 'subprojects:groovy-jsr223', 'subprojects:groovy-servlet',
-        'subprojects:groovy-shell', 'subprojects:groovy-sql', 'subprojects:groovy-swing',
-        'subprojects:groovy-test'
+include 'subprojects:groovy-ant', 'subprojects:groovy-bsf', 'subprojects:groovy-console', 'subprojects:groovy-docgenerator',
+        'subprojects:groovy-groovydoc', 'subprojects:groovy-jmx', 'subprojects:groovy-json', 'subprojects:groovy-jsr223',
+        'subprojects:groovy-servlet', 'subprojects:groovy-shell', 'subprojects:groovy-sql', 'subprojects:groovy-swing',
+        'subprojects:groovy-templates', 'subprojects:groovy-test', 'subprojects:groovy-xml'

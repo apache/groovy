@@ -133,9 +133,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static final Class[] DGM_LIKE_CLASSES = new Class[]{
             DefaultGroovyMethods.class,
             // TODO provide alternative way for these to be registered
-            //SwingGroovyMethods.class,
+//            SwingGroovyMethods.class,
 //            SqlGroovyMethods.class,
-            XmlGroovyMethods.class,
+//            XmlGroovyMethods.class,
             EncodingGroovyMethods.class,
             DateGroovyMethods.class,
             ProcessGroovyMethods.class

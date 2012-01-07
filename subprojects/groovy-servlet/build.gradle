@@ -15,5 +15,7 @@ dependencies {
     compile project(':')
     groovy project(':')
     testCompile "jmock:jmock:1.2.0"
+    // needed for MarkupBuilder
+    compile project(':subprojects:groovy-xml')
     testCompile project(':subprojects:groovy-test')
 }

@@ -142,7 +142,7 @@ class TestGenerator{
      * Common setup code for each test method
      */
     void printCommonTestMethodStart(result, fullMethodName,someSrcText) {
-        def buffer = new java.io.StringReader(someSrcText)
+        def buffer = new StringReader(someSrcText)
 
         result.println("    public void ${fullMethodName}() throws Throwable {")
         result.println("        StringBuffer srcBuffer = new StringBuffer();")
@@ -170,21 +170,21 @@ class TestGenerator{
             }
         }
 
-        //remove nonalphanumeric characters
+        //remove non-alphanumeric characters
         methodName = methodName.replaceAll("[^A-Za-z0-9]","")
 
         return methodName
     }
 
     /**
-     * Fetches a list of all the occurances of text between a string delimiter.
+     * Fetches a list of all the occurrences of text between a string delimiter.
      */
     List scrape(String txt, String tag) {
         return scrape(txt,tag,tag)
     }
 
     /**
-     * Fetches a list of all the occurances of text between two string delimiters (tags).
+     * Fetches a list of all the occurrences of text between two string delimiters (tags).
      */
     List scrape(String txt, String openTag, String closeTag) {
         def i = 0; def j = 0; def k = 0;

@@ -20,6 +20,7 @@ import javax.servlet.ServletOutputStream
 import javax.servlet.http.HttpServletRequest
 import javax.servlet.http.HttpServletResponse
 import javax.servlet.http.HttpSession
+import groovy.xml.MarkupBuilder
 
 /**
  * This test case tests the ServletBinding class.
@@ -167,7 +168,7 @@ class ServletBindingTest extends GroovyTestCase {
         )
 
         assert binding.getVariable("out") instanceof PrintWriter
-        assert binding.getVariable("html") instanceof groovy.xml.MarkupBuilder
+        assert binding.getVariable("html") instanceof MarkupBuilder
         assert binding.getVariable("sout") instanceof ServletOutputStream
     }
     

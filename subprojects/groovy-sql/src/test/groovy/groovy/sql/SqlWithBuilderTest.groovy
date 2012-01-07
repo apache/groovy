@@ -1,6 +1,6 @@
 package groovy.sql
 
-import groovy.xml.MarkupBuilder 
+import groovy.xml.MarkupBuilder
 
 /**
  * @author Brian McCallister

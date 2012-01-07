@@ -836,7 +836,7 @@ $Date$
                 footer="${docFooter}"
                 overview="src/main/overview.html">
             <link packages="javax.servlet.,javax.management." href="http://java.sun.com/j2ee/1.4/docs/api"/>
-            <link packages="java.,org.xml.,javax.,org.xml." href="http://java.sun.com/javase/6/docs/api"/>
+            <link packages="java.,org.xml.,javax.,org.w3c." href="http://java.sun.com/javase/6/docs/api"/>
             <link packages="org.apache.ant.,org.apache.tools.ant." href="http://www.dpml.net/api/ant/1.7.0"/>
             <link packages="org.junit.,junit." href="http://junit.sourceforge.net/junit3.8.1/javadoc"/>
             <link packages="org.apache.commons.cli." href="http://commons.apache.org/cli/api-release"/>
