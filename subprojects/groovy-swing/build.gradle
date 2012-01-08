@@ -5,12 +5,10 @@ apply plugin: 'code-quality'
 checkstyleConfigFileName = "../../config/checkstyle/checkstyle.xml"
 codeNarcConfigFileName = "../../config/codenarc/codenarc.groovy"
 
+evaluationDependsOn(':')
+
 dependencies {
     compile project(':')
     groovy project(':')
-//    testCompile project(':subprojects:groovy-test')
     testCompile project(':').sourceSets.test.runtimeClasspath
 }
-
-evaluationDependsOn(':')
-
