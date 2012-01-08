@@ -84,7 +84,7 @@ public class IndyInterface {
                 TO_STRING = LOOKUP.findStatic(IndyInterface.class, "coerceToString", MethodType.methodType(String.class, Object.class));
                 TO_BYTE = LOOKUP.findStatic(IndyInterface.class, "coerceToByte", O2O);
                 TO_BIGINT = LOOKUP.findStatic(IndyInterface.class, "coerceToBigInt", O2O);
-                SAME_MC = LOOKUP.findStatic(IndyInterface.class, "isSameMetaClass", MethodType.methodType(boolean.class, MetaClassImpl.class, Object.class));
+                SAME_MC = LOOKUP.findStatic(IndyInterface.class, "isSameMetaClass", MethodType.methodType(boolean.class, MetaClass.class, Object.class));
                 IS_NULL = LOOKUP.findStatic(IndyInterface.class, "isNull", MethodType.methodType(boolean.class, Object.class));
                 IS_NOT_NULL = LOOKUP.findStatic(IndyInterface.class, "isNotNull", MethodType.methodType(boolean.class, Object.class));
                 UNWRAP_EXCEPTION = LOOKUP.findStatic(IndyInterface.class, "unwrap", MethodType.methodType(Object.class, GroovyRuntimeException.class));
@@ -240,10 +240,11 @@ public class IndyInterface {
                     ci.handle = LOOKUP.findVirtual(MetaClass.class, "invokeMethod", INVOKE_METHOD_SIGNATURE);
                     ci.handle = ci.handle.bindTo(mc).bindTo(receiver.getClass());
                     ci.handle = MethodHandles.insertArguments(ci.handle, ci.handle.type().parameterCount()-2, true, false);
-                    
-                    // if the meta class call fails we may still want to fall back to call
-                    // GroovyObject#invokeMethod if the receiver is a GroovyObject
-                    ci.handle = MethodHandles.catchException(ci.handle, MissingMethodException.class, GROOVY_OBJECT_INVOKER);
+                    if (receiver instanceof GroovyObject) {
+                        // if the meta class call fails we may still want to fall back to call
+                        // GroovyObject#invokeMethod if the receiver is a GroovyObject
+                        ci.handle = MethodHandles.catchException(ci.handle, MissingMethodException.class, GROOVY_OBJECT_INVOKER);
+                    }
                 }
                 ci.handle = MethodHandles.insertArguments(ci.handle, 1, ci.methodName);
                 ci.handle = ci.handle.asCollector(Object[].class, ci.targetType.parameterCount()-2);
@@ -281,7 +282,7 @@ public class IndyInterface {
         /**
          * called by handle
          */
-        public static boolean isSameMetaClass(MetaClassImpl mc, Object receiver) {
+        public static boolean isSameMetaClass(MetaClass mc, Object receiver) {
             //TODO: remove this method if possible by switchpoint usage
             return receiver instanceof GroovyObject && mc==((GroovyObject)receiver).getMetaClass(); 
         }
@@ -388,7 +389,7 @@ public class IndyInterface {
             MethodHandle test=null;
             if (receiver instanceof GroovyObject) {
                 GroovyObject go = (GroovyObject) receiver;
-                MetaClassImpl mc = (MetaClassImpl) go.getMetaClass();
+                MetaClass mc = (MetaClass) go.getMetaClass();
                 test = SAME_MC.bindTo(mc); 
                 // drop dummy receiver
                 test = test.asType(MethodType.methodType(boolean.class,ci.targetType.parameterType(1)));
