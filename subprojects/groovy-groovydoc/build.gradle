@@ -5,13 +5,11 @@ apply plugin: 'code-quality'
 checkstyleConfigFileName = "../../config/checkstyle/checkstyle.xml"
 codeNarcConfigFileName = "../../config/codenarc/codenarc.groovy"
 
-repositories {
-    mavenCentral()
-}
-
 dependencies {
     compile project(':')
+    testCompile project(':').sourceSets.test.runtimeClasspath
     groovy project(':')
     compile project(':subprojects:groovy-templates')
     testCompile project(':subprojects:groovy-test')
+    testCompile "org.apache.ant:ant-testutil:1.8.2"
 }

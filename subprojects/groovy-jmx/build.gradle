@@ -5,10 +5,6 @@ apply plugin: 'code-quality'
 checkstyleConfigFileName = "../../config/checkstyle/checkstyle.xml"
 codeNarcConfigFileName = "../../config/codenarc/codenarc.groovy"
 
-repositories {
-    mavenCentral()
-}
-
 dependencies {
     groovy project(':')
     compile project(':')

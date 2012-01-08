@@ -9,6 +9,13 @@ allprojects { p ->
     version = groovyVersion
     tasks.withType(Checkstyle).all { t -> t.ignoreFailures = true }
     tasks.withType(CodeNarc).all { t -> t.ignoreFailures = true }
+    repositories {
+        mavenCentral()
+    }
+    configurations {
+        compile.transitive = true
+        testCompile.transitive = true
+    }
 }
 
 sourceCompatibility = 1.5
@@ -16,12 +23,9 @@ targetCompatibility = 1.5
 
 buildDir = 'target'
 
-//evaluationDependsOn(':subprojects:groovy-bsf')
-//childrenDependOnMe()
-
 repositories {
     // todo Some repos are needed only for some configs. Declare them just for the configuration once Gradle allows this.
-    mavenCentral() // default, tools
+//    mavenCentral() // default, tools
     mavenRepo url: "http://www.aQute.biz/repo" // tools
     mavenRepo url: "http://repository.jboss.org/maven2" // examples, tools
 }
@@ -70,8 +74,7 @@ dependencies {
     testCompile "ch.qos.logback:logback-classic:0.9.21"
     testCompile "log4j:log4j:1.2.16"
     testCompile "org.slf4j:jcl-over-slf4j:1.6.0"
-//    testCompile "com.thoughtworks.qdox:qdox:1.12"
-    testCompile "org.apache.ant:ant-testutil:1.8.2"
+    testCompile "com.thoughtworks.qdox:qdox:1.12"
     runtime "org.codehaus.gpars:gpars:0.12"
 
     tools "com.googlecode.jarjar:jarjar:1.1"
@@ -106,11 +109,8 @@ dependencies {
     antlr "org.apache.ant:ant-antlr:1.8.2"
 
 //    groovy project(':subprojects:groovy-ant')
+    // TODO M12N temporarily use gradle's groovy
     groovy localGroovy()
-    testCompile project(':subprojects:groovy-bsf')
-    testCompile project(':subprojects:groovy-jsr223')
-    testCompile project(':subprojects:groovy-jmx')
-    testCompile project(':subprojects:groovy-sql')
     testCompile project(':subprojects:groovy-test')
 }
 

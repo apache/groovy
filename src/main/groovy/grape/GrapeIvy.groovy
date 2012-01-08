@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2011 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,8 +40,8 @@ import org.apache.ivy.plugins.resolver.IBiblioResolver
 import org.apache.ivy.util.DefaultMessageLogger
 import org.apache.ivy.util.Message
 import org.codehaus.groovy.reflection.ReflectionUtils
-//import java.util.zip.ZipFile
-//import java.util.zip.ZipEntry
+import java.util.zip.ZipFile
+import java.util.zip.ZipEntry
 
 /**
  * @author Danno Ferrin
@@ -247,7 +247,7 @@ class GrapeIvy implements GrapeEngine {
 
             for (URI uri in resolve(loader, args, dependencies)) {
                 //TODO check artifact type, jar vs library, etc
-//                processServices(new File(uri));
+                processServices(new File(uri));
                 loader.addURL(uri.toURL())
             }
         } catch (Exception e) {
@@ -265,17 +265,17 @@ class GrapeIvy implements GrapeEngine {
         return null
     }
 
-//    void processServices(File f) {
-//        System.out.println('Processing ' + f.getCanonicalPath())
-//        ZipFile zf = new ZipFile(f)
-//        ZipEntry dgmMethods = zf.getEntry("META-INF/services/groovy/defaultGroovyMethods")
-//        if (dgmMethods == null) return
-//        InputStream is = zf.getInputStream(dgmMethods)
-//        List<String> classNames = is.text.readLines()
-//        classNames.each {
-//            println it.trim()
-//        }
-//    }
+    void processServices(File f) {
+        System.out.println('Processing ' + f.getCanonicalPath())
+        ZipFile zf = new ZipFile(f)
+        ZipEntry dgmMethods = zf.getEntry("META-INF/services/org.codehaus.groovy.runtime.DefaultGroovyMethods")
+        if (dgmMethods == null) return
+        InputStream is = zf.getInputStream(dgmMethods)
+        List<String> classNames = is.text.readLines()
+        classNames.each {
+            println it.trim()
+        }
+    }
 
     public ResolveReport getDependencies(Map args, IvyGrabRecord... grabRecords) {
         ResolutionCacheManager cacheManager = ivyInstance.resolutionCacheManager

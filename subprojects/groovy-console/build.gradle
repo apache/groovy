@@ -5,16 +5,14 @@ apply plugin: 'code-quality'
 checkstyleConfigFileName = "../../config/checkstyle/checkstyle.xml"
 codeNarcConfigFileName = "../../config/codenarc/codenarc.groovy"
 
-repositories {
-    mavenCentral()
-}
-
 dependencies {
     compile project(':')
     groovy project(':')
     compile project(':subprojects:groovy-swing')
-    testCompile project(':subprojects:groovy-test')
+    testCompile project(':subprojects:groovy-swing').sourceSets.test.runtimeClasspath
 }
+
+evaluationDependsOn(':subprojects:groovy-swing')
 
 // Required for MessageSourceTest
 sourceSets.test.runtimeClasspath += files(sourceSets.test.groovy.srcDirs)
