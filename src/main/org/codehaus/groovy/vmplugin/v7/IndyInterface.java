@@ -22,6 +22,7 @@ import groovy.lang.GroovySystem;
 import groovy.lang.MetaClass;
 import groovy.lang.MetaClassImpl;
 import groovy.lang.MetaMethod;
+import groovy.lang.MissingMethodException;
 
 import java.lang.invoke.*;
 import java.lang.invoke.MethodHandles.Lookup;
@@ -35,6 +36,7 @@ import org.codehaus.groovy.reflection.CachedMethod;
 import org.codehaus.groovy.runtime.NullObject;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 import org.codehaus.groovy.runtime.metaclass.DefaultMetaClassInfo;
+import org.codehaus.groovy.runtime.metaclass.MissingMethodExecutionFailed;
 import org.codehaus.groovy.runtime.metaclass.NewInstanceMetaMethod;
 import org.codehaus.groovy.runtime.metaclass.ReflectionMetaMethod;
 import org.codehaus.groovy.runtime.metaclass.DefaultMetaClassInfo.ConstantMetaClassVersioning;
@@ -75,7 +77,7 @@ public class IndyInterface {
             UNWRAP_METHOD,  TO_STRING,          TO_BYTE,        
             TO_BIGINT,      SAME_MC,            IS_NULL,
             IS_NOT_NULL,    UNWRAP_EXCEPTION,   SAME_CLASS,
-            META_METHOD_INVOKER;
+            META_METHOD_INVOKER,    GROOVY_OBJECT_INVOKER;
         static {
             try {
                 UNWRAP_METHOD = LOOKUP.findStatic(IndyInterface.class, "unwrap", O2O);
@@ -88,6 +90,7 @@ public class IndyInterface {
                 UNWRAP_EXCEPTION = LOOKUP.findStatic(IndyInterface.class, "unwrap", MethodType.methodType(Object.class, GroovyRuntimeException.class));
                 SAME_CLASS = LOOKUP.findStatic(IndyInterface.class, "sameClass", MethodType.methodType(boolean.class, Class.class, Object.class));
                 META_METHOD_INVOKER = LOOKUP.findVirtual(MetaMethod.class, "invoke", GENERAL_INVOKER_SIGNATURE);
+                GROOVY_OBJECT_INVOKER = LOOKUP.findStatic(IndyInterface.class, "invokeGroovyObjectInvoker", MethodType.methodType(Object.class, MissingMethodException.class, Object.class, String.class, Object[].class));
             } catch (Exception e) {
                 throw new GroovyBugError(e);
             }
@@ -234,17 +237,40 @@ public class IndyInterface {
                     ci.handle = LOOKUP.findVirtual(mc.getClass(), "invokeStaticMethod", MethodType.methodType(Object.class, Object.class, String.class, Object[].class));
                     ci.handle = ci.handle.bindTo(mc);
                 } else {
-                    ci.handle = LOOKUP.findVirtual(mc.getClass(), "invokeMethod", INVOKE_METHOD_SIGNATURE);
-                    ci.handle = ci.handle.bindTo(mc).bindTo(ci.sender);
+                    ci.handle = LOOKUP.findVirtual(MetaClass.class, "invokeMethod", INVOKE_METHOD_SIGNATURE);
+                    ci.handle = ci.handle.bindTo(mc).bindTo(receiver.getClass());
                     ci.handle = MethodHandles.insertArguments(ci.handle, ci.handle.type().parameterCount()-2, true, false);
+                    
+                    // if the meta class call fails we may still want to fall back to call
+                    // GroovyObject#invokeMethod if the receiver is a GroovyObject
+                    ci.handle = MethodHandles.catchException(ci.handle, MissingMethodException.class, GROOVY_OBJECT_INVOKER);
                 }
                 ci.handle = MethodHandles.insertArguments(ci.handle, 1, ci.methodName);
                 ci.handle = ci.handle.asCollector(Object[].class, ci.targetType.parameterCount()-2);
             } catch (Exception e) {
                 throw new GroovyBugError(e);
-            }            
+            }
+            
+           
         }
 
+        /**
+         * called by handle
+         */
+        public static Object invokeGroovyObjectInvoker(MissingMethodException e, Object receiver, String name, Object[] args) {
+            if (e instanceof MissingMethodExecutionFailed) {
+                throw (MissingMethodException)e.getCause();
+            } else if (receiver.getClass() == e.getType() && e.getMethod().equals(name)) {
+                //TODO: we should consider calling this one directly for MetaClassImpl,
+                //      then we save the new method selection
+                
+                // in case there's nothing else, invoke the object's own invokeMethod()
+                return ((GroovyObject)receiver).invokeMethod(name, args);
+            } else {
+                throw e;
+            }
+        }
+        
         /**
          * called by handle 
          */
