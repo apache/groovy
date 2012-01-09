@@ -195,6 +195,13 @@ class MiscSTCTest extends StaticTypeCheckingTestCase {
         ''', 'Cannot find matching method java.lang.Object#toInteger()'
     }
 
+    void testClassLiteralAsArgument() {
+        assertScript '''
+            void lookup(Class clazz) { }
+            lookup(Date)
+        '''
+    }
+
     public static class MiscSTCTestSupport {
         static def foo() { '123' }
     }
