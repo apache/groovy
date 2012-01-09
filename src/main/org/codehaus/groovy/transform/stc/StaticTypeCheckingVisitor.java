@@ -169,6 +169,14 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         classNode = oldCN;
     }
 
+    @Override
+    public void visitClassExpression(final ClassExpression expression) {
+        super.visitClassExpression(expression);
+        ClassNode cn = (ClassNode) expression.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
+        if (cn==null) {
+            storeType(expression, getType(expression));
+        }
+    }
 
     @Override
     public void visitVariableExpression(VariableExpression vexp) {
@@ -590,7 +598,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
         List<ClassNode> tests = new LinkedList<ClassNode>();
         tests.add(clazz);
-        if (objectExpression instanceof ClassExpression) tests.add(CLASS_Type);
+        if (clazz.equals(CLASS_Type) && clazz.getGenericsTypes()!=null) {
+            tests.add(clazz.getGenericsTypes()[0].getType());
+        }
         if (!temporaryIfBranchTypeInformation.empty()) {            
             List<ClassNode> classNodes = getTemporaryTypesForExpression(objectExpression);
             if (classNodes != null) tests.addAll(classNodes);
@@ -1095,7 +1105,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 visitMethodCallExpression(subcall);
                 // the inferred type here should be a list of what the subcall returns
                 ClassNode subcallReturnType = getType(subcall);
-                ClassNode listNode = new ClassNode(List.class);
+                ClassNode listNode = LIST_TYPE.getPlainNodeReference();
                 listNode.setGenericsTypes(new GenericsType[]{new GenericsType(wrapTypeIfNecessary(subcallReturnType))});
                 storeType(call, listNode);
                 return;
@@ -1206,8 +1216,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 List<ClassNode> receivers = new LinkedList<ClassNode>();
                 if (!withReceiverList.isEmpty()) receivers.addAll(withReceiverList);
                 receivers.add(receiver);
-                if (objectExpression instanceof ClassExpression) {
-                    receivers.add(CLASS_Type);
+                if (receiver.equals(CLASS_Type) && receiver.getGenericsTypes()!=null) {
+                    GenericsType clazzGT = receiver.getGenericsTypes()[0];
+                    receivers.add(clazzGT.getType());
                 }
                 if (!temporaryIfBranchTypeInformation.empty()) {
                     List<ClassNode> potentialReceiverType = getTemporaryTypesForExpression(objectExpression);
@@ -1669,7 +1680,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     private ClassNode getType(ASTNode exp) {
         ClassNode cn = (ClassNode) exp.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
         if (cn != null) return cn;
-        if (exp instanceof VariableExpression) {
+        if (exp instanceof ClassExpression) {
+            ClassNode node = CLASS_Type.getPlainNodeReference();
+            node.setGenericsTypes(new GenericsType[]{
+                    new GenericsType(((ClassExpression) exp).getType())
+            });
+            return node;
+        } else if (exp instanceof VariableExpression) {
             VariableExpression vexp = (VariableExpression) exp;
             if (vexp == VariableExpression.THIS_EXPRESSION) return classNode;
             if (vexp == VariableExpression.SUPER_EXPRESSION) return classNode.getSuperClass();
@@ -1696,13 +1713,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 GenericsType[] types = objectExpType.getGenericsTypes();
                 if ("key".equals(propertyName)) {
                     if (types.length==2) {
-                        ClassNode listKey = new ClassNode(List.class);
+                        ClassNode listKey = LIST_TYPE.getPlainNodeReference();
                         listKey.setGenericsTypes(new GenericsType[]{types[0]});
                         return listKey;
                     }
                 } else if ("value".equals(propertyName)) {
                     if (types.length==2) {
-                        ClassNode listValue = new ClassNode(List.class);
+                        ClassNode listValue = LIST_TYPE.getPlainNodeReference();
                         listValue.setGenericsTypes(new GenericsType[]{types[1]});
                         return listValue;
                     }
@@ -1916,7 +1933,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     if (methodGenericTypes.length==1) {
                         ClassNode nodeType = getWrapper(methodGenericTypes[0].getType());
                         ClassNode actualType = getWrapper(arguments[argNum]);
-                        if (!actualType.isDerivedFrom(nodeType)) {
+                        if (!implementsInterfaceOrIsSubclassOf(actualType, nodeType)) {
                             failure++;
                         }
                     } else {
@@ -1932,9 +1949,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     if (methodGenericTypes.length==1) {
                         ClassNode nodeType = getWrapper(methodGenericTypes[0].getType());
                         ClassNode actualType = getWrapper(arguments[argNum].getComponentType());
-                        if (!actualType.equals(nodeType)) {
+                        if (!implementsInterfaceOrIsSubclassOf(actualType, nodeType)) {
                             failure++;
                             // for proper error message
+                            GenericsType baseGT = methodGenericTypes[0];
+                            methodGenericTypes[0] = new GenericsType(baseGT.getType(), baseGT.getUpperBounds(), baseGT.getLowerBound());
                             methodGenericTypes[0].setType(methodGenericTypes[0].getType().makeArray());
                         }
                     } else {
