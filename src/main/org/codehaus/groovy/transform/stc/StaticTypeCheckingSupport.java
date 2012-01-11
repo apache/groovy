@@ -187,7 +187,7 @@ public abstract class StaticTypeCheckingSupport {
         if (clazz.isArray()) {
             ClassNode componentClass = clazz.getComponentType();
             if (!componentClass.equals(OBJECT_TYPE)) {
-                if (componentClass.isInterface()) {
+                if (componentClass.isInterface() || componentClass.getSuperClass()==null) {
                     findDGMMethodsForClassNode(OBJECT_TYPE.makeArray(), name, accumulator);
                 } else {
                     findDGMMethodsForClassNode(componentClass.getSuperClass().makeArray(), name, accumulator);

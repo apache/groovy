@@ -321,5 +321,24 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         ''', 'Cannot find matching method [Ljava.io.Serializable;#putAt(int, groovy.util.XmlSlurper)'
     }
 
+    void testArrayGetOnPrimitiveArray() {
+        assertScript '''
+            int m() {
+                int[] arr = [1,2,3]
+                arr.getAt(1)
+            }
+            assert m()==2
+        '''
+    }
+
+    void testReturnTypeOfArrayGet() {
+        assertScript '''
+            Serializable m() {
+                String[] arr = ['1','2','3']
+                arr.getAt(1)
+            }
+            assert m()=='2'
+        '''
+    }
 }
 
