@@ -21,6 +21,7 @@ import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.classgen.asm.OptimizingStatementWriter;
 import org.codehaus.groovy.classgen.asm.WriterController;
 import org.codehaus.groovy.classgen.asm.WriterControllerFactory;
+import org.codehaus.groovy.classgen.asm.sc.StaticTypesTypeChooser;
 import org.codehaus.groovy.classgen.asm.sc.StaticTypesWriterControllerFactoryImpl;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.OptimizerVisitor;
@@ -99,6 +100,9 @@ public class StaticCompileTransformation extends StaticTypesTransformation {
     private static class BinaryExpressionTransformer extends ClassCodeExpressionTransformer {
         private final SourceUnit unit;
 
+        private final StaticTypesTypeChooser typeChooser = new StaticTypesTypeChooser();
+        private ClassNode classNode;
+
         private BinaryExpressionTransformer(final SourceUnit unit) {
             this.unit = unit;
         }
@@ -111,43 +115,116 @@ public class StaticCompileTransformation extends StaticTypesTransformation {
         @Override
         public Expression transform(Expression expr) {
             if (expr instanceof StaticMethodCallExpression) {
-                StaticMethodCallExpression orig = (StaticMethodCallExpression) expr;
-                MethodNode target = (MethodNode) orig.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET);
-                if (target!=null) {
-                    MethodCallExpression call = new MethodCallExpression(
-                            new ClassExpression(orig.getOwnerType()),
-                            orig.getMethod(),
-                            orig.getArguments()
-                    );
-                    call.setMethodTarget(target);
-                    return call;
-                }
+                return transformStaticMethodCallExpression((StaticMethodCallExpression) expr);
             }
             if (expr instanceof BinaryExpression) {
-                Object[] list = (Object[]) expr.getNodeMetaData(BINARY_EXP_TARGET);
-                if (list!=null) {
-                    BinaryExpression bin = (BinaryExpression) expr;
-                    Token operation = bin.getOperation();
-                    boolean isAssignment = StaticTypeCheckingSupport.isAssignment(operation.getType());
+                return transformBinaryExpression(expr);
+            }
+            if (expr instanceof MethodCallExpression) {
+                return transformMethodCallExpression((MethodCallExpression) expr);
+            }
+            return super.transform(expr);
+        }
 
-                    MethodNode node = (MethodNode) list[0];
-                    String name = (String) list[1];
-                    Expression left = transform(bin.getLeftExpression());
-                    Expression right = transform(bin.getRightExpression());
-                    MethodCallExpression call = new MethodCallExpression(
-                            left,
-                            name,
-                            new ArgumentListExpression(right)
-                    );
-                    call.setMethodTarget(node);
-                    if (!isAssignment) return call;
-                    // case of +=, -=, /=, ...
-                    // the method represents the operation type only, and we must add an assignment
-                    return new BinaryExpression(left, Token.newSymbol("=", operation.getStartLine(), operation.getStartColumn()), call);
+        @Override
+        public void visitClass(final ClassNode node) {
+            ClassNode prec = classNode;
+            classNode = node;
+            super.visitClass(node);
+            classNode = prec;
+        }
+
+        private Expression transformMethodCallExpression(final MethodCallExpression expr) {
+            Expression objectExpression = expr.getObjectExpression();
+            ClassNode type = typeChooser.resolveType(objectExpression, classNode);
+            if (type!=null && type.isArray()) {
+                String method = expr.getMethodAsString();
+                if ("getAt".equals(method)) {
+                    Expression arguments = expr.getArguments();
+                    if (arguments instanceof TupleExpression) {
+                        List<Expression> argList = ((TupleExpression)arguments).getExpressions();
+                        if (argList.size()==1) {
+                            Expression indexExpr = argList.get(0);
+                            ClassNode argType = typeChooser.resolveType(indexExpr, classNode);
+                            if (argType!=null && ClassHelper.Integer_TYPE==ClassHelper.getWrapper(argType)) {
+                                BinaryExpression binaryExpression = new BinaryExpression(
+                                        objectExpression,
+                                        Token.newSymbol("[", indexExpr.getLineNumber(), indexExpr.getColumnNumber()),
+                                        indexExpr
+                                );
+                                binaryExpression.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, type.getComponentType());
+                                return binaryExpression;
+                            }
+                        }
+                    }
+                }
+                if ("putAt".equals(method)) {
+                    Expression arguments = expr.getArguments();
+                    if (arguments instanceof TupleExpression) {
+                        List<Expression> argList = ((TupleExpression)arguments).getExpressions();
+                        if (argList.size()==2) {
+                            Expression indexExpr = argList.get(0);
+                            Expression objExpr = argList.get(1);
+                            ClassNode argType = typeChooser.resolveType(indexExpr, classNode);
+                            if (argType!=null && ClassHelper.Integer_TYPE==ClassHelper.getWrapper(argType)) {
+                                BinaryExpression arrayGet = new BinaryExpression(
+                                        objectExpression,
+                                        Token.newSymbol("[", indexExpr.getLineNumber(), indexExpr.getColumnNumber()),
+                                        indexExpr
+                                );
+                                arrayGet.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, type.getComponentType());
+                                BinaryExpression assignment = new BinaryExpression(
+                                        arrayGet,
+                                        Token.newSymbol("=", objExpr.getLineNumber(), objExpr.getColumnNumber()),
+                                        objExpr
+                                );
+                                return assignment;
+                            }
+                        }
+                    }
                 }
             }
             return super.transform(expr);
-        }                
+        }
+
+        private Expression transformBinaryExpression(final Expression expr) {
+            Object[] list = (Object[]) expr.getNodeMetaData(BINARY_EXP_TARGET);
+            if (list!=null) {
+                BinaryExpression bin = (BinaryExpression) expr;
+                Token operation = bin.getOperation();
+                boolean isAssignment = StaticTypeCheckingSupport.isAssignment(operation.getType());
+
+                MethodNode node = (MethodNode) list[0];
+                String name = (String) list[1];
+                Expression left = transform(bin.getLeftExpression());
+                Expression right = transform(bin.getRightExpression());
+                MethodCallExpression call = new MethodCallExpression(
+                        left,
+                        name,
+                        new ArgumentListExpression(right)
+                );
+                call.setMethodTarget(node);
+                if (!isAssignment) return call;
+                // case of +=, -=, /=, ...
+                // the method represents the operation type only, and we must add an assignment
+                return new BinaryExpression(left, Token.newSymbol("=", operation.getStartLine(), operation.getStartColumn()), call);
+            }
+            return super.transform(expr);
+        }
+
+        private Expression transformStaticMethodCallExpression(final StaticMethodCallExpression orig) {
+            MethodNode target = (MethodNode) orig.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET);
+            if (target!=null) {
+                MethodCallExpression call = new MethodCallExpression(
+                        new ClassExpression(orig.getOwnerType()),
+                        orig.getMethod(),
+                        orig.getArguments()
+                );
+                call.setMethodTarget(target);
+                return call;
+            }
+            return super.transform(orig);
+        }
     }
 
 }

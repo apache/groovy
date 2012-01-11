@@ -115,6 +115,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     private Map<Parameter, ClassNode> forLoopVariableTypes = new HashMap<Parameter, ClassNode>();
     
+    // this map is used to ensure that two errors are not reported on the same line/column
+    private final Set<Long> reportedErrors = new TreeSet<Long>();
+    
     private final ReturnAdder returnAdder = new ReturnAdder(new ReturnAdder.ReturnStatementListener() {
         public void returnStatementAdded(final ReturnStatement returnStatement) {
             if (returnStatement.getExpression().equals(ConstantExpression.NULL)) return;
@@ -2000,6 +2003,15 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         } else {
             // ignore errors which are related to unknown source locations
             // because they are likely related to generated code
+        }
+    }
+
+    @Override
+    protected void addError(final String msg, final ASTNode expr) {
+        Long err = ((long)expr.getLineNumber()) << 16 + expr.getColumnNumber();
+        if (!reportedErrors.contains(err)) {
+            super.addError(msg, expr);
+            reportedErrors.add(err);
         }
     }
 
