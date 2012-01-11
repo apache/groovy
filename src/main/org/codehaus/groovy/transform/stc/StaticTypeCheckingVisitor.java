@@ -1801,6 +1801,20 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
      */
     private ClassNode inferReturnTypeGenerics(final ClassNode receiver, final MethodNode method, final Expression arguments) {
         ClassNode returnType = method.getReturnType();
+        if (method instanceof ExtensionMethodNode 
+                && (returnType.isGenericsPlaceHolder()||returnType.isArray() && returnType.getComponentType().isGenericsPlaceHolder())) {
+            // check if the placeholder corresponds to the placeholder of the first parameter
+            ExtensionMethodNode emn = (ExtensionMethodNode) method;
+            MethodNode dgmMethod = emn.getExtensionMethodNode();
+            ClassNode firstParam = dgmMethod.getParameters()[0].getOriginType();
+            if (firstParam.isGenericsPlaceHolder() || firstParam.isArray() && firstParam.getComponentType().isGenericsPlaceHolder()) {
+                ClassNode paramType = firstParam.isArray()?firstParam.getComponentType():firstParam;
+                ClassNode returnTypeComp = returnType.isArray()?returnType.getComponentType():returnType;
+                if (paramType.getName().equals(returnTypeComp.getName())) {
+                    return returnType.isArray()?receiver:receiver.getComponentType();
+                }
+            }
+        }
         if (!returnType.isUsingGenerics()) return returnType;
         GenericsType[] returnTypeGenerics = returnType.getGenericsTypes();
         List<GenericsType> placeholders = new LinkedList<GenericsType>();
