@@ -51,7 +51,8 @@ public class PojoMetaClassSite extends MetaClassSite{
     }
 
     protected final boolean checkCall(Object receiver) {
-        return receiver.getClass() == metaClass.getTheClass()
-            && version == classInfo.getVersion(); // metaClass is still valid
+        return  receiver!=null &&
+                receiver.getClass() == metaClass.getTheClass() &&
+                version == classInfo.getVersion(); // metaClass is still valid
     }
 }
