@@ -340,7 +340,5 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
             assert m()=='2'
         '''
     }
-
-
 }
 
