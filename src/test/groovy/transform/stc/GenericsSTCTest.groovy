@@ -299,6 +299,13 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             long time = c.get().time
         '''
     }
+
+    void testReturnAnntationClass() {
+        assertScript '''
+            import java.lang.annotation.Documented
+            Documented annotation = Deprecated.getAnnotation(Documented)
+        '''
+    }
   
     static class MyList extends LinkedList<String> {}
 }
