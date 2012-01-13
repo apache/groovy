@@ -19,13 +19,9 @@ import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.classgen.GeneratorContext;
 import org.codehaus.groovy.classgen.asm.*;
-import org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys;
 import org.codehaus.groovy.transform.sc.StaticCompilationVisitor;
-import org.codehaus.groovy.transform.sc.StaticCompileTransformation;
 import org.objectweb.asm.ClassVisitor;
 
-import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.*;
-import static org.codehaus.groovy.transform.sc.StaticCompileTransformation.COMPILE_STATIC_ANNOTATION;
 
 /**
  * An alternative {@link org.codehaus.groovy.classgen.asm.WriterController} which handles static types and method

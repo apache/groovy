@@ -35,9 +35,5 @@ class MiscStaticCompileTest extends MiscSTCTest {
         configure()
         shell = new GroovyShell(config)
     }
-
-    void testCompareEnumToNull() {
-        // enums not yet supported
-    }
 }
 

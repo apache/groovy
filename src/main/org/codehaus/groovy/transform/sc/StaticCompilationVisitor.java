@@ -17,16 +17,17 @@ package org.codehaus.groovy.transform.sc;
 
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
+import org.codehaus.groovy.classgen.asm.InvocationWriter;
+import org.codehaus.groovy.classgen.asm.TypeChooser;
+import org.codehaus.groovy.classgen.asm.sc.StaticTypesTypeChooser;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor;
 import org.codehaus.groovy.transform.stc.TypeCheckerPluginFactory;
 
-import java.util.Arrays;
-import java.util.Iterator;
+import java.util.List;
 
 import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.BINARY_EXP_TARGET;
 import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.STATIC_COMPILE_NODE;
-import static org.codehaus.groovy.transform.sc.StaticCompileTransformation.COMPILE_STATIC_ANNOTATION;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.DIRECT_METHOD_CALL_TARGET;
 
 /**
@@ -41,6 +42,10 @@ import static org.codehaus.groovy.transform.stc.StaticTypesMarker.DIRECT_METHOD_
  * @author Cedric Champeau
  */
 public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
+    private final TypeChooser typeChooser = new StaticTypesTypeChooser();
+    
+    private ClassNode classNode;
+    
     public StaticCompilationVisitor(final SourceUnit unit, final ClassNode node, final TypeCheckerPluginFactory pluginFactory) {
         super(unit, node, pluginFactory);
     }
@@ -54,6 +59,19 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
             return isStaticallyCompiled(((InnerClassNode)node).getOuterClass());
         }
         return false;
+    }
+
+    @Override
+    public void visitClass(final ClassNode node) {
+        ClassNode orig = classNode;
+        classNode = node;
+        super.visitClass(node);
+        classNode = orig;
+    }
+
+    @Override
+    public void visitSpreadExpression(final SpreadExpression expression) {
+        throw new UnsupportedOperationException("The spread operator cannot be used with static compilation because the number of arguments cannot be determined at compile time");
     }
 
     @Override
@@ -75,6 +93,18 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
         MethodNode target = (MethodNode) call.getNodeMetaData(DIRECT_METHOD_CALL_TARGET);
         if (target==null && call.getLineNumber()>0) {
             addError("Target constructor for constructor call expression hasn't been set", call);
+        } else {
+            if (target==null) {
+                // try to find a target
+                ArgumentListExpression argumentListExpression = InvocationWriter.makeArgumentList(call.getArguments());
+                List<Expression> expressions = argumentListExpression.getExpressions();
+                ClassNode[] args = new ClassNode[expressions.size()];
+                for (int i = 0; i < args.length; i++) {
+                    args[i] = typeChooser.resolveType(expressions.get(i), classNode);
+                }
+                MethodNode constructor = findMethodOrFail(call, call.isSuperCall() ? classNode.getSuperClass() : classNode, "<init>", args);
+                call.putNodeMetaData(DIRECT_METHOD_CALL_TARGET, constructor);
+            }
         }
     }
 

@@ -18,23 +18,23 @@ package org.codehaus.groovy.transform.sc;
 import groovy.transform.CompileStatic;
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
-import org.codehaus.groovy.classgen.asm.OptimizingStatementWriter;
-import org.codehaus.groovy.classgen.asm.WriterController;
 import org.codehaus.groovy.classgen.asm.WriterControllerFactory;
 import org.codehaus.groovy.classgen.asm.sc.StaticTypesTypeChooser;
 import org.codehaus.groovy.classgen.asm.sc.StaticTypesWriterControllerFactoryImpl;
 import org.codehaus.groovy.control.CompilePhase;
-import org.codehaus.groovy.control.OptimizerVisitor;
 import org.codehaus.groovy.control.SourceUnit;
+import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.syntax.Token;
+import org.codehaus.groovy.syntax.Types;
 import org.codehaus.groovy.transform.GroovyASTTransformation;
 import org.codehaus.groovy.transform.StaticTypesTransformation;
 import org.codehaus.groovy.transform.stc.*;
 
 import java.util.Collections;
-import java.util.LinkedList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.BINARY_EXP_TARGET;
 import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.STATIC_COMPILE_NODE;
@@ -48,6 +48,20 @@ import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.STA
 public class StaticCompileTransformation extends StaticTypesTransformation {
 
     public static final ClassNode COMPILE_STATIC_ANNOTATION = ClassHelper.make(CompileStatic.class);
+    private static final ClassNode BYTECODE_ADAPTER_CLASS = ClassHelper.make(ScriptBytecodeAdapter.class);
+    
+    
+    private final static Map<Integer, MethodNode> BYTECODE_BINARY_ADAPTERS = new HashMap<Integer, MethodNode>() {{
+        put(Types.COMPARE_EQUAL, BYTECODE_ADAPTER_CLASS.getMethods("compareEqual").get(0));
+        put(Types.COMPARE_GREATER_THAN, BYTECODE_ADAPTER_CLASS.getMethods("compareGreaterThan").get(0));
+        put(Types.COMPARE_GREATER_THAN_EQUAL, BYTECODE_ADAPTER_CLASS.getMethods("compareGreaterThanEqual").get(0));
+        put(Types.COMPARE_LESS_THAN, BYTECODE_ADAPTER_CLASS.getMethods("compareLessThan").get(0));
+        put(Types.COMPARE_LESS_THAN_EQUAL, BYTECODE_ADAPTER_CLASS.getMethods("compareLessThanEqual").get(0));
+        put(Types.COMPARE_NOT_EQUAL, BYTECODE_ADAPTER_CLASS.getMethods("compareNotEqual").get(0));
+        put(Types.COMPARE_TO, BYTECODE_ADAPTER_CLASS.getMethods("compareTo").get(0));
+        
+    }};
+    
     private final StaticTypesWriterControllerFactoryImpl factory = new StaticTypesWriterControllerFactoryImpl();
 
     @Override
@@ -139,6 +153,7 @@ public class StaticCompileTransformation extends StaticTypesTransformation {
             ClassNode type = typeChooser.resolveType(objectExpression, classNode);
             if (type!=null && type.isArray()) {
                 String method = expr.getMethodAsString();
+                ClassNode componentType = type.getComponentType();
                 if ("getAt".equals(method)) {
                     Expression arguments = expr.getArguments();
                     if (arguments instanceof TupleExpression) {
@@ -146,13 +161,18 @@ public class StaticCompileTransformation extends StaticTypesTransformation {
                         if (argList.size()==1) {
                             Expression indexExpr = argList.get(0);
                             ClassNode argType = typeChooser.resolveType(indexExpr, classNode);
-                            if (argType!=null && ClassHelper.Integer_TYPE==ClassHelper.getWrapper(argType)) {
+                            ClassNode indexType = ClassHelper.getWrapper(argType);
+                            if (componentType.isEnum() && ClassHelper.Number_TYPE==indexType) {
+                                // workaround for generated code in enums which use .next() returning a Number
+                                indexType = ClassHelper.Integer_TYPE;
+                            }
+                            if (argType!=null && ClassHelper.Integer_TYPE==indexType) {
                                 BinaryExpression binaryExpression = new BinaryExpression(
                                         objectExpression,
                                         Token.newSymbol("[", indexExpr.getLineNumber(), indexExpr.getColumnNumber()),
                                         indexExpr
                                 );
-                                binaryExpression.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, type.getComponentType());
+                                binaryExpression.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, componentType);
                                 return binaryExpression;
                             }
                         }
@@ -172,7 +192,7 @@ public class StaticCompileTransformation extends StaticTypesTransformation {
                                         Token.newSymbol("[", indexExpr.getLineNumber(), indexExpr.getColumnNumber()),
                                         indexExpr
                                 );
-                                arrayGet.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, type.getComponentType());
+                                arrayGet.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, componentType);
                                 BinaryExpression assignment = new BinaryExpression(
                                         arrayGet,
                                         Token.newSymbol("=", objExpr.getLineNumber(), objExpr.getColumnNumber()),
@@ -193,17 +213,26 @@ public class StaticCompileTransformation extends StaticTypesTransformation {
                 BinaryExpression bin = (BinaryExpression) expr;
                 Token operation = bin.getOperation();
                 boolean isAssignment = StaticTypeCheckingSupport.isAssignment(operation.getType());
-
+                MethodCallExpression call;
                 MethodNode node = (MethodNode) list[0];
                 String name = (String) list[1];
                 Expression left = transform(bin.getLeftExpression());
                 Expression right = transform(bin.getRightExpression());
-                MethodCallExpression call = new MethodCallExpression(
+                call = new MethodCallExpression(
                         left,
                         name,
                         new ArgumentListExpression(right)
                 );
                 call.setMethodTarget(node);
+                ClassExpression sba = new ClassExpression(BYTECODE_ADAPTER_CLASS);
+                MethodNode adapter = BYTECODE_BINARY_ADAPTERS.get(operation.getType());
+                if (adapter!=null) {
+                    // replace with compareEquals
+                    call = new MethodCallExpression(sba,
+                            "compareEquals",
+                            new ArgumentListExpression(left, right));
+                    call.setMethodTarget(adapter);
+                }
                 if (!isAssignment) return call;
                 // case of +=, -=, /=, ...
                 // the method represents the operation type only, and we must add an assignment

@@ -80,7 +80,17 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         }
         if (makeGetPublicField(receiver, receiverType, methodName, implicitThis, samePackages(receiverType.getPackageName(), classNode.getPackageName()))) return;
         if (makeGetPropertyWithGetter(receiver, receiverType, methodName)) return;
-
+        if (receiver instanceof ClassExpression) {
+            if (receiverType.isEnum()
+                    || ClassHelper.CLASS_Type.equals(receiverType) && receiverType.getGenericsTypes()!=null && receiverType.getGenericsTypes()[0].getType().isEnum()) {
+                if (ClassHelper.CLASS_Type.equals(receiverType)) {
+                    receiverType = receiverType.getGenericsTypes()[0].getType();
+                }
+                mv.visitFieldInsn(GETSTATIC, BytecodeHelper.getClassInternalName(receiverType), methodName, BytecodeHelper.getTypeDescription(receiverType));
+                controller.getOperandStack().push(receiverType);
+                return;
+            }
+        }
         throw new UnsupportedOperationException("Operation not yet implemented: "+receiver.getText()+"."+methodName);
     }
 

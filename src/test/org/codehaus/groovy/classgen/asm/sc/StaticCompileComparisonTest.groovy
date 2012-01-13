@@ -67,5 +67,19 @@ class StaticCompileComparisonTest extends AbstractBytecodeTestCase {
         )
     }
 
+    void testIdentityCompare() {
+        def bytecode = compile([method:'m'],'''
+            @groovy.transform.CompileStatic
+            boolean m(Object o) {
+                return o.is(o)
+            }
+            assert m(new Object())
+        ''')
+        assert bytecode.hasStrictSequence(
+                ['ALOAD','ALOAD', 'INVOKESTATIC org/codehaus/groovy/runtime/DefaultGroovyMethods.is (Ljava/lang/Object;Ljava/lang/Object;)Z']
+        )
+        clazz.newInstance().main()
+    }
+
 
 }
