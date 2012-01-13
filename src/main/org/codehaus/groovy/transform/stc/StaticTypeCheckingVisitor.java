@@ -1890,6 +1890,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
         returnType = returnType.getPlainNodeReference();
         returnType.setGenericsTypes(copy);
+        if (returnType.equals(Annotation_TYPE) && returnType.getGenericsTypes()!=null && !returnType.getGenericsTypes()[0].isPlaceholder()) {
+            return returnType.getGenericsTypes()[0].getType();
+        }
         return returnType;
     }
 
