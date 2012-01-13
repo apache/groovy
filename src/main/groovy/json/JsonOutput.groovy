@@ -139,10 +139,12 @@ class JsonOutput {
      * @return a JSON object representation for a map
      */
     static String toJson(Map m) {
-        if(m.containsKey(null)) {
-            throw new IllegalArgumentException('Null key for a Map not allowed')
-        }
-        "{" + m.collect { k, v -> toJson(k.toString()) + ':' + toJson(v) }.join(',') + "}"
+        "{" + m.collect { k, v ->
+                if (k == null) {
+                    throw new IllegalArgumentException('Null key for a Map not allowed')
+                }
+                toJson(k.toString()) + ':' + toJson(v)
+        }.join(',') + "}"
     }
 
     /**
