@@ -1629,6 +1629,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
         } else {
             methods = receiver.getMethods(name);
+            if (receiver instanceof InnerClassNode && !receiver.isStaticClass()) {
+                methods.addAll(receiver.getOuterClass().getMethods(name));
+            }
             if (methods.isEmpty() && (args==null || args.length==0)) {
                 // check if it's a property
                 String pname = null;
