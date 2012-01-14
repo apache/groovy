@@ -429,9 +429,12 @@ class SqlCompleteTest extends TestHelper {
         assert names[1] == ["NAME":"coffee"]
     }
 
-    void testNewInstanceMapMustContainUrl() {
+    void testNewInstanceMapMustContainNonNullUrl() {
         shouldFail(IllegalArgumentException) {
             Sql.newInstance(driver: 'org.hsqldb.jdbcDriver', user: 'scott', password: 'tiger')
+        }
+        shouldFail(IllegalArgumentException) {
+            Sql.newInstance(url: null, driver: 'org.hsqldb.jdbcDriver', user: 'scott', password: 'tiger')
         }
     }
 
