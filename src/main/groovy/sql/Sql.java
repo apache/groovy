@@ -365,6 +365,9 @@ public class Sql {
         if (!args.containsKey("url"))
             throw new IllegalArgumentException("Argument 'url' is required");
 
+        if (args.get("url") == null)
+            throw new IllegalArgumentException("Argument 'url' must not be null");
+
         if (args.containsKey("driverClassName") && args.containsKey("driver"))
             throw new IllegalArgumentException("Only one of 'driverClassName' and 'driver' should be provided");
 
