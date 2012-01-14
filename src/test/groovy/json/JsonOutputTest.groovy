@@ -287,6 +287,12 @@ class JsonOutputTest extends GroovyTestCase {
             toJson([(null): 1])
         }
     }
+
+    void testGROOVY5247() {
+        def m = new TreeMap()
+        m.a = 1
+        assert toJson(m) == '{"a":1}'
+    }
 }
 
 @Canonical
