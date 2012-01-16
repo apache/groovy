@@ -18,6 +18,9 @@ package org.codehaus.groovy.transform.sc;
 import groovy.transform.CompileStatic;
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
+import org.codehaus.groovy.ast.stmt.BlockStatement;
+import org.codehaus.groovy.ast.stmt.ExpressionStatement;
+import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.classgen.asm.WriterControllerFactory;
 import org.codehaus.groovy.classgen.asm.sc.StaticTypesTypeChooser;
 import org.codehaus.groovy.classgen.asm.sc.StaticTypesWriterControllerFactoryImpl;
@@ -31,10 +34,7 @@ import org.codehaus.groovy.transform.GroovyASTTransformation;
 import org.codehaus.groovy.transform.StaticTypesTransformation;
 import org.codehaus.groovy.transform.stc.*;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.BINARY_EXP_TARGET;
 import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.STATIC_COMPILE_NODE;
@@ -137,7 +137,15 @@ public class StaticCompileTransformation extends StaticTypesTransformation {
             if (expr instanceof MethodCallExpression) {
                 return transformMethodCallExpression((MethodCallExpression) expr);
             }
+            if (expr instanceof ClosureExpression) {
+                return transformClosureExpression((ClosureExpression)expr);
+            }
             return super.transform(expr);
+        }
+
+        private Expression transformClosureExpression(final ClosureExpression expr) {
+            visitClassCodeContainer(expr.getCode());
+            return expr;
         }
 
         @Override
@@ -145,7 +153,17 @@ public class StaticCompileTransformation extends StaticTypesTransformation {
             ClassNode prec = classNode;
             classNode = node;
             super.visitClass(node);
+            Iterator<InnerClassNode> innerClasses = classNode.getInnerClasses();
+            while (innerClasses.hasNext()) {
+                InnerClassNode innerClassNode = innerClasses.next();
+                visitClass(innerClassNode);
+            }
             classNode = prec;
+        }
+
+        @Override
+        public void visitClosureExpression(final ClosureExpression expression) {
+            super.visitClosureExpression(expression);
         }
 
         private Expression transformMethodCallExpression(final MethodCallExpression expr) {
