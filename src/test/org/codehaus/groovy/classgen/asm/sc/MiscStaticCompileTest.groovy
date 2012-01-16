@@ -35,5 +35,13 @@ class MiscStaticCompileTest extends MiscSTCTest {
         configure()
         shell = new GroovyShell(config)
     }
+
+    void testEachFileRecurse() {
+        assertScript '''import groovy.io.FileType
+            File dir = new File(System.getProperty('java.io.tmpdir'))
+            dir.eachFileRecurse(FileType.FILES) { File spec ->
+            }
+        '''
+    }
 }
 

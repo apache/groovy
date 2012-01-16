@@ -150,14 +150,18 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         // is direct access possible ?
         if (field !=null && (field.isPublic() || (samePackage && field.isProtected()))) {
             CompileStack compileStack = controller.getCompileStack();
-            if (implicitThis) {
-                compileStack.pushImplicitThis(implicitThis);
-            }
-            receiver.visit(controller.getAcg());
-            if (implicitThis) compileStack.popImplicitThis();
             MethodVisitor mv = controller.getMethodVisitor();
-            int opcode = field.isStatic()?GETSTATIC:GETFIELD;
-            mv.visitFieldInsn(opcode, BytecodeHelper.getClassInternalName(receiverType), fieldName, BytecodeHelper.getTypeDescription(field.getOriginType()));
+            if (field.isStatic()) {
+                mv.visitFieldInsn(GETSTATIC, BytecodeHelper.getClassInternalName(receiverType), fieldName, BytecodeHelper.getTypeDescription(field.getOriginType()));
+                controller.getOperandStack().push(ClassHelper.OBJECT_TYPE);
+            } else {
+                if (implicitThis) {
+                    compileStack.pushImplicitThis(implicitThis);
+                }
+                receiver.visit(controller.getAcg());
+                if (implicitThis) compileStack.popImplicitThis();
+                mv.visitFieldInsn(GETFIELD, BytecodeHelper.getClassInternalName(receiverType), fieldName, BytecodeHelper.getTypeDescription(field.getOriginType()));
+            }
             controller.getOperandStack().replace(field.getOriginType());
             return true;
         }
