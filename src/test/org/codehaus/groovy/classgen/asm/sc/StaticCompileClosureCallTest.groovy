@@ -125,4 +125,16 @@ class StaticCompileClosureCallTest extends AbstractBytecodeTestCase {
         new Foo().m()
         '''
     }
+
+    void testCallMethodWithinClosure() {
+        assertScript '''
+        @groovy.transform.CompileStatic
+        class Foo {
+            static void m(StackTraceElement[] trace) {
+                trace.each { StackTraceElement stackTraceElement -> !stackTraceElement.className.startsWith('foo') }
+            }
+        }
+        1
+        '''
+    }
 }

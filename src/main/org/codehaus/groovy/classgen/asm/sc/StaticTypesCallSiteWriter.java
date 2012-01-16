@@ -138,6 +138,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
                     new ArgumentListExpression()
             );
             call.setMethodTarget(getterNode);
+            call.setImplicitThis(false);
             call.visit(controller.getAcg());
             return true;
         }
