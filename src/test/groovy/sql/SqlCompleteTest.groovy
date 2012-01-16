@@ -429,6 +429,67 @@ class SqlCompleteTest extends TestHelper {
         assert names[1] == ["NAME":"coffee"]
     }
 
+    void testNewInstanceMapMustContainNonNullUrl() {
+        shouldFail(IllegalArgumentException) {
+            Sql.newInstance(driver: 'org.hsqldb.jdbcDriver', user: 'scott', password: 'tiger')
+        }
+        shouldFail(IllegalArgumentException) {
+            Sql.newInstance(url: null, driver: 'org.hsqldb.jdbcDriver', user: 'scott', password: 'tiger')
+        }
+    }
+
+    void testNewInstanceMapShouldNotContainDriverAndDriverClassName() {
+        shouldFail(IllegalArgumentException) {
+            Sql.newInstance(driver: 'a', driverClassName: 'b')
+        }
+    }
+
+    void testNewInstanceMapShouldNotHavePropertiesAndAccountInfo() {
+        def args = [url: getURI(), user: 'sa', password: '']
+        args.properties = [:] as Properties
+        shouldFail(IllegalArgumentException) {
+            Sql.newInstance(args)
+        }
+    }
+
+    void testNewInstanceMapShouldRequireUserAndPasswordIfOneIsProvided() {
+        shouldFail(IllegalArgumentException) {
+            Sql.newInstance(url: getURI(), driver: 'org.hsqldb.jdbcDriver', user: 'scott')
+        }
+        shouldFail(IllegalArgumentException) {
+            Sql.newInstance(url: getURI(), driver: 'org.hsqldb.jdbcDriver', password: 'tiger')
+        }
+    }
+
+    void testNewInstanceMapNotDestructiveGROOVY5216() {
+        String url = getURI()
+        String driver = 'org.hsqldb.jdbcDriver'
+        String user = 'sa'
+        String password = ''
+
+        // First pass with user/password and no properties
+        def args = [url: url, driver: driver, user: user, password: password]
+        def sql = Sql.newInstance(args)
+        assert 4 == args.size()
+        assert url == args.url
+        assert driver == args.driver
+        assert user == args.user
+        assert password == args.password
+
+        // Second pass with properties
+        def props = new Properties()
+        props.user = user
+        props.password = password
+        def args2 = [url: url, driver: driver, properties: props]
+        def sql2 = Sql.newInstance(args2)
+        assert 3 == args2.size()
+        assert url == args.url
+        assert driver == args.driver
+        assert 2 == props.size()
+        assert user == props.user
+        assert password == props.password
+    }
+
 }
 
 class PersonDTO {

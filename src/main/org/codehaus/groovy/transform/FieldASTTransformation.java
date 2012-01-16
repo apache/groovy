@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2011 the original author or authors.
+ * Copyright 2008-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
+import org.codehaus.groovy.classgen.VariableScopeVisitor;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 import org.objectweb.asm.Opcodes;
@@ -36,7 +37,6 @@ import java.util.List;
 
 /**
  * Handles transformation for the @Field annotation.
- * This is experimental, use at your own risk.
  *
  * @author Paul King
  * @author Cedric Champeau
@@ -85,7 +85,7 @@ public class FieldASTTransformation extends ClassCodeExpressionTransformer imple
             fieldNode.setSourcePosition(de);
             cNode.addField(fieldNode);
 
-            // GROOVY-4833 : annotations that are not Groovy transforms should be transfered to the generated field
+            // GROOVY-4833 : annotations that are not Groovy transforms should be transferred to the generated field
             final List<AnnotationNode> annotations = de.getAnnotations();
             for (AnnotationNode annotation : annotations) {
                 final ClassNode annotationClassNode = annotation.getClassNode();
@@ -95,6 +95,11 @@ public class FieldASTTransformation extends ClassCodeExpressionTransformer imple
             }
 
             super.visitClass(cNode);
+            // GROOVY-5207 So that Closures can see newly added fields
+            // (not super efficient for a very large class with many @Fields but we chose simplicity
+            // and understandability of this solution over more complex but efficient alternatives)
+            VariableScopeVisitor scopeVisitor = new VariableScopeVisitor(source);
+            scopeVisitor.visitClass(cNode);
         }
     }
 
