@@ -23,6 +23,7 @@ import org.codehaus.groovy.classgen.asm.*;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport;
+import org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
@@ -62,6 +63,13 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         TypeChooser typeChooser = controller.getTypeChooser();
         ClassNode classNode = controller.getClassNode();
         ClassNode receiverType = typeChooser.resolveType(receiver, classNode);
+        boolean isClassReceiver = false;
+        if (receiverType.equals(ClassHelper.CLASS_Type)
+                && receiverType.getGenericsTypes()!=null
+                && !receiverType.getGenericsTypes()[0].isPlaceholder()) {
+            isClassReceiver = true;
+            receiverType = receiverType.getGenericsTypes()[0].getType();
+        }
         MethodVisitor mv = controller.getMethodVisitor();
         if (receiverType.isArray() && methodName.equals("length")) {
             receiver.visit(controller.getAcg());
@@ -80,16 +88,15 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         }
         if (makeGetPublicField(receiver, receiverType, methodName, implicitThis, samePackages(receiverType.getPackageName(), classNode.getPackageName()))) return;
         if (makeGetPropertyWithGetter(receiver, receiverType, methodName)) return;
-        if (receiver instanceof ClassExpression) {
-            if (receiverType.isEnum()
-                    || ClassHelper.CLASS_Type.equals(receiverType) && receiverType.getGenericsTypes()!=null && receiverType.getGenericsTypes()[0].getType().isEnum()) {
-                if (ClassHelper.CLASS_Type.equals(receiverType)) {
-                    receiverType = receiverType.getGenericsTypes()[0].getType();
-                }
-                mv.visitFieldInsn(GETSTATIC, BytecodeHelper.getClassInternalName(receiverType), methodName, BytecodeHelper.getTypeDescription(receiverType));
-                controller.getOperandStack().push(receiverType);
-                return;
-            }
+        if (receiverType.isEnum()) {
+            mv.visitFieldInsn(GETSTATIC, BytecodeHelper.getClassInternalName(receiverType), methodName, BytecodeHelper.getTypeDescription(receiverType));
+            controller.getOperandStack().push(receiverType);
+            return;
+        }
+        if (isClassReceiver) {
+            // we are probably looking for a property of the class
+            if (makeGetPublicField(receiver, ClassHelper.CLASS_Type, methodName, false, true)) return;
+            if (makeGetPropertyWithGetter(receiver, ClassHelper.CLASS_Type, methodName)) return;
         }
         throw new UnsupportedOperationException("Operation not yet implemented: "+receiver.getText()+"."+methodName);
     }
@@ -148,7 +155,8 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
             receiver.visit(controller.getAcg());
             if (implicitThis) compileStack.popImplicitThis();
             MethodVisitor mv = controller.getMethodVisitor();
-            mv.visitFieldInsn(GETFIELD, BytecodeHelper.getClassInternalName(receiverType), fieldName, BytecodeHelper.getTypeDescription(field.getOriginType()));
+            int opcode = field.isStatic()?GETSTATIC:GETFIELD;
+            mv.visitFieldInsn(opcode, BytecodeHelper.getClassInternalName(receiverType), fieldName, BytecodeHelper.getTypeDescription(field.getOriginType()));
             controller.getOperandStack().replace(field.getOriginType());
             return true;
         }
@@ -199,8 +207,14 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
             writeArrayGet(receiver, arguments, rType, aType);
             return;
         }
-        List<MethodNode> nodes = StaticTypeCheckingSupport.findDGMMethodsByNameAndArguments(rType, message, new ClassNode[]{aType});
-        if (nodes.size()==1) {
+        ClassNode[] args = {aType};
+        // make sure Map#getAt() and List#getAt handled with the bracket syntax are properly compiled
+        boolean acceptAnyMethod =
+                ClassHelper.MAP_TYPE.equals(rType) || rType.implementsInterface(ClassHelper.MAP_TYPE)
+                || ClassHelper.LIST_TYPE.equals(rType) || rType.implementsInterface(ClassHelper.LIST_TYPE);
+        List<MethodNode> nodes = StaticTypeCheckingSupport.findDGMMethodsByNameAndArguments(rType, message, args);
+        nodes = StaticTypeCheckingSupport.chooseBestMethod(rType, nodes, args);
+        if (nodes.size()==1 || nodes.size()>1 && acceptAnyMethod) {
             MethodNode methodNode = nodes.get(0);
             MethodCallExpression call = new MethodCallExpression(
                     receiver,
@@ -212,7 +226,9 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
             return;
         }
         // todo: more cases
-        throw new GroovyBugError("This method should not have been called. Please try to create a simple example reproducing this error and file" +
+        throw new GroovyBugError(
+                "On receiver: "+receiver.getText() + " with message: "+message+" and arguments: "+arguments.getText()+"\n"+
+                "This method should not have been called. Please try to create a simple example reproducing this error and file" +
                 "a bug report at http://jira.codehaus.org/browse/GROOVY");
     }
 
@@ -297,4 +313,6 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
                 "(Ljava/lang/Number;Ljava/lang/Number;)Ljava/lang/Number;");
         controller.getOperandStack().replace(ClassHelper.Number_TYPE, m2 - m1);
     }
+
+
 }

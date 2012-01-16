@@ -78,7 +78,7 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
         @Override protected MethodCaller getArraySetCaller() { return shortArraySet; }    
     }
     
-    private BinaryExpressionWriter[] binExpWriter = initializeDelegateHelpers();
+    protected BinaryExpressionWriter[] binExpWriter = initializeDelegateHelpers();
 
     protected BinaryExpressionWriter[] initializeDelegateHelpers() {
         return new BinaryExpressionWriter[]{
@@ -115,7 +115,7 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
         return 0;
     }
     
-    private int getOperandType(ClassNode type) {
+    protected int getOperandType(ClassNode type) {
         Integer ret = typeMap.get(type);
         if (ret==null) return 0;
         return ret;

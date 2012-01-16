@@ -150,6 +150,27 @@ public class StaticCompileTransformation extends StaticTypesTransformation {
 
         private Expression transformMethodCallExpression(final MethodCallExpression expr) {
             Expression objectExpression = expr.getObjectExpression();
+            if (expr.isSafe()) {
+                MethodCallExpression notSafe = new MethodCallExpression(
+                        objectExpression,
+                        expr.getMethod(),
+                        expr.getArguments()
+                );
+                notSafe.copyNodeMetaData(expr);
+                notSafe.setSpreadSafe(expr.isSpreadSafe());
+                notSafe.setSourcePosition(expr);
+                notSafe.setMethodTarget(expr.getMethodTarget());
+                TernaryExpression texpr = new TernaryExpression(
+                        new BooleanExpression(new BinaryExpression(
+                                objectExpression,
+                                Token.newSymbol("!=", objectExpression.getLineNumber(), objectExpression.getColumnNumber()),
+                                ConstantExpression.NULL
+                        )),
+                        notSafe,
+                        ConstantExpression.NULL);
+                return transform(texpr);
+
+            }
             ClassNode type = typeChooser.resolveType(objectExpression, classNode);
             if (type!=null && type.isArray()) {
                 String method = expr.getMethodAsString();

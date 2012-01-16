@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2009 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,18 +16,11 @@
 package org.codehaus.groovy.classgen.asm.sc
 
 import groovy.transform.CompileStatic
-import groovy.transform.stc.MiscSTCTest
+import groovy.transform.stc.FieldsAndPropertiesSTCTest
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
-import groovy.transform.stc.ArraysAndCollectionsSTCTest
 
-/**
- * Unit tests for static type checking : miscellaneous tests.
- *
- * @author Cedric Champeau
- */
-class ArraysAndCollectionsStaticCompileTest extends ArraysAndCollectionsSTCTest {
-
+class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCTest {
     @Override
     protected void setUp() {
         super.setUp()
@@ -36,21 +29,25 @@ class ArraysAndCollectionsStaticCompileTest extends ArraysAndCollectionsSTCTest 
         configure()
         shell = new GroovyShell(config)
     }
-
-    // override failing tests
-    // todo: fix them all!
-
-    @Override
-    void testForInLoop() {
-        // not supported yet
+    
+    void testMapGetAt() {
+        assertScript '''
+            Map map = [a: 1, b:2]
+            String key = 'b'
+            assert map['a'] == 1
+            assert map[key] == 2
+        '''
     }
 
-    void testForInLoopWithDefaultListType() {
-        // not supported yet
+    void testGetAtFromStaticMap() {
+        assertScript '''
+            class Foo {
+                public static Map CLASSES = [:]
+            }
+            String foo = 'key'
+            Foo.CLASSES[foo]
+        '''
     }
 
-    void testListStarMethod() {
-        // not supported yet
-    }
+
 }
-
