@@ -18,12 +18,7 @@ package org.codehaus.groovy.classgen.asm;
 import java.util.LinkedList;
 import java.util.List;
 
-import org.codehaus.groovy.ast.ClassHelper;
-import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.ConstructorNode;
-import org.codehaus.groovy.ast.FieldNode;
-import org.codehaus.groovy.ast.MethodNode;
-import org.codehaus.groovy.ast.Parameter;
+import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.classgen.asm.OptimizingStatementWriter.StatementMeta;
@@ -104,9 +99,29 @@ public class InvocationWriter {
         if (opcode!=INVOKESTATIC) {
             if (receiver!=null) {
                 // load receiver if not static invocation
-                compileStack.pushImplicitThis(implicitThis);
-                receiver.visit(controller.getAcg());
-                operandStack.doGroovyCast(target.getDeclaringClass());
+                // todo: fix inner class case
+                ClassNode declaringClass = target.getDeclaringClass();
+                ClassNode classNode = controller.getClassNode();
+                if (implicitThis
+                        && !classNode.isDerivedFrom(declaringClass)
+                        && !classNode.implementsInterface(declaringClass)
+                        && classNode instanceof InnerClassNode) {
+                    // we are calling an outer class method
+                    compileStack.pushImplicitThis(false);
+                    if (controller.isInClosure()) {
+                        Expression expr = new PropertyExpression(
+                                VariableExpression.THIS_EXPRESSION, "owner"
+                        );
+                        expr.visit(controller.getAcg());
+                    } else {
+                        Expression expr = new PropertyExpression(new ClassExpression(declaringClass), "this");
+                        expr.visit(controller.getAcg());
+                    }
+                } else {
+                    compileStack.pushImplicitThis(implicitThis);
+                    receiver.visit(controller.getAcg());
+                }
+                operandStack.doGroovyCast(declaringClass);
                 compileStack.popImplicitThis();
                 argumentsToRemove++;
             } else {
