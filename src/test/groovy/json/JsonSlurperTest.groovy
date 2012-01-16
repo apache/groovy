@@ -145,7 +145,7 @@ class JsonSlurperTest extends GroovyTestCase {
         shouldFail(JsonException) { parser.parseText('["a", true')  }
     }
 
-    void testBackSlashEscapting() {
+    void testBackSlashEscaping() {
         def json = new JsonBuilder()
 
         json.person {
@@ -158,5 +158,15 @@ class JsonSlurperTest extends GroovyTestCase {
 
         def slurper = new JsonSlurper()
         assert slurper.parseText(jsonstring).person.name == "Guill\\aume"
+
+        assert parser.parseText('{"a":"\\\\"}') == [a: '\\']
+        assert parser.parseText('{"a":"C:\\\\\\"Documents and Settings\\"\\\\"}') == [a: 'C:\\"Documents and Settings"\\']
+        assert parser.parseText('{"a":"c:\\\\GROOVY5144\\\\","y":"z"}') == [a: 'c:\\GROOVY5144\\', y: 'z']
+
+        assert parser.parseText('["c:\\\\GROOVY5144\\\\","d"]') == ['c:\\GROOVY5144\\', 'd']
+
+        shouldFail(JsonException) {
+            parser.parseText('{"a":"c:\\\"}')
+        }
     }
 }
