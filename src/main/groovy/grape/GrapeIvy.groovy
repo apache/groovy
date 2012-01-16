@@ -247,7 +247,7 @@ class GrapeIvy implements GrapeEngine {
 
             for (URI uri in resolve(loader, args, dependencies)) {
                 //TODO check artifact type, jar vs library, etc
-                processServices(new File(uri));
+                processServices(new File(uri), loader);
                 loader.addURL(uri.toURL())
             }
         } catch (Exception e) {
@@ -265,15 +265,48 @@ class GrapeIvy implements GrapeEngine {
         return null
     }
 
-    void processServices(File f) {
+    void processServices(File f, ClassLoader loader) {
         System.out.println('Processing ' + f.getCanonicalPath())
         ZipFile zf = new ZipFile(f)
-        ZipEntry dgmMethods = zf.getEntry("META-INF/services/org.codehaus.groovy.runtime.DefaultGroovyMethods")
-        if (dgmMethods == null) return
-        InputStream is = zf.getInputStream(dgmMethods)
-        List<String> classNames = is.text.readLines()
-        classNames.each {
+        ZipEntry categoryMethods = zf.getEntry("META-INF/services/org.codehaus.groovy.runtime.CategoryMethods")
+        if (categoryMethods != null) {
+            processCategoryMethods(zf.getInputStream(categoryMethods))
+        }
+        ZipEntry serializedCategoryMethods = zf.getEntry("META-INF/services/org.codehaus.groovy.runtime.SerializedCategoryMethods")
+        if (serializedCategoryMethods != null) {
+            processSerializedCategoryMethods(zf.getInputStream(serializedCategoryMethods))
+        }
+        ZipEntry staticCategoryMethods = zf.getEntry("META-INF/services/org.codehaus.groovy.runtime.StaticCategoryMethods")
+        if (staticCategoryMethods != null) {
+            processStaticCategoryMethods(zf.getInputStream(staticCategoryMethods))
+        }
+        ZipEntry pluginRunners = zf.getEntry("META-INF/services/org.codehaus.groovy.plugins.Runners")
+        if (pluginRunners != null) {
+            processRunners(zf.getInputStream(pluginRunners), f.getName(), loader)
+        }
+    }
+
+    void processCategoryMethods(InputStream is) {
+        is.text.readLines().each {
             println it.trim()
+        }
+    }
+
+    void processSerializedCategoryMethods(InputStream is) {
+        is.text.readLines().each {
+            println it.trim()
+        }
+    }
+
+    void processStaticCategoryMethods(InputStream is) {
+        is.text.readLines().each {
+            println it.trim()
+        }
+    }
+
+    void processRunners(InputStream is, String name, ClassLoader loader) {
+        is.text.readLines().each {
+            GroovySystem.RUNNER_REGISTRY[name] = loader.loadClass(it.trim()).newInstance()
         }
     }
 

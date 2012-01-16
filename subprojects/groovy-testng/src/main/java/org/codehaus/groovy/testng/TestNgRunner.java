@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,32 +13,38 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.codehaus.groovy.vmplugin.v5;
-// TODO M12N move this to groovy-testng
+package org.codehaus.groovy.testng;
 
 import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyRuntimeException;
+import org.codehaus.groovy.plugin.GroovyRunner;
 import org.codehaus.groovy.runtime.InvokerHelper;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 
 /**
- * Java 5 code for working with TestNG tests.
+ * Integration code for running TestNG tests in Groovy.
  * 
  * @author Paul King
  *
  */
-public class TestNgUtils {
+public class TestNgRunner implements GroovyRunner {
 
     /**
-     * Utility method to check via reflection if the parsed class appears to be a TestNG test.
+     * Utility method to check via reflection if the parsed class appears to be a TestNG
+     * test, i.e.&nsbp;checks whether it appears to be using the relevant TestNG annotations.
      *
      * @param scriptClass the class we want to check
      * @param loader the GroovyClassLoader to use to find classes
      * @return true if the class appears to be a test
      */
-    static Boolean realIsTestNgTest(Class scriptClass, GroovyClassLoader loader) {
+    @SuppressWarnings("unchecked")
+    public boolean canRun(Class scriptClass, GroovyClassLoader loader) {
+        char version = System.getProperty("java.version").charAt(2);
+        if (version < '5') {
+            return false;
+        }
         // check if there are appropriate class or method annotations
         // that suggest we have a TestNG test
         boolean isTest = false;
@@ -50,8 +56,7 @@ public class TestNgUtils {
                     isTest = true;
                 } else {
                     Method[] methods = scriptClass.getMethods();
-                    for (int i = 0; i < methods.length; i++) {
-                        Method method = methods[i];
+                    for (Method method : methods) {
                         annotation = method.getAnnotation(testAnnotationClass);
                         if (annotation != null) {
                             isTest = true;
@@ -72,11 +77,11 @@ public class TestNgUtils {
      * Utility method to run a TestNG test.
      *
      * @param scriptClass the class we want to run as a test
+     * @param loader the class loader to use
      * @return the result of running the test
      */
-    static Object realRunTestNgTest(Class scriptClass, GroovyClassLoader loader) {
+    public Object run(Class scriptClass, GroovyClassLoader loader) {
         // invoke through reflection to eliminate mandatory TestNG jar dependency
-
         try {
             Class testNGClass = loader.loadClass("org.testng.TestNG");
             Object testng = InvokerHelper.invokeConstructorOf(testNGClass, new Object[]{});
@@ -84,10 +89,10 @@ public class TestNgUtils {
             Class listenerClass = loader.loadClass("org.testng.TestListenerAdapter");
             Object listener = InvokerHelper.invokeConstructorOf(listenerClass, new Object[]{});
             InvokerHelper.invokeMethod(testng, "addListener", new Object[]{listener});
-            Object result = InvokerHelper.invokeMethod(testng, "run", new Object[]{});
-            return result;
+            return InvokerHelper.invokeMethod(testng, "run", new Object[]{});
         } catch (ClassNotFoundException e) {
             throw new GroovyRuntimeException("Error running TestNG test.", e);
         }
     }
+
 }
