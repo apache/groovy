@@ -16,7 +16,6 @@
 package org.codehaus.groovy.tools;
 
 import groovy.grape.Grape;
-import groovy.grape.GrapeIvy;
 
 import java.io.*;
 import java.net.MalformedURLException;

@@ -529,7 +529,7 @@ $Date$
             <fileset dir="${mainSourceDirectory}">
                 <include name="org/codehaus/groovy/tools/groovydoc/gstringTemplates/*/*.*"/>
             </fileset>
-            <fileset dir="${toolsSourceDirectory}">
+            <fileset dir="${docgeneratorSourceDirectory}/main/groovy">
                 <include name="org/codehaus/groovy/tools/groovy.ico"/>
             </fileset>
         </copy>
@@ -546,10 +546,13 @@ $Date$
              excludes="*.groovy,**/package-info.class" manifest="${mainClassesDirectory}/META-INF/MANIFEST.MF"/>
         <jar destfile="${targetDistDirectory}/groovy-${groovyVersion}-sources.jar" basedir="${mainSourceDirectory}">
             <!-- TODO temp hack - remove once modules are in place -->
+            <fileset dir="${antSourceDirectory}/main/java"/>
+            <fileset dir="${antSourceDirectory}/main/groovy"/>
             <fileset dir="${bsfSourceDirectory}/main/java"/>
             <fileset dir="${jmxSourceDirectory}/main/java"/>
             <fileset dir="${jmxSourceDirectory}/main/groovy"/>
             <fileset dir="${jsr223SourceDirectory}/main/java"/>
+            <fileset dir="${templateSourceDirectory}/main/java"/>
             <fileset dir="${groovyTestSourceDirectory}/main/java"/>
             <fileset dir="${groovyTestSourceDirectory}/main/groovy"/>
         </jar>
@@ -711,7 +714,7 @@ $Date$
         <!-- icons -->
         <copy toDir="${installDirectory}/bin" flatten="true">
             <fileset dir="${sourceDirectory}/bin" includes="groovy.icns"/>
-            <fileset dir="${toolsSourceDirectory}">
+            <fileset dir="${docgeneratorSourceDirectory}/main/groovy">
                 <include name="org/codehaus/groovy/tools/groovy.ico"/>
             </fileset>
         </copy>
@@ -792,6 +795,7 @@ $Date$
             </classpath>
             <fileset dir="${mainSourceDirectory}" includes="**/*.java"/>
             <!-- TODO temp hack - remove once modules are in place -->
+            <fileset dir="${antSourceDirectory}/main/java" includes="**/*.java"/>
             <fileset dir="${bsfSourceDirectory}/main/java" includes="**/*.java"/>
             <fileset dir="${jmxSourceDirectory}/main/java" includes="**/*.java"/>
             <fileset dir="${jsr223SourceDirectory}/main/java" includes="**/*.java"/>

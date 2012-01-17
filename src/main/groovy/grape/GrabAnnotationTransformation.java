@@ -424,9 +424,9 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
         } else if (allstr.contains(":")) {
             // assume gradle syntax
             // see: http://www.gradle.org/latest/docs/userguide/dependency_management.html#sec:how_to_declare_your_dependencies
-            Map<String, String> parts = GrapeUtil.getIvyParts(allstr);
+            Map<String, Object> parts = GrapeUtil.getIvyParts(allstr);
             for (String key : parts.keySet()) {
-                String value = parts.get(key);
+                String value = parts.get(key).toString();
                 if (!key.equals("version") || !value.equals("*") || !exclude) {
                     node.addMember(key, new ConstantExpression(value));
                 }
