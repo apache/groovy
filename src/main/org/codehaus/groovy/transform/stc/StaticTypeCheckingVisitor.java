@@ -1095,7 +1095,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
 
         ClassNode[] args = getArgumentTypes(InvocationWriter.makeArgumentList(callArguments));
-        final boolean isCallOnClosure = isClosureCall(name, objectExpression);
+        final boolean isCallOnClosure = isClosureCall(name, objectExpression, callArguments);
         final ClassNode receiver = getType(objectExpression);
 
         if (isWithCall) {
@@ -1151,7 +1151,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                             // may face a recursive call. In that case, we will use the type of the
                             // generic return type of the closure declaration
                             if (variable.getType().equals(CLOSURE_TYPE)) {
-                                type = variable.getType().getGenericsTypes()[0].getType();
+                                GenericsType[] genericsTypes = variable.getType().getGenericsTypes();
+                                if (genericsTypes!=null && !genericsTypes[0].isPlaceholder()) {
+                                    type = genericsTypes[0].getType();
+                                } else {
+                                    type = OBJECT_TYPE;
+                                }
                             }
                         }
                         if (type != null) {
@@ -1255,8 +1260,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         call.putNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET, directMethodCallCandidate);
     }
 
-    private boolean isClosureCall(final String name, final Expression objectExpression) {
-        //if (!"call".equals(name)) return false;
+    private boolean isClosureCall(final String name, final Expression objectExpression, final Expression arguments) {
+        FieldNode field = classNode.getDeclaredField(name);
+        if (field!=null) {
+            if (!classNode.hasPossibleMethod(name, arguments)) return true;
+        }
+        if (!"call".equals(name) && !"doCall".equals(name)) return false;
         if (objectExpression instanceof ClosureExpression) return true;
         if (objectExpression==VariableExpression.THIS_EXPRESSION) {
             FieldNode fieldNode = classNode.getDeclaredField(name);
