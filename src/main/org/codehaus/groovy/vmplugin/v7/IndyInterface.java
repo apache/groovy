@@ -224,7 +224,7 @@ public class IndyInterface {
             if (receiver instanceof Class) {
                 ci.method = mci.retrieveStaticMethod(ci.methodName, removeRealReceiver(ci.args));
             } else {
-                ci.method = mci.getMethodWithCaching(getClass(receiver), ci.methodName, removeRealReceiver(ci.args), false);
+                ci.method = mci.getMethodWithCaching(ci.sender, ci.methodName, removeRealReceiver(ci.args), false);
             }
         }
         
