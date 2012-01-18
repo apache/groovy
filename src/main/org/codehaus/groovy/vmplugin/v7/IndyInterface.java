@@ -65,7 +65,7 @@ public class IndyInterface {
         private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
         private static final MethodHandle SELECT_METHOD;
         static {
-            MethodType mt = MethodType.methodType(Object.class, MutableCallSite.class, Class.class, String.class, Boolean.class, Object.class, Object[].class);
+            MethodType mt = MethodType.methodType(Object.class, MutableCallSite.class, Class.class, String.class, Boolean.class, Boolean.class, Object.class, Object[].class);
             try {
                 SELECT_METHOD = LOOKUP.findStatic(IndyInterface.class, "selectMethod", mt);
             } catch (Exception e) {
@@ -108,33 +108,42 @@ public class IndyInterface {
             }
         }
         
+        // the 4 entry points from bytecode 
+        public static CallSite bootstrapCurrent(Lookup caller, String name, MethodType type) {
+            return realBootstrap(caller, name, type, false, true);
+        }
+        
+        public static CallSite bootstrapCurrentSafe(Lookup caller, String name, MethodType type) {
+            return realBootstrap(caller, name, type, true, true);
+        }
         
         public static CallSite bootstrap(Lookup caller, String name, MethodType type) {
-            return realBootstrap(caller, name, type, false);
+            return realBootstrap(caller, name, type, false, false);
         }
         
         public static CallSite bootstrapSafe(Lookup caller, String name, MethodType type) {
-            return realBootstrap(caller, name, type, true);
+            return realBootstrap(caller, name, type, true, false);
         }
         
-        private static CallSite realBootstrap(Lookup caller, String name, MethodType type, boolean safe) {
+        private static CallSite realBootstrap(Lookup caller, String name, MethodType type, boolean safe, boolean thisCall) {
             // since indy does not give us the runtime types
             // we produce first a dummy call site, which then changes the target to one,
             // that does the method selection including the the direct call to the 
             // real method.
             MutableCallSite mc = new MutableCallSite(type);
-            MethodHandle mh = makeFallBack(mc,caller.lookupClass(),name,type,safe);
+            MethodHandle mh = makeFallBack(mc,caller.lookupClass(),name,type,safe,thisCall);
             mc.setTarget(mh);
             return mc;            
         }
         
         
-        private static MethodHandle makeFallBack(MutableCallSite mc, Class<?> sender, String name, MethodType type, boolean safeNavigation) {
+        private static MethodHandle makeFallBack(MutableCallSite mc, Class<?> sender, String name, MethodType type, boolean safeNavigation, boolean thisCall) {
             MethodHandle mh = SELECT_METHOD.
                                     bindTo(mc).
                                     bindTo(sender).
                                     bindTo(name).
                                     bindTo(safeNavigation).
+                                    bindTo(thisCall).
                                     asCollector(Object[].class, type.parameterCount()-1).
                                     asType(type);
             return mh;
@@ -166,6 +175,8 @@ public class IndyInterface {
             public Class sender;
             public boolean isVargs;
             public boolean safeNavigation;
+            public boolean thisCall;
+            public Class methodSelectionBase;
         }
         
         private static boolean isStatic(Method m) {
@@ -226,7 +237,7 @@ public class IndyInterface {
             if (receiver instanceof Class) {
                 ci.method = mci.retrieveStaticMethod(ci.methodName, removeRealReceiver(ci.args));
             } else {
-                ci.method = mci.getMethodWithCaching(ci.sender, ci.methodName, removeRealReceiver(ci.args), false);
+                ci.method = mci.getMethodWithCaching(ci.methodSelectionBase, ci.methodName, removeRealReceiver(ci.args), false);
             }
         }
         
@@ -249,11 +260,7 @@ public class IndyInterface {
                     
                     ci.handle = ci.handle.bindTo(mc);
                     if (!useShortForm) {
-                        if (receiver==null) {
-                            ci.handle = ci.handle.bindTo(NullObject.class);
-                        } else {
-                            ci.handle = ci.handle.bindTo(receiver.getClass());
-                        }
+                        ci.handle = ci.handle.bindTo(ci.methodSelectionBase);
                     }
                     
                     if (receiver instanceof GroovyObject) {
@@ -399,7 +406,7 @@ public class IndyInterface {
         private static void setGuards(CallInfo ci, Object receiver) {
             if (ci.handle==null) return;
             
-            MethodHandle fallback = makeFallBack(ci.callSite, ci.sender, ci.methodName, ci.targetType, ci.safeNavigation);
+            MethodHandle fallback = makeFallBack(ci.callSite, ci.sender, ci.methodName, ci.targetType, ci.safeNavigation, ci.thisCall);
             
             // special guards for receiver
             MethodHandle test=null;
@@ -493,7 +500,17 @@ public class IndyInterface {
             return true;
         }
         
-        public static Object selectMethod(MutableCallSite callSite, Class sender, String methodName, Boolean safeNavigation, Object dummyReceiver, Object[] arguments) throws Throwable {
+        private static void setMethodSelectionBase(CallInfo ci, MetaClass mc) {
+            if (ci.thisCall) {
+                ci.methodSelectionBase = ci.sender;
+            } else if (ci.args[0]==null) {
+                ci.methodSelectionBase = NullObject.class;
+            } else {
+                ci.methodSelectionBase = mc.getTheClass();
+            }
+        }
+        
+        public static Object selectMethod(MutableCallSite callSite, Class sender, String methodName, Boolean safeNavigation, Boolean thisCall, Object dummyReceiver, Object[] arguments) throws Throwable {
             //TODO: handle GroovyInterceptable 
             CallInfo callInfo = new CallInfo();
             callInfo.targetType = callSite.type();
@@ -502,10 +519,12 @@ public class IndyInterface {
             callInfo.callSite = callSite;
             callInfo.sender = sender;
             callInfo.safeNavigation = safeNavigation && arguments[0]==null;
+            callInfo.thisCall = thisCall;
                         
             if (!setNullForSafeNavigation(callInfo)) {
                 //            setInterceptableHandle(callInfo);
                 MetaClass mc = getMetaClass(callInfo.args[0]);
+                setMethodSelectionBase(callInfo, mc);
                 chooseMethod(mc, callInfo);
                 setHandleForMetaMethod(callInfo);
                 setMetaClassCallHandleIfNedded(mc, callInfo);

@@ -49,23 +49,37 @@ import static org.codehaus.groovy.classgen.asm.BytecodeHelper.*;
  */
 public class InvokeDynamicWriter extends InvocationWriter {
     
+    
+    private static final String INDY_INTERFACE_NAME = IndyInterface.class.getName().replace('.', '/');
+    private static final String BSM_METHOD_TYPE_DESCRIPTOR = 
+        MethodType.methodType(
+                CallSite.class, Lookup.class, String.class, MethodType.class
+        ).toMethodDescriptorString();
+    
     private static final Handle BSM = 
         new Handle(
                 H_INVOKESTATIC,
-                IndyInterface.class.getName().replace('.', '/'),
+                INDY_INTERFACE_NAME,
                 "bootstrap",
-                MethodType.methodType(
-                        CallSite.class, Lookup.class, String.class, MethodType.class
-                ).toMethodDescriptorString());
-
+                BSM_METHOD_TYPE_DESCRIPTOR);
     private static final Handle BSM_SAFE = 
         new Handle(
                 H_INVOKESTATIC,
-                IndyInterface.class.getName().replace('.', '/'),
+                INDY_INTERFACE_NAME,
                 "bootstrapSafe",
-                MethodType.methodType(
-                        CallSite.class, Lookup.class, String.class, MethodType.class
-                ).toMethodDescriptorString());
+                BSM_METHOD_TYPE_DESCRIPTOR);
+    private static final Handle BSM_CURRENT = 
+        new Handle(
+                H_INVOKESTATIC,
+                INDY_INTERFACE_NAME,
+                "bootstrapCurrent",
+                BSM_METHOD_TYPE_DESCRIPTOR);
+    private static final Handle BSM_CURRENT_SAFE = 
+        new Handle(
+                H_INVOKESTATIC,
+                INDY_INTERFACE_NAME,
+                "bootstrapCurrentSafe",
+                BSM_METHOD_TYPE_DESCRIPTOR);
     
     private WriterController controller;
 
@@ -108,7 +122,7 @@ public class InvokeDynamicWriter extends InvocationWriter {
             String methodName = getMethodName(message);
             
             if (methodName != null) {
-                makeIndyCall(receiver, implicitThis, safe, methodName, arguments);
+                makeIndyCall(adapter, receiver, implicitThis, safe, methodName, arguments);
                 return;
             }
         }
@@ -167,7 +181,7 @@ public class InvokeDynamicWriter extends InvocationWriter {
         operandStack.replace(ClassHelper.OBJECT_TYPE,operandsToRemove);
     }
     
-    private void makeIndyCall(Expression receiver, boolean implicitThis, boolean safe, String methodName, Expression arguments) {
+    private void makeIndyCall(MethodCallerMultiAdapter adapter, Expression receiver, boolean implicitThis, boolean safe, String methodName, Expression arguments) {
         CompileStack compileStack = controller.getCompileStack();
         OperandStack operandStack = controller.getOperandStack();
         
@@ -198,14 +212,25 @@ public class InvokeDynamicWriter extends InvocationWriter {
         }
         sig += ")Ljava/lang/Object;";
         
-        controller.getMethodVisitor().visitInvokeDynamicInsn(methodName, sig, safe?BSM_SAFE:BSM);
+        Handle bsmHandle = getBsmHandle(adapter, safe);
+        controller.getMethodVisitor().visitInvokeDynamicInsn(methodName, sig, bsmHandle);
         
         operandStack.replace(ClassHelper.OBJECT_TYPE, numberOfArguments+1);
         compileStack.popLHS();
     }
+    
+    private Handle getBsmHandle(MethodCallerMultiAdapter adapter, boolean safe) {
+        if (adapter==invokeMethodOnCurrent) {
+            if (safe) return BSM_CURRENT_SAFE;
+            return BSM_CURRENT;
+        } else {
+            if (safe) return BSM_SAFE;
+            return BSM;
+        }
+    }
 
     @Override
     public void makeSingleArgumentCall(Expression receiver, String message, Expression arguments) {
-        makeIndyCall(receiver, false, false, message, arguments);
+        makeIndyCall(null, receiver, false, false, message, arguments);
     }
 }
