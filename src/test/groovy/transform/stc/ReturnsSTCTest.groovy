@@ -205,6 +205,15 @@ class ReturnsSTCTest extends StaticTypeCheckingTestCase {
         new Foo().foo(2)
         '''
     }
+    
+    void testInferredReturnTypeWithImplicitConversion() {
+        shouldFailWithMessages '''
+            String methodWithImplicitConversion() {
+                new Date()
+            }
+            methodWithImplicitConversion().years
+        ''', 'No such property: years for class: java.lang.String'
+    }
 
 }
 
