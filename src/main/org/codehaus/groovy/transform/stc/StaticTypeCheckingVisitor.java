@@ -1304,20 +1304,17 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     private boolean isClosureCall(final String name, final Expression objectExpression, final Expression arguments) {
-        FieldNode field = classNode.getDeclaredField(name);
-        if (field!=null) {
-            if (!classNode.hasPossibleMethod(name, arguments)) return true;
-        }
-        if (!"call".equals(name) && !"doCall".equals(name)) return false;
         if (objectExpression instanceof ClosureExpression) return true;
         if (objectExpression==VariableExpression.THIS_EXPRESSION) {
             FieldNode fieldNode = classNode.getDeclaredField(name);
             if (fieldNode!=null) {
                 ClassNode type = fieldNode.getType();
-                if (CLOSURE_TYPE.equals(type)) {
+                if (CLOSURE_TYPE.equals(type) && !classNode.hasPossibleMethod(name, arguments)) {
                     return true;
                 }
             }
+        } else {
+            if (!"call".equals(name) && !"doCall".equals(name)) return false;
         }
         return (getType(objectExpression).equals(CLOSURE_TYPE));
     }
