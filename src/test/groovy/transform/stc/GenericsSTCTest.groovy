@@ -15,6 +15,13 @@
  */
 package groovy.transform.stc
 
+import org.codehaus.groovy.control.customizers.CompilationCustomizer
+import org.codehaus.groovy.control.CompilePhase
+import org.codehaus.groovy.ast.ClassCodeVisitorSupport
+import org.codehaus.groovy.ast.expr.VariableExpression
+import org.codehaus.groovy.ast.expr.Expression
+import org.codehaus.groovy.transform.stc.StaticTypesMarker
+import org.codehaus.groovy.ast.ClassHelper
 
 /**
  * Unit tests for static type checking : generics.
@@ -362,6 +369,41 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             new Foo(B)
             new Foo(C)
         '''
+    }
+
+    void testAssignmentOfNewInstance() {
+        Expression expr = null
+        config.addCompilationCustomizers(
+                new CompilationCustomizer(CompilePhase.INSTRUCTION_SELECTION) {
+                    @Override
+                    void call(final org.codehaus.groovy.control.SourceUnit source, final org.codehaus.groovy.classgen.GeneratorContext context, final org.codehaus.groovy.ast.ClassNode classNode) {
+                        def visitor = new ClassCodeVisitorSupport() {
+                            @Override
+                            protected org.codehaus.groovy.control.SourceUnit getSourceUnit() {
+                                source
+                            }
+
+                            @Override
+                            void visitVariableExpression(final VariableExpression expression) {
+                                super.visitVariableExpression(expression)
+                                if (expression.name=='obj') expr = expression
+                            }
+                        }
+                        visitor.visitClass(classNode)
+                    }
+                }
+        )
+        shell = new GroovyShell(config)
+        assertScript '''
+            class Foo {
+                static Class clazz = Date
+                public static void main(String... args) {
+                    def obj = clazz.newInstance()
+                }
+            }
+        '''
+        assert expr != null
+        assert expr.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE) == ClassHelper.OBJECT_TYPE
     }
 
     static class MyList extends LinkedList<String> {}
