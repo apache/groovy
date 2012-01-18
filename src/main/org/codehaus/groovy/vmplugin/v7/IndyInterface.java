@@ -15,6 +15,7 @@
  */
 package org.codehaus.groovy.vmplugin.v7;
 
+import groovy.lang.AdaptingMetaClass;
 import groovy.lang.GString;
 import groovy.lang.GroovyObject;
 import groovy.lang.GroovyRuntimeException;
@@ -22,6 +23,7 @@ import groovy.lang.GroovySystem;
 import groovy.lang.MetaClass;
 import groovy.lang.MetaClassImpl;
 import groovy.lang.MetaMethod;
+import groovy.lang.MetaObjectProtocol;
 import groovy.lang.MissingMethodException;
 
 import java.lang.invoke.*;
@@ -213,7 +215,7 @@ public class IndyInterface {
         }
         
         private static void chooseMethod(MetaClass mc, CallInfo ci) {
-            if (!(mc instanceof MetaClassImpl)) {return;}
+            if (!(mc instanceof MetaClassImpl) || mc instanceof AdaptingMetaClass) {return;}
             
             MetaClassImpl mci = (MetaClassImpl) mc;
             Object receiver = ci.args[0];
@@ -237,14 +239,23 @@ public class IndyInterface {
                     ci.handle = LOOKUP.findVirtual(mc.getClass(), "invokeStaticMethod", MethodType.methodType(Object.class, Object.class, String.class, Object[].class));
                     ci.handle = ci.handle.bindTo(mc);
                 } else {
-                    ci.handle = LOOKUP.findVirtual(MetaClass.class, "invokeMethod", INVOKE_METHOD_SIGNATURE);
-                    ci.handle = ci.handle.bindTo(mc);
-                    if (receiver==null) {
-                        ci.handle = ci.handle.bindTo(NullObject.class);
+                    boolean useShortForm = mc instanceof AdaptingMetaClass;
+                    if (useShortForm) {
+                        ci.handle = LOOKUP.findVirtual(MetaObjectProtocol.class, "invokeMethod", MethodType.methodType(Object.class, Object.class, String.class, Object[].class));
                     } else {
-                        ci.handle = ci.handle.bindTo(receiver.getClass());
+                        ci.handle = LOOKUP.findVirtual(MetaClass.class, "invokeMethod", INVOKE_METHOD_SIGNATURE);
+                        ci.handle = MethodHandles.insertArguments(ci.handle, ci.handle.type().parameterCount()-2, false, true);
                     }
-                    ci.handle = MethodHandles.insertArguments(ci.handle, ci.handle.type().parameterCount()-2, false, true);
+                    
+                    ci.handle = ci.handle.bindTo(mc);
+                    if (!useShortForm) {
+                        if (receiver==null) {
+                            ci.handle = ci.handle.bindTo(NullObject.class);
+                        } else {
+                            ci.handle = ci.handle.bindTo(receiver.getClass());
+                        }
+                    }
+                    
                     if (receiver instanceof GroovyObject) {
                         // if the meta class call fails we may still want to fall back to call
                         // GroovyObject#invokeMethod if the receiver is a GroovyObject
