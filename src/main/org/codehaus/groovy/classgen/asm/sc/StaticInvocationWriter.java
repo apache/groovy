@@ -76,8 +76,9 @@ public class StaticInvocationWriter extends InvocationWriter {
 
         String ownerDescriptor = prepareConstructorCall(cn);
         TupleExpression args = makeArgumentList(call.getArguments());
+        int before = controller.getOperandStack().getStackLength();
         loadArguments(args.getExpressions(), cn.getParameters());
-        finnishConstructorCall(cn, ownerDescriptor, args.getExpressions().size());
+        finnishConstructorCall(cn, ownerDescriptor, controller.getOperandStack().getStackLength()-before);
 
     }
 
@@ -118,6 +119,7 @@ public class StaticInvocationWriter extends InvocationWriter {
                     && !target.isPublic()
                     && target.getDeclaringClass()!=controller.getClassNode()) {
                 // replace call with an invoker helper call
+                // todo: use MOP generated methods instead
                 ArrayExpression arr = new ArrayExpression(ClassHelper.OBJECT_TYPE, args.getExpressions());
                 MethodCallExpression mce = new MethodCallExpression(
                         INVOKERHELER_RECEIVER,
@@ -181,18 +183,20 @@ public class StaticInvocationWriter extends InvocationWriter {
             TypeChooser typeChooser = controller.getTypeChooser();
             ClassNode classNode = controller.getClassNode();
             Expression[] arguments = new Expression[para.length];
-            for (int i=para.length-1, j=argumentList.size()-1; i>=0;i--) {
+            for (int i=0, j=0 ; i<para.length;i++) {
                 Parameter curParam = para[i];
                 ClassNode curParamType = curParam.getType();
-                Expression curArg = argumentList.get(j);
+                Expression curArg = j<argumentList.size()?argumentList.get(j):null;
                 Expression initialExpression = (Expression) curParam.getNodeMetaData(StaticTypesMarker.INITIAL_EXPRESSION);
-                ClassNode curArgType = typeChooser.resolveType(curArg, classNode);
+                if (initialExpression==null && curParam.hasInitialExpression()) initialExpression = curParam.getInitialExpression();
+                ClassNode curArgType = curArg==null?null:typeChooser.resolveType(curArg, classNode);
+
                 if (initialExpression!=null && !compatibleArgumentType(curArgType, curParamType)) {
                     // use default expression
                     arguments[i] = initialExpression;
                 } else {
                     arguments[i] = curArg;
-                    j--;
+                    j++;
                 }
             }
             for (int i = 0; i < arguments.length; i++) {
@@ -203,9 +207,10 @@ public class StaticInvocationWriter extends InvocationWriter {
     }
 
     private boolean compatibleArgumentType(ClassNode argumentType, ClassNode paramType) {
-        if (argumentType.equals(paramType)) return true;
+        if (argumentType==null) return false;
+        if (ClassHelper.getWrapper(argumentType).equals(ClassHelper.getWrapper(paramType))) return true;
         if (paramType.isInterface()) return argumentType.implementsInterface(paramType);
         if (paramType.isArray() && argumentType.isArray()) return compatibleArgumentType(argumentType.getComponentType(),paramType.getComponentType());
-        return argumentType.isDerivedFrom(paramType);
+        return ClassHelper.getWrapper(argumentType).isDerivedFrom(ClassHelper.getWrapper(paramType));
     }
 }

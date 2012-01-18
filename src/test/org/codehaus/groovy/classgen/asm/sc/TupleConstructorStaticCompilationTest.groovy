@@ -40,4 +40,39 @@ class TupleConstructorStaticCompilationTest extends AbstractBytecodeTestCase {
             assert p.age == null
         '''
     }
+
+    void testTupleConstructorWithMissingArgumentOfSameTypeAsPrevious() {
+        assertScript '''
+            @groovy.transform.TupleConstructor
+            class Person {
+                String firstName
+                String lastName
+                Integer age
+                Integer priority
+            }
+
+            @groovy.transform.CompileStatic
+            Person m() {
+                new Person('Cedric','Champeau',32)
+            }
+            def p = m()
+            assert p.firstName == 'Cedric'
+            assert p.lastName == 'Champeau'
+            assert p.age == 32
+            assert p.priority == null
+        '''
+    }
+    
+    void testConstructorWithDefaultArgsAndPossibleMessup() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            class Foo {
+                String val
+                Foo(String arg1='foo', String arg2) {
+                    arg1+arg2
+                }
+            }
+            new Foo('bar').val == 'foobar'
+        '''
+    }
 }
