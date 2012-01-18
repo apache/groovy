@@ -1973,7 +1973,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                                 type.getGenericsTypes());
                 if (methodGenericTypes.length == 1) {
                     ClassNode nodeType = getWrapper(methodGenericTypes[0].getType());
-                    ClassNode actualType = getWrapper(arguments[argNum]);
+                    GenericsType[] argumentGenericTypes = arguments[argNum].getGenericsTypes();
+                    ClassNode actualType = argumentGenericTypes!=null?getWrapper(argumentGenericTypes[0].getType()):nodeType;
                     if (!implementsInterfaceOrIsSubclassOf(actualType, nodeType)) {
                         failure = true;
                     }

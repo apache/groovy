@@ -317,7 +317,53 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             list.add(new B())
         '''
     }
+
+    void testMethodCallWithClassParameterUsingClassLiteralArg() {
+        assertScript '''
+            class A {}
+            class B extends A {}
+            class Foo {
+                void m(Class<? extends A> clazz) {}
+            }
+            new Foo().m(B)
+        '''
+    }
   
+    void testMethodCallWithClassParameterUsingClassLiteralArgWithoutWrappingClass() {
+        assertScript '''
+            class A {}
+            class B extends A {}
+            void m(Class<? extends A> clazz) {}
+            m(B)
+        '''
+    }
+
+    void testConstructorCallWithClassParameterUsingClassLiteralArg() {
+        assertScript '''
+            class A {}
+            class B extends A {}
+            class C extends B {}
+            class Foo {
+                Foo(Class<? extends A> clazz) {}
+            }
+            new Foo(B)
+            new Foo(C)
+        '''
+    }
+
+    void testConstructorCallWithClassParameterUsingClassLiteralArgAndInterface() {
+        assertScript '''
+            interface A {}
+            class B implements A {}
+            class C extends B {}
+            class Foo {
+                Foo(Class<? extends A> clazz) {}
+            }
+            new Foo(B)
+            new Foo(C)
+        '''
+    }
+
     static class MyList extends LinkedList<String> {}
 }
 
