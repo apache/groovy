@@ -88,7 +88,7 @@ public class InvocationWriter {
         int opcode = INVOKEVIRTUAL;
         if (target.isStatic()) {
             opcode = INVOKESTATIC;
-        } else if (target.isPrivate()) {
+        } else if (target.isPrivate() || ((receiver instanceof VariableExpression && ((VariableExpression) receiver).isSuperExpression()))) {
             opcode = INVOKESPECIAL;
         } else if (target.getDeclaringClass().isInterface()) {
             opcode = INVOKEINTERFACE;

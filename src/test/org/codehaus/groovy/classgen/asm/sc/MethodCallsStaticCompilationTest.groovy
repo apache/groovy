@@ -29,4 +29,17 @@ public class MethodCallsStaticCompilationTest extends MethodCallsSTCTest {
         configure()
         shell = new GroovyShell(config)
     }
+
+    void testCallToSuper() {
+        assertScript '''
+            class Foo {
+                int foo() { 1 }
+            }
+            class Bar extends Foo {
+                int foo() { super.foo() }
+            }
+            def bar = new Bar()
+            assert bar.foo() == 1
+        '''
+    }
 }
