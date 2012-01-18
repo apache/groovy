@@ -1894,6 +1894,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
         }
         if (returnType.equals(OBJECT_TYPE)) {
+            if (copy[0].getType().isGenericsPlaceHolder()) return OBJECT_TYPE;
             return copy[0].getType();
         }
         if (returnType.isArray()) {
