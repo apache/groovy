@@ -135,6 +135,7 @@ abstract class StaticTypeCheckingSupport {
         List<Class> classes = new LinkedList<Class>();
         Collections.addAll(classes, DefaultGroovyMethods.DGM_LIKE_CLASSES);
         Collections.addAll(classes, DefaultGroovyMethods.additionals);
+        classes.add(ObjectArrayStaticTypesHelper.class);
 		for (Class dgmLikeClass : classes) {
 			ClassNode cn = ClassHelper.makeWithoutCaching(dgmLikeClass, true);
 			for (MethodNode metaMethod : cn.getMethods()) {
@@ -142,7 +143,8 @@ abstract class StaticTypeCheckingSupport {
 				if (metaMethod.isStatic() && metaMethod.isPublic() && types.length > 0) {
 					Parameter[] parameters = new Parameter[types.length - 1];
 					System.arraycopy(types, 1, parameters, 0, parameters.length);
-					MethodNode node = new MethodNode(
+					MethodNode node = new ExtensionMethodNode(
+                            metaMethod,
 							metaMethod.getName(),
 							metaMethod.getModifiers(),
 							metaMethod.getReturnType(),
@@ -182,6 +184,16 @@ abstract class StaticTypeCheckingSupport {
         for (ClassNode node : clazz.getInterfaces()) {
             findDGMMethodsForClassNode(node, name, accumulator);
         }
+        if (clazz.isArray()) {
+            ClassNode componentClass = clazz.getComponentType();
+            if (!componentClass.equals(OBJECT_TYPE)) {
+                if (componentClass.isInterface() || componentClass.getSuperClass()==null) {
+                    findDGMMethodsForClassNode(OBJECT_TYPE.makeArray(), name, accumulator);
+                } else {
+                    findDGMMethodsForClassNode(componentClass.getSuperClass().makeArray(), name, accumulator);
+                }
+            }
+        }
         if (clazz.getSuperClass() != null) {
             findDGMMethodsForClassNode(clazz.getSuperClass(), name, accumulator);
         } else if (!clazz.equals(ClassHelper.OBJECT_TYPE)) {
@@ -201,9 +213,45 @@ abstract class StaticTypeCheckingSupport {
         int dist = 0;
         // we already know the lengths are equal
         for (int i = 0; i < params.length; i++) {
-            if (!isAssignableTo(args[i],params[i].getType())) return -1;
+            ClassNode paramType = params[i].getType();
+            if (!isAssignableTo(args[i], paramType)) return -1;
             else {
-                if (!params[i].getType().equals(args[i])) dist++;
+                if (!paramType.equals(args[i])) dist+=getDistance(args[i], paramType);
+            }
+        }
+        return dist;
+    }
+
+    /**
+     * Checks that arguments and parameter types match, expecting that the number of parameters is strictly greater
+     * than the number of arguments, allowing possible inclusion of default parameters.
+     * @param params method parameters
+     * @param args type arguments
+     * @return -1 if arguments do not match, 0 if arguments are of the exact type and >0 when one or more argument is
+     * not of the exact type but still match
+     */
+    static int allParametersAndArgumentsMatchWithDefaultParams(Parameter[] params, ClassNode[] args) {
+        int dist = 0;
+        ClassNode ptype = null;
+        // we already know the lengths are equal
+        for (int i = 0, j=0; i < params.length; i++) {
+            Parameter param = params[i];
+            ClassNode paramType = param.getType();
+            ClassNode arg = j>=args.length?null:args[j];
+            if (arg==null || !isAssignableTo(arg, paramType)){
+                if (!param.hasInitialExpression() && (ptype==null || !ptype.equals(paramType))) {
+                    return -1; // no default value
+                }
+                // a default value exists, we can skip this param
+                ptype = null;
+            } else {
+                j++;
+                if (!paramType.equals(arg)) dist+=getDistance(arg, paramType);
+                if (param.hasInitialExpression()) {
+                    ptype = arg;
+                } else {
+                    ptype = null;
+                }
             }
         }
         return dist;
@@ -621,6 +669,281 @@ abstract class StaticTypeCheckingSupport {
     }
 
     static boolean implementsInterfaceOrIsSubclassOf(ClassNode type, ClassNode superOrInterface) {
-        return type.equals(superOrInterface) || type.isDerivedFrom(superOrInterface) || type.implementsInterface(superOrInterface);
+        boolean result = type.equals(superOrInterface)
+                || type.isDerivedFrom(superOrInterface)
+                || type.implementsInterface(superOrInterface)
+                || type == UNKNOWN_PARAMETER_TYPE;
+        if (result) {
+            return true;
+        }
+        if (type.isArray() && superOrInterface.isArray()) {
+            return implementsInterfaceOrIsSubclassOf(type.getComponentType(), superOrInterface.getComponentType());
+        }
+        return false;
     }
+
+    static int getDistance(final ClassNode receiver, final ClassNode compare) {
+        if (receiver.equals(compare)||receiver == UNKNOWN_PARAMETER_TYPE) return 0;
+        if (compare.isInterface() && receiver.implementsInterface(compare)) return 1;
+        ClassNode superClass = compare.getSuperClass();
+        if (superClass ==null) return 2;
+        return 1+getDistance(receiver, superClass);
+    }
+
+    public static List<MethodNode> findDGMMethodsByNameAndArguments(final ClassNode receiver, final String name, final ClassNode[] args) {
+        return findDGMMethodsByNameAndArguments(receiver, name, args, new LinkedList<MethodNode>());
+    }
+
+    public static List<MethodNode> findDGMMethodsByNameAndArguments(final ClassNode receiver, final String name, final ClassNode[] args, final List<MethodNode> methods) {
+        final List<MethodNode> chosen;
+        methods.addAll(findDGMMethodsForClassNode(receiver, name));
+
+        chosen = chooseBestMethod(receiver, methods, args);
+        // specifically for DGM-like methods, we may have a generic type as the first argument of the DGM method
+        // for example: DGM#getAt(T[], int) or DGM#putAt(T[], int, U)
+        // in that case, we must verify that the chosen method match generic type information
+        Iterator<MethodNode> iterator = chosen.iterator();
+        while (iterator.hasNext()) {
+            ExtensionMethodNode emn = (ExtensionMethodNode) iterator.next();
+            MethodNode dgmMethod = emn.getExtensionMethodNode(); // this is the method from DGM
+            GenericsType[] methodGenericTypes = dgmMethod.getGenericsTypes();
+            if (methodGenericTypes !=null && methodGenericTypes.length>0) {
+                Parameter[] parameters = dgmMethod.getParameters();
+                ClassNode dgmOwnerType = parameters[0].getOriginType();
+                if (dgmOwnerType.isGenericsPlaceHolder() || dgmOwnerType.isArray() && dgmOwnerType.getComponentType().isGenericsPlaceHolder()) {
+                    // first parameter of DGM method is a generic type or an array of generic type
+
+                    ClassNode receiverBase = receiver.isArray() ? receiver.getComponentType() : receiver;
+                    ClassNode receiverBaseRedirect = dgmOwnerType.isArray()?dgmOwnerType.getComponentType():dgmOwnerType;
+                    boolean mismatch = false;
+                    // ex: <T, U extends T> void putAt(T[], int, U)
+                    for (int i = 1; i < parameters.length && !mismatch; i++) {
+                        final int k = i - 1; // index of the actual parameter because of the extra receiver parameter in DGM
+                        ClassNode type = parameters[i].getOriginType();
+                        if (isUsingGenericsOrIsArrayUsingGenerics(type)) {
+                            // in a DGM-like method, the first parameter is the receiver. Because of type erasure,
+                            // it can only be T or T[]
+                            String receiverPlaceholder = receiverBaseRedirect.getGenericsTypes()[0].getName();
+                            ClassNode parameterBaseType = args[k].isArray() ? args[k].getComponentType() : args[k];
+                            ClassNode parameterBaseTypeRedirect = type.isArray() ? type.getComponentType() : type;
+                            GenericsType[] paramRedirectGenericsTypes = parameterBaseTypeRedirect.getGenericsTypes();
+                            GenericsType[] paramGenericTypes = parameterBaseType.getGenericsTypes();
+                            if (paramGenericTypes==null) {
+                                paramGenericTypes = new GenericsType[paramRedirectGenericsTypes.length];
+                                Arrays.fill(paramGenericTypes, new GenericsType(OBJECT_TYPE));
+                            } else {
+                                for (int j = 0; j < paramGenericTypes.length; j++) {
+                                    GenericsType paramGenericType = paramGenericTypes[j];
+                                    if (paramGenericType.isWildcard() || paramGenericType.isPlaceholder()) {
+                                        // this may happen if an argument has been used without specifying a generic type
+                                        // for example, foo(List) instead of foo(List<Object>)
+                                        paramGenericTypes[j] = new GenericsType(OBJECT_TYPE);
+                                    }
+                                }
+                            }
+                            for (int j = 0, genericsTypesLength = paramRedirectGenericsTypes.length; j < genericsTypesLength && !mismatch; j++) {
+                                final GenericsType gt = paramRedirectGenericsTypes[j];
+                                if (gt.isPlaceholder()) {
+                                    List<GenericsType> fromMethodGenerics = new LinkedList<GenericsType>();
+                                    for (GenericsType methodGenericType : methodGenericTypes) {
+                                        if (methodGenericType.getName().equals(gt.getName())) {
+                                            fromMethodGenerics.add(methodGenericType);
+                                            break;
+                                        }
+                                    }
+                                    while (!fromMethodGenerics.isEmpty()) {
+                                        // type must either be T or a derived type from T (ex: U extends T)
+                                        GenericsType test = fromMethodGenerics.remove(0);
+                                        if (test.getName().equals(receiverPlaceholder)) {
+                                            if (!implementsInterfaceOrIsSubclassOf(getWrapper(args[k]), getWrapper(receiverBase))) {
+                                                mismatch = true;
+                                                break;
+                                            }
+                                        } else if (test.getUpperBounds()!=null) {
+                                            for (ClassNode classNode : test.getUpperBounds()) {
+                                                GenericsType[] genericsTypes = classNode.getGenericsTypes();
+                                                if (genericsTypes!=null) {
+                                                    for (GenericsType genericsType : genericsTypes) {
+                                                        if (genericsType.isPlaceholder()) {
+                                                            for (GenericsType methodGenericType : methodGenericTypes) {
+                                                                if (methodGenericType.getName().equals(genericsType.getName())) {
+                                                                    fromMethodGenerics.add(methodGenericType);
+                                                                    break;
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            if (mismatch) {
+                                iterator.remove();
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return chosen;
+    }
+
+    /**
+     * Given a list of candidate methods, returns the one which best matches the argument types
+     *
+     * @param receiver
+     * @param methods candidate methods
+     * @param args argument types
+     * @return the list of methods which best matches the argument types. It is still possible that multiple
+     * methods match the argument types.
+     */
+    public static List<MethodNode> chooseBestMethod(final ClassNode receiver, Collection<MethodNode> methods, ClassNode... args) {
+        if (methods.isEmpty()) return Collections.emptyList();
+        List<MethodNode> bestChoices = new LinkedList<MethodNode>();
+        int bestDist = Integer.MAX_VALUE;
+        ClassNode actualReceiver;
+        for (MethodNode m : methods) {
+            actualReceiver = receiver!=null?receiver:m.getDeclaringClass();
+            // todo : corner case
+            /*
+                class B extends A {}
+
+                Animal foo(A o) {...}
+                Person foo(B i){...}
+
+                B  a = new B()
+                Person p = foo(b)
+             */
+
+            Parameter[] params = parameterizeArguments(actualReceiver, m);
+            if (params.length > args.length && ! isVargs(params)) {
+                // GROOVY-5231
+                int dist = allParametersAndArgumentsMatchWithDefaultParams(params, args);
+                if (dist>=0 && !actualReceiver.equals(m.getDeclaringClass())) dist+=getDistance(actualReceiver, m.getDeclaringClass());
+                if (dist>=0 && dist<bestDist) {
+                    bestChoices.clear();
+                    bestChoices.add(m);
+                    bestDist = dist;
+                } else if (dist>=0 && dist==bestDist) {
+                    bestChoices.add(m);
+                }
+            } else if (params.length == args.length) {
+                int allPMatch = allParametersAndArgumentsMatch(params, args);
+                int lastArgMatch = isVargs(params)?lastArgMatchesVarg(params, args):-1;
+                if (lastArgMatch>=0) lastArgMatch++; // ensure exact matches are preferred over vargs
+                int dist = allPMatch>=0?Math.max(allPMatch, lastArgMatch):lastArgMatch;
+                if (dist>=0 && !actualReceiver.equals(m.getDeclaringClass())) dist+=getDistance(actualReceiver, m.getDeclaringClass());
+                if (dist>=0 && dist<bestDist) {
+                    bestChoices.clear();
+                    bestChoices.add(m);
+                    bestDist = dist;
+                } else if (dist>=0 && dist==bestDist) {
+                    bestChoices.add(m);
+                }
+            } else if (isVargs(params)) {
+                boolean firstParamMatches = true;
+                // check first parameters
+                if (args.length > 0) {
+                    Parameter[] firstParams = new Parameter[params.length - 1];
+                    System.arraycopy(params, 0, firstParams, 0, firstParams.length);
+                    firstParamMatches = allParametersAndArgumentsMatch(firstParams, args) >= 0;
+                }
+                if (firstParamMatches) {
+                    // there are three case for vargs
+                    // (1) varg part is left out
+                    if (params.length == args.length + 1) {
+                        if (bestDist > 1) {
+                            bestChoices.clear();
+                            bestChoices.add(m);
+                            bestDist = 1;
+                        }
+                    } else {
+                        // (2) last argument is put in the vargs array
+                        //      that case is handled above already
+                        // (3) there is more than one argument for the vargs array
+                        int dist = excessArgumentsMatchesVargsParameter(params, args);
+                        if (dist >= 0 && !actualReceiver.equals(m.getDeclaringClass())) dist++;
+                        // varargs methods must not be preferred to methods without varargs
+                        // for example :
+                        // int sum(int x) should be preferred to int sum(int x, int... y)
+                        dist++;
+                        if (params.length < args.length && dist >= 0) {
+                            if (dist >= 0 && dist < bestDist) {
+                                bestChoices.clear();
+                                bestChoices.add(m);
+                                bestDist = dist;
+                            } else if (dist >= 0 && dist == bestDist) {
+                                bestChoices.add(m);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return bestChoices;
+    }
+
+    /**
+     * Given a receiver and a method node, parameterize the method arguments using
+     * available generic type information.
+     * @param receiver
+     * @param m
+     * @return
+     */
+    public static Parameter[] parameterizeArguments(final ClassNode receiver, final MethodNode m) {
+        GenericsType[] redirectReceiverTypes = receiver.redirect().getGenericsTypes();
+        if (redirectReceiverTypes==null) {
+            // we must perform an additional check for methods like Collections#sort which define generics
+            // at the method level
+            redirectReceiverTypes = m.getGenericsTypes();
+        }
+        if (redirectReceiverTypes==null) return m.getParameters();
+        Parameter[] methodParameters = m.getParameters();
+        Parameter[] params = new Parameter[methodParameters.length];
+        GenericsType[] receiverParameterizedTypes = receiver.getGenericsTypes();
+        if (receiverParameterizedTypes==null) {
+            receiverParameterizedTypes = redirectReceiverTypes;
+        }
+        for (int i = 0; i < methodParameters.length; i++) {
+            Parameter methodParameter = methodParameters[i];
+            ClassNode paramType = methodParameter.getType();
+            if (paramType.isUsingGenerics()) {
+                GenericsType[] alignmentTypes = paramType.getGenericsTypes();
+                GenericsType[] genericsTypes = GenericsUtils.alignGenericTypes(redirectReceiverTypes, receiverParameterizedTypes, alignmentTypes);
+                if (genericsTypes.length==1) {
+                    ClassNode parameterizedCN;
+                    if (paramType.equals(OBJECT_TYPE)) {
+                        parameterizedCN = genericsTypes[0].getType();
+                    } else {
+                        parameterizedCN= paramType.getPlainNodeReference();
+                        parameterizedCN.setGenericsTypes(genericsTypes);
+                    }
+                    params[i] = new Parameter(
+                            parameterizedCN,
+                            methodParameter.getName()
+                    );
+                } else {
+                    params[i] = methodParameter;
+                }
+            } else {
+                params[i] = methodParameter;
+            }
+        }
+        return params;
+    }
+
+    static boolean isUsingGenericsOrIsArrayUsingGenerics(ClassNode cn) {
+        return cn.isUsingGenerics() || cn.isArray() && cn.getComponentType().isUsingGenerics();
+    }
+
+    /**
+     * A DGM-like method which adds support for method calls which are handled
+     * specifically by the Groovy compiler.
+     */
+    private static class ObjectArrayStaticTypesHelper {
+        public static <T> T getAt(T[] arr, int index) { return null;} 
+        public static <T,U extends T> void putAt(T[] arr, int index, U object) { }
+    } 
 }

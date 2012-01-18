@@ -1289,7 +1289,7 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     protected void createSyntheticStaticFields() {
-        MethodVisitor mv = controller.getMethodVisitor();
+        MethodVisitor mv;
         for (String staticFieldName : referencedClasses.keySet()) {
             // generate a field node
             FieldNode fn = controller.getClassNode().getDeclaredField(staticFieldName);
@@ -1359,23 +1359,30 @@ public class AsmClassGenerator extends ClassGenerator {
     public void visitClassExpression(ClassExpression expression) {
         ClassNode type = expression.getType();
         MethodVisitor mv = controller.getMethodVisitor();
-
-        if (ClassHelper.isPrimitiveType(type)) {
-            ClassNode objectType = ClassHelper.getWrapper(type);
-            mv.visitFieldInsn(GETSTATIC, BytecodeHelper.getClassInternalName(objectType), "TYPE", "Ljava/lang/Class;");
-        } else {
-            String staticFieldName = getStaticFieldName(type);
-            referencedClasses.put(staticFieldName,type);
-
-            String internalClassName = controller.getInternalClassName();
+        if (BytecodeHelper.isClassLiteralPossible(type)) {
             if (controller.getClassNode().isInterface()) {
-                internalClassName = BytecodeHelper.getClassInternalName(controller.getInterfaceClassLoadingClass());
-                mv.visitFieldInsn(GETSTATIC, internalClassName, staticFieldName, "Ljava/lang/Class;");
+                InterfaceHelperClassNode interfaceClassLoadingClass = controller.getInterfaceClassLoadingClass();
+                if (BytecodeHelper.isClassLiteralPossible(interfaceClassLoadingClass)) {
+                    BytecodeHelper.visitClassLiteral(mv, interfaceClassLoadingClass);
+                    controller.getOperandStack().push(ClassHelper.CLASS_Type);
+                    return;
+                }
             } else {
-                mv.visitMethodInsn(INVOKESTATIC, internalClassName, "$get$" + staticFieldName, "()Ljava/lang/Class;");
+                BytecodeHelper.visitClassLiteral(mv, type);
+                controller.getOperandStack().push(ClassHelper.CLASS_Type);
+                return;
             }
         }
-        
+        String staticFieldName = getStaticFieldName(type);
+        referencedClasses.put(staticFieldName, type);
+
+        String internalClassName = controller.getInternalClassName();
+        if (controller.getClassNode().isInterface()) {
+            internalClassName = BytecodeHelper.getClassInternalName(controller.getInterfaceClassLoadingClass());
+            mv.visitFieldInsn(GETSTATIC, internalClassName, staticFieldName, "Ljava/lang/Class;");
+        } else {
+            mv.visitMethodInsn(INVOKESTATIC, internalClassName, "$get$" + staticFieldName, "()Ljava/lang/Class;");
+        }
         controller.getOperandStack().push(ClassHelper.CLASS_Type);
     }
 

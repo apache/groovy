@@ -168,5 +168,42 @@ class MiscSTCTest extends StaticTypeCheckingTestCase {
             1
         '''
     }
+    
+    void testCompareEnumToNull() {
+        assertScript '''
+            enum MyEnum { a,b }
+            MyEnum val = null
+            if (val == null) {
+                val = MyEnum.a
+            }
+        '''
+    }
+
+    void testMethodReturnTypeInferenceShouldWorkBecauseInSameSourceUnit() {
+        assertScript '''
+            class A {
+                static def foo() { '123' }
+            }
+            A.foo().toInteger()
+        '''
+    }
+
+    void testMethodReturnTypeInferenceShouldNotWorkBecauseNotSameSourceUnit() {
+        shouldFailWithMessages '''
+            import groovy.transform.stc.MiscSTCTest.MiscSTCTestSupport as A
+            A.foo().toInteger()
+        ''', 'Cannot find matching method java.lang.Object#toInteger()'
+    }
+
+    void testClassLiteralAsArgument() {
+        assertScript '''
+            void lookup(Class clazz) { }
+            lookup(Date)
+        '''
+    }
+
+    public static class MiscSTCTestSupport {
+        static def foo() { '123' }
+    }
 }
 

@@ -279,6 +279,227 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    void testMethodCallArgumentUsingInstanceOf() {
+        assertScript '''
+            void foo(String str) { 'String' }
+            def o
+            if (o instanceof String) {
+                foo(o)
+            }
+        '''
+    }
+
+
+    void testShouldFindStaticMethod() {
+        assertScript '''
+                static String foo(String s) {
+                    'String'
+                }
+                foo('String')
+            '''
+    }
+
+    void testShouldFailWithNoMatchingMethod() {
+        shouldFailWithMessages '''
+                static String foo(String s) {
+                    'String'
+                }
+                static String foo(Integer s) {
+                    'Integer'
+                }
+                static String foo(Boolean s) {
+                    'Boolean'
+                }
+                ['foo',123,true].each { foo(it) }
+            ''', 'Cannot find matching method'
+    }
+
+    void testShouldNotFailThanksToInstanceOfChecks() {
+        assertScript '''
+                static String foo(String s) {
+                    'String'
+                }
+                static String foo(Integer s) {
+                    'Integer'
+                }
+                static String foo(Boolean s) {
+                    'Boolean'
+                }
+                ['foo',123,true].each {
+                    if (it instanceof String) {
+                        foo((String)it)
+                    } else if (it instanceof Boolean) {
+                        foo((Boolean)it)
+                    } else if (it instanceof Integer) {
+                        foo((Integer)it)
+                    }
+                }
+            '''
+    }
+
+    void testShouldNotFailThanksToInstanceOfChecksAndWithoutExplicitCasts() {
+        assertScript '''
+                static String foo(String s) {
+                    'String'
+                }
+                static String foo(Integer s) {
+                    'Integer'
+                }
+                static String foo(Boolean s) {
+                    'Boolean'
+                }
+                ['foo',123,true].each {
+                    if (it instanceof String) {
+                        foo(it)
+                    } else if (it instanceof Boolean) {
+                        foo(it)
+                    } else if (it instanceof Integer) {
+                        foo(it)
+                    }
+                }
+            '''
+    }
+
+    void testShouldFailWithMultiplePossibleMethods() {
+        shouldFailWithMessages '''
+                static String foo(String s) {
+                    'String'
+                }
+                static String foo(Integer s) {
+                    'Integer'
+                }
+                static String foo(Boolean s) {
+                    'Boolean'
+                }
+                ['foo',123,true].each {
+                    if (it instanceof String || it instanceof Boolean || it instanceof Integer) {
+                        foo(it)
+                    }
+                }
+            ''', 'Reference to method is ambiguous'
+    }
+
+    void testShouldFailBecauseVariableIsReassigned() {
+        shouldFailWithMessages '''
+                static String foo(String s) {
+                    'String'
+                }
+                def it
+                if (it instanceof String) {
+                    it = new Date()
+                    foo(it)
+                }
+            ''', 'foo(java.util.Date)'
+    }
+
+    void testShouldNotFailEvenIfVariableIsReassigned() {
+        assertScript '''
+                static String foo(int val) {
+                    'int'
+                }
+                def it
+                if (it instanceof String) {
+                    it = 123
+                    foo(it)
+                }
+            '''
+    }
+
+    void testShouldNotFailEvenIfVariableIsReassignedAndInstanceOfIsEmbed() {
+        assertScript '''
+                static String foo(int val) {
+                    'int'
+                }
+                static String foo(Date val) {
+                    'Date'
+                }
+                def it
+                if (it instanceof String) {
+                    it = 123
+                    foo(it)
+                    if (it instanceof Date) {
+                        foo(it)
+                    }
+                }
+            '''
+    }
+    
+    void testOneDefaultParam() {
+        assertScript '''
+            String m(String val = 'hello') {
+                return val.toUpperCase()
+            }
+            assert m() == 'HELLO'
+            assert m('bye') == 'BYE'
+        '''
+    }
+
+    void testOneDefaultParamWithWrongArgType() {
+        shouldFailWithMessages '''
+            String m(String val = 'hello') {
+                return val.toUpperCase()
+            }
+            assert m(123) == 'HELLO'
+        ''', '#m(int)'
+    }
+
+    void testOneDefaultParamAndOneWithout() {
+        assertScript '''
+            String m(String val = 'hello', int append) {
+                return val.toUpperCase() + append
+            }
+            assert m(1) == 'HELLO1'
+            assert m('bye',2) == 'BYE2'
+        '''
+    }
+
+    void testOneDefaultParamAndOneWithoutWithWrongArgType() {
+        shouldFailWithMessages '''
+            String m(String val = 'hello', int append) {
+                return val.toUpperCase() + append
+            }
+            m('test', new Object())
+        ''', 'm(java.lang.String, java.lang.Object)'
+    }
+    
+    void testMultipleDefaultArgs() {
+        assertScript '''
+            String m(String first = 'first', String second, String third = 'third') {
+                return first.toUpperCase() + ' ' + second.toUpperCase() + ' ' + third.toUpperCase()
+            }
+            assert m('hello') == 'FIRST HELLO THIRD'
+        '''
+    }
+
+    void testMultipleDefaultArgsWithMixedTypes() {
+        assertScript '''
+            String m(String first = 'first', int second, String third = 'third') {
+                return first.toUpperCase() + ' ' + second + ' ' + third.toUpperCase()
+            }
+            assert m(123) == 'FIRST 123 THIRD'
+            assert m('f',123) == 'F 123 THIRD'
+            assert m('f',123,'s') == 'F 123 S'
+        '''
+    }
+
+    void testMultipleDefaultArgsWithMixedTypesAndTooManyArgs() {
+        shouldFailWithMessages '''
+            String m(String first = 'first', int second, String third = 'third') {
+                return first.toUpperCase() + ' ' + second + ' ' + third.toUpperCase()
+            }
+            m('f',123,'s', 'too many args')
+        ''', '#m(java.lang.String, int, java.lang.String, java.lang.String)'
+    }
+
+    void testMultipleDefaultArgsWithMixedTypesAndWrongType() {
+        shouldFailWithMessages '''
+            String m(String first = 'first', int second, String third = 'third') {
+                return first.toUpperCase() + ' ' + second + ' ' + third.toUpperCase()
+            }
+            m('hello') // no value set for "second"
+        ''', '#m(java.lang.String)'
+    }
+
     static class MyMethodCallTestClass {
 
         static int mul(int... args) { args.toList().inject(1) { x,y -> x*y } }

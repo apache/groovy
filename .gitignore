@@ -1,4 +1,5 @@
 target
+build
 out
 src/main/org/codehaus/groovy/antlr/parser/GroovyLexer.java
 src/main/org/codehaus/groovy/antlr/parser/GroovyLexer.smap

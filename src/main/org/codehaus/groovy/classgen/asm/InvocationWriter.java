@@ -426,7 +426,7 @@ public class InvocationWriter {
     }
     
     private void loadVariableWithReference(VariableExpression var) {
-        if (!var.isClosureSharedVariable()) {
+        if (!var.isUseReferenceDirectly()) {
             var.visit(controller.getAcg());
         } else {
             ClosureWriter.loadReference(var.getName(), controller);

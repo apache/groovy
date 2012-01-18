@@ -23,12 +23,10 @@ import org.codehaus.groovy.classgen.ReturnAdder;
 import org.codehaus.groovy.classgen.asm.InvocationWriter;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.runtime.MetaClassHelper;
-import org.codehaus.groovy.runtime.typehandling.FloatingPointMath;
 import org.codehaus.groovy.transform.StaticTypesTransformation;
 import org.codehaus.groovy.util.ListHashMap;
 import org.objectweb.asm.Opcodes;
 
-import java.lang.reflect.Modifier;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -46,7 +44,6 @@ import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.*;
  */
 public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     private static final ClassNode ITERABLE_TYPE = ClassHelper.make(Iterable.class);
-    private final static ClassNode READONLY_PROPERTY_RETURN = ClassHelper.make("<readonly>");
     private final static List<MethodNode> EMPTY_METHODNODE_LIST = Collections.emptyList();
 
     private SourceUnit source;
@@ -142,9 +139,22 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         ClassNode oldCN = classNode;
         classNode = node;
         super.visitClass(node);
+        Iterator<InnerClassNode> innerClasses = classNode.getInnerClasses();
+        while (innerClasses.hasNext()) {
+            InnerClassNode innerClassNode = innerClasses.next();
+            visitClass(innerClassNode);
+        }
         classNode = oldCN;
     }
 
+    @Override
+    public void visitClassExpression(final ClassExpression expression) {
+        super.visitClassExpression(expression);
+        ClassNode cn = (ClassNode) expression.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
+        if (cn==null) {
+            storeType(expression, getType(expression));
+        }
+    }
 
     @Override
     public void visitVariableExpression(VariableExpression vexp) {
@@ -202,7 +212,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         final Expression rightExpression = expression.getRightExpression();
         ClassNode rType = getType(rightExpression);
         if (rightExpression instanceof ConstantExpression && ((ConstantExpression) rightExpression).getValue()==null) {
-            if (!isPrimitiveType(lType)) rType = lType; // primitive types should be ignored as they will result in another failure
+            if (!isPrimitiveType(lType)) rType = UNKNOWN_PARAMETER_TYPE; // primitive types should be ignored as they will result in another failure
         }
         int op = expression.getOperation().getType();
         ClassNode resultType = getResultType(lType, op, rType, expression);
@@ -216,7 +226,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 inferDiamondType((ConstructorCallExpression) rightExpression, lType);
             }
 
-            typeCheckAssignment(expression, leftExpression, lType, rightExpression, rType);
+            ClassNode originType = getOriginalDeclarationType(leftExpression);
+            typeCheckAssignment(expression, leftExpression, originType, rightExpression, resultType);
+            // if assignment succeeds but result type is not a subtype of original type, then we are in a special cast handling
+            // and we must update the result type
+            if (!implementsInterfaceOrIsSubclassOf(getWrapper(resultType),getWrapper(originType))) {
+                resultType = originType;
+            }
 
             // if we are in an if/else branch, keep track of assignment
             if (ifElseForWhileAssignmentTracker !=null && leftExpression instanceof VariableExpression) {
@@ -245,6 +261,18 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         } else if (op == KEYWORD_INSTANCEOF) {
             pushInstanceOfTypeInfo(leftExpression, rightExpression);
         }
+    }
+    
+    private ClassNode getOriginalDeclarationType(Expression lhs) {
+        if (lhs instanceof VariableExpression) {
+            Variable var = findTargetVariable((VariableExpression) lhs);     
+            if (var instanceof DynamicVariable) return getType(lhs);
+            return var.getOriginType();
+        }
+        if (lhs instanceof FieldExpression) {
+            return ((FieldExpression) lhs).getField().getOriginType();
+        }
+        return getType(lhs);
     }
 
     private void inferDiamondType(final ConstructorCallExpression cce, final ClassNode lType) {
@@ -348,13 +376,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             return;
         }
         boolean compatible = checkCompatibleAssignmentTypes(leftRedirect, inferredRightExpressionType, rightExpression);
+        // if leftRedirect is of READONLY_PROPERTY_RETURN type, then it means we are on a missing property
+        if (leftExpression.getNodeMetaData(StaticTypesMarker.READONLY_PROPERTY)!=null && (leftExpression instanceof PropertyExpression)) {
+            addStaticTypeError("Cannot set read-only property: "+((PropertyExpression)leftExpression).getPropertyAsString(), leftExpression);
+        }
         if (!compatible) {
-            // if leftRedirect is of READONLY_PROPERTY_RETURN type, then it means we are on a missing property
-            if ((leftRedirect == READONLY_PROPERTY_RETURN) && (leftExpression instanceof PropertyExpression)) {
-                addStaticTypeError("Cannot set read-only property: "+((PropertyExpression)leftExpression).getPropertyAsString(), leftExpression);
-            } else {
-                addStaticTypeError("Cannot assign value of type " + inferredRightExpressionType.getName() + " to variable of type " + leftExpressionType.getName(), assignmentExpression);
-            }
+          addStaticTypeError("Cannot assign value of type " + inferredRightExpressionType.getName() + " to variable of type " + leftExpressionType.getName(), assignmentExpression);
         } else {
             // if closure expression on RHS, then copy the inferred closure return type
             if (rightExpression instanceof ClosureExpression) {
@@ -464,7 +491,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (constructors.isEmpty() && arguments.length==0) return;
         List<MethodNode> constructorList = findMethod(node, "<init>", arguments);
         if (constructorList.isEmpty()) {
-            addStaticTypeError("No matching constructor found: "+node+toMethodParametersString("<init>", arguments), classNode);
+            addStaticTypeError("No matching constructor found: " + node + toMethodParametersString("<init>", arguments), classNode);
         }
     }
 
@@ -491,9 +518,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
      *         otherwise falls back to the provided type class.
      */
     private ClassNode findCurrentInstanceOfClass(final Expression expr, final ClassNode type) {
-        if (!temporaryIfBranchTypeInformation.empty()) {
-            Object key = extractTemporaryTypeInfoKey(expr);
-            List<ClassNode> nodes = temporaryIfBranchTypeInformation.peek().get(key);
+        if (!temporaryIfBranchTypeInformation.empty()) {            
+            List<ClassNode> nodes = getTemporaryTypesForExpression(expr);
             if (nodes != null && nodes.size() == 1) return nodes.get(0);
         }
         return type;
@@ -517,18 +543,19 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         ClassNode clazz = getType(objectExpression);
         if (clazz.isArray() && "length".equals(pexp.getPropertyAsString())) {
             if (visitor!=null) {
-                PropertyNode node = new PropertyNode("length", Opcodes.ACC_PUBLIC| Opcodes.ACC_FINAL, ClassHelper.int_TYPE, clazz, null, null, null);
+                PropertyNode node = new PropertyNode("length", Opcodes.ACC_PUBLIC| Opcodes.ACC_FINAL, int_TYPE, clazz, null, null, null);
+                storeType(pexp, int_TYPE);
                 visitor.visitProperty(node);
             }
             return true;
         }
         List<ClassNode> tests = new LinkedList<ClassNode>();
         tests.add(clazz);
-        if (objectExpression instanceof ClassExpression) tests.add(CLASS_Type);
-        if (!temporaryIfBranchTypeInformation.empty()) {
-            Map<Object, List<ClassNode>> info = temporaryIfBranchTypeInformation.peek();
-            Object key = extractTemporaryTypeInfoKey(objectExpression);
-            List<ClassNode> classNodes = info.get(key);
+        if (clazz.equals(CLASS_Type) && clazz.getGenericsTypes()!=null) {
+            tests.add(clazz.getGenericsTypes()[0].getType());
+        }
+        if (!temporaryIfBranchTypeInformation.empty()) {            
+            List<ClassNode> classNodes = getTemporaryTypesForExpression(objectExpression);
             if (classNodes != null) tests.addAll(classNodes);
         }
         if (lastImplicitItType != null
@@ -538,6 +565,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
         String propertyName = pexp.getPropertyAsString();
         if (propertyName==null) return false;
+        String capName = MetaClassHelper.capitalize(propertyName);
         boolean isAttributeExpression = pexp instanceof AttributeExpression;
         for (ClassNode testClass : tests) {
             // maps and lists have special handling for property expressions
@@ -548,12 +576,25 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     PropertyNode propertyNode = current.getProperty(propertyName);
                     if (propertyNode != null) {
                         if (visitor!=null) visitor.visitProperty(propertyNode);
+                        storeType(pexp, propertyNode.getOriginType());
                         return true;
+                    }
+                    MethodNode getter = current.getGetterMethod("get" + capName);
+                    if (getter==null) getter = current.getGetterMethod("is"+capName);
+                    if (getter!=null) {
+                        // check that a setter also exists
+                        MethodNode setterMethod = current.getSetterMethod("set" + capName);
+                        if (setterMethod!=null) {
+                            if (visitor!=null) visitor.visitMethod(getter);
+                            storeType(pexp, getter.getReturnType());
+                            return true;
+                        }
                     }
                     if (!isAttributeExpression) {
                         FieldNode field = current.getDeclaredField(propertyName);
                         if (field != null) {
                             if (visitor!=null) visitor.visitField(field);
+                            storeType(pexp, field.getOriginType());
                             return true;
                         }
                     }
@@ -566,18 +607,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     while (current != null) {
                         current = current.redirect();
 
-                        String pname = MetaClassHelper.capitalize(propertyName);
-                        List<MethodNode> nodes = current.getMethods("get" + pname);
-                        if (nodes.isEmpty()) nodes = current.getMethods("is" + pname);
-                        if (!nodes.isEmpty()) {
-                            for (MethodNode node : nodes) {
-                                Parameter[] parameters = node.getParameters();
-                                if (node.getReturnType() != VOID_TYPE && (parameters == null || parameters.length == 0)) {
-                                    if (visitor != null) visitor.visitMethod(node);
-                                    storeType(pexp, READONLY_PROPERTY_RETURN);
-                                    return true;
-                                }
-                            }
+                        MethodNode getter = current.getGetterMethod("get" + capName);
+                        if (getter==null) getter = current.getGetterMethod("is"+capName);
+                        if (getter!=null) {
+                            if (visitor != null) visitor.visitMethod(getter);
+                            pexp.putNodeMetaData(StaticTypesMarker.READONLY_PROPERTY, Boolean.TRUE);
+                            storeType(pexp, getter.getReturnType());
+                            return true;
                         }
                         // if the property expression is an attribute expression (o.@attr), then
                         // we stop now, otherwise we must check the parent class
@@ -663,6 +699,52 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         negativeOrPositiveUnary(expression, "negative");
     }
 
+    @Override
+    public void visitPostfixExpression(final PostfixExpression expression) {
+        super.visitPostfixExpression(expression);
+        Expression inner = expression.getExpression();
+        ClassNode exprType = getType(inner);
+        int type = expression.getOperation().getType();
+        if (isPrimitiveType(exprType) || isPrimitiveType(getUnwrapper(exprType))) {
+            if (type==PLUS_PLUS || type==MINUS_MINUS) return;
+            addStaticTypeError("Unsupported postfix operation type ["+expression.getOperation()+"]", expression);
+            return;
+        }
+        // not a primitive type. We must find a method which is called next
+        String name = type==PLUS_PLUS?"next":type==MINUS_MINUS?"previous":null;
+        if (name==null) {
+            addStaticTypeError("Unsupported postfix operation type ["+expression.getOperation()+"]", expression);
+            return;
+        }
+        MethodNode node = findMethodOrFail(inner, exprType, name);
+        if (node!=null) {
+            storeTargetMethod(expression, node);
+        }
+    }
+
+    @Override
+    public void visitPrefixExpression(final PrefixExpression expression) {
+        super.visitPrefixExpression(expression);
+        Expression inner = expression.getExpression();
+        ClassNode exprType = getType(inner);
+        int type = expression.getOperation().getType();
+        if (isPrimitiveType(exprType) || isPrimitiveType(getUnwrapper(exprType))) {
+            if (type==PLUS_PLUS || type==MINUS_MINUS) return;
+            addStaticTypeError("Unsupported prefix operation type ["+expression.getOperation()+"]", expression);
+            return;
+        }
+        // not a primitive type. We must find a method which is called next or previous
+        String name = type==PLUS_PLUS?"next":type==MINUS_MINUS?"previous":null;
+        if (name==null) {
+            addStaticTypeError("Unsupported prefix operation type ["+expression.getOperation()+"]", expression);
+            return;
+        }
+        MethodNode node = findMethodOrFail(inner, exprType, name);
+        if (node!=null) {
+            storeTargetMethod(expression, node);
+        }
+    }
+
     private void negativeOrPositiveUnary(Expression expression, String name) {
         ClassNode type = getType(expression);
         ClassNode typeRe = type.redirect();
@@ -732,11 +814,21 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         List<Expression> arglist = args.getExpressions();
         ClassNode[] ret = new ClassNode[arglist.size()];
         int i = 0;
+        Map<Object, List<ClassNode>> info = temporaryIfBranchTypeInformation.empty()?null:temporaryIfBranchTypeInformation.peek();
         for (Expression exp : arglist) {
             if (exp instanceof ConstantExpression && ((ConstantExpression)exp).getValue()==null) {
                 ret[i] = UNKNOWN_PARAMETER_TYPE;
             } else {
                 ret[i] = getType(exp);
+                if (exp instanceof VariableExpression && info!=null) {
+                    List<ClassNode> classNodes = getTemporaryTypesForExpression(exp);
+                    if (classNodes!=null && !classNodes.isEmpty()) {
+                        ArrayList<ClassNode> arr = new ArrayList<ClassNode>(classNodes.size()+1);
+                        arr.add(ret[i]);
+                        arr.addAll(classNodes);
+                        ret[i] = new UnionTypeClassNode(arr.toArray(new ClassNode[arr.size()]));
+                    }
+                }
             }
             i++;
         }
@@ -822,6 +914,107 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     @Override
+    public void visitStaticMethodCallExpression(final StaticMethodCallExpression call) {
+        final String name = call.getMethod();
+        if (name == null) {
+            addStaticTypeError("cannot resolve dynamic method name at compile time.", call);
+            return;
+        }
+
+        final ClassNode rememberLastItType = lastImplicitItType;
+        Expression callArguments = call.getArguments();
+
+        boolean isWithCall = isWithCall(name, callArguments);
+
+        if (!isWithCall) {
+            // if it is not a "with" call, arguments should be visited first
+            callArguments.visit(this);
+        }
+
+        ClassNode[] args = getArgumentTypes(InvocationWriter.makeArgumentList(callArguments));
+        final ClassNode receiver = call.getOwnerType();
+
+        if (isWithCall) {
+            withReceiverList.add(0, receiver); // must be added first in the list
+            lastImplicitItType = receiver;
+            // if the provided closure uses an explicit parameter definition, we can
+            // also check that the provided type is correct
+            if (callArguments instanceof ArgumentListExpression) {
+                ArgumentListExpression argList = (ArgumentListExpression) callArguments;
+                ClosureExpression closure = (ClosureExpression) argList.getExpression(0);
+                Parameter[] parameters = closure.getParameters();
+                if (parameters.length > 1) {
+                    addStaticTypeError("Unexpected number of parameters for a with call", argList);
+                } else if (parameters.length == 1) {
+                    Parameter param = parameters[0];
+                    if (!param.isDynamicTyped() && !isAssignableTo(receiver, param.getType().redirect())) {
+                        addStaticTypeError("Expected parameter type: " + receiver.toString(false) + " but was: " + param.getType().redirect().toString(false), param);
+                    }
+                }
+            }
+        }
+
+        try {
+            if (isWithCall) {
+                // in case of a with call, arguments (the closure) should be visited now that we checked
+                // the arguments
+                callArguments.visit(this);
+            }
+
+                // method call receivers are :
+                //   - possible "with" receivers
+                //   - the actual receiver as found in the method call expression
+                //   - any of the potential receivers found in the instanceof temporary table
+                // in that order
+                List<ClassNode> receivers = new LinkedList<ClassNode>();
+                if (!withReceiverList.isEmpty()) receivers.addAll(withReceiverList);
+                receivers.add(receiver);
+                List<MethodNode> mn = null;
+                ClassNode chosenReceiver = null;
+                for (ClassNode currentReceiver : receivers) {
+                    mn = findMethod(currentReceiver, name, args);
+                    if (!mn.isEmpty()) {
+                        if (mn.size()==1) typeCheckMethodsWithGenerics(currentReceiver, args, mn.get(0), call);
+                        chosenReceiver = currentReceiver;
+                        break;
+                    }
+                }
+                if (mn.isEmpty()) {
+                    addStaticTypeError("Cannot find matching method " + receiver.getName() + "#" + toMethodParametersString(name, args), call);
+                } else {
+                    if (mn.size() == 1) {
+                        MethodNode directMethodCallCandidate = mn.get(0);
+                        // visit the method to obtain inferred return type
+                        ClassNode currentClassNode = classNode;
+                        classNode = directMethodCallCandidate.getDeclaringClass();
+                        for (ClassNode node: source.getAST().getClasses()) {
+                            if (isClassInnerClassOrEqualTo(classNode, node)) {
+                                // visit is authorized because the classnode belongs to the same source unit
+                                visitMethod(directMethodCallCandidate);
+                                break;
+                            }
+                        }
+                        classNode = currentClassNode;
+                        ClassNode returnType = getType(directMethodCallCandidate);
+                        if (returnType.isUsingGenerics() && !returnType.isEnum()) {
+                            returnType = inferReturnTypeGenerics(chosenReceiver, directMethodCallCandidate, callArguments);
+                        }
+                        storeType(call, returnType);
+                        storeTargetMethod(call, directMethodCallCandidate);
+
+                    } else {
+                        addStaticTypeError("Reference to method is ambiguous. Cannot choose between " + mn, call);
+                    }
+                }
+        } finally {
+            if (isWithCall) {
+                lastImplicitItType = rememberLastItType;
+                withReceiverList.removeFirst();
+            }
+        }
+    }
+
+    @Override
     public void visitMethodCallExpression(MethodCallExpression call) {
         final String name = call.getMethodAsString();
         if (name == null) {
@@ -854,7 +1047,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 visitMethodCallExpression(subcall);
                 // the inferred type here should be a list of what the subcall returns
                 ClassNode subcallReturnType = getType(subcall);
-                ClassNode listNode = new ClassNode(List.class);
+                ClassNode listNode = LIST_TYPE.getPlainNodeReference();
                 listNode.setGenericsTypes(new GenericsType[]{new GenericsType(wrapTypeIfNecessary(subcallReturnType))});
                 storeType(call, listNode);
                 return;
@@ -902,67 +1095,94 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 callArguments.visit(this);
             }
 
-            // method call receivers are :
-            //   - possible "with" receivers
-            //   - the actual receiver as found in the method call expression
-            //   - any of the potential receivers found in the instanceof temporary table
-            // in that order
-            List<ClassNode> receivers = new LinkedList<ClassNode>();
-            if (!withReceiverList.isEmpty()) receivers.addAll(withReceiverList);
-            receivers.add(receiver);
-            if (objectExpression instanceof ClassExpression) {
-                receivers.add(CLASS_Type);
-            }
-            if (!temporaryIfBranchTypeInformation.empty()) {
-                final Map<Object, List<ClassNode>> tempo = temporaryIfBranchTypeInformation.peek();
-                Object key = extractTemporaryTypeInfoKey(objectExpression);
-                List<ClassNode> potentialReceiverType = tempo.get(key);
-                if (potentialReceiverType != null) receivers.addAll(potentialReceiverType);
-            }
-            List<MethodNode> mn = null;
-            ClassNode chosenReceiver = null;
-            for (ClassNode currentReceiver : receivers) {
-                mn = findMethod(currentReceiver, name, args);
-                if (!mn.isEmpty()) {
-                    typeCheckMethodsWithGenerics(currentReceiver, args, mn, call);
-                    chosenReceiver = currentReceiver;
-                    break;
-                }
-            }
-            if (mn.isEmpty()) {
-                addStaticTypeError("Cannot find matching method " + receiver.getName() + "#" + toMethodParametersString(name, args), call);
-            } else {
-                if (isCallOnClosure) {
-                    // this is a closure.call() call
-                    if (objectExpression instanceof VariableExpression) {
-                        Variable variable = findTargetVariable((VariableExpression)objectExpression);
-                        if (variable instanceof Expression) {
-                            Object data = ((Expression) variable).getNodeMetaData(StaticTypesMarker.CLOSURE_ARGUMENTS);
-                            if (data!=null) {
-                                Parameter[] parameters = (Parameter[]) data;
-                                typeCheckClosureCall(callArguments, args, parameters);
-                            }
-                            Object type = ((Expression) variable).getNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE);
-                            if (type!=null) {
-                                 storeType(call, (ClassNode) type);
+            if (isCallOnClosure) {
+                // this is a closure.call() call
+                if (objectExpression==VariableExpression.THIS_EXPRESSION) {
+                    // isClosureCall() check verified earlier that a field exists
+                    FieldNode field = classNode.getDeclaredField(name);
+                    ClassNode closureReturnType = field.getType().getGenericsTypes()[0].getType();
+                    Object data = field.getNodeMetaData(StaticTypesMarker.CLOSURE_ARGUMENTS);
+                    if (data != null) {
+                        Parameter[] parameters = (Parameter[]) data;
+                        typeCheckClosureCall(callArguments, args, parameters);
+                    }
+                    storeType(call, closureReturnType);
+                } else if (objectExpression instanceof VariableExpression) {
+                    Variable variable = findTargetVariable((VariableExpression) objectExpression);
+                    if (variable instanceof Expression) {
+                        Object data = ((Expression) variable).getNodeMetaData(StaticTypesMarker.CLOSURE_ARGUMENTS);
+                        if (data != null) {
+                            Parameter[] parameters = (Parameter[]) data;
+                            typeCheckClosureCall(callArguments, args, parameters);
+                        }
+                        Object type = ((Expression) variable).getNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE);
+                        if (type == null) {
+                            // if variable was declared as a closure and inferred type is unknown, we
+                            // may face a recursive call. In that case, we will use the type of the
+                            // generic return type of the closure declaration
+                            if (variable.getType().equals(CLOSURE_TYPE)) {
+                                type = variable.getType().getGenericsTypes()[0].getType();
                             }
                         }
-                    } else if (objectExpression instanceof ClosureExpression) {
-                        // we can get actual parameters directly
-                        Parameter[] parameters = ((ClosureExpression)objectExpression).getParameters();
-                        typeCheckClosureCall(callArguments, args, parameters);
-                        Object data = objectExpression.getNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE);
-                        if (data!=null) {
-                            storeType(call, (ClassNode) data);
+                        if (type != null) {
+                            storeType(call, (ClassNode) type);
                         }
                     }
+                } else if (objectExpression instanceof ClosureExpression) {
+                    // we can get actual parameters directly
+                    Parameter[] parameters = ((ClosureExpression) objectExpression).getParameters();
+                    typeCheckClosureCall(callArguments, args, parameters);
+                    Object data = objectExpression.getNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE);
+                    if (data != null) {
+                        storeType(call, (ClassNode) data);
+                    }
+                }
+            } else {
+                // method call receivers are :
+                //   - possible "with" receivers
+                //   - the actual receiver as found in the method call expression
+                //   - any of the potential receivers found in the instanceof temporary table
+                // in that order
+                List<ClassNode> receivers = new LinkedList<ClassNode>();
+                if (!withReceiverList.isEmpty()) receivers.addAll(withReceiverList);
+                receivers.add(receiver);
+                if (receiver.equals(CLASS_Type) && receiver.getGenericsTypes()!=null) {
+                    GenericsType clazzGT = receiver.getGenericsTypes()[0];
+                    receivers.add(clazzGT.getType());
+                }
+                if (!temporaryIfBranchTypeInformation.empty()) {
+                    List<ClassNode> potentialReceiverType = getTemporaryTypesForExpression(objectExpression);
+                    if (potentialReceiverType != null) receivers.addAll(potentialReceiverType);
+                }
+                List<MethodNode> mn = null;
+                ClassNode chosenReceiver = null;
+                for (ClassNode currentReceiver : receivers) {
+                    mn = findMethod(currentReceiver, name, args);
+                    if (!mn.isEmpty()) {
+                        if (mn.size()==1) typeCheckMethodsWithGenerics(currentReceiver, args, mn.get(0), call);
+                        chosenReceiver = currentReceiver;
+                        break;
+                    }
+                }
+                if (mn.isEmpty()) {
+                    addStaticTypeError("Cannot find matching method " + receiver.getName() + "#" + toMethodParametersString(name, args), call);
                 } else {
-                    if (mn.size()==1) {
+                    if (mn.size() == 1) {
                         MethodNode directMethodCallCandidate = mn.get(0);
                         // visit the method to obtain inferred return type
                         ClassNode currentClassNode = classNode;
                         classNode = directMethodCallCandidate.getDeclaringClass();
-                        visitMethod(directMethodCallCandidate);
+                        for (ClassNode node: source.getAST().getClasses()) {
+                            if (isClassInnerClassOrEqualTo(classNode, node)) {
+                                // visit is authorized because the classnode belongs to the same source unit
+                                visitMethod(directMethodCallCandidate);
+                                break;
+                            }
+                        }
+                        // todo: if no visit was done, we should try to obtain type information in a different
+                        // manner, for example creating a dedicated visitor. But this is not necessarily trivial:
+                        // choose the correct visitor type, make use AST doesn't get polluted with type info or
+                        // even transformed... Deal with precompiled classes...
                         classNode = currentClassNode;
                         ClassNode returnType = getType(directMethodCallCandidate);
                         if (returnType.isUsingGenerics()) {
@@ -971,14 +1191,14 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         storeType(call, returnType);
                         storeTargetMethod(call, directMethodCallCandidate);
 
-						// if the object expression is a closure shared variable, we will have to perform a second pass
-						if (objectExpression instanceof VariableExpression) {
-							VariableExpression var = (VariableExpression) objectExpression;
-							if (var.isClosureSharedVariable()) secondPassExpressions.add(call);
-						}
+                        // if the object expression is a closure shared variable, we will have to perform a second pass
+                        if (objectExpression instanceof VariableExpression) {
+                            VariableExpression var = (VariableExpression) objectExpression;
+                            if (var.isClosureSharedVariable()) secondPassExpressions.add(call);
+                        }
 
                     } else {
-                        addStaticTypeError("Reference to method is ambiguous. Cannot choose between "+mn, call);
+                        addStaticTypeError("Reference to method is ambiguous. Cannot choose between " + mn, call);
                     }
                 }
             }
@@ -990,13 +1210,33 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
     }
 
+    private List<ClassNode> getTemporaryTypesForExpression(final Expression objectExpression) {
+        List<ClassNode> classNodes = null;
+        int depth = temporaryIfBranchTypeInformation.size();
+        while (classNodes==null && depth>0) {
+            final Map<Object, List<ClassNode>> tempo = temporaryIfBranchTypeInformation.get(--depth);
+            Object key = extractTemporaryTypeInfoKey(objectExpression);
+            classNodes = tempo.get(key);
+        }
+        return classNodes;
+    }
+
     private void storeTargetMethod(final Expression call, final MethodNode directMethodCallCandidate) {
         call.putNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET, directMethodCallCandidate);
     }
 
     private boolean isClosureCall(final String name, final Expression objectExpression) {
-        if (!"call".equals(name)) return false;
+        //if (!"call".equals(name)) return false;
         if (objectExpression instanceof ClosureExpression) return true;
+        if (objectExpression==VariableExpression.THIS_EXPRESSION) {
+            FieldNode fieldNode = classNode.getDeclaredField(name);
+            if (fieldNode!=null) {
+                ClassNode type = fieldNode.getType();
+                if (CLOSURE_TYPE.equals(type)) {
+                    return true;
+                }
+            }
+        }
         return (getType(objectExpression).equals(CLOSURE_TYPE));
     }
 
@@ -1075,7 +1315,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 // ex: short s = (short) 0
             } else if (sourceIsNull && !isPrimitiveType(targetType)) {
                 // ex: (Date)null
-            } else if (!isAssignableTo(expressionType, targetType)) {
+            } else if (sourceIsNull && isPrimitiveType(targetType)) {
+                addStaticTypeError("Inconvertible types: cannot cast null to "+targetType.getName(), expression);
+            } else if (!isAssignableTo(targetType, expressionType) && !implementsInterfaceOrIsSubclassOf(expressionType,targetType)) {
                 addStaticTypeError("Inconvertible types: cannot cast "+expressionType.getName()+" to "+targetType.getName(), expression);
             }
         }
@@ -1106,6 +1348,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
 
     private void storeType(Expression exp, ClassNode cn) {
+        if (cn==UNKNOWN_PARAMETER_TYPE) {
+            // this can happen for example when "null" is used in an assignment or a method parameter.
+            // In that case, instead of storing the virtual type, we must "reset" type information
+            // by determining the declaration type of the expression
+            storeType(exp, getOriginalDeclarationType(exp));
+            return;
+        }
         ClassNode oldValue = (ClassNode) exp.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, cn);
         if (oldValue!=null) {
             // this may happen when a variable declaration type is wider than the subsequent assignment values
@@ -1136,7 +1385,14 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 				}
 				assignedTypes.add(cn);
 			}
-
+            if (!temporaryIfBranchTypeInformation.empty()) {
+                List<ClassNode> temporaryTypesForExpression = getTemporaryTypesForExpression(exp);
+                if (temporaryTypesForExpression!=null && !temporaryTypesForExpression.isEmpty()) {
+                    // a type inference has been made on a variable which type was defined in an instanceof block
+                    // we erase available information with the new type
+                    temporaryTypesForExpression.clear();
+                }
+            }
         }
     }
 
@@ -1162,18 +1418,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 return right;
             }
             if (leftExpression instanceof VariableExpression) {
-                VariableExpression target = (VariableExpression) leftExpression;
-                if (target.getAccessedVariable() instanceof VariableExpression && target.getAccessedVariable()!=leftExpression) {
-                    target = (VariableExpression) target.getAccessedVariable();
-                }
-                ClassNode initialType = target.getType().redirect();
+                ClassNode initialType = getOriginalDeclarationType(leftExpression).redirect();
                 // as anything can be assigned to a String, Class or boolean, return the left type instead
                 if (STRING_TYPE.equals(initialType)
                         || CLASS_Type.equals(initialType)
-                        || Boolean_TYPE.equals(initialType)
-                        || isPrimitiveType(initialType)
-                        || BigDecimal_TYPE==initialType
-                        || BigInteger_TYPE==initialType) {
+                        || Boolean_TYPE.equals(initialType)) {
                     return initialType;
                 }
             }
@@ -1229,11 +1478,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
         }
 
-        MethodNode method = findMethodOrFail(expr, leftRedirect, operationName, rightRedirect);
+        MethodNode method = findMethodOrFail(expr, left, operationName, right);
         if (method != null) {
+            typeCheckMethodsWithGenerics(left, new ClassNode[]{right}, method, expr );
+            if (isAssignment(op)) return left;
             if (isCompareToBoolean(op)) return boolean_TYPE;
             if (op == COMPARE_TO) return int_TYPE;
-            return getType(method);
+            return inferReturnTypeGenerics(left, method, new ArgumentListExpression(expr.getRightExpression()));
         }
         //TODO: other cases
         return null;
@@ -1305,7 +1556,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
         } else {
             methods = receiver.getMethods(name);
-            if (methods.isEmpty() && args==null || args.length==0) {
+            if (methods.isEmpty() && (args==null || args.length==0)) {
                 // check if it's a property
                 String pname = null;
                 if (name.startsWith("get")) {
@@ -1320,6 +1571,21 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         return Collections.singletonList(
                                 new MethodNode(name, Opcodes.ACC_PUBLIC, property.getType(), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, EmptyStatement.INSTANCE));
 
+                    }
+                }
+            } else if (methods.isEmpty() && args!=null && args.length==1) {
+                // maybe we are looking for a setter ?
+                if (name.startsWith("set")) {
+                    String pname = java.beans.Introspector.decapitalize(name.substring(3));
+                    PropertyNode property = receiver.getProperty(pname);
+                    if (property != null) {
+                        ClassNode type = property.getOriginType();
+                        if (implementsInterfaceOrIsSubclassOf(args[0], type)) {
+                            return Collections.singletonList(
+                                    new MethodNode(name, Opcodes.ACC_PUBLIC, VOID_TYPE, new Parameter[]{
+                                            new Parameter(type, "arg")
+                                    }, ClassNode.EMPTY_ARRAY, EmptyStatement.INSTANCE));
+                        }
                     }
                 }
             }
@@ -1339,140 +1605,16 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         return EMPTY_METHODNODE_LIST;
     }
 
-    private List<MethodNode> findDGMMethodsByNameAndArguments(final ClassNode receiver, final String name, final ClassNode[] args, final List<MethodNode> methods) {
-        final List<MethodNode> chosen;
-        methods.addAll(findDGMMethodsForClassNode(receiver, name));
-
-        chosen = chooseBestMethod(receiver, methods, args);
-            return chosen;
-        }
-
-    /**
-     * Given a list of candidate methods, returns the one which best matches the argument types
-     *
-     * @param receiver
-     * @param methods candidate methods
-     * @param args argument types
-     * @return the list of methods which best matches the argument types. It is still possible that multiple
-     * methods match the argument types.
-     */
-    private List<MethodNode> chooseBestMethod(final ClassNode receiver, Collection<MethodNode> methods, ClassNode... args) {
-        if (methods.isEmpty()) return Collections.emptyList();
-        List<MethodNode> bestChoices = new LinkedList<MethodNode>();
-        int bestDist = Integer.MAX_VALUE;
-        for (MethodNode m : methods) {
-            // todo : corner case
-            /*
-                class B extends A {}
-
-                Animal foo(A o) {...}
-                Person foo(B i){...}
-
-                B  a = new B()
-                Person p = foo(b)
-             */
-
-            Parameter[] params = parameterizeArguments(receiver, m);
-            if (params.length == args.length) {
-                int allPMatch = allParametersAndArgumentsMatch(params, args);
-                int lastArgMatch = isVargs(params)?lastArgMatchesVarg(params, args):-1;
-                if (lastArgMatch>=0) lastArgMatch++; // ensure exact matches are preferred over vargs
-                int dist = allPMatch>=0?Math.max(allPMatch, lastArgMatch):lastArgMatch;
-                if (dist>=0 && !receiver.equals(m.getDeclaringClass())) dist++;
-                if (dist>=0 && dist<bestDist) {
-                    bestChoices.clear();
-                    bestChoices.add(m);
-                    bestDist = dist;
-                } else if (dist>=0 && dist==bestDist) {
-                    bestChoices.add(m);
-                }
-            } else if (isVargs(params)) {
-                // there are three case for vargs
-                // (1) varg part is left out
-                if (params.length == args.length + 1) {
-                    if (bestDist>1) {
-                        bestChoices.clear();
-                        bestChoices.add(m);
-                        bestDist = 1;
-                    }
-                } else {
-                    // (2) last argument is put in the vargs array
-                    //      that case is handled above already
-                    // (3) there is more than one argument for the vargs array
-                    int dist = excessArgumentsMatchesVargsParameter(params, args);
-                    if (dist >= 0 && !receiver.equals(m.getDeclaringClass())) dist++;
-                    // varargs methods must not be preferred to methods without varargs
-                    // for example :
-                    // int sum(int x) should be preferred to int sum(int x, int... y)
-                    dist++;
-                    if (params.length < args.length && dist >= 0) {
-                        if (dist >= 0 && dist < bestDist) {
-                            bestChoices.clear();
-                            bestChoices.add(m);
-                            bestDist = dist;
-                        } else if (dist >= 0 && dist == bestDist) {
-                            bestChoices.add(m);
-                        }
-                    }
-                }
-            }
-        }
-        return bestChoices;
-    }
-
-    /**
-     * Given a receiver and a method node, parameterize the method arguments using
-     * available generic type information.
-     * @param receiver
-     * @param m
-     * @return
-     */
-    private Parameter[] parameterizeArguments(final ClassNode receiver, final MethodNode m) {
-        GenericsType[] redirectReceiverTypes = receiver.redirect().getGenericsTypes();
-        if (redirectReceiverTypes==null) {
-            // we must perform an additional check for methods like Collections#sort which define generics
-            // at the method level
-            redirectReceiverTypes = m.getGenericsTypes();
-        }
-        if (redirectReceiverTypes==null) return m.getParameters();
-        Parameter[] methodParameters = m.getParameters();
-        Parameter[] params = new Parameter[methodParameters.length];
-        GenericsType[] receiverParameterizedTypes = receiver.getGenericsTypes();
-        if (receiverParameterizedTypes==null) {
-            receiverParameterizedTypes = redirectReceiverTypes;
-        }
-        for (int i = 0; i < methodParameters.length; i++) {
-            Parameter methodParameter = methodParameters[i];
-            ClassNode paramType = methodParameter.getType();
-            if (paramType.isUsingGenerics()) {
-                GenericsType[] alignmentTypes = paramType.getGenericsTypes();
-                GenericsType[] genericsTypes = GenericsUtils.alignGenericTypes(redirectReceiverTypes, receiverParameterizedTypes, alignmentTypes);
-                if (genericsTypes.length==1) {
-                    ClassNode parameterizedCN;
-                    if (paramType.equals(OBJECT_TYPE)) {
-                        parameterizedCN = genericsTypes[0].getType();
-                    } else {
-                        parameterizedCN= paramType.getPlainNodeReference();
-                        parameterizedCN.setGenericsTypes(genericsTypes);
-                    }
-                    params[i] = new Parameter(
-                            parameterizedCN,
-                            methodParameter.getName()
-                    );
-                } else {
-                    params[i] = methodParameter;
-                }
-            } else {
-                params[i] = methodParameter;
-            }
-        }
-        return params;
-    }
-
     private ClassNode getType(ASTNode exp) {
         ClassNode cn = (ClassNode) exp.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
         if (cn != null) return cn;
-        if (exp instanceof VariableExpression) {
+        if (exp instanceof ClassExpression) {
+            ClassNode node = CLASS_Type.getPlainNodeReference();
+            node.setGenericsTypes(new GenericsType[]{
+                    new GenericsType(((ClassExpression) exp).getType())
+            });
+            return node;
+        } else if (exp instanceof VariableExpression) {
             VariableExpression vexp = (VariableExpression) exp;
             if (vexp == VariableExpression.THIS_EXPRESSION) return classNode;
             if (vexp == VariableExpression.SUPER_EXPRESSION) return classNode.getSuperClass();
@@ -1499,13 +1641,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 GenericsType[] types = objectExpType.getGenericsTypes();
                 if ("key".equals(propertyName)) {
                     if (types.length==2) {
-                        ClassNode listKey = new ClassNode(List.class);
+                        ClassNode listKey = LIST_TYPE.getPlainNodeReference();
                         listKey.setGenericsTypes(new GenericsType[]{types[0]});
                         return listKey;
                     }
                 } else if ("value".equals(propertyName)) {
                     if (types.length==2) {
-                        ClassNode listValue = new ClassNode(List.class);
+                        ClassNode listValue = LIST_TYPE.getPlainNodeReference();
                         listValue.setGenericsTypes(new GenericsType[]{types[1]});
                         return listValue;
                     }
@@ -1620,6 +1762,21 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
      */
     private ClassNode inferReturnTypeGenerics(final ClassNode receiver, final MethodNode method, final Expression arguments) {
         ClassNode returnType = method.getReturnType();
+        if (method instanceof ExtensionMethodNode 
+                && (returnType.isGenericsPlaceHolder()||returnType.isArray() && returnType.getComponentType().isGenericsPlaceHolder())) {
+            // check if the placeholder corresponds to the placeholder of the first parameter
+            ExtensionMethodNode emn = (ExtensionMethodNode) method;
+            MethodNode dgmMethod = emn.getExtensionMethodNode();
+            ClassNode firstParam = dgmMethod.getParameters()[0].getOriginType();
+            if (firstParam.isGenericsPlaceHolder() || firstParam.isArray() && firstParam.getComponentType().isGenericsPlaceHolder()) {
+                ClassNode paramType = firstParam.isArray()?firstParam.getComponentType():firstParam;
+                ClassNode returnTypeComp = returnType.isArray()?returnType.getComponentType():returnType;
+                if (paramType.getName().equals(returnTypeComp.getName())) {
+                    return returnType.isArray()?receiver:receiver.getComponentType();
+                }
+            }
+        }
+        if (!returnType.isUsingGenerics()) return returnType;
         GenericsType[] returnTypeGenerics = returnType.getGenericsTypes();
         List<GenericsType> placeholders = new LinkedList<GenericsType>();
         for (GenericsType returnTypeGeneric : returnTypeGenerics) {
@@ -1694,71 +1851,70 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
         returnType = returnType.getPlainNodeReference();
         returnType.setGenericsTypes(copy);
+        if (returnType.equals(Annotation_TYPE) && returnType.getGenericsTypes()!=null && !returnType.getGenericsTypes()[0].isPlaceholder()) {
+            return returnType.getGenericsTypes()[0].getType();
+        }
         return returnType;
     }
 
-    private void typeCheckMethodsWithGenerics(ClassNode receiver, ClassNode[] arguments, List<MethodNode> candidateMethods, Expression location) {
-        if (!receiver.isUsingGenerics()) return;
-        int failure=0;
+    private void typeCheckMethodsWithGenerics(ClassNode receiver, ClassNode[] arguments, MethodNode candidateMethod, Expression location) {
+        if (!isUsingGenericsOrIsArrayUsingGenerics(receiver)) return;
+        boolean failure=false;
         GenericsType[] methodGenericTypes = null;
-        for (MethodNode method : candidateMethods) {
-            ClassNode methodNodeReceiver = method.getDeclaringClass();
-            if (!implementsInterfaceOrIsSubclassOf(receiver, methodNodeReceiver) || !methodNodeReceiver.isUsingGenerics()) continue;
-            // both candidate method and receiver have generic information so a check is possible
-            Parameter[] parameters = method.getParameters();
-            int argNum = 0;
-            for (Parameter parameter : parameters) {
-                ClassNode type = parameter.getType();
-                if (type.isUsingGenerics()) {
-                    methodGenericTypes =
-                            GenericsUtils.alignGenericTypes(
-                                    receiver.redirect().getGenericsTypes(),
-                                    receiver.getGenericsTypes(),
-                                    type.getGenericsTypes());
-                    if (methodGenericTypes.length==1) {
-                        ClassNode nodeType = getWrapper(methodGenericTypes[0].getType());
-                        ClassNode actualType = getWrapper(arguments[argNum]);
-                        if (!actualType.isDerivedFrom(nodeType)) {
-                            failure++;
-                        }
-                    } else {
-                        // not sure this is possible !
+        ClassNode methodNodeReceiver = candidateMethod.getDeclaringClass();
+        if (!implementsInterfaceOrIsSubclassOf(receiver, methodNodeReceiver) || !isUsingGenericsOrIsArrayUsingGenerics(methodNodeReceiver))
+            return;
+        // both candidate method and receiver have generic information so a check is possible
+        Parameter[] parameters = candidateMethod.getParameters();
+        int argNum = 0;
+        for (Parameter parameter : parameters) {
+            ClassNode type = parameter.getType();
+            if (type.isUsingGenerics()) {
+                methodGenericTypes =
+                        GenericsUtils.alignGenericTypes(
+                                receiver.redirect().getGenericsTypes(),
+                                receiver.getGenericsTypes(),
+                                type.getGenericsTypes());
+                if (methodGenericTypes.length == 1) {
+                    ClassNode nodeType = getWrapper(methodGenericTypes[0].getType());
+                    ClassNode actualType = getWrapper(arguments[argNum]);
+                    if (!implementsInterfaceOrIsSubclassOf(actualType, nodeType)) {
+                        failure = true;
                     }
-                } else if (type.isArray() && type.getComponentType().isUsingGenerics()) {
-                    ClassNode componentType = type.getComponentType();
-                    methodGenericTypes =
-                            GenericsUtils.alignGenericTypes(
-                                    receiver.redirect().getGenericsTypes(),
-                                    receiver.getGenericsTypes(),
-                                    componentType.getGenericsTypes());
-                    if (methodGenericTypes.length==1) {
-                        ClassNode nodeType = getWrapper(methodGenericTypes[0].getType());
-                        ClassNode actualType = getWrapper(arguments[argNum].getComponentType());
-                        if (!actualType.equals(nodeType)) {
-                            failure++;
-                            // for proper error message
-                            methodGenericTypes[0].setType(methodGenericTypes[0].getType().makeArray());
-                        }
-                    } else {
-                        // not sure this is possible !
-                    }
+                } else {
+                    // not sure this is possible !
                 }
-                argNum++;
+            } else if (type.isArray() && type.getComponentType().isUsingGenerics()) {
+                ClassNode componentType = type.getComponentType();
+                methodGenericTypes =
+                        GenericsUtils.alignGenericTypes(
+                                receiver.redirect().getGenericsTypes(),
+                                receiver.getGenericsTypes(),
+                                componentType.getGenericsTypes());
+                if (methodGenericTypes.length == 1) {
+                    ClassNode nodeType = getWrapper(methodGenericTypes[0].getType());
+                    ClassNode actualType = getWrapper(arguments[argNum].getComponentType());
+                    if (!implementsInterfaceOrIsSubclassOf(actualType, nodeType)) {
+                        failure = true;
+                        // for proper error message
+                        GenericsType baseGT = methodGenericTypes[0];
+                        methodGenericTypes[0] = new GenericsType(baseGT.getType(), baseGT.getUpperBounds(), baseGT.getLowerBound());
+                        methodGenericTypes[0].setType(methodGenericTypes[0].getType().makeArray());
+                    }
+                } else {
+                    // not sure this is possible !
+                }
             }
+            argNum++;
         }
-        if (failure==candidateMethods.size()) {
-            if (failure==1) {
-                MethodNode method = candidateMethods.get(0);
-                ClassNode[] parameterTypes = new ClassNode[methodGenericTypes.length];
-                for (int i = 0; i < methodGenericTypes.length; i++) {
-                    parameterTypes[i] = methodGenericTypes[i].getType();
-                }
-                addStaticTypeError("Cannot call " + receiver.getName()+"#"+
-                        toMethodParametersString(method.getName(), parameterTypes) +
-                        " with arguments " + Arrays.asList(arguments), location);
-            } else {
-                addStaticTypeError("No matching method found for arguments "+Arrays.asList(arguments), location);
+        if (failure) {
+            ClassNode[] parameterTypes = new ClassNode[methodGenericTypes.length];
+            for (int i = 0; i < methodGenericTypes.length; i++) {
+                parameterTypes[i] = methodGenericTypes[i].getType();
             }
+            addStaticTypeError("Cannot call " + receiver.getName() + "#" +
+                    toMethodParametersString(candidateMethod.getName(), parameterTypes) +
+                    " with arguments " + Arrays.asList(arguments), location);
         }
     }
 
@@ -1822,6 +1978,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         return type;
     }
 
+    private static boolean isClassInnerClassOrEqualTo(ClassNode toBeChecked, ClassNode start) {
+        if (start==toBeChecked) return true;
+        if (start instanceof InnerClassNode) {
+            return isClassInnerClassOrEqualTo(toBeChecked, start.getOuterClass());
+        }
+        return false;
+    }
 	/**
      * A visitor used as a callback to {@link StaticTypeCheckingVisitor#existsProperty(org.codehaus.groovy.ast.expr.PropertyExpression, boolean, org.codehaus.groovy.ast.ClassCodeVisitorSupport)}
      * which will return set the type of the found property in the provided reference.

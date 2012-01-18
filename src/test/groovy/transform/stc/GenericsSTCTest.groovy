@@ -66,12 +66,52 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             list.add 'Hello'
         '''
     }
+    
+    void testAddOnListUsingLeftShift() {
+        shouldFailWithMessages '''
+            List<String> list = []
+            list << 1
+        ''', 'Cannot find matching method java.util.List#leftShift(int)'
+    }
+
+    void testAddOnList2UsingLeftShift() {
+        assertScript '''
+            List<String> list = []
+            list << 'Hello'
+        '''
+
+        assertScript '''
+            List<Integer> list = []
+            list << 1
+        '''
+    }
+
+    void testAddOnListWithDiamondUsingLeftShift() {
+        assertScript '''
+            List<String> list = new LinkedList<>()
+            list << 'Hello'
+        '''
+    }
 
     void testAddOnListWithDiamondAndWrongType() {
         shouldFailWithMessages '''
             List<Integer> list = new LinkedList<>()
             list.add 'Hello'
         ''', 'Cannot find matching method java.util.LinkedList#add(java.lang.String)'
+    }
+
+    void testAddOnListWithDiamondAndWrongTypeUsingLeftShift() {
+        shouldFailWithMessages '''
+            List<Integer> list = new LinkedList<>()
+            list << 'Hello'
+        ''', 'Cannot find matching method java.util.LinkedList#leftShift(java.lang.String)'
+    }
+
+    void testAddOnListWithDiamondAndNullUsingLeftShift() {
+        assertScript '''
+            List<Integer> list = new LinkedList<>()
+            list << null
+        '''
     }
 
     void testReturnTypeInference() {
@@ -245,6 +285,26 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
           println 'Hello'
         }
       '''
+    }
+
+    // GROOVY-5237
+    void testGenericTypeArgumentAsField() {
+        assertScript '''
+            class Container<T> {
+                private T initialValue
+                Container(T initialValue) { this.initialValue = initialValue }
+                T get() { initialValue }
+            }
+            Container<Date> c = new Container<Date>(new Date())
+            long time = c.get().time
+        '''
+    }
+
+    void testReturnAnntationClass() {
+        assertScript '''
+            import java.lang.annotation.Documented
+            Documented annotation = Deprecated.getAnnotation(Documented)
+        '''
     }
   
     static class MyList extends LinkedList<String> {}

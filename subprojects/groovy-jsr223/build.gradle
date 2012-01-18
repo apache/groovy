@@ -1,0 +1,18 @@
+apply plugin: 'groovy'
+apply plugin: 'code-quality'
+
+// TODO set these using subprojects?
+checkstyleConfigFileName = "../../config/checkstyle/checkstyle.xml"
+codeNarcConfigFileName = "../../config/codenarc/codenarc.groovy"
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // todo delete this and assume java 6? or should this be "provided"?
+    compile "org.livetribe:livetribe-jsr223:2.0.6"
+    compile project(':')
+    groovy project(':')
+    testCompile project(':subprojects:groovy-test')
+}

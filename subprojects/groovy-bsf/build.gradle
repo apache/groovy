@@ -1,0 +1,17 @@
+apply plugin: 'java'
+apply plugin: 'code-quality'
+
+// TODO set these using subprojects?
+checkstyleConfigFileName = "../../config/checkstyle/checkstyle.xml"
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile("bsf:bsf:2.4.0") {
+        exclude(group: 'commons-logging', module: 'commons-logging')
+    }
+    compile project(':')
+    testCompile project(':subprojects:groovy-test')
+}

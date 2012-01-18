@@ -116,18 +116,18 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         """
     }
 
-    void testIntPlusEqualsString() {
+    void testIntPlusEqualsObject() {
         shouldFailWithMessages """
             int i = 0
-            i += '1'
-        """, "Cannot assign value of type java.lang.String to variable of type int"
+            i += new Object()
+        """, "Cannot find matching method int#plus(java.lang.Object)"
     }
 
-    void testIntMinusEqualsString() {
+    void testIntMinusEqualsObject() {
         shouldFailWithMessages """
             int i = 0
-            i -= '1'
-        """, "Cannot find matching method int#minus(java.lang.String)", 'Cannot assign value of type java.lang.String to variable of type int'
+            i -= new Object()
+        """, "Cannot find matching method int#minus(java.lang.Object)"
     }
 
     void testStringPlusEqualsString() {
@@ -361,7 +361,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
     void testCastNullToCharWithCast() {
         shouldFailWithMessages '''
             def c = (char) null
-        ''', 'Inconvertible types: cannot cast java.lang.Object to char'
+        ''', 'Inconvertible types: cannot cast null to char'
     }
 
     void testCastStringToCharacterWithCast() {
@@ -379,6 +379,16 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
     void testCastNullToCharacterWithCast() {
         assertScript '''
             def c = (Character) null
+        '''
+    }
+    
+    void testCastObjectToSubclass() {
+        assertScript '''
+            Object o = null
+            try {
+                ((Integer)o).intValue()
+            } catch (NullPointerException e) {
+            }
         '''
     }
 
@@ -592,7 +602,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
     }
 
     void testBigIntegerMultDouble() {
-        assertScript '''
+       assertScript '''
             BigInteger a = 333
             double b = 2d
             BigDecimal c = a * b
@@ -616,5 +626,72 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
             assert c.getClass() == BigDecimal
         '''
     }
+    
+    void testPostfixOnInt() {
+        assertScript '''
+            int i = 0
+            i++
+        '''
+        assertScript '''
+            int i = 0
+            i--
+        '''
+    }
+
+    void testPostfixOnDate() {
+        assertScript '''
+            Date d = new Date()
+            d++
+        '''
+        assertScript '''
+            Date d = new Date()
+            d--
+        '''
+    }
+
+    void testPostfixOnObject() {
+        shouldFailWithMessages '''
+            Object o = new Object()
+            o++
+        ''', 'Cannot find matching method java.lang.Object#next()'
+        shouldFailWithMessages '''
+            Object o = new Object()
+            o--
+        ''', 'Cannot find matching method java.lang.Object#previous()'
+    }
+
+    void testPrefixOnInt() {
+        assertScript '''
+            int i = 0
+            ++i
+        '''
+        assertScript '''
+            int i = 0
+            --i
+        '''
+    }
+
+    void testPrefixOnDate() {
+        assertScript '''
+            Date d = new Date()
+            ++d
+        '''
+        assertScript '''
+            Date d = new Date()
+            --d
+        '''
+    }
+
+    void testPrefixOnObject() {
+        shouldFailWithMessages '''
+            Object o = new Object()
+            ++o
+        ''', 'Cannot find matching method java.lang.Object#next()'
+        shouldFailWithMessages '''
+            Object o = new Object()
+            --o
+        ''', 'Cannot find matching method java.lang.Object#previous()'
+    }
+
 }
 
