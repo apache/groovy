@@ -1355,7 +1355,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 if (i<parametersLength-1) sb.append(", ");
             }
             sb.append("]");
-            addStaticTypeError("Closure argument types: "+sb+" do not match with parameter types: "+ Arrays.toString(args), callArguments);
+            addStaticTypeError("Closure argument types: "+sb+" do not match with parameter types: "+ formatArgumentList(args), callArguments);
         }
     }
 
@@ -2061,8 +2061,22 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
             addStaticTypeError("Cannot call " + receiver.getName() + "#" +
                     toMethodParametersString(candidateMethod.getName(), parameterTypes) +
-                    " with arguments " + Arrays.asList(arguments), location);
+                    " with arguments " + formatArgumentList(arguments), location);
         }
+    }
+    
+    private static String formatArgumentList(ClassNode[] nodes) {
+        if (nodes==null) return "[]";
+        StringBuilder sb = new StringBuilder(24*nodes.length);
+        sb.append("[");
+        for (ClassNode node : nodes) {
+            sb.append(node.toString(false));
+            sb.append(", ");
+        }
+        if (sb.length()>1) {
+            sb.setCharAt(sb.length()-2, ']');
+        }
+        return sb.toString();
     }
 
     protected void addStaticTypeError(final String msg, final ASTNode expr) {
