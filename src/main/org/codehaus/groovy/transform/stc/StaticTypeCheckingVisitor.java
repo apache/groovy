@@ -238,6 +238,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             // and we must update the result type
             if (!implementsInterfaceOrIsSubclassOf(getWrapper(resultType),getWrapper(originType))) {
                 resultType = originType;
+            } else if (lType.isUsingGenerics() && !lType.isEnum() && hasRHSIncompleteGenericTypeInfo(resultType)) {
+                // for example, LHS is List<ConcreteClass> and RHS is List<T> where T is a placeholder
+                resultType = lType;
             }
 
             // if we are in an if/else branch, keep track of assignment
@@ -473,14 +476,31 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
             // last, check generic type information to ensure that inferred types are compatible
             if (leftExpressionType.isUsingGenerics() && !leftExpressionType.isEnum()) {
-                GenericsType gt = GenericsUtils.buildWildcardType(leftExpressionType);
-                if (!gt.isCompatibleWith(inferredRightExpressionType)) {
-                    addStaticTypeError("Incompatible generic argument types. Cannot assign "
-                    + inferredRightExpressionType.toString(false)
-                    + " to: "+leftExpressionType.toString(false), assignmentExpression);
+                boolean incomplete = hasRHSIncompleteGenericTypeInfo(inferredRightExpressionType);
+                if (!incomplete) {
+                    GenericsType gt = GenericsUtils.buildWildcardType(leftExpressionType);
+                    if (!gt.isCompatibleWith(inferredRightExpressionType)) {
+                        addStaticTypeError("Incompatible generic argument types. Cannot assign "
+                        + inferredRightExpressionType.toString(false)
+                        + " to: "+leftExpressionType.toString(false), assignmentExpression);
+                    }
                 }
             }
         }
+    }
+
+    private boolean hasRHSIncompleteGenericTypeInfo(final ClassNode inferredRightExpressionType) {
+        boolean replaceType = false;
+        GenericsType[] genericsTypes = inferredRightExpressionType.getGenericsTypes();
+        if (genericsTypes!=null) {
+            for (GenericsType genericsType : genericsTypes) {
+                if (genericsType.isPlaceholder()) {
+                    replaceType = true;
+                    break;
+                }
+            }
+        }
+        return replaceType;
     }
 
     /**

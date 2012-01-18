@@ -306,6 +306,17 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             Documented annotation = Deprecated.getAnnotation(Documented)
         '''
     }
+
+    void testReturnListOfParameterizedType() {
+        assertScript '''
+            class A {}
+            class B extends A { void bar() {} }
+            public <T extends A> List<T> foo() { [] }
+
+            List<B> list = foo()
+            list.add(new B())
+        '''
+    }
   
     static class MyList extends LinkedList<String> {}
 }
