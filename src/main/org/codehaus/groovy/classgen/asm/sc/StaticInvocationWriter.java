@@ -19,6 +19,7 @@ import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.classgen.asm.*;
+import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.transform.stc.ExtensionMethodNode;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor;
 import org.codehaus.groovy.transform.stc.StaticTypesMarker;
@@ -31,6 +32,26 @@ import static org.objectweb.asm.Opcodes.*;
 import static org.objectweb.asm.Opcodes.ACONST_NULL;
 
 public class StaticInvocationWriter extends InvocationWriter {
+    private static final ClassNode INVOKERHELPER_CLASSNODE = ClassHelper.make(InvokerHelper.class);
+    private static final Expression INVOKERHELER_RECEIVER = new ClassExpression(INVOKERHELPER_CLASSNODE);
+    private static final MethodNode INVOKERHELPER_INVOKEMETHOD = INVOKERHELPER_CLASSNODE.getMethod(
+            "invokeMethodSafe",
+            new Parameter[] {
+                    new Parameter(ClassHelper.OBJECT_TYPE, "object"),
+                    new Parameter(ClassHelper.STRING_TYPE, "name"),
+                    new Parameter(ClassHelper.OBJECT_TYPE, "args")
+            }
+    );
+    
+    private static final MethodNode INVOKERHELPER_INVOKESTATICMETHOD = INVOKERHELPER_CLASSNODE.getMethod(
+            "invokeStaticMethod",
+            new Parameter[] {
+                    new Parameter(ClassHelper.CLASS_Type, "clazz"),
+                    new Parameter(ClassHelper.STRING_TYPE, "name"),
+                    new Parameter(ClassHelper.OBJECT_TYPE, "args")
+            }
+    );
+
     private final WriterController controller;
     
     public StaticInvocationWriter(WriterController wc) {
@@ -90,6 +111,26 @@ public class StaticInvocationWriter extends InvocationWriter {
                 // wrap arguments into an array
                 ArrayExpression arr = new ArrayExpression(ClassHelper.OBJECT_TYPE, args.getExpressions());
                 return super.writeDirectMethodCall(target, implicitThis, receiver, new ArgumentListExpression(arr));
+            }
+            if (target!=null
+                    && controller.getClassNode().isDerivedFrom(ClassHelper.CLOSURE_TYPE)
+                    && controller.isInClosure()
+                    && !target.isPublic()
+                    && target.getDeclaringClass()!=controller.getClassNode()) {
+                // replace call with an invoker helper call
+                ArrayExpression arr = new ArrayExpression(ClassHelper.OBJECT_TYPE, args.getExpressions());
+                MethodCallExpression mce = new MethodCallExpression(
+                        INVOKERHELER_RECEIVER,
+                        target.isStatic() ? "invokeStaticMethod" : "invokeMethodSafe",
+                        new ArgumentListExpression(
+                                receiver,
+                                new ConstantExpression(target.getName()),
+                                arr
+                        )
+                );
+                mce.setMethodTarget(target.isStatic() ? INVOKERHELPER_INVOKESTATICMETHOD : INVOKERHELPER_INVOKEMETHOD);
+                mce.visit(controller.getAcg());
+                return true;
             }
             return super.writeDirectMethodCall(target, implicitThis, receiver, args);
         }

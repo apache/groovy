@@ -120,7 +120,23 @@ class StaticCompileClosureCallTest extends AbstractBytecodeTestCase {
                 cl()
                 assert test == 'TEST'
             }
-            public String bar() { 'TEST' }
+            private String bar() { 'TEST' }
+        }
+        new Foo().m()
+        '''
+    }
+
+    void testCallStaticPrivateMethodFromClosure() {
+        assertScript '''
+        @groovy.transform.CompileStatic
+        class Foo {
+            void m() {
+                String test = 'test'
+                def cl = { test = bar() }
+                cl()
+                assert test == 'TEST'
+            }
+            private static String bar() { 'TEST' }
         }
         new Foo().m()
         '''
