@@ -206,6 +206,7 @@ public class IndyInterface {
                     throw new GroovyBugError(e);
                 }
             } else if (info.method != null) {
+                // dgm method helper path
                 info.handle = META_METHOD_INVOKER;
                 info.handle = info.handle.bindTo(info.method);
                 if (info.method.getNativeParameterTypes().length==1 && 
@@ -219,6 +220,10 @@ public class IndyInterface {
                     // we need to wrap the array that represents our argument in
                     // another one for the vargs call
                     info.handle = MethodHandles.insertArguments(info.handle, 1, new Object[]{new Object[]{null}});
+                } else if (info.method.isVargsMethod()) {
+                    // the method expects the arguments as Object[] in a Object[]
+                    info.handle = info.handle.asCollector(Object[].class, info.targetType.parameterCount()-2);
+                    info.handle = info.handle.asCollector(Object[].class, info.targetType.parameterCount()-2);
                 } else {
                     info.handle = info.handle.asCollector(Object[].class, info.targetType.parameterCount()-2);
                 }
