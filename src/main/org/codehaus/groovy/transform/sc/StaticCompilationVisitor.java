@@ -22,6 +22,7 @@ import org.codehaus.groovy.classgen.asm.TypeChooser;
 import org.codehaus.groovy.classgen.asm.sc.StaticTypesTypeChooser;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor;
+import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 import org.codehaus.groovy.transform.stc.TypeCheckerPluginFactory;
 
 import java.util.List;
@@ -69,6 +70,15 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
         classNode = orig;
     }
 
+    private void memorizeInitialExpressions(final MethodNode node) {
+        // add node metadata for default parameters because they are erased by the Verifier
+        if (node.getParameters()!=null) {
+            for (Parameter parameter : node.getParameters()) {
+                parameter.putNodeMetaData(StaticTypesMarker.INITIAL_EXPRESSION, parameter.getInitialExpression());
+            }
+        }
+    }
+
     @Override
     public void visitSpreadExpression(final SpreadExpression expression) {
         throw new UnsupportedOperationException("The spread operator cannot be used with static compilation because the number of arguments cannot be determined at compile time");
@@ -79,7 +89,10 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
         super.visitMethodCallExpression(call);
 
         MethodNode target = (MethodNode) call.getNodeMetaData(DIRECT_METHOD_CALL_TARGET);
-        if (target!=null) call.setMethodTarget(target);
+        if (target!=null) {
+            call.setMethodTarget(target);
+            memorizeInitialExpressions(target);
+        }
 
         if (call.getMethodTarget()==null && call.getLineNumber()>0) {
             addError("Target method for method call expression hasn't been set", call);
@@ -104,7 +117,11 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
                 }
                 MethodNode constructor = findMethodOrFail(call, call.isSuperCall() ? classNode.getSuperClass() : classNode, "<init>", args);
                 call.putNodeMetaData(DIRECT_METHOD_CALL_TARGET, constructor);
+                target = constructor;
             }
+        }
+        if (target!=null) {
+            memorizeInitialExpressions(target);
         }
     }
 

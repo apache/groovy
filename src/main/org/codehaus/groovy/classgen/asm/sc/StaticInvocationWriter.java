@@ -17,6 +17,7 @@ package org.codehaus.groovy.classgen.asm.sc;
 
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
+import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.classgen.asm.*;
 import org.codehaus.groovy.transform.stc.ExtensionMethodNode;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor;
@@ -92,5 +93,78 @@ public class StaticInvocationWriter extends InvocationWriter {
             }
             return super.writeDirectMethodCall(target, implicitThis, receiver, args);
         }
+    }
+
+    protected void loadArguments(List<Expression> argumentList, Parameter[] para) {
+        if (para.length==0) return;
+        ClassNode lastParaType = para[para.length - 1].getOriginType();
+        AsmClassGenerator acg = controller.getAcg();
+        OperandStack operandStack = controller.getOperandStack();
+        if (lastParaType.isArray()
+                && (argumentList.size()>para.length || argumentList.size()==para.length-1 || !argumentList.get(para.length-1).getType().isArray())) {
+            int stackLen = operandStack.getStackLength()+argumentList.size();
+            MethodVisitor mv = controller.getMethodVisitor();
+            MethodVisitor orig = mv;
+            //mv = new org.objectweb.asm.util.TraceMethodVisitor(mv);
+            controller.setMethodVisitor(mv);
+            // varg call
+            // first parameters as usual
+            for (int i = 0; i < para.length-1; i++) {
+                argumentList.get(i).visit(acg);
+                operandStack.doGroovyCast(para[i].getType());
+            }
+            // last parameters wrapped in an array
+            List<Expression> lastParams = new LinkedList<Expression>();
+            for (int i=para.length-1; i<argumentList.size();i++) {
+                lastParams.add(argumentList.get(i));
+            }
+            ArrayExpression array = new ArrayExpression(
+                    lastParaType.getComponentType(),
+                    lastParams
+            );
+            array.visit(acg);
+            // adjust stack length
+            while (operandStack.getStackLength()<stackLen) {
+                operandStack.push(ClassHelper.OBJECT_TYPE);
+            }
+            if (argumentList.size()==para.length-1) {
+                operandStack.remove(1);
+            }
+        } else if (argumentList.size()==para.length) {
+            for (int i = 0; i < argumentList.size(); i++) {
+                argumentList.get(i).visit(acg);
+                operandStack.doGroovyCast(para[i].getType());
+            }
+        } else {
+            // method call with default arguments
+            TypeChooser typeChooser = controller.getTypeChooser();
+            ClassNode classNode = controller.getClassNode();
+            Expression[] arguments = new Expression[para.length];
+            for (int i=para.length-1, j=argumentList.size()-1; i>=0;i--) {
+                Parameter curParam = para[i];
+                ClassNode curParamType = curParam.getType();
+                Expression curArg = argumentList.get(j);
+                Expression initialExpression = (Expression) curParam.getNodeMetaData(StaticTypesMarker.INITIAL_EXPRESSION);
+                ClassNode curArgType = typeChooser.resolveType(curArg, classNode);
+                if (initialExpression!=null && !compatibleArgumentType(curArgType, curParamType)) {
+                    // use default expression
+                    arguments[i] = initialExpression;
+                } else {
+                    arguments[i] = curArg;
+                    j--;
+                }
+            }
+            for (int i = 0; i < arguments.length; i++) {
+                arguments[i].visit(acg);
+                operandStack.doGroovyCast(para[i].getType());
+            }
+        }
+    }
+
+    private boolean compatibleArgumentType(ClassNode argumentType, ClassNode paramType) {
+        if (argumentType.equals(paramType)) return true;
+        if (paramType.isInterface()) return argumentType.implementsInterface(paramType);
+        if (paramType.isArray() && argumentType.isArray()) return compatibleArgumentType(argumentType.getComponentType(),paramType.getComponentType());
+        return argumentType.isDerivedFrom(paramType);
     }
 }
