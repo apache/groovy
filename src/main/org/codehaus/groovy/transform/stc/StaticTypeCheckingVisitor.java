@@ -99,6 +99,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             if (returnStatement.getExpression().equals(ConstantExpression.NULL)) return;
             ClassNode returnType = checkReturnType(returnStatement);
             if (methodNode!=null) {
+                ClassNode mrt = methodNode.getReturnType();
+                if (!returnType.implementsInterface(mrt) && !returnType.isDerivedFrom(mrt)) {
+                    // there's an implicit type conversion, like Object -> String
+                    // so we'll use the method return type instead
+                    returnType = mrt;
+                }
                 ClassNode previousType = (ClassNode) methodNode.getNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE);
                 ClassNode inferred = previousType==null?returnType: lowestUpperBound(returnType, previousType);
                 methodNode.putNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE, inferred);
@@ -190,7 +196,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (!existsProperty(pexp, true)) {
             Expression objectExpression = pexp.getObjectExpression();
             addStaticTypeError("No such property: " + pexp.getPropertyAsString() +
-                    " for class: " + findCurrentInstanceOfClass(objectExpression, objectExpression.getType()), pexp);
+                    " for class: " + findCurrentInstanceOfClass(objectExpression, getType(objectExpression)).toString(false), pexp);
         }
     }
 
