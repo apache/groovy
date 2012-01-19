@@ -76,6 +76,15 @@ public class Binding extends GroovyObjectSupport {
             variables = new LinkedHashMap();
         variables.put(name, value);
     }
+    
+    /**
+     * Simple check for whether the binding contains a particular variable or not.
+     * 
+     * @param name the name of the variable to check for
+     */
+    public boolean hasVariable(String name) {
+        return variables != null && variables.containsKey(name);
+    }
 
     public Map getVariables() {
         if (variables == null)
@@ -108,5 +117,5 @@ public class Binding extends GroovyObjectSupport {
             setVariable(property, newValue);
         }
     }
-
+    
 }
