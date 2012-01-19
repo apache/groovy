@@ -33,4 +33,15 @@ class BindingTest extends GroovyTestCase {
         assert b.getVariable("a.b.c") == 'abc'
         assert b["a.b.c"] == 'abc'
     }
+    
+    void testHasVariable() {
+        def b = new Binding()
+        assert !b.hasVariable("dummy")
+        
+        b.setVariable("foo", 123)
+        assert !b.hasVariable("dummy")
+        
+        b.setVariable("dummy", "I'm here!")
+        assert b.hasVariable("dummy")
+    }
 }
