@@ -192,6 +192,34 @@ public class NodeTest extends GroovyTestCase {
         assert foo.baz.bar[0] == bar2
     }
 
+    public void testPlus() {
+        Node root = new Node(null, 'root')
+        Node first = new Node(root, 'first')
+
+        root.first + { second('some text') }
+
+        assert 2 == root.children().size()
+        assert 'some text' == root.second.text()
+    }
+
+    public void testPlusWithMixedContent() {
+        Node root = new Node(null, 'root')
+        Node beforeString = new Node(root, 'beforeString')
+        root.children().add('some text')
+        Node afterString = new Node(root, 'afterString')
+        assert 3 == root.children().size()
+
+        root.afterString + { foo() }
+        assert 4 == root.children().size()
+
+        // GROOVY-5224 - would fail with
+        //   java.lang.ClassCastException: java.lang.String cannot be cast to groovy.util.Node
+        root.beforeString + { bar() }
+        assert 5 == root.children().size()
+
+        assert 'some text' == root.children().get(2)
+    }
+
     protected void dump(Node node) {
         NodePrinter printer = new NodePrinter();
         printer.print(node);

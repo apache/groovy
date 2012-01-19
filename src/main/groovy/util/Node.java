@@ -177,9 +177,7 @@ public class Node implements Serializable {
             parent.appendNode(child.name(), child.attributes(), child.value());
         }
 
-        for (Node child : leftOvers) {
-            this.parent().children().add(child);
-        }
+        this.parent().children().addAll(leftOvers);
     }
 
     protected static void setMetaClass(final MetaClass metaClass, Class nodeClass) {
