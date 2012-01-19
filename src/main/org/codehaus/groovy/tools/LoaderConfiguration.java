@@ -21,6 +21,7 @@ import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -82,6 +83,7 @@ public class LoaderConfiguration {
     private static final String ALL_WILDCARD = "" + WILDCARD + WILDCARD;
     private static final String MATCH_FILE_NAME = "\\\\E[^/]+?\\\\Q";
     private static final String MATCH_ALL = "\\\\E.+?\\\\Q";
+    private final List<String> grabList = new ArrayList<String>();
 
     /**
      * creates a new loader configuration
@@ -114,10 +116,8 @@ public class LoaderConfiguration {
                 loadPath = assignProperties(loadPath);
                 loadFilteredPath(loadPath);
             } else if (line.startsWith(GRAB_PREFIX)) {
-                String grabParams = line.substring(LOAD_PREFIX.length()).trim();
-                grabParams = assignProperties(grabParams);
-                Map<String, Object> parts = GrapeUtil.getIvyParts(grabParams);
-                Grape.grab(parts);
+                String grabParams = line.substring(GRAB_PREFIX.length()).trim();
+                grabList.add(assignProperties(grabParams));
             } else if (line.startsWith(MAIN_PREFIX)) {
                 if (main != null)
                     throw new IOException("duplicate definition of main in line " + lineNumber + " : " + line);
@@ -129,7 +129,7 @@ public class LoaderConfiguration {
                     throw new IOException("unexpected property format - expecting name=value" + lineNumber + " : " + line);
                 }
                 String propName = params.substring(0, index);
-                String propValue= assignProperties(params.substring(index+1));
+                String propValue = assignProperties(params.substring(index + 1));
                 System.setProperty(propName, propValue);
             } else {
                 throw new IOException("unexpected line in " + lineNumber + " : " + line);
@@ -177,7 +177,7 @@ public class LoaderConfiguration {
                 }
             }
             propertyValue = getSlashyPath(propertyValue);
-            propertyValue = correctDoubleSlash(propertyValue,propertyIndexEnd,str);
+            propertyValue = correctDoubleSlash(propertyValue, propertyIndexEnd, str);
             result += propertyValue;
 
             propertyIndexEnd++;
@@ -195,13 +195,12 @@ public class LoaderConfiguration {
 
 
     private String correctDoubleSlash(String propertyValue, int propertyIndexEnd, String str) {
-        int index = propertyIndexEnd+1;
-        if ( index<str.length() && str.charAt(index)=='/' && 
-             propertyValue.endsWith("/") &&
-             propertyValue.length()>0)
-        {
-            propertyValue = propertyValue.substring(0,propertyValue.length()-1);
-        } 
+        int index = propertyIndexEnd + 1;
+        if (index < str.length() && str.charAt(index) == '/' &&
+                propertyValue.endsWith("/") &&
+                propertyValue.length() > 0) {
+            propertyValue = propertyValue.substring(0, propertyValue.length() - 1);
+        }
         return propertyValue;
     }
 
@@ -219,8 +218,8 @@ public class LoaderConfiguration {
         }
         boolean recursive = filter.contains(ALL_WILDCARD);
 
-        if (filter.lastIndexOf('/')<starIndex) {
-            starIndex=filter.lastIndexOf('/')+1;
+        if (filter.lastIndexOf('/') < starIndex) {
+            starIndex = filter.lastIndexOf('/') + 1;
         }
         String startDir = filter.substring(0, starIndex - 1);
         File root = new File(startDir);
@@ -295,7 +294,7 @@ public class LoaderConfiguration {
      * @see java.io.File#pathSeparator
      */
     public void addClassPath(String path) {
-       String[] paths = path.split(File.pathSeparator);
+        String[] paths = path.split(File.pathSeparator);
         for (String cpPath : paths) {
             // Check to support wild card classpath
             if (cpPath.endsWith("*")) {
@@ -321,6 +320,15 @@ public class LoaderConfiguration {
      */
     public URL[] getClassPathUrls() {
         return classPath.toArray(new URL[classPath.size()]);
+    }
+
+    /**
+     * The extra grab configuration.
+     *
+     * @return the list of grab urls
+     */
+    public List<String> getGrabUrls() {
+        return grabList;
     }
 
     /**
