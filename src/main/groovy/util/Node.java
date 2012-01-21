@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,7 +61,7 @@ public class Node implements Serializable {
      * the newly created node as a child of the parent.
      *
      * @param parent the parent node or null if no parent
-     * @param name the name of the node
+     * @param name   the name of the node
      */
     public Node(Node parent, Object name) {
         this(parent, name, new NodeList());
@@ -72,8 +72,8 @@ public class Node implements Serializable {
      * if a parent is supplied, adds the newly created node as a child of the parent.
      *
      * @param parent the parent node or null if no parent
-     * @param name the name of the node
-     * @param value the Node value, e.g. some text but in general any Object
+     * @param name   the name of the node
+     * @param value  the Node value, e.g. some text but in general any Object
      */
     public Node(Node parent, Object name, Object value) {
         this(parent, name, new HashMap(), value);
@@ -84,8 +84,8 @@ public class Node implements Serializable {
      * attributes specified in the <code>attributes</code> Map. If a parent is supplied,
      * the newly created node is added as a child of the parent.
      *
-     * @param parent the parent node or null if no parent
-     * @param name the name of the node
+     * @param parent     the parent node or null if no parent
+     * @param name       the name of the node
      * @param attributes a Map of name-value pairs
      */
     public Node(Node parent, Object name, Map attributes) {
@@ -97,10 +97,10 @@ public class Node implements Serializable {
      * with attributes specified in the <code>attributes</code> Map. If a parent is supplied,
      * the newly created node is added as a child of the parent.
      *
-     * @param parent the parent node or null if no parent
-     * @param name the name of the node
+     * @param parent     the parent node or null if no parent
+     * @param name       the name of the node
      * @param attributes a Map of name-value pairs
-     * @param value the Node value, e.g. some text but in general any Object
+     * @param value      the Node value, e.g. some text but in general any Object
      */
     public Node(Node parent, Object name, Map attributes, Object value) {
         this.parent = parent;
@@ -165,18 +165,16 @@ public class Node implements Serializable {
     }
 
     public void plus(Closure c) {
-        List<Node> list = this.parent().children();
+        List list = this.parent().children();
         int afterIndex = list.indexOf(this);
-        List<Node> leftOvers = new ArrayList<Node>(list.subList(afterIndex + 1, list.size()));
+        List leftOvers = new ArrayList(list.subList(afterIndex + 1, list.size()));
         list.subList(afterIndex + 1, list.size()).clear();
-
         NodeBuilder b = new NodeBuilder();
         Node newNode = (Node) b.invokeMethod("dummyNode", c);
         List<Node> children = newNode.children();
         for (Node child : children) {
             parent.appendNode(child.name(), child.attributes(), child.value());
         }
-
         this.parent().children().addAll(leftOvers);
     }
 
@@ -225,8 +223,7 @@ public class Node implements Serializable {
             Collection coll = (Collection) value;
             String previousText = null;
             StringBuffer buffer = null;
-            for (Iterator iter = coll.iterator(); iter.hasNext();) {
-                Object child = iter.next();
+            for (Object child : coll) {
                 if (child instanceof String) {
                     String childText = (String) child;
                     if (previousText == null) {
@@ -324,8 +321,7 @@ public class Node implements Serializable {
      */
     public NodeList getAt(QName name) {
         NodeList answer = new NodeList();
-        for (Iterator iter = children().iterator(); iter.hasNext();) {
-            Object child = iter.next();
+        for (Object child : children()) {
             if (child instanceof Node) {
                 Node childNode = (Node) child;
                 Object childNodeName = childNode.name();
@@ -345,8 +341,7 @@ public class Node implements Serializable {
      */
     private NodeList getByName(String name) {
         NodeList answer = new NodeList();
-        for (Iterator iter = children().iterator(); iter.hasNext();) {
-            Object child = iter.next();
+        for (Object child : children()) {
             if (child instanceof Node) {
                 Node childNode = (Node) child;
                 Object childNodeName = childNode.name();
@@ -378,7 +373,7 @@ public class Node implements Serializable {
 
     private List depthFirstRest() {
         List answer = new NodeList();
-        for (Iterator iter = InvokerHelper.asIterator(value); iter.hasNext();) {
+        for (Iterator iter = InvokerHelper.asIterator(value); iter.hasNext(); ) {
             Object child = iter.next();
             if (child instanceof Node) {
                 Node childNode = (Node) child;
@@ -407,10 +402,9 @@ public class Node implements Serializable {
         List answer = new NodeList();
         List nextLevelChildren = getDirectChildren();
         while (!nextLevelChildren.isEmpty()) {
-            List working = new NodeList(nextLevelChildren);
+            List<Node> working = new NodeList(nextLevelChildren);
             nextLevelChildren = new NodeList();
-            for (Iterator iter = working.iterator(); iter.hasNext();) {
-                Node childNode = (Node) iter.next();
+            for (Node childNode : working) {
                 answer.add(childNode);
                 List children = childNode.getDirectChildren();
                 nextLevelChildren.addAll(children);
@@ -421,7 +415,7 @@ public class Node implements Serializable {
 
     private List getDirectChildren() {
         List answer = new NodeList();
-        for (Iterator iter = InvokerHelper.asIterator(value); iter.hasNext();) {
+        for (Iterator iter = InvokerHelper.asIterator(value); iter.hasNext(); ) {
             Object child = iter.next();
             if (child instanceof Node) {
                 Node childNode = (Node) child;
