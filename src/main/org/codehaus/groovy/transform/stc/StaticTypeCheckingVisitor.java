@@ -721,6 +721,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     @Override
     public void visitForLoop(final ForStatement forLoop) {
+        // collect every variable expression used in the loop body
+        final Map<VariableExpression, ClassNode> varOrigType = new HashMap<VariableExpression, ClassNode>();
+        forLoop.getLoopBlock().visit(new VariableExpressionTypeMemoizer(varOrigType));
+        
+        // visit body
         Map<VariableExpression, List<ClassNode>> oldTracker = pushAssignmentTracking();
         final ClassNode collectionType = getType(forLoop.getCollectionExpression());
         ClassNode componentType = collectionType.getComponentType();
@@ -744,7 +749,23 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         } finally {
             forLoopVariableTypes.remove(forLoop.getVariable());
         }
-        popAssignmentTracking(oldTracker);
+        boolean typeChanged = isSecondPassNeededForControlStructure(varOrigType, oldTracker);
+        if (typeChanged) visitForLoop(forLoop);
+    }
+
+    private boolean isSecondPassNeededForControlStructure(final Map<VariableExpression, ClassNode> varOrigType, final Map<VariableExpression, List<ClassNode>> oldTracker) {
+        Map<VariableExpression, ClassNode> assignedVars = popAssignmentTracking(oldTracker);
+        for (Map.Entry<VariableExpression, ClassNode> entry : assignedVars.entrySet()) {
+            Variable key = findTargetVariable(entry.getKey());
+            if (key instanceof VariableExpression) {
+                ClassNode origType = varOrigType.get((VariableExpression)key);
+                ClassNode newType = entry.getValue();
+                if (varOrigType.containsKey(key) && (origType==null || !newType.equals(origType))) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     @Override
@@ -924,34 +945,44 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     @Override
     public void visitClosureExpression(final ClosureExpression expression) {
-		// first, collect closure shared variables and reinitialize types
-		SharedVariableCollector collector = new SharedVariableCollector(getSourceUnit());
-		collector.visitClosureExpression(expression);
-		Set<VariableExpression> closureSharedExpressions = collector.getClosureSharedExpressions();
-		Map<VariableExpression, ListHashMap> typesBeforeVisit = null;
-		if (!closureSharedExpressions.isEmpty()) {
-			typesBeforeVisit = new HashMap<VariableExpression, ListHashMap>();
-			saveVariableExpressionMetadata(closureSharedExpressions, typesBeforeVisit);
-		}
+        // collect every variable expression used in the loop body
+        final Map<VariableExpression, ClassNode> varOrigType = new HashMap<VariableExpression, ClassNode>();
+        Statement code = expression.getCode();
+        code.visit(new VariableExpressionTypeMemoizer(varOrigType));
 
-		// perform visit
+        Map<VariableExpression, List<ClassNode>> oldTracker = pushAssignmentTracking();
+
+        // first, collect closure shared variables and reinitialize types
+        SharedVariableCollector collector = new SharedVariableCollector(getSourceUnit());
+        collector.visitClosureExpression(expression);
+        Set<VariableExpression> closureSharedExpressions = collector.getClosureSharedExpressions();
+        Map<VariableExpression, ListHashMap> typesBeforeVisit = null;
+        if (!closureSharedExpressions.isEmpty()) {
+            typesBeforeVisit = new HashMap<VariableExpression, ListHashMap>();
+            saveVariableExpressionMetadata(closureSharedExpressions, typesBeforeVisit);
+        }
+
+        // perform visit
         ClosureExpression oldClosureExpr = closureExpression;
         List<ClassNode> oldClosureReturnTypes = closureReturnTypes;
         closureExpression = expression;
         super.visitClosureExpression(expression);
-        MethodNode node = new MethodNode("dummy", 0, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, expression.getCode());
+        MethodNode node = new MethodNode("dummy", 0, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, code);
         closureReturnAdder.visitMethod(node);
 
-        if (closureReturnTypes!=null) {
+        if (closureReturnTypes != null) {
             expression.putNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE, lowestUpperBound(closureReturnTypes));
         }
 
         closureExpression = oldClosureExpr;
         closureReturnTypes = oldClosureReturnTypes;
-		
-		// restore original metadata
-		restoreVariableExpressionMetadata(typesBeforeVisit);
-	}
+
+        boolean typeChanged = isSecondPassNeededForControlStructure(varOrigType, oldTracker);
+        if (typeChanged) visitClosureExpression(expression);
+
+        // restore original metadata
+        restoreVariableExpressionMetadata(typesBeforeVisit);
+    }
 
 	private void restoreVariableExpressionMetadata(final Map<VariableExpression, ListHashMap> typesBeforeVisit) {
 		if (typesBeforeVisit!=null) {
@@ -1386,13 +1417,18 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
     }
 
-    private void popAssignmentTracking(final Map<VariableExpression, List<ClassNode>> oldTracker) {
+    private Map<VariableExpression, ClassNode> popAssignmentTracking(final Map<VariableExpression, List<ClassNode>> oldTracker) {
+        Map<VariableExpression, ClassNode> assignments = new HashMap<VariableExpression, ClassNode>();
         if (!ifElseForWhileAssignmentTracker.isEmpty()) {
             for (Map.Entry<VariableExpression, List<ClassNode>> entry : ifElseForWhileAssignmentTracker.entrySet()) {
-                storeType(entry.getKey(), lowestUpperBound(entry.getValue()));
+                VariableExpression key = entry.getKey();
+                ClassNode cn = lowestUpperBound(entry.getValue());
+                storeType(key, cn);
+                assignments.put(key, cn);
             }
         }
         ifElseForWhileAssignmentTracker = oldTracker;
+        return assignments;
     }
 
     private Map<VariableExpression, List<ClassNode>> pushAssignmentTracking() {
@@ -2186,6 +2222,29 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         @Override
         public void visitField(final FieldNode field) {
             result.set(field.getType());
+        }
+    }
+
+    private class VariableExpressionTypeMemoizer extends ClassCodeVisitorSupport {
+        private final Map<VariableExpression, ClassNode> varOrigType;
+
+        public VariableExpressionTypeMemoizer(final Map<VariableExpression, ClassNode> varOrigType) {
+            this.varOrigType = varOrigType;
+        }
+
+        @Override
+        protected SourceUnit getSourceUnit() {
+            return source;
+        }
+
+        @Override
+        public void visitVariableExpression(final VariableExpression expression) {
+            super.visitVariableExpression(expression);
+            Variable var = findTargetVariable(expression);
+            if (var instanceof VariableExpression) {
+                VariableExpression ve = (VariableExpression) var;
+                varOrigType.put(ve, (ClassNode) ve.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE));
+            }
         }
     }
 }
