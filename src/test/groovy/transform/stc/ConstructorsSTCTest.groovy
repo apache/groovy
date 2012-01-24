@@ -54,6 +54,8 @@ class ConstructorsSTCTest extends StaticTypeCheckingTestCase {
             int x = 100
             int y = 200
             Dimension d = [x,y]
+            assert d.width == 100
+            assert d.height == 200
         '''
     }
 
@@ -61,7 +63,9 @@ class ConstructorsSTCTest extends StaticTypeCheckingTestCase {
         assertScript '''
             import java.awt.Dimension
             int x = 100
-            Dimension d = [x, '100'.toInteger()]
+            Dimension d = [x, '200'.toInteger()]
+            assert d.width == 100
+            assert d.height == 200
         '''
     }
 
@@ -80,6 +84,7 @@ class ConstructorsSTCTest extends StaticTypeCheckingTestCase {
                 int y
             }
             A a = [:]
+            assert a != null
         '''
     }
 
@@ -99,6 +104,20 @@ class ConstructorsSTCTest extends StaticTypeCheckingTestCase {
                 int y
             }
             A a = [x:100, y:200]
+            assert a.x == 100
+            assert a.y == 200
+        '''
+    }
+
+    void testConstructWithNamedParams() {
+        assertScript '''
+            class A {
+                int x
+                int y
+            }
+            A a = new A(x:100, y:200)
+            assert a.x == 100
+            assert a.y == 200
         '''
     }
 
@@ -109,6 +128,16 @@ class ConstructorsSTCTest extends StaticTypeCheckingTestCase {
                 int y
             }
             A a = [x:100, y:200, z: 300]
+        ''', 'No such property: z for class: A'
+    }
+
+    void testConstructWithNamedParamsAndMissingProperty() {
+        shouldFailWithMessages '''
+            class A {
+                int x
+                int y
+            }
+            A a = new A(x:100, y:200, z: 300)
         ''', 'No such property: z for class: A'
     }
 
@@ -141,6 +170,8 @@ class ConstructorsSTCTest extends StaticTypeCheckingTestCase {
                 int y
             }
             B b = [x:1, y:2]
+            assert b.x == 1
+            assert b.y == 2
         '''
     }
 
