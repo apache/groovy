@@ -179,7 +179,7 @@ $Date$
 
     <target name="-stagedcompile-groovy" depends="-initGroovyc">
         <groovyc srcdir="${mainSourcePath}" destdir="${mainClassesDirectory}" 
-                 fork="true" stacktrace="true"
+                 fork="true" stacktrace="true" indy="${useIndy}"
                  memorymaximumsize="${groovycMain_mx}">
             <classpath>
                 <pathelement path="${mainClassesDirectory}"/>
@@ -241,7 +241,7 @@ $Date$
         <groovyc srcdir="${testSourcePath}"
                  destdir="${testClassesDirectory}"
                  includes="${vm6GroovySourceFiles}"
-                 fork="true"
+                 fork="true" indy="${useIndy}"
                  stacktrace="true"
                  memorymaximumsize="${groovycTest_mx}">
             <classpath>
@@ -262,7 +262,7 @@ $Date$
 
         <groovyc srcdir="${examplesSourceDirectory}/webapps/groovlet-examples/WEB-INF/groovy"
                  destdir="${examplesClassesDirectory}"
-                 fork="true" stacktrace="true"
+                 fork="true" stacktrace="true" indy="${useIndy}"
                  memorymaximumsize="${groovycExamples_mx}">
             <classpath>
                 <pathelement path="${mainClassesDirectory}"/>
@@ -284,7 +284,7 @@ $Date$
         </javac>
         <groovyc srcdir="${examplesSourceDirectory}"
                  destdir="${examplesClassesDirectory}"
-                 fork="true" stacktrace="true"
+                 fork="true" stacktrace="true" indy="${useIndy}"
                  memorymaximumsize="${groovycExamples_mx}"
                  excludes="webapps/groovlet-examples/WEB-INF/groovy/**/*.groovy,org/codehaus/groovy/grails/compiler/injection/**/*.java">
             <classpath>
