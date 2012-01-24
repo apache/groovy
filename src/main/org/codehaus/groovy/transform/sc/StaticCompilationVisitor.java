@@ -17,6 +17,7 @@ package org.codehaus.groovy.transform.sc;
 
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
+import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.classgen.asm.InvocationWriter;
 import org.codehaus.groovy.classgen.asm.TypeChooser;
 import org.codehaus.groovy.classgen.asm.sc.StaticTypesTypeChooser;
@@ -123,6 +124,14 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
         if (target!=null) {
             memorizeInitialExpressions(target);
         }
+    }
+
+    @Override
+    public void visitForLoop(final ForStatement forLoop) {
+        super.visitForLoop(forLoop);
+        final ClassNode collectionType = getType(forLoop.getCollectionExpression());
+        ClassNode componentType = inferLoopElementType(collectionType);
+        forLoop.getVariable().setType(componentType);
     }
 
     @Override

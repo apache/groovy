@@ -728,6 +728,27 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         // visit body
         Map<VariableExpression, List<ClassNode>> oldTracker = pushAssignmentTracking();
         final ClassNode collectionType = getType(forLoop.getCollectionExpression());
+        ClassNode componentType = inferLoopElementType(collectionType);
+        forLoopVariableTypes.put(forLoop.getVariable(), componentType);
+        if (!checkCompatibleAssignmentTypes(forLoop.getVariableType(), componentType)) {
+            addStaticTypeError("Cannot loop with element of type " + forLoop.getVariableType() + " with collection of type " + collectionType, forLoop);
+        }
+        try {
+            super.visitForLoop(forLoop);
+        } finally {
+            forLoopVariableTypes.remove(forLoop.getVariable());
+        }
+        boolean typeChanged = isSecondPassNeededForControlStructure(varOrigType, oldTracker);
+        if (typeChanged) visitForLoop(forLoop);
+    }
+
+    /**
+     * Given a loop collection type, returns the inferred type of the loop element. Used, for
+     * example, to infer the element type of a (for e in list) loop.
+     * @param collectionType the type of the collection
+     * @return the inferred component type
+     */
+    protected ClassNode inferLoopElementType(final ClassNode collectionType) {
         ClassNode componentType = collectionType.getComponentType();
         if (componentType == null) {
             if (collectionType.implementsInterface(ITERABLE_TYPE)) {
@@ -740,17 +761,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 componentType = ClassHelper.OBJECT_TYPE;
             }
         }
-        forLoopVariableTypes.put(forLoop.getVariable(), componentType);
-        if (!checkCompatibleAssignmentTypes(forLoop.getVariableType(), componentType)) {
-            addStaticTypeError("Cannot loop with element of type " + forLoop.getVariableType() + " with collection of type " + collectionType, forLoop);
-        }
-        try {
-            super.visitForLoop(forLoop);
-        } finally {
-            forLoopVariableTypes.remove(forLoop.getVariable());
-        }
-        boolean typeChanged = isSecondPassNeededForControlStructure(varOrigType, oldTracker);
-        if (typeChanged) visitForLoop(forLoop);
+        return componentType;
     }
 
     private boolean isSecondPassNeededForControlStructure(final Map<VariableExpression, ClassNode> varOrigType, final Map<VariableExpression, List<ClassNode>> oldTracker) {
@@ -1776,7 +1787,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         return EMPTY_METHODNODE_LIST;
     }
 
-    private ClassNode getType(ASTNode exp) {
+    protected ClassNode getType(ASTNode exp) {
         ClassNode cn = (ClassNode) exp.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
         if (cn != null) return cn;
         if (exp instanceof ClassExpression) {

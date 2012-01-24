@@ -40,15 +40,6 @@ class ArraysAndCollectionsStaticCompileTest extends ArraysAndCollectionsSTCTest 
     // override failing tests
     // todo: fix them all!
 
-    @Override
-    void testForInLoop() {
-        // not supported yet
-    }
-
-    void testForInLoopWithDefaultListType() {
-        // not supported yet
-    }
-
     void testListStarMethod() {
         // not supported yet
     }

@@ -196,7 +196,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
     void testForInLoop() {
         assertScript '''
             class A {
-                String name
+                String name = 'foo'
             }
             List<A> myList = [new A(name:'Cedric'), new A(name:'Yakari')] as LinkedList<A>
             for (element in myList) {
@@ -208,7 +208,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
     void testForInLoopWithDefaultListType() {
         assertScript '''
             class A {
-                String name
+                String name = 'foo'
             }
             List<A> myList = [new A(name:'Cedric'), new A(name:'Yakari')]
             for (element in myList) {
