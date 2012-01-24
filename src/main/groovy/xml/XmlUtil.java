@@ -15,6 +15,7 @@
  */
 package groovy.xml;
 
+import groovy.lang.GroovyRuntimeException;
 import groovy.lang.Writable;
 import groovy.util.Node;
 import groovy.util.XmlNodePrinter;
@@ -253,7 +254,7 @@ public class XmlUtil {
             transformer.transform(source, target);
         }
         catch (TransformerException e) {
-            // ignore
+            throw new GroovyRuntimeException(e.getMessage());
         }
     }
 
