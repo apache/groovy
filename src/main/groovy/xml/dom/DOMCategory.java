@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,6 +41,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
+ * Category class which adds GPath style operations to Java's DOM classes.
+ *
  * @author sam
  * @author paulk
  */
@@ -234,7 +236,7 @@ public class DOMCategory {
     }
 
     public static String text(NodeList nodeList) {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         for (int i = 0; i < nodeList.getLength(); i++) {
             sb.append(text(nodeList.item(i)));
         }
@@ -307,43 +309,42 @@ public class DOMCategory {
         return result;
     }
 
-    public static Element replaceNode(NodesHolder self, Closure c) {
+    public static Node replaceNode(NodesHolder self, Closure c) {
         if (self.getLength() <= 0 || self.getLength() > 1) {
             throw new GroovyRuntimeException("replaceNode() can only be used to replace a single element.");
         }
-        return replaceNode((Element) self.item(0), c);
+        return replaceNode(self.item(0), c);
     }
 
-    public static Element replaceNode(Element self, Closure c) {
-        // Use DOMBuilder to generate the replacement node.
-        DOMBuilder b = new DOMBuilder(self.getOwnerDocument());
-        Element newNode = (Element) b.invokeMethod("rootNode", c);
-
-        // The replacement node is the first child element of 'rootNode'.
-        Node n = newNode.getFirstChild();
-        while (n != null && n.getNodeType() != Node.ELEMENT_NODE) {
-            n = n.getNextSibling();
+    // TODO return replaced node rather than last appended?
+    public static Node replaceNode(Node self, Closure c) {
+        if (self.getParentNode() instanceof Document) {
+            throw new UnsupportedOperationException("Replacing the root node is not supported");
         }
-
-        if (n == null) throw new GroovyRuntimeException("Replacement node must be an element.");
-
-        // Now replace the required node and return the replacement element.
-        newNode = (Element) n;
-        self.getParentNode().replaceChild(newNode, self);
-        return newNode;
+        Node result = appendNodes(self, c);
+        self.getParentNode().removeChild(self);
+        return result;
+//        return self;
     }
 
     public static void plus(Element self, Closure c) {
+        if (self.getParentNode() instanceof Document) {
+            throw new UnsupportedOperationException("Adding sibling nodes to the root node is not supported");
+        }
+        appendNodes(self, c);
+    }
+
+    private static Node appendNodes(Node self, Closure c) {
         Node parent = self.getParentNode();
         Node beforeNode = self.getNextSibling();
-
         DOMBuilder b = new DOMBuilder(self.getOwnerDocument());
         Element newNodes = (Element) b.invokeMethod("rootNode", c);
-
         Iterator<Node> iter = XmlGroovyMethods.iterator(children(newNodes));
+        Node lastAppended = null;
         while (iter.hasNext()) {
-            parent.insertBefore(iter.next(), beforeNode);
+            lastAppended = parent.insertBefore(iter.next(), beforeNode);
         }
+        return lastAppended;
     }
 
     public static void plus(NodeList self, Closure c) {
@@ -442,7 +443,7 @@ public class DOMCategory {
     }
 
     private static String toString(NodeList self) {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         sb.append("[");
         Iterator it = XmlGroovyMethods.iterator(self);
         while (it.hasNext()) {
@@ -480,8 +481,8 @@ public class DOMCategory {
 
         public int getLength() {
             int length = 0;
-            for (int i = 0; i < nodeLists.size(); i++) {
-                NodeList nl = (NodeList) nodeLists.get(i);
+            for (Object nodeList : nodeLists) {
+                NodeList nl = (NodeList) nodeList;
                 length += nl.getLength();
             }
             return length;
@@ -489,8 +490,8 @@ public class DOMCategory {
 
         public Node item(int index) {
             int relativeIndex = index;
-            for (int i = 0; i < nodeLists.size(); i++) {
-                NodeList nl = (NodeList) nodeLists.get(i);
+            for (Object nodeList : nodeLists) {
+                NodeList nl = (NodeList) nodeList;
                 if (relativeIndex < nl.getLength()) {
                     return nl.item(relativeIndex);
                 }
