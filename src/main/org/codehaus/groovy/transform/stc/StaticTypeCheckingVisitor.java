@@ -467,29 +467,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     checkGroovyStyleConstructor(leftRedirect, args);
                     // perform additional type checking on arguments
                     MapExpression mapExpression = (MapExpression) rightExpression;
-                    for (MapEntryExpression entryExpression : mapExpression.getMapEntryExpressions()) {
-                        Expression keyExpr = entryExpression.getKeyExpression();
-                        if (!(keyExpr instanceof ConstantExpression)) {
-                            addStaticTypeError("Dynamic keys in map-style constructors are unsupported in static type checking", keyExpr);
-                        } else {
-                            String property = keyExpr.getText();
-                            ClassNode currentNode = leftRedirect;
-                            PropertyNode propertyNode = null;
-                            while (propertyNode == null && currentNode != null) {
-                                propertyNode = currentNode.getProperty(property);
-                                currentNode = currentNode.getSuperClass();
-                            }
-                            if (propertyNode == null) {
-                                addStaticTypeError("No such property: " + property +
-                                        " for class: " + leftRedirect.getName(), leftExpression);
-                            } else if (propertyNode != null) {
-                                ClassNode valueType = getType(entryExpression.getValueExpression());
-                                if (!isAssignableTo(propertyNode.getType(), valueType)) {
-                                    addStaticTypeError("Cannot assign value of type " + valueType.getName() + " to field of type " + propertyNode.getType().getName(), entryExpression);
-                                }
-                            }
-                        }
-                    }
+                    checkGroovyConstructorMap(leftExpression, leftRedirect, mapExpression);
                 }
             }
 
@@ -502,6 +480,32 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         addStaticTypeError("Incompatible generic argument types. Cannot assign "
                         + inferredRightExpressionType.toString(false)
                         + " to: "+leftExpressionType.toString(false), assignmentExpression);
+                    }
+                }
+            }
+        }
+    }
+
+    private void checkGroovyConstructorMap(final Expression receiver, final ClassNode receiverType, final MapExpression mapExpression) {
+        for (MapEntryExpression entryExpression : mapExpression.getMapEntryExpressions()) {
+            Expression keyExpr = entryExpression.getKeyExpression();
+            if (!(keyExpr instanceof ConstantExpression)) {
+                addStaticTypeError("Dynamic keys in map-style constructors are unsupported in static type checking", keyExpr);
+            } else {
+                String property = keyExpr.getText();
+                ClassNode currentNode = receiverType;
+                PropertyNode propertyNode = null;
+                while (propertyNode == null && currentNode != null) {
+                    propertyNode = currentNode.getProperty(property);
+                    currentNode = currentNode.getSuperClass();
+                }
+                if (propertyNode == null) {
+                    addStaticTypeError("No such property: " + property +
+                            " for class: " + receiverType.getName(), receiver);
+                } else if (propertyNode != null) {
+                    ClassNode valueType = getType(entryExpression.getValueExpression());
+                    if (!isAssignableTo(propertyNode.getType(), valueType)) {
+                        addStaticTypeError("Cannot assign value of type " + valueType.getName() + " to field of type " + propertyNode.getType().getName(), entryExpression);
                     }
                 }
             }
@@ -880,9 +884,26 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         super.visitConstructorCallExpression(call);
         ClassNode receiver = call.isThisCall()?classNode:
                 call.isSuperCall()?classNode.getSuperClass():call.getType();
-        ClassNode[] args = getArgumentTypes(InvocationWriter.makeArgumentList(call.getArguments()));
+        Expression arguments = call.getArguments();
+        ClassNode[] args = getArgumentTypes(InvocationWriter.makeArgumentList(arguments));
         MethodNode node = findMethodOrFail(call, receiver, "<init>", args);
         if (node!=null) {
+            if (node.getParameters().length==0 && args.length==1 && implementsInterfaceOrIsSubclassOf(args[0], MAP_TYPE)) {
+                if (arguments instanceof TupleExpression) {
+                    TupleExpression texp = (TupleExpression) arguments;
+                    List<Expression> expressions = texp.getExpressions();
+                    if (expressions.size()==1) {
+                        Expression expression = expressions.get(0);
+                        if (expression instanceof MapExpression) {
+                            MapExpression argList = (MapExpression) expression;
+                            checkGroovyConstructorMap(call, receiver, argList);
+                            node = new ConstructorNode(Opcodes.ACC_PUBLIC, new Parameter[]{new Parameter(MAP_TYPE, "map")}, ClassNode.EMPTY_ARRAY, EmptyStatement.INSTANCE);
+                            node.setDeclaringClass(receiver);
+
+                        }
+                    }
+                }
+            }
             storeTargetMethod(call, node);
         }
     }
@@ -918,7 +939,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         final Map<VariableExpression, ClassNode> varOrigType = new HashMap<VariableExpression, ClassNode>();
         Statement code = expression.getCode();
         code.visit(new VariableExpressionTypeMemoizer(varOrigType));
-
         Map<VariableExpression, List<ClassNode>> oldTracker = pushAssignmentTracking();
 
         // first, collect closure shared variables and reinitialize types
@@ -1658,7 +1678,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if ("<init>".equals(name)) {
             methods = new ArrayList<MethodNode>(receiver.getDeclaredConstructors());
             if (methods.isEmpty()) {
-                MethodNode node = new MethodNode("<init>", Opcodes.ACC_PUBLIC, receiver, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, EmptyStatement.INSTANCE);
+                MethodNode node = new ConstructorNode(Opcodes.ACC_PUBLIC, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, EmptyStatement.INSTANCE);
                 node.setDeclaringClass(receiver);
                 return Collections.singletonList(node);
             }
