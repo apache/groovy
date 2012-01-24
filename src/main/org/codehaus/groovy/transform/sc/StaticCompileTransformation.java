@@ -18,9 +18,8 @@ package org.codehaus.groovy.transform.sc;
 import groovy.transform.CompileStatic;
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
-import org.codehaus.groovy.ast.stmt.BlockStatement;
-import org.codehaus.groovy.ast.stmt.ExpressionStatement;
-import org.codehaus.groovy.ast.stmt.Statement;
+import org.codehaus.groovy.ast.stmt.*;
+import org.codehaus.groovy.classgen.VariableScopeVisitor;
 import org.codehaus.groovy.classgen.asm.WriterControllerFactory;
 import org.codehaus.groovy.classgen.asm.sc.StaticTypesTypeChooser;
 import org.codehaus.groovy.classgen.asm.sc.StaticTypesWriterControllerFactoryImpl;
@@ -33,11 +32,13 @@ import org.codehaus.groovy.syntax.Types;
 import org.codehaus.groovy.transform.GroovyASTTransformation;
 import org.codehaus.groovy.transform.StaticTypesTransformation;
 import org.codehaus.groovy.transform.stc.*;
+import org.objectweb.asm.Opcodes;
 
 import java.util.*;
 
 import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.BINARY_EXP_TARGET;
 import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.STATIC_COMPILE_NODE;
+import static org.codehaus.groovy.transform.stc.StaticTypesMarker.DIRECT_METHOD_CALL_TARGET;
 
 /**
  * Handles the implementation of the {@link groovy.transform.CompileStatic} transformation.
@@ -140,6 +141,9 @@ public class StaticCompileTransformation extends StaticTypesTransformation {
             if (expr instanceof ClosureExpression) {
                 return transformClosureExpression((ClosureExpression)expr);
             }
+            if (expr instanceof ConstructorCallExpression) {
+                return transformConstructorCall((ConstructorCallExpression) expr);
+            }
             return super.transform(expr);
         }
 
@@ -166,6 +170,65 @@ public class StaticCompileTransformation extends StaticTypesTransformation {
             super.visitClosureExpression(expression);
         }
 
+        private Expression transformConstructorCall(final ConstructorCallExpression expr) {
+            ConstructorNode node = (ConstructorNode) expr.getNodeMetaData(DIRECT_METHOD_CALL_TARGET);
+            if (node==null) return expr;
+            if (node.getParameters().length==1 && StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf(node.getParameters()[0].getType(), ClassHelper.MAP_TYPE)) {
+                Expression arguments = expr.getArguments();
+                if (arguments instanceof TupleExpression) {
+                    TupleExpression tupleExpression = (TupleExpression) arguments;
+                    List<Expression> expressions = tupleExpression.getExpressions();
+                    if (expressions.size()==1) {
+                        Expression expression = expressions.get(0);
+                        if (expression instanceof MapExpression) {
+                            MapExpression map = (MapExpression) expression;
+                            // check that the node doesn't belong to the list of declared constructors
+                            ClassNode declaringClass = node.getDeclaringClass();
+                            for (ConstructorNode constructorNode : declaringClass.getDeclaredConstructors()) {
+                                if (constructorNode==node) {
+                                    return expr;
+                                }
+                            }
+                            // replace this call with a call to <init>() + appropriate setters
+                            // for example, foo(x:1, y:2) is replaced with:
+                            // { def tmp = new Foo(); tmp.x = 1; tmp.y = 2; return tmp }()
+                            
+                            VariableExpression vexp = new VariableExpression("obj"+System.currentTimeMillis(), declaringClass);
+                            ConstructorNode cn = new ConstructorNode(Opcodes.ACC_PUBLIC, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, EmptyStatement.INSTANCE);
+                            cn.setDeclaringClass(declaringClass);
+                            ConstructorCallExpression call = new ConstructorCallExpression(declaringClass, new ArgumentListExpression());
+                            call.putNodeMetaData(DIRECT_METHOD_CALL_TARGET, cn);
+                            DeclarationExpression declaration = new DeclarationExpression(
+                                    vexp, Token.newSymbol("=", expr.getLineNumber(), expr.getColumnNumber()),
+                                    call
+                                    );
+                            BlockStatement stmt = new BlockStatement();
+                            stmt.addStatement(new ExpressionStatement(declaration));
+                            for (MapEntryExpression entryExpression : map.getMapEntryExpressions()) {
+                                int line = entryExpression.getLineNumber();
+                                int col = entryExpression.getColumnNumber();
+                                BinaryExpression bexp = new BinaryExpression(
+                                        new PropertyExpression(vexp, entryExpression.getKeyExpression()),
+                                        Token.newSymbol("=", line, col),
+                                        entryExpression.getValueExpression()
+                                );
+                                stmt.addStatement(new ExpressionStatement(bexp));
+                            }
+                            stmt.addStatement(new ReturnStatement(vexp));
+                            ClosureExpression cl = new ClosureExpression(Parameter.EMPTY_ARRAY, stmt);
+                            MethodCallExpression result = new MethodCallExpression(cl, "call", ArgumentListExpression.EMPTY_ARGUMENTS);
+                            result.setMethodTarget(StaticTypeCheckingVisitor.CLOSURE_CALL_NO_ARG);
+                            VariableScopeVisitor visitor = new VariableScopeVisitor(unit);
+                            visitor.visitClosureExpression(cl);
+                            return result;
+                        }
+                    }
+                }
+
+            }
+            return expr;
+        }
+        
         private Expression transformMethodCallExpression(final MethodCallExpression expr) {
             Expression objectExpression = expr.getObjectExpression();
             if (expr.isSafe()) {

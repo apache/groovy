@@ -668,7 +668,7 @@ public abstract class StaticTypeCheckingSupport {
         return sb.toString();
     }
 
-    static boolean implementsInterfaceOrIsSubclassOf(ClassNode type, ClassNode superOrInterface) {
+    public static boolean implementsInterfaceOrIsSubclassOf(ClassNode type, ClassNode superOrInterface) {
         boolean result = type.equals(superOrInterface)
                 || type.isDerivedFrom(superOrInterface)
                 || type.implementsInterface(superOrInterface)
