@@ -342,7 +342,12 @@ public class JavaStubGenerator {
                 } else if (ClassHelper.char_TYPE.equals(valueExpr.getType())) {
                     out.print("'"+valueExpr.getText()+"'");
                 } else {
+                    ClassNode constantType = valueExpr.getType();
+                    out.print('(');
+                    printType(out, type);
+                    out.print(") ");
                     out.print(valueExpr.getText());
+                    if (ClassHelper.Long_TYPE.equals(ClassHelper.getWrapper(constantType))) out.print('L');
                 }
             } else if (ClassHelper.isPrimitiveType(type)) {
                 String val = type == ClassHelper.boolean_TYPE ? "false" : "0";
