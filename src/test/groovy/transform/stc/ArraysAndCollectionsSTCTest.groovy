@@ -133,6 +133,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         assertScript '''
             List list = ['a','b','c']
             List classes = list*.class
+            assert classes == [String,String,String]
         '''
     }
 
@@ -140,6 +141,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         assertScript '''
             List list = ['a','b','c']
             List classes = list*.toUpperCase()
+            assert classes == ['A','B','C']
         '''
     }
 

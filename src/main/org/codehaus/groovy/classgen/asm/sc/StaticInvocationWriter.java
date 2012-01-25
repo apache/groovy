@@ -17,16 +17,26 @@ package org.codehaus.groovy.classgen.asm.sc;
 
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
+import org.codehaus.groovy.ast.stmt.EmptyStatement;
+import org.codehaus.groovy.ast.stmt.ExpressionStatement;
+import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
+import org.codehaus.groovy.classgen.BytecodeExpression;
 import org.codehaus.groovy.classgen.asm.*;
+import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.transform.stc.ExtensionMethodNode;
+import org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor;
 import org.codehaus.groovy.transform.stc.StaticTypesMarker;
+import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.objectweb.asm.Opcodes.*;
 import static org.objectweb.asm.Opcodes.ACONST_NULL;
@@ -51,7 +61,17 @@ public class StaticInvocationWriter extends InvocationWriter {
                     new Parameter(ClassHelper.OBJECT_TYPE, "args")
             }
     );
+    private static final ClassNode ARRAYLIST_CLASSNODE = ClassHelper.make(ArrayList.class);
+    private static final MethodNode ARRAYLIST_CONSTRUCTOR;
+    private static final MethodNode ARRAYLIST_ADD_METHOD = ARRAYLIST_CLASSNODE.getMethod("add", new Parameter[]{new Parameter(ClassHelper.OBJECT_TYPE,"o")});
 
+    static {
+        ARRAYLIST_CONSTRUCTOR = new ConstructorNode(ACC_PUBLIC, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, EmptyStatement.INSTANCE);
+        ARRAYLIST_CONSTRUCTOR.setDeclaringClass(ARRAYLIST_CLASSNODE);
+    }
+
+    private final AtomicInteger labelCounter = new AtomicInteger();
+    
     private final WriterController controller;
     
     public StaticInvocationWriter(WriterController wc) {
@@ -212,5 +232,99 @@ public class StaticInvocationWriter extends InvocationWriter {
         if (paramType.isInterface()) return argumentType.implementsInterface(paramType);
         if (paramType.isArray() && argumentType.isArray()) return compatibleArgumentType(argumentType.getComponentType(),paramType.getComponentType());
         return ClassHelper.getWrapper(argumentType).isDerivedFrom(ClassHelper.getWrapper(paramType));
+    }
+
+    @Override
+    public void makeCall(final Expression origin, final Expression receiver, final Expression message, final Expression arguments, final MethodCallerMultiAdapter adapter, final boolean safe, final boolean spreadSafe, final boolean implicitThis) {
+        // if call is spread safe, replace it with a for in loop
+        if (spreadSafe && origin instanceof MethodCallExpression) {
+            MethodVisitor mv = controller.getMethodVisitor();
+            CompileStack compileStack = controller.getCompileStack();
+            TypeChooser typeChooser = controller.getTypeChooser();
+            OperandStack operandStack = controller.getOperandStack();
+            ClassNode classNode = controller.getClassNode();
+            int counter = labelCounter.incrementAndGet();
+
+            // create an empty arraylist
+            VariableExpression result = new VariableExpression(
+                    "spreadresult"+counter,
+                    ARRAYLIST_CLASSNODE
+            );
+            ConstructorCallExpression cce = new ConstructorCallExpression(ARRAYLIST_CLASSNODE, ArgumentListExpression.EMPTY_ARGUMENTS);
+            cce.setNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET, ARRAYLIST_CONSTRUCTOR);
+            DeclarationExpression declr = new DeclarationExpression(
+                    result,
+                    Token.newSymbol("=", origin.getLineNumber(), origin.getColumnNumber()),
+                    cce
+            );
+            declr.visit(controller.getAcg());
+            // if (receiver != null)
+            receiver.visit(controller.getAcg());
+            Label ifnull = compileStack.createLocalLabel("ifnull_" + counter);
+            mv.visitJumpInsn(IFNULL, ifnull);
+            operandStack.remove(1); // receiver consumed by if()
+            Label nonull = compileStack.createLocalLabel("nonull_" + counter);
+            mv.visitLabel(nonull);
+            ClassNode componentType = StaticTypeCheckingVisitor.inferLoopElementType(typeChooser.resolveType(receiver, classNode));
+            Parameter iterator = new Parameter(componentType, "for$it$" + counter);
+            VariableExpression iteratorAsVar = new VariableExpression(iterator);
+            MethodCallExpression origMCE = (MethodCallExpression) origin;
+            MethodCallExpression newMCE = new MethodCallExpression(
+                    iteratorAsVar,
+                    origMCE.getMethodAsString(),
+                    origMCE.getArguments()
+            );
+            newMCE.setMethodTarget(origMCE.getMethodTarget());
+            newMCE.setSafe(true);
+            MethodCallExpression add = new MethodCallExpression(
+                    result,
+                    "add",
+                    newMCE
+            );
+            add.setMethodTarget(ARRAYLIST_ADD_METHOD);
+            // for (e in receiver) { result.add(e?.method(arguments) }
+            ForStatement stmt = new ForStatement(
+                    iterator,
+                    receiver,
+                    new ExpressionStatement(add)
+            );
+            stmt.visit(controller.getAcg());
+            // else { empty list }
+            mv.visitLabel(ifnull);
+
+            // end of if/else
+            // return result list
+            result.visit(controller.getAcg());
+        } else if (safe && origin instanceof MethodCallExpression) {
+            // wrap call in an IFNULL check
+            MethodVisitor mv = controller.getMethodVisitor();
+            CompileStack compileStack = controller.getCompileStack();
+            OperandStack operandStack = controller.getOperandStack();
+            int counter = labelCounter.incrementAndGet();
+            // if (receiver != null)
+            receiver.visit(controller.getAcg());
+            Label ifnull = compileStack.createLocalLabel("ifnull_" + counter);
+            mv.visitJumpInsn(IFNULL, ifnull);
+            operandStack.remove(1); // receiver consumed by if()
+            Label nonull = compileStack.createLocalLabel("nonull_" + counter);
+            mv.visitLabel(nonull);
+            MethodCallExpression origMCE = (MethodCallExpression) origin;
+            MethodCallExpression newMCE = new MethodCallExpression(
+                    origMCE.getObjectExpression(),
+                    origMCE.getMethodAsString(),
+                    origMCE.getArguments()
+            );
+            newMCE.setMethodTarget(origMCE.getMethodTarget());
+            newMCE.setSafe(false);
+            newMCE.visit(controller.getAcg());
+            Label endof = compileStack.createLocalLabel("endof_" + counter);
+            mv.visitJumpInsn(GOTO,endof);
+            mv.visitLabel(ifnull);
+            // else { null }
+            mv.visitInsn(ACONST_NULL);
+            mv.visitLabel(endof);
+        } else {
+            super.makeCall(origin, receiver, message, arguments, adapter, safe, spreadSafe, implicitThis);
+        }
     }
 }

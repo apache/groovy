@@ -42,4 +42,11 @@ public class MethodCallsStaticCompilationTest extends MethodCallsSTCTest {
             assert bar.foo() == 1
         '''
     }
+    
+    void testNullSafeCall() {
+        assertScript '''
+            String str = null
+            assert str?.toString() == null
+        '''
+    }
 }

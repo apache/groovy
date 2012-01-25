@@ -752,7 +752,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
      * @param collectionType the type of the collection
      * @return the inferred component type
      */
-    protected ClassNode inferLoopElementType(final ClassNode collectionType) {
+    public static ClassNode inferLoopElementType(final ClassNode collectionType) {
         ClassNode componentType = collectionType.getComponentType();
         if (componentType == null) {
             if (collectionType.implementsInterface(ITERABLE_TYPE)) {
@@ -1199,6 +1199,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 ClassNode listNode = LIST_TYPE.getPlainNodeReference();
                 listNode.setGenericsTypes(new GenericsType[]{new GenericsType(wrapTypeIfNecessary(subcallReturnType))});
                 storeType(call, listNode);
+                // store target method
+                storeTargetMethod(call, (MethodNode) subcall.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET));
                 return;
             }
         }

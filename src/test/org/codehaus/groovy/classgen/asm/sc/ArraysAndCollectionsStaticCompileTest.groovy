@@ -37,11 +37,21 @@ class ArraysAndCollectionsStaticCompileTest extends ArraysAndCollectionsSTCTest 
         shell = new GroovyShell(config)
     }
 
-    // override failing tests
-    // todo: fix them all!
+    void testListStarWithMethodReturningVoid() {
+        assertScript '''
+            class A { void m() {} }
+            List<A> elems = [new A(), new A(), new A()]
+            List result = elems*.m()
+            assert result == [null,null,null]
+        '''
+    }
 
-    void testListStarMethod() {
-        // not supported yet
+    void testListStarWithMethodWithNullInList() {
+        assertScript '''
+            List<String> elems = ['a',(String)null,'C']
+            List<String> result = elems*.toUpperCase()
+            assert result == ['A',null,'C']
+        '''
     }
 }
 
