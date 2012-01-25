@@ -100,6 +100,20 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    void testListInferrenceWithNullElems() {
+        assertScript '''
+            List<String> strings = ['a', null]
+            assert strings == ['a',null]
+        '''
+    }
+
+    void testListInferrenceWithAllNullElems() {
+        assertScript '''
+            List<String> strings = [null, null]
+            assert strings == [null,null]
+        '''
+    }
+
     void testAddOnListWithDiamondAndWrongType() {
         shouldFailWithMessages '''
             List<Integer> list = new LinkedList<>()

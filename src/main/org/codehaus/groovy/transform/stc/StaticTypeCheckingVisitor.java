@@ -1817,7 +1817,15 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             // maybe we can infer the component type
             List<ClassNode> nodes = new LinkedList<ClassNode>();
             for (Expression expression : expressions) {
-                nodes.add(getType(expression));
+                if (expression instanceof ConstantExpression && ((ConstantExpression)expression).getValue()==null) {
+                    // a null element is found in the list, skip it because we'll use the other elements from the list
+                } else {
+                    nodes.add(getType(expression));
+                }
+            }
+            if (nodes.isEmpty()) {
+                // every element was the null constant
+                return listType;
             }
             ClassNode superType = getWrapper(lowestUpperBound(nodes)); // to be used in generics, type must be boxed
             ClassNode inferred = listType.getPlainNodeReference();
