@@ -26,15 +26,13 @@ import groovy.transform.stc.ArraysAndCollectionsSTCTest
  *
  * @author Cedric Champeau
  */
+@Mixin(StaticCompilationTestSupport)
 class ArraysAndCollectionsStaticCompileTest extends ArraysAndCollectionsSTCTest {
 
     @Override
     protected void setUp() {
         super.setUp()
-        config = new CompilerConfiguration()
-        config.addCompilationCustomizers(new ASTTransformationCustomizer(CompileStatic))
-        configure()
-        shell = new GroovyShell(config)
+        extraSetup()
     }
 
     void testListStarWithMethodReturningVoid() {

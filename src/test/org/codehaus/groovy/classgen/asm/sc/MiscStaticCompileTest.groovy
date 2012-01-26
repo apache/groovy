@@ -16,24 +16,19 @@
 package org.codehaus.groovy.classgen.asm.sc
 
 import groovy.transform.stc.MiscSTCTest
-import org.codehaus.groovy.control.CompilerConfiguration
-import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
-import groovy.transform.CompileStatic
 
 /**
  * Unit tests for static type checking : miscellaneous tests.
  *
  * @author Cedric Champeau
  */
+@Mixin(StaticCompilationTestSupport)
 class MiscStaticCompileTest extends MiscSTCTest {
 
     @Override
     protected void setUp() {
         super.setUp()
-        config = new CompilerConfiguration()
-        config.addCompilationCustomizers(new ASTTransformationCustomizer(CompileStatic))
-        configure()
-        shell = new GroovyShell(config)
+        extraSetup()
     }
 
     void testEachFileRecurse() {

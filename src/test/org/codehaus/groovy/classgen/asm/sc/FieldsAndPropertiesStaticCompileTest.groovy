@@ -15,19 +15,14 @@
  */
 package org.codehaus.groovy.classgen.asm.sc
 
-import groovy.transform.CompileStatic
 import groovy.transform.stc.FieldsAndPropertiesSTCTest
-import org.codehaus.groovy.control.CompilerConfiguration
-import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
 
+@Mixin(StaticCompilationTestSupport)
 class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCTest {
     @Override
     protected void setUp() {
         super.setUp()
-        config = new CompilerConfiguration()
-        config.addCompilationCustomizers(new ASTTransformationCustomizer(CompileStatic))
-        configure()
-        shell = new GroovyShell(config)
+        extraSetup()
     }
     
     void testMapGetAt() {

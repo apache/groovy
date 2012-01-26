@@ -15,9 +15,6 @@
  */
 package org.codehaus.groovy.classgen.asm.sc
 
-import groovy.transform.CompileStatic
-import org.codehaus.groovy.control.CompilerConfiguration
-import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
 import groovy.transform.stc.ConstructorsSTCTest
 
 /**
@@ -25,17 +22,14 @@ import groovy.transform.stc.ConstructorsSTCTest
  *
  * @author Cedric Champeau
  */
+@Mixin(StaticCompilationTestSupport)
 class StaticCompileConstructorsTest extends ConstructorsSTCTest {
 
     @Override
     protected void setUp() {
         super.setUp()
-        config = new CompilerConfiguration()
-        config.addCompilationCustomizers(new ASTTransformationCustomizer(CompileStatic))
-        configure()
-        shell = new GroovyShell(config)
+        extraSetup()
     }
-
 
 }
 
