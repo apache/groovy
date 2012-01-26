@@ -38,6 +38,5 @@ class TypeInferenceStaticCompileTest extends TypeInferenceSTCTest {
     void testCallMethodInWithContext() {
         // todo: fix
     }
-
 }
 
