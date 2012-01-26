@@ -697,30 +697,36 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         // collect every variable expression used in the loop body
         final Map<VariableExpression, ClassNode> varOrigType = new HashMap<VariableExpression, ClassNode>();
         forLoop.getLoopBlock().visit(new VariableExpressionTypeMemoizer(varOrigType));
-        
+
         // visit body
         Map<VariableExpression, List<ClassNode>> oldTracker = pushAssignmentTracking();
-        final ClassNode collectionType = getType(forLoop.getCollectionExpression());
-        ClassNode componentType = collectionType.getComponentType();
-        if (componentType == null) {
-            if (collectionType.implementsInterface(ITERABLE_TYPE)) {
-                ClassNode intf = GenericsUtils.parameterizeInterfaceGenerics(collectionType, ITERABLE_TYPE);
-                GenericsType[] genericsTypes = intf.getGenericsTypes();
-                componentType = genericsTypes[0].getType();
-            } else if (collectionType == ClassHelper.STRING_TYPE) {
-                componentType = ClassHelper.Character_TYPE;
-            } else {
-                componentType = ClassHelper.OBJECT_TYPE;
-            }
-        }
-        forLoopVariableTypes.put(forLoop.getVariable(), componentType);
-        if (!checkCompatibleAssignmentTypes(forLoop.getVariableType(), componentType)) {
-            addStaticTypeError("Cannot loop with element of type " + forLoop.getVariableType() + " with collection of type " + collectionType, forLoop);
-        }
-        try {
+        Expression collectionExpression = forLoop.getCollectionExpression();
+        if (collectionExpression instanceof ClosureListExpression) {
+            // for (int i=0; i<...; i++) style loop
             super.visitForLoop(forLoop);
-        } finally {
-            forLoopVariableTypes.remove(forLoop.getVariable());
+        } else {
+            final ClassNode collectionType = getType(collectionExpression);
+            ClassNode componentType = collectionType.getComponentType();
+            if (componentType == null) {
+                if (collectionType.implementsInterface(ITERABLE_TYPE)) {
+                    ClassNode intf = GenericsUtils.parameterizeInterfaceGenerics(collectionType, ITERABLE_TYPE);
+                    GenericsType[] genericsTypes = intf.getGenericsTypes();
+                    componentType = genericsTypes[0].getType();
+                } else if (collectionType == ClassHelper.STRING_TYPE) {
+                    componentType = ClassHelper.Character_TYPE;
+                } else {
+                    componentType = ClassHelper.OBJECT_TYPE;
+                }
+            }
+            forLoopVariableTypes.put(forLoop.getVariable(), componentType);
+            if (!checkCompatibleAssignmentTypes(forLoop.getVariableType(), componentType)) {
+                addStaticTypeError("Cannot loop with element of type " + forLoop.getVariableType() + " with collection of type " + collectionType, forLoop);
+            }
+            try {
+                super.visitForLoop(forLoop);
+            } finally {
+                forLoopVariableTypes.remove(forLoop.getVariable());
+            }
         }
         boolean typeChanged = isSecondPassNeededForControlStructure(varOrigType, oldTracker);
         if (typeChanged) visitForLoop(forLoop);
