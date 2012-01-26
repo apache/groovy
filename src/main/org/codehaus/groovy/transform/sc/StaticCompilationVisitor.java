@@ -137,9 +137,12 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
     @Override
     public void visitForLoop(final ForStatement forLoop) {
         super.visitForLoop(forLoop);
-        final ClassNode collectionType = getType(forLoop.getCollectionExpression());
-        ClassNode componentType = inferLoopElementType(collectionType);
-        forLoop.getVariable().setType(componentType);
+        Expression collectionExpression = forLoop.getCollectionExpression();
+        if (!(collectionExpression instanceof ClosureListExpression)) {
+            final ClassNode collectionType = getType(forLoop.getCollectionExpression());
+            ClassNode componentType = inferLoopElementType(collectionType);
+            forLoop.getVariable().setType(componentType);
+        }
     }
 
     @Override
