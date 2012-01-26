@@ -684,10 +684,35 @@ public abstract class StaticTypeCheckingSupport {
 
     static int getDistance(final ClassNode receiver, final ClassNode compare) {
         if (receiver.equals(compare)||receiver == UNKNOWN_PARAMETER_TYPE) return 0;
-        if (compare.isInterface() && receiver.implementsInterface(compare)) return 1;
+        if (compare.isInterface() && receiver.implementsInterface(compare)) {
+            int dist = getMaximumInterfaceDistance(receiver, compare);
+            return dist;
+        }
         ClassNode superClass = compare.getSuperClass();
         if (superClass ==null) return 2;
         return 1+getDistance(receiver, superClass);
+    }
+
+    private static int getMaximumInterfaceDistance(ClassNode c, ClassNode interfaceClass) {
+        // -1 means a mismatch
+        if (c == null) return -1;
+        // 0 means a direct match
+        if (c.equals(interfaceClass)) return 0;
+        ClassNode[] interfaces = c.getInterfaces();
+        int max = -1;
+        for (ClassNode anInterface : interfaces) {
+            int sub = getMaximumInterfaceDistance(anInterface, interfaceClass);
+            // we need to keep the -1 to track the mismatch, a +1
+            // by any means could let it look like a direct match
+            // we want to add one, because there is an interface between
+            // the interface we search for and the interface we are in.
+            if (sub != -1) sub++;
+            // we are interested in the longest path only
+            max = Math.max(max, sub);
+        }
+        // we do not add one for super classes, only for interfaces
+        int superClassMax = getMaximumInterfaceDistance(c.getSuperClass(), interfaceClass);
+        return Math.max(max, superClassMax);
     }
 
     public static List<MethodNode> findDGMMethodsByNameAndArguments(final ClassNode receiver, final String name, final ClassNode[] args) {
