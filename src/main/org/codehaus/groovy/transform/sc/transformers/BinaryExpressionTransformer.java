@@ -18,7 +18,13 @@ package org.codehaus.groovy.transform.sc.transformers;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.syntax.Token;
+import org.codehaus.groovy.syntax.Types;
+import org.codehaus.groovy.transform.sc.ListOfExpressionsExpression;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport;
+
+import java.util.Iterator;
+import java.util.List;
+
 import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.*;
 
 public class BinaryExpressionTransformer {
@@ -28,10 +34,9 @@ public class BinaryExpressionTransformer {
         this.staticCompilationTransformer = staticCompilationTransformer;
     }
 
-    Expression transformBinaryExpression(final Expression expr) {
-        Object[] list = (Object[]) expr.getNodeMetaData(BINARY_EXP_TARGET);
+    Expression transformBinaryExpression(final BinaryExpression bin) {
+        Object[] list = (Object[]) bin.getNodeMetaData(BINARY_EXP_TARGET);
         if (list != null) {
-            BinaryExpression bin = (BinaryExpression) expr;
             Token operation = bin.getOperation();
             boolean isAssignment = StaticTypeCheckingSupport.isAssignment(operation.getType());
             MethodCallExpression call;
@@ -59,7 +64,28 @@ public class BinaryExpressionTransformer {
             // the method represents the operation type only, and we must add an assignment
             return new BinaryExpression(left, Token.newSymbol("=", operation.getStartLine(), operation.getStartColumn()), call);
         }
-        return staticCompilationTransformer.superTransform(expr);
+        if (bin.getOperation().getType() == Types.EQUAL && bin.getLeftExpression() instanceof TupleExpression && bin.getRightExpression() instanceof ListExpression) {
+            // multiple assignment
+            ListOfExpressionsExpression cle = new ListOfExpressionsExpression();
+            boolean isDeclaration = bin instanceof DeclarationExpression;
+            List<Expression> leftExpressions = ((TupleExpression) bin.getLeftExpression()).getExpressions();
+            List<Expression> rightExpressions = ((ListExpression) bin.getRightExpression()).getExpressions();
+            Iterator<Expression> leftIt = leftExpressions.iterator();
+            Iterator<Expression> rightIt = rightExpressions.iterator();
+            while (leftIt.hasNext()) {
+                Expression left = leftIt.next();
+                if (rightIt.hasNext()) {
+                    Expression right = rightIt.next();
+                    BinaryExpression bexp = isDeclaration?
+                            new DeclarationExpression(left, bin.getOperation(), right):
+                            new BinaryExpression(left, bin.getOperation(), right);
+                    bexp.setSourcePosition(right);
+                    cle.addExpression(bexp);
+                }
+            }
+            return cle;
+        }
+        return staticCompilationTransformer.superTransform(bin);
     }
 
 }

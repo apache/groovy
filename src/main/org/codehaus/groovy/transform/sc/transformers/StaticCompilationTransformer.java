@@ -87,7 +87,7 @@ public class StaticCompilationTransformer extends ClassCodeExpressionTransformer
             return staticMethodCallExpressionTransformer.transformStaticMethodCallExpression((StaticMethodCallExpression) expr);
         }
         if (expr instanceof BinaryExpression) {
-            return binaryExpressionTransformer.transformBinaryExpression(expr);
+            return binaryExpressionTransformer.transformBinaryExpression((BinaryExpression)expr);
         }
         if (expr instanceof MethodCallExpression) {
             return methodCallExpressionTransformer.transformMethodCallExpression((MethodCallExpression) expr);
