@@ -106,13 +106,20 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         TypeChooser typeChooser = controller.getTypeChooser();
         ClassNode classNode = controller.getClassNode();
         ClassNode receiverType = typeChooser.resolveType(receiver, classNode);
-        if (makeGetPublicField(receiver, receiverType, methodName, implicitThis, samePackages(receiverType.getPackageName(), classNode.getPackageName()))) return;
-        if (makeGetPropertyWithGetter(receiver, receiverType, methodName)) return;
-
+        
+        String property = methodName;
+        if (classNode.getNodeMetaData(StaticCompilationMetadataKeys.WITH_CLOSURE)!=null && "owner".equals(property)) {
+            // the current class node is a closure used in a "with"
+            property = "delegate";
+        }
+        
+        if (makeGetPublicField(receiver, receiverType, property, implicitThis, samePackages(receiverType.getPackageName(), classNode.getPackageName()))) return;
+        if (makeGetPropertyWithGetter(receiver, receiverType, property)) return;
+        
         MethodCallExpression call = new MethodCallExpression(
                 receiver,
                 "getProperty",
-                new ArgumentListExpression(new ConstantExpression(methodName))
+                new ArgumentListExpression(new ConstantExpression(property))
         );
         call.setMethodTarget(GROOVYOBJECT_GETPROPERTY_METHOD);
         call.visit(controller.getAcg());

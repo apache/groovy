@@ -30,13 +30,5 @@ class TypeInferenceStaticCompileTest extends TypeInferenceSTCTest {
         super.setUp()
         extraSetup()
     }
-
-    void testCallMethodInWithContextAndShadowing() {
-        // todo: fix
-    }
-
-    void testCallMethodInWithContext() {
-        // todo: fix
-    }
 }
 

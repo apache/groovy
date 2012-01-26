@@ -100,7 +100,7 @@ public abstract class StaticTypeCheckingSupport {
      * @param callArguments arguments of the method
      * @return true if the name is "with" and arguments consist of a single closure
      */
-    static boolean isWithCall(final String name, final Expression callArguments) {
+    public static boolean isWithCall(final String name, final Expression callArguments) {
         boolean isWithCall = "with".equals(name) && callArguments instanceof ArgumentListExpression;
         if (isWithCall) {
             ArgumentListExpression argList = (ArgumentListExpression) callArguments;

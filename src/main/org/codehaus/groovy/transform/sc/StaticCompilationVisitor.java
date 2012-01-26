@@ -22,6 +22,7 @@ import org.codehaus.groovy.classgen.asm.InvocationWriter;
 import org.codehaus.groovy.classgen.asm.TypeChooser;
 import org.codehaus.groovy.classgen.asm.sc.StaticTypesTypeChooser;
 import org.codehaus.groovy.control.SourceUnit;
+import org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor;
 import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 import org.codehaus.groovy.transform.stc.TypeCheckerPluginFactory;
@@ -97,6 +98,13 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
 
         if (call.getMethodTarget()==null && call.getLineNumber()>0) {
             addError("Target method for method call expression hasn't been set", call);
+        }
+
+        // add special metadata on closure if the call is a "with" call
+        if (StaticTypeCheckingSupport.isWithCall(call.getMethodAsString(), call.getArguments())) {
+            // no check is required, ensured by isWithCall
+            ClosureExpression closure = (ClosureExpression) ((ArgumentListExpression) call.getArguments()).getExpression(0);
+            closure.setNodeMetaData(StaticCompilationMetadataKeys.WITH_CLOSURE, Boolean.TRUE);
         }
     }
 

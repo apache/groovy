@@ -25,6 +25,7 @@ import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.classgen.asm.ClosureWriter;
 import org.codehaus.groovy.classgen.asm.WriterController;
 import org.codehaus.groovy.control.SourceUnit;
+import org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys;
 import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 
 import java.util.List;
@@ -51,6 +52,7 @@ public class StaticTypesClosureWriter extends ClosureWriter {
         for (MethodNode method : methods) {
             visitor.visitMethod(method);
         }
+        closureClass.setNodeMetaData(StaticCompilationMetadataKeys.WITH_CLOSURE, expression.getNodeMetaData(StaticCompilationMetadataKeys.WITH_CLOSURE));
         return closureClass;
     }
     

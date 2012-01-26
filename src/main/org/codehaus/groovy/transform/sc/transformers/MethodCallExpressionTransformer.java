@@ -19,6 +19,7 @@ import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.syntax.Token;
+import org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor;
 import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 
 import java.util.List;
