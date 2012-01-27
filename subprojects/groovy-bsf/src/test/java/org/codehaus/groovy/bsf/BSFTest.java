@@ -172,8 +172,8 @@ public class BSFTest extends TestCase {
 
     // TODO don't rely on scripts outside this subproject?
     public void testExecFile() throws Exception {
-        execScript("../../src/test/groovy/script/MapFromList.groovy");
-        execScript("../../src/test/groovy/script/AtomTestScript.groovy");
+        execScript("src/test/groovy/script/MapFromList.groovy");
+        execScript("src/test/groovy/script/AtomTestScript.groovy");
     }
 
     protected void execScript(String fileName) throws Exception {
