@@ -15,8 +15,10 @@
  */
 package org.codehaus.groovy.transform.sc.transformers;
 
+import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.stmt.Statement;
 
 public class ClosureExpressionTransformer {
     private final StaticCompilationTransformer transformer;
@@ -26,8 +28,17 @@ public class ClosureExpressionTransformer {
     }
 
     Expression transformClosureExpression(final ClosureExpression expr) {
-        transformer.visitClassCodeContainer(expr.getCode());
-        return expr;
+        Parameter[] parameters = expr.getParameters();        
+        if (parameters!=null) {
+            for (Parameter parameter : parameters) {
+                if (parameter.hasInitialExpression()) {
+                    parameter.setInitialExpression(transformer.transform(parameter.getInitialExpression()));
+                }
+            }
+        }
+        Statement code = expr.getCode();
+        transformer.visitClassCodeContainer(code);
+        return transformer.superTransform(expr);
     }
 
 }

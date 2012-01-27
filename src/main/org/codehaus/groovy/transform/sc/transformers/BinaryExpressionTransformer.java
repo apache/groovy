@@ -83,7 +83,7 @@ public class BinaryExpressionTransformer {
                     cle.addExpression(bexp);
                 }
             }
-            return cle;
+            return staticCompilationTransformer.transform(cle);
         }
         return staticCompilationTransformer.superTransform(bin);
     }

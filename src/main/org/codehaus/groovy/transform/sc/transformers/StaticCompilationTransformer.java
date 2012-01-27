@@ -120,10 +120,4 @@ public class StaticCompilationTransformer extends ClassCodeExpressionTransformer
         }
         classNode = prec;
     }
-
-    @Override
-    public void visitClosureExpression(final ClosureExpression expression) {
-        super.visitClosureExpression(expression);
-    }
-
 }

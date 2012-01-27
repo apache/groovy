@@ -19,7 +19,6 @@ import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.syntax.Token;
-import org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor;
 import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 
 import java.util.List;
@@ -77,7 +76,7 @@ public class MethodCallExpressionTransformer {
                                     indexExpr
                             );
                             binaryExpression.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, componentType);
-                            return binaryExpression;
+                            return staticCompilationTransformer.transform(binaryExpression);
                         }
                     }
                 }
@@ -102,7 +101,7 @@ public class MethodCallExpressionTransformer {
                                     Token.newSymbol("=", objExpr.getLineNumber(), objExpr.getColumnNumber()),
                                     objExpr
                             );
-                            return assignment;
+                            return staticCompilationTransformer.transform(assignment);
                         }
                     }
                 }

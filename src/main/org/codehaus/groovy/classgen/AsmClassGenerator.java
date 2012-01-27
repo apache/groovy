@@ -522,13 +522,7 @@ public class AsmClassGenerator extends ClassGenerator {
     
     public void visitDeclarationExpression(DeclarationExpression expression) {
         onLineNumber(expression, "visitDeclarationExpression: \"" + expression.getText() + "\"");
-        try {
-            controller.getBinaryExpHelper().evaluateEqual(expression,true);
-        } catch (Throwable e) {
-            System.err.println("expression = " + expression.getText());
-            e.printStackTrace();
-
-        }
+        controller.getBinaryExpHelper().evaluateEqual(expression,true);
     }
 
     public void visitBinaryExpression(BinaryExpression expression) {

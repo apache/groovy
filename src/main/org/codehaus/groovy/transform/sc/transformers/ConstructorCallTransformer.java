@@ -56,7 +56,7 @@ public class ConstructorCallTransformer {
                         ClassNode declaringClass = node.getDeclaringClass();
                         for (ConstructorNode constructorNode : declaringClass.getDeclaredConstructors()) {
                             if (constructorNode == node) {
-                                return expr;
+                                return staticCompilationTransformer.superTransform(expr);
                             }
                         }
                         // replace this call with a call to <init>() + appropriate setters
@@ -77,10 +77,12 @@ public class ConstructorCallTransformer {
                         for (MapEntryExpression entryExpression : map.getMapEntryExpressions()) {
                             int line = entryExpression.getLineNumber();
                             int col = entryExpression.getColumnNumber();
+                            Expression keyExpression = staticCompilationTransformer.transform(entryExpression.getKeyExpression());
+                            Expression valueExpression = staticCompilationTransformer.transform(entryExpression.getValueExpression());
                             BinaryExpression bexp = new BinaryExpression(
-                                    new PropertyExpression(vexp, entryExpression.getKeyExpression()),
+                                    new PropertyExpression(vexp, keyExpression),
                                     Token.newSymbol("=", line, col),
-                                    entryExpression.getValueExpression()
+                                    valueExpression
                             );
                             stmt.addStatement(new ExpressionStatement(bexp));
                         }
@@ -96,6 +98,6 @@ public class ConstructorCallTransformer {
             }
 
         }
-        return expr;
+        return staticCompilationTransformer.superTransform(expr);
     }
 }
