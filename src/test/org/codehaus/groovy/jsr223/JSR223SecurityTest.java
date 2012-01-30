@@ -23,7 +23,9 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * Test contributed by Tiago Fernandez, for GROOVY-3946
+ * Test for GROOVY-3946 and GROOVY-5255.
+ *
+ * @author Tiago Fernandez
  */
 public class JSR223SecurityTest {
 
