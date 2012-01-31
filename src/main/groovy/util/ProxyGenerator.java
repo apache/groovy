@@ -31,8 +31,12 @@ import java.util.*;
  *
  * @author Paul King
  * @author Guillaume Laforge
+ * @author Cedric Champeau
  */
 public class ProxyGenerator {
+    private static final Class[] EMPTY_INTERFACE_ARRAY = new Class[0];
+    private static final Map<Object,Object> EMPTY_CLOSURE_MAP = Collections.emptyMap();
+
     public static final ProxyGenerator INSTANCE = new ProxyGenerator();
 
     static {
@@ -132,119 +136,19 @@ public class ProxyGenerator {
     }
 
     public GroovyObject instantiateAggregate(Map closureMap, List<Class> interfaces, Class clazz, Object[] constructorArgs) {
-        Map map = new HashMap();
-        if (closureMap != null) {
-            map = closureMap;
-        }
-        List<Class> interfacesToImplement;
-        if (interfaces == null) {
-            interfacesToImplement = new ArrayList<Class>();
-        } else {
-            interfacesToImplement = interfaces;
-        }
-        Class baseClass = GroovyObjectSupport.class;
-        if (clazz != null) {
-            baseClass = clazz;
-        }
-        boolean hasArgs = constructorArgs != null && constructorArgs.length > 0;
-        String name = shortName(baseClass.getName()) + "_groovyProxy";
-        StringBuffer buffer = new StringBuffer();
-
-        // add class header and fields
-        buffer.append("class ").append(name);
-        if (clazz != null) {
-            buffer.append(" extends ").append(baseClass.getName());
-        }
-        for (int i = 0; i < interfacesToImplement.size(); i++) {
-            Class thisInterface = interfacesToImplement.get(i);
-            if (i == 0) {
-                buffer.append(" implements ");
+        @SuppressWarnings("unchecked")
+        Map<Object,Object> map = closureMap!=null?closureMap: EMPTY_CLOSURE_MAP;
+        Class[] intfs = interfaces!=null? interfaces.toArray(new Class[interfaces.size()]): EMPTY_INTERFACE_ARRAY;
+        Class base = clazz;
+        if (base==null) {
+            if (intfs.length>0) {
+                base=intfs[0];
             } else {
-                buffer.append(", ");
-            }
-            buffer.append(thisInterface.getName());
-        }
-        buffer.append(" {\n").append("    private closureMap\n    ");
-
-        // add constructor
-        buffer.append(name).append("(map");
-        if (hasArgs) {
-            buffer.append(", args");
-        }
-        buffer.append(") {\n");
-        buffer.append("        super(");
-        if (hasArgs) {
-            buffer.append("*args");
-        }
-        buffer.append(")\n");
-        buffer.append("        this.closureMap = map\n");
-        buffer.append("    }\n");
-
-        // add overwriting methods
-        Map<String, Method> selectedMethods = new HashMap<String, Method>();
-        List<Method> publicAndProtectedMethods = getInheritedMethods(baseClass, new ArrayList<Method>());
-        boolean closureIndicator = map.containsKey("*");
-        for (Method method : publicAndProtectedMethods) {
-            if (method.getName().indexOf('$') != -1
-                    || Modifier.isFinal(method.getModifiers())
-                    || (!"toString".equals(method.getName()) && ConversionHandler.isCoreObjectMethod(method))
-                    || containsEquivalentMethod(selectedMethods.values(), method))
-                continue;
-            if (map.containsKey(method.getName()) || closureIndicator) {
-                selectedMethods.put(method.getName(), method);
-                addOverridingMapCall(buffer, method, closureIndicator);
-            } else if (Modifier.isAbstract(method.getModifiers())) {
-                selectedMethods.put(method.getName(), method);
-                addMapOrDummyCall(map, buffer, method);
+                base = Object.class;
             }
         }
-
-        // add interface methods
-        List<Method> interfaceMethods = new ArrayList<Method>();
-        for (Class thisInterface : interfacesToImplement) {
-            getInheritedMethods(thisInterface, interfaceMethods);
-        }
-        for (Method method : interfaceMethods) {
-            if (!containsEquivalentMethod(publicAndProtectedMethods, method)) {
-                selectedMethods.put(method.getName(), method);
-                addMapOrDummyCall(map, buffer, method);
-            }
-        }
-
-        // add leftover methods from the map
-        for (Object o : map.keySet()) {
-            String methodName = (String) o;
-            if (methodName.indexOf('$') != -1 || methodName.indexOf('*') != -1)
-                continue;
-            if (selectedMethods.keySet().contains(methodName)) continue;
-            addNewMapCall(buffer, methodName);
-        }
-
-        // end class
-
-        buffer.append("}\n").append("new ").append(name);
-        buffer.append("(map");
-        if (hasArgs) {
-            buffer.append(", constructorArgs");
-        }
-        buffer.append(")");
-
-        Binding binding = new Binding();
-        binding.setVariable("map", map);
-        binding.setVariable("constructorArgs", constructorArgs);
-        ClassLoader cl = override != null ? override : baseClass.getClassLoader();
-        if (clazz == null && interfacesToImplement.size() > 0) {
-            Class c = interfacesToImplement.get(0);
-            cl = c.getClassLoader();
-        }
-        GroovyShell shell = new GroovyShell(cl, binding);
-        if (debug)
-            System.out.println("proxy source:\n------------------\n" + buffer.toString() + "\n------------------");
-        try {
-            return (GroovyObject) shell.evaluate(buffer.toString());
-        } catch (MultipleCompilationErrorsException err) {
-            throw new GroovyRuntimeException("Error creating proxy: " + err.getMessage());
-        }
+        ProxyGeneratorAdapter adapter = new ProxyGeneratorAdapter(map, base, intfs, base.getClassLoader(), emptyMethods);
+        return adapter.proxy(constructorArgs);
     }
 
     public GroovyObject instantiateDelegate(Object delegate) {

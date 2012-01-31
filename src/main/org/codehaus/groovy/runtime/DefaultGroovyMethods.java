@@ -8405,9 +8405,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             return asType((Object) map, clazz);
         } catch (GroovyCastException ce) {
             try {
-//                return (T) ProxyGenerator.INSTANCE.instantiateAggregateFromBaseClass(map, clazz);
-                ProxyGeneratorAdapter adapter = new ProxyGeneratorAdapter(map, clazz, null);
-                return (T) adapter.proxy();
+                return (T) ProxyGenerator.INSTANCE.instantiateAggregateFromBaseClass(map, clazz);
             } catch (GroovyRuntimeException cause) {
                 throw new GroovyCastException("Error casting map to " + clazz.getName() +
                         ", Reason: " + cause.getMessage());
