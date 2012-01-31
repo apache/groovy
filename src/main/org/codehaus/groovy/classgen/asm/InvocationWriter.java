@@ -312,6 +312,7 @@ public class InvocationWriter {
     private void invokeClosure(Expression arguments, String methodName) {
         AsmClassGenerator acg = controller.getAcg();
         acg.visitVariableExpression(new VariableExpression(methodName));
+        controller.getOperandStack().box();
         if (arguments instanceof TupleExpression) {
             arguments.visit(acg);
         } else {
