@@ -24,7 +24,6 @@ import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.objectweb.asm.*;
 import org.objectweb.asm.commons.EmptyVisitor;
 import org.objectweb.asm.util.CheckClassAdapter;
-import org.objectweb.asm.util.TraceMethodVisitor;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -35,10 +34,6 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.LockSupport;
-import java.util.concurrent.locks.ReentrantLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * A proxy generator responsible for mapping a map of closures to a class implementing a list of interfaces. For
@@ -57,12 +52,12 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * @author Cedric Champeau
  */
 public class ProxyGeneratorAdapter extends ClassAdapter implements Opcodes {
-    private static final Map<String, DelegateClosure> EMPTY_CLOSURE_MAP = Collections.emptyMap();
+    private static final Map<String, Boolean> EMPTY_DELEGATECLOSURE_MAP = Collections.emptyMap();
+
+    private static final String CLOSURES_MAP_FIELD = "$closures$delegate$map";
 
     private final static AtomicLong pxyCounter = new AtomicLong();
     private static final Set<String> GROOVYOBJECT_METHODS;
-    private static final String WILDCARD = "*";
-    private static final String WILDCARD_FIELD = "$wildcard";
     private static final Object[] EMPTY_ARGS = new Object[0];
 
     static {
@@ -77,19 +72,17 @@ public class ProxyGeneratorAdapter extends ClassAdapter implements Opcodes {
     private final InnerLoader loader;
     private final String proxyName;
     private final List<Class> classList;
-    private final Map<String, DelegateClosure> closureMap;
-    private boolean addGroovyObjectSupport = false;
+    private final Map<String, Boolean> delegatedClosures;
 
     // if emptyBody == true, then we generate an empty body instead throwing error on unimplemented methods
     private final boolean emptyBody;
     private final boolean hasWildcard;
     
-    private final Set<Object> visitedMethods = new LinkedHashSet<Object>();
+    private final Set<Object> visitedMethods;
     
     // cached class
     private final Class cachedClass;
     private final Constructor cachedNoArgConstructor;
-    private final Object[] cachedClosures;
 
     /**
      * Construct a proxy generator. This generator is used when we need to create a proxy object for a class or an
@@ -102,23 +95,15 @@ public class ProxyGeneratorAdapter extends ClassAdapter implements Opcodes {
      */
     public ProxyGeneratorAdapter(final Map<Object, Object> closureMap, final Class superClass, final Class[] interfaces, ClassLoader proxyLoader, boolean emptyBody) {
         super(new ClassWriter(0));
-        this.closureMap = closureMap.isEmpty()?EMPTY_CLOSURE_MAP:new TreeMap<String, DelegateClosure>();
+        this.visitedMethods = new LinkedHashSet<Object>();
+        this.delegatedClosures = closureMap.isEmpty()? EMPTY_DELEGATECLOSURE_MAP :new HashMap<String, Boolean>();
         boolean wildcard = false;
         for (Map.Entry<Object, Object> entry : closureMap.entrySet()) {
-            final Object value = entry.getValue();
-            Closure cl = value instanceof Closure?(Closure)value:new Closure(null) {
-                @Override
-                public Object call(final Object... args) {
-                    // if the supplied value in the map is not a closure, then this value is wrapped in a closure
-                    return value;
-                }
-            };
             String name = entry.getKey().toString();
             if ("*".equals(name)) {
-                name= WILDCARD_FIELD;
                 wildcard = true;
             }
-            this.closureMap.put(findFieldName(entry.getKey()), new DelegateClosure(name,cl));
+            this.delegatedClosures.put(name, Boolean.FALSE);
         }
         this.hasWildcard = wildcard;
         // a proxy is supposed to be a concrete class, so it cannot extend an interface.
@@ -142,30 +127,17 @@ public class ProxyGeneratorAdapter extends ClassAdapter implements Opcodes {
         ClassReader cr = createClassVisitor(Object.class);
         cr.accept(this, 0);
         byte[] b = writer.toByteArray();
-//        CheckClassAdapter.verify(new ClassReader(b), true, new PrintWriter(System.err) );
+//        CheckClassAdapter.verify(new ClassReader(b), true, new PrintWriter(System.err));
         cachedClass = loader.defineClass(proxyName, b);
         // cache no-arg constructor
-        Class[] args = new Class[closureMap.size()];
-        for (int i = 0; i < closureMap.size(); i++) {
-            args[i] = Closure.class;
-        }
+        Class[] args = new Class[] { Map.class };
         Constructor constructor;
-        Object[] values;
         try {
             constructor = cachedClass.getConstructor(args);
-            int size = this.closureMap.size();
-            Iterator<DelegateClosure> delegates = this.closureMap.values().iterator();
-            values = new Object[size];
-            for (int i = 0; i < size; i++) {
-                DelegateClosure delegate = delegates.next();
-                values[i] = delegate.closure;
-            }
         } catch (NoSuchMethodException e) {
             constructor = null;
-            values = null;
         }
         cachedNoArgConstructor = constructor;
-        cachedClosures = values;
     }
 
     private InnerLoader findClassLoader(Class clazz) {
@@ -173,7 +145,7 @@ public class ProxyGeneratorAdapter extends ClassAdapter implements Opcodes {
         if (cl==null) cl = this.getClass().getClassLoader();
         return new InnerLoader(cl);
     }
-
+   
     /**
      * Creates a visitor which will be used as a base class for initiating the visit.
      * It is not necessary that the class is the superclass, any will do, as long as
@@ -199,10 +171,10 @@ public class ProxyGeneratorAdapter extends ClassAdapter implements Opcodes {
         for (Class extraInterface : classList) {
             if (extraInterface.isInterface()) interfacesSet.add(BytecodeHelper.getClassInternalName(extraInterface));
         }
-        addGroovyObjectSupport = !GroovyObject.class.isAssignableFrom(superClass);
+        final boolean addGroovyObjectSupport = !GroovyObject.class.isAssignableFrom(superClass);
         if (addGroovyObjectSupport) interfacesSet.add("groovy/lang/GroovyObject");
         super.visit(V1_5, ACC_PUBLIC, proxyName, signature, BytecodeHelper.getClassInternalName(superClass), interfacesSet.toArray(new String[interfacesSet.size()]));
-        addClosureDelegates();
+        addClosureDelegateField();
         if (addGroovyObjectSupport) {
             createGroovyObjectSupport();
         }
@@ -254,11 +226,14 @@ public class ProxyGeneratorAdapter extends ClassAdapter implements Opcodes {
 
         // Ultimately, methods can be available in the closure map which are not defined by the superclass
         // nor the interfaces
-        for (Map.Entry<String, DelegateClosure> entry : closureMap.entrySet()) {
-            DelegateClosure delegate = entry.getValue();
-            if (!delegate.visited) {
-                // generate a new method
-                visitMethod(ACC_PUBLIC, delegate.name, "([Ljava/lang/Object;)Ljava/lang/Object;", null, null);
+        for (Map.Entry<String, Boolean> entry : delegatedClosures.entrySet()) {
+            Boolean visited = entry.getValue();
+            if (!visited) {
+                String name = entry.getKey();
+                if (!"*".equals(name)) {
+                    // generate a new method
+                    visitMethod(ACC_PUBLIC, name, "([Ljava/lang/Object;)Ljava/lang/Object;", null, null);
+                }
             }
         }
     }
@@ -372,15 +347,8 @@ public class ProxyGeneratorAdapter extends ClassAdapter implements Opcodes {
     /**
      * Creates delegate fields for every closure defined in the map.
      */
-    private void addClosureDelegates() {
-        for (String fieldName : closureMap.keySet()) {
-            visitField(ACC_PRIVATE + ACC_FINAL, fieldName, "Lgroovy/lang/Closure;", null, null);
-        }
-    }
-
-    private static String findFieldName(final Object keyObject) {
-        if ("*".equals(keyObject.toString())) return "$delegate$closure$"+WILDCARD_FIELD;
-        return "$delegate$closure$" + keyObject.toString();
+    private void addClosureDelegateField() {
+        visitField(ACC_PRIVATE + ACC_FINAL, CLOSURES_MAP_FIELD, "Ljava/util/Map;", null, null);
     }
 
     private static String proxyName(String name) {
@@ -393,25 +361,21 @@ public class ProxyGeneratorAdapter extends ClassAdapter implements Opcodes {
     public MethodVisitor visitMethod(final int access, final String name, final String desc, final String signature, final String[] exceptions) {
         Object key = Arrays.asList(name, desc);
         if (visitedMethods.contains(key)) return new EmptyVisitor();
-        if (Modifier.isPrivate(access) || Modifier.isNative(access)) {
+        if (Modifier.isPrivate(access) || Modifier.isNative(access) || ((access&ACC_SYNTHETIC)!=0)) {
             // do not generate bytecode for private methods
             return new EmptyVisitor();
         }
         int accessFlags = access;
-        String fieldName = findFieldName(name);
         visitedMethods.add(key);
-        if ((closureMap.containsKey(fieldName) || (!"<init>".equals(name) && hasWildcard)) && !Modifier.isStatic(access) && !Modifier.isFinal(access)) {
-            DelegateClosure delegate = closureMap.get(fieldName);
-            if (delegate==null) {
-                fieldName = findFieldName(WILDCARD);
-                delegate = closureMap.get(fieldName);
+        if ((delegatedClosures.containsKey(name) || (!"<init>".equals(name) && hasWildcard)) && !Modifier.isStatic(access) && !Modifier.isFinal(access)) {
+            if (!GROOVYOBJECT_METHODS.contains(name)) {
+                delegatedClosures.put(name, Boolean.TRUE);
+                if (Modifier.isAbstract(access)) {
+                    // prevents the proxy from being abstract
+                    accessFlags -= ACC_ABSTRACT;
+                }
+                return makeDelegateToClosureCall(name, desc, signature, exceptions, accessFlags);
             }
-            delegate.visited = true;
-            if (Modifier.isAbstract(access)) {
-                // prevents the proxy from being abstract
-                accessFlags -= ACC_ABSTRACT;
-            }
-            return makeDelegateToClosureCall(name, desc, signature, exceptions, accessFlags, fieldName);
         } else if ("<init>".equals(name) && (Modifier.isPublic(access) || Modifier.isProtected(access))) {
             return createConstructor(access, name, desc, signature, exceptions);
         } else if (Modifier.isAbstract(access) && !GROOVYOBJECT_METHODS.contains(name)) {
@@ -459,9 +423,7 @@ public class ProxyGeneratorAdapter extends ClassAdapter implements Opcodes {
         for (Type arg : args) {
             newDesc.append(arg.getDescriptor());
         }
-        for (int i = 0; i < closureMap.size(); i++) {
-            newDesc.append("Lgroovy/lang/Closure;");
-        }
+        newDesc.append("Ljava/util/Map;"); // the closure map
         newDesc.append(")V");
         MethodVisitor mv = super.visitMethod(access, name, newDesc.toString(), signature, exceptions);
         mv.visitCode();
@@ -475,24 +437,22 @@ public class ProxyGeneratorAdapter extends ClassAdapter implements Opcodes {
             }
         }
         mv.visitMethodInsn(INVOKESPECIAL, BytecodeHelper.getClassInternalName(superClass), "<init>", desc);
-        initializeDelegates(mv, args.length);
+        initializeDelegate(mv, args.length);
         mv.visitInsn(RETURN);
-        int max = 1 + args.length + closureMap.size();
+        int max = args.length + 2;
         mv.visitMaxs(max, max);
         mv.visitEnd();
         return new EmptyVisitor();
     }
 
-    private void initializeDelegates(final MethodVisitor mv, int argStart) {
+    private void initializeDelegate(final MethodVisitor mv, int argStart) {
         int idx = argStart+1;
-        for (String name : closureMap.keySet()) {
-            mv.visitIntInsn(ALOAD, 0); // this
-            mv.visitIntInsn(ALOAD, idx++); // constructor arg n
-            mv.visitFieldInsn(PUTFIELD, proxyName, name, "Lgroovy/lang/Closure;");
-        }
+        mv.visitIntInsn(ALOAD, 0); // this
+        mv.visitIntInsn(ALOAD, idx); // constructor arg n is the closure map
+        mv.visitFieldInsn(PUTFIELD, proxyName, CLOSURES_MAP_FIELD, "Ljava/util/Map;");
     }
 
-    private MethodVisitor makeDelegateToClosureCall(final String name, final String desc, final String signature, final String[] exceptions, final int accessFlags, final String fieldName) {
+    private MethodVisitor makeDelegateToClosureCall(final String name, final String desc, final String signature, final String[] exceptions, final int accessFlags) {
         MethodVisitor mv = super.visitMethod(accessFlags, name, desc, signature, exceptions);
 //        TraceMethodVisitor tmv = new TraceMethodVisitor(mv);
 //        mv = tmv;
@@ -525,9 +485,26 @@ public class ProxyGeneratorAdapter extends ClassAdapter implements Opcodes {
             mv.visitInsn(AASTORE); // store value into array
         }
         mv.visitVarInsn(ASTORE, arrayStore); // store array
+        int arrayIndex = arrayStore;
         mv.visitVarInsn(ALOAD, 0); // load this
-        mv.visitFieldInsn(GETFIELD, proxyName, fieldName, "Lgroovy/lang/Closure;");
-        mv.visitVarInsn(ALOAD, arrayStore); // load argument array
+        mv.visitFieldInsn(GETFIELD, proxyName, CLOSURES_MAP_FIELD, "Ljava/util/Map;"); // load closure map
+        mv.visitLdcInsn(name); // load method name
+        mv.visitMethodInsn(INVOKEINTERFACE, "java/util/Map", "get", "(Ljava/lang/Object;)Ljava/lang/Object;");
+        arrayStore++;
+        mv.visitVarInsn(ASTORE, arrayStore);
+        // if null, test if wildcard exists
+        Label notNull = new Label();
+        mv.visitIntInsn(ALOAD, arrayStore);
+        mv.visitJumpInsn(IFNONNULL, notNull);
+        mv.visitVarInsn(ALOAD, 0); // load this
+        mv.visitFieldInsn(GETFIELD, proxyName, CLOSURES_MAP_FIELD, "Ljava/util/Map;"); // load closure map
+        mv.visitLdcInsn("*"); // load wildcard
+        mv.visitMethodInsn(INVOKEINTERFACE, "java/util/Map", "get", "(Ljava/lang/Object;)Ljava/lang/Object;");
+        mv.visitVarInsn(ASTORE, arrayStore);
+        mv.visitLabel(notNull);
+        mv.visitVarInsn(ALOAD, arrayStore);
+        mv.visitMethodInsn(INVOKESTATIC, BytecodeHelper.getClassInternalName(this.getClass()), "ensureClosure", "(Ljava/lang/Object;)Lgroovy/lang/Closure;");
+        mv.visitVarInsn(ALOAD, arrayIndex); // load argument array
         stackSize++;
         mv.visitMethodInsn(INVOKEVIRTUAL, "groovy/lang/Closure", "call", "([Ljava/lang/Object;)Ljava/lang/Object;"); // call closure
         Type returnType = Type.getReturnType(desc);
@@ -549,11 +526,11 @@ public class ProxyGeneratorAdapter extends ClassAdapter implements Opcodes {
     }
 
     @SuppressWarnings("unchecked")
-    public GroovyObject proxy(Object... constructorArgs) {
+    public GroovyObject proxy(Map<Object,Object> map, Object... constructorArgs) {
         if (constructorArgs==null && cachedNoArgConstructor!=null) {
             // if there isn't any argument, we can make invocation faster using the cached constructor
             try {
-                return (GroovyObject) cachedNoArgConstructor.newInstance(cachedClosures);
+                return (GroovyObject) cachedNoArgConstructor.newInstance(map);
             } catch (InstantiationException e) {
                 throw new GroovyRuntimeException(e);
             } catch (IllegalAccessException e) {
@@ -563,14 +540,22 @@ public class ProxyGeneratorAdapter extends ClassAdapter implements Opcodes {
             }
         }
         if (constructorArgs==null) constructorArgs= EMPTY_ARGS;
-        DelegateClosure[] delegates = closureMap.values().toArray(new DelegateClosure[closureMap.size()]);
-        Object[] values = new Object[constructorArgs.length + delegates.length];
+        Object[] values = new Object[constructorArgs.length + 1];
         System.arraycopy(constructorArgs, 0, values, 0, constructorArgs.length);
-        for (int i = 0; i < delegates.length; i++) {
-            DelegateClosure delegate = delegates[constructorArgs.length + i];
-            values[i] = delegate.closure;
-        }
+        values[values.length-1] = map;
         return DefaultGroovyMethods.<GroovyObject>newInstance(cachedClass, values);
+    }
+
+    /**
+     * Ensures that the provided object is wrapped into a closure if it's not
+     * a closure.
+     * Do not trust IDEs, this method is used in bytecode.
+     */
+    @SuppressWarnings("unchecked")
+    public static Closure ensureClosure(Object o) {
+        if (o==null) throw new UnsupportedOperationException();
+        if (o instanceof Closure) return (Closure) o;
+        return new ReturnValueWrappingClosure(o);
     }
 
     private static int getLoadInsn(final Type type) {
@@ -631,15 +616,17 @@ public class ProxyGeneratorAdapter extends ClassAdapter implements Opcodes {
 
     }    
 
-    private static class DelegateClosure {
-        private final Closure closure;
-        private final String name;
-        
-        private boolean visited = false;
+    private static class ReturnValueWrappingClosure<V> extends Closure<V>{
+        private final V value;
 
-        private DelegateClosure(final String name, final Closure closure) {
-            this.name = name;
-            this.closure = closure;
+        public ReturnValueWrappingClosure(V returnValue) {
+            super(null);
+            value = returnValue;
+        }
+
+        @Override
+        public V call(final Object... args) {
+            return value;
         }
     }
     

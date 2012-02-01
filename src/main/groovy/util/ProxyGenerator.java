@@ -135,8 +135,8 @@ public class ProxyGenerator {
         return instantiateAggregate(closureMap, interfaces, clazz, null);
     }
 
+    @SuppressWarnings("unchecked")
     public GroovyObject instantiateAggregate(Map closureMap, List<Class> interfaces, Class clazz, Object[] constructorArgs) {
-        @SuppressWarnings("unchecked")
         Map<Object,Object> map = closureMap!=null?closureMap: EMPTY_CLOSURE_MAP;
         Class[] intfs = interfaces!=null? interfaces.toArray(new Class[interfaces.size()]): EMPTY_INTERFACE_ARRAY;
         Class base = clazz;
@@ -148,7 +148,7 @@ public class ProxyGenerator {
             }
         }
         ProxyGeneratorAdapter adapter = new ProxyGeneratorAdapter(map, base, intfs, base.getClassLoader(), emptyMethods);
-        return adapter.proxy(constructorArgs);
+        return adapter.proxy(closureMap,constructorArgs);
     }
 
     public GroovyObject instantiateDelegate(Object delegate) {
