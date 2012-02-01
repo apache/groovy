@@ -138,14 +138,9 @@ public class IndyInterface {
         
         
         private static MethodHandle makeFallBack(MutableCallSite mc, Class<?> sender, String name, MethodType type, boolean safeNavigation, boolean thisCall) {
-            MethodHandle mh = SELECT_METHOD.
-                                    bindTo(mc).
-                                    bindTo(sender).
-                                    bindTo(name).
-                                    bindTo(safeNavigation).
-                                    bindTo(thisCall).
-                                    asCollector(Object[].class, type.parameterCount()-1).
-                                    asType(type);
+            MethodHandle mh = MethodHandles.insertArguments(SELECT_METHOD, 0, mc, sender, name, safeNavigation, thisCall, /*dummy receiver:*/ 1);
+            mh =    mh.asCollector(Object[].class, type.parameterCount()).
+                    asType(type);
             return mh;
         }
 
@@ -222,10 +217,10 @@ public class IndyInterface {
                     info.handle = MethodHandles.insertArguments(info.handle, 1, new Object[]{new Object[]{null}});
                 } else if (info.method.isVargsMethod()) {
                     // the method expects the arguments as Object[] in a Object[]
-                    info.handle = info.handle.asCollector(Object[].class, info.targetType.parameterCount()-2);
-                    info.handle = info.handle.asCollector(Object[].class, info.targetType.parameterCount()-2);
+                    info.handle = info.handle.asCollector(Object[].class, 1);
+                    info.handle = info.handle.asCollector(Object[].class, info.targetType.parameterCount()-1);
                 } else {
-                    info.handle = info.handle.asCollector(Object[].class, info.targetType.parameterCount()-2);
+                    info.handle = info.handle.asCollector(Object[].class, info.targetType.parameterCount()-1);
                 }
             }
         }
@@ -275,7 +270,7 @@ public class IndyInterface {
                     }
                 }
                 ci.handle = MethodHandles.insertArguments(ci.handle, 1, ci.methodName);
-                ci.handle = ci.handle.asCollector(Object[].class, ci.targetType.parameterCount()-2);
+                ci.handle = ci.handle.asCollector(Object[].class, ci.targetType.parameterCount()-1);
             } catch (Exception e) {
                 throw new GroovyBugError(e);
             }
@@ -401,11 +396,12 @@ public class IndyInterface {
         private static void correctNullReceiver(CallInfo ci){
             if (ci.args[0]!=null) return;
             ci.handle = ci.handle.bindTo(NullObject.getNullObject());
-            ci.handle = MethodHandles.dropArguments(ci.handle, 0, ci.targetType.parameterType(1));
+            ci.handle = MethodHandles.dropArguments(ci.handle, 0, ci.targetType.parameterType(0));
         }
         
         private static void dropDummyReceiver(CallInfo ci) {
             ci.handle = MethodHandles.dropArguments(ci.handle, 0, Integer.class);
+            ci.handle = MethodHandles.insertArguments(ci.handle, 0, 1);
         }
         
         private static void setGuards(CallInfo ci, Object receiver) {
@@ -420,16 +416,14 @@ public class IndyInterface {
                 MetaClass mc = (MetaClass) go.getMetaClass();
                 test = SAME_MC.bindTo(mc); 
                 // drop dummy receiver
-                test = test.asType(MethodType.methodType(boolean.class,ci.targetType.parameterType(1)));
-                test = MethodHandles.dropArguments(test, 0, ci.targetType.parameterType(0));
+                test = test.asType(MethodType.methodType(boolean.class,ci.targetType.parameterType(0)));
             } else if (receiver != null) {
                 // handle constant meta class
                 ConstantMetaClassVersioning mcv = DefaultMetaClassInfo.getCurrentConstantMetaClassVersioning();
                 test = VALID_MC_VERSION.bindTo(mcv);
                 ci.handle = MethodHandles.guardWithTest(test, ci.handle, fallback);
                 // check for not being null
-                test = IS_NOT_NULL.asType(MethodType.methodType(boolean.class,ci.targetType.parameterType(1)));
-                test = MethodHandles.dropArguments(test, 0, ci.targetType.parameterType(0));
+                test = IS_NOT_NULL.asType(MethodType.methodType(boolean.class,ci.targetType.parameterType(0)));
             }
             if (test!=null) {
                 ci.handle = MethodHandles.guardWithTest(test, ci.handle, fallback);
@@ -440,14 +434,14 @@ public class IndyInterface {
             for (int i=0; i<ci.args.length; i++) {
                 Object arg = ci.args[i];
                 if (arg==null) {
-                    test = IS_NULL.asType(MethodType.methodType(boolean.class, pt[i+1]));
+                    test = IS_NULL.asType(MethodType.methodType(boolean.class, pt[i]));
                 } else {
                     Class argClass = arg.getClass();
                     test = SAME_CLASS.
                                 bindTo(argClass).
-                                asType(MethodType.methodType(boolean.class, pt[i+1]));
+                                asType(MethodType.methodType(boolean.class, pt[i]));
                 }
-                Class[] drops = new Class[i+1];
+                Class[] drops = new Class[i];
                 for (int j=0; j<drops.length; j++) drops[j] = pt[j];
                 test = MethodHandles.dropArguments(test, 0, drops);
                 ci.handle = MethodHandles.guardWithTest(test, ci.handle, fallback);
@@ -551,16 +545,7 @@ public class IndyInterface {
             setGuards(callInfo, callInfo.args[0]);
             callSite.setTarget(callInfo.handle);
             
-            return callInfo.handle.invokeWithArguments(repack(dummyReceiver,callInfo.args));
-        }
-
-        private static Object[] repack(Object o, Object[] args) {
-            Object[] ar = new Object[args.length+1];
-            ar[0] = o;
-            for (int i=0; i<args.length; i++) {
-                ar[i+1] = args[i];
-            }
-            return ar;
+            return callInfo.handle.invokeWithArguments(callInfo.args);
         }
         
         private static Object[] removeRealReceiver(Object[] args) {

@@ -187,9 +187,7 @@ public class InvokeDynamicWriter extends InvocationWriter {
         
         compileStack.pushLHS(false);
 
-        // load a dummy receiver to avoid NPE
-        new ConstantExpression(0, false).visit(controller.getAcg());
-        String sig = "(Ljava/lang/Integer;";
+        String sig = "(";
         
         // load normal receiver as first argument
         compileStack.pushImplicitThis(implicitThis);
@@ -215,7 +213,7 @@ public class InvokeDynamicWriter extends InvocationWriter {
         Handle bsmHandle = getBsmHandle(adapter, safe);
         controller.getMethodVisitor().visitInvokeDynamicInsn(methodName, sig, bsmHandle);
         
-        operandStack.replace(ClassHelper.OBJECT_TYPE, numberOfArguments+1);
+        operandStack.replace(ClassHelper.OBJECT_TYPE, numberOfArguments);
         compileStack.popLHS();
     }
     
