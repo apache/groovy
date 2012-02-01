@@ -1300,9 +1300,20 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     protected void createInterfaceSyntheticStaticFields() {
-        if (referencedClasses.isEmpty()) return;
-
         ClassNode icl =  controller.getInterfaceClassLoadingClass();
+
+        if (referencedClasses.isEmpty()) {
+            Iterator<InnerClassNode> it = controller.getClassNode().getInnerClasses();
+            while(it.hasNext()) {
+                InnerClassNode inner = it.next();
+                if (inner==icl) {
+                    it.remove();
+                    return;
+                }
+            }
+            return;
+        }
+
         addInnerClass(icl);
         for (String staticFieldName : referencedClasses.keySet()) {            // generate a field node
             icl.addField(staticFieldName, ACC_STATIC + ACC_SYNTHETIC, ClassHelper.CLASS_Type.getPlainNodeReference(), new ClassExpression(referencedClasses.get(staticFieldName)));
