@@ -2936,6 +2936,10 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             Method[] listenerMethods = descriptor.getListenerMethods();
             for (Method listenerMethod : listenerMethods) {
                 final MetaMethod metaMethod = CachedMethod.find(descriptor.getAddListenerMethod());
+                // GROOVY-5202
+                // there might be a non public listener of some kind
+                // we skip that here
+                if (metaMethod==null) continue;
                 addToAllMethodsIfPublic(metaMethod);
                 String name = listenerMethod.getName();
                 if (listeners.containsKey(name)) {
