@@ -88,6 +88,8 @@ public class ProxyGeneratorAdapter extends ClassAdapter implements Opcodes {
     
     // cached class
     private final Class cachedClass;
+    private final Constructor cachedNoArgConstructor;
+    private final Object[] cachedClosures;
 
     /**
      * Construct a proxy generator. This generator is used when we need to create a proxy object for a class or an
@@ -142,6 +144,28 @@ public class ProxyGeneratorAdapter extends ClassAdapter implements Opcodes {
         byte[] b = writer.toByteArray();
 //        CheckClassAdapter.verify(new ClassReader(b), true, new PrintWriter(System.err) );
         cachedClass = loader.defineClass(proxyName, b);
+        // cache no-arg constructor
+        Class[] args = new Class[closureMap.size()];
+        for (int i = 0; i < closureMap.size(); i++) {
+            args[i] = Closure.class;
+        }
+        Constructor constructor;
+        Object[] values;
+        try {
+            constructor = cachedClass.getConstructor(args);
+            int size = this.closureMap.size();
+            Iterator<DelegateClosure> delegates = this.closureMap.values().iterator();
+            values = new Object[size];
+            for (int i = 0; i < size; i++) {
+                DelegateClosure delegate = delegates.next();
+                values[i] = delegate.closure;
+            }
+        } catch (NoSuchMethodException e) {
+            constructor = null;
+            values = null;
+        }
+        cachedNoArgConstructor = constructor;
+        cachedClosures = values;
     }
 
     private InnerLoader findClassLoader(Class clazz) {
@@ -452,18 +476,9 @@ public class ProxyGeneratorAdapter extends ClassAdapter implements Opcodes {
         }
         mv.visitMethodInsn(INVOKESPECIAL, BytecodeHelper.getClassInternalName(superClass), "<init>", desc);
         initializeDelegates(mv, args.length);
-        if (addGroovyObjectSupport) {
-            // create metaclass
-            mv.visitIntInsn(ALOAD, 0);
-            // this.metaClass = InvokerHelper.getMetaClass(this.getClass());
-            mv.visitInsn(DUP);
-            mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Object", "getClass", "()Ljava/lang/Class;");
-            mv.visitMethodInsn(INVOKESTATIC, "org/codehaus/groovy/runtime/InvokerHelper", "getMetaClass", "(Ljava/lang/Class;)Lgroovy/lang/MetaClass;");
-            mv.visitFieldInsn(PUTFIELD, proxyName, "metaClass", "Lgroovy/lang/MetaClass;");
-        }
         mv.visitInsn(RETURN);
         int max = 1 + args.length + closureMap.size();
-        mv.visitMaxs(addGroovyObjectSupport?1+max:max, max);
+        mv.visitMaxs(max, max);
         mv.visitEnd();
         return new EmptyVisitor();
     }
@@ -535,6 +550,18 @@ public class ProxyGeneratorAdapter extends ClassAdapter implements Opcodes {
 
     @SuppressWarnings("unchecked")
     public GroovyObject proxy(Object... constructorArgs) {
+        if (constructorArgs==null && cachedNoArgConstructor!=null) {
+            // if there isn't any argument, we can make invocation faster using the cached constructor
+            try {
+                return (GroovyObject) cachedNoArgConstructor.newInstance(cachedClosures);
+            } catch (InstantiationException e) {
+                throw new GroovyRuntimeException(e);
+            } catch (IllegalAccessException e) {
+                throw new GroovyRuntimeException(e);
+            } catch (InvocationTargetException e) {
+                throw new GroovyRuntimeException(e);
+            }
+        }
         if (constructorArgs==null) constructorArgs= EMPTY_ARGS;
         DelegateClosure[] delegates = closureMap.values().toArray(new DelegateClosure[closureMap.size()]);
         Object[] values = new Object[constructorArgs.length + delegates.length];
