@@ -23,7 +23,7 @@ project.pomConfigureClosure = {
         modelVersion '4.0.0'
         groupId 'org.codehaus.groovy'
         artifactId 'groovy'
-        version '1.8.2-SNAPSHOT'
+        version '1.8.6-SNAPSHOT'
         name 'Groovy'
         description 'Groovy: A powerful, dynamic language for the JVM'
         url 'http://groovy.codehaus.org/'
@@ -39,6 +39,7 @@ project.pomConfigureClosure = {
                 organization 'SpringSource'
                 roles {
                     role 'Project Manager'
+                    role 'Despot'
                     role 'Developer'
                 }
             }
@@ -188,6 +189,7 @@ project.pomConfigureClosure = {
                 email 'blackdrag@gmx.org'
                 roles {
                     role 'Developer'
+                    role 'Despot'
                 }
             }
             developer {
@@ -233,6 +235,7 @@ project.pomConfigureClosure = {
                 organization 'ASERT, Australia'
                 roles {
                     role 'Developer'
+                    role 'Despot'
                 }
             }
             developer {
@@ -302,6 +305,14 @@ project.pomConfigureClosure = {
                 id 'hamletdrc'
                 name 'Hamlet D\'Arcy'
                 email 'hamletdrc@gmail.com'
+                roles {
+                    role 'Developer'
+                }
+            }
+            developer {
+                id 'melix'
+                name 'Cédric Champeau'
+                email 'cedric.champeau@gmail.com'
                 roles {
                     role 'Developer'
                 }
@@ -443,13 +454,16 @@ project.pomConfigureClosure = {
                 name 'Adam Murdoch'
             }
             contributor {
-                name 'Cédric Champeau'
-            }
-            contributor {
                 name 'David Durham'
             }
             contributor {
                 name 'Daniel Henrique Alves Lima'
+            }
+            contributor {
+                name 'John Wagenleitner'
+            }
+            contributor {
+                name 'Colin Harrington'
             }
         }
         mailingLists {
