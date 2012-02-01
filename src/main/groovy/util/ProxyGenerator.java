@@ -20,7 +20,9 @@ import org.codehaus.groovy.control.MultipleCompilationErrorsException;
 import org.codehaus.groovy.runtime.ConversionHandler;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.runtime.memoize.LRUCache;
 
+import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.*;
@@ -36,6 +38,7 @@ import java.util.*;
 public class ProxyGenerator {
     private static final Class[] EMPTY_INTERFACE_ARRAY = new Class[0];
     private static final Map<Object,Object> EMPTY_CLOSURE_MAP = Collections.emptyMap();
+    private static final Set<String> EMPTY_KEYSET = Collections.emptySet();
 
     public static final ProxyGenerator INSTANCE = new ProxyGenerator();
 
@@ -49,6 +52,14 @@ public class ProxyGenerator {
     private boolean emptyMethods = false;
     private List<Method> objectMethods = getInheritedMethods(Object.class, new ArrayList<Method>());
     private List<Method> groovyObjectMethods = getInheritedMethods(GroovyObject.class, new ArrayList<Method>());
+
+    /**
+     * The adapter cache is used to cache proxy classes. When, for example, a call like:
+     * map as MyClass is found, then a lookup is made into the cache to find if a suitable
+     * adapter already exists. If so, then the class is reused, instead of generating a
+     * new class.
+     */
+    private final LRUCache adapterCache = new LRUCache(16);
 
     public boolean getDebug() {
         return debug;
@@ -147,8 +158,17 @@ public class ProxyGenerator {
                 base = Object.class;
             }
         }
-        ProxyGeneratorAdapter adapter = new ProxyGeneratorAdapter(map, base, intfs, base.getClassLoader(), emptyMethods);
-        return adapter.proxy(closureMap,constructorArgs);
+        Set<String> keys = map==EMPTY_CLOSURE_MAP?EMPTY_KEYSET:new HashSet<String>();
+        for (Object o : map.keySet()) {
+            keys.add(o.toString());
+        }
+        CacheKey key = new CacheKey(base, keys, intfs, emptyMethods);
+        ProxyGeneratorAdapter adapter = (ProxyGeneratorAdapter) adapterCache.get(key);
+        if (adapter==null) {
+            adapter = new ProxyGeneratorAdapter(map, base, intfs, base.getClassLoader(), emptyMethods);
+            adapterCache.put(key, adapter);
+        }
+        return adapter.proxy(map,constructorArgs);
     }
 
     public GroovyObject instantiateDelegate(Object delegate) {
@@ -409,6 +429,83 @@ public class ProxyGenerator {
             }
         };
         GroovySystem.getMetaClassRegistry().setMetaClass(ProxyGenerator.class, newMetaClass);
+    }
+    
+    private static class CacheKey {
+        private static final Comparator<Class> CLASSNAME_COMPARATOR = new Comparator<Class>() {
+            public int compare(final Class o1, final Class o2) {
+                return o1.getName().compareTo(o2.getName());
+            }
+        };
+        private final boolean emptyMethods;
+        private final Set<String> methods;
+        private final ClassReference baseClass;
+        private final ClassReference[] interfaces;
+
+        private CacheKey(final Class baseClass, final Set<String> methods, final Class[] interfaces, final boolean emptyMethods) {
+            this.baseClass = new ClassReference(baseClass);
+            this.emptyMethods = emptyMethods;
+            this.interfaces = interfaces == null ? null : new ClassReference[interfaces.length];
+            if (interfaces != null) {
+                Arrays.sort(interfaces, CLASSNAME_COMPARATOR);
+                for (int i = 0; i < interfaces.length; i++) {
+                    Class anInterface = interfaces[i];
+                    this.interfaces[i] = new ClassReference(anInterface);
+                }
+            }
+            this.methods = methods;
+        }
+
+        @Override
+        public boolean equals(final Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            final CacheKey cacheKey = (CacheKey) o;
+
+            if (emptyMethods != cacheKey.emptyMethods) return false;
+            if (baseClass != null ? !baseClass.equals(cacheKey.baseClass) : cacheKey.baseClass != null) return false;
+            if (!Arrays.equals(interfaces, cacheKey.interfaces)) return false;
+            if (methods != null ? !methods.equals(cacheKey.methods) : cacheKey.methods != null) return false;
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = (emptyMethods ? 1 : 0);
+            result = 31 * result + (methods != null ? methods.hashCode() : 0);
+            result = 31 * result + (baseClass != null ? baseClass.hashCode() : 0);
+            result = 31 * result + (interfaces != null ? Arrays.hashCode(interfaces) : 0);
+            return result;
+        }
+
+        /**
+         * A weak reference which delegates equals and hashcode to the referent.
+         */
+        private static class ClassReference extends WeakReference<Class> {
+
+            public ClassReference(Class referent) {
+                super(referent);
+            }
+
+            @Override
+            public boolean equals(final Object o) {
+                if (this == o) return true;
+                if (o == null || getClass() != o.getClass()) return false;
+                Class thisClass = this.get();
+                ClassReference that = (ClassReference) o;
+                if (thisClass == null) return false;
+                return thisClass.equals(that.get());
+            }
+
+            @Override
+            public int hashCode() {
+                Class thisClass = this.get();
+                if (thisClass==null) return 0;
+                return thisClass.hashCode();
+            }
+        }
     }
 
 }
