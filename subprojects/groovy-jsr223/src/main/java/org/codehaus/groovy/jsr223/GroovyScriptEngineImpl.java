@@ -71,6 +71,8 @@ import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.Writer;
 
+import java.lang.Class;
+import java.lang.String;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
@@ -78,6 +80,7 @@ import java.lang.reflect.Proxy;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /*
  * @author Mike Grogan
@@ -91,10 +94,10 @@ public class GroovyScriptEngineImpl
     private static boolean debug = false;
 
     // script-string-to-generated Class map
-    private Map<String, Class> classMap = Collections.synchronizedMap(new HashMap<String, Class>());
+    private Map<String, Class> classMap = new ConcurrentHashMap<String, Class>();
     // global closures map - this is used to simulate a single
     // global functions namespace 
-    private Map<String, Closure> globalClosures = Collections.synchronizedMap(new HashMap<String, Closure>());
+    private Map<String, Closure> globalClosures = new ConcurrentHashMap<String, Closure>();
     // class loader for Groovy generated classes
     private GroovyClassLoader loader;
     // lazily initialized factory
