@@ -296,13 +296,20 @@ public abstract class AbstractHttpServlet extends HttpServlet implements Resourc
 
     /**
      * Parses the http request for the real script or template source file.
-     *
-     * @param request the http request to analyze
-     * @return a file object using an absolute file path name
+     * 
+     * @param request
+     *            the http request to analyze
+     * @return a file object using an absolute file path name, or <code>null</code> if the
+     *         servlet container cannot translate the virtual path to a real
+     *         path for any reason (such as when the content is being made
+     *         available from a .war archive).
      */
     protected File getScriptUriAsFile(HttpServletRequest request) {
         String uri = getScriptUri(request);
         String real = servletContext.getRealPath(uri);
+        if (real == null) {
+            return null;
+        }
         return new File(real).getAbsoluteFile();
     }
 
