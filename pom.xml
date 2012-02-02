@@ -385,6 +385,15 @@
                 <role>Developer</role>
             </roles>
         </developer>
+        <developer>
+            <name>Cédric Champeau</name>
+            <id>melix</id>
+            <email>cedric.champeau@gmail.com</email>
+            <organization></organization>
+            <roles>
+                <role>Developer</role>
+            </roles>
+        </developer>
     </developers>
 
     <contributors>
@@ -565,10 +574,6 @@
             <email></email>
         </contributor>
         <contributor>
-            <name>Cédric Champeau</name>
-            <email></email>
-        </contributor>
-        <contributor>
             <name>David Durham</name>
             <email></email>
         </contributor>
@@ -578,6 +583,14 @@
         </contributor>
         <contributor>
             <name>John Wagenleitner</name>
+            <email></email>
+        </contributor>
+        <contributor>
+            <name>Colin Harrington</name>
+            <email></email>
+        </contributor>
+        <contributor>
+            <name>Brian Alexander</name>
             <email></email>
         </contributor>
     </contributors>
