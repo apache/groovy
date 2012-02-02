@@ -21,11 +21,12 @@ import groovy.text.TemplateEngine;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
-import java.io.FileReader;
-import java.io.IOException;
 import java.io.Writer;
+import java.net.URL;
 import java.util.Date;
 import java.util.Map;
 import java.util.WeakHashMap;
@@ -111,8 +112,8 @@ import javax.servlet.http.HttpServletResponse;
 public class TemplateServlet extends AbstractHttpServlet {
 
     /**
-     * Simple cache entry that validates against last modified and length
-     * attributes of the specified file.
+     * Simple cache entry. If a file is supplied, then the entry is validated against
+     * last modified and length attributes of the specified file.
      *
      * @author Christian Stein
      */
@@ -129,9 +130,6 @@ public class TemplateServlet extends AbstractHttpServlet {
         }
 
         public TemplateCacheEntry(File file, Template template, boolean timestamp) {
-            if (file == null) {
-                throw new NullPointerException("file");
-            }
             if (template == null) {
                 throw new NullPointerException("template");
             }
@@ -141,26 +139,27 @@ public class TemplateServlet extends AbstractHttpServlet {
                 this.date = null;
             }
             this.hit = 0;
-            this.lastModified = file.lastModified();
-            this.length = file.length();
+            if (file != null) {
+                this.lastModified = file.lastModified();
+                this.length = file.length();
+            }
             this.template = template;
         }
 
         /**
          * Checks the passed file attributes against those cached ones.
          *
-         * @param file Other file handle to compare to the cached values.
+         * @param file Other file handle to compare to the cached values. May be null in which case the validation is skipped.
          * @return <code>true</code> if all measured values match, else <code>false</code>
          */
         public boolean validate(File file) {
-            if (file == null) {
-                throw new NullPointerException("file");
-            }
-            if (file.lastModified() != this.lastModified) {
-                return false;
-            }
-            if (file.length() != this.length) {
-                return false;
+            if (file != null) {
+                if (file.lastModified() != this.lastModified) {
+                    return false;
+                }
+                if (file.length() != this.length) {
+                    return false;
+                }
             }
             hit++;
             return true;
@@ -178,7 +177,7 @@ public class TemplateServlet extends AbstractHttpServlet {
     /**
      * Simple file name to template cache map.
      */
-    private final Map cache;
+    private final Map<String, TemplateCacheEntry> cache;
 
     /**
      * Underlying template engine used to evaluate template source files.
@@ -198,15 +197,99 @@ public class TemplateServlet extends AbstractHttpServlet {
      * Create new TemplateServlet.
      */
     public TemplateServlet() {
-        this.cache = new WeakHashMap();
+        this.cache = new WeakHashMap<String, TemplateCacheEntry>();
         this.engine = null; // assigned later by init()
         this.generateBy = true; // may be changed by init()
         this.fileEncodingParamVal = null; // may be changed by init()
     }
 
     /**
+     * Find a cached template for a given key. If a <code>File</code> is passed then
+     * any cached object is validated against the File to determine if it is out of
+     * date
+     * @param key a unique key for the template, such as a file's absolutePath or a URL.
+     * @param file a file to be used to determine if the cached template is stale. May be null.
+     * @return The cached template, or null if there was no cached entry, or the entry was stale.
+     */
+    private Template findCachedTemplate(String key, File file) {
+        Template template = null;
+
+        /*
+         * Test cache for a valid template bound to the key.
+         */
+        if (verbose) {
+            log("Looking for cached template by key \"" + key + "\"");
+        }
+        
+        TemplateCacheEntry entry = (TemplateCacheEntry) cache.get(key);
+        if (entry != null) {
+            if (entry.validate(file)) {
+                if (verbose) {
+                    log("Cache hit! " + entry);
+                }
+                template = entry.template;
+            } else {
+                if (verbose) {
+                    log("Cached template " + key + " needs recompiliation! " + entry);
+                }
+            }
+        } else {
+            if (verbose) {
+                log("Cache miss for " + key);
+            }
+        }
+
+        return template;
+    }
+
+    /**
+     * Compile the template and store it in the cache.
+     * @param key a unique key for the template, such as a file's absolutePath or a URL.
+     * @param reader a reader for the template's source.
+     * @param file a file to be used to determine if the cached template is stale. May be null.
+     * @return the created template.
+     * @throws Exception Any exception when creating the template.
+     */
+    private Template createAndStoreTemplate(String key, InputStream inputStream, File file) throws Exception {
+        if (verbose) {
+            log("Creating new template from " + key + "...");
+        }
+
+        Reader reader = null;
+
+        try {
+            String fileEncoding = (fileEncodingParamVal != null) ? fileEncodingParamVal :
+                    System.getProperty(GROOVY_SOURCE_ENCODING);
+
+            reader = fileEncoding == null ? new InputStreamReader(inputStream) : new InputStreamReader(inputStream, fileEncoding);
+            Template template = engine.createTemplate(reader);
+
+            cache.put(key, new TemplateCacheEntry(file, template, verbose));
+
+            if (verbose) {
+                log("Created and added template to cache. [key=" + key + "] " + cache.get(key));
+            }
+
+            //
+            // Last sanity check.
+            //
+            if (template == null) {
+                throw new ServletException("Template is null? Should not happen here!");
+            }
+
+            return template;
+        } finally {
+            if (reader != null) {
+                reader.close();
+            } else if (inputStream != null) {
+                inputStream.close();
+            }
+        }
+    }
+
+    /**
      * Gets the template created by the underlying engine parsing the request.
-     * <p/>
+     *
      * <p>
      * This method looks up a simple (weak) hash map for an existing template
      * object that matches the source file. If the source file didn't change in
@@ -217,80 +300,63 @@ public class TemplateServlet extends AbstractHttpServlet {
      * calls.
      * </p>
      *
-     * @param file The HttpServletRequest.
      * @return The template that will produce the response text.
-     * @throws ServletException If the request specified an invalid template source file
+     * @param file
+     *            The file containing the template source.
+     *
+     * @throws ServletException
+     *            If the request specified an invalid template source file
      */
     protected Template getTemplate(File file) throws ServletException {
 
         String key = file.getAbsolutePath();
-        Template template = null;
-
-        /*
-         * Test cache for a valid template bound to the key.
-         */
-        if (verbose) {
-            log("Looking for cached template by key \"" + key + "\"");
-        }
-        TemplateCacheEntry entry = (TemplateCacheEntry) cache.get(key);
-        if (entry != null) {
-            if (entry.validate(file)) {
-                if (verbose) {
-                    log("Cache hit! " + entry);
-                }
-                template = entry.template;
-            } else {
-                if (verbose) {
-                    log("Cached template needs recompilation!");
-                }
-            }
-        } else {
-            if (verbose) {
-                log("Cache miss.");
-            }
-        }
+        Template template = findCachedTemplate(key, file);
 
         //
         // Template not cached or the source file changed - compile new template!
         //
         if (template == null) {
-            if (verbose) {
-                log("Creating new template from file " + file + "...");
-            }
-
-            String fileEncoding = (fileEncodingParamVal != null) ? fileEncodingParamVal :
-                    System.getProperty(GROOVY_SOURCE_ENCODING);
-
-            Reader reader = null;
             try {
-                reader = fileEncoding == null ? new FileReader(file) : new InputStreamReader(new FileInputStream(file), fileEncoding);
-                template = engine.createTemplate(reader);
+                template = createAndStoreTemplate(key, new FileInputStream(file), file);
             } catch (Exception e) {
                 throw new ServletException("Creation of template failed: " + e, e);
-            } finally {
-                if (reader != null) {
-                    try {
-                        reader.close();
-                    } catch (IOException ignore) {
-                        // e.printStackTrace();
-                    }
-                }
             }
-            cache.put(key, new TemplateCacheEntry(file, template, verbose));
-            if (verbose) {
-                log("Created and added template to cache. [key=" + key + "]");
-            }
-        }
-
-        //
-        // Last sanity check.
-        //
-        if (template == null) {
-            throw new ServletException("Template is null? Should not happen here!");
         }
 
         return template;
+    }
 
+    /**
+     * Gets the template created by the underlying engine parsing the request.
+     *
+     * <p>
+     * This method looks up a simple (weak) hash map for an existing template
+     * object that matches the source URL. If there is no cache entry, a new one is
+     * created by the underlying template engine. This new instance is put
+     * to the cache for consecutive calls.
+     * </p>
+     *
+     * @return The template that will produce the response text.
+     * @param url
+     *            The URL containing the template source..
+     * @throws ServletException
+     *            If the request specified an invalid template source URL
+     */
+    protected Template getTemplate(URL url) throws ServletException {
+
+        String key = url.toString();
+        Template template = findCachedTemplate(key, null);
+
+        // Template not cached or the source file changed - compile new template!
+        if (template == null) {
+            try {
+                template = createAndStoreTemplate(key, url.openConnection().getInputStream(), null);
+            } catch (Exception e) {
+                throw new ServletException("Creation of template failed: " + e, e);
+            }
+
+        }
+        return template;
     }
 
     /**
@@ -374,23 +440,31 @@ public class TemplateServlet extends AbstractHttpServlet {
         //
         // Get the template source file handle.
         //
+        Template template;
+        long getMillis;
+        String name;
+        
         File file = super.getScriptUriAsFile(request);
-        String name = file.getName();
-        if (!file.exists()) {
-            response.sendError(HttpServletResponse.SC_NOT_FOUND);
-            return; // throw new IOException(file.getAbsolutePath());
+        if (file != null) {
+            name = file.getName();
+            if (!file.exists()) {
+                response.sendError(HttpServletResponse.SC_NOT_FOUND);
+                return; // throw new IOException(file.getAbsolutePath());
+            }
+            if (!file.canRead()) {
+                response.sendError(HttpServletResponse.SC_FORBIDDEN, "Can not read \"" + name + "\"!");
+                return; // throw new IOException(file.getAbsolutePath());
+            }
+            getMillis = System.currentTimeMillis();
+            template = getTemplate(file);
+            getMillis = System.currentTimeMillis() - getMillis;
+        } else {
+            name = super.getScriptUri(request);
+            URL url = servletContext.getResource(name);
+            getMillis = System.currentTimeMillis();
+            template = getTemplate(url);
+            getMillis = System.currentTimeMillis() - getMillis;
         }
-        if (!file.canRead()) {
-            response.sendError(HttpServletResponse.SC_FORBIDDEN, "Can not read \"" + name + "\"!");
-            return; // throw new IOException(file.getAbsolutePath());
-        }
-
-        //
-        // Get the requested template.
-        //
-        long getMillis = System.currentTimeMillis();
-        Template template = getTemplate(file);
-        getMillis = System.currentTimeMillis() - getMillis;
 
         //
         // Create new binding for the current request.
