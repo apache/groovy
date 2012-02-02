@@ -3,7 +3,7 @@ package groovy.util
 class ProxyGeneratorAdapterTest extends GroovyTestCase {
     void testShouldCreateProxy() {
         def map = ['toString': { 'HELLO' }]
-        ProxyGeneratorAdapter adapter = new ProxyGeneratorAdapter(map, Object, null, this.class.classLoader, false)
+        ProxyGeneratorAdapter adapter = new ProxyGeneratorAdapter(map, Object, null, this.class.classLoader, false, null)
         def obj = adapter.proxy(map)
         assert obj instanceof GroovyObject
         assert obj.toString() == 'HELLO'
@@ -11,7 +11,7 @@ class ProxyGeneratorAdapterTest extends GroovyTestCase {
 
     void testImplementSingleAbstractMethod() {
         def map = ['m': { 'HELLO' }]
-        ProxyGeneratorAdapter adapter = new ProxyGeneratorAdapter(map, Foo, null, this.class.classLoader, false)
+        ProxyGeneratorAdapter adapter = new ProxyGeneratorAdapter(map, Foo, null, this.class.classLoader, false, null)
         def obj = adapter.proxy(map)
         assert obj instanceof GroovyObject
         assert obj instanceof Foo
@@ -21,7 +21,7 @@ class ProxyGeneratorAdapterTest extends GroovyTestCase {
     
     void testImplementSingleAbstractMethodReturningVoid() {
         def map = ['bar': { println 'HELLO' }]
-        ProxyGeneratorAdapter adapter = new ProxyGeneratorAdapter(map, Bar, null, this.class.classLoader, false)
+        ProxyGeneratorAdapter adapter = new ProxyGeneratorAdapter(map, Bar, null, this.class.classLoader, false, null)
         def obj = adapter.proxy(map)
         assert obj instanceof GroovyObject
         assert obj instanceof Bar
@@ -32,7 +32,7 @@ class ProxyGeneratorAdapterTest extends GroovyTestCase {
     void testImplementSingleAbstractMethodReturningVoidAndSharedVariable() {
         def x = null
         def map = ['bar': { x = 'HELLO' }]
-        ProxyGeneratorAdapter adapter = new ProxyGeneratorAdapter(map, Bar, null, this.class.classLoader, false)
+        ProxyGeneratorAdapter adapter = new ProxyGeneratorAdapter(map, Bar, null, this.class.classLoader, false, null)
         def obj = adapter.proxy(map)
         assert obj instanceof GroovyObject
         assert obj instanceof Bar
@@ -43,7 +43,7 @@ class ProxyGeneratorAdapterTest extends GroovyTestCase {
 
     void testImplementMethodFromInterface() {
         def map = ['foo': { 'HELLO' }]
-        ProxyGeneratorAdapter adapter = new ProxyGeneratorAdapter(map, Object, [FooInterface] as Class[], this.class.classLoader, false)
+        ProxyGeneratorAdapter adapter = new ProxyGeneratorAdapter(map, Object, [FooInterface] as Class[], this.class.classLoader, false, null)
         def obj = adapter.proxy(map)
         assert obj instanceof GroovyObject
         assert obj instanceof FooInterface
@@ -52,7 +52,7 @@ class ProxyGeneratorAdapterTest extends GroovyTestCase {
 
     void testImplementMethodFromInterfaceUsingInterfaceAsSuperClass() {
         def map = ['foo': { 'HELLO' }]
-        ProxyGeneratorAdapter adapter = new ProxyGeneratorAdapter(map, FooInterface, null, this.class.classLoader, false)
+        ProxyGeneratorAdapter adapter = new ProxyGeneratorAdapter(map, FooInterface, null, this.class.classLoader, false, null)
         def obj = adapter.proxy(map)
         assert obj instanceof GroovyObject
         assert obj instanceof FooInterface
@@ -62,7 +62,7 @@ class ProxyGeneratorAdapterTest extends GroovyTestCase {
     void testImplementMethodFromInterfaceAndSuperClass() {
         def x = null
         def map = ['foo': { 'HELLO' }, 'bar': { x='WORLD'} ]
-        ProxyGeneratorAdapter adapter = new ProxyGeneratorAdapter(map, Bar, [FooInterface] as Class[], this.class.classLoader, false)
+        ProxyGeneratorAdapter adapter = new ProxyGeneratorAdapter(map, Bar, [FooInterface] as Class[], this.class.classLoader, false, null)
         def obj = adapter.proxy(map)
         assert obj instanceof GroovyObject
         assert obj instanceof Bar
@@ -75,7 +75,7 @@ class ProxyGeneratorAdapterTest extends GroovyTestCase {
     
     void testImplementMethodFromInterfaceWithPrimitiveTypes() {
         def map = ['calc': { x -> x*2 } ]
-        ProxyGeneratorAdapter adapter = new ProxyGeneratorAdapter(map, Bar, [OtherInterface] as Class[], this.class.classLoader, false)
+        ProxyGeneratorAdapter adapter = new ProxyGeneratorAdapter(map, Bar, [OtherInterface] as Class[], this.class.classLoader, false, null)
         def obj = adapter.proxy(map)
         assert obj instanceof GroovyObject
         assert obj instanceof OtherInterface
@@ -84,11 +84,25 @@ class ProxyGeneratorAdapterTest extends GroovyTestCase {
     
     void testWildcardProxy() {
         def map = ['*': { '1' } ]
-        ProxyGeneratorAdapter adapter = new ProxyGeneratorAdapter(map, Foo, null, this.class.classLoader, false)
+        ProxyGeneratorAdapter adapter = new ProxyGeneratorAdapter(map, Foo, null, this.class.classLoader, false, null)
         def obj = adapter.proxy(map)
         assert obj instanceof GroovyObject
         assert obj instanceof Foo
         assert obj.m() == '1'
+    }
+
+    void testDelegatingProxy() {
+        assertScript '''
+        public abstract class A { abstract protected String doIt() }
+
+        class B extends A {
+           String doIt() { 'foo' }
+        }
+        def map = [ x : { int a, int b -> } ]
+        def adapter = new groovy.util.ProxyGeneratorAdapter(map, B, null, B.classLoader, false, B)
+        def pxy = adapter.delegatingProxy(new B(), map)
+        assert pxy.doIt() ==  'foo'
+        '''
     }
 
     abstract static class Foo {
