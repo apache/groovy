@@ -93,6 +93,10 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
             controller.getOperandStack().push(receiverType);
             return;
         }
+        if (receiver instanceof ClassExpression) {
+            if (makeGetPublicField(receiver, receiver.getType(), methodName, implicitThis, samePackages(receiverType.getPackageName(), classNode.getPackageName()))) return;
+            if (makeGetPropertyWithGetter(receiver, receiver.getType(), methodName)) return;
+        }
         if (isClassReceiver) {
             // we are probably looking for a property of the class
             if (makeGetPublicField(receiver, ClassHelper.CLASS_Type, methodName, false, true)) return;
