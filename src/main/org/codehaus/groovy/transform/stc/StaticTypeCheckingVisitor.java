@@ -21,8 +21,11 @@ import org.codehaus.groovy.ast.stmt.*;
 import org.codehaus.groovy.ast.tools.GenericsUtils;
 import org.codehaus.groovy.classgen.ReturnAdder;
 import org.codehaus.groovy.classgen.asm.InvocationWriter;
+import org.codehaus.groovy.control.ErrorCollector;
 import org.codehaus.groovy.control.SourceUnit;
+import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
 import org.codehaus.groovy.runtime.MetaClassHelper;
+import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.transform.StaticTypesTransformation;
 import org.codehaus.groovy.util.ListHashMap;
 import org.objectweb.asm.Opcodes;
@@ -50,6 +53,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     private ClassNode classNode;
     private MethodNode methodNode;
     private Set<MethodNode> methodsToBeVisited = Collections.emptySet();
+    private ErrorCollector errorCollector;
 
     // used for closure return type inference
     private ClosureExpression closureExpression;
@@ -138,12 +142,22 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         this.classNode = cn;
         this.temporaryIfBranchTypeInformation = new Stack<Map<Object, List<ClassNode>>>();
         this.pluginFactory = pluginFactory;
+        this.errorCollector = source.getErrorCollector();
         pushTemporaryTypeInfo();
     }
 
     //        @Override
     protected SourceUnit getSourceUnit() {
         return source;
+    }
+
+    /**
+     * Sets an alternative error collector. This can be useful when you want to run static
+     * type checking "silently", for example, without failing if errors are found.
+     * @param errorCollector an error collector
+     */
+    public void setErrorCollector(final ErrorCollector errorCollector) {
+        this.errorCollector = errorCollector;
     }
 
     @Override
@@ -2098,6 +2112,15 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             sb.setCharAt(sb.length()-2, ']');
         }
         return sb.toString();
+    }
+
+    @Override
+    protected void addError(final String msg, final ASTNode expr) {
+        int line = expr.getLineNumber();
+        int col = expr.getColumnNumber();
+        errorCollector.addErrorAndContinue(
+                new SyntaxErrorMessage(new SyntaxException(msg + '\n', line, col), source)
+        );
     }
 
     protected void addStaticTypeError(final String msg, final ASTNode expr) {
