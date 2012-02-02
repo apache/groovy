@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -191,7 +191,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
 
     public String getRelativeRootPath() {
         StringTokenizer tokenizer = new StringTokenizer(fullPathName, "/"); // todo windows??
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         if (tokenizer.hasMoreTokens()) {
             tokenizer.nextToken(); // ignore the first token, as we want n-1 parent dirs
         }
@@ -354,7 +354,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
     }
 
     private static String resolveMethodArgs(GroovyRootDoc rootDoc, SimpleGroovyClassDoc classDoc, String type) {
-        if (type.indexOf("(") < 0) return type;
+        if (!type.contains("(")) return type;
         Matcher m = NAME_ARGS_REGEX.matcher(type);
         if (m.matches()) {
             String name = m.group(1);
@@ -437,7 +437,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
     }
 
     private static String buildUrl(String relativeRoot, String[] target, String shortClassName) {
-        if (!relativeRoot.endsWith("/")) {
+        if (relativeRoot.length() > 0 && !relativeRoot.endsWith("/")) {
             relativeRoot += "/";
         }
         String url = relativeRoot + target[0].replace('.', '/').replace('$', '.') + ".html" + (target.length > 1 ? "#" + target[1] : "");
@@ -470,7 +470,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
 
         // The class is not in the tree being documented
         String shortname = name;
-        Class c = null;
+        Class c;
         if (slashIndex > 0) {
             shortname = name.substring(slashIndex + 1);
             c = resolveExternalFullyQualifiedClass(name);
@@ -705,18 +705,22 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
         return decodeSpecialSymbols(result);
     }
 
-    // TODO: this should go away once we have proper tags
     public String replaceAllTags(String self, String s1, String s2, Pattern regex) {
+        return replaceAllTags(self, s1, s2, regex, links, getRelativeRootPath(), savedRootDoc, this);
+    }
+
+    // TODO: this should go away once we have proper tags
+    public static String replaceAllTags(String self, String s1, String s2, Pattern regex, List<LinkArgument> links, String relPath, GroovyRootDoc rootDoc, SimpleGroovyClassDoc classDoc) {
         Matcher matcher = regex.matcher(self);
         if (matcher.find()) {
             matcher.reset();
             StringBuffer sb = new StringBuffer();
             while (matcher.find()) {
                 String tagname = matcher.group(1);
-                if (!tagname.equals("interface")) {
+                if (!"interface".equals(tagname)) {
                     String content = encodeSpecialSymbols(matcher.group(2));
-                    if (tagname.equals("link")) {
-                        content = getDocUrl(content);
+                    if ("link".equals(tagname) || "see".equals(tagname)) {
+                        content = getDocUrl(content, false, links, relPath, rootDoc, classDoc);
                     }
                     matcher.appendReplacement(sb, s1 + content + s2);
                 }
@@ -738,9 +742,9 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
             StringBuffer sb = new StringBuffer();
             while (matcher.find()) {
                 String tagname = matcher.group(1);
-                if (!tagname.equals("interface")) {
+                if (!"interface".equals(tagname)) {
                     String content = encodeSpecialSymbols(matcher.group(2));
-                    if ("see".equals(tagname)) {
+                    if ("see".equals(tagname) || "link".equals(tagname)) {
                         content = getDocUrl(content);
                     } else if ("param".equals(tagname)) {
                         int index = content.indexOf(" ");
