@@ -34,9 +34,7 @@ import org.objectweb.asm.Opcodes;
 import java.lang.reflect.Modifier;
 import java.util.*;
 
-import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.BINARY_EXP_TARGET;
-import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.PRIVATE_FIELDS_ACCESSORS;
-import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.STATIC_COMPILE_NODE;
+import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.*;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.DIRECT_METHOD_CALL_TARGET;
 
 /**
@@ -52,9 +50,9 @@ import static org.codehaus.groovy.transform.stc.StaticTypesMarker.DIRECT_METHOD_
  */
 public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
     private final TypeChooser typeChooser = new StaticTypesTypeChooser();
-    
+
     private ClassNode classNode;
-    
+
     public StaticCompilationVisitor(final SourceUnit unit, final ClassNode node, final TypeCheckerPluginFactory pluginFactory) {
         super(unit, node, pluginFactory);
     }
@@ -75,26 +73,65 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
         ClassNode oldCN = classNode;
         classNode = node;
         Iterator<InnerClassNode> innerClasses = classNode.getInnerClasses();
+        if (innerClasses.hasNext()) {
+            addPrivateBridgeMethods(classNode);
+            addPrivateFieldsAccessors(classNode);
+        }
         while (innerClasses.hasNext()) {
             InnerClassNode innerClassNode = innerClasses.next();
             innerClassNode.setNodeMetaData(STATIC_COMPILE_NODE, Boolean.TRUE);
             innerClassNode.setNodeMetaData(WriterControllerFactory.class, node.getNodeMetaData(WriterControllerFactory.class));
             addPrivateBridgeMethods(innerClassNode);
+            addPrivateFieldsAccessors(innerClassNode);
         }
         super.visitClass(node);
         classNode = oldCN;
     }
 
     /**
-     * This method is used to add "bridge" methods for private methods of an inner
+     * Adds special accessors for private constants so that inner classes can retrieve them.
+     */
+    @SuppressWarnings("unchecked")
+    private void addPrivateFieldsAccessors(ClassNode node) {
+        Map<String, MethodNode> privateConstantAccessors = (Map<String, MethodNode>) node.getNodeMetaData(PRIVATE_FIELDS_ACCESSORS);
+        if (privateConstantAccessors!=null) {
+            // already added
+            return;
+        }
+        int acc = -1;
+        privateConstantAccessors = new HashMap<String, MethodNode>();
+        for (FieldNode fieldNode : node.getFields()) {
+            int access = fieldNode.getModifiers();
+            if (Modifier.isPrivate(fieldNode.getModifiers()) && (access& Opcodes.ACC_SYNTHETIC)==0) {
+                acc++;
+                access = (access - Opcodes.ACC_PRIVATE + Opcodes.ACC_SYNTHETIC) + Opcodes.ACC_FINAL;
+                Expression receiver = fieldNode.isStatic()?new ClassExpression(node):new VariableExpression("this", node);
+                Statement stmt = new ExpressionStatement(new PropertyExpression(
+                        receiver,
+                        fieldNode.getName()
+                ));
+                MethodNode accessor = node.addMethod("pfaccess$"+acc, access, fieldNode.getOriginType(), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, stmt);
+                privateConstantAccessors.put(fieldNode.getName(), accessor);
+            }
+        }
+        node.setNodeMetaData(PRIVATE_FIELDS_ACCESSORS, privateConstantAccessors);
+    }
+
+    /**
+     * This method is used to add "bridge" methods for private methods of an inner/outer
      * class, so that the outer class is capable of calling them. It does basically
      * the same job as access$000 like methods in Java.
-     * 
-     * @param node an inner class node for which to generate bridge methods
+     *
+     * @param node an inner/outer class node for which to generate bridge methods
      */
-    private void addPrivateBridgeMethods(final InnerClassNode node) {
+    private void addPrivateBridgeMethods(final ClassNode node) {
         List<MethodNode> methods = new ArrayList<MethodNode>(node.getMethods());
-        Map<MethodNode, MethodNode> privateBridgeMethods = new HashMap<MethodNode, MethodNode>();
+        Map<MethodNode, MethodNode> privateBridgeMethods = (Map<MethodNode, MethodNode>) node.getNodeMetaData(PRIVATE_BRIDGE_METHODS);
+        if (privateBridgeMethods!=null) {
+            // private bridge methods already added
+            return;
+        }
+        privateBridgeMethods = new HashMap<MethodNode, MethodNode>();
         int i=-1;
         for (MethodNode method : methods) {
             int access = method.getModifiers();
@@ -117,7 +154,7 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
                 privateBridgeMethods.put(method, bridge);
             }
         }
-        node.setNodeMetaData(StaticCompilationMetadataKeys.PRIVATE_BRIDGE_METHODS, privateBridgeMethods);
+        node.setNodeMetaData(PRIVATE_BRIDGE_METHODS, privateBridgeMethods);
     }
 
     private void memorizeInitialExpressions(final MethodNode node) {

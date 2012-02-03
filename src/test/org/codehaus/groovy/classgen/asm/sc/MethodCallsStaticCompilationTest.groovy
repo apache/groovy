@@ -47,16 +47,41 @@ public class MethodCallsStaticCompilationTest extends MethodCallsSTCTest {
     }
 
     void testCallToPrivateInnerClassMethod() {
-        try {
-            assertScript '''
+        assertScript '''
                 class A {
                     static class B { private static void foo() {} }
                    public static void main(args) { B.foo() }
                 }
             '''
-        } finally {
-            println astTrees
-        }
+    }
+
+    void testCallToPrivateOuterClassMethod() {
+        assertScript '''
+                class A {
+                   private static void foo() {}
+                   static class B { private static void bar() { A.foo() } }
+                }
+                new A.B()
+            '''
+    }
+
+    void testCallToPrivateInnerClassConstant() {
+        assertScript '''
+                class A {
+                   static class B { private static int foo = 333 }
+                   public static void main(args) { B.foo }
+                }
+            '''
+    }
+
+    void testCallToPrivateOuterClassConstant() {
+        assertScript '''
+                class A {
+                   private static int foo = 333
+                   static class B { private static void bar() { A.foo } }
+                }
+                new A.B()
+            '''
     }
 
     void testForbiddenCallToPrivateMethod() {
@@ -66,6 +91,17 @@ public class MethodCallsStaticCompilationTest extends MethodCallsSTCTest {
                public static void main(args) { B.foo() }
             }
             class B { private static void foo() {} }
+        '''
+        }
+    }
+
+    void testForbiddenCallToPrivateConstant() {
+        shouldFail(MultipleCompilationErrorsException) {
+            assertScript '''
+            class A {
+               public static void main(args) { B.foo }
+            }
+            class B { private static int foo = 666 }
         '''
         }
     }

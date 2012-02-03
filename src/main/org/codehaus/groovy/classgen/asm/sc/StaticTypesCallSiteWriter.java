@@ -18,17 +18,18 @@ package org.codehaus.groovy.classgen.asm.sc;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
-import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.classgen.asm.*;
 import org.codehaus.groovy.runtime.MetaClassHelper;
+import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport;
-import org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
+import java.lang.reflect.Modifier;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 /**
  * A call site writer which replaces call site caching with static calls. This means that the generated code
@@ -86,7 +87,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
             expr.visit(controller.getAcg());
             return;
         }
-        if (makeGetPublicField(receiver, receiverType, methodName, implicitThis, samePackages(receiverType.getPackageName(), classNode.getPackageName()))) return;
+        if (makeGetField(receiver, receiverType, methodName, implicitThis, samePackages(receiverType.getPackageName(), classNode.getPackageName()))) return;
         if (makeGetPropertyWithGetter(receiver, receiverType, methodName)) return;
         if (receiverType.isEnum()) {
             mv.visitFieldInsn(GETSTATIC, BytecodeHelper.getClassInternalName(receiverType), methodName, BytecodeHelper.getTypeDescription(receiverType));
@@ -94,15 +95,43 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
             return;
         }
         if (receiver instanceof ClassExpression) {
-            if (makeGetPublicField(receiver, receiver.getType(), methodName, implicitThis, samePackages(receiverType.getPackageName(), classNode.getPackageName()))) return;
+            if (makeGetField(receiver, receiver.getType(), methodName, implicitThis, samePackages(receiverType.getPackageName(), classNode.getPackageName()))) return;
             if (makeGetPropertyWithGetter(receiver, receiver.getType(), methodName)) return;
         }
         if (isClassReceiver) {
             // we are probably looking for a property of the class
-            if (makeGetPublicField(receiver, ClassHelper.CLASS_Type, methodName, false, true)) return;
+            if (makeGetField(receiver, ClassHelper.CLASS_Type, methodName, false, true)) return;
             if (makeGetPropertyWithGetter(receiver, ClassHelper.CLASS_Type, methodName)) return;
         }
-        throw new UnsupportedOperationException("Operation not yet implemented: "+receiver.getText()+"."+methodName);
+        if (makeGetPrivateFieldWithBridgeMethod(receiver, receiverType, methodName)) return;
+        controller.getSourceUnit().addError(
+                new SyntaxException(
+                        "Access to "+receiverType.toString(false)+"#"+methodName+" is forbidden",
+                        receiver.getLineNumber(),
+                        receiver.getColumnNumber()
+                )
+        );
+    }
+
+    @SuppressWarnings("unchecked")
+    private boolean makeGetPrivateFieldWithBridgeMethod(final Expression receiver, final ClassNode receiverType, final String fieldName) {
+        FieldNode field = receiverType.getField(fieldName);
+        ClassNode classNode = controller.getClassNode();
+        if (Modifier.isPrivate(field.getModifiers()) 
+                && (StaticInvocationWriter.isPrivateBridgeMethodsCallAllowed(receiverType, classNode) || StaticInvocationWriter.isPrivateBridgeMethodsCallAllowed(classNode,receiverType))
+                && !receiverType.equals(classNode)) {
+            Map<String, MethodNode> accessors = (Map<String, MethodNode>) receiverType.redirect().getNodeMetaData(StaticCompilationMetadataKeys.PRIVATE_FIELDS_ACCESSORS);
+            if (accessors!=null) {
+                MethodNode methodNode = accessors.get(fieldName);
+                if (methodNode!=null) {
+                    MethodCallExpression mce = new MethodCallExpression(receiver, methodNode.getName(), ArgumentListExpression.EMPTY_ARGUMENTS);
+                    mce.setMethodTarget(methodNode);
+                    mce.visit(controller.getAcg());
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     @Override
@@ -117,7 +146,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
             property = "delegate";
         }
         
-        if (makeGetPublicField(receiver, receiverType, property, implicitThis, samePackages(receiverType.getPackageName(), classNode.getPackageName()))) return;
+        if (makeGetField(receiver, receiverType, property, implicitThis, samePackages(receiverType.getPackageName(), classNode.getPackageName()))) return;
         if (makeGetPropertyWithGetter(receiver, receiverType, property)) return;
         
         MethodCallExpression call = new MethodCallExpression(
@@ -156,10 +185,13 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         return false;
     }
 
-    private boolean makeGetPublicField(final Expression receiver, final ClassNode receiverType, final String fieldName, final boolean implicitThis, final boolean samePackage) {
+    private boolean makeGetField(final Expression receiver, final ClassNode receiverType, final String fieldName, final boolean implicitThis, final boolean samePackage) {
         FieldNode field = receiverType.getField(fieldName);
         // is direct access possible ?
-        if (field !=null && (field.isPublic() || (samePackage && field.isProtected()))) {
+        if (field !=null 
+                && (field.isPublic() 
+                    || (samePackage && field.isProtected())
+                    || Modifier.isPrivate(field.getModifiers()) && receiverType.redirect()==controller.getClassNode().redirect())) {
             CompileStack compileStack = controller.getCompileStack();
             MethodVisitor mv = controller.getMethodVisitor();
             if (field.isStatic()) {
@@ -181,7 +213,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
             String receiverTypePackageName = receiverType.getPackageName();
             String superClassPackageName = superClass.getPackageName();
             boolean same = samePackage && samePackages(receiverTypePackageName, superClassPackageName);
-            return makeGetPublicField(receiver, superClass, fieldName, implicitThis, same);
+            return makeGetField(receiver, superClass, fieldName, implicitThis, same);
         }
         return false;
     }

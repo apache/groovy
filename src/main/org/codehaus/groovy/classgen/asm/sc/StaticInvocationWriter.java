@@ -41,6 +41,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.*;
 import static org.objectweb.asm.Opcodes.*;
 import static org.objectweb.asm.Opcodes.ACONST_NULL;
 
@@ -136,11 +137,12 @@ public class StaticInvocationWriter extends InvocationWriter {
                 ArrayExpression arr = new ArrayExpression(ClassHelper.OBJECT_TYPE, args.getExpressions());
                 return super.writeDirectMethodCall(target, implicitThis, receiver, new ArgumentListExpression(arr));
             }
+            ClassNode classNode = controller.getClassNode();
             if (target!=null
-                    && controller.getClassNode().isDerivedFrom(ClassHelper.CLOSURE_TYPE)
+                    && classNode.isDerivedFrom(ClassHelper.CLOSURE_TYPE)
                     && controller.isInClosure()
                     && !target.isPublic()
-                    && target.getDeclaringClass()!=controller.getClassNode()) {
+                    && target.getDeclaringClass()!= classNode) {
                 // replace call with an invoker helper call
                 // todo: use MOP generated methods instead
                 ArrayExpression arr = new ArrayExpression(ClassHelper.OBJECT_TYPE, args.getExpressions());
@@ -159,20 +161,20 @@ public class StaticInvocationWriter extends InvocationWriter {
             }
             if (target!=null && target.isPrivate()) {
                 ClassNode declaringClass = target.getDeclaringClass();
-                if (declaringClass instanceof InnerClassNode
-                        && declaringClass.getNodeMetaData(StaticCompilationMetadataKeys.PRIVATE_BRIDGE_METHODS)!=null
-                        && declaringClass != controller.getClassNode()) {
+                if ((isPrivateBridgeMethodsCallAllowed(declaringClass, classNode) || isPrivateBridgeMethodsCallAllowed(classNode, declaringClass))
+                        && declaringClass.getNodeMetaData(PRIVATE_BRIDGE_METHODS)!=null
+                        && !declaringClass.equals(classNode)) {
                     @SuppressWarnings("unchecked")
-                    Map<MethodNode, MethodNode> bridges = (Map<MethodNode, MethodNode>) declaringClass.getNodeMetaData(StaticCompilationMetadataKeys.PRIVATE_BRIDGE_METHODS);
+                    Map<MethodNode, MethodNode> bridges = (Map<MethodNode, MethodNode>) declaringClass.redirect().getNodeMetaData(PRIVATE_BRIDGE_METHODS);
                     MethodNode bridge = bridges.get(target);
                     if (bridge!=null) {
                         return writeDirectMethodCall(bridge, implicitThis, receiver, args);
                     }
                 }
-                if (declaringClass != controller.getClassNode()) {
+                if (declaringClass != classNode) {
                     controller.getSourceUnit().addError(new SyntaxException(
                             "Cannot call private method " + (target.isStatic()?"static ":"") +
-                                    declaringClass.toString(false) + "#" + target.getName() + " from class " + controller.getClassNode().toString(false),
+                                    declaringClass.toString(false) + "#" + target.getName() + " from class " + classNode.toString(false),
                             receiver.getLineNumber(),
                             receiver.getColumnNumber()
                     ));
@@ -180,6 +182,12 @@ public class StaticInvocationWriter extends InvocationWriter {
             }
             return super.writeDirectMethodCall(target, implicitThis, receiver, args);
         }
+    }
+
+    protected static boolean isPrivateBridgeMethodsCallAllowed(ClassNode receiver, ClassNode caller) {
+        if (receiver.redirect()==caller) return true;
+        if (caller.redirect() instanceof InnerClassNode) return isPrivateBridgeMethodsCallAllowed(receiver, caller.redirect().getOuterClass());
+        return false;
     }
 
     protected void loadArguments(List<Expression> argumentList, Parameter[] para) {
