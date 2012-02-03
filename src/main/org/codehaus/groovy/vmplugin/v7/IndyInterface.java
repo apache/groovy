@@ -399,11 +399,6 @@ public class IndyInterface {
             ci.handle = MethodHandles.dropArguments(ci.handle, 0, ci.targetType.parameterType(0));
         }
         
-        private static void dropDummyReceiver(CallInfo ci) {
-            ci.handle = MethodHandles.dropArguments(ci.handle, 0, Integer.class);
-            ci.handle = MethodHandles.insertArguments(ci.handle, 0, 1);
-        }
-        
         private static void setGuards(CallInfo ci, Object receiver) {
             if (ci.handle==null) return;
             
@@ -531,7 +526,6 @@ public class IndyInterface {
                 correctParameterLenth(callInfo);
                 correctCoerce(callInfo);
                 correctNullReceiver(callInfo);
-                dropDummyReceiver(callInfo);
 
                 try {
                     callInfo.handle = callInfo.handle.asType(callInfo.targetType);
