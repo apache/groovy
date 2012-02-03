@@ -1396,7 +1396,7 @@ public class AsmClassGenerator extends ClassGenerator {
     public void visitClassExpression(ClassExpression expression) {
         ClassNode type = expression.getType();
         MethodVisitor mv = controller.getMethodVisitor();
-        if (BytecodeHelper.isClassLiteralPossible(type)) {
+        if (BytecodeHelper.isClassLiteralPossible(type) || BytecodeHelper.isSameCompilationUnit(controller.getClassNode(), type)) {
             if (controller.getClassNode().isInterface()) {
                 InterfaceHelperClassNode interfaceClassLoadingClass = controller.getInterfaceClassLoadingClass();
                 if (BytecodeHelper.isClassLiteralPossible(interfaceClassLoadingClass)) {
