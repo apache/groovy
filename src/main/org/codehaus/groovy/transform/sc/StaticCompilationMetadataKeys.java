@@ -23,5 +23,6 @@ package org.codehaus.groovy.transform.sc;
 public enum StaticCompilationMetadataKeys {
     STATIC_COMPILE_NODE, // used to mark a section of code as to be statically compiled
     BINARY_EXP_TARGET, // use to tell which method should be used in a binary expression
+    PRIVATE_BRIDGE_METHODS, // private bridge methods are methods used by an outer class to access an inner class method
     WITH_CLOSURE // used to mark some closures as being "with" calls, so "owner" can be replaced with "delegate"
 }

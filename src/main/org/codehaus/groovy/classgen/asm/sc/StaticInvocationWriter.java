@@ -25,7 +25,9 @@ import org.codehaus.groovy.classgen.BytecodeExpression;
 import org.codehaus.groovy.classgen.asm.*;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.syntax.Token;
+import org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys;
 import org.codehaus.groovy.transform.stc.ExtensionMethodNode;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor;
@@ -36,6 +38,7 @@ import org.objectweb.asm.MethodVisitor;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.objectweb.asm.Opcodes.*;
@@ -153,6 +156,27 @@ public class StaticInvocationWriter extends InvocationWriter {
                 mce.setMethodTarget(target.isStatic() ? INVOKERHELPER_INVOKESTATICMETHOD : INVOKERHELPER_INVOKEMETHOD);
                 mce.visit(controller.getAcg());
                 return true;
+            }
+            if (target!=null && target.isPrivate()) {
+                ClassNode declaringClass = target.getDeclaringClass();
+                if (declaringClass instanceof InnerClassNode
+                        && declaringClass.getNodeMetaData(StaticCompilationMetadataKeys.PRIVATE_BRIDGE_METHODS)!=null
+                        && declaringClass != controller.getClassNode()) {
+                    @SuppressWarnings("unchecked")
+                    Map<MethodNode, MethodNode> bridges = (Map<MethodNode, MethodNode>) declaringClass.getNodeMetaData(StaticCompilationMetadataKeys.PRIVATE_BRIDGE_METHODS);
+                    MethodNode bridge = bridges.get(target);
+                    if (bridge!=null) {
+                        return writeDirectMethodCall(bridge, implicitThis, receiver, args);
+                    }
+                }
+                if (declaringClass != controller.getClassNode()) {
+                    controller.getSourceUnit().addError(new SyntaxException(
+                            "Cannot call private method " + (target.isStatic()?"static ":"") +
+                                    declaringClass.toString(false) + "#" + target.getName() + " from class " + controller.getClassNode().toString(false),
+                            receiver.getLineNumber(),
+                            receiver.getColumnNumber()
+                    ));
+                }
             }
             return super.writeDirectMethodCall(target, implicitThis, receiver, args);
         }

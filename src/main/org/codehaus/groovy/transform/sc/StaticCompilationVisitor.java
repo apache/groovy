@@ -17,6 +17,8 @@ package org.codehaus.groovy.transform.sc;
 
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
+import org.codehaus.groovy.ast.stmt.BlockStatement;
+import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.classgen.asm.InvocationWriter;
 import org.codehaus.groovy.classgen.asm.TypeChooser;
@@ -26,8 +28,9 @@ import org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor;
 import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 import org.codehaus.groovy.transform.stc.TypeCheckerPluginFactory;
+import org.objectweb.asm.Opcodes;
 
-import java.util.List;
+import java.util.*;
 
 import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.BINARY_EXP_TARGET;
 import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.STATIC_COMPILE_NODE;
@@ -66,10 +69,51 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
 
     @Override
     public void visitClass(final ClassNode node) {
-        ClassNode orig = classNode;
+        ClassNode oldCN = classNode;
         classNode = node;
         super.visitClass(node);
-        classNode = orig;
+        Iterator<InnerClassNode> innerClasses = classNode.getInnerClasses();
+        while (innerClasses.hasNext()) {
+            InnerClassNode innerClassNode = innerClasses.next();
+            addPrivateBridgeMethods(innerClassNode);
+            visitClass(innerClassNode);
+        }
+        classNode = oldCN;
+    }
+
+    /**
+     * This method is used to add "bridge" methods for private methods of an inner
+     * class, so that the outer class is capable of calling them. It does basically
+     * the same job as access$000 like methods in Java.
+     * 
+     * @param node an inner class node for which to generate bridge methods
+     */
+    private void addPrivateBridgeMethods(final InnerClassNode node) {
+        List<MethodNode> methods = new ArrayList<MethodNode>(node.getMethods());
+        Map<MethodNode, MethodNode> privateBridgeMethods = new HashMap<MethodNode, MethodNode>();
+        int i=-1;
+        for (MethodNode method : methods) {
+            int access = method.getModifiers();
+            if (method.isPrivate() && (access& Opcodes.ACC_SYNTHETIC)==0) {
+                i++;
+                access = (access - Opcodes.ACC_PRIVATE + Opcodes.ACC_SYNTHETIC) + Opcodes.ACC_FINAL;
+                Expression arguments;
+                if (method.getParameters()==null || method.getParameters().length==0) {
+                    arguments = ArgumentListExpression.EMPTY_ARGUMENTS;
+                } else {
+                    List<Expression> args = new LinkedList<Expression>();
+                    for (Parameter parameter : method.getParameters()) {
+                        args.add(new VariableExpression(parameter));
+                    }
+                    arguments = new ArgumentListExpression(args);
+                }
+                Expression receiver = method.isStatic()?new ClassExpression(node):new VariableExpression("this", node);
+                ExpressionStatement returnStatement = new ExpressionStatement(new MethodCallExpression(receiver, method.getName(), arguments));
+                MethodNode bridge = node.addMethod("access$"+i, access, method.getReturnType(), method.getParameters(), method.getExceptions(), returnStatement);
+                privateBridgeMethods.put(method, bridge);
+            }
+        }
+        node.setNodeMetaData(StaticCompilationMetadataKeys.PRIVATE_BRIDGE_METHODS, privateBridgeMethods);
     }
 
     private void memorizeInitialExpressions(final MethodNode node) {

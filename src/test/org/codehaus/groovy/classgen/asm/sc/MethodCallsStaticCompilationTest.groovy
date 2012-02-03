@@ -16,6 +16,7 @@
 package org.codehaus.groovy.classgen.asm.sc;
 
 import groovy.transform.stc.MethodCallsSTCTest
+import org.codehaus.groovy.control.MultipleCompilationErrorsException
 
 @Mixin(StaticCompilationTestSupport)
 public class MethodCallsStaticCompilationTest extends MethodCallsSTCTest {
@@ -43,5 +44,29 @@ public class MethodCallsStaticCompilationTest extends MethodCallsSTCTest {
             String str = null
             assert str?.toString() == null
         '''
+    }
+
+    void testCallToPrivateInnerClassMethod() {
+        try {
+            assertScript '''
+                class A {
+                    static class B { private static void foo() {} }
+                   public static void main(args) { B.foo() }
+                }
+            '''
+        } finally {
+            println astTrees
+        }
+    }
+
+    void testForbiddenCallToPrivateMethod() {
+        shouldFail(MultipleCompilationErrorsException) {
+            assertScript '''
+            class A {
+               public static void main(args) { B.foo() }
+            }
+            class B { private static void foo() {} }
+        '''
+        }
     }
 }
