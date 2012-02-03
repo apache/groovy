@@ -39,6 +39,8 @@ public class ReflectionUtils {
         IGNORED_PACKAGES.add("org.codehaus.groovy.runtime.metaclass");
         IGNORED_PACKAGES.add("org.codehaus.groovy.runtime");
         IGNORED_PACKAGES.add("sun.reflect");
+        IGNORED_PACKAGES.add("java.lang.invoke");
+        IGNORED_PACKAGES.add("org.codehaus.groovy.vmplugin.v7");
     }
 
     private static final Method MAGIC_METHOD;
