@@ -17,11 +17,12 @@ package org.codehaus.groovy.transform.sc;
 
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
-import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.ForStatement;
+import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.classgen.asm.InvocationWriter;
 import org.codehaus.groovy.classgen.asm.TypeChooser;
+import org.codehaus.groovy.classgen.asm.WriterControllerFactory;
 import org.codehaus.groovy.classgen.asm.sc.StaticTypesTypeChooser;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport;
@@ -30,9 +31,11 @@ import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 import org.codehaus.groovy.transform.stc.TypeCheckerPluginFactory;
 import org.objectweb.asm.Opcodes;
 
+import java.lang.reflect.Modifier;
 import java.util.*;
 
 import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.BINARY_EXP_TARGET;
+import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.PRIVATE_FIELDS_ACCESSORS;
 import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.STATIC_COMPILE_NODE;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.DIRECT_METHOD_CALL_TARGET;
 
@@ -71,13 +74,14 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
     public void visitClass(final ClassNode node) {
         ClassNode oldCN = classNode;
         classNode = node;
-        super.visitClass(node);
         Iterator<InnerClassNode> innerClasses = classNode.getInnerClasses();
         while (innerClasses.hasNext()) {
             InnerClassNode innerClassNode = innerClasses.next();
+            innerClassNode.setNodeMetaData(STATIC_COMPILE_NODE, Boolean.TRUE);
+            innerClassNode.setNodeMetaData(WriterControllerFactory.class, node.getNodeMetaData(WriterControllerFactory.class));
             addPrivateBridgeMethods(innerClassNode);
-            visitClass(innerClassNode);
         }
+        super.visitClass(node);
         classNode = oldCN;
     }
 
