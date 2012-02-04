@@ -1110,6 +1110,36 @@ class GroovyMethodsTest extends GroovyTestCase {
             assert clazz.isInstance( object.drop( 5 ) )
         }
     }
+
+    void testContainsForPrimitiveArrays() {
+        boolean[] bools = [false]
+        byte[] bytes = [1, 3]
+        short[] shorts = [1, 3]
+        int[] ints = [1, 3]
+        long[] longs = [1, 3]
+        float[] floats = [1.0f, 3.0f]
+        double[] doubles = [1.0d, 3.0d]
+        char[] chars = ['a' as char, 'c' as char]
+
+        assert bools.contains(false)
+        assert !bools.contains(true)
+        assert bytes.contains(3)
+        assert !bytes.contains(2)
+        assert shorts.contains(3)
+        assert !shorts.contains(2)
+        assert ints.contains(3)
+        assert !ints.contains(2)
+        assert longs.contains(3)
+        assert !longs.contains(2)
+        assert longs.contains(3)
+        assert !longs.contains(2)
+        assert floats.contains(3.0f)
+        assert !floats.contains(2.0f)
+        assert doubles.contains(3.0d)
+        assert !doubles.contains(2.0d)
+        assert chars.contains('c' as char)
+        assert !chars.contains('b' as char)
+    }
 }
 
 class WackyList extends LinkedList {

@@ -169,5 +169,40 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
             fib.fib(2)
         '''
     }
+    
+    void testClosureRecursionWithoutClosureTypeArgument() {
+        shouldFailWithMessages '''
+            Closure fib
+            fib = { int n -> n<2?n:fib(n-1)+fib(n-2) }
+        ''', 'Cannot find matching method java.lang.Object#plus(java.lang.Object)'
+    }
+
+    void testClosureRecursionWithDef() {
+        shouldFailWithMessages '''
+            def fib
+            fib = { int n -> n<2?n:fib(n-1)+fib(n-2) }
+        ''',
+                'Cannot find matching method java.lang.Object#plus(java.lang.Object)',
+                'Cannot find matching method java.lang.Object#call(int)',
+                'Cannot find matching method java.lang.Object#call(int)'
+    }
+
+    void testClosureRecursionWithClosureTypeArgument() {
+        assertScript '''
+            Closure<Integer> fib
+            fib = { int n -> n<2?n:fib(n-1)+fib(n-2) }
+        '''
+    }
+
+    void testClosureMemoizeWithClosureTypeArgument() {
+        assertScript '''
+            Closure<Integer> fib
+            fib = { int n -> n<2?n:fib(n-1)+fib(n-2) }
+            def memoized = fib.memoizeAtMost(2)
+            assert fib(5) == memoized(5)
+        '''
+    }
+
+
 }
 

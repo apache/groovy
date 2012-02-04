@@ -231,6 +231,7 @@ p() {
 
     void testReplacementsAndAdditions() {
         GpathSyntaxTestSupport.checkReplaceNode(getRoot)
+        GpathSyntaxTestSupport.checkReplaceMultipleNodes(getRoot)
         GpathSyntaxTestSupport.checkPlus(getRoot)
     }
 

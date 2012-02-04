@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,7 +61,7 @@ public class Node implements Serializable {
      * the newly created node as a child of the parent.
      *
      * @param parent the parent node or null if no parent
-     * @param name the name of the node
+     * @param name   the name of the node
      */
     public Node(Node parent, Object name) {
         this(parent, name, new NodeList());
@@ -72,8 +72,8 @@ public class Node implements Serializable {
      * if a parent is supplied, adds the newly created node as a child of the parent.
      *
      * @param parent the parent node or null if no parent
-     * @param name the name of the node
-     * @param value the Node value, e.g. some text but in general any Object
+     * @param name   the name of the node
+     * @param value  the Node value, e.g. some text but in general any Object
      */
     public Node(Node parent, Object name, Object value) {
         this(parent, name, new HashMap(), value);
@@ -84,8 +84,8 @@ public class Node implements Serializable {
      * attributes specified in the <code>attributes</code> Map. If a parent is supplied,
      * the newly created node is added as a child of the parent.
      *
-     * @param parent the parent node or null if no parent
-     * @param name the name of the node
+     * @param parent     the parent node or null if no parent
+     * @param name       the name of the node
      * @param attributes a Map of name-value pairs
      */
     public Node(Node parent, Object name, Map attributes) {
@@ -97,10 +97,10 @@ public class Node implements Serializable {
      * with attributes specified in the <code>attributes</code> Map. If a parent is supplied,
      * the newly created node is added as a child of the parent.
      *
-     * @param parent the parent node or null if no parent
-     * @param name the name of the node
+     * @param parent     the parent node or null if no parent
+     * @param name       the name of the node
      * @param attributes a Map of name-value pairs
-     * @param value the Node value, e.g. some text but in general any Object
+     * @param value      the Node value, e.g. some text but in general any Object
      */
     public Node(Node parent, Object name, Map attributes, Object value) {
         this.parent = parent;
@@ -127,12 +127,12 @@ public class Node implements Serializable {
     }
 
     public boolean append(Node child) {
-        child.parent = this;
+        child.setParent(this);
         return getParentList(this).add(child);
     }
 
     public boolean remove(Node child) {
-        child.parent = null;
+        child.setParent(null);
         return getParentList(this).remove(child);
     }
 
@@ -152,34 +152,54 @@ public class Node implements Serializable {
         return new Node(this, name, attributes, value);
     }
 
+    // TODO return replaced node rather than last appended?
+    // * @return the original now replaced node
+    /**
+     * Replaces the current node with nodes defined using builder-style notation via a Closure.
+     *
+     * @param c A Closure defining the new nodes using builder-style notation.
+     * @return the last appended node
+     */
     public Node replaceNode(Closure c) {
-        getParentList(parent).remove(this);
-        NodeBuilder b = new NodeBuilder();
-        Node newNode = (Node) b.invokeMethod("dummyNode", c);
-        List<Node> children = newNode.children();
-        Node result = this;
-        for (Node child : children) {
-            result = parent.appendNode(child.name(), child.attributes(), child.value());
+        if (parent() == null) {
+            throw new UnsupportedOperationException("Replacing the root node is not supported");
         }
+        Node result = appendNodes(c);
+        getParentList(parent()).remove(this);
+//        this.setParent(null);
+//        return this;
         return result;
     }
 
+    /**
+     * Adds sibling nodes (defined using builder-style notation via a Closure) after the current node.
+     *
+     * @param c A Closure defining the new sibling nodes to add using builder-style notation.
+     */
     public void plus(Closure c) {
-        List<Node> list = this.parent().children();
-        int afterIndex = list.indexOf(this);
-        List<Node> leftOvers = new ArrayList<Node>(list.subList(afterIndex + 1, list.size()));
-        list.subList(afterIndex + 1, list.size()).clear();
+        if (parent() == null) {
+            throw new UnsupportedOperationException("Adding sibling nodes to the root node is not supported");
+        }
+        appendNodes(c);
+    }
 
+    private Node appendNodes(Closure c) {
+        List list = parent().children();
+        int afterIndex = list.indexOf(this);
+        List leftOvers = new ArrayList(list.subList(afterIndex + 1, list.size()));
+        list.subList(afterIndex + 1, list.size()).clear();
+        Node lastAppended = null;
+        for (Node child : buildChildrenFromClosure(c)) {
+            lastAppended = parent().appendNode(child.name(), child.attributes(), child.value());
+        }
+        parent().children().addAll(leftOvers);
+        return lastAppended;
+    }
+
+    private List<Node> buildChildrenFromClosure(Closure c) {
         NodeBuilder b = new NodeBuilder();
         Node newNode = (Node) b.invokeMethod("dummyNode", c);
-        List<Node> children = newNode.children();
-        for (Node child : children) {
-            parent.appendNode(child.name(), child.attributes(), child.value());
-        }
-
-        for (Node child : leftOvers) {
-            this.parent().children().add(child);
-        }
+        return newNode.children();
     }
 
     protected static void setMetaClass(final MetaClass metaClass, Class nodeClass) {
@@ -223,36 +243,36 @@ public class Node implements Serializable {
     public String text() {
         if (value instanceof String) {
             return (String) value;
-        } else if (value instanceof Collection) {
+        }
+        if (value instanceof Collection) {
             Collection coll = (Collection) value;
             String previousText = null;
-            StringBuffer buffer = null;
-            for (Iterator iter = coll.iterator(); iter.hasNext();) {
-                Object child = iter.next();
+            StringBuilder sb = null;
+            for (Object child : coll) {
                 if (child instanceof String) {
                     String childText = (String) child;
                     if (previousText == null) {
                         previousText = childText;
                     } else {
-                        if (buffer == null) {
-                            buffer = new StringBuffer();
-                            buffer.append(previousText);
+                        if (sb == null) {
+                            sb = new StringBuilder();
+                            sb.append(previousText);
                         }
-                        buffer.append(childText);
+                        sb.append(childText);
                     }
                 }
             }
-            if (buffer != null) {
-                return buffer.toString();
+            if (sb != null) {
+                return sb.toString();
             } else {
                 if (previousText != null) {
                     return previousText;
                 }
+                return "";
             }
         }
-        return "";
+        return "" + value;
     }
-
 
     public Iterator iterator() {
         return children().iterator();
@@ -295,6 +315,10 @@ public class Node implements Serializable {
         return parent;
     }
 
+    protected void setParent(Node parent) {
+        this.parent = parent;
+    }
+
     /**
      * Provides lookup of elements by non-namespaced name
      *
@@ -326,8 +350,7 @@ public class Node implements Serializable {
      */
     public NodeList getAt(QName name) {
         NodeList answer = new NodeList();
-        for (Iterator iter = children().iterator(); iter.hasNext();) {
-            Object child = iter.next();
+        for (Object child : children()) {
             if (child instanceof Node) {
                 Node childNode = (Node) child;
                 Object childNodeName = childNode.name();
@@ -347,8 +370,7 @@ public class Node implements Serializable {
      */
     private NodeList getByName(String name) {
         NodeList answer = new NodeList();
-        for (Iterator iter = children().iterator(); iter.hasNext();) {
-            Object child = iter.next();
+        for (Object child : children()) {
             if (child instanceof Node) {
                 Node childNode = (Node) child;
                 Object childNodeName = childNode.name();
@@ -380,7 +402,7 @@ public class Node implements Serializable {
 
     private List depthFirstRest() {
         List answer = new NodeList();
-        for (Iterator iter = InvokerHelper.asIterator(value); iter.hasNext();) {
+        for (Iterator iter = InvokerHelper.asIterator(value); iter.hasNext(); ) {
             Object child = iter.next();
             if (child instanceof Node) {
                 Node childNode = (Node) child;
@@ -409,10 +431,9 @@ public class Node implements Serializable {
         List answer = new NodeList();
         List nextLevelChildren = getDirectChildren();
         while (!nextLevelChildren.isEmpty()) {
-            List working = new NodeList(nextLevelChildren);
+            List<Node> working = new NodeList(nextLevelChildren);
             nextLevelChildren = new NodeList();
-            for (Iterator iter = working.iterator(); iter.hasNext();) {
-                Node childNode = (Node) iter.next();
+            for (Node childNode : working) {
                 answer.add(childNode);
                 List children = childNode.getDirectChildren();
                 nextLevelChildren.addAll(children);
@@ -423,7 +444,7 @@ public class Node implements Serializable {
 
     private List getDirectChildren() {
         List answer = new NodeList();
-        for (Iterator iter = InvokerHelper.asIterator(value); iter.hasNext();) {
+        for (Iterator iter = InvokerHelper.asIterator(value); iter.hasNext(); ) {
             Object child = iter.next();
             if (child instanceof Node) {
                 Node childNode = (Node) child;
