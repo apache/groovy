@@ -238,21 +238,107 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     void testListPlusEquals() {
-        /*assertScript '''
+        assertScript '''
             List<String> list = ['a','b']
             list += ['c']
             assert list == ['a','b','c']
-        '''*/
+        '''
 
         assertScript '''
             Collection<String> list = ['a','b']
             list += 'c'
             assert list == ['a','b','c']
         '''
-
-
-
+    }
+    
+    void testObjectArrayGet() {
+        assertScript '''
+            Object[] arr = [new Object()]
+            arr.getAt(0)
+        '''
     }
 
+    void testStringArrayGet() {
+        assertScript '''
+            String[] arr = ['abc']
+            arr.getAt(0)
+        '''
+    }
+
+    void testObjectArrayPut() {
+        assertScript '''
+            Object[] arr = [new Object()]
+            arr.putAt(0, new Object())
+        '''
+    }
+
+    void testObjectArrayPutWithNull() {
+        assertScript '''
+            Object[] arr = [new Object()]
+            arr.putAt(0, null)
+        '''
+    }
+
+    void testStringArrayPut() {
+        assertScript '''
+            String[] arr = ['abc']
+            arr.putAt(0, 'def')
+        '''
+    }
+
+    void testStringArrayPutWithNull() {
+        assertScript '''
+            String[] arr = ['abc']
+            arr.putAt(0, null)
+        '''
+    }
+
+    void testStringArrayPutWithWrongType() {
+        shouldFailWithMessages '''
+            String[] arr = ['abc']
+            arr.putAt(0, new Object())
+        ''', 'Cannot find matching method [Ljava.lang.String;#putAt(int, java.lang.Object)'
+    }
+
+    void testStringArrayPutWithSubType() {
+        assertScript '''
+            Serializable[] arr = ['abc']
+            arr.putAt(0, new Integer(1))
+        '''
+    }
+
+    void testStringArrayPutWithSubTypeAsPrimitive() {
+        assertScript '''
+            Serializable[] arr = ['abc']
+            arr.putAt(0, 1)
+        '''
+    }
+
+    void testStringArrayPutWithIncorrectSubType() {
+        shouldFailWithMessages '''
+            Serializable[] arr = ['abc']
+            arr.putAt(0, new XmlSlurper())
+        ''', 'Cannot find matching method [Ljava.io.Serializable;#putAt(int, groovy.util.XmlSlurper)'
+    }
+
+    void testArrayGetOnPrimitiveArray() {
+        assertScript '''
+            int m() {
+                int[] arr = [1,2,3]
+                arr.getAt(1)
+            }
+            assert m()==2
+        '''
+    }
+
+    void testReturnTypeOfArrayGet() {
+        assertScript '''
+            Serializable m() {
+                String[] arr = ['1','2','3']
+                arr.getAt(1)
+            }
+            assert m()=='2'
+        '''
+    }
 }
 

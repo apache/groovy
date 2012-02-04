@@ -71,7 +71,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         shouldFailWithMessages '''
             List<String> list = []
             list << 1
-        ''', "Cannot call java.util.List#leftShift(java.lang.String) with arguments [int]"
+        ''', 'Cannot find matching method java.util.List#leftShift(int)'
     }
 
     void testAddOnList2UsingLeftShift() {
@@ -104,7 +104,14 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         shouldFailWithMessages '''
             List<Integer> list = new LinkedList<>()
             list << 'Hello'
-        ''', 'Cannot call java.util.LinkedList#leftShift(java.lang.Integer) with arguments [java.lang.String]'
+        ''', 'Cannot find matching method java.util.LinkedList#leftShift(java.lang.String)'
+    }
+
+    void testAddOnListWithDiamondAndNullUsingLeftShift() {
+        assertScript '''
+            List<Integer> list = new LinkedList<>()
+            list << null
+        '''
     }
 
     void testReturnTypeInference() {
@@ -278,6 +285,26 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
           println 'Hello'
         }
       '''
+    }
+
+    // GROOVY-5237
+    void testGenericTypeArgumentAsField() {
+        assertScript '''
+            class Container<T> {
+                private T initialValue
+                Container(T initialValue) { this.initialValue = initialValue }
+                T get() { initialValue }
+            }
+            Container<Date> c = new Container<Date>(new Date())
+            long time = c.get().time
+        '''
+    }
+
+    void testReturnAnntationClass() {
+        assertScript '''
+            import java.lang.annotation.Documented
+            Documented annotation = Deprecated.getAnnotation(Documented)
+        '''
     }
   
     static class MyList extends LinkedList<String> {}

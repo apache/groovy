@@ -210,7 +210,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         node.addConstructor(constructor);
     }
 
-    private void addStaticMetaClassField(ClassNode node, final String classInternalName) {
+    private void addStaticMetaClassField(final ClassNode node, final String classInternalName) {
         String _staticClassInfoFieldName = "$staticClassInfo";
         while (node.getDeclaredField(_staticClassInfoFieldName) != null)
             _staticClassInfoFieldName = _staticClassInfoFieldName + "$";
@@ -229,8 +229,11 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                     public void visit(MethodVisitor mv) {
                         mv.visitVarInsn(ALOAD, 0);
                         mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Object", "getClass", "()Ljava/lang/Class;");
-                        mv.visitMethodInsn(INVOKESTATIC, classInternalName, "$get$$class$" + classInternalName.replaceAll("\\/", "\\$"), "()Ljava/lang/Class;");
-
+                        if (BytecodeHelper.isClassLiteralPossible(node)) {
+                            BytecodeHelper.visitClassLiteral(mv,node);
+                        } else {
+                            mv.visitMethodInsn(INVOKESTATIC, classInternalName, "$get$$class$" + classInternalName.replaceAll("\\/", "\\$"), "()Ljava/lang/Class;");
+                        }
                         Label l1 = new Label();
                         mv.visitJumpInsn(IF_ACMPEQ, l1);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2011 the original author or authors.
+ * Copyright 2008-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -161,6 +161,21 @@ class FieldTransformTest extends CompilableTestSupport {
         """
     }
 
+    void testFieldShouldBeAccessibleFromClosureForExternalClosures() {
+        // GROOVY-5207
+        assertScript """
+            import groovy.transform.Field
+            @Field xxx = [:]
+            @Field static yyy = [:]
+            [1, 2, 3].each {
+                xxx[it] = it
+                yyy[it] = it
+            }
+            assert xxx == [(1):1, (2):2, (3):3]
+            assert yyy == xxx
+        """
+    }
+
     void testStaticFieldShouldBeAccessibleFromClosure() {
         assertScript """
             import groovy.transform.Field
@@ -184,7 +199,7 @@ class FieldTransformTest extends CompilableTestSupport {
             @Awesome @Field def test
 
             class Doh {
-              @Awesome String test
+                @Awesome String test
             }
 
             assert Doh.getDeclaredField('test').getAnnotations().size() == 1

@@ -143,5 +143,20 @@ class ConstructorsSTCTest extends StaticTypeCheckingTestCase {
             B b = [x:1, y:2]
         '''
     }
+
+    // GROOVY-5231
+    void testConstructorWithTupleConstructorAnnotation() {
+        assertScript '''
+        @groovy.transform.TupleConstructor
+        class Person {
+            String name, city
+            static Person create() {
+                new Person("Guillaume")
+            }
+        }
+
+        Person.create()
+        '''
+    }
 }
 

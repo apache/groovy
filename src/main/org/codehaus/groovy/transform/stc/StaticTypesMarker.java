@@ -25,5 +25,6 @@ public enum StaticTypesMarker {
     DECLARATION_INFERRED_TYPE, // in flow analysis, represents the type of the declaration node lhs
     INFERRED_RETURN_TYPE, // used to store inferred return type for methods and closures
     CLOSURE_ARGUMENTS, // used to store closure argument types on a variable expression
+    READONLY_PROPERTY, // used to tell that a property expression refers to a readonly property
     DIRECT_METHOD_CALL_TARGET // used to store the MethodNode a MethodCallExpression should target
 }

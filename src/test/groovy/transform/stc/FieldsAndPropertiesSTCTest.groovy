@@ -185,6 +185,32 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    void testDateProperties() {
+        assertScript '''
+            Date d = new Date()
+            def time = d.time
+            d.time = 0
+        '''
+    }
+
+    // GROOVY-5232
+    void testSetterForProperty() {
+        assertScript '''
+            class Person {
+                String name
+
+                static Person create() {
+                    def p = new Person()
+                    p.setName("Guillaume")
+                    // but p.name = "Guillaume" works
+                    return p
+                }
+            }
+
+            Person.create()
+        '''
+    }
+
     public static class BaseClass {
         int x
     }

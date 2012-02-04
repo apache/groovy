@@ -130,6 +130,35 @@ class CategoryTest extends GroovyTestCase {
         }
       """
     }
+
+    void testNullReceiverChangeForPOJO() {
+        // GROOVY-5248
+        // this test will call a method using a POJO while a category is active
+        // in call site caching this triggers the usage of POJOMetaClassSite,
+        // which was missing a null check for the receiver. The last foo call
+        // uses null to exaclty check that path. I use multiple calls with foo(1)
+        // before to ensure for example indy will do the right things as well, 
+        // since indy may need more than one call here.
+        assertScript """
+            class Cat {
+              public static findAll(Integer x, Closure cl) {1}   
+            }
+
+             def foo(x) {
+                 x.findAll {}
+             }
+             
+             use (Cat) {
+                 assert foo(1) == 1
+                 assert foo(1) == 1
+                 assert foo(1) == 1
+                 assert foo(null) == []
+                 assert foo(1) == 1
+                 assert foo(1) == 1
+                 assert foo(1) == 1
+             }
+        """
+    }
 }
 
 class StringCategory {

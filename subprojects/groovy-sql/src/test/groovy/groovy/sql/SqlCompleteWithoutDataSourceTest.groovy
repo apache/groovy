@@ -10,7 +10,7 @@ import org.hsqldb.jdbcDriver
 class SqlCompleteWithoutDataSourceTest extends SqlCompleteTest {
     
     protected def newSql(String uri) {
-        def driver = jdbcDriver
+        def driver = Class.forName('org.hsqldb.jdbcDriver')
         println("Loading driver ${driver}")
         return new Sql(DriverManager.getConnection(uri))
     }

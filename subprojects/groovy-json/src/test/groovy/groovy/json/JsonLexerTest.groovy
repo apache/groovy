@@ -134,5 +134,12 @@ class JsonLexerTest extends GroovyTestCase {
         assert lexer.nextToken().value == "Guill\\aume"
         assert lexer.nextToken().type == JsonTokenType.CLOSE_BRACKET
         assert lexer.nextToken() == null
+
+        lexer = new JsonLexer(new StringReader('["c:\\\\"]'))
+
+        assert lexer.nextToken().type == JsonTokenType.OPEN_BRACKET
+        assert lexer.nextToken().value == "c:\\"
+        assert lexer.nextToken().type == JsonTokenType.CLOSE_BRACKET
+        assert lexer.nextToken() == null
     }
 }

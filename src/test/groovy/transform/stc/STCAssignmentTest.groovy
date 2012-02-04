@@ -361,7 +361,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
     void testCastNullToCharWithCast() {
         shouldFailWithMessages '''
             def c = (char) null
-        ''', 'Inconvertible types: cannot cast null to char'
+        ''', 'Inconvertible types: cannot cast java.lang.Object to char'
     }
 
     void testCastStringToCharacterWithCast() {
@@ -626,5 +626,99 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
             assert c.getClass() == BigDecimal
         '''
     }
+    
+    void testPostfixOnInt() {
+        assertScript '''
+            int i = 0
+            i++
+        '''
+        assertScript '''
+            int i = 0
+            i--
+        '''
+    }
+
+    void testPostfixOnDate() {
+        assertScript '''
+            Date d = new Date()
+            d++
+        '''
+        assertScript '''
+            Date d = new Date()
+            d--
+        '''
+    }
+
+    void testPostfixOnObject() {
+        shouldFailWithMessages '''
+            Object o = new Object()
+            o++
+        ''', 'Cannot find matching method java.lang.Object#next()'
+        shouldFailWithMessages '''
+            Object o = new Object()
+            o--
+        ''', 'Cannot find matching method java.lang.Object#previous()'
+    }
+
+    void testPrefixOnInt() {
+        assertScript '''
+            int i = 0
+            ++i
+        '''
+        assertScript '''
+            int i = 0
+            --i
+        '''
+    }
+
+    void testPrefixOnDate() {
+        assertScript '''
+            Date d = new Date()
+            ++d
+        '''
+        assertScript '''
+            Date d = new Date()
+            --d
+        '''
+    }
+
+    void testPrefixOnObject() {
+        shouldFailWithMessages '''
+            Object o = new Object()
+            ++o
+        ''', 'Cannot find matching method java.lang.Object#next()'
+        shouldFailWithMessages '''
+            Object o = new Object()
+            --o
+        ''', 'Cannot find matching method java.lang.Object#previous()'
+    }
+
+    void testAssignArray() {
+        assertScript '''
+            String[] src = ['a','b','c']
+            Object[] arr = src
+        '''
+    }
+
+    void testCastArray() {
+        assertScript '''
+            List<String> src = ['a','b','c']
+            (String[]) src.toArray(src as String[])
+        '''
+    }
+
+    void testIncompatibleCastArray() {
+        shouldFailWithMessages '''
+            String[] src = ['a','b','c']
+            (Set[]) src
+        ''', 'Inconvertible types: cannot cast [Ljava.lang.String; to [Ljava.util.Set;'
+    }
+
+    void testIncompatibleToArray() {
+        shouldFailWithMessages '''
+            (Set[]) ['a','b','c'].toArray(new String[3])
+        ''', 'Inconvertible types: cannot cast [Ljava.lang.String; to [Ljava.util.Set;'
+    }
+
 }
 
