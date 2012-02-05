@@ -7751,7 +7751,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns a new map containing the first <code>num</code> elements from the head of this map.
-     * If the map instance does not have ordered keys,then this function could return a random <code>n<code>
+     * If the map instance does not have ordered keys,then this function could return a random <code>n</code>
      * entries.  Groovy by default used LinkedHashMap, so this shouldn't be an issue in the main.
      * <pre class="groovyTestCase">
      *     def strings = [ 'a':10, 'b':20, 'c':30 ]
@@ -8937,7 +8937,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.5.0
      */
     public static <T> Set<T> minus(Set<T> self, Collection operands) {
-    	Comparator comparator = (self instanceof SortedSet) ? ((SortedSet) self).comparator() : null;
+        Comparator comparator = (self instanceof SortedSet) ? ((SortedSet) self).comparator() : null;
         final Set<T> ansSet = createSimilarSet(self);
         ansSet.addAll(self);
         if (operands != null && operands.size() > 0) {
@@ -8966,11 +8966,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.5.0
      */
     public static <T> Set<T> minus(Set<T> self, Object operand) {
-    	Comparator comparator = (self instanceof SortedSet) ? ((SortedSet) self).comparator() : null;
+        Comparator comparator = (self instanceof SortedSet) ? ((SortedSet) self).comparator() : null;
         final Set<T> ansSet = createSimilarSet(self);
         for (T t : self) {
-        	boolean areEqual = (comparator != null)? (comparator.compare(t, operand) == 0) : coercedEquals(t, operand);
-        	if (!areEqual) ansSet.add(t);
+            boolean areEqual = (comparator != null)? (comparator.compare(t, operand) == 0) : coercedEquals(t, operand);
+            if (!areEqual) ansSet.add(t);
         }
         return ansSet;
     }
@@ -11380,7 +11380,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * <p>For more control over Process construction you can use
      * <code>java.lang.ProcessBuilder</code> (JDK 1.5+).</p>
      *
-     * @param commandArray an array of <code>String<code> containing the command name and
+     * @param commandArray an array of <code>String</code> containing the command name and
      *                     parameters as separate items in the array.
      * @return the Process which has just started for this command line representation.
      * @throws IOException if an IOException occurs.
@@ -11397,7 +11397,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * <p>For more control over Process construction you can use
      * <code>java.lang.ProcessBuilder</code> (JDK 1.5+).</p>
      *
-     * @param commandArray an array of <code>String<code> containing the command name and
+     * @param commandArray an array of <code>String</code> containing the command name and
      *                     parameters as separate items in the array.
      * @param envp an array of Strings, each member of which
      *             has environment variable settings in the format
@@ -11422,7 +11422,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * <p>For more control over Process construction you can use
      * <code>java.lang.ProcessBuilder</code> (JDK 1.5+).</p>
      *
-     * @param commandArray an array of <code>String<code> containing the command name and
+     * @param commandArray an array of <code>String</code> containing the command name and
      *                     parameters as separate items in the array.
      * @param envp a List of Objects (converted to Strings using toString), each member of which
      *             has environment variable settings in the format
