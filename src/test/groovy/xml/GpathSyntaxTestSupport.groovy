@@ -47,6 +47,26 @@ class GpathSyntaxTestSupport {
 </root>
 '''
 
+    static void checkUpdateElementValue(Closure getRoot) {
+        def root = getRoot('<root><a>foo</a><b/></root>')
+        assert root != null
+        def a = root.a[0]
+        def b = root.b[0]
+        a.value = a.text() + 'bar'
+        b.value = 'baz'
+        String actual = XmlUtil.serialize(root)
+        def expected = '''\
+<?xml version="1.0" encoding="UTF-8"?>
+<root>
+  <a>foobar</a>
+  <b>baz</b>
+</root>
+'''
+        XMLUnit.ignoreWhitespace = true
+        def xmlDiff = new Diff(actual, expected)
+        assert xmlDiff.similar(), xmlDiff.toString()
+    }
+
     static void checkElement(Closure getRoot) {
         def root = getRoot(sampleXml)
         assert root != null
