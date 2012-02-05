@@ -86,6 +86,11 @@ class GroovyRowResultTest extends GroovyTestCase {
         assert row.NULLUPPER == null
         assert row[5] == null
 
+        assert row.containsKey('upper')
+        assert row.containsKey('UPPER')
+        assert row.remove('upper')
+        assert !row.containsKey('upper')
+        assert !row.containsKey('UPPER')
     }
 
     void testOrder() {
