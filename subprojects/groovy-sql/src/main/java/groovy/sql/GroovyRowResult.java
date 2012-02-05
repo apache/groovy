@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 package groovy.sql;
 
+import groovy.lang.GString;
 import groovy.lang.GroovyObjectSupport;
 import groovy.lang.MissingPropertyException;
 
@@ -47,25 +48,29 @@ public class GroovyRowResult extends GroovyObjectSupport implements Map {
      */
     public Object getProperty(String property) {
         try {
+            // try to match with exact case first for efficiency
             Object value = result.get(property);
-            if (value != null)
+            if (value != null || result.containsKey(property))
                 return value;
-            // if property exists and value is null, return null
-            if (result.containsKey(property))
-                return null;
-            // with some databases/drivers, the columns names are stored uppercase.
-            String propertyUpper = property.toUpperCase();
-            value = result.get(propertyUpper);
-            if (value != null)
+            // now try again ignoring case to cater for how some databases/drivers store column names.
+            value = getPropertyIgnoringCase(property);
+            if (value != null || containsKey(property))
                 return value;
-            // if property exists and value is null, return null
-            if (result.containsKey(propertyUpper)) 
-                return null;
             throw new MissingPropertyException(property, GroovyRowResult.class);
         }
         catch (Exception e) {
             throw new MissingPropertyException(property, GroovyRowResult.class, e);
         }
+    }
+
+    private Object getPropertyIgnoringCase(String property) {
+        for (Object key : result.keySet()) {
+            if (!(key instanceof String))
+                continue;
+            if (property.equalsIgnoreCase((String)key))
+                return result.get(key);
+        }
+        return null;
     }
 
     /**
@@ -90,7 +95,7 @@ public class GroovyRowResult extends GroovyObjectSupport implements Map {
                     it.next();
                 i++;
             }
-            return (obj);
+            return obj;
         }
         catch (Exception e) {
             throw new MissingPropertyException(Integer.toString(index), GroovyRowResult.class, e);
@@ -98,12 +103,12 @@ public class GroovyRowResult extends GroovyObjectSupport implements Map {
     }
 
     public String toString() {
-        return (result.toString());
+        return result.toString();
     }
 
     /*
      * The following methods are needed for implementing the Map interface.
-     * They are just delegating the request to the internal LinkedHashMap
+     * They are mostly delegating the request to the provided Map.
      */
      
     public void clear() {
@@ -111,7 +116,17 @@ public class GroovyRowResult extends GroovyObjectSupport implements Map {
     }
 
     public boolean containsKey(Object key) {
-        return result.containsKey(key);
+        // first look for exact case for efficiency
+        if (result.containsKey(key)) return true;
+        // now try again ignoring case
+        for (Object next : result.keySet()) {
+            if (!(next instanceof String) && !(key instanceof String || key instanceof GString))
+                continue;
+            if (key.toString().equalsIgnoreCase((String) next)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public boolean containsValue(Object value) {
@@ -129,8 +144,7 @@ public class GroovyRowResult extends GroovyObjectSupport implements Map {
     public Object get(Object property) {
         if (property instanceof String)
             return getProperty((String)property);
-        else
-            return null;
+        return null;
     }
 
     public int hashCode() {
