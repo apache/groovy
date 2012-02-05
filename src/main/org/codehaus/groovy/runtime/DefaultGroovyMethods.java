@@ -7751,7 +7751,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns a new map containing the first <code>num</code> elements from the head of this map.
-     * If the map instance does not have ordered keys,then this function could return a random <code>n</code>
+     * If the map instance does not have ordered keys, then this function could return a random <code>num</code>
      * entries.  Groovy by default used LinkedHashMap, so this shouldn't be an issue in the main.
      * <pre class="groovyTestCase">
      *     def strings = [ 'a':10, 'b':20, 'c':30 ]
@@ -7899,7 +7899,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Drops the given number of key/value pairs from the head of this map if they are available.
-     * If the map instance does not have ordered keys,then this function could return a random <code>n</code>
+     * If the map instance does not have ordered keys, then this function could drop a random <code>num</code>
      * entries.  Groovy by default used LinkedHashMap, so this shouldn't be an issue in the main.
      * <pre class="groovyTestCase">
      *     def strings = [ 'a':10, 'b':20, 'c':30 ]
@@ -11950,7 +11950,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Multiply a Character by a Number. The ordinal value of the Character
-     * is used in the multiplcation (the ordinal value is the unicode
+     * is used in the multiplication (the ordinal value is the unicode
      * value which for simple character sets is the ASCII value).
      *
      * @param left  a Character
