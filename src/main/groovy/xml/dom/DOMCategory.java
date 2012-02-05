@@ -260,7 +260,12 @@ public class DOMCategory {
     }
 
     public static void setValue(Element self, String value) {
-        self.getFirstChild().setNodeValue(value);
+        Node firstChild = self.getFirstChild();
+        if (firstChild == null) {
+            firstChild = self.getOwnerDocument().createTextNode(value);
+            self.appendChild(firstChild);
+        }
+        firstChild.setNodeValue(value);
     }
 
     public static void putAt(Element self, String property, Object value) {
