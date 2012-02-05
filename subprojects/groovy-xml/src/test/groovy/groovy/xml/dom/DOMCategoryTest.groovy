@@ -45,6 +45,7 @@ class DOMCategoryTest extends GroovyTestCase {
 
     void testElement() {
         use(DOMCategory) {
+            GpathSyntaxTestSupport.checkUpdateElementValue(getRoot)
             GpathSyntaxTestSupport.checkElement(getRoot)
             GpathSyntaxTestSupport.checkFindElement(getRoot)
             GpathSyntaxTestSupport.checkElementTypes(getRoot)

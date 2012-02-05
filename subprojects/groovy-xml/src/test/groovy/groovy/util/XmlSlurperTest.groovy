@@ -53,6 +53,8 @@ class XmlSlurperTest extends GroovyTestCase {
     }
 
     void testElement() {
+        // can't update value directly with XmlSlurper, use replaceNode instead
+        // GpathSyntaxTestSupport.checkUpdateElementValue(getRoot)
         GpathSyntaxTestSupport.checkElement(getRoot)
         GpathSyntaxTestSupport.checkFindElement(getRoot)
         GpathSyntaxTestSupport.checkElementTypes(getRoot)
