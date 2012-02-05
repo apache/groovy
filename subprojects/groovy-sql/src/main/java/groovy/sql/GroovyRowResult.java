@@ -15,7 +15,6 @@
  */
 package groovy.sql;
 
-import groovy.lang.GString;
 import groovy.lang.GroovyObjectSupport;
 import groovy.lang.MissingPropertyException;
 
@@ -48,14 +47,10 @@ public class GroovyRowResult extends GroovyObjectSupport implements Map {
      */
     public Object getProperty(String property) {
         try {
-            // try to match with exact case first for efficiency
-            Object value = result.get(property);
-            if (value != null || result.containsKey(property))
-                return value;
-            // now try again ignoring case to cater for how some databases/drivers store column names.
-            value = getPropertyIgnoringCase(property);
-            if (value != null || containsKey(property))
-                return value;
+            Object key = lookupKeyIgnoringCase(property);
+            if (key != null) {
+                return result.get(key);
+            }
             throw new MissingPropertyException(property, GroovyRowResult.class);
         }
         catch (Exception e) {
@@ -63,12 +58,18 @@ public class GroovyRowResult extends GroovyObjectSupport implements Map {
         }
     }
 
-    private Object getPropertyIgnoringCase(String property) {
-        for (Object key : result.keySet()) {
-            if (!(key instanceof String))
+    private Object lookupKeyIgnoringCase(Object key) {
+        // try some special cases first for efficiency
+        if (result.containsKey(key))
+            return key;
+        if (!(key instanceof CharSequence))
+            return null;
+        String keyStr = key.toString();
+        for (Object next : result.keySet()) {
+            if (!(next instanceof String))
                 continue;
-            if (property.equalsIgnoreCase((String)key))
-                return result.get(key);
+            if (keyStr.equalsIgnoreCase((String)next))
+                return next;
         }
         return null;
     }
@@ -116,17 +117,7 @@ public class GroovyRowResult extends GroovyObjectSupport implements Map {
     }
 
     public boolean containsKey(Object key) {
-        // first look for exact case for efficiency
-        if (result.containsKey(key)) return true;
-        // now try again ignoring case
-        for (Object next : result.keySet()) {
-            if (!(next instanceof String) && !(key instanceof String || key instanceof GString))
-                continue;
-            if (key.toString().equalsIgnoreCase((String) next)) {
-                return true;
-            }
-        }
-        return false;
+        return lookupKeyIgnoringCase(key) != null;
     }
 
     public boolean containsValue(Object value) {
@@ -167,8 +158,8 @@ public class GroovyRowResult extends GroovyObjectSupport implements Map {
         result.putAll(t);
     }
 
-    public Object remove(Object key) {
-        return result.remove(key);
+    public Object remove(Object rawKey) {
+        return result.remove(lookupKeyIgnoringCase(rawKey));
     }
 
     public int size() {
