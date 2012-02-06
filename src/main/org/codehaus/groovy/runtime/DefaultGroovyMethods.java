@@ -1966,6 +1966,95 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Collates this list into sub-lists of length <code>size</code>. Any remaining elements in
+     * the list after the subdivision will be dropped.
+     * Example:
+     * <pre class="groovyTestCase">def list = [ 1, 2, 3, 4, 5, 6, 7 ]
+     * def coll = list.collate( 3 )
+     * assert coll == [ [ 1, 2, 3 ], [ 4, 5, 6 ] ]</pre>
+     *
+     * @param self          a List
+     * @param size          the length of each sub-list in the returned list
+     * @return a List containing the data collated into sub-lists
+     * @since 1.8.7
+     */
+    public static <T> List<List<T>> collate( List<T> self, int size ) {
+        return collate( self, size, size, false ) ;
+    }
+
+    /**
+     * Collates this list into sub-lists of length <code>size</code> stepping through the code <code>step</code>
+     * elements for each subList.  Any remaining elements in the list after the subdivision will be dropped.
+     * Example:
+     * <pre class="groovyTestCase">def list = [ 1, 2, 3, 4 ]
+     * def coll = list.collate( 3, 1 )
+     * assert coll == [ [ 1, 2, 3 ], [ 2, 3, 4 ] ]</pre>
+     *
+     * @param self          a List
+     * @param size          the length of each sub-list in the returned list
+     * @param step          the number of elements to step through for each sub-list
+     * @return a List containing the data collated into sub-lists
+     * @since 1.8.7
+     */
+    public static <T> List<List<T>> collate( List<T> self, int size, int step ) {
+        return collate( self, size, step, false ) ;
+    }
+
+    /**
+     * Collates this list into sub-lists of length <code>size</code>. Any remaining elements in
+     * the list after the subdivision will be dropped if <code>keepRemainder</code> is false.
+     * Example:
+     * <pre class="groovyTestCase">def list = [ 1, 2, 3, 4, 5, 6, 7 ]
+     * def coll = list.collate( 3, true )
+     * assert coll == [ [ 1, 2, 3 ], [ 4, 5, 6 ], [ 7 ] ]</pre>
+     *
+     * @param self          a List
+     * @param size          the length of each sub-list in the returned list
+     * @param keepRemainder if true, any rmeaining elements are returned as sub-lists.  Otherwise they are discarded
+     * @return a List containing the data collated into sub-lists
+     * @since 1.8.7
+     */
+    public static <T> List<List<T>> collate( List<T> self, int size, boolean keepRemainder ) {
+        return collate( self, size, size, keepRemainder ) ;
+    }
+
+    /**
+     * Collates this list into sub-lists of length <code>size</code> stepping through the code <code>step</code>
+     * elements for each sub-list.  Any remaining elements in the list after the subdivision will be dropped if
+     * <code>keepRemainder</code> is false.
+     * Example:
+     * <pre class="groovyTestCase">def list = [ 1, 2, 3, 4 ]
+     * def coll = list.collate( 3, 1, true )
+     * assert coll == [ [ 1, 2, 3 ], [ 2, 3, 4 ], [ 3, 4 ], [ 4 ] ]</pre>
+     *
+     * @param self          a List
+     * @param size          the length of each sub-list in the returned list
+     * @param step          the number of elements to step through for each sub-list
+     * @param keepRemainder if true, any rmeaining elements are returned as sub-lists.  Otherwise they are discarded
+     * @return a List containing the data collated into sub-lists
+     * @since 1.8.7
+     */
+    public static <T> List<List<T>> collate( List<T> self, int size, int step, boolean keepRemainder ) {
+        List<List<T>> answer = new ArrayList<List<T>>();
+        if( size <= 0 || self.size() == 0 ) {
+            answer.add( self ) ;
+        }
+        else {
+            for( int pos = 0 ; pos < self.size() && pos > -1 ; pos += step ) {
+                if( !keepRemainder && pos > self.size() - size ) {
+                    break ;
+                }
+                List<T> element = new ArrayList<T>() ;
+                for( int offs = pos ; offs < pos + size && offs < self.size() ; offs++ ) {
+                    element.add( self.get( offs ) ) ;
+                }
+                answer.add( element ) ;
+            }
+        }
+        return answer ;
+    }
+
+    /**
      * Iterates through this aggregate Object transforming each item into a new value using the
      * <code>transform</code> closure, returning a list of transformed values.
      * Example:
