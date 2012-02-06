@@ -1966,12 +1966,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Collates this list into sub-lists of length <code>size</code>. Any remaining elements in
-     * the list after the subdivision will be dropped.
+     * Collates this list into sub-lists of length <code>size</code>.
      * Example:
      * <pre class="groovyTestCase">def list = [ 1, 2, 3, 4, 5, 6, 7 ]
      * def coll = list.collate( 3 )
-     * assert coll == [ [ 1, 2, 3 ], [ 4, 5, 6 ] ]</pre>
+     * assert coll == [ [ 1, 2, 3 ], [ 4, 5, 6 ], [ 7 ] ]</pre>
      *
      * @param self          a List
      * @param size          the length of each sub-list in the returned list
@@ -1979,16 +1978,16 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.8.7
      */
     public static <T> List<List<T>> collate( List<T> self, int size ) {
-        return collate( self, size, size, false ) ;
+        return collate( self, size, size, true ) ;
     }
 
     /**
      * Collates this list into sub-lists of length <code>size</code> stepping through the code <code>step</code>
-     * elements for each subList.  Any remaining elements in the list after the subdivision will be dropped.
+     * elements for each subList.
      * Example:
      * <pre class="groovyTestCase">def list = [ 1, 2, 3, 4 ]
      * def coll = list.collate( 3, 1 )
-     * assert coll == [ [ 1, 2, 3 ], [ 2, 3, 4 ] ]</pre>
+     * assert coll == [ [ 1, 2, 3 ], [ 2, 3, 4 ], [ 3, 4 ], [ 4 ] ]</pre>
      *
      * @param self          a List
      * @param size          the length of each sub-list in the returned list
@@ -1997,7 +1996,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.8.7
      */
     public static <T> List<List<T>> collate( List<T> self, int size, int step ) {
-        return collate( self, size, step, false ) ;
+        return collate( self, size, step, true ) ;
     }
 
     /**
@@ -2005,8 +2004,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * the list after the subdivision will be dropped if <code>keepRemainder</code> is false.
      * Example:
      * <pre class="groovyTestCase">def list = [ 1, 2, 3, 4, 5, 6, 7 ]
-     * def coll = list.collate( 3, true )
-     * assert coll == [ [ 1, 2, 3 ], [ 4, 5, 6 ], [ 7 ] ]</pre>
+     * def coll = list.collate( 3, false )
+     * assert coll == [ [ 1, 2, 3 ], [ 4, 5, 6 ] ]</pre>
      *
      * @param self          a List
      * @param size          the length of each sub-list in the returned list
@@ -2024,8 +2023,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * <code>keepRemainder</code> is false.
      * Example:
      * <pre class="groovyTestCase">def list = [ 1, 2, 3, 4 ]
-     * def coll = list.collate( 3, 1, true )
-     * assert coll == [ [ 1, 2, 3 ], [ 2, 3, 4 ], [ 3, 4 ], [ 4 ] ]</pre>
+     * assert list.collate( 3, 1, true  ) == [ [ 1, 2, 3 ], [ 2, 3, 4 ], [ 3, 4 ], [ 4 ] ]
+     * assert list.collate( 3, 1, false ) == [ [ 1, 2, 3 ], [ 2, 3, 4 ] ]</pre>
      *
      * @param self          a List
      * @param size          the length of each sub-list in the returned list
