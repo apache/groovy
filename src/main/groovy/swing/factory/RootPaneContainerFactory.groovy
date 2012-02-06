@@ -18,7 +18,9 @@ package groovy.swing.factory
 
 import java.awt.Component
 import java.awt.Window
+import javax.swing.JComponent
 import javax.swing.JButton
+import static groovy.swing.factory.LayoutFactory.DEFAULT_DELEGATE_PROPERTY_CONSTRAINT
 
 abstract class RootPaneContainerFactory extends AbstractFactory {
 
@@ -33,6 +35,9 @@ abstract class RootPaneContainerFactory extends AbstractFactory {
             def constraints = builder.context.constraints
             if (constraints != null) {
                 parent.contentPane.add(child, constraints)
+                if (child instanceof JComponent) {
+                    child.putClientProperty(DEFAULT_DELEGATE_PROPERTY_CONSTRAINT, constraints)
+                }
                 builder.context.remove('constraints')
             } else {
                 parent.contentPane.add(child)
