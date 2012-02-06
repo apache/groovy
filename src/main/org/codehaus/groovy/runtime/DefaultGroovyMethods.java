@@ -1975,7 +1975,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self          a List
      * @param size          the length of each sub-list in the returned list
      * @return a List containing the data collated into sub-lists
-     * @since 1.8.7
+     * @since 1.8.6
      */
     public static <T> List<List<T>> collate( List<T> self, int size ) {
         return collate( self, size, size, true ) ;
@@ -1993,7 +1993,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param size          the length of each sub-list in the returned list
      * @param step          the number of elements to step through for each sub-list
      * @return a List containing the data collated into sub-lists
-     * @since 1.8.7
+     * @since 1.8.6
      */
     public static <T> List<List<T>> collate( List<T> self, int size, int step ) {
         return collate( self, size, step, true ) ;
@@ -2011,7 +2011,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param size          the length of each sub-list in the returned list
      * @param keepRemainder if true, any rmeaining elements are returned as sub-lists.  Otherwise they are discarded
      * @return a List containing the data collated into sub-lists
-     * @since 1.8.7
+     * @since 1.8.6
      */
     public static <T> List<List<T>> collate( List<T> self, int size, boolean keepRemainder ) {
         return collate( self, size, size, keepRemainder ) ;
@@ -2031,7 +2031,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param step          the number of elements to step through for each sub-list
      * @param keepRemainder if true, any rmeaining elements are returned as sub-lists.  Otherwise they are discarded
      * @return a List containing the data collated into sub-lists
-     * @since 1.8.7
+     * @since 1.8.6
      */
     public static <T> List<List<T>> collate( List<T> self, int size, int step, boolean keepRemainder ) {
         List<List<T>> answer = new ArrayList<List<T>>();
