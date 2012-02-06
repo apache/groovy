@@ -126,4 +126,18 @@ class DurationTest extends GroovyTestCase {
             assertEquals "after subtracting 12345678 seconds", start.time, date
         }
     }
+
+    void testDurationComparison() {
+        use (TimeCategory) {
+            assert 1.week < 2.weeks
+            assert 3.weeks <= 4.weeks
+            assert 10.seconds == 10.seconds
+            assert 4.months >= 1.month
+            assert 10.days > 2.days
+            assert 3.months > 2.months
+            assert 1.second < 1.year
+            assert 1.day > 1000.seconds
+            assert 10.weeks < 10.years
+        }
+    }
 }
