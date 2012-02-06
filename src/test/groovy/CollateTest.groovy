@@ -19,19 +19,19 @@
 class CollateTest extends GroovyTestCase {
   void testSimple() {
     def list = [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 ]
-    assert list.collate( 3 ) == [ [ 1, 2, 3 ], [ 4, 5, 6 ], [ 7, 8, 9 ] ]
+    assert list.collate( 3 ) == [ [ 1, 2, 3 ], [ 4, 5, 6 ], [ 7, 8, 9 ], [ 10 ] ]
   }
 
   void testRemain() {
     def list = [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 ]
-    assert list.collate( 3, true ) == [ [ 1, 2, 3 ], [ 4, 5, 6 ], [ 7, 8, 9 ], [ 10 ] ]
+    assert list.collate( 3, false ) == [ [ 1, 2, 3 ], [ 4, 5, 6 ], [ 7, 8, 9 ] ]
   }
 
   void testStepSimple() {
     def list = [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 ]
     def expected = [ [ 1, 2, 3 ], [ 2, 3, 4 ], [ 3, 4, 5 ],
                      [ 4, 5, 6 ], [ 5, 6, 7 ], [ 6, 7, 8 ],
-                     [ 7, 8, 9 ], [ 8, 9, 10 ] ]
+                     [ 7, 8, 9 ], [ 8, 9, 10 ], [ 9, 10 ], [ 10 ] ]
     assert list.collate( 3, 1 ) == expected
   }
 
@@ -39,8 +39,8 @@ class CollateTest extends GroovyTestCase {
     def list = [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 ]
     def expected = [ [ 1, 2, 3 ], [ 2, 3, 4 ], [ 3, 4, 5 ],
                      [ 4, 5, 6 ], [ 5, 6, 7 ], [ 6, 7, 8 ],
-                     [ 7, 8, 9 ], [ 8, 9, 10 ], [ 9, 10 ], [ 10 ] ]
-    assert list.collate( 3, 1, true ) == expected
+                     [ 7, 8, 9 ], [ 8, 9, 10 ] ]
+    assert list.collate( 3, 1, false ) == expected
   }
 
   void testTwoDimensions() {
@@ -52,8 +52,8 @@ class CollateTest extends GroovyTestCase {
 
   void testLargeStep() {
     def list = [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 ]
-    assert list.collate( 2, 4       ) == [ [ 1, 2 ], [ 5, 6 ], [ 9, 10 ] ]
-    assert list.collate( 2, 4, true ) == [ [ 1, 2 ], [ 5, 6 ], [ 9, 10 ] ]
+    assert list.collate( 2, 4, false ) == [ [ 1, 2 ], [ 5, 6 ], [ 9, 10 ] ]
+    assert list.collate( 2, 4        ) == [ [ 1, 2 ], [ 5, 6 ], [ 9, 10 ] ]
   }
 
   void testEmpty() {
@@ -76,16 +76,16 @@ class CollateTest extends GroovyTestCase {
   void testChaining() {
     def list = 1..15
     def expected = [ [ [ 1, 2, 3],  [ 4, 5, 6] ],
-                     [ [ 7, 8, 9],  [10,11,12] ] ]
+                     [ [ 7, 8, 9],  [10,11,12] ],
+                     [ [13,14,15]              ] ]
     assert list.collate( 3 ).collate( 2 ) == expected
   }
 
   void testChainingRemain() {
     def list = 1..15
     def expected = [ [ [ 1, 2, 3],  [ 4, 5, 6] ],
-                     [ [ 7, 8, 9],  [10,11,12] ],
-                     [ [13,14,15]              ] ]
-    assert list.collate( 3 ).collate( 2, true ) == expected
+                     [ [ 7, 8, 9],  [10,11,12] ] ]
+    assert list.collate( 3 ).collate( 2, false ) == expected
   }
 
   void testSimpleUsecase() {
