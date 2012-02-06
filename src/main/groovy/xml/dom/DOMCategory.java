@@ -84,7 +84,7 @@ public class DOMCategory {
     }
 
     private static Object xgetAt(NodeList nodeList, String elementName) {
-        List results = new ArrayList();
+        List<NodeList> results = new ArrayList<NodeList>();
         for (int i = 0; i < nodeList.getLength(); i++) {
             Node node = nodeList.item(i);
             if (node instanceof Element) {
@@ -243,9 +243,9 @@ public class DOMCategory {
         return sb.toString();
     }
 
-    public static List list(NodeList self) {
-        List answer = new ArrayList();
-        Iterator it = XmlGroovyMethods.iterator(self);
+    public static List<Node> list(NodeList self) {
+        List<Node> answer = new ArrayList<Node>();
+        Iterator<Node> it = XmlGroovyMethods.iterator(self);
         while (it.hasNext()) {
             answer.add(it.next());
         }
@@ -253,14 +253,19 @@ public class DOMCategory {
     }
 
     public static NodeList depthFirst(Element self) {
-        List result = new ArrayList();
+        List<NodeList> result = new ArrayList<NodeList>();
         result.add(createNodeList(self));
         result.add(self.getElementsByTagName("*"));
         return new NodeListsHolder(result);
     }
 
     public static void setValue(Element self, String value) {
-        self.getFirstChild().setNodeValue(value);
+        Node firstChild = self.getFirstChild();
+        if (firstChild == null) {
+            firstChild = self.getOwnerDocument().createTextNode(value);
+            self.appendChild(firstChild);
+        }
+        firstChild.setNodeValue(value);
     }
 
     public static void putAt(Element self, String property, Object value) {
@@ -354,13 +359,13 @@ public class DOMCategory {
     }
 
     private static NodeList createNodeList(Element self) {
-        List first = new ArrayList();
+        List<Node> first = new ArrayList<Node>();
         first.add(self);
         return new NodesHolder(first);
     }
 
     public static NodeList breadthFirst(Element self) {
-        List result = new ArrayList();
+        List<NodeList> result = new ArrayList<NodeList>();
         NodeList thisLevel = createNodeList(self);
         while (thisLevel.getLength() > 0) {
             result.add(thisLevel);
@@ -370,7 +375,7 @@ public class DOMCategory {
     }
 
     private static NodeList getNextLevel(NodeList thisLevel) {
-        List result = new ArrayList();
+        List<NodeList> result = new ArrayList<NodeList>();
         for (int i = 0; i < thisLevel.getLength(); i++) {
             Node n = thisLevel.item(i);
             if (n instanceof Element) {
@@ -389,7 +394,7 @@ public class DOMCategory {
     }
 
     private static NodeList getChildElements(Element self, String elementName) {
-        List result = new ArrayList();
+        List<Node> result = new ArrayList<Node>();
         NodeList nodeList = self.getChildNodes();
         for (int i = 0; i < nodeList.getLength(); i++) {
             Node node = nodeList.item(i);
@@ -462,6 +467,7 @@ public class DOMCategory {
         return size(self) == 0;
     }
 
+    @SuppressWarnings("unchecked")
     private static void addResult(List results, Object result) {
         if (result != null) {
             if (result instanceof Collection) {
@@ -473,16 +479,15 @@ public class DOMCategory {
     }
 
     private static final class NodeListsHolder implements NodeList {
-        private List nodeLists;
+        private List<NodeList> nodeLists;
 
-        private NodeListsHolder(List nodeLists) {
+        private NodeListsHolder(List<NodeList> nodeLists) {
             this.nodeLists = nodeLists;
         }
 
         public int getLength() {
             int length = 0;
-            for (Object nodeList : nodeLists) {
-                NodeList nl = (NodeList) nodeList;
+            for (NodeList nl : nodeLists) {
                 length += nl.getLength();
             }
             return length;
@@ -490,8 +495,7 @@ public class DOMCategory {
 
         public Node item(int index) {
             int relativeIndex = index;
-            for (Object nodeList : nodeLists) {
-                NodeList nl = (NodeList) nodeList;
+            for (NodeList nl : nodeLists) {
                 if (relativeIndex < nl.getLength()) {
                     return nl.item(relativeIndex);
                 }
@@ -506,9 +510,9 @@ public class DOMCategory {
     }
 
     private static final class NodesHolder implements NodeList {
-        private List nodes;
+        private List<Node> nodes;
 
-        private NodesHolder(List nodes) {
+        private NodesHolder(List<Node> nodes) {
             this.nodes = nodes;
         }
 
@@ -520,7 +524,7 @@ public class DOMCategory {
             if (index < 0 || index >= getLength()) {
                 return null;
             }
-            return (Node) nodes.get(index);
+            return nodes.get(index);
         }
     }
 }

@@ -199,6 +199,7 @@ p() {
     }
 
     void testElement() {
+        GpathSyntaxTestSupport.checkUpdateElementValue(getRoot)
         GpathSyntaxTestSupport.checkElement(getRoot)
         GpathSyntaxTestSupport.checkFindElement(getRoot)
         GpathSyntaxTestSupport.checkElementTypes(getRoot)
