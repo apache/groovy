@@ -1936,18 +1936,16 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             LinkedList<CachedClass> superInterfaces = new LinkedList<CachedClass>(interfaces);
             // sort interfaces so that we may ensure a deterministic behaviour in case of
             // ambiguous fields (class implementing two interfaces using the same field)
-            Collections.sort(superInterfaces, CACHED_CLASS_NAME_COMPARATOR);
-            superInterfaces.remove(theCachedClass);
-
-            classPropertyIndexForSuper = classPropertyIndex;
-            final SingleKeyHashMap cPI = classPropertyIndex.getNotNull(theCachedClass);
-            for (Iterator interfaceIter = interfaces.iterator(); interfaceIter.hasNext();) {
-                CachedClass iclass = (CachedClass) interfaceIter.next();
-                SingleKeyHashMap iPropertyIndex = cPI;
-                inheritStaticInterfaceFields(superInterfaces, interfaces);
-                classPropertyIndex.put(iclass, iPropertyIndex);
+            if (superInterfaces.size()>1) {
+                Collections.sort(superInterfaces, CACHED_CLASS_NAME_COMPARATOR);
             }
-            classPropertyIndex.put(ReflectionCache.OBJECT_CLASS, cPI);
+
+            SingleKeyHashMap iPropertyIndex = classPropertyIndex.getNotNull(theCachedClass);
+            for (CachedClass iclass : superInterfaces) {
+                SingleKeyHashMap sPropertyIndex = classPropertyIndex.getNotNull(iclass);
+                copyNonPrivateFields(sPropertyIndex, iPropertyIndex);
+                addFields(iclass, iPropertyIndex);
+            }
 
             applyPropertyDescriptors(propertyDescriptors);
             applyStrayPropertyMethods(superClasses, classPropertyIndex, true);
@@ -1958,7 +1956,9 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             LinkedList<CachedClass> interfaces = new LinkedList<CachedClass>(theCachedClass.getInterfaces());
             // sort interfaces so that we may ensure a deterministic behaviour in case of
             // ambiguous fields (class implementing two interfaces using the same field)
-            Collections.sort(interfaces, CACHED_CLASS_NAME_COMPARATOR);
+            if (interfaces.size()>1) {
+                Collections.sort(interfaces, CACHED_CLASS_NAME_COMPARATOR);
+            }
 
             // if this an Array, then add the special read-only "length" property
             if (theCachedClass.isArray) {
