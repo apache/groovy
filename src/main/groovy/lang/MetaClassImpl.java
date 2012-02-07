@@ -1956,6 +1956,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                 copyNonPrivateFields(sPropertyIndex, iPropertyIndex);
                 addFields(iclass, iPropertyIndex);
             }
+            addFields(theCachedClass, iPropertyIndex);
 
             applyPropertyDescriptors(propertyDescriptors);
             applyStrayPropertyMethods(superClasses, classPropertyIndex, true);
