@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2011 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,26 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package groovy.bugs
 
-
 class Groovy4980Bug extends GroovyTestCase {
-    void testStaticOverloadedMixinMethods() {
+    void testNamedArgumentWithInnerClassConstructor() {
         assertScript """
             class Outer4980 {
                 class Inner4980 {
                     String firstName
                     String lastName
                 }
-            
+
                 def doit() {
                     new Inner4980(firstName: "fred", lastName: "johnson")
                 }
             }
-            
+
             def inner = new Outer4980().doit()
-            
+
             assert inner.firstName == 'fred'
             assert inner.lastName == 'johnson'
         """
