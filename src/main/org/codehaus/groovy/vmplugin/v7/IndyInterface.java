@@ -108,7 +108,11 @@ public class IndyInterface {
             }
         }
         
-        // the 4 entry points from bytecode 
+        // the 4 entry points from bytecode
+        
+        /**
+         * bootstrap method for method calls with "this" as receiver
+         */
         public static CallSite bootstrapCurrent(Lookup caller, String name, MethodType type) {
             return realBootstrap(caller, name, type, false, true);
         }
@@ -117,14 +121,23 @@ public class IndyInterface {
             return realBootstrap(caller, name, type, true, true);
         }
         
+        /**
+         * bootstrap method for standard method calls
+         */
         public static CallSite bootstrap(Lookup caller, String name, MethodType type) {
             return realBootstrap(caller, name, type, false, false);
         }
         
+        /**
+         * bootstrap method for null safe standard method calls
+         */
         public static CallSite bootstrapSafe(Lookup caller, String name, MethodType type) {
             return realBootstrap(caller, name, type, true, false);
         }
         
+        /**
+         * backing bootstrap method with all parameters
+         */
         private static CallSite realBootstrap(Lookup caller, String name, MethodType type, boolean safe, boolean thisCall) {
             // since indy does not give us the runtime types
             // we produce first a dummy call site, which then changes the target to one,
@@ -136,7 +149,9 @@ public class IndyInterface {
             return mc;            
         }
         
-        
+        /**
+         * Makes a fallback method for an invalidated method selection
+         */
         private static MethodHandle makeFallBack(MutableCallSite mc, Class<?> sender, String name, MethodType type, boolean safeNavigation, boolean thisCall) {
             MethodHandle mh = MethodHandles.insertArguments(SELECT_METHOD, 0, mc, sender, name, safeNavigation, thisCall, /*dummy receiver:*/ 1);
             mh =    mh.asCollector(Object[].class, type.parameterCount()).
@@ -144,11 +159,19 @@ public class IndyInterface {
             return mh;
         }
 
+        /**
+         * Gets the class of an object.
+         * In case the object is a Class it will return the object itself,
+         * otherwise it will return the getClass() result of it.
+         */
         private static Class getClass(Object x) {
             if (x instanceof Class) return (Class) x;
             return x.getClass();
         }
         
+        /**
+         * Gives the meta class to an Object.
+         */
         private static MetaClass getMetaClass(Object receiver) {
             if (receiver == null) {
                 return NullObject.getNullObject().getMetaClass();
@@ -174,11 +197,21 @@ public class IndyInterface {
             public Class methodSelectionBase;
         }
         
+        /**
+         * Returns if a method is static
+         */
         private static boolean isStatic(Method m) {
             int mods = m.getModifiers();
             return (mods & Modifier.STATIC) != 0;
         }
         
+        /**
+         * Creates a MethodHandle using a before selected MetaMethod.
+         * If the MetaMethod has reflective information available, then
+         * we will use that information to create the target MethodHandle. 
+         * If that is not the case we will produce a handle, which will use the
+         * MetaMethod itself for invocation.
+         */
         private static void setHandleForMetaMethod(CallInfo info) {
             MetaMethod metaMethod = info.method;
             boolean isCategoryTypeMethod = metaMethod instanceof NewInstanceMetaMethod;
@@ -225,6 +258,11 @@ public class IndyInterface {
             }
         }
         
+        /**
+         * Uses the meta class to get a meta method.
+         * There will be no meta method selected, if the meta class is no MetaClassImpl
+         * or the meta class is an AdaptingMetaClass.
+         */
         private static void chooseMethod(MetaClass mc, CallInfo ci) {
             if (!(mc instanceof MetaClassImpl) || mc instanceof AdaptingMetaClass) {return;}
             
@@ -241,6 +279,11 @@ public class IndyInterface {
             }
         }
         
+        /**
+         * Creates a MethodHandle, which will use the meta class path.
+         * This method is called only if no handle has been created before. This
+         * is usually the case if the method selection failed.
+         */
         private static void setMetaClassCallHandleIfNedded(MetaClass mc, CallInfo ci) {
             if (ci.handle!=null) return;
             try {
@@ -279,7 +322,15 @@ public class IndyInterface {
         }
 
         /**
-         * called by handle
+         * {@link GroovyObject#invokeMethod(String, Object)} path as fallback.
+         * This method is called by the handle as exception handler in case the
+         * selected method causes a MissingMethodExecutionFailed, where
+         * we will just give through the exception, and a normal 
+         * MissingMethodException where we call {@link GroovyObject#invokeMethod(String, Object)}
+         * if receiver class, the type transported by the exception and the name
+         * for the method stored in the exception and our current method name 
+         * are equal.
+         * Should those conditions not apply we just rethrow the exception.
          */
         public static Object invokeGroovyObjectInvoker(MissingMethodException e, Object receiver, String name, Object[] args) {
             if (e instanceof MissingMethodExecutionFailed) {
@@ -296,7 +347,9 @@ public class IndyInterface {
         }
         
         /**
-         * called by handle 
+         * Unwraps a {@link GroovyRuntimeException}.
+         * This method is called by the handle to unwrap internal exceptions 
+         * of the runtime.
          */
         public static Object unwrap(GroovyRuntimeException gre) throws Throwable {
             throw ScriptBytecodeAdapter.unwrap(gre);
@@ -311,7 +364,9 @@ public class IndyInterface {
         }
         
         /**
-         * called by handle
+         * Unwraps a {@link Wrapper}.
+         * This method is called by the handle to unwrap a Wrapper, which
+         * we use to force method selection.
          */
         public static Object unwrap(Object o) {
             Wrapper w = (Wrapper) o;
@@ -319,48 +374,66 @@ public class IndyInterface {
         }
         
         /**
-         * called by handle
+         * Converts an Object to String.
+         * This method is called by the handle to convert for example 
+         * a GString to String.
          */
         public static String coerceToString(Object o) {
             return o.toString();
         }
         
         /**
-         * called by handle
+         * Converts a Number to Byte.
+         * This method is called by the handle to convert
+         * Numbers to Byte.
          */
         public static Object coerceToByte(Object o) {
             return new Byte(((Number) o).byteValue());
         }
         
         /**
-         * called by handle
+         * Converts an Object to BigInteger.
+         * This method is called by the handle to convert
+         * Numbers to BigInteger using {@link String#valueOf(Object)} 
          */
         public static Object coerceToBigInt(Object o) {
             return new BigInteger(String.valueOf((Number) o));
         }
         
         /**
-         * check for null - called by handle
+         * Guard to check if the argument is null.
+         * This method is called by the handle to check
+         * if the provided argument is null.
          */
         public static boolean isNull(Object o) {
             return o == null;
         }
         
         /**
-         * check for != null - called by handle
+         * Guard to check if the argument is not null.
+         * This method is called by the handle to check
+         * if the provided argument is not null.
          */
         public static boolean isNotNull(Object o) {
             return o != null;
         }
         
         /**
-         * called by handle
+         * Guard to check if the provided Object has the same
+         * class as the provided Class. This method will
+         * return false if the Object is null.
          */
         public static boolean sameClass(Class c, Object o) {
             if (o==null) return false;
             return o.getClass() == c;
         }
         
+        /**
+         * Corrects method argument wrapping.
+         * In cases in which we want to force a certain method selection
+         * we use Wrapper classes to transport the static type information.
+         * This method will be used to undo thee wrapping.
+         */
         private static void correctWrapping(CallInfo ci) {
             if (ci.useMetaClass) return;
             Class[] pt = ci.handle.type().parameterArray();
@@ -373,6 +446,11 @@ public class IndyInterface {
             }
         }
         
+        /**
+         * There are some conversions we have to do explicitly.
+         * These are GString to String, Number to Byte and Number to BigInteger
+         * conversions.
+         */
         private static void correctCoerce(CallInfo ci) {
             if (ci.useMetaClass) return;
             Class[] parameters = ci.handle.type().parameterArray();
@@ -393,12 +471,20 @@ public class IndyInterface {
             }
         }
         
+        /**
+         * Gives a replacement receiver for null.
+         * In case of the receiver being null we want to do the method
+         * invocation on NullObject instead.
+         */
         private static void correctNullReceiver(CallInfo ci){
             if (ci.args[0]!=null) return;
             ci.handle = ci.handle.bindTo(NullObject.getNullObject());
             ci.handle = MethodHandles.dropArguments(ci.handle, 0, ci.targetType.parameterType(0));
         }
         
+        /**
+         * Sets all argument and receiver guards.
+         */
         private static void setGuards(CallInfo ci, Object receiver) {
             if (ci.handle==null) return;
             
@@ -441,9 +527,13 @@ public class IndyInterface {
                 test = MethodHandles.dropArguments(test, 0, drops);
                 ci.handle = MethodHandles.guardWithTest(test, ci.handle, fallback);
             }
-            
         }
         
+        /**
+         * Handles cases in which we have to correct the length of arguments
+         * using the parameters. This might be needed for vargs and for one 
+         * parameter calls without arguments (null is used then).  
+         */
         private static void correctParameterLenth(CallInfo info) {
             Class[] params = info.handle.type().parameterArray();
             
@@ -481,19 +571,35 @@ public class IndyInterface {
             
         }
         
+        /**
+         * Adds the standard exception handler.  
+         */
         private static void addExceptionHandler(CallInfo info) {
             if (info.handle==null) return;
-            MethodType returnType = MethodType.methodType(info.handle.type().returnType(), GroovyRuntimeException.class); 
-            info.handle = MethodHandles.catchException(info.handle, GroovyRuntimeException.class, UNWRAP_EXCEPTION.asType(returnType));
-            
+            Class returnType = info.handle.type().returnType();
+            if (returnType!=Object.class) {
+                MethodType mtype = MethodType.methodType(returnType, GroovyRuntimeException.class); 
+                info.handle = MethodHandles.catchException(info.handle, GroovyRuntimeException.class, UNWRAP_EXCEPTION.asType(mtype));
+            } else {
+                info.handle = MethodHandles.catchException(info.handle, GroovyRuntimeException.class, UNWRAP_EXCEPTION);
+            }
         }
         
+        /**
+         * Sets the null constant for safe navigation.
+         * In case of foo?.bar() and foo being null, we don't call the method,
+         * instead we simply return null. This produces a handle, which will 
+         * return the constant.
+         */
         private static boolean setNullForSafeNavigation(CallInfo info) {
             if (!info.safeNavigation) return false;
             info.handle = MethodHandles.dropArguments(NULL_REF,0,info.targetType.parameterArray());
             return true;
         }
         
+        /**
+         * Sets the method selection base.
+         */
         private static void setMethodSelectionBase(CallInfo ci, MetaClass mc) {
             if (ci.thisCall) {
                 ci.methodSelectionBase = ci.sender;
@@ -504,6 +610,9 @@ public class IndyInterface {
             }
         }
         
+        /**
+         * Core method for indy method selection using runtime types.
+         */
         public static Object selectMethod(MutableCallSite callSite, Class sender, String methodName, Boolean safeNavigation, Boolean thisCall, Object dummyReceiver, Object[] arguments) throws Throwable {
             //TODO: handle GroovyInterceptable 
             CallInfo callInfo = new CallInfo();
@@ -537,6 +646,10 @@ public class IndyInterface {
             return callInfo.handle.invokeWithArguments(callInfo.args);
         }
         
+        /**
+         * Helper method to remove the receiver from the argument array
+         * by producing a new array.
+         */
         private static Object[] removeRealReceiver(Object[] args) {
             Object[] ar = new Object[args.length-1];
             for (int i=1; i<args.length; i++) {
