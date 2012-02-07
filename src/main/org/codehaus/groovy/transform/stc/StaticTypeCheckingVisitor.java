@@ -901,7 +901,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             resultType = ArrayList_TYPE;
         } else {
             MethodNode mn = findMethodOrFail(expression, type, name);
-            resultType = mn.getReturnType();
+            if (mn!=null) {
+                resultType = mn.getReturnType();
+            } else {
+                resultType = type;
+            }
         }
         storeType(expression, resultType);
     }
