@@ -38,7 +38,16 @@ public class BinaryExpressionTransformer {
         Object[] list = (Object[]) bin.getNodeMetaData(BINARY_EXP_TARGET);
         if (list != null) {
             Token operation = bin.getOperation();
-            boolean isAssignment = StaticTypeCheckingSupport.isAssignment(operation.getType());
+            int operationType = operation.getType();
+            if (operationType==Types.COMPARE_EQUAL || operationType == Types.COMPARE_NOT_EQUAL) {
+                // let's check if one of the operands is the null constant
+                if (isNullConstant(bin.getLeftExpression())) {
+                    return new CompareToNullExpression(staticCompilationTransformer.transform(bin.getRightExpression()), operationType==Types.COMPARE_EQUAL);
+                } else if (isNullConstant(bin.getRightExpression())) {
+                    return new CompareToNullExpression(staticCompilationTransformer.transform(bin.getLeftExpression()), operationType==Types.COMPARE_EQUAL);
+                }
+            }
+            boolean isAssignment = StaticTypeCheckingSupport.isAssignment(operationType);
             MethodCallExpression call;
             MethodNode node = (MethodNode) list[0];
             String name = (String) list[1];
@@ -50,9 +59,9 @@ public class BinaryExpressionTransformer {
                     new ArgumentListExpression(right)
             );
             call.setMethodTarget(node);
-            ClassExpression sba = new ClassExpression(StaticCompilationTransformer.BYTECODE_ADAPTER_CLASS);
-            MethodNode adapter = StaticCompilationTransformer.BYTECODE_BINARY_ADAPTERS.get(operation.getType());
+            MethodNode adapter = StaticCompilationTransformer.BYTECODE_BINARY_ADAPTERS.get(operationType);
             if (adapter != null) {
+                ClassExpression sba = new ClassExpression(StaticCompilationTransformer.BYTECODE_ADAPTER_CLASS);
                 // replace with compareEquals
                 call = new MethodCallExpression(sba,
                         "compareEquals",
@@ -86,6 +95,10 @@ public class BinaryExpressionTransformer {
             return staticCompilationTransformer.transform(cle);
         }
         return staticCompilationTransformer.superTransform(bin);
+    }
+
+    private static boolean isNullConstant(final Expression expression) {
+        return expression instanceof ConstantExpression && ((ConstantExpression) expression).getValue()==null;
     }
 
 }
