@@ -518,6 +518,7 @@ public class IndyInterface {
                     test = IS_NULL.asType(MethodType.methodType(boolean.class, pt[i]));
                 } else {
                     Class argClass = arg.getClass();
+                    if (Modifier.isFinal(argClass.getModifiers()) && argumentClassIsParameterClass(argClass,pt[i])) continue;
                     test = SAME_CLASS.
                                 bindTo(argClass).
                                 asType(MethodType.methodType(boolean.class, pt[i]));
@@ -527,6 +528,40 @@ public class IndyInterface {
                 test = MethodHandles.dropArguments(test, 0, drops);
                 ci.handle = MethodHandles.guardWithTest(test, ci.handle, fallback);
             }
+        }
+        
+        /**
+         * Get wrapper class for a given class. 
+         * If the class is for a primitive number type, then the wrapper class
+         * will be returned. If it is no primtive number type, we return the 
+         * class itself.
+         */
+        private static Class getWrapperClass(Class c) {
+            if (c == Integer.TYPE) {
+                c = Integer.class;
+            } else if (c == Byte.TYPE) {
+                c = Byte.class;
+            } else if (c == Long.TYPE) {
+                c = Long.class;
+            } else if (c == Double.TYPE) {
+                c = Double.class;
+            } else if (c == Float.TYPE) {
+                c = Float.class;
+            }
+            return c;
+        }
+        
+        /**
+         * Realizes an unsharp equal for the class. 
+         * In general we return true if the provided arguments are the same. But
+         * we will also return true if our argument class is a wrapper for
+         * the parameter class. For example the parameter is an int and the
+         * argument class is a wrapper.
+         */
+        private static boolean argumentClassIsParameterClass(Class argumentClass, Class parameterClass) {
+            if (argumentClass == parameterClass) return true;
+            if (getWrapperClass(parameterClass) == argumentClass) return true;
+            return false;
         }
         
         /**
