@@ -2185,9 +2185,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     protected void addError(final String msg, final ASTNode expr) {
         int line = expr.getLineNumber();
         int col = expr.getColumnNumber();
-        errorCollector.addErrorAndContinue(
-                new SyntaxErrorMessage(new SyntaxException(msg + '\n', line, col), source)
-        );
+        Long err = ((long)expr.getLineNumber()) << 16 + expr.getColumnNumber();
+        if (!reportedErrors.contains(err)) {
+            errorCollector.addErrorAndContinue(
+                    new SyntaxErrorMessage(new SyntaxException(msg + '\n', line, col), source)
+            );
+            reportedErrors.add(err);
+        }
     }
 
     protected void addStaticTypeError(final String msg, final ASTNode expr) {
@@ -2196,15 +2200,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         } else {
             // ignore errors which are related to unknown source locations
             // because they are likely related to generated code
-        }
-    }
-
-    @Override
-    protected void addError(final String msg, final ASTNode expr) {
-        Long err = ((long)expr.getLineNumber()) << 16 + expr.getColumnNumber();
-        if (!reportedErrors.contains(err)) {
-            super.addError(msg, expr);
-            reportedErrors.add(err);
         }
     }
 

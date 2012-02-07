@@ -511,8 +511,7 @@ public class OperandStack {
                     ) {
                 ClassNode primType = ClassHelper.getUnwrapper(type);
                 pushPrimitiveConstant(mv, value, primType);
-                BytecodeHelper.box(mv, primType); // does not change this.stack field contents
-                BytecodeHelper.doCast(mv, type);
+                type = primType;
             } else {
                 mv.visitLdcInsn(value);
                 BytecodeHelper.box(mv, ClassHelper.getUnwrapper(type)); // does not change this.stack field contents
