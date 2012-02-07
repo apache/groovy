@@ -205,8 +205,11 @@ public class StaticInvocationWriter extends InvocationWriter {
             // varg call
             // first parameters as usual
             for (int i = 0; i < para.length-1; i++) {
-                argumentList.get(i).visit(acg);
-                operandStack.doGroovyCast(para[i].getType());
+                Expression expression = argumentList.get(i);
+                expression.visit(acg);
+                if (!isNullConstant(expression)) {
+                    operandStack.doGroovyCast(para[i].getType());
+                }
             }
             // last parameters wrapped in an array
             List<Expression> lastParams = new LinkedList<Expression>();
@@ -227,8 +230,11 @@ public class StaticInvocationWriter extends InvocationWriter {
             }
         } else if (argumentList.size()==para.length) {
             for (int i = 0; i < argumentList.size(); i++) {
-                argumentList.get(i).visit(acg);
-                operandStack.doGroovyCast(para[i].getType());
+                Expression expression = argumentList.get(i);
+                expression.visit(acg);
+                if (!isNullConstant(expression)) {
+                    operandStack.doGroovyCast(para[i].getType());
+                }
             }
         } else {
             // method call with default arguments
@@ -252,10 +258,17 @@ public class StaticInvocationWriter extends InvocationWriter {
                 }
             }
             for (int i = 0; i < arguments.length; i++) {
-                arguments[i].visit(acg);
-                operandStack.doGroovyCast(para[i].getType());
+                Expression expression = arguments[i];
+                expression.visit(acg);
+                if (!isNullConstant(expression)) {
+                    operandStack.doGroovyCast(para[i].getType());
+                }
             }
         }
+    }
+
+    private boolean isNullConstant(final Expression expression) {
+        return (expression instanceof ConstantExpression && ((ConstantExpression) expression).getValue() == null);
     }
 
     private boolean compatibleArgumentType(ClassNode argumentType, ClassNode paramType) {
