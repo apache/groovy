@@ -130,7 +130,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             DoubleArrayPutAtMetaMethod.class,
     };
 
-	public static final Class[] DGM_LIKE_CLASSES = new Class[]{
+    public static final Class[] DGM_LIKE_CLASSES = new Class[]{
             DefaultGroovyMethods.class,
             SwingGroovyMethods.class,
             SqlGroovyMethods.class,
@@ -140,7 +140,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             ProcessGroovyMethods.class
     };
 
-	/**
+    /**
      * Identity check. Since == is overridden in Groovy with the meaning of equality
      * we need some fallback to check for object identity.  Invoke using the
      * 'is' method, like so: <code>def same = this.is(that)</code>
@@ -1963,6 +1963,94 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             answer.add(self.nextElement());
         }
         return answer;
+    }
+
+    /**
+     * Collates this list into sub-lists of length <code>size</code>.
+     * Example:
+     * <pre class="groovyTestCase">def list = [ 1, 2, 3, 4, 5, 6, 7 ]
+     * def coll = list.collate( 3 )
+     * assert coll == [ [ 1, 2, 3 ], [ 4, 5, 6 ], [ 7 ] ]</pre>
+     *
+     * @param self          a List
+     * @param size          the length of each sub-list in the returned list
+     * @return a List containing the data collated into sub-lists
+     * @since 1.8.6
+     */
+    public static <T> List<List<T>> collate( List<T> self, int size ) {
+        return collate( self, size, size, true ) ;
+    }
+
+    /**
+     * Collates this list into sub-lists of length <code>size</code> stepping through the code <code>step</code>
+     * elements for each subList.
+     * Example:
+     * <pre class="groovyTestCase">def list = [ 1, 2, 3, 4 ]
+     * def coll = list.collate( 3, 1 )
+     * assert coll == [ [ 1, 2, 3 ], [ 2, 3, 4 ], [ 3, 4 ], [ 4 ] ]</pre>
+     *
+     * @param self          a List
+     * @param size          the length of each sub-list in the returned list
+     * @param step          the number of elements to step through for each sub-list
+     * @return a List containing the data collated into sub-lists
+     * @since 1.8.6
+     */
+    public static <T> List<List<T>> collate( List<T> self, int size, int step ) {
+        return collate( self, size, step, true ) ;
+    }
+
+    /**
+     * Collates this list into sub-lists of length <code>size</code>. Any remaining elements in
+     * the list after the subdivision will be dropped if <code>keepRemainder</code> is false.
+     * Example:
+     * <pre class="groovyTestCase">def list = [ 1, 2, 3, 4, 5, 6, 7 ]
+     * def coll = list.collate( 3, false )
+     * assert coll == [ [ 1, 2, 3 ], [ 4, 5, 6 ] ]</pre>
+     *
+     * @param self          a List
+     * @param size          the length of each sub-list in the returned list
+     * @param keepRemainder if true, any rmeaining elements are returned as sub-lists.  Otherwise they are discarded
+     * @return a List containing the data collated into sub-lists
+     * @since 1.8.6
+     */
+    public static <T> List<List<T>> collate( List<T> self, int size, boolean keepRemainder ) {
+        return collate( self, size, size, keepRemainder ) ;
+    }
+
+    /**
+     * Collates this list into sub-lists of length <code>size</code> stepping through the code <code>step</code>
+     * elements for each sub-list.  Any remaining elements in the list after the subdivision will be dropped if
+     * <code>keepRemainder</code> is false.
+     * Example:
+     * <pre class="groovyTestCase">def list = [ 1, 2, 3, 4 ]
+     * assert list.collate( 3, 1, true  ) == [ [ 1, 2, 3 ], [ 2, 3, 4 ], [ 3, 4 ], [ 4 ] ]
+     * assert list.collate( 3, 1, false ) == [ [ 1, 2, 3 ], [ 2, 3, 4 ] ]</pre>
+     *
+     * @param self          a List
+     * @param size          the length of each sub-list in the returned list
+     * @param step          the number of elements to step through for each sub-list
+     * @param keepRemainder if true, any rmeaining elements are returned as sub-lists.  Otherwise they are discarded
+     * @return a List containing the data collated into sub-lists
+     * @since 1.8.6
+     */
+    public static <T> List<List<T>> collate( List<T> self, int size, int step, boolean keepRemainder ) {
+        List<List<T>> answer = new ArrayList<List<T>>();
+        if( size <= 0 || self.size() == 0 ) {
+            answer.add( self ) ;
+        }
+        else {
+            for( int pos = 0 ; pos < self.size() && pos > -1 ; pos += step ) {
+                if( !keepRemainder && pos > self.size() - size ) {
+                    break ;
+                }
+                List<T> element = new ArrayList<T>() ;
+                for( int offs = pos ; offs < pos + size && offs < self.size() ; offs++ ) {
+                    element.add( self.get( offs ) ) ;
+                }
+                answer.add( element ) ;
+            }
+        }
+        return answer ;
     }
 
     /**
@@ -7761,7 +7849,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns a new map containing the first <code>num</code> elements from the head of this map.
-     * If the map instance does not have ordered keys,then this function could return a random <code>n<code>
+     * If the map instance does not have ordered keys, then this function could return a random <code>num</code>
      * entries.  Groovy by default used LinkedHashMap, so this shouldn't be an issue in the main.
      * <pre class="groovyTestCase">
      *     def strings = [ 'a':10, 'b':20, 'c':30 ]
@@ -7909,7 +7997,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Drops the given number of key/value pairs from the head of this map if they are available.
-     * If the map instance does not have ordered keys,then this function could return a random <code>n</code>
+     * If the map instance does not have ordered keys, then this function could drop a random <code>num</code>
      * entries.  Groovy by default used LinkedHashMap, so this shouldn't be an issue in the main.
      * <pre class="groovyTestCase">
      *     def strings = [ 'a':10, 'b':20, 'c':30 ]
@@ -11100,7 +11188,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self  the array we are searching
      * @param value the value being searched for
      * @return true if the array contains the value
-     * @since 2.0
+     * @since 1.8.6
      */
     public static boolean contains(int[] self, Object value) {
         for (int next : self) {
@@ -11115,7 +11203,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self  the array we are searching
      * @param value the value being searched for
      * @return true if the array contains the value
-     * @since 2.0
+     * @since 1.8.6
      */
     public static boolean contains(long[] self, Object value) {
         for (long next : self) {
@@ -11130,7 +11218,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self  the array we are searching
      * @param value the value being searched for
      * @return true if the array contains the value
-     * @since 2.0
+     * @since 1.8.6
      */
     public static boolean contains(short[] self, Object value) {
         for (short next : self) {
@@ -11145,7 +11233,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self  the array we are searching
      * @param value the value being searched for
      * @return true if the array contains the value
-     * @since 2.0
+     * @since 1.8.6
      */
     public static boolean contains(char[] self, Object value) {
         for (char next : self) {
@@ -11160,7 +11248,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self  the array within which we count the number of occurrences
      * @param value the value being searched for
      * @return the number of occurrences
-     * @since 1.6.4
+     * @since 1.8.6
      */
     public static boolean contains(boolean[] self, Object value) {
         for (boolean next : self) {
@@ -11175,7 +11263,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self  the array we are searching
      * @param value the value being searched for
      * @return true if the array contains the value
-     * @since 2.0
+     * @since 1.8.6
      */
     public static boolean contains(double[] self, Object value) {
         for (double next : self) {
@@ -11190,7 +11278,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self  the array we are searching
      * @param value the value being searched for
      * @return true if the array contains the value
-     * @since 2.0
+     * @since 1.8.6
      */
     public static boolean contains(float[] self, Object value) {
         for (float next : self) {
@@ -11205,10 +11293,25 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self  the array we are searching
      * @param value the value being searched for
      * @return true if the array contains the value
-     * @since 2.0
+     * @since 1.8.6
      */
     public static boolean contains(byte[] self, Object value) {
         for (byte next : self) {
+            if (DefaultTypeTransformation.compareEqual(value, next)) return true;
+        }
+        return false;
+    }
+
+    /**
+     * Checks whether the array contains the given value.
+     *
+     * @param self  the array we are searching
+     * @param value the value being searched for
+     * @return true if the array contains the value
+     * @since 1.8.6
+     */
+    public static boolean contains(Object[] self, Object value) {
+        for (Object next : self) {
             if (DefaultTypeTransformation.compareEqual(value, next)) return true;
         }
         return false;
@@ -11390,7 +11493,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * <p>For more control over Process construction you can use
      * <code>java.lang.ProcessBuilder</code> (JDK 1.5+).</p>
      *
-     * @param commandArray an array of <code>String<code> containing the command name and
+     * @param commandArray an array of <code>String</code> containing the command name and
      *                     parameters as separate items in the array.
      * @return the Process which has just started for this command line representation.
      * @throws IOException if an IOException occurs.
@@ -11407,7 +11510,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * <p>For more control over Process construction you can use
      * <code>java.lang.ProcessBuilder</code> (JDK 1.5+).</p>
      *
-     * @param commandArray an array of <code>String<code> containing the command name and
+     * @param commandArray an array of <code>String</code> containing the command name and
      *                     parameters as separate items in the array.
      * @param envp an array of Strings, each member of which
      *             has environment variable settings in the format
@@ -11432,7 +11535,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * <p>For more control over Process construction you can use
      * <code>java.lang.ProcessBuilder</code> (JDK 1.5+).</p>
      *
-     * @param commandArray an array of <code>String<code> containing the command name and
+     * @param commandArray an array of <code>String</code> containing the command name and
      *                     parameters as separate items in the array.
      * @param envp a List of Objects (converted to Strings using toString), each member of which
      *             has environment variable settings in the format
@@ -11960,7 +12063,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Multiply a Character by a Number. The ordinal value of the Character
-     * is used in the multiplcation (the ordinal value is the unicode
+     * is used in the multiplication (the ordinal value is the unicode
      * value which for simple character sets is the ASCII value).
      *
      * @param left  a Character

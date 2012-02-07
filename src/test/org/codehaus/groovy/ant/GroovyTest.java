@@ -2,13 +2,13 @@ package org.codehaus.groovy.ant;
 
 import groovy.lang.GroovyRuntimeException;
 import groovy.util.GroovyTestCase;
+import junit.framework.Test;
+import junit.framework.TestSuite;
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Project;
 import org.apache.tools.ant.ProjectHelper;
 
-import java.io.File;
-import java.io.PrintWriter;
-import java.io.StringWriter;
+import java.io.*;
 import java.util.regex.Pattern;
 
 /**
@@ -23,6 +23,24 @@ public class GroovyTest extends GroovyTestCase {
     public static String FLAG = null;
     private final File antFile = new File("src/test/org/codehaus/groovy/ant/GroovyTest.xml");
     private Project project;
+
+    public GroovyTest(final String name) {
+        setName(name);
+    }
+
+    public static Test suite() {
+        TestSuite suite = new TestSuite();
+        suite.addTest(new GroovyTest("testGroovyCodeWithinTag"));
+        suite.addTest(new GroovyTest("testGroovyCodeExternalFile"));
+        suite.addTest(new GroovyTest("testGroovyCodeInExternalFileWithOtherClass"));
+        suite.addTest(new GroovyTest("testClasspath_missing"));
+        suite.addTest(new GroovyTest("testClasspath_classpathAttribute"));
+        suite.addTest(new GroovyTest("testClasspath_classpathrefAttribute"));
+        suite.addTest(new GroovyTest("testClasspath_nestedclasspath"));
+        suite.addTest(new GroovyTest("testGroovyArgUsage"));
+        suite.addTest(new GroovyTest("testFileNameInStackTrace"));
+        return suite;
+    }
 
     protected void setUp() throws Exception {
         super.setUp();

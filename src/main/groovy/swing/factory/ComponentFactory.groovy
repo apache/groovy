@@ -18,6 +18,8 @@ package groovy.swing.factory
 
 import java.awt.Component
 import java.awt.Window
+import javax.swing.JComponent
+import static groovy.swing.factory.LayoutFactory.DEFAULT_DELEGATE_PROPERTY_CONSTRAINT
 
 class ComponentFactory extends BeanFactory {
 
@@ -37,6 +39,9 @@ class ComponentFactory extends BeanFactory {
             def constraints = builder.context.constraints
             if (constraints != null) {
                 LayoutFactory.getLayoutTarget(parent).add(child, constraints)
+                if (child instanceof JComponent) {
+                    child.putClientProperty(DEFAULT_DELEGATE_PROPERTY_CONSTRAINT, constraints)
+                }
                 builder.context.remove('constraints')
             } else {
                 LayoutFactory.getLayoutTarget(parent).add(child)
