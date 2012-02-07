@@ -527,12 +527,7 @@ public class IndyInterface {
                 correctCoerce(callInfo);
                 correctNullReceiver(callInfo);
 
-                try {
-                    callInfo.handle = callInfo.handle.asType(callInfo.targetType);
-                } catch (Exception e) {
-                    System.err.println("ERROR while processing "+methodName);
-                    throw e;
-                }
+                callInfo.handle = callInfo.handle.asType(callInfo.targetType);
 
                 addExceptionHandler(callInfo);
             }
