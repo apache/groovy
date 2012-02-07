@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 the original author or authors.
+ * Copyright 2008-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-
 /**
  * Handles generation of code for the {@code @}InheritConstructors annotation.
  *
@@ -57,46 +56,62 @@ public class InheritConstructorsASTTransformation implements ASTTransformation, 
         if (!MY_TYPE.equals(node.getClassNode())) return;
 
         if (parent instanceof ClassNode) {
-            ClassNode cNode = (ClassNode) parent;
-            if (cNode.isInterface()) {
-                addError("Error processing interface '" + cNode.getName() +
-                        "'. " + MY_TYPE_NAME + " only allowed for classes.", cNode, source);
-                return;
-            }
-            ClassNode sNode = cNode.getSuperClass();
-            for (ConstructorNode cn : sNode.getDeclaredConstructors()) {
-                Parameter[] params = cn.getParameters();
-                if (cn.isPrivate()) continue;
-                Parameter[] pcopy = new Parameter[params.length];
-                List<Expression> args = new ArrayList<Expression>();
-                for (int i = 0; i < params.length; i++) {
-                    Parameter p = params[i];
-                    pcopy[i] = p.hasInitialExpression() ?
-                            new Parameter(p.getType(), p.getName(), p.getInitialExpression()) :
-                            new Parameter(p.getType(), p.getName());
-                    args.add(new VariableExpression(p.getName(), p.getType()));
-                }
-                if (isClashing(cNode, pcopy)) continue;
-                BlockStatement body = new BlockStatement();
-                body.addStatement(new ExpressionStatement(new ConstructorCallExpression(ClassNode.SUPER, new ArgumentListExpression(args))));
-                cNode.addConstructor(cn.getModifiers(), pcopy, cn.getExceptions(), body);
-            }
+            processClass((ClassNode) parent, source);
         }
     }
 
-    private boolean isClashing(ClassNode cNode, Parameter[] pcopy) {
-        for (ConstructorNode cn : cNode.getDeclaredConstructors()) {
-            if (conflictingTypes(pcopy, cn.getParameters())) {
+    private void processClass(ClassNode cNode, SourceUnit source) {
+        if (cNode.isInterface()) {
+            addError("Error processing interface '" + cNode.getName() +
+                    "'. " + MY_TYPE_NAME + " only allowed for classes.", cNode, source);
+            return;
+        }
+        ClassNode sNode = cNode.getSuperClass();
+        List<AnnotationNode> superAnnotations = sNode.getAnnotations(MY_TYPE);
+        if (superAnnotations.size() == 1) {
+            // We need @InheritConstructors from parent classes processed first
+            // so force that order here. The transformation is benign on an already
+            // processed node so processing twice in any order won't matter bar
+            // a very small time penalty.
+            processClass(sNode, source);
+        }
+        for (ConstructorNode cn : sNode.getDeclaredConstructors()) {
+            addConstructorUnlessAlreadyExisting(cNode, cn);
+        }
+    }
+
+    private void addConstructorUnlessAlreadyExisting(ClassNode classNode, ConstructorNode consNode) {
+        Parameter[] origParams = consNode.getParameters();
+        if (consNode.isPrivate()) return;
+        Parameter[] params = new Parameter[origParams.length];
+        List<Expression> args = new ArrayList<Expression>();
+        for (int i = 0; i < origParams.length; i++) {
+            Parameter p = origParams[i];
+            params[i] = p.hasInitialExpression() ?
+                    new Parameter(p.getType(), p.getName(), p.getInitialExpression()) :
+                    new Parameter(p.getType(), p.getName());
+            args.add(new VariableExpression(p.getName(), p.getType()));
+        }
+        if (isExisting(classNode, params)) return;
+        BlockStatement body = new BlockStatement();
+        body.addStatement(new ExpressionStatement(
+                new ConstructorCallExpression(ClassNode.SUPER, new ArgumentListExpression(args))));
+        classNode.addConstructor(consNode.getModifiers(), params, consNode.getExceptions(), body);
+    }
+
+    private boolean isExisting(ClassNode classNode, Parameter[] params) {
+        for (ConstructorNode consNode : classNode.getDeclaredConstructors()) {
+            if (matchingTypes(params, consNode.getParameters())) {
                 return true;
             }
         }
         return false;
     }
 
-    private boolean conflictingTypes(Parameter[] pcopy, Parameter[] parameters) {
-        if (pcopy.length != parameters.length) return false;
-        for (int i = 0; i < pcopy.length; i++) {
-            if (!pcopy[i].getType().equals(parameters[i].getType())) {
+    private boolean matchingTypes(Parameter[] params, Parameter[] existingParams) {
+        if (params.length != existingParams.length) return false;
+        for (int i = 0; i < params.length; i++) {
+            if (!params[i].getType().equals(existingParams[i].getType())) {
                 return false;
             }
         }
