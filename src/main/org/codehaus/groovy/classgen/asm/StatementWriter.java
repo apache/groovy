@@ -451,7 +451,7 @@ public class StatementWriter {
         
         statement.getExpression().visit(controller.getAcg());
         operandStack.box();
-        controller.getBinaryExpHelper().getIsCaseMethod().call(mv);
+        controller.getBinaryExpressionHelper().getIsCaseMethod().call(mv);
         operandStack.replace(ClassHelper.boolean_TYPE);
 
         Label l0 = controller.getOperandStack().jump(IFEQ);
