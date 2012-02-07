@@ -623,7 +623,7 @@ public class IndyInterface {
             callInfo.sender = sender;
             callInfo.safeNavigation = safeNavigation && arguments[0]==null;
             callInfo.thisCall = thisCall;
-                        
+
             if (!setNullForSafeNavigation(callInfo)) {
                 //            setInterceptableHandle(callInfo);
                 MetaClass mc = getMetaClass(callInfo.args[0]);
@@ -635,15 +635,16 @@ public class IndyInterface {
                 correctParameterLenth(callInfo);
                 correctCoerce(callInfo);
                 correctNullReceiver(callInfo);
-
-                callInfo.handle = callInfo.handle.asType(callInfo.targetType);
+                callInfo.handle =  MethodHandles.explicitCastArguments(callInfo.handle,callInfo.targetType);
 
                 addExceptionHandler(callInfo);
-            }
+            } 
             setGuards(callInfo, callInfo.args[0]);
             callSite.setTarget(callInfo.handle);
             
-            return callInfo.handle.invokeWithArguments(callInfo.args);
+            MethodHandle call = callInfo.handle.asSpreader(Object[].class, callInfo.args.length);
+            call = call.asType(MethodType.methodType(Object.class,Object[].class));
+            return call.invokeExact(callInfo.args);
         }
         
         /**
