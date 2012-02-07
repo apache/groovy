@@ -20,6 +20,22 @@ class Groovy5272Bug extends GroovyTestCase {
         }
     }
 
+    void testShouldNeverFail2() {
+        10.times {
+            assertScript '''
+            public interface InterfaceA {
+                String FOO="Foo A";
+            }
+            public interface AnotherInterface extends InterfaceA {
+                String FOO="Foo B";
+            }
+
+            // Fails randomly
+            assert InterfaceA.FOO!=AnotherInterface.FOO
+            '''
+        }
+    }
+
     void testResolvingAmbiguousStaticFieldShouldAlwaysReturnTheSameValue() {
         10.times {
         assertScript '''
