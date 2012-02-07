@@ -38,6 +38,7 @@ public class StaticTypesWriterController extends DelegatingController {
     private StaticTypesTypeChooser typeChooser;
     private StaticInvocationWriter invocationWriter;
     private BinaryExpressionMultiTypeDispatcher binaryExprHelper;
+    private UnaryExpressionHelper unaryExpressionHelper;
     private ClosureWriter closureWriter;
 
     public StaticTypesWriterController(WriterController normalController) {
@@ -54,6 +55,7 @@ public class StaticTypesWriterController extends DelegatingController {
         this.invocationWriter = new StaticInvocationWriter(this);
         this.binaryExprHelper = new StaticTypesBinaryExpressionMultiTypeDispatcher(this);
         this.closureWriter = new StaticTypesClosureWriter(this);
+        this.unaryExpressionHelper = new StaticTypesUnaryExpressionHelper(this);
     }
 
     @Override
@@ -127,12 +129,20 @@ public class StaticTypesWriterController extends DelegatingController {
     }
 
     @Override
-    public BinaryExpressionHelper getBinaryExpHelper() {
+    public BinaryExpressionHelper getBinaryExpressionHelper() {
         if (isInStaticallyCheckedMethod) {
             return binaryExprHelper;
         } else {
-            return super.getBinaryExpHelper();
+            return super.getBinaryExpressionHelper();
         }
+    }
+
+    @Override
+    public UnaryExpressionHelper getUnaryExpressionHelper() {
+        if (isInStaticallyCheckedMethod) {
+            return unaryExpressionHelper;
+        }
+        return super.getUnaryExpressionHelper();
     }
 
     @Override
