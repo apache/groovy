@@ -575,6 +575,8 @@ public class IndyInterface {
          * Adds the standard exception handler.  
          */
         private static void addExceptionHandler(CallInfo info) {
+            //TODO: if we would know exactly which paths require the exceptions
+            //      and which paths not, we can sometimes save this guard 
             if (info.handle==null) return;
             Class returnType = info.handle.type().returnType();
             if (returnType!=Object.class) {
