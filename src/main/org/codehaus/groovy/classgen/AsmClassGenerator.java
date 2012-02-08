@@ -405,6 +405,7 @@ public class AsmClassGenerator extends ClassGenerator {
         }
         Object value = cexp!=null && ClassHelper.isStaticConstantInitializerType(cexp.getType())
                 && cexp.getType().equals(t)
+                && fieldNode.isStatic() && fieldNode.isFinal()
                 ?cexp.getValue() // GROOVY-5150
                 :null;
         if (value!=null) {
