@@ -448,7 +448,7 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
         Expression exp = node.initialValueExpression
         if (exp instanceof ConstantExpression) exp = Verifier.transformToPrimitiveConstantIfPossible(exp)
         ClassNode type = exp?.type
-        if (Modifier.isStatic(node.modifiers)
+        if (Modifier.isStatic(node.modifiers) && Modifier.isFinal(node.getModifiers())
                 && exp instanceof ConstantExpression
                 && type == node.type
                 && ClassHelper.isStaticConstantInitializerType(type)) {
