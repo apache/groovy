@@ -180,6 +180,14 @@ public class StaticInvocationWriter extends InvocationWriter {
                     ));
                 }
             }
+            if (target!=null && receiver!=null) {
+                if (!(receiver instanceof VariableExpression) || !((VariableExpression) receiver).isSuperExpression()) {
+                    // in order to avoid calls to castToType, which is the dynamic behaviour, we make sure that we call CHECKCAST instead
+                    // then replace the top operand type
+                    Expression checkCastReceiver = new CheckcastReceiverExpression(receiver, target);
+                    return super.writeDirectMethodCall(target, implicitThis, checkCastReceiver, args);
+                }
+            }
             return super.writeDirectMethodCall(target, implicitThis, receiver, args);
         }
     }
@@ -370,6 +378,50 @@ public class StaticInvocationWriter extends InvocationWriter {
             mv.visitLabel(endof);
         } else {
             super.makeCall(origin, receiver, message, arguments, adapter, safe, spreadSafe, implicitThis);
+        }
+    }
+
+    private class CheckcastReceiverExpression extends Expression {
+        private final Expression receiver;
+        private final MethodNode target;
+
+        public CheckcastReceiverExpression(final Expression receiver, final MethodNode target) {
+            this.receiver = receiver;
+            this.target = target;
+        }
+
+        @Override
+        public Expression transformExpression(final ExpressionTransformer transformer) {
+            return this;
+        }
+
+        @Override
+        public void visit(final GroovyCodeVisitor visitor) {
+            receiver.visit(visitor);
+            if (visitor instanceof AsmClassGenerator) {
+                ClassNode topOperand = controller.getOperandStack().getTopOperand();
+                ClassNode type;
+                if (target instanceof ExtensionMethodNode) {
+                    type = ((ExtensionMethodNode) target).getExtensionMethodNode().getDeclaringClass();
+                } else {
+                   type = target.getDeclaringClass();
+                }
+                if (ClassHelper.GSTRING_TYPE.equals(topOperand) && ClassHelper.STRING_TYPE.equals(type)) {
+                    // perform regular type conversion
+                    controller.getOperandStack().doGroovyCast(type);
+                    return;
+                }
+                if (ClassHelper.isPrimitiveType(topOperand) && !ClassHelper.isPrimitiveType(type)) {
+                    controller.getOperandStack().box();
+                } else if (!ClassHelper.isPrimitiveType(topOperand) && ClassHelper.isPrimitiveType(type)) {
+                    controller.getOperandStack().doGroovyCast(type);
+                }
+                if (StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf(topOperand, type)) return;
+                controller.getMethodVisitor().visitTypeInsn(CHECKCAST, type.isArray() ?
+                        BytecodeHelper.getTypeDescription(type) :
+                        BytecodeHelper.getClassInternalName(type.getName()));
+                controller.getOperandStack().replace(type);
+            }
         }
     }
 }

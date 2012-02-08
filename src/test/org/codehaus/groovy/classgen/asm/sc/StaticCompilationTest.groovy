@@ -1,9 +1,6 @@
 package org.codehaus.groovy.classgen.asm.sc
 
 import org.codehaus.groovy.classgen.asm.AbstractBytecodeTestCase
-import org.codehaus.groovy.control.CompilerConfiguration
-import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
-import groovy.transform.CompileStatic
 
 class StaticCompilationTest extends AbstractBytecodeTestCase {
     void testEmptyMethod() {
@@ -157,6 +154,33 @@ class StaticCompilationTest extends AbstractBytecodeTestCase {
         ])
     }
 
+    void testArrayGet() {
+        assert compile([method:'m'],'''
+        @groovy.transform.CompileStatic
+        void m(int[] arr) {
+            arr[0]
+        }''').hasStrictSequence([
+                "ALOAD 1",
+                "ICONST_0",
+                "INVOKESTATIC org/codehaus/groovy/runtime/BytecodeInterface8.intArrayGet ([II)I"
+        ])
+    }
+
+    void testArraySet() {
+        assert compile([method:'m'],'''
+        @groovy.transform.CompileStatic
+        void m(int[] arr) {
+            arr[0] = 0
+        }''').hasStrictSequence([
+                "ICONST_0",
+                "ISTORE 2",
+                "ALOAD 1",
+                "ICONST_0",
+                "ILOAD 2",
+                "INVOKESTATIC org/codehaus/groovy/runtime/BytecodeInterface8.intArraySet ([III)V"
+        ])
+    }
+
 /*    void testPlusPlus() {
         assert compile([method:'m'],'''
         @groovy.transform.CompileStatic
@@ -217,7 +241,7 @@ class StaticCompilationTest extends AbstractBytecodeTestCase {
             obj = str
             obj.toUpperCase()
         }
-        assert m('Cedric') == 'CEDRIC'
+        m 'Cedric'
         ''').hasStrictSequence([
                 "ICONST",
                 "INVOKESTATIC java/lang/Integer.valueOf (I)Ljava/lang/Integer;",
@@ -236,16 +260,13 @@ class StaticCompilationTest extends AbstractBytecodeTestCase {
                 "L3",
                 "LINENUMBER",
                 "ALOAD 2",
-                "LDC Ljava/lang/String;.class",
-                "INVOKESTATIC org/codehaus/groovy/runtime/ScriptBytecodeAdapter.castToType",
                 "CHECKCAST java/lang/String",
                 "INVOKEVIRTUAL java/lang/String.toUpperCase ()Ljava/lang/String;",
                 "ARETURN",
                 "L4"
         ])
-        clazz.newInstance().main()
     }
-/*
+
     void testInstanceOf() {
         assert compile([method:'m'],'''
         @groovy.transform.CompileStatic
@@ -256,90 +277,9 @@ class StaticCompilationTest extends AbstractBytecodeTestCase {
         }
         m 'Cedric'
         ''').hasStrictSequence([
-                "ILOAD",
-                "ILOAD",
-                "IADD",
-                "ISTORE"
+                "ALOAD",
+                "CHECKCAST java/lang/String",
+                "INVOKEVIRTUAL java/lang/String.toUpperCase ()Ljava/lang/String;"
         ])
-    }*/
-
-    void testBinaryExpressionAsMethodCall() {
-        assertScript '''
-            @groovy.transform.CompileStatic
-            class Groovy {
-
-              public static void main(String[] args) {
-                def absoluteResult = []
-                def before = System.currentTimeMillis()
-                for (times in 1..10000) {
-                  def result = ['foo', 23, true]
-                  for (y in result) {
-                    if (y instanceof String) {
-                        absoluteResult << foo(y)
-                    } else if (y instanceof Integer) {
-                        absoluteResult << foo(y)
-                    } else if (y instanceof Boolean) {
-                        absoluteResult << foo(y)
-                    }
-                  }
-                }
-                println("Took : "+(System.currentTimeMillis() - before)
-                  +" ms, number of elements : "+absoluteResult.size);
-                assert absoluteResult.size() == 30000
-              }
-
-              static String foo(String s) {
-                'String'
-              }
-
-              static String foo(Boolean s) {
-                'Boolean'
-              }
-
-              static String foo(Integer s) {
-                'Integer'
-              }
-            }
-        '''
-    }
-
-    void testBinaryExpressionAsMethodCallUsingPlusEquals() {
-        assertScript '''
-            @groovy.transform.CompileStatic
-            class Groovy {
-
-              public static void main(String[] args) {
-                def absoluteResult = []
-                def before = System.currentTimeMillis()
-                for (times in 1..10000) {
-                  def result = ['foo', 23, true]
-                  for (y in result) {
-                    if (y instanceof String) {
-                        absoluteResult += foo(y)
-                    } else if (y instanceof Integer) {
-                        absoluteResult += foo(y)
-                    } else if (y instanceof Boolean) {
-                        absoluteResult += foo(y)
-                    }
-                  }
-                }
-                println("Took : "+(System.currentTimeMillis() - before)
-                  +" ms, number of elements : "+absoluteResult.size);
-                assert absoluteResult.size() == 30000
-              }
-
-              static String foo(String s) {
-                'String'
-              }
-
-              static String foo(Boolean s) {
-                'Boolean'
-              }
-
-              static String foo(Integer s) {
-                'Integer'
-              }
-            }
-        '''
     }
 }
