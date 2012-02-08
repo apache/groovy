@@ -75,7 +75,12 @@ abstract class StaticTypeCheckingSupport {
                     for (int i = 0; i < o1ps.length && allEqual; i++) {
                         allEqual = o1ps[i].getType().equals(o2ps[i].getType());
                     }
-                    if (allEqual) return 0;
+                    if (allEqual) {
+                        if (o1 instanceof ExtensionMethodNode && o2 instanceof ExtensionMethodNode) {
+                            return compare(((ExtensionMethodNode) o1).getExtensionMethodNode(), ((ExtensionMethodNode) o2).getExtensionMethodNode());
+                        }
+                        return 0;
+                    }
                 } else {
                     return o1ps.length - o2ps.length;
                 }
