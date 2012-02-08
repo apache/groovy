@@ -192,4 +192,23 @@ class StaticCompileNullCompareOptimizationTest extends AbstractBytecodeTestCase 
         ])
     }
 
+    void testCompare() {
+        def bytecode=compile(method:'stat', '''
+            class Doc {}
+
+            @groovy.transform.CompileStatic
+            class A {
+                static void foo() {
+                    Doc doc = null
+                    def cl = { if (doc) { 1 } else { 0 } }
+                    assert cl() == 0
+                }
+            }
+
+            A.foo()
+
+        ''')
+        clazz.main()
+    }
+
 }
