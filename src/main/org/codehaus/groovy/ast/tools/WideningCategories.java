@@ -40,21 +40,18 @@ import java.util.List;
 public class WideningCategories {
     /**
      * It is of an int category, if the provided type is a
-     * byte, char, short, int or any of the wrapper.   
+     * byte, char, short, int.
      */
     public static boolean isIntCategory(ClassNode type) {
-        return  type==byte_TYPE     ||  type==Byte_TYPE      ||
-                type==char_TYPE     ||  type==Character_TYPE ||
-                type==int_TYPE      ||  type==Integer_TYPE   ||
-                type==short_TYPE    ||  type==Short_TYPE;
+        return  type==byte_TYPE     ||  type==char_TYPE     ||
+                type==int_TYPE      ||  type==short_TYPE;
     }
     /**
      * It is of a long category, if the provided type is a
      * long, its wrapper or if it is a long category. 
      */
     public static boolean isLongCategory(ClassNode type) {
-        return  type==long_TYPE     ||  type==Long_TYPE     ||
-                isIntCategory(type);
+        return  type==long_TYPE     ||  isIntCategory(type);
     }
     /**
      * It is of a BigInteger category, if the provided type is a
@@ -72,14 +69,13 @@ public class WideningCategories {
     }
     /**
      * It is of a double category, if the provided type is a
-     * BigDecimal, a float, double or a wrapper of those. C(type)=double
+     * BigDecimal, a float, double. C(type)=double
      */
     public static boolean isDoubleCategory(ClassNode type) {
-        return  type==float_TYPE    ||  type==Float_TYPE    ||
-                type==double_TYPE   ||  type==Double_TYPE   ||
+        return  type==float_TYPE    ||  type==double_TYPE   ||
                 isBigDecCategory(type);
     }
-    
+
     public static boolean isNumberCategory(ClassNode type) {
         return isBigDecCategory(type) || type.isDerivedFrom(Number_TYPE);
     }
