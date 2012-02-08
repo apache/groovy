@@ -850,7 +850,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         ClassNode type = getType(expression);
         ClassNode typeRe = type.redirect();
         ClassNode resultType;
-        if (isDoubleCategory(typeRe)) {
+        if (isDoubleCategory(ClassHelper.getUnwrapper(typeRe))) {
             resultType = type;
         } else if (typeRe == ArrayList_TYPE) {
             resultType = ArrayList_TYPE;
@@ -1860,6 +1860,15 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 });
             }
             return plain;
+        }
+        if (exp instanceof UnaryPlusExpression) {
+            return getType(((UnaryPlusExpression) exp).getExpression());
+        }
+        if (exp instanceof UnaryMinusExpression) {
+            return getType(((UnaryMinusExpression) exp).getExpression());
+        }
+        if (exp instanceof BitwiseNegationExpression) {
+            return getType(((BitwiseNegationExpression) exp).getExpression());
         }
         return exp instanceof VariableExpression?((VariableExpression) exp).getOriginType():((Expression)exp).getType();
     }
