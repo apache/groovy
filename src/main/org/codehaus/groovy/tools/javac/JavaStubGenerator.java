@@ -334,6 +334,7 @@ public class JavaStubGenerator {
                 valueExpr = Verifier.transformToPrimitiveConstantIfPossible((ConstantExpression) valueExpr);
             }
             if (valueExpr instanceof ConstantExpression
+                    && fieldNode.isStatic() && fieldNode.isFinal()
                     && ClassHelper.isStaticConstantInitializerType(valueExpr.getType())
                     && valueExpr.getType().equals(fieldNode.getType())) {
                 // GROOVY-5150 : Initialize value with a dummy constant so that Java cross compiles correctly

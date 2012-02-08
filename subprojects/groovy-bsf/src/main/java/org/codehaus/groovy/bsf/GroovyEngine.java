@@ -46,9 +46,10 @@ public class GroovyEngine extends BSFEngineImpl {
      * with "_".
      */
     private String convertToValidJavaClassname(String inName) {
-        if (inName == null || inName.equals("")) {
-            return "_";
-        }
+        if (inName == null) return "_";
+        if (inName.startsWith("scriptdef_")) inName = inName.substring(10);
+        if (inName.equals("")) return "_";
+
         StringBuffer output = new StringBuffer(inName.length());
         boolean firstChar = true;
         for (int i = 0; i < inName.length(); ++i) {

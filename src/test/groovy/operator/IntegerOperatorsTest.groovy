@@ -182,4 +182,34 @@ class IntegerOperatorsTest extends GroovyTestCase {
         } catch (UnsupportedOperationException uoe) {
         }
     }
+
+    void testCompareBoxing() {
+        assertScript """
+            def proceed(){}
+            def checkResponse() {return null}
+
+            Integer responseCode = checkResponse()
+            if (responseCode == 200) { 
+                proceed()
+            }
+        """
+    }
+
+    void testCompareBoxingWithEMC() {
+        try {
+            assertScript """
+                def proceed(){}
+                def checkResponse() {return null}
+
+                Integer.metaClass.foo = {1}
+                Integer responseCode = checkResponse()
+                if (responseCode == 200) { 
+                    proceed()
+                }
+            """
+        } finally {
+            Integer.metaClass = null
+        }
+    }
+
 }
