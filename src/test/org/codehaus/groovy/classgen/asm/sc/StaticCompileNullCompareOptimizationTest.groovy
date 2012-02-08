@@ -82,4 +82,114 @@ class StaticCompileNullCompareOptimizationTest extends AbstractBytecodeTestCase 
         ])
     }
 
+
+    void testOptimizeGroovyTruthForPrimitiveBoolean() {
+        def bytecode = compile(method:'m', '''
+            @groovy.transform.CompileStatic
+            void m(boolean x) {
+                if (x) {
+                    println 'ok'
+                }
+            }
+        ''')
+        assert bytecode.hasStrictSequence(['ILOAD 1', 'IFEQ'])
+    }
+
+    void testOptimizeGroovyTruthForBoxedBoolean() {
+        def bytecode = compile(method:'m', '''
+            @groovy.transform.CompileStatic
+            void m(Boolean x) {
+                if (x) {
+                    println 'ok'
+                }
+            }
+        ''')
+        assert bytecode.hasStrictSequence(['ALOAD 1', 'INVOKEVIRTUAL', 'IFEQ'])
+    }
+
+    void testOptimizeGroovyTruthWithStringShouldNotBeTriggered() {
+        def bytecode = compile(method:'m', '''
+            @groovy.transform.CompileStatic
+            void m(String x) {
+                if (x) {
+                    println 'ok'
+                }
+            }
+        ''')
+        assert bytecode.hasStrictSequence([
+                'ALOAD 1',
+                'INVOKESTATIC org/codehaus/groovy/runtime/typehandling/DefaultTypeTransformation.booleanUnbox (Ljava/lang/Object;)Z',
+                'IFEQ'
+        ])
+    }
+
+    void testGroovyTruthOptimizationWithObjectShouldNotBeTriggered() {
+        def bytecode = compile(method:'m', '''
+            @groovy.transform.CompileStatic
+            void m(Object x) {
+                if (x) {
+                    println 'ok'
+                }
+            }
+        ''')
+        assert bytecode.hasStrictSequence([
+                'ALOAD 1',
+                'INVOKESTATIC org/codehaus/groovy/runtime/typehandling/DefaultTypeTransformation.booleanUnbox (Ljava/lang/Object;)Z',
+                'IFEQ'
+        ])
+    }
+
+    void testGroovyTruthOptimizationWithFinalClass() {
+        def bytecode = compile(method:'m', '''
+            final class A {}
+            @groovy.transform.CompileStatic
+            void m(A x) {
+                if (x) {
+                    println 'ok'
+                }
+            }
+        ''')
+        assert bytecode.hasStrictSequence([
+                'ALOAD 1',
+                'IFNULL',
+        ])
+    }
+
+    void testGroovyTruthOptimizationWithPrivateInnerClass() {
+        def bytecode = compile(method:'m', '''
+            class A {
+                private static class B {}
+                @groovy.transform.CompileStatic
+                void m(B x) {
+                    if (x) {
+                        println 'ok'
+                    }
+                }
+            }
+        ''')
+        assert bytecode.hasStrictSequence([
+                'ALOAD 1',
+                'IFNULL',
+        ])
+    }
+
+    void testGroovyTruthOptimizationWithPublicInnerClass() {
+        def bytecode = compile(method:'m', '''
+            class A {
+                public static class B {}
+                @groovy.transform.CompileStatic
+                void m(B x) {
+                    if (x) {
+                        println 'ok'
+                    }
+                }
+            }
+        ''')
+        assert bytecode.hasStrictSequence([
+                'ALOAD 1',
+                'INVOKESTATIC org/codehaus/groovy/runtime/typehandling/DefaultTypeTransformation.booleanUnbox (Ljava/lang/Object;)Z',
+                'IFEQ'
+        ])
+    }
+
 }

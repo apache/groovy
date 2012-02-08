@@ -58,6 +58,7 @@ public class StaticCompilationTransformer extends ClassCodeExpressionTransformer
     private final MethodCallExpressionTransformer methodCallExpressionTransformer = new MethodCallExpressionTransformer(this);
     private final BinaryExpressionTransformer binaryExpressionTransformer = new BinaryExpressionTransformer(this);
     private final ClosureExpressionTransformer closureExpressionTransformer = new ClosureExpressionTransformer(this);
+    private final BooleanExpressionTransformer booleanExpressionTransformer = new BooleanExpressionTransformer(this);
 
     public StaticCompilationTransformer(final SourceUnit unit) {
         this.unit = unit;
@@ -97,6 +98,9 @@ public class StaticCompilationTransformer extends ClassCodeExpressionTransformer
         }
         if (expr instanceof ConstructorCallExpression) {
             return constructorCallTransformer.transformConstructorCall((ConstructorCallExpression) expr);
+        }
+        if (expr instanceof BooleanExpression) {
+            return booleanExpressionTransformer.transformBooleanExpression((BooleanExpression)expr);
         }
         return super.transform(expr);
     }
