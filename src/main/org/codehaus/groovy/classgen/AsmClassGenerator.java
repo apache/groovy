@@ -613,11 +613,16 @@ public class AsmClassGenerator extends ClassGenerator {
 
     public void visitCastExpression(CastExpression castExpression) {
         ClassNode type = castExpression.getType();
-        castExpression.getExpression().visit(this);
+        Expression subExpression = castExpression.getExpression();
+        subExpression.visit(this);
         if (castExpression.isCoerce()) {
             controller.getOperandStack().doAsType(type);
         } else {
-            controller.getOperandStack().doGroovyCast(type);
+            if (isNullConstant(subExpression)) {
+                controller.getOperandStack().replace(type);
+            } else {
+                controller.getOperandStack().doGroovyCast(type);
+            }
         }
     }
 
@@ -733,8 +738,11 @@ public class AsmClassGenerator extends ClassGenerator {
         
         mv.visitVarInsn(ALOAD, 0);
         for (int i=0; i<params.length; i++) {
-            argumentList.get(i).visit(this);
-            operandStack.doGroovyCast(params[i].getType());
+            Expression expression = argumentList.get(i);
+            expression.visit(this);
+            if (!isNullConstant(expression)) {
+                operandStack.doGroovyCast(params[i].getType());
+            }
             operandStack.remove(1);
         }
         String descriptor = BytecodeHelper.getMethodDescriptor(ClassHelper.VOID_TYPE, params);        
@@ -743,6 +751,10 @@ public class AsmClassGenerator extends ClassGenerator {
         return true;
     }
      
+    private static boolean isNullConstant(Expression expr) {
+        return expr instanceof ConstantExpression && ((ConstantExpression) expr).getValue()==null;
+    }
+
     private void makeMOPBasedConstructorCall(List<ConstructorNode> constructors, ConstructorCallExpression call, ClassNode callNode) {
         MethodVisitor mv = controller.getMethodVisitor();
         OperandStack operandStack = controller.getOperandStack();
