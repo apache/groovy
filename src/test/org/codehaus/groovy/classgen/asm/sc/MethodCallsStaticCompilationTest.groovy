@@ -105,4 +105,13 @@ public class MethodCallsStaticCompilationTest extends MethodCallsSTCTest {
         '''
         }
     }
+
+    void testExplicitTargetMethodWithCast() {
+        assertScript '''
+            String foo(String str) { 'STRING' }
+            String foo(Object o) { 'OBJECT' }
+            assert foo('call') == 'STRING'
+            assert foo((Object)'call') == 'OBJECT'
+        '''
+    }
 }
