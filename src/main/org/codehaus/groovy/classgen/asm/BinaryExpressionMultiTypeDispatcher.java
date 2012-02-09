@@ -117,28 +117,37 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
         return ret;
     }
     
+    protected boolean doPrimtiveCompare(ClassNode leftType, ClassNode rightType, BinaryExpression binExp) {
+        Expression leftExp = binExp.getLeftExpression();
+        Expression rightExp = binExp.getRightExpression();
+        int operation = binExp.getOperation().getType();
+        
+        int operationType = getOperandConversionType(leftType,rightType);
+        BinaryExpressionWriter bew = binExpWriter[operationType];
+
+        if (!bew.write(operation, true)) return false;
+            
+        AsmClassGenerator acg = getController().getAcg();
+        OperandStack os = getController().getOperandStack();
+        leftExp.visit(acg);
+        os.doGroovyCast(bew.getNormalOpResultType());
+        rightExp.visit(acg);
+        os.doGroovyCast(bew.getNormalOpResultType());
+        bew.write(operation, false);
+        
+        return true;
+    }
+    
     @Override
     protected void evaluateCompareExpression(final MethodCaller compareMethod, BinaryExpression binExp) {
         ClassNode current =  getController().getClassNode();
-        int operation = binExp.getOperation().getType();
-        
+
         Expression leftExp = binExp.getLeftExpression();
         ClassNode leftType = getController().getTypeChooser().resolveType(leftExp, current);
         Expression rightExp = binExp.getRightExpression();
         ClassNode rightType = getController().getTypeChooser().resolveType(rightExp, current);
         
-        int operationType = getOperandConversionType(leftType,rightType);
-        BinaryExpressionWriter bew = binExpWriter[operationType];
-        
-        if (bew.write(operation, true)) {
-            AsmClassGenerator acg = getController().getAcg();
-            OperandStack os = getController().getOperandStack();
-            leftExp.visit(acg);
-            os.doGroovyCast(bew.getNormalOpResultType());
-            rightExp.visit(acg);
-            os.doGroovyCast(bew.getNormalOpResultType());
-            bew.write(operation, false);
-        } else {
+        if (!doPrimtiveCompare(leftType, rightType, binExp)) {
             super.evaluateCompareExpression(compareMethod, binExp);
         }
     }
