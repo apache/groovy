@@ -54,7 +54,7 @@ abstract class RootPaneContainerFactory extends AbstractFactory {
             builder.addAttributeDelegate {myBuilder, node, myAttributes ->
                 if ((node instanceof JButton) && (builder.containingWindows[-1] == container)) {
                     // in Java 6 use descending iterator
-                    ListIterator li = builder.contexts.listIterator();
+                    ListIterator li = builder.contexts.listIterator()
                     Map context
                     while (li.hasNext()) context = li.next()
                     while (context && context[FactoryBuilderSupport.CURRENT_NODE] != container) {
@@ -80,7 +80,7 @@ abstract class RootPaneContainerFactory extends AbstractFactory {
         if (node instanceof Window) {
             def containingWindows = builder.containingWindows
             if (!containingWindows.empty && containingWindows.last == node) {
-                containingWindows.removeLast();
+                containingWindows.removeLast()
             }
         }
 
