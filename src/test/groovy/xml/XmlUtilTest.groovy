@@ -16,6 +16,7 @@
 package groovy.xml
 
 import static groovy.xml.XmlAssert.assertXmlEquals
+import org.xml.sax.InputSource
 
 /**
  * @author Paul King
@@ -30,7 +31,8 @@ class XmlUtilTest extends GroovyTestCase {
 
     // GROOVY-5158
     void testSerializeOfGPathResultShouldRoundTrip() {
-    // TODO reinstate - why does this fail on CI server?
-//        assertXmlEquals(xml, XmlUtil.serialize(new XmlSlurper().parseText(xml)))
+        def source = new InputSource(new StringReader(xml))
+        source.encoding = "UTF-8"
+        assertXmlEquals(xml, XmlUtil.serialize(new XmlSlurper().parse(source)))
     }
 }
