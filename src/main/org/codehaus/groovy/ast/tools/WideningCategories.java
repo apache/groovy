@@ -68,7 +68,7 @@ public class WideningCategories {
      * @param type the type to check
      */
     public static boolean isInt(ClassNode type) {
-        return int_TYPE == type || Integer_TYPE == type;
+        return int_TYPE == type;
     }
 
     /**
@@ -76,7 +76,7 @@ public class WideningCategories {
      * @param type the type to check
      */
     public static boolean isDouble(ClassNode type) {
-        return double_TYPE == type || Double_TYPE == type;
+        return double_TYPE == type;
     }
 
     /**
@@ -84,26 +84,23 @@ public class WideningCategories {
      * @param type the type to check
      */
     public static boolean isFloat(ClassNode type) {
-        return float_TYPE == type || Float_TYPE == type;
+        return float_TYPE == type;
     }
 
     /**
      * It is of an int category, if the provided type is a
-     * byte, char, short, int or any of the wrapper.   
+     * byte, char, short, int.
      */
     public static boolean isIntCategory(ClassNode type) {
-        return  type==byte_TYPE     ||  type==Byte_TYPE      ||
-                type==char_TYPE     ||  type==Character_TYPE ||
-                type==int_TYPE      ||  type==Integer_TYPE   ||
-                type==short_TYPE    ||  type==Short_TYPE;
+        return  type==byte_TYPE     ||  type==char_TYPE     ||
+                type==int_TYPE      ||  type==short_TYPE;
     }
     /**
      * It is of a long category, if the provided type is a
      * long, its wrapper or if it is a long category. 
      */
     public static boolean isLongCategory(ClassNode type) {
-        return  type==long_TYPE     ||  type==Long_TYPE     ||
-                isIntCategory(type);
+        return  type==long_TYPE     ||  isIntCategory(type);
     }
     /**
      * It is of a BigInteger category, if the provided type is a
@@ -121,21 +118,19 @@ public class WideningCategories {
     }
     /**
      * It is of a double category, if the provided type is a
-     * BigDecimal, a float, double or a wrapper of those. C(type)=double
+     * BigDecimal, a float, double. C(type)=double
      */
     public static boolean isDoubleCategory(ClassNode type) {
-        return  type==float_TYPE    ||  type==Float_TYPE    ||
-                type==double_TYPE   ||  type==Double_TYPE   ||
+        return  type==float_TYPE    ||  type==double_TYPE   ||
                 isBigDecCategory(type);
     }
 
     /**
      * It is of a floating category, if the provided type is a
-     * a float, double or a wrapper of those. C(type)=double
+     * a float, double. C(type)=float
      */
     public static boolean isFloatingCategory(ClassNode type) {
-        return  type==float_TYPE    ||  type==Float_TYPE    ||
-                type==double_TYPE   ||  type==Double_TYPE;
+        return  type==float_TYPE    ||  type==double_TYPE;
     }
 
     public static boolean isNumberCategory(ClassNode type) {

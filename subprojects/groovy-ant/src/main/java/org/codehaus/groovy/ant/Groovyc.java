@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,11 +36,11 @@ import org.apache.tools.ant.util.SourceFileScanner;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.SourceExtensionHandler;
+import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.tools.ErrorReporter;
 import org.codehaus.groovy.tools.FileSystemCompiler;
 import org.codehaus.groovy.tools.RootLoader;
 import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit;
-import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -51,6 +51,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
@@ -862,6 +863,7 @@ public class Groovyc extends MatchingTask {
                     final Execute executor = new Execute(); // new LogStreamHandler ( attributes , Project.MSG_INFO , Project.MSG_WARN ) ) ;
                     executor.setAntRun(getProject());
                     executor.setWorkingDirectory(getProject().getBaseDir());
+                    executor.setEnvironment(addClasspathToEnvironment(executor.getEnvironment(), classpath.toString()));
                     executor.setCommandline(commandLine);
                     try {
                         executor.execute();
@@ -935,6 +937,12 @@ public class Groovyc extends MatchingTask {
                 }
             }
         }
+    }
+
+    private String[] addClasspathToEnvironment(String[] oldEnvironment, String classpath) {
+        List<String> newEnvironmentList = (oldEnvironment == null) ? new ArrayList<String>() : Arrays.asList(oldEnvironment);
+        newEnvironmentList.add("classpath=" + classpath);
+        return newEnvironmentList.toArray(new String[newEnvironmentList.size()]);
     }
 
     protected CompilationUnit makeCompileUnit() {

@@ -516,10 +516,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
         if (!isPackageAllowed && ast.getPackage() != null) {
             throw new SecurityException("Package definitions are not allowed");
         }
-        final List<MethodNode> methods = ast.getMethods();
-        if (!isMethodDefinitionAllowed && methods !=null && methods.size()>0) {
-            throw new SecurityException("Method definitions are not allowed");
-        }
+        checkMethodDefinitionAllowed(classNode);
 
         // verify imports
         if (importsBlacklist != null || importsWhitelist != null || starImportsBlacklist != null || starImportsWhitelist != null) {
@@ -547,12 +544,41 @@ public class SecureASTCustomizer extends CompilationCustomizer {
 
         final SecuringCodeVisitor visitor = new SecuringCodeVisitor();
         ast.getStatementBlock().visit(visitor);
-
-        if (isMethodDefinitionAllowed && methods !=null) {
-            for (MethodNode method : methods) {
-                method.getCode().visit(visitor);
+        for (ClassNode clNode : ast.getClasses()) {
+            if (clNode!=classNode) {
+                checkMethodDefinitionAllowed(clNode);
+                for (MethodNode methodNode : clNode.getMethods()) {
+                    if (!methodNode.isSynthetic()) {
+                        methodNode.getCode().visit(visitor);
+                    }
+                }
             }
         }
+
+        List<MethodNode> methods = filterMethods(classNode);
+        if (isMethodDefinitionAllowed) {
+            for (MethodNode method : methods) {
+                if (method.getDeclaringClass()==classNode) method.getCode().visit(visitor);
+            }
+        }
+    }
+    
+    private void checkMethodDefinitionAllowed(ClassNode owner) {
+        if (isMethodDefinitionAllowed) return;
+        List<MethodNode> methods = filterMethods(owner);
+        if (!methods.isEmpty()) throw new SecurityException("Method definitions are not allowed");
+    }
+    
+    private List<MethodNode> filterMethods(ClassNode owner) {
+        List<MethodNode> result = new LinkedList<MethodNode>();
+        List<MethodNode> methods = owner.getMethods();
+        for (MethodNode method : methods) {
+            if (method.getDeclaringClass() == owner && !method.isSynthetic()) {
+                if ("main".equals(method.getName()) || "run".equals(method.getName()) && owner.isScriptBody()) continue;
+                result.add(method);
+            }
+        }
+        return result;
     }
 
     private void assertStarImportIsAllowed(final String packageName) {
@@ -649,13 +675,13 @@ public class SecureASTCustomizer extends CompilationCustomizer {
         private void assertExpressionAuthorized(final Expression expression) throws SecurityException {
             final Class<? extends Expression> clazz = expression.getClass();
             if (expressionsBlacklist != null && expressionsBlacklist.contains(clazz)) {
-                throw new SecurityException(clazz.getSimpleName() + "s are not allowed");
+                throw new SecurityException(clazz.getSimpleName() + "s are not allowed: " + expression.getText());
             } else if (expressionsWhitelist != null && !expressionsWhitelist.contains(clazz)) {
-                throw new SecurityException(clazz.getSimpleName() + "s are not allowed");
+                throw new SecurityException(clazz.getSimpleName() + "s are not allowed: " + expression.getText());
             }
             for (ExpressionChecker expressionChecker : expressionCheckers) {
                 if (!expressionChecker.isAuthorized(expression)) {
-                    throw new SecurityException("Expression [" + clazz.getSimpleName() + "] is not allowed");
+                    throw new SecurityException("Expression [" + clazz.getSimpleName() + "] is not allowed: " + expression.getText());
                 }
             }
             if (isIndirectImportCheckEnabled) {

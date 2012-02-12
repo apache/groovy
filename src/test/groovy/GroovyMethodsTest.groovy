@@ -1140,6 +1140,13 @@ class GroovyMethodsTest extends GroovyTestCase {
         assert chars.contains('c' as char)
         assert !chars.contains('b' as char)
     }
+
+    void testArrayContains() {
+        String[] vowels = ['a', 'e', 'i', 'o', 'u']
+        assert vowels.contains('u')
+        assert !vowels.contains('x')
+    }
+
 }
 
 class WackyList extends LinkedList {

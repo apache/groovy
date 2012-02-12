@@ -44,6 +44,7 @@ public class WriterController {
     private String internalClassName;
     private InvocationWriter invocationWriter;
     private BinaryExpressionHelper binaryExpHelper, fastPathBinaryExpHelper;
+    private UnaryExpressionHelper unaryExpressionHelper, fastPathUnaryExpressionHelper;
     private AssertionWriter assertionWriter;
     private String internalBaseClassName;
     private ClassNode outermostClass;
@@ -82,10 +83,14 @@ public class WriterController {
         }
         
         this.binaryExpHelper = new BinaryExpressionHelper(this);
+        this.unaryExpressionHelper = new UnaryExpressionHelper(this);
         if (optimizeForInt) {
-            this.fastPathBinaryExpHelper = new BinaryExpressionMultiTypeDispatcher(this);            
+            this.fastPathBinaryExpHelper = new BinaryExpressionMultiTypeDispatcher(this);
+            // todo: replace with a real fast path unary expression helper when available
+            this.fastPathUnaryExpressionHelper = new UnaryExpressionHelper(this);
         } else {
             this.fastPathBinaryExpHelper = this.binaryExpHelper;
+            this.fastPathUnaryExpressionHelper = new UnaryExpressionHelper(this);
         }
 
         this.operandStack = new OperandStack(this);
@@ -153,11 +158,19 @@ public class WriterController {
         return invocationWriter;
     }
 
-    public BinaryExpressionHelper getBinaryExpHelper() {
+    public BinaryExpressionHelper getBinaryExpressionHelper() {
         if (fastPath) {
             return fastPathBinaryExpHelper;
         } else {
             return binaryExpHelper;
+        }
+    }
+
+    public UnaryExpressionHelper getUnaryExpressionHelper() {
+        if (fastPath) {
+            return fastPathUnaryExpressionHelper;
+        } else {
+            return unaryExpressionHelper;
         }
     }
 

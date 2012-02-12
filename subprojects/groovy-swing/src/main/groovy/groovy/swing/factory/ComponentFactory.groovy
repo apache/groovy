@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,10 @@ package groovy.swing.factory
 
 import java.awt.Component
 import java.awt.Window
+import javax.swing.JComponent
+import static groovy.swing.factory.LayoutFactory.DEFAULT_DELEGATE_PROPERTY_CONSTRAINT
 
-class ComponentFactory extends groovy.swing.factory.BeanFactory {
+class ComponentFactory extends BeanFactory {
 
     public ComponentFactory(Class beanClass) {
         super(beanClass)
@@ -31,18 +33,21 @@ class ComponentFactory extends groovy.swing.factory.BeanFactory {
 
     public void setChild(FactoryBuilderSupport builder, Object parent, Object child) {
         if (!(child instanceof Component) || (child instanceof Window)) {
-            return;
+            return
         }
         try {
             def constraints = builder.context.constraints
             if (constraints != null) {
-                groovy.swing.factory.LayoutFactory.getLayoutTarget(parent).add(child, constraints)
+                LayoutFactory.getLayoutTarget(parent).add(child, constraints)
+                if (child instanceof JComponent) {
+                    child.putClientProperty(DEFAULT_DELEGATE_PROPERTY_CONSTRAINT, constraints)
+                }
                 builder.context.remove('constraints')
             } else {
-                groovy.swing.factory.LayoutFactory.getLayoutTarget(parent).add(child)
+                LayoutFactory.getLayoutTarget(parent).add(child)
             }
         } catch (MissingPropertyException mpe) {
-            groovy.swing.factory.LayoutFactory.getLayoutTarget(parent).add(child)
+            LayoutFactory.getLayoutTarget(parent).add(child)
         }
     }
 }

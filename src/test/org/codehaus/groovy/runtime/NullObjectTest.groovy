@@ -56,6 +56,12 @@ class NullObjectTest extends GroovyTestCase {
         assert null.hello() == "Greeting from null"
         null.setMetaClass(oldMC)
     }
+
+    void testNullPlusNull() {
+        shouldFail(NullPointerException) {
+            null+null
+        }
+    }
 }
 
 class MyCategory {

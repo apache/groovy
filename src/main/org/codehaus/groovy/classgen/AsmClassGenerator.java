@@ -71,10 +71,6 @@ public class AsmClassGenerator extends ClassGenerator {
     static final MethodCaller despreadList = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "despreadList");
     // Closure
     static final MethodCaller getMethodPointer = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "getMethodPointer");
-    // unary plus, unary minus, bitwise negation
-    static final MethodCaller unaryPlus = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "unaryPlus");
-    static final MethodCaller unaryMinus = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "unaryMinus");
-    static final MethodCaller bitwiseNegate = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "bitwiseNegate");
 
     // type conversions
     static final MethodCaller createListMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "createList");
@@ -413,6 +409,7 @@ public class AsmClassGenerator extends ClassGenerator {
         }
         Object value = cexp!=null && ClassHelper.isStaticConstantInitializerType(cexp.getType())
                 && cexp.getType().equals(t)
+                && fieldNode.isStatic() && fieldNode.isFinal()
                 ?cexp.getValue() // GROOVY-5150
                 :null;
         if (value!=null) {
@@ -518,22 +515,22 @@ public class AsmClassGenerator extends ClassGenerator {
 
     public void visitTernaryExpression(TernaryExpression expression) {
         onLineNumber(expression, "visitTernaryExpression");
-        controller.getBinaryExpHelper().evaluateTernary(expression);
+        controller.getBinaryExpressionHelper().evaluateTernary(expression);
     }
     
     public void visitDeclarationExpression(DeclarationExpression expression) {
         onLineNumber(expression, "visitDeclarationExpression: \"" + expression.getText() + "\"");
-        controller.getBinaryExpHelper().evaluateEqual(expression,true);
+        controller.getBinaryExpressionHelper().evaluateEqual(expression,true);
     }
 
     public void visitBinaryExpression(BinaryExpression expression) {
         onLineNumber(expression, "visitBinaryExpression: \"" + expression.getOperation().getText() + "\" ");
-        controller.getBinaryExpHelper().eval(expression);
+        controller.getBinaryExpressionHelper().eval(expression);
         controller.getAssertionWriter().record(expression.getOperation());
     }
 
     public void visitPostfixExpression(PostfixExpression expression) {
-        controller.getBinaryExpHelper().evaluatePostfixMethod(expression);
+        controller.getBinaryExpressionHelper().evaluatePostfixMethod(expression);
         controller.getAssertionWriter().record(expression);
     }
 
@@ -542,7 +539,7 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     public void visitPrefixExpression(PrefixExpression expression) {
-        controller.getBinaryExpHelper().evaluatePrefixMethod(expression);
+        controller.getBinaryExpressionHelper().evaluatePrefixMethod(expression);
         controller.getAssertionWriter().record(expression);
     }
 
@@ -603,30 +600,15 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     public void visitUnaryMinusExpression(UnaryMinusExpression expression) {
-        Expression subExpression = expression.getExpression();
-        subExpression.visit(this);
-        controller.getOperandStack().box();
-        unaryMinus.call(controller.getMethodVisitor());
-        controller.getOperandStack().replace(ClassHelper.OBJECT_TYPE);
-        controller.getAssertionWriter().record(expression);
+        controller.getUnaryExpressionHelper().writeUnaryMinus(expression);
     }
 
     public void visitUnaryPlusExpression(UnaryPlusExpression expression) {
-        Expression subExpression = expression.getExpression();
-        subExpression.visit(this);
-        controller.getOperandStack().box();
-        unaryPlus.call(controller.getMethodVisitor());
-        controller.getOperandStack().replace(ClassHelper.OBJECT_TYPE);
-        controller.getAssertionWriter().record(expression);
+        controller.getUnaryExpressionHelper().writeUnaryPlus(expression);
     }
 
     public void visitBitwiseNegationExpression(BitwiseNegationExpression expression) {
-        Expression subExpression = expression.getExpression();
-        subExpression.visit(this);
-        controller.getOperandStack().box();
-        bitwiseNegate.call(controller.getMethodVisitor());
-        controller.getOperandStack().replace(ClassHelper.OBJECT_TYPE);
-        controller.getAssertionWriter().record(expression);
+        controller.getUnaryExpressionHelper().writeBitwiseNegate(expression);
     }
 
     public void visitCastExpression(CastExpression castExpression) {
@@ -640,12 +622,7 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     public void visitNotExpression(NotExpression expression) {
-        Expression subExpression = expression.getExpression();
-        int mark = controller.getOperandStack().getStackLength();
-        subExpression.visit(this);
-        controller.getOperandStack().castToBool(mark, true);
-        BytecodeHelper.negateBoolean(controller.getMethodVisitor());
-        controller.getAssertionWriter().record(expression);
+        controller.getUnaryExpressionHelper().writeNotExpression(expression);
     }
 
     /**

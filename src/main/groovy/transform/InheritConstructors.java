@@ -102,14 +102,6 @@ import java.lang.annotation.Target;
  * inherit) the constructors with signatures that Groovy adds later.
  * If you get it wrong you will get a compile-time error about the duplication.
  * </p>
- * <p>
- * <em>Current limitations:</em>We recommend not extending from an exception that
- * also uses {@code @InheritConstructors} unless you can guarantee that the parent
- * exception is already compiled. If you do extend from such a class and are compiling
- * them together, then your exception will not inherit the constructors added by this
- * transform to the parent exception if the compiler visits your class before the one
- * you inherit from. This limitation will be removed in a future version of Groovy.
- * </p>
  *
  * @author Paul King
  * @since 1.7.3

@@ -961,7 +961,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                 if (initialValueExpression instanceof ConstantExpression) {
                     ConstantExpression cexp = (ConstantExpression) initialValueExpression;
                     cexp = transformToPrimitiveConstantIfPossible(cexp);
-                    if (ClassHelper.isStaticConstantInitializerType(cexp.getType()) && cexp.getType().equals(fieldNode.getType())) {
+                    if (fieldNode.isFinal() && ClassHelper.isStaticConstantInitializerType(cexp.getType()) && cexp.getType().equals(fieldNode.getType())) {
                         return; // GROOVY-5150: primitive type constants will be initialized directly
                     }
                     staticList.add(0, statement);

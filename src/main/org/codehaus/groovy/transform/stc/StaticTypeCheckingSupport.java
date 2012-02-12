@@ -75,7 +75,12 @@ public abstract class StaticTypeCheckingSupport {
                     for (int i = 0; i < o1ps.length && allEqual; i++) {
                         allEqual = o1ps[i].getType().equals(o2ps[i].getType());
                     }
-                    if (allEqual) return 0;
+                    if (allEqual) {
+                        if (o1 instanceof ExtensionMethodNode && o2 instanceof ExtensionMethodNode) {
+                            return compare(((ExtensionMethodNode) o1).getExtensionMethodNode(), ((ExtensionMethodNode) o2).getExtensionMethodNode());
+                        }
+                        return 0;
+                    }
                 } else {
                     return o1ps.length - o2ps.length;
                 }
@@ -683,14 +688,21 @@ public abstract class StaticTypeCheckingSupport {
     }
 
     static int getDistance(final ClassNode receiver, final ClassNode compare) {
-        if (receiver.equals(compare)||receiver == UNKNOWN_PARAMETER_TYPE) return 0;
-        if (compare.isInterface() && receiver.implementsInterface(compare)) {
-            int dist = getMaximumInterfaceDistance(receiver, compare);
-            return dist;
+        int dist = 0;
+        ClassNode ref = compare;
+        while (ref!=null) {
+            if (receiver.equals(ref) || receiver == UNKNOWN_PARAMETER_TYPE) {
+                break;
+            }
+            if (ref.isInterface() && receiver.implementsInterface(ref)) {
+                dist += getMaximumInterfaceDistance(receiver, ref);
+                break;
+            }
+            ref = ref.getSuperClass();
+            if (ref == null) dist += 2;
+            dist++;
         }
-        ClassNode superClass = compare.getSuperClass();
-        if (superClass ==null) return 2;
-        return 1+getDistance(receiver, superClass);
+        return dist;
     }
 
     private static int getMaximumInterfaceDistance(ClassNode c, ClassNode interfaceClass) {
@@ -829,7 +841,8 @@ public abstract class StaticTypeCheckingSupport {
         List<MethodNode> bestChoices = new LinkedList<MethodNode>();
         int bestDist = Integer.MAX_VALUE;
         ClassNode actualReceiver;
-        for (MethodNode m : methods) {
+        Collection<MethodNode> choicesLeft = removeCovariants(methods);
+        for (MethodNode m : choicesLeft) {
             actualReceiver = receiver!=null?receiver:m.getDeclaringClass();
             // todo : corner case
             /*
@@ -910,6 +923,48 @@ public abstract class StaticTypeCheckingSupport {
         return bestChoices;
     }
 
+    private static Collection<MethodNode> removeCovariants(Collection<MethodNode> collection) {
+        if (collection.size()<=1) return collection;
+        List<MethodNode> toBeRemoved = new LinkedList<MethodNode>();
+        List<MethodNode> list = new LinkedList<MethodNode>(new HashSet<MethodNode>(collection));
+        for (int i=0;i<list.size()-1;i++) {
+            MethodNode one = list.get(i);
+            if (toBeRemoved.contains(one)) continue;
+            for (int j=i+1;j<list.size();j++) {
+                MethodNode two = list.get(j);
+                if (toBeRemoved.contains(two)) continue;
+                if (one.getName().equals(two.getName()) && one.getDeclaringClass()==two.getDeclaringClass()) {
+                    Parameter[] onePars = one.getParameters();
+                    Parameter[] twoPars = two.getParameters();
+                    if (onePars.length == twoPars.length) {
+                        boolean sameTypes = true;
+                        for (int k = 0; k < onePars.length; k++) {
+                            Parameter onePar = onePars[k];
+                            Parameter twoPar = twoPars[k];
+                            if (!onePar.getType().equals(twoPar.getType())) {
+                                sameTypes = false;
+                                break;
+                            }
+                        }
+                        if (sameTypes) {
+                            ClassNode oneRT = one.getReturnType();
+                            ClassNode twoRT = two.getReturnType();
+                            if (oneRT.isDerivedFrom(twoRT) || oneRT.implementsInterface(twoRT)) {
+                                toBeRemoved.add(two);
+                            } else if (twoRT.isDerivedFrom(oneRT) || twoRT.implementsInterface(oneRT)) {
+                                toBeRemoved.add(one);
+                            }
+                        }
+                    }
+                }                
+            }
+        }
+        if (toBeRemoved.isEmpty()) return list;
+        List<MethodNode> result = new LinkedList<MethodNode>(list);
+        result.removeAll(toBeRemoved);
+        return result;
+    }
+    
     /**
      * Given a receiver and a method node, parameterize the method arguments using
      * available generic type information.
