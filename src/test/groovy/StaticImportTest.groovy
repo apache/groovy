@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2011 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,6 +38,8 @@ import static java.util.jar.Attributes.Name as AttrName
 // TODO GROOVY-4287: reinstate next two imports
 //import static Outer3.*
 //import static Outer4.Inner4
+import static groovy.Container5087.*
+import org.codehaus.groovy.runtime.DefaultGroovyMethods as DGM
 
 class StaticImportTest extends CompilableTestSupport {
     void testFieldWithAliasInExpression() {
@@ -304,6 +306,32 @@ class StaticImportTest extends CompilableTestSupport {
 //    void testStaticImportOfStaticInnerClassExternalClass() {
 //        assert Inner4.class.name == 'Outer4$Inner4'
 //    }
+
+    void testMapIndexInLeftExpressionOfEquals() {
+        holder = 'foo'
+        def map = [:]
+        map[holder] = 'bar'
+        assert map.containsKey('foo')
+        assert map.foo == 'bar'
+    }
+
+    void testConstructorParamInLeftExpressionOfEquals() {
+        holder = [:]
+        new HolderWrapper(holder).foo = 'baz'
+        assert holder.foo == 'baz'
+    }
+
+    void testMethodParamInLeftExpressionOfEquals() {
+        holder = [[a:1, b:2], [c:3]]
+        DGM.find(holder) { it.size() == 2 }.a = 4
+        assert holder[0].a == 4
+        dgmFind(holder) { it.size() == 1 }.c = 7
+        assert holder[1].c == 7
+    }
+
+    private <T> T dgmFind(Collection<T> col, Closure clos) {
+        DGM.find(col, clos)
+    }
 }
 
 class API {
@@ -346,5 +374,21 @@ class Bar4964 {
         assert doIt() == [k: 'foo']
         assert Bar4964.doIt() == [k: 'bar']
         assert Bar4964.doIt().k == 'bar'
+    }
+}
+
+class Container5087 {
+    static holder
+}
+
+class HolderWrapper {
+    def holder
+
+    HolderWrapper(holder) {
+        this.holder = holder
+    }
+
+    void setProperty(String name, Object value) {
+        holder[name] = value
     }
 }
