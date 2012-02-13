@@ -939,7 +939,7 @@ public class Groovyc extends MatchingTask {
 
     private String[] addClasspathToEnvironment(String[] oldEnvironment, String classpath) {
         List<String> newEnvironmentList = (oldEnvironment == null) ? new ArrayList<String>() : Arrays.asList(oldEnvironment);
-        newEnvironmentList.add("classpath=" + classpath);
+        newEnvironmentList.add("CLASSPATH=" + classpath);
         return newEnvironmentList.toArray(new String[newEnvironmentList.size()]);
     }
 
