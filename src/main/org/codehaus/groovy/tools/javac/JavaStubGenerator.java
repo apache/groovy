@@ -541,7 +541,7 @@ public class JavaStubGenerator {
     private void printDefaultValue(PrintWriter out, ClassNode type) {
         if (type.redirect() != ClassHelper.OBJECT_TYPE && type.redirect() != ClassHelper.boolean_TYPE) {
             out.print("(");
-            printType(out, type);
+            printTypeWithoutBounds(out, type);
             out.print(")");
         }
 
@@ -564,6 +564,15 @@ public class JavaStubGenerator {
             out.print(type.getGenericsTypes()[0].getName());
         } else {
             printGenericsBounds(out, type, false);
+        }
+    }
+
+    private void printTypeWithoutBounds(PrintWriter out, ClassNode type) {
+        if (type.isArray()) {
+            printTypeWithoutBounds(out, type.getComponentType());
+            out.print("[]");
+        } else {
+            printTypeName(out, type);
         }
     }
 
