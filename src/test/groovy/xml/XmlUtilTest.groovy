@@ -24,9 +24,9 @@ import org.xml.sax.InputSource
 class XmlUtilTest extends GroovyTestCase {
     def xml = """\
     <?xml version="1.0" encoding="UTF-8"?>
-    <Schl\u00DCssel>
+    <Schl\u00FCssel>
     text content
-    </Schl\u00DCssel>
+    </Schl\u00FCssel>
     """.stripIndent()
 
     // GROOVY-5158
