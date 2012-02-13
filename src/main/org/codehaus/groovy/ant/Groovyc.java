@@ -779,8 +779,6 @@ public class Groovyc extends MatchingTask {
                     }
 
                     commandLineList.add(javaHome + separator + "bin" + separator + "java");
-                    commandLineList.add("-classpath");
-                    commandLineList.add(classpath.toString());
 
                     final String fileEncodingProp = System.getProperty("file.encoding");
                     if ((fileEncodingProp != null) && !fileEncodingProp.equals("")) {
