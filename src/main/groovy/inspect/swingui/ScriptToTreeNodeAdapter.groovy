@@ -170,7 +170,7 @@ class ScriptToTreeNodeAdapter {
  * This Node Operation builds up a root tree node for the viewer.
  * @author Hamlet D'Arcy
  */
-private class TreeNodeBuildingNodeOperation extends PrimaryClassNodeOperation {
+@groovy.transform.PackageScope class TreeNodeBuildingNodeOperation extends PrimaryClassNodeOperation {
 
     final def root
     final def sourceCollected = new AtomicBoolean(false)
@@ -310,7 +310,7 @@ private class TreeNodeBuildingNodeOperation extends PrimaryClassNodeOperation {
  *
  * @author Hamlet D'Arcy
 */
-private class TreeNodeBuildingVisitor extends CodeVisitorSupport {
+@groovy.transform.PackageScope class TreeNodeBuildingVisitor extends CodeVisitorSupport {
 
     def currentNode
     private adapter

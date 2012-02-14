@@ -57,7 +57,7 @@ class GroovyAssertTest {
     }
 }
 
-private class GroovyAssertDummyClass {
+@groovy.transform.PackageScope class GroovyAssertDummyClass {
     static throwException() {
         throw new GroovyAssertDummyException()
     }
@@ -67,7 +67,7 @@ private class GroovyAssertDummyClass {
     }
 }
 
-private class GroovyAssertDummyException extends RuntimeException {
+@groovy.transform.PackageScope class GroovyAssertDummyException extends RuntimeException {
     GroovyAssertDummyException(Throwable cause) {
         super(cause);
     }

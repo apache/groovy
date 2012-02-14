@@ -203,19 +203,19 @@ assert x == null
     }
 }
 
-private class SingleLineToString {
+@groovy.transform.PackageScope class SingleLineToString {
     String toString() {
         "single line"
     }
 }
 
-private class MultiLineToString {
+@groovy.transform.PackageScope class MultiLineToString {
     String toString() {
         "mul\ntiple\n   lines"
     }
 }
 
-private class NullToString {
+@groovy.transform.PackageScope class NullToString {
     String objectToString() {
         super.toString()
     }
@@ -223,7 +223,7 @@ private class NullToString {
     String toString() { null }
 }
 
-private class EmptyToString {
+@groovy.transform.PackageScope class EmptyToString {
     String objectToString() {
         super.toString()
     }
@@ -231,7 +231,7 @@ private class EmptyToString {
     String toString() { "" }
 }
 
-private class ThrowingToString {
+@groovy.transform.PackageScope class ThrowingToString {
     String objectToString() {
         super.toString()
     }

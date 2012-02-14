@@ -263,7 +263,7 @@ class LogTest extends GroovyTestCase {
 
 }
 
-private class LoggerSpy extends Logger {
+@groovy.transform.PackageScope class LoggerSpy extends Logger {
 
     String severeParameter = null
     String warningParameter = null

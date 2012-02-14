@@ -65,14 +65,14 @@ class AssertionsInDifferentLocationsTest extends GroovyTestCase {
     }
 }
 
-private class AssertionInConstructor {
+@groovy.transform.PackageScope class AssertionInConstructor {
     def AssertionInConstructor() {
         assert true
         assert false
     }
 }
 
-private class AssertionInConstructorAfterThisCall {
+@groovy.transform.PackageScope class AssertionInConstructorAfterThisCall {
     def AssertionInConstructorAfterThisCall() {
         this(true)
         assert true
@@ -82,7 +82,7 @@ private class AssertionInConstructorAfterThisCall {
     def AssertionInConstructorAfterThisCall(flag) {}
 }
 
-private class AssertionInConstructorAfterSuperCall {
+@groovy.transform.PackageScope class AssertionInConstructorAfterSuperCall {
     def AssertionInConstructorAfterSuperCall() {
         super()
         assert true
@@ -90,14 +90,14 @@ private class AssertionInConstructorAfterSuperCall {
     }
 }
 
-private class AssertionInInstanceInitializer {
+@groovy.transform.PackageScope class AssertionInInstanceInitializer {
     {
         assert true
         assert false
     }
 }
 
-private class AssertionInClassInitializer {
+@groovy.transform.PackageScope class AssertionInClassInitializer {
     static {
         assert true
         assert false

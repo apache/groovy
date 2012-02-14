@@ -8,7 +8,7 @@ class Groovy4861Bug extends GroovyTestCase {
     }
 }
 
-private class Foo4861 {
+@groovy.transform.PackageScope class Foo4861 {
     static interface A {
         static Integer j = 3
         static Integer j2 = j + 4
