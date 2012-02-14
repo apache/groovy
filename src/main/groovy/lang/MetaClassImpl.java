@@ -483,22 +483,46 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                           return;
                         if (useThis ^ Modifier.isPrivate(method.getModifiers())) return;
                         String mopName = method.getMopName();
-                        int index = Arrays.binarySearch(mopMethods, mopName, CachedClass.CachedMethodComparatorWithString.INSTANCE);
-                        if (index >= 0) {
-                            int from = index;
-                            while (from > 0 && mopMethods[from-1].getName().equals(mopName))
-                              from--;
-                            int to = index;
-                            while (to < mopMethods.length-1 && mopMethods[to+1].getName().equals(mopName))
-                              to++;
-
-                            int matchingMethod = findMatchingMethod(mopMethods, from, to, method);
-                            if (matchingMethod != -1) {
-                                e.methodsForSuper = mopMethods[matchingMethod];
+                        // GROOVY-4922: Due to a numbering scheme change, we must find the super$X$method which exists
+                        // with the highest number. If we don't, no method may be found, leading to a stack overflow
+                        String[] decomposedMopName = decomposeMopName(mopName);
+                        int distance = Integer.valueOf(decomposedMopName[1]);
+                        while (distance>0) {
+                            String fixedMopName = decomposedMopName[0] + distance + decomposedMopName[2];
+                            int index = Arrays.binarySearch(mopMethods, fixedMopName, CachedClass.CachedMethodComparatorWithString.INSTANCE);
+                            if (index >= 0) {
+                                int from = index;
+                                while (from > 0 && mopMethods[from-1].getName().equals(fixedMopName))
+                                  from--;
+                                int to = index;
+                                while (to < mopMethods.length-1 && mopMethods[to+1].getName().equals(fixedMopName))
+                                  to++;
+    
+                                int matchingMethod = findMatchingMethod(mopMethods, from, to, method);
+                                if (matchingMethod != -1) {
+                                    e.methodsForSuper = mopMethods[matchingMethod];
+                                    distance = 0;
+                                }
                             }
+                            distance--;
                         }
                     }
                 }
+            }
+
+            private String[] decomposeMopName(final String mopName) {
+                int idx = mopName.indexOf("$");
+                if (idx>0) {
+                    int eidx = mopName.indexOf("$", idx+1);
+                    if (eidx>0) {
+                        return new String[] {
+                                mopName.substring(0, idx+1),
+                                mopName.substring(idx+1, eidx),
+                                mopName.substring(eidx)
+                        };
+                    }
+                }
+                return new String[]{"","0",mopName};
             }
 
             private void processFastArray(FastArray methods) {
