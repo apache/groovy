@@ -49,7 +49,7 @@ dependencies {
     compile "org.apache.ant:ant:1.8.2"
     compile "javax.servlet:servlet-api:2.4"
     compile "javax.servlet:jsp-api:2.0"
-    compile("com.thoughtworks.xstream:xstream:1.4.2") {
+    compile(group:"com.thoughtworks.xstream", name:"xstream", version:"1.4.2", classifier:"jdk5") {
         exclude(group: 'xpp3', module: 'xpp3_min')
         exclude(group: 'junit', module: 'junit')
         exclude(group: 'jmock', module: 'jmock')
@@ -61,7 +61,9 @@ dependencies {
     compile("org.apache.ivy:ivy:2.2.0") {
         transitive = false
     }
-    runtime "org.apache.ant:ant-junit:1.8.2"
+    runtime("org.apache.ant:ant-junit:1.8.2") {
+        exclude(group: 'junit', module: 'junit')
+    }
     runtime "org.apache.ant:ant-launcher:1.8.2"
     runtime "org.apache.ant:ant-antlr:1.8.2"
     runtime("commons-logging:commons-logging:1.1.1") {
