@@ -165,6 +165,10 @@
       <java classname="org.codehaus.groovy.ant.GroovycTest1"/>
     </target>
 
+    <target name="noForkNoAntRuntime">
+        <groovyc srcdir="${srcPath}" destdir="${destPath}" includes="GroovycTest1.groovy" fork="false" includeAntRuntime="false"/>
+    </target>
+
   <target name="clean">
     <delete quiet="true">
       <fileset dir="${destPath}/org/codehaus/groovy/ant">
