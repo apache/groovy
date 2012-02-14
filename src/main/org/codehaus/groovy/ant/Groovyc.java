@@ -968,6 +968,10 @@ public class Groovyc extends MatchingTask {
 
 
     protected GroovyClassLoader buildClassLoaderFor() {
+        // GROOVY-5044
+        if (!fork && !getIncludeantruntime()) {
+            throw new IllegalArgumentException("The includeAntRuntime=false option is not compatible with fork=false");
+        }
         ClassLoader parent = getIncludeantruntime()
                 ? getClass().getClassLoader()
                 : new AntClassLoader(new RootLoader(new URL[0], null), getProject(), getClasspath());

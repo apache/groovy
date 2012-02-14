@@ -223,6 +223,10 @@ public class GroovycTest extends GroovyTestCase {
         ensureFails("GroovycTest1_ForkGroovy_NoClasspath_Fail");
     }
 
+    public void testNoForkWithNoIncludeAntRuntime() {
+        ensureFails("noForkNoAntRuntime");
+    }
+
     private void ensureExecutes(String target) {
         ensureNotPresent("GroovycTest1");
         project.executeTarget(target);
