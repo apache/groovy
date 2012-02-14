@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 package groovy.sql
+
+import static groovy.sql.SqlTestConstants.DB_DATASOURCE
+import static groovy.sql.SqlTestConstants.DB_URL_PREFIX
 
 class TestHelper extends GroovyTestCase {
     TestHelper() {
@@ -58,9 +61,9 @@ class TestHelper extends GroovyTestCase {
             sql.execute "drop table FEATURE"
         }
 
-        sql.execute("create table PERSON ( firstname varchar(100), lastname varchar(100), id integer, location_id integer, location_name varchar(100) )")
-        sql.execute("create table FOOD ( type varchar(100), name varchar(100))")
-        sql.execute("create table FEATURE ( id integer, name varchar(100))")
+        sql.execute("create table PERSON ( firstname VARCHAR(100), lastname VARCHAR(100), id INTEGER, location_id INTEGER, location_name VARCHAR(100) )")
+        sql.execute("create table FOOD ( type VARCHAR(100), name VARCHAR(100))")
+        sql.execute("create table FEATURE ( id INTEGER, name VARCHAR(100))")
 
         // now let's populate the datasets
         def people = sql.dataSet("PERSON")
@@ -91,7 +94,7 @@ class TestHelper extends GroovyTestCase {
     protected getURI() {
         if (props && props."groovy.testdb.url")
             return props."groovy.testdb.url"
-        def answer = "jdbc:hsqldb:mem:foo"
+        def answer = DB_URL_PREFIX
         def name = getMethodName()
         if (name == null) {
             name = ""
@@ -110,12 +113,10 @@ class TestHelper extends GroovyTestCase {
             if (!username && !password) return Sql.newInstance(url:url, driver:"$driver")
             return Sql.newInstance(url, username, password, driver)
         }
-        // TODO once hsqldb 1.9.0 is out rename this
-        // def ds = new org.hsqldb.jdbc.JDBCDataSource()
-        def ds = new org.hsqldb.jdbc.jdbcDataSource()
-        ds.database = uri
-        ds.user = 'sa'
-        ds.password = ''
+        def ds = DB_DATASOURCE.newInstance(
+                database: uri,
+                user: 'sa',
+                password: '')
         return new Sql(ds)
     }
 }

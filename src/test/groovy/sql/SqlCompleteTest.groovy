@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2011 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 package groovy.sql
+
+import static groovy.sql.SqlTestConstants.DB_DATASOURCE
 
 class SqlCompleteTest extends TestHelper {
 
@@ -303,10 +305,10 @@ class SqlCompleteTest extends TestHelper {
         features.each {
             /** @todo HSQLDB doesn't yet support ResultSet updating
              if (it.id == 1) {
-             it.name = it.name + " Rocks!"
-             println("Changing name to ${it.name}")
+                 it.name = it.name + " Rocks!"
+                 println("Changing name to ${it.name}")
              }
-             */
+             /* */
             results.add(it.name)
         }
         def expected = ["GDO", "GPath", "GroovyMarkup"]
@@ -431,10 +433,10 @@ class SqlCompleteTest extends TestHelper {
 
     void testNewInstanceMapMustContainNonNullUrl() {
         shouldFail(IllegalArgumentException) {
-            Sql.newInstance(driver: 'org.hsqldb.jdbcDriver', user: 'scott', password: 'tiger')
+            Sql.newInstance(driver: DB_DATASOURCE.name, user: 'scott', password: 'tiger')
         }
         shouldFail(IllegalArgumentException) {
-            Sql.newInstance(url: null, driver: 'org.hsqldb.jdbcDriver', user: 'scott', password: 'tiger')
+            Sql.newInstance(url: null, driver: DB_DATASOURCE.name, user: 'scott', password: 'tiger')
         }
     }
 
@@ -454,16 +456,16 @@ class SqlCompleteTest extends TestHelper {
 
     void testNewInstanceMapShouldRequireUserAndPasswordIfOneIsProvided() {
         shouldFail(IllegalArgumentException) {
-            Sql.newInstance(url: getURI(), driver: 'org.hsqldb.jdbcDriver', user: 'scott')
+            Sql.newInstance(url: getURI(), driver: DB_DATASOURCE.name, user: 'scott')
         }
         shouldFail(IllegalArgumentException) {
-            Sql.newInstance(url: getURI(), driver: 'org.hsqldb.jdbcDriver', password: 'tiger')
+            Sql.newInstance(url: getURI(), driver: DB_DATASOURCE.name, password: 'tiger')
         }
     }
 
     void testNewInstanceMapNotDestructiveGROOVY5216() {
         String url = getURI()
-        String driver = 'org.hsqldb.jdbcDriver'
+        String driver = DB_DATASOURCE.name
         String user = 'sa'
         String password = ''
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2011 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,9 @@
 package groovy.sql
 
 import javax.sql.DataSource
-import java.sql.Connection
+
+import static groovy.sql.SqlTestConstants.DB_DATASOURCE
+import static groovy.sql.SqlTestConstants.DB_URL_PREFIX
 
 /**
  * Test Sql batch features
@@ -25,17 +27,15 @@ import java.sql.Connection
  */
 class SqlBatchTest extends GroovyTestCase {
     Sql sql
-    def personFood
     private others = ['Jean':'Gabin', 'Lino':'Ventura']
 
     void setUp() {
-        DataSource ds = new org.hsqldb.jdbc.jdbcDataSource()
-        ds.database = "jdbc:hsqldb:mem:foo" + getMethodName()
-        ds.user = 'sa'
-        ds.password = ''
-        Connection con = ds.connection
-        sql = new Sql(con)
-        sql.execute("CREATE TABLE person ( id INTEGER, firstname VARCHAR, lastname VARCHAR, PRIMARY KEY (id))")
+        DataSource ds = DB_DATASOURCE.newInstance(
+                database: DB_URL_PREFIX + getMethodName(),
+                user: 'sa',
+                password: '')
+        sql = new Sql(ds.connection)
+        sql.execute("CREATE TABLE person ( id INTEGER, firstname VARCHAR(10), lastname VARCHAR(10), PRIMARY KEY (id))")
 
         // populate some data
         def people = sql.dataSet("PERSON")

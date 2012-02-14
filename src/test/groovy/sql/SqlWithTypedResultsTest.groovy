@@ -9,7 +9,7 @@ class SqlWithTypedResultsTest extends TestHelper {
     void testSqlQuery() {
         def sql = createEmptySql()
 
-        sql.execute("create table groovytest ( anint integer, astring varchar )");
+        sql.execute("create table groovytest ( anint INTEGER, astring VARCHAR(10) )");
 
         def groovytest = sql.dataSet("groovytest")
         groovytest.add(anint: 1, astring: "Groovy")

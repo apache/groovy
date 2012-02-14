@@ -765,9 +765,9 @@
 
         <!-- used for SQL library -->
         <dependency>
-            <groupId>hsqldb</groupId>
+            <groupId>org.hsqldb</groupId>
             <artifactId>hsqldb</artifactId>
-            <version>1.8.0.10</version>
+            <version>2.2.8</version>
             <scope>test</scope>
         </dependency>
 

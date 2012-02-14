@@ -6,8 +6,8 @@ class SqlRowsTest extends TestHelper {
         Sql sql = super.createSql()
 
         ["JOINTESTA", "JOINTESTB"].each{ tryDrop(it) }
-        sql.execute("create table JOINTESTA ( id integer, bid integer, name varchar)")
-        sql.execute("create table JOINTESTB ( id integer, name varchar)")
+        sql.execute("create table JOINTESTA ( id INTEGER, bid INTEGER, name VARCHAR(10))")
+        sql.execute("create table JOINTESTB ( id INTEGER, name VARCHAR(10))")
 
         def jointesta = sql.dataSet("JOINTESTA")
         jointesta.add( id:1, bid:3, name:'A 1' )

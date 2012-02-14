@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2009 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,9 @@ package groovy.sql
 
 import javax.sql.DataSource
 
+import static groovy.sql.SqlTestConstants.DB_DATASOURCE
+import static groovy.sql.SqlTestConstants.DB_URL_PREFIX
+
 /**
  * Test Sql transaction features using a Sql built from a DataSource
  *
@@ -24,10 +27,10 @@ import javax.sql.DataSource
  */
 class SqlTransactionDataSourceTest extends SqlTransactionTestCase {
     protected Sql setUpSql() {
-        DataSource ds = new org.hsqldb.jdbc.jdbcDataSource()
-        ds.database = "jdbc:hsqldb:mem:foo" + getMethodName()
-        ds.user = 'sa'
-        ds.password = ''
+        DataSource ds = DB_DATASOURCE.newInstance(
+                database: DB_URL_PREFIX + getMethodName(),
+                user: 'sa',
+                password: '')
         return new Sql(ds)
     }
 }

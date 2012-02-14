@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2009 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,8 +43,8 @@ class SqlTransactionTestCase extends GroovyTestCase {
         // drop them in this order due to FK constraint
         ["PERSON_FOOD", "PERSON"].each{ tryDrop(it) }
 
-        sql.execute("CREATE TABLE person ( id INTEGER, firstname VARCHAR, lastname VARCHAR, PRIMARY KEY (id))")
-        sql.execute("CREATE TABLE person_food ( personid INTEGER, food VARCHAR, FOREIGN KEY (personid) REFERENCES person(id))")
+        sql.execute("CREATE TABLE person ( id INTEGER, firstname VARCHAR(10), lastname VARCHAR(10), PRIMARY KEY (id))")
+        sql.execute("CREATE TABLE person_food ( personid INTEGER, food VARCHAR(10), FOREIGN KEY (personid) REFERENCES person(id))")
 
         // populate some data
         def people = sql.dataSet("PERSON")
@@ -94,7 +94,7 @@ class SqlTransactionTestCase extends GroovyTestCase {
                 fail("Should have thrown an exception before now")
             } catch (SQLException se) {
                 assert numAdds == 1
-                assert se.message.contains('Integrity constraint violation')
+                assert se.message.toLowerCase().contains('integrity constraint violation')
                 sql.rollback()
             }
             connection.autoCommit = true
@@ -116,7 +116,7 @@ class SqlTransactionTestCase extends GroovyTestCase {
                 fail("Should have thrown an exception before now")
             } catch (SQLException se) {
                 assert numAdds == 1
-                assert se.message.contains('Integrity constraint violation')
+                assert se.message.toLowerCase().contains('integrity constraint violation')
                 personFood.rollback()
             }
             connection.autoCommit = true
@@ -137,7 +137,7 @@ class SqlTransactionTestCase extends GroovyTestCase {
             fail("Should have thrown an exception before now")
         } catch (SQLException se) {
             assert numAdds == 1
-            assert se.message.contains('Integrity constraint violation')
+            assert se.message.toLowerCase().contains('integrity constraint violation')
         }
         assert sql.rows("SELECT * FROM PERSON_FOOD").size() == 3
     }
@@ -155,7 +155,7 @@ class SqlTransactionTestCase extends GroovyTestCase {
             fail("Should have thrown an exception before now")
         } catch (SQLException se) {
             assert numAdds == 1
-            assert se.message.contains('Integrity constraint violation')
+            assert se.message.toLowerCase().contains('integrity constraint violation')
         }
         assert sql.rows("SELECT * FROM PERSON_FOOD").size() == 3
     }
