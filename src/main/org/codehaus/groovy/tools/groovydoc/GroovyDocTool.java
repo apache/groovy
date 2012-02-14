@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
+import java.nio.charset.Charset;
 
 /**
  * @author Jeremy Rayner
@@ -51,6 +52,10 @@ public class GroovyDocTool {
     public GroovyDocTool(ResourceManager resourceManager, String[] sourcepaths, String[] docTemplates, String[] packageTemplates, String[] classTemplates, List<LinkArgument> links, Properties properties) {
         rootDocBuilder = new GroovyRootDocBuilder(this, sourcepaths, links, properties);
         this.properties = properties;
+
+        // This is used in the templates to output <meta http-equiv="Content-Type" content="text/html; charset=«encoding»">
+        properties.put("encoding", Charset.defaultCharset().name());
+
         if (resourceManager == null) {
             templateEngine = null;
         } else {
