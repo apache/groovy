@@ -288,5 +288,5 @@ apply from: "$projectDir/gradle/upload.gradle"
 task wrapper(type: Wrapper) {
 //    gradleVersion = '1.0-milestone-5-20110929000016+0200'
 //    distributionUrl = "http://repo.gradle.org/gradle/distributions-snapshots/gradle-${gradleVersion}-bin.zip"
-    gradleVersion = '1.0-milestone-6'
+    gradleVersion = '1.0-milestone-8'
 }
