@@ -34,6 +34,7 @@ import org.codehaus.groovy.ast.stmt.CaseStatement;
 import org.codehaus.groovy.ast.stmt.CatchStatement;
 import org.codehaus.groovy.ast.stmt.ContinueStatement;
 import org.codehaus.groovy.ast.stmt.DoWhileStatement;
+import org.codehaus.groovy.ast.stmt.EmptyStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.ast.stmt.IfStatement;
@@ -284,15 +285,19 @@ public class StatementWriter {
         ifElse.getIfBlock().visit(controller.getAcg());
         controller.getCompileStack().pop();
 
-        Label l1 = new Label();
-        mv.visitJumpInsn(GOTO, l1);
-        mv.visitLabel(l0);
-
-        controller.getCompileStack().pushBooleanExpression();
-        ifElse.getElseBlock().visit(controller.getAcg());
-        controller.getCompileStack().pop();
-
-        mv.visitLabel(l1);
+        if (ifElse.getElseBlock()==EmptyStatement.INSTANCE) {
+            mv.visitLabel(l0);
+        } else {
+            Label l1 = new Label();
+            mv.visitJumpInsn(GOTO, l1);
+            mv.visitLabel(l0);
+    
+            controller.getCompileStack().pushBooleanExpression();
+            ifElse.getElseBlock().visit(controller.getAcg());
+            controller.getCompileStack().pop();
+    
+            mv.visitLabel(l1);
+        } 
     }
 
     public void writeTryCatchFinally(TryCatchStatement statement) {
