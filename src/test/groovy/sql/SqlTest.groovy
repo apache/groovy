@@ -18,8 +18,7 @@ package groovy.sql
 import java.sql.Connection
 import javax.sql.DataSource
 
-import static groovy.sql.SqlTestConstants.DB_DATASOURCE
-import static groovy.sql.SqlTestConstants.DB_URL_PREFIX
+import static groovy.sql.SqlTestConstants.*
 
 /**
  * This is more of a sample program than a unit test and is here as an easy
@@ -145,9 +144,9 @@ class SqlTest extends GroovyTestCase {
 
     private createSql() {
         DataSource ds = DB_DATASOURCE.newInstance(
-                database: DB_URL_PREFIX + getMethodName(),
-                user: 'sa',
-                password: '')
+                (DB_DS_KEY): DB_URL_PREFIX + getMethodName(),
+                user: DB_USER,
+                password: DB_PASSWORD)
         sql = new Sql(ds.connection)
         def sql = new Sql(ds)
 

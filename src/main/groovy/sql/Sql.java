@@ -388,14 +388,19 @@ public class Sql {
 
         Object url = sqlArgs.remove("url");
         Connection connection;
-        if (props != null) connection = DriverManager.getConnection(url.toString(), new Properties(props));
-        else if (sqlArgs.containsKey("user")) {
+        if (props != null) {
+            System.err.println("url = " + url);
+            System.err.println("props = " + props);
+            connection = DriverManager.getConnection(url.toString(), new Properties(props));
+        } else if (sqlArgs.containsKey("user")) {
             Object user = sqlArgs.remove("user");
             Object password = sqlArgs.remove("password");
             connection = DriverManager.getConnection(url.toString(),
                     (user == null ? null : user.toString()),
                     (password == null ? null : password.toString()));
-        } else connection = DriverManager.getConnection(url.toString());
+        } else {
+            connection = DriverManager.getConnection(url.toString());
+        }
 
         Sql result = (Sql) InvokerHelper.invokeConstructorOf(Sql.class, sqlArgs);
         result.setConnection(connection);

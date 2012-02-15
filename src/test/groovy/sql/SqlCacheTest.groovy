@@ -20,8 +20,7 @@ import javax.sql.DataSource
 import java.sql.Connection
 import org.codehaus.groovy.runtime.InvokerHelper
 
-import static groovy.sql.SqlTestConstants.DB_DATASOURCE
-import static groovy.sql.SqlTestConstants.DB_URL_PREFIX
+import static groovy.sql.SqlTestConstants.*
 
 /**
  * Unit test of Sql cache feature 
@@ -40,9 +39,9 @@ class SqlCacheTest extends GroovyTestCase {
 
     void setUp() {
         ds = DB_DATASOURCE.newInstance(
-                database: DB_URL_PREFIX + getMethodName(),
-                user: 'sa',
-                password: '')
+                (DB_DS_KEY): DB_URL_PREFIX + getMethodName(),
+                user: DB_USER,
+                password: DB_PASSWORD)
         con = ds.connection
         def methodOverride = [
                 createStatement: {Object[] args ->

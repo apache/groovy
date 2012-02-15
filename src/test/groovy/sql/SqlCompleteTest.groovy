@@ -15,7 +15,7 @@
  */
 package groovy.sql
 
-import static groovy.sql.SqlTestConstants.DB_DRIVER
+import static groovy.sql.SqlTestConstants.*
 
 class SqlCompleteTest extends TestHelper {
 
@@ -446,7 +446,7 @@ class SqlCompleteTest extends TestHelper {
     }
 
     void testNewInstanceMapShouldNotHavePropertiesAndAccountInfo() {
-        def args = [url: getURI(), user: 'sa', password: '']
+        def args = [url: getURI(), user: DB_USER, password: DB_PASSWORD]
         args.properties = [:] as Properties
         shouldFail(IllegalArgumentException) {
             Sql.newInstance(args)
@@ -465,30 +465,22 @@ class SqlCompleteTest extends TestHelper {
     void testNewInstanceMapNotDestructiveGROOVY5216() {
         String url = getURI()
         String driver = DB_DRIVER.name
-        String user = 'sa'
-        String password = ''
+        String user = DB_USER
+        String password = DB_PASSWORD
 
         // First pass with user/password and no properties
         def args = [url: url, driver: driver, user: user, password: password]
         def sql = Sql.newInstance(args)
-        assert 4 == args.size()
-        assert url == args.url
-        assert driver == args.driver
-        assert user == args.user
-        assert password == args.password
+        assert args == [url: url, driver: driver, user: user, password: password]
 
         // Second pass with properties
+        String url2 = getURI()
         def props = new Properties()
         props.user = user
         props.password = password
-        def args2 = [url: url, driver: driver, properties: props]
+        def args2 = [url: url2, driver: driver, properties: props]
         def sql2 = Sql.newInstance(args2)
-        assert 3 == args2.size()
-        assert url == args.url
-        assert driver == args.driver
-        assert 2 == props.size()
-        assert user == props.user
-        assert password == props.password
+        assert args2 == [url: url2, driver:  driver, properties: [user: user, password:  password]]
     }
 
 }

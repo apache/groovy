@@ -16,10 +16,8 @@
 package groovy.sql
 
 import javax.sql.DataSource
-import java.sql.Connection
 
-import static groovy.sql.SqlTestConstants.DB_DATASOURCE
-import static groovy.sql.SqlTestConstants.DB_URL_PREFIX
+import static groovy.sql.SqlTestConstants.*
 
 /**
  * Unit test of Sql statement feature
@@ -31,9 +29,9 @@ class SqlStatementTest extends GroovyTestCase {
 
     void setUp() {
         DataSource ds = DB_DATASOURCE.newInstance(
-                database: DB_URL_PREFIX + getMethodName(),
-                user: 'sa',
-                password: '')
+                (DB_DS_KEY): DB_URL_PREFIX + getMethodName(),
+                user: DB_USER,
+                password: DB_PASSWORD)
         sql = new Sql(ds.connection)
         sql.execute("create table PERSON ( id INTEGER, firstname VARCHAR(10), lastname VARCHAR(10) )")
 

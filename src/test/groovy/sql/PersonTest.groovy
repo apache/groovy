@@ -17,8 +17,7 @@ package groovy.sql
 
 import javax.sql.DataSource
 
-import static groovy.sql.SqlTestConstants.DB_DATASOURCE
-import static groovy.sql.SqlTestConstants.DB_URL_PREFIX
+import static groovy.sql.SqlTestConstants.*
 
 class PersonTest extends GroovyTestCase {
 
@@ -72,9 +71,9 @@ order by firstName DESC, age'''
 
     protected DataSource createDataSource() {
         return DB_DATASOURCE.newInstance(
-                database: DB_URL_PREFIX + getMethodName(),
-                user: 'sa',
-                password: '')
+                (DB_DS_KEY): DB_URL_PREFIX + getMethodName(),
+                user: DB_USER,
+                password: DB_PASSWORD)
     }
 
     protected def createDataSet() {

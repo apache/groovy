@@ -15,8 +15,7 @@
  */
 package groovy.sql
 
-import static groovy.sql.SqlTestConstants.DB_DATASOURCE
-import static groovy.sql.SqlTestConstants.DB_URL_PREFIX
+import static groovy.sql.SqlTestConstants.*
 
 class TestHelper extends GroovyTestCase {
     TestHelper() {
@@ -41,26 +40,9 @@ class TestHelper extends GroovyTestCase {
         return newSql(getURI())
     }
 
-    protected createSql() {
-        def sql = newSql(getURI())
-
-        ["PERSON", "FOOD", "FEATURE"].each { tryDrop(it) }
-
-        def ignoreErrors = { Closure c ->
-            try {
-                c()
-            } catch (java.sql.SQLException se) {}
-        }
-        ignoreErrors {
-            sql.execute "drop table PERSON"
-        }
-        ignoreErrors {
-            sql.execute "drop table FOOD"
-        }
-        ignoreErrors {
-            sql.execute "drop table FEATURE"
-        }
-
+    protected Sql createSql() {
+        Sql sql = newSql(getURI())
+        ["PERSON", "FOOD", "FEATURE"].each { tryDrop(sql, it) }
         sql.execute("create table PERSON ( firstname VARCHAR(100), lastname VARCHAR(100), id INTEGER, location_id INTEGER, location_name VARCHAR(100) )")
         sql.execute("create table FOOD ( type VARCHAR(100), name VARCHAR(100))")
         sql.execute("create table FEATURE ( id INTEGER, name VARCHAR(100))")
@@ -85,10 +67,10 @@ class TestHelper extends GroovyTestCase {
         return sql
     }
 
-    protected tryDrop(String tableName) {
+    protected tryDrop(Sql sql, String tableName) {
         try {
-            sql.execute("drop table $tableName")
-        } catch (Exception e) {}
+            sql.execute("drop table $tableName".toString())
+        } catch (java.sql.SQLException se) {}
     }
 
     protected getURI() {
@@ -100,10 +82,10 @@ class TestHelper extends GroovyTestCase {
             name = ""
         }
         name += counter++
-        return answer + name
+        return answer + name + DB_URL_SUFFIX
     }
 
-    protected newSql(String uri) {
+    protected Sql newSql(String uri) {
         if (props) {
             def url = props."groovy.testdb.url"
             def driver = props."groovy.testdb.driver"
@@ -114,9 +96,9 @@ class TestHelper extends GroovyTestCase {
             return Sql.newInstance(url, username, password, driver)
         }
         def ds = DB_DATASOURCE.newInstance(
-                database: uri,
-                user: 'sa',
-                password: '')
+                (DB_DS_KEY): uri,
+                user: DB_USER,
+                password: DB_PASSWORD)
         return new Sql(ds)
     }
 }

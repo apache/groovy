@@ -17,8 +17,7 @@ package groovy.sql
 
 import javax.sql.DataSource
 
-import static groovy.sql.SqlTestConstants.DB_DATASOURCE
-import static groovy.sql.SqlTestConstants.DB_URL_PREFIX
+import static groovy.sql.SqlTestConstants.*
 
 /**
  * Test Sql batch features
@@ -31,9 +30,9 @@ class SqlBatchTest extends GroovyTestCase {
 
     void setUp() {
         DataSource ds = DB_DATASOURCE.newInstance(
-                database: DB_URL_PREFIX + getMethodName(),
-                user: 'sa',
-                password: '')
+                (DB_DS_KEY): DB_URL_PREFIX + getMethodName(),
+                user: DB_USER,
+                password: DB_PASSWORD)
         sql = new Sql(ds.connection)
         sql.execute("CREATE TABLE person ( id INTEGER, firstname VARCHAR(10), lastname VARCHAR(10), PRIMARY KEY (id))")
 

@@ -17,8 +17,7 @@ package groovy.sql
 
 import javax.sql.DataSource
 
-import static groovy.sql.SqlTestConstants.DB_DATASOURCE
-import static groovy.sql.SqlTestConstants.DB_URL_PREFIX
+import static groovy.sql.SqlTestConstants.*
 
 /**
  * Test Sql transaction features using a Sql built from a DataSource
@@ -28,9 +27,9 @@ import static groovy.sql.SqlTestConstants.DB_URL_PREFIX
 class SqlTransactionDataSourceTest extends SqlTransactionTestCase {
     protected Sql setUpSql() {
         DataSource ds = DB_DATASOURCE.newInstance(
-                database: DB_URL_PREFIX + getMethodName(),
-                user: 'sa',
-                password: '')
+                (DB_DS_KEY): DB_URL_PREFIX + getMethodName(),
+                user: DB_USER,
+                password: DB_PASSWORD)
         return new Sql(ds)
     }
 }
