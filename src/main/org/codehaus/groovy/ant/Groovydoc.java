@@ -267,7 +267,7 @@ public class Groovydoc extends Task {
 
     /**
      * Specifies the charset to be used in the templates, i.e.&nbsp; the value output within:
-     * &lt;meta http-equiv="Content-Type" content="text/html; charset=«charset»"&gt;.
+     * &lt;meta http-equiv="Content-Type" content="text/html; charset=<em>charset</em>"&gt;.
      *
      * @param charset the charset value
      */
@@ -408,7 +408,7 @@ public class Groovydoc extends Task {
         properties.setProperty("processScripts", processScripts.toString());
         properties.setProperty("includeMainForScripts", includeMainForScripts.toString());
         properties.setProperty("overviewFile", overviewFile != null ? overviewFile.getAbsolutePath() : "");
-        properties.setProperty("charset", charset);
+        properties.setProperty("charset", charset != null ? charset : "");
 
         if (sourcePath != null) {
             sourceDirs.addExisting(sourcePath);
