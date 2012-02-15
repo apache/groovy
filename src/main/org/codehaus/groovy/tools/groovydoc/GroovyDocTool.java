@@ -1,5 +1,5 @@
 /*
- * Copyright 2007-2010 the original author or authors.
+ * Copyright 2007-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,10 +22,10 @@ import org.codehaus.groovy.tools.shell.util.Logger;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
-import java.nio.charset.Charset;
 
 /**
  * @author Jeremy Rayner
@@ -51,10 +51,10 @@ public class GroovyDocTool {
 
     public GroovyDocTool(ResourceManager resourceManager, String[] sourcepaths, String[] docTemplates, String[] packageTemplates, String[] classTemplates, List<LinkArgument> links, Properties properties) {
         rootDocBuilder = new GroovyRootDocBuilder(this, sourcepaths, links, properties);
+        String charset = properties.getProperty("charset");
+        properties.setProperty("charset", charset != null && charset.length() != 0 ? charset : Charset.defaultCharset().name());
         this.properties = properties;
 
-        // This is used in the templates to output <meta http-equiv="Content-Type" content="text/html; charset=«encoding»">
-        properties.put("encoding", Charset.defaultCharset().name());
 
         if (resourceManager == null) {
             templateEngine = null;

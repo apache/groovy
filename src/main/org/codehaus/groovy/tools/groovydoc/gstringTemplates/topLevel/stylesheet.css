@@ -1,4 +1,4 @@
-@charset "${props.encoding}";
+@charset "${props.charset}";
 /* Groovydoc style sheet */
 
 /* Define colors, fonts and other style attributes here to override the defaults */
