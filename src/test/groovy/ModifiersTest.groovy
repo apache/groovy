@@ -14,9 +14,15 @@ class ModifiersTest extends CompilableTestSupport {
     public void testClass() {
         // control
         shouldCompile("public class X {}")
+        shouldCompile """
+            class X {
+                private class Y {}
+            }
+        """
         // erroneous
         shouldNotCompile("public private class X {}")
         shouldNotCompile("synchronized class X {}")
+        shouldNotCompile("private class X {}")
     }
 
     public void testMethodsShouldOnlyHaveOneVisibility() {

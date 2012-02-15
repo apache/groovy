@@ -92,7 +92,7 @@ public class CodeVisitorSupportTest extends GroovyTestCase {
 *
 * @author Hamlet D'Arcy
 */
-private class RecordingCodeVisitorSupport extends CodeVisitorSupport implements GroovyInterceptable {
+@groovy.transform.PackageScope class RecordingCodeVisitorSupport extends CodeVisitorSupport implements GroovyInterceptable {
     def history = []
 
     public void visitBlockStatement(BlockStatement node) {

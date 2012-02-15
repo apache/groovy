@@ -607,7 +607,7 @@ assert func.call(42) == null
     */
 }
 
-private class Holder {
+@groovy.transform.PackageScope class Holder {
     public x = 0
     def getX() { 9 }
     String toString() { "h" }

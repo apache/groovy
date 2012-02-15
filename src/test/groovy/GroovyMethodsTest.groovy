@@ -96,7 +96,7 @@ class GroovyMethodsTest extends GroovySwingTestCase {
         assert ol.observed == letters
     }
 
-    private class ObserverLike {
+    @groovy.transform.PackageScope class ObserverLike {
       def observed = []
       void update(Observable o, arg) {observed << arg }
     }
