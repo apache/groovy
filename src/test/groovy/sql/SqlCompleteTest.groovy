@@ -15,7 +15,7 @@
  */
 package groovy.sql
 
-import static groovy.sql.SqlTestConstants.DB_DATASOURCE
+import static groovy.sql.SqlTestConstants.DB_DRIVER
 
 class SqlCompleteTest extends TestHelper {
 
@@ -405,7 +405,6 @@ class SqlCompleteTest extends TestHelper {
         assert names[1] == "coffee"
     }
 
-
     void testRowsPaging() {
         def sql = createSql()
         def names = sql.rows("select name from FOOD order by name", 2, 2)
@@ -433,10 +432,10 @@ class SqlCompleteTest extends TestHelper {
 
     void testNewInstanceMapMustContainNonNullUrl() {
         shouldFail(IllegalArgumentException) {
-            Sql.newInstance(driver: DB_DATASOURCE.name, user: 'scott', password: 'tiger')
+            Sql.newInstance(driver: DB_DRIVER.name, user: 'scott', password: 'tiger')
         }
         shouldFail(IllegalArgumentException) {
-            Sql.newInstance(url: null, driver: DB_DATASOURCE.name, user: 'scott', password: 'tiger')
+            Sql.newInstance(url: null, driver: DB_DRIVER.name, user: 'scott', password: 'tiger')
         }
     }
 
@@ -456,16 +455,16 @@ class SqlCompleteTest extends TestHelper {
 
     void testNewInstanceMapShouldRequireUserAndPasswordIfOneIsProvided() {
         shouldFail(IllegalArgumentException) {
-            Sql.newInstance(url: getURI(), driver: DB_DATASOURCE.name, user: 'scott')
+            Sql.newInstance(url: getURI(), driver: DB_DRIVER.name, user: 'scott')
         }
         shouldFail(IllegalArgumentException) {
-            Sql.newInstance(url: getURI(), driver: DB_DATASOURCE.name, password: 'tiger')
+            Sql.newInstance(url: getURI(), driver: DB_DRIVER.name, password: 'tiger')
         }
     }
 
     void testNewInstanceMapNotDestructiveGROOVY5216() {
         String url = getURI()
-        String driver = DB_DATASOURCE.name
+        String driver = DB_DRIVER.name
         String user = 'sa'
         String password = ''
 

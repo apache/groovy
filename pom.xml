@@ -769,7 +769,7 @@
             <scope>test</scope>
         </dependency>
 
-        <!-- used for SQL library -->
+        <!-- used for testing SQL library -->
         <dependency>
             <groupId>org.hsqldb</groupId>
             <artifactId>hsqldb</artifactId>
@@ -777,6 +777,14 @@
             <classifier>jdk5</classifier>
             <scope>test</scope>
         </dependency>
+<!--
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <version>1.3.164</version>
+            <scope>test</scope>
+        </dependency>
+-->
 
         <!-- used for servlet / gsp -->
         <dependency>
