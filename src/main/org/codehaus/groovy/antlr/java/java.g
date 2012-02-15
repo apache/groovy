@@ -1758,7 +1758,11 @@ WS	:	(	' '
 // Single-line comments
 SL_COMMENT
 	:	"//"
-		(~('\n'|'\r'))* ('\n'|'\r'('\n')?)
+        (
+            options {  greedy = true;  }:
+            // '\uffff' means the EOF character.
+            ~('\n'|'\r'|'\uffff')
+        )*
 		{$setType(Token.SKIP); newline();}
 	;
 
