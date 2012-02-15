@@ -597,6 +597,10 @@
             <name>Jan Weitz</name>
             <email></email>
         </contributor>
+        <contributor>
+            <name>Joachim Baumann</name>
+            <email></email>
+        </contributor>
     </contributors>
 
     <dependencies>
