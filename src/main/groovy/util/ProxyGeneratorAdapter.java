@@ -554,6 +554,10 @@ public class ProxyGeneratorAdapter extends ClassAdapter implements Opcodes {
         newDesc.append(")V");
         MethodVisitor mv = super.visitMethod(access, name, newDesc.toString(), signature, exceptions);
         mv.visitCode();
+        initializeDelegateClosure(mv, args.length);
+        if (generateDelegateField) {
+            initializeDelegateObject(mv, args.length+1);
+        }
         mv.visitVarInsn(ALOAD, 0);
         int idx = 1;
         for (Type arg : args) {
@@ -565,10 +569,6 @@ public class ProxyGeneratorAdapter extends ClassAdapter implements Opcodes {
             idx += registerLen(arg);
         }
         mv.visitMethodInsn(INVOKESPECIAL, BytecodeHelper.getClassInternalName(superClass), "<init>", desc);
-        initializeDelegateClosure(mv, args.length);
-        if (generateDelegateField) {
-            initializeDelegateObject(mv, args.length+1);
-        }
         mv.visitInsn(RETURN);
         int max = idx + 1 + (generateDelegateField?1:0);
         mv.visitMaxs(max, max);
