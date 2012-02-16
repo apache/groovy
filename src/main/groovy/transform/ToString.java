@@ -76,8 +76,22 @@ import java.lang.annotation.Target;
  * <pre>
  * AgedThing(age:5, super:NamedThing(Lassie))
  * </pre>
+ * If you want to omit fields or properties referring to <tt>null</tt> you can use:
+ * <pre>
+ * import groovy.transform.ToString
+ * {@code @ToString(ignoreNullValues = true)} class NamedThing {
+ *     String name
+ * }
+ * println new NamedThing(name: null)
+ * </pre>
+ * Which results in:
+ * <pre>
+ * NamedThing()
+ * </pre>
  *
  * @author Paul King
+ * @author Andre Steingress
+ *
  * @since 1.8.0
  */
 @java.lang.annotation.Documented
@@ -111,4 +125,9 @@ public @interface ToString {
      * Include fields as well as properties in generated toString
      */
     boolean includeFields() default false;
+
+    /**
+     * Ignore fields as well as properties referring to <tt>null</tt>
+     */
+    boolean ignoreNullValues() default false;
 }
