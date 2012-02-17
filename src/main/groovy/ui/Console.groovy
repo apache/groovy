@@ -55,6 +55,7 @@ import java.awt.BorderLayout
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
 import groovy.transform.ThreadInterrupt
+import javax.swing.event.DocumentListener
 
 /**
  * Groovy Swing console.
@@ -619,9 +620,13 @@ options:
                 consoleText = file.readLines().join('\n')
                 scriptFile = file
                 swing.edt {
+                    def listeners = inputArea.document.getListeners(DocumentListener)
+                    listeners.each { inputArea.document.removeDocumentListener(it) }
+                    println listeners
                     updateTitle()
                     inputArea.document.remove 0, inputArea.document.length
                     inputArea.document.insertString 0, consoleText, null
+                    listeners.each { inputArea.document.addDocumentListener(it) }
                     setDirty(false)
                     inputArea.caretPosition = 0
                 }
