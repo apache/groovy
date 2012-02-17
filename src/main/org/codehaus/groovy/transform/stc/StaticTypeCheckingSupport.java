@@ -30,7 +30,7 @@ import static org.codehaus.groovy.syntax.Types.*;
 /**
  * Static support methods for {@link StaticTypeCheckingVisitor}.
  */
-abstract class StaticTypeCheckingSupport {
+public abstract class StaticTypeCheckingSupport {
     final static Map<String, List<MethodNode>> VIRTUAL_DGM_METHODS = getDGMMethods();
     final static ClassNode
             Collection_TYPE = makeWithoutCaching(Collection.class);
@@ -105,7 +105,7 @@ abstract class StaticTypeCheckingSupport {
      * @param callArguments arguments of the method
      * @return true if the name is "with" and arguments consist of a single closure
      */
-    static boolean isWithCall(final String name, final Expression callArguments) {
+    public static boolean isWithCall(final String name, final Expression callArguments) {
         boolean isWithCall = "with".equals(name) && callArguments instanceof ArgumentListExpression;
         if (isWithCall) {
             ArgumentListExpression argList = (ArgumentListExpression) callArguments;
@@ -213,7 +213,7 @@ abstract class StaticTypeCheckingSupport {
      * @return -1 if arguments do not match, 0 if arguments are of the exact type and >0 when one or more argument is
      * not of the exact type but still match
      */
-    static int allParametersAndArgumentsMatch(Parameter[] params, ClassNode[] args) {
+    public static int allParametersAndArgumentsMatch(Parameter[] params, ClassNode[] args) {
         if (params==null) return args.length==0?0:-1;
         int dist = 0;
         // we already know the lengths are equal
@@ -471,7 +471,7 @@ abstract class StaticTypeCheckingSupport {
         }
     }
 
-    static boolean isAssignment(int op) {
+    public static boolean isAssignment(int op) {
         switch (op) {
             case ASSIGN:
             case LOGICAL_OR_EQUAL:
@@ -673,7 +673,7 @@ abstract class StaticTypeCheckingSupport {
         return sb.toString();
     }
 
-    static boolean implementsInterfaceOrIsSubclassOf(ClassNode type, ClassNode superOrInterface) {
+    public static boolean implementsInterfaceOrIsSubclassOf(ClassNode type, ClassNode superOrInterface) {
         boolean result = type.equals(superOrInterface)
                 || type.isDerivedFrom(superOrInterface)
                 || type.implementsInterface(superOrInterface)

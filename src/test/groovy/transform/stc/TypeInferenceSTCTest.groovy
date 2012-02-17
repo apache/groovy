@@ -268,6 +268,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
             a.with {
                 x = 2 // should be recognized as a.x at compile time
             }
+            assert a.x == 2
         '''
     }
 
@@ -300,6 +301,8 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
                     x = '2' // should be recognized as b.x at compile time
                 }
             }
+            assert a.x == 0
+            assert b.x == '2'
         '''
     }
 
@@ -312,6 +315,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
             a.with {
                 it.x = 2 // should be recognized as a.x at compile time
             }
+            assert a.x == 2
         '''
     }
 
@@ -324,6 +328,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
             a.with { it ->
                 it.x = 2 // should be recognized as a.x at compile time
             }
+            assert a.x == 2
         '''
     }
 
@@ -351,6 +356,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
              b.with {
                  x = 2 // should be recognized as b.x at compile time
              }
+             assert b.x == 2
          '''
     }
 

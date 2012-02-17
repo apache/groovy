@@ -26,5 +26,6 @@ public enum StaticTypesMarker {
     INFERRED_RETURN_TYPE, // used to store inferred return type for methods and closures
     CLOSURE_ARGUMENTS, // used to store closure argument types on a variable expression
     READONLY_PROPERTY, // used to tell that a property expression refers to a readonly property
+    INITIAL_EXPRESSION, // used to store the default expression for a parameter
     DIRECT_METHOD_CALL_TARGET // used to store the MethodNode a MethodCallExpression should target
 }

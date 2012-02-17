@@ -27,6 +27,6 @@ class Groovy5267Bug extends AbstractBytecodeTestCase {
         }
         ''')
         
-        assert bytecode.hasSequence(['INVOKESTATIC org/codehaus/groovy/runtime/typehandling/DefaultTypeTransformation.box (I)Ljava/lang/Object;','CHECKCAST java/lang/Integer'])
+        assert bytecode.hasSequence(['INVOKESTATIC java/lang/Integer.valueOf (I)Ljava/lang/Integer;'])
     }
 }

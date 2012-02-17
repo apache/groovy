@@ -133,6 +133,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         assertScript '''
             List list = ['a','b','c']
             List classes = list*.class
+            assert classes == [String,String,String]
         '''
     }
 
@@ -140,6 +141,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         assertScript '''
             List list = ['a','b','c']
             List classes = list*.toUpperCase()
+            assert classes == ['A','B','C']
         '''
     }
 
@@ -196,7 +198,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
     void testForInLoop() {
         assertScript '''
             class A {
-                String name
+                String name = 'foo'
             }
             List<A> myList = [new A(name:'Cedric'), new A(name:'Yakari')] as LinkedList<A>
             for (element in myList) {
@@ -208,7 +210,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
     void testForInLoopWithDefaultListType() {
         assertScript '''
             class A {
-                String name
+                String name = 'foo'
             }
             List<A> myList = [new A(name:'Cedric'), new A(name:'Yakari')]
             for (element in myList) {

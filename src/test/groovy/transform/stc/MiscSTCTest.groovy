@@ -58,6 +58,7 @@ class MiscSTCTest extends StaticTypeCheckingTestCase {
             def cl = { String it -> it.toUpperCase() }
             assert cl('test')=='TEST'
         }
+        method()
         '''
     }
 

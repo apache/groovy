@@ -78,18 +78,22 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
         @Override protected MethodCaller getArraySetCaller() { return shortArraySet; }    
     }
     
-    private BinaryExpressionWriter[] binExpWriter = {
-            /* 0: dummy  */ new BinaryObjectExpressionHelper(getController()),
-            /* 1: int    */ new BinaryIntExpressionHelper(getController()),
-            /* 2: long   */ new BinaryLongExpressionHelper(getController()),
-            /* 3: double */ new BinaryDoubleExpressionHelper(getController()),
-            /* 4: char   */ new BinaryCharExpressionHelper(getController()),
-            /* 5: byte   */ new BinaryByteExpressionHelper(getController()),
-            /* 6: short  */ new BinaryShortExpressionHelper(getController()),
-            /* 7: float  */ new BinaryFloatExpressionHelper(getController()),
-            /* 8: bool   */ new BinaryBooleanExpressionHelper(getController()),
-    };
-    
+    protected BinaryExpressionWriter[] binExpWriter = initializeDelegateHelpers();
+
+    protected BinaryExpressionWriter[] initializeDelegateHelpers() {
+        return new BinaryExpressionWriter[]{
+                /* 0: dummy  */ new BinaryObjectExpressionHelper(getController()),
+                /* 1: int    */ new BinaryIntExpressionHelper(getController()),
+                /* 2: long   */ new BinaryLongExpressionHelper(getController()),
+                /* 3: double */ new BinaryDoubleExpressionHelper(getController()),
+                /* 4: char   */ new BinaryCharExpressionHelper(getController()),
+                /* 5: byte   */ new BinaryByteExpressionHelper(getController()),
+                /* 6: short  */ new BinaryShortExpressionHelper(getController()),
+                /* 7: float  */ new BinaryFloatExpressionHelper(getController()),
+                /* 8: bool   */ new BinaryBooleanExpressionHelper(getController()),
+        };
+    }
+
     public static Map<ClassNode,Integer> typeMap = new HashMap<ClassNode,Integer>(14);
     static {
         typeMap.put(int_TYPE,       1); typeMap.put(long_TYPE,          2);
@@ -111,7 +115,7 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
         return 0;
     }
     
-    private int getOperandType(ClassNode type) {
+    protected int getOperandType(ClassNode type) {
         Integer ret = typeMap.get(type);
         if (ret==null) return 0;
         return ret;
@@ -120,12 +124,13 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
     @Override
     protected void evaluateCompareExpression(final MethodCaller compareMethod, BinaryExpression binExp) {
         ClassNode current =  getController().getClassNode();
+        TypeChooser typeChooser = getController().getTypeChooser();
         int operation = binExp.getOperation().getType();
         
         Expression leftExp = binExp.getLeftExpression();
-        ClassNode leftType = getController().getTypeChooser().resolveType(leftExp, current);
+        ClassNode leftType = typeChooser.resolveType(leftExp, current);
         Expression rightExp = binExp.getRightExpression();
-        ClassNode rightType = getController().getTypeChooser().resolveType(rightExp, current);
+        ClassNode rightType = typeChooser.resolveType(rightExp, current);
         
         int operationType = getOperandConversionType(leftType,rightType);
         BinaryExpressionWriter bew = binExpWriter[operationType];

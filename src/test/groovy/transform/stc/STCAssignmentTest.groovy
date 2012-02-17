@@ -250,6 +250,8 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
     void testMultipleAssignment1() {
         assertScript '''
             def (x,y) = [1,2]
+            assert x == 1
+            assert y == 2
         '''
     }
 
@@ -258,6 +260,8 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
             int x
             int y
             (x,y) = [1,2]
+            assert x == 1
+            assert y == 2
         '''
     }
 
@@ -282,6 +286,8 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
             int x
             int y
             (x,y) = [1,2,3]
+            assert x == 1
+            assert y == 2
         '''
     }
 
