@@ -64,7 +64,7 @@ public class HandleMetaClass extends DelegatingMetaClass {
                     ((ExpandoMetaClass)delegate).registerInstanceMethod(method);
               }
               delegate.initialize();
-              DefaultGroovyMethods.setMetaClass(object, delegate);
+              MetaClassHelper.doSetMetaClass(object, delegate);
               object = NONE;
           }
         }

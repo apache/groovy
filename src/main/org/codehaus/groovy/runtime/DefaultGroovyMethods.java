@@ -18105,7 +18105,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Set the metaclass for an object
+     * Set the metaclass for an object.
      * @param self the object whose metaclass we want to set
      * @param metaClass the new metaclass value
      * @since 1.6.0
@@ -18114,14 +18114,26 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         if (metaClass instanceof HandleMetaClass)
             metaClass = ((HandleMetaClass)metaClass).getAdaptee();
 
-        if (self instanceof GroovyObject) {
-            ((GroovyObject)self).setMetaClass(metaClass);
-            disablePrimitiveOptimization(self);
-        } else if (self instanceof Class) {
-            ((MetaClassRegistryImpl)GroovySystem.getMetaClassRegistry()).setMetaClass((Class)self, metaClass);
+        if (self instanceof Class) {
+            ((MetaClassRegistryImpl)GroovySystem.getMetaClassRegistry()).setMetaClass((Class) self, metaClass);
         } else {
             ((MetaClassRegistryImpl)GroovySystem.getMetaClassRegistry()).setMetaClass(self, metaClass);
         }
+    }
+
+    /**
+     * Set the metaclass for a GroovyObject.
+     * @param self the object whose metaclass we want to set
+     * @param metaClass the new metaclass value
+     * @since 2.0.0
+     */
+    public static void setMetaClass(GroovyObject self, MetaClass metaClass) {
+        // this method was introduced as to prevent from a stack overflow, described in GROOVY-5285
+        if (metaClass instanceof HandleMetaClass)
+            metaClass = ((HandleMetaClass)metaClass).getAdaptee();
+
+        self.setMetaClass(metaClass);
+        disablePrimitiveOptimization(self);
     }
 
     private static void disablePrimitiveOptimization(Object self) {
@@ -18197,7 +18209,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             final ExpandoMetaClass metaClass = new ExpandoMetaClass(self.getClass(), false, true);
             metaClass.initialize();
             metaClass.define(closure);
-            setMetaClass(self, metaClass);
+            if (self instanceof GroovyObject) {
+                setMetaClass((GroovyObject)self, metaClass);
+            } else {
+                setMetaClass(self, metaClass);
+            }
             return metaClass;
         }
         else {
