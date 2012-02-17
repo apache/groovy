@@ -175,4 +175,100 @@ class StaticCompileMathTest extends AbstractBytecodeTestCase {
             doIt()
         '''
     }
+
+    void testStaticCompileLeftShiftEquals() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            int foo() {
+                int i = 1
+                i <<= 2
+                i
+            }
+            assert foo()==4
+        '''
+    }
+
+    void testStaticCompileRightShiftEquals() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            int foo() {
+                int i = 4
+                i >>= 2
+                i
+            }
+            assert foo()==1
+        '''
+    }
+
+    void testStaticCompilePlusEquals() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            int foo() {
+                int i = 4
+                i += 2
+                i
+            }
+            assert foo()==6
+        '''
+    }
+
+    void testStaticCompileMinusEquals() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            int foo() {
+                int i = 4
+                i -= 2
+                i
+            }
+            assert foo()==2
+        '''
+    }
+
+    void testStaticCompileDivideEquals() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            int foo() {
+                int i = 4
+                i /= 2
+                i
+            }
+            assert foo()==2
+        '''
+    }
+
+    void testStaticCompileMultiplyEquals() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            int foo() {
+                int i = 4
+                i *= 2
+                i
+            }
+            assert foo()==8
+        '''
+    }
+
+    void testStaticCompilePowerEquals() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            def foo() {
+                def i = 4
+                i **= 2
+                i
+            }
+            assert foo()==16
+        '''
+    }
+
+    void testStaticCompileModEquals() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            int foo() {
+                int i = 3
+                i %= 2
+                i
+            }
+            assert foo()==1
+        '''
+    }
 }
