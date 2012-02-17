@@ -622,7 +622,6 @@ options:
                 swing.edt {
                     def listeners = inputArea.document.getListeners(DocumentListener)
                     listeners.each { inputArea.document.removeDocumentListener(it) }
-                    println listeners
                     updateTitle()
                     inputArea.document.remove 0, inputArea.document.length
                     inputArea.document.insertString 0, consoleText, null
