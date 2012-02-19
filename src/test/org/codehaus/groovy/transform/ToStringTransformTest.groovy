@@ -100,18 +100,18 @@ class ToStringTransformTest extends GroovyShellTestCase {
 
     void testIncludeFieldsAndIgnoreNullValues() {
         def toString = evaluate("""
-                            import groovy.transform.ToString
+            import groovy.transform.ToString
 
-                            @ToString(includeFields = true, includeNames = true, ignoreNullValues = true)
-                            class Person {
-                                String firstName
-                                String surName
+            @ToString(includeFields = true, includeNames = true, ignoreNullValues = true)
+            class Person {
+                String firstName
+                String surName
 
-                                private age = 50
-                            }
+                private age = 50
+            }
 
-                            new Person(firstName:null, surName: 'Doe').toString()
-                        """)
+            new Person(firstName:null, surName: 'Doe').toString()
+        """)
 
         assertEquals("Person(surName:Doe, age:50)", toString)
     }
@@ -143,15 +143,15 @@ class ToStringTransformTest extends GroovyShellTestCase {
     void testIgnoreStaticProperties()  {
 
         def toString = evaluate("""
-                import groovy.transform.ToString
+            import groovy.transform.ToString
 
-                @ToString
-                class Person {
-                    static int humanBeings = 0
-                }
+            @ToString
+            class Person {
+                static int humanBeings = 0
+            }
 
-                new Person().toString()
-            """)
+            new Person().toString()
+        """)
 
         assertEquals("Person()", toString)
     }
@@ -159,16 +159,16 @@ class ToStringTransformTest extends GroovyShellTestCase {
     void testWithCollection()  {
 
         def toString = evaluate("""
-                    import groovy.transform.ToString
+            import groovy.transform.ToString
 
-                    @ToString(includeNames = true)
-                    class Person {
-                        def relatives = []
-                        def mates = [:]
-                    }
+            @ToString(includeNames = true)
+            class Person {
+                def relatives = []
+                def mates = [:]
+            }
 
-                    new Person(relatives: ['a', 'b', 'c'], mates: [friends: ['c', 'd', 'e']]).toString()
-                """)
+            new Person(relatives: ['a', 'b', 'c'], mates: [friends: ['c', 'd', 'e']]).toString()
+        """)
 
         assertEquals("Person(relatives:[a, b, c], mates:[friends:[c, d, e]])", toString)
     }
@@ -176,15 +176,15 @@ class ToStringTransformTest extends GroovyShellTestCase {
     void testExcludesAndIgnoreNullValues()  {
 
         def toString = evaluate("""
-                        import groovy.transform.ToString
+            import groovy.transform.ToString
 
-                        @ToString(excludes = 'surName', ignoreNullValues = true)
-                        class Person {
-                            String surName
-                        }
+            @ToString(excludes = 'surName', ignoreNullValues = true)
+            class Person {
+                String surName
+            }
 
-                        new Person(surName: 'Doe').toString()
-                    """)
+            new Person(surName: 'Doe').toString()
+        """)
 
         assertEquals("Person()", toString)
     }
@@ -192,15 +192,15 @@ class ToStringTransformTest extends GroovyShellTestCase {
     void testIncludesAndIgnoreNullValues()  {
 
         def toString = evaluate("""
-                            import groovy.transform.ToString
+            import groovy.transform.ToString
 
-                            @ToString(includes = 'surName', ignoreNullValues = true)
-                            class Person {
-                                String surName
-                            }
+            @ToString(includes = 'surName', ignoreNullValues = true)
+            class Person {
+                String surName
+            }
 
-                            new Person(surName: null).toString()
-                        """)
+            new Person(surName: null).toString()
+        """)
 
         assertEquals("Person()", toString)
     }
@@ -208,15 +208,15 @@ class ToStringTransformTest extends GroovyShellTestCase {
     void testSkipInternalProperties()  {
 
         def toString = evaluate("""
-                            import groovy.transform.ToString
+            import groovy.transform.ToString
 
-                            @ToString(includeFields = true)
-                            class Person {
-                                private String \$surName = 'Doe'
-                            }
+            @ToString(includeFields = true)
+            class Person {
+                private String \$surName = 'Doe'
+            }
 
-                            new Person().toString()
-                            """)
+            new Person().toString()
+        """)
 
         assertEquals("Person()", toString)
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2011 the original author or authors.
+ * Copyright 2008-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -392,17 +392,24 @@ class ImmutableTransformTest extends GroovyShellTestCase {
         '''
     }
 
-    void testImmutableToString_TracksNamedParameters() {
+    void testImmutableToStringVariants() {
         assertScript '''
-            @groovy.transform.Immutable
-            class Person {
-                String first, last
-            }
+            import groovy.transform.*
 
-            // normal toString
-            assert new Person("Hamlet", "D'Arcy").toString() == "Person(Hamlet, D'Arcy)"
-            // instance created with named parameters has special toString
-            assert new Person(first: "Hamlet", last: "D'Arcy").toString() == "Person(first:Hamlet, last:D'Arcy)"
+            @Immutable
+            class Person1 { String first, last }
+
+            @Immutable
+            @ToString(includeNames=true)
+            class Person2 { String first, last }
+
+            @Immutable
+            @ToString(excludes="last")
+            class Person3 { String first, last }
+
+            assert new Person1("Hamlet", "D'Arcy").toString() == "Person1(Hamlet, D'Arcy)"
+            assert new Person2(first: "Hamlet", last: "D'Arcy").toString() == "Person2(first:Hamlet, last:D'Arcy)"
+            assert new Person3("Hamlet", "D'Arcy").toString() == "Person3(Hamlet)"
             '''
     }
 

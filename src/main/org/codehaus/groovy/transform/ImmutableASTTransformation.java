@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2011 the original author or authors.
+ * Copyright 2008-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -121,7 +121,9 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
             createConstructors(cNode);
             createHashCode(cNode, true, false, false, null, null);
             createEquals(cNode, false, false, false, null, null);
-            createToString(cNode, false, false, null, null);
+            if (!hasAnnotation(cNode, ToStringASTTransformation.MY_TYPE)) {
+                createToString(cNode, false, false, null, null, false);
+            }
         }
     }
 
@@ -132,22 +134,19 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
     }
 
     private void createConstructors(ClassNode cNode) {
-        // pretty toString will remember how the user declared the params and print accordingly
-        final FieldNode constructorField = cNode.addField("$print$names", ACC_PRIVATE | ACC_SYNTHETIC, ClassHelper.boolean_TYPE, null);
-        final Expression constructorStyle = new VariableExpression(constructorField);
         if (!validateConstructors(cNode)) return;
 
         List<PropertyNode> list = getInstanceProperties(cNode);
         boolean specialHashMapCase = list.size() == 1 && list.get(0).getField().getType().equals(HASHMAP_TYPE);
         if (specialHashMapCase) {
-            createConstructorMapSpecial(cNode, constructorStyle, list);
+            createConstructorMapSpecial(cNode, list);
         } else {
-            createConstructorMap(cNode, constructorStyle, list);
-            createConstructorOrdered(cNode, constructorStyle, list);
+            createConstructorMap(cNode, list);
+            createConstructorOrdered(cNode, list);
         }
     }
 
-    private void createConstructorOrdered(ClassNode cNode, Expression constructorStyle, List<PropertyNode> list) {
+    private void createConstructorOrdered(ClassNode cNode, List<PropertyNode> list) {
         final MapExpression argMap = new MapExpression();
         final Parameter[] orderedParams = new Parameter[list.size()];
         int index = 0;
@@ -160,7 +159,6 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
         orderedBody.addStatement(new ExpressionStatement(
                 new ConstructorCallExpression(ClassNode.THIS, new ArgumentListExpression(new CastExpression(HASHMAP_TYPE, argMap)))
         ));
-        orderedBody.addStatement(assignStatement(constructorStyle, ConstantExpression.FALSE));
         cNode.addConstructor(new ConstructorNode(ACC_PUBLIC, orderedParams, ClassNode.EMPTY_ARRAY, orderedBody));
     }
 
@@ -177,13 +175,13 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
         return new MethodCallExpression(fieldExpr, "clone", MethodCallExpression.NO_ARGUMENTS);
     }
 
-    private void createConstructorMapSpecial(ClassNode cNode, Expression constructorStyle, List<PropertyNode> list) {
+    private void createConstructorMapSpecial(ClassNode cNode, List<PropertyNode> list) {
         final BlockStatement body = new BlockStatement();
         body.addStatement(createConstructorStatementMapSpecial(list.get(0).getField()));
-        createConstructorMapCommon(cNode, constructorStyle, body);
+        createConstructorMapCommon(cNode, body);
     }
 
-    private void createConstructorMap(ClassNode cNode, Expression constructorStyle, List<PropertyNode> list) {
+    private void createConstructorMap(ClassNode cNode, List<PropertyNode> list) {
         final BlockStatement body = new BlockStatement();
         for (PropertyNode pNode : list) {
             body.addStatement(createConstructorStatement(cNode, pNode));
@@ -191,10 +189,10 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
         // check for missing properties
         Expression checkArgs = new ArgumentListExpression(new VariableExpression("this"), new VariableExpression("args"));
         body.addStatement(new ExpressionStatement(new StaticMethodCallExpression(SELF_TYPE, "checkPropNames", checkArgs)));
-        createConstructorMapCommon(cNode, constructorStyle, body);
+        createConstructorMapCommon(cNode, body);
     }
 
-    private void createConstructorMapCommon(ClassNode cNode, Expression constructorStyle, BlockStatement body) {
+    private void createConstructorMapCommon(ClassNode cNode, BlockStatement body) {
         final List<FieldNode> fList = cNode.getFields();
         for (FieldNode fNode : fList) {
             if (fNode.isPublic()) continue; // public fields will be rejected elsewhere
@@ -204,7 +202,6 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
             if (fNode.isFinal() && fNode.getInitialExpression() != null) body.addStatement(checkFinalArgNotOverridden(cNode, fNode));
             body.addStatement(createConstructorStatementDefault(fNode));
         }
-        body.addStatement(assignStatement(constructorStyle, ConstantExpression.TRUE));
         final Parameter[] params = new Parameter[]{new Parameter(HASHMAP_TYPE, "args")};
         cNode.addConstructor(new ConstructorNode(ACC_PUBLIC, params, ClassNode.EMPTY_ARRAY, new IfStatement(
                 equalsNullExpr(new VariableExpression("args")),

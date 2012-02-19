@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2011 the original author or authors.
+ * Copyright 2008-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -76,10 +76,12 @@ import java.lang.annotation.Target;
  * <pre>
  * AgedThing(age:5, super:NamedThing(Lassie))
  * </pre>
- * If you want to omit fields or properties referring to <tt>null</tt> you can use:
+ * {@code @ToString} can also be used in conjunction with {@code @Canonical} and {@code @Immutable}.
+ * <p/>
+ * If you want to omit fields or properties referring to <tt>null</tt>, you can use the <tt>ignoreNulls</tt> flag:
  * <pre>
  * import groovy.transform.ToString
- * {@code @ToString(ignoreNullValues = true)} class NamedThing {
+ * {@code @ToString(ignoreNulls = true)} class NamedThing {
  *     String name
  * }
  * println new NamedThing(name: null)
@@ -91,7 +93,8 @@ import java.lang.annotation.Target;
  *
  * @author Paul King
  * @author Andre Steingress
- *
+ * @see groovy.transform.Immutable
+ * @see groovy.transform.Canonical
  * @since 1.8.0
  */
 @java.lang.annotation.Documented
@@ -127,7 +130,7 @@ public @interface ToString {
     boolean includeFields() default false;
 
     /**
-     * Ignore fields as well as properties referring to <tt>null</tt>
+     * Don't display any fields or properties with value <tt>null</tt>
      */
-    boolean ignoreNullValues() default false;
+    boolean ignoreNulls() default false;
 }

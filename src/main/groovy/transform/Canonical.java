@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2011 the original author or authors.
+ * Copyright 2008-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -77,6 +77,9 @@ import java.lang.annotation.Target;
  * If an "underscore" version of the respective method already exists, then no default implementation is provided.
  * </ul>
  * <p/>
+ * If you want similar functionality to what this annotation provides but also require immutability, see the
+ * {@code @Immutable} annotation.
+ * <p/>
  * Limitations:
  * <ul>
  * <li>
@@ -88,6 +91,7 @@ import java.lang.annotation.Target;
  * @see groovy.transform.EqualsAndHashCode
  * @see groovy.transform.ToString
  * @see groovy.transform.TupleConstructor
+ * @see groovy.transform.Immutable
  * @since 1.8.0
  */
 @java.lang.annotation.Documented
