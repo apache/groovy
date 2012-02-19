@@ -36,11 +36,11 @@ class ToStringTransformTest extends GroovyShellTestCase {
         assertEquals("Person(John, Doe)", toString)
     }
 
-    void testIgnoreNullValues() {
+    void testIgnoreNulls() {
         def toString = evaluate("""
                 import groovy.transform.ToString
 
-                @ToString(ignoreNullValues = true)
+                @ToString(ignoreNulls = true)
                 class Person {
                     String firstName
                     String surName
@@ -54,7 +54,7 @@ class ToStringTransformTest extends GroovyShellTestCase {
         toString = evaluate("""
                 import groovy.transform.ToString
 
-                @ToString(ignoreNullValues = true)
+                @ToString(ignoreNulls = true)
                 class Person {
                     String firstName
                     String surName
@@ -66,11 +66,11 @@ class ToStringTransformTest extends GroovyShellTestCase {
         assertEquals("Person()", toString)
     }
 
-    void testIncludeFieldNamesAndIgnoreNullValues() {
+    void testIncludeFieldNamesAndIgnoreNulls() {
         def toString = evaluate("""
                     import groovy.transform.ToString
 
-                    @ToString(includeNames = true, ignoreNullValues = true)
+                    @ToString(includeNames = true, ignoreNulls = true)
                     class Person {
                         String firstName
                         String surName
@@ -82,11 +82,11 @@ class ToStringTransformTest extends GroovyShellTestCase {
         assertEquals("Person(surName:Doe)", toString)
     }
 
-    void testIncludeFieldNamesAndDoNotIgnoreNullValues() {
+    void testIncludeFieldNamesAndDoNotIgnoreNulls() {
         def toString = evaluate("""
                         import groovy.transform.ToString
 
-                        @ToString(includeNames = true, ignoreNullValues = false)
+                        @ToString(includeNames = true, ignoreNulls = false)
                         class Person {
                             String firstName
                             String surName
@@ -98,11 +98,11 @@ class ToStringTransformTest extends GroovyShellTestCase {
         assertEquals("Person(firstName:null, surName:Doe)", toString)
     }
 
-    void testIncludeFieldsAndIgnoreNullValues() {
+    void testIncludeFieldsAndIgnoreNulls() {
         def toString = evaluate("""
             import groovy.transform.ToString
 
-            @ToString(includeFields = true, includeNames = true, ignoreNullValues = true)
+            @ToString(includeFields = true, includeNames = true, ignoreNulls = true)
             class Person {
                 String firstName
                 String surName
@@ -121,7 +121,7 @@ class ToStringTransformTest extends GroovyShellTestCase {
         def toString = evaluate("""
             import groovy.transform.ToString
 
-            @ToString(ignoreNullValues = true, includeNames = true)
+            @ToString(ignoreNulls = true, includeNames = true)
             class HumanBeing {
                 Boolean female = null
             }
@@ -173,12 +173,12 @@ class ToStringTransformTest extends GroovyShellTestCase {
         assertEquals("Person(relatives:[a, b, c], mates:[friends:[c, d, e]])", toString)
     }
 
-    void testExcludesAndIgnoreNullValues()  {
+    void testExcludesAndIgnoreNulls()  {
 
         def toString = evaluate("""
             import groovy.transform.ToString
 
-            @ToString(excludes = 'surName', ignoreNullValues = true)
+            @ToString(excludes = 'surName', ignoreNulls = true)
             class Person {
                 String surName
             }
@@ -189,12 +189,12 @@ class ToStringTransformTest extends GroovyShellTestCase {
         assertEquals("Person()", toString)
     }
 
-    void testIncludesAndIgnoreNullValues()  {
+    void testIncludesAndIgnoreNulls()  {
 
         def toString = evaluate("""
             import groovy.transform.ToString
 
-            @ToString(includes = 'surName', ignoreNullValues = true)
+            @ToString(includes = 'surName', ignoreNulls = true)
             class Person {
                 String surName
             }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2011 the original author or authors.
+ * Copyright 2008-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.BooleanExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
+import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
@@ -176,12 +177,20 @@ public abstract class AbstractASTTransformUtil implements Opcodes {
         return new BinaryExpression(expression, ASSIGN, value);
     }
 
+    public static ExpressionStatement declStatement(Expression result, Expression init) {
+        return new ExpressionStatement(new DeclarationExpression(result, ASSIGN, init));
+    }
+
     public static BooleanExpression isInstanceOf(Expression objectExpression, ClassNode cNode) {
         return new BooleanExpression(new BinaryExpression(objectExpression, INSTANCEOF, new ClassExpression(cNode)));
     }
 
     public static BooleanExpression equalsNullExpr(Expression argExpr) {
         return new BooleanExpression(new BinaryExpression(argExpr, COMPARE_EQUAL, ConstantExpression.NULL));
+    }
+
+    public static BooleanExpression notNullExpr(Expression argExpr) {
+        return new BooleanExpression(new BinaryExpression(argExpr, COMPARE_NOT_EQUAL, ConstantExpression.NULL));
     }
 
     public static BooleanExpression isZeroExpr(Expression expr) {
