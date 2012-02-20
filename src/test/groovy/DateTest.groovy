@@ -1,31 +1,52 @@
+/*
+ * Copyright 2003-2012 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package groovy
 
 import static java.util.Calendar.*
 
 class DateTest extends GroovyTestCase {
-  
-    void testNextPrevious() {
+    private static final String fmt = 'dd-MMM-yyyy'
+
+    void testCalendarNextPrevious() {
+        Calendar c = Calendar.getInstance(TimeZone.getTimeZone('GMT+00'), Locale.US)
+        c[YEAR] = 2002
+        c[MONTH] = FEBRUARY
+        c[DATE] = 2
+        assert c.previous().format(fmt) == '01-Feb-2002'
+        assert c.format(fmt) == '02-Feb-2002'
+        assert c.next().format(fmt) == '03-Feb-2002'
+        def dates = (c.previous()..c.next())*.format(fmt)
+        assert dates == ['01-Feb-2002', '02-Feb-2002', '03-Feb-2002']
+    }
+
+    void testDateNextPrevious() {
         def x = new Date()
         def y = x + 2
-        
         assert x < y
         ++x
         --y
-        
         assert x == y
         x += 2
         assert x > y
-        
-        println "have dates ${x} and ${y}"
     }
-    
+
     void testDateRange() {
-        
         def today = new Date()
         def later = today + 3
-        
         def expected = [today, today + 1, today + 2, today + 3]
-        
         def list = []
         for (d in today..later) {
             list << d
