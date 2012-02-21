@@ -20,6 +20,7 @@ import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.messages.SimpleMessage;
 
@@ -95,7 +96,8 @@ public class ASTTransformationCollectorCodeVisitor extends ClassCodeVisitorSuppo
         for (String transformClass : transformClassNames) {
             try {
                 Class klass = transformLoader.loadClass(transformClass, false, true, false);
-                verifyClassAndAddTransform(annotation, klass);
+                verifyAndAddTransform(annotation, klass);
+
             } catch (ClassNotFoundException e) {
                 source.getErrorCollector().addErrorAndContinue(
                         new SimpleMessage(
@@ -105,17 +107,38 @@ public class ASTTransformationCollectorCodeVisitor extends ClassCodeVisitorSuppo
             }
         }
         for (Class klass : transformClasses) {
-            verifyClassAndAddTransform(annotation, klass);
+            verifyAndAddTransform(annotation, klass);
         }
     }
-    
-    private void verifyClassAndAddTransform(AnnotationNode annotation, Class klass) {
-        if (ASTTransformation.class.isAssignableFrom(klass)) {
-            classNode.addTransform(klass, annotation);
-        } else {
-            source.getErrorCollector().addError(new SimpleMessage("Not an ASTTransformation: " + 
+
+    private void verifyAndAddTransform(AnnotationNode annotation, Class klass) {
+        verifyClass(annotation, klass);
+        verifyCompilePhase(annotation, klass);
+        addTransform(annotation, klass);
+    }
+
+    private void verifyCompilePhase(AnnotationNode annotation, Class klass) {
+        GroovyASTTransformation transformationClass = (GroovyASTTransformation) klass.getAnnotation(GroovyASTTransformation.class);
+        if (transformationClass != null)  {
+            CompilePhase specifiedCompilePhase = transformationClass.phase();
+            if (specifiedCompilePhase.getPhaseNumber() < CompilePhase.SEMANTIC_ANALYSIS.getPhaseNumber())  {
+                source.getErrorCollector().addError(
+                        new SimpleMessage(
+                                annotation.getClassNode().getName() + " is defined to be run in compile phase " + specifiedCompilePhase + ". Local AST transformations must run in " + CompilePhase.SEMANTIC_ANALYSIS + " or later!",
+                                source));
+            }
+        }
+    }
+
+    private void verifyClass(AnnotationNode annotation, Class klass) {
+        if (!ASTTransformation.class.isAssignableFrom(klass)) {
+            source.getErrorCollector().addError(new SimpleMessage("Not an ASTTransformation: " +
                     klass.getName() + " declared by " + annotation.getClassNode().getName(), source));
         }
+    }
+
+    private void addTransform(AnnotationNode annotation, Class klass)  {
+        classNode.addTransform(klass, annotation);
     }
 
     private static Annotation getTransformClassAnnotation(ClassNode annotatedType) {
