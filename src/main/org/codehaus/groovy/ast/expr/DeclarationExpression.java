@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2011 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ import org.codehaus.groovy.syntax.Token;
  * an expression like: <code>def (x, y) = [1, 2]</code>.
  * <p/>
  * You can access the left hand side of a declaration using the
- * "<code>Expression getLeftExpression()<code>" method. In which case you might then
+ * "<code>Expression getLeftExpression()</code>" method. In which case you might then
  * use <code>instanceof</code> and casting to perform operations specific to a
  * single local variable (<code>VariableExpression</code>) or for the multiple
  * assignment case (<code>TupleExpression</code>).

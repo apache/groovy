@@ -5,7 +5,9 @@ import org.objectweb.asm.util.TraceClassVisitor
 import org.objectweb.asm.tree.*
 import org.objectweb.asm.*
 import org.codehaus.groovy.control.Phases
-import java.util.List
+import org.objectweb.asm.commons.EmptyVisitor
+import org.codehaus.groovy.control.CompilerConfiguration
+import java.security.CodeSource
 
 /**
  * Abstract test case to extend to check the instructions we generate in the bytecode of groovy programs.
@@ -14,6 +16,42 @@ import java.util.List
  */
 abstract class AbstractBytecodeTestCase extends GroovyTestCase {
 
+    Map extractionOptions
+    InstructionSequence sequence
+    Class clazz
+
+    @Override
+    protected void setUp() {
+        super.setUp()
+        extractionOptions = [method: 'run']
+    }
+
+
+    protected void assertScript(final String script) throws Exception {
+        GroovyShell shell = new GroovyShell();
+        def unit
+        shell.loader = new GroovyClassLoader() {
+            @Override
+            protected CompilationUnit createCompilationUnit(final CompilerConfiguration config, final CodeSource source) {
+                unit = super.createCompilationUnit(config, source)
+
+                unit
+            }
+        }
+        try {
+            shell.evaluate(script, getTestClassName());
+        } finally {
+            if (unit) {
+                try {
+                    sequence = extractSequence(unit.classes[0].bytes, extractionOptions)
+                    if (extractionOptions.print) println sequence
+                } catch (e) {
+                    // probably an error in the script
+                }
+            }
+        }
+    }
+
     /**
      * Compiles a script into bytecode and returns the decompiled string equivalent using ASM.
      *
@@ -21,6 +59,8 @@ abstract class AbstractBytecodeTestCase extends GroovyTestCase {
      * @return the decompiled <code>InstructionSequence</code>
      */
     InstructionSequence compile(Map options=[method:"run"], String scriptText) {
+        sequence = null
+        clazz = null
         def cu = new CompilationUnit()
         def su = cu.addSource("script", scriptText)
         cu.compile(Phases.CONVERSION)
@@ -28,20 +68,50 @@ abstract class AbstractBytecodeTestCase extends GroovyTestCase {
             options.conversionAction(su)
         }
         cu.compile(Phases.CLASS_GENERATION)
-        
-        
+
+        cu.classes.each {
+            if (it.name==~'.*script') {
+                sequence = extractSequence(it.bytes, options)
+            }
+        }
+        if (sequence==null && cu.classes.size()>0) {
+            sequence = extractSequence(cu.classes[0].bytes, options)
+        }
+        cu.classes.each {
+            try {
+                def dep = cu.classLoader.defineClass(it.name, it.bytes)
+                if (Script.class.isAssignableFrom(dep)) {
+                    clazz = dep
+                }
+            } catch (Throwable e) {
+                System.err.println(sequence)
+                e.printStackTrace()
+            }
+        }
+        return sequence
+    }
+
+    InstructionSequence extractSequence(byte[] bytes, Map options=[method:"run"]) {
+        InstructionSequence sequence
         def output = new StringWriter()
         def tcf = new TraceClassVisitor(new ClassVisitor(Opcodes.ASM4) {
             MethodVisitor visitMethod(int access, String name, String desc, String signature, String... exceptions) {
                 if (options.method == name) {
-                    super.visitMethod(access, name, desc, signature, exceptions)
+                    text << '--BEGIN--'
+                    def res = super.visitMethod(access, name, desc, signature, exceptions)
+                    text << '--END--'
+                    res
                 } else {
                     null
                 }
             }
+
             FieldVisitor visitField(int access, String name, String desc, String signature, Object value) {
                 if (options.field == name) {
-                    super.visitField(access, name, desc, signature, value)
+                    text << '--BEGIN--'
+                    def res = super.visitField(access, name, desc, signature, value)
+                    text << '--END--'
+                    res
                 } else {
                     null
                 }
@@ -52,8 +122,8 @@ abstract class AbstractBytecodeTestCase extends GroovyTestCase {
         cr.accept(tcf, 0)
 
         def code = output.toString()
-
-        return new InstructionSequence(instructions: code.split('\n')*.trim())
+        sequence = new InstructionSequence(instructions: code.split('\n')*.trim())
+        return sequence
     }
 }
 
@@ -117,5 +187,13 @@ class InstructionSequence {
 
     String toString() {
         instructions.join('\n')
+    }
+
+    String toSequence() {
+        def sb = new StringBuilder()
+        instructions*.trim().each {
+            sb << "'${it}'," << '\n'
+        }
+        sb.toString()
     }
 }

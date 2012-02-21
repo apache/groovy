@@ -82,10 +82,15 @@ public class DelegatingController extends WriterController {
     }
     
     @Override
-    public BinaryExpressionHelper getBinaryExpHelper() {
-        return delegationController.getBinaryExpHelper();
+    public BinaryExpressionHelper getBinaryExpressionHelper() {
+        return delegationController.getBinaryExpressionHelper();
     }
-    
+
+    @Override
+    public UnaryExpressionHelper getUnaryExpressionHelper() {
+        return delegationController.getUnaryExpressionHelper();
+    }
+
     @Override
     public String getClassName() {
         return delegationController.getClassName();

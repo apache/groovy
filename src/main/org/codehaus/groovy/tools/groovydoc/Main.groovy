@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2011 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@ class Main {
     private static String docTitle
     private static String header
     private static String footer
+    private static String charset
     private static Boolean author
     private static Boolean noScripts
     private static Boolean noMainForScripts
@@ -71,6 +72,7 @@ class Main {
         cli.protected(messages['cli.option.protected.description'])
         cli.package(messages['cli.option.package.description'])
         cli.private(messages['cli.option.private.description'])
+        cli.charset(args:1, argName: 'charset', messages['cli.option.charset.description'])
         cli.windowtitle(args:1, argName: 'text', messages['cli.option.windowtitle.description'])
         cli.doctitle(args:1, argName: 'html', messages['cli.option.doctitle.description'])
         cli.header(args:1, argName: 'html', messages['cli.option.header.description'])
@@ -138,6 +140,7 @@ class Main {
         docTitle = options.doctitle ?: ''
         header = options.header ?: ''
         footer = options.footer ?: ''
+        charset = options.charset ?: ''
 
         if (options.Ds) {
             def values = options.Ds
@@ -173,6 +176,7 @@ class Main {
         properties.put("docTitle", docTitle)
         properties.put("footer", footer)
         properties.put("header", header)
+        properties.put("charset", charset)
         properties.put("privateScope", privateScope.toString())
         properties.put("protectedScope", protectedScope.toString())
         properties.put("publicScope", publicScope.toString())

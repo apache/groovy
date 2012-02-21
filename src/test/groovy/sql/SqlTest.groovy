@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,9 @@
 package groovy.sql
 
 import java.sql.Connection
+import javax.sql.DataSource
+
+import static groovy.sql.SqlTestConstants.*
 
 /**
  * This is more of a sample program than a unit test and is here as an easy
@@ -96,13 +99,12 @@ class SqlTest extends GroovyTestCase {
     }
 
     void testExecuteInsert() {
-        def foo = 'food-drink'
-        def bar = 'guiness'
+        def value = 'log entry'
         if (sql.dataSource.connection.metaData.supportsGetGeneratedKeys()) {
-            def keys = sql.executeInsert('insert into FOOD (type,name) values (?,?)', [foo, bar])
+            def keys = sql.executeInsert('insert into LOG (value) values (?)', [value])
             assert 1 == keys.size()
         } else {
-            def count = sql.executeUpdate('insert into FOOD (type,name) values (?,?)', [foo, bar])
+            def count = sql.executeUpdate('insert into LOG (value) values (?)', [value])
             assert 1 == count
         }
     }
@@ -131,7 +133,7 @@ class SqlTest extends GroovyTestCase {
             if (res)
                 res.close()
         }
-        res = sub.rows('select * from PERSON') { metaData ->
+        sub.rows('select * from PERSON') { metaData ->
             assert sub.connection && !sub.connection.isClosed()
             data = (1..metaData.columnCount).collect {
                 metaData.getColumnName(it).toLowerCase()
@@ -141,14 +143,16 @@ class SqlTest extends GroovyTestCase {
     }
 
     private createSql() {
-        def ds = new org.hsqldb.jdbc.jdbcDataSource()
-        ds.database = "jdbc:hsqldb:mem:foo" + getMethodName()
-        ds.user = 'sa'
-        ds.password = ''
+        DataSource ds = DB_DATASOURCE.newInstance(
+                (DB_DS_KEY): DB_URL_PREFIX + getMethodName(),
+                user: DB_USER,
+                password: DB_PASSWORD)
+        sql = new Sql(ds.connection)
         def sql = new Sql(ds)
 
-        sql.execute("create table PERSON ( firstname varchar, lastname varchar )")
-        sql.execute("create table FOOD ( type varchar, name varchar)")
+        sql.execute("create table PERSON ( firstname VARCHAR(10), lastname VARCHAR(10) )")
+        sql.execute("create table FOOD ( type VARCHAR(10), name VARCHAR(10))")
+        sql.execute("create table LOG ( value VARCHAR(20), id INTEGER IDENTITY)")
 
         // now let's populate the datasets
         def people = sql.dataSet("PERSON")

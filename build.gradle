@@ -49,19 +49,21 @@ dependencies {
     compile "org.apache.ant:ant:1.8.2"
     compile "javax.servlet:servlet-api:2.4"
     compile "javax.servlet:jsp-api:2.0"
-    compile("com.thoughtworks.xstream:xstream:1.4.1") {
+    compile("com.thoughtworks.xstream:xstream:1.4.2") {
         exclude(group: 'xpp3', module: 'xpp3_min')
         exclude(group: 'junit', module: 'junit')
         exclude(group: 'jmock', module: 'jmock')
     }
-    compile("jline:jline:0.9.94") {
+    compile("jline:jline:1.0") {
         exclude(group: 'junit', module: 'junit')
     }
     compile "org.fusesource.jansi:jansi:1.7"
     compile("org.apache.ivy:ivy:2.2.0") {
         transitive = false
     }
-    runtime "org.apache.ant:ant-junit:1.8.2"
+    runtime("org.apache.ant:ant-junit:1.8.2") {
+        exclude(group: 'junit', module: 'junit')
+    }
     runtime "org.apache.ant:ant-launcher:1.8.2"
     runtime "org.apache.ant:ant-antlr:1.8.2"
     runtime("commons-logging:commons-logging:1.1.1") {
@@ -73,6 +75,8 @@ dependencies {
     testCompile "jmock:jmock-cglib:1.2.0"
     testCompile "xmlunit:xmlunit:1.3"
     testCompile "hsqldb:hsqldb:1.8.0.10"
+//    testCompile group:"org.hsqldb", name:"hsqldb", version:"2.2.8", classifier:"jdk5"
+//    testCompile "com.h2database:h2:1.3.164"
     testCompile "ch.qos.logback:logback-classic:0.9.21"
     testCompile "log4j:log4j:1.2.16"
     testCompile "org.slf4j:jcl-over-slf4j:1.6.0"
@@ -286,5 +290,5 @@ apply from: "$projectDir/gradle/upload.gradle"
 task wrapper(type: Wrapper) {
 //    gradleVersion = '1.0-milestone-5-20110929000016+0200'
 //    distributionUrl = "http://repo.gradle.org/gradle/distributions-snapshots/gradle-${gradleVersion}-bin.zip"
-    gradleVersion = '1.0-milestone-6'
+    gradleVersion = '1.0-milestone-8'
 }

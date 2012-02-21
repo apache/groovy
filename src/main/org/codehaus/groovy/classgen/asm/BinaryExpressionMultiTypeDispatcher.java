@@ -78,18 +78,22 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
         @Override protected MethodCaller getArraySetCaller() { return shortArraySet; }    
     }
     
-    private BinaryExpressionWriter[] binExpWriter = {
-            /* 0: dummy  */ new BinaryObjectExpressionHelper(getController()),
-            /* 1: int    */ new BinaryIntExpressionHelper(getController()),
-            /* 2: long   */ new BinaryLongExpressionHelper(getController()),
-            /* 3: double */ new BinaryDoubleExpressionHelper(getController()),
-            /* 4: char   */ new BinaryCharExpressionHelper(getController()),
-            /* 5: byte   */ new BinaryByteExpressionHelper(getController()),
-            /* 6: short  */ new BinaryShortExpressionHelper(getController()),
-            /* 7: float  */ new BinaryFloatExpressionHelper(getController()),
-            /* 8: bool   */ new BinaryBooleanExpressionHelper(getController()),
-    };
-    
+    protected BinaryExpressionWriter[] binExpWriter = initializeDelegateHelpers();
+
+    protected BinaryExpressionWriter[] initializeDelegateHelpers() {
+        return new BinaryExpressionWriter[]{
+                /* 0: dummy  */ new BinaryObjectExpressionHelper(getController()),
+                /* 1: int    */ new BinaryIntExpressionHelper(getController()),
+                /* 2: long   */ new BinaryLongExpressionHelper(getController()),
+                /* 3: double */ new BinaryDoubleExpressionHelper(getController()),
+                /* 4: char   */ new BinaryCharExpressionHelper(getController()),
+                /* 5: byte   */ new BinaryByteExpressionHelper(getController()),
+                /* 6: short  */ new BinaryShortExpressionHelper(getController()),
+                /* 7: float  */ new BinaryFloatExpressionHelper(getController()),
+                /* 8: bool   */ new BinaryBooleanExpressionHelper(getController()),
+        };
+    }
+
     public static Map<ClassNode,Integer> typeMap = new HashMap<ClassNode,Integer>(14);
     static {
         typeMap.put(int_TYPE,       1); typeMap.put(long_TYPE,          2);
@@ -111,7 +115,7 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
         return 0;
     }
     
-    private int getOperandType(ClassNode type) {
+    protected int getOperandType(ClassNode type) {
         Integer ret = typeMap.get(type);
         if (ret==null) return 0;
         return ret;
@@ -141,11 +145,13 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
     @Override
     protected void evaluateCompareExpression(final MethodCaller compareMethod, BinaryExpression binExp) {
         ClassNode current =  getController().getClassNode();
-
+        TypeChooser typeChooser = getController().getTypeChooser();
+        int operation = binExp.getOperation().getType();
+        
         Expression leftExp = binExp.getLeftExpression();
-        ClassNode leftType = getController().getTypeChooser().resolveType(leftExp, current);
+        ClassNode leftType = typeChooser.resolveType(leftExp, current);
         Expression rightExp = binExp.getRightExpression();
-        ClassNode rightType = getController().getTypeChooser().resolveType(rightExp, current);
+        ClassNode rightType = typeChooser.resolveType(rightExp, current);
         
         if (!doPrimtiveCompare(leftType, rightType, binExp)) {
             super.evaluateCompareExpression(compareMethod, binExp);
@@ -240,6 +246,18 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
             case PLUS_EQUAL: return PLUS;
             case MINUS_EQUAL: return MINUS;
             case MULTIPLY_EQUAL: return MULTIPLY;
+            case LEFT_SHIFT_EQUAL: return LEFT_SHIFT;
+            case RIGHT_SHIFT_EQUAL: return RIGHT_SHIFT;
+            case RIGHT_SHIFT_UNSIGNED_EQUAL: return RIGHT_SHIFT_UNSIGNED;
+            case LOGICAL_OR_EQUAL: return LOGICAL_OR;
+            case LOGICAL_AND_EQUAL: return LOGICAL_AND;
+            case MOD_EQUAL: return MOD;
+            case DIVIDE_EQUAL: return DIVIDE;
+            case INTDIV_EQUAL: return INTDIV;
+            case POWER_EQUAL: return POWER;
+            case BITWISE_OR_EQUAL: return BITWISE_OR;
+            case BITWISE_AND_EQUAL: return BITWISE_AND;
+            case BITWISE_XOR_EQUAL: return BITWISE_XOR;
             default: return op;
         }
     }

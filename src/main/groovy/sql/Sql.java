@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2011 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,7 +58,7 @@ import org.codehaus.groovy.runtime.SqlGroovyMethods;
  * In simple cases, you can just provide
  * the necessary details to set up a connection (e.g. for hsqldb):
  * <pre>
- * def db = [url:'jdbc:hsqldb:mem:testDB', user:'sa', password:'', driver:'org.hsqldb.jdbcDriver']
+ * def db = [url:'jdbc:hsqldb:mem:testDB', user:'sa', password:'', driver:'org.hsqldb.jdbc.JDBCDriver']
  * def sql = Sql.newInstance(db.url, db.user, db.password, db.driver)
  * </pre>
  * or if you have an existing connection (perhaps from a connection pool) or a
@@ -350,7 +350,7 @@ public class Sql {
      *     url:'jdbc:hsqldb:mem:testDB',
      *     user:'sa',
      *     password:'',
-     *     driver:'org.hsqldb.jdbcDriver',
+     *     driver:'org.hsqldb.jdbc.JDBCDriver',
      *     cacheStatements: true,
      *     resultSetConcurrency: CONCUR_READ_ONLY
      * )
@@ -362,34 +362,47 @@ public class Sql {
      * @throws ClassNotFoundException if the class cannot be found or loaded
      */
     public static Sql newInstance(Map<String, Object> args) throws SQLException, ClassNotFoundException {
+        if (!args.containsKey("url"))
+            throw new IllegalArgumentException("Argument 'url' is required");
+
+        if (args.get("url") == null)
+            throw new IllegalArgumentException("Argument 'url' must not be null");
+
         if (args.containsKey("driverClassName") && args.containsKey("driver"))
             throw new IllegalArgumentException("Only one of 'driverClassName' and 'driver' should be provided");
-        Object driverClassName = args.remove("driverClassName");
-        if (driverClassName == null) driverClassName = args.remove("driver");
+
+        // Make a copy so destructive operations will not affect the caller
+        Map<String, Object> sqlArgs = new HashMap<String, Object>(args);
+
+        Object driverClassName = sqlArgs.remove("driverClassName");
+        if (driverClassName == null) driverClassName = sqlArgs.remove("driver");
         if (driverClassName != null) loadDriver(driverClassName.toString());
 
-        Object url = args.remove("url");
-        if (url == null) throw new IllegalArgumentException("Argument 'url' is required");
-
-        Properties props = (Properties) args.remove("properties");
-        if (props != null && args.containsKey("user"))
+        Properties props = (Properties) sqlArgs.remove("properties");
+        if (props != null && sqlArgs.containsKey("user"))
             throw new IllegalArgumentException("Only one of 'properties' and 'user' should be supplied");
-        if (props != null && args.containsKey("password"))
+        if (props != null && sqlArgs.containsKey("password"))
             throw new IllegalArgumentException("Only one of 'properties' and 'password' should be supplied");
-        if (args.containsKey("user") ^ args.containsKey("password"))
+        if (sqlArgs.containsKey("user") ^ sqlArgs.containsKey("password"))
             throw new IllegalArgumentException("Found one but not both of 'user' and 'password'");
 
+        Object url = sqlArgs.remove("url");
         Connection connection;
-        if (props != null) connection = DriverManager.getConnection(url.toString(), props);
-        else if (args.containsKey("user")) {
-            Object user = args.remove("user");
-            Object password = args.remove("password");
+        if (props != null) {
+            System.err.println("url = " + url);
+            System.err.println("props = " + props);
+            connection = DriverManager.getConnection(url.toString(), new Properties(props));
+        } else if (sqlArgs.containsKey("user")) {
+            Object user = sqlArgs.remove("user");
+            Object password = sqlArgs.remove("password");
             connection = DriverManager.getConnection(url.toString(),
                     (user == null ? null : user.toString()),
                     (password == null ? null : password.toString()));
-        } else connection = DriverManager.getConnection(url.toString());
+        } else {
+            connection = DriverManager.getConnection(url.toString());
+        }
 
-        Sql result = (Sql) InvokerHelper.invokeConstructorOf(Sql.class, args);
+        Sql result = (Sql) InvokerHelper.invokeConstructorOf(Sql.class, sqlArgs);
         result.setConnection(connection);
         return result;
     }
@@ -1711,19 +1724,19 @@ public class Sql {
      * <p/>
      * Example usages:
      * <pre>
-     * sql.execute "drop table if exists PERSON"
+     * sql.execute "DROP TABLE IF EXISTS person"
      *
      * sql.execute """
-     *     create table PERSON (
-     *         id integer not null,
-     *         firstname varchar(100),
-     *         lastname varchar(100),
-     *         location_id integer
+     *     CREATE TABLE person (
+     *         id INTEGER NOT NULL,
+     *         firstname VARCHAR(100),
+     *         lastname VARCHAR(100),
+     *         location_id INTEGER
      *     )
      * """
      *
      * sql.execute """
-     *     insert into PERSON (id, firstname, lastname, location_id) values (4, 'Paul', 'King', 40)
+     *     INSERT INTO person (id, firstname, lastname, location_id) VALUES (4, 'Paul', 'King', 40)
      * """
      * assert sql.updateCount == 1
      * </pre>

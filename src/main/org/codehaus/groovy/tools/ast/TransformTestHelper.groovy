@@ -83,7 +83,7 @@ class TransformTestHelper {
 *
 * @author Hamlet D'Arcy
 */
-private class TestHarnessClassLoader extends GroovyClassLoader {
+@groovy.transform.PackageScope class TestHarnessClassLoader extends GroovyClassLoader {
 
     private ASTTransformation transform
     private CompilePhase phase
@@ -106,7 +106,7 @@ private class TestHarnessClassLoader extends GroovyClassLoader {
 *
 * @author Hamlet D'Arcy
 */
-private class TestHarnessOperation extends PrimaryClassNodeOperation {
+@groovy.transform.PackageScope class TestHarnessOperation extends PrimaryClassNodeOperation {
 
     private ASTTransformation transform
 

@@ -324,7 +324,8 @@ public class GenericsType extends ASTNode {
                                                     gt = classNodePlaceholders.get(gt.getName());
                                                 }
                                             }
-                                            match = gt.getType().isDerivedFrom(classNodeType.getType());
+                                            match = (gt.getType().isDerivedFrom(classNodeType.getType())
+                                                || gt.getType().implementsInterface(classNodeType.getType()));
                                         }
                                         if (match && redirectBoundType.upperBounds!=null) {
                                             for (ClassNode upperBound : redirectBoundType.upperBounds) {
@@ -336,7 +337,9 @@ public class GenericsType extends ASTNode {
                                                         gt = classNodePlaceholders.get(gt.getName());
                                                     }
                                                 }
-                                                match = match && classNodeType.getType().isDerivedFrom(gt.getType());
+                                                match = match &&
+                                                        (classNodeType.getType().isDerivedFrom(gt.getType())
+                                                         || classNodeType.getType().implementsInterface(gt.getType()));
                                             }
                                         }
                                         return match;

@@ -15,14 +15,19 @@
  */
 package org.codehaus.groovy.transform;
 
+import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.*;
+import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.control.*;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor;
+import org.codehaus.groovy.transform.stc.TypeCheckerPluginFactory;
 
+import java.lang.reflect.Modifier;
 import java.util.Collections;
+import java.util.Map;
 
 /**
  * Handles the implementation of the {@link groovy.transform.TypeChecked} transformation.
@@ -38,16 +43,34 @@ public class StaticTypesTransformation implements ASTTransformation {
 
 //    @Override
     public void visit(ASTNode[] nodes, SourceUnit source) {
-//        AnnotationNode annotationInformation = (AnnotationNode) nodes[0];
+        AnnotationNode annotationInformation = (AnnotationNode) nodes[0];
+        Map<String,Expression> members = annotationInformation.getMembers();
+        TypeCheckerPluginFactory pluginFactory = null;
+        if (members!=null) {
+            Expression exp = members.get("pluginFactory");
+            if (exp instanceof ClassExpression) {
+                ClassNode type = exp.getType();
+                Class clazz = type.getTypeClass();
+                if (TypeCheckerPluginFactory.class.isAssignableFrom(TypeCheckerPluginFactory.class)) {
+                    try {
+                        pluginFactory = (TypeCheckerPluginFactory) clazz.newInstance();
+                    } catch (InstantiationException e) {
+                        throw new GroovyBugError(e);
+                    } catch (IllegalAccessException e) {
+                        throw new GroovyBugError(e);
+                    }
+                }
+            }
+        }
         AnnotatedNode node = (AnnotatedNode) nodes[1];
         StaticTypeCheckingVisitor visitor = null;
         if (node instanceof ClassNode) {
             ClassNode classNode = (ClassNode) node;
-            visitor = newVisitor(source, classNode);
+            visitor = newVisitor(source, classNode, pluginFactory);
             visitor.visitClass(classNode);
         } else if (node instanceof MethodNode) {
             MethodNode methodNode = (MethodNode)node;
-            visitor = newVisitor(source, methodNode.getDeclaringClass());
+            visitor = newVisitor(source, methodNode.getDeclaringClass(), pluginFactory);
             visitor.setMethodsToBeVisited(Collections.singleton(methodNode));
             visitor.visitMethod(methodNode);
         } else {
@@ -65,8 +88,8 @@ public class StaticTypesTransformation implements ASTTransformation {
      * @param node the current classnode
      * @return a static type checking visitor
      */
-    protected StaticTypeCheckingVisitor newVisitor(SourceUnit unit, ClassNode node) {
-        return new StaticTypeCheckingVisitor(unit, node);
+    protected StaticTypeCheckingVisitor newVisitor(SourceUnit unit, ClassNode node, TypeCheckerPluginFactory pluginFactory) {
+        return new StaticTypeCheckingVisitor(unit, node, pluginFactory);
     }
 
 }

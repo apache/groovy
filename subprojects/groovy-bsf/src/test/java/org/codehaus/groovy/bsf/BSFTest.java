@@ -40,6 +40,11 @@ public class BSFTest extends TestCase {
         manager = new BSFManager();
     }
 
+    public void testScriptDefPrefixRemoval() throws Exception {
+        manager.exec("groovy","scriptdef_foo", 0, 0, "assert bsf != null && this.class.name.equals('foo')");
+        manager.exec("groovy","scriptdef_", 0, 0, "assert bsf != null && this.class.name.equals('_')");
+    }
+
     public void testInvalidName() throws Exception {
         manager.exec("groovy", null, 0, 0, "assert bsf != null");
         manager.exec("groovy", "", 0, 0, "assert bsf != null");
@@ -172,8 +177,8 @@ public class BSFTest extends TestCase {
 
     // TODO don't rely on scripts outside this subproject?
     public void testExecFile() throws Exception {
-        execScript("../../src/test/groovy/script/MapFromList.groovy");
-        execScript("../../src/test/groovy/script/AtomTestScript.groovy");
+        execScript("src/test/groovy/script/MapFromList.groovy");
+        execScript("src/test/groovy/script/AtomTestScript.groovy");
     }
 
     protected void execScript(String fileName) throws Exception {

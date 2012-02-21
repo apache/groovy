@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2009 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,8 +39,11 @@ import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.*;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static org.codehaus.groovy.tools.groovydoc.SimpleGroovyClassDoc.LINK_REGEX;
+import static org.codehaus.groovy.tools.groovydoc.SimpleGroovyClassDoc.TAG_REGEX;
+import static org.codehaus.groovy.tools.groovydoc.SimpleGroovyClassDoc.CODE_REGEX;
 
 /*
  *  todo: order methods alphabetically (implement compareTo enough?)
@@ -229,11 +232,15 @@ public class GroovyRootDocBuilder {
     }
 
     /* package private */ void processPackageInfo(String src, String filename, SimpleGroovyPackageDoc packageDoc) {
-        String description = calcThenSetPackageDescription(src, filename, packageDoc);
-        calcThenSetSummary(description, packageDoc);
+        String relPath = packageDoc.getRelativeRootPath();
+        String description = calcThenSetPackageDescription(src, filename, relPath);
+        packageDoc.setDescription(description);
+        // get same description but with paths relative to root
+        String altDescription = calcThenSetPackageDescription(src, filename, "");
+        calcThenSetSummary(altDescription, packageDoc);
     }
 
-    private String calcThenSetPackageDescription(String src, String filename, SimpleGroovyPackageDoc packageDoc) {
+    private String calcThenSetPackageDescription(String src, String filename, String relPath) {
         String description;
         if (filename.endsWith(".html")) {
             description = scrubOffExcessiveTags(src);
@@ -242,49 +249,30 @@ public class GroovyRootDocBuilder {
         } else {
             description = trimPackageAndComments(src);
         }
-        description = replaceTags(description, packageDoc);
-        packageDoc.setDescription(description);
+        description = replaceTags(description, relPath);
         return description;
     }
 
     // TODO remove dup with SimpleGroovyClassDoc
-    private String replaceTags(String orig, SimpleGroovyPackageDoc packageDoc) {
+    private String replaceTags(String orig, String relPath) {
         String result = orig.replaceAll("(?m)^\\s*\\*", ""); // todo precompile regex
 
         // {@link processing hack}
-        result = replaceAllTags(result, "", "", SimpleGroovyClassDoc.LINK_REGEX, packageDoc);
+        result = replaceAllTags(result, "", "", LINK_REGEX, relPath);
 
         // {@code processing hack}
-        result = replaceAllTags(result, "<TT>", "</TT>", SimpleGroovyClassDoc.CODE_REGEX, packageDoc);
+        result = replaceAllTags(result, "<TT>", "</TT>", CODE_REGEX, relPath);
 
         // hack to reformat other groovydoc block tags (@see, @return, @param, @throws, @author, @since) into html
-        result = replaceAllTags(result + "@endMarker", "<DL><DT><B>$1:</B></DT><DD>", "</DD></DL>", SimpleGroovyClassDoc.TAG_REGEX, packageDoc);
+        result = replaceAllTags(result + "@endMarker", "<DL><DT><B>$1:</B></DT><DD>", "</DD></DL>", TAG_REGEX, relPath);
         // remove @endMarker
         result = result.substring(0, result.length() - 10);
 
         return SimpleGroovyClassDoc.decodeSpecialSymbols(result);
     }
 
-    // TODO remove dup with SimpleGroovyClassDoc
-    private String replaceAllTags(String self, String s1, String s2, Pattern regex, SimpleGroovyPackageDoc packageDoc) {
-        Matcher matcher = regex.matcher(self);
-        if (matcher.find()) {
-            matcher.reset();
-            StringBuffer sb = new StringBuffer();
-            while (matcher.find()) {
-                String tagname = matcher.group(1);
-                if (tagname.equals("see") || tagname.equals("link")) {
-                    matcher.appendReplacement(sb, s1 + SimpleGroovyClassDoc.getDocUrl(
-                            SimpleGroovyClassDoc.encodeSpecialSymbols(matcher.group(2)), false, links, packageDoc.getRelativeRootPath(), rootDoc, null) + s2);
-                } else if (!tagname.equals("interface")) {
-                    matcher.appendReplacement(sb, s1 + SimpleGroovyClassDoc.encodeSpecialSymbols(matcher.group(2)) + s2);
-                }
-            }
-            matcher.appendTail(sb);
-            return sb.toString();
-        } else {
-            return self;
-        }
+    private String replaceAllTags(String self, String s1, String s2, Pattern regex, String relPath) {
+        return SimpleGroovyClassDoc.replaceAllTags(self, s1, s2, regex, links, relPath, rootDoc, null);
     }
 
     private void calcThenSetSummary(String src, SimpleGroovyPackageDoc packageDoc) {

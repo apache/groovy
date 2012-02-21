@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -83,7 +83,7 @@ test=foo + 1
         def config = new ConfigSlurper("production").parse('''
 dataSource {
     pooling = false
-    driverClassName = "org.hsqldb.jdbcDriver"
+    driverClassName = "org.hsqldb.jdbc.JDBCDriver"
     username = "sa"
     password = ""
 }
@@ -97,7 +97,7 @@ environments {
     test {
         dataSource {
             dbCreate = "update"
-            url = "jdbc:hsqldb:mem:testDb"
+            url = "jdbc:hsqldb:mem:testDB"
         }
     }
     production {
@@ -110,7 +110,7 @@ environments {
 }''')
 
         assertEquals false, config.dataSource.pooling
-        assertEquals "org.hsqldb.jdbcDriver", config.dataSource.driverClassName
+        assertEquals "org.hsqldb.jdbc.JDBCDriver", config.dataSource.driverClassName
         assertEquals "sa", config.dataSource.username
         assertEquals "secret", config.dataSource.password
         assertEquals "update", config.dataSource.dbCreate

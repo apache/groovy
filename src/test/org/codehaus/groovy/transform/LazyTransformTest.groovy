@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 package org.codehaus.groovy.transform
 
 import java.lang.ref.SoftReference
+import java.lang.reflect.Modifier
 
 /**
  * @author Alex Tkachman
@@ -123,6 +124,8 @@ class LazyTransformTest extends GroovyShellTestCase {
         assertNull res.@'$val2'
         assert res.val1 == 1
         assert res.val2 == 2
+        assert res.class.getDeclaredField('$val1').type == Integer
+        assert Modifier.isVolatile(res.class.getDeclaredField('$val2').modifiers)
     }
 
     void testSoft() {

@@ -539,14 +539,12 @@ public class AstNodeToScriptAdapterTest extends GroovyTestCase {
         String script = '@groovy.transform.Immutable class Event { }'
 
         String result = compileToScript(script, CompilePhase.CANONICALIZATION)
-        assert result.contains('private boolean $print$names')
         assert result.contains('private int $hash$code')
         assert result.contains('public Event(java.util.HashMap args)')
 
         // assert toString()... quotations marks were a hassle
         assert result.contains('public java.lang.String toString()')
-        assert result.contains("_result.append('Event')")
-        assert result.contains("_result.append('(')")
+        assert result.contains("_result.append('Event(')")
         assert result.contains("_result.append(')')")
         assert result.contains('return _result.toString()')
     }
@@ -555,8 +553,8 @@ public class AstNodeToScriptAdapterTest extends GroovyTestCase {
         String script = '@groovy.transform.ToString class Event { Date when }'
 
         String result = compileToScript(script, CompilePhase.CANONICALIZATION)
-        // we had problems with the ast transform passing a VariableExpression as StateMethodCallExpression arguments
-        assert result.contains('_result.append(org.codehaus.groovy.runtime.InvokerHelper.toStringthis.getWhen())')
+        // we had problems with the ast transform passing a VariableExpression as StaticMethodCallExpression arguments
+        assert result.contains('_result.append(org.codehaus.groovy.runtime.InvokerHelper.toString(this.getWhen()))')
     }
 
     public void testAtImmutableClassWithProperties() {

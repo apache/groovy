@@ -143,7 +143,7 @@ class Groovysh extends Shell {
                 log.debug("Evaluating buffer...")
 
                 if (io.verbose) {
-                    displayBuffer(buffer)
+                    displayBuffer(current)
                 }
 
                 // Evaluate the current buffer w/imports and dummy statement

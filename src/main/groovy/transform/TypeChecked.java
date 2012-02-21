@@ -18,6 +18,7 @@ package groovy.transform;
 import java.lang.annotation.*;
 
 import org.codehaus.groovy.transform.GroovyASTTransformationClass;
+import org.codehaus.groovy.transform.stc.TypeCheckerPluginFactory;
 
 /**
  * This will let the Groovy compiler use compile time checks in the style of Java.
@@ -30,4 +31,5 @@ import org.codehaus.groovy.transform.GroovyASTTransformationClass;
 })
 @GroovyASTTransformationClass("org.codehaus.groovy.transform.StaticTypesTransformation")
 public @interface TypeChecked {
+    Class<? extends TypeCheckerPluginFactory> pluginFactory() default TypeCheckerPluginFactory.class;
 }

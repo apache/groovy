@@ -1,8 +1,8 @@
 package org.codehaus.groovy.antlr.treewalker;
 
 import junit.framework.TestCase;
-import org.custommonkey.xmlunit.Diff;
-import org.custommonkey.xmlunit.XMLUnit;
+
+import static groovy.xml.XmlAssert.assertXmlEquals;
 
 /**
  * Testcases for the antlr AST visitor that prints groovy source code nodes as HTML.
@@ -11,10 +11,6 @@ public class NodeAsHTMLPrinterTest extends TestCase {
 
     private static final String HEADER = "<html><head></head><body><pre>";
     private static final String FOOTER = "</pre></body></html>";
-
-    protected void setUp() throws Exception {
-        XMLUnit.setIgnoreWhitespace(true);
-    }
 
     public void testAbstract() throws Exception {
         assertXmlEquals(
@@ -67,11 +63,6 @@ public class NodeAsHTMLPrinterTest extends TestCase {
                         "<code title='SLIST'><font color='#000000'></font></code>" +
                         FOOTER,
                 pretty("if (foo==~\"bar\"){}"));
-    }
-
-    private void assertXmlEquals(String expected, String actual) throws Exception {
-        Diff diff = new Diff(expected, actual);
-        assertTrue(diff.toString(), diff.similar());
     }
 
     private String pretty(String input) throws Exception {

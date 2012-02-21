@@ -500,6 +500,13 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         ''', '#m(java.lang.String)'
     }
 
+    void testShouldNotFailWithAmbiguousMethodSelection() {
+        assertScript '''
+            StringBuffer sb = new StringBuffer()
+            sb.append('foo')
+        '''
+    }
+
     static class MyMethodCallTestClass {
 
         static int mul(int... args) { args.toList().inject(1) { x,y -> x*y } }

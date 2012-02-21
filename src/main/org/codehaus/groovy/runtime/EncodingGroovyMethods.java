@@ -187,5 +187,80 @@ public class EncodingGroovyMethods {
         }
     }
 
+    /**
+     * Produces a Writable that writes the hex encoding of the Byte[]. Calling
+     * toString() on this Writable returns the hex encoding as a String. The hex
+     * encoding includes two characters for each byte and all letters are lower case.
+     *
+     * @param data byte array to be encoded
+     * @return object which will write the hex encoding of the byte array
+     * @see Integer#toHexString(int)
+     */
+    public static Writable encodeHex(final Byte[] data) {
+        return encodeHex(DefaultTypeTransformation.convertToByteArray(data));
+    }
 
+    /**
+     * Produces a Writable that writes the hex encoding of the byte[]. Calling
+     * toString() on this Writable returns the hex encoding as a String. The hex
+     * encoding includes two characters for each byte and all letters are lower case.
+     *
+     * @param data byte array to be encoded
+     * @return object which will write the hex encoding of the byte array
+     * @see Integer#toHexString(int)
+     */
+    public static Writable encodeHex(final byte[] data) {
+        return new Writable() {
+            public Writer writeTo(Writer out) throws IOException {
+                for (int i = 0; i < data.length; i++) {
+                    // convert byte into unsigned hex string
+                    String hexString = Integer.toHexString(data[i] & 0xFF);
+
+                    // add leading zero if the length of the string is one
+                    if (hexString.length() < 2) {
+                        out.write("0");
+                    }
+
+                    // write hex string to writer
+                    out.write(hexString);
+                }
+                return out;
+            }
+
+            public String toString() {
+                StringWriter buffer = new StringWriter();
+
+                try {
+                    writeTo(buffer);
+                } catch (IOException e) {
+                    throw new StringWriterIOException(e);
+                }
+
+                return buffer.toString();
+            }
+        };
+    }
+
+    /**
+     * Decodes a hex string to a byte array. The hex string can contain either upper
+     * case or lower case letters.
+     *
+     * @param value string to be decoded
+     * @return decoded byte array
+     * @throws NumberFormatException If the string contains an odd number of characters
+     *                               or if the characters are not valid hexadecimal values.
+     */
+    public static byte[] decodeHex(final String value) {
+        // if string length is odd then throw exception
+        if (value.length() % 2 != 0) {
+            throw new NumberFormatException("odd number of characters in hex string");
+        }
+
+        byte[] bytes = new byte[value.length() / 2];
+        for (int i = 0; i < value.length(); i += 2) {
+            bytes[i / 2] = (byte) Integer.parseInt(value.substring(i, i + 2), 16);
+        }
+
+        return bytes;
+    }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 the original author or authors.
+ * Copyright 2008-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,30 @@
 
 package org.codehaus.groovy.transform;
 
-import org.codehaus.groovy.ast.*;
-import org.codehaus.groovy.ast.expr.*;
-import org.codehaus.groovy.ast.stmt.*;
+import org.codehaus.groovy.GroovyBugError;
+import org.codehaus.groovy.ast.ASTNode;
+import org.codehaus.groovy.ast.AnnotatedNode;
+import org.codehaus.groovy.ast.AnnotationNode;
+import org.codehaus.groovy.ast.ClassHelper;
+import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.FieldNode;
+import org.codehaus.groovy.ast.InnerClassNode;
+import org.codehaus.groovy.ast.Parameter;
+import org.codehaus.groovy.ast.expr.ArgumentListExpression;
+import org.codehaus.groovy.ast.expr.BinaryExpression;
+import org.codehaus.groovy.ast.expr.ClassExpression;
+import org.codehaus.groovy.ast.expr.ConstantExpression;
+import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
+import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.MethodCallExpression;
+import org.codehaus.groovy.ast.expr.PropertyExpression;
+import org.codehaus.groovy.ast.expr.VariableExpression;
+import org.codehaus.groovy.ast.stmt.BlockStatement;
+import org.codehaus.groovy.ast.stmt.ExpressionStatement;
+import org.codehaus.groovy.ast.stmt.IfStatement;
+import org.codehaus.groovy.ast.stmt.ReturnStatement;
+import org.codehaus.groovy.ast.stmt.Statement;
+import org.codehaus.groovy.ast.stmt.SynchronizedStatement;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.runtime.MetaClassHelper;
@@ -27,6 +48,10 @@ import org.objectweb.asm.Opcodes;
 
 import java.lang.ref.SoftReference;
 import java.util.Arrays;
+
+import static org.codehaus.groovy.transform.AbstractASTTransformUtil.assignStatement;
+import static org.codehaus.groovy.transform.AbstractASTTransformUtil.declStatement;
+import static org.codehaus.groovy.transform.AbstractASTTransformUtil.notNullExpr;
 
 /**
  * Handles generation of code for the @Lazy annotation
@@ -40,11 +65,10 @@ public class LazyASTTransformation implements ASTTransformation, Opcodes {
     private static final ClassNode SOFT_REF = ClassHelper.makeWithoutCaching(SoftReference.class, false);
     private static final Expression NULL_EXPR = ConstantExpression.NULL;
     private static final Token ASSIGN = Token.newSymbol("=", -1, -1);
-    private static final Token COMPARE_NOT_EQUAL = Token.newSymbol("!=", -1, -1);
 
     public void visit(ASTNode[] nodes, SourceUnit source) {
         if (nodes.length != 2 || !(nodes[0] instanceof AnnotationNode) || !(nodes[1] instanceof AnnotatedNode)) {
-            throw new RuntimeException("Internal error: expecting [AnnotationNode, AnnotatedNode] but got: " + Arrays.asList(nodes));
+            throw new GroovyBugError("Internal error: expecting [AnnotationNode, AnnotatedNode] but got: " + Arrays.asList(nodes));
         }
 
         AnnotatedNode parent = (AnnotatedNode) nodes[1];
@@ -52,13 +76,13 @@ public class LazyASTTransformation implements ASTTransformation, Opcodes {
 
         if (parent instanceof FieldNode) {
             final FieldNode fieldNode = (FieldNode) parent;
-            final Expression member = node.getMember("soft");
+            final Expression soft = node.getMember("soft");
             final Expression init = getInitExpr(fieldNode);
 
             fieldNode.rename("$" + fieldNode.getName());
             fieldNode.setModifiers(ACC_PRIVATE | (fieldNode.getModifiers() & (~(ACC_PUBLIC | ACC_PROTECTED))));
             
-            if (member instanceof ConstantExpression && ((ConstantExpression) member).getValue().equals(true))
+            if (soft instanceof ConstantExpression && ((ConstantExpression) soft).getValue().equals(true))
                 createSoft(fieldNode, init);
             else {
                 create(fieldNode, init);
@@ -74,7 +98,7 @@ public class LazyASTTransformation implements ASTTransformation, Opcodes {
         final BlockStatement body = new BlockStatement();
         if (fieldNode.isStatic()) {
             addHolderClassIdiomBody(body, fieldNode, initExpr);
-        } else if (isVolatile(fieldNode)) {
+        } else if (notVolatile(fieldNode)) {
             addNonThreadSafeBody(body, fieldNode, initExpr);
         } else {
             addDoubleCheckedLockingBody(body, fieldNode, initExpr);
@@ -98,14 +122,14 @@ public class LazyASTTransformation implements ASTTransformation, Opcodes {
     private void addDoubleCheckedLockingBody(BlockStatement body, FieldNode fieldNode, Expression initExpr) {
         final Expression fieldExpr = new VariableExpression(fieldNode);
         final VariableExpression localVar = new VariableExpression(fieldNode.getName() + "_local");
-        body.addStatement(new ExpressionStatement(new DeclarationExpression(localVar, ASSIGN, fieldExpr)));
+        body.addStatement(declStatement(localVar, fieldExpr));
         body.addStatement(new IfStatement(
-                new BooleanExpression(new BinaryExpression(localVar, COMPARE_NOT_EQUAL, NULL_EXPR)),
+                notNullExpr(localVar),
                 new ReturnStatement(localVar),
                 new SynchronizedStatement(
-                        synchTarget(fieldNode),
+                        syncTarget(fieldNode),
                         new IfStatement(
-                                new BooleanExpression(new BinaryExpression(fieldExpr, COMPARE_NOT_EQUAL, NULL_EXPR)),
+                                notNullExpr(fieldExpr),
                                 new ReturnStatement(fieldExpr),
                                 new ReturnStatement(new BinaryExpression(fieldExpr, ASSIGN, initExpr))
                         )
@@ -116,9 +140,9 @@ public class LazyASTTransformation implements ASTTransformation, Opcodes {
     private void addNonThreadSafeBody(BlockStatement body, FieldNode fieldNode, Expression initExpr) {
         final Expression fieldExpr = new VariableExpression(fieldNode);
         body.addStatement(new IfStatement(
-                new BooleanExpression(new BinaryExpression(fieldExpr, COMPARE_NOT_EQUAL, NULL_EXPR)),
+                notNullExpr(fieldExpr),
                 new ExpressionStatement(fieldExpr),
-                new ExpressionStatement(new BinaryExpression(fieldExpr, ASSIGN, initExpr))
+                assignStatement(fieldExpr, initExpr)
         ));
     }
 
@@ -142,26 +166,22 @@ public class LazyASTTransformation implements ASTTransformation, Opcodes {
         final Expression resExpr = new VariableExpression("res", type);
         final MethodCallExpression callExpression = new MethodCallExpression(fieldExpr, "get", new ArgumentListExpression());
         callExpression.setSafe(true);
-        body.addStatement(new ExpressionStatement(new DeclarationExpression(resExpr, ASSIGN, callExpression)));
+        body.addStatement(declStatement(resExpr, callExpression));
 
         final BlockStatement elseBlock = new BlockStatement();
-        elseBlock.addStatement(new ExpressionStatement(new BinaryExpression(resExpr, ASSIGN, initExpr)));
-        elseBlock.addStatement(new ExpressionStatement(new BinaryExpression(fieldExpr, ASSIGN, new ConstructorCallExpression(SOFT_REF, resExpr))));
+        elseBlock.addStatement(assignStatement(resExpr, initExpr));
+        elseBlock.addStatement(assignStatement(fieldExpr, new ConstructorCallExpression(SOFT_REF, resExpr)));
         elseBlock.addStatement(new ExpressionStatement(resExpr));
 
-        final Statement mainIf = new IfStatement(
-                new BooleanExpression(new BinaryExpression(resExpr, COMPARE_NOT_EQUAL, NULL_EXPR)),
-                new ExpressionStatement(resExpr),
-                elseBlock
-        );
+        final Statement mainIf = new IfStatement(notNullExpr(resExpr), new ExpressionStatement(resExpr), elseBlock);
 
-        if (isVolatile(fieldNode)) {
+        if (notVolatile(fieldNode)) {
             body.addStatement(mainIf);
         } else {
             body.addStatement(new IfStatement(
-                    new BooleanExpression(new BinaryExpression(resExpr, COMPARE_NOT_EQUAL, NULL_EXPR)),
+                    notNullExpr(resExpr),
                     new ExpressionStatement(resExpr),
-                    new SynchronizedStatement(synchTarget(fieldNode), mainIf)
+                    new SynchronizedStatement(syncTarget(fieldNode), mainIf)
             ));
         }
         addMethod(fieldNode, body, type);
@@ -174,20 +194,20 @@ public class LazyASTTransformation implements ASTTransformation, Opcodes {
         final Parameter parameter = new Parameter(type, "value");
         final Expression paramExpr = new VariableExpression(parameter);
         body.addStatement(new IfStatement(
-                new BooleanExpression(new BinaryExpression(paramExpr, COMPARE_NOT_EQUAL, NULL_EXPR)),
-                new ExpressionStatement(new BinaryExpression(fieldExpr, ASSIGN, new ConstructorCallExpression(SOFT_REF, paramExpr))),
-                new ExpressionStatement(new BinaryExpression(fieldExpr, ASSIGN, NULL_EXPR))
+                notNullExpr(paramExpr),
+                assignStatement(fieldExpr, new ConstructorCallExpression(SOFT_REF, paramExpr)),
+                assignStatement(fieldExpr, NULL_EXPR)
         ));
         int visibility = ACC_PUBLIC;
         if (fieldNode.isStatic()) visibility |= ACC_STATIC;
         fieldNode.getDeclaringClass().addMethod(name, visibility, ClassHelper.VOID_TYPE, new Parameter[]{parameter}, ClassNode.EMPTY_ARRAY, body);
     }
 
-    private Expression synchTarget(FieldNode fieldNode) {
+    private Expression syncTarget(FieldNode fieldNode) {
         return fieldNode.isStatic() ? new ClassExpression(fieldNode.getDeclaringClass()) : VariableExpression.THIS_EXPRESSION;
     }
 
-    private boolean isVolatile(FieldNode fieldNode) {
+    private boolean notVolatile(FieldNode fieldNode) {
         return (fieldNode.getModifiers() & ACC_VOLATILE) == 0;
     }
 

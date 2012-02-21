@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -88,7 +88,6 @@ public class Node implements Writable {
         });
     }
 
-
     protected void replaceBody(final Object newValue) {
         this.children.clear();
         this.children.add(newValue);
@@ -112,18 +111,15 @@ public class Node implements Writable {
     * @see org.codehaus.groovy.sandbox.util.slurpersupport.Node#text()
     */
     public String text() {
-        final StringBuffer buff = new StringBuffer();
-        final Iterator iter = this.children.iterator();
-        while (iter.hasNext()) {
-            final Object child = iter.next();
-
+        final StringBuilder sb = new StringBuilder();
+        for (Object child : this.children) {
             if (child instanceof Node) {
-                buff.append(((Node) child).text());
+                sb.append(((Node) child).text());
             } else {
-                buff.append(child);
+                sb.append(child);
             }
         }
-        return buff.toString();
+        return sb.toString();
     }
 
     /* (non-Javadoc)
@@ -154,7 +150,6 @@ public class Node implements Writable {
             private Object getNextElementNodes() {
                 while (iter.hasNext()) {
                     final Object node = iter.next();
-
                     if (node instanceof Node) {
                         return node;
                     }
@@ -169,9 +164,7 @@ public class Node implements Writable {
     */
     public Writer writeTo(final Writer out) throws IOException {
         if (this.replacementNodeStack.empty()) {
-            final Iterator iter = this.children.iterator();
-            while (iter.hasNext()) {
-                final Object child = iter.next();
+            for (Object child : this.children) {
                 if (child instanceof Writable) {
                     ((Writable) child).writeTo(out);
                 } else {
@@ -179,7 +172,6 @@ public class Node implements Writable {
                 }
             }
             return out;
-
         } else {
             return ((Writable) this.replacementNodeStack.peek()).writeTo(out);
         }
@@ -190,7 +182,6 @@ public class Node implements Writable {
             final Closure rest = new Closure(null) {
                 public Object doCall(final Object o) {
                     buildChildren(builder, namespaceMap, namespaceTagHints);
-
                     return null;
                 }
             };
@@ -210,18 +201,13 @@ public class Node implements Writable {
                     builder.invokeMethod(this.name, new Object[]{this.attributes, rest});
                 } else {
                     final Map attributesWithNamespaces = new HashMap(this.attributes);
-                    final Iterator attrs = this.attributes.keySet().iterator();
-
-                    while (attrs.hasNext()) {
-                        final Object key = attrs.next();
+                    for (Object key : this.attributes.keySet()) {
                         final Object attributeNamespaceURI = this.attributeNamespaces.get(key);
-
                         if (attributeNamespaceURI != null) {
                             attributesWithNamespaces.put(getTagFor(attributeNamespaceURI, current, pending, namespaceMap, namespaceTagHints, newTags, builder) +
                                     "$" + key, attributesWithNamespaces.remove(key));
                         }
                     }
-
                     builder.getProperty(getTagFor(this.namespaceURI, current, pending, namespaceMap, namespaceTagHints, newTags, builder));
                     builder.invokeMethod(this.name, new Object[]{attributesWithNamespaces, rest});
                 }
@@ -229,7 +215,6 @@ public class Node implements Writable {
                 // remove the new tags we had to define for this element
                 if (!newTags.isEmpty()) {
                     final Iterator iter = newTags.iterator();
-
                     do {
                         pending.remove(iter.next());
                     } while (iter.hasNext());
@@ -257,7 +242,6 @@ public class Node implements Writable {
 
                 if (tag == null || tag.length() == 0) { // otherwise make up a new tag and check it has not been used before
                     int suffix = 0;
-
                     do {
                         final String possibleTag = "tag" + suffix++;
 
@@ -279,9 +263,8 @@ public class Node implements Writable {
 
     private static String findNamespaceTag(final Map tagMap, final Object namespaceURI) {
         if (tagMap.containsValue(namespaceURI)) {
-            final Iterator entries = tagMap.entrySet().iterator();
-            while (entries.hasNext()) {
-                final Map.Entry entry = (Map.Entry) entries.next();
+            for (Object o : tagMap.entrySet()) {
+                final Map.Entry entry = (Map.Entry) o;
                 if (namespaceURI.equals(entry.getValue())) {
                     return (String) entry.getKey();
                 }
@@ -291,9 +274,7 @@ public class Node implements Writable {
     }
 
     private void buildChildren(final GroovyObject builder, final Map namespaceMap, final Map<String, String> namespaceTagHints) {
-        final Iterator iter = this.children.iterator();
-        while (iter.hasNext()) {
-            final Object child = iter.next();
+        for (Object child : this.children) {
             if (child instanceof Node) {
                 ((Node) child).build(builder, namespaceMap, namespaceTagHints);
             } else if (child instanceof Buildable) {

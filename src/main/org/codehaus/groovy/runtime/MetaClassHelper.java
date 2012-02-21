@@ -16,10 +16,7 @@
 
 package org.codehaus.groovy.runtime;
 
-import groovy.lang.Closure;
-import groovy.lang.GString;
-import groovy.lang.GroovyRuntimeException;
-import groovy.lang.MetaMethod;
+import groovy.lang.*;
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.util.FastArray;
 import org.codehaus.groovy.reflection.ParameterTypes;
@@ -1033,6 +1030,25 @@ public class MetaClassHelper {
             if (arguments[i] instanceof Wrapper) {
                 arguments[i] = ((Wrapper) arguments[i]).unwrap();
             }
+        }
+    }
+
+    /**
+     * Sets the meta class for an object, by delegating to the appropriate
+     * {@link DefaultGroovyMethods} helper method. This method was introduced as
+     * a breaking change in 2.0 to solve rare cases of stack overflow. See GROOVY-5285.
+     *
+     * The method is named doSetMetaClass in order to prevent misusages. Do not use
+     * this method directly unless you know what you do.
+     *
+     * @param self the object for which to set the meta class
+     * @param mc the metaclass
+     */
+    public static void doSetMetaClass(Object self, MetaClass mc) {
+        if (self instanceof GroovyObject) {
+            DefaultGroovyMethods.setMetaClass((GroovyObject)self, mc);
+        } else {
+            DefaultGroovyMethods.setMetaClass(self, mc);
         }
     }
 }

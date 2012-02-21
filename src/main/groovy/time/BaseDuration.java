@@ -27,7 +27,7 @@ import java.util.ArrayList;
  * @see Duration
  * @author John Wilson tug@wilson.co.uk
  */
-public abstract class BaseDuration {
+public abstract class BaseDuration implements Comparable<BaseDuration> {
     protected final int years;
     protected final int months;    
     protected final int days;
@@ -117,6 +117,10 @@ public abstract class BaseDuration {
     public abstract Date getAgo();
     
     public abstract From getFrom();
+
+    public int compareTo(BaseDuration otherDuration) {
+        return Long.signum(toMilliseconds() - otherDuration.toMilliseconds());
+    }
 
     public abstract static class From {
         public abstract Date getNow();

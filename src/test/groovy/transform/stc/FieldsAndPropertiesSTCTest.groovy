@@ -49,6 +49,8 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
             HashMap map = [:]
             map['a'] = 1
             map.b = 2
+            assert map.get('a') == 1
+            assert map.get('b') == 2
         '''
     }
 

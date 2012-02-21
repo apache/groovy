@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2011 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -448,7 +448,7 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
         Expression exp = node.initialValueExpression
         if (exp instanceof ConstantExpression) exp = Verifier.transformToPrimitiveConstantIfPossible(exp)
         ClassNode type = exp?.type
-        if (Modifier.isStatic(node.modifiers)
+        if (Modifier.isStatic(node.modifiers) && Modifier.isFinal(node.getModifiers())
                 && exp instanceof ConstantExpression
                 && type == node.type
                 && ClassHelper.isStaticConstantInitializerType(type)) {
@@ -629,7 +629,7 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
     @Override
     public void visitStaticMethodCallExpression(StaticMethodCallExpression expression) {
         print expression?.ownerType?.name + "." + expression?.method
-        if (expression?.arguments instanceof VariableExpression) {
+        if (expression?.arguments instanceof VariableExpression || expression?.arguments instanceof MethodCallExpression) {
             print '('
             expression?.arguments?.visit this
             print ')'            

@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,21 +18,26 @@ package groovy.swing.factory
 
 import java.awt.Component
 import java.awt.Window
+import javax.swing.JComponent
 import javax.swing.JButton
+import static groovy.swing.factory.LayoutFactory.DEFAULT_DELEGATE_PROPERTY_CONSTRAINT
 
 abstract class RootPaneContainerFactory extends AbstractFactory {
 
-    public static final String DELEGATE_PROPERTY_DEFAULT_BUTTON = "_delegateProperty:defaultButton";
-    public static final String DEFAULT_DELEGATE_PROPERTY_DEFAULT_BUTTON = "defaultButton";
+    public static final String DELEGATE_PROPERTY_DEFAULT_BUTTON = "_delegateProperty:defaultButton"
+    public static final String DEFAULT_DELEGATE_PROPERTY_DEFAULT_BUTTON = "defaultButton"
 
     public void setChild(FactoryBuilderSupport builder, Object parent, Object child) {
         if (!(child instanceof Component) || (child instanceof Window)) {
-            return;
+            return
         }
         try {
             def constraints = builder.context.constraints
             if (constraints != null) {
                 parent.contentPane.add(child, constraints)
+                if (child instanceof JComponent) {
+                    child.putClientProperty(DEFAULT_DELEGATE_PROPERTY_CONSTRAINT, constraints)
+                }
                 builder.context.remove('constraints')
             } else {
                 parent.contentPane.add(child)
@@ -49,11 +54,11 @@ abstract class RootPaneContainerFactory extends AbstractFactory {
             builder.addAttributeDelegate {myBuilder, node, myAttributes ->
                 if ((node instanceof JButton) && (builder.containingWindows[-1] == container)) {
                     // in Java 6 use descending iterator
-                    ListIterator li = builder.contexts.listIterator();
+                    ListIterator li = builder.contexts.listIterator()
                     Map context
                     while (li.hasNext()) context = li.next()
                     while (context && context[FactoryBuilderSupport.CURRENT_NODE] != container) {
-                        context = li.previous() 
+                        context = li.previous()
                     }
                     def defaultButtonProperty = context[DELEGATE_PROPERTY_DEFAULT_BUTTON] ?: DEFAULT_DELEGATE_PROPERTY_DEFAULT_BUTTON
                     def defaultButton = myAttributes.remove(defaultButtonProperty)
@@ -75,7 +80,7 @@ abstract class RootPaneContainerFactory extends AbstractFactory {
         if (node instanceof Window) {
             def containingWindows = builder.containingWindows
             if (!containingWindows.empty && containingWindows.last == node) {
-                containingWindows.removeLast();
+                containingWindows.removeLast()
             }
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,6 +53,8 @@ class XmlSlurperTest extends GroovyTestCase {
     }
 
     void testElement() {
+        // can't update value directly with XmlSlurper, use replaceNode instead
+        // GpathSyntaxTestSupport.checkUpdateElementValue(getRoot)
         GpathSyntaxTestSupport.checkElement(getRoot)
         GpathSyntaxTestSupport.checkFindElement(getRoot)
         GpathSyntaxTestSupport.checkElementTypes(getRoot)
@@ -84,23 +86,22 @@ class XmlSlurperTest extends GroovyTestCase {
 
     void testReplacementsAndAdditions() {
         GpathSyntaxTestSupport.checkReplaceNode(getRoot)
+        GpathSyntaxTestSupport.checkReplaceMultipleNodes(getRoot)
         GpathSyntaxTestSupport.checkPlus(getRoot)
     }
 
     void testMixedMarkup() {
         MixedMarkupTestSupport.checkMixedMarkup(getRoot)
     }
-    
+
     void testReplace() {
         def input = "<doc><sec>Hello<p>World</p></sec></doc>"
-        def replaceSlurper = new XmlSlurper().parseText(input) 
-        
-        replaceSlurper.sec.replaceNode{ node ->
-          t(){ delegate.mkp.yield node.getBody() }
+        def replaceSlurper = new XmlSlurper().parseText(input)
+        replaceSlurper.sec.replaceNode { node ->
+            t() { delegate.mkp.yield node.getBody() }
         }
-        
         def outputSlurper = new StreamingMarkupBuilder()
-        String output = outputSlurper.bind{ mkp.yield replaceSlurper }
+        String output = outputSlurper.bind { mkp.yield replaceSlurper }
         assert output == "<doc><t>Hello<p>World</p></t></doc>"
     }
 

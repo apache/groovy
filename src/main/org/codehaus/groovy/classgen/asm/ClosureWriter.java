@@ -51,15 +51,21 @@ import org.objectweb.asm.MethodVisitor;
 import static org.objectweb.asm.Opcodes.*;
 
 public class ClosureWriter {
-    
+
     protected interface UseExistingReference {}
 
-    private HashMap<Expression,ClassNode> closureClassMap;
-    private WriterController controller;
-    
+    private final HashMap<Expression,ClassNode> closureClassMap;
+    private final WriterController controller;
+    private final WriterControllerFactory factory;
+
     public ClosureWriter(WriterController wc) {
         this.controller = wc;
         closureClassMap = new HashMap<Expression,ClassNode>();
+        factory = new WriterControllerFactory() {
+            public WriterController makeController(final WriterController normalController) {
+                return controller;
+            }
+        };
     }
 
     public void writeClosure(ClosureExpression expression) {
@@ -145,6 +151,7 @@ public class ClosureWriter {
             closureClassMap.put(expression, closureClass);
             controller.getAcg().addInnerClass(closureClass);
             closureClass.addInterface(ClassHelper.GENERATED_CLOSURE_Type);
+            closureClass.putNodeMetaData(WriterControllerFactory.class, factory);
         }
         return closureClass;
     }
@@ -159,7 +166,7 @@ public class ClosureWriter {
         return false;
     }
     
-    private ClassNode createClosureClass(ClosureExpression expression, int mods) {
+    protected ClassNode createClosureClass(ClosureExpression expression, int mods) {
         ClassNode classNode = controller.getClassNode();
         ClassNode outerClass = controller.getOutermostClass();
         MethodNode methodNode = controller.getMethodNode();

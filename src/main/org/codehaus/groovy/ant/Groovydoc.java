@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -65,6 +65,7 @@ public class Groovydoc extends Task {
     private File styleSheetFile;
     // dev note: update javadoc comment for #setExtensions(String) if updating below
     private String extensions = ".java:.groovy:.gv:.gvy:.gsh";
+    private String charset;
 
     public Groovydoc() {
         packageNames = new ArrayList<String>();
@@ -265,6 +266,16 @@ public class Groovydoc extends Task {
     }
 
     /**
+     * Specifies the charset to be used in the templates, i.e.&nbsp; the value output within:
+     * &lt;meta http-equiv="Content-Type" content="text/html; charset=<em>charset</em>"&gt;.
+     *
+     * @param charset the charset value
+     */
+    public void setCharset(String charset) {
+        this.charset = charset;
+    }
+
+    /**
      * Specifies a stylesheet file to use. If not specified,
      * a default one will be generated for you.
      *
@@ -397,6 +408,7 @@ public class Groovydoc extends Task {
         properties.setProperty("processScripts", processScripts.toString());
         properties.setProperty("includeMainForScripts", includeMainForScripts.toString());
         properties.setProperty("overviewFile", overviewFile != null ? overviewFile.getAbsolutePath() : "");
+        properties.setProperty("charset", charset != null ? charset : "");
 
         if (sourcePath != null) {
             sourceDirs.addExisting(sourcePath);

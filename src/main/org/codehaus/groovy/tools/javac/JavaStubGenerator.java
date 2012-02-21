@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2011 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -300,7 +300,6 @@ public class JavaStubGenerator {
         }
     }
 
-
     private void printEnumFields(PrintWriter out, List<FieldNode> fields) {
         if (fields.size() == 0) return;
         boolean first = true;
@@ -334,15 +333,21 @@ public class JavaStubGenerator {
                 valueExpr = Verifier.transformToPrimitiveConstantIfPossible((ConstantExpression) valueExpr);
             }
             if (valueExpr instanceof ConstantExpression
+                    && fieldNode.isStatic() && fieldNode.isFinal()
                     && ClassHelper.isStaticConstantInitializerType(valueExpr.getType())
                     && valueExpr.getType().equals(fieldNode.getType())) {
                 // GROOVY-5150 : Initialize value with a dummy constant so that Java cross compiles correctly
                 if (ClassHelper.STRING_TYPE.equals(valueExpr.getType())) {
-                    out.print("\""+valueExpr.getText().replaceAll("\\\"", "\\\\\"")+"\"");
+                    out.print("\"" + escapeSpecialChars(valueExpr.getText()) + "\"");
                 } else if (ClassHelper.char_TYPE.equals(valueExpr.getType())) {
                     out.print("'"+valueExpr.getText()+"'");
                 } else {
+                    ClassNode constantType = valueExpr.getType();
+                    out.print('(');
+                    printType(out, type);
+                    out.print(") ");
                     out.print(valueExpr.getText());
+                    if (ClassHelper.Long_TYPE.equals(ClassHelper.getWrapper(constantType))) out.print('L');
                 }
             } else if (ClassHelper.isPrimitiveType(type)) {
                 String val = type == ClassHelper.boolean_TYPE ? "false" : "0";
@@ -536,7 +541,7 @@ public class JavaStubGenerator {
     private void printDefaultValue(PrintWriter out, ClassNode type) {
         if (type.redirect() != ClassHelper.OBJECT_TYPE && type.redirect() != ClassHelper.boolean_TYPE) {
             out.print("(");
-            printType(out, type);
+            printTypeWithoutBounds(out, type);
             out.print(")");
         }
 
@@ -559,6 +564,15 @@ public class JavaStubGenerator {
             out.print(type.getGenericsTypes()[0].getName());
         } else {
             printGenericsBounds(out, type, false);
+        }
+    }
+
+    private void printTypeWithoutBounds(PrintWriter out, ClassNode type) {
+        if (type.isArray()) {
+            printTypeWithoutBounds(out, type.getComponentType());
+            out.print("[]");
+        } else {
+            printTypeName(out, type);
         }
     }
 
@@ -676,7 +690,7 @@ public class JavaStubGenerator {
             } else if (constValue instanceof Number || constValue instanceof Boolean)
                 val = constValue.toString();
             else
-                val = "\"" + escapeStringAnnotationValue(constValue.toString()) + "\"";
+                val = "\"" + escapeSpecialChars(constValue.toString()) + "\"";
         } else if (memberValue instanceof PropertyExpression || memberValue instanceof VariableExpression) {
             // assume must be static class field or enum value or class that Java can resolve
             val = ((Expression) memberValue).getText();
@@ -746,7 +760,7 @@ public class JavaStubGenerator {
         }
     }
 
-    private static String escapeStringAnnotationValue(String value) {
+    private static String escapeSpecialChars(String value) {
         return value.replace("\n", "\\n").replace("\r", "\\r").replace("\"", "\\\"");
     }
 }

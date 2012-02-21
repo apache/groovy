@@ -17,11 +17,11 @@
 package org.codehaus.groovy.runtime.metaclass;
 
 import org.codehaus.groovy.runtime.InvokerHelper;
-import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 
 import java.lang.ref.WeakReference;
 
 import groovy.lang.*;
+import org.codehaus.groovy.runtime.MetaClassHelper;
 
 /**
  * @author Alex Tkachman
@@ -33,7 +33,7 @@ public class MixedInMetaClass extends OwnedMetaClass {
     public MixedInMetaClass(Object instance, Object owner) {
         super(GroovySystem.getMetaClassRegistry().getMetaClass(instance.getClass()));
         this.owner = new WeakReference(owner);
-        DefaultGroovyMethods.setMetaClass (instance, this);
+        MetaClassHelper.doSetMetaClass(instance, this);
     }
 
     protected Object getOwner() {

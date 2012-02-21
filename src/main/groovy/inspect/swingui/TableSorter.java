@@ -193,7 +193,6 @@ space and avoid unnecessary heap allocation.
     }
 
     public void tableChanged(TableModelEvent e) {
-        System.out.println("Sorter: tableChanged");
         reallocateIndexes();
 
         super.tableChanged(e);

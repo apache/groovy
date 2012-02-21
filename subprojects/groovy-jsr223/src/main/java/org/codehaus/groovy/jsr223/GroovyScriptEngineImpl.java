@@ -71,6 +71,8 @@ import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.Writer;
 
+import java.lang.Class;
+import java.lang.String;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
@@ -78,6 +80,7 @@ import java.lang.reflect.Proxy;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /*
  * @author Mike Grogan
@@ -91,10 +94,10 @@ public class GroovyScriptEngineImpl
     private static boolean debug = false;
 
     // script-string-to-generated Class map
-    private Map<String, Class> classMap;
+    private Map<String, Class> classMap = new ConcurrentHashMap<String, Class>();
     // global closures map - this is used to simulate a single
     // global functions namespace 
-    private Map<String, Closure> globalClosures;
+    private Map<String, Closure> globalClosures = new ConcurrentHashMap<String, Closure>();
     // class loader for Groovy generated classes
     private GroovyClassLoader loader;
     // lazily initialized factory
@@ -108,10 +111,12 @@ public class GroovyScriptEngineImpl
     }
 
     public GroovyScriptEngineImpl() {
-        classMap = Collections.synchronizedMap(new HashMap<String, Class>());
-        globalClosures = Collections.synchronizedMap(new HashMap<String, Closure>());
-        loader = new GroovyClassLoader(getParentLoader(),
-                new CompilerConfiguration());
+        this.loader = new GroovyClassLoader(getParentLoader(), new CompilerConfiguration());
+    }
+
+    public GroovyScriptEngineImpl(GroovyClassLoader classLoader) {
+        if (classLoader == null) throw new IllegalArgumentException("GroovyClassLoader is null");
+        this.loader = classLoader;
     }
 
     public Object eval(Reader reader, ScriptContext ctx)
@@ -355,7 +360,7 @@ public class GroovyScriptEngineImpl
         return clazz;
     }
 
-    public void setClassLoader(final GroovyClassLoader classLoader) {
+    public void setClassLoader(GroovyClassLoader classLoader) {
         this.loader = classLoader;
     }
 

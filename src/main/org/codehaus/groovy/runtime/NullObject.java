@@ -110,6 +110,18 @@ public class NullObject extends GroovyObjectSupport {
     }
 
     /**
+     * Fallback for null+null.
+     * The result is always a NPE. The plus(String) version will catch 
+     * the case of adding a non null String to null.
+     *
+     * @param o - the Object
+     * @return nothing
+     */
+    public Object plus(Object o) {
+        throw new NullPointerException("Cannot execute null+null");
+    }
+
+    /**
      * The method "is" is used to test for equal references.
      * This method will return true only if the given parameter
      * is null

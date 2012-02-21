@@ -539,6 +539,23 @@ public class BytecodeHelper implements Opcodes {
         );
     }
 
+    /**
+     * Given a primitive number type (byte, integer, short, ...), generates bytecode
+     * to convert it to a wrapped number (Integer, Long, Double) using calls to
+     * [WrappedType].valueOf
+     * @param mv method visitor
+     * @param sourceType the primitive number type
+     * @param targetType the wrapped target type
+     */
+    public static void doCastToWrappedType(MethodVisitor mv, ClassNode sourceType, ClassNode targetType) {
+        mv.visitMethodInsn(
+                INVOKESTATIC,
+                getClassInternalName(targetType),
+                "valueOf",
+                "("+getTypeDescription(sourceType)+")"+getTypeDescription(targetType)
+        );
+    }
+
     public static void doCast(MethodVisitor mv, Class type) {
         if (type == Object.class) return;
         if (type.isPrimitive() && type != Void.TYPE) {
@@ -622,5 +639,17 @@ public class BytecodeHelper implements Opcodes {
         // There are situations where we could make more fine grained checks, but be careful of
         // potential breakage of existing code.
         return Modifier.isPublic(classNode.getModifiers());
+    }
+
+    /**
+     * Returns true if the two classes share the same compilation unit.
+     * @param a class a
+     * @param b class b
+     * @return true if both classes share the same compilation unit
+     */
+    public static boolean isSameCompilationUnit(ClassNode a, ClassNode b) {
+        CompileUnit cu1 = a.getCompileUnit();
+        CompileUnit cu2 = b.getCompileUnit();
+        return cu1 !=null && cu2 !=null && cu1==cu2;
     }
 }

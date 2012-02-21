@@ -15,6 +15,13 @@
  */
 package groovy.transform.stc
 
+import org.codehaus.groovy.control.customizers.CompilationCustomizer
+import org.codehaus.groovy.control.CompilePhase
+import org.codehaus.groovy.ast.ClassCodeVisitorSupport
+import org.codehaus.groovy.ast.expr.VariableExpression
+import org.codehaus.groovy.ast.expr.Expression
+import org.codehaus.groovy.transform.stc.StaticTypesMarker
+import org.codehaus.groovy.ast.ClassHelper
 
 /**
  * Unit tests for static type checking : generics.
@@ -90,6 +97,20 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         assertScript '''
             List<String> list = new LinkedList<>()
             list << 'Hello'
+        '''
+    }
+
+    void testListInferrenceWithNullElems() {
+        assertScript '''
+            List<String> strings = ['a', null]
+            assert strings == ['a',null]
+        '''
+    }
+
+    void testListInferrenceWithAllNullElems() {
+        assertScript '''
+            List<String> strings = [null, null]
+            assert strings == [null,null]
         '''
     }
 
@@ -306,7 +327,99 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             Documented annotation = Deprecated.getAnnotation(Documented)
         '''
     }
+
+    void testReturnListOfParameterizedType() {
+        assertScript '''
+            class A {}
+            class B extends A { void bar() {} }
+            public <T extends A> List<T> foo() { [] }
+
+            List<B> list = foo()
+            list.add(new B())
+        '''
+    }
+
+    void testMethodCallWithClassParameterUsingClassLiteralArg() {
+        assertScript '''
+            class A {}
+            class B extends A {}
+            class Foo {
+                void m(Class<? extends A> clazz) {}
+            }
+            new Foo().m(B)
+        '''
+    }
   
+    void testMethodCallWithClassParameterUsingClassLiteralArgWithoutWrappingClass() {
+        assertScript '''
+            class A {}
+            class B extends A {}
+            void m(Class<? extends A> clazz) {}
+            m(B)
+        '''
+    }
+
+    void testConstructorCallWithClassParameterUsingClassLiteralArg() {
+        assertScript '''
+            class A {}
+            class B extends A {}
+            class C extends B {}
+            class Foo {
+                Foo(Class<? extends A> clazz) {}
+            }
+            new Foo(B)
+            new Foo(C)
+        '''
+    }
+
+    void testConstructorCallWithClassParameterUsingClassLiteralArgAndInterface() {
+        assertScript '''
+            interface A {}
+            class B implements A {}
+            class C extends B {}
+            class Foo {
+                Foo(Class<? extends A> clazz) {}
+            }
+            new Foo(B)
+            new Foo(C)
+        '''
+    }
+
+    void testAssignmentOfNewInstance() {
+        Expression expr = null
+        config.addCompilationCustomizers(
+                new CompilationCustomizer(CompilePhase.INSTRUCTION_SELECTION) {
+                    @Override
+                    void call(final org.codehaus.groovy.control.SourceUnit source, final org.codehaus.groovy.classgen.GeneratorContext context, final org.codehaus.groovy.ast.ClassNode classNode) {
+                        def visitor = new ClassCodeVisitorSupport() {
+                            @Override
+                            protected org.codehaus.groovy.control.SourceUnit getSourceUnit() {
+                                source
+                            }
+
+                            @Override
+                            void visitVariableExpression(final VariableExpression expression) {
+                                super.visitVariableExpression(expression)
+                                if (expression.name=='obj') expr = expression
+                            }
+                        }
+                        visitor.visitClass(classNode)
+                    }
+                }
+        )
+        shell = new GroovyShell(config)
+        assertScript '''
+            class Foo {
+                static Class clazz = Date
+                public static void main(String... args) {
+                    def obj = clazz.newInstance()
+                }
+            }
+        '''
+        assert expr != null
+        assert expr.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE) == ClassHelper.OBJECT_TYPE
+    }
+
     static class MyList extends LinkedList<String> {}
 }
 

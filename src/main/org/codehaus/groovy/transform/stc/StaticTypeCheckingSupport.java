@@ -30,7 +30,7 @@ import static org.codehaus.groovy.syntax.Types.*;
 /**
  * Static support methods for {@link StaticTypeCheckingVisitor}.
  */
-abstract class StaticTypeCheckingSupport {
+public abstract class StaticTypeCheckingSupport {
     final static Map<String, List<MethodNode>> VIRTUAL_DGM_METHODS = getDGMMethods();
     final static ClassNode
             Collection_TYPE = makeWithoutCaching(Collection.class);
@@ -75,7 +75,12 @@ abstract class StaticTypeCheckingSupport {
                     for (int i = 0; i < o1ps.length && allEqual; i++) {
                         allEqual = o1ps[i].getType().equals(o2ps[i].getType());
                     }
-                    if (allEqual) return 0;
+                    if (allEqual) {
+                        if (o1 instanceof ExtensionMethodNode && o2 instanceof ExtensionMethodNode) {
+                            return compare(((ExtensionMethodNode) o1).getExtensionMethodNode(), ((ExtensionMethodNode) o2).getExtensionMethodNode());
+                        }
+                        return 0;
+                    }
                 } else {
                     return o1ps.length - o2ps.length;
                 }
@@ -100,7 +105,7 @@ abstract class StaticTypeCheckingSupport {
      * @param callArguments arguments of the method
      * @return true if the name is "with" and arguments consist of a single closure
      */
-    static boolean isWithCall(final String name, final Expression callArguments) {
+    public static boolean isWithCall(final String name, final Expression callArguments) {
         boolean isWithCall = "with".equals(name) && callArguments instanceof ArgumentListExpression;
         if (isWithCall) {
             ArgumentListExpression argList = (ArgumentListExpression) callArguments;
@@ -208,7 +213,7 @@ abstract class StaticTypeCheckingSupport {
      * @return -1 if arguments do not match, 0 if arguments are of the exact type and >0 when one or more argument is
      * not of the exact type but still match
      */
-    static int allParametersAndArgumentsMatch(Parameter[] params, ClassNode[] args) {
+    public static int allParametersAndArgumentsMatch(Parameter[] params, ClassNode[] args) {
         if (params==null) return args.length==0?0:-1;
         int dist = 0;
         // we already know the lengths are equal
@@ -466,7 +471,7 @@ abstract class StaticTypeCheckingSupport {
         }
     }
 
-    static boolean isAssignment(int op) {
+    public static boolean isAssignment(int op) {
         switch (op) {
             case ASSIGN:
             case LOGICAL_OR_EQUAL:
@@ -668,7 +673,7 @@ abstract class StaticTypeCheckingSupport {
         return sb.toString();
     }
 
-    static boolean implementsInterfaceOrIsSubclassOf(ClassNode type, ClassNode superOrInterface) {
+    public static boolean implementsInterfaceOrIsSubclassOf(ClassNode type, ClassNode superOrInterface) {
         boolean result = type.equals(superOrInterface)
                 || type.isDerivedFrom(superOrInterface)
                 || type.implementsInterface(superOrInterface)
@@ -683,11 +688,43 @@ abstract class StaticTypeCheckingSupport {
     }
 
     static int getDistance(final ClassNode receiver, final ClassNode compare) {
-        if (receiver.equals(compare)||receiver == UNKNOWN_PARAMETER_TYPE) return 0;
-        if (compare.isInterface() && receiver.implementsInterface(compare)) return 1;
-        ClassNode superClass = compare.getSuperClass();
-        if (superClass ==null) return 2;
-        return 1+getDistance(receiver, superClass);
+        int dist = 0;
+        ClassNode ref = compare;
+        while (ref!=null) {
+            if (receiver.equals(ref) || receiver == UNKNOWN_PARAMETER_TYPE) {
+                break;
+            }
+            if (ref.isInterface() && receiver.implementsInterface(ref)) {
+                dist += getMaximumInterfaceDistance(receiver, ref);
+                break;
+            }
+            ref = ref.getSuperClass();
+            if (ref == null) dist += 2;
+            dist++;
+        }
+        return dist;
+    }
+
+    private static int getMaximumInterfaceDistance(ClassNode c, ClassNode interfaceClass) {
+        // -1 means a mismatch
+        if (c == null) return -1;
+        // 0 means a direct match
+        if (c.equals(interfaceClass)) return 0;
+        ClassNode[] interfaces = c.getInterfaces();
+        int max = -1;
+        for (ClassNode anInterface : interfaces) {
+            int sub = getMaximumInterfaceDistance(anInterface, interfaceClass);
+            // we need to keep the -1 to track the mismatch, a +1
+            // by any means could let it look like a direct match
+            // we want to add one, because there is an interface between
+            // the interface we search for and the interface we are in.
+            if (sub != -1) sub++;
+            // we are interested in the longest path only
+            max = Math.max(max, sub);
+        }
+        // we do not add one for super classes, only for interfaces
+        int superClassMax = getMaximumInterfaceDistance(c.getSuperClass(), interfaceClass);
+        return Math.max(max, superClassMax);
     }
 
     public static List<MethodNode> findDGMMethodsByNameAndArguments(final ClassNode receiver, final String name, final ClassNode[] args) {
@@ -804,7 +841,8 @@ abstract class StaticTypeCheckingSupport {
         List<MethodNode> bestChoices = new LinkedList<MethodNode>();
         int bestDist = Integer.MAX_VALUE;
         ClassNode actualReceiver;
-        for (MethodNode m : methods) {
+        Collection<MethodNode> choicesLeft = removeCovariants(methods);
+        for (MethodNode m : choicesLeft) {
             actualReceiver = receiver!=null?receiver:m.getDeclaringClass();
             // todo : corner case
             /*
@@ -885,6 +923,48 @@ abstract class StaticTypeCheckingSupport {
         return bestChoices;
     }
 
+    private static Collection<MethodNode> removeCovariants(Collection<MethodNode> collection) {
+        if (collection.size()<=1) return collection;
+        List<MethodNode> toBeRemoved = new LinkedList<MethodNode>();
+        List<MethodNode> list = new LinkedList<MethodNode>(new HashSet<MethodNode>(collection));
+        for (int i=0;i<list.size()-1;i++) {
+            MethodNode one = list.get(i);
+            if (toBeRemoved.contains(one)) continue;
+            for (int j=i+1;j<list.size();j++) {
+                MethodNode two = list.get(j);
+                if (toBeRemoved.contains(two)) continue;
+                if (one.getName().equals(two.getName()) && one.getDeclaringClass()==two.getDeclaringClass()) {
+                    Parameter[] onePars = one.getParameters();
+                    Parameter[] twoPars = two.getParameters();
+                    if (onePars.length == twoPars.length) {
+                        boolean sameTypes = true;
+                        for (int k = 0; k < onePars.length; k++) {
+                            Parameter onePar = onePars[k];
+                            Parameter twoPar = twoPars[k];
+                            if (!onePar.getType().equals(twoPar.getType())) {
+                                sameTypes = false;
+                                break;
+                            }
+                        }
+                        if (sameTypes) {
+                            ClassNode oneRT = one.getReturnType();
+                            ClassNode twoRT = two.getReturnType();
+                            if (oneRT.isDerivedFrom(twoRT) || oneRT.implementsInterface(twoRT)) {
+                                toBeRemoved.add(two);
+                            } else if (twoRT.isDerivedFrom(oneRT) || twoRT.implementsInterface(oneRT)) {
+                                toBeRemoved.add(one);
+                            }
+                        }
+                    }
+                }                
+            }
+        }
+        if (toBeRemoved.isEmpty()) return list;
+        List<MethodNode> result = new LinkedList<MethodNode>(list);
+        result.removeAll(toBeRemoved);
+        return result;
+    }
+    
     /**
      * Given a receiver and a method node, parameterize the method arguments using
      * available generic type information.

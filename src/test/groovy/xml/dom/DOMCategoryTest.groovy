@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@ class DOMCategoryTest extends GroovyTestCase {
     void testReplacementsAndAdditions() {
         use(DOMCategory) {
             GpathSyntaxTestSupport.checkReplaceNode(getRoot)
+            GpathSyntaxTestSupport.checkReplaceMultipleNodes(getRoot)
             GpathSyntaxTestSupport.checkPlus(getRoot)
         }
     }
@@ -44,6 +45,7 @@ class DOMCategoryTest extends GroovyTestCase {
 
     void testElement() {
         use(DOMCategory) {
+            GpathSyntaxTestSupport.checkUpdateElementValue(getRoot)
             GpathSyntaxTestSupport.checkElement(getRoot)
             GpathSyntaxTestSupport.checkFindElement(getRoot)
             GpathSyntaxTestSupport.checkElementTypes(getRoot)

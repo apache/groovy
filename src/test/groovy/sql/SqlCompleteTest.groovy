@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2011 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 package groovy.sql
+
+import static groovy.sql.SqlTestConstants.*
 
 class SqlCompleteTest extends TestHelper {
 
@@ -303,10 +305,10 @@ class SqlCompleteTest extends TestHelper {
         features.each {
             /** @todo HSQLDB doesn't yet support ResultSet updating
              if (it.id == 1) {
-             it.name = it.name + " Rocks!"
-             println("Changing name to ${it.name}")
+                 it.name = it.name + " Rocks!"
+                 println("Changing name to ${it.name}")
              }
-             */
+             /* */
             results.add(it.name)
         }
         def expected = ["GDO", "GPath", "GroovyMarkup"]
@@ -403,7 +405,6 @@ class SqlCompleteTest extends TestHelper {
         assert names[1] == "coffee"
     }
 
-
     void testRowsPaging() {
         def sql = createSql()
         def names = sql.rows("select name from FOOD order by name", 2, 2)
@@ -427,6 +428,59 @@ class SqlCompleteTest extends TestHelper {
         assert names.size() == 2
         assert names[0] == ["NAME":"cheddar"]
         assert names[1] == ["NAME":"coffee"]
+    }
+
+    void testNewInstanceMapMustContainNonNullUrl() {
+        shouldFail(IllegalArgumentException) {
+            Sql.newInstance(driver: DB_DRIVER.name, user: 'scott', password: 'tiger')
+        }
+        shouldFail(IllegalArgumentException) {
+            Sql.newInstance(url: null, driver: DB_DRIVER.name, user: 'scott', password: 'tiger')
+        }
+    }
+
+    void testNewInstanceMapShouldNotContainDriverAndDriverClassName() {
+        shouldFail(IllegalArgumentException) {
+            Sql.newInstance(driver: 'a', driverClassName: 'b')
+        }
+    }
+
+    void testNewInstanceMapShouldNotHavePropertiesAndAccountInfo() {
+        def args = [url: getURI(), user: DB_USER, password: DB_PASSWORD]
+        args.properties = [:] as Properties
+        shouldFail(IllegalArgumentException) {
+            Sql.newInstance(args)
+        }
+    }
+
+    void testNewInstanceMapShouldRequireUserAndPasswordIfOneIsProvided() {
+        shouldFail(IllegalArgumentException) {
+            Sql.newInstance(url: getURI(), driver: DB_DRIVER.name, user: 'scott')
+        }
+        shouldFail(IllegalArgumentException) {
+            Sql.newInstance(url: getURI(), driver: DB_DRIVER.name, password: 'tiger')
+        }
+    }
+
+    void testNewInstanceMapNotDestructiveGROOVY5216() {
+        String url = getURI()
+        String driver = DB_DRIVER.name
+        String user = DB_USER
+        String password = DB_PASSWORD
+
+        // First pass with user/password and no properties
+        def args = [url: url, driver: driver, user: user, password: password]
+        def sql = Sql.newInstance(args)
+        assert args == [url: url, driver: driver, user: user, password: password]
+
+        // Second pass with properties
+        String url2 = getURI()
+        def props = new Properties()
+        props.user = user
+        props.password = password
+        def args2 = [url: url2, driver: driver, properties: props]
+        def sql2 = Sql.newInstance(args2)
+        assert args2 == [url: url2, driver:  driver, properties: [user: user, password:  password]]
     }
 
 }

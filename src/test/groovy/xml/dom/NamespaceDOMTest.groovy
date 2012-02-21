@@ -15,9 +15,8 @@
  */
 package groovy.xml.dom
 
-import org.custommonkey.xmlunit.Diff
-import org.custommonkey.xmlunit.XMLUnit
 import groovy.xml.*
+import static groovy.xml.XmlAssert.assertXmlEquals
 
 /*
 This isn't inherently doing anything requiring jdk1.5 but there is a bug in
@@ -73,7 +72,7 @@ class NamespaceDOMTest extends TestXmlSupport {
                 attribute(name: 'orderDate', type: 'xsd:date')
             }
         }
-        assertXmlEqual(expected1, XmlUtil.serialize(root))
+        assertXmlEquals(expected1, XmlUtil.serialize(root))
     }
 
     void testXsdSchemaWithBuilderHavingMultipleNamespaces() {
@@ -108,12 +107,6 @@ class NamespaceDOMTest extends TestXmlSupport {
                 }
             }
         }
-        assertXmlEqual(expected2, XmlUtil.serialize(root))
-    }
-
-    private assertXmlEqual(expected, actual) {
-        XMLUnit.ignoreWhitespace = true
-        def xmlDiff = new Diff(expected, actual)
-        assert xmlDiff.similar(), xmlDiff.toString()
+        assertXmlEquals(expected2, XmlUtil.serialize(root))
     }
 }

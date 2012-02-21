@@ -81,6 +81,37 @@ class SecureASTCustomizerTest extends GroovyTestCase {
         }
     }
 
+    void testMethodDefinitionInClass() {
+        def shell = new GroovyShell(configuration)
+        String script = """
+            class A {
+                def method() {
+                    true
+                }
+            }
+            new A()
+        """
+        shell.evaluate(script)
+        // no error means success
+        customizer.methodDefinitionAllowed = false
+        assert hasSecurityException {
+            shell.evaluate(script)
+        }
+    }
+
+    void testClassExtendingClassWithMethods() {
+        def shell = new GroovyShell(configuration)
+        String script = """
+            class A extends LinkedList {
+            }
+            new A()
+        """
+        shell.evaluate(script)
+        // no error means success
+        customizer.methodDefinitionAllowed = false
+        shell.evaluate(script)
+    }
+
     void testExpressionWhiteList() {
         def shell = new GroovyShell(configuration)
         customizer.expressionsWhitelist = [BinaryExpression, ConstantExpression]

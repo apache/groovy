@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,6 @@
  */
 package groovy.xml
 
-import groovy.util.slurpersupport.GPathResult
 import org.custommonkey.xmlunit.XMLUnit
 import org.custommonkey.xmlunit.Diff
 
@@ -47,6 +46,26 @@ class GpathSyntaxTestSupport {
     <d></d>
 </root>
 '''
+
+    static void checkUpdateElementValue(Closure getRoot) {
+        def root = getRoot('<root><a>foo</a><b/></root>')
+        assert root != null
+        def a = root.a[0]
+        def b = root.b[0]
+        a.value = a.text() + 'bar'
+        b.value = 'baz'
+        String actual = XmlUtil.serialize(root)
+        def expected = '''\
+<?xml version="1.0" encoding="UTF-8"?>
+<root>
+  <a>foobar</a>
+  <b>baz</b>
+</root>
+'''
+        XMLUnit.ignoreWhitespace = true
+        def xmlDiff = new Diff(actual, expected)
+        assert xmlDiff.similar(), xmlDiff.toString()
+    }
 
     static void checkElement(Closure getRoot) {
         def root = getRoot(sampleXml)
@@ -312,16 +331,13 @@ class GpathSyntaxTestSupport {
     }
 
     static void checkReplaceNode(Closure getRoot) {
-        def root = getRoot('<a><b>B1</b><b>B2</b><c a1="4" a2="true"><x>500</x></c></a>')
+        def root = getRoot('<a><b>B1</b><b>B2</b><c a1="4" a2="true"><x>500</x></c><d/></a>')
         def r = root.c.replaceNode {
             n(type: 'string') {
                 hello('world')
             }
         }
-        String result
-        // TODO remove need for cast
-        if (isSlurper(root)) result = XmlUtil.serialize((GPathResult)root)
-        else result = XmlUtil.serialize(root)
+        String actual = XmlUtil.serialize(root)
         def expected = '''\
 <?xml version="1.0" encoding="UTF-8"?>
 <a>
@@ -330,10 +346,11 @@ class GpathSyntaxTestSupport {
   <n type="string">
     <hello>world</hello>
   </n>
+  <d/>
 </a>
 '''
         XMLUnit.ignoreWhitespace = true
-        def xmlDiff = new Diff(result, expected)
+        def xmlDiff = new Diff(actual, expected)
         assert xmlDiff.similar(), xmlDiff.toString()
 
         // XmlSlurper replacements are deferred so can't check here
@@ -342,22 +359,39 @@ class GpathSyntaxTestSupport {
             assert r.'@type' == 'string'
             assert r.hello.text() == 'world'
         }
+    }
 
-        // TODO behaviour when multiple nodes added?
-//        root.c.replaceNode {
-//            n(type: 'string') {
-//                hello('world')
-//            }
-//            n(type: 'int', 330)
-//        }
+    static void checkReplaceMultipleNodes(Closure getRoot) {
+        def root = getRoot('<a><b>B1</b><b>B2</b><c a1="4" a2="true"><x>500</x></c><d/></a>')
+        def r = root.c.replaceNode {
+            n(type: 'string') {
+                hello('world')
+            }
+            n(type: 'int', 330)
+        }
+        String actual = XmlUtil.serialize(root)
+        def expected = '''\
+<?xml version="1.0" encoding="UTF-8"?>
+<a>
+  <b>B1</b>
+  <b>B2</b>
+  <n type="string">
+    <hello>world</hello>
+  </n>
+  <n type="int">330</n>
+  <d/>
+</a>
+'''
+        XMLUnit.ignoreWhitespace = true
+        def xmlDiff = new Diff(actual, expected)
+        assert xmlDiff.similar(), xmlDiff.toString()
 
-        // TODO behavior when replaceNode() is operating on a node list?
-//        root.b.replaceNode {
-//            n(type: 'string') {
-//                hello('world')
-//            }
-//        }
-
+        // XmlSlurper replacements are deferred so can't check here
+        if (!isSlurper(root)) {
+            assert r.name() == 'n'
+            assert r.'@type' == 'int'
+            assert r.text() == '330'
+        }
     }
 
     static void checkPlus(Closure getRoot) {
@@ -373,10 +407,7 @@ class GpathSyntaxTestSupport {
         root.b[-1] + {
             b('B4')
         }
-        String result
-        // TODO remove need for cast
-        if (isSlurper(root)) result = XmlUtil.serialize((GPathResult)root)
-        else result = XmlUtil.serialize(root)
+        String actual = XmlUtil.serialize(root)
         def expected = '''\
 <?xml version="1.0" encoding="UTF-8"?>
 <a>
@@ -392,7 +423,7 @@ class GpathSyntaxTestSupport {
 </a>
 '''
         XMLUnit.ignoreWhitespace = true
-        def xmlDiff = new Diff(result, expected)
+        def xmlDiff = new Diff(actual, expected)
         assert xmlDiff.similar(), xmlDiff.toString()
     }
 

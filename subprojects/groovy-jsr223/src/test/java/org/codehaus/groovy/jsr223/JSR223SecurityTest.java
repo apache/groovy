@@ -11,6 +11,7 @@ import org.codehaus.groovy.control.CompilationUnit.PrimaryClassNodeOperation;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.Phases;
 import org.codehaus.groovy.control.SourceUnit;
+import org.junit.Before;
 import org.junit.Test;
 
 import javax.script.ScriptEngine;
@@ -22,36 +23,67 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * Test contributed by Tiago Fernandez, for GROOVY-3946
+ * Test for GROOVY-3946 and GROOVY-5255.
+ *
+ * @author Tiago Fernandez
  */
 public class JSR223SecurityTest {
 
+    class TestFixture {
+        String script = "System.exit 2";
+        String forbiddenInstruction = "java.lang.System";
+    }
+
+    TestFixture testFixture;
+
+    @Before
+    public void resetTestFixture() {
+        testFixture = new TestFixture();
+    }
+
     @Test(expected = ScriptException.class)
     public void should_forbid_an_instruction_when_overriding_GroovyClassLoader_using_reflection() throws Exception {
-        secureEval("System.exit 2", "java.lang.System", true);
+        secureEval(ClassLoaderDefinitionType.REFLECTION);
     }
 
     @Test(expected = ScriptException.class)
     public void should_forbid_an_instruction_when_overriding_GroovyClassLoader_using_injection() throws Exception {
-        secureEval("System.exit 2", "java.lang.System", false);
+        secureEval(ClassLoaderDefinitionType.INJECTION);
     }
 
-    private void secureEval(final String script, final String forbiddenInstruction, final boolean useReflection) throws Exception {
-        final ScriptEngine groovyEngine = new ScriptEngineManager().getEngineByName("groovy");
-
-        final GroovySecurityManager groovySecurityManager = GroovySecurityManager.instance();
-        groovySecurityManager.overrideGroovyClassLoader(groovyEngine, useReflection);
-        groovySecurityManager.forbid(forbiddenInstruction);
-
-        groovyEngine.eval(script);
+    @Test(expected = ScriptException.class)
+    public void should_forbid_an_instruction_when_overriding_GroovyClassLoader_using_constructor() throws Exception {
+        secureEval(ClassLoaderDefinitionType.CONSTRUCTOR);
     }
+
+    private void secureEval(ClassLoaderDefinitionType classLoaderDefType) throws Exception {
+        ScriptEngine engine = createScriptEngine(classLoaderDefType);
+
+        GroovySecurityManager securityMgr = GroovySecurityManager.instance();
+        securityMgr.overrideGroovyClassLoader(engine, classLoaderDefType);
+        securityMgr.forbid(testFixture.forbiddenInstruction);
+
+        engine.eval(testFixture.script);
+    }
+
+    private ScriptEngine createScriptEngine(ClassLoaderDefinitionType classLoaderDefType) {
+        return (classLoaderDefType == ClassLoaderDefinitionType.CONSTRUCTOR)
+                ? new GroovyScriptEngineImpl(new CustomGroovyClassLoader())
+                : new ScriptEngineManager().getEngineByName("groovy");
+    }
+}
+
+enum ClassLoaderDefinitionType {
+    CONSTRUCTOR,
+    INJECTION,
+    REFLECTION
 }
 
 class GroovySecurityManager {
 
-    private final static GroovySecurityManager instance = new GroovySecurityManager();
+    private static GroovySecurityManager instance = new GroovySecurityManager();
 
-    private final Set<String> blacklist = new HashSet<String>();
+    private Set<String> blacklist = new HashSet<String>();
 
     private GroovySecurityManager() { }
 
@@ -59,22 +91,25 @@ class GroovySecurityManager {
         return instance;
     }
 
-    public void overrideGroovyClassLoader(final ScriptEngine engine, final boolean useReflection) {
+    public void overrideGroovyClassLoader(ScriptEngine engine, ClassLoaderDefinitionType classLoaderDefType) {
         try {
-            if (useReflection)
+            if (classLoaderDefType == ClassLoaderDefinitionType.REFLECTION) {
                 overrideDefaultGroovyClassLoaderUsingReflection(engine);
-            else
+            }
+            else if (classLoaderDefType == ClassLoaderDefinitionType.INJECTION) {
                 overrideDefaultGroovyClassLoaderUsingInjection(engine);
-        } catch (Throwable ex) {
+            }
+        }
+        catch (Throwable ex) {
             throw new RuntimeException("Could not initialize the security manager", ex);
         }
     }
 
-    public void forbid(final String instruction) {
+    public void forbid(String instruction) {
         blacklist.add(instruction);
     }
 
-    public boolean isForbidden(final String instruction) {
+    public boolean isForbidden(String instruction) {
         for (String forbidden : blacklist)
             if (instruction.startsWith(forbidden))
                 return true;
@@ -82,13 +117,13 @@ class GroovySecurityManager {
         return false;
     }
 
-    private void overrideDefaultGroovyClassLoaderUsingReflection(final ScriptEngine engine) throws Exception {
-        final Field classLoader = engine.getClass().getDeclaredField("loader");
+    private void overrideDefaultGroovyClassLoaderUsingReflection(ScriptEngine engine) throws Exception {
+        Field classLoader = engine.getClass().getDeclaredField("loader");
         classLoader.setAccessible(true);
         classLoader.set(engine, new CustomGroovyClassLoader());
     }
 
-    private void overrideDefaultGroovyClassLoaderUsingInjection(final ScriptEngine engine) throws Exception {
+    private void overrideDefaultGroovyClassLoaderUsingInjection(ScriptEngine engine) throws Exception {
         GroovyScriptEngineImpl concreteEngine = (GroovyScriptEngineImpl) engine;
         concreteEngine.setClassLoader(new CustomGroovyClassLoader());
     }
@@ -96,16 +131,15 @@ class GroovySecurityManager {
 
 class GroovySecurityException extends RuntimeException {
 
-    public GroovySecurityException(final String message) {
+    public GroovySecurityException(String message) {
         super(message);
     }
 }
 
 class CustomGroovyClassLoader extends GroovyClassLoader {
 
-    @Override
-    protected CompilationUnit createCompilationUnit(final CompilerConfiguration config, final CodeSource source) {
-        final CompilationUnit unit = super.createCompilationUnit(config, source);
+    protected CompilationUnit createCompilationUnit(CompilerConfiguration config, CodeSource source) {
+        CompilationUnit unit = super.createCompilationUnit(config, source);
         unit.addPhaseOperation(new CustomPrimaryClassNodeOperation(), Phases.SEMANTIC_ANALYSIS);
         return unit;
     }
@@ -113,8 +147,7 @@ class CustomGroovyClassLoader extends GroovyClassLoader {
 
 class CustomPrimaryClassNodeOperation extends PrimaryClassNodeOperation {
 
-    @Override
-    public void call(final SourceUnit source, final GeneratorContext context, final ClassNode classNode) {
+    public void call(SourceUnit source, GeneratorContext context, ClassNode classNode) {
         for (Object statement : source.getAST().getStatementBlock().getStatements())
             ((ExpressionStatement) statement).visit(new CustomCodeVisitorSupport());
     }
@@ -122,10 +155,9 @@ class CustomPrimaryClassNodeOperation extends PrimaryClassNodeOperation {
 
 class CustomCodeVisitorSupport extends CodeVisitorSupport {
 
-    private final GroovySecurityManager groovySecurityManager = GroovySecurityManager.instance();
+    private GroovySecurityManager groovySecurityManager = GroovySecurityManager.instance();
 
-    @Override
-    public void visitMethodCallExpression(final MethodCallExpression call) {
+    public void visitMethodCallExpression(MethodCallExpression call) {
         if (groovySecurityManager.isForbidden(call.getText()))
             throw new GroovySecurityException("The following code is forbidden in the script: " + call.getText());
     }

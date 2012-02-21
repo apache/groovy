@@ -250,6 +250,8 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
     void testMultipleAssignment1() {
         assertScript '''
             def (x,y) = [1,2]
+            assert x == 1
+            assert y == 2
         '''
     }
 
@@ -258,6 +260,8 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
             int x
             int y
             (x,y) = [1,2]
+            assert x == 1
+            assert y == 2
         '''
     }
 
@@ -282,6 +286,8 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
             int x
             int y
             (x,y) = [1,2,3]
+            assert x == 1
+            assert y == 2
         '''
     }
 
@@ -361,7 +367,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
     void testCastNullToCharWithCast() {
         shouldFailWithMessages '''
             def c = (char) null
-        ''', 'Inconvertible types: cannot cast null to char'
+        ''', 'Inconvertible types: cannot cast java.lang.Object to char'
     }
 
     void testCastStringToCharacterWithCast() {
@@ -691,6 +697,33 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
             Object o = new Object()
             --o
         ''', 'Cannot find matching method java.lang.Object#previous()'
+    }
+
+    void testAssignArray() {
+        assertScript '''
+            String[] src = ['a','b','c']
+            Object[] arr = src
+        '''
+    }
+
+    void testCastArray() {
+        assertScript '''
+            List<String> src = ['a','b','c']
+            (String[]) src.toArray(src as String[])
+        '''
+    }
+
+    void testIncompatibleCastArray() {
+        shouldFailWithMessages '''
+            String[] src = ['a','b','c']
+            (Set[]) src
+        ''', 'Inconvertible types: cannot cast [Ljava.lang.String; to [Ljava.util.Set;'
+    }
+
+    void testIncompatibleToArray() {
+        shouldFailWithMessages '''
+            (Set[]) ['a','b','c'].toArray(new String[3])
+        ''', 'Inconvertible types: cannot cast [Ljava.lang.String; to [Ljava.util.Set;'
     }
 
 }

@@ -15,24 +15,11 @@
  */
 package org.codehaus.groovy.classgen.asm;
 
+import java.util.LinkedList;
 import java.util.List;
 
-import org.codehaus.groovy.ast.ClassHelper;
-import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.ConstructorNode;
-import org.codehaus.groovy.ast.FieldNode;
-import org.codehaus.groovy.ast.MethodNode;
-import org.codehaus.groovy.ast.Parameter;
-import org.codehaus.groovy.ast.expr.ArgumentListExpression;
-import org.codehaus.groovy.ast.expr.CastExpression;
-import org.codehaus.groovy.ast.expr.ClassExpression;
-import org.codehaus.groovy.ast.expr.ConstantExpression;
-import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
-import org.codehaus.groovy.ast.expr.Expression;
-import org.codehaus.groovy.ast.expr.MethodCallExpression;
-import org.codehaus.groovy.ast.expr.StaticMethodCallExpression;
-import org.codehaus.groovy.ast.expr.TupleExpression;
-import org.codehaus.groovy.ast.expr.VariableExpression;
+import org.codehaus.groovy.ast.*;
+import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.classgen.asm.OptimizingStatementWriter.StatementMeta;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
@@ -101,8 +88,10 @@ public class InvocationWriter {
         int opcode = INVOKEVIRTUAL;
         if (target.isStatic()) {
             opcode = INVOKESTATIC;
-        } else if (target.isPrivate()) {
+        } else if (target.isPrivate() || ((receiver instanceof VariableExpression && ((VariableExpression) receiver).isSuperExpression()))) {
             opcode = INVOKESPECIAL;
+        } else if (target.getDeclaringClass().isInterface()) {
+            opcode = INVOKEINTERFACE;
         }
 
         // handle receiver
@@ -110,9 +99,29 @@ public class InvocationWriter {
         if (opcode!=INVOKESTATIC) {
             if (receiver!=null) {
                 // load receiver if not static invocation
-                compileStack.pushImplicitThis(implicitThis);
-                receiver.visit(controller.getAcg());
-                operandStack.doGroovyCast(target.getDeclaringClass());
+                // todo: fix inner class case
+                ClassNode declaringClass = target.getDeclaringClass();
+                ClassNode classNode = controller.getClassNode();
+                if (implicitThis
+                        && !classNode.isDerivedFrom(declaringClass)
+                        && !classNode.implementsInterface(declaringClass)
+                        && classNode instanceof InnerClassNode) {
+                    // we are calling an outer class method
+                    compileStack.pushImplicitThis(false);
+                    if (controller.isInClosure()) {
+                        Expression expr = new PropertyExpression(
+                                VariableExpression.THIS_EXPRESSION, "owner"
+                        );
+                        expr.visit(controller.getAcg());
+                    } else {
+                        Expression expr = new PropertyExpression(new ClassExpression(declaringClass), "this");
+                        expr.visit(controller.getAcg());
+                    }
+                } else {
+                    compileStack.pushImplicitThis(implicitThis);
+                    receiver.visit(controller.getAcg());
+                }
+                operandStack.doGroovyCast(declaringClass);
                 compileStack.popImplicitThis();
                 argumentsToRemove++;
             } else {
@@ -137,10 +146,46 @@ public class InvocationWriter {
     }
 
     // load arguments
-    private void loadArguments(List<Expression> argumentList, Parameter[] para) {
-        for (int i=0; i<argumentList.size(); i++) {
-            argumentList.get(i).visit(controller.getAcg());
-            controller.getOperandStack().doGroovyCast(para[i].getType());
+    protected void loadArguments(List<Expression> argumentList, Parameter[] para) {
+        if (para.length==0) return;
+        ClassNode lastParaType = para[para.length - 1].getOriginType();
+        AsmClassGenerator acg = controller.getAcg();
+        OperandStack operandStack = controller.getOperandStack();
+        if (lastParaType.isArray()
+                && (argumentList.size()>para.length || argumentList.size()==para.length-1 || !argumentList.get(para.length-1).getType().isArray())) {
+            int stackLen = operandStack.getStackLength()+argumentList.size();
+            MethodVisitor mv = controller.getMethodVisitor();
+            MethodVisitor orig = mv;
+            //mv = new org.objectweb.asm.util.TraceMethodVisitor(mv);
+            controller.setMethodVisitor(mv);
+            // varg call
+            // first parameters as usual
+            for (int i = 0; i < para.length-1; i++) {
+                argumentList.get(i).visit(acg);
+                operandStack.doGroovyCast(para[i].getType());
+            }
+            // last parameters wrapped in an array
+            List<Expression> lastParams = new LinkedList<Expression>();
+            for (int i=para.length-1; i<argumentList.size();i++) {
+                lastParams.add(argumentList.get(i));
+            }
+            ArrayExpression array = new ArrayExpression(
+                    lastParaType.getComponentType(),
+                    lastParams
+            );
+            array.visit(acg);
+            // adjust stack length
+            while (operandStack.getStackLength()<stackLen) {
+                operandStack.push(ClassHelper.OBJECT_TYPE);
+            }
+            if (argumentList.size()==para.length-1) {
+                operandStack.remove(1);
+            }
+        } else {
+            for (int i = 0; i < argumentList.size(); i++) {
+                argumentList.get(i).visit(acg);
+                operandStack.doGroovyCast(para[i].getType());
+            }
         }
     }
 
@@ -312,6 +357,7 @@ public class InvocationWriter {
     private void invokeClosure(Expression arguments, String methodName) {
         AsmClassGenerator acg = controller.getAcg();
         acg.visitVariableExpression(new VariableExpression(methodName));
+        controller.getOperandStack().box();
         if (arguments instanceof TupleExpression) {
             arguments.visit(acg);
         } else {
@@ -362,7 +408,7 @@ public class InvocationWriter {
         return true;
     }
     
-    private String prepareConstructorCall(ConstructorNode cn) {
+    protected String prepareConstructorCall(ConstructorNode cn) {
         String owner = BytecodeHelper.getClassInternalName(cn.getDeclaringClass());
         MethodVisitor mv = controller.getMethodVisitor();
         
@@ -371,7 +417,7 @@ public class InvocationWriter {
         return owner;
     }
     
-    private void finnishConstructorCall(ConstructorNode cn, String ownerDescriptor, int argsToRemove) {
+    protected void finnishConstructorCall(ConstructorNode cn, String ownerDescriptor, int argsToRemove) {
         String desc = BytecodeHelper.getMethodDescriptor(ClassHelper.VOID_TYPE, cn.getParameters());
         MethodVisitor mv = controller.getMethodVisitor();
         mv.visitMethodInsn(INVOKESPECIAL, ownerDescriptor, "<init>", desc);
