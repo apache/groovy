@@ -275,6 +275,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         }
         // todo: more cases
         throw new GroovyBugError(
+                "At line "+receiver.getLineNumber() + " column " + receiver.getColumnNumber() + "\n" +
                 "On receiver: "+receiver.getText() + " with message: "+message+" and arguments: "+arguments.getText()+"\n"+
                 "This method should not have been called. Please try to create a simple example reproducing this error and file" +
                 "a bug report at http://jira.codehaus.org/browse/GROOVY");
