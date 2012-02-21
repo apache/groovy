@@ -451,4 +451,52 @@ class ImmutableTransformTest extends GroovyShellTestCase {
             }
             '''
     }
+
+    void testKnownImmutableClassesWithNamedParameters() {
+        assertScript '''
+            import groovy.transform.*
+            @Immutable(knownImmutableClasses = [Address])
+            class Person {
+                String first, last
+                Address address
+            }
+
+            @TupleConstructor @ToString class Address { final String street }
+
+            assert new Person(first: 'John', last: 'Doe', address: new Address('Some Street')).toString() == 'Person(John, Doe, Address(Some Street))'
+        '''
+    }
+
+    void testKnownImmutableClassesWithExplicitConstructor() {
+        assertScript '''
+            @groovy.transform.Immutable(knownImmutableClasses = [Address])
+            class Person {
+                String first, last
+                Address address
+            }
+
+            // ok, not really immutable but deem it such for the purpose of this test
+            @groovy.transform.ToString class Address { String street }
+
+            assert new Person('John', 'Doe', new Address(street: 'Street')).toString() == 'Person(John, Doe, Address(Street))'
+        '''
+    }
+
+    void testKnownImmutableClassesMissing() {
+        def msg = shouldFail(RuntimeException) {
+            evaluate '''
+                @groovy.transform.ToString class Address { String street }
+
+                @groovy.transform.Immutable
+                class Person {
+                    String first, last
+                    Address address
+                }
+
+                new Person(first: 'John', last: 'Doe', address: new Address(street: 'Street'))
+            '''
+        }
+        assert msg.contains("doesn't know how to handle field 'address' of type 'Address'")
+        assert msg.contains("@Immutable classes only support properties with effectively immutable types")
+    }
 }
