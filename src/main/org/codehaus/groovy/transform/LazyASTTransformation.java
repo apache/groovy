@@ -98,10 +98,10 @@ public class LazyASTTransformation implements ASTTransformation, Opcodes {
         final BlockStatement body = new BlockStatement();
         if (fieldNode.isStatic()) {
             addHolderClassIdiomBody(body, fieldNode, initExpr);
-        } else if (notVolatile(fieldNode)) {
-            addNonThreadSafeBody(body, fieldNode, initExpr);
-        } else {
+        } else if (fieldNode.isVolatile()) {
             addDoubleCheckedLockingBody(body, fieldNode, initExpr);
+        } else {
+            addNonThreadSafeBody(body, fieldNode, initExpr);
         }
         addMethod(fieldNode, body, fieldNode.getType());
     }
@@ -175,14 +175,14 @@ public class LazyASTTransformation implements ASTTransformation, Opcodes {
 
         final Statement mainIf = new IfStatement(notNullExpr(resExpr), new ExpressionStatement(resExpr), elseBlock);
 
-        if (notVolatile(fieldNode)) {
-            body.addStatement(mainIf);
-        } else {
+        if (fieldNode.isVolatile()) {
             body.addStatement(new IfStatement(
                     notNullExpr(resExpr),
                     new ExpressionStatement(resExpr),
                     new SynchronizedStatement(syncTarget(fieldNode), mainIf)
             ));
+        } else {
+            body.addStatement(mainIf);
         }
         addMethod(fieldNode, body, type);
     }
@@ -205,10 +205,6 @@ public class LazyASTTransformation implements ASTTransformation, Opcodes {
 
     private Expression syncTarget(FieldNode fieldNode) {
         return fieldNode.isStatic() ? new ClassExpression(fieldNode.getDeclaringClass()) : VariableExpression.THIS_EXPRESSION;
-    }
-
-    private boolean notVolatile(FieldNode fieldNode) {
-        return (fieldNode.getModifiers() & ACC_VOLATILE) == 0;
     }
 
     private Expression getInitExpr(FieldNode fieldNode) {
