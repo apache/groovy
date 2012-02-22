@@ -410,16 +410,23 @@ class ImmutableTransformTest extends GroovyShellTestCase {
             assert new Person1("Hamlet", "D'Arcy").toString() == "Person1(Hamlet, D'Arcy)"
             assert new Person2(first: "Hamlet", last: "D'Arcy").toString() == "Person2(first:Hamlet, last:D'Arcy)"
             assert new Person3("Hamlet", "D'Arcy").toString() == "Person3(Hamlet)"
-            '''
+        '''
     }
 
-    void testImmutableUsageOnStaticInnerClasses() {
-        shell.parse '''
+    void testImmutableUsageOnInnerClasses() {
+        assertScript '''
             import groovy.transform.Immutable
             class A4997 {
                 @Immutable
-                static class B4997 {}
+                static class B4997 { String name }
+                @Immutable
+                class C4997 { String name }
+                def test() {
+                    assert new C4997(name: 'foo').toString() == 'A4997$C4997(foo)'
+                }
             }
-            '''
+            assert new A4997.B4997(name: 'bar').toString() == 'A4997$B4997(bar)'
+            new A4997().test()
+        '''
     }
 }

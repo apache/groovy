@@ -25,7 +25,6 @@ import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.FieldNode;
-import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.expr.*;
@@ -40,8 +39,14 @@ import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.InvokerHelper;
 
-import java.lang.reflect.Modifier;
-import java.util.*;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static org.codehaus.groovy.transform.AbstractASTTransformUtil.*;
 import static org.codehaus.groovy.transform.EqualsAndHashCodeASTTransformation.createEquals;
@@ -265,12 +270,6 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
     }
 
     private boolean validateConstructors(ClassNode cNode) {
-        if(cNode instanceof InnerClassNode && Modifier.isStatic(cNode.getModifiers())) {
-            List<ConstructorNode> constructors = cNode.getDeclaredConstructors();
-            if (constructors.size() == 1 && constructors.get(0).getCode() == null) {
-                constructors.remove(0);
-            }
-        }
         if (cNode.getDeclaredConstructors().size() != 0) {
             // TODO: allow constructors which only call provided constructor?
             addError("Explicit constructors not allowed for " + ImmutableASTTransformation.MY_TYPE_NAME + " class: " + cNode.getNameWithoutPackage(), cNode.getDeclaredConstructors().get(0));
