@@ -193,8 +193,11 @@ public class StaticInvocationWriter extends InvocationWriter {
     }
 
     protected static boolean isPrivateBridgeMethodsCallAllowed(ClassNode receiver, ClassNode caller) {
+        if (receiver==null) return false;
         if (receiver.redirect()==caller) return true;
-        if (caller.redirect() instanceof InnerClassNode) return isPrivateBridgeMethodsCallAllowed(receiver, caller.redirect().getOuterClass());
+        if (caller.redirect() instanceof InnerClassNode) return
+                isPrivateBridgeMethodsCallAllowed(receiver, caller.redirect().getOuterClass()) ||
+                isPrivateBridgeMethodsCallAllowed(receiver.getOuterClass(), caller);
         return false;
     }
 

@@ -111,13 +111,15 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
                         receiver.getColumnNumber()
                 )
         );
+        controller.getMethodVisitor().visitInsn(ACONST_NULL);
+        controller.getOperandStack().push(ClassHelper.OBJECT_TYPE);
     }
 
     @SuppressWarnings("unchecked")
     private boolean makeGetPrivateFieldWithBridgeMethod(final Expression receiver, final ClassNode receiverType, final String fieldName) {
         FieldNode field = receiverType.getField(fieldName);
         ClassNode classNode = controller.getClassNode();
-        if (Modifier.isPrivate(field.getModifiers()) 
+        if (field!=null && Modifier.isPrivate(field.getModifiers())
                 && (StaticInvocationWriter.isPrivateBridgeMethodsCallAllowed(receiverType, classNode) || StaticInvocationWriter.isPrivateBridgeMethodsCallAllowed(classNode,receiverType))
                 && !receiverType.equals(classNode)) {
             Map<String, MethodNode> accessors = (Map<String, MethodNode>) receiverType.redirect().getNodeMetaData(StaticCompilationMetadataKeys.PRIVATE_FIELDS_ACCESSORS);
