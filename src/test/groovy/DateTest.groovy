@@ -15,20 +15,22 @@
  */
 package groovy
 
+import java.text.SimpleDateFormat
+
 import static java.util.Calendar.*
+import static java.util.TimeZone.getTimeZone
 
 class DateTest extends GroovyTestCase {
-    private static final String fmt = 'dd-MMM-yyyy'
-
     void testCalendarNextPrevious() {
-        Calendar c = Calendar.getInstance(TimeZone.getTimeZone('GMT+00'), Locale.US)
+        Calendar c = getInstance(getTimeZone('GMT+00'))
         c[YEAR] = 2002
         c[MONTH] = FEBRUARY
         c[DATE] = 2
-        assert c.previous().format(fmt) == '01-Feb-2002'
-        assert c.format(fmt) == '02-Feb-2002'
-        assert c.next().format(fmt) == '03-Feb-2002'
-        def dates = (c.previous()..c.next())*.format(fmt)
+        def formatter = new SimpleDateFormat('dd-MMM-yyyy', Locale.US)
+        assert formatter.format(c.previous().time) == '01-Feb-2002'
+        assert formatter.format(c.time) == '02-Feb-2002'
+        assert formatter.format(c.next().time) == '03-Feb-2002'
+        def dates = (c.previous()..c.next()).collect{ formatter.format(it.time) }
         assert dates == ['01-Feb-2002', '02-Feb-2002', '03-Feb-2002']
     }
 
