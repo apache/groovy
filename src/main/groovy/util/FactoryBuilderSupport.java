@@ -735,7 +735,7 @@ public abstract class FactoryBuilderSupport extends Binding {
      */
     protected Factory resolveFactory(Object name, Map attributes, Object value) {
         getProxyBuilder().getContext().put(CHILD_BUILDER, getProxyBuilder());
-        return getProxyBuilder().factories.get(name);
+        return getProxyBuilder().getFactories().get(name);
     }
 
     /**
@@ -748,7 +748,7 @@ public abstract class FactoryBuilderSupport extends Binding {
      */
     @SuppressWarnings({"UnusedDeclaration"})
     protected Closure resolveExplicitMethod(String methodName, Object args) {
-        return explicitMethods.get(methodName);
+        return getExplicitMethods().get(methodName);
     }
 
     /**
@@ -759,7 +759,7 @@ public abstract class FactoryBuilderSupport extends Binding {
      * @return the get and set closures (in that order) for the matched explicit property.<br>
      */
     protected Closure[] resolveExplicitProperty(String propertyName) {
-        return explicitProperties.get(propertyName);
+        return getExplicitProperties().get(propertyName);
     }
 
     /**
@@ -954,7 +954,7 @@ public abstract class FactoryBuilderSupport extends Binding {
             return;
         }
 
-        for (Closure attrDelegate : getProxyBuilder().attributeDelegates) {
+        for (Closure attrDelegate : getProxyBuilder().getAttributeDelegates()) {
             FactoryBuilderSupport builder = this;
             if (attrDelegate.getOwner() instanceof FactoryBuilderSupport) {
                 builder = (FactoryBuilderSupport) attrDelegate.getOwner();
@@ -1010,7 +1010,7 @@ public abstract class FactoryBuilderSupport extends Binding {
      * @param node       the object created by the node factory
      */
     protected void postInstantiate(Object name, Map attributes, Object node) {
-        for (Closure postInstantiateDelegate : getProxyBuilder().postInstantiateDelegates) {
+        for (Closure postInstantiateDelegate : getProxyBuilder().getPostInstantiateDelegates()) {
             (postInstantiateDelegate).call(new Object[]{this, attributes, node});
         }
     }
@@ -1027,7 +1027,7 @@ public abstract class FactoryBuilderSupport extends Binding {
      * @return the node, possibly new, that represents the markup element
      */
     protected Object postNodeCompletion(Object parent, Object node) {
-        for (Closure postNodeCompletionDelegate : getProxyBuilder().postNodeCompletionDelegates) {
+        for (Closure postNodeCompletionDelegate : getProxyBuilder().getPostNodeCompletionDelegates()) {
             (postNodeCompletionDelegate).call(new Object[]{this, parent, node});
         }
 
@@ -1044,7 +1044,7 @@ public abstract class FactoryBuilderSupport extends Binding {
      * @param value      the value argument(s) of the node
      */
     protected void preInstantiate(Object name, Map attributes, Object value) {
-        for (Closure preInstantiateDelegate : getProxyBuilder().preInstantiateDelegates) {
+        for (Closure preInstantiateDelegate : getProxyBuilder().getPreInstantiateDelegates()) {
             (preInstantiateDelegate).call(new Object[]{this, attributes, value});
         }
     }
@@ -1280,24 +1280,24 @@ public abstract class FactoryBuilderSupport extends Binding {
 
 class FactoryInterceptorMetaClass extends DelegatingMetaClass {
 
-    FactoryBuilderSupport factory;
+    FactoryBuilderSupport builder;
 
-    public FactoryInterceptorMetaClass(MetaClass delegate, FactoryBuilderSupport factory) {
+    public FactoryInterceptorMetaClass(MetaClass delegate, FactoryBuilderSupport builder) {
         super(delegate);
-        this.factory = factory;
+        this.builder = builder;
     }
 
     public Object invokeMethod(Object object, String methodName, Object arguments) {
         try {
             return delegate.invokeMethod(object, methodName, arguments);
         } catch (MissingMethodException mme) {
-            // attempt factory resolution
+            // attempt builder resolution
             try {
-                if (factory.getMetaClass().respondsTo(factory, methodName).isEmpty()) {
+                if (builder.getMetaClass().respondsTo(builder, methodName).isEmpty()) {
                     // dispatch to factories if it is not a literal method
-                    return factory.invokeMethod(methodName, arguments);
+                    return builder.invokeMethod(methodName, arguments);
                 } else {
-                    return InvokerHelper.invokeMethod(factory, methodName, arguments);
+                    return InvokerHelper.invokeMethod(builder, methodName, arguments);
                 }
             } catch (MissingMethodException mme2) {
                 // chain secondary exception
@@ -1316,13 +1316,13 @@ class FactoryInterceptorMetaClass extends DelegatingMetaClass {
         try {
             return delegate.invokeMethod(object, methodName, arguments);
         } catch (MissingMethodException mme) {
-            // attempt factory resolution
+            // attempt builder resolution
             try {
-                if (factory.getMetaClass().respondsTo(factory, methodName).isEmpty()) {
+                if (builder.getMetaClass().respondsTo(builder, methodName).isEmpty()) {
                     // dispatch to factories if it is not a literal method
-                    return factory.invokeMethod(methodName, arguments);
+                    return builder.invokeMethod(methodName, arguments);
                 } else {
-                    return InvokerHelper.invokeMethod(factory, methodName, arguments);
+                    return InvokerHelper.invokeMethod(builder, methodName, arguments);
                 }
             } catch (MissingMethodException mme2) {
                 // chain secondary exception
