@@ -358,6 +358,22 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    void testCastCharToByte() {
+        assertScript '''
+            void foo(char c) {
+                byte b = (byte) c
+            }
+        '''
+    }
+
+    void testCastCharToInt() {
+        assertScript '''
+            void foo(char c) {
+                int b = (int) c
+            }
+        '''
+    }
+
     void testCastStringLongerThan1ToCharWithCast() {
         shouldFailWithMessages '''
             def c = (char) 'aa'

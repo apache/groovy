@@ -1523,7 +1523,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         } else if (targetType.equals(Character_TYPE) && (expressionType==STRING_TYPE||sourceIsNull)
                 && (sourceIsNull || source instanceof ConstantExpression && source.getText().length()==1)) {
             // ex : (Character) 'c'
-        } else if (isNumberCategory(getWrapper(targetType)) && isNumberCategory(getWrapper(expressionType))) {
+        } else if (isNumberCategory(getWrapper(targetType)) && (isNumberCategory(getWrapper(expressionType)) || char_TYPE==expressionType)) {
             // ex: short s = (short) 0
         } else if (sourceIsNull && !isPrimitiveType(targetType)) {
             // ex: (Date)null
