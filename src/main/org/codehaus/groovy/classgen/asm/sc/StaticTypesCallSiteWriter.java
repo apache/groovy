@@ -84,6 +84,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
                     ArgumentListExpression.EMPTY_ARGUMENTS
             );
             expr.setMethodTarget(COLLECTION_SIZE_METHOD);
+            expr.setImplicitThis(implicitThis);
             expr.visit(controller.getAcg());
             return;
         }
@@ -103,7 +104,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
             if (makeGetField(receiver, ClassHelper.CLASS_Type, methodName, false, true)) return;
             if (makeGetPropertyWithGetter(receiver, ClassHelper.CLASS_Type, methodName)) return;
         }
-        if (makeGetPrivateFieldWithBridgeMethod(receiver, receiverType, methodName)) return;
+        if (makeGetPrivateFieldWithBridgeMethod(receiver, receiverType, methodName, implicitThis)) return;
         controller.getSourceUnit().addError(
                 new SyntaxException(
                         "Access to "+receiverType.toString(false)+"#"+methodName+" is forbidden",
@@ -116,7 +117,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
     }
 
     @SuppressWarnings("unchecked")
-    private boolean makeGetPrivateFieldWithBridgeMethod(final Expression receiver, final ClassNode receiverType, final String fieldName) {
+    private boolean makeGetPrivateFieldWithBridgeMethod(final Expression receiver, final ClassNode receiverType, final String fieldName, final boolean implicitThis) {
         FieldNode field = receiverType.getField(fieldName);
         ClassNode classNode = controller.getClassNode();
         if (field!=null && Modifier.isPrivate(field.getModifiers())
@@ -128,6 +129,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
                 if (methodNode!=null) {
                     MethodCallExpression mce = new MethodCallExpression(receiver, methodNode.getName(), ArgumentListExpression.EMPTY_ARGUMENTS);
                     mce.setMethodTarget(methodNode);
+                    mce.setImplicitThis(implicitThis);
                     mce.visit(controller.getAcg());
                     return true;
                 }

@@ -1011,7 +1011,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 String ownerName = BytecodeHelper.getClassInternalName(iterType);
                 iterType = iterType.getOuterClass();
                 String typeName = BytecodeHelper.getTypeDescription(iterType);
-                mv.visitFieldInsn(GETFIELD, ownerName, "this$0", typeName);                
+                mv.visitFieldInsn(GETFIELD, ownerName, "this$0", typeName);
             }
             controller.getOperandStack().push(type);
             return;
