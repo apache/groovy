@@ -139,6 +139,8 @@ public abstract class FactoryBuilderSupport extends Binding {
     protected LinkedList<Closure> preInstantiateDelegates = new LinkedList<Closure>();
     protected LinkedList<Closure> postInstantiateDelegates = new LinkedList<Closure>();
     protected LinkedList<Closure> postNodeCompletionDelegates = new LinkedList<Closure>();
+    protected Closure methodMissingDelegate;
+    protected Closure propertyMissingDelegate;
     protected Map<String, Closure[]> explicitProperties = new HashMap<String, Closure[]>();
     protected Map<String, Closure> explicitMethods = new HashMap<String, Closure>();
     protected Map<String, Set<String>> registrationGroup = new HashMap<String, Set<String>>();
@@ -220,7 +222,14 @@ public abstract class FactoryBuilderSupport extends Binding {
      * @return the variable value
      */
     public Object getVariable(String name) {
-        return getProxyBuilder().doGetVariable(name);
+        try {
+            return getProxyBuilder().doGetVariable(name);
+        } catch(MissingPropertyException mpe) {
+            if(mpe.getProperty().equals(name) && propertyMissingDelegate != null) {
+                return propertyMissingDelegate.call(new Object[]{name});
+            }
+            throw mpe;
+        }
     }
 
     private Object doGetVariable(String name) {
@@ -259,7 +268,14 @@ public abstract class FactoryBuilderSupport extends Binding {
             if ((getContext() != null) && (getContext().containsKey(property))) {
                 return getContext().get(property);
             } else {
-                return getMetaClass().getProperty(this, property);
+                try {
+                    return getMetaClass().getProperty(this, property);
+                } catch(MissingPropertyException mpe2) {
+                    if(mpe2.getProperty().equals(property) && propertyMissingDelegate != null) {
+                        return propertyMissingDelegate.call(new Object[]{property});
+                    }
+                    throw mpe2;
+                }
             }
         }
     }
@@ -368,6 +384,22 @@ public abstract class FactoryBuilderSupport extends Binding {
 
     public List<Closure> getPostNodeCompletionDelegates() {
         return Collections.unmodifiableList(postNodeCompletionDelegates);
+    }
+
+    public Closure getMethodMissingDelegate() {
+        return methodMissingDelegate;
+    }
+
+    public void setMethodMissingDelegate(Closure delegate) {
+        methodMissingDelegate = delegate;
+    }
+
+    public Closure getPropertyMissingDelegate() {
+        return propertyMissingDelegate;
+    }
+
+    public void setPropertyMissingDelegate(Closure delegate) {
+        propertyMissingDelegate = delegate;
     }
 
     /**
@@ -625,7 +657,6 @@ public abstract class FactoryBuilderSupport extends Binding {
                     return beanClass.newInstance();
                 }
             }
-
         });
         getRegistrationGroup(groupName).add(theName);
     }
@@ -744,7 +775,14 @@ public abstract class FactoryBuilderSupport extends Binding {
         if (checkExplicitMethod(methodName, args, explicitResult)) {
             return explicitResult.get();
         } else {
-            return dispathNodeCall(name, args);
+            try {
+                return dispathNodeCall(name, args);
+            } catch(MissingMethodException mme) {
+                if(mme.getMethod().equals(methodName) && methodMissingDelegate != null) {
+                    return methodMissingDelegate.call(new Object[]{methodName, args});
+                }
+                throw mme;
+            }
         }
     }
 
