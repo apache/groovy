@@ -3615,6 +3615,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the result of the last closure call
      * @throws NoSuchElementException if the collection is empty.
      * @see #inject(Collection, Object, Closure)
+     * @since 1.8.7
      */
     public static <T, V extends T> T inject(Collection<T> self, Closure<V> closure ) {
         if( self.isEmpty() ) {
@@ -3624,7 +3625,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         if( list.size() == 1 ) {
             return list.get( 0 ) ;
         }
-        return inject( drop( list, 1 ), head( list ), closure );
+        return (T) inject( drop( list, 1 ), head( list ), closure );
     }
 
     /**
@@ -3744,6 +3745,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the result of the last closure call
      * @throws NoSuchElementException if the collection is empty.
      * @see #inject(Collection, Object, Closure)
+     * @since 1.8.7
      */
     public static <T, V extends T> T inject(Object self, Closure<V> closure) {
         Iterator iter = InvokerHelper.asIterator(self);
@@ -3783,6 +3785,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the result of the last closure call
      * @throws NoSuchElementException if the array is empty.
      * @see #inject(Object[], Object, Closure)
+     * @since 1.8.7
      */
     public static <T, V extends T> T inject(Object[] self, Closure<V> closure) {
         return inject( (Object)self, closure ) ;
