@@ -44,7 +44,7 @@ public class StatementMetaTypeChooser implements TypeChooser {
             type = ve.getOriginType();
             if (ve.getAccessedVariable() instanceof FieldNode) {
                 FieldNode fn = (FieldNode) ve.getAccessedVariable();
-                if (!fn.getDeclaringClass().equals(current)) return OBJECT_TYPE;
+                if (!fn.getDeclaringClass().equals(current)) return fn.getOriginType();
             }
         } else if (exp instanceof Variable) {
             Variable v = (Variable) exp;
