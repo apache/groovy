@@ -3611,6 +3611,33 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
 
     /**
+     * Performs the same function as the version of inject that takes an initial value, but
+     * uses the head of the Collection as the initial value, and iterates over the tail.
+     * <pre class="groovyTestCase">
+     * assert 1 * 2 * 3 * 4 == [ 1, 2, 3, 4 ].inject { acc, val -> acc * val }
+     * assert ['b'] == [['a','b'], ['b','c'], ['d','b']].inject { acc, val -> acc.intersect( val ) }
+     * LinkedHashSet set = [ 't', 'i', 'm' ]
+     * assert 'tim' == set.inject { a, b -> a + b }
+     * </pre>
+     *
+     * @param self         a Collection
+     * @param closure      a closure
+     * @return the result of the last closure call
+     * @throws NoSuchElementException if the collection is empty.
+     * @see #inject(Collection, Object, Closure)
+     */
+    public static <T, V extends T> T inject(Collection<T> self, Closure<V> closure ) {
+        if( self.isEmpty() ) {
+            throw new NoSuchElementException( "Cannot call inject() on an empty collection without passing an initial value." ) ;
+        }
+        List<T> list = asList( self ) ;
+        if( list.size() == 1 ) {
+            return list.get( 0 ) ;
+        }
+        return inject( drop( list, 1 ), head( list ), closure );
+    }
+
+    /**
      * Iterates through the given Collection, passing in the initial value to
      * the 2-arg closure along with the first item. The result is passed back (injected) into
      * the closure along with the second item. The new result is injected back into
@@ -3716,6 +3743,28 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Iterates through the given Object, passing in the first value to
+     * the closure along with the first item. The result is passed back (injected) into
+     * the closure along with the second item. The new result is injected back into
+     * the closure along with the third item and so on until further iteration of
+     * the object is not possible. Also known as foldLeft in functional parlance.
+     *
+     * @param self         an Object
+     * @param closure      a closure
+     * @return the result of the last closure call
+     * @throws NoSuchElementException if the collection is empty.
+     * @see #inject(Collection, Object, Closure)
+     */
+    public static <T, V extends T> T inject(Object self, Closure<V> closure) {
+        Iterator iter = InvokerHelper.asIterator(self);
+        if( !iter.hasNext() ) {
+            throw new NoSuchElementException( "Cannot call inject() over an empty iterable without passing an initial value." ) ;
+        }
+        Object initialValue = iter.next() ;
+        return (T) inject(iter, initialValue, closure);
+    }
+
+    /**
      * Iterates through the given Object, passing in the initial value to
      * the closure along with the first item. The result is passed back (injected) into
      * the closure along with the second item. The new result is injected back into
@@ -3732,6 +3781,21 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static <T, U extends T, V extends T> T inject(Object self, U initialValue, Closure<V> closure) {
         Iterator iter = InvokerHelper.asIterator(self);
         return (T) inject(iter, initialValue, closure);
+    }
+
+    /**
+     * Iterates through the given array as with inject(Object[],initialValue,closure), but
+     * using the first element of the array as the initialValue, and then iterating
+     * the remaining elements of the array.
+     *
+     * @param self         an Object[]
+     * @param closure      a closure
+     * @return the result of the last closure call
+     * @throws NoSuchElementException if the array is empty.
+     * @see #inject(Object[], Object, Closure)
+     */
+    public static <T, V extends T> T inject(Object[] self, Closure<V> closure) {
+        return inject( (Object)self, closure ) ;
     }
 
     /**
