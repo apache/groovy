@@ -34,6 +34,8 @@ import java.lang.annotation.Target;
  *
  * @author Dierk König
  * @author Andre Steingress
+ * @author Ilinca V. Hallberg
+ * @author Björn Westlin
  */
 @java.lang.annotation.Documented
 @Retention(RetentionPolicy.RUNTIME)
