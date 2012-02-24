@@ -188,7 +188,7 @@ public class JsonSlurper {
                         "Expected " + STRING.getLabel() + " key " +
                         "on line: " + currentToken.getStartLine() + ", " +
                         "column: " + currentToken.getStartColumn() + ".\n" +
-                        "Bug got '" + currentToken.getText() + "' instead."
+                        "But got '" + currentToken.getText() + "' instead."
                 );
             }
 
@@ -212,7 +212,7 @@ public class JsonSlurper {
                         "Expected " + COLON.getLabel() + " " +
                         "on line: " + currentToken.getStartLine() + ", " +
                         "column: " + currentToken.getStartColumn() + ".\n" +
-                        "Bug got '" + currentToken.getText() +  "' instead."
+                        "But got '" + currentToken.getText() +  "' instead."
                 );
             }
 
