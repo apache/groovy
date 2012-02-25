@@ -51,6 +51,7 @@ task docGDK {
                 arg(value: "org.codehaus.groovy.runtime.DefaultGroovyMethods")
                 arg(value: "org.codehaus.groovy.runtime.SqlGroovyMethods")
                 arg(value: "org.codehaus.groovy.runtime.SwingGroovyMethods")
+                arg(value: "org.codehaus.groovy.runtime.StringGroovyMethods")
                 arg(value: "org.codehaus.groovy.runtime.XmlGroovyMethods")
                 arg(value: "org.codehaus.groovy.runtime.EncodingGroovyMethods")
                 arg(value: "org.codehaus.groovy.runtime.DateGroovyMethods")

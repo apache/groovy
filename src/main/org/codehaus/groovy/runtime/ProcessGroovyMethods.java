@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2011 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ import groovy.lang.Closure;
 import groovy.lang.GroovyRuntimeException;
 
 import java.io.*;
+import java.util.List;
 
 /**
  * This class defines new groovy methods which appear on normal JDK
@@ -488,6 +489,210 @@ public class ProcessGroovyMethods extends DefaultGroovyMethodsSupport {
                 throw new GroovyRuntimeException("exception while dumping process stream", e);
             }
         }
+    }
+
+    /**
+     * Executes the command specified by <code>self</code> as a command-line process.
+     * <p>For more control over Process construction you can use
+     * <code>java.lang.ProcessBuilder</code> (JDK 1.5+).</p>
+     *
+     * @param self a command line String
+     * @return the Process which has just started for this command line representation
+     * @throws IOException if an IOException occurs.
+     * @since 1.0
+     */
+    public static Process execute(final String self) throws IOException {
+        return Runtime.getRuntime().exec(self);
+    }
+
+    /**
+     * Executes the command specified by <code>self</code> with environment defined by <code>envp</code>
+     * and under the working directory <code>dir</code>.
+     * <p>For more control over Process construction you can use
+     * <code>java.lang.ProcessBuilder</code> (JDK 1.5+).</p>
+     *
+     * @param self a command line String to be executed.
+     * @param envp an array of Strings, each element of which
+     *             has environment variable settings in the format
+     *             <i>name</i>=<i>value</i>, or
+     *             <tt>null</tt> if the subprocess should inherit
+     *             the environment of the current process.
+     * @param dir  the working directory of the subprocess, or
+     *             <tt>null</tt> if the subprocess should inherit
+     *             the working directory of the current process.
+     * @return the Process which has just started for this command line representation.
+     * @throws IOException if an IOException occurs.
+     * @since 1.0
+     */
+    public static Process execute(final String self, final String[] envp, final File dir) throws IOException {
+        return Runtime.getRuntime().exec(self, envp, dir);
+    }
+
+    /**
+     * Executes the command specified by <code>self</code> with environment defined
+     * by <code>envp</code> and under the working directory <code>dir</code>.
+     * <p>For more control over Process construction you can use
+     * <code>java.lang.ProcessBuilder</code> (JDK 1.5+).</p>
+     *
+     * @param self a command line String to be executed.
+     * @param envp a List of Objects (converted to Strings using toString), each member of which
+     *             has environment variable settings in the format
+     *             <i>name</i>=<i>value</i>, or
+     *             <tt>null</tt> if the subprocess should inherit
+     *             the environment of the current process.
+     * @param dir  the working directory of the subprocess, or
+     *             <tt>null</tt> if the subprocess should inherit
+     *             the working directory of the current process.
+     * @return the Process which has just started for this command line representation.
+     * @throws IOException if an IOException occurs.
+     * @since 1.0
+     */
+    public static Process execute(final String self, final List envp, final File dir) throws IOException {
+        return execute(self, stringify(envp), dir);
+    }
+
+    /**
+     * Executes the command specified by the given <code>String</code> array.
+     * The first item in the array is the command; the others are the parameters.
+     * <p>For more control over Process construction you can use
+     * <code>java.lang.ProcessBuilder</code> (JDK 1.5+).</p>
+     *
+     * @param commandArray an array of <code>String</code> containing the command name and
+     *                     parameters as separate items in the array.
+     * @return the Process which has just started for this command line representation.
+     * @throws IOException if an IOException occurs.
+     * @since 1.0
+     */
+    public static Process execute(final String[] commandArray) throws IOException {
+        return Runtime.getRuntime().exec(commandArray);
+    }
+
+    /**
+     * Executes the command specified by the <code>String</code> array given in the first parameter,
+     * with the environment defined by <code>envp</code> and under the working directory <code>dir</code>.
+     * The first item in the array is the command; the others are the parameters.
+     * <p>For more control over Process construction you can use
+     * <code>java.lang.ProcessBuilder</code> (JDK 1.5+).</p>
+     *
+     * @param commandArray an array of <code>String</code> containing the command name and
+     *                     parameters as separate items in the array.
+     * @param envp an array of Strings, each member of which
+     *             has environment variable settings in the format
+     *             <i>name</i>=<i>value</i>, or
+     *             <tt>null</tt> if the subprocess should inherit
+     *             the environment of the current process.
+     * @param dir  the working directory of the subprocess, or
+     *             <tt>null</tt> if the subprocess should inherit
+     *             the working directory of the current process.
+     * @return the Process which has just started for this command line representation.
+     * @throws IOException if an IOException occurs.
+     * @since 1.7.1
+     */
+    public static Process execute(final String[] commandArray, final String[] envp, final File dir) throws IOException {
+        return Runtime.getRuntime().exec(commandArray, envp, dir);
+    }
+
+    /**
+     * Executes the command specified by the <code>String</code> array given in the first parameter,
+     * with the environment defined by <code>envp</code> and under the working directory <code>dir</code>.
+     * The first item in the array is the command; the others are the parameters.
+     * <p>For more control over Process construction you can use
+     * <code>java.lang.ProcessBuilder</code> (JDK 1.5+).</p>
+     *
+     * @param commandArray an array of <code>String</code> containing the command name and
+     *                     parameters as separate items in the array.
+     * @param envp a List of Objects (converted to Strings using toString), each member of which
+     *             has environment variable settings in the format
+     *             <i>name</i>=<i>value</i>, or
+     *             <tt>null</tt> if the subprocess should inherit
+     *             the environment of the current process.
+     * @param dir  the working directory of the subprocess, or
+     *             <tt>null</tt> if the subprocess should inherit
+     *             the working directory of the current process.
+     * @return the Process which has just started for this command line representation.
+     * @throws IOException if an IOException occurs.
+     * @since 1.7.1
+     */
+    public static Process execute(final String[] commandArray, final List envp, final File dir) throws IOException {
+        return Runtime.getRuntime().exec(commandArray, stringify(envp), dir);
+    }
+
+    /**
+     * Executes the command specified by the given list. The toString() method is called
+     * for each item in the list to convert into a resulting String.
+     * The first item in the list is the command the others are the parameters.
+     * <p>For more control over Process construction you can use
+     * <code>java.lang.ProcessBuilder</code> (JDK 1.5+).</p>
+     *
+     * @param commands a list containing the command name and
+     *                    parameters as separate items in the list.
+     * @return the Process which has just started for this command line representation.
+     * @throws IOException if an IOException occurs.
+     * @since 1.0
+     */
+    public static Process execute(final List commands) throws IOException {
+        return execute(stringify(commands));
+    }
+
+    /**
+     * Executes the command specified by the given list,
+     * with the environment defined by <code>envp</code> and under the working directory <code>dir</code>.
+     * The first item in the list is the command; the others are the parameters. The toString()
+     * method is called on items in the list to convert them to Strings.
+     * <p>For more control over Process construction you can use
+     * <code>java.lang.ProcessBuilder</code> (JDK 1.5+).</p>
+     *
+     * @param commands a List containing the command name and
+     *                     parameters as separate items in the list.
+     * @param envp an array of Strings, each member of which
+     *             has environment variable settings in the format
+     *             <i>name</i>=<i>value</i>, or
+     *             <tt>null</tt> if the subprocess should inherit
+     *             the environment of the current process.
+     * @param dir  the working directory of the subprocess, or
+     *             <tt>null</tt> if the subprocess should inherit
+     *             the working directory of the current process.
+     * @return the Process which has just started for this command line representation.
+     * @throws IOException if an IOException occurs.
+     * @since 1.7.1
+     */
+    public static Process execute(final List commands, final String[] envp, final File dir) throws IOException {
+        return Runtime.getRuntime().exec(stringify(commands), envp, dir);
+    }
+
+    /**
+     * Executes the command specified by the given list,
+     * with the environment defined by <code>envp</code> and under the working directory <code>dir</code>.
+     * The first item in the list is the command; the others are the parameters. The toString()
+     * method is called on items in the list to convert them to Strings.
+     * <p>For more control over Process construction you can use
+     * <code>java.lang.ProcessBuilder</code> (JDK 1.5+).</p>
+     *
+     * @param commands a List containing the command name and
+     *                     parameters as separate items in the list.
+     * @param envp a List of Objects (converted to Strings using toString), each member of which
+     *             has environment variable settings in the format
+     *             <i>name</i>=<i>value</i>, or
+     *             <tt>null</tt> if the subprocess should inherit
+     *             the environment of the current process.
+     * @param dir  the working directory of the subprocess, or
+     *             <tt>null</tt> if the subprocess should inherit
+     *             the working directory of the current process.
+     * @return the Process which has just started for this command line representation.
+     * @throws IOException if an IOException occurs.
+     * @since 1.7.1
+     */
+    public static Process execute(final List commands, final List envp, final File dir) throws IOException {
+        return Runtime.getRuntime().exec(stringify(commands), stringify(envp), dir);
+    }
+
+    private static String[] stringify(final List orig) {
+        if (orig == null) return null;
+        String[] result = new String[orig.size()];
+        for (int i = 0; i < orig.size(); i++) {
+            result[i] = orig.get(i).toString();
+        }
+        return result;
     }
 
 }
