@@ -121,7 +121,7 @@ public abstract class StaticTypeCheckingSupport {
      * @return the target variable
      */
     static Variable findTargetVariable(VariableExpression ve) {
-        final Variable accessedVariable = ve.getAccessedVariable();
+        final Variable accessedVariable = ve.getAccessedVariable() != null ? ve.getAccessedVariable() : ve;
         if (accessedVariable != ve) {
             if (accessedVariable instanceof VariableExpression)
                 return findTargetVariable((VariableExpression) accessedVariable);
