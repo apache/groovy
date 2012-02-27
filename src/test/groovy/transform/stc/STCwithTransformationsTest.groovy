@@ -45,7 +45,7 @@ class STCwithTransformationsTest extends StaticTypeCheckingTestCase {
         )
     }
 
-    void testAssignmentFailure() {
+    void testCheckedInjectedProperty() {
         assertScript """
             class Test{
                 long test(){
