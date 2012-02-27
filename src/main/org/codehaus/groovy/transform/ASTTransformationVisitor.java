@@ -195,43 +195,49 @@ public final class ASTTransformationVisitor extends ClassCodeVisitorSupport {
             while (globalServices.hasMoreElements()) {
                 URL service = globalServices.nextElement();
                 String className;
-                BufferedReader svcIn = new BufferedReader(new InputStreamReader(service.openStream()));
+                BufferedReader svcIn = null;
                 try {
-                    className = svcIn.readLine();
-                } catch (IOException ioe) {
-                    compilationUnit.getErrorCollector().addError(new SimpleMessage(
-                        "IOException reading the service definition at "
-                        + service.toExternalForm() + " because of exception " + ioe.toString(), null));
-                    continue;
-                }
-                while (className != null) {
-                    if (!className.startsWith("#") && className.length() > 0) {
-                        if (transformNames.containsKey(className)) {
-                            if (!service.equals(transformNames.get(className))) {
-                                compilationUnit.getErrorCollector().addWarning(
-                                        WarningMessage.POSSIBLE_ERRORS,
-                                        "The global transform for class " + className + " is defined in both "
-                                            + transformNames.get(className).toExternalForm()
-                                            + " and "
-                                            + service.toExternalForm()
-                                            + " - the former definition will be used and the latter ignored.",
-                                        null,
-                                        null);
-                            }
-
-                        } else {
-                            transformNames.put(className, service);
-                        }
-                    }
+                    svcIn = new BufferedReader(new InputStreamReader(service.openStream()));
                     try {
                         className = svcIn.readLine();
                     } catch (IOException ioe) {
                         compilationUnit.getErrorCollector().addError(new SimpleMessage(
-                            "IOException reading the service definition at "
-                            + service.toExternalForm() + " because of exception " + ioe.toString(), null));
-                        //noinspection UnnecessaryContinue
+                                "IOException reading the service definition at "
+                                        + service.toExternalForm() + " because of exception " + ioe.toString(), null));
                         continue;
                     }
+                    while (className != null) {
+                        if (!className.startsWith("#") && className.length() > 0) {
+                            if (transformNames.containsKey(className)) {
+                                if (!service.equals(transformNames.get(className))) {
+                                    compilationUnit.getErrorCollector().addWarning(
+                                            WarningMessage.POSSIBLE_ERRORS,
+                                            "The global transform for class " + className + " is defined in both "
+                                                    + transformNames.get(className).toExternalForm()
+                                                    + " and "
+                                                    + service.toExternalForm()
+                                                    + " - the former definition will be used and the latter ignored.",
+                                            null,
+                                            null);
+                                }
+
+                            } else {
+                                transformNames.put(className, service);
+                            }
+                        }
+                        try {
+                            className = svcIn.readLine();
+                        } catch (IOException ioe) {
+                            compilationUnit.getErrorCollector().addError(new SimpleMessage(
+                                    "IOException reading the service definition at "
+                                            + service.toExternalForm() + " because of exception " + ioe.toString(), null));
+                            //noinspection UnnecessaryContinue
+                            continue;
+                        }
+                    }
+                } finally {
+                    if (svcIn != null)
+                        svcIn.close();
                 }
             }
         } catch (IOException e) {
