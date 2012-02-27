@@ -218,7 +218,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             DynamicVariable dyn = (DynamicVariable) vexp.getAccessedVariable();
             // first, we must check the 'with' context
             String dynName = dyn.getName();
-            for (ClassNode node : withReceiverList) {
+
+            List<ClassNode> checkList = new LinkedList<ClassNode>(withReceiverList);
+            // force checking on classNode for ast injected properties
+            checkList.add(classNode);
+
+            for (ClassNode node : checkList) {
                 if (node.getProperty(dynName) != null) {
                     storeType(vexp, node.getProperty(dynName).getType());
                     return;
