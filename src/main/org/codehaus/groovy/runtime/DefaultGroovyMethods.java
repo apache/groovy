@@ -15,13 +15,15 @@
  */
 package org.codehaus.groovy.runtime;
 
-import groovy.io.EncodingAwareBufferedWriter;
 import groovy.io.FileType;
-import groovy.io.FileVisitResult;
 import groovy.io.GroovyPrintWriter;
 import groovy.lang.*;
-import groovy.util.*;
-
+import groovy.util.ClosureComparator;
+import groovy.util.GroovyCollections;
+import groovy.util.MapEntry;
+import groovy.util.OrderBy;
+import groovy.util.PermutationGenerator;
+import groovy.util.ProxyGenerator;
 import org.codehaus.groovy.classgen.Verifier;
 import org.codehaus.groovy.reflection.ClassInfo;
 import org.codehaus.groovy.reflection.MixinInMetaClass;
@@ -45,7 +47,12 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.net.*;
+import java.net.MalformedURLException;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.*;
@@ -132,13 +139,16 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     public static final Class[] DGM_LIKE_CLASSES = new Class[]{
             DefaultGroovyMethods.class,
-            SwingGroovyMethods.class,
-            StringGroovyMethods.class,
-            SqlGroovyMethods.class,
-            XmlGroovyMethods.class,
-            EncodingGroovyMethods.class,
             DateGroovyMethods.class,
-            ProcessGroovyMethods.class
+            EncodingGroovyMethods.class,
+            IOGroovyMethods.class,
+            ProcessGroovyMethods.class,
+            ResourceGroovyMethods.class,
+            SocketGroovyMethods.class,
+            SqlGroovyMethods.class,
+            StringGroovyMethods.class,
+            SwingGroovyMethods.class,
+            XmlGroovyMethods.class
     };
 
     /**
@@ -4476,17 +4486,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Provide the standard Groovy <code>size()</code> method for <code>File</code>.
-     *
-     * @param self a file object
-     * @return the file's size (length)
-     * @since 1.5.0
-     */
-    public static long size(File self) {
-        return self.length();
-    }
-
-    /**
      * Provide the standard Groovy <code>size()</code> method for an array.
      *
      * @param self an Array of objects
@@ -7560,21 +7559,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Overloads the left shift operator to provide a mechanism to append
-     * values to a writer.
-     *
-     * @param self  a Writer
-     * @param value a value to append
-     * @return the writer on which this operation was invoked
-     * @throws IOException if an I/O error occurs.
-     * @since 1.0
-     */
-    public static Writer leftShift(Writer self, Object value) throws IOException {
-        InvokerHelper.write(self, value);
-        return self;
-    }
-
-    /**
      * Implementation of the left shift operator for integral types.  Non integral
      * Number types throw UnsupportedOperationException.
      *
@@ -7611,86 +7595,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static Number rightShiftUnsigned(Number self, Number operand) {
         return NumberMath.rightShiftUnsigned(self, operand);
-    }
-
-    /**
-     * A helper method so that dynamic dispatch of the writer.write(object) method
-     * will always use the more efficient Writable.writeTo(writer) mechanism if the
-     * object implements the Writable interface.
-     *
-     * @param self     a Writer
-     * @param writable an object implementing the Writable interface
-     * @throws IOException if an I/O error occurs.
-     * @since 1.0
-     */
-    public static void write(Writer self, Writable writable) throws IOException {
-        writable.writeTo(self);
-    }
-
-    /**
-     * Overloads the leftShift operator to provide an append mechanism to add values to a stream.
-     *
-     * @param self  an OutputStream
-     * @param value a value to append
-     * @return a Writer
-     * @throws IOException if an I/O error occurs.
-     * @since 1.0
-     */
-    public static Writer leftShift(OutputStream self, Object value) throws IOException {
-        OutputStreamWriter writer = new FlushingStreamWriter(self);
-        leftShift(writer, value);
-        return writer;
-    }
-
-    /**
-     * Overloads the leftShift operator to add objects to an ObjectOutputStream.
-     *
-     * @param self  an ObjectOutputStream
-     * @param value an object to write to the stream
-     * @throws IOException if an I/O error occurs.
-     * @since 1.5.0
-     */
-    public static void leftShift(ObjectOutputStream self, Object value) throws IOException {
-        self.writeObject(value);
-    }
-
-    /**
-     * Pipe an InputStream into an OutputStream for efficient stream copying.
-     *
-     * @param self stream on which to write
-     * @param in   stream to read from
-     * @return the outputstream itself
-     * @throws IOException if an I/O error occurs.
-     * @since 1.0
-     */
-    public static OutputStream leftShift(OutputStream self, InputStream in) throws IOException {
-        byte[] buf = new byte[1024];
-        while (true) {
-            int count = in.read(buf, 0, buf.length);
-            if (count == -1) break;
-            if (count == 0) {
-                Thread.yield();
-                continue;
-            }
-            self.write(buf, 0, count);
-        }
-        self.flush();
-        return self;
-    }
-
-    /**
-     * Overloads the leftShift operator to provide an append mechanism to add bytes to a stream.
-     *
-     * @param self  an OutputStream
-     * @param value a value to append
-     * @return an OutputStream
-     * @throws IOException if an I/O error occurs.
-     * @since 1.0
-     */
-    public static OutputStream leftShift(OutputStream self, byte[] value) throws IOException {
-        self.write(value);
-        self.flush();
-        return self;
     }
 
     // Primitive type array methods
@@ -10564,1960 +10468,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 //        return Boolean.valueOf(!left.booleanValue());
 //    }
 
-    // File and stream based methods
-    //-------------------------------------------------------------------------
-
-    /**
-     * Create an object output stream for this file.
-     *
-     * @param file a file
-     * @return an object output stream
-     * @throws IOException if an IOException occurs.
-     * @since 1.5.0
-     */
-    public static ObjectOutputStream newObjectOutputStream(File file) throws IOException {
-        return new ObjectOutputStream(new FileOutputStream(file));
-    }
-
-    /**
-     * Create an object output stream for this output stream.
-     *
-     * @param outputStream an output stream
-     * @return an object output stream
-     * @throws IOException if an IOException occurs.
-     * @since 1.5.0
-     */
-    public static ObjectOutputStream newObjectOutputStream(OutputStream outputStream) throws IOException {
-        return new ObjectOutputStream(outputStream);
-    }
-
-    /**
-     * Create a new ObjectOutputStream for this file and then pass it to the
-     * closure.  This method ensures the stream is closed after the closure
-     * returns.
-     *
-     * @param file    a File
-     * @param closure a closure
-     * @return the value returned by the closure
-     * @throws IOException if an IOException occurs.
-     * @see #withStream(java.io.OutputStream, groovy.lang.Closure)
-     * @since 1.5.0
-     */
-    public static <T> T withObjectOutputStream(File file, Closure<T> closure) throws IOException {
-        return withStream(newObjectOutputStream(file), closure);
-    }
-
-    /**
-     * Create a new ObjectOutputStream for this output stream and then pass it to the
-     * closure.  This method ensures the stream is closed after the closure
-     * returns.
-     *
-     * @param outputStream am output stream
-     * @param closure      a closure
-     * @return the value returned by the closure
-     * @throws IOException if an IOException occurs.
-     * @see #withStream(java.io.OutputStream, groovy.lang.Closure)
-     * @since 1.5.0
-     */
-    public static <T> T withObjectOutputStream(OutputStream outputStream, Closure<T> closure) throws IOException {
-        return withStream(newObjectOutputStream(outputStream), closure);
-    }
-
-    /**
-     * Create an object input stream for this file.
-     *
-     * @param file a file
-     * @return an object input stream
-     * @throws IOException if an IOException occurs.
-     * @since 1.5.0
-     */
-    public static ObjectInputStream newObjectInputStream(File file) throws IOException {
-        return new ObjectInputStream(new FileInputStream(file));
-    }
-
-    /**
-     * Create an object input stream for this input stream.
-     *
-     * @param inputStream an input stream
-     * @return an object input stream
-     * @throws IOException if an IOException occurs.
-     * @since 1.5.0
-     */
-    public static ObjectInputStream newObjectInputStream(InputStream inputStream) throws IOException {
-        return new ObjectInputStream(inputStream);
-    }
-
-    /**
-     * Create an object input stream for this input stream using the given class loader.
-     *
-     * @param inputStream an input stream
-     * @param classLoader the class loader to use when loading the class
-     * @return an object input stream
-     * @throws IOException if an IOException occurs.
-     * @since 1.5.0
-     */
-    public static ObjectInputStream newObjectInputStream(InputStream inputStream, final ClassLoader classLoader) throws IOException {
-        return new ObjectInputStream(inputStream) {
-            protected Class<?> resolveClass(ObjectStreamClass desc) throws IOException, ClassNotFoundException {
-                return Class.forName(desc.getName(), true, classLoader);
-
-            }
-        };
-    }
-
-    /**
-     * Create an object input stream for this file using the given class loader.
-     *
-     * @param file        a file
-     * @param classLoader the class loader to use when loading the class
-     * @return an object input stream
-     * @throws IOException if an IOException occurs.
-     * @since 1.5.0
-     */
-    public static ObjectInputStream newObjectInputStream(File file, final ClassLoader classLoader) throws IOException {
-        return newObjectInputStream(new FileInputStream(file), classLoader);
-    }
-
-    /**
-     * Iterates through the given file object by object.
-     *
-     * @param self    a File
-     * @param closure a closure
-     * @throws IOException            if an IOException occurs.
-     * @throws ClassNotFoundException if the class  is not found.
-     * @see #eachObject(java.io.ObjectInputStream, groovy.lang.Closure)
-     * @since 1.0
-     */
-    public static void eachObject(File self, Closure closure) throws IOException, ClassNotFoundException {
-        eachObject(newObjectInputStream(self), closure);
-    }
-
-    /**
-     * Iterates through the given object stream object by object. The
-     * ObjectInputStream is closed afterwards.
-     *
-     * @param ois     an ObjectInputStream, closed after the operation
-     * @param closure a closure
-     * @throws IOException            if an IOException occurs.
-     * @throws ClassNotFoundException if the class  is not found.
-     * @since 1.0
-     */
-    public static void eachObject(ObjectInputStream ois, Closure closure) throws IOException, ClassNotFoundException {
-        try {
-            while (true) {
-                try {
-                    Object obj = ois.readObject();
-                    // we allow null objects in the object stream
-                    closure.call(obj);
-                } catch (EOFException e) {
-                    break;
-                }
-            }
-            InputStream temp = ois;
-            ois = null;
-            temp.close();
-        } finally {
-            closeWithWarning(ois);
-        }
-    }
-
-    /**
-     * Create a new ObjectInputStream for this file and pass it to the closure.
-     * This method ensures the stream is closed after the closure returns.
-     *
-     * @param file    a File
-     * @param closure a closure
-     * @return the value returned by the closure
-     * @throws IOException if an IOException occurs.
-     * @see #withStream(java.io.InputStream, groovy.lang.Closure)
-     * @since 1.5.2
-     */
-    public static <T> T withObjectInputStream(File file, Closure<T> closure) throws IOException {
-        return withStream(newObjectInputStream(file), closure);
-    }
-
-    /**
-     * Create a new ObjectInputStream for this file associated with the given class loader and pass it to the closure.
-     * This method ensures the stream is closed after the closure returns.
-     *
-     * @param file        a File
-     * @param classLoader the class loader to use when loading the class
-     * @param closure     a closure
-     * @return the value returned by the closure
-     * @throws IOException if an IOException occurs.
-     * @see #withStream(java.io.InputStream, groovy.lang.Closure)
-     * @since 1.5.2
-     */
-    public static <T> T withObjectInputStream(File file, ClassLoader classLoader, Closure<T> closure) throws IOException {
-        return withStream(newObjectInputStream(file, classLoader), closure);
-    }
-
-    /**
-     * Create a new ObjectInputStream for this file and pass it to the closure.
-     * This method ensures the stream is closed after the closure returns.
-     *
-     * @param inputStream an input stream
-     * @param closure     a closure
-     * @return the value returned by the closure
-     * @throws IOException if an IOException occurs.
-     * @see #withStream(java.io.InputStream, groovy.lang.Closure)
-     * @since 1.5.0
-     */
-    public static <T> T withObjectInputStream(InputStream inputStream, Closure<T> closure) throws IOException {
-        return withStream(newObjectInputStream(inputStream), closure);
-    }
-
-    /**
-     * Create a new ObjectInputStream for this file and pass it to the closure.
-     * This method ensures the stream is closed after the closure returns.
-     *
-     * @param inputStream an input stream
-     * @param classLoader the class loader to use when loading the class
-     * @param closure     a closure
-     * @return the value returned by the closure
-     * @throws IOException if an IOException occurs.
-     * @see #withStream(java.io.InputStream, groovy.lang.Closure)
-     * @since 1.5.0
-     */
-    public static <T> T withObjectInputStream(InputStream inputStream, ClassLoader classLoader, Closure<T> closure) throws IOException {
-        return withStream(newObjectInputStream(inputStream, classLoader), closure);
-    }
-
-    /**
-     * Iterates through this file line by line.  Each line is passed to the
-     * given 1 or 2 arg closure.  The file is read using a reader which
-     * is closed before this method returns.
-     *
-     * @param self    a File
-     * @param closure a closure (arg 1 is line, optional arg 2 is line number starting at line 1)
-     * @throws IOException if an IOException occurs.
-     * @return the last value returned by the closure
-     * @see #eachLine(java.io.File, int, groovy.lang.Closure)
-     * @since 1.5.5
-     */
-    public static <T> T eachLine(File self, Closure<T> closure) throws IOException {
-        return eachLine(self, 1, closure);
-    }
-
-    /**
-     * Iterates through this file line by line.  Each line is passed to the
-     * given 1 or 2 arg closure.  The file is read using a reader which
-     * is closed before this method returns.
-     *
-     * @param self    a File
-     * @param charset opens the file with a specified charset
-     * @param closure a closure (arg 1 is line, optional arg 2 is line number starting at line 1)
-     * @throws IOException if an IOException occurs.
-     * @return the last value returned by the closure
-     * @see #eachLine(java.io.File, java.lang.String, int, groovy.lang.Closure)
-     * @since 1.6.8
-     */
-    public static <T> T eachLine(File self, String charset, Closure<T> closure) throws IOException {
-        return eachLine(self, charset, 1, closure);
-    }
-
-    /**
-     * Iterates through this file line by line.  Each line is passed
-     * to the given 1 or 2 arg closure.  The file is read using a reader
-     * which is closed before this method returns.
-     *
-     * @param self    a File
-     * @param firstLine the line number value used for the first line (default is 1, set to 0 to start counting from 0)
-     * @param closure a closure (arg 1 is line, optional arg 2 is line number)
-     * @throws IOException if an IOException occurs.
-     * @return the last value returned by the closure
-     * @see #eachLine(java.io.Reader, int, groovy.lang.Closure)
-     * @since 1.5.7
-     */
-    public static <T> T eachLine(File self, int firstLine, Closure<T> closure) throws IOException {
-        return eachLine(newReader(self), firstLine, closure);
-    }
-
-    /**
-     * Iterates through this file line by line.  Each line is passed
-     * to the given 1 or 2 arg closure.  The file is read using a reader
-     * which is closed before this method returns.
-     *
-     * @param self    a File
-     * @param charset opens the file with a specified charset
-     * @param firstLine the line number value used for the first line (default is 1, set to 0 to start counting from 0)
-     * @param closure a closure (arg 1 is line, optional arg 2 is line number)
-     * @throws IOException if an IOException occurs.
-     * @return the last value returned by the closure
-     * @see #eachLine(java.io.Reader, int, groovy.lang.Closure)
-     * @since 1.6.8
-     */
-    public static <T> T eachLine(File self, String charset, int firstLine, Closure<T> closure) throws IOException {
-        return eachLine(newReader(self, charset), firstLine, closure);
-    }
-
-    /**
-     * Iterates through this stream reading with the provided charset, passing each line to the
-     * given 1 or 2 arg closure.  The stream is closed before this method returns.
-     *
-     * @param stream  a stream
-     * @param charset opens the stream with a specified charset
-     * @param closure a closure (arg 1 is line, optional arg 2 is line number starting at line 1)
-     * @throws IOException if an IOException occurs.
-     * @return the last value returned by the closure
-     * @see #eachLine(java.io.InputStream, java.lang.String, int, groovy.lang.Closure)
-     * @since 1.5.5
-     */
-    public static <T> T eachLine(InputStream stream, String charset, Closure<T> closure) throws IOException {
-        return eachLine(stream, charset, 1, closure);
-    }
-
-    /**
-     * Iterates through this stream reading with the provided charset, passing each line to
-     * the given 1 or 2 arg closure.  The stream is closed after this method returns.
-     *
-     * @param stream    a stream
-     * @param charset   opens the stream with a specified charset
-     * @param firstLine the line number value used for the first line (default is 1, set to 0 to start counting from 0)
-     * @param closure a closure (arg 1 is line, optional arg 2 is line number)
-     * @return the last value returned by the closure
-     * @throws IOException if an IOException occurs.
-     * @see #eachLine(java.io.Reader, int, groovy.lang.Closure)
-     * @since 1.5.7
-     */
-    public static <T> T eachLine(InputStream stream, String charset, int firstLine, Closure<T> closure) throws IOException {
-        return eachLine(new InputStreamReader(stream, charset), firstLine, closure);
-    }
-
-    /**
-     * Iterates through this stream, passing each line to the given 1 or 2 arg closure.
-     * The stream is closed before this method returns.
-     *
-     * @param stream  a stream
-     * @param closure a closure (arg 1 is line, optional arg 2 is line number starting at line 1)
-     * @throws IOException if an IOException occurs.
-     * @return the last value returned by the closure
-     * @see #eachLine(java.io.InputStream, int, groovy.lang.Closure)
-     * @since 1.5.6
-     */
-    public static <T> T eachLine(InputStream stream, Closure<T> closure) throws IOException {
-        return eachLine(stream, 1, closure);
-    }
-
-    /**
-     * Iterates through this stream, passing each line to the given 1 or 2 arg closure.
-     * The stream is closed before this method returns.
-     *
-     * @param stream  a stream
-     * @param firstLine the line number value used for the first line (default is 1, set to 0 to start counting from 0)
-     * @param closure a closure (arg 1 is line, optional arg 2 is line number)
-     * @throws IOException if an IOException occurs.
-     * @return the last value returned by the closure
-     * @see #eachLine(java.io.Reader, int, groovy.lang.Closure)
-     * @since 1.5.7
-     */
-    public static <T> T eachLine(InputStream stream, int firstLine, Closure<T> closure) throws IOException {
-        return eachLine(new InputStreamReader(stream), firstLine, closure);
-    }
-
-    /**
-     * Iterates through the lines read from the URL's associated input stream passing each
-     * line to the given 1 or 2 arg closure. The stream is closed before this method returns.
-     *
-     * @param url     a URL to open and read
-     * @param closure a closure to apply on each line (arg 1 is line, optional arg 2 is line number starting at line 1)
-     * @return the last value returned by the closure
-     * @throws IOException if an IOException occurs.
-     * @see #eachLine(java.net.URL, int, groovy.lang.Closure)
-     * @since 1.5.6
-     */
-    public static <T> T eachLine(URL url, Closure<T> closure) throws IOException {
-        return eachLine(url, 1, closure);
-    }
-
-    /**
-     * Iterates through the lines read from the URL's associated input stream passing each
-     * line to the given 1 or 2 arg closure. The stream is closed before this method returns.
-     *
-     * @param url       a URL to open and read
-     * @param firstLine the line number value used for the first line (default is 1, set to 0 to start counting from 0)
-     * @param closure   a closure to apply on each line (arg 1 is line, optional arg 2 is line number)
-     * @return the last value returned by the closure
-     * @throws IOException if an IOException occurs.
-     * @see #eachLine(java.io.InputStream, int, groovy.lang.Closure)
-     * @since 1.5.7
-     */
-    public static <T> T eachLine(URL url, int firstLine, Closure<T> closure) throws IOException {
-        return eachLine(url.openConnection().getInputStream(), firstLine, closure);
-    }
-
-    /**
-     * Iterates through the lines read from the URL's associated input stream passing each
-     * line to the given 1 or 2 arg closure. The stream is closed before this method returns.
-     *
-     * @param url     a URL to open and read
-     * @param charset opens the stream with a specified charset
-     * @param closure a closure to apply on each line (arg 1 is line, optional arg 2 is line number starting at line 1)
-     * @return the last value returned by the closure
-     * @throws IOException if an IOException occurs.
-     * @see #eachLine(java.net.URL, java.lang.String, int, groovy.lang.Closure)
-     * @since 1.5.6
-     */
-    public static <T> T eachLine(URL url, String charset, Closure<T> closure) throws IOException {
-        return eachLine(url, charset, 1, closure);
-    }
-
-    /**
-     * Iterates through the lines read from the URL's associated input stream passing each
-     * line to the given 1 or 2 arg closure. The stream is closed before this method returns.
-     *
-     * @param url       a URL to open and read
-     * @param charset   opens the stream with a specified charset
-     * @param firstLine the line number value used for the first line (default is 1, set to 0 to start counting from 0)
-     * @param closure   a closure to apply on each line (arg 1 is line, optional arg 2 is line number)
-     * @return the last value returned by the closure
-     * @throws IOException if an IOException occurs.
-     * @see #eachLine(java.io.Reader, int, groovy.lang.Closure)
-     * @since 1.5.7
-     */
-    public static <T> T eachLine(URL url, String charset, int firstLine, Closure<T> closure) throws IOException {
-        return eachLine(newReader(url, charset), firstLine, closure);
-    }
-
-    /**
-     * Iterates through the given reader line by line.  Each line is passed to the
-     * given 1 or 2 arg closure. If the closure has two arguments, the line count is passed
-     * as the second argument. The Reader is closed before this method returns.
-     *
-     * @param self    a Reader, closed after the method returns
-     * @param closure a closure (arg 1 is line, optional arg 2 is line number starting at line 1)
-     * @throws IOException if an IOException occurs.
-     * @return the last value returned by the closure
-     * @see #eachLine(java.io.Reader, int, groovy.lang.Closure)
-     * @since 1.5.6
-     */
-    public static <T> T eachLine(Reader self, Closure<T> closure) throws IOException {
-        return eachLine(self, 1, closure);
-    }
-
-    /**
-     * Iterates through the given reader line by line.  Each line is passed to the
-     * given 1 or 2 arg closure. If the closure has two arguments, the line count is passed
-     * as the second argument. The Reader is closed before this method returns.
-     *
-     * @param self      a Reader, closed after the method returns
-     * @param firstLine the line number value used for the first line (default is 1, set to 0 to start counting from 0)
-     * @param closure   a closure which will be passed each line (or for 2 arg closures the line and line count)
-     * @return the last value returned by the closure
-     * @throws IOException if an IOException occurs.
-     * @since 1.5.7
-     */
-    public static <T> T eachLine(Reader self, int firstLine, Closure<T> closure) throws IOException {
-        BufferedReader br;
-        int count = firstLine;
-        T result = null;
-
-        if (self instanceof BufferedReader)
-            br = (BufferedReader) self;
-        else
-            br = new BufferedReader(self);
-
-        try {
-            while (true) {
-                String line = br.readLine();
-                if (line == null) {
-                    break;
-                } else {
-                    result = callClosureForLine(closure, line, count);
-                    count++;
-                }
-            }
-            Reader temp = self;
-            self = null;
-            temp.close();
-            return result;
-        } finally {
-            closeWithWarning(self);
-            closeWithWarning(br);
-        }
-    }
-
-    /**
-     * Iterates through this file line by line, splitting each line using
-     * the given regex separator. For each line, the given closure is called with
-     * a single parameter being the list of strings computed by splitting the line
-     * around matches of the given regular expression.
-     * Finally the resources used for processing the file are closed.
-     *
-     * @param self    a File
-     * @param regex   the delimiting regular expression
-     * @param closure a closure
-     * @throws IOException if an IOException occurs.
-     * @throws java.util.regex.PatternSyntaxException if the regular expression's syntax is invalid
-     * @return the last value returned by the closure
-     * @see #splitEachLine(java.io.Reader, java.lang.String, groovy.lang.Closure)
-     * @since 1.5.5
-     */
-    public static <T> T splitEachLine(File self, String regex, Closure<T> closure) throws IOException {
-        return splitEachLine(newReader(self), regex, closure);
-    }
-
-    /**
-     * Iterates through this file line by line, splitting each line using
-     * the given separator Pattern. For each line, the given closure is called with
-     * a single parameter being the list of strings computed by splitting the line
-     * around matches of the given regular expression Pattern.
-     * Finally the resources used for processing the file are closed.
-     *
-     * @param self    a File
-     * @param pattern the regular expression Pattern for the delimiter
-     * @param closure a closure
-     * @throws IOException if an IOException occurs.
-     * @return the last value returned by the closure
-     * @see #splitEachLine(java.io.Reader, java.util.regex.Pattern, groovy.lang.Closure)
-     * @since 1.6.8
-     */
-    public static <T> T splitEachLine(File self, Pattern pattern, Closure<T> closure) throws IOException {
-        return splitEachLine(newReader(self), pattern, closure);
-    }
-
-    /**
-     * Iterates through this file line by line, splitting each line using
-     * the given regex separator. For each line, the given closure is called with
-     * a single parameter being the list of strings computed by splitting the line
-     * around matches of the given regular expression.
-     * Finally the resources used for processing the file are closed.
-     *
-     * @param self    a File
-     * @param regex   the delimiting regular expression
-     * @param charset opens the file with a specified charset
-     * @param closure a closure
-     * @throws IOException if an IOException occurs.
-     * @throws java.util.regex.PatternSyntaxException if the regular expression's syntax is invalid
-     * @return the last value returned by the closure
-     * @see #splitEachLine(java.io.Reader, java.lang.String, groovy.lang.Closure)
-     * @since 1.6.8
-     */
-    public static <T> T splitEachLine(File self, String regex, String charset, Closure<T> closure) throws IOException {
-        return splitEachLine(newReader(self, charset), regex, closure);
-    }
-
-    /**
-     * Iterates through this file line by line, splitting each line using
-     * the given regex separator Pattern. For each line, the given closure is called with
-     * a single parameter being the list of strings computed by splitting the line
-     * around matches of the given regular expression.
-     * Finally the resources used for processing the file are closed.
-     *
-     * @param self    a File
-     * @param pattern the regular expression Pattern for the delimiter
-     * @param charset opens the file with a specified charset
-     * @param closure a closure
-     * @throws IOException if an IOException occurs.
-     * @return the last value returned by the closure
-     * @see #splitEachLine(java.io.Reader, java.util.regex.Pattern, groovy.lang.Closure)
-     * @since 1.6.8
-     */
-    public static <T> T splitEachLine(File self, Pattern pattern, String charset, Closure<T> closure) throws IOException {
-        return splitEachLine(newReader(self, charset), pattern, closure);
-    }
-
-    /**
-     * Iterates through the input stream associated with this URL line by line, splitting each line using
-     * the given regex separator. For each line, the given closure is called with
-     * a single parameter being the list of strings computed by splitting the line
-     * around matches of the given regular expression.
-     * Finally the resources used for processing the URL are closed.
-     *
-     * @param self    a URL to open and read
-     * @param regex   the delimiting regular expression
-     * @param closure a closure
-     * @throws IOException if an IOException occurs.
-     * @throws java.util.regex.PatternSyntaxException if the regular expression's syntax is invalid
-     * @return the last value returned by the closure
-     * @see #splitEachLine(java.io.Reader, java.lang.String, groovy.lang.Closure)
-     * @since 1.6.8
-     */
-    public static <T> T splitEachLine(URL self, String regex, Closure<T> closure) throws IOException {
-        return splitEachLine(newReader(self), regex, closure);
-    }
-
-    /**
-     * Iterates through the input stream associated with this URL line by line, splitting each line using
-     * the given regex separator Pattern. For each line, the given closure is called with
-     * a single parameter being the list of strings computed by splitting the line
-     * around matches of the given regular expression.
-     * Finally the resources used for processing the URL are closed.
-     *
-     * @param self    a URL to open and read
-     * @param pattern the regular expression Pattern for the delimiter
-     * @param closure a closure
-     * @throws IOException if an IOException occurs.
-     * @return the last value returned by the closure
-     * @see #splitEachLine(java.io.Reader, java.util.regex.Pattern, groovy.lang.Closure)
-     * @since 1.6.8
-     */
-    public static <T> T splitEachLine(URL self, Pattern pattern, Closure<T> closure) throws IOException {
-        return splitEachLine(newReader(self), pattern, closure);
-    }
-
-    /**
-     * Iterates through the input stream associated with this URL line by line, splitting each line using
-     * the given regex separator. For each line, the given closure is called with
-     * a single parameter being the list of strings computed by splitting the line
-     * around matches of the given regular expression.
-     * Finally the resources used for processing the URL are closed.
-     *
-     * @param self    a URL to open and read
-     * @param regex   the delimiting regular expression
-     * @param charset opens the file with a specified charset
-     * @param closure a closure
-     * @throws IOException if an IOException occurs.
-     * @throws java.util.regex.PatternSyntaxException if the regular expression's syntax is invalid
-     * @return the last value returned by the closure
-     * @see #splitEachLine(java.io.Reader, java.lang.String, groovy.lang.Closure)
-     * @since 1.6.8
-     */
-    public static <T> T splitEachLine(URL self, String regex, String charset, Closure<T> closure) throws IOException {
-        return splitEachLine(newReader(self, charset), regex, closure);
-    }
-
-    /**
-     * Iterates through the input stream associated with this URL line by line, splitting each line using
-     * the given regex separator Pattern. For each line, the given closure is called with
-     * a single parameter being the list of strings computed by splitting the line
-     * around matches of the given regular expression.
-     * Finally the resources used for processing the URL are closed.
-     *
-     * @param self    a URL to open and read
-     * @param pattern the regular expression Pattern for the delimiter
-     * @param charset opens the file with a specified charset
-     * @param closure a closure
-     * @throws IOException if an IOException occurs.
-     * @return the last value returned by the closure
-     * @see #splitEachLine(java.io.Reader, java.util.regex.Pattern, groovy.lang.Closure)
-     * @since 1.6.8
-     */
-    public static <T> T splitEachLine(URL self, Pattern pattern, String charset, Closure<T> closure) throws IOException {
-        return splitEachLine(newReader(self, charset), pattern, closure);
-    }
-
-    /**
-     * Iterates through the given reader line by line, splitting each line using
-     * the given regex separator. For each line, the given closure is called with
-     * a single parameter being the list of strings computed by splitting the line
-     * around matches of the given regular expression.  The Reader is closed afterwards.
-     * <p/>
-     * Here is an example:
-     * <pre>
-     * def s = 'The 3 quick\nbrown 4 fox'
-     * def result = ''
-     * new StringReader(s).splitEachLine(/\d/){ parts ->
-     *     result += "${parts[0]}_${parts[1]}|"
-     * }
-     * assert result == 'The _ quick|brown _ fox|'
-     * </pre>
-     *
-     * @param self    a Reader, closed after the method returns
-     * @param regex   the delimiting regular expression
-     * @param closure a closure
-     * @throws IOException if an IOException occurs.
-     * @throws java.util.regex.PatternSyntaxException if the regular expression's syntax is invalid
-     * @return the last value returned by the closure
-     * @see java.lang.String#split(java.lang.String)
-     * @since 1.5.5
-     */
-    public static <T> T splitEachLine(Reader self, String regex, Closure<T> closure) throws IOException {
-        return splitEachLine(self, Pattern.compile(regex), closure);
-    }
-
-    /**
-     * Iterates through the given reader line by line, splitting each line using
-     * the given regex separator Pattern. For each line, the given closure is called with
-     * a single parameter being the list of strings computed by splitting the line
-     * around matches of the given regular expression.  The Reader is closed afterwards.
-     * <p/>
-     * Here is an example:
-     * <pre>
-     * def s = 'The 3 quick\nbrown 4 fox'
-     * def result = ''
-     * new StringReader(s).splitEachLine(~/\d/){ parts ->
-     *     result += "${parts[0]}_${parts[1]}|"
-     * }
-     * assert result == 'The _ quick|brown _ fox|'
-     * </pre>
-     *
-     * @param self    a Reader, closed after the method returns
-     * @param pattern the regular expression Pattern for the delimiter
-     * @param closure a closure
-     * @throws IOException if an IOException occurs.
-     * @throws java.util.regex.PatternSyntaxException if the regular expression's syntax is invalid
-     * @return the last value returned by the closure
-     * @see java.lang.String#split(java.lang.String)
-     * @since 1.6.8
-     */
-    public static <T> T splitEachLine(Reader self, Pattern pattern, Closure<T> closure) throws IOException {
-        BufferedReader br;
-        T result = null;
-
-        if (self instanceof BufferedReader)
-            br = (BufferedReader) self;
-        else
-            br = new BufferedReader(self);
-
-        try {
-            while (true) {
-                String line = br.readLine();
-                if (line == null) {
-                    break;
-                } else {
-                    List vals = Arrays.asList(pattern.split(line));
-                    result = closure.call(vals);
-                }
-            }
-            Reader temp = self;
-            self = null;
-            temp.close();
-            return result;
-        } finally {
-            closeWithWarning(self);
-            closeWithWarning(br);
-        }
-    }
-
-    /**
-     * Iterates through the given InputStream line by line using the specified
-     * encoding, splitting each line using the given separator.  The list of tokens
-     * for each line is then passed to the given closure. Finally, the stream
-     * is closed.
-     *
-     * @param stream  an InputStream
-     * @param regex   the delimiting regular expression
-     * @param charset opens the stream with a specified charset
-     * @param closure a closure
-     * @throws IOException if an IOException occurs.
-     * @throws java.util.regex.PatternSyntaxException if the regular expression's syntax is invalid
-     * @return the last value returned by the closure
-     * @see #splitEachLine(java.io.Reader, java.lang.String, groovy.lang.Closure)
-     * @since 1.5.5
-     */
-    public static <T> T splitEachLine(InputStream stream, String regex, String charset, Closure<T> closure) throws IOException {
-        return splitEachLine(new BufferedReader(new InputStreamReader(stream, charset)), regex, closure);
-    }
-
-    /**
-     * Iterates through the given InputStream line by line using the specified
-     * encoding, splitting each line using the given separator Pattern.  The list of tokens
-     * for each line is then passed to the given closure. Finally, the stream
-     * is closed.
-     *
-     * @param stream  an InputStream
-     * @param pattern the regular expression Pattern for the delimiter
-     * @param charset opens the stream with a specified charset
-     * @param closure a closure
-     * @throws IOException if an IOException occurs.
-     * @return the last value returned by the closure
-     * @see #splitEachLine(java.io.Reader, java.util.regex.Pattern, groovy.lang.Closure)
-     * @since 1.6.8
-     */
-    public static <T> T splitEachLine(InputStream stream, Pattern pattern, String charset, Closure<T> closure) throws IOException {
-        return splitEachLine(new BufferedReader(new InputStreamReader(stream, charset)), pattern, closure);
-    }
-
-    /**
-     * Iterates through the given InputStream line by line, splitting each line using
-     * the given separator.  The list of tokens for each line is then passed to
-     * the given closure. The stream is closed before the method returns.
-     *
-     * @param stream  an InputStream
-     * @param regex   the delimiting regular expression
-     * @param closure a closure
-     * @throws IOException if an IOException occurs.
-     * @throws java.util.regex.PatternSyntaxException if the regular expression's syntax is invalid
-     * @return the last value returned by the closure
-     * @see #splitEachLine(java.io.Reader, java.lang.String, groovy.lang.Closure)
-     * @since 1.5.6
-     */
-    public static <T> T splitEachLine(InputStream stream, String regex, Closure<T> closure) throws IOException {
-        return splitEachLine(new BufferedReader(new InputStreamReader(stream)), regex, closure);
-    }
-
-    /**
-     * Iterates through the given InputStream line by line, splitting each line using
-     * the given separator Pattern.  The list of tokens for each line is then passed to
-     * the given closure. The stream is closed before the method returns.
-     *
-     * @param stream  an InputStream
-     * @param pattern the regular expression Pattern for the delimiter
-     * @param closure a closure
-     * @throws IOException if an IOException occurs.
-     * @return the last value returned by the closure
-     * @see #splitEachLine(java.io.Reader, java.util.regex.Pattern, groovy.lang.Closure)
-     * @since 1.6.8
-     */
-    public static <T> T splitEachLine(InputStream stream, Pattern pattern, Closure<T> closure) throws IOException {
-        return splitEachLine(new BufferedReader(new InputStreamReader(stream)), pattern, closure);
-    }
-
-    /**
-     * Read a single, whole line from the given Reader.
-     *
-     * @param self a Reader
-     * @return a line
-     * @throws IOException if an IOException occurs.
-     * @since 1.0
-     */
-    public static String readLine(Reader self) throws IOException {
-        if (self instanceof BufferedReader) {
-            BufferedReader br = (BufferedReader) self;
-            return br.readLine();
-        }
-        if (self.markSupported()) {
-            return readLineFromReaderWithMark(self);
-        }
-        return readLineFromReaderWithoutMark(self);
-    }
-
-    private static int charBufferSize = 4096;     // half the default stream buffer size
-    private static int expectedLineLength = 160;  // double the default line length
-    private static int EOF = -1;                  // End Of File
-
-    /*
-    * This method tries to read subsequent buffers from the reader using a mark
-    */
-    private static String readLineFromReaderWithMark(final Reader input)
-            throws IOException {
-        char[] cbuf = new char[charBufferSize];
-        try {
-            input.mark(charBufferSize);
-        } catch (IOException e) {
-            // this should never happen
-            LOG.warning("Caught exception setting mark on supporting reader: " + e);
-            // fallback
-            return readLineFromReaderWithoutMark(input);
-        }
-
-        // could be changed into do..while, but then
-        // we might create an additional StringBuffer
-        // instance at the end of the stream
-        int count = input.read(cbuf);
-        if (count == EOF) // we are at the end of the input data
-            return null;
-
-        StringBuffer line = new StringBuffer(expectedLineLength);
-        // now work on the buffer(s)
-        int ls = lineSeparatorIndex(cbuf, count);
-        while (ls == -1) {
-            line.append(cbuf, 0, count);
-            count = input.read(cbuf);
-            if (count == EOF) {
-                // we are at the end of the input data
-                return line.toString();
-            }
-            ls = lineSeparatorIndex(cbuf, count);
-        }
-        line.append(cbuf, 0, ls);
-
-        // correct ls if we have \r\n
-        int skipLS = 1;
-        if (ls + 1 < count) {
-            // we are not at the end of the buffer
-            if (cbuf[ls] == '\r' && cbuf[ls + 1] == '\n') {
-                skipLS++;
-            }
-        } else {
-            if (cbuf[ls] == '\r' && input.read() == '\n') {
-                skipLS++;
-            }
-        }
-
-        //reset() and skip over last linesep
-        input.reset();
-        input.skip(line.length() + skipLS);
-        return line.toString();
-    }
-
-    /*
-    * This method reads without a buffer.
-    * It returns too many empty lines if \r\n combinations
-    * are used. Nothing can be done because we can't push
-    * back the character we have just read.
-    */
-    private static String readLineFromReaderWithoutMark(Reader input)
-            throws IOException {
-
-        int c = input.read();
-        if (c == -1)
-            return null;
-        StringBuffer line = new StringBuffer(expectedLineLength);
-
-        while (c != EOF && c != '\n' && c != '\r') {
-            char ch = (char) c;
-            line.append(ch);
-            c = input.read();
-        }
-        return line.toString();
-    }
-
-    /*
-     * searches for \n or \r
-     * Returns -1 if not found.
-     */
-    private static int lineSeparatorIndex(char[] array, int length) {
-        for (int k = 0; k < length; k++) {
-            if (isLineSeparator(array[k])) {
-                return k;
-            }
-        }
-        return -1;
-    }
-
-    /*
-    * true if either \n or \r
-    */
-    private static boolean isLineSeparator(char c) {
-        return c == '\n' || c == '\r';
-    }
-
-    static String lineSeparator = null;
-
-    /**
-     * Reads the file into a list of Strings, with one item for each line.
-     *
-     * @param file a File
-     * @return a List of lines
-     * @throws IOException if an IOException occurs.
-     * @see #readLines(java.io.Reader)
-     * @since 1.0
-     */
-    public static List<String> readLines(File file) throws IOException {
-        return readLines(newReader(file));
-    }
-
-    /**
-     * Reads the file into a list of Strings, with one item for each line.
-     *
-     * @param file a File
-     * @param charset opens the file with a specified charset
-     * @return a List of lines
-     * @throws IOException if an IOException occurs.
-     * @see #readLines(java.io.Reader)
-     * @since 1.6.8
-     */
-    public static List<String> readLines(File file, String charset) throws IOException {
-        return readLines(newReader(file, charset));
-    }
-
-    /**
-     * Reads the stream into a list, with one element for each line.
-     *
-     * @param stream a stream
-     * @return a List of lines
-     * @throws IOException if an IOException occurs.
-     * @see #readLines(java.io.Reader)
-     * @since 1.0
-     */
-    public static List<String> readLines(InputStream stream) throws IOException {
-        return readLines(newReader(stream));
-    }
-
-    /**
-     * Reads the stream into a list, with one element for each line.
-     *
-     * @param stream a stream
-     * @param charset opens the stream with a specified charset
-     * @return a List of lines
-     * @throws IOException if an IOException occurs.
-     * @see #readLines(java.io.Reader)
-     * @since 1.6.8
-     */
-    public static List<String> readLines(InputStream stream, String charset) throws IOException {
-        return readLines(newReader(stream, charset));
-    }
-
-    /**
-     * Reads the URL contents into a list, with one element for each line.
-     *
-     * @param self a URL
-     * @return a List of lines
-     * @throws IOException if an IOException occurs.
-     * @see #readLines(java.io.Reader)
-     * @since 1.6.8
-     */
-    public static List<String> readLines(URL self) throws IOException {
-        return readLines(newReader(self));
-    }
-
-    /**
-     * Reads the URL contents into a list, with one element for each line.
-     *
-     * @param self a URL
-     * @param charset opens the URL with a specified charset
-     * @return a List of lines
-     * @throws IOException if an IOException occurs.
-     * @see #readLines(java.io.Reader)
-     * @since 1.6.8
-     */
-    public static List<String> readLines(URL self, String charset) throws IOException {
-        return readLines(newReader(self, charset));
-    }
-
-    /**
-     * Reads the reader into a list of Strings, with one entry for each line.
-     * The reader is closed before this method returns.
-     *
-     * @param reader a Reader
-     * @return a List of lines
-     * @throws IOException if an IOException occurs.
-     * @since 1.0
-     */
-    public static List<String> readLines(Reader reader) throws IOException {
-        IteratorClosureAdapter closure = new IteratorClosureAdapter(reader);
-        eachLine(reader, closure);
-        return closure.asList();
-    }
-
-    /**
-     * Read the content of the File using the specified encoding and return it
-     * as a String.
-     *
-     * @param file    the file whose content we want to read
-     * @param charset the charset used to read the content of the file
-     * @return a String containing the content of the file
-     * @throws IOException if an IOException occurs.
-     * @since 1.0
-     */
-    public static String getText(File file, String charset) throws IOException {
-        return getText(newReader(file, charset));
-    }
-
-    /**
-     * Read the content of the File and returns it as a String.
-     *
-     * @param file the file whose content we want to read
-     * @return a String containing the content of the file
-     * @throws IOException if an IOException occurs.
-     * @since 1.0
-     */
-    public static String getText(File file) throws IOException {
-        return getText(newReader(file));
-    }
-
-    /**
-     * Read the content of this URL and returns it as a String.
-     *
-     * @param url URL to read content from
-     * @return the text from that URL
-     * @throws IOException if an IOException occurs.
-     * @since 1.0
-     */
-    public static String getText(URL url) throws IOException {
-        return getText(url, CharsetToolkit.getDefaultSystemCharset().toString());
-    }
-
-    /**
-     * Read the content of this URL and returns it as a String.
-     *
-     * @param url URL to read content from
-     * @param parameters connection parameters
-     * @return the text from that URL
-     * @throws IOException if an IOException occurs.
-     * @since 1.8.1
-     */
-    public static String getText(URL url, Map parameters) throws IOException {
-        return getText(url, parameters, CharsetToolkit.getDefaultSystemCharset().toString());
-    }
-
-    /**
-     * Read the data from this URL and return it as a String.  The connection
-     * stream is closed before this method returns.
-     *
-     * @param url     URL to read content from
-     * @param charset opens the stream with a specified charset
-     * @return the text from that URL
-     * @throws IOException if an IOException occurs.
-     * @see java.net.URLConnection#getInputStream()
-     * @since 1.0
-     */
-    public static String getText(URL url, String charset) throws IOException {
-        BufferedReader reader = newReader(url, charset);
-        return getText(reader);
-    }
-
-    /**
-     * Read the data from this URL and return it as a String.  The connection
-     * stream is closed before this method returns.
-     *
-     * @param url     URL to read content from
-     * @param parameters connection parameters
-     * @param charset opens the stream with a specified charset
-     * @return the text from that URL
-     * @throws IOException if an IOException occurs.
-     * @see java.net.URLConnection#getInputStream()
-     * @since 1.8.1
-     */
-    public static String getText(URL url, Map parameters, String charset) throws IOException {
-        BufferedReader reader = newReader(url, parameters, charset);
-        return getText(reader);
-    }
-
-    /**
-     * Read the content of this InputStream and return it as a String.
-     * The stream is closed before this method returns.
-     *
-     * @param is an input stream
-     * @return the text from that URL
-     * @throws IOException if an IOException occurs.
-     * @since 1.0
-     */
-    public static String getText(InputStream is) throws IOException {
-        BufferedReader reader = new BufferedReader(new InputStreamReader(is));
-        return getText(reader);
-    }
-
-    /**
-     * Read the content of this InputStream using specified charset and return
-     * it as a String.  The stream is closed before this method returns.
-     *
-     * @param is      an input stream
-     * @param charset opens the stream with a specified charset
-     * @return the text from that URL
-     * @throws IOException if an IOException occurs.
-     * @since 1.0
-     */
-    public static String getText(InputStream is, String charset) throws IOException {
-        BufferedReader reader = new BufferedReader(new InputStreamReader(is, charset));
-        return getText(reader);
-    }
-
-    /**
-     * Read the content of the Reader and return it as a String.  The reader
-     * is closed before this method returns.
-     *
-     * @param reader a Reader whose content we want to read
-     * @return a String containing the content of the buffered reader
-     * @throws IOException if an IOException occurs.
-     * @see #getText(java.io.BufferedReader)
-     * @since 1.0
-     */
-    public static String getText(Reader reader) throws IOException {
-        BufferedReader bufferedReader = new BufferedReader(reader);
-        return getText(bufferedReader);
-    }
-
-    /**
-     * Read the content of the BufferedReader and return it as a String.
-     * The BufferedReader is closed afterwards.
-     *
-     * @param reader a BufferedReader whose content we want to read
-     * @return a String containing the content of the buffered reader
-     * @throws IOException if an IOException occurs.
-     * @since 1.0
-     */
-    public static String getText(BufferedReader reader) throws IOException {
-        StringBuilder answer = new StringBuilder();
-        // reading the content of the file within a char buffer
-        // allow to keep the correct line endings
-        char[] charBuffer = new char[8192];
-        int nbCharRead /* = 0*/;
-        try {
-            while ((nbCharRead = reader.read(charBuffer)) != -1) {
-                // appends buffer
-                answer.append(charBuffer, 0, nbCharRead);
-            }
-            Reader temp = reader;
-            reader = null;
-            temp.close();
-        } finally {
-            closeWithWarning(reader);
-        }
-        return answer.toString();
-    }
-
-    /**
-     * Read the content of the File and returns it as a byte[].
-     *
-     * @param file the file whose content we want to read
-     * @return a String containing the content of the file
-     * @throws IOException if an IOException occurs.
-     * @since 1.7.1
-     */
-    public static byte[] getBytes(File file) throws IOException {
-        return getBytes(new FileInputStream(file));
-    }
-
-    /**
-     * Read the content of this URL and returns it as a byte[].
-     *
-     * @param url URL to read content from
-     * @return the byte[] from that URL
-     * @throws IOException if an IOException occurs.
-     * @since 1.7.1
-     */
-    public static byte[] getBytes(URL url) throws IOException {
-        return getBytes(url.openConnection().getInputStream());
-    }
-
-    /**
-     * Read the content of this InputStream and return it as a byte[].
-     * The stream is closed before this method returns.
-     *
-     * @param is an input stream
-     * @return the byte[] from that InputStream
-     * @throws IOException if an IOException occurs.
-     * @since 1.7.1
-     */
-    public static byte[] getBytes(InputStream is) throws IOException {
-        ByteArrayOutputStream answer = new ByteArrayOutputStream();
-        // reading the content of the file within a byte buffer
-        byte[] byteBuffer = new byte[8192];
-        int nbByteRead /* = 0*/;
-        try {
-            while ((nbByteRead = is.read(byteBuffer)) != -1) {
-                // appends buffer
-                answer.write(byteBuffer, 0, nbByteRead);
-            }
-        } finally {
-            closeWithWarning(is);
-        }
-        return answer.toByteArray();
-    }
-
-    /**
-     * Write the bytes from the byte array to the File.
-     *
-     * @param file  the file to write to
-     * @param bytes the byte[] to write to the file
-     * @throws IOException if an IOException occurs.
-     * @since 1.7.1
-     */
-    public static void setBytes(File file, byte[] bytes) throws IOException {
-        setBytes(new FileOutputStream(file), bytes);
-    }
-
-    /**
-     * Write the byte[] to the output stream.
-     * The stream is closed before this method returns.
-     *
-     * @param os    an output stream
-     * @param bytes the byte[] to write to the output stream
-     * @throws IOException if an IOException occurs.
-     * @since 1.7.1
-     */
-    public static void setBytes(OutputStream os, byte[] bytes) throws IOException {
-        try {
-            os.write(bytes);
-        } finally {
-            closeWithWarning(os);
-        }
-    }
-
-    /**
-     * Write the text and append a newline (using the platform's line-ending).
-     *
-     * @param writer a BufferedWriter
-     * @param line   the line to write
-     * @throws IOException if an IOException occurs.
-     * @since 1.0
-     */
-    public static void writeLine(BufferedWriter writer, String line) throws IOException {
-        writer.write(line);
-        writer.newLine();
-    }
-
-    /**
-     * Write the text to the File.
-     *
-     * @param file a File
-     * @param text the text to write to the File
-     * @throws IOException if an IOException occurs.
-     * @since 1.0
-     */
-    public static void write(File file, String text) throws IOException {
-        BufferedWriter writer = null;
-        try {
-            writer = newWriter(file);
-            writer.write(text);
-            writer.flush();
-
-            Writer temp = writer;
-            writer = null;
-            temp.close();
-        } finally {
-            closeWithWarning(writer);
-        }
-    }
-
-    /**
-     * Synonym for write(text) allowing file.text = 'foo'.
-     *
-     * @param file a File
-     * @param text the text to write to the File
-     * @throws IOException if an IOException occurs.
-     * @see #write(java.io.File, java.lang.String)
-     * @since 1.5.1
-     */
-    public static void setText(File file, String text) throws IOException {
-        write(file, text);
-    }
-
-    /**
-     * Synonym for write(text, charset) allowing:
-     * <pre>
-     * myFile.setText('some text', charset)
-     * </pre>
-     * or with some help from <code>ExpandoMetaClass</code>, you could do something like:
-     * <pre>
-     * myFile.metaClass.setText = { String s -> delegate.setText(s, 'UTF-8') }
-     * myfile.text = 'some text'
-     * </pre>
-     *
-     * @param file A File
-     * @param charset The charset used when writing to the file
-     * @param text The text to write to the File
-     * @throws IOException if an IOException occurs.
-     * @see #write(java.io.File, java.lang.String, java.lang.String)
-     * @since 1.7.3
-     */
-    public static void setText(File file, String text, String charset) throws IOException {
-        write(file, text, charset);
-    }
-
-    /**
-     * Write the text to the File.
-     *
-     * @param file a File
-     * @param text the text to write to the File
-     * @return the original file
-     * @throws IOException if an IOException occurs.
-     * @since 1.0
-     */
-    public static File leftShift(File file, Object text) throws IOException {
-        append(file, text);
-        return file;
-    }
-
-    /**
-     * Write bytes to a File.
-     *
-     * @param file a File
-     * @param bytes the byte array to append to the end of the File
-     * @return the original file
-     * @throws IOException if an IOException occurs.
-     * @since 1.5.0
-     */
-    public static File leftShift(File file, byte[] bytes) throws IOException {
-        append(file, bytes);
-        return file;
-    }
-
-    /**
-     * Append binary data to the file.  See {@link #append(java.io.File, java.io.InputStream)}
-     * @param file a File
-     * @param data an InputStream of data to write to the file
-     * @return the file
-     * @throws IOException if an IOException occurs.
-     * @since 1.5.0
-     */
-    public static File leftShift(File file, InputStream data) throws IOException {
-        append(file, data);
-        return file;
-    }
-
-    /**
-     * Write the text to the File, using the specified encoding.
-     *
-     * @param file    a File
-     * @param text    the text to write to the File
-     * @param charset the charset used
-     * @throws IOException if an IOException occurs.
-     * @since 1.0
-     */
-    public static void write(File file, String text, String charset) throws IOException {
-        BufferedWriter writer = null;
-        try {
-            writer = newWriter(file, charset);
-            writer.write(text);
-            writer.flush();
-
-            Writer temp = writer;
-            writer = null;
-            temp.close();
-        } finally {
-            closeWithWarning(writer);
-        }
-    }
-
-    /**
-     * Append the text at the end of the File.
-     *
-     * @param file a File
-     * @param text the text to append at the end of the File
-     * @throws IOException if an IOException occurs.
-     * @since 1.0
-     */
-    public static void append(File file, Object text) throws IOException {
-        BufferedWriter writer = null;
-        try {
-            writer = newWriter(file, true);
-            InvokerHelper.write(writer, text);
-            writer.flush();
-
-            Writer temp = writer;
-            writer = null;
-            temp.close();
-        } finally {
-            closeWithWarning(writer);
-        }
-    }
-
-    /**
-     * Append bytes to the end of a File.
-     *
-     * @param file a File
-     * @param bytes the byte array to append to the end of the File
-     * @throws IOException if an IOException occurs.
-     * @since 1.5.1
-     */
-    public static void append(File file, byte[] bytes) throws IOException {
-        BufferedOutputStream stream = null;
-        try {
-            stream = new BufferedOutputStream( new FileOutputStream(file,true) );
-            stream.write(bytes, 0, bytes.length);
-            stream.flush();
-
-            OutputStream temp = stream;
-            stream = null;
-            temp.close();
-        } finally {
-            closeWithWarning(stream);
-        }
-    }
-
-    /**
-     * Append binary data to the file.  It <strong>will not</strong> be
-     * interpreted as text.
-     * @param self a File
-     * @param stream stream to read data from.
-     * @throws IOException if an IOException occurs.
-     * @since 1.5.0
-     */
-    public static void append(File self, InputStream stream ) throws IOException {
-        OutputStream out = new FileOutputStream( self, true );
-        try {
-            leftShift( out, stream );
-        }
-        finally {
-            closeWithWarning( out );
-        }
-    }
-
-    /**
-     * Append the text at the end of the File, using a specified encoding.
-     *
-     * @param file    a File
-     * @param text    the text to append at the end of the File
-     * @param charset the charset used
-     * @throws IOException if an IOException occurs.
-     * @since 1.0
-     */
-    public static void append(File file, Object text, String charset) throws IOException {
-        BufferedWriter writer = null;
-        try {
-            writer = newWriter(file, charset, true);
-            InvokerHelper.write(writer, text);
-            writer.flush();
-
-            Writer temp = writer;
-            writer = null;
-            temp.close();
-        } finally {
-            closeWithWarning(writer);
-        }
-    }
-
-    /**
-     * This method is used to throw useful exceptions when the eachFile* and eachDir closure methods
-     * are used incorrectly.
-     *
-     * @param dir The directory to check
-     * @throws FileNotFoundException    if the given directory does not exist
-     * @throws IllegalArgumentException if the provided File object does not represent a directory
-     * @since 1.0
-     */
-    private static void checkDir(File dir) throws FileNotFoundException, IllegalArgumentException {
-        if (!dir.exists())
-            throw new FileNotFoundException(dir.getAbsolutePath());
-        if (!dir.isDirectory())
-            throw new IllegalArgumentException("The provided File object is not a directory: " + dir.getAbsolutePath());
-    }
-
-    /**
-     * Invokes the closure for each 'child' file in this 'parent' folder/directory.
-     * Both regular files and subfolders/subdirectories can be processed depending
-     * on the fileType enum value.
-     *
-     * @param self    a file object
-     * @param fileType if normal files or directories or both should be processed
-     * @param closure the closure to invoke
-     * @throws FileNotFoundException    if the given directory does not exist
-     * @throws IllegalArgumentException if the provided File object does not represent a directory
-     * @since 1.7.1
-     */
-    public static void eachFile(final File self, final FileType fileType, final Closure closure)
-            throws FileNotFoundException, IllegalArgumentException {
-        checkDir(self);
-        final File[] files = self.listFiles();
-        // null check because of http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4803836
-        if (files == null) return;
-        for (File file : files) {
-            if (fileType == FileType.ANY ||
-                    (fileType != FileType.FILES && file.isDirectory()) ||
-                    (fileType != FileType.DIRECTORIES && file.isFile())) {
-                closure.call(file);
-            }
-        }
-    }
-
-    /**
-     * Invokes the closure for each 'child' file in this 'parent' folder/directory.
-     * Both regular files and subfolders/subdirectories are processed.
-     *
-     * @param self    a File (that happens to be a folder/directory)
-     * @param closure a closure (first parameter is the 'child' file)
-     * @throws FileNotFoundException    if the given directory does not exist
-     * @throws IllegalArgumentException if the provided File object does not represent a directory
-     * @see java.io.File#listFiles()
-     * @see #eachFile(java.io.File, groovy.io.FileType, groovy.lang.Closure)
-     * @since 1.5.0
-     */
-    public static void eachFile(final File self, final Closure closure) throws FileNotFoundException, IllegalArgumentException {
-        eachFile(self, FileType.ANY, closure);
-    }
-
-    /**
-     * Invokes the closure for each subdirectory in this directory,
-     * ignoring regular files.
-     *
-     * @param self    a File (that happens to be a folder/directory)
-     * @param closure a closure (first parameter is the subdirectory file)
-     * @throws FileNotFoundException    if the given directory does not exist
-     * @throws IllegalArgumentException if the provided File object does not represent a directory
-     * @see java.io.File#listFiles()
-     * @see #eachFile(java.io.File, groovy.io.FileType, groovy.lang.Closure)
-     * @since 1.0
-     */
-    public static void eachDir(File self, Closure closure) throws FileNotFoundException, IllegalArgumentException {
-        eachFile(self, FileType.DIRECTORIES, closure);
-    }
-
-    /**
-     * Invokes the closure for each descendant file in this directory.
-     * Sub-directories are recursively searched in a depth-first fashion.
-     * Both regular files and subdirectories may be passed to the closure
-     * depending on the value of fileType.
-     *
-     * @param self     a file object
-     * @param fileType if normal files or directories or both should be processed
-     * @param closure  the closure to invoke on each file
-     * @throws FileNotFoundException    if the given directory does not exist
-     * @throws IllegalArgumentException if the provided File object does not represent a directory
-     * @since 1.7.1
-     */
-    public static void eachFileRecurse(final File self, final FileType fileType, final Closure closure)
-            throws FileNotFoundException, IllegalArgumentException {
-        checkDir(self);
-        final File[] files = self.listFiles();
-        // null check because of http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4803836
-        if (files == null) return;
-        for (File file : files) {
-            if (file.isDirectory()) {
-                if (fileType != FileType.FILES) closure.call(file);
-                eachFileRecurse(file, fileType, closure);
-            } else if (fileType != FileType.DIRECTORIES) {
-                closure.call(file);
-            }
-        }
-    }
-
-    /**
-     * Invokes <code>closure</code> for each descendant file in this directory tree.
-     * Sub-directories are recursively traversed as found.
-     * The traversal can be adapted by providing various options in the <code>options</code> Map according
-     * to the following keys:<dl>
-     * <dt>type</dt><dd>A {@link groovy.io.FileType} enum to determine if normal files or directories or both are processed</dd>
-     * <dt>preDir</dt><dd>A {@link groovy.lang.Closure} run before each directory is processed and optionally returning a {@link groovy.io.FileVisitResult} value
-     *     which can be used to control subsequent processing.</dd>
-     * <dt>preRoot</dt><dd>A boolean indicating that the 'preDir' closure should be applied at the root level</dd>
-     * <dt>postDir</dt><dd>A {@link groovy.lang.Closure} run after each directory is processed and optionally returning a {@link groovy.io.FileVisitResult} value
-     *     which can be used to control subsequent processing.</dd>
-     * <dt>postRoot</dt><dd>A boolean indicating that the 'postDir' closure should be applied at the root level</dd>
-     * <dt>visitRoot</dt><dd>A boolean indicating that the given closure should be applied for the root dir
-     *     (not applicable if the 'type' is set to {@link groovy.io.FileType#FILES})</dd>
-     * <dt>maxDepth</dt><dd>The maximum number of directory levels when recursing
-     *     (default is -1 which means infinite, set to 0 for no recursion)</dd>
-     * <dt>filter</dt><dd>A filter to perform on traversed files/directories (using the {@link #isCase(java.lang.Object, java.lang.Object)} method). If set,
-     *     only files/dirs which match are candidates for visiting.</dd>
-     * <dt>nameFilter</dt><dd>A filter to perform on the name of traversed files/directories (using the {@link #isCase(java.lang.Object, java.lang.Object)} method). If set,
-     *     only files/dirs which match are candidates for visiting. (Must not be set if 'filter' is set)</dd>
-     * <dt>excludeFilter</dt><dd>A filter to perform on traversed files/directories (using the {@link #isCase(java.lang.Object, java.lang.Object)} method).
-     *     If set, any candidates which match won't be visited.</dd>
-     * <dt>excludeNameFilter</dt><dd>A filter to perform on the names of traversed files/directories (using the {@link #isCase(java.lang.Object, java.lang.Object)} method).
-     *     If set, any candidates which match won't be visited. (Must not be set if 'excludeFilter' is set)</dd>
-     * <dt>sort</dt><dd>A {@link groovy.lang.Closure} which if set causes the files and subdirectories for each directory to be processed in sorted order.
-     *     Note that even when processing only files, the order of visited subdirectories will be affected by this parameter.</dd>
-     * </dl>
-     * This example prints out file counts and size aggregates for groovy source files within a directory tree:
-     * <pre>
-     * def totalSize = 0
-     * def count = 0
-     * def sortByTypeThenName = { a, b ->
-     *     a.isFile() != b.isFile() ? a.isFile() <=> b.isFile() : a.name <=> b.name
-     * }
-     * rootDir.traverse(
-     *         type         : FILES,
-     *         nameFilter   : ~/.*\.groovy/,
-     *         preDir       : { if (it.name == '.svn') return SKIP_SUBTREE },
-     *         postDir      : { println "Found $count files in $it.name totalling $totalSize bytes"
-     *                         totalSize = 0; count = 0 },
-     *         postRoot     : true
-     *         sort         : sortByTypeThenName
-     * ) {it -> totalSize += it.size(); count++ }
-     * </pre>
-     *
-     * @param self    a File
-     * @param options a Map of options to alter the traversal behavior
-     * @param closure the Closure to invoke on each file/directory and optionally returning a {@link groovy.io.FileVisitResult} value
-     *     which can be used to control subsequent processing
-     * @throws FileNotFoundException    if the given directory does not exist
-     * @throws IllegalArgumentException if the provided File object does not represent a directory or illegal filter combinations are supplied
-     * @see #sort(java.util.Collection, groovy.lang.Closure)
-     * @see groovy.io.FileVisitResult
-     * @see groovy.io.FileType
-     * @since 1.7.1
-     */
-    public static void traverse(final File self, final Map<String, Object> options, final Closure closure)
-            throws FileNotFoundException, IllegalArgumentException {
-        Number maxDepthNumber = asType(options.remove("maxDepth"), Number.class);
-        int maxDepth = maxDepthNumber == null ? -1 : maxDepthNumber.intValue();
-        Boolean visitRoot = asType(get(options, "visitRoot", false), Boolean.class);
-        Boolean preRoot = asType(get(options, "preRoot", false), Boolean.class);
-        Boolean postRoot = asType(get(options, "postRoot", false), Boolean.class);
-        final Closure pre = (Closure) options.get("preDir");
-        final Closure post = (Closure) options.get("postDir");
-        final FileType type = (FileType) options.get("type");
-        final Object filter = options.get("filter");
-        final Object nameFilter = options.get("nameFilter");
-        final Object excludeFilter = options.get("excludeFilter");
-        final Object excludeNameFilter = options.get("excludeNameFilter");
-        Object preResult = null;
-        if (preRoot && pre != null) {
-            preResult = pre.call(self);
-        }
-        if (preResult == FileVisitResult.TERMINATE ||
-                preResult == FileVisitResult.SKIP_SUBTREE) return;
-
-        FileVisitResult terminated = traverse(self, options, closure, maxDepth);
-
-        if (type != FileType.FILES && visitRoot) {
-            if (closure != null && notFiltered(self, filter, nameFilter, excludeFilter, excludeNameFilter)) {
-                Object closureResult = closure.call(self);
-                if (closureResult == FileVisitResult.TERMINATE) return;
-            }
-        }
-
-        if (postRoot && post != null && terminated != FileVisitResult.TERMINATE) post.call(self);
-    }
-
-    private static boolean notFiltered(File file, Object filter, Object nameFilter, Object excludeFilter, Object excludeNameFilter) {
-        if (filter == null && nameFilter == null && excludeFilter == null && excludeNameFilter == null) return true;
-        if (filter != null && nameFilter != null) throw new IllegalArgumentException("Can't set both 'filter' and 'nameFilter'");
-        if (excludeFilter != null && excludeNameFilter != null) throw new IllegalArgumentException("Can't set both 'excludeFilter' and 'excludeNameFilter'");
-        Object filterToUse = null;
-        Object filterParam = null;
-        if (filter != null) {
-            filterToUse = filter;
-            filterParam = file;
-        } else if (nameFilter != null) {
-            filterToUse = nameFilter;
-            filterParam = file.getName();
-        }
-        Object excludeFilterToUse = null;
-        Object excludeParam = null;
-        if (excludeFilter != null) {
-            excludeFilterToUse = excludeFilter;
-            excludeParam = file;
-        } else if (excludeNameFilter != null) {
-            excludeFilterToUse = excludeNameFilter;
-            excludeParam = file.getName();
-        }
-        final MetaClass filterMC = filterToUse == null ? null : InvokerHelper.getMetaClass(filterToUse);
-        final MetaClass excludeMC = excludeFilterToUse == null ? null : InvokerHelper.getMetaClass(excludeFilterToUse);
-        boolean included = filterToUse == null || DefaultTypeTransformation.castToBoolean(filterMC.invokeMethod(filterToUse, "isCase", filterParam));
-        boolean excluded = excludeFilterToUse != null && DefaultTypeTransformation.castToBoolean(excludeMC.invokeMethod(excludeFilterToUse, "isCase", excludeParam));
-        return included && !excluded;
-    }
-
-    /**
-     * Invokes the closure for each descendant file in this directory tree.
-     * Sub-directories are recursively traversed in a depth-first fashion.
-     * Convenience method for {@link #traverse(java.io.File, java.util.Map, groovy.lang.Closure)} when
-     * no options to alter the traversal behavior are required.
-     *
-     * @param self    a File
-     * @param closure the Closure to invoke on each file/directory and optionally returning a {@link groovy.io.FileVisitResult} value
-     *     which can be used to control subsequent processing
-     * @throws FileNotFoundException    if the given directory does not exist
-     * @throws IllegalArgumentException if the provided File object does not represent a directory
-     * @see #traverse(java.io.File, java.util.Map, groovy.lang.Closure)
-     * @since 1.7.1
-     */
-    public static void traverse(final File self, final Closure closure)
-            throws FileNotFoundException, IllegalArgumentException {
-        traverse(self, new HashMap<String, Object>(), closure);
-    }
-
-    /**
-     * Invokes the closure specified with key 'visit' in the options Map
-     * for each descendant file in this directory tree. Convenience method
-     * for {@link #traverse(java.io.File, java.util.Map, groovy.lang.Closure)} allowing the 'visit' closure
-     * to be included in the options Map rather than as a parameter.
-     *
-     * @param self    a File
-     * @param options a Map of options to alter the traversal behavior
-     * @throws FileNotFoundException    if the given directory does not exist
-     * @throws IllegalArgumentException if the provided File object does not represent a directory or illegal filter combinations are supplied
-     * @see #traverse(java.io.File, java.util.Map, groovy.lang.Closure)
-     * @since 1.7.1
-     */
-    public static void traverse(final File self, final Map<String, Object> options)
-            throws FileNotFoundException, IllegalArgumentException {
-        final Closure visit = (Closure) options.remove("visit");
-        traverse(self, options, visit);
-    }
-
-    private static FileVisitResult traverse(final File self, final Map<String, Object> options, final Closure closure, final int maxDepth)
-            throws FileNotFoundException, IllegalArgumentException {
-        checkDir(self);
-        final Closure pre = (Closure) options.get("preDir");
-        final Closure post = (Closure) options.get("postDir");
-        final FileType type = (FileType) options.get("type");
-        final Object filter = options.get("filter");
-        final Object nameFilter = options.get("nameFilter");
-        final Object excludeFilter = options.get("excludeFilter");
-        final Object excludeNameFilter = options.get("excludeNameFilter");
-        final Closure sort = (Closure) options.get("sort");
-
-        final File[] origFiles = self.listFiles();
-        // null check because of http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4803836
-        if (origFiles != null) {
-            List<File> files = Arrays.asList(origFiles);
-            if (sort != null) files = sort(files, sort);
-            for (File file : files) {
-                if (file.isDirectory()) {
-                    if (type != FileType.FILES) {
-                        if (closure != null && notFiltered(file, filter, nameFilter, excludeFilter, excludeNameFilter)) {
-                            Object closureResult = closure.call(file);
-                            if (closureResult == FileVisitResult.SKIP_SIBLINGS) break;
-                            if (closureResult == FileVisitResult.TERMINATE) return FileVisitResult.TERMINATE;
-                        }
-                    }
-                    if (maxDepth != 0) {
-                        Object preResult = null;
-                        if (pre != null) {
-                            preResult = pre.call(file);
-                        }
-                        if (preResult == FileVisitResult.SKIP_SIBLINGS) break;
-                        if (preResult == FileVisitResult.TERMINATE) return FileVisitResult.TERMINATE;
-                        if (preResult != FileVisitResult.SKIP_SUBTREE) {
-                            FileVisitResult terminated = traverse(file, options, closure, maxDepth - 1);
-                            if (terminated == FileVisitResult.TERMINATE) return terminated;
-                        }
-                        Object postResult = null;
-                        if (post != null) {
-                            postResult = post.call(file);
-                        }
-                        if (postResult == FileVisitResult.SKIP_SIBLINGS) break;
-                        if (postResult == FileVisitResult.TERMINATE) return FileVisitResult.TERMINATE;
-                    }
-                } else if (type != FileType.DIRECTORIES) {
-                    if (closure != null && notFiltered(file, filter, nameFilter, excludeFilter, excludeNameFilter)) {
-                        Object closureResult = closure.call(file);
-                        if (closureResult == FileVisitResult.SKIP_SIBLINGS) break;
-                        if (closureResult == FileVisitResult.TERMINATE) return FileVisitResult.TERMINATE;
-                    }
-                }
-            }
-        }
-        return FileVisitResult.CONTINUE;
-    }
-
-    /**
-     * Invokes the closure for each descendant file in this directory.
-     * Sub-directories are recursively searched in a depth-first fashion.
-     * Both regular files and subdirectories are passed to the closure.
-     *
-     * @param self    a File
-     * @param closure a closure
-     * @throws FileNotFoundException    if the given directory does not exist
-     * @throws IllegalArgumentException if the provided File object does not represent a directory
-     * @see #eachFileRecurse(java.io.File, groovy.io.FileType, groovy.lang.Closure)
-     * @since 1.0
-     */
-    public static void eachFileRecurse(File self, Closure closure) throws FileNotFoundException, IllegalArgumentException {
-        eachFileRecurse(self, FileType.ANY, closure);
-    }
-
-    /**
-     * Invokes the closure for each descendant directory of this directory.
-     * Sub-directories are recursively searched in a depth-first fashion.
-     * Only subdirectories are passed to the closure; regular files are ignored.
-     *
-     * @param self    a directory
-     * @param closure a closure
-     * @throws FileNotFoundException    if the given directory does not exist
-     * @throws IllegalArgumentException if the provided File object does not represent a directory
-     * @see #eachFileRecurse(java.io.File, groovy.io.FileType, groovy.lang.Closure)
-     * @since 1.5.0
-     */
-    public static void eachDirRecurse(final File self, final Closure closure) throws FileNotFoundException, IllegalArgumentException {
-        eachFileRecurse(self, FileType.DIRECTORIES, closure);
-    }
-
-    /**
-     * Invokes the closure for each file whose name (file.name) matches the given nameFilter in the given directory
-     * - calling the {@link #isCase(java.lang.Object, java.lang.Object)} method to determine if a match occurs.  This method can be used
-     * with different kinds of filters like regular expressions, classes, ranges etc.
-     * Both regular files and subdirectories may be candidates for matching depending
-     * on the value of fileType.
-     * <pre>
-     * // collect names of files in baseDir matching supplied regex pattern
-     * import static groovy.io.FileType.*
-     * def names = []
-     * baseDir.eachFileMatch FILES, ~/foo\d\.txt/, { names << it.name }
-     * assert names == ['foo1.txt', 'foo2.txt']
-     *
-     * // remove all *.bak files in baseDir
-     * baseDir.eachFileMatch FILES, ~/.*\.bak/, { File bak -> bak.delete() }
-     *
-     * // print out files > 4K in size from baseDir
-     * baseDir.eachFileMatch FILES, { new File(baseDir, it).size() > 4096 }, { println "$it.name ${it.size()}" }
-     * </pre>
-     *
-     * @param self       a file
-     * @param fileType   whether normal files or directories or both should be processed
-     * @param nameFilter the filter to perform on the name of the file/directory (using the {@link #isCase(java.lang.Object, java.lang.Object)} method)
-     * @param closure    the closure to invoke
-     * @throws FileNotFoundException    if the given directory does not exist
-     * @throws IllegalArgumentException if the provided File object does not represent a directory
-     * @since 1.7.1
-     */
-    public static void eachFileMatch(final File self, final FileType fileType, final Object nameFilter, final Closure closure)
-            throws FileNotFoundException, IllegalArgumentException {
-        checkDir(self);
-        final File[] files = self.listFiles();
-        // null check because of http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4803836
-        if (files == null) return;
-        final MetaClass metaClass = InvokerHelper.getMetaClass(nameFilter);
-        for (final File currentFile : files) {
-            if ((fileType != FileType.FILES && currentFile.isDirectory()) ||
-                    (fileType != FileType.DIRECTORIES && currentFile.isFile())) {
-                if (DefaultTypeTransformation.castToBoolean(metaClass.invokeMethod(nameFilter, "isCase", currentFile.getName())))
-                    closure.call(currentFile);
-            }
-        }
-    }
-
-    /**
-     * Invokes the closure for each file whose name (file.name) matches the given nameFilter in the given directory
-     * - calling the {@link #isCase(java.lang.Object, java.lang.Object)} method to determine if a match occurs.  This method can be used
-     * with different kinds of filters like regular expressions, classes, ranges etc.
-     * Both regular files and subdirectories are matched.
-     *
-     * @param self       a file
-     * @param nameFilter the nameFilter to perform on the name of the file (using the {@link #isCase(java.lang.Object, java.lang.Object)} method)
-     * @param closure    the closure to invoke
-     * @throws FileNotFoundException    if the given directory does not exist
-     * @throws IllegalArgumentException if the provided File object does not represent a directory
-     * @see #eachFileMatch(java.io.File, groovy.io.FileType, java.lang.Object, groovy.lang.Closure)
-     * @since 1.5.0
-     */
-    public static void eachFileMatch(final File self, final Object nameFilter, final Closure closure)
-            throws FileNotFoundException, IllegalArgumentException {
-        eachFileMatch(self, FileType.ANY, nameFilter, closure);
-    }
-
-    /**
-     * Invokes the closure for each subdirectory whose name (dir.name) matches the given nameFilter in the given directory
-     * - calling the {@link #isCase(java.lang.Object, java.lang.Object)} method to determine if a match occurs.  This method can be used
-     * with different kinds of filters like regular expressions, classes, ranges etc.
-     * Only subdirectories are matched; regular files are ignored.
-     *
-     * @param self       a file
-     * @param nameFilter the nameFilter to perform on the name of the directory (using the {@link #isCase(java.lang.Object, java.lang.Object)} method)
-     * @param closure    the closure to invoke
-     * @throws FileNotFoundException    if the given directory does not exist
-     * @throws IllegalArgumentException if the provided File object does not represent a directory
-     * @see #eachFileMatch(java.io.File, groovy.io.FileType, java.lang.Object, groovy.lang.Closure)
-     * @since 1.5.0
-     */
-    public static void eachDirMatch(final File self, final Object nameFilter, final Closure closure) throws FileNotFoundException, IllegalArgumentException {
-        eachFileMatch(self, FileType.DIRECTORIES, nameFilter, closure);
-    }
-
-    /**
-     * Deletes a directory with all contained files and subdirectories.
-     * <p>The method returns
-     * <ul>
-     * <li>true, when deletion was successful</li>
-     * <li>true, when it is called for a non existing directory</li>
-     * <li>false, when it is called for a file which isn't a directory</li>
-     * <li>false, when directory couldn't be deleted</li>
-     * </ul>
-     * </p>
-     *
-     * @param self a File
-     * @return true if the file doesn't exist or deletion was successful
-     * @since 1.6.0
-     */
-    public static boolean deleteDir(final File self) {
-        if (!self.exists())
-            return true;
-        if (!self.isDirectory())
-            return false;
-
-        File[] files = self.listFiles();
-        if (files == null)
-            // couldn't access files
-            return false;
-
-        // delete contained files
-        boolean result = true;
-        for (File file : files) {
-            if (file.isDirectory()) {
-                if (!deleteDir(file))
-                    result = false;
-            } else {
-                if (!file.delete())
-                    result = false;
-            }
-        }
-
-        // now delete directory itself
-        if(!self.delete())
-            result = false;
-
-        return result;
-    }
-
-    /**
-     * Renames the file. It's a shortcut for {@link java.io.File#renameTo(File)}
-     *
-     * @param self a File
-     * @param newPathName The new pathname for the named file
-     * @return  <code>true</code> if and only if the renaming succeeded;
-     *             <code>false</code> otherwise
-     * @since 1.7.4
-     */
-    public static boolean renameTo(final File self, String newPathName) {
-        return self.renameTo(new File(newPathName));
-    }
-
     /**
      * Allows a simple syntax for using timers.  This timer will execute the
      * given closure after the given delay.
@@ -12536,792 +10486,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         };
         timer.schedule(timerTask, delay);
         return timerTask;
-    }
-
-    /**
-     * Create a buffered reader for this file.
-     *
-     * @param file a File
-     * @return a BufferedReader
-     * @throws IOException if an IOException occurs.
-     * @since 1.0
-     */
-    public static BufferedReader newReader(File file) throws IOException {
-        CharsetToolkit toolkit = new CharsetToolkit(file);
-        return toolkit.getReader();
-    }
-
-    /**
-     * Create a buffered reader for this file, using the specified
-     * charset as the encoding.
-     *
-     * @param file    a File
-     * @param charset the charset for this File
-     * @return a BufferedReader
-     * @throws FileNotFoundException        if the File was not found
-     * @throws UnsupportedEncodingException if the encoding specified is not supported
-     * @since 1.0
-     */
-    public static BufferedReader newReader(File file, String charset)
-            throws FileNotFoundException, UnsupportedEncodingException {
-        return new BufferedReader(new InputStreamReader(new FileInputStream(file), charset));
-    }
-
-    /**
-     * Creates a reader for this input stream.
-     *
-     * @param self an input stream
-     * @return a reader
-     * @since 1.0
-     */
-    public static BufferedReader newReader(InputStream self) {
-        return new BufferedReader(new InputStreamReader(self));
-    }
-
-    /**
-     * Creates a reader for this input stream, using the specified
-     * charset as the encoding.
-     *
-     * @param self an input stream
-     * @param charset the charset for this input stream
-     * @return a reader
-     * @throws UnsupportedEncodingException if the encoding specified is not supported
-     * @since 1.6.0
-     */
-    public static BufferedReader newReader(InputStream self, String charset) throws UnsupportedEncodingException {
-        return new BufferedReader(new InputStreamReader(self, charset));
-    }
-
-    /**
-     * Create a new BufferedReader for this file and then
-     * passes it into the closure, ensuring the reader is closed after the
-     * closure returns.
-     *
-     * @param file    a file object
-     * @param closure a closure
-     * @return the value returned by the closure
-     * @throws IOException if an IOException occurs.
-     * @since 1.5.2
-     */
-    public static <T> T withReader(File file, Closure<T> closure) throws IOException {
-        return withReader(newReader(file), closure);
-    }
-
-    /**
-     * Create a new BufferedReader for this file using the specified charset and then
-     * passes it into the closure, ensuring the reader is closed after the
-     * closure returns.
-     *
-     * @param file    a file object
-     * @param charset the charset for this input stream
-     * @param closure a closure
-     * @return the value returned by the closure
-     * @throws IOException if an IOException occurs.
-     * @since 1.6.0
-     */
-    public static <T> T withReader(File file, String charset, Closure<T> closure) throws IOException {
-        return withReader(newReader(file, charset), closure);
-    }
-
-    /**
-     * Create a buffered output stream for this file.
-     *
-     * @param file a file object
-     * @return the created OutputStream
-     * @throws IOException if an IOException occurs.
-     * @since 1.0
-     */
-    public static BufferedOutputStream newOutputStream(File file) throws IOException {
-        return new BufferedOutputStream(new FileOutputStream(file));
-    }
-
-    /**
-     * Creates a new data output stream for this file.
-     *
-     * @param file a file object
-     * @return the created DataOutputStream
-     * @throws IOException if an IOException occurs.
-     * @since 1.5.0
-     */
-    public static DataOutputStream newDataOutputStream(File file) throws IOException {
-        return new DataOutputStream(new FileOutputStream(file));
-    }
-
-    /**
-     * Creates a new OutputStream for this file and passes it into the closure.
-     * This method ensures the stream is closed after the closure returns.
-     *
-     * @param file    a File
-     * @param closure a closure
-     * @return the value returned by the closure
-     * @throws IOException if an IOException occurs.
-     * @see #withStream(java.io.OutputStream, groovy.lang.Closure)
-     * @since 1.5.2
-     */
-    public static Object withOutputStream(File file, Closure closure) throws IOException {
-        return withStream(newOutputStream(file), closure);
-    }
-
-    /**
-     * Create a new InputStream for this file and passes it into the closure.
-     * This method ensures the stream is closed after the closure returns.
-     *
-     * @param file    a File
-     * @param closure a closure
-     * @return the value returned by the closure
-     * @throws IOException if an IOException occurs.
-     * @see #withStream(java.io.InputStream, groovy.lang.Closure)
-     * @since 1.5.2
-     */
-    public static Object withInputStream(File file, Closure closure) throws IOException {
-        return withStream(newInputStream(file), closure);
-    }
-
-    /**
-     * Creates a new InputStream for this URL and passes it into the closure.
-     * This method ensures the stream is closed after the closure returns.
-     *
-     * @param url     a URL
-     * @param closure a closure
-     * @return the value returned by the closure
-     * @throws IOException if an IOException occurs.
-     * @see #withStream(java.io.InputStream, groovy.lang.Closure)
-     * @since 1.5.2
-     */
-    public static <T> T withInputStream(URL url, Closure<T> closure) throws IOException {
-        return withStream(newInputStream(url), closure);
-    }
-
-    /**
-     * Create a new DataOutputStream for this file and passes it into the closure.
-     * This method ensures the stream is closed after the closure returns.
-     *
-     * @param file    a File
-     * @param closure a closure
-     * @return the value returned by the closure
-     * @throws IOException if an IOException occurs.
-     * @see #withStream(java.io.OutputStream, groovy.lang.Closure)
-     * @since 1.5.2
-     */
-    public static <T> T withDataOutputStream(File file, Closure<T> closure) throws IOException {
-        return withStream(newDataOutputStream(file), closure);
-    }
-
-    /**
-     * Create a new DataInputStream for this file and passes it into the closure.
-     * This method ensures the stream is closed after the closure returns.
-     *
-     * @param file    a File
-     * @param closure a closure
-     * @return the value returned by the closure
-     * @throws IOException if an IOException occurs.
-     * @see #withStream(java.io.InputStream, groovy.lang.Closure)
-     * @since 1.5.2
-     */
-    public static <T> T withDataInputStream(File file, Closure<T> closure) throws IOException {
-        return withStream(newDataInputStream(file), closure);
-    }
-
-    /**
-     * Create a buffered writer for this file.
-     *
-     * @param file a File
-     * @return a BufferedWriter
-     * @throws IOException if an IOException occurs.
-     * @since 1.0
-     */
-    public static BufferedWriter newWriter(File file) throws IOException {
-        return new BufferedWriter(new FileWriter(file));
-    }
-
-    /**
-     * Creates a buffered writer for this file, optionally appending to the
-     * existing file content.
-     *
-     * @param file   a File
-     * @param append true if data should be appended to the file
-     * @return a BufferedWriter
-     * @throws IOException if an IOException occurs.
-     * @since 1.0
-     */
-    public static BufferedWriter newWriter(File file, boolean append) throws IOException {
-        return new BufferedWriter(new FileWriter(file, append));
-    }
-
-    /**
-     * Helper method to create a buffered writer for a file.  If the given
-     * charset is "UTF-16BE" or "UTF-16LE", the requisite byte order mark is
-     * written to the stream before the writer is returned.
-     *
-     * @param file    a File
-     * @param charset the name of the encoding used to write in this file
-     * @param append  true if in append mode
-     * @return a BufferedWriter
-     * @throws IOException if an IOException occurs.
-     * @since 1.0
-     */
-    public static BufferedWriter newWriter(File file, String charset, boolean append) throws IOException {
-        if (append) {
-            return new EncodingAwareBufferedWriter(new OutputStreamWriter(new FileOutputStream(file, append), charset));
-        } else {
-            // first write the Byte Order Mark for Unicode encodings
-            FileOutputStream stream = new FileOutputStream(file);
-            if ("UTF-16BE".equals(charset)) {
-                writeUtf16Bom(stream, true);
-            } else if ("UTF-16LE".equals(charset)) {
-                writeUtf16Bom(stream, false);
-            }
-            return new EncodingAwareBufferedWriter(new OutputStreamWriter(stream, charset));
-        }
-    }
-
-    /**
-     * Creates a buffered writer for this file, writing data using the given
-     * encoding.
-     *
-     * @param file    a File
-     * @param charset the name of the encoding used to write in this file
-     * @return a BufferedWriter
-     * @throws IOException if an IOException occurs.
-     * @since 1.0
-     */
-    public static BufferedWriter newWriter(File file, String charset) throws IOException {
-        return newWriter(file, charset, false);
-    }
-
-    /**
-     * Write a Byte Order Mark at the beginning of the file
-     *
-     * @param stream    the FileOutputStream to write the BOM to
-     * @param bigEndian true if UTF 16 Big Endian or false if Low Endian
-     * @throws IOException if an IOException occurs.
-     * @since 1.0
-     */
-    private static void writeUtf16Bom(FileOutputStream stream, boolean bigEndian) throws IOException {
-        if (bigEndian) {
-            stream.write(-2);
-            stream.write(-1);
-        } else {
-            stream.write(-1);
-            stream.write(-2);
-        }
-    }
-
-    /**
-     * Creates a new BufferedWriter for this file, passes it to the closure, and
-     * ensures the stream is flushed and closed after the closure returns.
-     *
-     * @param file    a File
-     * @param closure a closure
-     * @return the value returned by the closure
-     * @throws IOException if an IOException occurs.
-     * @since 1.5.2
-     */
-    public static <T> T withWriter(File file, Closure<T> closure) throws IOException {
-        return withWriter(newWriter(file), closure);
-    }
-
-    /**
-     * Creates a new BufferedWriter for this file, passes it to the closure, and
-     * ensures the stream is flushed and closed after the closure returns.
-     * The writer will use the given charset encoding.
-     *
-     * @param file    a File
-     * @param charset the charset used
-     * @param closure a closure
-     * @return the value returned by the closure
-     * @throws IOException if an IOException occurs.
-     * @since 1.5.2
-     */
-    public static <T> T withWriter(File file, String charset, Closure<T> closure) throws IOException {
-        return withWriter(newWriter(file, charset), closure);
-    }
-
-    /**
-     * Create a new BufferedWriter which will append to this
-     * file.  The writer is passed to the closure and will be closed before
-     * this method returns.
-     *
-     * @param file    a File
-     * @param charset the charset used
-     * @param closure a closure
-     * @return the value returned by the closure
-     * @throws IOException if an IOException occurs.
-     * @since 1.5.2
-     */
-    public static <T> T withWriterAppend(File file, String charset, Closure<T> closure) throws IOException {
-        return withWriter(newWriter(file, charset, true), closure);
-    }
-
-    /**
-     * Create a new BufferedWriter for this file in append mode.  The writer
-     * is passed to the closure and is closed after the closure returns.
-     *
-     * @param file    a File
-     * @param closure a closure
-     * @return the value returned by the closure
-     * @throws IOException if an IOException occurs.
-     * @since 1.5.2
-     */
-    public static <T> T withWriterAppend(File file, Closure<T> closure) throws IOException {
-        return withWriter(newWriter(file, true), closure);
-    }
-
-    /**
-     * Create a new PrintWriter for this file.
-     *
-     * @param file a File
-     * @return the created PrintWriter
-     * @throws IOException if an IOException occurs.
-     * @since 1.0
-     */
-    public static PrintWriter newPrintWriter(File file) throws IOException {
-        return new GroovyPrintWriter(newWriter(file));
-    }
-
-    /**
-     * Create a new PrintWriter for this file, using specified
-     * charset.
-     *
-     * @param file    a File
-     * @param charset the charset
-     * @return a PrintWriter
-     * @throws IOException if an IOException occurs.
-     * @since 1.0
-     */
-    public static PrintWriter newPrintWriter(File file, String charset) throws IOException {
-        return new GroovyPrintWriter(newWriter(file, charset));
-    }
-
-    /**
-     * Create a new PrintWriter for this file, using specified
-     * charset.
-     *
-     * @param writer   a writer
-     * @return a PrintWriter
-     * @since 1.6.0
-     */
-    public static PrintWriter newPrintWriter(Writer writer) {
-        return new GroovyPrintWriter(writer);
-    }
-
-    /**
-     * Create a new PrintWriter for this file which is then
-     * passed it into the given closure.  This method ensures its the writer
-     * is closed after the closure returns.
-     *
-     * @param file    a File
-     * @param closure the closure to invoke with the PrintWriter
-     * @return the value returned by the closure
-     * @throws IOException if an IOException occurs.
-     * @since 1.5.2
-     */
-    public static <T> T withPrintWriter(File file, Closure<T> closure) throws IOException {
-        return withWriter(newPrintWriter(file), closure);
-    }
-
-    /**
-     * Create a new PrintWriter with a specified charset for
-     * this file.  The writer is passed to the closure, and will be closed
-     * before this method returns.
-     *
-     * @param file    a File
-     * @param charset the charset
-     * @param closure the closure to invoke with the PrintWriter
-     * @return the value returned by the closure
-     * @throws IOException if an IOException occurs.
-     * @since 1.5.2
-     */
-    public static <T> T withPrintWriter(File file, String charset, Closure<T> closure) throws IOException {
-        return withWriter(newPrintWriter(file, charset), closure);
-    }
-
-    /**
-     * Create a new PrintWriter with a specified charset for
-     * this file.  The writer is passed to the closure, and will be closed
-     * before this method returns.
-     *
-     * @param writer   a writer
-     * @param closure the closure to invoke with the PrintWriter
-     * @return the value returned by the closure
-     * @throws IOException if an IOException occurs.
-     * @since 1.6.0
-     */
-    public static <T> T withPrintWriter(Writer writer, Closure<T> closure) throws IOException {
-        return withWriter(newPrintWriter(writer), closure);
-    }
-
-    /**
-     * Allows this writer to be used within the closure, ensuring that it
-     * is flushed and closed before this method returns.
-     *
-     * @param writer  the writer which is used and then closed
-     * @param closure the closure that the writer is passed into
-     * @return the value returned by the closure
-     * @throws IOException if an IOException occurs.
-     * @since 1.5.2
-     */
-    public static <T> T withWriter(Writer writer, Closure<T> closure) throws IOException {
-        try {
-            T result = closure.call(writer);
-
-            try {
-                writer.flush();
-            } catch (IOException e) {
-                // try to continue even in case of error
-            }
-            Writer temp = writer;
-            writer = null;
-            temp.close();
-            return result;
-        } finally {
-            closeWithWarning(writer);
-        }
-    }
-
-    /**
-     * Allows this reader to be used within the closure, ensuring that it
-     * is closed before this method returns.
-     *
-     * @param reader  the reader which is used and then closed
-     * @param closure the closure that the writer is passed into
-     * @return the value returned by the closure
-     * @throws IOException if an IOException occurs.
-     * @since 1.5.2
-     */
-    public static <T> T withReader(Reader reader, Closure<T> closure) throws IOException {
-        try {
-            T result = closure.call(reader);
-
-            Reader temp = reader;
-            reader = null;
-            temp.close();
-
-            return result;
-        } finally {
-            closeWithWarning(reader);
-        }
-    }
-
-    /**
-     * Allows this input stream to be used within the closure, ensuring that it
-     * is flushed and closed before this method returns.
-     *
-     * @param stream  the stream which is used and then closed
-     * @param closure the closure that the stream is passed into
-     * @return the value returned by the closure
-     * @throws IOException if an IOException occurs.
-     * @since 1.5.2
-     */
-    public static <T> T withStream(InputStream stream, Closure<T> closure) throws IOException {
-        try {
-            T result = closure.call(stream);
-
-            InputStream temp = stream;
-            stream = null;
-            temp.close();
-
-            return result;
-        } finally {
-            closeWithWarning(stream);
-        }
-    }
-
-    /**
-     * Helper method to create a new BufferedReader for a URL and then
-     * passes it to the closure.  The reader is closed after the closure returns.
-     *
-     * @param url     a URL
-     * @param closure the closure to invoke with the reader
-     * @return the value returned by the closure
-     * @throws IOException if an IOException occurs.
-     * @since 1.5.2
-     */
-    public static <T> T withReader(URL url, Closure<T> closure) throws IOException {
-        return withReader(url.openConnection().getInputStream(), closure);
-    }
-
-    /**
-     * Helper method to create a new Reader for a URL and then
-     * passes it to the closure.  The reader is closed after the closure returns.
-     *
-     * @param url     a URL
-     * @param charset the charset used
-     * @param closure the closure to invoke with the reader
-     * @return the value returned by the closure
-     * @throws IOException if an IOException occurs.
-     * @since 1.5.6
-     */
-    public static <T> T withReader(URL url, String charset, Closure<T> closure) throws IOException {
-        return withReader(url.openConnection().getInputStream(), charset, closure);
-    }
-
-    /**
-     * Helper method to create a new Reader for a stream and then
-     * passes it into the closure.  The reader (and this stream) is closed after
-     * the closure returns.
-     *
-     * @see java.io.InputStreamReader
-     * @param in      a stream
-     * @param closure the closure to invoke with the InputStream
-     * @return the value returned by the closure
-     * @throws IOException if an IOException occurs.
-     * @since 1.5.2
-     */
-    public static <T> T withReader(InputStream in, Closure<T> closure) throws IOException {
-        return withReader(new InputStreamReader(in), closure);
-    }
-
-    /**
-     * Helper method to create a new Reader for a stream and then
-     * passes it into the closure.  The reader (and this stream) is closed after
-     * the closure returns.
-     *
-     * @see java.io.InputStreamReader
-     * @param in      a stream
-     * @param charset the charset used to decode the stream
-     * @param closure the closure to invoke with the reader
-     * @return the value returned by the closure
-     * @throws IOException if an IOException occurs.
-     * @since 1.5.6
-     */
-    public static <T> T withReader(InputStream in, String charset, Closure<T> closure) throws IOException {
-        return withReader(new InputStreamReader(in, charset), closure);
-    }
-
-    /**
-     * Creates a writer from this stream, passing it to the given closure.
-     * This method ensures the stream is closed after the closure returns.
-     *
-     * @param stream  the stream which is used and then closed
-     * @param closure the closure that the writer is passed into
-     * @return the value returned by the closure
-     * @throws IOException if an IOException occurs.
-     * @see #withWriter(java.io.Writer, groovy.lang.Closure)
-     * @since 1.5.2
-     */
-    public static <T> T withWriter(OutputStream stream, Closure<T> closure) throws IOException {
-        return withWriter(new OutputStreamWriter(stream), closure);
-    }
-
-    /**
-     * Creates a writer from this stream, passing it to the given closure.
-     * This method ensures the stream is closed after the closure returns.
-     *
-     * @param stream  the stream which is used and then closed
-     * @param charset the charset used
-     * @param closure the closure that the writer is passed into
-     * @return the value returned by the closure
-     * @throws IOException if an IOException occurs.
-     * @see #withWriter(java.io.Writer, groovy.lang.Closure)
-     * @since 1.5.2
-     */
-    public static <T> T withWriter(OutputStream stream, String charset, Closure<T> closure) throws IOException {
-        return withWriter(new OutputStreamWriter(stream, charset), closure);
-    }
-
-    /**
-     * Passes this OutputStream to the closure, ensuring that the stream
-     * is closed after the closure returns, regardless of errors.
-     *
-     * @param os      the stream which is used and then closed
-     * @param closure the closure that the stream is passed into
-     * @return the value returned by the closure
-     * @throws IOException if an IOException occurs.
-     * @since 1.5.2
-     */
-    public static <T> T withStream(OutputStream os, Closure<T> closure) throws IOException {
-        try {
-            T result = closure.call(os);
-            os.flush();
-
-            OutputStream temp = os;
-            os = null;
-            temp.close();
-
-            return result;
-        } finally {
-            closeWithWarning(os);
-        }
-    }
-
-    /**
-     * Creates a buffered input stream for this file.
-     *
-     * @param file a File
-     * @return a BufferedInputStream of the file
-     * @throws FileNotFoundException if the file is not found.
-     * @since 1.0
-     */
-    public static BufferedInputStream newInputStream(File file) throws FileNotFoundException {
-        return new BufferedInputStream(new FileInputStream(file));
-    }
-
-    /**
-     * Creates an inputstream for this URL, with the possibility to set different connection parameters using the
-     * <i>parameters map</i>:
-     * <ul>
-     *     <li>connectTimeout : the connection timeout</li>
-     *     <li>readTimeout : the read timeout</li>
-     *     <li>useCaches : set the use cache property for the URL connection</li>
-     *     <li>allowUserInteraction : set the user interaction flag for the URL connection</li>
-     *     <li>requestProperties : a map of properties to be passed to the URL connection</li>
-     * </ul>
-     * @param parameters an optional map specifying part or all of supported connection parameters
-     * @param url the url for which to create the inputstream
-     * @return an InputStream from the underlying URLConnection
-     * @throws IOException if an I/O error occurs while creating the input stream
-     * @since 1.8.1
-     */
-    private static InputStream configuredInputStream(Map parameters, URL url) throws IOException {
-        final URLConnection connection = url.openConnection();
-        if (parameters!=null) {
-            if (parameters.containsKey("connectTimeout")) {
-                connection.setConnectTimeout(asType(parameters.get("connectTimeout"), Integer.class));
-            }
-            if (parameters.containsKey("readTimeout")) {
-                connection.setReadTimeout(asType(parameters.get("readTimeout"), Integer.class));
-            }
-            if (parameters.containsKey("useCaches")) {
-                connection.setUseCaches(asType(parameters.get("useCaches"), Boolean.class));
-            }
-            if (parameters.containsKey("allowUserInteraction")) {
-                connection.setAllowUserInteraction(asType(parameters.get("allowUserInteraction"), Boolean.class));
-            }
-            if (parameters.containsKey("requestProperties")) {
-                @SuppressWarnings("unchecked")
-                Map<String,String> properties = (Map<String, String>) parameters.get("requestProperties");
-                for (Map.Entry<String, String> entry : properties.entrySet()) {
-                    connection.setRequestProperty(entry.getKey(), entry.getValue());
-                }
-            }
-
-        }
-        return connection.getInputStream();
-    }
-
-    /**
-     * Creates a buffered input stream for this URL.
-     *
-     * @param url a URL
-     * @return a BufferedInputStream for the URL
-     * @throws MalformedURLException is thrown if the URL is not well formed
-     * @throws IOException if an I/O error occurs while creating the input stream
-     * @since 1.5.2
-     */
-    public static BufferedInputStream newInputStream(URL url) throws MalformedURLException, IOException {
-        return new BufferedInputStream(configuredInputStream(null, url));
-    }
-
-    /**
-     * Creates a buffered input stream for this URL.
-     *
-     * @param url a URL
-     * @param parameters connection parameters
-     * @return a BufferedInputStream for the URL
-     * @throws MalformedURLException is thrown if the URL is not well formed
-     * @throws IOException if an I/O error occurs while creating the input stream
-     * @since 1.8.1
-     */
-    public static BufferedInputStream newInputStream(URL url, Map parameters) throws MalformedURLException, IOException {
-        return new BufferedInputStream(configuredInputStream(parameters, url));
-    }
-
-    /**
-     * Creates a buffered reader for this URL.
-     *
-     * @param url a URL
-     * @return a BufferedReader for the URL
-     * @throws MalformedURLException is thrown if the URL is not well formed
-     * @throws IOException if an I/O error occurs while creating the input stream
-     * @since 1.5.5
-     */
-    public static BufferedReader newReader(URL url) throws MalformedURLException, IOException {
-        return newReader(configuredInputStream(null, url));
-    }
-
-    /**
-     * Creates a buffered reader for this URL.
-     *
-     * @param url a URL
-     * @param parameters connection parameters
-     * @return a BufferedReader for the URL
-     * @throws MalformedURLException is thrown if the URL is not well formed
-     * @throws IOException if an I/O error occurs while creating the input stream
-     * @since 1.8.1
-     */
-    public static BufferedReader newReader(URL url, Map parameters) throws MalformedURLException, IOException {
-        return newReader(configuredInputStream(parameters, url));
-    }
-
-    /**
-     * Creates a buffered reader for this URL using the given encoding.
-     *
-     * @param url a URL
-     * @param charset opens the stream with a specified charset
-     * @return a BufferedReader for the URL
-     * @throws MalformedURLException is thrown if the URL is not well formed
-     * @throws IOException if an I/O error occurs while creating the input stream
-     * @since 1.5.5
-     */
-    public static BufferedReader newReader(URL url, String charset) throws MalformedURLException, IOException {
-        return new BufferedReader(new InputStreamReader(configuredInputStream(null, url), charset));
-    }
-
-    /**
-     * Creates a buffered reader for this URL using the given encoding.
-     *
-     * @param url a URL
-     * @param parameters connection parameters
-     * @param charset opens the stream with a specified charset
-     * @return a BufferedReader for the URL
-     * @throws MalformedURLException is thrown if the URL is not well formed
-     * @throws IOException if an I/O error occurs while creating the input stream
-     * @since 1.8.1
-     */
-    public static BufferedReader newReader(URL url, Map parameters, String charset) throws MalformedURLException, IOException {
-        return new BufferedReader(new InputStreamReader(configuredInputStream(parameters, url), charset));
-    }
-
-    /**
-     * Create a data input stream for this file
-     *
-     * @param file a File
-     * @return a DataInputStream of the file
-     * @throws FileNotFoundException if the file is not found.
-     * @since 1.5.0
-     */
-    public static DataInputStream newDataInputStream(File file) throws FileNotFoundException {
-        return new DataInputStream(new FileInputStream(file));
-    }
-
-    /**
-     * Traverse through each byte of this File
-     *
-     * @param self    a File
-     * @param closure a closure
-     * @throws IOException if an IOException occurs.
-     * @see #eachByte(java.io.InputStream, groovy.lang.Closure)
-     * @since 1.0
-     */
-    public static void eachByte(File self, Closure closure) throws IOException {
-        BufferedInputStream is = newInputStream(self);
-        eachByte(is, closure);
-    }
-
-    /**
-     * Traverse through the bytes of this File, bufferLen bytes at a time.
-     *
-     * @param self      a File
-     * @param bufferLen the length of the buffer to use.
-     * @param closure   a 2 parameter closure which is passed the byte[] and a number of bytes successfully read.
-     * @throws IOException if an IOException occurs.
-     * @see #eachByte(java.io.InputStream, int, groovy.lang.Closure)
-     * @since 1.7.4
-     */
-    public static void eachByte(File self, int bufferLen, Closure closure) throws IOException {
-        BufferedInputStream is = newInputStream(self);
-        eachByte(is, bufferLen, closure);
     }
 
     /**
@@ -13346,674 +10510,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static void eachByte(byte[] self, Closure closure) {
         each(self, closure);
-    }
-
-    /**
-     * Traverse through each byte of the specified stream. The
-     * stream is closed after the closure returns.
-     *
-     * @param is      stream to iterate over, closed after the method call
-     * @param closure closure to apply to each byte
-     * @throws IOException if an IOException occurs.
-     * @since 1.0
-     */
-    public static void eachByte(InputStream is, Closure closure) throws IOException {
-        try {
-            while (true) {
-                int b = is.read();
-                if (b == -1) {
-                    break;
-                } else {
-                    closure.call((byte) b);
-                }
-            }
-
-            InputStream temp = is;
-            is = null;
-            temp.close();
-        } finally {
-            closeWithWarning(is);
-        }
-    }
-
-    /**
-     * Traverse through each the specified stream reading bytes into a buffer
-     * and calling the 2 parameter closure with this buffer and the number of bytes.
-     *
-     * @param is        stream to iterate over, closed after the method call.
-     * @param bufferLen the length of the buffer to use.
-     * @param closure   a 2 parameter closure which is passed the byte[] and a number of bytes successfully read.
-     * @throws IOException if an IOException occurs.
-     * @since 1.8
-     */
-    public static void eachByte(InputStream is, int bufferLen, Closure closure) throws IOException {
-        byte[] buffer = new byte[ bufferLen ] ;
-        int bytesRead = 0 ;
-        try {
-            while ( ( bytesRead = is.read( buffer, 0, bufferLen ) ) > 0 ) {
-                closure.call( new Object[]{ buffer, bytesRead } ) ;
-            }
-
-            InputStream temp = is;
-            is = null;
-            temp.close();
-        } finally {
-            closeWithWarning(is);
-        }
-    }
-
-    /**
-     * Reads the InputStream from this URL, passing each byte to the given
-     * closure.  The URL stream will be closed before this method returns.
-     *
-     * @param url     url to iterate over
-     * @param closure closure to apply to each byte
-     * @throws IOException if an IOException occurs.
-     * @see #eachByte(java.io.InputStream, groovy.lang.Closure)
-     * @since 1.0
-     */
-    public static void eachByte(URL url, Closure closure) throws IOException {
-        InputStream is = url.openConnection().getInputStream();
-        eachByte(is, closure);
-    }
-
-    /**
-     * Reads the InputStream from this URL, passing a byte[] and a number of bytes
-     * to the given closure.  The URL stream will be closed before this method returns.
-     *
-     * @param url       url to iterate over
-     * @param bufferLen the length of the buffer to use.
-     * @param closure   a 2 parameter closure which is passed the byte[] and a number of bytes successfully read.
-     * @throws IOException if an IOException occurs.
-     * @see #eachByte(java.io.InputStream, int, groovy.lang.Closure)
-     * @since 1.8
-     */
-    public static void eachByte(URL url, int bufferLen, Closure closure) throws IOException {
-        InputStream is = url.openConnection().getInputStream();
-        eachByte(is, bufferLen, closure);
-    }
-
-    /**
-     * Transforms each character from this reader by passing it to the given
-     * closure.  The Closure should return each transformed character, which
-     * will be passed to the Writer.  The reader and writer will be both be
-     * closed before this method returns.
-     *
-     * @param self    a Reader object
-     * @param writer  a Writer to receive the transformed characters
-     * @param closure a closure that performs the required transformation
-     * @throws IOException if an IOException occurs.
-     * @since 1.5.0
-     */
-    public static void transformChar(Reader self, Writer writer, Closure closure) throws IOException {
-        int c;
-        try {
-            char[] chars = new char[1];
-            while ((c = self.read()) != -1) {
-                chars[0] = (char) c;
-                writer.write((String) closure.call(new String(chars)));
-            }
-            writer.flush();
-
-            Writer temp2 = writer;
-            writer = null;
-            temp2.close();
-            Reader temp1 = self;
-            self = null;
-            temp1.close();
-        } finally {
-            closeWithWarning(self);
-            closeWithWarning(writer);
-        }
-    }
-
-    /**
-     * Transforms the lines from a reader with a Closure and
-     * write them to a writer. Both Reader and Writer are
-     * closed after the operation.
-     *
-     * @param reader  Lines of text to be transformed. Reader is closed afterwards.
-     * @param writer  Where transformed lines are written. Writer is closed afterwards.
-     * @param closure Single parameter closure that is called to transform each line of
-     *                text from the reader, before writing it to the writer.
-     * @throws IOException if an IOException occurs.
-     * @since 1.0
-     */
-    public static void transformLine(Reader reader, Writer writer, Closure closure) throws IOException {
-        BufferedReader br = new BufferedReader(reader);
-        BufferedWriter bw = new BufferedWriter(writer);
-        String line;
-        try {
-            while ((line = br.readLine()) != null) {
-                Object o = closure.call(line);
-                if (o != null) {
-                    bw.write(o.toString());
-                    bw.newLine();
-                }
-            }
-            bw.flush();
-
-            Writer temp2 = writer;
-            writer = null;
-            temp2.close();
-            Reader temp1 = reader;
-            reader = null;
-            temp1.close();
-        } finally {
-            closeWithWarning(br);
-            closeWithWarning(reader);
-            closeWithWarning(bw);
-            closeWithWarning(writer);
-        }
-    }
-
-    /**
-     * Filter the lines from a reader and write them on the writer,
-     * according to a closure which returns true if the line should be included.
-     * Both Reader and Writer are closed after the operation.
-     *
-     * @param reader  a reader, closed after the call
-     * @param writer  a writer, closed after the call
-     * @param closure the closure which returns booleans
-     * @throws IOException if an IOException occurs.
-     * @since 1.0
-     */
-    public static void filterLine(Reader reader, Writer writer, Closure closure) throws IOException {
-        BufferedReader br = new BufferedReader(reader);
-        BufferedWriter bw = new BufferedWriter(writer);
-        String line;
-        try {
-            while ((line = br.readLine()) != null) {
-                if (DefaultTypeTransformation.castToBoolean(closure.call(line))) {
-                    bw.write(line);
-                    bw.newLine();
-                }
-            }
-            bw.flush();
-
-            Writer temp2 = writer;
-            writer = null;
-            temp2.close();
-            Reader temp1 = reader;
-            reader = null;
-            temp1.close();
-        } finally {
-            closeWithWarning(br);
-            closeWithWarning(reader);
-            closeWithWarning(bw);
-            closeWithWarning(writer);
-        }
-
-    }
-
-    /**
-     * Filters the lines of a File and creates a Writable in return to
-     * stream the filtered lines.
-     *
-     * @param self    a File
-     * @param closure a closure which returns a boolean indicating to filter
-     *                the line or not
-     * @return a Writable closure
-     * @throws IOException if <code>self</code> is not readable
-     * @see #filterLine(java.io.Reader, groovy.lang.Closure)
-     * @since 1.0
-     */
-    public static Writable filterLine(File self, Closure closure) throws IOException {
-        return filterLine(newReader(self), closure);
-    }
-
-    /**
-     * Filters the lines of a File and creates a Writable in return to
-     * stream the filtered lines.
-     *
-     * @param self    a File
-     * @param charset opens the file with a specified charset
-     * @param closure a closure which returns a boolean indicating to filter
-     *                the line or not
-     * @return a Writable closure
-     * @throws IOException if an IOException occurs
-     * @see #filterLine(java.io.Reader, groovy.lang.Closure)
-     * @since 1.6.8
-     */
-    public static Writable filterLine(File self, String charset, Closure closure) throws IOException {
-        return filterLine(newReader(self, charset), closure);
-    }
-
-    /**
-     * Filter the lines from this File, and write them to the given writer based
-     * on the given closure predicate.
-     *
-     * @param self    a File
-     * @param writer  a writer destination to write filtered lines to
-     * @param closure a closure which takes each line as a parameter and returns
-     *                <code>true</code> if the line should be written to this writer.
-     * @throws IOException if <code>self</code> is not readable
-     * @see #filterLine(java.io.Reader, java.io.Writer, groovy.lang.Closure)
-     * @since 1.0
-     */
-    public static void filterLine(File self, Writer writer, Closure closure) throws IOException {
-        filterLine(newReader(self), writer, closure);
-    }
-
-    /**
-     * Filter the lines from this File, and write them to the given writer based
-     * on the given closure predicate.
-     *
-     * @param self    a File
-     * @param writer  a writer destination to write filtered lines to
-     * @param charset opens the file with a specified charset
-     * @param closure a closure which takes each line as a parameter and returns
-     *                <code>true</code> if the line should be written to this writer.
-     * @throws IOException if an IO error occurs
-     * @see #filterLine(java.io.Reader, java.io.Writer, groovy.lang.Closure)
-     * @since 1.6.8
-     */
-    public static void filterLine(File self, Writer writer, String charset, Closure closure) throws IOException {
-        filterLine(newReader(self, charset), writer, closure);
-    }
-
-    /**
-     * Filter the lines from this Reader, and return a Writable which can be
-     * used to stream the filtered lines to a destination.  The closure should
-     * return <code>true</code> if the line should be passed to the writer.
-     *
-     * @param reader  this reader
-     * @param closure a closure used for filtering
-     * @return a Writable which will use the closure to filter each line
-     *         from the reader when the Writable#writeTo(Writer) is called.
-     * @since 1.0
-     */
-    public static Writable filterLine(Reader reader, final Closure closure) {
-        final BufferedReader br = new BufferedReader(reader);
-        return new Writable() {
-            public Writer writeTo(Writer out) throws IOException {
-                BufferedWriter bw = new BufferedWriter(out);
-                String line;
-                while ((line = br.readLine()) != null) {
-                    if (DefaultTypeTransformation.castToBoolean(closure.call(line))) {
-                        bw.write(line);
-                        bw.newLine();
-                    }
-                }
-                bw.flush();
-                return out;
-            }
-
-            public String toString() {
-                StringWriter buffer = new StringWriter();
-                try {
-                    writeTo(buffer);
-                } catch (IOException e) {
-                    throw new StringWriterIOException(e);
-                }
-                return buffer.toString();
-            }
-        };
-    }
-
-    /**
-     * Filter lines from an input stream using a closure predicate.  The closure
-     * will be passed each line as a String, and it should return
-     * <code>true</code> if the line should be passed to the writer.
-     *
-     * @param self      an input stream
-     * @param predicate a closure which returns boolean and takes a line
-     * @return a writable which writes out the filtered lines
-     * @see #filterLine(java.io.Reader, groovy.lang.Closure)
-     * @since 1.0
-     */
-    public static Writable filterLine(InputStream self, Closure predicate) {
-        return filterLine(newReader(self), predicate);
-    }
-
-    /**
-     * Filter lines from an input stream using a closure predicate.  The closure
-     * will be passed each line as a String, and it should return
-     * <code>true</code> if the line should be passed to the writer.
-     *
-     * @param self      an input stream
-     * @param charset   opens the stream with a specified charset
-     * @param predicate a closure which returns boolean and takes a line
-     * @return a writable which writes out the filtered lines
-     * @throws UnsupportedEncodingException if the encoding specified is not supported
-     * @see #filterLine(java.io.Reader, groovy.lang.Closure)
-     * @since 1.6.8
-     */
-    public static Writable filterLine(InputStream self, String charset, Closure predicate)
-            throws UnsupportedEncodingException {
-        return filterLine(newReader(self, charset), predicate);
-    }
-
-    /**
-     * Uses a closure to filter lines from this InputStream and pass them to
-     * the given writer. The closure will be passed each line as a String, and
-     * it should return <code>true</code> if the line should be passed to the
-     * writer.
-     *
-     * @param self      the InputStream
-     * @param writer    a writer to write output to
-     * @param predicate a closure which returns true if a line should be accepted
-     * @throws IOException if an IOException occurs.
-     * @see #filterLine(java.io.Reader, java.io.Writer, groovy.lang.Closure)
-     * @since 1.0
-     */
-    public static void filterLine(InputStream self, Writer writer, Closure predicate)
-            throws IOException {
-        filterLine(newReader(self), writer, predicate);
-    }
-
-    /**
-     * Uses a closure to filter lines from this InputStream and pass them to
-     * the given writer. The closure will be passed each line as a String, and
-     * it should return <code>true</code> if the line should be passed to the
-     * writer.
-     *
-     * @param self      the InputStream
-     * @param writer    a writer to write output to
-     * @param charset   opens the stream with a specified charset
-     * @param predicate a closure which returns true if a line should be accepted
-     * @throws IOException if an IOException occurs.
-     * @see #filterLine(java.io.Reader, java.io.Writer, groovy.lang.Closure)
-     * @since 1.6.8
-     */
-    public static void filterLine(InputStream self, Writer writer, String charset, Closure predicate)
-            throws IOException {
-        filterLine(newReader(self, charset), writer, predicate);
-    }
-
-    /**
-     * Filter lines from a URL using a closure predicate.  The closure
-     * will be passed each line as a String, and it should return
-     * <code>true</code> if the line should be passed to the writer.
-     *
-     * @param self      a URL
-     * @param predicate a closure which returns boolean and takes a line
-     * @return a writable which writes out the filtered lines
-     * @throws IOException if an IO exception occurs
-     * @see #filterLine(java.io.Reader, groovy.lang.Closure)
-     * @since 1.6.8
-     */
-    public static Writable filterLine(URL self, Closure predicate)
-            throws IOException {
-        return filterLine(newReader(self), predicate);
-    }
-
-    /**
-     * Filter lines from a URL using a closure predicate.  The closure
-     * will be passed each line as a String, and it should return
-     * <code>true</code> if the line should be passed to the writer.
-     *
-     * @param self      the URL
-     * @param charset   opens the URL with a specified charset
-     * @param predicate a closure which returns boolean and takes a line
-     * @return a writable which writes out the filtered lines
-     * @throws IOException if an IO exception occurs
-     * @see #filterLine(java.io.Reader, groovy.lang.Closure)
-     * @since 1.6.8
-     */
-    public static Writable filterLine(URL self, String charset, Closure predicate)
-            throws IOException {
-        return filterLine(newReader(self, charset), predicate);
-    }
-
-    /**
-     * Uses a closure to filter lines from this URL and pass them to
-     * the given writer. The closure will be passed each line as a String, and
-     * it should return <code>true</code> if the line should be passed to the
-     * writer.
-     *
-     * @param self      the URL
-     * @param writer    a writer to write output to
-     * @param predicate a closure which returns true if a line should be accepted
-     * @throws IOException if an IOException occurs.
-     * @see #filterLine(java.io.Reader, java.io.Writer, groovy.lang.Closure)
-     * @since 1.6.8
-     */
-    public static void filterLine(URL self, Writer writer, Closure predicate)
-            throws IOException {
-        filterLine(newReader(self), writer, predicate);
-    }
-
-    /**
-     * Uses a closure to filter lines from this URL and pass them to
-     * the given writer. The closure will be passed each line as a String, and
-     * it should return <code>true</code> if the line should be passed to the
-     * writer.
-     *
-     * @param self      the URL
-     * @param writer    a writer to write output to
-     * @param charset   opens the URL with a specified charset
-     * @param predicate a closure which returns true if a line should be accepted
-     * @throws IOException if an IOException occurs.
-     * @see #filterLine(java.io.Reader, java.io.Writer, groovy.lang.Closure)
-     * @since 1.6.8
-     */
-    public static void filterLine(URL self, Writer writer, String charset, Closure predicate)
-            throws IOException {
-        filterLine(newReader(self, charset), writer, predicate);
-    }
-
-    /**
-     * Reads the content of the file into a byte array.
-     *
-     * @param file a File
-     * @return a byte array with the contents of the file.
-     * @throws IOException if an IOException occurs.
-     * @since 1.0
-     */
-    public static byte[] readBytes(File file) throws IOException {
-        byte[] bytes = new byte[(int) file.length()];
-        FileInputStream fileInputStream = new FileInputStream(file);
-        DataInputStream dis = new DataInputStream(fileInputStream);
-        try {
-            dis.readFully(bytes);
-            InputStream temp = dis;
-            dis = null;
-            temp.close();
-        } finally {
-            closeWithWarning(dis);
-        }
-        return bytes;
-    }
-
-    // ================================
-    // Socket and ServerSocket methods
-
-    /**
-     * Passes the Socket's InputStream and OutputStream to the closure.  The
-     * streams will be closed after the closure returns, even if an exception
-     * is thrown.
-     *
-     * @param socket  a Socket
-     * @param closure a Closure
-     * @return the value returned by the closure
-     * @throws IOException if an IOException occurs.
-     * @since 1.5.2
-     */
-    public static <T> T withStreams(Socket socket, Closure<T> closure) throws IOException {
-        InputStream input = socket.getInputStream();
-        OutputStream output = socket.getOutputStream();
-        try {
-            T result = closure.call(new Object[]{input, output});
-
-            InputStream temp1 = input;
-            input = null;
-            temp1.close();
-            OutputStream temp2 = output;
-            output = null;
-            temp2.close();
-
-            return result;
-        } finally {
-            closeWithWarning(input);
-            closeWithWarning(output);
-        }
-    }
-
-    /**
-     * Creates an InputObjectStream and an OutputObjectStream from a Socket, and
-     * passes them to the closure.  The streams will be closed after the closure
-     * returns, even if an exception is thrown.
-     *
-     * @param socket  this Socket
-     * @param closure a Closure
-     * @return the value returned by the closure
-     * @throws IOException if an IOException occurs.
-     * @since 1.5.0
-     */
-    public static <T> T withObjectStreams(Socket socket, Closure<T> closure) throws IOException {
-        InputStream input = socket.getInputStream();
-        OutputStream output = socket.getOutputStream();
-        ObjectOutputStream oos = new ObjectOutputStream(output);
-        ObjectInputStream ois = new ObjectInputStream(input);
-        try {
-            T result = closure.call(new Object[]{ois, oos});
-
-            InputStream temp1 = ois;
-            ois = null;
-            temp1.close();
-            temp1 = input;
-            input = null;
-            temp1.close();
-            OutputStream temp2 = oos;
-            oos = null;
-            temp2.close();
-            temp2 = output;
-            output = null;
-            temp2.close();
-
-            return result;
-        } finally {
-            closeWithWarning(ois);
-            closeWithWarning(input);
-            closeWithWarning(oos);
-            closeWithWarning(output);
-        }
-    }
-
-    /**
-     * Overloads the left shift operator to provide an append mechanism to
-     * add things to the output stream of a socket
-     *
-     * @param self  a Socket
-     * @param value a value to append
-     * @return a Writer
-     * @throws IOException if an IOException occurs.
-     * @since 1.0
-     */
-    public static Writer leftShift(Socket self, Object value) throws IOException {
-        return leftShift(self.getOutputStream(), value);
-    }
-
-    /**
-     * Overloads the left shift operator to provide an append mechanism
-     * to add bytes to the output stream of a socket
-     *
-     * @param self  a Socket
-     * @param value a value to append
-     * @return an OutputStream
-     * @throws IOException if an IOException occurs.
-     * @since 1.0
-     */
-    public static OutputStream leftShift(Socket self, byte[] value) throws IOException {
-        return leftShift(self.getOutputStream(), value);
-    }
-
-    /**
-     * Accepts a connection and passes the resulting Socket to the closure
-     * which runs in a new Thread.
-     *
-     * @param serverSocket a ServerSocket
-     * @param closure      a Closure
-     * @return a Socket
-     * @throws IOException if an IOException occurs.
-     * @see java.net.ServerSocket#accept()
-     * @since 1.0
-     */
-    public static Socket accept(ServerSocket serverSocket, final Closure closure) throws IOException {
-        return accept(serverSocket, true, closure);
-    }
-
-    /**
-     * Accepts a connection and passes the resulting Socket to the closure
-     * which runs in a new Thread or the calling thread, as needed.
-     *
-     * @param serverSocket a ServerSocket
-     * @param runInANewThread This flag should be true, if the closure should be invoked in a new thread, else false.
-     * @param closure      a Closure
-     * @return a Socket
-     * @throws IOException if an IOException occurs.
-     * @see java.net.ServerSocket#accept()
-     * @since 1.7.6
-     */
-    public static Socket accept(ServerSocket serverSocket, final boolean runInANewThread, 
-            final Closure closure) throws IOException {
-        final Socket socket = serverSocket.accept();
-        if(runInANewThread) {
-            new Thread(new Runnable() {
-                public void run() {
-                    invokeClosureWithSocket(socket, closure);
-                }
-            }).start();
-        } else {
-            invokeClosureWithSocket(socket, closure);
-        }
-        return socket;
-    }
-    
-    private static void invokeClosureWithSocket(Socket socket, Closure closure) {
-        try {
-            closure.call(socket);
-        } finally {
-            if (socket != null) {
-                try {
-                    socket.close();
-                } catch (IOException e) {
-                    LOG.warning("Caught exception closing socket: " + e);
-                }
-            }
-        }
-    }
-
-    /**
-     * Converts this File to a {@link groovy.lang.Writable}.
-     *
-     * @param file a File
-     * @return a File which wraps the input file and which implements Writable
-     * @since 1.0
-     */
-    public static File asWritable(File file) {
-        return new WritableFile(file);
-    }
-
-    /**
-     * Converts this File to a {@link groovy.lang.Writable} or delegates to default
-     * {@link #asType(java.lang.Object, java.lang.Class)}.
-     *
-     * @param f a File
-     * @param c the desired class
-     * @return the converted object
-     * @since 1.0
-     */
-    @SuppressWarnings("unchecked")
-    public static <T> T asType(File f, Class<T> c) {
-        if (c == Writable.class) {
-            return (T) asWritable(f);
-        }
-        return asType((Object) f, c);
-    }
-
-    /**
-     * Allows a file to return a Writable implementation that can output itself
-     * to a Writer stream.
-     *
-     * @param file     a File
-     * @param encoding the encoding to be used when reading the file's contents
-     * @return File which wraps the input file and which implements Writable
-     * @since 1.0
-     */
-    public static File asWritable(File file, String encoding) {
-        return new WritableFile(file, encoding);
     }
 
     /**
@@ -14293,7 +10789,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return (T) InvokerHelper.invokeConstructorOf(c, args);
     }
 
-
     /**
      * Adds a "metaClass" property to all class objects so you can use the syntax
      * <code>String.metaClass.myMethod = { println "foo" }</code>
@@ -14561,178 +11056,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
             public void remove() {
                 throw new UnsupportedOperationException("Cannot remove() from an Enumeration");
-            }
-        };
-    }
-
-    /**
-     * Returns an {@link java.util.Iterator} which traverses each match.
-     *
-     * @param matcher a Matcher object
-     * @return an Iterator for a Matcher
-     * @see java.util.regex.Matcher#group()
-     * @since 1.0
-     */
-    public static Iterator iterator(final Matcher matcher) {
-        matcher.reset();
-        return new Iterator() {
-            private boolean found /* = false */;
-            private boolean done /* = false */;
-
-            public boolean hasNext() {
-                if (done) {
-                    return false;
-                }
-                if (!found) {
-                    found = matcher.find();
-                    if (!found) {
-                        done = true;
-                    }
-                }
-                return found;
-            }
-
-            public Object next() {
-                if (!found) {
-                    if (!hasNext()) {
-                        throw new NoSuchElementException();
-                    }
-                }
-                found = false;
-
-                if (hasGroup(matcher)) {
-                    // are we using groups?
-                    // yes, so return the specified group as list
-                    List<String> list = new ArrayList<String>(matcher.groupCount());
-                    for (int i = 0; i <= matcher.groupCount(); i++) {
-                       list.add(matcher.group(i));
-                    }
-                    return list;
-                } else {
-                    // not using groups, so return the nth
-                    // occurrence of the pattern
-                    return matcher.group();
-                 }
-            }
-
-            public void remove() {
-                throw new UnsupportedOperationException();
-            }
-        };
-    }
-
-    /**
-     * Creates an iterator which will traverse through the reader a line at a time.
-     *
-     * @param self a Reader object
-     * @return an Iterator for the Reader
-     * @see java.io.BufferedReader#readLine()
-     * @since 1.5.0
-     */
-    public static Iterator<String> iterator(Reader self) {
-        final BufferedReader bufferedReader;
-        if (self instanceof BufferedReader)
-            bufferedReader = (BufferedReader) self;
-        else
-            bufferedReader = new BufferedReader(self);
-        return new Iterator<String>() {
-            String nextVal /* = null */;
-            boolean nextMustRead = true;
-            boolean hasNext = true;
-
-            public boolean hasNext() {
-                if (nextMustRead && hasNext) {
-                    try {
-                        nextVal = readNext();
-                        nextMustRead = false;
-                    } catch (IOException e) {
-                        hasNext = false;
-                    }
-                }
-                return hasNext;
-            }
-
-            public String next() {
-                String retval = null;
-                if (nextMustRead) {
-                    try {
-                        retval = readNext();
-                    } catch (IOException e) {
-                        hasNext = false;
-                    }
-                } else
-                    retval = nextVal;
-                nextMustRead = true;
-                return retval;
-            }
-
-            private String readNext() throws IOException {
-                String nv = bufferedReader.readLine();
-                if (nv == null)
-                    hasNext = false;
-                return nv;
-            }
-
-            public void remove() {
-                throw new UnsupportedOperationException("Cannot remove() from a Reader Iterator");
-            }
-        };
-    }
-
-    /**
-     * Standard iterator for a input stream which iterates through the stream
-     * content in a byte-based fashion.
-     *
-     * @param self an InputStream object
-     * @return an Iterator for the InputStream
-     * @since 1.5.0
-     */
-    public static Iterator<Byte> iterator(InputStream self) {
-        return iterator(new DataInputStream(self));
-    }
-
-    /**
-     * Standard iterator for a data input stream which iterates through the
-     * stream content a Byte at a time.
-     *
-     * @param self a DataInputStream object
-     * @return an Iterator for the DataInputStream
-     * @since 1.5.0
-     */
-    public static Iterator<Byte> iterator(final DataInputStream self) {
-        return new Iterator<Byte>() {
-            Byte nextVal;
-            boolean nextMustRead = true;
-            boolean hasNext = true;
-
-            public boolean hasNext() {
-                if (nextMustRead && hasNext) {
-                    try {
-                        nextVal = self.readByte();
-                        nextMustRead = false;
-                    } catch (IOException e) {
-                        hasNext = false;
-                    }
-                }
-                return hasNext;
-            }
-
-            public Byte next() {
-                Byte retval = null;
-                if (nextMustRead) {
-                    try {
-                        retval = self.readByte();
-                    } catch (IOException e) {
-                        hasNext = false;
-                    }
-                } else
-                    retval = nextVal;
-                nextMustRead = true;
-                return retval;
-            }
-
-            public void remove() {
-                throw new UnsupportedOperationException("Cannot remove() from a DataInputStream Iterator");
             }
         };
     }
@@ -15249,6 +11572,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     @Deprecated
+    public static Iterator iterator(final Matcher matcher) {
+        return StringGroovyMethods.iterator(matcher);
+    }
+
+    @Deprecated
     public static StringBuilder leftShift(CharSequence self, Object value) {
         return StringGroovyMethods.leftShift(self, value);
     }
@@ -15732,22 +12060,22 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     @Deprecated
     public static URI toURI(CharSequence self) throws URISyntaxException {
-        return StringGroovyMethods.toURI(self);
+        return ResourceGroovyMethods.toURI(self);
     }
 
     @Deprecated
     public static URI toURI(String self) throws URISyntaxException {
-        return StringGroovyMethods.toURI(self);
+        return ResourceGroovyMethods.toURI(self);
     }
 
     @Deprecated
     public static URL toURL(CharSequence self) throws MalformedURLException {
-        return StringGroovyMethods.toURL(self);
+        return ResourceGroovyMethods.toURL(self);
     }
 
     @Deprecated
     public static URL toURL(String self) throws MalformedURLException {
-        return StringGroovyMethods.toURL(self);
+        return ResourceGroovyMethods.toURL(self);
     }
 
     @Deprecated
@@ -15833,6 +12161,904 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     @Deprecated
     public static Process execute(final List commands, final List envp, final File dir) throws IOException {
         return ProcessGroovyMethods.execute(commands, envp, dir);
+    }
+
+    @Deprecated
+    public static <T> T withStreams(Socket socket, Closure<T> closure) throws IOException {
+        return SocketGroovyMethods.withStreams(socket, closure);
+    }
+
+    @Deprecated
+    public static <T> T withObjectStreams(Socket socket, Closure<T> closure) throws IOException {
+        return SocketGroovyMethods.withObjectStreams(socket, closure);
+    }
+
+    @Deprecated
+    public static Writer leftShift(Socket self, Object value) throws IOException {
+        return SocketGroovyMethods.leftShift(self, value);
+    }
+
+    @Deprecated
+    public static OutputStream leftShift(Socket self, byte[] value) throws IOException {
+        return SocketGroovyMethods.leftShift(self, value);
+    }
+
+    @Deprecated
+    public static Socket accept(ServerSocket serverSocket, final Closure closure) throws IOException {
+        return SocketGroovyMethods.accept(serverSocket, closure);
+    }
+
+    @Deprecated
+    public static Socket accept(ServerSocket serverSocket, final boolean runInANewThread,
+            final Closure closure) throws IOException {
+        return SocketGroovyMethods.accept(serverSocket, runInANewThread, closure);
+    }
+
+    @Deprecated
+    public static long size(File self) {
+        return ResourceGroovyMethods.size(self);
+    }
+
+    @Deprecated
+    public static Writer leftShift(Writer self, Object value) throws IOException {
+        return IOGroovyMethods.leftShift(self, value);
+    }
+
+    @Deprecated
+    public static void write(Writer self, Writable writable) throws IOException {
+        IOGroovyMethods.write(self, writable);
+    }
+
+    @Deprecated
+    public static Writer leftShift(OutputStream self, Object value) throws IOException {
+        return IOGroovyMethods.leftShift(self, value);
+    }
+
+    @Deprecated
+    public static void leftShift(ObjectOutputStream self, Object value) throws IOException {
+        IOGroovyMethods.leftShift(self, value);
+    }
+
+    @Deprecated
+    public static OutputStream leftShift(OutputStream self, InputStream in) throws IOException {
+        return IOGroovyMethods.leftShift(self, in);
+    }
+
+    @Deprecated
+    public static OutputStream leftShift(OutputStream self, byte[] value) throws IOException {
+        return IOGroovyMethods.leftShift(self, value);
+    }
+
+    @Deprecated
+    public static ObjectOutputStream newObjectOutputStream(File file) throws IOException {
+        return ResourceGroovyMethods.newObjectOutputStream(file);
+    }
+
+    @Deprecated
+    public static ObjectOutputStream newObjectOutputStream(OutputStream outputStream) throws IOException {
+        return IOGroovyMethods.newObjectOutputStream(outputStream);
+    }
+
+    @Deprecated
+    public static <T> T withObjectOutputStream(File file, Closure<T> closure) throws IOException {
+        return ResourceGroovyMethods.withObjectOutputStream(file, closure);
+    }
+
+    @Deprecated
+    public static <T> T withObjectOutputStream(OutputStream outputStream, Closure<T> closure) throws IOException {
+        return IOGroovyMethods.withObjectOutputStream(outputStream, closure);
+    }
+
+    @Deprecated
+    public static ObjectInputStream newObjectInputStream(File file) throws IOException {
+        return ResourceGroovyMethods.newObjectInputStream(file);
+    }
+
+    @Deprecated
+    public static ObjectInputStream newObjectInputStream(InputStream inputStream) throws IOException {
+        return IOGroovyMethods.newObjectInputStream(inputStream);
+    }
+
+    @Deprecated
+    public static ObjectInputStream newObjectInputStream(InputStream inputStream, final ClassLoader classLoader) throws IOException {
+        return IOGroovyMethods.newObjectInputStream(inputStream, classLoader);
+    }
+
+    @Deprecated
+    public static ObjectInputStream newObjectInputStream(File file, final ClassLoader classLoader) throws IOException {
+        return ResourceGroovyMethods.newObjectInputStream(file, classLoader);
+    }
+
+    @Deprecated
+    public static void eachObject(File self, Closure closure) throws IOException, ClassNotFoundException {
+        ResourceGroovyMethods.eachObject(self, closure);
+    }
+
+    @Deprecated
+    public static void eachObject(ObjectInputStream ois, Closure closure) throws IOException, ClassNotFoundException {
+        IOGroovyMethods.eachObject(ois, closure);
+    }
+
+    @Deprecated
+    public static <T> T withObjectInputStream(File file, Closure<T> closure) throws IOException {
+        return ResourceGroovyMethods.withObjectInputStream(file, closure);
+    }
+
+    @Deprecated
+    public static <T> T withObjectInputStream(File file, ClassLoader classLoader, Closure<T> closure) throws IOException {
+        return ResourceGroovyMethods.withObjectInputStream(file, classLoader, closure);
+    }
+
+    @Deprecated
+    public static <T> T withObjectInputStream(InputStream inputStream, Closure<T> closure) throws IOException {
+        return IOGroovyMethods.withObjectInputStream(inputStream, closure);
+    }
+
+    @Deprecated
+    public static <T> T withObjectInputStream(InputStream inputStream, ClassLoader classLoader, Closure<T> closure) throws IOException {
+        return IOGroovyMethods.withObjectInputStream(inputStream, classLoader, closure);
+    }
+
+    @Deprecated
+    public static <T> T eachLine(File self, Closure<T> closure) throws IOException {
+        return ResourceGroovyMethods.eachLine(self, closure);
+    }
+
+    @Deprecated
+    public static <T> T eachLine(File self, String charset, Closure<T> closure) throws IOException {
+        return ResourceGroovyMethods.eachLine(self, charset, closure);
+    }
+
+    @Deprecated
+    public static <T> T eachLine(File self, int firstLine, Closure<T> closure) throws IOException {
+        return ResourceGroovyMethods.eachLine(self, firstLine, closure);
+    }
+
+    @Deprecated
+    public static <T> T eachLine(File self, String charset, int firstLine, Closure<T> closure) throws IOException {
+        return ResourceGroovyMethods.eachLine(self, charset, firstLine, closure);
+    }
+
+    @Deprecated
+    public static <T> T eachLine(InputStream stream, String charset, Closure<T> closure) throws IOException {
+        return IOGroovyMethods.eachLine(stream, charset, closure);
+    }
+
+    @Deprecated
+    public static <T> T eachLine(InputStream stream, String charset, int firstLine, Closure<T> closure) throws IOException {
+        return IOGroovyMethods.eachLine(stream, charset, firstLine, closure);
+    }
+
+    @Deprecated
+    public static <T> T eachLine(InputStream stream, Closure<T> closure) throws IOException {
+        return IOGroovyMethods.eachLine(stream, closure);
+    }
+
+    @Deprecated
+    public static <T> T eachLine(InputStream stream, int firstLine, Closure<T> closure) throws IOException {
+        return IOGroovyMethods.eachLine(stream, firstLine, closure);
+    }
+
+    @Deprecated
+    public static <T> T eachLine(URL url, Closure<T> closure) throws IOException {
+        return ResourceGroovyMethods.eachLine(url, closure);
+    }
+
+    @Deprecated
+    public static <T> T eachLine(URL url, int firstLine, Closure<T> closure) throws IOException {
+        return ResourceGroovyMethods.eachLine(url, firstLine, closure);
+    }
+
+    @Deprecated
+    public static <T> T eachLine(URL url, String charset, Closure<T> closure) throws IOException {
+        return ResourceGroovyMethods.eachLine(url, charset, closure);
+    }
+
+    @Deprecated
+    public static <T> T eachLine(URL url, String charset, int firstLine, Closure<T> closure) throws IOException {
+        return ResourceGroovyMethods.eachLine(url, charset, firstLine, closure);
+    }
+
+    @Deprecated
+    public static <T> T eachLine(Reader self, Closure<T> closure) throws IOException {
+        return IOGroovyMethods.eachLine(self, closure);
+    }
+
+    @Deprecated
+    public static <T> T eachLine(Reader self, int firstLine, Closure<T> closure) throws IOException {
+        return IOGroovyMethods.eachLine(self, firstLine, closure);
+    }
+
+    @Deprecated
+    public static <T> T splitEachLine(File self, String regex, Closure<T> closure) throws IOException {
+        return ResourceGroovyMethods.splitEachLine(self, regex, closure);
+    }
+
+    @Deprecated
+    public static <T> T splitEachLine(File self, Pattern pattern, Closure<T> closure) throws IOException {
+        return ResourceGroovyMethods.splitEachLine(self, pattern, closure);
+    }
+
+    @Deprecated
+    public static <T> T splitEachLine(File self, String regex, String charset, Closure<T> closure) throws IOException {
+        return ResourceGroovyMethods.splitEachLine(self, regex, charset, closure);
+    }
+
+    @Deprecated
+    public static <T> T splitEachLine(File self, Pattern pattern, String charset, Closure<T> closure) throws IOException {
+        return ResourceGroovyMethods.splitEachLine(self, pattern, charset, closure);
+    }
+
+    @Deprecated
+    public static <T> T splitEachLine(URL self, String regex, Closure<T> closure) throws IOException {
+        return ResourceGroovyMethods.splitEachLine(self, regex, closure);
+    }
+
+    @Deprecated
+    public static <T> T splitEachLine(URL self, Pattern pattern, Closure<T> closure) throws IOException {
+        return ResourceGroovyMethods.splitEachLine(self, pattern, closure);
+    }
+
+    @Deprecated
+    public static <T> T splitEachLine(URL self, String regex, String charset, Closure<T> closure) throws IOException {
+        return ResourceGroovyMethods.splitEachLine(self, regex, charset, closure);
+    }
+
+    @Deprecated
+    public static <T> T splitEachLine(URL self, Pattern pattern, String charset, Closure<T> closure) throws IOException {
+        return ResourceGroovyMethods.splitEachLine(self, pattern, charset, closure);
+    }
+
+    @Deprecated
+    public static <T> T splitEachLine(Reader self, String regex, Closure<T> closure) throws IOException {
+        return IOGroovyMethods.splitEachLine(self, regex, closure);
+    }
+
+    @Deprecated
+    public static <T> T splitEachLine(Reader self, Pattern pattern, Closure<T> closure) throws IOException {
+        return IOGroovyMethods.splitEachLine(self, pattern, closure);
+    }
+
+    @Deprecated
+    public static <T> T splitEachLine(InputStream stream, String regex, String charset, Closure<T> closure) throws IOException {
+        return IOGroovyMethods.splitEachLine(stream, charset, regex, closure);
+    }
+
+    @Deprecated
+    public static <T> T splitEachLine(InputStream stream, Pattern pattern, String charset, Closure<T> closure) throws IOException {
+        return IOGroovyMethods.splitEachLine(stream, pattern, charset, closure);
+    }
+
+    @Deprecated
+    public static <T> T splitEachLine(InputStream stream, String regex, Closure<T> closure) throws IOException {
+        return IOGroovyMethods.splitEachLine(stream, regex, closure);
+    }
+
+    @Deprecated
+    public static <T> T splitEachLine(InputStream stream, Pattern pattern, Closure<T> closure) throws IOException {
+        return IOGroovyMethods.splitEachLine(stream, pattern, closure);
+    }
+
+    @Deprecated
+    public static String readLine(Reader self) throws IOException {
+        return  IOGroovyMethods.readLine(self);
+    }
+
+    @Deprecated
+    public static List<String> readLines(File file) throws IOException {
+        return ResourceGroovyMethods.readLines(file);
+    }
+
+    @Deprecated
+    public static List<String> readLines(File file, String charset) throws IOException {
+        return ResourceGroovyMethods.readLines(file, charset);
+    }
+
+    @Deprecated
+    public static List<String> readLines(InputStream stream) throws IOException {
+        return IOGroovyMethods.readLines(stream);
+    }
+
+    @Deprecated
+    public static List<String> readLines(InputStream stream, String charset) throws IOException {
+        return IOGroovyMethods.readLines(stream, charset);
+    }
+
+    @Deprecated
+    public static List<String> readLines(URL self) throws IOException {
+        return ResourceGroovyMethods.readLines(self);
+    }
+
+    @Deprecated
+    public static List<String> readLines(URL self, String charset) throws IOException {
+        return ResourceGroovyMethods.readLines(self, charset);
+    }
+
+    @Deprecated
+    public static List<String> readLines(Reader reader) throws IOException {
+        return IOGroovyMethods.readLines(reader);
+    }
+
+    @Deprecated
+    public static String getText(File file, String charset) throws IOException {
+        return ResourceGroovyMethods.getText(file, charset);
+    }
+
+    @Deprecated
+    public static String getText(File file) throws IOException {
+        return ResourceGroovyMethods.getText(file);
+    }
+
+    @Deprecated
+    public static String getText(URL url) throws IOException {
+        return ResourceGroovyMethods.getText(url);
+    }
+
+    @Deprecated
+    public static String getText(URL url, Map parameters) throws IOException {
+        return ResourceGroovyMethods.getText(url, parameters);
+    }
+
+    @Deprecated
+    public static String getText(URL url, String charset) throws IOException {
+        return ResourceGroovyMethods.getText(url, charset);
+    }
+
+    @Deprecated
+    public static String getText(URL url, Map parameters, String charset) throws IOException {
+        return ResourceGroovyMethods.getText(url, parameters, charset);
+    }
+
+    @Deprecated
+    public static String getText(InputStream is) throws IOException {
+        return IOGroovyMethods.getText(is);
+    }
+
+    @Deprecated
+    public static String getText(InputStream is, String charset) throws IOException {
+        return IOGroovyMethods.getText(is, charset);
+    }
+
+    @Deprecated
+    public static String getText(Reader reader) throws IOException {
+        return IOGroovyMethods.getText(reader);
+    }
+
+    @Deprecated
+    public static String getText(BufferedReader reader) throws IOException {
+        return IOGroovyMethods.getText(reader);
+    }
+
+    @Deprecated
+    public static byte[] getBytes(File file) throws IOException {
+        return ResourceGroovyMethods.getBytes(file);
+    }
+
+    @Deprecated
+    public static byte[] getBytes(URL url) throws IOException {
+        return ResourceGroovyMethods.getBytes(url);
+    }
+
+    @Deprecated
+    public static byte[] getBytes(InputStream is) throws IOException {
+        return IOGroovyMethods.getBytes(is);
+    }
+
+    @Deprecated
+    public static void setBytes(File file, byte[] bytes) throws IOException {
+        ResourceGroovyMethods.setBytes(file, bytes);
+    }
+
+    @Deprecated
+    public static void setBytes(OutputStream os, byte[] bytes) throws IOException {
+        IOGroovyMethods.setBytes(os, bytes);
+    }
+
+    @Deprecated
+    public static void writeLine(BufferedWriter writer, String line) throws IOException {
+        IOGroovyMethods.writeLine(writer, line);
+    }
+
+    @Deprecated
+    public static void write(File file, String text) throws IOException {
+        ResourceGroovyMethods.write(file, text);
+    }
+
+    @Deprecated
+    public static void setText(File file, String text) throws IOException {
+        ResourceGroovyMethods.setText(file, text);
+    }
+
+    @Deprecated
+    public static void setText(File file, String text, String charset) throws IOException {
+        ResourceGroovyMethods.setText(file, text, charset);
+    }
+
+    @Deprecated
+    public static File leftShift(File file, Object text) throws IOException {
+        return ResourceGroovyMethods.leftShift(file, text);
+    }
+
+    @Deprecated
+    public static File leftShift(File file, byte[] bytes) throws IOException {
+        return ResourceGroovyMethods.leftShift(file, bytes);
+    }
+
+    @Deprecated
+    public static File leftShift(File file, InputStream data) throws IOException {
+        return ResourceGroovyMethods.leftShift(file, data);
+    }
+
+    @Deprecated
+    public static void write(File file, String text, String charset) throws IOException {
+        ResourceGroovyMethods.write(file, text, charset);
+    }
+
+    @Deprecated
+    public static void append(File file, Object text) throws IOException {
+        ResourceGroovyMethods.append(file, text);
+    }
+
+    @Deprecated
+    public static void append(File file, byte[] bytes) throws IOException {
+        ResourceGroovyMethods.append(file, bytes);
+    }
+
+    @Deprecated
+    public static void append(File self, InputStream stream ) throws IOException {
+        ResourceGroovyMethods.append(self, stream);
+    }
+
+    @Deprecated
+    public static void append(File file, Object text, String charset) throws IOException {
+        ResourceGroovyMethods.append(file, text, charset);
+    }
+
+    @Deprecated
+    public static void eachFile(final File self, final FileType fileType, final Closure closure)
+            throws FileNotFoundException, IllegalArgumentException {
+        ResourceGroovyMethods.eachFile(self, fileType, closure);
+    }
+
+    @Deprecated
+    public static void eachFile(final File self, final Closure closure) throws FileNotFoundException, IllegalArgumentException {
+        ResourceGroovyMethods.eachFile(self, closure);
+    }
+
+    @Deprecated
+    public static void eachDir(File self, Closure closure) throws FileNotFoundException, IllegalArgumentException {
+        ResourceGroovyMethods.eachDir(self, closure);
+    }
+
+    @Deprecated
+    public static void eachFileRecurse(final File self, final FileType fileType, final Closure closure)
+            throws FileNotFoundException, IllegalArgumentException {
+        ResourceGroovyMethods.eachFileRecurse(self, fileType, closure);
+    }
+
+    @Deprecated
+    public static void traverse(final File self, final Map<String, Object> options, final Closure closure)
+            throws FileNotFoundException, IllegalArgumentException {
+        ResourceGroovyMethods.traverse(self, options, closure);
+    }
+
+    @Deprecated
+    public static void traverse(final File self, final Closure closure) throws FileNotFoundException, IllegalArgumentException {
+        ResourceGroovyMethods.traverse(self, closure);
+    }
+
+    @Deprecated
+    public static void traverse(final File self, final Map<String, Object> options)
+            throws FileNotFoundException, IllegalArgumentException {
+        ResourceGroovyMethods.traverse(self, options);
+    }
+
+    @Deprecated
+    public static void eachFileRecurse(File self, Closure closure) throws FileNotFoundException, IllegalArgumentException {
+        ResourceGroovyMethods.eachFileRecurse(self, closure);
+    }
+
+    @Deprecated
+    public static void eachDirRecurse(final File self, final Closure closure) throws FileNotFoundException, IllegalArgumentException {
+        ResourceGroovyMethods.eachDirRecurse(self, closure);
+    }
+
+    @Deprecated
+    public static void eachFileMatch(final File self, final FileType fileType, final Object nameFilter, final Closure closure)
+            throws FileNotFoundException, IllegalArgumentException {
+        ResourceGroovyMethods.eachFileMatch(self, fileType, nameFilter, closure);
+    }
+
+    @Deprecated
+    public static void eachFileMatch(final File self, final Object nameFilter, final Closure closure)
+            throws FileNotFoundException, IllegalArgumentException {
+        ResourceGroovyMethods.eachFileMatch(self, nameFilter, closure);
+    }
+
+    @Deprecated
+    public static void eachDirMatch(final File self, final Object nameFilter, final Closure closure) throws FileNotFoundException, IllegalArgumentException {
+        ResourceGroovyMethods.eachDirMatch(self, nameFilter, closure);
+    }
+
+    @Deprecated
+    public static boolean deleteDir(final File self) {
+        return ResourceGroovyMethods.deleteDir(self);
+    }
+
+    @Deprecated
+    public static boolean renameTo(final File self, String newPathName) {
+        return ResourceGroovyMethods.renameTo(self, newPathName);
+    }
+
+    @Deprecated
+    public static Iterator<String> iterator(Reader self) {
+        return IOGroovyMethods.iterator(self);
+    }
+
+    @Deprecated
+    public static Iterator<Byte> iterator(InputStream self) {
+        return IOGroovyMethods.iterator(self);
+    }
+
+    @Deprecated
+    public static Iterator<Byte> iterator(final DataInputStream self) {
+        return IOGroovyMethods.iterator(self);
+    }
+
+    @Deprecated
+    public static File asWritable(File file) {
+        return ResourceGroovyMethods.asWritable(file);
+    }
+
+    @Deprecated
+    public static <T> T asType(File f, Class<T> c) {
+        return ResourceGroovyMethods.asType(f, c);
+    }
+
+    @Deprecated
+    public static File asWritable(File file, String encoding) {
+        return ResourceGroovyMethods.asWritable(file, encoding);
+    }
+
+    @Deprecated
+    public static BufferedReader newReader(File file) throws IOException {
+        return ResourceGroovyMethods.newReader(file);
+    }
+
+    @Deprecated
+    public static BufferedReader newReader(File file, String charset)
+            throws FileNotFoundException, UnsupportedEncodingException {
+        return ResourceGroovyMethods.newReader(file, charset);
+    }
+
+    @Deprecated
+    public static BufferedReader newReader(InputStream self) {
+        return IOGroovyMethods.newReader(self);
+    }
+
+    @Deprecated
+    public static BufferedReader newReader(InputStream self, String charset) throws UnsupportedEncodingException {
+        return IOGroovyMethods.newReader(self, charset);
+    }
+
+    @Deprecated
+    public static <T> T withReader(File file, Closure<T> closure) throws IOException {
+        return ResourceGroovyMethods.withReader(file, closure);
+    }
+
+    @Deprecated
+    public static <T> T withReader(File file, String charset, Closure<T> closure) throws IOException {
+        return ResourceGroovyMethods.withReader(file, charset, closure);
+    }
+
+    @Deprecated
+    public static BufferedOutputStream newOutputStream(File file) throws IOException {
+        return ResourceGroovyMethods.newOutputStream(file);
+    }
+
+    @Deprecated
+    public static DataOutputStream newDataOutputStream(File file) throws IOException {
+        return ResourceGroovyMethods.newDataOutputStream(file);
+    }
+
+    @Deprecated
+    public static Object withOutputStream(File file, Closure closure) throws IOException {
+        return ResourceGroovyMethods.withOutputStream(file, closure);
+    }
+
+    @Deprecated
+    public static Object withInputStream(File file, Closure closure) throws IOException {
+        return ResourceGroovyMethods.withInputStream(file, closure);
+    }
+
+    @Deprecated
+    public static <T> T withInputStream(URL url, Closure<T> closure) throws IOException {
+        return ResourceGroovyMethods.withInputStream(url, closure);
+    }
+
+    @Deprecated
+    public static <T> T withDataOutputStream(File file, Closure<T> closure) throws IOException {
+        return ResourceGroovyMethods.withDataOutputStream(file, closure);
+    }
+
+    @Deprecated
+    public static <T> T withDataInputStream(File file, Closure<T> closure) throws IOException {
+        return ResourceGroovyMethods.withDataInputStream(file, closure);
+    }
+
+    @Deprecated
+    public static BufferedWriter newWriter(File file) throws IOException {
+        return ResourceGroovyMethods.newWriter(file);
+    }
+
+    @Deprecated
+    public static BufferedWriter newWriter(File file, boolean append) throws IOException {
+        return ResourceGroovyMethods.newWriter(file, append);
+    }
+
+    @Deprecated
+    public static BufferedWriter newWriter(File file, String charset, boolean append) throws IOException {
+        return ResourceGroovyMethods.newWriter(file, charset, append);
+    }
+
+    @Deprecated
+    public static BufferedWriter newWriter(File file, String charset) throws IOException {
+        return ResourceGroovyMethods.newWriter(file, charset);
+    }
+
+    @Deprecated
+    public static <T> T withWriter(File file, Closure<T> closure) throws IOException {
+        return ResourceGroovyMethods.withWriter(file, closure);
+    }
+
+    @Deprecated
+    public static <T> T withWriter(File file, String charset, Closure<T> closure) throws IOException {
+        return ResourceGroovyMethods.withWriter(file, charset, closure);
+    }
+
+    @Deprecated
+    public static <T> T withWriterAppend(File file, String charset, Closure<T> closure) throws IOException {
+        return ResourceGroovyMethods.withWriterAppend(file, charset, closure);
+    }
+
+    @Deprecated
+    public static <T> T withWriterAppend(File file, Closure<T> closure) throws IOException {
+        return ResourceGroovyMethods.withWriterAppend(file, closure);
+    }
+
+    @Deprecated
+    public static PrintWriter newPrintWriter(File file) throws IOException {
+        return ResourceGroovyMethods.newPrintWriter(file);
+    }
+
+    @Deprecated
+    public static PrintWriter newPrintWriter(File file, String charset) throws IOException {
+        return ResourceGroovyMethods.newPrintWriter(file, charset);
+    }
+
+    @Deprecated
+    public static PrintWriter newPrintWriter(Writer writer) {
+        return IOGroovyMethods.newPrintWriter(writer);
+    }
+
+    @Deprecated
+    public static <T> T withPrintWriter(File file, Closure<T> closure) throws IOException {
+        return ResourceGroovyMethods.withPrintWriter(file, closure);
+    }
+
+    @Deprecated
+    public static <T> T withPrintWriter(File file, String charset, Closure<T> closure) throws IOException {
+        return ResourceGroovyMethods.withPrintWriter(file, charset, closure);
+    }
+
+    @Deprecated
+    public static <T> T withPrintWriter(Writer writer, Closure<T> closure) throws IOException {
+        return IOGroovyMethods.withPrintWriter(writer, closure);
+    }
+
+    @Deprecated
+    public static <T> T withWriter(Writer writer, Closure<T> closure) throws IOException {
+            return IOGroovyMethods.withWriter(writer, closure);
+    }
+
+    @Deprecated
+    public static <T> T withReader(Reader reader, Closure<T> closure) throws IOException {
+        return IOGroovyMethods.withReader(reader, closure);
+    }
+
+    @Deprecated
+    public static <T> T withStream(InputStream stream, Closure<T> closure) throws IOException {
+        return IOGroovyMethods.withStream(stream, closure);
+    }
+
+    @Deprecated
+    public static <T> T withReader(URL url, Closure<T> closure) throws IOException {
+        return ResourceGroovyMethods.withReader(url, closure);
+    }
+
+    @Deprecated
+    public static <T> T withReader(URL url, String charset, Closure<T> closure) throws IOException {
+        return ResourceGroovyMethods.withReader(url, charset, closure);
+    }
+
+    @Deprecated
+    public static <T> T withReader(InputStream in, Closure<T> closure) throws IOException {
+        return IOGroovyMethods.withReader(in, closure);
+    }
+
+    @Deprecated
+    public static <T> T withReader(InputStream in, String charset, Closure<T> closure) throws IOException {
+        return IOGroovyMethods.withReader(in, charset, closure);
+    }
+
+    @Deprecated
+    public static <T> T withWriter(OutputStream stream, Closure<T> closure) throws IOException {
+        return IOGroovyMethods.withWriter(stream, closure);
+    }
+
+    @Deprecated
+    public static <T> T withWriter(OutputStream stream, String charset, Closure<T> closure) throws IOException {
+        return IOGroovyMethods.withWriter(stream, charset, closure);
+    }
+
+    @Deprecated
+    public static <T> T withStream(OutputStream os, Closure<T> closure) throws IOException {
+        return IOGroovyMethods.withStream(os, closure);
+    }
+
+    @Deprecated
+    public static BufferedInputStream newInputStream(File file) throws FileNotFoundException {
+        return ResourceGroovyMethods.newInputStream(file);
+    }
+
+    @Deprecated
+    public static BufferedInputStream newInputStream(URL url) throws MalformedURLException, IOException {
+        return ResourceGroovyMethods.newInputStream(url);
+    }
+
+    @Deprecated
+    public static BufferedInputStream newInputStream(URL url, Map parameters) throws MalformedURLException, IOException {
+        return ResourceGroovyMethods.newInputStream(url, parameters);
+    }
+
+    @Deprecated
+    public static BufferedReader newReader(URL url) throws MalformedURLException, IOException {
+        return ResourceGroovyMethods.newReader(url);
+    }
+
+    @Deprecated
+    public static BufferedReader newReader(URL url, Map parameters) throws MalformedURLException, IOException {
+        return ResourceGroovyMethods.newReader(url, parameters);
+    }
+
+    @Deprecated
+    public static BufferedReader newReader(URL url, String charset) throws MalformedURLException, IOException {
+        return ResourceGroovyMethods.newReader(url, charset);
+    }
+
+    @Deprecated
+    public static BufferedReader newReader(URL url, Map parameters, String charset) throws MalformedURLException, IOException {
+        return ResourceGroovyMethods.newReader(url, parameters, charset);
+    }
+
+    @Deprecated
+    public static DataInputStream newDataInputStream(File file) throws FileNotFoundException {
+        return ResourceGroovyMethods.newDataInputStream(file);
+    }
+
+    @Deprecated
+    public static void eachByte(File self, Closure closure) throws IOException {
+        ResourceGroovyMethods.eachByte(self, closure);
+    }
+
+    @Deprecated
+    public static void eachByte(File self, int bufferLen, Closure closure) throws IOException {
+        ResourceGroovyMethods.eachByte(self, bufferLen, closure);
+    }
+
+    @Deprecated
+    public static void eachByte(InputStream is, Closure closure) throws IOException {
+        IOGroovyMethods.eachByte(is, closure);
+    }
+
+    @Deprecated
+    public static void eachByte(InputStream is, int bufferLen, Closure closure) throws IOException {
+        IOGroovyMethods.eachByte(is, bufferLen, closure);
+    }
+
+    @Deprecated
+    public static void eachByte(URL url, Closure closure) throws IOException {
+        ResourceGroovyMethods.eachByte(url, closure);
+    }
+
+    @Deprecated
+    public static void eachByte(URL url, int bufferLen, Closure closure) throws IOException {
+        ResourceGroovyMethods.eachByte(url, bufferLen, closure);
+    }
+
+    @Deprecated
+    public static void transformChar(Reader self, Writer writer, Closure closure) throws IOException {
+        IOGroovyMethods.transformChar(self, writer, closure);
+    }
+
+    @Deprecated
+    public static void transformLine(Reader reader, Writer writer, Closure closure) throws IOException {
+        IOGroovyMethods.transformLine(reader, writer, closure);
+    }
+
+    @Deprecated
+    public static void filterLine(Reader reader, Writer writer, Closure closure) throws IOException {
+        IOGroovyMethods.filterLine(reader, writer, closure);
+    }
+
+    @Deprecated
+    public static Writable filterLine(File self, Closure closure) throws IOException {
+        return ResourceGroovyMethods.filterLine(self, closure);
+    }
+
+    @Deprecated
+    public static Writable filterLine(File self, String charset, Closure closure) throws IOException {
+        return ResourceGroovyMethods.filterLine(self, closure);
+    }
+
+    @Deprecated
+    public static void filterLine(File self, Writer writer, Closure closure) throws IOException {
+        ResourceGroovyMethods.filterLine(self, writer, closure);
+    }
+
+    @Deprecated
+    public static void filterLine(File self, Writer writer, String charset, Closure closure) throws IOException {
+        ResourceGroovyMethods.filterLine(self, writer, charset, closure);
+    }
+
+    @Deprecated
+    public static Writable filterLine(Reader reader, final Closure closure) {
+        return IOGroovyMethods.filterLine(reader, closure);
+    }
+
+    @Deprecated
+    public static Writable filterLine(InputStream self, Closure predicate) {
+        return IOGroovyMethods.filterLine(self, predicate);
+    }
+
+    @Deprecated
+    public static Writable filterLine(InputStream self, String charset, Closure predicate) throws UnsupportedEncodingException {
+        return IOGroovyMethods.filterLine(self, charset, predicate);
+    }
+
+    @Deprecated
+    public static void filterLine(InputStream self, Writer writer, Closure predicate) throws IOException {
+        IOGroovyMethods.filterLine(self, writer, predicate);
+    }
+
+    @Deprecated
+    public static void filterLine(InputStream self, Writer writer, String charset, Closure predicate) throws IOException {
+        IOGroovyMethods.filterLine(self, writer, charset, predicate);
+    }
+
+    @Deprecated
+    public static Writable filterLine(URL self, Closure predicate) throws IOException {
+        return ResourceGroovyMethods.filterLine(self, predicate);
+    }
+
+    @Deprecated
+    public static Writable filterLine(URL self, String charset, Closure predicate) throws IOException {
+        return ResourceGroovyMethods.filterLine(self, charset, predicate);
+    }
+
+    @Deprecated
+    public static void filterLine(URL self, Writer writer, Closure predicate) throws IOException {
+        ResourceGroovyMethods.filterLine(self, writer, predicate);
+    }
+
+    @Deprecated
+    public static void filterLine(URL self, Writer writer, String charset, Closure predicate) throws IOException {
+        ResourceGroovyMethods.filterLine(self, writer, charset, predicate);
+    }
+
+    @Deprecated
+    public static byte[] readBytes(File file) throws IOException {
+        return ResourceGroovyMethods.readBytes(file);
     }
 
 }

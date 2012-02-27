@@ -23,6 +23,8 @@ import static java.util.TimeZone.getTimeZone
 class DateTest extends GroovyTestCase {
     void testCalendarNextPrevious() {
         Calendar c = getInstance(getTimeZone('GMT+00'))
+        c.clearTime()
+        c[HOUR_OF_DAY] = 6
         c[YEAR] = 2002
         c[MONTH] = FEBRUARY
         c[DATE] = 2

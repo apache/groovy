@@ -29,16 +29,13 @@ import java.io.StringReader;
 import java.io.StringWriter;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.regex.Matcher;
@@ -91,6 +88,8 @@ import static org.codehaus.groovy.runtime.DefaultGroovyMethods.each;
  * @author Dinko Srkoc
  */
 public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
+
+    static String lineSeparator = null;
 
     /**
      * Coerce a string (an instance of CharSequence) to a boolean value.
@@ -447,7 +446,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
     public static String denormalize(final String self) {
         // Don't do this in static initializer because we may never be needed.
         // TODO: Put this lineSeparator property somewhere everyone can use it.
-        if (DefaultGroovyMethods.lineSeparator == null) {
+        if (lineSeparator == null) {
             final StringWriter sw = new StringWriter(2);
             try {
                 // We use BufferedWriter rather than System.getProperty because
@@ -455,11 +454,11 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
                 final BufferedWriter bw = new BufferedWriter(sw);
                 bw.newLine();
                 bw.flush();
-                DefaultGroovyMethods.lineSeparator = sw.toString();
+                lineSeparator = sw.toString();
             } catch (IOException ioe) {
                 // This shouldn't happen, but this is the same default used by
                 // BufferedWriter on a security exception.
-                DefaultGroovyMethods.lineSeparator = "\n";
+                lineSeparator = "\n";
             }
         }
 
@@ -478,7 +477,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
 
             switch (ch) {
                 case '\r':
-                    sb.append(DefaultGroovyMethods.lineSeparator);
+                    sb.append(lineSeparator);
 
                     // Eat the following LF if any.
                     if ((i < len) && (self.charAt(i) == '\n')) {
@@ -488,7 +487,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
                     break;
 
                 case '\n':
-                    sb.append(DefaultGroovyMethods.lineSeparator);
+                    sb.append(lineSeparator);
                     break;
 
                 default:
@@ -523,7 +522,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
         if( self.length() <= num ) {
             return self.subSequence( 0, 0 ) ;
         }
-        return self.subSequence( num, self.length() ) ;
+        return self.subSequence(num, self.length()) ;
     }
 
     /**
@@ -1093,7 +1092,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
     public static List<String> findAll(String self, Pattern pattern) {
         Matcher matcher = pattern.matcher(self);
         List<String> list = new ArrayList<String>();
-        for (Iterator iter = DefaultGroovyMethods.iterator(matcher); iter.hasNext();) {
+        for (Iterator iter = iterator(matcher); iter.hasNext();) {
             if (hasGroup(matcher)) {
                 list.add((String) ((List) iter.next()).get(0));
             } else {
@@ -1360,7 +1359,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
             }
             idx = normaliseIndex(idx, count);
 
-            Iterator iter = DefaultGroovyMethods.iterator(matcher);
+            Iterator iter = iterator(matcher);
             Object result = null;
             for (int i = 0; i <= idx; i++) {
                 result = iter.next();
@@ -1838,6 +1837,62 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static boolean isNumber(String self) {
         return isBigDecimal(self);
+    }
+
+    /**
+     * Returns an {@link java.util.Iterator} which traverses each match.
+     *
+     * @param matcher a Matcher object
+     * @return an Iterator for a Matcher
+     * @see java.util.regex.Matcher#group()
+     * @since 1.0
+     */
+    public static Iterator iterator(final Matcher matcher) {
+        matcher.reset();
+        return new Iterator() {
+            private boolean found /* = false */;
+            private boolean done /* = false */;
+
+            public boolean hasNext() {
+                if (done) {
+                    return false;
+                }
+                if (!found) {
+                    found = matcher.find();
+                    if (!found) {
+                        done = true;
+                    }
+                }
+                return found;
+            }
+
+            public Object next() {
+                if (!found) {
+                    if (!hasNext()) {
+                        throw new NoSuchElementException();
+                    }
+                }
+                found = false;
+
+                if (hasGroup(matcher)) {
+                    // are we using groups?
+                    // yes, so return the specified group as list
+                    List<String> list = new ArrayList<String>(matcher.groupCount());
+                    for (int i = 0; i <= matcher.groupCount(); i++) {
+                       list.add(matcher.group(i));
+                    }
+                    return list;
+                } else {
+                    // not using groups, so return the nth
+                    // occurrence of the pattern
+                    return matcher.group();
+                 }
+            }
+
+            public void remove() {
+                throw new UnsupportedOperationException();
+            }
+        };
     }
 
     /**
@@ -2391,7 +2446,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.5.5
      */
     public static List<String> readLines(String self) throws IOException {
-        return DefaultGroovyMethods.readLines(new StringReader(self));
+        return IOGroovyMethods.readLines(new StringReader(self));
     }
 
     /**
@@ -3478,54 +3533,6 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static Short toShort(String self) {
         return Short.valueOf(self.trim());
-    }
-
-    /**
-     * Transforms a CharSequence representing a URI into a URI object.
-     *
-     * @param self the CharSequence representing a URI
-     * @return a URI
-     * @throws java.net.URISyntaxException is thrown if the URI is not well formed.
-     * @since 1.8.2
-     */
-    public static URI toURI(CharSequence self) throws URISyntaxException {
-        return new URI(self.toString());
-    }
-
-    /**
-     * Transforms a String representing a URI into a URI object.
-     *
-     * @param self the String representing a URI
-     * @return a URI
-     * @throws java.net.URISyntaxException is thrown if the URI is not well formed.
-     * @since 1.0
-     */
-    public static URI toURI(String self) throws URISyntaxException {
-        return new URI(self);
-    }
-
-    /**
-     * Transforms a CharSequence representing a URL into a URL object.
-     *
-     * @param self the CharSequence representing a URL
-     * @return a URL
-     * @throws java.net.MalformedURLException is thrown if the URL is not well formed.
-     * @since 1.8.2
-     */
-    public static URL toURL(CharSequence self) throws MalformedURLException {
-        return new URL(self.toString());
-    }
-
-    /**
-     * Transforms a String representing a URL into a URL object.
-     *
-     * @param self the String representing a URL
-     * @return a URL
-     * @throws java.net.MalformedURLException is thrown if the URL is not well formed.
-     * @since 1.0
-     */
-    public static URL toURL(String self) throws MalformedURLException {
-        return new URL(self);
     }
 
     /**

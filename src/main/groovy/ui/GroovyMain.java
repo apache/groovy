@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2011 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.InvokerInvocationException;
-import org.codehaus.groovy.runtime.DefaultGroovyMethods;
+import org.codehaus.groovy.runtime.ResourceGroovyMethods;
 import org.codehaus.groovy.runtime.StackTraceUtils;
 
 /**
@@ -378,12 +378,12 @@ public class GroovyMain {
     public String getText(String urlOrFilename) throws IOException {
         if (isScriptUrl(urlOrFilename)) {
             try {
-                return DefaultGroovyMethods.getText(new URL(urlOrFilename));
+                return ResourceGroovyMethods.getText(new URL(urlOrFilename));
             } catch (Exception e) {
                 throw new GroovyRuntimeException("Unable to get script from URL: ", e);
             }
         }
-        return DefaultGroovyMethods.getText(huntForTheScriptFile(urlOrFilename));
+        return ResourceGroovyMethods.getText(huntForTheScriptFile(urlOrFilename));
     }
 
     private boolean isScriptUrl(String urlOrFilename) {

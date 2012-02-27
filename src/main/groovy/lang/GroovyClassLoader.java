@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ModuleNode;
 import org.codehaus.groovy.classgen.Verifier;
 import org.codehaus.groovy.control.*;
-import org.codehaus.groovy.runtime.DefaultGroovyMethods;
+import org.codehaus.groovy.runtime.IOGroovyMethods;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
 
@@ -229,8 +229,8 @@ public class GroovyClassLoader extends URLClassLoader {
             public GroovyCodeSource run() {
                 try {
                     String scriptText = config.getSourceEncoding() != null ?
-                            DefaultGroovyMethods.getText(in, config.getSourceEncoding()) :
-                            DefaultGroovyMethods.getText(in);
+                            IOGroovyMethods.getText(in, config.getSourceEncoding()) :
+                            IOGroovyMethods.getText(in);
                     return new GroovyCodeSource(scriptText, fileName, "/groovy/script");
                 } catch (IOException e) {
                     throw new RuntimeException("Impossible to read the content of the input stream for file named: " + fileName, e);

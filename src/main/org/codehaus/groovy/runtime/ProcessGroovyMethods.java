@@ -18,7 +18,15 @@ package org.codehaus.groovy.runtime;
 import groovy.lang.Closure;
 import groovy.lang.GroovyRuntimeException;
 
-import java.io.*;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.Writer;
 import java.util.List;
 
 /**
@@ -60,7 +68,7 @@ public class ProcessGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static String getText(Process self) throws IOException {
-        return DefaultGroovyMethods.getText(new BufferedReader(new InputStreamReader(self.getInputStream())));
+        return IOGroovyMethods.getText(new BufferedReader(new InputStreamReader(self.getInputStream())));
     }
 
     /**
@@ -98,7 +106,7 @@ public class ProcessGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static Writer leftShift(Process self, Object value) throws IOException {
-        return DefaultGroovyMethods.leftShift(self.getOutputStream(), value);
+        return IOGroovyMethods.leftShift(self.getOutputStream(), value);
     }
 
     /**
@@ -112,7 +120,7 @@ public class ProcessGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static OutputStream leftShift(Process self, byte[] value) throws IOException {
-        return DefaultGroovyMethods.leftShift(self.getOutputStream(), value);
+        return IOGroovyMethods.leftShift(self.getOutputStream(), value);
     }
 
     /**
@@ -323,7 +331,7 @@ public class ProcessGroovyMethods extends DefaultGroovyMethodsSupport {
         new Thread(new Runnable() {
             public void run() {
                 try {
-                    DefaultGroovyMethods.withWriter(new BufferedOutputStream(getOut(self)), closure);
+                    IOGroovyMethods.withWriter(new BufferedOutputStream(getOut(self)), closure);
                 } catch (IOException e) {
                     throw new GroovyRuntimeException("exception while reading process stream", e);
                 }
@@ -345,7 +353,7 @@ public class ProcessGroovyMethods extends DefaultGroovyMethodsSupport {
         new Thread(new Runnable() {
             public void run() {
                 try {
-                    DefaultGroovyMethods.withStream(new BufferedOutputStream(getOut(self)), closure);
+                    IOGroovyMethods.withStream(new BufferedOutputStream(getOut(self)), closure);
                 } catch (IOException e) {
                     throw new GroovyRuntimeException("exception while reading process stream", e);
                 }

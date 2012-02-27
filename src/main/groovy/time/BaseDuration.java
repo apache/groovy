@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,24 +16,26 @@
 package groovy.time;
 
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
+import org.codehaus.groovy.runtime.StringGroovyMethods;
 
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
-import java.util.ArrayList;
 
 /**
  * Base class for date and time durations.
- * @see Duration
+ *
  * @author John Wilson tug@wilson.co.uk
+ * @see Duration
  */
 public abstract class BaseDuration implements Comparable<BaseDuration> {
     protected final int years;
-    protected final int months;    
+    protected final int months;
     protected final int days;
     protected final int hours;
     protected final int minutes;
-    protected final int seconds;    
+    protected final int seconds;
     protected final int millis;
 
     protected BaseDuration(final int years, final int months, final int days, final int hours, final int minutes, final int seconds, final int millis) {
@@ -49,38 +51,38 @@ public abstract class BaseDuration implements Comparable<BaseDuration> {
     protected BaseDuration(final int days, final int hours, final int minutes, final int seconds, final int millis) {
         this(0, 0, days, hours, minutes, seconds, millis);
     }
-    
+
     public int getYears() {
         return this.years;
     }
-    
+
     public int getMonths() {
         return this.months;
     }
-    
+
     public int getDays() {
         return this.days;
     }
-    
+
     public int getHours() {
         return this.hours;
     }
-    
+
     public int getMinutes() {
         return this.minutes;
     }
-    
+
     public int getSeconds() {
         return this.seconds;
     }
-    
+
     public int getMillis() {
         return this.millis;
     }
-    
+
     public Date plus(final Date date) {
-    final Calendar cal = Calendar.getInstance();
-    
+        final Calendar cal = Calendar.getInstance();
+
         cal.setTime(date);
         cal.add(Calendar.YEAR, this.years);
         cal.add(Calendar.MONTH, this.months);
@@ -89,23 +91,23 @@ public abstract class BaseDuration implements Comparable<BaseDuration> {
         cal.add(Calendar.MINUTE, this.minutes);
         cal.add(Calendar.SECOND, this.seconds);
         cal.add(Calendar.MILLISECOND, this.millis);
-        
+
         return cal.getTime();
     }
 
     public String toString() {
         List buffer = new ArrayList();
 
-        if (this.years      != 0) buffer.add(this.years   + " years");
-        if (this.months     != 0) buffer.add(this.months  + " months");
-        if (this.days       != 0) buffer.add(this.days    + " days");
-        if (this.hours      != 0) buffer.add(this.hours   + " hours");
-        if (this.minutes    != 0) buffer.add(this.minutes + " minutes");
+        if (this.years != 0) buffer.add(this.years + " years");
+        if (this.months != 0) buffer.add(this.months + " months");
+        if (this.days != 0) buffer.add(this.days + " days");
+        if (this.hours != 0) buffer.add(this.hours + " hours");
+        if (this.minutes != 0) buffer.add(this.minutes + " minutes");
 
         if (this.seconds != 0 || this.millis != 0)
-            buffer.add((seconds == 0 ? (millis < 0 ? "-0" : "0") : seconds) + "." + DefaultGroovyMethods.padLeft("" + Math.abs(millis), 3, "0")  + " seconds");
+            buffer.add((seconds == 0 ? (millis < 0 ? "-0" : "0") : seconds) + "." + StringGroovyMethods.padLeft("" + Math.abs(millis), 3, "0") + " seconds");
 
-        if (buffer.size()!=0) {
+        if (buffer.size() != 0) {
             return DefaultGroovyMethods.join(buffer, ", ");
         } else {
             return "0";
@@ -113,9 +115,9 @@ public abstract class BaseDuration implements Comparable<BaseDuration> {
     }
 
     public abstract long toMilliseconds();
-    
+
     public abstract Date getAgo();
-    
+
     public abstract From getFrom();
 
     public int compareTo(BaseDuration otherDuration) {
@@ -124,7 +126,7 @@ public abstract class BaseDuration implements Comparable<BaseDuration> {
 
     public abstract static class From {
         public abstract Date getNow();
-        
+
         public Date getToday() {
             return getNow();
         }

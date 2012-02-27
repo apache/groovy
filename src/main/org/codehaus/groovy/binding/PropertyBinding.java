@@ -1,5 +1,5 @@
 /*
- * Copyright 2007-2009 the original author or authors.
+ * Copyright 2007-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,9 @@ import groovy.beans.DefaultPropertyAccessor;
 import groovy.beans.PropertyAccessor;
 import groovy.lang.GroovyRuntimeException;
 import groovy.lang.MissingMethodException;
-import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.InvokerInvocationException;
+import org.codehaus.groovy.runtime.ResourceGroovyMethods;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 import javax.swing.SwingUtilities;
@@ -57,7 +57,7 @@ public class PropertyBinding implements SourceBinding, TargetBinding, TriggerBin
         Enumeration<URL> urls = fetchUrlsFor("META-INF/services/" + groovy.beans.PropertyAccessor.class.getName());
         while (urls.hasMoreElements()) {
             try {
-                registerPropertyAccessors(DefaultGroovyMethods.readLines(urls.nextElement()));
+                registerPropertyAccessors(ResourceGroovyMethods.readLines(urls.nextElement()));
             } catch (IOException e) {
                 // ignore
                 // TODO should use a low priority logger

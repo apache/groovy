@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,11 +20,11 @@ import junit.framework.Test;
 import junit.framework.TestSuite;
 import junit.textui.TestRunner;
 import org.codehaus.groovy.control.CompilerConfiguration;
-import org.codehaus.groovy.runtime.DefaultGroovyMethods;
+import org.codehaus.groovy.runtime.ResourceGroovyMethods;
 
 import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
 import java.io.File;
+import java.io.PrintStream;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
@@ -124,12 +124,12 @@ public class GroovyShellTest extends GroovyTestCase {
         // create a valid (empty) test suite on disk
         String testName = "GroovyShellTestJUnit3Test"+System.currentTimeMillis();
         File testSuite = new File(System.getProperty("java.io.tmpdir"), testName);
-        DefaultGroovyMethods.write(testSuite, "import junit.framework.*; \r\n"+
-            "public class "+testName+" extends TestSuite { \r\n"+
-            "    public static Test suite() { \r\n"+
-            "        return new TestSuite(); \r\n"+
-            "    } \r\n" +
-            "} \r\n");
+        ResourceGroovyMethods.write(testSuite, "import junit.framework.*; \r\n" +
+                "public class " + testName + " extends TestSuite { \r\n" +
+                "    public static Test suite() { \r\n" +
+                "        return new TestSuite(); \r\n" +
+                "    } \r\n" +
+                "} \r\n");
         testSuite.deleteOnExit();
         
         PrintStream out = System.out;
