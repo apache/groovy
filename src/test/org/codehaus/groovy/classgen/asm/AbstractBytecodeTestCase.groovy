@@ -93,12 +93,13 @@ abstract class AbstractBytecodeTestCase extends GroovyTestCase {
     InstructionSequence extractSequence(byte[] bytes, Map options=[method:"run"]) {
         InstructionSequence sequence
         def output = new StringWriter()
-        def tcf = new TraceClassVisitor(new ClassVisitor(Opcodes.ASM4) {
+        def tcf;
+        tcf = new TraceClassVisitor(new ClassVisitor(Opcodes.ASM4) {
             MethodVisitor visitMethod(int access, String name, String desc, String signature, String... exceptions) {
                 if (options.method == name) {
-                    text << '--BEGIN--'
+                    tcf.p.text << '--BEGIN--'
                     def res = super.visitMethod(access, name, desc, signature, exceptions)
-                    text << '--END--'
+                    tcf.p.text << '--END--'
                     res
                 } else {
                     null
@@ -107,9 +108,9 @@ abstract class AbstractBytecodeTestCase extends GroovyTestCase {
 
             FieldVisitor visitField(int access, String name, String desc, String signature, Object value) {
                 if (options.field == name) {
-                    text << '--BEGIN--'
+                    tcf.p.text << '--BEGIN--'
                     def res = super.visitField(access, name, desc, signature, value)
-                    text << '--END--'
+                    tcf.p.text << '--END--'
                     res
                 } else {
                     null
@@ -117,7 +118,7 @@ abstract class AbstractBytecodeTestCase extends GroovyTestCase {
             }
 
         }, new PrintWriter(output))
-        def cr = new ClassReader(cu.classes[0].bytes)
+        def cr = new ClassReader(bytes)
         cr.accept(tcf, 0)
 
         def code = output.toString()
