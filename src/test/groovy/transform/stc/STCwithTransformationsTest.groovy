@@ -38,11 +38,21 @@ class STCwithTransformationsTest extends StaticTypeCheckingTestCase {
     }
 
     @Override
-    protected void setUp() {
-        super.setUp()
+    protected void configure() {
         config.addCompilationCustomizers(
                 new ASTTransformationCustomizer(new TestTransformation())
         )
+    }
+
+    void testShouldFailWithDynamicVariable() {
+        shouldFailWithMessages '''
+            class Test{
+                long test(){
+                    i + 6
+                }
+            }
+            new Test().test()
+            ''', 'The variable [i] is undeclared'
     }
 
     void testCheckedInjectedProperty() {
@@ -62,7 +72,7 @@ class STCwithTransformationsTest extends StaticTypeCheckingTestCase {
 
         void visit(ASTNode[] nodes, SourceUnit source) {
             def initExpr = new ConstantExpression(5l)
-            source.AST.classes[1].addProperty('j', Modifier.PUBLIC, new ClassNode(Long), initExpr, null, null)
+            source.AST.classes[1]?.addProperty('j', Modifier.PUBLIC, new ClassNode(Long), initExpr, null, null)
         }
 
     }

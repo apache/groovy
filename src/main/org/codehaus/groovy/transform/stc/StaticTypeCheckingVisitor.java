@@ -23,6 +23,7 @@ import org.codehaus.groovy.ast.stmt.*;
 import org.codehaus.groovy.ast.tools.GenericsUtils;
 import org.codehaus.groovy.classgen.ReturnAdder;
 import org.codehaus.groovy.classgen.asm.InvocationWriter;
+import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.ErrorCollector;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
@@ -181,6 +182,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     @Override
     public void visitClass(final ClassNode node) {
+        Object type = node.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
+        if (type!=null) {
+            // transformation has already been run on this class node
+            // prevent it from running twice
+            return;
+        }
+        node.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, node);
         ClassNode oldCN = classNode;
         classNode = node;
         Set<MethodNode> oldVisitedMethod = alreadyVisitedMethods;
@@ -1170,8 +1178,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         classNode = directMethodCallCandidate.getDeclaringClass();
                         for (ClassNode node: source.getAST().getClasses()) {
                             if (isClassInnerClassOrEqualTo(classNode, node)) {
-                                // visit is authorized because the classnode belongs to the same source unit
-                                visitMethod(directMethodCallCandidate);
+                                silentlyVisitMethodNode(directMethodCallCandidate);
                                 break;
                             }
                         }
@@ -1192,6 +1199,19 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 lastImplicitItType = rememberLastItType;
                 withReceiverList.removeFirst();
             }
+        }
+    }
+
+    private void silentlyVisitMethodNode(final MethodNode directMethodCallCandidate) {
+        // visit is authorized because the classnode belongs to the same source unit
+        ErrorCollector currentCollector = errorCollector;
+        // create a dummy collector, we don't want errors to be reported for this visit
+        errorCollector = new ErrorCollector(new CompilerConfiguration());
+        try {
+            visitMethod(directMethodCallCandidate);
+        } finally {
+            // restore error collector
+            errorCollector = currentCollector;
         }
     }
 
@@ -1375,7 +1395,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         for (ClassNode node: source.getAST().getClasses()) {
                             if (isClassInnerClassOrEqualTo(classNode, node)) {
                                 // visit is authorized because the classnode belongs to the same source unit
-                                visitMethod(directMethodCallCandidate);
+                                silentlyVisitMethodNode(directMethodCallCandidate);
                                 break;
                             }
                         }
