@@ -15,13 +15,15 @@
  */
 package org.codehaus.groovy.runtime;
 
-import groovy.io.EncodingAwareBufferedWriter;
 import groovy.io.FileType;
-import groovy.io.FileVisitResult;
 import groovy.io.GroovyPrintWriter;
 import groovy.lang.*;
-import groovy.util.*;
-
+import groovy.util.ClosureComparator;
+import groovy.util.GroovyCollections;
+import groovy.util.MapEntry;
+import groovy.util.OrderBy;
+import groovy.util.PermutationGenerator;
+import groovy.util.ProxyGenerator;
 import org.codehaus.groovy.classgen.Verifier;
 import org.codehaus.groovy.reflection.ClassInfo;
 import org.codehaus.groovy.reflection.MixinInMetaClass;
@@ -45,7 +47,12 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.net.*;
+import java.net.MalformedURLException;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.*;
@@ -132,12 +139,16 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     public static final Class[] DGM_LIKE_CLASSES = new Class[]{
             DefaultGroovyMethods.class,
-            SwingGroovyMethods.class,
-            SqlGroovyMethods.class,
-            XmlGroovyMethods.class,
-            EncodingGroovyMethods.class,
             DateGroovyMethods.class,
-            ProcessGroovyMethods.class
+            EncodingGroovyMethods.class,
+            IOGroovyMethods.class,
+            ProcessGroovyMethods.class,
+            ResourceGroovyMethods.class,
+            SocketGroovyMethods.class,
+            SqlGroovyMethods.class,
+            StringGroovyMethods.class,
+            SwingGroovyMethods.class,
+            XmlGroovyMethods.class
     };
 
     /**
@@ -883,53 +894,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * 'Case' implementation for a String, which uses String#equals(Object)
-     * in order to allow Strings to be used in switch statements.
-     * For example:
-     * <pre>switch( str ) {
-     *   case 'one' :
-     *   // etc...
-     * }</pre>
-     * Note that this returns <code>true</code> for the case where both the
-     * 'switch' and 'case' operand is <code>null</code>.
-     *
-     * @param caseValue   the case value
-     * @param switchValue the switch value
-     * @return true if the switchValue's toString() equals the caseValue
-     * @since 1.0
-     */
-    public static boolean isCase(String caseValue, Object switchValue) {
-        if (switchValue == null) {
-            return caseValue == null;
-        }
-        return caseValue.equals(switchValue.toString());
-    }
-
-    /**
-     * 'Case' implementation for a CharSequence, which simply calls the equivalent method for String.
-     *
-     * @param caseValue   the case value
-     * @param switchValue the switch value
-     * @return true if the switchValue's toString() equals the caseValue
-     * @since 1.8.2
-     */
-    public static boolean isCase(CharSequence caseValue, Object switchValue) {
-        return isCase(caseValue.toString(), switchValue);
-    }
-
-    /**
-     * 'Case' implementation for a GString, which simply calls the equivalent method for String.
-     *
-     * @param caseValue   the case value
-     * @param switchValue the switch value
-     * @return true if the switchValue's toString() equals the caseValue
-     * @since 1.6.0
-     */
-    public static boolean isCase(GString caseValue, Object switchValue) {
-        return isCase(caseValue.toString(), switchValue);
-    }
-
-    /**
      * Special 'Case' implementation for Class, which allows testing
      * for a certain class in a switch statement.
      * For example:
@@ -995,36 +959,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static boolean isCase(Map caseValue, Object switchValue) {
         return DefaultTypeTransformation.castToBoolean(caseValue.get(switchValue));
-    }
-
-    /**
-     * 'Case' implementation for the {@link java.util.regex.Pattern} class, which allows
-     * testing a String against a number of regular expressions.
-     * For example:
-     * <pre>switch( str ) {
-     *   case ~/one/ :
-     *     // the regex 'one' matches the value of str
-     * }
-     * </pre>
-     * Note that this returns true for the case where both the pattern and
-     * the 'switch' values are <code>null</code>.
-     *
-     * @param caseValue   the case value
-     * @param switchValue the switch value
-     * @return true if the switchValue is deemed to match the caseValue
-     * @since 1.0
-     */
-    public static boolean isCase(Pattern caseValue, Object switchValue) {
-        if (switchValue == null) {
-            return caseValue == null;
-        }
-        final Matcher matcher = caseValue.matcher(switchValue.toString());
-        if (matcher.matches()) {
-            RegexSupport.setLastMatcher(matcher);
-            return true;
-        } else {
-            return false;
-        }
     }
 
     /**
@@ -3611,6 +3545,34 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
 
     /**
+     * Performs the same function as the version of inject that takes an initial value, but
+     * uses the head of the Collection as the initial value, and iterates over the tail.
+     * <pre class="groovyTestCase">
+     * assert 1 * 2 * 3 * 4 == [ 1, 2, 3, 4 ].inject { acc, val -> acc * val }
+     * assert ['b'] == [['a','b'], ['b','c'], ['d','b']].inject { acc, val -> acc.intersect( val ) }
+     * LinkedHashSet set = [ 't', 'i', 'm' ]
+     * assert 'tim' == set.inject { a, b -> a + b }
+     * </pre>
+     *
+     * @param self         a Collection
+     * @param closure      a closure
+     * @return the result of the last closure call
+     * @throws NoSuchElementException if the collection is empty.
+     * @see #inject(Collection, Object, Closure)
+     * @since 1.8.7
+     */
+    public static <T, V extends T> T inject(Collection<T> self, Closure<V> closure ) {
+        if( self.isEmpty() ) {
+            throw new NoSuchElementException( "Cannot call inject() on an empty collection without passing an initial value." ) ;
+        }
+        List<T> list = asList( self ) ;
+        if( list.size() == 1 ) {
+            return list.get( 0 ) ;
+        }
+        return (T) inject( drop( list, 1 ), head( list ), closure );
+    }
+
+    /**
      * Iterates through the given Collection, passing in the initial value to
      * the 2-arg closure along with the first item. The result is passed back (injected) into
      * the closure along with the second item. The new result is injected back into
@@ -3716,6 +3678,29 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Iterates through the given Object, passing in the first value to
+     * the closure along with the first item. The result is passed back (injected) into
+     * the closure along with the second item. The new result is injected back into
+     * the closure along with the third item and so on until further iteration of
+     * the object is not possible. Also known as foldLeft in functional parlance.
+     *
+     * @param self         an Object
+     * @param closure      a closure
+     * @return the result of the last closure call
+     * @throws NoSuchElementException if the collection is empty.
+     * @see #inject(Collection, Object, Closure)
+     * @since 1.8.7
+     */
+    public static <T, V extends T> T inject(Object self, Closure<V> closure) {
+        Iterator iter = InvokerHelper.asIterator(self);
+        if( !iter.hasNext() ) {
+            throw new NoSuchElementException( "Cannot call inject() over an empty iterable without passing an initial value." ) ;
+        }
+        Object initialValue = iter.next() ;
+        return (T) inject(iter, initialValue, closure);
+    }
+
+    /**
      * Iterates through the given Object, passing in the initial value to
      * the closure along with the first item. The result is passed back (injected) into
      * the closure along with the second item. The new result is injected back into
@@ -3732,6 +3717,22 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static <T, U extends T, V extends T> T inject(Object self, U initialValue, Closure<V> closure) {
         Iterator iter = InvokerHelper.asIterator(self);
         return (T) inject(iter, initialValue, closure);
+    }
+
+    /**
+     * Iterates through the given array as with inject(Object[],initialValue,closure), but
+     * using the first element of the array as the initialValue, and then iterating
+     * the remaining elements of the array.
+     *
+     * @param self         an Object[]
+     * @param closure      a closure
+     * @return the result of the last closure call
+     * @throws NoSuchElementException if the array is empty.
+     * @see #inject(Object[], Object, Closure)
+     * @since 1.8.7
+     */
+    public static <T, V extends T> T inject(Object[] self, Closure<V> closure) {
+        return inject( (Object)self, closure ) ;
     }
 
     /**
@@ -4485,62 +4486,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Provide the standard Groovy <code>size()</code> method for <code>String</code>.
-     *
-     * @param text a String
-     * @return the length of the String
-     * @since 1.0
-     */
-    public static int size(String text) {
-        return text.length();
-    }
-
-    /**
-     * Provide the standard Groovy <code>size()</code> method for <code>CharSequence</code>.
-     *
-     * @param text a CharSequence
-     * @return the length of the CharSequence
-     * @since 1.8.2
-     */
-    public static int size(CharSequence text) {
-        return text.length();
-    }
-
-    /**
-     * Provide the standard Groovy <code>size()</code> method for <code>StringBuffer</code>.
-     *
-     * @param buffer a StringBuffer
-     * @return the length of the StringBuffer
-     * @since 1.0
-     */
-    public static int size(StringBuffer buffer) {
-        return buffer.length();
-    }
-
-    /**
-     * Provide the standard Groovy <code>size()</code> method for <code>File</code>.
-     *
-     * @param self a file object
-     * @return the file's size (length)
-     * @since 1.5.0
-     */
-    public static long size(File self) {
-        return self.length();
-    }
-
-
-    /**
-     * Provide the standard Groovy <code>size()</code> method for <code>Matcher</code>.
-     *
-     * @param self a matcher object
-     * @return the matcher's size (count)
-     * @since 1.5.0
-     */
-    public static long size(Matcher self) {
-        return getCount(self);
-    }
-
-    /**
      * Provide the standard Groovy <code>size()</code> method for an array.
      *
      * @param self an Array of objects
@@ -4549,1735 +4494,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static int size(Object[] self) {
         return self.length;
-    }
-
-    /**
-     * Support the subscript operator for CharSequence.
-     *
-     * @param text  a CharSequence
-     * @param index the index of the Character to get
-     * @return the Character at the given index
-     * @since 1.0
-     */
-    public static CharSequence getAt(CharSequence text, int index) {
-        index = normaliseIndex(index, text.length());
-        return text.subSequence(index, index + 1);
-    }
-
-    /**
-     * Support the subscript operator for String.
-     *
-     * @param text  a String
-     * @param index the index of the Character to get
-     * @return the Character at the given index
-     * @since 1.0
-     */
-    public static String getAt(String text, int index) {
-        index = normaliseIndex(index, text.length());
-        return text.substring(index, index + 1);
-    }
-
-    /**
-     * Support the range subscript operator for CharSequence
-     *
-     * @param text  a CharSequence
-     * @param range a Range
-     * @return the subsequence CharSequence
-     * @since 1.0
-     */
-    public static CharSequence getAt(CharSequence text, Range range) {
-        int from = normaliseIndex(DefaultTypeTransformation.intUnbox(range.getFrom()), text.length());
-        int to = normaliseIndex(DefaultTypeTransformation.intUnbox(range.getTo()), text.length());
-
-        boolean reverse = range.isReverse();
-        // If this is a backwards range, reverse the arguments to substring.
-        if (from > to) {
-            int tmp = from;
-            from = to;
-            to = tmp;
-            reverse = !reverse;
-        }
-
-        CharSequence sequence = text.subSequence(from, to + 1);
-        return reverse ? reverse((String) sequence) : sequence;
-    }
-
-    /**
-     * Support the range subscript operator for CharSequence or StringBuffer with IntRange
-     *
-     * @param text  a CharSequence
-     * @param range an IntRange
-     * @return the subsequence CharSequence
-     * @since 1.0
-     */
-    public static CharSequence getAt(CharSequence text, IntRange range) {
-        return getAt(text, (Range) range);
-    }
-
-    /**
-     * Support the range subscript operator for CharSequence or StringBuffer with EmptyRange
-     *
-     * @param text  a CharSequence
-     * @param range an EmptyRange
-     * @return the subsequence CharSequence
-     * @since 1.5.0
-     */
-    public static CharSequence getAt(CharSequence text, EmptyRange range) {
-        return "";
-    }
-
-    /**
-     * Support the range subscript operator for String with IntRange
-     *
-     * @param text  a String
-     * @param range an IntRange
-     * @return the resulting String
-     * @since 1.0
-     */
-    public static String getAt(String text, IntRange range) {
-        return getAt(text, (Range) range);
-    }
-
-    /**
-     * Support the range subscript operator for String with EmptyRange
-     *
-     * @param text  a String
-     * @param range an EmptyRange
-     * @return the resulting String
-     * @since 1.5.0
-     */
-    public static String getAt(String text, EmptyRange range) {
-        return "";
-    }
-
-    /**
-     * Support the range subscript operator for String
-     *
-     * @param text  a String
-     * @param range a Range
-     * @return a substring corresponding to the Range
-     * @since 1.0
-     */
-    public static String getAt(String text, Range range) {
-        int from = normaliseIndex(DefaultTypeTransformation.intUnbox(range.getFrom()), text.length());
-        int to = normaliseIndex(DefaultTypeTransformation.intUnbox(range.getTo()), text.length());
-
-        // If this is a backwards range, reverse the arguments to substring.
-        boolean reverse = range.isReverse();
-        if (from > to) {
-            int tmp = to;
-            to = from;
-            from = tmp;
-            reverse = !reverse;
-        }
-
-        String answer = text.substring(from, to + 1);
-        if (reverse) {
-            answer = reverse(answer);
-        }
-        return answer;
-    }
-
-    /**
-     * Creates a new string which is the reverse (backwards) of this string
-     *
-     * @param self a String
-     * @return a new string with all the characters reversed.
-     * @since 1.0
-     * @see java.lang.StringBuilder#reverse()
-     */
-    public static String reverse(String self) {
-        return new StringBuilder(self).reverse().toString();
-    }
-
-    /**
-     * Creates a new CharSequence which is the reverse (backwards) of this string
-     *
-     * @param self a CharSequence
-     * @return a new CharSequence with all the characters reversed.
-     * @see #reverse(String)
-     * @since 1.8.2
-     */
-    public static CharSequence reverse(CharSequence self) {
-        return new StringBuilder(self).reverse().toString();
-    }
-
-    /**
-     * <p>Strip leading whitespace/control characters followed by '|' from
-     * every line in a String.</p>
-     * <pre class="groovyTestCase">
-     * assert 'ABC\n123\n456' == '''ABC
-     *                             |123
-     *                             |456'''.stripMargin()
-     * </pre>
-     *
-     * @param self The String to strip the margin from
-     * @return the stripped String
-     * @see #stripMargin(String, char)
-     * @since 1.7.3
-     */
-    public static String stripMargin(String self) {
-        return stripMargin(self, '|');
-    }
-
-    /**
-     * <p>Strip leading whitespace/control characters followed by '|' from
-     * every line in a CharSequence.</p>
-     *
-     * @param self The CharSequence to strip the margin from
-     * @return the stripped CharSequence
-     * @see #stripMargin(CharSequence, char)
-     * @since 1.8.2
-     */
-    public static CharSequence stripMargin(CharSequence self) {
-        return stripMargin(self, '|');
-    }
-
-    /**
-     * <p>Strip leading whitespace/control characters followed by <tt>marginChar</tt> from
-     * every line in a String.</p>
-     *
-     * @param self       The String to strip the margin from
-     * @param marginChar Any character that serves as margin delimiter
-     * @return the stripped String
-     * @see #stripMargin(String, char)
-     * @since 1.7.3
-     */
-    public static String stripMargin(String self, String marginChar) {
-        if (marginChar == null || marginChar.length() == 0) return stripMargin(self, '|');
-        // TODO IllegalArgumentException for marginChar.length() > 1 ? Or support String as marker?
-        return stripMargin(self, marginChar.charAt(0));
-    }
-
-    /**
-     * <p>Strip leading whitespace/control characters followed by <tt>marginChar</tt> from
-     * every line in a CharSequence.</p>
-     *
-     * @param self       The CharSequence to strip the margin from
-     * @param marginChar Any character that serves as margin delimiter
-     * @return the stripped CharSequence
-     * @see #stripMargin(String, String)
-     * @since 1.8.2
-     */
-    public static String stripMargin(CharSequence self, CharSequence marginChar) {
-        return stripMargin(self.toString(), marginChar.toString());
-    }
-
-    /**
-     * <p>Strip leading whitespace/control characters followed by <tt>marginChar</tt> from
-     * every line in a String.</p>
-     * <pre class="groovyTestCase">
-     * assert 'ABC\n123\n456' == '''ABC
-     *                             *123
-     *                             *456'''.stripMargin('*')
-     * </pre>
-     *
-     * @param self       The String to strip the margin from
-     * @param marginChar Any character that serves as margin delimiter
-     * @return the stripped String
-     * @since 1.7.3
-     */
-    public static String stripMargin(String self, char marginChar) {
-        if (self.length() == 0) return self;
-        try {
-            StringBuilder builder = new StringBuilder();
-            for (String line : readLines(self)) {
-                builder.append(stripMarginFromLine(line, marginChar));
-                builder.append("\n");
-            }
-            // remove the normalized ending line ending if it was not present
-            if (!self.endsWith("\n")) {
-                builder.deleteCharAt(builder.length() - 1);
-            }
-            return builder.toString();
-        } catch (IOException e) {
-            /* ignore */
-        }
-        return self;
-    }
-
-    /**
-     * <p>Strip leading whitespace/control characters followed by <tt>marginChar</tt> from
-     * every line in a String.</p>
-     *
-     * @param self       The CharSequence to strip the margin from
-     * @param marginChar Any character that serves as margin delimiter
-     * @return the stripped CharSequence
-     * @see #stripMargin(String, char)
-     * @since 1.8.2
-     */
-    public static CharSequence stripMargin(CharSequence self, char marginChar) {
-        return stripMargin(self.toString(), marginChar);
-    }
-
-    // TODO expose this for stream based stripping?
-    private static String stripMarginFromLine(String line, char marginChar) {
-        int length = line.length();
-        int index = 0;
-        while (index < length && line.charAt(index) <= ' ') index++;
-        return (index < length && line.charAt(index) == marginChar) ? line.substring(index + 1) : line;
-    }
-
-    /**
-     * <p>Strip leading spaces from every line in a String. The
-     * line with the least number of leading spaces determines
-     * the number to remove. Lines only containing whitespace are
-     * ignored when calculating the number of leading spaces to strip.</p>
-     * <pre class="groovyTestCase">
-     * assert '  A\n B\nC' == '   A\n  B\n C'.stripIndent()
-     * </pre>
-     *
-     * @param self     The String to strip the leading spaces from
-     * @return the stripped String
-     * @see #stripIndent(String, int)
-     * @since 1.7.3
-     */
-    public static String stripIndent(String self) {
-        if (self.length() == 0) return self;
-        int runningCount = -1;
-        try {
-            for (String line : readLines(self)) {
-                // don't take blank lines into account for calculating the indent
-                if (isAllWhitespace(line)) continue;
-                if (runningCount == -1) runningCount = line.length();
-                runningCount = findMinimumLeadingSpaces(line, runningCount);
-                if (runningCount == 0) break;
-            }
-        } catch (IOException e) {
-            /* ignore */
-        }
-        return stripIndent(self, runningCount == -1 ? 0 : runningCount);
-    }
-
-    /**
-     * <p>Strip leading spaces from every line in a CharSequence. The
-     * line with the least number of leading spaces determines
-     * the number to remove. Lines only containing whitespace are
-     * ignored when calculating the number of leading spaces to strip.</p>
-     *
-     * @param self     The CharSequence to strip the leading spaces from
-     * @return the stripped CharSequence
-     * @see #stripIndent(String)
-     * @since 1.8.2
-     */
-    public static CharSequence stripIndent(CharSequence self) {
-        return stripIndent(self.toString());
-    }
-
-    /**
-     * True if a String only contains whitespace characters.
-     *
-     * @param self The String to check the characters in
-     * @return true If all characters are whitespace characters
-     * @see Character#isWhitespace(char)
-     * @since 1.6
-     */
-    public static boolean isAllWhitespace(String self) {
-        for (int i = 0; i < self.length(); i++) {
-            if (!Character.isWhitespace(self.charAt(i)))
-                return false;
-        }
-        return true;
-    }
-
-    /**
-     * True if a CharSequence only contains whitespace characters.
-     *
-     * @param self The CharSequence to check the characters in
-     * @return true If all characters are whitespace characters
-     * @see #isAllWhitespace(String)
-     * @since 1.8.2
-     */
-    public static boolean isAllWhitespace(CharSequence self) {
-        return isAllWhitespace(self.toString());
-    }
-
-    // TODO expose this for stream based scenarios?
-    private static int findMinimumLeadingSpaces(String line, int count) {
-        int length = line.length();
-        int index = 0;
-        while (index < length && index < count && Character.isWhitespace(line.charAt(index))) index++;
-        return index;
-    }
-
-    /**
-     * <p>Strip <tt>numChar</tt> leading characters from
-     * every line in a String.</p>
-     * <pre class="groovyTestCase">
-     * assert 'DEF\n456' == '''ABCDEF\n123456'''.stripIndent(3)
-     * </pre>
-     *
-     * @param self     The String to strip the characters from
-     * @param numChars The number of characters to strip
-     * @return the stripped String
-     * @since 1.7.3
-     */
-    public static String stripIndent(String self, int numChars) {
-        if (self.length() == 0 || numChars <= 0) return self;
-        try {
-            StringBuilder builder = new StringBuilder();
-            for (String line : readLines(self)) {
-                // normalize an empty or whitespace line to \n
-                // or strip the indent for lines containing non-space characters
-                if (!isAllWhitespace(line)) {
-                    builder.append(stripIndentFromLine(line, numChars));
-                }
-                builder.append("\n");
-            }
-            // remove the normalized ending line ending if it was not present
-            if (!self.endsWith("\n")) {
-                builder.deleteCharAt(builder.length() - 1);
-            }
-            return builder.toString();
-        } catch (IOException e) {
-            /* ignore */
-        }
-        return self;
-    }
-
-    /**
-     * <p>Strip <tt>numChar</tt> leading characters from
-     * every line in a CharSequence.</p>
-     *
-     * @param self     The CharSequence to strip the characters from
-     * @param numChars The number of characters to strip
-     * @return the stripped CharSequence
-     * @since 1.8.2
-     */
-    public static CharSequence stripIndent(CharSequence self, int numChars) {
-        return stripIndent(self);
-    }
-
-    // TODO expose this for stream based stripping?
-    private static String stripIndentFromLine(String line, int numChars) {
-        int length = line.length();
-        return numChars <= length ? line.substring(numChars) : "";
-    }
-
-    /**
-     * Transforms a String representing a URL into a URL object.
-     *
-     * @param self the String representing a URL
-     * @return a URL
-     * @throws MalformedURLException is thrown if the URL is not well formed.
-     * @since 1.0
-     */
-    public static URL toURL(String self) throws MalformedURLException {
-        return new URL(self);
-    }
-
-    /**
-     * Transforms a CharSequence representing a URL into a URL object.
-     *
-     * @param self the CharSequence representing a URL
-     * @return a URL
-     * @throws MalformedURLException is thrown if the URL is not well formed.
-     * @since 1.8.2
-     */
-    public static URL toURL(CharSequence self) throws MalformedURLException {
-        return new URL(self.toString());
-    }
-
-    /**
-     * Transforms a String representing a URI into a URI object.
-     *
-     * @param self the String representing a URI
-     * @return a URI
-     * @throws URISyntaxException is thrown if the URI is not well formed.
-     * @since 1.0
-     */
-    public static URI toURI(String self) throws URISyntaxException {
-        return new URI(self);
-    }
-
-    /**
-     * Transforms a CharSequence representing a URI into a URI object.
-     *
-     * @param self the CharSequence representing a URI
-     * @return a URI
-     * @throws URISyntaxException is thrown if the URI is not well formed.
-     * @since 1.8.2
-     */
-    public static URI toURI(CharSequence self) throws URISyntaxException {
-        return new URI(self.toString());
-    }
-
-    /**
-     * Turns a String into a regular expression Pattern
-     *
-     * @param self a String to convert into a regular expression
-     * @return the regular expression pattern
-     * @since 1.5.0
-     */
-    public static Pattern bitwiseNegate(String self) {
-        return Pattern.compile(self);
-    }
-
-    /**
-     * Turns a CharSequence into a regular expression Pattern
-     *
-     * @param self a String to convert into a regular expression
-     * @return the regular expression pattern
-     * @since 1.8.2
-     */
-    public static Pattern bitwiseNegate(CharSequence self) {
-        return Pattern.compile(self.toString());
-    }
-
-    /**
-     * Replaces the first substring of a String that matches the given
-     * compiled regular expression with the given replacement.
-     * <p/>
-     * Note that backslashes (<tt>\</tt>) and dollar signs (<tt>$</tt>) in the
-     * replacement string may cause the results to be different than if it were
-     * being treated as a literal replacement string; see
-     * {@link java.util.regex.Matcher#replaceFirst}.
-     * Use {@link java.util.regex.Matcher#quoteReplacement} to suppress the special
-     * meaning of these characters, if desired.
-     * <p/>
-     * <pre class="groovyTestCase">
-     * assert "foo".replaceFirst('o', 'X') == 'fXo'
-     * </pre>
-     *
-     * @param   self the string that is to be matched
-     * @param   pattern the regex Pattern to which the string of interest is to be matched
-     * @param   replacement the string to be substituted for the first match
-     * @return  The resulting <tt>String</tt>
-     * @see java.lang.String#replaceFirst(java.lang.String, java.lang.String)
-     * @since 1.6.1
-     */
-    public static String replaceFirst(String self, Pattern pattern, String replacement) {
-        return pattern.matcher(self).replaceFirst(replacement);
-    }
-
-    /**
-     * Replaces the first substring of a CharSequence that matches the given
-     * compiled regular expression with the given replacement.
-     *
-     * @param   self the CharSequence that is to be matched
-     * @param   pattern the regex Pattern to which the CharSequence of interest is to be matched
-     * @param   replacement the CharSequence to be substituted for the first match
-     * @return  The resulting <tt>CharSequence</tt>
-     * @see #replaceFirst(String, Pattern, String)
-     * @since 1.8.2
-     */
-    public static CharSequence replaceFirst(CharSequence self, Pattern pattern, CharSequence replacement) {
-        return pattern.matcher(self).replaceFirst(replacement.toString());
-    }
-
-    /**
-     * Replaces all substrings of a String that match the given
-     * compiled regular expression with the given replacement.
-     * <p>
-     * Note that backslashes (<tt>\</tt>) and dollar signs (<tt>$</tt>) in the
-     * replacement string may cause the results to be different than if it were
-     * being treated as a literal replacement string; see
-     * {@link java.util.regex.Matcher#replaceAll}.
-     * Use {@link java.util.regex.Matcher#quoteReplacement} to suppress the special
-     * meaning of these characters, if desired.
-     * <p/>
-     * <pre class="groovyTestCase">
-     * assert "foo".replaceAll('o', 'X') == 'fXX'
-     * </pre>
-     *
-     * @param   self the string that is to be matched
-     * @param   pattern the regex Pattern to which the string of interest is to be matched
-     * @param   replacement the string to be substituted for the first match
-     * @return  The resulting <tt>String</tt>
-     * @see java.lang.String#replaceAll(java.lang.String, java.lang.String)
-     * @since 1.6.1
-     */
-    public static String replaceAll(String self, Pattern pattern, String replacement) {
-        return pattern.matcher(self).replaceAll(replacement);
-    }
-
-    /**
-     * Replaces all substrings of a CharSequence that match the given
-     * compiled regular expression with the given replacement.
-     *
-     * @param   self the CharSequence that is to be matched
-     * @param   pattern the regex Pattern to which the CharSequence of interest is to be matched
-     * @param   replacement the CharSequence to be substituted for the first match
-     * @return  The resulting <tt>CharSequence</tt>
-     * @see #replaceAll(String, Pattern, String)
-     * @since 1.8.2
-     */
-    public static CharSequence replaceAll(CharSequence self, Pattern pattern, CharSequence replacement) {
-        return pattern.matcher(self).replaceAll(replacement.toString());
-    }
-
-    /**
-     * Translates a string by replacing characters from the sourceSet with characters from replacementSet.
-     * If the first character from sourceSet appears in the string, it will be replaced with the first character from replacementSet.
-     * If the second character from sourceSet appears in the string, it will be replaced with the second character from replacementSet.
-     * and so on for all provided replacement characters.
-     * <p/>
-     * Here is an example which converts the vowels in a word from lower to uppercase:
-     * <pre>
-     * assert 'hello'.tr('aeiou', 'AEIOU') == 'hEllO'
-     * </pre>
-     * A character range using regex-style syntax can also be used, e.g. here is an example which converts a word from lower to uppercase:
-     * <pre>
-     * assert 'hello'.tr('a-z', 'A-Z') == 'HELLO'
-     * </pre>
-     * Hyphens at the start or end of sourceSet or replacementSet are treated as normal hyphens and are not
-     * considered to be part of a range specification. Similarly, a hyphen immediately after an earlier range
-     * is treated as a normal hyphen. So, '-x', 'x-' have no ranges while 'a-c-e' has the range 'a-c' plus
-     * the '-' character plus the 'e' character.
-     * <p/>
-     * Unlike the unix tr command, Groovy's tr command supports reverse ranges, e.g.:
-     * <pre>
-     * assert 'hello'.tr('z-a', 'Z-A') == 'HELLO'
-     * </pre>
-     * If replacementSet is smaller than sourceSet, then the last character from replacementSet is used as the replacement for all remaining source characters as shown here:
-     * <pre>
-     * assert 'Hello World!'.tr('a-z', 'A') == 'HAAAA WAAAA!'
-     * </pre>
-     * If sourceSet contains repeated characters, the last specified replacement is used as shown here:
-     * <pre>
-     * assert 'Hello World!'.tr('lloo', '1234') == 'He224 W4r2d!'
-     * </pre>
-     * The functionality provided by tr can be achieved using regular expressions but tr provides a much more compact
-     * notation and efficient implementation for certain scenarios.
-     *
-     * @param   self the string that is to be translated
-     * @param   sourceSet the set of characters to translate from
-     * @param   replacementSet the set of replacement characters
-     * @return  The resulting translated <tt>String</tt>
-     * @see org.codehaus.groovy.util.StringUtil#tr(String, String, String)
-     * @since 1.7.3
-     */
-    public static String tr(final String self, String sourceSet, String replacementSet) throws ClassNotFoundException {
-        return (String) InvokerHelper.invokeStaticMethod("org.codehaus.groovy.util.StringUtil", "tr", new Object[]{self, sourceSet, replacementSet});
-    }
-
-    /**
-     * Translates a string by replacing characters from the sourceSet with characters from replacementSet.
-     *
-     * @param   self the CharSequence that is to be translated
-     * @param   sourceSet the set of characters to translate from
-     * @param   replacementSet the set of replacement characters
-     * @return  The resulting translated <tt>CharSequence</tt>
-     * @see #tr(String, String, String)
-     * @since 1.8.2
-     */
-    public static CharSequence tr(final CharSequence self, CharSequence sourceSet, CharSequence replacementSet) throws ClassNotFoundException {
-        return tr(self.toString(), sourceSet.toString(), replacementSet.toString());
-    }
-
-    /**
-     * Tells whether or not self matches the given
-     * compiled regular expression Pattern.
-     *
-     * @param   self the string that is to be matched
-     * @param   pattern the regex Pattern to which the string of interest is to be matched
-     * @return  true if the string matches
-     * @see java.lang.String#matches(java.lang.String)
-     * @since 1.6.1
-     */
-    public static boolean matches(String self, Pattern pattern) {
-        return pattern.matcher(self).matches();
-    }
-
-    /**
-     * Tells whether or not a CharSequence matches the given
-     * compiled regular expression Pattern.
-     *
-     * @param   self the CharSequence that is to be matched
-     * @param   pattern the regex Pattern to which the string of interest is to be matched
-     * @return  true if the CharSequence matches
-     * @see java.lang.String#matches(java.lang.String)
-     * @since 1.8.2
-     */
-    public static boolean matches(CharSequence self, Pattern pattern) {
-        return pattern.matcher(self).matches();
-    }
-
-    /**
-     * Finds the first occurrence of a regular expression String within a String.
-     * If the regex doesn't match, null will be returned.
-     * <p/>
-     * <p> For example, if the regex doesn't match the result is null:
-     * <pre>
-     *     assert null == "New York, NY".find(/\d{5}/)
-     * </pre>
-     * </p>
-     * <p> If it does match, we get the matching string back:
-     * <pre>
-     *      assert "10292" == "New York, NY 10292-0098".find(/\d{5}/)
-     * </pre>
-     * </p>
-     * <p> If we have capture groups in our expression, we still get back the full match
-     * <pre>
-     *      assert "10292-0098" == "New York, NY 10292-0098".find(/(\d{5})-?(\d{4})/)
-     * </pre>
-     * </p>
-     *
-     * @param self  a String
-     * @param regex the capturing regex
-     * @return a String containing the matched portion, or null if the regex doesn't match
-     * @since 1.6.1
-     */
-    public static String find(String self, String regex) {
-        return find(self, Pattern.compile(regex));
-    }
-
-    /**
-     * Finds the first occurrence of a regular expression CharSequence within a CharSequence.
-     *
-     * @param self  a CharSequence
-     * @param regex the capturing regex
-     * @return a CharSequence containing the matched portion, or null if the regex doesn't match
-     * @see #find(String, Pattern)
-     * @since 1.8.2
-     */
-    public static CharSequence find(CharSequence self, CharSequence regex) {
-        return find(self.toString(), Pattern.compile(regex.toString()));
-    }
-
-    /**
-     * Finds the first occurrence of a compiled regular expression Pattern within a String.
-     * If the pattern doesn't match, null will be returned.
-     * <p/>
-     * <p> For example, if the pattern doesn't match the result is null:
-     * <pre>
-     *     assert null == "New York, NY".find(~/\d{5}/)
-     * </pre>
-     * </p>
-     * <p> If it does match, we get the matching string back:
-     * <pre>
-     *      assert "10292" == "New York, NY 10292-0098".find(~/\d{5}/)
-     * </pre>
-     * </p>
-     * <p> If we have capture groups in our expression, the groups are ignored and
-     * we get back the full match:
-     * <pre>
-     *      assert "10292-0098" == "New York, NY 10292-0098".find(~/(\d{5})-?(\d{4})/)
-     * </pre>
-     * If you need to work with capture groups, then use the closure version
-     * of this method or use Groovy's matcher operators or use <tt>eachMatch</tt>.
-     * </p>
-     *
-     * @param self    a String
-     * @param pattern the compiled regex Pattern
-     * @return a String containing the matched portion, or null if the regex pattern doesn't match
-     * @since 1.6.1
-     */
-    public static String find(String self, Pattern pattern) {
-        Matcher matcher = pattern.matcher(self);
-        if (matcher.find()) {
-            return matcher.group(0);
-        }
-        return null;
-    }
-
-    /**
-     * Finds the first occurrence of a compiled regular expression Pattern within a CharSequence.
-     *
-     * @param self    a CharSequence
-     * @param pattern the compiled regex Pattern
-     * @return a CharSequence containing the matched portion, or null if the regex pattern doesn't match
-     * @see #find(String, Pattern)
-     * @since 1.8.2
-     */
-    public static CharSequence find(CharSequence self, Pattern pattern) {
-        return find(self.toString(), pattern);
-    }
-
-    /**
-     * Returns the result of calling a closure with the first occurrence of a regular expression found within a String.
-     * If the regex doesn't match, the closure will not be called and find will return null.
-     * <p/>
-     * <p> For example, if the regex doesn't match, the result is null:
-     * <pre>
-     *     assert null == "New York, NY".find(~/\d{5}/) { match -> return "-$match-"}
-     * </pre>
-     * </p>
-     * <p> If it does match and we don't have any capture groups in our regex, there is a single parameter
-     * on the closure that the match gets passed to:
-     * <pre>
-     *      assert "-10292-" == "New York, NY 10292-0098".find(~/\d{5}/) { match -> return "-$match-"}
-     * </pre>
-     * </p>
-     * <p> If we have capture groups in our expression, our closure has one parameter for the match, followed by
-     * one for each of the capture groups:
-     * <pre>
-     *      assert "10292" == "New York, NY 10292-0098".find(~/(\d{5})-?(\d{4})/) { match, zip, plusFour ->
-     *          assert match == "10292-0098"
-     *          assert zip == "10292"
-     *          assert plusFour == "0098"
-     *          return zip
-     *      }
-     * </pre>
-     * <p> If we have capture groups in our expression, and our closure has one parameter,
-     * the closure will be passed an array with the first element corresponding to the whole match,
-     * followed by an element for each of the capture groups:
-     * <pre>
-     *      assert "10292" == "New York, NY 10292-0098".find(~/(\d{5})-?(\d{4})/) { match, zip, plusFour ->
-     *          assert array[0] == "10292-0098"
-     *          assert array[1] == "10292"
-     *          assert array[2] == "0098"
-     *          return array[1]
-     *      }
-     * </pre>
-     * <p> If a capture group is optional, and doesn't match, then the corresponding value
-     * for that capture group passed to the closure will be null as illustrated here:
-     * <pre>
-     *      assert "2339999" == "adsf 233-9999 adsf".find(~/(\d{3})?-?(\d{3})-(\d{4})/) { match, areaCode, exchange, stationNumber ->
-     *          assert "233-9999" == match
-     *          assert null == areaCode
-     *          assert "233" == exchange
-     *          assert "9999" == stationNumber
-     *          return "$exchange$stationNumber"
-     *      }
-     * </pre>
-     * </p>
-     *
-     * @param self    a String
-     * @param regex   the capturing regex string
-     * @param closure the closure that will be passed the full match, plus each of the capturing groups
-     * @return a String containing the result of the closure, or null if the regex pattern doesn't match
-     * @since 1.6.1
-     */
-    public static String find(String self, String regex, Closure closure) {
-        return find(self, Pattern.compile(regex), closure);
-    }
-
-    /**
-     * Returns the result of calling a closure with the first occurrence of a regular expression found within a CharSequence.
-     * If the regex doesn't match, the closure will not be called and find will return null.
-     *
-     * @param self    a CharSequence
-     * @param regex   the capturing regex CharSequence
-     * @param closure the closure that will be passed the full match, plus each of the capturing groups
-     * @return a CharSequence containing the result of the closure, or null if the regex pattern doesn't match
-     * @see #find(String, Pattern, Closure)
-     * @since 1.8.2
-     */
-    public static CharSequence find(CharSequence self, CharSequence regex, Closure closure) {
-        return find(self.toString(), Pattern.compile(regex.toString()), closure);
-    }
-
-    /**
-     * Returns the result of calling a closure with the first occurrence of a compiled regular expression found within a String.
-     * If the regex doesn't match, the closure will not be called and find will return null.
-     * <p/>
-     * <p> For example, if the pattern doesn't match, the result is null:
-     * <pre>
-     *     assert null == "New York, NY".find(~/\d{5}/) { match -> return "-$match-"}
-     * </pre>
-     * </p>
-     * <p> If it does match and we don't have any capture groups in our regex, there is a single parameter
-     * on the closure that the match gets passed to:
-     * <pre>
-     *      assert "-10292-" == "New York, NY 10292-0098".find(~/\d{5}/) { match -> return "-$match-"}
-     * </pre>
-     * </p>
-     * <p> If we have capture groups in our expression, our closure has one parameter for the match, followed by
-     * one for each of the capture groups:
-     * <pre>
-     *      assert "10292" == "New York, NY 10292-0098".find(~/(\d{5})-?(\d{4})/) { match, zip, plusFour ->
-     *          assert match == "10292-0098"
-     *          assert zip == "10292"
-     *          assert plusFour == "0098"
-     *          return zip
-     *      }
-     * </pre>
-     * <p> If we have capture groups in our expression, and our closure has one parameter,
-     * the closure will be passed an array with the first element corresponding to the whole match,
-     * followed by an element for each of the capture groups:
-     * <pre>
-     *      assert "10292" == "New York, NY 10292-0098".find(~/(\d{5})-?(\d{4})/) { match, zip, plusFour ->
-     *          assert array[0] == "10292-0098"
-     *          assert array[1] == "10292"
-     *          assert array[2] == "0098"
-     *          return array[1]
-     *      }
-     * </pre>
-     * <p> If a capture group is optional, and doesn't match, then the corresponding value
-     * for that capture group passed to the closure will be null as illustrated here:
-     * <pre>
-     *      assert "2339999" == "adsf 233-9999 adsf".find(~/(\d{3})?-?(\d{3})-(\d{4})/) { match, areaCode, exchange, stationNumber ->
-     *          assert "233-9999" == match
-     *          assert null == areaCode
-     *          assert "233" == exchange
-     *          assert "9999" == stationNumber
-     *          return "$exchange$stationNumber"
-     *      }
-     * </pre>
-     * </p>
-     *
-     * @param self    a String
-     * @param pattern the compiled regex Pattern
-     * @param closure the closure that will be passed the full match, plus each of the capturing groups
-     * @return a String containing the result of the closure, or null if the regex pattern doesn't match
-     * @since 1.6.1
-     */
-    public static String find(String self, Pattern pattern, Closure closure) {
-        Matcher matcher = pattern.matcher(self);
-        if (matcher.find()) {
-            if (hasGroup(matcher)) {
-                int count = matcher.groupCount();
-                List groups = new ArrayList(count);
-                for (int i = 0; i <= count; i++) {
-                    groups.add(matcher.group(i));
-                }
-                return InvokerHelper.toString(closure.call(groups));
-            } else {
-                return InvokerHelper.toString(closure.call(matcher.group(0)));
-            }
-        }
-        return null;
-    }
-
-    /**
-     * Returns the result of calling a closure with the first occurrence of a regular expression found within a
-     * CharSequence.&nbsp;If the regex doesn't match, the closure will not be called and find will return null.
-     *
-     * @param self    a CharSequence
-     * @param pattern the compiled regex Pattern
-     * @param closure the closure that will be passed the full match, plus each of the capturing groups
-     * @return a CharSequence containing the result of the closure, or null if the regex pattern doesn't match
-     * @see #find(String, java.util.regex.Pattern, groovy.lang.Closure)
-     * @since 1.8.2
-     */
-    public static CharSequence find(CharSequence self, Pattern pattern, Closure closure) {
-        return find(self.toString(), pattern, closure);
-    }
-
-    /**
-     * Returns a (possibly empty) list of all occurrences of a regular expression (in String format) found within a String.
-     * <p/>
-     * <p>For example, if the regex doesn't match, it returns an empty list:
-     * <pre>
-     * assert [] == "foo".findAll(/(\w*) Fish/)
-     * </pre>
-     * <p>Any regular expression matches are returned in a list, and all regex capture groupings are ignored, only the full match is returned:
-     * <pre>
-     * def expected = ["One Fish", "Two Fish", "Red Fish", "Blue Fish"]
-     * assert expected == "One Fish, Two Fish, Red Fish, Blue Fish".findAll(/(\w*) Fish/)
-     * </pre>
-     * If you need to work with capture groups, then use the closure version
-     * of this method or use Groovy's matcher operators or use <tt>eachMatch</tt>.
-     * </p>
-     *
-     * @param self  a String
-     * @param regex the capturing regex String
-     * @return a List containing all full matches of the regex within the string, an empty list will be returned if there are no matches
-     * @since 1.6.1
-     */
-    public static List<String> findAll(String self, String regex) {
-        return findAll(self, Pattern.compile(regex));
-    }
-
-    /**
-     * Returns a (possibly empty) list of all occurrences of a regular expression (in CharSequence format) found within a CharSequence.
-     *
-     * @param self  a CharSequence
-     * @param regex the capturing regex CharSequence
-     * @return a List containing all full matches of the regex within the CharSequence, an empty list will be returned if there are no matches
-     * @see #findAll(String, String)
-     * @since 1.8.2
-     */
-    public static List<CharSequence> findAll(CharSequence self, CharSequence regex) {
-        return new ArrayList<CharSequence>(findAll(self.toString(), regex.toString()));
-    }
-
-    /**
-     * Returns a (possibly empty) list of all occurrences of a regular expression (in Pattern format) found within a String.
-     * <p/>
-     * <p>For example, if the pattern doesn't match, it returns an empty list:
-     * <pre>
-     * assert [] == "foo".findAll(~/(\w*) Fish/)
-     * </pre>
-     * <p>Any regular expression matches are returned in a list, and all regex capture groupings are ignored, only the full match is returned:
-     * <pre>
-     * def expected = ["One Fish", "Two Fish", "Red Fish", "Blue Fish"]
-     * assert expected == "One Fish, Two Fish, Red Fish, Blue Fish".findAll(~/(\w*) Fish/)
-     * </pre>
-     *
-     * @param self    a String
-     * @param pattern the compiled regex Pattern
-     * @return a List containing all full matches of the Pattern within the string, an empty list will be returned if there are no matches
-     * @since 1.6.1
-     */
-    public static List<String> findAll(String self, Pattern pattern) {
-        Matcher matcher = pattern.matcher(self);
-        List<String> list = new ArrayList<String>();
-        for (Iterator iter = iterator(matcher); iter.hasNext();) {
-            if (hasGroup(matcher)) {
-                list.add((String) ((List) iter.next()).get(0));
-            } else {
-                list.add((String) iter.next());
-            }
-        }
-        return list;
-    }
-
-    /**
-     * Returns a (possibly empty) list of all occurrences of a regular expression (in Pattern format) found within a CharSequence.
-     *
-     * @param self    a CharSequence
-     * @param pattern the compiled regex Pattern
-     * @return a List containing all full matches of the Pattern within the CharSequence, an empty list will be returned if there are no matches
-     * @see #findAll(String, Pattern)
-     * @since 1.8.2
-     */
-    public static List<CharSequence> findAll(CharSequence self, Pattern pattern) {
-        return new ArrayList<CharSequence>(findAll(self.toString(), pattern));
-    }
-
-    /**
-     * Finds all occurrences of a regular expression string within a String.   Any matches are passed to the specified closure.  The closure
-     * is expected to have the full match in the first parameter.  If there are any capture groups, they will be placed in subsequent parameters.
-     * <p/>
-     * If there are no matches, the closure will not be called, and an empty List will be returned.
-     * <p/>
-     * <p>For example, if the regex doesn't match, it returns an empty list:
-     * <pre>
-     * assert [] == "foo".findAll(/(\w*) Fish/) { match, firstWord -> return firstWord }
-     * </pre>
-     * <p>Any regular expression matches are passed to the closure, if there are no capture groups, there will be one parameter for the match:
-     * <pre>
-     * assert ["couldn't", "wouldn't"] == "I could not, would not, with a fox.".findAll(/.ould/) { match -> "${match}n't"}
-     * </pre>
-     * <p>If there are capture groups, the first parameter will be the match followed by one parameter for each capture group:
-     * <pre>
-     * def orig = "There's a Wocket in my Pocket"
-     * assert ["W > Wocket", "P > Pocket"] == orig.findAll(/(.)ocket/) { match, firstLetter -> "$firstLetter > $match" }
-     * </pre>
-     *
-     * @param self    a String
-     * @param regex   the capturing regex String
-     * @param closure will be passed the full match plus each of the capturing groups
-     * @return a List containing all full matches of the regex within the string, an empty list will be returned if there are no matches
-     * @since 1.6.1
-     */
-    public static <T> List<T> findAll(String self, String regex, Closure<T> closure) {
-        return findAll(self, Pattern.compile(regex), closure);
-    }
-
-    /**
-     * Finds all occurrences of a capturing regular expression CharSequence within a CharSequence.
-     *
-     * @param self    a CharSequence
-     * @param regex   the capturing regex CharSequence
-     * @param closure will be passed the full match plus each of the capturing groups
-     * @return a List containing all full matches of the regex within the CharSequence, an empty list will be returned if there are no matches
-     * @see #findAll(String, String, Closure)
-     * @since 1.8.2
-     */
-    public static <T> List<T> findAll(CharSequence self, CharSequence regex, Closure<T> closure) {
-        return findAll(self.toString(), regex.toString(), closure);
-    }
-
-    /**
-     * Finds all occurrences of a compiled regular expression Pattern within a String.   Any matches are passed to the specified closure.  The closure
-     * is expected to have the full match in the first parameter.  If there are any capture groups, they will be placed in subsequent parameters.
-     * <p/>
-     * If there are no matches, the closure will not be called, and an empty List will be returned.
-     * <p/>
-     * <p>For example, if the pattern doesn't match, it returns an empty list:
-     * <pre>
-     * assert [] == "foo".findAll(~/(\w*) Fish/) { match, firstWord -> return firstWord }
-     * </pre>
-     * <p>Any regular expression matches are passed to the closure, if there are no capture groups, there will be one parameter for the match:
-     * <pre>
-     * assert ["couldn't", "wouldn't"] == "I could not, would not, with a fox.".findAll(~/.ould/) { match -> "${match}n't"}
-     * </pre>
-     * <p>If there are capture groups, the first parameter will be the match followed by one parameter for each capture group:
-     * <pre>
-     * def orig = "There's a Wocket in my Pocket"
-     * assert ["W > Wocket", "P > Pocket"] == orig.findAll(~/(.)ocket/) { match, firstLetter -> "$firstLetter > $match" }
-     * </pre>
-     *
-     * @param self    a String
-     * @param pattern the compiled regex Pattern
-     * @param closure will be passed the full match plus each of the capturing groups
-     * @return a List containing all full matches of the regex Pattern within the string, an empty list will be returned if there are no matches
-     * @since 1.6.1
-     */
-    public static <T> List<T> findAll(String self, Pattern pattern, Closure<T> closure) {
-        Matcher matcher = pattern.matcher(self);
-        return collect(matcher, closure);
-    }
-
-    /**
-     * Finds all occurrences of a compiled regular expression Pattern within a CharSequence.
-     *
-     * @param self    a CharSequence
-     * @param pattern the compiled regex Pattern
-     * @param closure will be passed the full match plus each of the capturing groups
-     * @return a List containing all full matches of the regex Pattern within the CharSequence, an empty list will be returned if there are no matches
-     * @see #findAll(String, Pattern, Closure)
-     * @since 1.8.2
-     */
-    public static <T> List<T> findAll(CharSequence self, Pattern pattern, Closure<T> closure) {
-        return findAll(self.toString(), pattern, closure);
-    }
-
-    /**
-     * Replaces all occurrences of a captured group by the result of a closure on that text.
-     * <p/>
-     * <p> For examples,
-     * <pre>
-     *     assert "hellO wOrld" == "hello world".replaceAll("(o)") { it[0].toUpperCase() }
-     * <p/>
-     *     assert "FOOBAR-FOOBAR-" == "foobar-FooBar-".replaceAll("(([fF][oO]{2})[bB]ar)", { Object[] it -> it[0].toUpperCase() })
-     * <p/>
-     *     Here,
-     *          it[0] is the global string of the matched group
-     *          it[1] is the first string in the matched group
-     *          it[2] is the second string in the matched group
-     * <p/>
-     * <p/>
-     *     assert "FOO-FOO-" == "foobar-FooBar-".replaceAll("(([fF][oO]{2})[bB]ar)", { x, y, z -> z.toUpperCase() })
-     * <p/>
-     *     Here,
-     *          x is the global string of the matched group
-     *          y is the first string in the matched group
-     *          z is the second string in the matched group
-     * </pre>
-     * <p>Note that unlike String.replaceAll(String regex, String replacement), where the replacement string
-     * treats '$' and '\' specially (for group substitution), the result of the closure is converted to a string
-     * and that value is used literally for the replacement.</p>
-     *
-     * @param self    a String
-     * @param regex   the capturing regex
-     * @param closure the closure to apply on each captured group
-     * @return a String with replaced content
-     * @throws java.util.regex.PatternSyntaxException if the regular expression's syntax is invalid
-     * @since 1.0
-     * @see java.util.regex.Matcher#quoteReplacement(java.lang.String)
-     * @see #replaceAll(String, Pattern, Closure)
-     */
-    public static String replaceAll(final String self, final String regex, final Closure closure) {
-        return replaceAll(self, Pattern.compile(regex), closure);
-    }
-
-    /**
-     * Replaces all occurrences of a captured group by the result of a closure on that text.
-     *
-     * @param self    a CharSequence
-     * @param regex   the capturing regex
-     * @param closure the closure to apply on each captured group
-     * @return a CharSequence with replaced content
-     * @throws java.util.regex.PatternSyntaxException if the regular expression's syntax is invalid
-     * @since 1.8.2
-     * @see #replaceAll(String, Pattern, Closure)
-     */
-    public static CharSequence replaceAll(final CharSequence self, final CharSequence regex, final Closure closure) {
-        return replaceAll(self.toString(), Pattern.compile(regex.toString()), closure);
-    }
-
-    /**
-     * Replaces each substring of this CharSequence that matches the given
-     * regular expression with the given replacement.
-     *
-     * @param self        a CharSequence
-     * @param regex       the capturing regex
-     * @param replacement the capturing regex
-     * @return a CharSequence with replaced content
-     * @throws java.util.regex.PatternSyntaxException if the regular expression's syntax is invalid
-     * @see String#replaceAll(String, String)
-     * @since 1.8.2
-     */
-    public static CharSequence replaceAll(final CharSequence self, final CharSequence regex, final CharSequence replacement) {
-        return self.toString().replaceAll(regex.toString(), replacement.toString());
-    }
-
-    /**
-     * Replaces the first occurrence of a captured group by the result of a closure call on that text.
-     * <p/>
-     * <p> For example (with some replaceAll variants thrown in for comparison purposes),
-     * <pre>
-     * assert "hellO world" == "hello world".replaceFirst("(o)") { it[0].toUpperCase() } // first match
-     * assert "hellO wOrld" == "hello world".replaceAll("(o)") { it[0].toUpperCase() }   // all matches
-     * <p/>
-     * assert '1-FISH, two fish' == "one fish, two fish".replaceFirst(/([a-z]{3})\s([a-z]{4})/) { [one:1, two:2][it[1]] + '-' + it[2].toUpperCase() }
-     * assert '1-FISH, 2-FISH' == "one fish, two fish".replaceAll(/([a-z]{3})\s([a-z]{4})/) { [one:1, two:2][it[1]] + '-' + it[2].toUpperCase() }
-     * </pre>
-     *
-     * @param self    a String
-     * @param regex   the capturing regex
-     * @param closure the closure to apply on the first captured group
-     * @return a String with replaced content
-     * @throws java.util.regex.PatternSyntaxException if the regular expression's syntax is invalid
-     * @since 1.7.7
-     * @see java.util.regex.Matcher#quoteReplacement(java.lang.String)
-     * @see #replaceFirst(String, Pattern, Closure)
-     */
-    public static String replaceFirst(final String self, final String regex, final Closure closure) {
-        return replaceFirst(self, Pattern.compile(regex), closure);
-    }
-
-    /**
-     * Replaces the first substring of this CharSequence that matches the given
-     * regular expression with the given replacement.
-     *
-     * @param self        a CharSequence
-     * @param regex       the capturing regex
-     * @param replacement the capturing regex
-     * @return a CharSequence with replaced content
-     * @throws java.util.regex.PatternSyntaxException if the regular expression's syntax is invalid
-     * @see String#replaceAll(String, String)
-     * @since 1.8.2
-     */
-    public static String replaceFirst(final CharSequence self, final CharSequence regex, final CharSequence replacement) {
-        return self.toString().replaceFirst(regex.toString(), replacement.toString());
-    }
-
-    /**
-     * Replaces the first occurrence of a captured group by the result of a closure call on that text.
-     *
-     * @param self    a CharSequence
-     * @param regex   the capturing regex
-     * @param closure the closure to apply on the first captured group
-     * @return a CharSequence with replaced content
-     * @throws java.util.regex.PatternSyntaxException if the regular expression's syntax is invalid
-     * @see #replaceFirst(String, String, Closure)
-     * @since 1.8.2
-     */
-    public static String replaceFirst(final CharSequence self, final CharSequence regex, final Closure closure) {
-        return replaceFirst(self.toString(), regex.toString(), closure);
-    }
-
-    /**
-     * Get a replacement corresponding to the matched pattern for {@link org.codehaus.groovy.runtime.DefaultGroovyMethods#replaceAll(String, Pattern, Closure)}.
-     * The closure take parameter:
-     * <ul>
-     * <li>Whole of match if the pattern include no capturing group</li>
-     * <li>Object[] of capturing groups if the closure takes Object[] as parameter</li>
-     * <li>List of capturing groups</li>
-     * </ul>
-     *
-     * @param    matcher the matcher object used for matching
-     * @param    closure specified with replaceAll() to get replacement
-     * @return   replacement correspond replacement for a match
-     */
-    private static String getReplacement(Matcher matcher, Closure closure) {
-        if (!hasGroup(matcher)) {
-            return InvokerHelper.toString(closure.call(matcher.group()));
-        }
-
-        int count = matcher.groupCount();
-        List<String> groups = new ArrayList<String>();
-        for (int i = 0; i <= count; i++) {
-            groups.add(matcher.group(i));
-        }
-
-        if (closure.getParameterTypes().length == 1
-            && closure.getParameterTypes()[0] == Object[].class) {
-            return InvokerHelper.toString(closure.call(groups.toArray()));
-        }
-        return InvokerHelper.toString(closure.call(groups));
-    }
-
-    /**
-     * Replaces all occurrences of a captured group by the result of a closure call on that text.
-     * <p/>
-     * <p> For examples,
-     * <pre>
-     *     assert "hellO wOrld" == "hello world".replaceAll(~"(o)") { it[0].toUpperCase() }
-     * <p/>
-     *     assert "FOOBAR-FOOBAR-" == "foobar-FooBar-".replaceAll(~"(([fF][oO]{2})[bB]ar)", { it[0].toUpperCase() })
-     * <p/>
-     *     Here,
-     *          it[0] is the global string of the matched group
-     *          it[1] is the first string in the matched group
-     *          it[2] is the second string in the matched group
-     * <p/>
-     * <p/>
-     *     assert "FOOBAR-FOOBAR-" == "foobar-FooBar-".replaceAll(~"(([fF][oO]{2})[bB]ar)", { Object[] it -> it[0].toUpperCase() })
-     * <p/>
-     *     Here,
-     *          it[0] is the global string of the matched group
-     *          it[1] is the first string in the matched group
-     *          it[2] is the second string in the matched group
-     * <p/>
-     * <p/>
-     *     assert "FOO-FOO-" == "foobar-FooBar-".replaceAll("(([fF][oO]{2})[bB]ar)", { x, y, z -> z.toUpperCase() })
-     * <p/>
-     *     Here,
-     *          x is the global string of the matched group
-     *          y is the first string in the matched group
-     *          z is the second string in the matched group
-     * </pre>
-     * <p>Note that unlike String.replaceAll(String regex, String replacement), where the replacement string
-     * treats '$' and '\' specially (for group substitution), the result of the closure is converted to a string
-     * and that value is used literally for the replacement.</p>
-     *
-     * @param self    a String
-     * @param pattern the capturing regex Pattern
-     * @param closure the closure to apply on each captured group
-     * @return a String with replaced content
-     * @since 1.6.8
-     * @see java.util.regex.Matcher#quoteReplacement(java.lang.String)
-     */
-    public static String replaceAll(final String self, final Pattern pattern, final Closure closure) {
-        final Matcher matcher = pattern.matcher(self);
-        if (matcher.find()) {
-            final StringBuffer sb = new StringBuffer(self.length() + 16);
-            do {
-                String replacement = getReplacement(matcher, closure);
-                matcher.appendReplacement(sb, Matcher.quoteReplacement(replacement));
-            } while (matcher.find());
-            matcher.appendTail(sb);
-            return sb.toString();
-        } else {
-            return self;
-        }
-    }
-
-    /**
-     * Replaces all occurrences of a captured group by the result of a closure call on that text.
-     *
-     * @param self    a CharSequence
-     * @param pattern the capturing regex Pattern
-     * @param closure the closure to apply on each captured group
-     * @return a CharSequence with replaced content
-     * @since 1.8.2
-     * @see #replaceAll(String, Pattern, Closure)
-     */
-    public static String replaceAll(final CharSequence self, final Pattern pattern, final Closure closure) {
-        return replaceAll(self.toString(), pattern, closure);
-    }
-
-    /**
-     * Replaces the first occurrence of a captured group by the result of a closure call on that text.
-     * <p/>
-     * <p> For example (with some replaceAll variants thrown in for comparison purposes),
-     * <pre>
-     * assert "hellO world" == "hello world".replaceFirst(~"(o)") { it[0].toUpperCase() } // first match
-     * assert "hellO wOrld" == "hello world".replaceAll(~"(o)") { it[0].toUpperCase() }   // all matches
-     * <p/>
-     * assert '1-FISH, two fish' == "one fish, two fish".replaceFirst(~/([a-z]{3})\s([a-z]{4})/) { [one:1, two:2][it[1]] + '-' + it[2].toUpperCase() }
-     * assert '1-FISH, 2-FISH' == "one fish, two fish".replaceAll(~/([a-z]{3})\s([a-z]{4})/) { [one:1, two:2][it[1]] + '-' + it[2].toUpperCase() }
-     * </pre>
-     *
-     * @param self    a String
-     * @param pattern the capturing regex Pattern
-     * @param closure the closure to apply on the first captured group
-     * @return a String with replaced content
-     * @since 1.7.7
-     * @see #replaceAll(String, Pattern, Closure)
-     */
-    public static String replaceFirst(final String self, final Pattern pattern, final Closure closure) {
-        final Matcher matcher = pattern.matcher(self);
-        if (matcher.find()) {
-            final StringBuffer sb = new StringBuffer(self.length() + 16);
-            String replacement = getReplacement(matcher, closure);
-            matcher.appendReplacement(sb, Matcher.quoteReplacement(replacement));
-            matcher.appendTail(sb);
-            return sb.toString();
-        } else {
-            return self;
-        }
-    }
-
-    /**
-     * Replaces the first occurrence of a captured group by the result of a closure call on that text.
-     *
-     * @param self    a CharSequence
-     * @param pattern the capturing regex Pattern
-     * @param closure the closure to apply on the first captured group
-     * @return a CharSequence with replaced content
-     * @see #replaceFirst(String, Pattern, Closure)
-     * @since 1.8.2
-     */
-    public static String replaceFirst(final CharSequence self, final Pattern pattern, final Closure closure) {
-        return replaceFirst(self.toString(), pattern, closure);
-    }
-
-    private static String getPadding(String padding, int length) {
-        if (padding.length() < length) {
-            return multiply(padding, length / padding.length() + 1).substring(0, length);
-        } else {
-            return padding.substring(0, length);
-        }
-    }
-
-    /**
-     * Pad a String to a minimum length specified by <tt>numberOfChars</tt>, adding the supplied padding String as many times as needed to the left.
-     *
-     * If the String is already the same size or bigger than the target <tt>numberOfChars</tt>, then the original String is returned. An example:
-     * <pre>
-     * println 'Numbers:'
-     * [1, 10, 100, 1000].each{ println it.toString().padLeft(5, '*') }
-     * [2, 20, 200, 2000].each{ println it.toString().padLeft(5, '*_') }
-     * </pre>
-     * will produce output like:
-     * <pre>
-     * Numbers:
-     * ****1
-     * ***10
-     * **100
-     * *1000
-     * *_*_2
-     * *_*20
-     * *_200
-     * *2000
-     * </pre>
-     *
-     * @param self          a String object
-     * @param numberOfChars the total minimum number of characters of the resulting string
-     * @param padding       the characters used for padding
-     * @return the String padded to the left
-     * @since 1.0
-     */
-    public static String padLeft(String self, Number numberOfChars, String padding) {
-        int numChars = numberOfChars.intValue();
-        if (numChars <= self.length()) {
-            return self;
-        } else {
-            return getPadding(padding, numChars - self.length()) + self;
-        }
-    }
-
-    /**
-     * Pad a CharSequence to a minimum length specified by <tt>numberOfChars</tt>, adding the supplied padding CharSequence as many times as needed to the left.
-     *
-     * @param self          a CharSequence object
-     * @param numberOfChars the total minimum number of characters of the resulting CharSequence
-     * @param padding       the characters used for padding
-     * @return the CharSequence padded to the left
-     * @see #padLeft(String, Number, String)
-     * @since 1.8.2
-     */
-    public static CharSequence padLeft(CharSequence self, Number numberOfChars, CharSequence padding) {
-        return padLeft(self.toString(), numberOfChars, padding.toString());
-    }
-
-    /**
-     * Pad a String to a minimum length specified by <tt>numberOfChars</tt> by adding the space character to the left as many times as needed.
-     *
-     * If the String is already the same size or bigger than the target <tt>numberOfChars</tt>, then the original String is returned. An example:
-     * <pre>
-     * println 'Numbers:'
-     * [1, 10, 100, 1000].each{ println it.toString().padLeft(5) }
-     * </pre>
-     * will produce output like:
-     * <pre>
-     * Numbers:
-     *     1
-     *    10
-     *   100
-     *  1000
-     * </pre>
-     *
-     * @param self          a String object
-     * @param numberOfChars the total minimum number of characters of the resulting string
-     * @return the String padded to the left
-     * @see #padLeft(String, Number, String)
-     * @since 1.0
-     */
-    public static String padLeft(String self, Number numberOfChars) {
-        return padLeft(self, numberOfChars, " ");
-    }
-
-    /**
-     * Pad a CharSequence to a minimum length specified by <tt>numberOfChars</tt> by adding the space character to the left as many times as needed.
-     *
-     * @param self          a CharSequence object
-     * @param numberOfChars the total minimum number of characters of the resulting CharSequence
-     * @return the CharSequence padded to the left
-     * @see #padLeft(CharSequence, Number, CharSequence)
-     * @since 1.8.2
-     */
-    public static CharSequence padLeft(CharSequence self, Number numberOfChars) {
-        return padLeft(self, numberOfChars, " ");
-    }
-
-    /**
-     * Pad a String to a minimum length specified by <tt>numberOfChars</tt>, adding the supplied padding String as many times as needed to the right.
-     *
-     * If the String is already the same size or bigger than the target <tt>numberOfChars</tt>, then the original String is returned. An example:
-     * <pre>
-     * ['A', 'BB', 'CCC', 'DDDD'].each{ println it.padRight(5, '#') + it.size() }
-     * </pre>
-     * will produce output like:
-     * <pre>
-     * A####1
-     * BB###2
-     * CCC##3
-     * DDDD#4
-     * </pre>
-     *
-     * @param self          a String object
-     * @param numberOfChars the total minimum number of characters of the resulting string
-     * @param padding       the characters used for padding
-     * @return the String padded to the right
-     * @since 1.0
-     */
-    public static String padRight(String self, Number numberOfChars, String padding) {
-        int numChars = numberOfChars.intValue();
-        if (numChars <= self.length()) {
-            return self;
-        } else {
-            return self + getPadding(padding, numChars - self.length());
-        }
-    }
-
-    /**
-     * Pad a CharSequence to a minimum length specified by <tt>numberOfChars</tt>, adding the supplied padding CharSequence as many times as needed to the right.
-     *
-     * @param self          a CharSequence object
-     * @param numberOfChars the total minimum number of characters of the resulting CharSequence
-     * @param padding       the characters used for padding
-     * @return the CharSequence padded to the right
-     * @see #padRight(String, Number, String)
-     * @since 1.8.2
-     */
-    public static CharSequence padRight(CharSequence self, Number numberOfChars, CharSequence padding) {
-        return padRight(self.toString(), numberOfChars, padding.toString());
-    }
-
-    /**
-     * Pad a String to a minimum length specified by <tt>numberOfChars</tt> by adding the space character to the right as many times as needed.
-     *
-     * If the String is already the same size or bigger than the target <tt>numberOfChars</tt>, then the original String is returned. An example:
-     * <pre>
-     * ['A', 'BB', 'CCC', 'DDDD'].each{ println it.padRight(5) + it.size() }
-     * </pre>
-     * will produce output like:
-     * <pre>
-     * A    1
-     * BB   2
-     * CCC  3
-     * DDDD 4
-     * </pre>
-     *
-     * @param self          a String object
-     * @param numberOfChars the total minimum number of characters of the resulting string
-     * @return the String padded to the right
-     * @since 1.0
-     */
-    public static String padRight(String self, Number numberOfChars) {
-        return padRight(self, numberOfChars, " ");
-    }
-
-    /**
-     * Pad a CharSequence to a minimum length specified by <tt>numberOfChars</tt> by adding the space character to the right as many times as needed.
-     *
-     * @param self          a CharSequence object
-     * @param numberOfChars the total minimum number of characters of the resulting string
-     * @return the CharSequence padded to the right
-     * @see #padRight(String, Number)
-     * @since 1.8.2
-     */
-    public static CharSequence padRight(CharSequence self, Number numberOfChars) {
-        return padRight(self.toString(), numberOfChars);
-    }
-
-    /**
-     * Pad a String to a minimum length specified by <tt>numberOfChars</tt>, appending the supplied padding String around the original as many times as needed keeping it centered.
-     *
-     * If the String is already the same size or bigger than the target <tt>numberOfChars</tt>, then the original String is returned. An example:
-     * <pre>
-     * ['A', 'BB', 'CCC', 'DDDD'].each{ println '|' + it.center(6, '+') + '|' }
-     * </pre>
-     * will produce output like:
-     * <pre>
-     * |++A+++|
-     * |++BB++|
-     * |+CCC++|
-     * |+DDDD+|
-     * </pre>
-     *
-     * @param self          a String object
-     * @param numberOfChars the total minimum number of characters of the resulting string
-     * @param padding       the characters used for padding
-     * @return the String centered with padded characters around it
-     * @since 1.0
-     */
-    public static String center(String self, Number numberOfChars, String padding) {
-        int numChars = numberOfChars.intValue();
-        if (numChars <= self.length()) {
-            return self;
-        } else {
-            int charsToAdd = numChars - self.length();
-            String semiPad = charsToAdd % 2 == 1 ?
-                    getPadding(padding, charsToAdd / 2 + 1) :
-                    getPadding(padding, charsToAdd / 2);
-            if (charsToAdd % 2 == 0)
-                return semiPad + self + semiPad;
-            else
-                return semiPad.substring(0, charsToAdd / 2) + self + semiPad;
-        }
-    }
-
-    /**
-     * Pad a CharSequence to a minimum length specified by <tt>numberOfChars</tt>, appending the supplied padding CharSequence around the original as many times as needed keeping it centered.
-     *
-     * @param self          a CharSequence object
-     * @param numberOfChars the total minimum number of characters of the resulting CharSequence
-     * @param padding       the characters used for padding
-     * @return the CharSequence centered with padded characters around it
-     * @see #center(String, Number, String)
-     * @since 1.8.2
-     */
-    public static CharSequence center(CharSequence self, Number numberOfChars, CharSequence padding) {
-        return center(self.toString(), numberOfChars, padding.toString());
-    }
-
-    /**
-     * Pad a String to a minimum length specified by <tt>numberOfChars</tt> by adding the space character around it as many times as needed so that it remains centered.
-     *
-     * If the String is already the same size or bigger than the target <tt>numberOfChars</tt>, then the original String is returned. An example:
-     * <pre>
-     * ['A', 'BB', 'CCC', 'DDDD'].each{ println '|' + it.center(6) + '|' }
-     * </pre>
-     * will produce output like:
-     * <pre>
-     * |  A   |
-     * |  BB  |
-     * | CCC  |
-     * | DDDD |
-     * </pre>
-     *
-     * @param self          a String object
-     * @param numberOfChars the total minimum number of characters of the resulting string
-     * @return the String centered with padded characters around it
-     * @see #center(String, Number, String)
-     * @since 1.0
-     */
-    public static String center(String self, Number numberOfChars) {
-        return center(self, numberOfChars, " ");
-    }
-
-    /**
-     * Pad a CharSequence to a minimum length specified by <tt>numberOfChars</tt> by adding the space character around it as many times as needed so that it remains centered.
-     *
-     * @param self          a CharSequence object
-     * @param numberOfChars the total minimum number of characters of the resulting CharSequence
-     * @return the CharSequence centered with padded characters around it
-     * @see #center(String, Number)
-     * @since 1.8.2
-     */
-    public static CharSequence center(CharSequence self, Number numberOfChars) {
-        return center(self.toString(), numberOfChars);
-    }
-
-    /**
-     * Support the subscript operator, e.g.&nbsp;matcher[index], for a regex Matcher.
-     * <p/>
-     * For an example using no group match,
-     * <pre>
-     *    def p = /ab[d|f]/
-     *    def m = "abcabdabeabf" =~ p
-     *    assert 2 == m.count
-     *    assert 2 == m.size() // synonym for m.getCount()
-     *    assert ! m.hasGroup()
-     *    assert 0 == m.groupCount()
-     *    def matches = ["abd", "abf"]
-     *    for (i in 0..&lt;m.count) {
-     *    &nbsp;&nbsp;assert m[i] == matches[i]
-     *    }
-     * </pre>
-     * <p/>
-     * For an example using group matches,
-     * <pre>
-     *    def p = /(?:ab([c|d|e|f]))/
-     *    def m = "abcabdabeabf" =~ p
-     *    assert 4 == m.count
-     *    assert m.hasGroup()
-     *    assert 1 == m.groupCount()
-     *    def matches = [["abc", "c"], ["abd", "d"], ["abe", "e"], ["abf", "f"]]
-     *    for (i in 0..&lt;m.count) {
-     *    &nbsp;&nbsp;assert m[i] == matches[i]
-     *    }
-     * </pre>
-     * <p/>
-     * For another example using group matches,
-     * <pre>
-     *    def m = "abcabdabeabfabxyzabx" =~ /(?:ab([d|x-z]+))/
-     *    assert 3 == m.count
-     *    assert m.hasGroup()
-     *    assert 1 == m.groupCount()
-     *    def matches = [["abd", "d"], ["abxyz", "xyz"], ["abx", "x"]]
-     *    for (i in 0..&lt;m.count) {
-     *    &nbsp;&nbsp;assert m[i] == matches[i]
-     *    }
-     * </pre>
-     *
-     * @param matcher a Matcher
-     * @param idx     an index
-     * @return object a matched String if no groups matched, list of matched groups otherwise.
-     * @since 1.0
-     */
-    public static Object getAt(Matcher matcher, int idx) {
-        try {
-            int count = getCount(matcher);
-            if (idx < -count || idx >= count) {
-                throw new IndexOutOfBoundsException("index is out of range " + (-count) + ".." + (count - 1) + " (index = " + idx + ")");
-            }
-            idx = normaliseIndex(idx, count);
-
-            Iterator iter = iterator(matcher);
-            Object result = null;
-            for (int i = 0; i <= idx; i++) {
-                result = iter.next();
-            }
-            return result;
-        }
-        catch (IllegalStateException ex) {
-            return null;
-        }
-    }
-
-    /**
-     * Set the position of the given Matcher to the given index.
-     *
-     * @param matcher a Matcher
-     * @param idx     the index number
-     * @since 1.0
-     */
-    public static void setIndex(Matcher matcher, int idx) {
-        int count = getCount(matcher);
-        if (idx < -count || idx >= count) {
-            throw new IndexOutOfBoundsException("index is out of range " + (-count) + ".." + (count - 1) + " (index = " + idx + ")");
-        }
-        if (idx == 0) {
-            matcher.reset();
-        } else if (idx > 0) {
-            matcher.reset();
-            for (int i = 0; i < idx; i++) {
-                matcher.find();
-            }
-        } else if (idx < 0) {
-            matcher.reset();
-            idx += getCount(matcher);
-            for (int i = 0; i < idx; i++) {
-                matcher.find();
-            }
-        }
-    }
-
-    /**
-     * Find the number of Strings matched to the given Matcher.
-     *
-     * @param matcher a Matcher
-     * @return int  the number of Strings matched to the given matcher.
-     * @since 1.0
-     */
-    public static int getCount(Matcher matcher) {
-        int counter = 0;
-        matcher.reset();
-        while (matcher.find()) {
-            counter++;
-        }
-        return counter;
-    }
-
-    /**
-     * Check whether a Matcher contains a group or not.
-     *
-     * @param matcher a Matcher
-     * @return boolean  <code>true</code> if matcher contains at least one group.
-     * @since 1.0
-     */
-    public static boolean hasGroup(Matcher matcher) {
-        return matcher.groupCount() > 0;
     }
 
     /**
@@ -6363,65 +4579,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             }
         }
         return answer;
-    }
-
-    /**
-     * Select a List of characters from a CharSequence using a Collection
-     * to identify the indices to be selected.
-     *
-     * @param self    a CharSequence
-     * @param indices a Collection of indices
-     * @return a CharSequence consisting of the characters at the given indices
-     * @since 1.0
-     */
-    public static CharSequence getAt(CharSequence self, Collection indices) {
-        StringBuilder answer = new StringBuilder();
-        for (Object value : indices) {
-            if (value instanceof Range) {
-                answer.append(getAt(self, (Range) value));
-            } else if (value instanceof Collection) {
-                answer.append(getAt(self, (Collection) value));
-            } else {
-                int idx = DefaultTypeTransformation.intUnbox(value);
-                answer.append(getAt(self, idx));
-            }
-        }
-        return answer.toString();
-    }
-
-    /**
-     * Select a List of characters from a String using a Collection
-     * to identify the indices to be selected.
-     *
-     * @param self    a String
-     * @param indices a Collection of indices
-     * @return a String consisting of the characters at the given indices
-     * @since 1.0
-     */
-    public static String getAt(String self, Collection indices) {
-        return (String) getAt((CharSequence) self, indices);
-    }
-
-    /**
-     * Select a List of values from a Matcher using a Collection
-     * to identify the indices to be selected.
-     *
-     * @param self    a Matcher
-     * @param indices a Collection of indices
-     * @return a String of the values at the given indices
-     * @since 1.6.0
-     */
-    public static List getAt(Matcher self, Collection indices) {
-        List result = new ArrayList();
-        for (Object value : indices) {
-            if (value instanceof Range) {
-                result.addAll(getAt(self, (Range) value));
-            } else {
-                int idx = DefaultTypeTransformation.intUnbox(value);
-                result.add(getAt(self, idx));
-            }
-        }
-        return result;
     }
 
     /**
@@ -6621,34 +4778,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             }
             self.add(idx, value);
         }
-    }
-
-
-    /**
-     * Support the range subscript operator for StringBuffer.  Index values are
-     * treated as characters within the buffer.
-     *
-     * @param self  a StringBuffer
-     * @param range a Range
-     * @param value the object that's toString() will be inserted
-     * @since 1.0
-     */
-    public static void putAt(StringBuffer self, IntRange range, Object value) {
-        RangeInfo info = subListBorders(self.length(), range);
-        self.replace(info.from, info.to, value.toString());
-    }
-
-    /**
-     * Support the range subscript operator for StringBuffer.
-     *
-     * @param self  a StringBuffer
-     * @param range a Range
-     * @param value the object that's toString() will be inserted
-     * @since 1.0
-     */
-    public static void putAt(StringBuffer self, EmptyRange range, Object value) {
-        RangeInfo info = subListBorders(self.length(), range);
-        self.replace(info.from, info.to, value.toString());
     }
 
     /**
@@ -8028,7 +6157,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         }
         return ret ;
     }
-
+    
     /**
      * Drops the given number of elements from the head of this iterator if they are available.
      * The original iterator is stepped along by <code>num</code> elements.
@@ -8054,32 +6183,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             self.next();
         }
         return self ;
-    }
-
-    /**
-     * Drops the given number of chars from the head of this CharSequence
-     * if they are available.
-     * <pre class="groovyTestCase">
-     *     def text = "Groovy"
-     *     assert text.drop( 0 ) == 'Groovy'
-     *     assert text.drop( 2 ) == 'oovy'
-     *     assert text.drop( 7 ) == ''
-     * </pre>
-     *
-     * @param self the original CharSequence
-     * @param num the number of characters to drop from this iterator
-     * @return a CharSequence consisting of all characters except the first <code>num</code> ones,
-     *         or else an empty String, if this CharSequence has less than <code>num</code> characters.
-     * @since 1.8.1
-     */
-    public static CharSequence drop(CharSequence self, int num) {
-        if( num <= 0 ) {
-            return self ;
-        }
-        if( self.length() <= num ) {
-            return self.subSequence( 0, 0 ) ;
-        }
-        return self.subSequence( num, self.length() ) ;
     }
 
     /**
@@ -8122,18 +6225,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static boolean asBoolean(Boolean bool) {
         return bool;
-    }
-
-    /**
-     * Coerce a Matcher instance to a boolean value.
-     *
-     * @param matcher the matcher
-     * @return the boolean value
-     * @since 1.7.0
-     */
-    public static boolean asBoolean(Matcher matcher) {
-        RegexSupport.setLastMatcher(matcher);
-        return matcher.find();
     }
 
     /**
@@ -8188,19 +6279,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static boolean asBoolean(Enumeration enumeration) {
         return enumeration.hasMoreElements();
-    }
-
-    /**
-     * Coerce a string (an instance of CharSequence) to a boolean value.
-     * A string is coerced to false if it is of length 0,
-     * and to true otherwise.
-     *
-     * @param string the character sequence
-     * @return the boolean value
-     * @since 1.7.0
-     */
-    public static boolean asBoolean(CharSequence string) {
-        return string.length() > 0;
     }
 
     /**
@@ -8387,7 +6465,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             stack.addAll(col);
             return (T) stack;
         }
-
+        
         if (clazz!=String[].class && ReflectionCache.isArray(clazz)) {
             try {
                 return (T) asArrayType(col, clazz);
@@ -9481,84 +7559,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Overloads the left shift operator to provide an easy way to append multiple
-     * objects as string representations to a String.
-     *
-     * @param self  a String
-     * @param value an Object
-     * @return a StringBuffer built from this string
-     * @since 1.0
-     */
-    public static StringBuffer leftShift(String self, Object value) {
-        return new StringBuffer(self).append(value);
-    }
-
-    /**
-     * Overloads the left shift operator to provide an easy way to append multiple
-     * objects as string representations to a CharSequence.
-     *
-     * @param self  a CharSequence
-     * @param value an Object
-     * @return a StringBuilder built from this CharSequence
-     * @since 1.8.2
-     */
-    public static StringBuilder leftShift(CharSequence self, Object value) {
-        return new StringBuilder(self).append(value);
-    }
-
-    /**
-     * Overloads the left shift operator to provide syntactic sugar for appending to a StringBuilder.
-     *
-     * @param self  a StringBuilder
-     * @param value an Object
-     * @return the original StringBuilder
-     * @since 1.8.2
-     */
-    public static StringBuilder leftShift(StringBuilder self, Object value) {
-        self.append(value);
-        return self;
-    }
-
-    protected static StringWriter createStringWriter(String self) {
-        StringWriter answer = new StringWriter();
-        answer.write(self);
-        return answer;
-    }
-
-    protected static StringBufferWriter createStringBufferWriter(StringBuffer self) {
-        return new StringBufferWriter(self);
-    }
-
-    /**
-     * Overloads the left shift operator to provide an easy way to append multiple
-     * objects as string representations to a StringBuffer.
-     *
-     * @param self  a StringBuffer
-     * @param value a value to append
-     * @return the StringBuffer on which this operation was invoked
-     * @since 1.0
-     */
-    public static StringBuffer leftShift(StringBuffer self, Object value) {
-        self.append(value);
-        return self;
-    }
-
-    /**
-     * Overloads the left shift operator to provide a mechanism to append
-     * values to a writer.
-     *
-     * @param self  a Writer
-     * @param value a value to append
-     * @return the writer on which this operation was invoked
-     * @throws IOException if an I/O error occurs.
-     * @since 1.0
-     */
-    public static Writer leftShift(Writer self, Object value) throws IOException {
-        InvokerHelper.write(self, value);
-        return self;
-    }
-
-    /**
      * Implementation of the left shift operator for integral types.  Non integral
      * Number types throw UnsupportedOperationException.
      *
@@ -9595,86 +7595,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static Number rightShiftUnsigned(Number self, Number operand) {
         return NumberMath.rightShiftUnsigned(self, operand);
-    }
-
-    /**
-     * A helper method so that dynamic dispatch of the writer.write(object) method
-     * will always use the more efficient Writable.writeTo(writer) mechanism if the
-     * object implements the Writable interface.
-     *
-     * @param self     a Writer
-     * @param writable an object implementing the Writable interface
-     * @throws IOException if an I/O error occurs.
-     * @since 1.0
-     */
-    public static void write(Writer self, Writable writable) throws IOException {
-        writable.writeTo(self);
-    }
-
-    /**
-     * Overloads the leftShift operator to provide an append mechanism to add values to a stream.
-     *
-     * @param self  an OutputStream
-     * @param value a value to append
-     * @return a Writer
-     * @throws IOException if an I/O error occurs.
-     * @since 1.0
-     */
-    public static Writer leftShift(OutputStream self, Object value) throws IOException {
-        OutputStreamWriter writer = new FlushingStreamWriter(self);
-        leftShift(writer, value);
-        return writer;
-    }
-
-    /**
-     * Overloads the leftShift operator to add objects to an ObjectOutputStream.
-     *
-     * @param self  an ObjectOutputStream
-     * @param value an object to write to the stream
-     * @throws IOException if an I/O error occurs.
-     * @since 1.5.0
-     */
-    public static void leftShift(ObjectOutputStream self, Object value) throws IOException {
-        self.writeObject(value);
-    }
-
-    /**
-     * Pipe an InputStream into an OutputStream for efficient stream copying.
-     *
-     * @param self stream on which to write
-     * @param in   stream to read from
-     * @return the outputstream itself
-     * @throws IOException if an I/O error occurs.
-     * @since 1.0
-     */
-    public static OutputStream leftShift(OutputStream self, InputStream in) throws IOException {
-        byte[] buf = new byte[1024];
-        while (true) {
-            int count = in.read(buf, 0, buf.length);
-            if (count == -1) break;
-            if (count == 0) {
-                Thread.yield();
-                continue;
-            }
-            self.write(buf, 0, count);
-        }
-        self.flush();
-        return self;
-    }
-
-    /**
-     * Overloads the leftShift operator to provide an append mechanism to add bytes to a stream.
-     *
-     * @param self  an OutputStream
-     * @param value a value to append
-     * @return an OutputStream
-     * @throws IOException if an I/O error occurs.
-     * @since 1.0
-     */
-    public static OutputStream leftShift(OutputStream self, byte[] value) throws IOException {
-        self.write(value);
-        self.flush();
-        return self;
     }
 
     // Primitive type array methods
@@ -10656,40 +8576,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return newValue;
     }
 
-    // String methods
-    //-------------------------------------------------------------------------
-
-    /**
-     * Converts the given string into a Character object
-     * using the first character in the string.
-     *
-     * @param self a String
-     * @return the first Character
-     * @since 1.0
-     */
-    public static Character toCharacter(String self) {
-        return self.charAt(0);
-    }
-
-    /**
-     * Converts the given string into a Boolean object.
-     * If the trimmed string is "true", "y" or "1" (ignoring case)
-     * then the result is true otherwise it is false.
-     *
-     * @param self a String
-     * @return The Boolean value
-     * @since 1.0
-     */
-    public static Boolean toBoolean(String self) {
-        final String trimmed = self.trim();
-
-        if ("true".equalsIgnoreCase(trimmed) || "y".equalsIgnoreCase(trimmed) || "1".equals(trimmed)) {
-            return Boolean.TRUE;
-        } else {
-            return Boolean.FALSE;
-        }
-    }
-
     /**
      * Identity conversion which returns Boolean.TRUE for a true Boolean and Boolean.FALSE for a false Boolean.
      *
@@ -10699,487 +8585,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static Boolean toBoolean(Boolean self) {
         return self;
-    }
-
-    /**
-     * Convenience method to split a string (with whitespace as delimiter)
-     * Like tokenize, but returns an Array of Strings instead of a List
-     *
-     * @param self the string to split
-     * @return String[] result of split
-     * @since 1.5.0
-     */
-    public static String[] split(String self) {
-        StringTokenizer st = new StringTokenizer(self);
-        String[] strings = new String[st.countTokens()];
-        for (int i = 0; i < strings.length; i++) {
-            strings[i] = st.nextToken();
-        }
-        return strings;
-    }
-
-    /**
-     * Convenience method to split a CharSequence (with whitespace as delimiter).
-     * Similar to tokenize, but returns an Array of CharSequence instead of a List.
-     *
-     * @param self the CharSequence to split
-     * @return CharSequence[] result of split
-     * @see #split(String)
-     * @since 1.8.2
-     */
-    public static CharSequence[] split(CharSequence self) {
-        return split(self.toString());
-    }
-
-    /**
-     * Convenience method to capitalize the first letter of a string
-     * (typically the first letter of a word). Example usage:
-     * <pre class="groovyTestCase">
-     * assert 'h'.capitalize() == 'H'
-     * assert 'hello'.capitalize() == 'Hello'
-     * assert 'hello world'.capitalize() == 'Hello world'
-     * assert 'Hello World' ==
-     *     'hello world'.split(' ').collect{ it.capitalize() }.join(' ')
-     * </pre>
-     *
-     * @param self The string to capitalize
-     * @return The capitalized String
-     * @since 1.7.3
-     */
-    public static String capitalize(String self) {
-        if (self == null || self.length() == 0) return self;
-        return Character.toUpperCase(self.charAt(0)) + self.substring(1);
-    }
-
-    /**
-     * Convenience method to capitalize the first letter of a CharSequence.
-     *
-     * @param self The CharSequence to capitalize
-     * @return The capitalized CharSequence
-     * @see #capitalize(String)
-     * @since 1.8.2
-     */
-    public static CharSequence capitalize(CharSequence self) {
-        return capitalize(self.toString());
-    }
-
-    /**
-     * Expands all tabs into spaces with tabStops of size 8.
-     *
-     * @param self A String to expand
-     * @return The expanded String
-     * @since 1.7.3
-     * @see #expand(java.lang.String, int)
-     */
-    public static String expand(String self) {
-        return expand(self, 8);
-    }
-
-    /**
-     * Expands all tabs into spaces with tabStops of size 8.
-     *
-     * @param self A CharSequence to expand
-     * @return The expanded CharSequence
-     * @see #expand(java.lang.String)
-     * @since 1.8.2
-     */
-    public static CharSequence expand(CharSequence self) {
-        return expand(self.toString(), 8);
-    }
-
-    /**
-     * Expands all tabs into spaces. If the String has multiple
-     * lines, expand each line - restarting tab stops at the start
-     * of each line.
-     *
-     * @param self A String to expand
-     * @param tabStop The number of spaces a tab represents
-     * @return The expanded String
-     * @since 1.7.3
-     */
-    public static String expand(String self, int tabStop) {
-        if (self.length() == 0) return self;
-        try {
-            StringBuilder builder = new StringBuilder();
-            for (String line : readLines(self)) {
-                builder.append(expandLine(line, tabStop));
-                builder.append("\n");
-            }
-            // remove the normalized ending line ending if it was not present
-            if (!self.endsWith("\n")) {
-                builder.deleteCharAt(builder.length() - 1);
-            }
-            return builder.toString();
-        } catch (IOException e) {
-            /* ignore */
-        }
-        return self;
-    }
-
-    /**
-     * Expands all tabs into spaces. If the CharSequence has multiple
-     * lines, expand each line - restarting tab stops at the start
-     * of each line.
-     *
-     * @param self A CharSequence to expand
-     * @param tabStop The number of spaces a tab represents
-     * @return The expanded CharSequence
-     * @see #expand(String, int)
-     * @since 1.8.2
-     */
-    public static CharSequence expand(CharSequence self, int tabStop) {
-        return expand(self.toString(), tabStop);
-    }
-
-    /**
-     * Expands all tabs into spaces. Assumes the String represents a single line of text.
-     *
-     * @param self A line to expand
-     * @param tabStop The number of spaces a tab represents
-     * @return The expanded String
-     * @since 1.7.3
-     */
-    public static String expandLine(String self, int tabStop) {
-        int index;
-        while ((index = self.indexOf('\t')) != -1) {
-            StringBuilder builder = new StringBuilder(self);
-            int count = tabStop - index % tabStop;
-            builder.deleteCharAt(index);
-            for (int i = 0; i < count; i++) builder.insert(index, " ");
-            self = builder.toString();
-        }
-        return self;
-    }
-
-    /**
-     * Expands all tabs into spaces. Assumes the CharSequence represents a single line of text.
-     *
-     * @param self A line to expand
-     * @param tabStop The number of spaces a tab represents
-     * @return The expanded CharSequence
-     * @see #expandLine(String, int)
-     * @since 1.8.2
-     */
-    public static CharSequence expandLine(CharSequence self, int tabStop) {
-        return expandLine(self.toString(), tabStop);
-    }
-
-    /**
-     * Replaces sequences of whitespaces with tabs using tabStops of size 8.
-     *
-     * @param self A String to unexpand
-     * @return The unexpanded String
-     * @since 1.7.3
-     * @see #unexpand(java.lang.String, int)
-     */
-    public static String unexpand(String self) {
-        return unexpand(self, 8);
-    }
-
-    /**
-     * Replaces sequences of whitespaces with tabs using tabStops of size 8.
-     *
-     * @param self A CharSequence to unexpand
-     * @return The unexpanded CharSequence
-     * @see #unexpand(java.lang.String)
-     * @since 1.8.2
-     */
-    public static CharSequence unexpand(CharSequence self) {
-        return unexpand(self.toString());
-    }
-
-    /**
-     * Replaces sequences of whitespaces with tabs.
-     *
-     * @param self A String to unexpand
-     * @param tabStop The number of spaces a tab represents
-     * @return The unexpanded String
-     * @since 1.7.3
-     */
-    public static String unexpand(String self, int tabStop) {
-        if (self.length() == 0) return self;
-        try {
-            StringBuilder builder = new StringBuilder();
-            for (String line : readLines(self)) {
-                builder.append(unexpandLine(line, tabStop));
-                builder.append("\n");
-            }
-            // remove the normalized ending line ending if it was not present
-            if (!self.endsWith("\n")) {
-                builder.deleteCharAt(builder.length() - 1);
-            }
-            return builder.toString();
-        } catch (IOException e) {
-            /* ignore */
-        }
-        return self;
-    }
-
-    /**
-     * Replaces sequences of whitespaces with tabs.
-     *
-     * @param self A CharSequence to unexpand
-     * @param tabStop The number of spaces a tab represents
-     * @return The unexpanded CharSequence
-     * @see #unexpand(String, int)
-     * @since 1.8.2
-     */
-    public static CharSequence unexpand(CharSequence self, int tabStop) {
-        return unexpand(self.toString(), tabStop);
-    }
-
-    /**
-     * Replaces sequences of whitespaces with tabs within a line.
-     *
-     * @param self A line to unexpand
-     * @param tabStop The number of spaces a tab represents
-     * @return The unexpanded String
-     * @since 1.7.3
-     */
-    public static String unexpandLine(String self, int tabStop) {
-        StringBuilder builder = new StringBuilder(self);
-        int index = 0;
-        while (index + tabStop < builder.length()) {
-            // cut original string in tabstop-length pieces
-            String piece = builder.substring(index, index + tabStop);
-            // count trailing whitespace characters
-            int count = 0;
-            while ((count < tabStop) && (Character.isWhitespace(piece.charAt(tabStop - (count + 1)))))
-                count++;
-            // replace if whitespace was found
-            if (count > 0) {
-                piece = piece.substring(0, tabStop - count) + '\t';
-                builder.replace(index, index + tabStop, piece);
-                index = index + tabStop - (count - 1);
-            } else
-                index = index + tabStop;
-        }
-        return builder.toString();
-    }
-
-    /**
-     * Replaces sequences of whitespaces with tabs within a line.
-     *
-     * @param self A line to unexpand
-     * @param tabStop The number of spaces a tab represents
-     * @return The unexpanded CharSequence
-     * @see #unexpandLine(String, int)
-     * @since 1.8.2
-     */
-    public static CharSequence unexpandLine(CharSequence self, int tabStop) {
-        return unexpandLine(self.toString(), tabStop);
-    }
-
-    /**
-     * Convenience method to split a GString (with whitespace as delimiter).
-     *
-     * @param self the GString to split
-     * @return String[] result of split
-     * @see #split(java.lang.String)
-     * @since 1.6.1
-     */
-    public static String[] split(GString self) {
-        return split(self.toString());
-    }
-
-    /**
-     * Tokenize a String based on the given string delimiter.
-     *
-     * @param self  a String
-     * @param token the delimiter
-     * @return a List of tokens
-     * @see java.util.StringTokenizer#StringTokenizer(java.lang.String, java.lang.String)
-     * @since 1.0
-     */
-    @SuppressWarnings("unchecked")
-    public static List<String> tokenize(String self, String token) {
-        return InvokerHelper.asList(new StringTokenizer(self, token));
-    }
-
-    /**
-     * Tokenize a CharSequence based on the given CharSequence delimiter.
-     *
-     * @param self  a CharSequence
-     * @param token the delimiter
-     * @return a List of tokens
-     * @see #tokenize(String, String)
-     * @since 1.8.2
-     */
-    public static List<CharSequence> tokenize(CharSequence self, CharSequence token) {
-        return new ArrayList<CharSequence>(tokenize(self.toString(), token.toString()));
-    }
-
-    /**
-     * Tokenize a String based on the given character delimiter.
-     * For example:
-     * <pre class="groovyTestCase">
-     * char pathSep = ':'
-     * assert "/tmp:/usr".tokenize(pathSep) == ["/tmp", "/usr"]
-     * </pre>
-     *
-     * @param self  a String
-     * @param token the delimiter
-     * @return a List of tokens
-     * @see java.util.StringTokenizer#StringTokenizer(java.lang.String, java.lang.String)
-     * @since 1.7.2
-     */
-    public static List<String> tokenize(String self, Character token) {
-        return tokenize(self, token.toString());
-    }
-
-    /**
-     * Tokenize a CharSequence based on the given character delimiter.
-     *
-     * @param self  a CharSequence
-     * @param token the delimiter
-     * @return a List of tokens
-     * @see #tokenize(String, Character)
-     * @since 1.8.2
-     */
-    public static List<CharSequence> tokenize(CharSequence self, Character token) {
-        return tokenize(self, token.toString());
-    }
-
-    /**
-     * Tokenize a String (with a whitespace as the delimiter).
-     *
-     * @param self a String
-     * @return a List of tokens
-     * @see java.util.StringTokenizer#StringTokenizer(java.lang.String)
-     * @since 1.0
-     */
-    @SuppressWarnings("unchecked")
-    public static List<String> tokenize(String self) {
-        return InvokerHelper.asList(new StringTokenizer(self));
-    }
-
-    /**
-     * Tokenize a CharSequence (with a whitespace as the delimiter).
-     *
-     * @param self a CharSequence
-     * @return a List of tokens
-     * @see #tokenize(String)
-     * @since 1.8.2
-     */
-    public static List<CharSequence> tokenize(CharSequence self) {
-        return new ArrayList<CharSequence>(tokenize(self.toString()));
-    }
-
-    /**
-     * Appends the String representation of the given operand to this string.
-     *
-     * @param left  a String
-     * @param value any Object
-     * @return the new string with the object appended
-     * @since 1.0
-     */
-    public static String plus(String left, Object value) {
-        return left + toString(value);
-    }
-
-    /**
-     * Appends the String representation of the given operand to this string.
-     *
-     * @param left  a CharSequence
-     * @param value any Object
-     * @return the new CharSequence with the object appended
-     * @since 1.8.2
-     */
-    public static CharSequence plus(CharSequence left, Object value) {
-        return left + toString(value);
-    }
-
-    /**
-     * Appends a String to the string representation of this number.
-     *
-     * @param value a Number
-     * @param right a String
-     * @return a String
-     * @since 1.0
-     */
-    public static String plus(Number value, String right) {
-        return toString(value) + right;
-    }
-
-    /**
-     * Appends a String to this StringBuffer.
-     *
-     * @param left  a StringBuffer
-     * @param value a String
-     * @return a String
-     * @since 1.0
-     */
-    public static String plus(StringBuffer left, String value) {
-        return left + value;
-    }
-
-    /**
-     * Remove a part of a String. This replaces the first occurrence
-     * of target within self with '' and returns the result. If
-     * target is a regex Pattern, the first occurrence of that
-     * pattern will be removed (using regex matching), otherwise
-     * the first occurrence of target.toString() will be removed.
-     *
-     * @param self   a String
-     * @param target an object representing the part to remove
-     * @return a String minus the part to be removed
-     * @since 1.0
-     */
-    public static String minus(String self, Object target) {
-        if (target instanceof Pattern) {
-            return ((Pattern)target).matcher(self).replaceFirst("");
-        }
-        String text = toString(target);
-        int index = self.indexOf(text);
-        if (index == -1) return self;
-        int end = index + text.length();
-        if (self.length() > end) {
-            return self.substring(0, index) + self.substring(end);
-        }
-        return self.substring(0, index);
-    }
-
-    /**
-     * Remove a part of a CharSequence by replacing the first occurrence
-     * of target within self with '' and returns the result.
-     *
-     * @param self   a CharSequence
-     * @param target an object representing the part to remove
-     * @return a CharSequence minus the part to be removed
-     * @see #minus(String, Object)
-     * @since 1.8.2
-     */
-    public static CharSequence minus(CharSequence self, Object target) {
-        return minus(self.toString(), target);
-    }
-
-    /**
-     * Provide an implementation of contains() like
-     * {@link java.util.Collection#contains(java.lang.Object)} to make Strings more polymorphic.
-     * This method is not required on JDK 1.5 onwards
-     *
-     * @param self a String
-     * @param text a String to look for
-     * @return true if this string contains the given text
-     * @since 1.0
-     */
-    public static boolean contains(String self, String text) {
-        int idx = self.indexOf(text);
-        return idx >= 0;
-    }
-
-    /**
-     * Provide an implementation of contains() like
-     * {@link java.util.Collection#contains(java.lang.Object)} to make CharSequences more polymorphic.
-     *
-     * @param self a CharSequence
-     * @param text the CharSequence to look for
-     * @return true if this CharSequence contains the given text
-     * @see #contains(String, String)
-     * @since 1.8.2
-     */
-    public static boolean contains(CharSequence self, CharSequence text) {
-        return contains(self.toString(), text.toString());
     }
 
     /**
@@ -11315,356 +8720,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             if (DefaultTypeTransformation.compareEqual(value, next)) return true;
         }
         return false;
-    }
-
-    /**
-     * Count the number of occurrences of a substring.
-     *
-     * @param self a String
-     * @param text a substring
-     * @return the number of occurrences of the given string inside this String
-     * @since 1.0
-     */
-    public static int count(String self, String text) {
-        int answer = 0;
-        for (int idx = 0; true; idx++) {
-            idx = self.indexOf(text, idx);
-            if (idx >= 0) {
-                ++answer;
-            } else {
-                break;
-            }
-        }
-        return answer;
-    }
-
-    /**
-     * Count the number of occurrences of a sub CharSequence.
-     *
-     * @param self a CharSequence
-     * @param text a sub CharSequence
-     * @return the number of occurrences of the given CharSequence inside this CharSequence
-     * @see #count(String, String)
-     * @since 1.8.2
-     */
-    public static int count(CharSequence self, CharSequence text) {
-        return count(self.toString(), text.toString());
-    }
-
-    /**
-     * This method is called by the ++ operator for the class String.
-     * It increments the last character in the given string. If the
-     * character in the string is Character.MAX_VALUE a Character.MIN_VALUE
-     * will be appended. The empty string is incremented to a string
-     * consisting of the character Character.MIN_VALUE.
-     *
-     * @param self a String
-     * @return an incremented String
-     * @since 1.0
-     */
-    public static String next(String self) {
-        StringBuilder buffer = new StringBuilder(self);
-        if (buffer.length() == 0) {
-            buffer.append(Character.MIN_VALUE);
-        } else {
-            char last = buffer.charAt(buffer.length() - 1);
-            if (last == Character.MAX_VALUE) {
-                buffer.append(Character.MIN_VALUE);
-            } else {
-                char next = last;
-                next++;
-                buffer.setCharAt(buffer.length() - 1, next);
-            }
-        }
-        return buffer.toString();
-    }
-
-    /**
-     * This method is called by the ++ operator for the class CharSequence.
-     *
-     * @param self a CharSequence
-     * @return an incremented CharSequence
-     * @see #next(String)
-     * @since 1.8.2
-     */
-    public static CharSequence next(CharSequence self) {
-        return next(self.toString());
-    }
-
-    /**
-     * This method is called by the -- operator for the class String.
-     * It decrements the last character in the given string. If the
-     * character in the string is Character.MIN_VALUE it will be deleted.
-     * The empty string can't be decremented.
-     *
-     * @param self a String
-     * @return a String with a decremented digit at the end
-     * @since 1.0
-     */
-    public static String previous(String self) {
-        StringBuilder buffer = new StringBuilder(self);
-        if (buffer.length() == 0) throw new IllegalArgumentException("the string is empty");
-        char last = buffer.charAt(buffer.length() - 1);
-        if (last == Character.MIN_VALUE) {
-            buffer.deleteCharAt(buffer.length() - 1);
-        } else {
-            char next = last;
-            next--;
-            buffer.setCharAt(buffer.length() - 1, next);
-        }
-        return buffer.toString();
-    }
-
-    /**
-     * This method is called by the -- operator for the class CharSequence.
-     *
-     * @param self a CharSequence
-     * @return a CharSequence with a decremented digit at the end
-     * @see #previous(String)
-     * @since 1.8.2
-     */
-    public static CharSequence previous(CharSequence self) {
-        return previous(self.toString());
-    }
-
-    /**
-     * Executes the command specified by <code>self</code> as a command-line process.
-     * <p>For more control over Process construction you can use
-     * <code>java.lang.ProcessBuilder</code> (JDK 1.5+).</p>
-     *
-     * @param self a command line String
-     * @return the Process which has just started for this command line representation
-     * @throws IOException if an IOException occurs.
-     * @since 1.0
-     */
-    public static Process execute(final String self) throws IOException {
-        return Runtime.getRuntime().exec(self);
-    }
-
-    /**
-     * Executes the command specified by <code>self</code> with environment defined by <code>envp</code>
-     * and under the working directory <code>dir</code>.
-     * <p>For more control over Process construction you can use
-     * <code>java.lang.ProcessBuilder</code> (JDK 1.5+).</p>
-     *
-     * @param self a command line String to be executed.
-     * @param envp an array of Strings, each element of which
-     *             has environment variable settings in the format
-     *             <i>name</i>=<i>value</i>, or
-     *             <tt>null</tt> if the subprocess should inherit
-     *             the environment of the current process.
-     * @param dir  the working directory of the subprocess, or
-     *             <tt>null</tt> if the subprocess should inherit
-     *             the working directory of the current process.
-     * @return the Process which has just started for this command line representation.
-     * @throws IOException if an IOException occurs.
-     * @since 1.0
-     */
-    public static Process execute(final String self, final String[] envp, final File dir) throws IOException {
-        return Runtime.getRuntime().exec(self, envp, dir);
-    }
-
-    /**
-     * Executes the command specified by <code>self</code> with environment defined
-     * by <code>envp</code> and under the working directory <code>dir</code>.
-     * <p>For more control over Process construction you can use
-     * <code>java.lang.ProcessBuilder</code> (JDK 1.5+).</p>
-     *
-     * @param self a command line String to be executed.
-     * @param envp a List of Objects (converted to Strings using toString), each member of which
-     *             has environment variable settings in the format
-     *             <i>name</i>=<i>value</i>, or
-     *             <tt>null</tt> if the subprocess should inherit
-     *             the environment of the current process.
-     * @param dir  the working directory of the subprocess, or
-     *             <tt>null</tt> if the subprocess should inherit
-     *             the working directory of the current process.
-     * @return the Process which has just started for this command line representation.
-     * @throws IOException if an IOException occurs.
-     * @since 1.0
-     */
-    public static Process execute(final String self, final List envp, final File dir) throws IOException {
-        return execute(self, stringify(envp), dir);
-    }
-
-    /**
-     * Executes the command specified by the given <code>String</code> array.
-     * The first item in the array is the command; the others are the parameters.
-     * <p>For more control over Process construction you can use
-     * <code>java.lang.ProcessBuilder</code> (JDK 1.5+).</p>
-     *
-     * @param commandArray an array of <code>String</code> containing the command name and
-     *                     parameters as separate items in the array.
-     * @return the Process which has just started for this command line representation.
-     * @throws IOException if an IOException occurs.
-     * @since 1.0
-     */
-    public static Process execute(final String[] commandArray) throws IOException {
-        return Runtime.getRuntime().exec(commandArray);
-    }
-
-    /**
-     * Executes the command specified by the <code>String</code> array given in the first parameter,
-     * with the environment defined by <code>envp</code> and under the working directory <code>dir</code>.
-     * The first item in the array is the command; the others are the parameters.
-     * <p>For more control over Process construction you can use
-     * <code>java.lang.ProcessBuilder</code> (JDK 1.5+).</p>
-     *
-     * @param commandArray an array of <code>String</code> containing the command name and
-     *                     parameters as separate items in the array.
-     * @param envp an array of Strings, each member of which
-     *             has environment variable settings in the format
-     *             <i>name</i>=<i>value</i>, or
-     *             <tt>null</tt> if the subprocess should inherit
-     *             the environment of the current process.
-     * @param dir  the working directory of the subprocess, or
-     *             <tt>null</tt> if the subprocess should inherit
-     *             the working directory of the current process.
-     * @return the Process which has just started for this command line representation.
-     * @throws IOException if an IOException occurs.
-     * @since 1.7.1
-     */
-    public static Process execute(final String[] commandArray, final String[] envp, final File dir) throws IOException {
-        return Runtime.getRuntime().exec(commandArray, envp, dir);
-    }
-
-    /**
-     * Executes the command specified by the <code>String</code> array given in the first parameter,
-     * with the environment defined by <code>envp</code> and under the working directory <code>dir</code>.
-     * The first item in the array is the command; the others are the parameters.
-     * <p>For more control over Process construction you can use
-     * <code>java.lang.ProcessBuilder</code> (JDK 1.5+).</p>
-     *
-     * @param commandArray an array of <code>String</code> containing the command name and
-     *                     parameters as separate items in the array.
-     * @param envp a List of Objects (converted to Strings using toString), each member of which
-     *             has environment variable settings in the format
-     *             <i>name</i>=<i>value</i>, or
-     *             <tt>null</tt> if the subprocess should inherit
-     *             the environment of the current process.
-     * @param dir  the working directory of the subprocess, or
-     *             <tt>null</tt> if the subprocess should inherit
-     *             the working directory of the current process.
-     * @return the Process which has just started for this command line representation.
-     * @throws IOException if an IOException occurs.
-     * @since 1.7.1
-     */
-    public static Process execute(final String[] commandArray, final List envp, final File dir) throws IOException {
-        return Runtime.getRuntime().exec(commandArray, stringify(envp), dir);
-    }
-
-    /**
-     * Executes the command specified by the given list. The toString() method is called
-     * for each item in the list to convert into a resulting String.
-     * The first item in the list is the command the others are the parameters.
-     * <p>For more control over Process construction you can use
-     * <code>java.lang.ProcessBuilder</code> (JDK 1.5+).</p>
-     *
-     * @param commands a list containing the command name and
-     *                    parameters as separate items in the list.
-     * @return the Process which has just started for this command line representation.
-     * @throws IOException if an IOException occurs.
-     * @since 1.0
-     */
-    public static Process execute(final List commands) throws IOException {
-        return execute(stringify(commands));
-    }
-
-    /**
-     * Executes the command specified by the given list,
-     * with the environment defined by <code>envp</code> and under the working directory <code>dir</code>.
-     * The first item in the list is the command; the others are the parameters. The toString()
-     * method is called on items in the list to convert them to Strings.
-     * <p>For more control over Process construction you can use
-     * <code>java.lang.ProcessBuilder</code> (JDK 1.5+).</p>
-     *
-     * @param commands a List containing the command name and
-     *                     parameters as separate items in the list.
-     * @param envp an array of Strings, each member of which
-     *             has environment variable settings in the format
-     *             <i>name</i>=<i>value</i>, or
-     *             <tt>null</tt> if the subprocess should inherit
-     *             the environment of the current process.
-     * @param dir  the working directory of the subprocess, or
-     *             <tt>null</tt> if the subprocess should inherit
-     *             the working directory of the current process.
-     * @return the Process which has just started for this command line representation.
-     * @throws IOException if an IOException occurs.
-     * @since 1.7.1
-     */
-    public static Process execute(final List commands, final String[] envp, final File dir) throws IOException {
-        return Runtime.getRuntime().exec(stringify(commands), envp, dir);
-    }
-
-    /**
-     * Executes the command specified by the given list,
-     * with the environment defined by <code>envp</code> and under the working directory <code>dir</code>.
-     * The first item in the list is the command; the others are the parameters. The toString()
-     * method is called on items in the list to convert them to Strings.
-     * <p>For more control over Process construction you can use
-     * <code>java.lang.ProcessBuilder</code> (JDK 1.5+).</p>
-     *
-     * @param commands a List containing the command name and
-     *                     parameters as separate items in the list.
-     * @param envp a List of Objects (converted to Strings using toString), each member of which
-     *             has environment variable settings in the format
-     *             <i>name</i>=<i>value</i>, or
-     *             <tt>null</tt> if the subprocess should inherit
-     *             the environment of the current process.
-     * @param dir  the working directory of the subprocess, or
-     *             <tt>null</tt> if the subprocess should inherit
-     *             the working directory of the current process.
-     * @return the Process which has just started for this command line representation.
-     * @throws IOException if an IOException occurs.
-     * @since 1.7.1
-     */
-    public static Process execute(final List commands, final List envp, final File dir) throws IOException {
-        return Runtime.getRuntime().exec(stringify(commands), stringify(envp), dir);
-    }
-
-    private static String[] stringify(final List orig) {
-        if (orig == null) return null;
-        String[] result = new String[orig.size()];
-        for (int i = 0; i < orig.size(); i++) {
-            result[i] = orig.get(i).toString();
-        }
-        return result;
-    }
-
-    /**
-     * Repeat a String a certain number of times.
-     *
-     * @param self   a String to be repeated
-     * @param factor the number of times the String should be repeated
-     * @return a String composed of a repetition
-     * @throws IllegalArgumentException if the number of repetitions is &lt; 0
-     * @since 1.0
-     */
-    public static String multiply(String self, Number factor) {
-        int size = factor.intValue();
-        if (size == 0)
-            return "";
-        else if (size < 0) {
-            throw new IllegalArgumentException("multiply() should be called with a number of 0 or greater not: " + size);
-        }
-        StringBuilder answer = new StringBuilder(self);
-        for (int i = 1; i < size; i++) {
-            answer.append(self);
-        }
-        return answer.toString();
-    }
-
-    /**
-     * Repeat a CharSequence a certain number of times.
-     *
-     * @param self   a CharSequence to be repeated
-     * @param factor the number of times the CharSequence should be repeated
-     * @return a CharSequence composed of a repetition
-     * @throws IllegalArgumentException if the number of repetitions is &lt; 0
-     * @since 1.8.2
-     */
-    public static CharSequence multiply(CharSequence self, Number factor) {
-        return multiply(self.toString(), factor);
     }
 
     /**
@@ -12167,7 +9222,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Power of a BigDecimal to an integer certain exponent.  If the
      * exponent is positive, call the BigDecimal.pow(int) method to
      * maintain precision. Called by the '**' operator.
-     *
+     * 
      * @param self     a BigDecimal
      * @param exponent an Integer exponent
      * @return a Number to the power of a the exponent
@@ -12184,7 +9239,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Power of a BigInteger to an integer certain exponent.  If the
      * exponent is positive, call the BigInteger.pow(int) method to
      * maintain precision. Called by the '**' operator.
-     *
+     * 
      *  @param self     a BigInteger
      *  @param exponent an Integer exponent
      *  @return a Number to the power of a the exponent
@@ -12202,7 +9257,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * exponent is positive, convert to a BigInteger and call
      * BigInteger.pow(int) method to maintain precision. Called by the
      * '**' operator.
-     *
+     * 
      *  @param self     an Integer
      *  @param exponent an Integer exponent
      *  @return a Number to the power of a the exponent
@@ -13119,361 +10174,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Parse a String into an Integer
-     *
-     * @param self a String
-     * @return an Integer
-     * @since 1.0
-     */
-    public static Integer toInteger(String self) {
-        return Integer.valueOf(self.trim());
-    }
-
-    /**
-     * Parse a String into a Long
-     *
-     * @param self a String
-     * @return a Long
-     * @since 1.0
-     */
-    public static Long toLong(String self) {
-        return Long.valueOf(self.trim());
-    }
-
-    /**
-     * Parse a String into a Short
-     *
-     * @param self a String
-     * @return a Short
-     * @since 1.5.7
-     */
-    public static Short toShort(String self) {
-        return Short.valueOf(self.trim());
-    }
-
-    /**
-     * Parse a String into a Float
-     *
-     * @param self a String
-     * @return a Float
-     * @since 1.0
-     */
-    public static Float toFloat(String self) {
-        return Float.valueOf(self.trim());
-    }
-
-    /**
-     * Parse a String into a Double
-     *
-     * @param self a String
-     * @return a Double
-     * @since 1.0
-     */
-    public static Double toDouble(String self) {
-        return Double.valueOf(self.trim());
-    }
-
-    /**
-     * Parse a String into a BigInteger
-     *
-     * @param self a String
-     * @return a BigInteger
-     * @since 1.0
-     */
-    public static BigInteger toBigInteger(String self) {
-        return new BigInteger(self.trim());
-    }
-
-    /**
-     * Parse a String into a BigDecimal
-     *
-     * @param self a String
-     * @return a BigDecimal
-     * @since 1.0
-     */
-    public static BigDecimal toBigDecimal(String self) {
-        return new BigDecimal(self.trim());
-    }
-
-    /**
-     * Determine if a String can be parsed into an Integer.
-     *
-     * @param self a String
-     * @return true if the string can be parsed
-     * @since 1.5.0
-     */
-    public static boolean isInteger(String self) {
-        try {
-            Integer.valueOf(self.trim());
-            return true;
-        } catch (NumberFormatException nfe) {
-            return false;
-        }
-    }
-
-    /**
-     * Determine if a String can be parsed into a Long.
-     *
-     * @param self a String
-     * @return true if the string can be parsed
-     * @since 1.5.0
-     */
-    public static boolean isLong(String self) {
-        try {
-            Long.valueOf(self.trim());
-            return true;
-        } catch (NumberFormatException nfe) {
-            return false;
-        }
-    }
-
-    /**
-     * Determine if a String can be parsed into a Float.
-     *
-     * @param self a String
-     * @return true if the string can be parsed
-     * @since 1.5.0
-     */
-    public static boolean isFloat(String self) {
-        try {
-            Float.valueOf(self.trim());
-            return true;
-        } catch (NumberFormatException nfe) {
-            return false;
-        }
-    }
-
-    /**
-     * Determine if a String can be parsed into a Double.
-     *
-     * @param self a String
-     * @return true if the string can be parsed
-     * @since 1.5.0
-     */
-    public static boolean isDouble(String self) {
-        try {
-            Double.valueOf(self.trim());
-            return true;
-        } catch (NumberFormatException nfe) {
-            return false;
-        }
-    }
-
-    /**
-     * Determine if a String can be parsed into a BigInteger.
-     *
-     * @param self a String
-     * @return true if the string can be parsed
-     * @since 1.5.0
-     */
-    public static boolean isBigInteger(String self) {
-        try {
-            new BigInteger(self.trim());
-            return true;
-        } catch (NumberFormatException nfe) {
-            return false;
-        }
-    }
-
-    /**
-     * Determine if a String can be parsed into a BigDecimal.
-     *
-     * @param self a String
-     * @return true if the string can be parsed
-     * @since 1.5.0
-     */
-    public static boolean isBigDecimal(String self) {
-        try {
-            new BigDecimal(self.trim());
-            return true;
-        } catch (NumberFormatException nfe) {
-            return false;
-        }
-    }
-
-    /**
-     * Determine if a String can be parsed into a Number.
-     * Synonym for 'isBigDecimal()'.
-     *
-     * @param self a String
-     * @return true if the string can be parsed
-     * @see #isBigDecimal(java.lang.String)
-     * @since 1.5.0
-     */
-    public static boolean isNumber(String self) {
-        return isBigDecimal(self);
-    }
-
-    /**
-     * Parse a CharSequence into an Integer
-     *
-     * @param self a CharSequence
-     * @return an Integer
-     * @see #toInteger(java.lang.String)
-     * @since 1.8.2
-     */
-    public static Integer toInteger(CharSequence self) {
-        return toInteger(self.toString());
-    }
-
-    /**
-     * Parse a CharSequence into a Long
-     *
-     * @param self a CharSequence
-     * @return a Long
-     * @see #toLong(java.lang.String)
-     * @since 1.8.2
-     */
-    public static Long toLong(CharSequence self) {
-        return toLong(self.toString());
-    }
-
-    /**
-     * Parse a CharSequence into a Short
-     *
-     * @param self a CharSequence
-     * @return a Short
-     * @see #toShort(java.lang.String)
-     * @since 1.8.2
-     */
-    public static Short toShort(CharSequence self) {
-        return toShort(self.toString());
-    }
-
-    /**
-     * Parse a CharSequence into a Float
-     *
-     * @param self a CharSequence
-     * @return a Float
-     * @see #toFloat(java.lang.String)
-     * @since 1.8.2
-     */
-    public static Float toFloat(CharSequence self) {
-        return toFloat(self.toString());
-    }
-
-    /**
-     * Parse a CharSequence into a Double
-     *
-     * @param self a CharSequence
-     * @return a Double
-     * @see #toDouble(java.lang.String)
-     * @since 1.8.2
-     */
-    public static Double toDouble(CharSequence self) {
-        return toDouble(self.toString());
-    }
-
-    /**
-     * Parse a CharSequence into a BigInteger
-     *
-     * @param self a CharSequence
-     * @return a BigInteger
-     * @see #toBigInteger(java.lang.String)
-     * @since 1.8.2
-     */
-    public static BigInteger toBigInteger(CharSequence self) {
-        return toBigInteger(self.toString());
-    }
-
-    /**
-     * Parse a CharSequence into a BigDecimal
-     *
-     * @param self a CharSequence
-     * @return a BigDecimal
-     * @see #toBigDecimal(java.lang.String)
-     * @since 1.8.2
-     */
-    public static BigDecimal toBigDecimal(CharSequence self) {
-        return toBigDecimal(self.toString());
-    }
-
-    /**
-     * Determine if a CharSequence can be parsed as an Integer.
-     *
-     * @param self a CharSequence
-     * @return true if the CharSequence can be parsed
-     * @see #isInteger(java.lang.String)
-     * @since 1.8.2
-     */
-    public static boolean isInteger(CharSequence self) {
-        return isInteger(self.toString());
-    }
-
-    /**
-     * Determine if a CharSequence can be parsed as a Long.
-     *
-     * @param self a CharSequence
-     * @return true if the CharSequence can be parsed
-     * @see #isLong(java.lang.String)
-     * @since 1.8.2
-     */
-    public static boolean isLong(CharSequence self) {
-        return isLong(self.toString());
-    }
-
-    /**
-     * Determine if a CharSequence can be parsed as a Float.
-     *
-     * @param self a CharSequence
-     * @return true if the CharSequence can be parsed
-     * @see #isFloat(java.lang.String)
-     * @since 1.8.2
-     */
-    public static boolean isFloat(CharSequence self) {
-        return isFloat(self.toString());
-    }
-
-    /**
-     * Determine if a CharSequence can be parsed as a Double.
-     *
-     * @param self a CharSequence
-     * @return true if the CharSequence can be parsed
-     * @see #isDouble(java.lang.String)
-     * @since 1.8.2
-     */
-    public static boolean isDouble(CharSequence self) {
-        return isDouble(self.toString());
-    }
-
-    /**
-     * Determine if a CharSequence can be parsed as a BigInteger.
-     *
-     * @param self a CharSequence
-     * @return true if the CharSequence can be parsed
-     * @see #isBigInteger(java.lang.String)
-     * @since 1.8.2
-     */
-    public static boolean isBigInteger(CharSequence self) {
-        return isBigInteger(self.toString());
-    }
-
-    /**
-     * Determine if a CharSequence can be parsed as a BigDecimal.
-     *
-     * @param self a CharSequence
-     * @return true if the CharSequence can be parsed
-     * @see #isBigDecimal(java.lang.String)
-     * @since 1.8.2
-     */
-    public static boolean isBigDecimal(CharSequence self) {
-        return isBigDecimal(self.toString());
-    }
-
-    /**
-     * Determine if a CharSequence can be parsed as a Number.
-     * Synonym for 'isBigDecimal()'.
-     *
-     * @param self a CharSequence
-     * @return true if the CharSequence can be parsed
-     * @see #isNumber(java.lang.String)
-     * @since 1.8.2
-     */
-    public static boolean isNumber(CharSequence self) {
-        return isNumber(self.toString());
-    }
-
-    /**
      * Determine if a Character is uppercase.
      * Synonym for 'Character.isUpperCase(this)'.
      *
@@ -13768,2258 +10468,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 //        return Boolean.valueOf(!left.booleanValue());
 //    }
 
-    // File and stream based methods
-    //-------------------------------------------------------------------------
-
-    /**
-     * Create an object output stream for this file.
-     *
-     * @param file a file
-     * @return an object output stream
-     * @throws IOException if an IOException occurs.
-     * @since 1.5.0
-     */
-    public static ObjectOutputStream newObjectOutputStream(File file) throws IOException {
-        return new ObjectOutputStream(new FileOutputStream(file));
-    }
-
-    /**
-     * Create an object output stream for this output stream.
-     *
-     * @param outputStream an output stream
-     * @return an object output stream
-     * @throws IOException if an IOException occurs.
-     * @since 1.5.0
-     */
-    public static ObjectOutputStream newObjectOutputStream(OutputStream outputStream) throws IOException {
-        return new ObjectOutputStream(outputStream);
-    }
-
-    /**
-     * Create a new ObjectOutputStream for this file and then pass it to the
-     * closure.  This method ensures the stream is closed after the closure
-     * returns.
-     *
-     * @param file    a File
-     * @param closure a closure
-     * @return the value returned by the closure
-     * @throws IOException if an IOException occurs.
-     * @see #withStream(java.io.OutputStream, groovy.lang.Closure)
-     * @since 1.5.0
-     */
-    public static <T> T withObjectOutputStream(File file, Closure<T> closure) throws IOException {
-        return withStream(newObjectOutputStream(file), closure);
-    }
-
-    /**
-     * Create a new ObjectOutputStream for this output stream and then pass it to the
-     * closure.  This method ensures the stream is closed after the closure
-     * returns.
-     *
-     * @param outputStream am output stream
-     * @param closure      a closure
-     * @return the value returned by the closure
-     * @throws IOException if an IOException occurs.
-     * @see #withStream(java.io.OutputStream, groovy.lang.Closure)
-     * @since 1.5.0
-     */
-    public static <T> T withObjectOutputStream(OutputStream outputStream, Closure<T> closure) throws IOException {
-        return withStream(newObjectOutputStream(outputStream), closure);
-    }
-
-    /**
-     * Create an object input stream for this file.
-     *
-     * @param file a file
-     * @return an object input stream
-     * @throws IOException if an IOException occurs.
-     * @since 1.5.0
-     */
-    public static ObjectInputStream newObjectInputStream(File file) throws IOException {
-        return new ObjectInputStream(new FileInputStream(file));
-    }
-
-    /**
-     * Create an object input stream for this input stream.
-     *
-     * @param inputStream an input stream
-     * @return an object input stream
-     * @throws IOException if an IOException occurs.
-     * @since 1.5.0
-     */
-    public static ObjectInputStream newObjectInputStream(InputStream inputStream) throws IOException {
-        return new ObjectInputStream(inputStream);
-    }
-
-    /**
-     * Create an object input stream for this input stream using the given class loader.
-     *
-     * @param inputStream an input stream
-     * @param classLoader the class loader to use when loading the class
-     * @return an object input stream
-     * @throws IOException if an IOException occurs.
-     * @since 1.5.0
-     */
-    public static ObjectInputStream newObjectInputStream(InputStream inputStream, final ClassLoader classLoader) throws IOException {
-        return new ObjectInputStream(inputStream) {
-            protected Class<?> resolveClass(ObjectStreamClass desc) throws IOException, ClassNotFoundException {
-                return Class.forName(desc.getName(), true, classLoader);
-
-            }
-        };
-    }
-
-    /**
-     * Create an object input stream for this file using the given class loader.
-     *
-     * @param file        a file
-     * @param classLoader the class loader to use when loading the class
-     * @return an object input stream
-     * @throws IOException if an IOException occurs.
-     * @since 1.5.0
-     */
-    public static ObjectInputStream newObjectInputStream(File file, final ClassLoader classLoader) throws IOException {
-        return newObjectInputStream(new FileInputStream(file), classLoader);
-    }
-
-    /**
-     * Iterates through the given file object by object.
-     *
-     * @param self    a File
-     * @param closure a closure
-     * @throws IOException            if an IOException occurs.
-     * @throws ClassNotFoundException if the class  is not found.
-     * @see #eachObject(java.io.ObjectInputStream, groovy.lang.Closure)
-     * @since 1.0
-     */
-    public static void eachObject(File self, Closure closure) throws IOException, ClassNotFoundException {
-        eachObject(newObjectInputStream(self), closure);
-    }
-
-    /**
-     * Iterates through the given object stream object by object. The
-     * ObjectInputStream is closed afterwards.
-     *
-     * @param ois     an ObjectInputStream, closed after the operation
-     * @param closure a closure
-     * @throws IOException            if an IOException occurs.
-     * @throws ClassNotFoundException if the class  is not found.
-     * @since 1.0
-     */
-    public static void eachObject(ObjectInputStream ois, Closure closure) throws IOException, ClassNotFoundException {
-        try {
-            while (true) {
-                try {
-                    Object obj = ois.readObject();
-                    // we allow null objects in the object stream
-                    closure.call(obj);
-                } catch (EOFException e) {
-                    break;
-                }
-            }
-            InputStream temp = ois;
-            ois = null;
-            temp.close();
-        } finally {
-            closeWithWarning(ois);
-        }
-    }
-
-    /**
-     * Create a new ObjectInputStream for this file and pass it to the closure.
-     * This method ensures the stream is closed after the closure returns.
-     *
-     * @param file    a File
-     * @param closure a closure
-     * @return the value returned by the closure
-     * @throws IOException if an IOException occurs.
-     * @see #withStream(java.io.InputStream, groovy.lang.Closure)
-     * @since 1.5.2
-     */
-    public static <T> T withObjectInputStream(File file, Closure<T> closure) throws IOException {
-        return withStream(newObjectInputStream(file), closure);
-    }
-
-    /**
-     * Create a new ObjectInputStream for this file associated with the given class loader and pass it to the closure.
-     * This method ensures the stream is closed after the closure returns.
-     *
-     * @param file        a File
-     * @param classLoader the class loader to use when loading the class
-     * @param closure     a closure
-     * @return the value returned by the closure
-     * @throws IOException if an IOException occurs.
-     * @see #withStream(java.io.InputStream, groovy.lang.Closure)
-     * @since 1.5.2
-     */
-    public static <T> T withObjectInputStream(File file, ClassLoader classLoader, Closure<T> closure) throws IOException {
-        return withStream(newObjectInputStream(file, classLoader), closure);
-    }
-
-    /**
-     * Create a new ObjectInputStream for this file and pass it to the closure.
-     * This method ensures the stream is closed after the closure returns.
-     *
-     * @param inputStream an input stream
-     * @param closure     a closure
-     * @return the value returned by the closure
-     * @throws IOException if an IOException occurs.
-     * @see #withStream(java.io.InputStream, groovy.lang.Closure)
-     * @since 1.5.0
-     */
-    public static <T> T withObjectInputStream(InputStream inputStream, Closure<T> closure) throws IOException {
-        return withStream(newObjectInputStream(inputStream), closure);
-    }
-
-    /**
-     * Create a new ObjectInputStream for this file and pass it to the closure.
-     * This method ensures the stream is closed after the closure returns.
-     *
-     * @param inputStream an input stream
-     * @param classLoader the class loader to use when loading the class
-     * @param closure     a closure
-     * @return the value returned by the closure
-     * @throws IOException if an IOException occurs.
-     * @see #withStream(java.io.InputStream, groovy.lang.Closure)
-     * @since 1.5.0
-     */
-    public static <T> T withObjectInputStream(InputStream inputStream, ClassLoader classLoader, Closure<T> closure) throws IOException {
-        return withStream(newObjectInputStream(inputStream, classLoader), closure);
-    }
-
-    /**
-     * Iterates through this String line by line.  Each line is passed
-     * to the given 1 or 2 arg closure. If a 2 arg closure is found
-     * the line count is passed as the second argument.
-     *
-     * @param self    a String
-     * @param closure a closure
-     * @return the last value returned by the closure
-     * @throws java.io.IOException if an error occurs
-     * @see #eachLine(java.lang.String, int, groovy.lang.Closure)
-     * @since 1.5.5
-     */
-    public static <T> T eachLine(String self, Closure<T> closure) throws IOException {
-        return eachLine(self, 0, closure);
-    }
-
-    /**
-     * Iterates through this CharSequence line by line.  Each line is passed
-     * to the given 1 or 2 arg closure. If a 2 arg closure is found
-     * the line count is passed as the second argument.
-     *
-     * @param self    a CharSequence
-     * @param closure a closure
-     * @return the last value returned by the closure
-     * @throws java.io.IOException if an error occurs
-     * @see #eachLine(java.lang.String, groovy.lang.Closure)
-     * @since 1.8.2
-     */
-    public static <T> T eachLine(CharSequence self, Closure<T> closure) throws IOException {
-        return eachLine(self.toString(), closure);
-    }
-
-    /**
-     * Iterates through this String line by line.  Each line is passed
-     * to the given 1 or 2 arg closure. If a 2 arg closure is found
-     * the line count is passed as the second argument.
-     *
-     * @param self    a String
-     * @param firstLine the line number value used for the first line (default is 1, set to 0 to start counting from 0)
-     * @param closure a closure (arg 1 is line, optional arg 2 is line number)
-     * @return the last value returned by the closure
-     * @throws java.io.IOException if an error occurs
-     * @since 1.5.7
-     */
-    public static <T> T eachLine(String self, int firstLine, Closure<T> closure) throws IOException {
-        int count = firstLine;
-        T result = null;
-        for (String line : readLines(self)) {
-            result = callClosureForLine(closure, line, count);
-            count++;
-        }
-        return result;
-    }
-
-    /**
-     * Iterates through this CharSequence line by line.  Each line is passed
-     * to the given 1 or 2 arg closure. If a 2 arg closure is found
-     * the line count is passed as the second argument.
-     *
-     * @param self    a CharSequence
-     * @param firstLine the line number value used for the first line (default is 1, set to 0 to start counting from 0)
-     * @param closure a closure (arg 1 is line, optional arg 2 is line number)
-     * @return the last value returned by the closure
-     * @throws java.io.IOException if an error occurs
-     * @see #eachLine(java.lang.String, int, groovy.lang.Closure)
-     * @since 1.8.2
-     */
-    public static <T> T eachLine(CharSequence self, int firstLine, Closure<T> closure) throws IOException {
-        return eachLine(self.toString(), firstLine, closure);
-    }
-
-    /**
-     * Iterates through this file line by line.  Each line is passed to the
-     * given 1 or 2 arg closure.  The file is read using a reader which
-     * is closed before this method returns.
-     *
-     * @param self    a File
-     * @param closure a closure (arg 1 is line, optional arg 2 is line number starting at line 1)
-     * @throws IOException if an IOException occurs.
-     * @return the last value returned by the closure
-     * @see #eachLine(java.io.File, int, groovy.lang.Closure)
-     * @since 1.5.5
-     */
-    public static <T> T eachLine(File self, Closure<T> closure) throws IOException {
-        return eachLine(self, 1, closure);
-    }
-
-    /**
-     * Iterates through this file line by line.  Each line is passed to the
-     * given 1 or 2 arg closure.  The file is read using a reader which
-     * is closed before this method returns.
-     *
-     * @param self    a File
-     * @param charset opens the file with a specified charset
-     * @param closure a closure (arg 1 is line, optional arg 2 is line number starting at line 1)
-     * @throws IOException if an IOException occurs.
-     * @return the last value returned by the closure
-     * @see #eachLine(java.io.File, java.lang.String, int, groovy.lang.Closure)
-     * @since 1.6.8
-     */
-    public static <T> T eachLine(File self, String charset, Closure<T> closure) throws IOException {
-        return eachLine(self, charset, 1, closure);
-    }
-
-    /**
-     * Iterates through this file line by line.  Each line is passed
-     * to the given 1 or 2 arg closure.  The file is read using a reader
-     * which is closed before this method returns.
-     *
-     * @param self    a File
-     * @param firstLine the line number value used for the first line (default is 1, set to 0 to start counting from 0)
-     * @param closure a closure (arg 1 is line, optional arg 2 is line number)
-     * @throws IOException if an IOException occurs.
-     * @return the last value returned by the closure
-     * @see #eachLine(java.io.Reader, int, groovy.lang.Closure)
-     * @since 1.5.7
-     */
-    public static <T> T eachLine(File self, int firstLine, Closure<T> closure) throws IOException {
-        return eachLine(newReader(self), firstLine, closure);
-    }
-
-    /**
-     * Iterates through this file line by line.  Each line is passed
-     * to the given 1 or 2 arg closure.  The file is read using a reader
-     * which is closed before this method returns.
-     *
-     * @param self    a File
-     * @param charset opens the file with a specified charset
-     * @param firstLine the line number value used for the first line (default is 1, set to 0 to start counting from 0)
-     * @param closure a closure (arg 1 is line, optional arg 2 is line number)
-     * @throws IOException if an IOException occurs.
-     * @return the last value returned by the closure
-     * @see #eachLine(java.io.Reader, int, groovy.lang.Closure)
-     * @since 1.6.8
-     */
-    public static <T> T eachLine(File self, String charset, int firstLine, Closure<T> closure) throws IOException {
-        return eachLine(newReader(self, charset), firstLine, closure);
-    }
-
-    /**
-     * Iterates through this stream reading with the provided charset, passing each line to the
-     * given 1 or 2 arg closure.  The stream is closed before this method returns.
-     *
-     * @param stream  a stream
-     * @param charset opens the stream with a specified charset
-     * @param closure a closure (arg 1 is line, optional arg 2 is line number starting at line 1)
-     * @throws IOException if an IOException occurs.
-     * @return the last value returned by the closure
-     * @see #eachLine(java.io.InputStream, java.lang.String, int, groovy.lang.Closure)
-     * @since 1.5.5
-     */
-    public static <T> T eachLine(InputStream stream, String charset, Closure<T> closure) throws IOException {
-        return eachLine(stream, charset, 1, closure);
-    }
-
-    /**
-     * Iterates through this stream reading with the provided charset, passing each line to
-     * the given 1 or 2 arg closure.  The stream is closed after this method returns.
-     *
-     * @param stream    a stream
-     * @param charset   opens the stream with a specified charset
-     * @param firstLine the line number value used for the first line (default is 1, set to 0 to start counting from 0)
-     * @param closure a closure (arg 1 is line, optional arg 2 is line number)
-     * @return the last value returned by the closure
-     * @throws IOException if an IOException occurs.
-     * @see #eachLine(java.io.Reader, int, groovy.lang.Closure)
-     * @since 1.5.7
-     */
-    public static <T> T eachLine(InputStream stream, String charset, int firstLine, Closure<T> closure) throws IOException {
-        return eachLine(new InputStreamReader(stream, charset), firstLine, closure);
-    }
-
-    /**
-     * Iterates through this stream, passing each line to the given 1 or 2 arg closure.
-     * The stream is closed before this method returns.
-     *
-     * @param stream  a stream
-     * @param closure a closure (arg 1 is line, optional arg 2 is line number starting at line 1)
-     * @throws IOException if an IOException occurs.
-     * @return the last value returned by the closure
-     * @see #eachLine(java.io.InputStream, int, groovy.lang.Closure)
-     * @since 1.5.6
-     */
-    public static <T> T eachLine(InputStream stream, Closure<T> closure) throws IOException {
-        return eachLine(stream, 1, closure);
-    }
-
-    /**
-     * Iterates through this stream, passing each line to the given 1 or 2 arg closure.
-     * The stream is closed before this method returns.
-     *
-     * @param stream  a stream
-     * @param firstLine the line number value used for the first line (default is 1, set to 0 to start counting from 0)
-     * @param closure a closure (arg 1 is line, optional arg 2 is line number)
-     * @throws IOException if an IOException occurs.
-     * @return the last value returned by the closure
-     * @see #eachLine(java.io.Reader, int, groovy.lang.Closure)
-     * @since 1.5.7
-     */
-    public static <T> T eachLine(InputStream stream, int firstLine, Closure<T> closure) throws IOException {
-        return eachLine(new InputStreamReader(stream), firstLine, closure);
-    }
-
-    /**
-     * Iterates through the lines read from the URL's associated input stream passing each
-     * line to the given 1 or 2 arg closure. The stream is closed before this method returns.
-     *
-     * @param url     a URL to open and read
-     * @param closure a closure to apply on each line (arg 1 is line, optional arg 2 is line number starting at line 1)
-     * @return the last value returned by the closure
-     * @throws IOException if an IOException occurs.
-     * @see #eachLine(java.net.URL, int, groovy.lang.Closure)
-     * @since 1.5.6
-     */
-    public static <T> T eachLine(URL url, Closure<T> closure) throws IOException {
-        return eachLine(url, 1, closure);
-    }
-
-    /**
-     * Iterates through the lines read from the URL's associated input stream passing each
-     * line to the given 1 or 2 arg closure. The stream is closed before this method returns.
-     *
-     * @param url       a URL to open and read
-     * @param firstLine the line number value used for the first line (default is 1, set to 0 to start counting from 0)
-     * @param closure   a closure to apply on each line (arg 1 is line, optional arg 2 is line number)
-     * @return the last value returned by the closure
-     * @throws IOException if an IOException occurs.
-     * @see #eachLine(java.io.InputStream, int, groovy.lang.Closure)
-     * @since 1.5.7
-     */
-    public static <T> T eachLine(URL url, int firstLine, Closure<T> closure) throws IOException {
-        return eachLine(url.openConnection().getInputStream(), firstLine, closure);
-    }
-
-    /**
-     * Iterates through the lines read from the URL's associated input stream passing each
-     * line to the given 1 or 2 arg closure. The stream is closed before this method returns.
-     *
-     * @param url     a URL to open and read
-     * @param charset opens the stream with a specified charset
-     * @param closure a closure to apply on each line (arg 1 is line, optional arg 2 is line number starting at line 1)
-     * @return the last value returned by the closure
-     * @throws IOException if an IOException occurs.
-     * @see #eachLine(java.net.URL, java.lang.String, int, groovy.lang.Closure)
-     * @since 1.5.6
-     */
-    public static <T> T eachLine(URL url, String charset, Closure<T> closure) throws IOException {
-        return eachLine(url, charset, 1, closure);
-    }
-
-    /**
-     * Iterates through the lines read from the URL's associated input stream passing each
-     * line to the given 1 or 2 arg closure. The stream is closed before this method returns.
-     *
-     * @param url       a URL to open and read
-     * @param charset   opens the stream with a specified charset
-     * @param firstLine the line number value used for the first line (default is 1, set to 0 to start counting from 0)
-     * @param closure   a closure to apply on each line (arg 1 is line, optional arg 2 is line number)
-     * @return the last value returned by the closure
-     * @throws IOException if an IOException occurs.
-     * @see #eachLine(java.io.Reader, int, groovy.lang.Closure)
-     * @since 1.5.7
-     */
-    public static <T> T eachLine(URL url, String charset, int firstLine, Closure<T> closure) throws IOException {
-        return eachLine(newReader(url, charset), firstLine, closure);
-    }
-
-    /**
-     * Iterates through the given reader line by line.  Each line is passed to the
-     * given 1 or 2 arg closure. If the closure has two arguments, the line count is passed
-     * as the second argument. The Reader is closed before this method returns.
-     *
-     * @param self    a Reader, closed after the method returns
-     * @param closure a closure (arg 1 is line, optional arg 2 is line number starting at line 1)
-     * @throws IOException if an IOException occurs.
-     * @return the last value returned by the closure
-     * @see #eachLine(java.io.Reader, int, groovy.lang.Closure)
-     * @since 1.5.6
-     */
-    public static <T> T eachLine(Reader self, Closure<T> closure) throws IOException {
-        return eachLine(self, 1, closure);
-    }
-
-    /**
-     * Iterates through the given reader line by line.  Each line is passed to the
-     * given 1 or 2 arg closure. If the closure has two arguments, the line count is passed
-     * as the second argument. The Reader is closed before this method returns.
-     *
-     * @param self      a Reader, closed after the method returns
-     * @param firstLine the line number value used for the first line (default is 1, set to 0 to start counting from 0)
-     * @param closure   a closure which will be passed each line (or for 2 arg closures the line and line count)
-     * @return the last value returned by the closure
-     * @throws IOException if an IOException occurs.
-     * @since 1.5.7
-     */
-    public static <T> T eachLine(Reader self, int firstLine, Closure<T> closure) throws IOException {
-        BufferedReader br;
-        int count = firstLine;
-        T result = null;
-
-        if (self instanceof BufferedReader)
-            br = (BufferedReader) self;
-        else
-            br = new BufferedReader(self);
-
-        try {
-            while (true) {
-                String line = br.readLine();
-                if (line == null) {
-                    break;
-                } else {
-                    result = callClosureForLine(closure, line, count);
-                    count++;
-                }
-            }
-            Reader temp = self;
-            self = null;
-            temp.close();
-            return result;
-        } finally {
-            closeWithWarning(self);
-            closeWithWarning(br);
-        }
-    }
-
-    /**
-     * Iterates through this file line by line, splitting each line using
-     * the given regex separator. For each line, the given closure is called with
-     * a single parameter being the list of strings computed by splitting the line
-     * around matches of the given regular expression.
-     * Finally the resources used for processing the file are closed.
-     *
-     * @param self    a File
-     * @param regex   the delimiting regular expression
-     * @param closure a closure
-     * @throws IOException if an IOException occurs.
-     * @throws java.util.regex.PatternSyntaxException if the regular expression's syntax is invalid
-     * @return the last value returned by the closure
-     * @see #splitEachLine(java.io.Reader, java.lang.String, groovy.lang.Closure)
-     * @since 1.5.5
-     */
-    public static <T> T splitEachLine(File self, String regex, Closure<T> closure) throws IOException {
-        return splitEachLine(newReader(self), regex, closure);
-    }
-
-    /**
-     * Iterates through this file line by line, splitting each line using
-     * the given separator Pattern. For each line, the given closure is called with
-     * a single parameter being the list of strings computed by splitting the line
-     * around matches of the given regular expression Pattern.
-     * Finally the resources used for processing the file are closed.
-     *
-     * @param self    a File
-     * @param pattern the regular expression Pattern for the delimiter
-     * @param closure a closure
-     * @throws IOException if an IOException occurs.
-     * @return the last value returned by the closure
-     * @see #splitEachLine(java.io.Reader, java.util.regex.Pattern, groovy.lang.Closure)
-     * @since 1.6.8
-     */
-    public static <T> T splitEachLine(File self, Pattern pattern, Closure<T> closure) throws IOException {
-        return splitEachLine(newReader(self), pattern, closure);
-    }
-
-    /**
-     * Iterates through this file line by line, splitting each line using
-     * the given regex separator. For each line, the given closure is called with
-     * a single parameter being the list of strings computed by splitting the line
-     * around matches of the given regular expression.
-     * Finally the resources used for processing the file are closed.
-     *
-     * @param self    a File
-     * @param regex   the delimiting regular expression
-     * @param charset opens the file with a specified charset
-     * @param closure a closure
-     * @throws IOException if an IOException occurs.
-     * @throws java.util.regex.PatternSyntaxException if the regular expression's syntax is invalid
-     * @return the last value returned by the closure
-     * @see #splitEachLine(java.io.Reader, java.lang.String, groovy.lang.Closure)
-     * @since 1.6.8
-     */
-    public static <T> T splitEachLine(File self, String regex, String charset, Closure<T> closure) throws IOException {
-        return splitEachLine(newReader(self, charset), regex, closure);
-    }
-
-    /**
-     * Iterates through this file line by line, splitting each line using
-     * the given regex separator Pattern. For each line, the given closure is called with
-     * a single parameter being the list of strings computed by splitting the line
-     * around matches of the given regular expression.
-     * Finally the resources used for processing the file are closed.
-     *
-     * @param self    a File
-     * @param pattern the regular expression Pattern for the delimiter
-     * @param charset opens the file with a specified charset
-     * @param closure a closure
-     * @throws IOException if an IOException occurs.
-     * @return the last value returned by the closure
-     * @see #splitEachLine(java.io.Reader, java.util.regex.Pattern, groovy.lang.Closure)
-     * @since 1.6.8
-     */
-    public static <T> T splitEachLine(File self, Pattern pattern, String charset, Closure<T> closure) throws IOException {
-        return splitEachLine(newReader(self, charset), pattern, closure);
-    }
-
-    /**
-     * Iterates through the input stream associated with this URL line by line, splitting each line using
-     * the given regex separator. For each line, the given closure is called with
-     * a single parameter being the list of strings computed by splitting the line
-     * around matches of the given regular expression.
-     * Finally the resources used for processing the URL are closed.
-     *
-     * @param self    a URL to open and read
-     * @param regex   the delimiting regular expression
-     * @param closure a closure
-     * @throws IOException if an IOException occurs.
-     * @throws java.util.regex.PatternSyntaxException if the regular expression's syntax is invalid
-     * @return the last value returned by the closure
-     * @see #splitEachLine(java.io.Reader, java.lang.String, groovy.lang.Closure)
-     * @since 1.6.8
-     */
-    public static <T> T splitEachLine(URL self, String regex, Closure<T> closure) throws IOException {
-        return splitEachLine(newReader(self), regex, closure);
-    }
-
-    /**
-     * Iterates through the input stream associated with this URL line by line, splitting each line using
-     * the given regex separator Pattern. For each line, the given closure is called with
-     * a single parameter being the list of strings computed by splitting the line
-     * around matches of the given regular expression.
-     * Finally the resources used for processing the URL are closed.
-     *
-     * @param self    a URL to open and read
-     * @param pattern the regular expression Pattern for the delimiter
-     * @param closure a closure
-     * @throws IOException if an IOException occurs.
-     * @return the last value returned by the closure
-     * @see #splitEachLine(java.io.Reader, java.util.regex.Pattern, groovy.lang.Closure)
-     * @since 1.6.8
-     */
-    public static <T> T splitEachLine(URL self, Pattern pattern, Closure<T> closure) throws IOException {
-        return splitEachLine(newReader(self), pattern, closure);
-    }
-
-    /**
-     * Iterates through the input stream associated with this URL line by line, splitting each line using
-     * the given regex separator. For each line, the given closure is called with
-     * a single parameter being the list of strings computed by splitting the line
-     * around matches of the given regular expression.
-     * Finally the resources used for processing the URL are closed.
-     *
-     * @param self    a URL to open and read
-     * @param regex   the delimiting regular expression
-     * @param charset opens the file with a specified charset
-     * @param closure a closure
-     * @throws IOException if an IOException occurs.
-     * @throws java.util.regex.PatternSyntaxException if the regular expression's syntax is invalid
-     * @return the last value returned by the closure
-     * @see #splitEachLine(java.io.Reader, java.lang.String, groovy.lang.Closure)
-     * @since 1.6.8
-     */
-    public static <T> T splitEachLine(URL self, String regex, String charset, Closure<T> closure) throws IOException {
-        return splitEachLine(newReader(self, charset), regex, closure);
-    }
-
-    /**
-     * Iterates through the input stream associated with this URL line by line, splitting each line using
-     * the given regex separator Pattern. For each line, the given closure is called with
-     * a single parameter being the list of strings computed by splitting the line
-     * around matches of the given regular expression.
-     * Finally the resources used for processing the URL are closed.
-     *
-     * @param self    a URL to open and read
-     * @param pattern the regular expression Pattern for the delimiter
-     * @param charset opens the file with a specified charset
-     * @param closure a closure
-     * @throws IOException if an IOException occurs.
-     * @return the last value returned by the closure
-     * @see #splitEachLine(java.io.Reader, java.util.regex.Pattern, groovy.lang.Closure)
-     * @since 1.6.8
-     */
-    public static <T> T splitEachLine(URL self, Pattern pattern, String charset, Closure<T> closure) throws IOException {
-        return splitEachLine(newReader(self, charset), pattern, closure);
-    }
-
-    /**
-     * Iterates through the given reader line by line, splitting each line using
-     * the given regex separator. For each line, the given closure is called with
-     * a single parameter being the list of strings computed by splitting the line
-     * around matches of the given regular expression.  The Reader is closed afterwards.
-     * <p/>
-     * Here is an example:
-     * <pre>
-     * def s = 'The 3 quick\nbrown 4 fox'
-     * def result = ''
-     * new StringReader(s).splitEachLine(/\d/){ parts ->
-     *     result += "${parts[0]}_${parts[1]}|"
-     * }
-     * assert result == 'The _ quick|brown _ fox|'
-     * </pre>
-     *
-     * @param self    a Reader, closed after the method returns
-     * @param regex   the delimiting regular expression
-     * @param closure a closure
-     * @throws IOException if an IOException occurs.
-     * @throws java.util.regex.PatternSyntaxException if the regular expression's syntax is invalid
-     * @return the last value returned by the closure
-     * @see java.lang.String#split(java.lang.String)
-     * @since 1.5.5
-     */
-    public static <T> T splitEachLine(Reader self, String regex, Closure<T> closure) throws IOException {
-        return splitEachLine(self, Pattern.compile(regex), closure);
-    }
-
-    /**
-     * Iterates through the given reader line by line, splitting each line using
-     * the given regex separator Pattern. For each line, the given closure is called with
-     * a single parameter being the list of strings computed by splitting the line
-     * around matches of the given regular expression.  The Reader is closed afterwards.
-     * <p/>
-     * Here is an example:
-     * <pre>
-     * def s = 'The 3 quick\nbrown 4 fox'
-     * def result = ''
-     * new StringReader(s).splitEachLine(~/\d/){ parts ->
-     *     result += "${parts[0]}_${parts[1]}|"
-     * }
-     * assert result == 'The _ quick|brown _ fox|'
-     * </pre>
-     *
-     * @param self    a Reader, closed after the method returns
-     * @param pattern the regular expression Pattern for the delimiter
-     * @param closure a closure
-     * @throws IOException if an IOException occurs.
-     * @throws java.util.regex.PatternSyntaxException if the regular expression's syntax is invalid
-     * @return the last value returned by the closure
-     * @see java.lang.String#split(java.lang.String)
-     * @since 1.6.8
-     */
-    public static <T> T splitEachLine(Reader self, Pattern pattern, Closure<T> closure) throws IOException {
-        BufferedReader br;
-        T result = null;
-
-        if (self instanceof BufferedReader)
-            br = (BufferedReader) self;
-        else
-            br = new BufferedReader(self);
-
-        try {
-            while (true) {
-                String line = br.readLine();
-                if (line == null) {
-                    break;
-                } else {
-                    List vals = Arrays.asList(pattern.split(line));
-                    result = closure.call(vals);
-                }
-            }
-            Reader temp = self;
-            self = null;
-            temp.close();
-            return result;
-        } finally {
-            closeWithWarning(self);
-            closeWithWarning(br);
-        }
-    }
-
-    /**
-     * Iterates through the given InputStream line by line using the specified
-     * encoding, splitting each line using the given separator.  The list of tokens
-     * for each line is then passed to the given closure. Finally, the stream
-     * is closed.
-     *
-     * @param stream  an InputStream
-     * @param regex   the delimiting regular expression
-     * @param charset opens the stream with a specified charset
-     * @param closure a closure
-     * @throws IOException if an IOException occurs.
-     * @throws java.util.regex.PatternSyntaxException if the regular expression's syntax is invalid
-     * @return the last value returned by the closure
-     * @see #splitEachLine(java.io.Reader, java.lang.String, groovy.lang.Closure)
-     * @since 1.5.5
-     */
-    public static <T> T splitEachLine(InputStream stream, String regex, String charset, Closure<T> closure) throws IOException {
-        return splitEachLine(new BufferedReader(new InputStreamReader(stream, charset)), regex, closure);
-    }
-
-    /**
-     * Iterates through the given InputStream line by line using the specified
-     * encoding, splitting each line using the given separator Pattern.  The list of tokens
-     * for each line is then passed to the given closure. Finally, the stream
-     * is closed.
-     *
-     * @param stream  an InputStream
-     * @param pattern the regular expression Pattern for the delimiter
-     * @param charset opens the stream with a specified charset
-     * @param closure a closure
-     * @throws IOException if an IOException occurs.
-     * @return the last value returned by the closure
-     * @see #splitEachLine(java.io.Reader, java.util.regex.Pattern, groovy.lang.Closure)
-     * @since 1.6.8
-     */
-    public static <T> T splitEachLine(InputStream stream, Pattern pattern, String charset, Closure<T> closure) throws IOException {
-        return splitEachLine(new BufferedReader(new InputStreamReader(stream, charset)), pattern, closure);
-    }
-
-    /**
-     * Iterates through the given InputStream line by line, splitting each line using
-     * the given separator.  The list of tokens for each line is then passed to
-     * the given closure. The stream is closed before the method returns.
-     *
-     * @param stream  an InputStream
-     * @param regex   the delimiting regular expression
-     * @param closure a closure
-     * @throws IOException if an IOException occurs.
-     * @throws java.util.regex.PatternSyntaxException if the regular expression's syntax is invalid
-     * @return the last value returned by the closure
-     * @see #splitEachLine(java.io.Reader, java.lang.String, groovy.lang.Closure)
-     * @since 1.5.6
-     */
-    public static <T> T splitEachLine(InputStream stream, String regex, Closure<T> closure) throws IOException {
-        return splitEachLine(new BufferedReader(new InputStreamReader(stream)), regex, closure);
-    }
-
-    /**
-     * Iterates through the given InputStream line by line, splitting each line using
-     * the given separator Pattern.  The list of tokens for each line is then passed to
-     * the given closure. The stream is closed before the method returns.
-     *
-     * @param stream  an InputStream
-     * @param pattern the regular expression Pattern for the delimiter
-     * @param closure a closure
-     * @throws IOException if an IOException occurs.
-     * @return the last value returned by the closure
-     * @see #splitEachLine(java.io.Reader, java.util.regex.Pattern, groovy.lang.Closure)
-     * @since 1.6.8
-     */
-    public static <T> T splitEachLine(InputStream stream, Pattern pattern, Closure<T> closure) throws IOException {
-        return splitEachLine(new BufferedReader(new InputStreamReader(stream)), pattern, closure);
-    }
-
-    /**
-     * Iterates through the given String line by line, splitting each line using
-     * the given separator.  The list of tokens for each line is then passed to
-     * the given closure.
-     *
-     * @param self    a String
-     * @param regex   the delimiting regular expression
-     * @param closure a closure
-     * @return the last value returned by the closure
-     * @throws java.io.IOException if an error occurs
-     * @throws java.util.regex.PatternSyntaxException if the regular expression's syntax is invalid
-     * @see java.lang.String#split(java.lang.String)
-     * @since 1.5.5
-     */
-    public static <T> T splitEachLine(String self, String regex, Closure<T> closure) throws IOException {
-        return splitEachLine(self, Pattern.compile(regex), closure);
-    }
-
-    /**
-     * Iterates through the given CharSequence line by line, splitting each line using
-     * the given separator.  The list of tokens for each line is then passed to
-     * the given closure.
-     *
-     * @param self    a CharSequence
-     * @param regex   the delimiting regular expression
-     * @param closure a closure
-     * @return the last value returned by the closure
-     * @throws java.io.IOException if an error occurs
-     * @throws java.util.regex.PatternSyntaxException if the regular expression's syntax is invalid
-     * @see #splitEachLine(String, String, Closure)
-     * @since 1.8.2
-     */
-    public static <T> T splitEachLine(CharSequence self, CharSequence regex, Closure<T> closure) throws IOException {
-        return splitEachLine(self.toString(), regex.toString(), closure);
-    }
-
-    /**
-     * Iterates through the given String line by line, splitting each line using
-     * the given separator Pattern.  The list of tokens for each line is then passed to
-     * the given closure.
-     *
-     * @param self    a String
-     * @param pattern the regular expression Pattern for the delimiter
-     * @param closure a closure
-     * @return the last value returned by the closure
-     * @throws java.io.IOException if an error occurs
-     * @see java.util.regex.Pattern#split(java.lang.CharSequence)
-     * @since 1.6.8
-     */
-    public static <T> T splitEachLine(String self, Pattern pattern, Closure<T> closure) throws IOException {
-        final List<String> list = readLines(self);
-        T result = null;
-        for (String line : list) {
-            List vals = Arrays.asList(pattern.split(line));
-            result = closure.call(vals);
-        }
-        return result;
-    }
-
-    /**
-     * Iterates through the given CharSequence line by line, splitting each line using
-     * the given separator Pattern.  The list of tokens for each line is then passed to
-     * the given closure.
-     *
-     * @param self    a CharSequence
-     * @param pattern the regular expression Pattern for the delimiter
-     * @param closure a closure
-     * @return the last value returned by the closure
-     * @throws java.io.IOException if an error occurs
-     * @see #splitEachLine(String, Pattern, Closure)
-     * @since 1.8.2
-     */
-    public static <T> T splitEachLine(CharSequence self, Pattern pattern, Closure<T> closure) throws IOException {
-        return splitEachLine(self.toString(), pattern, closure);
-    }
-
-    /**
-     * Read a single, whole line from the given Reader.
-     *
-     * @param self a Reader
-     * @return a line
-     * @throws IOException if an IOException occurs.
-     * @since 1.0
-     */
-    public static String readLine(Reader self) throws IOException {
-        if (self instanceof BufferedReader) {
-            BufferedReader br = (BufferedReader) self;
-            return br.readLine();
-        }
-        if (self.markSupported()) {
-            return readLineFromReaderWithMark(self);
-        }
-        return readLineFromReaderWithoutMark(self);
-    }
-
-    private static int charBufferSize = 4096;     // half the default stream buffer size
-    private static int expectedLineLength = 160;  // double the default line length
-    private static int EOF = -1;                  // End Of File
-
-    /*
-    * This method tries to read subsequent buffers from the reader using a mark
-    */
-    private static String readLineFromReaderWithMark(final Reader input)
-            throws IOException {
-        char[] cbuf = new char[charBufferSize];
-        try {
-            input.mark(charBufferSize);
-        } catch (IOException e) {
-            // this should never happen
-            LOG.warning("Caught exception setting mark on supporting reader: " + e);
-            // fallback
-            return readLineFromReaderWithoutMark(input);
-        }
-
-        // could be changed into do..while, but then
-        // we might create an additional StringBuffer
-        // instance at the end of the stream
-        int count = input.read(cbuf);
-        if (count == EOF) // we are at the end of the input data
-            return null;
-
-        StringBuffer line = new StringBuffer(expectedLineLength);
-        // now work on the buffer(s)
-        int ls = lineSeparatorIndex(cbuf, count);
-        while (ls == -1) {
-            line.append(cbuf, 0, count);
-            count = input.read(cbuf);
-            if (count == EOF) {
-                // we are at the end of the input data
-                return line.toString();
-            }
-            ls = lineSeparatorIndex(cbuf, count);
-        }
-        line.append(cbuf, 0, ls);
-
-        // correct ls if we have \r\n
-        int skipLS = 1;
-        if (ls + 1 < count) {
-            // we are not at the end of the buffer
-            if (cbuf[ls] == '\r' && cbuf[ls + 1] == '\n') {
-                skipLS++;
-            }
-        } else {
-            if (cbuf[ls] == '\r' && input.read() == '\n') {
-                skipLS++;
-            }
-        }
-
-        //reset() and skip over last linesep
-        input.reset();
-        input.skip(line.length() + skipLS);
-        return line.toString();
-    }
-
-    /*
-    * This method reads without a buffer.
-    * It returns too many empty lines if \r\n combinations
-    * are used. Nothing can be done because we can't push
-    * back the character we have just read.
-    */
-    private static String readLineFromReaderWithoutMark(Reader input)
-            throws IOException {
-
-        int c = input.read();
-        if (c == -1)
-            return null;
-        StringBuffer line = new StringBuffer(expectedLineLength);
-
-        while (c != EOF && c != '\n' && c != '\r') {
-            char ch = (char) c;
-            line.append(ch);
-            c = input.read();
-        }
-        return line.toString();
-    }
-
-    /*
-     * searches for \n or \r
-     * Returns -1 if not found.
-     */
-    private static int lineSeparatorIndex(char[] array, int length) {
-        for (int k = 0; k < length; k++) {
-            if (isLineSeparator(array[k])) {
-                return k;
-            }
-        }
-        return -1;
-    }
-
-    /*
-    * true if either \n or \r
-    */
-    private static boolean isLineSeparator(char c) {
-        return c == '\n' || c == '\r';
-    }
-
-    static String lineSeparator = null;
-
-    /**
-     * Return a String with lines (separated by LF, CR/LF, or CR)
-     * terminated by the platform specific line separator.
-     *
-     * @param self a String object
-     * @return the denormalized string
-     * @since 1.6.0
-     */
-    public static String denormalize(final String self) {
-        // Don't do this in static initializer because we may never be needed.
-        // TODO: Put this lineSeparator property somewhere everyone can use it.
-        if (lineSeparator == null) {
-            final StringWriter sw = new StringWriter(2);
-            try {
-                // We use BufferedWriter rather than System.getProperty because
-                // it has the security manager rigamarole to deal with the possible exception.
-                final BufferedWriter bw = new BufferedWriter(sw);
-                bw.newLine();
-                bw.flush();
-                lineSeparator = sw.toString();
-            } catch (IOException ioe) {
-                // This shouldn't happen, but this is the same default used by
-                // BufferedWriter on a security exception.
-                lineSeparator = "\n";
-            }
-        }
-
-        final int len = self.length();
-
-        if (len < 1) {
-            return self;
-        }
-
-        final StringBuilder sb = new StringBuilder((110 * len) / 100);
-
-        int i = 0;
-
-        while (i < len) {
-            final char ch = self.charAt(i++);
-
-            switch (ch) {
-                case '\r':
-                    sb.append(lineSeparator);
-
-                    // Eat the following LF if any.
-                    if ((i < len) && (self.charAt(i) == '\n')) {
-                        ++i;
-                    }
-
-                    break;
-
-                case '\n':
-                    sb.append(lineSeparator);
-                    break;
-
-                default:
-                    sb.append(ch);
-                    break;
-            }
-         }
-
-        return sb.toString();
-    }
-
-    /**
-     * Return a CharSequence with lines (separated by LF, CR/LF, or CR)
-     * terminated by the platform specific line separator.
-     *
-     * @param self a CharSequence object
-     * @return the denormalized CharSequence
-     * @see #denormalize(String)
-     * @since 1.8.2
-     */
-    public static CharSequence denormalize(final CharSequence self) {
-        return denormalize(self.toString());
-    }
-
-    /**
-     * Return a String with linefeeds and carriage returns normalized to linefeeds.
-     *
-     * @param self a String object
-     * @return the normalized string
-     * @since 1.6.0
-     */
-    public static String normalize(final String self) {
-        int nx = self.indexOf('\r');
-
-        if (nx < 0) {
-            return self;
-        }
-
-        final int len = self.length();
-        final StringBuilder sb = new StringBuilder(len);
-
-        int i = 0;
-
-        do {
-            sb.append(self, i, nx);
-            sb.append('\n');
-
-            if ((i = nx + 1) >= len) break;
-
-            if (self.charAt(i) == '\n') {
-                // skip the LF in CR LF
-                if (++i >= len) break;
-            }
-
-            nx = self.indexOf('\r', i);
-        } while (nx > 0);
-
-        sb.append(self, i, len);
-
-        return sb.toString();
-    }
-
-    /**
-     * Return a CharSequence with linefeeds and carriage returns normalized to linefeeds.
-     *
-     * @param self a CharSequence object
-     * @return the normalized CharSequence
-     * @see #normalize(String)
-     * @since 1.8.2
-     */
-    public static CharSequence normalize(final CharSequence self) {
-        return normalize(self.toString());
-    }
-
-    /**
-     * Return the lines of a String as a List of Strings.
-     *
-     * @param self a String object
-     * @return a list of lines
-     * @throws java.io.IOException if an error occurs
-     * @since 1.5.5
-     */
-    public static List<String> readLines(String self) throws IOException {
-        return readLines(new StringReader(self));
-    }
-
-    /**
-     * Return the lines of a CharSequence as a List of CharSequence.
-     *
-     * @param self a CharSequence object
-     * @return a list of lines
-     * @throws java.io.IOException if an error occurs
-     * @since 1.8.2
-     */
-    public static List<CharSequence> readLines(CharSequence self) throws IOException {
-        return new ArrayList<CharSequence>(readLines(self.toString()));
-    }
-
-    /**
-     * Reads the file into a list of Strings, with one item for each line.
-     *
-     * @param file a File
-     * @return a List of lines
-     * @throws IOException if an IOException occurs.
-     * @see #readLines(java.io.Reader)
-     * @since 1.0
-     */
-    public static List<String> readLines(File file) throws IOException {
-        return readLines(newReader(file));
-    }
-
-    /**
-     * Reads the file into a list of Strings, with one item for each line.
-     *
-     * @param file a File
-     * @param charset opens the file with a specified charset
-     * @return a List of lines
-     * @throws IOException if an IOException occurs.
-     * @see #readLines(java.io.Reader)
-     * @since 1.6.8
-     */
-    public static List<String> readLines(File file, String charset) throws IOException {
-        return readLines(newReader(file, charset));
-    }
-
-    /**
-     * Reads the stream into a list, with one element for each line.
-     *
-     * @param stream a stream
-     * @return a List of lines
-     * @throws IOException if an IOException occurs.
-     * @see #readLines(java.io.Reader)
-     * @since 1.0
-     */
-    public static List<String> readLines(InputStream stream) throws IOException {
-        return readLines(newReader(stream));
-    }
-
-    /**
-     * Reads the stream into a list, with one element for each line.
-     *
-     * @param stream a stream
-     * @param charset opens the stream with a specified charset
-     * @return a List of lines
-     * @throws IOException if an IOException occurs.
-     * @see #readLines(java.io.Reader)
-     * @since 1.6.8
-     */
-    public static List<String> readLines(InputStream stream, String charset) throws IOException {
-        return readLines(newReader(stream, charset));
-    }
-
-    /**
-     * Reads the URL contents into a list, with one element for each line.
-     *
-     * @param self a URL
-     * @return a List of lines
-     * @throws IOException if an IOException occurs.
-     * @see #readLines(java.io.Reader)
-     * @since 1.6.8
-     */
-    public static List<String> readLines(URL self) throws IOException {
-        return readLines(newReader(self));
-    }
-
-    /**
-     * Reads the URL contents into a list, with one element for each line.
-     *
-     * @param self a URL
-     * @param charset opens the URL with a specified charset
-     * @return a List of lines
-     * @throws IOException if an IOException occurs.
-     * @see #readLines(java.io.Reader)
-     * @since 1.6.8
-     */
-    public static List<String> readLines(URL self, String charset) throws IOException {
-        return readLines(newReader(self, charset));
-    }
-
-    /**
-     * Reads the reader into a list of Strings, with one entry for each line.
-     * The reader is closed before this method returns.
-     *
-     * @param reader a Reader
-     * @return a List of lines
-     * @throws IOException if an IOException occurs.
-     * @since 1.0
-     */
-    public static List<String> readLines(Reader reader) throws IOException {
-        IteratorClosureAdapter closure = new IteratorClosureAdapter(reader);
-        eachLine(reader, closure);
-        return closure.asList();
-    }
-
-    /**
-     * Read the content of the File using the specified encoding and return it
-     * as a String.
-     *
-     * @param file    the file whose content we want to read
-     * @param charset the charset used to read the content of the file
-     * @return a String containing the content of the file
-     * @throws IOException if an IOException occurs.
-     * @since 1.0
-     */
-    public static String getText(File file, String charset) throws IOException {
-        return getText(newReader(file, charset));
-    }
-
-    /**
-     * Read the content of the File and returns it as a String.
-     *
-     * @param file the file whose content we want to read
-     * @return a String containing the content of the file
-     * @throws IOException if an IOException occurs.
-     * @since 1.0
-     */
-    public static String getText(File file) throws IOException {
-        return getText(newReader(file));
-    }
-
-    /**
-     * Read the content of this URL and returns it as a String.
-     *
-     * @param url URL to read content from
-     * @return the text from that URL
-     * @throws IOException if an IOException occurs.
-     * @since 1.0
-     */
-    public static String getText(URL url) throws IOException {
-        return getText(url, CharsetToolkit.getDefaultSystemCharset().toString());
-    }
-
-    /**
-     * Read the content of this URL and returns it as a String.
-     *
-     * @param url URL to read content from
-     * @param parameters connection parameters
-     * @return the text from that URL
-     * @throws IOException if an IOException occurs.
-     * @since 1.8.1
-     */
-    public static String getText(URL url, Map parameters) throws IOException {
-        return getText(url, parameters, CharsetToolkit.getDefaultSystemCharset().toString());
-    }
-
-    /**
-     * Read the data from this URL and return it as a String.  The connection
-     * stream is closed before this method returns.
-     *
-     * @param url     URL to read content from
-     * @param charset opens the stream with a specified charset
-     * @return the text from that URL
-     * @throws IOException if an IOException occurs.
-     * @see java.net.URLConnection#getInputStream()
-     * @since 1.0
-     */
-    public static String getText(URL url, String charset) throws IOException {
-        BufferedReader reader = newReader(url, charset);
-        return getText(reader);
-    }
-
-    /**
-     * Read the data from this URL and return it as a String.  The connection
-     * stream is closed before this method returns.
-     *
-     * @param url     URL to read content from
-     * @param parameters connection parameters
-     * @param charset opens the stream with a specified charset
-     * @return the text from that URL
-     * @throws IOException if an IOException occurs.
-     * @see java.net.URLConnection#getInputStream()
-     * @since 1.8.1
-     */
-    public static String getText(URL url, Map parameters, String charset) throws IOException {
-        BufferedReader reader = newReader(url, parameters, charset);
-        return getText(reader);
-    }
-
-    /**
-     * Read the content of this InputStream and return it as a String.
-     * The stream is closed before this method returns.
-     *
-     * @param is an input stream
-     * @return the text from that URL
-     * @throws IOException if an IOException occurs.
-     * @since 1.0
-     */
-    public static String getText(InputStream is) throws IOException {
-        BufferedReader reader = new BufferedReader(new InputStreamReader(is));
-        return getText(reader);
-    }
-
-    /**
-     * Read the content of this InputStream using specified charset and return
-     * it as a String.  The stream is closed before this method returns.
-     *
-     * @param is      an input stream
-     * @param charset opens the stream with a specified charset
-     * @return the text from that URL
-     * @throws IOException if an IOException occurs.
-     * @since 1.0
-     */
-    public static String getText(InputStream is, String charset) throws IOException {
-        BufferedReader reader = new BufferedReader(new InputStreamReader(is, charset));
-        return getText(reader);
-    }
-
-    /**
-     * Read the content of the Reader and return it as a String.  The reader
-     * is closed before this method returns.
-     *
-     * @param reader a Reader whose content we want to read
-     * @return a String containing the content of the buffered reader
-     * @throws IOException if an IOException occurs.
-     * @see #getText(java.io.BufferedReader)
-     * @since 1.0
-     */
-    public static String getText(Reader reader) throws IOException {
-        BufferedReader bufferedReader = new BufferedReader(reader);
-        return getText(bufferedReader);
-    }
-
-    /**
-     * Read the content of the BufferedReader and return it as a String.
-     * The BufferedReader is closed afterwards.
-     *
-     * @param reader a BufferedReader whose content we want to read
-     * @return a String containing the content of the buffered reader
-     * @throws IOException if an IOException occurs.
-     * @since 1.0
-     */
-    public static String getText(BufferedReader reader) throws IOException {
-        StringBuilder answer = new StringBuilder();
-        // reading the content of the file within a char buffer
-        // allow to keep the correct line endings
-        char[] charBuffer = new char[8192];
-        int nbCharRead /* = 0*/;
-        try {
-            while ((nbCharRead = reader.read(charBuffer)) != -1) {
-                // appends buffer
-                answer.append(charBuffer, 0, nbCharRead);
-            }
-            Reader temp = reader;
-            reader = null;
-            temp.close();
-        } finally {
-            closeWithWarning(reader);
-        }
-        return answer.toString();
-    }
-
-    /**
-     * Read the content of the File and returns it as a byte[].
-     *
-     * @param file the file whose content we want to read
-     * @return a String containing the content of the file
-     * @throws IOException if an IOException occurs.
-     * @since 1.7.1
-     */
-    public static byte[] getBytes(File file) throws IOException {
-        return getBytes(new FileInputStream(file));
-    }
-
-    /**
-     * Read the content of this URL and returns it as a byte[].
-     *
-     * @param url URL to read content from
-     * @return the byte[] from that URL
-     * @throws IOException if an IOException occurs.
-     * @since 1.7.1
-     */
-    public static byte[] getBytes(URL url) throws IOException {
-        return getBytes(url.openConnection().getInputStream());
-    }
-
-    /**
-     * Read the content of this InputStream and return it as a byte[].
-     * The stream is closed before this method returns.
-     *
-     * @param is an input stream
-     * @return the byte[] from that InputStream
-     * @throws IOException if an IOException occurs.
-     * @since 1.7.1
-     */
-    public static byte[] getBytes(InputStream is) throws IOException {
-        ByteArrayOutputStream answer = new ByteArrayOutputStream();
-        // reading the content of the file within a byte buffer
-        byte[] byteBuffer = new byte[8192];
-        int nbByteRead /* = 0*/;
-        try {
-            while ((nbByteRead = is.read(byteBuffer)) != -1) {
-                // appends buffer
-                answer.write(byteBuffer, 0, nbByteRead);
-            }
-        } finally {
-            closeWithWarning(is);
-        }
-        return answer.toByteArray();
-    }
-
-    /**
-     * Write the bytes from the byte array to the File.
-     *
-     * @param file  the file to write to
-     * @param bytes the byte[] to write to the file
-     * @throws IOException if an IOException occurs.
-     * @since 1.7.1
-     */
-    public static void setBytes(File file, byte[] bytes) throws IOException {
-        setBytes(new FileOutputStream(file), bytes);
-    }
-
-    /**
-     * Write the byte[] to the output stream.
-     * The stream is closed before this method returns.
-     *
-     * @param os    an output stream
-     * @param bytes the byte[] to write to the output stream
-     * @throws IOException if an IOException occurs.
-     * @since 1.7.1
-     */
-    public static void setBytes(OutputStream os, byte[] bytes) throws IOException {
-        try {
-            os.write(bytes);
-        } finally {
-            closeWithWarning(os);
-        }
-    }
-
-    /**
-     * Write the text and append a newline (using the platform's line-ending).
-     *
-     * @param writer a BufferedWriter
-     * @param line   the line to write
-     * @throws IOException if an IOException occurs.
-     * @since 1.0
-     */
-    public static void writeLine(BufferedWriter writer, String line) throws IOException {
-        writer.write(line);
-        writer.newLine();
-    }
-
-    /**
-     * Write the text to the File.
-     *
-     * @param file a File
-     * @param text the text to write to the File
-     * @throws IOException if an IOException occurs.
-     * @since 1.0
-     */
-    public static void write(File file, String text) throws IOException {
-        BufferedWriter writer = null;
-        try {
-            writer = newWriter(file);
-            writer.write(text);
-            writer.flush();
-
-            Writer temp = writer;
-            writer = null;
-            temp.close();
-        } finally {
-            closeWithWarning(writer);
-        }
-    }
-
-    /**
-     * Synonym for write(text) allowing file.text = 'foo'.
-     *
-     * @param file a File
-     * @param text the text to write to the File
-     * @throws IOException if an IOException occurs.
-     * @see #write(java.io.File, java.lang.String)
-     * @since 1.5.1
-     */
-    public static void setText(File file, String text) throws IOException {
-        write(file, text);
-    }
-
-    /**
-     * Synonym for write(text, charset) allowing:
-     * <pre>
-     * myFile.setText('some text', charset)
-     * </pre>
-     * or with some help from <code>ExpandoMetaClass</code>, you could do something like:
-     * <pre>
-     * myFile.metaClass.setText = { String s -> delegate.setText(s, 'UTF-8') }
-     * myfile.text = 'some text'
-     * </pre>
-     *
-     * @param file A File
-     * @param charset The charset used when writing to the file
-     * @param text The text to write to the File
-     * @throws IOException if an IOException occurs.
-     * @see #write(java.io.File, java.lang.String, java.lang.String)
-     * @since 1.7.3
-     */
-    public static void setText(File file, String text, String charset) throws IOException {
-        write(file, text, charset);
-    }
-
-    /**
-     * Write the text to the File.
-     *
-     * @param file a File
-     * @param text the text to write to the File
-     * @return the original file
-     * @throws IOException if an IOException occurs.
-     * @since 1.0
-     */
-    public static File leftShift(File file, Object text) throws IOException {
-        append(file, text);
-        return file;
-    }
-
-    /**
-     * Write bytes to a File.
-     *
-     * @param file a File
-     * @param bytes the byte array to append to the end of the File
-     * @return the original file
-     * @throws IOException if an IOException occurs.
-     * @since 1.5.0
-     */
-    public static File leftShift(File file, byte[] bytes) throws IOException {
-        append(file, bytes);
-        return file;
-    }
-
-    /**
-     * Append binary data to the file.  See {@link #append(java.io.File, java.io.InputStream)}
-     * @param file a File
-     * @param data an InputStream of data to write to the file
-     * @return the file
-     * @throws IOException if an IOException occurs.
-     * @since 1.5.0
-     */
-    public static File leftShift(File file, InputStream data) throws IOException {
-        append(file, data);
-        return file;
-    }
-
-    /**
-     * Write the text to the File, using the specified encoding.
-     *
-     * @param file    a File
-     * @param text    the text to write to the File
-     * @param charset the charset used
-     * @throws IOException if an IOException occurs.
-     * @since 1.0
-     */
-    public static void write(File file, String text, String charset) throws IOException {
-        BufferedWriter writer = null;
-        try {
-            writer = newWriter(file, charset);
-            writer.write(text);
-            writer.flush();
-
-            Writer temp = writer;
-            writer = null;
-            temp.close();
-        } finally {
-            closeWithWarning(writer);
-        }
-    }
-
-    /**
-     * Append the text at the end of the File.
-     *
-     * @param file a File
-     * @param text the text to append at the end of the File
-     * @throws IOException if an IOException occurs.
-     * @since 1.0
-     */
-    public static void append(File file, Object text) throws IOException {
-        BufferedWriter writer = null;
-        try {
-            writer = newWriter(file, true);
-            InvokerHelper.write(writer, text);
-            writer.flush();
-
-            Writer temp = writer;
-            writer = null;
-            temp.close();
-        } finally {
-            closeWithWarning(writer);
-        }
-    }
-
-    /**
-     * Append bytes to the end of a File.
-     *
-     * @param file a File
-     * @param bytes the byte array to append to the end of the File
-     * @throws IOException if an IOException occurs.
-     * @since 1.5.1
-     */
-    public static void append(File file, byte[] bytes) throws IOException {
-        BufferedOutputStream stream = null;
-        try {
-            stream = new BufferedOutputStream( new FileOutputStream(file,true) );
-            stream.write(bytes, 0, bytes.length);
-            stream.flush();
-
-            OutputStream temp = stream;
-            stream = null;
-            temp.close();
-        } finally {
-            closeWithWarning(stream);
-        }
-    }
-
-    /**
-     * Append binary data to the file.  It <strong>will not</strong> be
-     * interpreted as text.
-     * @param self a File
-     * @param stream stream to read data from.
-     * @throws IOException if an IOException occurs.
-     * @since 1.5.0
-     */
-    public static void append(File self, InputStream stream ) throws IOException {
-        OutputStream out = new FileOutputStream( self, true );
-        try {
-            leftShift( out, stream );
-        }
-        finally {
-            closeWithWarning( out );
-        }
-    }
-
-    /**
-     * Append the text at the end of the File, using a specified encoding.
-     *
-     * @param file    a File
-     * @param text    the text to append at the end of the File
-     * @param charset the charset used
-     * @throws IOException if an IOException occurs.
-     * @since 1.0
-     */
-    public static void append(File file, Object text, String charset) throws IOException {
-        BufferedWriter writer = null;
-        try {
-            writer = newWriter(file, charset, true);
-            InvokerHelper.write(writer, text);
-            writer.flush();
-
-            Writer temp = writer;
-            writer = null;
-            temp.close();
-        } finally {
-            closeWithWarning(writer);
-        }
-    }
-
-    /**
-     * This method is used to throw useful exceptions when the eachFile* and eachDir closure methods
-     * are used incorrectly.
-     *
-     * @param dir The directory to check
-     * @throws FileNotFoundException    if the given directory does not exist
-     * @throws IllegalArgumentException if the provided File object does not represent a directory
-     * @since 1.0
-     */
-    private static void checkDir(File dir) throws FileNotFoundException, IllegalArgumentException {
-        if (!dir.exists())
-            throw new FileNotFoundException(dir.getAbsolutePath());
-        if (!dir.isDirectory())
-            throw new IllegalArgumentException("The provided File object is not a directory: " + dir.getAbsolutePath());
-    }
-
-    /**
-     * Invokes the closure for each 'child' file in this 'parent' folder/directory.
-     * Both regular files and subfolders/subdirectories can be processed depending
-     * on the fileType enum value.
-     *
-     * @param self    a file object
-     * @param fileType if normal files or directories or both should be processed
-     * @param closure the closure to invoke
-     * @throws FileNotFoundException    if the given directory does not exist
-     * @throws IllegalArgumentException if the provided File object does not represent a directory
-     * @since 1.7.1
-     */
-    public static void eachFile(final File self, final FileType fileType, final Closure closure)
-            throws FileNotFoundException, IllegalArgumentException {
-        checkDir(self);
-        final File[] files = self.listFiles();
-        // null check because of http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4803836
-        if (files == null) return;
-        for (File file : files) {
-            if (fileType == FileType.ANY ||
-                    (fileType != FileType.FILES && file.isDirectory()) ||
-                    (fileType != FileType.DIRECTORIES && file.isFile())) {
-                closure.call(file);
-            }
-        }
-    }
-
-    /**
-     * Invokes the closure for each 'child' file in this 'parent' folder/directory.
-     * Both regular files and subfolders/subdirectories are processed.
-     *
-     * @param self    a File (that happens to be a folder/directory)
-     * @param closure a closure (first parameter is the 'child' file)
-     * @throws FileNotFoundException    if the given directory does not exist
-     * @throws IllegalArgumentException if the provided File object does not represent a directory
-     * @see java.io.File#listFiles()
-     * @see #eachFile(java.io.File, groovy.io.FileType, groovy.lang.Closure)
-     * @since 1.5.0
-     */
-    public static void eachFile(final File self, final Closure closure) throws FileNotFoundException, IllegalArgumentException {
-        eachFile(self, FileType.ANY, closure);
-    }
-
-    /**
-     * Invokes the closure for each subdirectory in this directory,
-     * ignoring regular files.
-     *
-     * @param self    a File (that happens to be a folder/directory)
-     * @param closure a closure (first parameter is the subdirectory file)
-     * @throws FileNotFoundException    if the given directory does not exist
-     * @throws IllegalArgumentException if the provided File object does not represent a directory
-     * @see java.io.File#listFiles()
-     * @see #eachFile(java.io.File, groovy.io.FileType, groovy.lang.Closure)
-     * @since 1.0
-     */
-    public static void eachDir(File self, Closure closure) throws FileNotFoundException, IllegalArgumentException {
-        eachFile(self, FileType.DIRECTORIES, closure);
-    }
-
-    /**
-     * Invokes the closure for each descendant file in this directory.
-     * Sub-directories are recursively searched in a depth-first fashion.
-     * Both regular files and subdirectories may be passed to the closure
-     * depending on the value of fileType.
-     *
-     * @param self     a file object
-     * @param fileType if normal files or directories or both should be processed
-     * @param closure  the closure to invoke on each file
-     * @throws FileNotFoundException    if the given directory does not exist
-     * @throws IllegalArgumentException if the provided File object does not represent a directory
-     * @since 1.7.1
-     */
-    public static void eachFileRecurse(final File self, final FileType fileType, final Closure closure)
-            throws FileNotFoundException, IllegalArgumentException {
-        checkDir(self);
-        final File[] files = self.listFiles();
-        // null check because of http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4803836
-        if (files == null) return;
-        for (File file : files) {
-            if (file.isDirectory()) {
-                if (fileType != FileType.FILES) closure.call(file);
-                eachFileRecurse(file, fileType, closure);
-            } else if (fileType != FileType.DIRECTORIES) {
-                closure.call(file);
-            }
-        }
-    }
-
-    /**
-     * Invokes <code>closure</code> for each descendant file in this directory tree.
-     * Sub-directories are recursively traversed as found.
-     * The traversal can be adapted by providing various options in the <code>options</code> Map according
-     * to the following keys:<dl>
-     * <dt>type</dt><dd>A {@link groovy.io.FileType} enum to determine if normal files or directories or both are processed</dd>
-     * <dt>preDir</dt><dd>A {@link groovy.lang.Closure} run before each directory is processed and optionally returning a {@link groovy.io.FileVisitResult} value
-     *     which can be used to control subsequent processing.</dd>
-     * <dt>preRoot</dt><dd>A boolean indicating that the 'preDir' closure should be applied at the root level</dd>
-     * <dt>postDir</dt><dd>A {@link groovy.lang.Closure} run after each directory is processed and optionally returning a {@link groovy.io.FileVisitResult} value
-     *     which can be used to control subsequent processing.</dd>
-     * <dt>postRoot</dt><dd>A boolean indicating that the 'postDir' closure should be applied at the root level</dd>
-     * <dt>visitRoot</dt><dd>A boolean indicating that the given closure should be applied for the root dir
-     *     (not applicable if the 'type' is set to {@link groovy.io.FileType#FILES})</dd>
-     * <dt>maxDepth</dt><dd>The maximum number of directory levels when recursing
-     *     (default is -1 which means infinite, set to 0 for no recursion)</dd>
-     * <dt>filter</dt><dd>A filter to perform on traversed files/directories (using the {@link #isCase(java.lang.Object, java.lang.Object)} method). If set,
-     *     only files/dirs which match are candidates for visiting.</dd>
-     * <dt>nameFilter</dt><dd>A filter to perform on the name of traversed files/directories (using the {@link #isCase(java.lang.Object, java.lang.Object)} method). If set,
-     *     only files/dirs which match are candidates for visiting. (Must not be set if 'filter' is set)</dd>
-     * <dt>excludeFilter</dt><dd>A filter to perform on traversed files/directories (using the {@link #isCase(java.lang.Object, java.lang.Object)} method).
-     *     If set, any candidates which match won't be visited.</dd>
-     * <dt>excludeNameFilter</dt><dd>A filter to perform on the names of traversed files/directories (using the {@link #isCase(java.lang.Object, java.lang.Object)} method).
-     *     If set, any candidates which match won't be visited. (Must not be set if 'excludeFilter' is set)</dd>
-     * <dt>sort</dt><dd>A {@link groovy.lang.Closure} which if set causes the files and subdirectories for each directory to be processed in sorted order.
-     *     Note that even when processing only files, the order of visited subdirectories will be affected by this parameter.</dd>
-     * </dl>
-     * This example prints out file counts and size aggregates for groovy source files within a directory tree:
-     * <pre>
-     * def totalSize = 0
-     * def count = 0
-     * def sortByTypeThenName = { a, b ->
-     *     a.isFile() != b.isFile() ? a.isFile() <=> b.isFile() : a.name <=> b.name
-     * }
-     * rootDir.traverse(
-     *         type         : FILES,
-     *         nameFilter   : ~/.*\.groovy/,
-     *         preDir       : { if (it.name == '.svn') return SKIP_SUBTREE },
-     *         postDir      : { println "Found $count files in $it.name totalling $totalSize bytes"
-     *                         totalSize = 0; count = 0 },
-     *         postRoot     : true
-     *         sort         : sortByTypeThenName
-     * ) {it -> totalSize += it.size(); count++ }
-     * </pre>
-     *
-     * @param self    a File
-     * @param options a Map of options to alter the traversal behavior
-     * @param closure the Closure to invoke on each file/directory and optionally returning a {@link groovy.io.FileVisitResult} value
-     *     which can be used to control subsequent processing
-     * @throws FileNotFoundException    if the given directory does not exist
-     * @throws IllegalArgumentException if the provided File object does not represent a directory or illegal filter combinations are supplied
-     * @see #sort(java.util.Collection, groovy.lang.Closure)
-     * @see groovy.io.FileVisitResult
-     * @see groovy.io.FileType
-     * @since 1.7.1
-     */
-    public static void traverse(final File self, final Map<String, Object> options, final Closure closure)
-            throws FileNotFoundException, IllegalArgumentException {
-        Number maxDepthNumber = asType(options.remove("maxDepth"), Number.class);
-        int maxDepth = maxDepthNumber == null ? -1 : maxDepthNumber.intValue();
-        Boolean visitRoot = asType(get(options, "visitRoot", false), Boolean.class);
-        Boolean preRoot = asType(get(options, "preRoot", false), Boolean.class);
-        Boolean postRoot = asType(get(options, "postRoot", false), Boolean.class);
-        final Closure pre = (Closure) options.get("preDir");
-        final Closure post = (Closure) options.get("postDir");
-        final FileType type = (FileType) options.get("type");
-        final Object filter = options.get("filter");
-        final Object nameFilter = options.get("nameFilter");
-        final Object excludeFilter = options.get("excludeFilter");
-        final Object excludeNameFilter = options.get("excludeNameFilter");
-        Object preResult = null;
-        if (preRoot && pre != null) {
-            preResult = pre.call(self);
-        }
-        if (preResult == FileVisitResult.TERMINATE ||
-                preResult == FileVisitResult.SKIP_SUBTREE) return;
-
-        FileVisitResult terminated = traverse(self, options, closure, maxDepth);
-
-        if (type != FileType.FILES && visitRoot) {
-            if (closure != null && notFiltered(self, filter, nameFilter, excludeFilter, excludeNameFilter)) {
-                Object closureResult = closure.call(self);
-                if (closureResult == FileVisitResult.TERMINATE) return;
-            }
-        }
-
-        if (postRoot && post != null && terminated != FileVisitResult.TERMINATE) post.call(self);
-    }
-
-    private static boolean notFiltered(File file, Object filter, Object nameFilter, Object excludeFilter, Object excludeNameFilter) {
-        if (filter == null && nameFilter == null && excludeFilter == null && excludeNameFilter == null) return true;
-        if (filter != null && nameFilter != null) throw new IllegalArgumentException("Can't set both 'filter' and 'nameFilter'");
-        if (excludeFilter != null && excludeNameFilter != null) throw new IllegalArgumentException("Can't set both 'excludeFilter' and 'excludeNameFilter'");
-        Object filterToUse = null;
-        Object filterParam = null;
-        if (filter != null) {
-            filterToUse = filter;
-            filterParam = file;
-        } else if (nameFilter != null) {
-            filterToUse = nameFilter;
-            filterParam = file.getName();
-        }
-        Object excludeFilterToUse = null;
-        Object excludeParam = null;
-        if (excludeFilter != null) {
-            excludeFilterToUse = excludeFilter;
-            excludeParam = file;
-        } else if (excludeNameFilter != null) {
-            excludeFilterToUse = excludeNameFilter;
-            excludeParam = file.getName();
-        }
-        final MetaClass filterMC = filterToUse == null ? null : InvokerHelper.getMetaClass(filterToUse);
-        final MetaClass excludeMC = excludeFilterToUse == null ? null : InvokerHelper.getMetaClass(excludeFilterToUse);
-        boolean included = filterToUse == null || DefaultTypeTransformation.castToBoolean(filterMC.invokeMethod(filterToUse, "isCase", filterParam));
-        boolean excluded = excludeFilterToUse != null && DefaultTypeTransformation.castToBoolean(excludeMC.invokeMethod(excludeFilterToUse, "isCase", excludeParam));
-        return included && !excluded;
-    }
-
-    /**
-     * Invokes the closure for each descendant file in this directory tree.
-     * Sub-directories are recursively traversed in a depth-first fashion.
-     * Convenience method for {@link #traverse(java.io.File, java.util.Map, groovy.lang.Closure)} when
-     * no options to alter the traversal behavior are required.
-     *
-     * @param self    a File
-     * @param closure the Closure to invoke on each file/directory and optionally returning a {@link groovy.io.FileVisitResult} value
-     *     which can be used to control subsequent processing
-     * @throws FileNotFoundException    if the given directory does not exist
-     * @throws IllegalArgumentException if the provided File object does not represent a directory
-     * @see #traverse(java.io.File, java.util.Map, groovy.lang.Closure)
-     * @since 1.7.1
-     */
-    public static void traverse(final File self, final Closure closure)
-            throws FileNotFoundException, IllegalArgumentException {
-        traverse(self, new HashMap<String, Object>(), closure);
-    }
-
-    /**
-     * Invokes the closure specified with key 'visit' in the options Map
-     * for each descendant file in this directory tree. Convenience method
-     * for {@link #traverse(java.io.File, java.util.Map, groovy.lang.Closure)} allowing the 'visit' closure
-     * to be included in the options Map rather than as a parameter.
-     *
-     * @param self    a File
-     * @param options a Map of options to alter the traversal behavior
-     * @throws FileNotFoundException    if the given directory does not exist
-     * @throws IllegalArgumentException if the provided File object does not represent a directory or illegal filter combinations are supplied
-     * @see #traverse(java.io.File, java.util.Map, groovy.lang.Closure)
-     * @since 1.7.1
-     */
-    public static void traverse(final File self, final Map<String, Object> options)
-            throws FileNotFoundException, IllegalArgumentException {
-        final Closure visit = (Closure) options.remove("visit");
-        traverse(self, options, visit);
-    }
-
-    private static FileVisitResult traverse(final File self, final Map<String, Object> options, final Closure closure, final int maxDepth)
-            throws FileNotFoundException, IllegalArgumentException {
-        checkDir(self);
-        final Closure pre = (Closure) options.get("preDir");
-        final Closure post = (Closure) options.get("postDir");
-        final FileType type = (FileType) options.get("type");
-        final Object filter = options.get("filter");
-        final Object nameFilter = options.get("nameFilter");
-        final Object excludeFilter = options.get("excludeFilter");
-        final Object excludeNameFilter = options.get("excludeNameFilter");
-        final Closure sort = (Closure) options.get("sort");
-
-        final File[] origFiles = self.listFiles();
-        // null check because of http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4803836
-        if (origFiles != null) {
-            List<File> files = Arrays.asList(origFiles);
-            if (sort != null) files = sort(files, sort);
-            for (File file : files) {
-                if (file.isDirectory()) {
-                    if (type != FileType.FILES) {
-                        if (closure != null && notFiltered(file, filter, nameFilter, excludeFilter, excludeNameFilter)) {
-                            Object closureResult = closure.call(file);
-                            if (closureResult == FileVisitResult.SKIP_SIBLINGS) break;
-                            if (closureResult == FileVisitResult.TERMINATE) return FileVisitResult.TERMINATE;
-                        }
-                    }
-                    if (maxDepth != 0) {
-                        Object preResult = null;
-                        if (pre != null) {
-                            preResult = pre.call(file);
-                        }
-                        if (preResult == FileVisitResult.SKIP_SIBLINGS) break;
-                        if (preResult == FileVisitResult.TERMINATE) return FileVisitResult.TERMINATE;
-                        if (preResult != FileVisitResult.SKIP_SUBTREE) {
-                            FileVisitResult terminated = traverse(file, options, closure, maxDepth - 1);
-                            if (terminated == FileVisitResult.TERMINATE) return terminated;
-                        }
-                        Object postResult = null;
-                        if (post != null) {
-                            postResult = post.call(file);
-                        }
-                        if (postResult == FileVisitResult.SKIP_SIBLINGS) break;
-                        if (postResult == FileVisitResult.TERMINATE) return FileVisitResult.TERMINATE;
-                    }
-                } else if (type != FileType.DIRECTORIES) {
-                    if (closure != null && notFiltered(file, filter, nameFilter, excludeFilter, excludeNameFilter)) {
-                        Object closureResult = closure.call(file);
-                        if (closureResult == FileVisitResult.SKIP_SIBLINGS) break;
-                        if (closureResult == FileVisitResult.TERMINATE) return FileVisitResult.TERMINATE;
-                    }
-                }
-            }
-        }
-        return FileVisitResult.CONTINUE;
-    }
-
-    /**
-     * Invokes the closure for each descendant file in this directory.
-     * Sub-directories are recursively searched in a depth-first fashion.
-     * Both regular files and subdirectories are passed to the closure.
-     *
-     * @param self    a File
-     * @param closure a closure
-     * @throws FileNotFoundException    if the given directory does not exist
-     * @throws IllegalArgumentException if the provided File object does not represent a directory
-     * @see #eachFileRecurse(java.io.File, groovy.io.FileType, groovy.lang.Closure)
-     * @since 1.0
-     */
-    public static void eachFileRecurse(File self, Closure closure) throws FileNotFoundException, IllegalArgumentException {
-        eachFileRecurse(self, FileType.ANY, closure);
-    }
-
-    /**
-     * Invokes the closure for each descendant directory of this directory.
-     * Sub-directories are recursively searched in a depth-first fashion.
-     * Only subdirectories are passed to the closure; regular files are ignored.
-     *
-     * @param self    a directory
-     * @param closure a closure
-     * @throws FileNotFoundException    if the given directory does not exist
-     * @throws IllegalArgumentException if the provided File object does not represent a directory
-     * @see #eachFileRecurse(java.io.File, groovy.io.FileType, groovy.lang.Closure)
-     * @since 1.5.0
-     */
-    public static void eachDirRecurse(final File self, final Closure closure) throws FileNotFoundException, IllegalArgumentException {
-        eachFileRecurse(self, FileType.DIRECTORIES, closure);
-    }
-
-    /**
-     * Invokes the closure for each file whose name (file.name) matches the given nameFilter in the given directory
-     * - calling the {@link #isCase(java.lang.Object, java.lang.Object)} method to determine if a match occurs.  This method can be used
-     * with different kinds of filters like regular expressions, classes, ranges etc.
-     * Both regular files and subdirectories may be candidates for matching depending
-     * on the value of fileType.
-     * <pre>
-     * // collect names of files in baseDir matching supplied regex pattern
-     * import static groovy.io.FileType.*
-     * def names = []
-     * baseDir.eachFileMatch FILES, ~/foo\d\.txt/, { names << it.name }
-     * assert names == ['foo1.txt', 'foo2.txt']
-     *
-     * // remove all *.bak files in baseDir
-     * baseDir.eachFileMatch FILES, ~/.*\.bak/, { File bak -> bak.delete() }
-     *
-     * // print out files > 4K in size from baseDir
-     * baseDir.eachFileMatch FILES, { new File(baseDir, it).size() > 4096 }, { println "$it.name ${it.size()}" }
-     * </pre>
-     *
-     * @param self       a file
-     * @param fileType   whether normal files or directories or both should be processed
-     * @param nameFilter the filter to perform on the name of the file/directory (using the {@link #isCase(java.lang.Object, java.lang.Object)} method)
-     * @param closure    the closure to invoke
-     * @throws FileNotFoundException    if the given directory does not exist
-     * @throws IllegalArgumentException if the provided File object does not represent a directory
-     * @since 1.7.1
-     */
-    public static void eachFileMatch(final File self, final FileType fileType, final Object nameFilter, final Closure closure)
-            throws FileNotFoundException, IllegalArgumentException {
-        checkDir(self);
-        final File[] files = self.listFiles();
-        // null check because of http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4803836
-        if (files == null) return;
-        final MetaClass metaClass = InvokerHelper.getMetaClass(nameFilter);
-        for (final File currentFile : files) {
-            if ((fileType != FileType.FILES && currentFile.isDirectory()) ||
-                    (fileType != FileType.DIRECTORIES && currentFile.isFile())) {
-                if (DefaultTypeTransformation.castToBoolean(metaClass.invokeMethod(nameFilter, "isCase", currentFile.getName())))
-                    closure.call(currentFile);
-            }
-        }
-    }
-
-    /**
-     * Invokes the closure for each file whose name (file.name) matches the given nameFilter in the given directory
-     * - calling the {@link #isCase(java.lang.Object, java.lang.Object)} method to determine if a match occurs.  This method can be used
-     * with different kinds of filters like regular expressions, classes, ranges etc.
-     * Both regular files and subdirectories are matched.
-     *
-     * @param self       a file
-     * @param nameFilter the nameFilter to perform on the name of the file (using the {@link #isCase(java.lang.Object, java.lang.Object)} method)
-     * @param closure    the closure to invoke
-     * @throws FileNotFoundException    if the given directory does not exist
-     * @throws IllegalArgumentException if the provided File object does not represent a directory
-     * @see #eachFileMatch(java.io.File, groovy.io.FileType, java.lang.Object, groovy.lang.Closure)
-     * @since 1.5.0
-     */
-    public static void eachFileMatch(final File self, final Object nameFilter, final Closure closure)
-            throws FileNotFoundException, IllegalArgumentException {
-        eachFileMatch(self, FileType.ANY, nameFilter, closure);
-    }
-
-    /**
-     * Invokes the closure for each subdirectory whose name (dir.name) matches the given nameFilter in the given directory
-     * - calling the {@link #isCase(java.lang.Object, java.lang.Object)} method to determine if a match occurs.  This method can be used
-     * with different kinds of filters like regular expressions, classes, ranges etc.
-     * Only subdirectories are matched; regular files are ignored.
-     *
-     * @param self       a file
-     * @param nameFilter the nameFilter to perform on the name of the directory (using the {@link #isCase(java.lang.Object, java.lang.Object)} method)
-     * @param closure    the closure to invoke
-     * @throws FileNotFoundException    if the given directory does not exist
-     * @throws IllegalArgumentException if the provided File object does not represent a directory
-     * @see #eachFileMatch(java.io.File, groovy.io.FileType, java.lang.Object, groovy.lang.Closure)
-     * @since 1.5.0
-     */
-    public static void eachDirMatch(final File self, final Object nameFilter, final Closure closure) throws FileNotFoundException, IllegalArgumentException {
-        eachFileMatch(self, FileType.DIRECTORIES, nameFilter, closure);
-    }
-
-    /**
-     * Deletes a directory with all contained files and subdirectories.
-     * <p>The method returns
-     * <ul>
-     * <li>true, when deletion was successful</li>
-     * <li>true, when it is called for a non existing directory</li>
-     * <li>false, when it is called for a file which isn't a directory</li>
-     * <li>false, when directory couldn't be deleted</li>
-     * </ul>
-     * </p>
-     *
-     * @param self a File
-     * @return true if the file doesn't exist or deletion was successful
-     * @since 1.6.0
-     */
-    public static boolean deleteDir(final File self) {
-        if (!self.exists())
-            return true;
-        if (!self.isDirectory())
-            return false;
-
-        File[] files = self.listFiles();
-        if (files == null)
-            // couldn't access files
-            return false;
-
-        // delete contained files
-        boolean result = true;
-        for (File file : files) {
-            if (file.isDirectory()) {
-                if (!deleteDir(file))
-                    result = false;
-            } else {
-                if (!file.delete())
-                    result = false;
-            }
-        }
-
-        // now delete directory itself
-        if(!self.delete())
-            result = false;
-
-        return result;
-    }
-
-    /**
-     * Renames the file. It's a shortcut for {@link java.io.File#renameTo(File)}
-     *
-     * @param self a File
-     * @param newPathName The new pathname for the named file
-     * @return  <code>true</code> if and only if the renaming succeeded;
-     *             <code>false</code> otherwise
-     * @since 1.7.4
-     */
-    public static boolean renameTo(final File self, String newPathName) {
-        return self.renameTo(new File(newPathName));
-    }
-
     /**
      * Allows a simple syntax for using timers.  This timer will execute the
      * given closure after the given delay.
@@ -16038,792 +10486,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         };
         timer.schedule(timerTask, delay);
         return timerTask;
-    }
-
-    /**
-     * Create a buffered reader for this file.
-     *
-     * @param file a File
-     * @return a BufferedReader
-     * @throws IOException if an IOException occurs.
-     * @since 1.0
-     */
-    public static BufferedReader newReader(File file) throws IOException {
-        CharsetToolkit toolkit = new CharsetToolkit(file);
-        return toolkit.getReader();
-    }
-
-    /**
-     * Create a buffered reader for this file, using the specified
-     * charset as the encoding.
-     *
-     * @param file    a File
-     * @param charset the charset for this File
-     * @return a BufferedReader
-     * @throws FileNotFoundException        if the File was not found
-     * @throws UnsupportedEncodingException if the encoding specified is not supported
-     * @since 1.0
-     */
-    public static BufferedReader newReader(File file, String charset)
-            throws FileNotFoundException, UnsupportedEncodingException {
-        return new BufferedReader(new InputStreamReader(new FileInputStream(file), charset));
-    }
-
-    /**
-     * Creates a reader for this input stream.
-     *
-     * @param self an input stream
-     * @return a reader
-     * @since 1.0
-     */
-    public static BufferedReader newReader(InputStream self) {
-        return new BufferedReader(new InputStreamReader(self));
-    }
-
-    /**
-     * Creates a reader for this input stream, using the specified
-     * charset as the encoding.
-     *
-     * @param self an input stream
-     * @param charset the charset for this input stream
-     * @return a reader
-     * @throws UnsupportedEncodingException if the encoding specified is not supported
-     * @since 1.6.0
-     */
-    public static BufferedReader newReader(InputStream self, String charset) throws UnsupportedEncodingException {
-        return new BufferedReader(new InputStreamReader(self, charset));
-    }
-
-    /**
-     * Create a new BufferedReader for this file and then
-     * passes it into the closure, ensuring the reader is closed after the
-     * closure returns.
-     *
-     * @param file    a file object
-     * @param closure a closure
-     * @return the value returned by the closure
-     * @throws IOException if an IOException occurs.
-     * @since 1.5.2
-     */
-    public static <T> T withReader(File file, Closure<T> closure) throws IOException {
-        return withReader(newReader(file), closure);
-    }
-
-    /**
-     * Create a new BufferedReader for this file using the specified charset and then
-     * passes it into the closure, ensuring the reader is closed after the
-     * closure returns.
-     *
-     * @param file    a file object
-     * @param charset the charset for this input stream
-     * @param closure a closure
-     * @return the value returned by the closure
-     * @throws IOException if an IOException occurs.
-     * @since 1.6.0
-     */
-    public static <T> T withReader(File file, String charset, Closure<T> closure) throws IOException {
-        return withReader(newReader(file, charset), closure);
-    }
-
-    /**
-     * Create a buffered output stream for this file.
-     *
-     * @param file a file object
-     * @return the created OutputStream
-     * @throws IOException if an IOException occurs.
-     * @since 1.0
-     */
-    public static BufferedOutputStream newOutputStream(File file) throws IOException {
-        return new BufferedOutputStream(new FileOutputStream(file));
-    }
-
-    /**
-     * Creates a new data output stream for this file.
-     *
-     * @param file a file object
-     * @return the created DataOutputStream
-     * @throws IOException if an IOException occurs.
-     * @since 1.5.0
-     */
-    public static DataOutputStream newDataOutputStream(File file) throws IOException {
-        return new DataOutputStream(new FileOutputStream(file));
-    }
-
-    /**
-     * Creates a new OutputStream for this file and passes it into the closure.
-     * This method ensures the stream is closed after the closure returns.
-     *
-     * @param file    a File
-     * @param closure a closure
-     * @return the value returned by the closure
-     * @throws IOException if an IOException occurs.
-     * @see #withStream(java.io.OutputStream, groovy.lang.Closure)
-     * @since 1.5.2
-     */
-    public static Object withOutputStream(File file, Closure closure) throws IOException {
-        return withStream(newOutputStream(file), closure);
-    }
-
-    /**
-     * Create a new InputStream for this file and passes it into the closure.
-     * This method ensures the stream is closed after the closure returns.
-     *
-     * @param file    a File
-     * @param closure a closure
-     * @return the value returned by the closure
-     * @throws IOException if an IOException occurs.
-     * @see #withStream(java.io.InputStream, groovy.lang.Closure)
-     * @since 1.5.2
-     */
-    public static Object withInputStream(File file, Closure closure) throws IOException {
-        return withStream(newInputStream(file), closure);
-    }
-
-    /**
-     * Creates a new InputStream for this URL and passes it into the closure.
-     * This method ensures the stream is closed after the closure returns.
-     *
-     * @param url     a URL
-     * @param closure a closure
-     * @return the value returned by the closure
-     * @throws IOException if an IOException occurs.
-     * @see #withStream(java.io.InputStream, groovy.lang.Closure)
-     * @since 1.5.2
-     */
-    public static <T> T withInputStream(URL url, Closure<T> closure) throws IOException {
-        return withStream(newInputStream(url), closure);
-    }
-
-    /**
-     * Create a new DataOutputStream for this file and passes it into the closure.
-     * This method ensures the stream is closed after the closure returns.
-     *
-     * @param file    a File
-     * @param closure a closure
-     * @return the value returned by the closure
-     * @throws IOException if an IOException occurs.
-     * @see #withStream(java.io.OutputStream, groovy.lang.Closure)
-     * @since 1.5.2
-     */
-    public static <T> T withDataOutputStream(File file, Closure<T> closure) throws IOException {
-        return withStream(newDataOutputStream(file), closure);
-    }
-
-    /**
-     * Create a new DataInputStream for this file and passes it into the closure.
-     * This method ensures the stream is closed after the closure returns.
-     *
-     * @param file    a File
-     * @param closure a closure
-     * @return the value returned by the closure
-     * @throws IOException if an IOException occurs.
-     * @see #withStream(java.io.InputStream, groovy.lang.Closure)
-     * @since 1.5.2
-     */
-    public static <T> T withDataInputStream(File file, Closure<T> closure) throws IOException {
-        return withStream(newDataInputStream(file), closure);
-    }
-
-    /**
-     * Create a buffered writer for this file.
-     *
-     * @param file a File
-     * @return a BufferedWriter
-     * @throws IOException if an IOException occurs.
-     * @since 1.0
-     */
-    public static BufferedWriter newWriter(File file) throws IOException {
-        return new BufferedWriter(new FileWriter(file));
-    }
-
-    /**
-     * Creates a buffered writer for this file, optionally appending to the
-     * existing file content.
-     *
-     * @param file   a File
-     * @param append true if data should be appended to the file
-     * @return a BufferedWriter
-     * @throws IOException if an IOException occurs.
-     * @since 1.0
-     */
-    public static BufferedWriter newWriter(File file, boolean append) throws IOException {
-        return new BufferedWriter(new FileWriter(file, append));
-    }
-
-    /**
-     * Helper method to create a buffered writer for a file.  If the given
-     * charset is "UTF-16BE" or "UTF-16LE", the requisite byte order mark is
-     * written to the stream before the writer is returned.
-     *
-     * @param file    a File
-     * @param charset the name of the encoding used to write in this file
-     * @param append  true if in append mode
-     * @return a BufferedWriter
-     * @throws IOException if an IOException occurs.
-     * @since 1.0
-     */
-    public static BufferedWriter newWriter(File file, String charset, boolean append) throws IOException {
-        if (append) {
-            return new EncodingAwareBufferedWriter(new OutputStreamWriter(new FileOutputStream(file, append), charset));
-        } else {
-            // first write the Byte Order Mark for Unicode encodings
-            FileOutputStream stream = new FileOutputStream(file);
-            if ("UTF-16BE".equals(charset)) {
-                writeUtf16Bom(stream, true);
-            } else if ("UTF-16LE".equals(charset)) {
-                writeUtf16Bom(stream, false);
-            }
-            return new EncodingAwareBufferedWriter(new OutputStreamWriter(stream, charset));
-        }
-    }
-
-    /**
-     * Creates a buffered writer for this file, writing data using the given
-     * encoding.
-     *
-     * @param file    a File
-     * @param charset the name of the encoding used to write in this file
-     * @return a BufferedWriter
-     * @throws IOException if an IOException occurs.
-     * @since 1.0
-     */
-    public static BufferedWriter newWriter(File file, String charset) throws IOException {
-        return newWriter(file, charset, false);
-    }
-
-    /**
-     * Write a Byte Order Mark at the beginning of the file
-     *
-     * @param stream    the FileOutputStream to write the BOM to
-     * @param bigEndian true if UTF 16 Big Endian or false if Low Endian
-     * @throws IOException if an IOException occurs.
-     * @since 1.0
-     */
-    private static void writeUtf16Bom(FileOutputStream stream, boolean bigEndian) throws IOException {
-        if (bigEndian) {
-            stream.write(-2);
-            stream.write(-1);
-        } else {
-            stream.write(-1);
-            stream.write(-2);
-        }
-    }
-
-    /**
-     * Creates a new BufferedWriter for this file, passes it to the closure, and
-     * ensures the stream is flushed and closed after the closure returns.
-     *
-     * @param file    a File
-     * @param closure a closure
-     * @return the value returned by the closure
-     * @throws IOException if an IOException occurs.
-     * @since 1.5.2
-     */
-    public static <T> T withWriter(File file, Closure<T> closure) throws IOException {
-        return withWriter(newWriter(file), closure);
-    }
-
-    /**
-     * Creates a new BufferedWriter for this file, passes it to the closure, and
-     * ensures the stream is flushed and closed after the closure returns.
-     * The writer will use the given charset encoding.
-     *
-     * @param file    a File
-     * @param charset the charset used
-     * @param closure a closure
-     * @return the value returned by the closure
-     * @throws IOException if an IOException occurs.
-     * @since 1.5.2
-     */
-    public static <T> T withWriter(File file, String charset, Closure<T> closure) throws IOException {
-        return withWriter(newWriter(file, charset), closure);
-    }
-
-    /**
-     * Create a new BufferedWriter which will append to this
-     * file.  The writer is passed to the closure and will be closed before
-     * this method returns.
-     *
-     * @param file    a File
-     * @param charset the charset used
-     * @param closure a closure
-     * @return the value returned by the closure
-     * @throws IOException if an IOException occurs.
-     * @since 1.5.2
-     */
-    public static <T> T withWriterAppend(File file, String charset, Closure<T> closure) throws IOException {
-        return withWriter(newWriter(file, charset, true), closure);
-    }
-
-    /**
-     * Create a new BufferedWriter for this file in append mode.  The writer
-     * is passed to the closure and is closed after the closure returns.
-     *
-     * @param file    a File
-     * @param closure a closure
-     * @return the value returned by the closure
-     * @throws IOException if an IOException occurs.
-     * @since 1.5.2
-     */
-    public static <T> T withWriterAppend(File file, Closure<T> closure) throws IOException {
-        return withWriter(newWriter(file, true), closure);
-    }
-
-    /**
-     * Create a new PrintWriter for this file.
-     *
-     * @param file a File
-     * @return the created PrintWriter
-     * @throws IOException if an IOException occurs.
-     * @since 1.0
-     */
-    public static PrintWriter newPrintWriter(File file) throws IOException {
-        return new GroovyPrintWriter(newWriter(file));
-    }
-
-    /**
-     * Create a new PrintWriter for this file, using specified
-     * charset.
-     *
-     * @param file    a File
-     * @param charset the charset
-     * @return a PrintWriter
-     * @throws IOException if an IOException occurs.
-     * @since 1.0
-     */
-    public static PrintWriter newPrintWriter(File file, String charset) throws IOException {
-        return new GroovyPrintWriter(newWriter(file, charset));
-    }
-
-    /**
-     * Create a new PrintWriter for this file, using specified
-     * charset.
-     *
-     * @param writer   a writer
-     * @return a PrintWriter
-     * @since 1.6.0
-     */
-    public static PrintWriter newPrintWriter(Writer writer) {
-        return new GroovyPrintWriter(writer);
-    }
-
-    /**
-     * Create a new PrintWriter for this file which is then
-     * passed it into the given closure.  This method ensures its the writer
-     * is closed after the closure returns.
-     *
-     * @param file    a File
-     * @param closure the closure to invoke with the PrintWriter
-     * @return the value returned by the closure
-     * @throws IOException if an IOException occurs.
-     * @since 1.5.2
-     */
-    public static <T> T withPrintWriter(File file, Closure<T> closure) throws IOException {
-        return withWriter(newPrintWriter(file), closure);
-    }
-
-    /**
-     * Create a new PrintWriter with a specified charset for
-     * this file.  The writer is passed to the closure, and will be closed
-     * before this method returns.
-     *
-     * @param file    a File
-     * @param charset the charset
-     * @param closure the closure to invoke with the PrintWriter
-     * @return the value returned by the closure
-     * @throws IOException if an IOException occurs.
-     * @since 1.5.2
-     */
-    public static <T> T withPrintWriter(File file, String charset, Closure<T> closure) throws IOException {
-        return withWriter(newPrintWriter(file, charset), closure);
-    }
-
-    /**
-     * Create a new PrintWriter with a specified charset for
-     * this file.  The writer is passed to the closure, and will be closed
-     * before this method returns.
-     *
-     * @param writer   a writer
-     * @param closure the closure to invoke with the PrintWriter
-     * @return the value returned by the closure
-     * @throws IOException if an IOException occurs.
-     * @since 1.6.0
-     */
-    public static <T> T withPrintWriter(Writer writer, Closure<T> closure) throws IOException {
-        return withWriter(newPrintWriter(writer), closure);
-    }
-
-    /**
-     * Allows this writer to be used within the closure, ensuring that it
-     * is flushed and closed before this method returns.
-     *
-     * @param writer  the writer which is used and then closed
-     * @param closure the closure that the writer is passed into
-     * @return the value returned by the closure
-     * @throws IOException if an IOException occurs.
-     * @since 1.5.2
-     */
-    public static <T> T withWriter(Writer writer, Closure<T> closure) throws IOException {
-        try {
-            T result = closure.call(writer);
-
-            try {
-                writer.flush();
-            } catch (IOException e) {
-                // try to continue even in case of error
-            }
-            Writer temp = writer;
-            writer = null;
-            temp.close();
-            return result;
-        } finally {
-            closeWithWarning(writer);
-        }
-    }
-
-    /**
-     * Allows this reader to be used within the closure, ensuring that it
-     * is closed before this method returns.
-     *
-     * @param reader  the reader which is used and then closed
-     * @param closure the closure that the writer is passed into
-     * @return the value returned by the closure
-     * @throws IOException if an IOException occurs.
-     * @since 1.5.2
-     */
-    public static <T> T withReader(Reader reader, Closure<T> closure) throws IOException {
-        try {
-            T result = closure.call(reader);
-
-            Reader temp = reader;
-            reader = null;
-            temp.close();
-
-            return result;
-        } finally {
-            closeWithWarning(reader);
-        }
-    }
-
-    /**
-     * Allows this input stream to be used within the closure, ensuring that it
-     * is flushed and closed before this method returns.
-     *
-     * @param stream  the stream which is used and then closed
-     * @param closure the closure that the stream is passed into
-     * @return the value returned by the closure
-     * @throws IOException if an IOException occurs.
-     * @since 1.5.2
-     */
-    public static <T> T withStream(InputStream stream, Closure<T> closure) throws IOException {
-        try {
-            T result = closure.call(stream);
-
-            InputStream temp = stream;
-            stream = null;
-            temp.close();
-
-            return result;
-        } finally {
-            closeWithWarning(stream);
-        }
-    }
-
-    /**
-     * Helper method to create a new BufferedReader for a URL and then
-     * passes it to the closure.  The reader is closed after the closure returns.
-     *
-     * @param url     a URL
-     * @param closure the closure to invoke with the reader
-     * @return the value returned by the closure
-     * @throws IOException if an IOException occurs.
-     * @since 1.5.2
-     */
-    public static <T> T withReader(URL url, Closure<T> closure) throws IOException {
-        return withReader(url.openConnection().getInputStream(), closure);
-    }
-
-    /**
-     * Helper method to create a new Reader for a URL and then
-     * passes it to the closure.  The reader is closed after the closure returns.
-     *
-     * @param url     a URL
-     * @param charset the charset used
-     * @param closure the closure to invoke with the reader
-     * @return the value returned by the closure
-     * @throws IOException if an IOException occurs.
-     * @since 1.5.6
-     */
-    public static <T> T withReader(URL url, String charset, Closure<T> closure) throws IOException {
-        return withReader(url.openConnection().getInputStream(), charset, closure);
-    }
-
-    /**
-     * Helper method to create a new Reader for a stream and then
-     * passes it into the closure.  The reader (and this stream) is closed after
-     * the closure returns.
-     *
-     * @see java.io.InputStreamReader
-     * @param in      a stream
-     * @param closure the closure to invoke with the InputStream
-     * @return the value returned by the closure
-     * @throws IOException if an IOException occurs.
-     * @since 1.5.2
-     */
-    public static <T> T withReader(InputStream in, Closure<T> closure) throws IOException {
-        return withReader(new InputStreamReader(in), closure);
-    }
-
-    /**
-     * Helper method to create a new Reader for a stream and then
-     * passes it into the closure.  The reader (and this stream) is closed after
-     * the closure returns.
-     *
-     * @see java.io.InputStreamReader
-     * @param in      a stream
-     * @param charset the charset used to decode the stream
-     * @param closure the closure to invoke with the reader
-     * @return the value returned by the closure
-     * @throws IOException if an IOException occurs.
-     * @since 1.5.6
-     */
-    public static <T> T withReader(InputStream in, String charset, Closure<T> closure) throws IOException {
-        return withReader(new InputStreamReader(in, charset), closure);
-    }
-
-    /**
-     * Creates a writer from this stream, passing it to the given closure.
-     * This method ensures the stream is closed after the closure returns.
-     *
-     * @param stream  the stream which is used and then closed
-     * @param closure the closure that the writer is passed into
-     * @return the value returned by the closure
-     * @throws IOException if an IOException occurs.
-     * @see #withWriter(java.io.Writer, groovy.lang.Closure)
-     * @since 1.5.2
-     */
-    public static <T> T withWriter(OutputStream stream, Closure<T> closure) throws IOException {
-        return withWriter(new OutputStreamWriter(stream), closure);
-    }
-
-    /**
-     * Creates a writer from this stream, passing it to the given closure.
-     * This method ensures the stream is closed after the closure returns.
-     *
-     * @param stream  the stream which is used and then closed
-     * @param charset the charset used
-     * @param closure the closure that the writer is passed into
-     * @return the value returned by the closure
-     * @throws IOException if an IOException occurs.
-     * @see #withWriter(java.io.Writer, groovy.lang.Closure)
-     * @since 1.5.2
-     */
-    public static <T> T withWriter(OutputStream stream, String charset, Closure<T> closure) throws IOException {
-        return withWriter(new OutputStreamWriter(stream, charset), closure);
-    }
-
-    /**
-     * Passes this OutputStream to the closure, ensuring that the stream
-     * is closed after the closure returns, regardless of errors.
-     *
-     * @param os      the stream which is used and then closed
-     * @param closure the closure that the stream is passed into
-     * @return the value returned by the closure
-     * @throws IOException if an IOException occurs.
-     * @since 1.5.2
-     */
-    public static <T> T withStream(OutputStream os, Closure<T> closure) throws IOException {
-        try {
-            T result = closure.call(os);
-            os.flush();
-
-            OutputStream temp = os;
-            os = null;
-            temp.close();
-
-            return result;
-        } finally {
-            closeWithWarning(os);
-        }
-    }
-
-    /**
-     * Creates a buffered input stream for this file.
-     *
-     * @param file a File
-     * @return a BufferedInputStream of the file
-     * @throws FileNotFoundException if the file is not found.
-     * @since 1.0
-     */
-    public static BufferedInputStream newInputStream(File file) throws FileNotFoundException {
-        return new BufferedInputStream(new FileInputStream(file));
-    }
-
-    /**
-     * Creates an inputstream for this URL, with the possibility to set different connection parameters using the
-     * <i>parameters map</i>:
-     * <ul>
-     *     <li>connectTimeout : the connection timeout</li>
-     *     <li>readTimeout : the read timeout</li>
-     *     <li>useCaches : set the use cache property for the URL connection</li>
-     *     <li>allowUserInteraction : set the user interaction flag for the URL connection</li>
-     *     <li>requestProperties : a map of properties to be passed to the URL connection</li>
-     * </ul>
-     * @param parameters an optional map specifying part or all of supported connection parameters
-     * @param url the url for which to create the inputstream
-     * @return an InputStream from the underlying URLConnection
-     * @throws IOException if an I/O error occurs while creating the input stream
-     * @since 1.8.1
-     */
-    private static InputStream configuredInputStream(Map parameters, URL url) throws IOException {
-        final URLConnection connection = url.openConnection();
-        if (parameters!=null) {
-            if (parameters.containsKey("connectTimeout")) {
-                connection.setConnectTimeout(asType(parameters.get("connectTimeout"), Integer.class));
-            }
-            if (parameters.containsKey("readTimeout")) {
-                connection.setReadTimeout(asType(parameters.get("readTimeout"), Integer.class));
-            }
-            if (parameters.containsKey("useCaches")) {
-                connection.setUseCaches(asType(parameters.get("useCaches"), Boolean.class));
-            }
-            if (parameters.containsKey("allowUserInteraction")) {
-                connection.setAllowUserInteraction(asType(parameters.get("allowUserInteraction"), Boolean.class));
-            }
-            if (parameters.containsKey("requestProperties")) {
-                @SuppressWarnings("unchecked")
-                Map<String,String> properties = (Map<String, String>) parameters.get("requestProperties");
-                for (Map.Entry<String, String> entry : properties.entrySet()) {
-                    connection.setRequestProperty(entry.getKey(), entry.getValue());
-                }
-            }
-
-        }
-        return connection.getInputStream();
-    }
-
-    /**
-     * Creates a buffered input stream for this URL.
-     *
-     * @param url a URL
-     * @return a BufferedInputStream for the URL
-     * @throws MalformedURLException is thrown if the URL is not well formed
-     * @throws IOException if an I/O error occurs while creating the input stream
-     * @since 1.5.2
-     */
-    public static BufferedInputStream newInputStream(URL url) throws MalformedURLException, IOException {
-        return new BufferedInputStream(configuredInputStream(null, url));
-    }
-
-    /**
-     * Creates a buffered input stream for this URL.
-     *
-     * @param url a URL
-     * @param parameters connection parameters
-     * @return a BufferedInputStream for the URL
-     * @throws MalformedURLException is thrown if the URL is not well formed
-     * @throws IOException if an I/O error occurs while creating the input stream
-     * @since 1.8.1
-     */
-    public static BufferedInputStream newInputStream(URL url, Map parameters) throws MalformedURLException, IOException {
-        return new BufferedInputStream(configuredInputStream(parameters, url));
-    }
-
-    /**
-     * Creates a buffered reader for this URL.
-     *
-     * @param url a URL
-     * @return a BufferedReader for the URL
-     * @throws MalformedURLException is thrown if the URL is not well formed
-     * @throws IOException if an I/O error occurs while creating the input stream
-     * @since 1.5.5
-     */
-    public static BufferedReader newReader(URL url) throws MalformedURLException, IOException {
-        return newReader(configuredInputStream(null, url));
-    }
-
-    /**
-     * Creates a buffered reader for this URL.
-     *
-     * @param url a URL
-     * @param parameters connection parameters
-     * @return a BufferedReader for the URL
-     * @throws MalformedURLException is thrown if the URL is not well formed
-     * @throws IOException if an I/O error occurs while creating the input stream
-     * @since 1.8.1
-     */
-    public static BufferedReader newReader(URL url, Map parameters) throws MalformedURLException, IOException {
-        return newReader(configuredInputStream(parameters, url));
-    }
-
-    /**
-     * Creates a buffered reader for this URL using the given encoding.
-     *
-     * @param url a URL
-     * @param charset opens the stream with a specified charset
-     * @return a BufferedReader for the URL
-     * @throws MalformedURLException is thrown if the URL is not well formed
-     * @throws IOException if an I/O error occurs while creating the input stream
-     * @since 1.5.5
-     */
-    public static BufferedReader newReader(URL url, String charset) throws MalformedURLException, IOException {
-        return new BufferedReader(new InputStreamReader(configuredInputStream(null, url), charset));
-    }
-
-    /**
-     * Creates a buffered reader for this URL using the given encoding.
-     *
-     * @param url a URL
-     * @param parameters connection parameters
-     * @param charset opens the stream with a specified charset
-     * @return a BufferedReader for the URL
-     * @throws MalformedURLException is thrown if the URL is not well formed
-     * @throws IOException if an I/O error occurs while creating the input stream
-     * @since 1.8.1
-     */
-    public static BufferedReader newReader(URL url, Map parameters, String charset) throws MalformedURLException, IOException {
-        return new BufferedReader(new InputStreamReader(configuredInputStream(parameters, url), charset));
-    }
-
-    /**
-     * Create a data input stream for this file
-     *
-     * @param file a File
-     * @return a DataInputStream of the file
-     * @throws FileNotFoundException if the file is not found.
-     * @since 1.5.0
-     */
-    public static DataInputStream newDataInputStream(File file) throws FileNotFoundException {
-        return new DataInputStream(new FileInputStream(file));
-    }
-
-    /**
-     * Traverse through each byte of this File
-     *
-     * @param self    a File
-     * @param closure a closure
-     * @throws IOException if an IOException occurs.
-     * @see #eachByte(java.io.InputStream, groovy.lang.Closure)
-     * @since 1.0
-     */
-    public static void eachByte(File self, Closure closure) throws IOException {
-        BufferedInputStream is = newInputStream(self);
-        eachByte(is, closure);
-    }
-
-    /**
-     * Traverse through the bytes of this File, bufferLen bytes at a time.
-     *
-     * @param self      a File
-     * @param bufferLen the length of the buffer to use.
-     * @param closure   a 2 parameter closure which is passed the byte[] and a number of bytes successfully read.
-     * @throws IOException if an IOException occurs.
-     * @see #eachByte(java.io.InputStream, int, groovy.lang.Closure)
-     * @since 1.7.4
-     */
-    public static void eachByte(File self, int bufferLen, Closure closure) throws IOException {
-        BufferedInputStream is = newInputStream(self);
-        eachByte(is, bufferLen, closure);
     }
 
     /**
@@ -16848,914 +10510,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static void eachByte(byte[] self, Closure closure) {
         each(self, closure);
-    }
-
-    /**
-     * Traverse through each byte of the specified stream. The
-     * stream is closed after the closure returns.
-     *
-     * @param is      stream to iterate over, closed after the method call
-     * @param closure closure to apply to each byte
-     * @throws IOException if an IOException occurs.
-     * @since 1.0
-     */
-    public static void eachByte(InputStream is, Closure closure) throws IOException {
-        try {
-            while (true) {
-                int b = is.read();
-                if (b == -1) {
-                    break;
-                } else {
-                    closure.call((byte) b);
-                }
-            }
-
-            InputStream temp = is;
-            is = null;
-            temp.close();
-        } finally {
-            closeWithWarning(is);
-        }
-    }
-
-    /**
-     * Traverse through each the specified stream reading bytes into a buffer
-     * and calling the 2 parameter closure with this buffer and the number of bytes.
-     *
-     * @param is        stream to iterate over, closed after the method call.
-     * @param bufferLen the length of the buffer to use.
-     * @param closure   a 2 parameter closure which is passed the byte[] and a number of bytes successfully read.
-     * @throws IOException if an IOException occurs.
-     * @since 1.8
-     */
-    public static void eachByte(InputStream is, int bufferLen, Closure closure) throws IOException {
-        byte[] buffer = new byte[ bufferLen ] ;
-        int bytesRead = 0 ;
-        try {
-            while ( ( bytesRead = is.read( buffer, 0, bufferLen ) ) > 0 ) {
-                closure.call( new Object[]{ buffer, bytesRead } ) ;
-            }
-
-            InputStream temp = is;
-            is = null;
-            temp.close();
-        } finally {
-            closeWithWarning(is);
-        }
-    }
-
-    /**
-     * Reads the InputStream from this URL, passing each byte to the given
-     * closure.  The URL stream will be closed before this method returns.
-     *
-     * @param url     url to iterate over
-     * @param closure closure to apply to each byte
-     * @throws IOException if an IOException occurs.
-     * @see #eachByte(java.io.InputStream, groovy.lang.Closure)
-     * @since 1.0
-     */
-    public static void eachByte(URL url, Closure closure) throws IOException {
-        InputStream is = url.openConnection().getInputStream();
-        eachByte(is, closure);
-    }
-
-    /**
-     * Reads the InputStream from this URL, passing a byte[] and a number of bytes
-     * to the given closure.  The URL stream will be closed before this method returns.
-     *
-     * @param url       url to iterate over
-     * @param bufferLen the length of the buffer to use.
-     * @param closure   a 2 parameter closure which is passed the byte[] and a number of bytes successfully read.
-     * @throws IOException if an IOException occurs.
-     * @see #eachByte(java.io.InputStream, int, groovy.lang.Closure)
-     * @since 1.8
-     */
-    public static void eachByte(URL url, int bufferLen, Closure closure) throws IOException {
-        InputStream is = url.openConnection().getInputStream();
-        eachByte(is, bufferLen, closure);
-    }
-
-    /**
-     * Transforms each character from this reader by passing it to the given
-     * closure.  The Closure should return each transformed character, which
-     * will be passed to the Writer.  The reader and writer will be both be
-     * closed before this method returns.
-     *
-     * @param self    a Reader object
-     * @param writer  a Writer to receive the transformed characters
-     * @param closure a closure that performs the required transformation
-     * @throws IOException if an IOException occurs.
-     * @since 1.5.0
-     */
-    public static void transformChar(Reader self, Writer writer, Closure closure) throws IOException {
-        int c;
-        try {
-            char[] chars = new char[1];
-            while ((c = self.read()) != -1) {
-                chars[0] = (char) c;
-                writer.write((String) closure.call(new String(chars)));
-            }
-            writer.flush();
-
-            Writer temp2 = writer;
-            writer = null;
-            temp2.close();
-            Reader temp1 = self;
-            self = null;
-            temp1.close();
-        } finally {
-            closeWithWarning(self);
-            closeWithWarning(writer);
-        }
-    }
-
-    /**
-     * Transforms the lines from a reader with a Closure and
-     * write them to a writer. Both Reader and Writer are
-     * closed after the operation.
-     *
-     * @param reader  Lines of text to be transformed. Reader is closed afterwards.
-     * @param writer  Where transformed lines are written. Writer is closed afterwards.
-     * @param closure Single parameter closure that is called to transform each line of
-     *                text from the reader, before writing it to the writer.
-     * @throws IOException if an IOException occurs.
-     * @since 1.0
-     */
-    public static void transformLine(Reader reader, Writer writer, Closure closure) throws IOException {
-        BufferedReader br = new BufferedReader(reader);
-        BufferedWriter bw = new BufferedWriter(writer);
-        String line;
-        try {
-            while ((line = br.readLine()) != null) {
-                Object o = closure.call(line);
-                if (o != null) {
-                    bw.write(o.toString());
-                    bw.newLine();
-                }
-            }
-            bw.flush();
-
-            Writer temp2 = writer;
-            writer = null;
-            temp2.close();
-            Reader temp1 = reader;
-            reader = null;
-            temp1.close();
-        } finally {
-            closeWithWarning(br);
-            closeWithWarning(reader);
-            closeWithWarning(bw);
-            closeWithWarning(writer);
-        }
-    }
-
-    /**
-     * Filter the lines from a reader and write them on the writer,
-     * according to a closure which returns true if the line should be included.
-     * Both Reader and Writer are closed after the operation.
-     *
-     * @param reader  a reader, closed after the call
-     * @param writer  a writer, closed after the call
-     * @param closure the closure which returns booleans
-     * @throws IOException if an IOException occurs.
-     * @since 1.0
-     */
-    public static void filterLine(Reader reader, Writer writer, Closure closure) throws IOException {
-        BufferedReader br = new BufferedReader(reader);
-        BufferedWriter bw = new BufferedWriter(writer);
-        String line;
-        try {
-            while ((line = br.readLine()) != null) {
-                if (DefaultTypeTransformation.castToBoolean(closure.call(line))) {
-                    bw.write(line);
-                    bw.newLine();
-                }
-            }
-            bw.flush();
-
-            Writer temp2 = writer;
-            writer = null;
-            temp2.close();
-            Reader temp1 = reader;
-            reader = null;
-            temp1.close();
-        } finally {
-            closeWithWarning(br);
-            closeWithWarning(reader);
-            closeWithWarning(bw);
-            closeWithWarning(writer);
-        }
-
-    }
-
-    /**
-     * Filters the lines of a File and creates a Writable in return to
-     * stream the filtered lines.
-     *
-     * @param self    a File
-     * @param closure a closure which returns a boolean indicating to filter
-     *                the line or not
-     * @return a Writable closure
-     * @throws IOException if <code>self</code> is not readable
-     * @see #filterLine(java.io.Reader, groovy.lang.Closure)
-     * @since 1.0
-     */
-    public static Writable filterLine(File self, Closure closure) throws IOException {
-        return filterLine(newReader(self), closure);
-    }
-
-    /**
-     * Filters the lines of a File and creates a Writable in return to
-     * stream the filtered lines.
-     *
-     * @param self    a File
-     * @param charset opens the file with a specified charset
-     * @param closure a closure which returns a boolean indicating to filter
-     *                the line or not
-     * @return a Writable closure
-     * @throws IOException if an IOException occurs
-     * @see #filterLine(java.io.Reader, groovy.lang.Closure)
-     * @since 1.6.8
-     */
-    public static Writable filterLine(File self, String charset, Closure closure) throws IOException {
-        return filterLine(newReader(self, charset), closure);
-    }
-
-    /**
-     * Filter the lines from this File, and write them to the given writer based
-     * on the given closure predicate.
-     *
-     * @param self    a File
-     * @param writer  a writer destination to write filtered lines to
-     * @param closure a closure which takes each line as a parameter and returns
-     *                <code>true</code> if the line should be written to this writer.
-     * @throws IOException if <code>self</code> is not readable
-     * @see #filterLine(java.io.Reader, java.io.Writer, groovy.lang.Closure)
-     * @since 1.0
-     */
-    public static void filterLine(File self, Writer writer, Closure closure) throws IOException {
-        filterLine(newReader(self), writer, closure);
-    }
-
-    /**
-     * Filter the lines from this File, and write them to the given writer based
-     * on the given closure predicate.
-     *
-     * @param self    a File
-     * @param writer  a writer destination to write filtered lines to
-     * @param charset opens the file with a specified charset
-     * @param closure a closure which takes each line as a parameter and returns
-     *                <code>true</code> if the line should be written to this writer.
-     * @throws IOException if an IO error occurs
-     * @see #filterLine(java.io.Reader, java.io.Writer, groovy.lang.Closure)
-     * @since 1.6.8
-     */
-    public static void filterLine(File self, Writer writer, String charset, Closure closure) throws IOException {
-        filterLine(newReader(self, charset), writer, closure);
-    }
-
-    /**
-     * Filter the lines from this Reader, and return a Writable which can be
-     * used to stream the filtered lines to a destination.  The closure should
-     * return <code>true</code> if the line should be passed to the writer.
-     *
-     * @param reader  this reader
-     * @param closure a closure used for filtering
-     * @return a Writable which will use the closure to filter each line
-     *         from the reader when the Writable#writeTo(Writer) is called.
-     * @since 1.0
-     */
-    public static Writable filterLine(Reader reader, final Closure closure) {
-        final BufferedReader br = new BufferedReader(reader);
-        return new Writable() {
-            public Writer writeTo(Writer out) throws IOException {
-                BufferedWriter bw = new BufferedWriter(out);
-                String line;
-                while ((line = br.readLine()) != null) {
-                    if (DefaultTypeTransformation.castToBoolean(closure.call(line))) {
-                        bw.write(line);
-                        bw.newLine();
-                    }
-                }
-                bw.flush();
-                return out;
-            }
-
-            public String toString() {
-                StringWriter buffer = new StringWriter();
-                try {
-                    writeTo(buffer);
-                } catch (IOException e) {
-                    throw new StringWriterIOException(e);
-                }
-                return buffer.toString();
-            }
-        };
-    }
-
-    /**
-     * Filter lines from an input stream using a closure predicate.  The closure
-     * will be passed each line as a String, and it should return
-     * <code>true</code> if the line should be passed to the writer.
-     *
-     * @param self      an input stream
-     * @param predicate a closure which returns boolean and takes a line
-     * @return a writable which writes out the filtered lines
-     * @see #filterLine(java.io.Reader, groovy.lang.Closure)
-     * @since 1.0
-     */
-    public static Writable filterLine(InputStream self, Closure predicate) {
-        return filterLine(newReader(self), predicate);
-    }
-
-    /**
-     * Filter lines from an input stream using a closure predicate.  The closure
-     * will be passed each line as a String, and it should return
-     * <code>true</code> if the line should be passed to the writer.
-     *
-     * @param self      an input stream
-     * @param charset   opens the stream with a specified charset
-     * @param predicate a closure which returns boolean and takes a line
-     * @return a writable which writes out the filtered lines
-     * @throws UnsupportedEncodingException if the encoding specified is not supported
-     * @see #filterLine(java.io.Reader, groovy.lang.Closure)
-     * @since 1.6.8
-     */
-    public static Writable filterLine(InputStream self, String charset, Closure predicate)
-            throws UnsupportedEncodingException {
-        return filterLine(newReader(self, charset), predicate);
-    }
-
-    /**
-     * Uses a closure to filter lines from this InputStream and pass them to
-     * the given writer. The closure will be passed each line as a String, and
-     * it should return <code>true</code> if the line should be passed to the
-     * writer.
-     *
-     * @param self      the InputStream
-     * @param writer    a writer to write output to
-     * @param predicate a closure which returns true if a line should be accepted
-     * @throws IOException if an IOException occurs.
-     * @see #filterLine(java.io.Reader, java.io.Writer, groovy.lang.Closure)
-     * @since 1.0
-     */
-    public static void filterLine(InputStream self, Writer writer, Closure predicate)
-            throws IOException {
-        filterLine(newReader(self), writer, predicate);
-    }
-
-    /**
-     * Uses a closure to filter lines from this InputStream and pass them to
-     * the given writer. The closure will be passed each line as a String, and
-     * it should return <code>true</code> if the line should be passed to the
-     * writer.
-     *
-     * @param self      the InputStream
-     * @param writer    a writer to write output to
-     * @param charset   opens the stream with a specified charset
-     * @param predicate a closure which returns true if a line should be accepted
-     * @throws IOException if an IOException occurs.
-     * @see #filterLine(java.io.Reader, java.io.Writer, groovy.lang.Closure)
-     * @since 1.6.8
-     */
-    public static void filterLine(InputStream self, Writer writer, String charset, Closure predicate)
-            throws IOException {
-        filterLine(newReader(self, charset), writer, predicate);
-    }
-
-    /**
-     * Filter lines from a URL using a closure predicate.  The closure
-     * will be passed each line as a String, and it should return
-     * <code>true</code> if the line should be passed to the writer.
-     *
-     * @param self      a URL
-     * @param predicate a closure which returns boolean and takes a line
-     * @return a writable which writes out the filtered lines
-     * @throws IOException if an IO exception occurs
-     * @see #filterLine(java.io.Reader, groovy.lang.Closure)
-     * @since 1.6.8
-     */
-    public static Writable filterLine(URL self, Closure predicate)
-            throws IOException {
-        return filterLine(newReader(self), predicate);
-    }
-
-    /**
-     * Filter lines from a URL using a closure predicate.  The closure
-     * will be passed each line as a String, and it should return
-     * <code>true</code> if the line should be passed to the writer.
-     *
-     * @param self      the URL
-     * @param charset   opens the URL with a specified charset
-     * @param predicate a closure which returns boolean and takes a line
-     * @return a writable which writes out the filtered lines
-     * @throws IOException if an IO exception occurs
-     * @see #filterLine(java.io.Reader, groovy.lang.Closure)
-     * @since 1.6.8
-     */
-    public static Writable filterLine(URL self, String charset, Closure predicate)
-            throws IOException {
-        return filterLine(newReader(self, charset), predicate);
-    }
-
-    /**
-     * Uses a closure to filter lines from this URL and pass them to
-     * the given writer. The closure will be passed each line as a String, and
-     * it should return <code>true</code> if the line should be passed to the
-     * writer.
-     *
-     * @param self      the URL
-     * @param writer    a writer to write output to
-     * @param predicate a closure which returns true if a line should be accepted
-     * @throws IOException if an IOException occurs.
-     * @see #filterLine(java.io.Reader, java.io.Writer, groovy.lang.Closure)
-     * @since 1.6.8
-     */
-    public static void filterLine(URL self, Writer writer, Closure predicate)
-            throws IOException {
-        filterLine(newReader(self), writer, predicate);
-    }
-
-    /**
-     * Uses a closure to filter lines from this URL and pass them to
-     * the given writer. The closure will be passed each line as a String, and
-     * it should return <code>true</code> if the line should be passed to the
-     * writer.
-     *
-     * @param self      the URL
-     * @param writer    a writer to write output to
-     * @param charset   opens the URL with a specified charset
-     * @param predicate a closure which returns true if a line should be accepted
-     * @throws IOException if an IOException occurs.
-     * @see #filterLine(java.io.Reader, java.io.Writer, groovy.lang.Closure)
-     * @since 1.6.8
-     */
-    public static void filterLine(URL self, Writer writer, String charset, Closure predicate)
-            throws IOException {
-        filterLine(newReader(self, charset), writer, predicate);
-    }
-
-    /**
-     * Reads the content of the file into a byte array.
-     *
-     * @param file a File
-     * @return a byte array with the contents of the file.
-     * @throws IOException if an IOException occurs.
-     * @since 1.0
-     */
-    public static byte[] readBytes(File file) throws IOException {
-        byte[] bytes = new byte[(int) file.length()];
-        FileInputStream fileInputStream = new FileInputStream(file);
-        DataInputStream dis = new DataInputStream(fileInputStream);
-        try {
-            dis.readFully(bytes);
-            InputStream temp = dis;
-            dis = null;
-            temp.close();
-        } finally {
-            closeWithWarning(dis);
-        }
-        return bytes;
-    }
-
-    // ================================
-    // Socket and ServerSocket methods
-
-    /**
-     * Passes the Socket's InputStream and OutputStream to the closure.  The
-     * streams will be closed after the closure returns, even if an exception
-     * is thrown.
-     *
-     * @param socket  a Socket
-     * @param closure a Closure
-     * @return the value returned by the closure
-     * @throws IOException if an IOException occurs.
-     * @since 1.5.2
-     */
-    public static <T> T withStreams(Socket socket, Closure<T> closure) throws IOException {
-        InputStream input = socket.getInputStream();
-        OutputStream output = socket.getOutputStream();
-        try {
-            T result = closure.call(new Object[]{input, output});
-
-            InputStream temp1 = input;
-            input = null;
-            temp1.close();
-            OutputStream temp2 = output;
-            output = null;
-            temp2.close();
-
-            return result;
-        } finally {
-            closeWithWarning(input);
-            closeWithWarning(output);
-        }
-    }
-
-    /**
-     * Creates an InputObjectStream and an OutputObjectStream from a Socket, and
-     * passes them to the closure.  The streams will be closed after the closure
-     * returns, even if an exception is thrown.
-     *
-     * @param socket  this Socket
-     * @param closure a Closure
-     * @return the value returned by the closure
-     * @throws IOException if an IOException occurs.
-     * @since 1.5.0
-     */
-    public static <T> T withObjectStreams(Socket socket, Closure<T> closure) throws IOException {
-        InputStream input = socket.getInputStream();
-        OutputStream output = socket.getOutputStream();
-        ObjectOutputStream oos = new ObjectOutputStream(output);
-        ObjectInputStream ois = new ObjectInputStream(input);
-        try {
-            T result = closure.call(new Object[]{ois, oos});
-
-            InputStream temp1 = ois;
-            ois = null;
-            temp1.close();
-            temp1 = input;
-            input = null;
-            temp1.close();
-            OutputStream temp2 = oos;
-            oos = null;
-            temp2.close();
-            temp2 = output;
-            output = null;
-            temp2.close();
-
-            return result;
-        } finally {
-            closeWithWarning(ois);
-            closeWithWarning(input);
-            closeWithWarning(oos);
-            closeWithWarning(output);
-        }
-    }
-
-    /**
-     * Overloads the left shift operator to provide an append mechanism to
-     * add things to the output stream of a socket
-     *
-     * @param self  a Socket
-     * @param value a value to append
-     * @return a Writer
-     * @throws IOException if an IOException occurs.
-     * @since 1.0
-     */
-    public static Writer leftShift(Socket self, Object value) throws IOException {
-        return leftShift(self.getOutputStream(), value);
-    }
-
-    /**
-     * Overloads the left shift operator to provide an append mechanism
-     * to add bytes to the output stream of a socket
-     *
-     * @param self  a Socket
-     * @param value a value to append
-     * @return an OutputStream
-     * @throws IOException if an IOException occurs.
-     * @since 1.0
-     */
-    public static OutputStream leftShift(Socket self, byte[] value) throws IOException {
-        return leftShift(self.getOutputStream(), value);
-    }
-
-    /**
-     * Accepts a connection and passes the resulting Socket to the closure
-     * which runs in a new Thread.
-     *
-     * @param serverSocket a ServerSocket
-     * @param closure      a Closure
-     * @return a Socket
-     * @throws IOException if an IOException occurs.
-     * @see java.net.ServerSocket#accept()
-     * @since 1.0
-     */
-    public static Socket accept(ServerSocket serverSocket, final Closure closure) throws IOException {
-        return accept(serverSocket, true, closure);
-    }
-
-    /**
-     * Accepts a connection and passes the resulting Socket to the closure
-     * which runs in a new Thread or the calling thread, as needed.
-     *
-     * @param serverSocket a ServerSocket
-     * @param runInANewThread This flag should be true, if the closure should be invoked in a new thread, else false.
-     * @param closure      a Closure
-     * @return a Socket
-     * @throws IOException if an IOException occurs.
-     * @see java.net.ServerSocket#accept()
-     * @since 1.7.6
-     */
-    public static Socket accept(ServerSocket serverSocket, final boolean runInANewThread,
-            final Closure closure) throws IOException {
-        final Socket socket = serverSocket.accept();
-        if(runInANewThread) {
-            new Thread(new Runnable() {
-                public void run() {
-                    invokeClosureWithSocket(socket, closure);
-                }
-            }).start();
-        } else {
-            invokeClosureWithSocket(socket, closure);
-        }
-        return socket;
-    }
-
-    private static void invokeClosureWithSocket(Socket socket, Closure closure) {
-        try {
-            closure.call(socket);
-        } finally {
-            if (socket != null) {
-                try {
-                    socket.close();
-                } catch (IOException e) {
-                    LOG.warning("Caught exception closing socket: " + e);
-                }
-            }
-        }
-    }
-
-    /**
-     * Converts this File to a {@link groovy.lang.Writable}.
-     *
-     * @param file a File
-     * @return a File which wraps the input file and which implements Writable
-     * @since 1.0
-     */
-    public static File asWritable(File file) {
-        return new WritableFile(file);
-    }
-
-    /**
-     * Converts this File to a {@link groovy.lang.Writable} or delegates to default
-     * {@link #asType(java.lang.Object, java.lang.Class)}.
-     *
-     * @param f a File
-     * @param c the desired class
-     * @return the converted object
-     * @since 1.0
-     */
-    @SuppressWarnings("unchecked")
-    public static <T> T asType(File f, Class<T> c) {
-        if (c == Writable.class) {
-            return (T) asWritable(f);
-        }
-        return asType((Object) f, c);
-    }
-
-    /**
-     * Allows a file to return a Writable implementation that can output itself
-     * to a Writer stream.
-     *
-     * @param file     a File
-     * @param encoding the encoding to be used when reading the file's contents
-     * @return File which wraps the input file and which implements Writable
-     * @since 1.0
-     */
-    public static File asWritable(File file, String encoding) {
-        return new WritableFile(file, encoding);
-    }
-
-    /**
-     * Converts the given String into a List of strings of one character.
-     *
-     * @param self a String
-     * @return a List of characters (a 1-character String)
-     * @since 1.0
-     */
-    public static List<String> toList(String self) {
-        int size = self.length();
-        List<String> answer = new ArrayList<String>(size);
-        for (int i = 0; i < size; i++) {
-            answer.add(self.substring(i, i + 1));
-        }
-        return answer;
-    }
-
-    /**
-     * Converts the given CharSequence into a List of CharSequence of one character.
-     *
-     * @param self a CharSequence
-     * @return a List of characters (a 1-character CharSequence)
-     * @see #toSet(String)
-     * @since 1.8.2
-     */
-    public static List<CharSequence> toList(CharSequence self) {
-        return new ArrayList<CharSequence>(toList(self.toString()));
-    }
-
-    /**
-     * Converts the given String into a Set of unique strings of one character.
-     * <p>
-     * Example usage:
-     * <pre class="groovyTestCase">
-     * assert 'groovy'.toSet() == ['v', 'g', 'r', 'o', 'y'] as Set
-     * assert "abc".toSet().iterator()[0] instanceof String
-     * </pre>
-     *
-     * @param self a String
-     * @return a Set of unique character Strings (each a 1-character String)
-     * @since 1.8.0
-     */
-    public static Set<String> toSet(String self) {
-        return new HashSet<String>(toList(self));
-    }
-
-    /**
-     * Converts the given CharSequence into a Set of unique CharSequence of one character.
-     *
-     * @param self a CharSequence
-     * @return a Set of unique character CharSequence (each a 1-character CharSequence)
-     * @see #toSet(String)
-     * @since 1.8.2
-     */
-    public static Set<CharSequence> toSet(CharSequence self) {
-        return new HashSet<CharSequence>(toList(self));
-    }
-
-    /**
-     * Converts the given String into an array of characters.
-     * Alias for toCharArray.
-     *
-     * @param self a String
-     * @return an array of characters
-     * @see java.lang.String#toCharArray()
-     * @since 1.6.0
-     */
-    public static char[] getChars(String self) {
-        return self.toCharArray();
-    }
-
-    /**
-     * Converts the given CharSequence into an array of characters.
-     *
-     * @param self a CharSequence
-     * @return an array of characters
-     * @see #getChars(String)
-     * @since 1.8.2
-     */
-    public static char[] getChars(CharSequence self) {
-        return getChars(self.toString());
-    }
-
-    /**
-     * Converts the GString to a File, or delegates to the default
-     * {@link #asType(java.lang.Object, java.lang.Class)}
-     *
-     * @param self a GString
-     * @param c    the desired class
-     * @return the converted object
-     * @since 1.5.0
-     */
-    @SuppressWarnings("unchecked")
-    public static <T> T asType(GString self, Class<T> c) {
-        if (c == File.class) {
-            return (T) new File(self.toString());
-        } else if (Number.class.isAssignableFrom(c)) {
-            return asType(self.toString(), c);
-        }
-        return asType((Object) self, c);
-    }
-
-    /**
-     * <p>Provides a method to perform custom 'dynamic' type conversion
-     * to the given class using the <code>as</code> operator.</p>
-     * <strong>Example:</strong> <code>'123' as Double</code>
-     * <p>By default, the following types are supported:
-     * <ul>
-     * <li>List</li>
-     * <li>BigDecimal</li>
-     * <li>BigInteger</li>
-     * <li>Long</li>
-     * <li>Integer</li>
-     * <li>Short</li>
-     * <li>Byte</li>
-     * <li>Character</li>
-     * <li>Double</li>
-     * <li>Float</li>
-     * <li>File</li>
-     * <li>Subclasses of Enum (Java 5 and above)</li>
-     * </ul>
-     * If any other type is given, the call is delegated to
-     * {@link #asType(java.lang.Object, java.lang.Class)}.
-     *
-     * @param self a String
-     * @param c    the desired class
-     * @return the converted object
-     * @since 1.0
-     */
-    @SuppressWarnings("unchecked")
-    public static <T> T asType(String self, Class<T> c) {
-        if (c == List.class) {
-            return (T) toList(self);
-        } else if (c == BigDecimal.class) {
-            return (T) toBigDecimal(self);
-        } else if (c == BigInteger.class) {
-            return (T) toBigInteger(self);
-        } else if (c == Long.class || c == Long.TYPE) {
-            return (T) toLong(self);
-        } else if (c == Integer.class || c == Integer.TYPE) {
-            return (T) toInteger(self);
-        } else if (c == Short.class || c == Short.TYPE) {
-            return (T) toShort(self);
-        } else if (c == Byte.class || c == Byte.TYPE) {
-            return (T) Byte.valueOf(self.trim());
-        } else if (c == Character.class || c == Character.TYPE) {
-            return (T) toCharacter(self);
-        } else if (c == Double.class || c == Double.TYPE) {
-            return (T) toDouble(self);
-        } else if (c == Float.class || c == Float.TYPE) {
-            return (T) toFloat(self);
-        } else if (c == File.class) {
-            return (T) new File(self);
-        } else if (DefaultTypeTransformation.isEnumSubclass(c)) {
-            return (T) InvokerHelper.invokeMethod(c, "valueOf", new Object[]{ self });
-        }
-        return asType((Object) self, c);
-    }
-
-    /**
-     * <p>Provides a method to perform custom 'dynamic' type conversion
-     * to the given class using the <code>as</code> operator.
-     *
-     * @param self a CharSequence
-     * @param c    the desired class
-     * @return the converted object
-     * @see #asType(String, Class)
-     * @since 1.8.2
-     */
-    public static <T> T asType(CharSequence self, Class<T> c) {
-        return asType(self.toString(), c);
-    }
-
-    /**
-     * Process each regex group matched substring of the given string. If the closure
-     * parameter takes one argument, an array with all match groups is passed to it.
-     * If the closure takes as many arguments as there are match groups, then each
-     * parameter will be one match group.
-     *
-     * @param self    the source string
-     * @param regex   a Regex string
-     * @param closure a closure with one parameter or as much parameters as groups
-     * @return the source string
-     * @since 1.6.0
-     */
-    public static String eachMatch(String self, String regex, Closure closure) {
-        return eachMatch(self, Pattern.compile(regex), closure);
-    }
-
-    /**
-     * Process each regex group matched substring of the given CharSequence. If the closure
-     * parameter takes one argument, an array with all match groups is passed to it.
-     * If the closure takes as many arguments as there are match groups, then each
-     * parameter will be one match group.
-     *
-     * @param self    the source CharSequence
-     * @param regex   a Regex CharSequence
-     * @param closure a closure with one parameter or as much parameters as groups
-     * @return the source CharSequence
-     * @see #eachMatch(String, String, groovy.lang.Closure)
-     * @since 1.8.2
-     */
-    public static String eachMatch(CharSequence self, CharSequence regex, Closure closure) {
-        return eachMatch(self.toString(), regex.toString(), closure);
-    }
-
-    /**
-     * Process each regex group matched substring of the given pattern. If the closure
-     * parameter takes one argument, an array with all match groups is passed to it.
-     * If the closure takes as many arguments as there are match groups, then each
-     * parameter will be one match group.
-     *
-     * @param self    the source string
-     * @param pattern a regex Pattern
-     * @param closure a closure with one parameter or as much parameters as groups
-     * @return the source string
-     * @since 1.6.1
-     */
-    public static String eachMatch(String self, Pattern pattern, Closure closure) {
-        Matcher m = pattern.matcher(self);
-        each(m, closure);
-        return self;
-    }
-
-    /**
-     * Process each regex group matched substring of the given pattern. If the closure
-     * parameter takes one argument, an array with all match groups is passed to it.
-     * If the closure takes as many arguments as there are match groups, then each
-     * parameter will be one match group.
-     *
-     * @param self    the source CharSequence
-     * @param pattern a regex Pattern
-     * @param closure a closure with one parameter or as much parameters as groups
-     * @return the source CharSequence
-     * @see #eachMatch(String, Pattern, groovy.lang.Closure)
-     * @since 1.8.2
-     */
-    public static String eachMatch(CharSequence self, Pattern pattern, Closure closure) {
-        return eachMatch(self.toString(), pattern, closure);
     }
 
     /**
@@ -18035,7 +10789,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return (T) InvokerHelper.invokeConstructorOf(c, args);
     }
 
-
     /**
      * Adds a "metaClass" property to all class objects so you can use the syntax
      * <code>String.metaClass.myMethod = { println "foo" }</code>
@@ -18308,178 +11061,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Returns an {@link java.util.Iterator} which traverses each match.
-     *
-     * @param matcher a Matcher object
-     * @return an Iterator for a Matcher
-     * @see java.util.regex.Matcher#group()
-     * @since 1.0
-     */
-    public static Iterator iterator(final Matcher matcher) {
-        matcher.reset();
-        return new Iterator() {
-            private boolean found /* = false */;
-            private boolean done /* = false */;
-
-            public boolean hasNext() {
-                if (done) {
-                    return false;
-                }
-                if (!found) {
-                    found = matcher.find();
-                    if (!found) {
-                        done = true;
-                    }
-                }
-                return found;
-            }
-
-            public Object next() {
-                if (!found) {
-                    if (!hasNext()) {
-                        throw new NoSuchElementException();
-                    }
-                }
-                found = false;
-
-                if (hasGroup(matcher)) {
-                    // are we using groups?
-                    // yes, so return the specified group as list
-                    List<String> list = new ArrayList<String>(matcher.groupCount());
-                    for (int i = 0; i <= matcher.groupCount(); i++) {
-                       list.add(matcher.group(i));
-                    }
-                    return list;
-                } else {
-                    // not using groups, so return the nth
-                    // occurrence of the pattern
-                    return matcher.group();
-                 }
-            }
-
-            public void remove() {
-                throw new UnsupportedOperationException();
-            }
-        };
-    }
-
-    /**
-     * Creates an iterator which will traverse through the reader a line at a time.
-     *
-     * @param self a Reader object
-     * @return an Iterator for the Reader
-     * @see java.io.BufferedReader#readLine()
-     * @since 1.5.0
-     */
-    public static Iterator<String> iterator(Reader self) {
-        final BufferedReader bufferedReader;
-        if (self instanceof BufferedReader)
-            bufferedReader = (BufferedReader) self;
-        else
-            bufferedReader = new BufferedReader(self);
-        return new Iterator<String>() {
-            String nextVal /* = null */;
-            boolean nextMustRead = true;
-            boolean hasNext = true;
-
-            public boolean hasNext() {
-                if (nextMustRead && hasNext) {
-                    try {
-                        nextVal = readNext();
-                        nextMustRead = false;
-                    } catch (IOException e) {
-                        hasNext = false;
-                    }
-                }
-                return hasNext;
-            }
-
-            public String next() {
-                String retval = null;
-                if (nextMustRead) {
-                    try {
-                        retval = readNext();
-                    } catch (IOException e) {
-                        hasNext = false;
-                    }
-                } else
-                    retval = nextVal;
-                nextMustRead = true;
-                return retval;
-            }
-
-            private String readNext() throws IOException {
-                String nv = bufferedReader.readLine();
-                if (nv == null)
-                    hasNext = false;
-                return nv;
-            }
-
-            public void remove() {
-                throw new UnsupportedOperationException("Cannot remove() from a Reader Iterator");
-            }
-        };
-    }
-
-    /**
-     * Standard iterator for a input stream which iterates through the stream
-     * content in a byte-based fashion.
-     *
-     * @param self an InputStream object
-     * @return an Iterator for the InputStream
-     * @since 1.5.0
-     */
-    public static Iterator<Byte> iterator(InputStream self) {
-        return iterator(new DataInputStream(self));
-    }
-
-    /**
-     * Standard iterator for a data input stream which iterates through the
-     * stream content a Byte at a time.
-     *
-     * @param self a DataInputStream object
-     * @return an Iterator for the DataInputStream
-     * @since 1.5.0
-     */
-    public static Iterator<Byte> iterator(final DataInputStream self) {
-        return new Iterator<Byte>() {
-            Byte nextVal;
-            boolean nextMustRead = true;
-            boolean hasNext = true;
-
-            public boolean hasNext() {
-                if (nextMustRead && hasNext) {
-                    try {
-                        nextVal = self.readByte();
-                        nextMustRead = false;
-                    } catch (IOException e) {
-                        hasNext = false;
-                    }
-                }
-                return hasNext;
-            }
-
-            public Byte next() {
-                Byte retval = null;
-                if (nextMustRead) {
-                    try {
-                        retval = self.readByte();
-                    } catch (IOException e) {
-                        hasNext = false;
-                    }
-                } else
-                    retval = nextVal;
-                nextMustRead = true;
-                return retval;
-            }
-
-            public void remove() {
-                throw new UnsupportedOperationException("Cannot remove() from a DataInputStream Iterator");
-            }
-        };
-    }
-
-    /**
      * An identity function for iterators, supporting 'duck-typing' when trying to get an
      * iterator for each object within a collection, some of which may already be iterators.
      *
@@ -18544,6 +11125,1940 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static MetaProperty hasProperty(Object self, String name) {
         return InvokerHelper.getMetaClass(self).hasProperty(self, name);
+    }
+
+    @Deprecated
+    public static boolean asBoolean(CharSequence string) {
+        return StringGroovyMethods.asBoolean(string);
+    }
+
+    @Deprecated
+    public static boolean asBoolean(Matcher matcher) {
+        return StringGroovyMethods.asBoolean(matcher);
+    }
+
+    @Deprecated
+    public static <T> T asType(CharSequence self, Class<T> c) {
+        return StringGroovyMethods.asType(self, c);
+    }
+
+    @Deprecated
+    @SuppressWarnings("unchecked")
+    public static <T> T asType(GString self, Class<T> c) {
+        return StringGroovyMethods.asType(self, c);
+    }
+
+    @Deprecated
+    @SuppressWarnings("unchecked")
+    public static <T> T asType(String self, Class<T> c) {
+        return StringGroovyMethods.asType(self, c);
+    }
+
+    @Deprecated
+    public static Pattern bitwiseNegate(CharSequence self) {
+        return StringGroovyMethods.bitwiseNegate(self);
+    }
+
+    @Deprecated
+    public static Pattern bitwiseNegate(String self) {
+        return StringGroovyMethods.bitwiseNegate(self);
+    }
+
+    @Deprecated
+    public static CharSequence capitalize(CharSequence self) {
+        return StringGroovyMethods.capitalize(self);
+    }
+
+    @Deprecated
+    public static String capitalize(String self) {
+        return StringGroovyMethods.capitalize(self);
+    }
+
+    @Deprecated
+    public static CharSequence center(CharSequence self, Number numberOfChars) {
+        return StringGroovyMethods.center(self, numberOfChars);
+    }
+
+    @Deprecated
+    public static CharSequence center(CharSequence self, Number numberOfChars, CharSequence padding) {
+        return StringGroovyMethods.center(self, numberOfChars, padding);
+    }
+
+    @Deprecated
+    public static String center(String self, Number numberOfChars) {
+        return StringGroovyMethods.center(self, numberOfChars);
+    }
+
+    @Deprecated
+    public static String center(String self, Number numberOfChars, String padding) {
+        return StringGroovyMethods.center(self, numberOfChars, padding);
+    }
+
+    @Deprecated
+    public static boolean contains(CharSequence self, CharSequence text) {
+        return StringGroovyMethods.contains(self, text);
+    }
+
+    @Deprecated
+    public static boolean contains(String self, String text) {
+        return StringGroovyMethods.contains(self, text);
+    }
+
+    @Deprecated
+    public static int count(CharSequence self, CharSequence text) {
+        return StringGroovyMethods.count(self, text);
+    }
+
+    @Deprecated
+    public static int count(String self, String text) {
+        return StringGroovyMethods.count(self, text);
+    }
+
+    @Deprecated
+    protected static StringBufferWriter createStringBufferWriter(StringBuffer self) {
+        return new StringBufferWriter(self);
+    }
+
+    @Deprecated
+    protected static StringWriter createStringWriter(String self) {
+        StringWriter answer = new StringWriter();
+        answer.write(self);
+        return answer;
+    }
+
+    @Deprecated
+    public static CharSequence denormalize(final CharSequence self) {
+        return StringGroovyMethods.denormalize(self);
+    }
+
+    @Deprecated
+    public static String denormalize(final String self) {
+        return StringGroovyMethods.denormalize(self);
+    }
+
+    @Deprecated
+    public static CharSequence drop(CharSequence self, int num) {
+        return StringGroovyMethods.drop(self, num);
+    }
+
+    @Deprecated
+    public static <T> T eachLine(CharSequence self, Closure<T> closure) throws IOException {
+        return StringGroovyMethods.eachLine(self, closure);
+    }
+
+    @Deprecated
+    public static <T> T eachLine(CharSequence self, int firstLine, Closure<T> closure) throws IOException {
+        return StringGroovyMethods.eachLine(self, firstLine, closure);
+    }
+
+    @Deprecated
+    public static <T> T eachLine(String self, Closure<T> closure) throws IOException {
+        return StringGroovyMethods.eachLine(self, closure);
+    }
+
+    @Deprecated
+    public static <T> T eachLine(String self, int firstLine, Closure<T> closure) throws IOException {
+        return StringGroovyMethods.eachLine(self, firstLine, closure);
+    }
+
+    @Deprecated
+    public static String eachMatch(CharSequence self, CharSequence regex, Closure closure) {
+        return StringGroovyMethods.eachMatch(self, regex, closure);
+    }
+
+    @Deprecated
+    public static String eachMatch(CharSequence self, Pattern pattern, Closure closure) {
+        return StringGroovyMethods.eachMatch(self, pattern, closure);
+    }
+
+    @Deprecated
+    public static String eachMatch(String self, Pattern pattern, Closure closure) {
+        return StringGroovyMethods.eachMatch(self, pattern, closure);
+    }
+
+    @Deprecated
+    public static String eachMatch(String self, String regex, Closure closure) {
+        return StringGroovyMethods.eachMatch(self, regex, closure);
+    }
+
+    @Deprecated
+    public static CharSequence expand(CharSequence self) {
+        return StringGroovyMethods.expand(self);
+    }
+
+    @Deprecated
+    public static CharSequence expand(CharSequence self, int tabStop) {
+        return StringGroovyMethods.expand(self, tabStop);
+    }
+
+    @Deprecated
+    public static String expand(String self) {
+        return StringGroovyMethods.expand(self);
+    }
+
+    @Deprecated
+    public static String expand(String self, int tabStop) {
+        return StringGroovyMethods.expand(self, tabStop);
+    }
+
+    @Deprecated
+    public static CharSequence expandLine(CharSequence self, int tabStop) {
+        return StringGroovyMethods.expandLine(self, tabStop);
+    }
+
+    @Deprecated
+    public static String expandLine(String self, int tabStop) {
+        return StringGroovyMethods.expandLine(self, tabStop);
+    }
+
+    @Deprecated
+    public static CharSequence find(CharSequence self, CharSequence regex) {
+        return StringGroovyMethods.find(self, regex);
+    }
+
+    @Deprecated
+    public static CharSequence find(CharSequence self, CharSequence regex, Closure closure) {
+        return StringGroovyMethods.find(self, regex, closure);
+    }
+
+    @Deprecated
+    public static CharSequence find(CharSequence self, Pattern pattern) {
+        return StringGroovyMethods.find(self, pattern);
+    }
+
+    @Deprecated
+    public static CharSequence find(CharSequence self, Pattern pattern, Closure closure) {
+        return StringGroovyMethods.find(self, pattern, closure);
+    }
+
+    @Deprecated
+    public static String find(String self, Pattern pattern) {
+        return StringGroovyMethods.find(self, pattern);
+    }
+
+    @Deprecated
+    public static String find(String self, Pattern pattern, Closure closure) {
+        return StringGroovyMethods.find(self, pattern, closure);
+    }
+
+    @Deprecated
+    public static String find(String self, String regex) {
+        return StringGroovyMethods.find(self, regex);
+    }
+
+    @Deprecated
+    public static String find(String self, String regex, Closure closure) {
+        return StringGroovyMethods.find(self, regex, closure);
+    }
+
+    @Deprecated
+    public static List<CharSequence> findAll(CharSequence self, CharSequence regex) {
+        return StringGroovyMethods.findAll(self, regex);
+    }
+
+    @Deprecated
+    public static <T> List<T> findAll(CharSequence self, CharSequence regex, Closure<T> closure) {
+        return StringGroovyMethods.findAll(self, regex, closure);
+    }
+
+    @Deprecated
+    public static List<CharSequence> findAll(CharSequence self, Pattern pattern) {
+        return StringGroovyMethods.findAll(self, pattern);
+    }
+
+    @Deprecated
+    public static <T> List<T> findAll(CharSequence self, Pattern pattern, Closure<T> closure) {
+        return StringGroovyMethods.findAll(self, pattern, closure);
+    }
+
+    @Deprecated
+    public static List<String> findAll(String self, Pattern pattern) {
+        return StringGroovyMethods.findAll(self, pattern);
+    }
+
+    @Deprecated
+    public static <T> List<T> findAll(String self, Pattern pattern, Closure<T> closure) {
+        return StringGroovyMethods.findAll(self, pattern, closure);
+    }
+
+    @Deprecated
+    public static List<String> findAll(String self, String regex) {
+        return StringGroovyMethods.findAll(self, regex);
+    }
+
+    @Deprecated
+    public static <T> List<T> findAll(String self, String regex, Closure<T> closure) {
+        return StringGroovyMethods.findAll(self, regex, closure);
+    }
+
+    @Deprecated
+    public static CharSequence getAt(CharSequence self, Collection indices) {
+        return StringGroovyMethods.getAt(self, indices);
+    }
+
+    @Deprecated
+    public static CharSequence getAt(CharSequence text, EmptyRange range) {
+        return StringGroovyMethods.getAt(text, range);
+    }
+
+    @Deprecated
+    public static CharSequence getAt(CharSequence text, int index) {
+        return StringGroovyMethods.getAt(text, index);
+    }
+
+    @Deprecated
+    public static CharSequence getAt(CharSequence text, IntRange range) {
+        return StringGroovyMethods.getAt(text, range);
+    }
+
+    @Deprecated
+    public static CharSequence getAt(CharSequence text, Range range) {
+        return StringGroovyMethods.getAt(text, range);
+    }
+
+    @Deprecated
+    public static List getAt(Matcher self, Collection indices) {
+        return StringGroovyMethods.getAt(self, indices);
+    }
+
+    @Deprecated
+    public static Object getAt(Matcher matcher, int idx) {
+        return StringGroovyMethods.getAt(matcher, idx);
+    }
+
+    @Deprecated
+    public static String getAt(String self, Collection indices) {
+        return StringGroovyMethods.getAt(self, indices);
+    }
+
+    @Deprecated
+    public static String getAt(String text, EmptyRange range) {
+        return StringGroovyMethods.getAt(text, range);
+    }
+
+    @Deprecated
+    public static String getAt(String text, int index) {
+        return StringGroovyMethods.getAt(text, index);
+    }
+
+    @Deprecated
+    public static String getAt(String text, IntRange range) {
+        return StringGroovyMethods.getAt(text, range);
+    }
+
+    @Deprecated
+    public static String getAt(String text, Range range) {
+        return StringGroovyMethods.getAt(text, range);
+    }
+
+    @Deprecated
+    public static char[] getChars(CharSequence self) {
+        return StringGroovyMethods.getChars(self);
+    }
+
+    @Deprecated
+    public static char[] getChars(String self) {
+        return StringGroovyMethods.getChars(self);
+    }
+
+    @Deprecated
+    public static int getCount(Matcher matcher) {
+        return StringGroovyMethods.getCount(matcher);
+    }
+
+    @Deprecated
+    public static boolean hasGroup(Matcher matcher) {
+        return StringGroovyMethods.hasGroup(matcher);
+    }
+
+    @Deprecated
+    public static boolean isAllWhitespace(CharSequence self) {
+        return StringGroovyMethods.isAllWhitespace(self);
+    }
+
+    @Deprecated
+    public static boolean isAllWhitespace(String self) {
+        return StringGroovyMethods.isAllWhitespace(self);
+    }
+
+    @Deprecated
+    public static boolean isBigDecimal(CharSequence self) {
+        return StringGroovyMethods.isBigDecimal(self);
+    }
+
+    @Deprecated
+    public static boolean isBigDecimal(String self) {
+        return StringGroovyMethods.isBigDecimal(self);
+    }
+
+    @Deprecated
+    public static boolean isBigInteger(CharSequence self) {
+        return StringGroovyMethods.isBigInteger(self);
+    }
+
+    @Deprecated
+    public static boolean isBigInteger(String self) {
+        return StringGroovyMethods.isBigInteger(self);
+    }
+
+    @Deprecated
+    public static boolean isCase(CharSequence caseValue, Object switchValue) {
+        return StringGroovyMethods.isCase(caseValue, switchValue);
+    }
+
+    @Deprecated
+    public static boolean isCase(GString caseValue, Object switchValue) {
+        return StringGroovyMethods.isCase(caseValue, switchValue);
+    }
+
+    @Deprecated
+    public static boolean isCase(Pattern caseValue, Object switchValue) {
+        return StringGroovyMethods.isCase(caseValue, switchValue);
+    }
+
+    @Deprecated
+    public static boolean isCase(String caseValue, Object switchValue) {
+        return StringGroovyMethods.isCase(caseValue, switchValue);
+    }
+
+    @Deprecated
+    public static boolean isDouble(CharSequence self) {
+        return StringGroovyMethods.isDouble(self);
+    }
+
+    @Deprecated
+    public static boolean isDouble(String self) {
+        return StringGroovyMethods.isDouble(self);
+    }
+
+    @Deprecated
+    public static boolean isFloat(CharSequence self) {
+        return StringGroovyMethods.isFloat(self);
+    }
+
+    @Deprecated
+    public static boolean isFloat(String self) {
+        return StringGroovyMethods.isFloat(self);
+    }
+
+    @Deprecated
+    public static boolean isInteger(CharSequence self) {
+        return StringGroovyMethods.isInteger(self);
+    }
+
+    @Deprecated
+    public static boolean isInteger(String self) {
+        return StringGroovyMethods.isInteger(self);
+    }
+
+    @Deprecated
+    public static boolean isLong(CharSequence self) {
+        return StringGroovyMethods.isLong(self);
+    }
+
+    @Deprecated
+    public static boolean isLong(String self) {
+        return StringGroovyMethods.isLong(self);
+    }
+
+    @Deprecated
+    public static boolean isNumber(CharSequence self) {
+        return StringGroovyMethods.isNumber(self);
+    }
+
+    @Deprecated
+    public static boolean isNumber(String self) {
+        return StringGroovyMethods.isNumber(self);
+    }
+
+    @Deprecated
+    public static Iterator iterator(final Matcher matcher) {
+        return StringGroovyMethods.iterator(matcher);
+    }
+
+    @Deprecated
+    public static StringBuilder leftShift(CharSequence self, Object value) {
+        return StringGroovyMethods.leftShift(self, value);
+    }
+
+    @Deprecated
+    public static StringBuffer leftShift(String self, Object value) {
+        return StringGroovyMethods.leftShift(self, value);
+    }
+
+    @Deprecated
+    public static StringBuffer leftShift(StringBuffer self, Object value) {
+        return StringGroovyMethods.leftShift(self, value);
+    }
+
+    @Deprecated
+    public static StringBuilder leftShift(StringBuilder self, Object value) {
+        return StringGroovyMethods.leftShift(self, value);
+    }
+
+    @Deprecated
+    public static boolean matches(CharSequence self, Pattern pattern) {
+        return StringGroovyMethods.matches(self, pattern);
+    }
+
+    @Deprecated
+    public static boolean matches(String self, Pattern pattern) {
+        return StringGroovyMethods.matches(self, pattern);
+    }
+
+    @Deprecated
+    public static CharSequence minus(CharSequence self, Object target) {
+        return StringGroovyMethods.minus(self, target);
+    }
+
+    @Deprecated
+    public static String minus(String self, Object target) {
+        return StringGroovyMethods.minus(self, target);
+    }
+
+    @Deprecated
+    public static CharSequence multiply(CharSequence self, Number factor) {
+        return StringGroovyMethods.multiply(self, factor);
+    }
+
+    @Deprecated
+    public static String multiply(String self, Number factor) {
+        return StringGroovyMethods.multiply(self, factor);
+    }
+
+    @Deprecated
+    public static CharSequence next(CharSequence self) {
+        return StringGroovyMethods.next(self);
+    }
+
+    @Deprecated
+    public static String next(String self) {
+        return StringGroovyMethods.next(self);
+    }
+
+    @Deprecated
+    public static CharSequence normalize(final CharSequence self) {
+        return StringGroovyMethods.normalize(self);
+    }
+
+    @Deprecated
+    public static String normalize(final String self) {
+        return StringGroovyMethods.normalize(self);
+    }
+
+    @Deprecated
+    public static CharSequence padLeft(CharSequence self, Number numberOfChars) {
+        return StringGroovyMethods.padLeft(self, numberOfChars);
+    }
+
+    @Deprecated
+    public static CharSequence padLeft(CharSequence self, Number numberOfChars, CharSequence padding) {
+        return StringGroovyMethods.padLeft(self, numberOfChars, padding);
+    }
+
+    @Deprecated
+    public static String padLeft(String self, Number numberOfChars) {
+        return StringGroovyMethods.padLeft(self, numberOfChars);
+    }
+
+    @Deprecated
+    public static String padLeft(String self, Number numberOfChars, String padding) {
+        return StringGroovyMethods.padLeft(self, numberOfChars, padding);
+    }
+
+    @Deprecated
+    public static CharSequence padRight(CharSequence self, Number numberOfChars) {
+        return StringGroovyMethods.padRight(self, numberOfChars);
+    }
+
+    @Deprecated
+    public static CharSequence padRight(CharSequence self, Number numberOfChars, CharSequence padding) {
+        return StringGroovyMethods.padRight(self, numberOfChars, padding);
+    }
+
+    @Deprecated
+    public static String padRight(String self, Number numberOfChars) {
+        return StringGroovyMethods.padRight(self, numberOfChars);
+    }
+
+    @Deprecated
+    public static String padRight(String self, Number numberOfChars, String padding) {
+        return StringGroovyMethods.padRight(self, numberOfChars, padding);
+    }
+
+    @Deprecated
+    public static CharSequence plus(CharSequence left, Object value) {
+        return StringGroovyMethods.plus(left, value);
+    }
+
+    @Deprecated
+    public static String plus(Number value, String right) {
+        return StringGroovyMethods.plus(value, right);
+    }
+
+    @Deprecated
+    public static String plus(String left, Object value) {
+        return StringGroovyMethods.plus(left, value);
+    }
+
+    @Deprecated
+    public static String plus(StringBuffer left, String value) {
+        return StringGroovyMethods.plus(left, value);
+    }
+
+    @Deprecated
+    public static CharSequence previous(CharSequence self) {
+        return StringGroovyMethods.previous(self);
+    }
+
+    @Deprecated
+    public static String previous(String self) {
+        return StringGroovyMethods.previous(self);
+    }
+
+    @Deprecated
+    public static void putAt(StringBuffer self, EmptyRange range, Object value) {
+        StringGroovyMethods.putAt(self, range, value);
+    }
+
+    @Deprecated
+    public static void putAt(StringBuffer self, IntRange range, Object value) {
+        StringGroovyMethods.putAt(self, range, value);
+    }
+
+    @Deprecated
+    public static List<CharSequence> readLines(CharSequence self) throws IOException {
+        return StringGroovyMethods.readLines(self);
+    }
+
+    @Deprecated
+    public static List<String> readLines(String self) throws IOException {
+        return StringGroovyMethods.readLines(self);
+    }
+
+    @Deprecated
+    public static CharSequence replaceAll(final CharSequence self, final CharSequence regex, final CharSequence replacement) {
+        return StringGroovyMethods.replaceAll(self, regex, replacement);
+    }
+
+    @Deprecated
+    public static CharSequence replaceAll(final CharSequence self, final CharSequence regex, final Closure closure) {
+        return StringGroovyMethods.replaceAll(self, regex, closure);
+    }
+
+    @Deprecated
+    public static CharSequence replaceAll(CharSequence self, Pattern pattern, CharSequence replacement) {
+        return StringGroovyMethods.replaceAll(self, pattern, replacement);
+    }
+
+    @Deprecated
+    public static String replaceAll(final CharSequence self, final Pattern pattern, final Closure closure) {
+        return StringGroovyMethods.replaceAll(self, pattern, closure);
+    }
+
+    @Deprecated
+    public static String replaceAll(final String self, final Pattern pattern, final Closure closure) {
+        return StringGroovyMethods.replaceAll(self, pattern, closure);
+    }
+
+    @Deprecated
+    public static String replaceAll(String self, Pattern pattern, String replacement) {
+        return StringGroovyMethods.replaceAll(self, pattern, replacement);
+    }
+
+    @Deprecated
+    public static String replaceAll(final String self, final String regex, final Closure closure) {
+        return StringGroovyMethods.replaceAll(self, regex, closure);
+    }
+
+    @Deprecated
+    public static String replaceFirst(final CharSequence self, final CharSequence regex, final CharSequence replacement) {
+        return StringGroovyMethods.replaceFirst(self, regex, replacement);
+    }
+
+    @Deprecated
+    public static String replaceFirst(final CharSequence self, final CharSequence regex, final Closure closure) {
+        return StringGroovyMethods.replaceFirst(self, regex, closure);
+    }
+
+    @Deprecated
+    public static CharSequence replaceFirst(CharSequence self, Pattern pattern, CharSequence replacement) {
+        return StringGroovyMethods.replaceFirst(self, pattern, replacement);
+    }
+
+    @Deprecated
+    public static String replaceFirst(final CharSequence self, final Pattern pattern, final Closure closure) {
+        return StringGroovyMethods.replaceFirst(self, pattern, closure);
+    }
+
+    @Deprecated
+    public static String replaceFirst(final String self, final Pattern pattern, final Closure closure) {
+        return StringGroovyMethods.replaceFirst(self, pattern, closure);
+    }
+
+    @Deprecated
+    public static String replaceFirst(String self, Pattern pattern, String replacement) {
+        return StringGroovyMethods.replaceFirst(self, pattern, replacement);
+    }
+
+    @Deprecated
+    public static String replaceFirst(final String self, final String regex, final Closure closure) {
+        return StringGroovyMethods.replaceFirst(self, regex, closure);
+    }
+
+    @Deprecated
+    public static CharSequence reverse(CharSequence self) {
+        return StringGroovyMethods.reverse(self);
+    }
+
+    @Deprecated
+    public static String reverse(String self) {
+        return StringGroovyMethods.reverse(self);
+    }
+
+    @Deprecated
+    public static void setIndex(Matcher matcher, int idx) {
+        StringGroovyMethods.setIndex(matcher, idx);
+    }
+
+    @Deprecated
+    public static int size(CharSequence text) {
+        return StringGroovyMethods.size(text);
+    }
+
+    @Deprecated
+    public static long size(Matcher self) {
+        return StringGroovyMethods.size(self);
+    }
+
+    @Deprecated
+    public static int size(String text) {
+        return StringGroovyMethods.size(text);
+    }
+
+    @Deprecated
+    public static int size(StringBuffer buffer) {
+        return StringGroovyMethods.size(buffer);
+    }
+
+    @Deprecated
+    public static CharSequence[] split(CharSequence self) {
+        return StringGroovyMethods.split(self);
+    }
+
+    @Deprecated
+    public static String[] split(GString self) {
+        return StringGroovyMethods.split(self);
+    }
+
+    @Deprecated
+    public static String[] split(String self) {
+        return StringGroovyMethods.split(self);
+    }
+
+    @Deprecated
+    public static <T> T splitEachLine(CharSequence self, CharSequence regex, Closure<T> closure) throws IOException {
+        return StringGroovyMethods.splitEachLine(self, regex, closure);
+    }
+
+    @Deprecated
+    public static <T> T splitEachLine(CharSequence self, Pattern pattern, Closure<T> closure) throws IOException {
+        return StringGroovyMethods.splitEachLine(self, pattern, closure);
+    }
+
+    @Deprecated
+    public static <T> T splitEachLine(String self, Pattern pattern, Closure<T> closure) throws IOException {
+        return StringGroovyMethods.splitEachLine(self, pattern, closure);
+    }
+
+    @Deprecated
+    public static <T> T splitEachLine(String self, String regex, Closure<T> closure) throws IOException {
+        return StringGroovyMethods.splitEachLine(self, regex, closure);
+    }
+
+    @Deprecated
+    public static CharSequence stripIndent(CharSequence self) {
+        return StringGroovyMethods.stripIndent(self);
+    }
+
+    @Deprecated
+    public static CharSequence stripIndent(CharSequence self, int numChars) {
+        return StringGroovyMethods.stripIndent(self, numChars);
+    }
+
+    @Deprecated
+    public static String stripIndent(String self) {
+        return StringGroovyMethods.stripIndent(self);
+    }
+
+    @Deprecated
+    public static String stripIndent(String self, int numChars) {
+        return StringGroovyMethods.stripIndent(self, numChars);
+    }
+
+    @Deprecated
+    public static CharSequence stripMargin(CharSequence self) {
+        return StringGroovyMethods.stripMargin(self);
+    }
+
+    @Deprecated
+    public static CharSequence stripMargin(CharSequence self, char marginChar) {
+        return StringGroovyMethods.stripMargin(self, marginChar);
+    }
+
+    @Deprecated
+    public static String stripMargin(CharSequence self, CharSequence marginChar) {
+        return StringGroovyMethods.stripMargin(self, marginChar);
+    }
+
+    @Deprecated
+    public static String stripMargin(String self) {
+        return StringGroovyMethods.stripMargin(self);
+    }
+
+    @Deprecated
+    public static String stripMargin(String self, char marginChar) {
+        return StringGroovyMethods.stripMargin(self, marginChar);
+    }
+
+    @Deprecated
+    public static String stripMargin(String self, String marginChar) {
+        return StringGroovyMethods.stripMargin(self, marginChar);
+    }
+
+    @Deprecated
+    public static BigDecimal toBigDecimal(CharSequence self) {
+        return StringGroovyMethods.toBigDecimal(self);
+    }
+
+    @Deprecated
+    public static BigDecimal toBigDecimal(String self) {
+        return StringGroovyMethods.toBigDecimal(self);
+    }
+
+    @Deprecated
+    public static BigInteger toBigInteger(CharSequence self) {
+        return StringGroovyMethods.toBigInteger(self);
+    }
+
+    @Deprecated
+    public static BigInteger toBigInteger(String self) {
+        return StringGroovyMethods.toBigInteger(self);
+    }
+
+    @Deprecated
+    public static Boolean toBoolean(String self) {
+        return StringGroovyMethods.toBoolean(self);
+    }
+
+    @Deprecated
+    public static Character toCharacter(String self) {
+        return StringGroovyMethods.toCharacter(self);
+    }
+
+    @Deprecated
+    public static Double toDouble(CharSequence self) {
+        return StringGroovyMethods.toDouble(self);
+    }
+
+    @Deprecated
+    public static Double toDouble(String self) {
+        return StringGroovyMethods.toDouble(self);
+    }
+
+    @Deprecated
+    public static Float toFloat(CharSequence self) {
+        return StringGroovyMethods.toFloat(self);
+    }
+
+    @Deprecated
+    public static Float toFloat(String self) {
+        return StringGroovyMethods.toFloat(self);
+    }
+
+    @Deprecated
+    public static Integer toInteger(CharSequence self) {
+        return StringGroovyMethods.toInteger(self);
+    }
+
+    @Deprecated
+    public static Integer toInteger(String self) {
+        return StringGroovyMethods.toInteger(self);
+    }
+
+    @Deprecated
+    public static List<CharSequence> tokenize(CharSequence self) {
+        return StringGroovyMethods.tokenize(self);
+    }
+
+    @Deprecated
+    public static List<CharSequence> tokenize(CharSequence self, Character token) {
+        return StringGroovyMethods.tokenize(self, token);
+    }
+
+    @Deprecated
+    public static List<CharSequence> tokenize(CharSequence self, CharSequence token) {
+        return StringGroovyMethods.tokenize(self, token);
+    }
+
+    @Deprecated
+    @SuppressWarnings("unchecked")
+    public static List<String> tokenize(String self) {
+        return StringGroovyMethods.tokenize(self);
+    }
+
+    @Deprecated
+    public static List<String> tokenize(String self, Character token) {
+        return StringGroovyMethods.tokenize(self, token);
+    }
+
+    @Deprecated
+    @SuppressWarnings("unchecked")
+    public static List<String> tokenize(String self, String token) {
+        return StringGroovyMethods.tokenize(self, token);
+    }
+
+    @Deprecated
+    public static List<CharSequence> toList(CharSequence self) {
+        return StringGroovyMethods.toList(self);
+    }
+
+    @Deprecated
+    public static List<String> toList(String self) {
+        return StringGroovyMethods.toList(self);
+    }
+
+    @Deprecated
+    public static Long toLong(CharSequence self) {
+        return StringGroovyMethods.toLong(self);
+    }
+
+    @Deprecated
+    public static Long toLong(String self) {
+        return StringGroovyMethods.toLong(self);
+    }
+
+    @Deprecated
+    public static Set<CharSequence> toSet(CharSequence self) {
+        return StringGroovyMethods.toSet(self);
+    }
+
+    @Deprecated
+    public static Set<String> toSet(String self) {
+        return StringGroovyMethods.toSet(self);
+    }
+
+    @Deprecated
+    public static Short toShort(CharSequence self) {
+        return StringGroovyMethods.toShort(self);
+    }
+
+    @Deprecated
+    public static Short toShort(String self) {
+        return StringGroovyMethods.toShort(self);
+    }
+
+    @Deprecated
+    public static URI toURI(CharSequence self) throws URISyntaxException {
+        return ResourceGroovyMethods.toURI(self);
+    }
+
+    @Deprecated
+    public static URI toURI(String self) throws URISyntaxException {
+        return ResourceGroovyMethods.toURI(self);
+    }
+
+    @Deprecated
+    public static URL toURL(CharSequence self) throws MalformedURLException {
+        return ResourceGroovyMethods.toURL(self);
+    }
+
+    @Deprecated
+    public static URL toURL(String self) throws MalformedURLException {
+        return ResourceGroovyMethods.toURL(self);
+    }
+
+    @Deprecated
+    public static CharSequence tr(final CharSequence self, CharSequence sourceSet, CharSequence replacementSet) throws ClassNotFoundException {
+        return StringGroovyMethods.tr(self, sourceSet, replacementSet);
+    }
+
+    @Deprecated
+    public static String tr(final String self, String sourceSet, String replacementSet) throws ClassNotFoundException {
+        return StringGroovyMethods.tr(self, sourceSet, replacementSet);
+    }
+
+    @Deprecated
+    public static CharSequence unexpand(CharSequence self) {
+        return StringGroovyMethods.unexpand(self);
+    }
+
+    @Deprecated
+    public static CharSequence unexpand(CharSequence self, int tabStop) {
+        return StringGroovyMethods.unexpand(self, tabStop);
+    }
+
+    @Deprecated
+    public static String unexpand(String self) {
+        return StringGroovyMethods.unexpand(self);
+    }
+
+    @Deprecated
+    public static String unexpand(String self, int tabStop) {
+        return StringGroovyMethods.unexpand(self, tabStop);
+    }
+
+    @Deprecated
+    public static CharSequence unexpandLine(CharSequence self, int tabStop) {
+        return StringGroovyMethods.unexpandLine(self, tabStop);
+    }
+
+    @Deprecated
+    public static String unexpandLine(String self, int tabStop) {
+        return StringGroovyMethods.unexpandLine(self, tabStop);
+    }
+
+    @Deprecated
+    public static Process execute(final String self) throws IOException {
+        return ProcessGroovyMethods.execute(self);
+    }
+
+    @Deprecated
+    public static Process execute(final String self, final String[] envp, final File dir) throws IOException {
+        return ProcessGroovyMethods.execute(self, envp, dir);
+    }
+
+    @Deprecated
+    public static Process execute(final String self, final List envp, final File dir) throws IOException {
+        return ProcessGroovyMethods.execute(self, envp, dir);
+    }
+
+    @Deprecated
+    public static Process execute(final String[] commandArray) throws IOException {
+        return ProcessGroovyMethods.execute(commandArray);
+    }
+
+    @Deprecated
+    public static Process execute(final String[] commandArray, final String[] envp, final File dir) throws IOException {
+        return ProcessGroovyMethods.execute(commandArray, envp, dir);
+    }
+
+    @Deprecated
+    public static Process execute(final String[] commandArray, final List envp, final File dir) throws IOException {
+        return ProcessGroovyMethods.execute(commandArray, envp, dir);
+    }
+
+    @Deprecated
+    public static Process execute(final List commands) throws IOException {
+        return ProcessGroovyMethods.execute(commands);
+    }
+
+    @Deprecated
+    public static Process execute(final List commands, final String[] envp, final File dir) throws IOException {
+        return ProcessGroovyMethods.execute(commands, envp, dir);
+    }
+
+    @Deprecated
+    public static Process execute(final List commands, final List envp, final File dir) throws IOException {
+        return ProcessGroovyMethods.execute(commands, envp, dir);
+    }
+
+    @Deprecated
+    public static <T> T withStreams(Socket socket, Closure<T> closure) throws IOException {
+        return SocketGroovyMethods.withStreams(socket, closure);
+    }
+
+    @Deprecated
+    public static <T> T withObjectStreams(Socket socket, Closure<T> closure) throws IOException {
+        return SocketGroovyMethods.withObjectStreams(socket, closure);
+    }
+
+    @Deprecated
+    public static Writer leftShift(Socket self, Object value) throws IOException {
+        return SocketGroovyMethods.leftShift(self, value);
+    }
+
+    @Deprecated
+    public static OutputStream leftShift(Socket self, byte[] value) throws IOException {
+        return SocketGroovyMethods.leftShift(self, value);
+    }
+
+    @Deprecated
+    public static Socket accept(ServerSocket serverSocket, final Closure closure) throws IOException {
+        return SocketGroovyMethods.accept(serverSocket, closure);
+    }
+
+    @Deprecated
+    public static Socket accept(ServerSocket serverSocket, final boolean runInANewThread,
+            final Closure closure) throws IOException {
+        return SocketGroovyMethods.accept(serverSocket, runInANewThread, closure);
+    }
+
+    @Deprecated
+    public static long size(File self) {
+        return ResourceGroovyMethods.size(self);
+    }
+
+    @Deprecated
+    public static Writer leftShift(Writer self, Object value) throws IOException {
+        return IOGroovyMethods.leftShift(self, value);
+    }
+
+    @Deprecated
+    public static void write(Writer self, Writable writable) throws IOException {
+        IOGroovyMethods.write(self, writable);
+    }
+
+    @Deprecated
+    public static Writer leftShift(OutputStream self, Object value) throws IOException {
+        return IOGroovyMethods.leftShift(self, value);
+    }
+
+    @Deprecated
+    public static void leftShift(ObjectOutputStream self, Object value) throws IOException {
+        IOGroovyMethods.leftShift(self, value);
+    }
+
+    @Deprecated
+    public static OutputStream leftShift(OutputStream self, InputStream in) throws IOException {
+        return IOGroovyMethods.leftShift(self, in);
+    }
+
+    @Deprecated
+    public static OutputStream leftShift(OutputStream self, byte[] value) throws IOException {
+        return IOGroovyMethods.leftShift(self, value);
+    }
+
+    @Deprecated
+    public static ObjectOutputStream newObjectOutputStream(File file) throws IOException {
+        return ResourceGroovyMethods.newObjectOutputStream(file);
+    }
+
+    @Deprecated
+    public static ObjectOutputStream newObjectOutputStream(OutputStream outputStream) throws IOException {
+        return IOGroovyMethods.newObjectOutputStream(outputStream);
+    }
+
+    @Deprecated
+    public static <T> T withObjectOutputStream(File file, Closure<T> closure) throws IOException {
+        return ResourceGroovyMethods.withObjectOutputStream(file, closure);
+    }
+
+    @Deprecated
+    public static <T> T withObjectOutputStream(OutputStream outputStream, Closure<T> closure) throws IOException {
+        return IOGroovyMethods.withObjectOutputStream(outputStream, closure);
+    }
+
+    @Deprecated
+    public static ObjectInputStream newObjectInputStream(File file) throws IOException {
+        return ResourceGroovyMethods.newObjectInputStream(file);
+    }
+
+    @Deprecated
+    public static ObjectInputStream newObjectInputStream(InputStream inputStream) throws IOException {
+        return IOGroovyMethods.newObjectInputStream(inputStream);
+    }
+
+    @Deprecated
+    public static ObjectInputStream newObjectInputStream(InputStream inputStream, final ClassLoader classLoader) throws IOException {
+        return IOGroovyMethods.newObjectInputStream(inputStream, classLoader);
+    }
+
+    @Deprecated
+    public static ObjectInputStream newObjectInputStream(File file, final ClassLoader classLoader) throws IOException {
+        return ResourceGroovyMethods.newObjectInputStream(file, classLoader);
+    }
+
+    @Deprecated
+    public static void eachObject(File self, Closure closure) throws IOException, ClassNotFoundException {
+        ResourceGroovyMethods.eachObject(self, closure);
+    }
+
+    @Deprecated
+    public static void eachObject(ObjectInputStream ois, Closure closure) throws IOException, ClassNotFoundException {
+        IOGroovyMethods.eachObject(ois, closure);
+    }
+
+    @Deprecated
+    public static <T> T withObjectInputStream(File file, Closure<T> closure) throws IOException {
+        return ResourceGroovyMethods.withObjectInputStream(file, closure);
+    }
+
+    @Deprecated
+    public static <T> T withObjectInputStream(File file, ClassLoader classLoader, Closure<T> closure) throws IOException {
+        return ResourceGroovyMethods.withObjectInputStream(file, classLoader, closure);
+    }
+
+    @Deprecated
+    public static <T> T withObjectInputStream(InputStream inputStream, Closure<T> closure) throws IOException {
+        return IOGroovyMethods.withObjectInputStream(inputStream, closure);
+    }
+
+    @Deprecated
+    public static <T> T withObjectInputStream(InputStream inputStream, ClassLoader classLoader, Closure<T> closure) throws IOException {
+        return IOGroovyMethods.withObjectInputStream(inputStream, classLoader, closure);
+    }
+
+    @Deprecated
+    public static <T> T eachLine(File self, Closure<T> closure) throws IOException {
+        return ResourceGroovyMethods.eachLine(self, closure);
+    }
+
+    @Deprecated
+    public static <T> T eachLine(File self, String charset, Closure<T> closure) throws IOException {
+        return ResourceGroovyMethods.eachLine(self, charset, closure);
+    }
+
+    @Deprecated
+    public static <T> T eachLine(File self, int firstLine, Closure<T> closure) throws IOException {
+        return ResourceGroovyMethods.eachLine(self, firstLine, closure);
+    }
+
+    @Deprecated
+    public static <T> T eachLine(File self, String charset, int firstLine, Closure<T> closure) throws IOException {
+        return ResourceGroovyMethods.eachLine(self, charset, firstLine, closure);
+    }
+
+    @Deprecated
+    public static <T> T eachLine(InputStream stream, String charset, Closure<T> closure) throws IOException {
+        return IOGroovyMethods.eachLine(stream, charset, closure);
+    }
+
+    @Deprecated
+    public static <T> T eachLine(InputStream stream, String charset, int firstLine, Closure<T> closure) throws IOException {
+        return IOGroovyMethods.eachLine(stream, charset, firstLine, closure);
+    }
+
+    @Deprecated
+    public static <T> T eachLine(InputStream stream, Closure<T> closure) throws IOException {
+        return IOGroovyMethods.eachLine(stream, closure);
+    }
+
+    @Deprecated
+    public static <T> T eachLine(InputStream stream, int firstLine, Closure<T> closure) throws IOException {
+        return IOGroovyMethods.eachLine(stream, firstLine, closure);
+    }
+
+    @Deprecated
+    public static <T> T eachLine(URL url, Closure<T> closure) throws IOException {
+        return ResourceGroovyMethods.eachLine(url, closure);
+    }
+
+    @Deprecated
+    public static <T> T eachLine(URL url, int firstLine, Closure<T> closure) throws IOException {
+        return ResourceGroovyMethods.eachLine(url, firstLine, closure);
+    }
+
+    @Deprecated
+    public static <T> T eachLine(URL url, String charset, Closure<T> closure) throws IOException {
+        return ResourceGroovyMethods.eachLine(url, charset, closure);
+    }
+
+    @Deprecated
+    public static <T> T eachLine(URL url, String charset, int firstLine, Closure<T> closure) throws IOException {
+        return ResourceGroovyMethods.eachLine(url, charset, firstLine, closure);
+    }
+
+    @Deprecated
+    public static <T> T eachLine(Reader self, Closure<T> closure) throws IOException {
+        return IOGroovyMethods.eachLine(self, closure);
+    }
+
+    @Deprecated
+    public static <T> T eachLine(Reader self, int firstLine, Closure<T> closure) throws IOException {
+        return IOGroovyMethods.eachLine(self, firstLine, closure);
+    }
+
+    @Deprecated
+    public static <T> T splitEachLine(File self, String regex, Closure<T> closure) throws IOException {
+        return ResourceGroovyMethods.splitEachLine(self, regex, closure);
+    }
+
+    @Deprecated
+    public static <T> T splitEachLine(File self, Pattern pattern, Closure<T> closure) throws IOException {
+        return ResourceGroovyMethods.splitEachLine(self, pattern, closure);
+    }
+
+    @Deprecated
+    public static <T> T splitEachLine(File self, String regex, String charset, Closure<T> closure) throws IOException {
+        return ResourceGroovyMethods.splitEachLine(self, regex, charset, closure);
+    }
+
+    @Deprecated
+    public static <T> T splitEachLine(File self, Pattern pattern, String charset, Closure<T> closure) throws IOException {
+        return ResourceGroovyMethods.splitEachLine(self, pattern, charset, closure);
+    }
+
+    @Deprecated
+    public static <T> T splitEachLine(URL self, String regex, Closure<T> closure) throws IOException {
+        return ResourceGroovyMethods.splitEachLine(self, regex, closure);
+    }
+
+    @Deprecated
+    public static <T> T splitEachLine(URL self, Pattern pattern, Closure<T> closure) throws IOException {
+        return ResourceGroovyMethods.splitEachLine(self, pattern, closure);
+    }
+
+    @Deprecated
+    public static <T> T splitEachLine(URL self, String regex, String charset, Closure<T> closure) throws IOException {
+        return ResourceGroovyMethods.splitEachLine(self, regex, charset, closure);
+    }
+
+    @Deprecated
+    public static <T> T splitEachLine(URL self, Pattern pattern, String charset, Closure<T> closure) throws IOException {
+        return ResourceGroovyMethods.splitEachLine(self, pattern, charset, closure);
+    }
+
+    @Deprecated
+    public static <T> T splitEachLine(Reader self, String regex, Closure<T> closure) throws IOException {
+        return IOGroovyMethods.splitEachLine(self, regex, closure);
+    }
+
+    @Deprecated
+    public static <T> T splitEachLine(Reader self, Pattern pattern, Closure<T> closure) throws IOException {
+        return IOGroovyMethods.splitEachLine(self, pattern, closure);
+    }
+
+    @Deprecated
+    public static <T> T splitEachLine(InputStream stream, String regex, String charset, Closure<T> closure) throws IOException {
+        return IOGroovyMethods.splitEachLine(stream, charset, regex, closure);
+    }
+
+    @Deprecated
+    public static <T> T splitEachLine(InputStream stream, Pattern pattern, String charset, Closure<T> closure) throws IOException {
+        return IOGroovyMethods.splitEachLine(stream, pattern, charset, closure);
+    }
+
+    @Deprecated
+    public static <T> T splitEachLine(InputStream stream, String regex, Closure<T> closure) throws IOException {
+        return IOGroovyMethods.splitEachLine(stream, regex, closure);
+    }
+
+    @Deprecated
+    public static <T> T splitEachLine(InputStream stream, Pattern pattern, Closure<T> closure) throws IOException {
+        return IOGroovyMethods.splitEachLine(stream, pattern, closure);
+    }
+
+    @Deprecated
+    public static String readLine(Reader self) throws IOException {
+        return  IOGroovyMethods.readLine(self);
+    }
+
+    @Deprecated
+    public static List<String> readLines(File file) throws IOException {
+        return ResourceGroovyMethods.readLines(file);
+    }
+
+    @Deprecated
+    public static List<String> readLines(File file, String charset) throws IOException {
+        return ResourceGroovyMethods.readLines(file, charset);
+    }
+
+    @Deprecated
+    public static List<String> readLines(InputStream stream) throws IOException {
+        return IOGroovyMethods.readLines(stream);
+    }
+
+    @Deprecated
+    public static List<String> readLines(InputStream stream, String charset) throws IOException {
+        return IOGroovyMethods.readLines(stream, charset);
+    }
+
+    @Deprecated
+    public static List<String> readLines(URL self) throws IOException {
+        return ResourceGroovyMethods.readLines(self);
+    }
+
+    @Deprecated
+    public static List<String> readLines(URL self, String charset) throws IOException {
+        return ResourceGroovyMethods.readLines(self, charset);
+    }
+
+    @Deprecated
+    public static List<String> readLines(Reader reader) throws IOException {
+        return IOGroovyMethods.readLines(reader);
+    }
+
+    @Deprecated
+    public static String getText(File file, String charset) throws IOException {
+        return ResourceGroovyMethods.getText(file, charset);
+    }
+
+    @Deprecated
+    public static String getText(File file) throws IOException {
+        return ResourceGroovyMethods.getText(file);
+    }
+
+    @Deprecated
+    public static String getText(URL url) throws IOException {
+        return ResourceGroovyMethods.getText(url);
+    }
+
+    @Deprecated
+    public static String getText(URL url, Map parameters) throws IOException {
+        return ResourceGroovyMethods.getText(url, parameters);
+    }
+
+    @Deprecated
+    public static String getText(URL url, String charset) throws IOException {
+        return ResourceGroovyMethods.getText(url, charset);
+    }
+
+    @Deprecated
+    public static String getText(URL url, Map parameters, String charset) throws IOException {
+        return ResourceGroovyMethods.getText(url, parameters, charset);
+    }
+
+    @Deprecated
+    public static String getText(InputStream is) throws IOException {
+        return IOGroovyMethods.getText(is);
+    }
+
+    @Deprecated
+    public static String getText(InputStream is, String charset) throws IOException {
+        return IOGroovyMethods.getText(is, charset);
+    }
+
+    @Deprecated
+    public static String getText(Reader reader) throws IOException {
+        return IOGroovyMethods.getText(reader);
+    }
+
+    @Deprecated
+    public static String getText(BufferedReader reader) throws IOException {
+        return IOGroovyMethods.getText(reader);
+    }
+
+    @Deprecated
+    public static byte[] getBytes(File file) throws IOException {
+        return ResourceGroovyMethods.getBytes(file);
+    }
+
+    @Deprecated
+    public static byte[] getBytes(URL url) throws IOException {
+        return ResourceGroovyMethods.getBytes(url);
+    }
+
+    @Deprecated
+    public static byte[] getBytes(InputStream is) throws IOException {
+        return IOGroovyMethods.getBytes(is);
+    }
+
+    @Deprecated
+    public static void setBytes(File file, byte[] bytes) throws IOException {
+        ResourceGroovyMethods.setBytes(file, bytes);
+    }
+
+    @Deprecated
+    public static void setBytes(OutputStream os, byte[] bytes) throws IOException {
+        IOGroovyMethods.setBytes(os, bytes);
+    }
+
+    @Deprecated
+    public static void writeLine(BufferedWriter writer, String line) throws IOException {
+        IOGroovyMethods.writeLine(writer, line);
+    }
+
+    @Deprecated
+    public static void write(File file, String text) throws IOException {
+        ResourceGroovyMethods.write(file, text);
+    }
+
+    @Deprecated
+    public static void setText(File file, String text) throws IOException {
+        ResourceGroovyMethods.setText(file, text);
+    }
+
+    @Deprecated
+    public static void setText(File file, String text, String charset) throws IOException {
+        ResourceGroovyMethods.setText(file, text, charset);
+    }
+
+    @Deprecated
+    public static File leftShift(File file, Object text) throws IOException {
+        return ResourceGroovyMethods.leftShift(file, text);
+    }
+
+    @Deprecated
+    public static File leftShift(File file, byte[] bytes) throws IOException {
+        return ResourceGroovyMethods.leftShift(file, bytes);
+    }
+
+    @Deprecated
+    public static File leftShift(File file, InputStream data) throws IOException {
+        return ResourceGroovyMethods.leftShift(file, data);
+    }
+
+    @Deprecated
+    public static void write(File file, String text, String charset) throws IOException {
+        ResourceGroovyMethods.write(file, text, charset);
+    }
+
+    @Deprecated
+    public static void append(File file, Object text) throws IOException {
+        ResourceGroovyMethods.append(file, text);
+    }
+
+    @Deprecated
+    public static void append(File file, byte[] bytes) throws IOException {
+        ResourceGroovyMethods.append(file, bytes);
+    }
+
+    @Deprecated
+    public static void append(File self, InputStream stream ) throws IOException {
+        ResourceGroovyMethods.append(self, stream);
+    }
+
+    @Deprecated
+    public static void append(File file, Object text, String charset) throws IOException {
+        ResourceGroovyMethods.append(file, text, charset);
+    }
+
+    @Deprecated
+    public static void eachFile(final File self, final FileType fileType, final Closure closure)
+            throws FileNotFoundException, IllegalArgumentException {
+        ResourceGroovyMethods.eachFile(self, fileType, closure);
+    }
+
+    @Deprecated
+    public static void eachFile(final File self, final Closure closure) throws FileNotFoundException, IllegalArgumentException {
+        ResourceGroovyMethods.eachFile(self, closure);
+    }
+
+    @Deprecated
+    public static void eachDir(File self, Closure closure) throws FileNotFoundException, IllegalArgumentException {
+        ResourceGroovyMethods.eachDir(self, closure);
+    }
+
+    @Deprecated
+    public static void eachFileRecurse(final File self, final FileType fileType, final Closure closure)
+            throws FileNotFoundException, IllegalArgumentException {
+        ResourceGroovyMethods.eachFileRecurse(self, fileType, closure);
+    }
+
+    @Deprecated
+    public static void traverse(final File self, final Map<String, Object> options, final Closure closure)
+            throws FileNotFoundException, IllegalArgumentException {
+        ResourceGroovyMethods.traverse(self, options, closure);
+    }
+
+    @Deprecated
+    public static void traverse(final File self, final Closure closure) throws FileNotFoundException, IllegalArgumentException {
+        ResourceGroovyMethods.traverse(self, closure);
+    }
+
+    @Deprecated
+    public static void traverse(final File self, final Map<String, Object> options)
+            throws FileNotFoundException, IllegalArgumentException {
+        ResourceGroovyMethods.traverse(self, options);
+    }
+
+    @Deprecated
+    public static void eachFileRecurse(File self, Closure closure) throws FileNotFoundException, IllegalArgumentException {
+        ResourceGroovyMethods.eachFileRecurse(self, closure);
+    }
+
+    @Deprecated
+    public static void eachDirRecurse(final File self, final Closure closure) throws FileNotFoundException, IllegalArgumentException {
+        ResourceGroovyMethods.eachDirRecurse(self, closure);
+    }
+
+    @Deprecated
+    public static void eachFileMatch(final File self, final FileType fileType, final Object nameFilter, final Closure closure)
+            throws FileNotFoundException, IllegalArgumentException {
+        ResourceGroovyMethods.eachFileMatch(self, fileType, nameFilter, closure);
+    }
+
+    @Deprecated
+    public static void eachFileMatch(final File self, final Object nameFilter, final Closure closure)
+            throws FileNotFoundException, IllegalArgumentException {
+        ResourceGroovyMethods.eachFileMatch(self, nameFilter, closure);
+    }
+
+    @Deprecated
+    public static void eachDirMatch(final File self, final Object nameFilter, final Closure closure) throws FileNotFoundException, IllegalArgumentException {
+        ResourceGroovyMethods.eachDirMatch(self, nameFilter, closure);
+    }
+
+    @Deprecated
+    public static boolean deleteDir(final File self) {
+        return ResourceGroovyMethods.deleteDir(self);
+    }
+
+    @Deprecated
+    public static boolean renameTo(final File self, String newPathName) {
+        return ResourceGroovyMethods.renameTo(self, newPathName);
+    }
+
+    @Deprecated
+    public static Iterator<String> iterator(Reader self) {
+        return IOGroovyMethods.iterator(self);
+    }
+
+    @Deprecated
+    public static Iterator<Byte> iterator(InputStream self) {
+        return IOGroovyMethods.iterator(self);
+    }
+
+    @Deprecated
+    public static Iterator<Byte> iterator(final DataInputStream self) {
+        return IOGroovyMethods.iterator(self);
+    }
+
+    @Deprecated
+    public static File asWritable(File file) {
+        return ResourceGroovyMethods.asWritable(file);
+    }
+
+    @Deprecated
+    public static <T> T asType(File f, Class<T> c) {
+        return ResourceGroovyMethods.asType(f, c);
+    }
+
+    @Deprecated
+    public static File asWritable(File file, String encoding) {
+        return ResourceGroovyMethods.asWritable(file, encoding);
+    }
+
+    @Deprecated
+    public static BufferedReader newReader(File file) throws IOException {
+        return ResourceGroovyMethods.newReader(file);
+    }
+
+    @Deprecated
+    public static BufferedReader newReader(File file, String charset)
+            throws FileNotFoundException, UnsupportedEncodingException {
+        return ResourceGroovyMethods.newReader(file, charset);
+    }
+
+    @Deprecated
+    public static BufferedReader newReader(InputStream self) {
+        return IOGroovyMethods.newReader(self);
+    }
+
+    @Deprecated
+    public static BufferedReader newReader(InputStream self, String charset) throws UnsupportedEncodingException {
+        return IOGroovyMethods.newReader(self, charset);
+    }
+
+    @Deprecated
+    public static <T> T withReader(File file, Closure<T> closure) throws IOException {
+        return ResourceGroovyMethods.withReader(file, closure);
+    }
+
+    @Deprecated
+    public static <T> T withReader(File file, String charset, Closure<T> closure) throws IOException {
+        return ResourceGroovyMethods.withReader(file, charset, closure);
+    }
+
+    @Deprecated
+    public static BufferedOutputStream newOutputStream(File file) throws IOException {
+        return ResourceGroovyMethods.newOutputStream(file);
+    }
+
+    @Deprecated
+    public static DataOutputStream newDataOutputStream(File file) throws IOException {
+        return ResourceGroovyMethods.newDataOutputStream(file);
+    }
+
+    @Deprecated
+    public static Object withOutputStream(File file, Closure closure) throws IOException {
+        return ResourceGroovyMethods.withOutputStream(file, closure);
+    }
+
+    @Deprecated
+    public static Object withInputStream(File file, Closure closure) throws IOException {
+        return ResourceGroovyMethods.withInputStream(file, closure);
+    }
+
+    @Deprecated
+    public static <T> T withInputStream(URL url, Closure<T> closure) throws IOException {
+        return ResourceGroovyMethods.withInputStream(url, closure);
+    }
+
+    @Deprecated
+    public static <T> T withDataOutputStream(File file, Closure<T> closure) throws IOException {
+        return ResourceGroovyMethods.withDataOutputStream(file, closure);
+    }
+
+    @Deprecated
+    public static <T> T withDataInputStream(File file, Closure<T> closure) throws IOException {
+        return ResourceGroovyMethods.withDataInputStream(file, closure);
+    }
+
+    @Deprecated
+    public static BufferedWriter newWriter(File file) throws IOException {
+        return ResourceGroovyMethods.newWriter(file);
+    }
+
+    @Deprecated
+    public static BufferedWriter newWriter(File file, boolean append) throws IOException {
+        return ResourceGroovyMethods.newWriter(file, append);
+    }
+
+    @Deprecated
+    public static BufferedWriter newWriter(File file, String charset, boolean append) throws IOException {
+        return ResourceGroovyMethods.newWriter(file, charset, append);
+    }
+
+    @Deprecated
+    public static BufferedWriter newWriter(File file, String charset) throws IOException {
+        return ResourceGroovyMethods.newWriter(file, charset);
+    }
+
+    @Deprecated
+    public static <T> T withWriter(File file, Closure<T> closure) throws IOException {
+        return ResourceGroovyMethods.withWriter(file, closure);
+    }
+
+    @Deprecated
+    public static <T> T withWriter(File file, String charset, Closure<T> closure) throws IOException {
+        return ResourceGroovyMethods.withWriter(file, charset, closure);
+    }
+
+    @Deprecated
+    public static <T> T withWriterAppend(File file, String charset, Closure<T> closure) throws IOException {
+        return ResourceGroovyMethods.withWriterAppend(file, charset, closure);
+    }
+
+    @Deprecated
+    public static <T> T withWriterAppend(File file, Closure<T> closure) throws IOException {
+        return ResourceGroovyMethods.withWriterAppend(file, closure);
+    }
+
+    @Deprecated
+    public static PrintWriter newPrintWriter(File file) throws IOException {
+        return ResourceGroovyMethods.newPrintWriter(file);
+    }
+
+    @Deprecated
+    public static PrintWriter newPrintWriter(File file, String charset) throws IOException {
+        return ResourceGroovyMethods.newPrintWriter(file, charset);
+    }
+
+    @Deprecated
+    public static PrintWriter newPrintWriter(Writer writer) {
+        return IOGroovyMethods.newPrintWriter(writer);
+    }
+
+    @Deprecated
+    public static <T> T withPrintWriter(File file, Closure<T> closure) throws IOException {
+        return ResourceGroovyMethods.withPrintWriter(file, closure);
+    }
+
+    @Deprecated
+    public static <T> T withPrintWriter(File file, String charset, Closure<T> closure) throws IOException {
+        return ResourceGroovyMethods.withPrintWriter(file, charset, closure);
+    }
+
+    @Deprecated
+    public static <T> T withPrintWriter(Writer writer, Closure<T> closure) throws IOException {
+        return IOGroovyMethods.withPrintWriter(writer, closure);
+    }
+
+    @Deprecated
+    public static <T> T withWriter(Writer writer, Closure<T> closure) throws IOException {
+            return IOGroovyMethods.withWriter(writer, closure);
+    }
+
+    @Deprecated
+    public static <T> T withReader(Reader reader, Closure<T> closure) throws IOException {
+        return IOGroovyMethods.withReader(reader, closure);
+    }
+
+    @Deprecated
+    public static <T> T withStream(InputStream stream, Closure<T> closure) throws IOException {
+        return IOGroovyMethods.withStream(stream, closure);
+    }
+
+    @Deprecated
+    public static <T> T withReader(URL url, Closure<T> closure) throws IOException {
+        return ResourceGroovyMethods.withReader(url, closure);
+    }
+
+    @Deprecated
+    public static <T> T withReader(URL url, String charset, Closure<T> closure) throws IOException {
+        return ResourceGroovyMethods.withReader(url, charset, closure);
+    }
+
+    @Deprecated
+    public static <T> T withReader(InputStream in, Closure<T> closure) throws IOException {
+        return IOGroovyMethods.withReader(in, closure);
+    }
+
+    @Deprecated
+    public static <T> T withReader(InputStream in, String charset, Closure<T> closure) throws IOException {
+        return IOGroovyMethods.withReader(in, charset, closure);
+    }
+
+    @Deprecated
+    public static <T> T withWriter(OutputStream stream, Closure<T> closure) throws IOException {
+        return IOGroovyMethods.withWriter(stream, closure);
+    }
+
+    @Deprecated
+    public static <T> T withWriter(OutputStream stream, String charset, Closure<T> closure) throws IOException {
+        return IOGroovyMethods.withWriter(stream, charset, closure);
+    }
+
+    @Deprecated
+    public static <T> T withStream(OutputStream os, Closure<T> closure) throws IOException {
+        return IOGroovyMethods.withStream(os, closure);
+    }
+
+    @Deprecated
+    public static BufferedInputStream newInputStream(File file) throws FileNotFoundException {
+        return ResourceGroovyMethods.newInputStream(file);
+    }
+
+    @Deprecated
+    public static BufferedInputStream newInputStream(URL url) throws MalformedURLException, IOException {
+        return ResourceGroovyMethods.newInputStream(url);
+    }
+
+    @Deprecated
+    public static BufferedInputStream newInputStream(URL url, Map parameters) throws MalformedURLException, IOException {
+        return ResourceGroovyMethods.newInputStream(url, parameters);
+    }
+
+    @Deprecated
+    public static BufferedReader newReader(URL url) throws MalformedURLException, IOException {
+        return ResourceGroovyMethods.newReader(url);
+    }
+
+    @Deprecated
+    public static BufferedReader newReader(URL url, Map parameters) throws MalformedURLException, IOException {
+        return ResourceGroovyMethods.newReader(url, parameters);
+    }
+
+    @Deprecated
+    public static BufferedReader newReader(URL url, String charset) throws MalformedURLException, IOException {
+        return ResourceGroovyMethods.newReader(url, charset);
+    }
+
+    @Deprecated
+    public static BufferedReader newReader(URL url, Map parameters, String charset) throws MalformedURLException, IOException {
+        return ResourceGroovyMethods.newReader(url, parameters, charset);
+    }
+
+    @Deprecated
+    public static DataInputStream newDataInputStream(File file) throws FileNotFoundException {
+        return ResourceGroovyMethods.newDataInputStream(file);
+    }
+
+    @Deprecated
+    public static void eachByte(File self, Closure closure) throws IOException {
+        ResourceGroovyMethods.eachByte(self, closure);
+    }
+
+    @Deprecated
+    public static void eachByte(File self, int bufferLen, Closure closure) throws IOException {
+        ResourceGroovyMethods.eachByte(self, bufferLen, closure);
+    }
+
+    @Deprecated
+    public static void eachByte(InputStream is, Closure closure) throws IOException {
+        IOGroovyMethods.eachByte(is, closure);
+    }
+
+    @Deprecated
+    public static void eachByte(InputStream is, int bufferLen, Closure closure) throws IOException {
+        IOGroovyMethods.eachByte(is, bufferLen, closure);
+    }
+
+    @Deprecated
+    public static void eachByte(URL url, Closure closure) throws IOException {
+        ResourceGroovyMethods.eachByte(url, closure);
+    }
+
+    @Deprecated
+    public static void eachByte(URL url, int bufferLen, Closure closure) throws IOException {
+        ResourceGroovyMethods.eachByte(url, bufferLen, closure);
+    }
+
+    @Deprecated
+    public static void transformChar(Reader self, Writer writer, Closure closure) throws IOException {
+        IOGroovyMethods.transformChar(self, writer, closure);
+    }
+
+    @Deprecated
+    public static void transformLine(Reader reader, Writer writer, Closure closure) throws IOException {
+        IOGroovyMethods.transformLine(reader, writer, closure);
+    }
+
+    @Deprecated
+    public static void filterLine(Reader reader, Writer writer, Closure closure) throws IOException {
+        IOGroovyMethods.filterLine(reader, writer, closure);
+    }
+
+    @Deprecated
+    public static Writable filterLine(File self, Closure closure) throws IOException {
+        return ResourceGroovyMethods.filterLine(self, closure);
+    }
+
+    @Deprecated
+    public static Writable filterLine(File self, String charset, Closure closure) throws IOException {
+        return ResourceGroovyMethods.filterLine(self, closure);
+    }
+
+    @Deprecated
+    public static void filterLine(File self, Writer writer, Closure closure) throws IOException {
+        ResourceGroovyMethods.filterLine(self, writer, closure);
+    }
+
+    @Deprecated
+    public static void filterLine(File self, Writer writer, String charset, Closure closure) throws IOException {
+        ResourceGroovyMethods.filterLine(self, writer, charset, closure);
+    }
+
+    @Deprecated
+    public static Writable filterLine(Reader reader, final Closure closure) {
+        return IOGroovyMethods.filterLine(reader, closure);
+    }
+
+    @Deprecated
+    public static Writable filterLine(InputStream self, Closure predicate) {
+        return IOGroovyMethods.filterLine(self, predicate);
+    }
+
+    @Deprecated
+    public static Writable filterLine(InputStream self, String charset, Closure predicate) throws UnsupportedEncodingException {
+        return IOGroovyMethods.filterLine(self, charset, predicate);
+    }
+
+    @Deprecated
+    public static void filterLine(InputStream self, Writer writer, Closure predicate) throws IOException {
+        IOGroovyMethods.filterLine(self, writer, predicate);
+    }
+
+    @Deprecated
+    public static void filterLine(InputStream self, Writer writer, String charset, Closure predicate) throws IOException {
+        IOGroovyMethods.filterLine(self, writer, charset, predicate);
+    }
+
+    @Deprecated
+    public static Writable filterLine(URL self, Closure predicate) throws IOException {
+        return ResourceGroovyMethods.filterLine(self, predicate);
+    }
+
+    @Deprecated
+    public static Writable filterLine(URL self, String charset, Closure predicate) throws IOException {
+        return ResourceGroovyMethods.filterLine(self, charset, predicate);
+    }
+
+    @Deprecated
+    public static void filterLine(URL self, Writer writer, Closure predicate) throws IOException {
+        ResourceGroovyMethods.filterLine(self, writer, predicate);
+    }
+
+    @Deprecated
+    public static void filterLine(URL self, Writer writer, String charset, Closure predicate) throws IOException {
+        ResourceGroovyMethods.filterLine(self, writer, charset, predicate);
+    }
+
+    @Deprecated
+    public static byte[] readBytes(File file) throws IOException {
+        return ResourceGroovyMethods.readBytes(file);
     }
 
 }

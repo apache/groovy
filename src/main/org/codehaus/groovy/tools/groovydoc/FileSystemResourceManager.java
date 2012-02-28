@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,23 +15,25 @@
  */
 package org.codehaus.groovy.tools.groovydoc;
 
+import org.codehaus.groovy.runtime.ResourceGroovyMethods;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
-import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 
 public class FileSystemResourceManager implements ResourceManager {
     private String basedir;
     private static final String FS = "/";
-    
+
     public FileSystemResourceManager() {
         basedir = "";
     }
-    
+
     public FileSystemResourceManager(String basedir) {
         this.basedir = basedir + FS;
     }
+
     public Reader getReader(String resourceName) throws IOException {
-        return DefaultGroovyMethods.newReader(new File(basedir + resourceName));
+        return ResourceGroovyMethods.newReader(new File(basedir + resourceName));
     }
 }

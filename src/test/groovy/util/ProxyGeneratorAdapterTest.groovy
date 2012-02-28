@@ -1,5 +1,7 @@
 package groovy.util
 
+import org.codehaus.groovy.runtime.ProxyGeneratorAdapter
+
 class ProxyGeneratorAdapterTest extends GroovyTestCase {
     void testShouldCreateProxy() {
         def map = ['toString': { 'HELLO' }]
@@ -99,7 +101,7 @@ class ProxyGeneratorAdapterTest extends GroovyTestCase {
            String doIt() { 'foo' }
         }
         def map = [ x : { int a, int b -> } ]
-        def adapter = new groovy.util.ProxyGeneratorAdapter(map, B, null, B.classLoader, false, B)
+        def adapter = new org.codehaus.groovy.runtime.ProxyGeneratorAdapter(map, B, null, B.classLoader, false, B)
         def pxy = adapter.delegatingProxy(new B(), map)
         assert pxy.doIt() ==  'foo'
         '''

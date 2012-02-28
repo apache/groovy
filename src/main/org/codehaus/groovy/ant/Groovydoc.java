@@ -21,7 +21,7 @@ import org.apache.tools.ant.Task;
 import org.apache.tools.ant.types.DirSet;
 import org.apache.tools.ant.types.Path;
 import org.apache.tools.ant.types.PatternSet;
-import org.codehaus.groovy.runtime.DefaultGroovyMethods;
+import org.codehaus.groovy.runtime.ResourceGroovyMethods;
 import org.codehaus.groovy.tools.groovydoc.ClasspathResourceManager;
 import org.codehaus.groovy.tools.groovydoc.FileOutputTool;
 import org.codehaus.groovy.tools.groovydoc.GroovyDocTool;
@@ -435,9 +435,9 @@ public class Groovydoc extends Task {
         // try to override the default stylesheet with custom specified one if needed
         if (styleSheetFile != null) {
             try {
-                String css = DefaultGroovyMethods.getText(styleSheetFile);
+                String css = ResourceGroovyMethods.getText(styleSheetFile);
                 File outfile = new File(destDir, "stylesheet.css");
-                DefaultGroovyMethods.setText(outfile, css);
+                ResourceGroovyMethods.setText(outfile, css);
             } catch (IOException e) {
                 System.out.println("Warning: Unable to copy specified stylesheet '" + styleSheetFile.getAbsolutePath() +
                         "'. Using default stylesheet instead. Due to: " + e.getMessage());

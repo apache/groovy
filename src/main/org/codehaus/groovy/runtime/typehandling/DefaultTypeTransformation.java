@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -463,14 +463,14 @@ public class DefaultTypeTransformation {
             return adapter.asList();
         }
         else if (value instanceof String) {
-            return DefaultGroovyMethods.toList((String) value);
+            return StringGroovyMethods.toList((String) value);
         }
         else if (value instanceof GString) {
-            return DefaultGroovyMethods.toList(value.toString());
+            return StringGroovyMethods.toList(value.toString());
         }
         else if (value instanceof File) {
             try {
-                return DefaultGroovyMethods.readLines((File) value);
+                return ResourceGroovyMethods.readLines((File) value);
             }
             catch (IOException e) {
                 throw new GroovyRuntimeException("Error reading file: " + value, e);

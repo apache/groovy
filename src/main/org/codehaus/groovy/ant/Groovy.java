@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2011 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,8 +32,8 @@ import org.apache.tools.ant.types.Reference;
 import org.apache.tools.ant.util.FileUtils;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilerConfiguration;
-import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.runtime.ResourceGroovyMethods;
 import org.codehaus.groovy.tools.ErrorReporter;
 
 import java.io.BufferedOutputStream;
@@ -527,7 +527,7 @@ public class Groovy extends Java {
         // Temporary file - delete on exit, create (assured unique name).
         final File tempFile = FileUtils.getFileUtils().createTempFile(PREFIX, SUFFIX, null, true, true);
         final String[] commandline = new String[args.length + 1];
-        DefaultGroovyMethods.write(tempFile, txt);
+        ResourceGroovyMethods.write(tempFile, txt);
         commandline[0] = tempFile.getCanonicalPath();
         System.arraycopy(args, 0, commandline, 1, args.length);
         super.clearArgs();

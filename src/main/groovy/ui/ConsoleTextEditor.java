@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.prefs.Preferences;
 
-import org.codehaus.groovy.runtime.DefaultGroovyMethods;
+import org.codehaus.groovy.runtime.StringGroovyMethods;
 
 /**
  * Component which provides a styled editor for the console.
@@ -98,7 +98,7 @@ public class ConsoleTextEditor extends JScrollPane {
             }
             g.setFont(f);
             for (int line = startline, y = startingY; line <= endline; y += fontHeight, line++) {
-                String lineNumber = DefaultGroovyMethods.padLeft(Integer.toString(line), 4, " ");
+                String lineNumber = StringGroovyMethods.padLeft(Integer.toString(line), 4, " ");
                 g.drawString(lineNumber, 0, y);
             }
         }

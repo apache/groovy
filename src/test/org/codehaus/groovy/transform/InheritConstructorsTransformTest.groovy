@@ -57,4 +57,33 @@ class InheritConstructorsTransformTest extends GroovyShellTestCase {
         """
     }
 
+    void testInnerClassUsage() {
+        assertScript """
+            import groovy.transform.InheritConstructors
+            @InheritConstructors
+            class Outer extends RuntimeException {
+                @InheritConstructors
+                class Inner extends RuntimeException {}
+                @InheritConstructors
+                static class StaticInner extends RuntimeException {}
+                void test() {
+                    assert new StaticInner('bar').message == 'bar'
+                    assert new Inner('foo').message == 'foo'
+                }
+            }
+            class Outer2 extends Outer {
+                @InheritConstructors
+                class Inner2 extends Outer.Inner {}
+                void test() {
+                    assert new Inner2('foobar').message == 'foobar'
+                }
+            }
+
+            def o = new Outer('baz')
+            assert o.message == 'baz'
+            o.test()
+            new Outer2().test()
+        """
+    }
+
 }

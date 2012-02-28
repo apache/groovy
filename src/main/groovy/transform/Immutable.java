@@ -118,6 +118,7 @@ import java.lang.annotation.Target;
  * </ul>
  *
  * @author Paul King
+ * @author Andre Steingress
  * @see groovy.transform.ToString
  * @see groovy.transform.Canonical
  * @since 1.7
@@ -127,4 +128,26 @@ import java.lang.annotation.Target;
 @Target({ElementType.TYPE})
 @GroovyASTTransformationClass("org.codehaus.groovy.transform.ImmutableASTTransformation")
 public @interface Immutable {
+    /**
+     * Allows you to provide {@code @Immutable} with a list of classes which
+     * are deemed immutable. By supplying a class in this list, you are vouching
+     * for its immutability and {@code @Immutable} will do no further checks.
+     * Example:
+     * <pre>
+     * import groovy.transform.*
+     * {@code @Immutable}(knownImmutableClasses = [Address])
+     * class Person {
+     *     String first, last
+     *     Address address
+     * }
+     *
+     * {@code @TupleConstructor}
+     * class Address {
+     *     final String street
+     * }
+     * </pre>
+     *
+     * @since 1.8.7
+     */
+    Class[] knownImmutableClasses() default {};
 }

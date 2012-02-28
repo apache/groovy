@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,9 @@
  */
 package org.codehaus.groovy.tools.groovydoc;
 
+import org.codehaus.groovy.runtime.ResourceGroovyMethods;
+
 import java.io.File;
-import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 
 public class FileOutputTool implements OutputTool {
     public void makeOutputArea(String filename) {
@@ -27,6 +28,6 @@ public class FileOutputTool implements OutputTool {
     public void writeToOutput(String fileName, String text) throws Exception {
         File file = new File(fileName);
         file.getParentFile().mkdirs();
-        DefaultGroovyMethods.write(file, text);
+        ResourceGroovyMethods.write(file, text);
     }
 }

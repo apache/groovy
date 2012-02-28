@@ -59,4 +59,19 @@ class StaticCompileInnerClassTest extends AbstractBytecodeTestCase {
                 ['public m()V', 'L0', 'RETURN']
         )*/
     }
+
+    void testAccessPrivateMemberFromAnotherInnerClass() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            class A {
+                private static class Inner1 {
+                    private final static int CONST_1 = 123
+                }
+                private static class Inner2 {
+                    private final static int CONST_2 = 2*Inner1.CONST_1
+                }
+            }
+            assert A.Inner2.CONST_2 == 246
+        '''
+    }
 }

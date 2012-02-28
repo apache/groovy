@@ -236,6 +236,19 @@ class JsonOutputTest extends GroovyTestCase {
             }""".stripIndent()
     }
 
+    void testPrettyPrintDoubleQuoteEscape() {
+        def json = new JsonBuilder()
+
+        json.text { content 'abc"def' }
+
+        assert json.toPrettyString() == """\
+            {
+                "text": {
+                    "content": "abc\\"def"
+                }
+            }""".stripIndent()
+    }
+
     void testSerializePogos() {
         def city = new JsonCity("Paris", [
                 new JsonDistrict(1, [

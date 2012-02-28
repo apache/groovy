@@ -385,6 +385,27 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    void testPutMethodWithPrimitiveValue() {
+        assertScript '''
+            Map<String, Integer> map = new HashMap<String,Integer>()
+            map.put('hello', 1)
+        '''
+    }
+
+    void testPutMethodWithWrongValueType() {
+        shouldFailWithMessages '''
+            Map<String, Integer> map = new HashMap<String,Integer>()
+            map.put('hello', new Object())
+        ''', 'Cannot find matching method java.util.HashMap#put(java.lang.String, java.lang.Object)'
+    }
+
+    void testPutMethodWithPrimitiveValueAndArrayPut() {
+        assertScript '''
+            Map<String, Integer> map = new HashMap<String,Integer>()
+            map['hello'] = 1
+        '''
+    }
+
     void testAssignmentOfNewInstance() {
         Expression expr = null
         config.addCompilationCustomizers(

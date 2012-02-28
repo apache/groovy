@@ -34,6 +34,8 @@ import java.util.Arrays;
  *
  * @author Dierk König
  * @author Andre Steingress
+ * @author Ilinca V. Hallberg
+ * @author Björn Westlin
  */
 @GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
 public class NotYetImplementedASTTransformation extends AbstractASTTransformation {

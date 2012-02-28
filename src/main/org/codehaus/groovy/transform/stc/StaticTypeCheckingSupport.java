@@ -121,7 +121,7 @@ public abstract class StaticTypeCheckingSupport {
      * @return the target variable
      */
     static Variable findTargetVariable(VariableExpression ve) {
-        final Variable accessedVariable = ve.getAccessedVariable();
+        final Variable accessedVariable = ve.getAccessedVariable() != null ? ve.getAccessedVariable() : ve;
         if (accessedVariable != ve) {
             if (accessedVariable instanceof VariableExpression)
                 return findTargetVariable((VariableExpression) accessedVariable);
@@ -973,16 +973,27 @@ public abstract class StaticTypeCheckingSupport {
      * @return
      */
     public static Parameter[] parameterizeArguments(final ClassNode receiver, final MethodNode m) {
-        GenericsType[] redirectReceiverTypes = receiver.redirect().getGenericsTypes();
-        if (redirectReceiverTypes==null) {
-            // we must perform an additional check for methods like Collections#sort which define generics
-            // at the method level
-            redirectReceiverTypes = m.getGenericsTypes();
+        MethodNode mn = m;
+        ClassNode actualReceiver = receiver;
+        /*if (m instanceof ExtensionMethodNode) {
+            ExtensionMethodNode emn = (ExtensionMethodNode) m;
+            mn = emn.getExtensionMethodNode();
+            actualReceiver = emn.getDeclaringClass();
+        }*/
+        List<GenericsType> redirectTypes = new ArrayList<GenericsType>();
+//        if (mn.getGenericsTypes()!=null) Collections.addAll(redirectTypes,mn.getGenericsTypes());
+        if (actualReceiver.redirect().getGenericsTypes()!=null) {
+            Collections.addAll(redirectTypes,actualReceiver.redirect().getGenericsTypes());
         }
-        if (redirectReceiverTypes==null) return m.getParameters();
-        Parameter[] methodParameters = m.getParameters();
+
+        if (redirectTypes.isEmpty()) {
+            return m.getParameters();
+        }
+        GenericsType[] redirectReceiverTypes = redirectTypes.toArray(new GenericsType[redirectTypes.size()]);
+
+        Parameter[] methodParameters = mn.getParameters();
         Parameter[] params = new Parameter[methodParameters.length];
-        GenericsType[] receiverParameterizedTypes = receiver.getGenericsTypes();
+        GenericsType[] receiverParameterizedTypes = actualReceiver.getGenericsTypes();
         if (receiverParameterizedTypes==null) {
             receiverParameterizedTypes = redirectReceiverTypes;
         }
@@ -1011,6 +1022,15 @@ public abstract class StaticTypeCheckingSupport {
                 params[i] = methodParameter;
             }
         }
+        /*if (m instanceof ExtensionMethodNode) {
+            // the parameter array we're using is the one from the extension
+            // but we want to return an array for the regular method
+            Parameter[] result = new Parameter[params.length-1];
+            // 0 is the receiver
+            // 1..n are what we want to return
+            System.arraycopy(params, 1, result, 0, result.length);
+            return result;
+        }*/
         return params;
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package org.codehaus.groovy.tools.groovydoc;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
-import org.codehaus.groovy.runtime.DefaultGroovyMethods;
+import org.codehaus.groovy.runtime.IOGroovyMethods;
 
 public class ClasspathResourceManager implements ResourceManager {
     ClassLoader classLoader;
@@ -35,7 +35,7 @@ public class ClasspathResourceManager implements ResourceManager {
     }
 
     public Reader getReader(String resourceName) throws IOException {
-        return DefaultGroovyMethods.newReader(getInputStream(resourceName));
+        return IOGroovyMethods.newReader(getInputStream(resourceName));
     }
 
 }

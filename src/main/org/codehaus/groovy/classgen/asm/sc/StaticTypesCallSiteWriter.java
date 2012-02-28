@@ -84,6 +84,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
                     ArgumentListExpression.EMPTY_ARGUMENTS
             );
             expr.setMethodTarget(COLLECTION_SIZE_METHOD);
+            expr.setImplicitThis(implicitThis);
             expr.visit(controller.getAcg());
             return;
         }
@@ -103,7 +104,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
             if (makeGetField(receiver, ClassHelper.CLASS_Type, methodName, false, true)) return;
             if (makeGetPropertyWithGetter(receiver, ClassHelper.CLASS_Type, methodName)) return;
         }
-        if (makeGetPrivateFieldWithBridgeMethod(receiver, receiverType, methodName)) return;
+        if (makeGetPrivateFieldWithBridgeMethod(receiver, receiverType, methodName, implicitThis)) return;
         controller.getSourceUnit().addError(
                 new SyntaxException(
                         "Access to "+receiverType.toString(false)+"#"+methodName+" is forbidden",
@@ -111,13 +112,15 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
                         receiver.getColumnNumber()
                 )
         );
+        controller.getMethodVisitor().visitInsn(ACONST_NULL);
+        controller.getOperandStack().push(ClassHelper.OBJECT_TYPE);
     }
 
     @SuppressWarnings("unchecked")
-    private boolean makeGetPrivateFieldWithBridgeMethod(final Expression receiver, final ClassNode receiverType, final String fieldName) {
+    private boolean makeGetPrivateFieldWithBridgeMethod(final Expression receiver, final ClassNode receiverType, final String fieldName, final boolean implicitThis) {
         FieldNode field = receiverType.getField(fieldName);
         ClassNode classNode = controller.getClassNode();
-        if (Modifier.isPrivate(field.getModifiers()) 
+        if (field!=null && Modifier.isPrivate(field.getModifiers())
                 && (StaticInvocationWriter.isPrivateBridgeMethodsCallAllowed(receiverType, classNode) || StaticInvocationWriter.isPrivateBridgeMethodsCallAllowed(classNode,receiverType))
                 && !receiverType.equals(classNode)) {
             Map<String, MethodNode> accessors = (Map<String, MethodNode>) receiverType.redirect().getNodeMetaData(StaticCompilationMetadataKeys.PRIVATE_FIELDS_ACCESSORS);
@@ -126,6 +129,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
                 if (methodNode!=null) {
                     MethodCallExpression mce = new MethodCallExpression(receiver, methodNode.getName(), ArgumentListExpression.EMPTY_ARGUMENTS);
                     mce.setMethodTarget(methodNode);
+                    mce.setImplicitThis(implicitThis);
                     mce.visit(controller.getAcg());
                     return true;
                 }
@@ -275,6 +279,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         }
         // todo: more cases
         throw new GroovyBugError(
+                "At line "+receiver.getLineNumber() + " column " + receiver.getColumnNumber() + "\n" +
                 "On receiver: "+receiver.getText() + " with message: "+message+" and arguments: "+arguments.getText()+"\n"+
                 "This method should not have been called. Please try to create a simple example reproducing this error and file" +
                 "a bug report at http://jira.codehaus.org/browse/GROOVY");

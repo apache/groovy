@@ -410,16 +410,71 @@ class ImmutableTransformTest extends GroovyShellTestCase {
             assert new Person1("Hamlet", "D'Arcy").toString() == "Person1(Hamlet, D'Arcy)"
             assert new Person2(first: "Hamlet", last: "D'Arcy").toString() == "Person2(first:Hamlet, last:D'Arcy)"
             assert new Person3("Hamlet", "D'Arcy").toString() == "Person3(Hamlet)"
-            '''
+        '''
     }
 
-    void testImmutableUsageOnStaticInnerClasses() {
-        shell.parse '''
+    void testImmutableUsageOnInnerClasses() {
+        assertScript '''
             import groovy.transform.Immutable
             class A4997 {
                 @Immutable
-                static class B4997 {}
+                static class B4997 { String name }
+                @Immutable
+                class C4997 { String name }
+                def test() {
+                    assert new C4997(name: 'foo').toString() == 'A4997$C4997(foo)'
+                }
             }
+            assert new A4997.B4997(name: 'bar').toString() == 'A4997$B4997(bar)'
+            new A4997().test()
+        '''
+    }
+
+    void testKnownImmutableClassesWithNamedParameters() {
+        assertScript '''
+            import groovy.transform.*
+            @Immutable(knownImmutableClasses = [Address])
+            class Person {
+                String first, last
+                Address address
+            }
+
+            @TupleConstructor @ToString class Address { final String street }
+
+            assert new Person(first: 'John', last: 'Doe', address: new Address('Some Street')).toString() == 'Person(John, Doe, Address(Some Street))'
+        '''
+    }
+
+    void testKnownImmutableClassesWithExplicitConstructor() {
+        assertScript '''
+            @groovy.transform.Immutable(knownImmutableClasses = [Address])
+            class Person {
+                String first, last
+                Address address
+            }
+
+            // ok, not really immutable but deem it such for the purpose of this test
+            @groovy.transform.ToString class Address { String street }
+
+            assert new Person('John', 'Doe', new Address(street: 'Street')).toString() == 'Person(John, Doe, Address(Street))'
+        '''
+    }
+
+    void testKnownImmutableClassesMissing() {
+        def msg = shouldFail(RuntimeException) {
+            evaluate '''
+                @groovy.transform.ToString class Address { String street }
+
+                @groovy.transform.Immutable
+                class Person {
+                    String first, last
+                    Address address
+                }
+
+                new Person(first: 'John', last: 'Doe', address: new Address(street: 'Street'))
             '''
+        }
+        assert msg.contains("doesn't know how to handle field 'address' of type 'Address'")
+        assert msg.contains("@Immutable classes only support properties with effectively immutable types")
     }
 }
