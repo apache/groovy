@@ -13,21 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package groovy.util;
+package org.codehaus.groovy.runtime;
 
 import groovy.lang.Closure;
 import groovy.lang.GroovyObject;
 import groovy.lang.GroovyRuntimeException;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
-import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.objectweb.asm.*;
 import org.objectweb.asm.commons.EmptyVisitor;
-import org.objectweb.asm.util.CheckClassAdapter;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.PrintWriter;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
