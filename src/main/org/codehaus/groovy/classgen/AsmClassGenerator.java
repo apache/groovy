@@ -97,14 +97,56 @@ public class AsmClassGenerator extends ClassGenerator {
     private Map genericParameterNames = null;
     private SourceUnit source;
     private WriterController controller;
-
+    
     public AsmClassGenerator(
             SourceUnit source, GeneratorContext context,
             ClassVisitor classVisitor, String sourceFile
     ) {
         this.source = source;
         this.context = context;
-        this.cv = classVisitor;
+        if (classVisitor!=null) {
+            this.cv = classVisitor;
+        } else {
+            this.cv = new ClassWriter(ClassWriter.COMPUTE_FRAMES+ClassWriter.COMPUTE_MAXS) {
+                private ClassNode getClassNode(String name) {
+                    // try classes under compilation
+                    CompileUnit cu = AsmClassGenerator.this.context.getCompileUnit();
+                    ClassNode cn = cu.getClass(name);
+                    if (cn!=null) return cn;
+                    // try inner classes
+                    for (ClassNode ci : AsmClassGenerator.this.innerClasses){
+                        if (ci.getName().equals(name)) return ci;
+                    }
+                    // try class loader classes
+                    try {
+                        cn = ClassHelper.make(
+                                cu.getClassLoader().loadClass(name,false,true),
+                                false);
+                    } catch (Exception e) {
+                        throw new GroovyBugError(e);
+                    }
+                    return cn;
+                }
+                private ClassNode getCommonSuperClassNode(ClassNode c, ClassNode d) {
+                    // adapted from ClassWriter code
+                    if (c.isDerivedFrom(d)) return d;
+                    if (d.isDerivedFrom(c)) return c;
+                    if (c.isInterface() || d.isInterface()) return ClassHelper.OBJECT_TYPE;
+                    do {
+                        c = c.getSuperClass();
+                    } while (c!=null && !d.isDerivedFrom(c));
+                    if (c==null) return ClassHelper.OBJECT_TYPE;
+                    return c;
+                }
+                @Override
+                protected String getCommonSuperClass(String arg1, String arg2) {
+                    ClassNode a = getClassNode(arg1.replace('/', '.')); 
+                    ClassNode b = getClassNode(arg2.replace('/', '.'));
+                    return getCommonSuperClassNode(a,b).getName().replace('.','/');
+                }
+                
+            };
+        }
         this.sourceFile = sourceFile;
         genericParameterNames = new HashMap();
     }
@@ -2093,5 +2135,9 @@ public class AsmClassGenerator extends ClassGenerator {
     public boolean addInnerClass(ClassNode innerClass) {
         innerClass.setModule(controller.getClassNode().getModule());
         return innerClasses.add(innerClass);
+    }
+
+    public byte[] toByteArray() {
+        return ((ClassWriter) cv).toByteArray();
     }
 }
