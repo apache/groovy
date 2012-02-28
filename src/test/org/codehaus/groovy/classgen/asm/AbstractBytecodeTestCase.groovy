@@ -5,7 +5,6 @@ import org.objectweb.asm.util.TraceClassVisitor
 import org.objectweb.asm.tree.*
 import org.objectweb.asm.*
 import org.codehaus.groovy.control.Phases
-import org.objectweb.asm.commons.EmptyVisitor
 import org.codehaus.groovy.control.CompilerConfiguration
 import java.security.CodeSource
 
