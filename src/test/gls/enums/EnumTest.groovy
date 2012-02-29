@@ -371,7 +371,7 @@ class EnumTest extends CompilableTestSupport {
     void testEnumWithSingleValueAndClassField() {
         // GROOVY-4268
         shouldCompile """
-            private enum EnumWithSingleValueAndClassField {
+            enum EnumWithSingleValueAndClassField {
                 VALUE
                 String toString() { "I'm a value" }
             }

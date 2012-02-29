@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,9 @@ import groovy.lang.GroovyObjectSupport;
 import groovy.lang.IntRange;
 import groovy.lang.MetaClass;
 import groovy.lang.Writable;
+import org.codehaus.groovy.runtime.DefaultGroovyMethods;
+import org.codehaus.groovy.runtime.ResourceGroovyMethods;
+import org.codehaus.groovy.runtime.StringGroovyMethods;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -39,8 +42,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Stack;
-
-import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 
 /**
  * Base class for representing lazy evaluated GPath expressions.
@@ -193,39 +194,39 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
     }
 
     public Integer toInteger() {
-        return DefaultGroovyMethods.toInteger(text());
+        return StringGroovyMethods.toInteger(text());
     }
 
     public Long toLong() {
-        return DefaultGroovyMethods.toLong(text());
+        return StringGroovyMethods.toLong(text());
     }
 
     public Float toFloat() {
-        return DefaultGroovyMethods.toFloat(text());
+        return StringGroovyMethods.toFloat(text());
     }
 
     public Double toDouble() {
-        return DefaultGroovyMethods.toDouble(text());
+        return StringGroovyMethods.toDouble(text());
     }
 
     public BigDecimal toBigDecimal() {
-        return DefaultGroovyMethods.toBigDecimal(text());
+        return StringGroovyMethods.toBigDecimal(text());
     }
 
     public BigInteger toBigInteger() {
-        return DefaultGroovyMethods.toBigInteger(text());
+        return StringGroovyMethods.toBigInteger(text());
     }
 
     public URL toURL() throws MalformedURLException {
-        return DefaultGroovyMethods.toURL(text());
+        return ResourceGroovyMethods.toURL(text());
     }
 
     public URI toURI() throws URISyntaxException {
-        return DefaultGroovyMethods.toURI(text());
+        return ResourceGroovyMethods.toURI(text());
     }
 
     public Boolean toBoolean() {
-        return DefaultGroovyMethods.toBoolean(text());
+        return StringGroovyMethods.toBoolean(text());
     }
 
     public GPathResult declareNamespace(final Map newNamespaceMapping) {

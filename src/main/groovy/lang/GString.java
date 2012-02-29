@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,8 @@
  */
 package groovy.lang;
 
-import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.runtime.StringGroovyMethods;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -248,6 +248,6 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
      * @return the regular expression pattern
      */
     public Pattern negate() {
-        return DefaultGroovyMethods.bitwiseNegate(toString());
+        return StringGroovyMethods.bitwiseNegate(toString());
     }
 }

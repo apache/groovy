@@ -154,6 +154,33 @@ class StaticCompilationTest extends AbstractBytecodeTestCase {
         ])
     }
 
+    void testArrayGet() {
+        assert compile([method:'m'],'''
+        @groovy.transform.CompileStatic
+        void m(int[] arr) {
+            arr[0]
+        }''').hasStrictSequence([
+                "ALOAD 1",
+                "ICONST_0",
+                "INVOKESTATIC org/codehaus/groovy/runtime/BytecodeInterface8.intArrayGet ([II)I"
+        ])
+    }
+
+    void testArraySet() {
+        assert compile([method:'m'],'''
+        @groovy.transform.CompileStatic
+        void m(int[] arr) {
+            arr[0] = 0
+        }''').hasStrictSequence([
+                "ICONST_0",
+                "ISTORE 2",
+                "ALOAD 1",
+                "ICONST_0",
+                "ILOAD 2",
+                "INVOKESTATIC org/codehaus/groovy/runtime/BytecodeInterface8.intArraySet ([III)V"
+        ])
+    }
+
 /*    void testPlusPlus() {
         assert compile([method:'m'],'''
         @groovy.transform.CompileStatic
@@ -218,7 +245,6 @@ class StaticCompilationTest extends AbstractBytecodeTestCase {
         ''').hasStrictSequence([
                 "ICONST",
                 "INVOKESTATIC java/lang/Integer.valueOf (I)Ljava/lang/Integer;",
-                "CHECKCAST java/lang/Comparable",
                 "ASTORE",
                 "L1",
                 "ALOAD 2",
@@ -226,10 +252,8 @@ class StaticCompilationTest extends AbstractBytecodeTestCase {
                 "L2",
                 "LINENUMBER",
                 "ALOAD 1",
-                "CHECKCAST java/lang/String",
                 "ASTORE 3",
                 "ALOAD 3",
-                "CHECKCAST java/lang/String",
                 "ASTORE 2",
                 "ALOAD 3",
                 "POP",
@@ -242,7 +266,7 @@ class StaticCompilationTest extends AbstractBytecodeTestCase {
                 "L4"
         ])
     }
-/*
+
     void testInstanceOf() {
         assert compile([method:'m'],'''
         @groovy.transform.CompileStatic
@@ -253,10 +277,9 @@ class StaticCompilationTest extends AbstractBytecodeTestCase {
         }
         m 'Cedric'
         ''').hasStrictSequence([
-                "ILOAD",
-                "ILOAD",
-                "IADD",
-                "ISTORE"
+                "ALOAD",
+                "CHECKCAST java/lang/String",
+                "INVOKEVIRTUAL java/lang/String.toUpperCase ()Ljava/lang/String;"
         ])
-    }*/
+    }
 }

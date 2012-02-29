@@ -111,6 +111,7 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
         checkClassForModifier(node, isNative(node.getModifiers()), "native");
         if (!(node instanceof InnerClassNode)) {
             checkClassForModifier(node, isStatic(node.getModifiers()), "static");
+            checkClassForModifier(node, isPrivate(node.getModifiers()), "private");
         }
         // don't check synchronized here as it overlaps with ACC_SUPER
     }

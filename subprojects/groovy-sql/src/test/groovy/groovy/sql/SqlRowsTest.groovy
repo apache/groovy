@@ -5,9 +5,9 @@ class SqlRowsTest extends TestHelper {
     protected Sql createSql() {
         Sql sql = super.createSql()
 
-        ["JOINTESTA", "JOINTESTB"].each{ tryDrop(it) }
-        sql.execute("create table JOINTESTA ( id integer, bid integer, name varchar)")
-        sql.execute("create table JOINTESTB ( id integer, name varchar)")
+        ["JOINTESTA", "JOINTESTB"].each{ tryDrop(sql, it) }
+        sql.execute("create table JOINTESTA ( id INTEGER, bid INTEGER, name VARCHAR(10))")
+        sql.execute("create table JOINTESTB ( id INTEGER, name VARCHAR(10))")
 
         def jointesta = sql.dataSet("JOINTESTA")
         jointesta.add( id:1, bid:3, name:'A 1' )
@@ -23,7 +23,6 @@ class SqlRowsTest extends TestHelper {
 
     void testFirstRowWithPropertyName() {
         def sql = createSql()
-
         def results = sql.firstRow("select firstname, lastname from PERSON where id=1").firstname
         def expected = "James"
         assert results == expected
@@ -31,7 +30,6 @@ class SqlRowsTest extends TestHelper {
 
     void testFirstRowWithPropertyNameAndParams() {
         def sql = createSql()
-
         def results = sql.firstRow("select firstname, lastname from PERSON where id=?", [1]).lastname
         def expected = "Strachan"
         assert results == expected
@@ -39,7 +37,6 @@ class SqlRowsTest extends TestHelper {
 
     void testFirstRowWithPropertyNumber() {
         def sql = createSql()
-
         def results = sql.firstRow("select firstname, lastname from PERSON where id=1")[0]
         def expected = "James"
         assert results == expected
@@ -47,7 +44,6 @@ class SqlRowsTest extends TestHelper {
     
     void testFirstRowWithPropertyNumberAndParams() {
         def sql = createSql()
-
         def results = sql.firstRow("select firstname, lastname from PERSON where id=?", [1])[0]
         def expected = "James"
         assert results == expected
@@ -55,7 +51,6 @@ class SqlRowsTest extends TestHelper {
     
     void testAllRowsWithPropertyNumber() {
         def sql = createSql()
-
         def results = sql.rows("select firstname, lastname from PERSON where id=1 or id=2 order by id")
         assert results[0][0] == "James"
         assert results[0][1] == "Strachan"
@@ -65,7 +60,6 @@ class SqlRowsTest extends TestHelper {
 
     void testAllRowsWithPropertyNumberAndParams() {
         def sql = createSql()
-
         def results = sql.rows("select firstname, lastname from PERSON where id=? or id=? order by id", [1,2])
         assert results[0][0] == "James"
         assert results[0][1] == "Strachan"
@@ -75,7 +69,6 @@ class SqlRowsTest extends TestHelper {
 
     void testAllRowsWithPropertyName() {
         def sql = createSql()
-
         def results = sql.rows("select firstname, lastname from PERSON where id=1 or id=2 order by id")
         assert results[0].firstname == "James"
         assert results[0].lastname == "Strachan"
@@ -85,7 +78,6 @@ class SqlRowsTest extends TestHelper {
 
     void testAsRenaming() {
         def sql = createSql()
-
         def results = sql.rows("select firstname, lastname, firstname || ' ' || lastname as fullname from PERSON where id=1")
         assert results[0].firstname == "James"
         assert results[0].lastname == "Strachan"
@@ -102,7 +94,6 @@ class SqlRowsTest extends TestHelper {
 
     void testAllRowsWithPropertyNameAndParams() {
         def sql = createSql()
-
         def results = sql.rows("select firstname, lastname from PERSON where id=? or id=? order by id", [1,2])
         assert results[0].firstname == "James"
         assert results[0].lastname == "Strachan"
@@ -112,7 +103,6 @@ class SqlRowsTest extends TestHelper {
 
     void testJoinsWithSameName_Groovy3320() {
         def sql = createSql()
-
         // First check it's ok
         sql.rows( "select a.id, a.name, b.id, b.name from jointesta as a join jointestb as b on ( a.bid = b.id )" ).eachWithIndex { row, idx ->
             assert row.size() == 2

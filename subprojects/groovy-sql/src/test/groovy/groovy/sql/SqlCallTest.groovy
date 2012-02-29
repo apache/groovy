@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2009 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,9 @@
  */
 package groovy.sql
 
-import java.sql.Connection
 import javax.sql.DataSource
+
+import static groovy.sql.SqlTestConstants.*
 
 /**
  * Test Sql transaction features using a Sql built from a connection
@@ -28,12 +29,11 @@ class SqlCallTest extends GroovyTestCase {
     Sql sql
 
     protected Sql setUpSql() {
-        DataSource ds = new org.hsqldb.jdbc.jdbcDataSource()
-        ds.database = "jdbc:hsqldb:mem:foo" + getMethodName()
-        ds.user = 'sa'
-        ds.password = ''
-        Connection con = ds.connection
-        return new Sql(con)
+        DataSource ds = DB_DATASOURCE.newInstance(
+                (DB_DS_KEY): DB_URL_PREFIX + getMethodName(),
+                user: DB_USER,
+                password: DB_PASSWORD)
+        return new Sql(ds.connection)
     }
 
     protected tryDrop(String tableName) {
@@ -46,7 +46,7 @@ class SqlCallTest extends GroovyTestCase {
         sql = setUpSql()
         ["PERSON"].each{ tryDrop(it) }
 
-        sql.execute("CREATE TABLE person ( id INTEGER, firstname VARCHAR, lastname VARCHAR, PRIMARY KEY (id))")
+        sql.execute("CREATE TABLE person ( id INTEGER, firstname VARCHAR(10), lastname VARCHAR(10), PRIMARY KEY (id))")
 
         // populate some data
         def people = sql.dataSet("PERSON")

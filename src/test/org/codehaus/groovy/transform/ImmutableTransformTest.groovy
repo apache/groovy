@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2011 the original author or authors.
+ * Copyright 2008-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -392,27 +392,89 @@ class ImmutableTransformTest extends GroovyShellTestCase {
         '''
     }
 
-    void testImmutableToString_TracksNamedParameters() {
+    void testImmutableToStringVariants() {
         assertScript '''
-            @groovy.transform.Immutable
-            class Person {
-                String first, last
-            }
+            import groovy.transform.*
 
-            // normal toString
-            assert new Person("Hamlet", "D'Arcy").toString() == "Person(Hamlet, D'Arcy)"
-            // instance created with named parameters has special toString
-            assert new Person(first: "Hamlet", last: "D'Arcy").toString() == "Person(first:Hamlet, last:D'Arcy)"
-            '''
+            @Immutable
+            class Person1 { String first, last }
+
+            @Immutable
+            @ToString(includeNames=true)
+            class Person2 { String first, last }
+
+            @Immutable
+            @ToString(excludes="last")
+            class Person3 { String first, last }
+
+            assert new Person1("Hamlet", "D'Arcy").toString() == "Person1(Hamlet, D'Arcy)"
+            assert new Person2(first: "Hamlet", last: "D'Arcy").toString() == "Person2(first:Hamlet, last:D'Arcy)"
+            assert new Person3("Hamlet", "D'Arcy").toString() == "Person3(Hamlet)"
+        '''
     }
 
-    void testImmutableUsageOnStaticInnerClasses() {
-        shell.parse '''
+    void testImmutableUsageOnInnerClasses() {
+        assertScript '''
             import groovy.transform.Immutable
             class A4997 {
                 @Immutable
-                static class B4997 {}
+                static class B4997 { String name }
+                @Immutable
+                class C4997 { String name }
+                def test() {
+                    assert new C4997(name: 'foo').toString() == 'A4997$C4997(foo)'
+                }
             }
+            assert new A4997.B4997(name: 'bar').toString() == 'A4997$B4997(bar)'
+            new A4997().test()
+        '''
+    }
+
+    void testKnownImmutableClassesWithNamedParameters() {
+        assertScript '''
+            import groovy.transform.*
+            @Immutable(knownImmutableClasses = [Address])
+            class Person {
+                String first, last
+                Address address
+            }
+
+            @TupleConstructor @ToString class Address { final String street }
+
+            assert new Person(first: 'John', last: 'Doe', address: new Address('Some Street')).toString() == 'Person(John, Doe, Address(Some Street))'
+        '''
+    }
+
+    void testKnownImmutableClassesWithExplicitConstructor() {
+        assertScript '''
+            @groovy.transform.Immutable(knownImmutableClasses = [Address])
+            class Person {
+                String first, last
+                Address address
+            }
+
+            // ok, not really immutable but deem it such for the purpose of this test
+            @groovy.transform.ToString class Address { String street }
+
+            assert new Person('John', 'Doe', new Address(street: 'Street')).toString() == 'Person(John, Doe, Address(Street))'
+        '''
+    }
+
+    void testKnownImmutableClassesMissing() {
+        def msg = shouldFail(RuntimeException) {
+            evaluate '''
+                @groovy.transform.ToString class Address { String street }
+
+                @groovy.transform.Immutable
+                class Person {
+                    String first, last
+                    Address address
+                }
+
+                new Person(first: 'John', last: 'Doe', address: new Address(street: 'Street'))
             '''
+        }
+        assert msg.contains("doesn't know how to handle field 'address' of type 'Address'")
+        assert msg.contains("@Immutable classes only support properties with effectively immutable types")
     }
 }

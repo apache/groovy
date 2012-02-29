@@ -119,6 +119,13 @@ public class FieldNode extends AnnotatedNode implements Opcodes, Variable {
     }
 
     /**
+     * @return true if the field is volatile
+     */
+    public boolean isVolatile() {
+        return (modifiers & ACC_VOLATILE) != 0;
+    }
+
+    /**
      * @return true if the field is public
      */
     public boolean isPublic() {

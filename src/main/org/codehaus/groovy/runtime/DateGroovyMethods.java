@@ -265,6 +265,32 @@ public class DateGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Increment a Calendar by one day.
+     *
+     * @param self a Calendar
+     * @return a new Calendar set to the next day
+     * @since 1.8.7
+     */
+    public static Calendar next(Calendar self) {
+        Calendar result = (Calendar) self.clone();
+        result.add(Calendar.DAY_OF_YEAR, 1);
+        return result;
+    }
+
+    /**
+     * Decrement a Calendar by one day.
+     *
+     * @param self a Calendar
+     * @return a new Calendar set to the previous day
+     * @since 1.8.7
+     */
+    public static Calendar previous(Calendar self) {
+        Calendar result = (Calendar) self.clone();
+        result.add(Calendar.DAY_OF_YEAR, -1);
+        return result;
+    }
+
+    /**
      * Increment a java.sql.Date by one day.
      *
      * @param self a java.sql.Date
@@ -387,7 +413,6 @@ public class DateGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return number of days
      * @since 1.6.0
      */
-
     public static int minus(Calendar self, Calendar then) {
         Calendar a = self;
         Calendar b = then;

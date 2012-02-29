@@ -164,9 +164,7 @@ $Date$
                deprecation="on" debug="yes" source="1.5" target="1.5" fork="true" classpathref="compilePath">
             <exclude name="groovy/ui/**/*.java"/>
         </javac>
-        <java classname="org.codehaus.groovy.tools.DgmConverter"
-              fork="yes"
-              failonerror="true">
+        <java classname="org.codehaus.groovy.tools.DgmConverter" fork="yes" failonerror="true">
             <classpath>
                 <pathelement path="${mainClassesDirectory}"/>
                 <path refid="compilePath"/>
@@ -856,13 +854,17 @@ $Date$
                 <pathelement path="${mainClassesDirectory}"/>
             </classpath>
             <arg value="org.codehaus.groovy.runtime.DefaultGroovyMethods"/>
+            <arg value="org.codehaus.groovy.runtime.DefaultGroovyStaticMethods"/>
+            <arg value="org.codehaus.groovy.runtime.DateGroovyMethods"/>
+            <arg value="org.codehaus.groovy.runtime.EncodingGroovyMethods"/>
+            <arg value="org.codehaus.groovy.runtime.IOGroovyMethods"/>
+            <arg value="org.codehaus.groovy.runtime.ProcessGroovyMethods"/>
+            <arg value="org.codehaus.groovy.runtime.ResourceGroovyMethods"/>
+            <arg value="org.codehaus.groovy.runtime.SocketGroovyMethods"/>
             <arg value="org.codehaus.groovy.runtime.SqlGroovyMethods"/>
+            <arg value="org.codehaus.groovy.runtime.StringGroovyMethods"/>
             <arg value="org.codehaus.groovy.runtime.SwingGroovyMethods"/>
             <arg value="org.codehaus.groovy.runtime.XmlGroovyMethods"/>
-            <arg value="org.codehaus.groovy.runtime.EncodingGroovyMethods"/>
-            <arg value="org.codehaus.groovy.runtime.DateGroovyMethods"/>
-            <arg value="org.codehaus.groovy.runtime.ProcessGroovyMethods"/>
-            <arg value="org.codehaus.groovy.runtime.DefaultGroovyStaticMethods"/>
             <arg value="org.codehaus.groovy.vmplugin.v5.PluginDefaultGroovyMethods"/>
             <arg value="org.codehaus.groovy.vmplugin.v6.PluginDefaultGroovyMethods"/>
             <arg value="org.codehaus.groovy.vmplugin.v6.PluginStaticGroovyMethods"/>

@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2011 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -2528,7 +2528,11 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             } else {
                 size = ConstantExpression.EMPTY_EXPRESSION;
             }
-            list = arraySizeExpression(node.getFirstChild());
+            AST child = node.getFirstChild();
+            if (child == null) {
+                throw new ASTRuntimeException(node, "No expression for the array constructor call");
+            }
+            list = arraySizeExpression(child);
         } else {
             size = expression(node);
             list = new ArrayList();

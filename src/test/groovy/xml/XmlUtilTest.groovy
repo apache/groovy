@@ -16,6 +16,7 @@
 package groovy.xml
 
 import static groovy.xml.XmlAssert.assertXmlEquals
+import org.xml.sax.InputSource
 
 /**
  * @author Paul King
@@ -23,13 +24,15 @@ import static groovy.xml.XmlAssert.assertXmlEquals
 class XmlUtilTest extends GroovyTestCase {
     def xml = """\
     <?xml version="1.0" encoding="UTF-8"?>
-    <Schlüssel>
+    <Schl\u00FCssel>
     text content
-    </Schlüssel>
+    </Schl\u00FCssel>
     """.stripIndent()
 
     // GROOVY-5158
     void testSerializeOfGPathResultShouldRoundTrip() {
-        assertXmlEquals(xml, XmlUtil.serialize(new XmlSlurper().parseText(xml)))
+        def source = new InputSource(new StringReader(xml))
+        source.encoding = "UTF-8"
+        assertXmlEquals(xml, XmlUtil.serialize(new XmlSlurper().parse(source)))
     }
 }

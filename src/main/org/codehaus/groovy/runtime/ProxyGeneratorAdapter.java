@@ -13,21 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package groovy.util;
+package org.codehaus.groovy.runtime;
 
 import groovy.lang.Closure;
 import groovy.lang.GroovyObject;
 import groovy.lang.GroovyRuntimeException;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
-import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.objectweb.asm.*;
 import org.objectweb.asm.commons.EmptyVisitor;
-import org.objectweb.asm.util.CheckClassAdapter;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.PrintWriter;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -513,7 +510,7 @@ public class ProxyGeneratorAdapter extends ClassAdapter implements Opcodes {
                             mv.visitInsn(ACONST_NULL);
                     }
                     mv.visitInsn(getReturnInsn(returnType));
-                    mv.visitMaxs(2, args.length+1);
+                    mv.visitMaxs(2, registerLen(args)+1);
                 }
             } else {
                 // for compatibility with the legacy proxy generator, we should throw an UnsupportedOperationException
@@ -522,11 +519,23 @@ public class ProxyGeneratorAdapter extends ClassAdapter implements Opcodes {
                 mv.visitInsn(DUP);
                 mv.visitMethodInsn(INVOKESPECIAL, "java/lang/UnsupportedOperationException", "<init>", "()V");
                 mv.visitInsn(ATHROW);
-                mv.visitMaxs(2, args.length+1);
+                mv.visitMaxs(2, registerLen(args)+1);
             }
             mv.visitEnd();
         }
         return EMPTY_VISITOR;
+    }
+
+    private int registerLen(Type[] args) {
+        int i = 0;
+        for (Type arg : args) {
+            i += registerLen(arg);
+        }
+        return i;
+    }
+
+    private int registerLen(final Type arg) {
+        return arg== Type.DOUBLE_TYPE||arg==Type.LONG_TYPE?2:1;
     }
 
     private MethodVisitor createConstructor(final int access, final String name, final String desc, final String signature, final String[] exceptions) {
@@ -542,22 +551,23 @@ public class ProxyGeneratorAdapter extends ClassAdapter implements Opcodes {
         newDesc.append(")V");
         MethodVisitor mv = super.visitMethod(access, name, newDesc.toString(), signature, exceptions);
         mv.visitCode();
-        mv.visitVarInsn(ALOAD, 0);
-        for (int i = 0; i < args.length; i++) {
-            Type arg = args[i];
-            if (isPrimitive(arg)) {
-                mv.visitIntInsn(getLoadInsn(arg), i + 1);
-            } else {
-                mv.visitVarInsn(ALOAD, i + 1); // load argument i
-            }
-        }
-        mv.visitMethodInsn(INVOKESPECIAL, BytecodeHelper.getClassInternalName(superClass), "<init>", desc);
         initializeDelegateClosure(mv, args.length);
         if (generateDelegateField) {
             initializeDelegateObject(mv, args.length+1);
         }
+        mv.visitVarInsn(ALOAD, 0);
+        int idx = 1;
+        for (Type arg : args) {
+            if (isPrimitive(arg)) {
+                mv.visitIntInsn(getLoadInsn(arg), idx);
+            } else {
+                mv.visitVarInsn(ALOAD, idx); // load argument i
+            }
+            idx += registerLen(arg);
+        }
+        mv.visitMethodInsn(INVOKESPECIAL, BytecodeHelper.getClassInternalName(superClass), "<init>", desc);
         mv.visitInsn(RETURN);
-        int max = args.length + 2 + (generateDelegateField?1:0);
+        int max = idx + 1 + (generateDelegateField?1:0);
         mv.visitMaxs(max, max);
         mv.visitEnd();
         return EMPTY_VISITOR;
@@ -591,27 +601,29 @@ public class ProxyGeneratorAdapter extends ClassAdapter implements Opcodes {
         BytecodeHelper.pushConstant(mv, args.length);
         mv.visitTypeInsn(ANEWARRAY, "java/lang/Object");
         size = 3;
+        int idx = 1;
         for (int i = 0; i < args.length; i++) {
             Type arg = args[i];
             mv.visitInsn(DUP);
             BytecodeHelper.pushConstant(mv, i);
             // primitive types must be boxed
             if (isPrimitive(arg)) {
-                mv.visitIntInsn(getLoadInsn(arg), i + 1);
+                mv.visitIntInsn(getLoadInsn(arg), idx);
                 String wrappedType = getWrappedClassDescriptor(arg);
                 mv.visitMethodInsn(INVOKESTATIC,
                         wrappedType,
                         "valueOf",
                         "(" + arg.getDescriptor() + ")L" + wrappedType + ";");
             } else {
-                mv.visitVarInsn(ALOAD, i + 1); // load argument i
-            }
-            size = 6;
+                mv.visitVarInsn(ALOAD, idx); // load argument i
+            }            
+            size = Math.max(6, 5+registerLen(arg));
+            idx += registerLen(arg);
             mv.visitInsn(AASTORE); // store value into array
         }
         mv.visitMethodInsn(INVOKESTATIC, "org/codehaus/groovy/runtime/InvokerHelper", "invokeMethod", "(Ljava/lang/Object;Ljava/lang/String;Ljava/lang/Object;)Ljava/lang/Object;");
         unwrapResult(mv, desc);
-        mv.visitMaxs(size, args.length + 1);
+        mv.visitMaxs(size, registerLen(args) + 1);
 
         return EMPTY_VISITOR;
     }
@@ -629,6 +641,7 @@ public class ProxyGeneratorAdapter extends ClassAdapter implements Opcodes {
         BytecodeHelper.pushConstant(mv, args.length);
         mv.visitTypeInsn(ANEWARRAY, "java/lang/Object"); // stack size = 1
         stackSize = 1;
+        int idx = 1;
         for (int i = 0; i < args.length; i++) {
             Type arg = args[i];
             mv.visitInsn(DUP); // stack size = 2
@@ -636,16 +649,17 @@ public class ProxyGeneratorAdapter extends ClassAdapter implements Opcodes {
             stackSize = 3;
             // primitive types must be boxed
             if (isPrimitive(arg)) {
-                mv.visitIntInsn(getLoadInsn(arg), i + 1);
+                mv.visitIntInsn(getLoadInsn(arg), idx);
                 String wrappedType = getWrappedClassDescriptor(arg);
                 mv.visitMethodInsn(INVOKESTATIC,
                         wrappedType,
                         "valueOf",
                         "(" + arg.getDescriptor() + ")L" + wrappedType + ";");
             } else {
-                mv.visitVarInsn(ALOAD, i + 1); // load argument i
+                mv.visitVarInsn(ALOAD, idx); // load argument i
             }
-            stackSize = 4;
+            idx += registerLen(arg);
+            stackSize = Math.max(4, 3+registerLen(arg));
             mv.visitInsn(AASTORE); // store value into array
         }
         mv.visitVarInsn(ASTORE, arrayStore); // store array

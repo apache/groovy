@@ -280,16 +280,16 @@ class EvaluationTest extends GroovyTestCase {
     */
 }
 
-private class Properties {
+@groovy.transform.PackageScope class Properties {
     def getNext() { this }
     def x
 }
 
-private class Attributes {
+@groovy.transform.PackageScope class Attributes {
     def x
     def y
 }
 
-private class MethodPointers {
+@groovy.transform.PackageScope class MethodPointers {
     def inc(x) { x + 1 }
 }

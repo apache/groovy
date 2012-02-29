@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,8 @@ import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.security.cert.Certificate;
 
-import org.codehaus.groovy.runtime.DefaultGroovyMethods;
+import org.codehaus.groovy.runtime.IOGroovyMethods;
+import org.codehaus.groovy.runtime.ResourceGroovyMethods;
 
 /**
  * CodeSource wrapper class that allows specific security policies to be associated with a class
@@ -89,7 +90,7 @@ public class GroovyCodeSource {
         this.codeSource = createCodeSource(codeBase);
 
         try {
-            this.scriptText = DefaultGroovyMethods.getText(reader);
+            this.scriptText = IOGroovyMethods.getText(reader);
         } catch (IOException e) {
             throw new RuntimeException("Impossible to read the text content from that reader, for script: " + name + " with codeBase: " + codeBase, e);
         }
@@ -121,9 +122,9 @@ public class GroovyCodeSource {
                 public Object[] run() throws IOException {
                     // retrieve the content of the file using the provided encoding
                     if (encoding != null) {
-                        scriptText = DefaultGroovyMethods.getText(infile, encoding);
+                        scriptText = ResourceGroovyMethods.getText(infile, encoding);
                     } else {
-                        scriptText = DefaultGroovyMethods.getText(infile);
+                        scriptText = ResourceGroovyMethods.getText(infile);
                     }
 
                     Object[] info = new Object[2];
@@ -163,9 +164,9 @@ public class GroovyCodeSource {
         try {
             String contentEncoding = url.openConnection().getContentEncoding();
             if (contentEncoding != null) {
-                this.scriptText = DefaultGroovyMethods.getText(url, contentEncoding);
+                this.scriptText = ResourceGroovyMethods.getText(url, contentEncoding);
             } else {
-                this.scriptText = DefaultGroovyMethods.getText(url); // falls-back on default encoding
+                this.scriptText = ResourceGroovyMethods.getText(url); // falls-back on default encoding
             }
         } catch (IOException e) {
             throw new RuntimeException("Impossible to read the text content from " + name, e);

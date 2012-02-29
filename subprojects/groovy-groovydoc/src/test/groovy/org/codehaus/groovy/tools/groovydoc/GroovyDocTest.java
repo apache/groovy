@@ -16,7 +16,7 @@
 package org.codehaus.groovy.tools.groovydoc;
 
 import org.apache.tools.ant.BuildFileTest;
-import org.codehaus.groovy.runtime.DefaultGroovyMethods;
+import org.codehaus.groovy.runtime.ResourceGroovyMethods;
 
 import java.io.File;
 import java.io.FilenameFilter;
@@ -57,7 +57,7 @@ public class GroovyDocTest extends BuildFileTest {
         assertEquals(1, list.length);
         File documentedClassHtmlDoc = new File(testfilesPackageDir, list[0]);
 
-        List<String> lines = DefaultGroovyMethods.readLines(documentedClassHtmlDoc);
+        List<String> lines = ResourceGroovyMethods.readLines(documentedClassHtmlDoc);
         assertTrue(lines.contains("<title>DocumentedClass</title>"));
         assertTrue(lines.contains("This is a custom class template."));
     }

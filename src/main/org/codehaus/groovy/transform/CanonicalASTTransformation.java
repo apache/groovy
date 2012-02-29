@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2011 the original author or authors.
+ * Copyright 2008-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@ package org.codehaus.groovy.transform;
 
 import groovy.transform.Canonical;
 import org.codehaus.groovy.ast.*;
-import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 
@@ -26,7 +25,6 @@ import java.util.List;
 import static org.codehaus.groovy.transform.EqualsAndHashCodeASTTransformation.createEquals;
 import static org.codehaus.groovy.transform.EqualsAndHashCodeASTTransformation.createHashCode;
 import static org.codehaus.groovy.transform.ToStringASTTransformation.createToString;
-import static org.codehaus.groovy.transform.ToStringASTTransformation.toStringInit;
 import static org.codehaus.groovy.transform.TupleConstructorASTTransformation.createConstructor;
 
 /**
@@ -68,8 +66,7 @@ public class CanonicalASTTransformation extends AbstractASTTransformation {
                 createEquals(cNode, false, false, true, excludes, includes);
             }
             if (!hasAnnotation(cNode, ToStringASTTransformation.MY_TYPE)) {
-                toStringInit(cNode, ConstantExpression.FALSE);
-                createToString(cNode, false, false, excludes, includes);
+                createToString(cNode, false, false, excludes, includes, false);
             }
         }
     }

@@ -352,7 +352,10 @@ public class OperandStack {
         if (ClassHelper.isNumberType(top) && primTarget && ClassHelper.isNumberType(targetType)) {
             BytecodeHelper.doCastToPrimitive(mv, top, targetType);
         } else {
-            BytecodeHelper.doCast(mv,targetType);
+            top = stack.get(size-1);
+            if (!top.isDerivedFrom(targetType) && !top.implementsInterface(targetType)) {
+                BytecodeHelper.doCast(mv,targetType);
+            }
         }
         replace(targetType);
     }
@@ -508,8 +511,7 @@ public class OperandStack {
                     ) {
                 ClassNode primType = ClassHelper.getUnwrapper(type);
                 pushPrimitiveConstant(mv, value, primType);
-                BytecodeHelper.box(mv, primType); // does not change this.stack field contents
-                BytecodeHelper.doCast(mv, type);
+                type = primType;
             } else {
                 mv.visitLdcInsn(value);
                 BytecodeHelper.box(mv, ClassHelper.getUnwrapper(type)); // does not change this.stack field contents

@@ -16,35 +16,66 @@
 package org.codehaus.groovy.transform.sc;
 
 import groovy.transform.CompileStatic;
-import org.codehaus.groovy.ast.ASTNode;
-import org.codehaus.groovy.ast.ClassHelper;
-import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.classgen.asm.WriterControllerFactory;
 import org.codehaus.groovy.classgen.asm.sc.StaticTypesWriterControllerFactoryImpl;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
+import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
+import org.codehaus.groovy.syntax.SyntaxException;
+import org.codehaus.groovy.syntax.Types;
 import org.codehaus.groovy.transform.GroovyASTTransformation;
 import org.codehaus.groovy.transform.StaticTypesTransformation;
-import org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor;
-import org.codehaus.groovy.transform.stc.TypeCheckerPluginFactory;
+import org.codehaus.groovy.transform.sc.transformers.StaticCompilationTransformer;
+import org.codehaus.groovy.transform.stc.*;
+
+import java.util.*;
+
+import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.STATIC_COMPILE_NODE;
 
 /**
  * Handles the implementation of the {@link groovy.transform.CompileStatic} transformation.
  *
  * @author Cedric Champeau
  */
-@GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
+@GroovyASTTransformation(phase = CompilePhase.INSTRUCTION_SELECTION)
 public class StaticCompileTransformation extends StaticTypesTransformation {
 
-    public static final ClassNode COMPILE_STATIC_ANNOTATION = ClassHelper.make(CompileStatic.class);
     private final StaticTypesWriterControllerFactoryImpl factory = new StaticTypesWriterControllerFactoryImpl();
 
     @Override
     public void visit(final ASTNode[] nodes, final SourceUnit source) {
-        for (ClassNode classNode : source.getAST().getClasses()) {
+        StaticCompilationTransformer transformer = new StaticCompilationTransformer(source);
+
+        AnnotatedNode node = (AnnotatedNode) nodes[1];
+        StaticTypeCheckingVisitor visitor = null;
+        if (node instanceof ClassNode) {
+            ClassNode classNode = (ClassNode) node;
             classNode.putNodeMetaData(WriterControllerFactory.class, factory);
+            node.putNodeMetaData(STATIC_COMPILE_NODE, Boolean.TRUE);
+            visitor = newVisitor(source, classNode, null);
+            visitor.visitClass(classNode);
+        } else if (node instanceof MethodNode) {
+            MethodNode methodNode = (MethodNode)node;
+            methodNode.putNodeMetaData(STATIC_COMPILE_NODE, Boolean.TRUE);
+            ClassNode declaringClass = methodNode.getDeclaringClass();
+            if (declaringClass.getNodeMetaData(WriterControllerFactory.class)==null) {
+                declaringClass.putNodeMetaData(WriterControllerFactory.class, factory);
+            }
+            visitor = newVisitor(source, declaringClass, null);
+            visitor.setMethodsToBeVisited(Collections.singleton(methodNode));
+            visitor.visitMethod(methodNode);
+        } else {
+            source.addError(new SyntaxException(STATIC_ERROR_PREFIX + "Unimplemented node type", node.getLineNumber(), node.getColumnNumber()));
         }
-        super.visit(nodes, source);
+        if (visitor!=null) {
+            visitor.performSecondPass();
+        }
+        if (node instanceof ClassNode) {
+            transformer.visitClass((ClassNode)node);
+        } else if (node instanceof MethodNode) {
+            transformer.visitMethod((MethodNode)node);
+        }
     }
 
     @Override

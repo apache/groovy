@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2009 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,8 @@ import groovy.text.TemplateEngine;
 import org.codehaus.groovy.groovydoc.GroovyClassDoc;
 import org.codehaus.groovy.groovydoc.GroovyPackageDoc;
 import org.codehaus.groovy.groovydoc.GroovyRootDoc;
-import org.codehaus.groovy.runtime.DefaultGroovyMethods;
+import org.codehaus.groovy.runtime.DefaultGroovyMethodsSupport;
+import org.codehaus.groovy.runtime.IOGroovyMethods;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -167,13 +168,13 @@ public class GroovyDocTemplateEngine {
             try {
                 InputStream inputStream = ((ClasspathResourceManager) resourceManager).getInputStream(template);
                 outputStream = new FileOutputStream(destFileName);
-                DefaultGroovyMethods.leftShift(outputStream, inputStream);
+                IOGroovyMethods.leftShift(outputStream, inputStream);
             } catch (IOException e) {
                 System.err.println("Resource " + template + " skipped due to: " + e.getMessage());
             } catch (NullPointerException e) {
                 System.err.println("Resource " + template + " not found so skipped");
             } finally {
-                DefaultGroovyMethods.closeQuietly(outputStream);
+                DefaultGroovyMethodsSupport.closeQuietly(outputStream);
             }
         }
     }

@@ -252,8 +252,8 @@ grant codeBase "file:${user.dir}/src/test/groovy/sql/-" {
 };
 
 grant codeBase "file:${user.dir}/src/test/groovy/sql/SqlCompleteWithoutDataSourceTest.groovy" {
-    //TODO: what should this be see other TODO about narrowing down main directories
-    //permission java.io.FilePermission "${groovy.lib}${/}axion${/}jars${/}axion-1.0-M3-dev.jar", "read";
+    permission java.util.PropertyPermission "file.separator", "read";
+    permission java.util.PropertyPermission "line.separator", "read";
 };
 
 grant codeBase "file:${user.dir}/src/test/groovy/sql/SqlTest.groovy" {

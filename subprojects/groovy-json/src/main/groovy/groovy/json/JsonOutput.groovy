@@ -141,7 +141,7 @@ class JsonOutput {
     static String toJson(Map m) {
         "{" + m.collect { k, v ->
                 if (k == null) {
-                    throw new IllegalArgumentException('Null key for a Map not allowed')
+                    throw new IllegalArgumentException('Maps with null keys can\'t be converted to JSON')
                 }
                 toJson(k.toString()) + ':' + toJson(v)
         }.join(',') + "}"
@@ -183,6 +183,8 @@ class JsonOutput {
                 output.append(' ' * indent)
             } else if (token.type == COLON) {
                 output.append(': ')
+            } else if (token.type == STRING) {
+                output.append('"' + StringEscapeUtils.escapeJava(token.text[1..-2]) + '"')
             } else {
                 output.append(token.text)
             }

@@ -21,6 +21,7 @@ import org.codehaus.groovy.ast.stmt.*;
 import org.codehaus.groovy.ast.tools.GenericsUtils;
 import org.codehaus.groovy.classgen.ReturnAdder;
 import org.codehaus.groovy.classgen.asm.InvocationWriter;
+import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.ErrorCollector;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
@@ -103,6 +104,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     private Map<Parameter, ClassNode> forLoopVariableTypes = new HashMap<Parameter, ClassNode>();
     
+    // this map is used to ensure that two errors are not reported on the same line/column
+    private final Set<Long> reportedErrors = new TreeSet<Long>();
+    
     private final ReturnAdder returnAdder = new ReturnAdder(new ReturnAdder.ReturnStatementListener() {
         public void returnStatementAdded(final ReturnStatement returnStatement) {
             if (returnStatement.getExpression().equals(ConstantExpression.NULL)) return;
@@ -162,14 +166,24 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     @Override
     public void visitClass(final ClassNode node) {
+        Object type = node.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
+        if (type!=null) {
+            // transformation has already been run on this class node
+            // prevent it from running twice
+            return;
+        }
+        node.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, node);
         ClassNode oldCN = classNode;
         classNode = node;
+        Set<MethodNode> oldVisitedMethod = alreadyVisitedMethods;
+        alreadyVisitedMethods = new LinkedHashSet<MethodNode>();
         super.visitClass(node);
         Iterator<InnerClassNode> innerClasses = classNode.getInnerClasses();
         while (innerClasses.hasNext()) {
             InnerClassNode innerClassNode = innerClasses.next();
             visitClass(innerClassNode);
         }
+        alreadyVisitedMethods = oldVisitedMethod;
         classNode = oldCN;
     }
 
@@ -196,7 +210,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             DynamicVariable dyn = (DynamicVariable) vexp.getAccessedVariable();
             // first, we must check the 'with' context
             String dynName = dyn.getName();
-            for (ClassNode node : withReceiverList) {
+
+            List<ClassNode> checkList = new LinkedList<ClassNode>(withReceiverList);
+            // force checking on classNode for ast injected properties
+            checkList.add(classNode);
+
+            for (ClassNode node : checkList) {
                 if (node.getProperty(dynName) != null) {
                     storeType(vexp, node.getProperty(dynName).getType());
                     return;
@@ -711,7 +730,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         // collect every variable expression used in the loop body
         final Map<VariableExpression, ClassNode> varOrigType = new HashMap<VariableExpression, ClassNode>();
         forLoop.getLoopBlock().visit(new VariableExpressionTypeMemoizer(varOrigType));
-
+        
         // visit body
         Map<VariableExpression, List<ClassNode>> oldTracker = pushAssignmentTracking();
         Expression collectionExpression = forLoop.getCollectionExpression();
@@ -720,18 +739,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             super.visitForLoop(forLoop);
         } else {
             final ClassNode collectionType = getType(collectionExpression);
-            ClassNode componentType = collectionType.getComponentType();
-            if (componentType == null) {
-                if (collectionType.implementsInterface(ITERABLE_TYPE)) {
-                    ClassNode intf = GenericsUtils.parameterizeInterfaceGenerics(collectionType, ITERABLE_TYPE);
-                    GenericsType[] genericsTypes = intf.getGenericsTypes();
-                    componentType = genericsTypes[0].getType();
-                } else if (collectionType == ClassHelper.STRING_TYPE) {
-                    componentType = ClassHelper.Character_TYPE;
-                } else {
-                    componentType = ClassHelper.OBJECT_TYPE;
-                }
-            }
+            ClassNode componentType = inferLoopElementType(collectionType);
             forLoopVariableTypes.put(forLoop.getVariable(), componentType);
             if (!checkCompatibleAssignmentTypes(forLoop.getVariableType(), componentType)) {
                 addStaticTypeError("Cannot loop with element of type " + forLoop.getVariableType() + " with collection of type " + collectionType, forLoop);
@@ -744,6 +752,28 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
         boolean typeChanged = isSecondPassNeededForControlStructure(varOrigType, oldTracker);
         if (typeChanged) visitForLoop(forLoop);
+    }
+
+    /**
+     * Given a loop collection type, returns the inferred type of the loop element. Used, for
+     * example, to infer the element type of a (for e in list) loop.
+     * @param collectionType the type of the collection
+     * @return the inferred component type
+     */
+    public static ClassNode inferLoopElementType(final ClassNode collectionType) {
+        ClassNode componentType = collectionType.getComponentType();
+        if (componentType == null) {
+            if (collectionType.implementsInterface(ITERABLE_TYPE)) {
+                ClassNode intf = GenericsUtils.parameterizeInterfaceGenerics(collectionType, ITERABLE_TYPE);
+                GenericsType[] genericsTypes = intf.getGenericsTypes();
+                componentType = genericsTypes[0].getType();
+            } else if (collectionType == ClassHelper.STRING_TYPE) {
+                componentType = ClassHelper.Character_TYPE;
+            } else {
+                componentType = ClassHelper.OBJECT_TYPE;
+            }
+        }
+        return componentType;
     }
 
     private boolean isSecondPassNeededForControlStructure(final Map<VariableExpression, ClassNode> varOrigType, final Map<VariableExpression, List<ClassNode>> oldTracker) {
@@ -1120,8 +1150,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         classNode = directMethodCallCandidate.getDeclaringClass();
                         for (ClassNode node: source.getAST().getClasses()) {
                             if (isClassInnerClassOrEqualTo(classNode, node)) {
-                                // visit is authorized because the classnode belongs to the same source unit
-                                visitMethod(directMethodCallCandidate);
+                                silentlyVisitMethodNode(directMethodCallCandidate);
                                 break;
                             }
                         }
@@ -1142,6 +1171,19 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 lastImplicitItType = rememberLastItType;
                 withReceiverList.removeFirst();
             }
+        }
+    }
+
+    private void silentlyVisitMethodNode(final MethodNode directMethodCallCandidate) {
+        // visit is authorized because the classnode belongs to the same source unit
+        ErrorCollector currentCollector = errorCollector;
+        // create a dummy collector, we don't want errors to be reported for this visit
+        errorCollector = new ErrorCollector(new CompilerConfiguration());
+        try {
+            visitMethod(directMethodCallCandidate);
+        } finally {
+            // restore error collector
+            errorCollector = currentCollector;
         }
     }
 
@@ -1181,6 +1223,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 ClassNode listNode = LIST_TYPE.getPlainNodeReference();
                 listNode.setGenericsTypes(new GenericsType[]{new GenericsType(wrapTypeIfNecessary(subcallReturnType))});
                 storeType(call, listNode);
+                // store target method
+                storeTargetMethod(call, (MethodNode) subcall.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET));
                 return;
             }
         }
@@ -1311,7 +1355,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         for (ClassNode node: source.getAST().getClasses()) {
                             if (isClassInnerClassOrEqualTo(classNode, node)) {
                                 // visit is authorized because the classnode belongs to the same source unit
-                                visitMethod(directMethodCallCandidate);
+                                silentlyVisitMethodNode(directMethodCallCandidate);
                                 break;
                             }
                         }
@@ -1464,7 +1508,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         } else if (targetType.equals(Character_TYPE) && (expressionType==STRING_TYPE||sourceIsNull)
                 && (sourceIsNull || source instanceof ConstantExpression && source.getText().length()==1)) {
             // ex : (Character) 'c'
-        } else if (isNumberCategory(getWrapper(targetType)) && isNumberCategory(getWrapper(expressionType))) {
+        } else if (isNumberCategory(getWrapper(targetType)) && (isNumberCategory(getWrapper(expressionType)) || char_TYPE==expressionType)) {
             // ex: short s = (short) 0
         } else if (sourceIsNull && !isPrimitiveType(targetType)) {
             // ex: (Date)null
@@ -1553,7 +1597,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         ClassNode rightRedirect = right.redirect();
 
         Expression leftExpression = expr.getLeftExpression();
-        if (op == ASSIGN) {
+        if (op == ASSIGN || op == ASSIGNMENT_OPERATOR) {
             if (leftRedirect.isArray() && !rightRedirect.isArray()) return leftRedirect;
             if (leftRedirect.implementsInterface(Collection_TYPE) && rightRedirect.implementsInterface(Collection_TYPE)) {
                 // because of type inferrence, we must perform an additional check if the right expression
@@ -1681,7 +1725,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
     }
 
-    private MethodNode findMethodOrFail(
+    protected MethodNode findMethodOrFail(
             Expression expr,
             ClassNode receiver, String name, ClassNode... args) {
         final List<MethodNode> methods = findMethod(receiver, name, args);
@@ -1708,8 +1752,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
         } else {
             methods = receiver.getMethods(name);
-            if (receiver instanceof InnerClassNode && !receiver.isStaticClass()) {
-                methods.addAll(receiver.getOuterClass().getMethods(name));
+            if (closureExpression==null) {
+                // not in a closure
+                ClassNode parent = receiver;
+                while (parent instanceof InnerClassNode && !parent.isStaticClass()) {
+                    parent = receiver.getOuterClass();
+                    methods.addAll(parent.getMethods(name));
+                }
             }
             if (methods.isEmpty() && (args==null || args.length==0)) {
                 // check if it's a property
@@ -1723,8 +1772,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     // we don't use property exists there because findMethod is called on super clases recursively
                     PropertyNode property = receiver.getProperty(pname);
                     if (property!=null) {
+                        MethodNode node = new MethodNode(name, Opcodes.ACC_PUBLIC, property.getType(), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, EmptyStatement.INSTANCE);
+                        node.setDeclaringClass(receiver);
                         return Collections.singletonList(
-                                new MethodNode(name, Opcodes.ACC_PUBLIC, property.getType(), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, EmptyStatement.INSTANCE));
+                                node);
 
                     }
                 }
@@ -1736,10 +1787,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     if (property != null) {
                         ClassNode type = property.getOriginType();
                         if (implementsInterfaceOrIsSubclassOf(args[0], type)) {
-                            return Collections.singletonList(
-                                    new MethodNode(name, Opcodes.ACC_PUBLIC, VOID_TYPE, new Parameter[]{
-                                            new Parameter(type, "arg")
-                                    }, ClassNode.EMPTY_ARRAY, EmptyStatement.INSTANCE));
+                            MethodNode node = new MethodNode(name, Opcodes.ACC_PUBLIC, VOID_TYPE, new Parameter[]{
+                                    new Parameter(type, "arg")
+                            }, ClassNode.EMPTY_ARRAY, EmptyStatement.INSTANCE);
+                            node.setDeclaringClass(receiver);
+                            return Collections.singletonList(node);
                         }
                     }
                 }
@@ -1757,7 +1809,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
 
         if (receiver == ClassHelper.GSTRING_TYPE) return findMethod(ClassHelper.STRING_TYPE, name, args);
-        
+
         if (pluginFactory!=null) {
             TypeCheckerPlugin plugin = pluginFactory.getTypeCheckerPlugin(classNode);
             if (plugin!=null) {
@@ -1769,7 +1821,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         return EMPTY_METHODNODE_LIST;
     }
 
-    private ClassNode getType(ASTNode exp) {
+    protected ClassNode getType(ASTNode exp) {
         ClassNode cn = (ClassNode) exp.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
         if (cn != null) return cn;
         if (exp instanceof ClassExpression) {
@@ -2131,9 +2183,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     protected void addError(final String msg, final ASTNode expr) {
         int line = expr.getLineNumber();
         int col = expr.getColumnNumber();
-        errorCollector.addErrorAndContinue(
-                new SyntaxErrorMessage(new SyntaxException(msg + '\n', line, col), source)
-        );
+        Long err = ((long)expr.getLineNumber()) << 16 + expr.getColumnNumber();
+        if (!reportedErrors.contains(err)) {
+            errorCollector.addErrorAndContinue(
+                    new SyntaxErrorMessage(new SyntaxException(msg + '\n', line, col), source)
+            );
+            reportedErrors.add(err);
+        }
     }
 
     protected void addStaticTypeError(final String msg, final ASTNode expr) {

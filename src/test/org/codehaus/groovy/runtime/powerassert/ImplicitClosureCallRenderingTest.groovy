@@ -75,7 +75,7 @@ assert func(42) == null
         }
     }
 
-    private class FuncHolder {
+    @groovy.transform.PackageScope class FuncHolder {
         def func = { it }
     }
 

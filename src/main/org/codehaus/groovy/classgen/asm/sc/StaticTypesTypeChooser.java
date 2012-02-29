@@ -33,7 +33,7 @@ public class StaticTypesTypeChooser extends StatementMetaTypeChooser {
     @Override
     public ClassNode resolveType(final Expression exp, final ClassNode current) {
         Expression target = exp instanceof VariableExpression ? getTarget((VariableExpression) exp) : exp;
-        ClassNode dif = (ClassNode) exp.getNodeMetaData(StaticTypesMarker.DECLARATION_INFERRED_TYPE);
+        ClassNode dif = (ClassNode) target.getNodeMetaData(StaticTypesMarker.DECLARATION_INFERRED_TYPE);
         if (dif != null) return dif;
         ClassNode inferredType = (ClassNode) target.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
         if (inferredType != null) {

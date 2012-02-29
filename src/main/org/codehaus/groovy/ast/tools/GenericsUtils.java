@@ -53,6 +53,17 @@ public class GenericsUtils {
                 for (int j = 0; j < redirectGenericTypes.length && match == null; j++) {
                     GenericsType redirectGenericType = redirectGenericTypes[j];
                     if (redirectGenericType.isCompatibleWith(currentTarget.getType())) {
+                        if (currentTarget.isPlaceholder() && redirectGenericType.isPlaceholder() && !currentTarget.getName().equals(redirectGenericType.getName())) {
+                            // check if there's a potential better match
+                            boolean skip = false;
+                            for (int k=j+1; k<redirectGenericTypes.length && !skip; k++) {
+                                GenericsType ogt = redirectGenericTypes[k];
+                                if (ogt.isPlaceholder() && ogt.isCompatibleWith(currentTarget.getType()) && ogt.getName().equals(currentTarget.getName())) {
+                                    skip = true;
+                                }
+                            }
+                            if (skip) continue;
+                        }
                         match = parameterizedTypes[j];
                         if (currentTarget.isWildcard()) {
                             // if alignment target is a wildcard type

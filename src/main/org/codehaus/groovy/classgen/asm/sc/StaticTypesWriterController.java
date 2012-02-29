@@ -15,19 +15,13 @@
  */
 package org.codehaus.groovy.classgen.asm.sc;
 
-import org.codehaus.groovy.ast.ClassHelper;
-import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.ConstructorNode;
-import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.classgen.GeneratorContext;
 import org.codehaus.groovy.classgen.asm.*;
-import org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys;
-import org.codehaus.groovy.transform.sc.StaticCompileTransformation;
+import org.codehaus.groovy.transform.sc.StaticCompilationVisitor;
 import org.objectweb.asm.ClassVisitor;
 
-import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.*;
-import static org.codehaus.groovy.transform.sc.StaticCompileTransformation.COMPILE_STATIC_ANNOTATION;
 
 /**
  * An alternative {@link org.codehaus.groovy.classgen.asm.WriterController} which handles static types and method
@@ -44,6 +38,7 @@ public class StaticTypesWriterController extends DelegatingController {
     private StaticTypesTypeChooser typeChooser;
     private StaticInvocationWriter invocationWriter;
     private BinaryExpressionMultiTypeDispatcher binaryExprHelper;
+    private UnaryExpressionHelper unaryExpressionHelper;
     private ClosureWriter closureWriter;
 
     public StaticTypesWriterController(WriterController normalController) {
@@ -59,7 +54,8 @@ public class StaticTypesWriterController extends DelegatingController {
         this.typeChooser = new StaticTypesTypeChooser();
         this.invocationWriter = new StaticInvocationWriter(this);
         this.binaryExprHelper = new StaticTypesBinaryExpressionMultiTypeDispatcher(this);
-        this.closureWriter = new ClosureWriter(this);
+        this.closureWriter = new StaticTypesClosureWriter(this);
+        this.unaryExpressionHelper = new StaticTypesUnaryExpressionHelper(this);
     }
 
     @Override
@@ -70,14 +66,14 @@ public class StaticTypesWriterController extends DelegatingController {
 
     private void updateStaticCompileFlag(final MethodNode mn) {
         ClassNode classNode = getClassNode();
+        AnnotatedNode node = mn;
         if (classNode.implementsInterface(ClassHelper.GENERATED_CLOSURE_Type)) {
-            classNode = classNode.getOuterClass();
+            node = classNode.getOuterClass();
         }
-        isInStaticallyCheckedMethod = mn != null && (
-                !mn.getAnnotations(COMPILE_STATIC_ANNOTATION).isEmpty() ||
-                        !classNode.getAnnotations(COMPILE_STATIC_ANNOTATION).isEmpty() ||
-                        classNode.getNodeMetaData(STATIC_COMPILE_NODE) != null);
-/*        if (isInStaticallyCheckedMethod) {
+
+        isInStaticallyCheckedMethod = mn != null && StaticCompilationVisitor.isStaticallyCompiled(node);
+
+/*      if (isInStaticallyCheckedMethod) {
             System.out.println("Entering statically compiled method: "+mn.getDeclaringClass()+"#"+mn);
         } else if (mn!=null) {
             System.out.println("Entering dynamically compiled method: "+mn.getDeclaringClass()+"#"+mn);
@@ -133,12 +129,20 @@ public class StaticTypesWriterController extends DelegatingController {
     }
 
     @Override
-    public BinaryExpressionHelper getBinaryExpHelper() {
+    public BinaryExpressionHelper getBinaryExpressionHelper() {
         if (isInStaticallyCheckedMethod) {
             return binaryExprHelper;
         } else {
-            return super.getBinaryExpHelper();
+            return super.getBinaryExpressionHelper();
         }
+    }
+
+    @Override
+    public UnaryExpressionHelper getUnaryExpressionHelper() {
+        if (isInStaticallyCheckedMethod) {
+            return unaryExpressionHelper;
+        }
+        return super.getUnaryExpressionHelper();
     }
 
     @Override

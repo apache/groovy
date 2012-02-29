@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2008 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,9 @@
  */
 package groovy
 
-/** 
+import org.codehaus.groovy.runtime.DefaultGroovyMethods as DGM
+
+/**
  * Tests the various Closure methods in Groovy
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
@@ -230,6 +232,82 @@ class ClosureMethodTest extends GroovyTestCase {
         assert value == 6
         value = ([1, 2, 3, 4] as Object[]).inject(0) { c, item -> c + item }
         assert value == 10
+    }
+
+    void testOneArgListInject() {
+        // Check basic functionality
+        def value = [ 1, 2, 3 ].inject { c, item -> c + item }
+        assert value == 6
+
+        // Check a use-case
+        value = [ [ 'tim', 'dave', 'chris' ],
+                  [ 'stuart', 'harry', 'tim' ],
+                  [ 'bert', 'tim', 'ernie' ] ]
+        assert value.inject { a, b -> a.intersect( b ) } == ['tim']
+
+        // Check edges
+        try {
+            [].inject { a, b -> a + b } == null
+            fail( "inject(Closure) on an emtpy list should throw a NoSuchElementException" )
+        }
+        catch ( NoSuchElementException e ) {
+        }
+        assert    [ 1 ].inject { a, b -> a + b } == 1
+        assert [ 1, 2 ].inject { a, b -> a + b } == 3
+    }
+
+    void testOneArgObjectInject() {
+        def value = ([1, 2, 3, 4] as Object[]).inject { c, item -> c + item }
+        assert value == 10
+
+        try {
+            ([] as Object[]).inject { c, item -> c + item }
+            fail( "inject(Closure) on an emtpy Object[] should throw a NoSuchElementException" )
+        }
+        catch ( NoSuchElementException e ) {
+        }
+
+        value = ([ 1 ] as Object[]).inject { c, item -> c + item }
+        assert value == 1
+
+        def i = 1
+        def iter = [ hasNext:{ -> i < 5 }, next:{ -> i++ } ] as Iterator
+        assert iter.inject { a, b -> a * b } == 24
+
+        try {
+            iter = [ hasNext:{ -> false }, next:{ -> null } ] as Iterator
+            iter.inject { a, b -> a * b }
+            fail( "inject(Closure) on an exhaused iterator should throw a NoSuchElementException" )
+        }
+        catch ( NoSuchElementException e ) {
+        }
+
+        i = 1
+        iter = [ hasNext:{ -> i <= 1 }, next:{ -> i++ } ] as Iterator
+        assert iter.inject { a, b -> a * b } == 1
+    }
+
+    void testOldAndNewStylesYieldSameResults() {
+        def items = [1000, 200, 30, 4]
+        def twice = { int x -> x * 2 }
+        def checkEqual = { int a, b -> assert a == b; a }
+        def sum = DGM.&sum
+        def addThreeWays = [
+            items.sum(),
+            items.inject(0, sum),
+            items.inject(sum)
+        ]
+        assert addThreeWays == [1234] * 3
+        addThreeWays.inject(checkEqual)
+
+        def addTwiceFourWays = [
+            items.inject(0){ int acc, next -> acc + twice(next) },
+            items.collect(twice).sum(),
+            items.collect(twice).inject(0, sum),
+            items.collect(twice).inject(sum)
+        ]
+        assert addTwiceFourWays == [2468] * 4
+        addTwiceFourWays.inject(checkEqual)
     }
 
     void testObjectInject() {

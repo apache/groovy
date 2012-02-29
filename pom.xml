@@ -597,6 +597,10 @@
             <name>Jan Weitz</name>
             <email></email>
         </contributor>
+        <contributor>
+            <name>Joachim Baumann</name>
+            <email></email>
+        </contributor>
     </contributors>
 
     <dependencies>
@@ -647,6 +651,12 @@
             <version>1.8.2</version>
             <scope>runtime</scope>
             <optional>true</optional>
+            <exclusions>
+                <exclusion>
+                    <groupId>junit</groupId>
+                    <artifactId>junit</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.apache.ant</groupId>
@@ -763,13 +773,30 @@
             <scope>test</scope>
         </dependency>
 
-        <!-- used for SQL library -->
+        <!-- used for testing SQL library -->
         <dependency>
             <groupId>hsqldb</groupId>
             <artifactId>hsqldb</artifactId>
             <version>1.8.0.10</version>
             <scope>test</scope>
         </dependency>
+<!--
+        <dependency>
+            <groupId>org.hsqldb</groupId>
+            <artifactId>hsqldb</artifactId>
+            <version>2.2.8</version>
+            <classifier>jdk5</classifier>
+            <scope>test</scope>
+        </dependency>
+-->
+<!--
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <version>1.3.164</version>
+            <scope>test</scope>
+        </dependency>
+-->
 
         <!-- used for servlet / gsp -->
         <dependency>
@@ -791,7 +818,7 @@
         <dependency>
             <groupId>com.thoughtworks.xstream</groupId>
             <artifactId>xstream</artifactId>
-            <version>1.4.1</version>
+            <version>1.4.2</version>
             <scope>compile</scope>
             <optional>true</optional>
             <exclusions>
@@ -824,7 +851,7 @@
         <dependency>
             <groupId>jline</groupId>
             <artifactId>jline</artifactId>
-            <version>0.9.94</version>
+            <version>1.0</version>
             <scope>compile</scope>
             <optional>true</optional>
             <exclusions>
@@ -838,7 +865,7 @@
         <dependency>
             <groupId>org.fusesource.jansi</groupId>
             <artifactId>jansi</artifactId>
-            <version>1.7</version>
+            <version>1.6</version>
             <scope>compile</scope>
             <optional>true</optional>
         </dependency>

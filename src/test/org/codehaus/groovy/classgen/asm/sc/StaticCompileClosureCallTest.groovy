@@ -97,4 +97,60 @@ class StaticCompileClosureCallTest extends AbstractBytecodeTestCase {
         '''
     }
 
+    void testWriteSharedVariableInClosure() {
+        def bytecode = compile([method:'m'],'''
+        @groovy.transform.CompileStatic
+        void m() {
+            String test = 'test'
+            def cl = { test = 'TEST' }
+            cl()
+            assert test == 'TEST'
+        }
+        ''')
+        clazz.newInstance().main()
+    }
+
+    void testCallPrivateMethodFromClosure() {
+        assertScript '''
+        @groovy.transform.CompileStatic
+        class Foo {
+            void m() {
+                String test = 'test'
+                def cl = { test = bar() }
+                cl()
+                assert test == 'TEST'
+            }
+            private String bar() { 'TEST' }
+        }
+        new Foo().m()
+        '''
+    }
+
+    void testCallStaticPrivateMethodFromClosure() {
+        assertScript '''
+        @groovy.transform.CompileStatic
+        class Foo {
+            void m() {
+                String test = 'test'
+                def cl = { test = bar() }
+                cl()
+                assert test == 'TEST'
+            }
+            private static String bar() { 'TEST' }
+        }
+        new Foo().m()
+        '''
+    }
+
+    void testCallMethodWithinClosure() {
+        assertScript '''
+        @groovy.transform.CompileStatic
+        class Foo {
+            static void m(StackTraceElement[] trace) {
+                trace.each { StackTraceElement stackTraceElement -> !stackTraceElement.className.startsWith('foo') }
+            }
+        }
+        1
+        '''
+    }
 }

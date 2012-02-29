@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2011 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package org.codehaus.groovy.runtime;
 import groovy.lang.Closure;
 import groovy.util.GroovyTestCase;
 
-import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -50,7 +49,7 @@ public class DefaultGroovyMethodsTest extends GroovyTestCase {
 
     public void testIncrementString() throws Exception {
         String original = "z";
-        String answer = DefaultGroovyMethods.next(original);
+        String answer = StringGroovyMethods.next(original);
 
         assertEquals("{", answer);
         assertTrue(answer.compareTo(original) > 0);
@@ -58,7 +57,7 @@ public class DefaultGroovyMethodsTest extends GroovyTestCase {
 
     public void testDecrementString() throws Exception {
         String original = "a";
-        String answer = DefaultGroovyMethods.previous(original);
+        String answer = StringGroovyMethods.previous(original);
 
         assertEquals("`", answer);
         assertTrue(ScriptBytecodeAdapter.compareLessThan(answer, original));
@@ -119,34 +118,34 @@ public class DefaultGroovyMethodsTest extends GroovyTestCase {
     public void testToMethods() throws Exception {
         Number n = 7L;
 
-        assertEquals(DefaultGroovyMethods.toInteger("1"), new Integer(1));
+        assertEquals(StringGroovyMethods.toInteger("1"), new Integer(1));
         assertEquals(DefaultGroovyMethods.toInteger(n), new Integer(7));
-        assertEquals(DefaultGroovyMethods.toLong("1"), new Long(1));
+        assertEquals(StringGroovyMethods.toLong("1"), new Long(1));
         assertEquals(DefaultGroovyMethods.toLong(n), new Long(7));
 
-        assertEquals(DefaultGroovyMethods.toFloat("1"), new Float(1));
+        assertEquals(StringGroovyMethods.toFloat("1"), new Float(1));
         assertEquals(DefaultGroovyMethods.toFloat(n), new Float(7));
-        assertEquals(DefaultGroovyMethods.toDouble("1"), new Double(1));
+        assertEquals(StringGroovyMethods.toDouble("1"), new Double(1));
         assertEquals(DefaultGroovyMethods.toDouble(n), new Double(7));
 
-        assertEquals(DefaultGroovyMethods.toBigInteger("1"), new BigInteger("1"));
+        assertEquals(StringGroovyMethods.toBigInteger("1"), new BigInteger("1"));
         assertEquals(DefaultGroovyMethods.toBigInteger(n), new BigInteger("7"));
-        assertEquals(DefaultGroovyMethods.toBigDecimal("1"), new BigDecimal("1"));
+        assertEquals(StringGroovyMethods.toBigDecimal("1"), new BigDecimal("1"));
         assertEquals(DefaultGroovyMethods.toBigDecimal(n), new BigDecimal("7"));
 
         // The following is true starting with 1.6 (GROOVY-3171):
         assertEquals(new BigDecimal("0.1"), DefaultGroovyMethods.toBigDecimal(0.1));
 
-        assertEquals(DefaultGroovyMethods.toURL("http://example.org/"), new URL("http://example.org/"));
-        assertEquals(DefaultGroovyMethods.toURI("http://example.org/"), new URI("http://example.org/"));
+        assertEquals(ResourceGroovyMethods.toURL("http://example.org/"), new URL("http://example.org/"));
+        assertEquals(ResourceGroovyMethods.toURI("http://example.org/"), new URI("http://example.org/"));
 
-        assertEquals(DefaultGroovyMethods.toBoolean("True"), Boolean.TRUE);
-        assertEquals(DefaultGroovyMethods.toBoolean("Y"), Boolean.TRUE);
-        assertEquals(DefaultGroovyMethods.toBoolean(" y "), Boolean.TRUE);
-        assertEquals(DefaultGroovyMethods.toBoolean("1"), Boolean.TRUE);
-        assertEquals(DefaultGroovyMethods.toBoolean("false"), Boolean.FALSE);
-        assertEquals(DefaultGroovyMethods.toBoolean("n"), Boolean.FALSE);
-        assertEquals(DefaultGroovyMethods.toBoolean("0"), Boolean.FALSE);
+        assertEquals(StringGroovyMethods.toBoolean("True"), Boolean.TRUE);
+        assertEquals(StringGroovyMethods.toBoolean("Y"), Boolean.TRUE);
+        assertEquals(StringGroovyMethods.toBoolean(" y "), Boolean.TRUE);
+        assertEquals(StringGroovyMethods.toBoolean("1"), Boolean.TRUE);
+        assertEquals(StringGroovyMethods.toBoolean("false"), Boolean.FALSE);
+        assertEquals(StringGroovyMethods.toBoolean("n"), Boolean.FALSE);
+        assertEquals(StringGroovyMethods.toBoolean("0"), Boolean.FALSE);
 
         assertEquals(DefaultGroovyMethods.toBoolean(Boolean.FALSE), Boolean.FALSE);
         assertEquals(DefaultGroovyMethods.toBoolean(Boolean.TRUE), Boolean.TRUE);
@@ -157,36 +156,36 @@ public class DefaultGroovyMethodsTest extends GroovyTestCase {
         String floatStr = "1.23E-1";
         String nonNumberStr = "ONE";
 
-        assertTrue(DefaultGroovyMethods.isInteger(intStr));
-        assertFalse(DefaultGroovyMethods.isInteger(floatStr));
-        assertFalse(DefaultGroovyMethods.isInteger(nonNumberStr));
-        assertTrue(DefaultGroovyMethods.isLong(intStr));
-        assertFalse(DefaultGroovyMethods.isLong(floatStr));
-        assertFalse(DefaultGroovyMethods.isLong(nonNumberStr));
+        assertTrue(StringGroovyMethods.isInteger(intStr));
+        assertFalse(StringGroovyMethods.isInteger(floatStr));
+        assertFalse(StringGroovyMethods.isInteger(nonNumberStr));
+        assertTrue(StringGroovyMethods.isLong(intStr));
+        assertFalse(StringGroovyMethods.isLong(floatStr));
+        assertFalse(StringGroovyMethods.isLong(nonNumberStr));
 
-        assertTrue(DefaultGroovyMethods.isFloat(intStr));
-        assertTrue(DefaultGroovyMethods.isFloat(floatStr));
-        assertFalse(DefaultGroovyMethods.isFloat(nonNumberStr));
-        assertTrue(DefaultGroovyMethods.isDouble(intStr));
-        assertTrue(DefaultGroovyMethods.isDouble(floatStr));
-        assertFalse(DefaultGroovyMethods.isDouble(nonNumberStr));
+        assertTrue(StringGroovyMethods.isFloat(intStr));
+        assertTrue(StringGroovyMethods.isFloat(floatStr));
+        assertFalse(StringGroovyMethods.isFloat(nonNumberStr));
+        assertTrue(StringGroovyMethods.isDouble(intStr));
+        assertTrue(StringGroovyMethods.isDouble(floatStr));
+        assertFalse(StringGroovyMethods.isDouble(nonNumberStr));
 
-        assertTrue(DefaultGroovyMethods.isBigInteger(intStr));
-        assertFalse(DefaultGroovyMethods.isBigInteger(floatStr));
-        assertFalse(DefaultGroovyMethods.isBigInteger(nonNumberStr));
-        assertTrue(DefaultGroovyMethods.isBigDecimal(intStr));
-        assertTrue(DefaultGroovyMethods.isBigDecimal(floatStr));
-        assertFalse(DefaultGroovyMethods.isBigDecimal(nonNumberStr));
-        assertTrue(DefaultGroovyMethods.isNumber(intStr));
-        assertTrue(DefaultGroovyMethods.isNumber(floatStr));
-        assertFalse(DefaultGroovyMethods.isNumber(nonNumberStr));
+        assertTrue(StringGroovyMethods.isBigInteger(intStr));
+        assertFalse(StringGroovyMethods.isBigInteger(floatStr));
+        assertFalse(StringGroovyMethods.isBigInteger(nonNumberStr));
+        assertTrue(StringGroovyMethods.isBigDecimal(intStr));
+        assertTrue(StringGroovyMethods.isBigDecimal(floatStr));
+        assertFalse(StringGroovyMethods.isBigDecimal(nonNumberStr));
+        assertTrue(StringGroovyMethods.isNumber(intStr));
+        assertTrue(StringGroovyMethods.isNumber(floatStr));
+        assertFalse(StringGroovyMethods.isNumber(nonNumberStr));
     }
 
     public void testGetBytes() {
         byte[] bytes = {42,45,47,14,10,84};
         ByteArrayInputStream is = new ByteArrayInputStream(bytes);
         try {
-            byte[] answer = DefaultGroovyMethods.getBytes(is);
+            byte[] answer = IOGroovyMethods.getBytes(is);
             assertEquals(bytes.length, answer.length);
             for (int i = 0; i < bytes.length; i++) {
                 assertEquals(bytes[i], answer[i]);       
@@ -200,7 +199,7 @@ public class DefaultGroovyMethodsTest extends GroovyTestCase {
         byte[] bytes = {42,45,47,14,10,84};
         ByteArrayOutputStream os = new ByteArrayOutputStream();
         try {
-            DefaultGroovyMethods.setBytes(os, bytes);
+            IOGroovyMethods.setBytes(os, bytes);
             byte[] answer = os.toByteArray();
             assertEquals(bytes.length, answer.length);
             for (int i = 0; i < bytes.length; i++) {

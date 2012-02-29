@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2009 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,8 @@ import javax.sql.DataSource
 import java.sql.Connection
 import org.codehaus.groovy.runtime.InvokerHelper
 
+import static groovy.sql.SqlTestConstants.*
+
 /**
  * Unit test of Sql cache feature 
  * @author Marc DeXeT
@@ -36,11 +38,11 @@ class SqlCacheTest extends GroovyTestCase {
     int createStatementCallCounter
 
     void setUp() {
-        ds = new org.hsqldb.jdbc.jdbcDataSource()
-        ds.database = "jdbc:hsqldb:mem:foo" + getMethodName()
-        ds.user = 'sa'
-        ds.password = ''
-        con = ds.getConnection()
+        ds = DB_DATASOURCE.newInstance(
+                (DB_DS_KEY): DB_URL_PREFIX + getMethodName(),
+                user: DB_USER,
+                password: DB_PASSWORD)
+        con = ds.connection
         def methodOverride = [
                 createStatement: {Object[] args ->
                     createStatementCallCounter++
@@ -55,9 +57,9 @@ class SqlCacheTest extends GroovyTestCase {
         ]
         wrappedCon = ProxyGenerator.INSTANCE.instantiateDelegate(methodOverride, [Connection], con)
         sql = new Sql(wrappedCon)
-        sql.execute("create table PERSON ( id integer, firstname varchar, lastname varchar )")
-        sql.execute("create table FOOD ( id integer, type varchar, name varchar)")
-        sql.execute("create table PERSON_FOOD ( personid integer, foodid integer)")
+        sql.execute("create table PERSON ( id INTEGER, firstname VARCHAR(10), lastname VARCHAR(10) )")
+        sql.execute("create table FOOD ( id INTEGER, type VARCHAR(10), name VARCHAR(10))")
+        sql.execute("create table PERSON_FOOD ( personid INTEGER, foodid INTEGER)")
 
         // now let's populate the datasets
         def people = sql.dataSet("PERSON")

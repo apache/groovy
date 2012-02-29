@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2011 the original author or authors.
+ * Copyright 2008-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -85,9 +85,14 @@ import java.lang.annotation.Target;
  * your objects may no longer be immutable. It is up to you to ensure that your objects remain immutable at least
  * to the extent expected in other parts of your program!
  * </ul>
- * <p/>
  * Immutable classes are particularly useful for functional and concurrent styles of programming
- * and for use as key values within maps.
+ * and for use as key values within maps. If you want similar functionality to what this annotation
+ * provides but don't need immutability then consider using {@code @Canonical}.
+ * <p/>
+ * Customising behaviour:
+ * <p/>
+ * You can customise the toString() method provided for you by {@code @Immutable}
+ * by also adding the {@code @ToString} annotation to your class definition.
  * <p/>
  * Limitations:
  * <ul>
@@ -113,6 +118,9 @@ import java.lang.annotation.Target;
  * </ul>
  *
  * @author Paul King
+ * @author Andre Steingress
+ * @see groovy.transform.ToString
+ * @see groovy.transform.Canonical
  * @since 1.7
  */
 @java.lang.annotation.Documented
@@ -120,4 +128,26 @@ import java.lang.annotation.Target;
 @Target({ElementType.TYPE})
 @GroovyASTTransformationClass("org.codehaus.groovy.transform.ImmutableASTTransformation")
 public @interface Immutable {
+    /**
+     * Allows you to provide {@code @Immutable} with a list of classes which
+     * are deemed immutable. By supplying a class in this list, you are vouching
+     * for its immutability and {@code @Immutable} will do no further checks.
+     * Example:
+     * <pre>
+     * import groovy.transform.*
+     * {@code @Immutable}(knownImmutableClasses = [Address])
+     * class Person {
+     *     String first, last
+     *     Address address
+     * }
+     *
+     * {@code @TupleConstructor}
+     * class Address {
+     *     final String street
+     * }
+     * </pre>
+     *
+     * @since 1.8.7
+     */
+    Class[] knownImmutableClasses() default {};
 }

@@ -292,7 +292,11 @@ public class BinaryExpressionHelper {
         if (directAssignment) {
             VariableExpression var = (VariableExpression) leftExpression;
             rhsType = controller.getTypeChooser().resolveType(var, controller.getClassNode());
-            operandStack.doGroovyCast(rhsType);
+            if (!(rightExpression instanceof ConstantExpression) || (((ConstantExpression) rightExpression).getValue()!=null)) {
+                operandStack.doGroovyCast(rhsType);
+            } else {
+                operandStack.replace(rhsType);
+            }
             rhsValueId = compileStack.defineVariable(var, rhsType, true).getIndex();
         } else {
             rhsValueId = compileStack.defineTemporaryVariable("$rhs", rhsType, true);

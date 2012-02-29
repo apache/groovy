@@ -17,7 +17,7 @@ def classTypes = [
 ]
 def pluralize = { name -> name + (name.endsWith("s") ? "es" : "s") }
 %>
-
+<meta http-equiv="Content-Type" content="text/html; charset=${props.charset}">
 <META NAME="keywords" CONTENT="${packageDoc.name()} package">
 
 <LINK REL ="stylesheet" TYPE="text/css" HREF="${packageDoc.getRelativeRootPath()}stylesheet.css" TITLE="Style">

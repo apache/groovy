@@ -19,7 +19,7 @@ import junit.framework.TestCase;
 import org.apache.bsf.BSFEngine;
 import org.apache.bsf.BSFException;
 import org.apache.bsf.BSFManager;
-import org.codehaus.groovy.runtime.DefaultGroovyMethods;
+import org.codehaus.groovy.runtime.ResourceGroovyMethods;
 
 import java.io.File;
 import java.util.List;
@@ -182,6 +182,6 @@ public class BSFTest extends TestCase {
     }
 
     protected void execScript(String fileName) throws Exception {
-        manager.exec("groovy", fileName, 0, 0, DefaultGroovyMethods.getText(new File(fileName)));
+        manager.exec("groovy", fileName, 0, 0, ResourceGroovyMethods.getText(new File(fileName)));
     }
 }

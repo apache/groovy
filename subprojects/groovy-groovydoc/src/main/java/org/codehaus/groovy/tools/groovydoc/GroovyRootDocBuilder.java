@@ -32,7 +32,7 @@ import org.codehaus.groovy.antlr.treewalker.SourceCodeTraversal;
 import org.codehaus.groovy.antlr.treewalker.Visitor;
 import org.codehaus.groovy.groovydoc.GroovyClassDoc;
 import org.codehaus.groovy.groovydoc.GroovyRootDoc;
-import org.codehaus.groovy.runtime.DefaultGroovyMethods;
+import org.codehaus.groovy.runtime.ResourceGroovyMethods;
 import org.codehaus.groovy.tools.shell.util.Logger;
 
 import java.io.File;
@@ -179,7 +179,7 @@ public class GroovyRootDocBuilder {
         String path = properties.getProperty("overviewFile");
         if (path != null && path.length() > 0) {
             try {
-                String content = DefaultGroovyMethods.getText(new File(path));
+                String content = ResourceGroovyMethods.getText(new File(path));
                 calcThenSetOverviewDescription(content);
             } catch (IOException e) {
                 System.err.println("Unable to load overview file: " + e.getMessage());
@@ -188,7 +188,7 @@ public class GroovyRootDocBuilder {
     }
 
     private void processFile(String filename, File srcFile, boolean isAbsolute) throws IOException {
-        String src = DefaultGroovyMethods.getText(srcFile);
+        String src = ResourceGroovyMethods.getText(srcFile);
         String packagePath = isAbsolute ? "DefaultPackage" : tool.getPath(filename).replace('\\', FS);
         String file = tool.getFile(filename);
         SimpleGroovyPackageDoc packageDoc = null;

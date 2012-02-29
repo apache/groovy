@@ -779,8 +779,6 @@ public class Groovyc extends MatchingTask {
                     }
 
                     commandLineList.add(javaHome + separator + "bin" + separator + "java");
-                    commandLineList.add("-classpath");
-                    commandLineList.add(classpath.toString());
 
                     final String fileEncodingProp = System.getProperty("file.encoding");
                     if ((fileEncodingProp != null) && !fileEncodingProp.equals("")) {
@@ -941,7 +939,7 @@ public class Groovyc extends MatchingTask {
 
     private String[] addClasspathToEnvironment(String[] oldEnvironment, String classpath) {
         List<String> newEnvironmentList = (oldEnvironment == null) ? new ArrayList<String>() : Arrays.asList(oldEnvironment);
-        newEnvironmentList.add("classpath=" + classpath);
+        newEnvironmentList.add("CLASSPATH=" + classpath);
         return newEnvironmentList.toArray(new String[newEnvironmentList.size()]);
     }
 
@@ -970,6 +968,10 @@ public class Groovyc extends MatchingTask {
 
 
     protected GroovyClassLoader buildClassLoaderFor() {
+        // GROOVY-5044
+        if (!fork && !getIncludeantruntime()) {
+            throw new IllegalArgumentException("The includeAntRuntime=false option is not compatible with fork=false");
+        }
         ClassLoader parent = getIncludeantruntime()
                 ? getClass().getClassLoader()
                 : new AntClassLoader(new RootLoader(new URL[0], null), getProject(), getClasspath());

@@ -640,4 +640,16 @@ public class BytecodeHelper implements Opcodes {
         // potential breakage of existing code.
         return Modifier.isPublic(classNode.getModifiers());
     }
+
+    /**
+     * Returns true if the two classes share the same compilation unit.
+     * @param a class a
+     * @param b class b
+     * @return true if both classes share the same compilation unit
+     */
+    public static boolean isSameCompilationUnit(ClassNode a, ClassNode b) {
+        CompileUnit cu1 = a.getCompileUnit();
+        CompileUnit cu2 = b.getCompileUnit();
+        return cu1 !=null && cu2 !=null && cu1==cu2;
+    }
 }

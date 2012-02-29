@@ -59,7 +59,6 @@ class StaticCompileFieldAccessTest extends AbstractBytecodeTestCase {
         ''')
         assert sequence.hasStrictSequence([
                 'ALOAD',
-                'CHECKCAST A',
                 'INVOKEVIRTUAL A.getX ()I',
                 'IRETURN'
         ])
@@ -124,7 +123,6 @@ class StaticCompileFieldAccessTest extends AbstractBytecodeTestCase {
         ''')
         assert sequence.hasStrictSequence([
                 'ALOAD',
-                'CHECKCAST groovy/lang/GroovyObject',
                 'LDC "x"',
                 'INVOKEINTERFACE groovy/lang/GroovyObject.getProperty (Ljava/lang/String;)Ljava/lang/Object;'
         ])

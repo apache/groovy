@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package org.codehaus.groovy.classgen;
 import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.VariableScope;
@@ -43,10 +44,7 @@ public abstract class InnerClassVisitorHelper extends ClassCodeVisitorSupport {
                 new ReturnStatement(
                         new AttributeExpression(
                                 thiz,
-                                new GStringExpression("$name",
-                                        gStringStrings,
-                                        gStringValues
-                                )
+                                new GStringExpression("$name", gStringStrings, gStringValues)
                         )
                 )
         );
@@ -63,10 +61,7 @@ public abstract class InnerClassVisitorHelper extends ClassCodeVisitorSupport {
                         new BinaryExpression(
                                 new AttributeExpression(
                                         thiz,
-                                        new GStringExpression("$name",
-                                                gStringStrings,
-                                                gStringValues
-                                        )
+                                        new GStringExpression("$name", gStringStrings, gStringValues)
                                 ),
                                 Token.newSymbol(Types.ASSIGN, -1, -1),
                                 new VariableExpression(parameters[1])
@@ -85,10 +80,7 @@ public abstract class InnerClassVisitorHelper extends ClassCodeVisitorSupport {
                 new ReturnStatement(
                         new MethodCallExpression(
                                 thiz,
-                                new GStringExpression("$name",
-                                        gStringStrings,
-                                        gStringValues
-                                ),
+                                new GStringExpression("$name", gStringStrings, gStringValues),
                                 new ArgumentListExpression(
                                         new SpreadExpression(new VariableExpression(parameters[1]))
                                 )
@@ -115,5 +107,13 @@ public abstract class InnerClassVisitorHelper extends ClassCodeVisitorSupport {
             node = node.getSuperClass();
         }
         return count;
+    }
+
+    protected static void addFieldInit(Parameter p, FieldNode fn, BlockStatement block) {
+        VariableExpression ve = new VariableExpression(p);
+        FieldExpression fe = new FieldExpression(fn);
+        block.addStatement(new ExpressionStatement(
+                new BinaryExpression(fe, Token.newSymbol(Types.ASSIGN, -1, -1), ve)
+        ));
     }
 }
