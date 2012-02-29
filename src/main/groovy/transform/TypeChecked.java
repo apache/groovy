@@ -32,4 +32,5 @@ import org.codehaus.groovy.transform.stc.TypeCheckerPluginFactory;
 @GroovyASTTransformationClass("org.codehaus.groovy.transform.StaticTypesTransformation")
 public @interface TypeChecked {
     Class<? extends TypeCheckerPluginFactory> pluginFactory() default TypeCheckerPluginFactory.class;
+    TypeCheckingMode value() default TypeCheckingMode.PASS;
 }

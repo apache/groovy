@@ -34,4 +34,5 @@ import java.lang.annotation.*;
 })
 @GroovyASTTransformationClass("org.codehaus.groovy.transform.sc.StaticCompileTransformation")
 public @interface CompileStatic {
+    TypeCheckingMode value() default TypeCheckingMode.PASS;
 }

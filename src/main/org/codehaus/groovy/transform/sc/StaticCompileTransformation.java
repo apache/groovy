@@ -51,18 +51,18 @@ public class StaticCompileTransformation extends StaticTypesTransformation {
         StaticTypeCheckingVisitor visitor = null;
         if (node instanceof ClassNode) {
             ClassNode classNode = (ClassNode) node;
-            classNode.putNodeMetaData(WriterControllerFactory.class, factory);
-            node.putNodeMetaData(STATIC_COMPILE_NODE, Boolean.TRUE);
             visitor = newVisitor(source, classNode, null);
+            classNode.putNodeMetaData(WriterControllerFactory.class, factory);
+            node.putNodeMetaData(STATIC_COMPILE_NODE, !visitor.isSkipMode(node));
             visitor.visitClass(classNode);
         } else if (node instanceof MethodNode) {
             MethodNode methodNode = (MethodNode)node;
-            methodNode.putNodeMetaData(STATIC_COMPILE_NODE, Boolean.TRUE);
             ClassNode declaringClass = methodNode.getDeclaringClass();
+            visitor = newVisitor(source, declaringClass, null);
+            methodNode.putNodeMetaData(STATIC_COMPILE_NODE, !visitor.isSkipMode(node));
             if (declaringClass.getNodeMetaData(WriterControllerFactory.class)==null) {
                 declaringClass.putNodeMetaData(WriterControllerFactory.class, factory);
             }
-            visitor = newVisitor(source, declaringClass, null);
             visitor.setMethodsToBeVisited(Collections.singleton(methodNode));
             visitor.visitMethod(methodNode);
         } else {

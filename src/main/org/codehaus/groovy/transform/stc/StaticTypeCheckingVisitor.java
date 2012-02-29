@@ -17,6 +17,8 @@ package org.codehaus.groovy.transform.stc;
 
 import groovy.lang.IntRange;
 import groovy.lang.ObjectRange;
+import groovy.transform.TypeChecked;
+import groovy.transform.TypeCheckingMode;
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.stmt.*;
@@ -51,6 +53,9 @@ import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.*;
 public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     private static final ClassNode ITERABLE_TYPE = ClassHelper.make(Iterable.class);
     private final static List<MethodNode> EMPTY_METHODNODE_LIST = Collections.emptyList();
+    private static final ClassNode TYPECHECKED_CLASSNODE = ClassHelper.make(TypeChecked.class);
+    private static final ClassNode[] TYPECHECKING_ANNOTATIONS = new ClassNode[]{TYPECHECKED_CLASSNODE};
+
     public static final MethodNode CLOSURE_CALL_NO_ARG;
     public static final MethodNode CLOSURE_CALL_ONE_ARG;
     public static final MethodNode CLOSURE_CALL_VARGS;
@@ -182,13 +187,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     @Override
     public void visitClass(final ClassNode node) {
-        Object type = node.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
-        if (type!=null) {
-            // transformation has already been run on this class node
-            // prevent it from running twice
-            return;
-        }
-        node.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, node);
+        if (shouldSkipClassNode(node)) return;
         ClassNode oldCN = classNode;
         classNode = node;
         Set<MethodNode> oldVisitedMethod = alreadyVisitedMethods;
@@ -201,6 +200,56 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
         alreadyVisitedMethods = oldVisitedMethod;
         classNode = oldCN;
+        node.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, node);
+    }
+
+    protected boolean shouldSkipClassNode(final ClassNode node) {
+        Object type = node.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
+        if (type!=null) {
+            // transformation has already been run on this class node
+            // prevent it from running twice
+            return true;
+        }
+        if (isSkipMode(node)) return true;
+        return false;
+    }
+
+    /**
+     * Returns the list of type checking annotations class nodes. Subclasses may override this method
+     * in order to provide additional classes which must be looked up when checking if a method or
+     * a class node should be skipped.
+     *
+     * The default implementation returns {@link TypeChecked}.
+     *
+     * @return array of class nodes
+     */
+    protected ClassNode[] getTypeCheckingAnnotations() {
+        return TYPECHECKING_ANNOTATIONS;
+    }
+
+    public boolean isSkipMode(final AnnotatedNode node) {
+        if (node==null) return false;
+        for (ClassNode tca : getTypeCheckingAnnotations()) {
+            List<AnnotationNode> annotations = node.getAnnotations(tca);
+            if (annotations != null) {
+                for (AnnotationNode annotation : annotations) {
+                    Expression value = annotation.getMember("value");
+                    if (value != null) {
+                        if (value instanceof ConstantExpression) {
+                            ConstantExpression ce = (ConstantExpression) value;
+                            if (TypeCheckingMode.SKIP.toString().equals(ce.getValue().toString())) return true;
+                        } else if (value instanceof PropertyExpression) {
+                            PropertyExpression pe = (PropertyExpression) value;
+                            if (TypeCheckingMode.SKIP.toString().equals(pe.getPropertyAsString())) return true;
+                        }
+                    }
+                }
+            }
+        }
+        if (node instanceof MethodNode) {
+            return isSkipMode(node.getDeclaringClass());
+        }
+        return false;
     }
 
     @Override
@@ -1088,6 +1137,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     @Override
     public void visitMethod(final MethodNode node) {
+        if (isSkipMode(node)) return;
         // alreadyVisitedMethods prevents from visiting the same method multiple times
         // and prevents from infinite loops
         if (alreadyVisitedMethods.contains(node)) return;
