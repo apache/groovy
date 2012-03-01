@@ -1,6 +1,7 @@
 apply plugin: 'groovy'
 apply plugin: 'idea'
-apply plugin: 'code-quality'
+apply plugin: 'codenarc'
+apply plugin: 'checkstyle'
 // TODO use antlr plugin
 //apply plugin: 'antlr'
 
@@ -50,7 +51,7 @@ dependencies {
     groovy "asm:asm-tree:3.3.1"
 
     compile "commons-cli:commons-cli:1.2"
-    compile "org.apache.ant:ant:1.8.2"
+    compile "org.apache.ant:ant:1.8.3"
     compile "javax.servlet:servlet-api:2.4"
     compile "javax.servlet:jsp-api:2.0"
     compile("com.thoughtworks.xstream:xstream:1.4.2") {
@@ -65,11 +66,11 @@ dependencies {
     compile("org.apache.ivy:ivy:2.2.0") {
         transitive = false
     }
-    runtime("org.apache.ant:ant-junit:1.8.2") {
+    runtime("org.apache.ant:ant-junit:1.8.3") {
         exclude(group: 'junit', module: 'junit')
     }
-    runtime "org.apache.ant:ant-launcher:1.8.2"
-    runtime "org.apache.ant:ant-antlr:1.8.2"
+    runtime "org.apache.ant:ant-launcher:1.8.3"
+    runtime "org.apache.ant:ant-antlr:1.8.3"
     runtime("commons-logging:commons-logging:1.1.1") {
         exclude(group: 'log4j', module: 'log4j')
         exclude(group: 'logkit', module: 'logkit')
@@ -116,7 +117,7 @@ dependencies {
         exclude(module: 'geronimo-j2ee-connector_1.5_spec')
     }
 
-    antlr "org.apache.ant:ant-antlr:1.8.2"
+    antlr "org.apache.ant:ant-antlr:1.8.3"
 
 //    groovy project(':subprojects:groovy-ant')
     // TODO M12N temporarily use gradle's groovy
@@ -272,13 +273,16 @@ task checkstyleMain(overwrite: true) << {};
 task checkstyleTest(overwrite: true) << {};
 task checkstyleTools(overwrite: true) << {};
 
-codeNarcConfigFileName = "./config/codenarc/codenarc.groovy"
-
 // ignore CodeNarc on examples
 task codenarcExamples(overwrite: true) << {};
 // don't fail build on CodeNarc tasks
 tasks.withType(CodeNarc).all { codeNarcTask ->
     codeNarcTask.ignoreFailures = true
+    codeNarcTask.configFile = file("./config/codenarc/codenarc.groovy")
+}
+tasks.withType(Checkstyle).all { checkstyleTask ->
+    checkstyleTask.ignoreFailures = true
+    checkstyleTask.configFile = file("./config/checkstyle/checkstyle.xml")
 }
 
 // provide to other build scripts
@@ -292,5 +296,5 @@ apply from: "$projectDir/gradle/upload.gradle"
 task wrapper(type: Wrapper) {
 //    gradleVersion = '1.0-milestone-5-20110929000016+0200'
 //    distributionUrl = "http://repo.gradle.org/gradle/distributions-snapshots/gradle-${gradleVersion}-bin.zip"
-    gradleVersion = '1.0-milestone-8'
+    gradleVersion = '1.0-milestone-8a'
 }

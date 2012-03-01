@@ -15,6 +15,8 @@
  */
 package org.codehaus.groovy.transform.sc;
 
+import groovy.transform.CompileStatic;
+import groovy.transform.TypeChecked;
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
@@ -49,6 +51,10 @@ import static org.codehaus.groovy.transform.stc.StaticTypesMarker.DIRECT_METHOD_
  * @author Cedric Champeau
  */
 public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
+    private static final ClassNode TYPECHECKED_CLASSNODE = ClassHelper.make(TypeChecked.class);
+    private static final ClassNode COMPILESTATIC_CLASSNODE = ClassHelper.make(CompileStatic.class);
+    private static final ClassNode[] TYPECHECKED_ANNOTATIONS = {TYPECHECKED_CLASSNODE, COMPILESTATIC_CLASSNODE};
+    
     private final TypeChooser typeChooser = new StaticTypesTypeChooser();
 
     private ClassNode classNode;
@@ -57,8 +63,13 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
         super(unit, node, pluginFactory);
     }
 
+    @Override
+    protected ClassNode[] getTypeCheckingAnnotations() {
+        return TYPECHECKED_ANNOTATIONS;
+    }
+
     public static boolean isStaticallyCompiled(AnnotatedNode node) {
-        if (node.getNodeMetaData(STATIC_COMPILE_NODE)!=null) return true;
+        if (node.getNodeMetaData(STATIC_COMPILE_NODE)!=null) return (Boolean)node.getNodeMetaData(STATIC_COMPILE_NODE);
         if (node instanceof MethodNode) {
             return isStaticallyCompiled(node.getDeclaringClass());
         }
@@ -70,6 +81,7 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
 
     @Override
     public void visitClass(final ClassNode node) {
+        boolean skip = shouldSkipClassNode(node);
         ClassNode oldCN = classNode;
         classNode = node;
         Iterator<InnerClassNode> innerClasses = classNode.getInnerClasses();
@@ -79,13 +91,21 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
         }
         while (innerClasses.hasNext()) {
             InnerClassNode innerClassNode = innerClasses.next();
-            innerClassNode.setNodeMetaData(STATIC_COMPILE_NODE, Boolean.TRUE);
+            innerClassNode.setNodeMetaData(STATIC_COMPILE_NODE, !skip);
             innerClassNode.setNodeMetaData(WriterControllerFactory.class, node.getNodeMetaData(WriterControllerFactory.class));
             addPrivateBridgeMethods(innerClassNode);
             addPrivateFieldsAccessors(innerClassNode);
         }
         super.visitClass(node);
         classNode = oldCN;
+    }
+
+    @Override
+    public void visitMethod(final MethodNode node) {
+        if (isSkipMode(node)) {
+            node.putNodeMetaData(STATIC_COMPILE_NODE, false);
+        }
+        super.visitMethod(node);
     }
 
     /**

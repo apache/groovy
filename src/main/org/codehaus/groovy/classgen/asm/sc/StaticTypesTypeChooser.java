@@ -15,12 +15,11 @@
  */
 package org.codehaus.groovy.classgen.asm.sc;
 
+import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.classgen.asm.StatementMetaTypeChooser;
-import org.codehaus.groovy.transform.StaticTypesTransformation;
 import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 
 /**
@@ -33,10 +32,16 @@ public class StaticTypesTypeChooser extends StatementMetaTypeChooser {
     @Override
     public ClassNode resolveType(final Expression exp, final ClassNode current) {
         Expression target = exp instanceof VariableExpression ? getTarget((VariableExpression) exp) : exp;
-        ClassNode dif = (ClassNode) target.getNodeMetaData(StaticTypesMarker.DECLARATION_INFERRED_TYPE);
-        if (dif != null) return dif;
-        ClassNode inferredType = (ClassNode) target.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
+        ClassNode inferredType = (ClassNode) target.getNodeMetaData(StaticTypesMarker.DECLARATION_INFERRED_TYPE);
+        if (inferredType == null) {
+            inferredType = (ClassNode) target.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
+        }
         if (inferredType != null) {
+            if (ClassHelper.VOID_TYPE==inferredType) {
+                // we are in a case of a type inference failure, probably because code was generated
+                // it is better to avoid using this
+                inferredType = super.resolveType(exp, current);
+            }
             return inferredType;
         }
         return super.resolveType(exp, current);
