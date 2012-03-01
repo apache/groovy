@@ -1,6 +1,7 @@
 apply plugin: 'groovy'
 apply plugin: 'idea'
-apply plugin: 'code-quality'
+apply plugin: 'codenarc'
+apply plugin: 'checkstyle'
 // TODO use antlr plugin
 //apply plugin: 'antlr'
 
@@ -270,13 +271,16 @@ task checkstyleMain(overwrite: true) << {};
 task checkstyleTest(overwrite: true) << {};
 task checkstyleTools(overwrite: true) << {};
 
-codeNarcConfigFileName = "./config/codenarc/codenarc.groovy"
-
 // ignore CodeNarc on examples
 task codenarcExamples(overwrite: true) << {};
 // don't fail build on CodeNarc tasks
 tasks.withType(CodeNarc).all { codeNarcTask ->
     codeNarcTask.ignoreFailures = true
+    codeNarcTask.configFile = file("./config/codenarc/codenarc.groovy")
+}
+tasks.withType(Checkstyle).all { checkstyleTask ->
+    checkstyleTask.ignoreFailures = true
+    checkstyleTask.configFile = file("./config/checkstyle/checkstyle.xml")
 }
 
 // provide to other build scripts
@@ -290,5 +294,5 @@ apply from: "$projectDir/gradle/upload.gradle"
 task wrapper(type: Wrapper) {
 //    gradleVersion = '1.0-milestone-5-20110929000016+0200'
 //    distributionUrl = "http://repo.gradle.org/gradle/distributions-snapshots/gradle-${gradleVersion}-bin.zip"
-    gradleVersion = '1.0-milestone-8'
+    gradleVersion = '1.0-milestone-8a'
 }
