@@ -46,7 +46,7 @@ dependencies {
     groovy "asm:asm-tree:3.3.1"
 
     compile "commons-cli:commons-cli:1.2"
-    compile "org.apache.ant:ant:1.8.2"
+    compile "org.apache.ant:ant:1.8.3"
     compile "javax.servlet:servlet-api:2.4"
     compile "javax.servlet:jsp-api:2.0"
     compile("com.thoughtworks.xstream:xstream:1.4.2") {
@@ -61,11 +61,11 @@ dependencies {
     compile("org.apache.ivy:ivy:2.2.0") {
         transitive = false
     }
-    runtime("org.apache.ant:ant-junit:1.8.2") {
+    runtime("org.apache.ant:ant-junit:1.8.3") {
         exclude(group: 'junit', module: 'junit')
     }
-    runtime "org.apache.ant:ant-launcher:1.8.2"
-    runtime "org.apache.ant:ant-antlr:1.8.2"
+    runtime "org.apache.ant:ant-launcher:1.8.3"
+    runtime "org.apache.ant:ant-antlr:1.8.3"
     runtime("commons-logging:commons-logging:1.1.1") {
         exclude(group: 'log4j', module: 'log4j')
         exclude(group: 'logkit', module: 'logkit')
@@ -81,7 +81,7 @@ dependencies {
     testCompile "log4j:log4j:1.2.16"
     testCompile "org.slf4j:jcl-over-slf4j:1.6.0"
     testCompile "com.thoughtworks.qdox:qdox:1.12"
-    testCompile "org.apache.ant:ant-testutil:1.8.2"
+    testCompile "org.apache.ant:ant-testutil:1.8.3"
     runtime "org.codehaus.gpars:gpars:0.12"
 
     tools "com.googlecode.jarjar:jarjar:1.1"
@@ -114,7 +114,7 @@ dependencies {
         exclude(module: 'geronimo-j2ee-connector_1.5_spec')
     }
 
-    antlr "org.apache.ant:ant-antlr:1.8.2"
+    antlr "org.apache.ant:ant-antlr:1.8.3"
 
     testCompile project(':subprojects:groovy-test')
     testCompile project(':subprojects:groovy-jsr223')
