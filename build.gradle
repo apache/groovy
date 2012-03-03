@@ -5,13 +5,6 @@ apply plugin: 'checkstyle'
 // TODO use antlr plugin
 //apply plugin: 'antlr'
 
-allprojects { p ->
-    group = 'org.codehaus.groovy'
-    version = groovyVersion
-    tasks.withType(Checkstyle).all { t -> t.ignoreFailures = true }
-    tasks.withType(CodeNarc).all { t -> t.ignoreFailures = true }
-}
-
 sourceCompatibility = 1.5
 targetCompatibility = 1.5
 
@@ -265,14 +258,18 @@ def isJava16() {
     System.properties['java.version'].contains('1.6')
 }
 
-// suppress CheckStyle
-task checkstyleExamples(overwrite: true) << {};
-task checkstyleMain(overwrite: true) << {};
-task checkstyleTest(overwrite: true) << {};
-task checkstyleTools(overwrite: true) << {};
-
-// ignore CodeNarc on examples
-task codenarcExamples(overwrite: true) << {};
+allprojects { p ->
+    group = 'org.codehaus.groovy'
+    version = groovyVersion
+//    tasks.withType(Checkstyle).all { t -> t.ignoreFailures = true }
+//    tasks.withType(CodeNarc).all { t -> t.ignoreFailures = true }
+}
+// suppress CheckStyle/CodeNarc
+task checkstyleExamples(overwrite: true) << {}
+task checkstyleMain(overwrite: true) << {}
+task checkstyleTest(overwrite: true) << {}
+task checkstyleTools(overwrite: true) << {}
+task codenarcExamples(overwrite: true) << {}
 // don't fail build on CodeNarc tasks
 tasks.withType(CodeNarc).all { codeNarcTask ->
     codeNarcTask.ignoreFailures = true
