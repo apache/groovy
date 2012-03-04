@@ -18,15 +18,19 @@ package groovy
 import java.text.SimpleDateFormat
 
 import static java.util.Calendar.*
-import static java.util.TimeZone.getTimeZone
 
 class DateTest extends GroovyTestCase {
     void testCalendarNextPrevious() {
-        Calendar c = getInstance(getTimeZone('GMT+00'))
+        TimeZone tz = TimeZone.getTimeZone('GMT+00')
+        Calendar c = getInstance(tz)
+        c[HOUR_OF_DAY] = 6
         c[YEAR] = 2002
         c[MONTH] = FEBRUARY
         c[DATE] = 2
+        c.clearTime()
         def formatter = new SimpleDateFormat('dd-MMM-yyyy', Locale.US)
+        formatter.calendar.timeZone = tz
+
         assert formatter.format(c.previous().time) == '01-Feb-2002'
         assert formatter.format(c.time) == '02-Feb-2002'
         assert formatter.format(c.next().time) == '03-Feb-2002'
