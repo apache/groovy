@@ -3448,17 +3448,17 @@ public class Sql {
          * @return statement that can be cached, etc.
          * @throws SQLException if a database error occurs
          */
-        abstract Statement execute(Connection conn, String sql) throws SQLException;
+        protected abstract Statement execute(Connection conn, String sql) throws SQLException;
     }
 
     private class CreatePreparedStatementCommand extends AbstractStatementCommand {
         private final int returnGeneratedKeys;
 
-        CreatePreparedStatementCommand(int returnGeneratedKeys) {
+        private CreatePreparedStatementCommand(int returnGeneratedKeys) {
             this.returnGeneratedKeys = returnGeneratedKeys;
         }
 
-        PreparedStatement execute(Connection connection, String sql) throws SQLException {
+        protected PreparedStatement execute(Connection connection, String sql) throws SQLException {
             if (returnGeneratedKeys != 0)
                 return connection.prepareStatement(sql, returnGeneratedKeys);
             if (appearsLikeStoredProc(sql))
@@ -3466,18 +3466,16 @@ public class Sql {
             return connection.prepareStatement(sql);
         }
 
-        boolean appearsLikeStoredProc(String sql) {
+        private boolean appearsLikeStoredProc(String sql) {
             return sql.matches("\\s*[{]?\\s*[?]?\\s*[=]?\\s*[cC][aA][lL][lL].*");
         }
     }
 
     private class CreateStatementCommand extends AbstractStatementCommand {
-
         @Override
-        Statement execute(Connection conn, String sql) throws SQLException {
+        protected Statement execute(Connection conn, String sql) throws SQLException {
             return createStatement(conn);
         }
-
     }
 
     protected abstract class AbstractQueryCommand {
@@ -3485,7 +3483,7 @@ public class Sql {
         protected Statement statement;
         private Connection connection;
 
-        AbstractQueryCommand(String sql) {
+        protected AbstractQueryCommand(String sql) {
             // Don't create statement in subclass constructors to avoid throw in constructors
             this.sql = sql;
         }
@@ -3497,9 +3495,9 @@ public class Sql {
          * @return ResultSet from executing a query
          * @throws SQLException if a database error occurs
          */
-         final ResultSet execute() throws SQLException {
-             connection = createConnection();
-             setInternalConnection(connection);
+        protected final ResultSet execute() throws SQLException {
+            connection = createConnection();
+            setInternalConnection(connection);
             statement = null;
             try {
                 // The variation in the pattern is isolated
@@ -3513,40 +3511,41 @@ public class Sql {
                 statement = null;
                 throw e;
             }
-         }
+        }
 
-         /**
-          * After performing the execute operation and making use of its return, it's necessary
-          * to free the resources allocated for the statement.
-          */
-         public final void closeResources(){
-             Sql.this.closeResources(connection, statement);
-         }
+        /**
+         * After performing the execute operation and making use of its return, it's necessary
+         * to free the resources allocated for the statement.
+         */
+        protected final void closeResources() {
+            Sql.this.closeResources(connection, statement);
+        }
 
-         /**
-          * After performing the execute operation and making use of its return, it's necessary
-          * to free the resources allocated for the statement.
-          *
-          * @param rs allows the caller to conveniently close its resource as well
-          */
-         public final void closeResources(ResultSet rs) {
-             Sql.this.closeResources(connection, statement, rs);
-         }
+        /**
+         * After performing the execute operation and making use of its return, it's necessary
+         * to free the resources allocated for the statement.
+         *
+         * @param rs allows the caller to conveniently close its resource as well
+         */
+        protected final void closeResources(ResultSet rs) {
+            Sql.this.closeResources(connection, statement, rs);
+        }
 
-         /**
-          * Perform the query. Must set statement field so that the main ({@link #execute()}) method can clean up.
-          * This is the method that encloses the variant part of the code.
-          * @param connection the connection to use
-          * @return ResultSet from an executeQuery method.
-          * @throws SQLException if a database error occurs
-          */
-         protected abstract ResultSet runQuery(Connection connection) throws SQLException;
+        /**
+         * Perform the query. Must set statement field so that the main ({@link #execute()}) method can clean up.
+         * This is the method that encloses the variant part of the code.
+         *
+         * @param connection the connection to use
+         * @return ResultSet from an executeQuery method.
+         * @throws SQLException if a database error occurs
+         */
+        protected abstract ResultSet runQuery(Connection connection) throws SQLException;
     }
 
-    protected final class PreparedQueryCommand extends AbstractQueryCommand {
+    private final class PreparedQueryCommand extends AbstractQueryCommand {
         private List<Object> params;
 
-        PreparedQueryCommand(String sql, List<Object> queryParams) {
+        private PreparedQueryCommand(String sql, List<Object> queryParams) {
             super(sql);
             params = queryParams;
         }
@@ -3559,9 +3558,9 @@ public class Sql {
         }
     }
 
-    protected final class QueryCommand extends AbstractQueryCommand {
+    private final class QueryCommand extends AbstractQueryCommand {
 
-        QueryCommand(String sql) {
+        private QueryCommand(String sql) {
             super(sql);
         }
 
@@ -3579,7 +3578,7 @@ public class Sql {
      *  <pre>
      * AbstractQueryCommand q = createQueryCommand("update TABLE set count = 0) where count is null");
      * try {
-     *        ResultSet rs = q.execute();
+     *     ResultSet rs = q.execute();
      *     return asList(rs);
      * } finally {
      *     q.closeResources();
@@ -3617,19 +3616,19 @@ public class Sql {
         private List<Tuple> indexPropList;
         private String newSql;
 
-        public ExtractIndexAndSql(String sql) {
+        private ExtractIndexAndSql(String sql) {
             this.sql = sql;
         }
 
-        public List<Tuple> getIndexPropList() {
+        private List<Tuple> getIndexPropList() {
             return indexPropList;
         }
 
-        public String getNewSql() {
+        private String getNewSql() {
             return newSql;
         }
 
-        public ExtractIndexAndSql invoke() {
+        private ExtractIndexAndSql invoke() {
             if (cacheNamedQueries && namedParamSqlCache.containsKey(sql)) {
                 newSql = namedParamSqlCache.get(sql);
                 indexPropList = namedParamIndexPropCache.get(sql);
