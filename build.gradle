@@ -8,8 +8,8 @@ apply plugin: 'checkstyle'
 allprojects { p ->
     group = 'org.codehaus.groovy'
     version = groovyVersion
-    tasks.withType(Checkstyle).all { t -> t.ignoreFailures = true }
-    tasks.withType(CodeNarc).all { t -> t.ignoreFailures = true }
+//    tasks.withType(Checkstyle).all { t -> t.ignoreFailures = true }
+//    tasks.withType(CodeNarc).all { t -> t.ignoreFailures = true }
     repositories {
         mavenCentral()
     }
@@ -17,6 +17,15 @@ allprojects { p ->
         compile.transitive = true
         testCompile.transitive = true
     }
+}
+// don't fail build on CodeNarc tasks
+tasks.withType(CodeNarc).all { codeNarcTask ->
+    codeNarcTask.ignoreFailures = true
+    codeNarcTask.configFile = file("./config/codenarc/codenarc.groovy")
+}
+tasks.withType(Checkstyle).all { checkstyleTask ->
+    checkstyleTask.ignoreFailures = true
+    checkstyleTask.configFile = file("./config/checkstyle/checkstyle.xml")
 }
 
 sourceCompatibility = 1.5
@@ -267,23 +276,12 @@ def isJava16() {
     System.properties['java.version'].contains('1.6')
 }
 
-// suppress CheckStyle
-task checkstyleExamples(overwrite: true) << {};
-task checkstyleMain(overwrite: true) << {};
-task checkstyleTest(overwrite: true) << {};
-task checkstyleTools(overwrite: true) << {};
-
-// ignore CodeNarc on examples
-task codenarcExamples(overwrite: true) << {};
-// don't fail build on CodeNarc tasks
-tasks.withType(CodeNarc).all { codeNarcTask ->
-    codeNarcTask.ignoreFailures = true
-    codeNarcTask.configFile = file("./config/codenarc/codenarc.groovy")
-}
-tasks.withType(Checkstyle).all { checkstyleTask ->
-    checkstyleTask.ignoreFailures = true
-    checkstyleTask.configFile = file("./config/checkstyle/checkstyle.xml")
-}
+// suppress CheckStyle/CodeNarc
+task checkstyleExamples(overwrite: true) << {}
+task checkstyleMain(overwrite: true) << {}
+task checkstyleTest(overwrite: true) << {}
+task checkstyleTools(overwrite: true) << {}
+task codenarcExamples(overwrite: true) << {}
 
 // provide to other build scripts
 isJava6 = this.&isJava16()
