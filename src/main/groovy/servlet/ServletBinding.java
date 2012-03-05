@@ -17,7 +17,6 @@ package groovy.servlet;
 
 import groovy.lang.Binding;
 import groovy.xml.MarkupBuilder;
-import groovy.json.JsonBuilder;
 
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletContext;
@@ -299,15 +298,21 @@ public class ServletBinding extends Binding {
     private void lazyInit() {
         if (initialized) return;
         initialized = true;
+
         HttpServletResponse response = (HttpServletResponse) super.getVariable("response");
         ServletOutput output = new ServletOutput(response);
         super.setVariable("out", output.getWriter());
         super.setVariable("sout", output.getOutputStream());
+
         MarkupBuilder builder = new MarkupBuilder(output.getWriter());
         builder.setExpandEmptyElements(true);
         super.setVariable("html", builder);
-		JsonBuilder jsonBuilder = new JsonBuilder();
-        super.setVariable("json", jsonBuilder);
+
+        try {
+            Object jsonBuilder = null;
+            jsonBuilder = this.getClass().getClassLoader().loadClass("groovy.json.JsonBuilder").newInstance();
+            super.setVariable("json", jsonBuilder);
+        } catch (Throwable t) { }
 
         // bind forward method
         MethodClosure c = new MethodClosure(this, "forward");
