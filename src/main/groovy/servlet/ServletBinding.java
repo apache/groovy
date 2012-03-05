@@ -17,6 +17,7 @@ package groovy.servlet;
 
 import groovy.lang.Binding;
 import groovy.xml.MarkupBuilder;
+import groovy.json.JsonBuilder;
 
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletContext;
@@ -57,6 +58,7 @@ import java.util.Map;
  * <li><tt>"out"</tt> : <code>response.getWriter()</code></li>
  * <li><tt>"sout"</tt> : <code>response.getOutputStream()</code></li>
  * <li><tt>"html"</tt> : <code>new MarkupBuilder(response.getWriter())</code> - <code>expandEmptyElements</code> flag is set to true</li>
+ * <li><tt>"json"</tt> : <code>new JsonBuilder()</code></li>
  * </ul>
  * As per the Servlet specification, a call to <code>response.getWriter()</code> should not be
  * done if a call to <code>response.getOutputStream()</code> has already occurred or the other way
@@ -271,6 +273,7 @@ public class ServletBinding extends Binding {
         excludeReservedName(name, "out");
         excludeReservedName(name, "sout");
         excludeReservedName(name, "html");
+		excludeReservedName(name, "json");
         excludeReservedName(name, "forward");
         excludeReservedName(name, "include");
         excludeReservedName(name, "redirect");
@@ -303,7 +306,9 @@ public class ServletBinding extends Binding {
         MarkupBuilder builder = new MarkupBuilder(output.getWriter());
         builder.setExpandEmptyElements(true);
         super.setVariable("html", builder);
-        
+		JsonBuilder jsonBuilder = new JsonBuilder();
+        super.setVariable("json", jsonBuilder);
+
         // bind forward method
         MethodClosure c = new MethodClosure(this, "forward");
         super.setVariable("forward", c);
