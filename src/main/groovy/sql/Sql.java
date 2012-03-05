@@ -2843,7 +2843,12 @@ public class Sql {
     //-------------------------------------------------------------------------
 
     /**
-     * Hook to allow derived classes to access ResultSet returned from query.
+     * Useful helper method which handles resource management when executing a
+     * query which returns a result set.
+     * Derived classes of Sql can override "createQueryCommand" and then call
+     * this method to access the ResultSet returned from the provided query
+     * or alternatively can use the higher-level method of Sql which return
+     * result sets which are funnelled through this method, e.g. eachRow, query.
      *
      * @param sql query to execute
      * @return the resulting ResultSet
@@ -2861,7 +2866,10 @@ public class Sql {
     }
 
     /**
-     * Hook to allow derived classes to access ResultSet returned from query.
+     * Useful helper method which handles resource management when executing a
+     * prepared query which returns a result set.
+     * Derived classes of Sql can override "createPreparedQueryCommand" and then
+     * call this method to access the ResultSet returned from the provided query.
      *
      * @param sql query to execute
      * @param params parameters matching question mark placeholders in the query
