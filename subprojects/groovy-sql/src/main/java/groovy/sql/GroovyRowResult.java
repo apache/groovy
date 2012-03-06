@@ -150,10 +150,12 @@ public class GroovyRowResult extends GroovyObjectSupport implements Map {
         return result.keySet();
     }
 
+    @SuppressWarnings("unchecked")
     public Object put(Object key, Object value) {
         return result.put(key, value);
     }
 
+    @SuppressWarnings("unchecked")
     public void putAll(Map t) {
         result.putAll(t);
     }

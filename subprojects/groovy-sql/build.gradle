@@ -1,9 +1,6 @@
 apply plugin: 'groovy'
-apply plugin: 'code-quality'
-
-// TODO set these using subprojects?
-checkstyleConfigFileName = "../../config/checkstyle/checkstyle.xml"
-codeNarcConfigFileName = "../../config/codenarc/codenarc.groovy"
+apply plugin: 'codenarc'
+apply plugin: 'checkstyle'
 
 dependencies {
     compile project(':')
@@ -14,3 +11,8 @@ dependencies {
 
 // required for DataSet tests
 sourceSets.test.runtimeClasspath += files('src/test/groovy')
+
+// TODO move to parent build.gradle subprojects
+test {
+    excludes = ['**/*TestCase.class', '**/*$*.class']
+}

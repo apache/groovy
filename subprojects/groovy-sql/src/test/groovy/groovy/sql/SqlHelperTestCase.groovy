@@ -17,8 +17,8 @@ package groovy.sql
 
 import static groovy.sql.SqlTestConstants.*
 
-class TestHelper extends GroovyTestCase {
-    TestHelper() {
+class SqlHelperTestCase extends GroovyTestCase {
+    SqlHelperTestCase() {
         def testdb = System.getProperty("groovy.testdb.props")
         if (testdb && new File(testdb).exists()) {
             props = new Properties()
@@ -32,7 +32,7 @@ class TestHelper extends GroovyTestCase {
     static def counter = 1
 
     static Sql makeSql() {
-        def foo = new TestHelper()
+        def foo = new SqlHelperTestCase()
         return foo.createSql()
     }
 

@@ -17,7 +17,12 @@ allprojects { p ->
         compile.transitive = true
         testCompile.transitive = true
     }
+    // TODO why doesn't this work?
+//    test {
+//        excludes = ['**/*TestCase.class', '**/*$*.class']
+//    }
 }
+
 // don't fail build on CodeNarc tasks
 tasks.withType(CodeNarc).all { codeNarcTask ->
     codeNarcTask.ignoreFailures = true

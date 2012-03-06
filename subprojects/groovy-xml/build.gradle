@@ -1,13 +1,11 @@
 apply plugin: 'groovy'
-apply plugin: 'code-quality'
-
-// TODO set these using subprojects?
-checkstyleConfigFileName = "../../config/checkstyle/checkstyle.xml"
-codeNarcConfigFileName = "../../config/codenarc/codenarc.groovy"
+apply plugin: 'codenarc'
+apply plugin: 'checkstyle'
 
 dependencies {
     compile project(':')
     groovy project(':')
+    testCompile project(':').sourceSets.test.runtimeClasspath
     testCompile "xmlunit:xmlunit:1.3"
     testCompile project(':subprojects:groovy-test')
 }

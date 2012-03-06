@@ -15,12 +15,12 @@
  */
 import groovy.inspect.InspectorTest;
 import groovy.lang.*;
-import groovy.text.TemplateTest;
-import groovy.text.XmlTemplateEngineTest;
+//import groovy.text.TemplateTest;
+//import groovy.text.XmlTemplateEngineTest;
 import groovy.tree.NodePrinterTest;
 import groovy.util.EvalTest;
-import groovy.xml.FactorySupportTest;
-import groovy.xml.XmlTest;
+//import groovy.xml.FactorySupportTest;
+//import groovy.xml.XmlTest;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 
@@ -41,13 +41,13 @@ public class JavaSourceGroovyPackagesNonSecuritySuite {
         suite.addTestSuite(ScriptTest.class);
         suite.addTestSuite(SequenceTest.class);
         suite.addTestSuite(TupleTest.class);
-        suite.addTestSuite(TemplateTest.class);
-        suite.addTestSuite(XmlTemplateEngineTest.class);
+//        suite.addTestSuite(TemplateTest.class);
+//        suite.addTestSuite(XmlTemplateEngineTest.class);
         suite.addTestSuite(NodePrinterTest.class);
         suite.addTestSuite(EvalTest.class);
-        suite.addTestSuite(FactorySupportTest.class);
+//        suite.addTestSuite(FactorySupportTest.class);
         suite.addTest(new RangeTestSuite());
-        suite.addTestSuite(XmlTest.class);
+//        suite.addTestSuite(XmlTest.class);
         return suite;
     }
 }

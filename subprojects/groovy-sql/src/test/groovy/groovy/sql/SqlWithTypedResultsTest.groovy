@@ -4,7 +4,7 @@ package groovy.sql
  * @author Thomas Heller
  * @version $Revision$
  */
-class SqlWithTypedResultsTest extends TestHelper {
+class SqlWithTypedResultsTest extends SqlHelperTestCase {
 
     void testSqlQuery() {
         def sql = createEmptySql()

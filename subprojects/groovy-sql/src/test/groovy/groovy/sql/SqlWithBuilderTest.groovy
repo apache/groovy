@@ -6,7 +6,7 @@ import groovy.xml.MarkupBuilder
  * @author Brian McCallister
  * @version $Revision$
  */
-class SqlWithBuilderTest extends TestHelper {
+class SqlWithBuilderTest extends SqlHelperTestCase {
 
     void testSqlQuery() {
          def sql = createSql()

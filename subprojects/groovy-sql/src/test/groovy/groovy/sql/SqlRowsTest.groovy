@@ -1,6 +1,6 @@
 package groovy.sql
 
-class SqlRowsTest extends TestHelper {
+class SqlRowsTest extends SqlHelperTestCase {
 
     protected Sql createSql() {
         Sql sql = super.createSql()

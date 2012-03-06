@@ -17,7 +17,7 @@ package groovy.sql
 
 import static groovy.sql.SqlTestConstants.*
 
-class SqlCompleteTest extends TestHelper {
+class SqlCompleteTest extends SqlHelperTestCase {
 
     boolean personMetaClosureCalled = false
     boolean foodMetaClosureCalled = false
