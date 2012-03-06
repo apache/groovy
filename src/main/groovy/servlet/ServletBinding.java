@@ -28,10 +28,8 @@ import javax.servlet.http.HttpServletResponse;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.runtime.MethodClosure;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.PrintWriter;
+import java.io.*;
+import java.lang.reflect.Constructor;
 import java.util.Enumeration;
 import java.util.LinkedHashMap;
 import java.util.Locale;
@@ -309,10 +307,12 @@ public class ServletBinding extends Binding {
         super.setVariable("html", builder);
 
         try {
-            Object jsonBuilder = null;
-            jsonBuilder = this.getClass().getClassLoader().loadClass("groovy.json.JsonBuilder").newInstance();
-            super.setVariable("json", jsonBuilder);
-        } catch (Throwable t) { }
+            Class jsonBuilderClass = this.getClass().getClassLoader().loadClass("groovy.json.StreamingJsonBuilder");
+            Constructor writerConstructor = jsonBuilderClass.getConstructor(Writer.class);
+            super.setVariable("json", writerConstructor.newInstance(output.getWriter()));
+        } catch (Throwable t) {
+            t.printStackTrace();
+        }
 
         // bind forward method
         MethodClosure c = new MethodClosure(this, "forward");

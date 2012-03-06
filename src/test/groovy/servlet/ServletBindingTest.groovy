@@ -169,7 +169,7 @@ class ServletBindingTest extends GroovyTestCase {
         assert binding.getVariable("out") instanceof PrintWriter
         assert binding.getVariable("html") instanceof groovy.xml.MarkupBuilder
         assert binding.getVariable("sout") instanceof ServletOutputStream
-		assert binding.getVariable("json") instanceof groovy.json.JsonBuilder
+        assert binding.getVariable("json") instanceof groovy.json.StreamingJsonBuilder
     }
     
     void testOutSoutWriteException() {
