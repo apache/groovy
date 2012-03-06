@@ -1259,6 +1259,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                                 break;
                             }
                         }
+                        pickInferredTypeFromMethodAnnotation(directMethodCallCandidate);
                         classNode = currentClassNode;
                         ClassNode returnType = getType(directMethodCallCandidate);
                         if (returnType.isUsingGenerics() && !returnType.isEnum()) {
@@ -1279,6 +1280,19 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
     }
 
+    private void pickInferredTypeFromMethodAnnotation(final MethodNode node) {
+        if (node.getNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE)==null
+            && !node.getAnnotations(TYPECHECKING_INFO_NODE).isEmpty()) {
+            List<AnnotationNode> annotations = node.getAnnotations(TYPECHECKING_INFO_NODE);
+            AnnotationNode head = annotations.get(0);
+            int version = Integer.valueOf(head.getMember("version").getText());
+            String signature = head.getMember("inferredType").getText();
+            SignatureCodec codec = SignatureCodecFactory.getCodec(version);
+            ClassNode result = codec.decode(signature);
+            node.putNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE, result);
+        }
+    }
+    
     private void silentlyVisitMethodNode(final MethodNode directMethodCallCandidate) {
         // visit is authorized because the classnode belongs to the same source unit
         ErrorCollector currentCollector = errorCollector;
@@ -1476,10 +1490,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                                 break;
                             }
                         }
-                        // todo: if no visit was done, we should try to obtain type information in a different
-                        // manner, for example creating a dedicated visitor. But this is not necessarily trivial:
-                        // choose the correct visitor type, make use AST doesn't get polluted with type info or
-                        // even transformed... Deal with precompiled classes...
+                        pickInferredTypeFromMethodAnnotation(directMethodCallCandidate);
                         classNode = currentClassNode;
                         ClassNode returnType = getType(directMethodCallCandidate);
                         if (isUsingGenericsOrIsArrayUsingGenerics(returnType)) {
@@ -2548,7 +2559,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             ClassNode result = OBJECT_TYPE;
             if (typeCode=='L') {
                 // object type
-                result = ClassHelper.make(typedesc.replace('/','.').substring(1, typedesc.length()-1)).getPlainNodeReference();
+                String className = typedesc.replace('/', '.').substring(1, typedesc.length() - 1);
+                try {
+                    result = ClassHelper.make(Class.forName(className)).getPlainNodeReference();
+                } catch (ClassNotFoundException e) {
+                    result = ClassHelper.make(className);
+                }
                 result.setUsingGenerics(dis.readBoolean());
                 int len = dis.readInt();
                 if (len>=0) {
