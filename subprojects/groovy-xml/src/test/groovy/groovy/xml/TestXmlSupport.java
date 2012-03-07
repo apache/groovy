@@ -15,7 +15,7 @@
  */
 package groovy.xml;
 
-import groovy.util.GroovyTestCase;
+import org.codehaus.groovy.classgen.TestSupport;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.xml.sax.Attributes;
@@ -28,7 +28,7 @@ import java.io.IOException;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public abstract class TestXmlSupport extends GroovyTestCase {
+public abstract class TestXmlSupport extends TestSupport {
 
     protected void dump(Node node) throws IOException {
         XmlUtil.serialize((Element) node, System.out);
