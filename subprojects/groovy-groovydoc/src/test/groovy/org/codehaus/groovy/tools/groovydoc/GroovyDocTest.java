@@ -37,9 +37,7 @@ public class GroovyDocTest extends BuildFileTest {
 
     @Override
     public void setUp() throws Exception {
-
         configureProject(SRC_TESTFILES + "buildWithCustomGroovyDoc.xml");
-
         tmpDir = new File(getProject().getProperty("tmpdir"));
     }
 
@@ -54,11 +52,12 @@ public class GroovyDocTest extends BuildFileTest {
             }
         });
 
+        assertNotNull("Dir not found: " + testfilesPackageDir.getAbsolutePath(), list);
         assertEquals(1, list.length);
         File documentedClassHtmlDoc = new File(testfilesPackageDir, list[0]);
 
         List<String> lines = ResourceGroovyMethods.readLines(documentedClassHtmlDoc);
-        assertTrue(lines.contains("<title>DocumentedClass</title>"));
-        assertTrue(lines.contains("This is a custom class template."));
+        assertTrue("\"<title>DocumentedClass</title>\" not in: " + lines, lines.contains("<title>DocumentedClass</title>"));
+        assertTrue("\"This is a custom class template.\" not in: " + lines, lines.contains("This is a custom class template."));
     }
 }

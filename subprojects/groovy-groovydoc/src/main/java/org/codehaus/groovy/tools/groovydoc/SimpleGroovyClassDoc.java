@@ -399,7 +399,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
             return getDocUrl(type.substring(0, type.length() - 2), full, links, relativePath, rootDoc, classDoc) + "[]";
         }
 
-        if (type.indexOf('.') == -1 && classDoc != null) {
+        if (!type.contains(".") && classDoc != null) {
             String[] pieces = type.split("#");
             String candidate = pieces[0];
             Class c = classDoc.resolveExternalClassFromImport(candidate);
@@ -424,12 +424,14 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
             }
         }
 
-        for (LinkArgument link : links) {
-            final StringTokenizer tokenizer = new StringTokenizer(link.getPackages(), ", ");
-            while (tokenizer.hasMoreTokens()) {
-                final String token = tokenizer.nextToken();
-                if (type.startsWith(token)) {
-                    return buildUrl(link.getHref(), target, label == null ? name : label);
+        if (links != null) {
+            for (LinkArgument link : links) {
+                final StringTokenizer tokenizer = new StringTokenizer(link.getPackages(), ", ");
+                while (tokenizer.hasMoreTokens()) {
+                    final String token = tokenizer.nextToken();
+                    if (type.startsWith(token)) {
+                        return buildUrl(link.getHref(), target, label == null ? name : label);
+                    }
                 }
             }
         }

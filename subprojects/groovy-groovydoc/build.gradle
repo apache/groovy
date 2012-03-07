@@ -8,5 +8,7 @@ dependencies {
     groovy project(':')
     compile project(':subprojects:groovy-templates')
     testCompile project(':subprojects:groovy-test')
-    testCompile "org.apache.ant:ant-testutil:1.8.2"
+    testCompile "org.apache.ant:ant-testutil:1.8.3"
 }
+
+sourceSets.main.resources.srcDir 'src/main/java'

@@ -1,6 +1,5 @@
 /*
- *
- * Copyright 2007-2009 the original author or authors.
+ * Copyright 2007-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +17,8 @@
 package org.codehaus.groovy.tools.groovydoc;
 
 import groovy.util.GroovyTestCase;
+
+import java.util.ArrayList;
 
 /**
  * @author Paul King
@@ -38,8 +39,8 @@ public class GroovyRootDocBuilderTest extends GroovyTestCase {
             " */\n" +
             "package org.dummy.cmdline;";
 
-    public void testCommentStripping() throws Exception {
-        GroovyRootDocBuilder builder = new GroovyRootDocBuilder(null, null, null, null);
+    public void testCommentExtraction() throws Exception {
+        GroovyRootDocBuilder builder = new GroovyRootDocBuilder(null, null, new ArrayList<LinkArgument>(), null);
         SimpleGroovyPackageDoc doc = new SimpleGroovyPackageDoc("org.dummy.cmdline");
         builder.processPackageInfo(src, "package-info.groovy", doc);
         assertEquals("<h1>Description</h1>\n" +
@@ -51,7 +52,7 @@ public class GroovyRootDocBuilderTest extends GroovyTestCase {
                 " that control how the command line is to be processed and what\n" +
                 " options the program supports.</li>\n" +
                 " <li>Call \n" +
-                " {@link org.dummy.cmdline.CmdLine#processCmdLine()}\n" +
+                " org.dummy.cmdline.CmdLine#processCmdLine()\n" +
                 " to process the command line.</li>", doc.description().trim());
     }
 }

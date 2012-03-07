@@ -8,3 +8,6 @@ dependencies {
     compile project(':subprojects:groovy-console')
     testCompile project(':subprojects:groovy-test')
 }
+
+// required for MessageSourceTest to load messages property file (TODO move to resources?)
+sourceSets.test.runtimeClasspath += files('src/test/groovy')
