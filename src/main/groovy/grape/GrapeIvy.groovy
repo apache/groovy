@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2011 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -280,10 +280,11 @@ class GrapeIvy implements GrapeEngine {
     public ResolveReport getDependencies(Map args, IvyGrabRecord... grabRecords) {
         ResolutionCacheManager cacheManager = ivyInstance.resolutionCacheManager
 
+        def millis = System.currentTimeMillis()
         def md = new DefaultModuleDescriptor(ModuleRevisionId
-                .newInstance("caller", "all-caller", "working"), "integration", null, true)
+                .newInstance("caller", "all-caller", "working" + millis.toString()[-2..-1]), "integration", null, true)
         md.addConfiguration(new Configuration('default'))
-        md.setLastModified(System.currentTimeMillis())
+        md.setLastModified(millis)
 
         addExcludesIfNeeded(args, md)
 
@@ -331,7 +332,24 @@ class GrapeIvy implements GrapeEngine {
                     break
             } } ] as IvyListener)
         }
-        ResolveReport report = ivyInstance.resolve(md, resolveOptions)
+
+        ResolveReport report = null
+        int attempt = 8 // max of 8 times
+        while (true) {
+            try {
+                report = ivyInstance.resolve(md, resolveOptions)
+                break
+            } catch(IOException ioe) {
+                if (attempt--) {
+                    if (reportDownloads)
+                        System.err.println "Grab Error: retrying..."
+                    sleep attempt > 4 ? 350 : 1000
+                    continue
+                }
+                throw new RuntimeException("Error grabbing grapes -- $ioe.message")
+            }
+        }
+
         if (report.hasError()) {
             throw new RuntimeException("Error grabbing Grapes -- $report.allProblemMessages")
         }
