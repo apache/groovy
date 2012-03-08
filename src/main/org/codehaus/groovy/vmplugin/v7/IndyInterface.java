@@ -38,6 +38,7 @@ import org.codehaus.groovy.reflection.CachedMethod;
 import org.codehaus.groovy.runtime.NullObject;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 import org.codehaus.groovy.runtime.metaclass.DefaultMetaClassInfo;
+import org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl;
 import org.codehaus.groovy.runtime.metaclass.MissingMethodExecutionFailed;
 import org.codehaus.groovy.runtime.metaclass.NewInstanceMetaMethod;
 import org.codehaus.groovy.runtime.metaclass.ReflectionMetaMethod;
@@ -178,7 +179,7 @@ public class IndyInterface {
             } else if (receiver instanceof GroovyObject) {
                 return ((GroovyObject) receiver).getMetaClass(); 
             } else {
-                return GroovySystem.getMetaClassRegistry().getMetaClass(getClass(receiver));
+                return ((MetaClassRegistryImpl) GroovySystem.getMetaClassRegistry()).getMetaClass(receiver);
             }
         }
         
