@@ -432,4 +432,122 @@ class ListTest extends GroovyTestCase {
             immlist[0] = 1
         }
     }
+
+    // GROOVY-4946
+    void testWithLazyDefault() {
+        def l1 = [].withLazyDefault { 42 }
+        assert l1[0] == 42
+        assert l1[2] == 42
+        assert l1 == [42, null, 42]
+
+        assert l1[1] == 42
+
+        assert l1[-1] == 42
+        assert l1[-3] == 42
+
+        def l2 = [].withLazyDefault { 42 }
+        assert l2[-1] == 42
+        assert l2.size() == 1
+        assert l2[0]  == 42
+
+        def l3 = [].withLazyDefault { it }
+        assert l3[-1] == 0
+        assert l3[1]  == 1
+        assert l3[3]  == 3
+
+        def l5 = [0,1,null,3].withLazyDefault { 42 }
+        assert l5[0] == 0
+        assert l5[1] == 1
+        assert l5[3] == 3
+        assert l5 == [0,1,null,3]
+
+        def l8 = [].withLazyDefault { it }
+        assert l8[-1] == 0
+        assert l8[1]  == 1
+        assert l8[3]  == 3
+        assert l8[5]  == 5
+        assert l8 == [0,1,null,3,null,5]
+
+        def l9 = [].withLazyDefault { int index -> index }
+        assert l9[-1] == 0
+        assert l9[1]  == 1
+        assert l9[3]  == 3
+        assert l9[5]  == 5
+
+        assert l9[0..5] == [0, 1, null, 3, null, 5]
+    }
+
+    void testWithEagerDefault() {
+
+        def l1 = [].withEagerDefault { 42 }
+        assert l1[0] == 42
+        assert l1[2] == 42
+        assert l1 == [42, 42, 42]
+
+        assert l1[1] == 42
+        assert l1[-1] == 42
+        assert l1[-3] == 42
+
+        def l2 = [].withEagerDefault { 42 }
+        assert l2[-1] == 42
+        assert l2.size() == 1
+        assert l2[0]  == 42
+
+        def l3 = [].withEagerDefault { it }
+        assert l3[-1] == 0
+        assert l3[1]  == 1
+        assert l3[3]  == 3
+
+        assert l3 == [0,1,2,3]
+
+        def l5 = [0,1,null,3].withEagerDefault { 42 }
+        assert l5[0] == 0
+        assert l5[1] == 1
+        assert l5[3] == 3
+        assert l5 == [0,1,null,3]
+
+        def l8 = [].withEagerDefault { it }
+        assert l8[-1] == 0
+        assert l8[1]  == 1
+        assert l8[3]  == 3
+        assert l8[5]  == 5
+        assert l8 == [0,1,2,3,4,5]
+
+        def l9 = [].withEagerDefault { int index -> index }
+        assert l9[-1] == 0
+        assert l9[1]  == 1
+        assert l9[3]  == 3
+        assert l9[5]  == 5
+
+        assert l9[0..5] == [0, 1, 2, 3, 4, 5]
+
+    }
+
+    void testWithDefaultReturnWithDefaultSubList() {
+
+        def l1 = [].withLazyDefault { 42 }
+        assert l1[2] == 42
+        assert l1.size() == 3
+
+        def l2 = l1.subList(0, 2)
+        assert l2.size() == 2
+        assert l2 == [null, null]
+        assert l2[2] == 42
+        assert l2 == [null, null, 42]
+    }
+    
+    void testWithDefaultRedirectsToWithLazyDefault()  {
+        
+        def l1 = [].withDefault { 42 }
+        assert l1[2] == 42
+        assert l1 == [null, null, 42]
+        
+    }
+    
+    void testWithDefaultNullAsDefaultValue() {
+        def l1 = [].withEagerDefault { null }
+        assert l1[0] == null
+        assert l1[2] == null
+        assert l1 == [null, null, null]
+    }
 }
