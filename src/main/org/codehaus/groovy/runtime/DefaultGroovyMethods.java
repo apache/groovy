@@ -95,6 +95,7 @@ import java.util.regex.Pattern;
  * @author Cedric Champeau
  * @author Tim Yates
  * @author Dinko Srkoc
+ * @author Andre Steingress
  */
 public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
@@ -5487,7 +5488,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return null;
     }
 
-    /**
+    /*
      * Returns the result of calling a closure with the first occurrence of a regular expression found within a
      * CharSequence.&nbsp;If the regex doesn't match, the closure will not be called and find will return null.
      *
@@ -7219,6 +7220,81 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <K, V> Map<K, V> withDefault(Map<K, V> self, Closure init) {
         return MapWithDefault.newInstance(self, init);
+    }
+
+    /**
+     * Wraps a list using the delegate pattern with a wrapper that intercepts all calls
+     * to <code>getAt(index)</code> and <code>get(index)</code>. If an index greater or equal
+     * than size is used, the list will grow automatically up to the specified index. Gaps
+     * will be filled by {@code null}.
+     *
+     * Example usage:
+     * <pre class="groovyTestCase">
+     * def list = [0,1].withDefault{ 42 }
+     * assert list[0] == 0
+     * assert list[1] == 1
+     *
+     * assert list[3] == 42   // default value
+     * assert list[2] == null // gap filled with null
+     * </pre>
+     *
+     * @param self a List
+     * @param init a Closure which generates the default value and that is passed the target index
+     * @return the wrapped List
+     * @since TODO
+     */
+    public static <T> List<T> withDefault(List<T> self, Closure init)  {
+        return withLazyDefault(self, init);
+    }
+
+    /**
+     * Wraps a list using the delegate pattern with a wrapper that intercepts all calls
+     * to <code>getAt(index)</code> and <code>get(index)</code>. If an index greater or equal
+     * than size is used, the list will grow automatically up to the specified index. Gaps
+     * will be filled by {@code null}.
+     *
+     * Example usage:
+     * <pre class="groovyTestCase">
+     * def list = [0,1].withDefault{ 42 }
+     * assert list[0] == 0
+     * assert list[1] == 1
+     *
+     * assert list[3] == 42   // default value
+     * assert list[2] == null // gap filled with null
+     * </pre>
+     *
+     * @param self a List
+     * @param init a Closure which generates the default value and that is passed the target index
+     * @return the wrapped List
+     * @since TODO
+     */
+    public static <T> List<T> withLazyDefault(List<T> self, Closure init)  {
+        return ListWithDefault.newInstance(self, true, init);
+    }
+
+    /**
+     * Wraps a list using the delegate pattern with a wrapper that intercepts all calls
+     * to <code>getAt(index)</code> and <code>get(index)</code>. If an index greater or equal
+     * than size is used, the list will grow automatically up to the specified index. Gaps
+     * will be filled by the closure generated default value.
+     *
+     * Example usage:
+     * <pre class="groovyTestCase">
+     * def list = [0,1].withDefault(false), { 42 }
+     * assert list[0] == 0
+     * assert list[1] == 1
+     *
+     * assert list[3] == 42   // default value
+     * assert list[2] == 42   // gap filled with default value
+     * </pre>
+     *
+     * @param self a List
+     * @param init a Closure which generates the default value and that is passed the target index
+     * @return the wrapped List
+     * @since TODO
+     */
+    public static <T> List<T> withEagerDefault(List<T> self, Closure init)  {
+        return ListWithDefault.newInstance(self, false, init);
     }
 
     /**
