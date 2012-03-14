@@ -5270,7 +5270,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Wraps a map using the delegate pattern with a wrapper that intercepts all calls
+     * Wraps a map using the decorator pattern with a wrapper that intercepts all calls
      * to <code>get(key)</code>. If an unknown key is found, a default value will be
      * stored into the Map before being returned. The default value stored will be the
      * result of calling the supplied Closure with the key as the parameter to the Closure.
@@ -5295,77 +5295,103 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Wraps a list using the delegate pattern with a wrapper that intercepts all calls
-     * to <code>getAt(index)</code> and <code>get(index)</code>. If an index greater or equal
-     * than size is used, the list will grow automatically up to the specified index. Gaps
-     * will be filled by {@code null}.
-     *
-     * Example usage:
-     * <pre class="groovyTestCase">
-     * def list = [0,1].withDefault{ 42 }
-     * assert list[0] == 0
-     * assert list[1] == 1
-     *
-     * assert list[3] == 42   // default value
-     * assert list[2] == null // gap filled with null
-     * </pre>
+     * An alias for <code>withLazyDefault</code> which decorates a list allowing
+     * it to grow when called with index values outside the normal list bounds.
      *
      * @param self a List
-     * @param init a Closure which generates the default value and that is passed the target index
-     * @return the wrapped List
-     * @since TODO
+     * @param init a Closure with the target index as parameter which generates the default value
+     * @return the decorated List
+     * @see #withLazyDefault(java.util.List, groovy.lang.Closure)
+     * @see #withEagerDefault(java.util.List, groovy.lang.Closure)
+     * @since 1.8.7
      */
-    public static <T> List<T> withDefault(List<T> self, Closure init)  {
+    public static <T> List<T> withDefault(List<T> self, Closure init) {
         return withLazyDefault(self, init);
     }
 
     /**
-     * Wraps a list using the delegate pattern with a wrapper that intercepts all calls
-     * to <code>getAt(index)</code> and <code>get(index)</code>. If an index greater or equal
-     * than size is used, the list will grow automatically up to the specified index. Gaps
-     * will be filled by {@code null}.
-     *
+     * Decorates a list allowing it to grow when called with a non-existent index value.
+     * When called with such values, the list is grown in size and a default value
+     * is placed in the list by calling a supplied <code>init</code> Closure. Subsequent
+     * retrieval operations if finding a null value in the list assume it was set
+     * as null from an earlier growing operation and again call the <code>init</code> Closure
+     * to populate the retrieved value; consequently the list can't be used to store null values.
+     * <p/>
+     * How it works: The decorated list intercepts all calls
+     * to <code>getAt(index)</code> and <code>get(index)</code>. If an index greater than
+     * or equal to the current <code>size()</code> is used, the list will grow automatically
+     * up to the specified index. Gaps will be filled by {@code null}. If a default value
+     * should also be used to fill gaps instead of {@code null}, use <code>withEagerDefault</code>.
+     * If <code>getAt(index)</code> or <code>get(index)</code> are called and a null value
+     * is found, it is assumed that the null value was a consequence of an earlier grow list
+     * operation and the <code>init</code> Closure is called to populate the value.
+     * <p/>
      * Example usage:
      * <pre class="groovyTestCase">
-     * def list = [0,1].withDefault{ 42 }
+     * def list = [0, 1].withLazyDefault{ 42 }
      * assert list[0] == 0
      * assert list[1] == 1
-     *
      * assert list[3] == 42   // default value
-     * assert list[2] == null // gap filled with null
+     * assert list == [0, 1, null, 42] // gap filled with null
+     *
+     * // illustrate using the index when generating default values
+     * def list2 = [5].withLazyDefault{ index -> index * index }
+     * assert list2[3] == 9
+     * assert list2 == [5, null, null, 9]
+     * assert list2[2] == 4
+     * assert list2 == [5, null, 4, 9]
+     *
+     * // illustrate what happens with null values
+     * list2[2] = null
+     * assert list2[2] == 4
      * </pre>
      *
      * @param self a List
-     * @param init a Closure which generates the default value and that is passed the target index
-     * @return the wrapped List
-     * @since TODO
+     * @param init a Closure with the target index as parameter which generates the default value
+     * @return the decorated List
+     * @since 1.8.7
      */
-    public static <T> List<T> withLazyDefault(List<T> self, Closure init)  {
+    public static <T> List<T> withLazyDefault(List<T> self, Closure init) {
         return ListWithDefault.newInstance(self, true, init);
     }
 
     /**
-     * Wraps a list using the delegate pattern with a wrapper that intercepts all calls
-     * to <code>getAt(index)</code> and <code>get(index)</code>. If an index greater or equal
-     * than size is used, the list will grow automatically up to the specified index. Gaps
-     * will be filled by the closure generated default value.
-     *
+     * Decorates a list allowing it to grow when called with a non-existent index value.
+     * When called with such values, the list is grown in size and a default value
+     * is placed in the list by calling a supplied <code>init</code> Closure. Null values
+     * can be stored in the list.
+     * <p/>
+     * How it works: The decorated list intercepts all calls
+     * to <code>getAt(index)</code> and <code>get(index)</code>. If an index greater than
+     * or equal to the current <code>size()</code> is used, the list will grow automatically
+     * up to the specified index. Gaps will be filled by calling the <code>init</code> Closure.
+     * If generating a default value is a costly operation consider using <code>withLazyDefault</code>.
+     * <p/>
      * Example usage:
      * <pre class="groovyTestCase">
-     * def list = [0,1].withDefault(false), { 42 }
+     * def list = [0, 1].withEagerDefault{ 42 }
      * assert list[0] == 0
      * assert list[1] == 1
-     *
      * assert list[3] == 42   // default value
-     * assert list[2] == 42   // gap filled with default value
+     * assert list == [0, 1, 42, 42]   // gap filled with default value
+     *
+     * // illustrate using the index when generating default values
+     * def list2 = [5].withEagerDefault{ index -> index * index }
+     * assert list2[3] == 9
+     * assert list2 == [5, 1, 4, 9]
+     *
+     * // illustrate what happens with null values
+     * list2[2] = null
+     * assert list2[2] == null
+     * assert list2 == [5, 1, null, 9]
      * </pre>
      *
      * @param self a List
-     * @param init a Closure which generates the default value and that is passed the target index
+     * @param init a Closure with the target index as parameter which generates the default value
      * @return the wrapped List
-     * @since TODO
+     * @since 1.8.7
      */
-    public static <T> List<T> withEagerDefault(List<T> self, Closure init)  {
+    public static <T> List<T> withEagerDefault(List<T> self, Closure init) {
         return ListWithDefault.newInstance(self, false, init);
     }
 
