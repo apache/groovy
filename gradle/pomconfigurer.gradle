@@ -312,7 +312,7 @@ project.ext.pomConfigureClosure = {
             }
             developer {
                 id 'melix'
-                name 'C�dric Champeau'
+                name 'Cedric Champeau'
                 email 'cedric.champeau@gmail.com'
                 roles {
                     role 'Developer'
