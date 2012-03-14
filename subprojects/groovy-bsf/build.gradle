@@ -2,7 +2,7 @@ apply plugin: 'java'
 apply plugin: 'checkstyle'
 
 // TODO set these using subprojects?
-checkstyleConfigFileName = "../../config/checkstyle/checkstyle.xml"
+ext.checkstyleConfigFileName = "../../config/checkstyle/checkstyle.xml"
 
 dependencies {
     compile("bsf:bsf:2.4.0") {

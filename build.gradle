@@ -1,11 +1,11 @@
 apply plugin: 'groovy'
-apply plugin: 'idea'
 apply plugin: 'codenarc'
 apply plugin: 'checkstyle'
 // TODO use antlr plugin
 //apply plugin: 'antlr'
 
 allprojects { p ->
+    apply plugin: 'idea'
     group = 'org.codehaus.groovy'
     version = groovyVersion
 //    tasks.withType(Checkstyle).all { t -> t.ignoreFailures = true }
@@ -227,20 +227,20 @@ processResources.doLast {
 
 task ensureGrammars {
     description = "Ensure all the Antlr generated files are up to date."
-    antlrDirectory = "$projectDir/src/main/org/codehaus/groovy/antlr"
-    groovyParserDirectory = "$antlrDirectory/parser"
-    javaParserDirectory = "$antlrDirectory/java"
+    ext.antlrDirectory = "$projectDir/src/main/org/codehaus/groovy/antlr"
+    ext.groovyParserDirectory = "$ext.antlrDirectory/parser"
+    ext.javaParserDirectory = "$ext.antlrDirectory/java"
     doFirst {
         ant {
             taskdef(name: 'antlr',
                     classname: 'org.apache.tools.ant.taskdefs.optional.ANTLR',
                     classpath: configurations.antlr.asPath)
 
-            mkdir dir: groovyParserDirectory
-            antlr(target: "$antlrDirectory/groovy.g", outputdirectory: groovyParserDirectory) {
+            mkdir dir: ext.groovyParserDirectory
+            antlr(target: "$ext.antlrDirectory/groovy.g", outputdirectory: ext.groovyParserDirectory) {
                 classpath path: configurations.compile.asPath
             }
-            antlr(target: "$javaParserDirectory/java.g", outputdirectory: javaParserDirectory) {
+            antlr(target: "$ext.javaParserDirectory/java.g", outputdirectory: ext.javaParserDirectory) {
                 classpath path: configurations.compile.asPath
             }
         }
@@ -289,7 +289,7 @@ task checkstyleTools(overwrite: true) << {}
 task codenarcExamples(overwrite: true) << {}
 
 // provide to other build scripts
-isJava6 = this.&isJava16()
+ext.isJava6 = this.&isJava16()
 
 apply from: "$projectDir/gradle/test.gradle"
 apply from: "$projectDir/gradle/docs.gradle"

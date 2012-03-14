@@ -1,4 +1,4 @@
-project.pomConfigureClosure = {
+project.ext.pomConfigureClosure = {
     // todo The maven pom builder is not fully compatible with the 2.x Maven model shipped with Gradle. As soon as we update
     // to Maven 3 we can also add the distribution management in builder notation
 /*
@@ -312,7 +312,7 @@ project.pomConfigureClosure = {
             }
             developer {
                 id 'melix'
-                name 'Cédric Champeau'
+                name 'Cï¿½dric Champeau'
                 email 'cedric.champeau@gmail.com'
                 roles {
                     role 'Developer'

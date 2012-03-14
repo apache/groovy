@@ -25,9 +25,9 @@ dependencies {
 }
 
 task generatePoms {
-    pom = pom()
+    ext.pom = pom()
     pom.scopeMappings.addMapping(10, configurations.groovy, 'compile')
-    pomAll = pom()
+    ext.pomAll = pom()
     [pomAll, pom]*.whenConfigured {pom ->
         pom.dependencies.find {dep -> dep.artifactId == 'livetribe-jsr223' }.scope = 'provided'
 //        pom.dependencies.find {dep -> dep.artifactId == 'ivy' }.addExclusion(new org.apache.maven.model.Exclusion(groupId: '*', artifactId: '*'))
@@ -42,8 +42,8 @@ task generatePoms {
     pom.whenConfigured {pom ->
         pom.dependencies.each { dep ->  if (groovyConfDeps.contains(dep.artifactId)) { dep.optional = false }}
     }
-    pomFile = "$buildDir/generatedPoms/groovy.pom" as File
-    pomAllFile = "$buildDir/generatedPoms/groovy-all.pom" as File
+    ext.pomFile = "$buildDir/generatedPoms/groovy.pom" as File
+    ext.pomAllFile = "$buildDir/generatedPoms/groovy-all.pom" as File
     doFirst {
         configure(pom, pomConfigureClosure)
         configure(pomAll, pomConfigureClosure)

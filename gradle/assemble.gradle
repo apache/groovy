@@ -8,7 +8,7 @@ apply plugin: 'osgi'
 group = 'org.codehaus.groovy'
 archivesBaseName = 'groovy'
 
-allManifest = manifest {
+ext.allManifest = manifest {
     attributes("Built-By": System.properties['user.name'],
             "Extension-Name": 'groovy',
             "Specification-Title": 'Groovy: a powerful, dynamic language for the JVM',
@@ -30,7 +30,7 @@ allManifest = manifest {
             "Main-class": 'groovy.ui.GroovyMain')
 }
 
-licenseSpec = copySpec {
+ext.licenseSpec = copySpec {
     from "$projectDir/config/build"
     from(zipTree(configurations.compile.fileCollection { it.name.startsWith 'commons-cli' }.singleFile).matching {
         include 'META-INF/LICENSE.txt'
@@ -42,7 +42,7 @@ licenseSpec = copySpec {
     }
 }
 
-binaryJarsMetaInf = {
+ext.binaryJarsMetaInf = {
     Date buildTime = new Date()
     from "$projectDir/LICENSE.txt"
     from("$projectDir/src/main/META-INF/groovy-release-info.properties") {
@@ -62,7 +62,7 @@ task copy(type: Copy) {
     with licenseSpec
 }
 
-commonOsgiManifest = {
+ext.commonOsgiManifest = {
     // We exclude the Bnd-LastModified attribute as it always triggers a rebuild without being really needed.
     from(allManifest) {
         eachEntry {details ->
@@ -89,7 +89,7 @@ jar {
 }
 
 task jarAll(type: Jar, dependsOn: jar) {
-    metaInfDir = "$buildDir/tmp/groovy-all-metainf"
+    ext.metaInfDir = "$buildDir/tmp/groovy-all-metainf"
     inputs.files jar.archivePath
     inputs.dir metaInfDir
     appendix = 'all'
@@ -150,7 +150,7 @@ task javadocAllJar(type: Jar, dependsOn: javadocJar) {
 }
 
 
-distSpec = copySpec {
+ext.distSpec = copySpec {
     from("$projectDir") {
         include "LICENSE.txt", "NOTICE.txt"
     }
@@ -167,7 +167,7 @@ distSpec = copySpec {
         from("src/bin") {
             filter(ReplaceTokens, tokens: [GROOVYJAR:jar.archiveName])
             fileMode = 0755
-            exclude = "groovy.icns"
+            ext.exclude = "groovy.icns"
         }
         from("src/bin/groovy.icns")
         from("src/tools/org/codehaus/groovy/tools/groovy.ico")
@@ -214,7 +214,7 @@ task distSrc(type: Zip, dependsOn: [javadoc, groovydoc, docGDK]) {
     appendix = 'src'
     into("groovy-$version")
     from(projectDir) {
-        exclude 'target', buildDirName, 'classes/**', 'cruise/**', '.clover/*', 'local.build.properties',
+        exclude 'target', buildDir.path, 'classes/**', 'cruise/**', '.clover/*', 'local.build.properties',
                 'cobertura.ser', 'junitvmwatcher*.properties'
     }
 }

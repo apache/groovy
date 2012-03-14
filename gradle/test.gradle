@@ -19,7 +19,7 @@ test {
     forkEvery = 1
     scanForTestClasses = false
     ignoreFailures = false
-    resultText = ''
+    ext.resultText = ''
     includes = includePattern
 }
 

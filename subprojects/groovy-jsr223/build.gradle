@@ -3,7 +3,7 @@ apply plugin: 'codenarc'
 apply plugin: 'checkstyle'
 
 // TODO set these using subprojects?
-checkstyleConfigFileName = "../../config/checkstyle/checkstyle.xml"
+ext.checkstyleConfigFileName = "../../config/checkstyle/checkstyle.xml"
 
 dependencies {
     // todo delete this and assume java 6? or should this be "provided"?
