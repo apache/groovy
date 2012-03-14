@@ -5,7 +5,6 @@ apply plugin: 'checkstyle'
 //apply plugin: 'antlr'
 
 allprojects { p ->
-    apply plugin: 'idea'
     group = 'org.codehaus.groovy'
     version = groovyVersion
 //    tasks.withType(Checkstyle).all { t -> t.ignoreFailures = true }
@@ -295,9 +294,10 @@ apply from: "$projectDir/gradle/test.gradle"
 apply from: "$projectDir/gradle/docs.gradle"
 apply from: "$projectDir/gradle/assemble.gradle"
 apply from: "$projectDir/gradle/upload.gradle"
+apply from: "$projectDir/gradle/idea.gradle"
 
 task wrapper(type: Wrapper) {
 //    gradleVersion = '1.0-milestone-5-20110929000016+0200'
 //    distributionUrl = "http://repo.gradle.org/gradle/distributions-snapshots/gradle-${gradleVersion}-bin.zip"
-    gradleVersion = '1.0-milestone-8a'
+    gradleVersion = '1.0-milestone-9'
 }

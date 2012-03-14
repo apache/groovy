@@ -1,0 +1,92 @@
+/**
+ * Configuration for gradle idea.
+ *
+ * Inspired from the Gradle build.
+ */
+
+allprojects {
+    apply plugin: 'idea'
+}
+
+idea {
+
+    project {
+        jdkName = '1.6'
+        languageLevel = '1.6'
+
+        ipr {
+            withXml { provider ->
+                def node = provider.asNode()
+
+                // Use git
+                def vcsConfig = node.component.find { it.'@name' == 'VcsDirectoryMappings' }
+                vcsConfig.mapping[0].'@vcs' = 'Git'
+
+                // license header
+                def copyrightManager = node.component.find { it.'@name' == 'CopyrightManager' }
+                copyrightManager.@default = "ASL2"
+                def aslCopyright = copyrightManager.copyright.find { it.option.find { it.@name == "myName" }?.@value == "ASL2" }
+                if (aslCopyright == null) {
+                    copyrightManager.append(new XmlParser().parseText('''
+                      <copyright>
+                          <option name="notice" value="Copyright 2008-$today.year the original author or authors.&#10;&#10;Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);&#10;you may not use this file except in compliance with the License.&#10;You may obtain a copy of the License at&#10;&#10;     http://www.apache.org/licenses/LICENSE-2.0&#10;&#10;Unless required by applicable law or agreed to in writing, software&#10;distributed under the License is distributed on an &quot;AS IS&quot; BASIS,&#10;WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.&#10;See the License for the specific language governing permissions and&#10;limitations under the License." />
+                          <option name="keyword" value="Copyright" />
+                          <option name="allowReplaceKeyword" value="" />
+                          <option name="myName" value="ASL2" />
+                          <option name="myLocal" value="true" />
+                      </copyright>
+                '''))
+                }
+            }
+        }
+    }
+
+    workspace {
+        iws {
+            withXml { provider ->
+                def node = provider.asNode()
+
+                // exclude some files from stub generation
+                def groovyCompilerConfig = node.component.find { it.'@name' == 'GroovyCompilerConfiguration' }
+                if (!groovyCompilerConfig) {
+                    node.append(new XmlParser().parseText('''
+                   <component name='GroovyCompilerConfiguration'>
+                      <excludes></excludes>
+                   </component>'''))
+                    groovyCompilerConfig = node.component.find { it.'@name' == 'GroovyCompilerConfiguration' }
+                }
+                def excludeNode = groovyCompilerConfig.excludes[0]
+                ['/src/test/org/codehaus/groovy/transform/DelegateTransformTest.groovy'].each { excludedFile ->
+                    def url = "file://\$PROJECT_DIR\$$excludedFile"
+                    if (!excludeNode.file.any { it.'@url' == url }) {
+                        excludeNode.append(new XmlParser().parseText("<file url=\"$url\" />"))
+                    }
+                }
+            }
+        }
+    }
+
+    module.iml.withXml { provider ->
+        def node = provider.asNode()
+
+        // replace groovy-1.8.6.jar in libraries with the one generated in target
+        def entry = node.component.find { it.'@name' == 'NewModuleRootManager' }.orderEntry.find { oe ->
+            oe.library.CLASSES.root.'@url' =~ /groovy-all-[0-9]\.[0-9]\.[0-9](-SNAPSHOT)?\.jar/
+        }
+        if (entry) {
+            entry.library.CLASSES.root[0].'@url' = "jar://\$MODULE_DIR\$/target/libs/groovy-all-${groovyVersion}.jar!/"
+        }
+    }
+
+}
+
+tasks.withType(GenerateIdeaProject).all {
+    it.doLast {
+        println """
+--------------------------------------------------------------------------------
+ Project has been created, but it is recommanded that you run the 'jarAll' task
+ in order to provide IntelliJ IDEA a groovy jar that it can use for compilation
+--------------------------------------------------------------------------------
+"""
+    }
+}
