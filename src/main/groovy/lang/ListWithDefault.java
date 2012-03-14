@@ -1,3 +1,18 @@
+/*
+ * Copyright 2003-2012 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package groovy.lang;
 
 import java.util.Collection;
@@ -6,11 +21,11 @@ import java.util.List;
 import java.util.ListIterator;
 
 /**
- * A wrapper for {@link List} which automatically grows by calling {@link #get(int)} or {@link #getAt(int)} with
- * an index greater or equal to {@code size()}.
+ * A wrapper for {@link List} which automatically grows the list when either {@link #get(int)} or
+ * {@link #getAt(int)} is called with an index greater than or equal to {@code size()}.
  *
  * @author Andre Steingress
- * @since TODO
+ * @since 1.8.7
  */
 public final class ListWithDefault<T> implements List<T> {
 
@@ -19,7 +34,7 @@ public final class ListWithDefault<T> implements List<T> {
 
     private final Closure initClosure;
 
-    private ListWithDefault(List<T> items, boolean lazyDefaultValues, Closure initClosure)  {
+    private ListWithDefault(List<T> items, boolean lazyDefaultValues, Closure initClosure) {
         this.delegate = items;
         this.lazyDefaultValues = lazyDefaultValues;
         this.initClosure = initClosure;
@@ -92,17 +107,29 @@ public final class ListWithDefault<T> implements List<T> {
 
     /**
      * Overwrites subscript operator handling by redirecting to {@link #get(int)}.
-     * 
+     *
      * @param index an index (might be greater or equal to {@code size()}, or smaller than 0)
      * @return the value at the given {@code index} or the default value
      */
-    public T getAt(int index)  {
+    public T getAt(int index) {
         return get(index);
     }
 
     /**
-     * Implements the "lazy list" approach. If the requested {@code index} is greater or equal to {@code size()}, the
-     * list will grow to the new size. This implementation breaks
+     * Returns the element at the given index but grows the list if needed. If the requested {@code index} is
+     * greater than or equal to {@code size()}, the list will grow to the new size and a default value calculated
+     * using the <code>initClosure</code> will be used to populate the missing value and returned.
+     * <p/>
+     * If <code>lazyDefaultValues</code> is <code>true</code> any gaps when growing the list are filled
+     * with nulls. Subsequent attempts to retrieve items from the list from those gap index values
+     * will, upon finding null, call the <code>initClosure</code> to populate the list for the
+     * given list value. Hence, when in this mode, nulls cannot be stored in this list.
+     * If <code>lazyDefaultValues</code> is <code>false</code> any gaps when growing the list are filled
+     * eagerly by calling the <code>initClosure</code> for all gap indexes during list growth.
+     * No calls to <code>initClosure</code> are made except during list growth and it is ok to
+     * store null values in the list when in this mode.
+     * <p/>
+     * This implementation breaks
      * the contract of {@link java.util.List#get(int)} as it a) possibly modifies the underlying list and b) does
      * NOT throw an {@link IndexOutOfBoundsException} when {@code index < 0 || index >= size()}.
      *
@@ -115,13 +142,13 @@ public final class ListWithDefault<T> implements List<T> {
         int normalisedIndex = normaliseIndex(index, size);
 
         // either index >= size or the normalised index is negative
-        if (normalisedIndex >= size || normalisedIndex < 0)  {
+        if (normalisedIndex >= size || normalisedIndex < 0) {
             final boolean prepend = (normalisedIndex < 0);
             // find out the number of gaps to fill with null/the default value
             final int gapCount = (prepend ? ((normalisedIndex + 1) * -1) : normalisedIndex - size);
 
             // fill all gaps
-            for (int i = 0; i < gapCount; i++)  {
+            for (int i = 0; i < gapCount; i++) {
                 final int idx = prepend ? 0 : size();
 
                 // if we lazily create default values, use 'null' as placeholder
@@ -140,7 +167,7 @@ public final class ListWithDefault<T> implements List<T> {
         }
 
         T item = delegate.get(normalisedIndex);
-        if (item == null)  {
+        if (item == null && lazyDefaultValues) {
             item = getDefaultValue(normalisedIndex);
             delegate.set(normalisedIndex, item);
         }
@@ -148,8 +175,9 @@ public final class ListWithDefault<T> implements List<T> {
         return item;
     }
 
+    @SuppressWarnings("unchecked")
     private T getDefaultValue(int idx) {
-        return (T) initClosure.call(new Object[] { idx });
+        return (T) initClosure.call(new Object[]{idx});
     }
 
     private int normaliseIndex(int index, int size) {
@@ -187,12 +215,22 @@ public final class ListWithDefault<T> implements List<T> {
         return delegate.listIterator(i);
     }
 
+    @Override
+    public boolean equals(Object obj) {
+        return delegate.equals(obj);
+    }
+
+    @Override
+    public int hashCode() {
+        return delegate.hashCode();
+    }
+
     /**
      * Returns a view of a portion of this list. This method returns a list with the same
      * lazy list settings as the original list.
      *
      * @param fromIndex low endpoint of the subList (inclusive)
-     * @param toIndex upper endpoint of the subList (exclusive)
+     * @param toIndex   upper endpoint of the subList (exclusive)
      * @return a view of a specified range within this list, keeping all lazy list settings
      */
     public List<T> subList(int fromIndex, int toIndex) {
