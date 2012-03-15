@@ -56,7 +56,8 @@ idea {
                     groovyCompilerConfig = node.component.find { it.'@name' == 'GroovyCompilerConfiguration' }
                 }
                 def excludeNode = groovyCompilerConfig.excludes[0]
-                ['/src/test/org/codehaus/groovy/transform/DelegateTransformTest.groovy'].each { excludedFile ->
+                ['/src/test/org/codehaus/groovy/transform/DelegateTransformTest.groovy',
+                '/src/test/groovy/bugs/Groovy593_Bug.groovy'].each { excludedFile ->
                     def url = "file://\$PROJECT_DIR\$$excludedFile"
                     if (!excludeNode.file.any { it.'@url' == url }) {
                         excludeNode.append(new XmlParser().parseText("<file url=\"$url\" />"))
