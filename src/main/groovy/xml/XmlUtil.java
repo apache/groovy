@@ -22,12 +22,19 @@ import groovy.util.XmlNodePrinter;
 import groovy.util.slurpersupport.GPathResult;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.w3c.dom.Element;
+import org.xml.sax.SAXException;
 
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
 import javax.xml.transform.*;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
+import javax.xml.validation.Schema;
+import javax.xml.validation.SchemaFactory;
 import java.io.*;
+import java.net.URL;
 
 /**
  * Used for pretty printing XML content.
@@ -189,6 +196,129 @@ public class XmlUtil {
      */
     public static void serialize(String xmlString, Writer w) {
         serialize(asStreamSource(xmlString), w);
+    }
+
+    /**
+     * Factory method to create a SAXParser configured to validate according to a particular schema language and
+     * optionally providing the schema sources to validate with.
+     * The created SAXParser will be namespace-aware and not validate against DTDs.
+     *
+     * @param schemaLanguage the schema language used, e.g. XML Schema or RelaxNG (as per the String representation in javax.xml.XMLConstants)
+     * @param schemas        the schemas to validate against
+     * @return the created SAXParser
+     * @throws SAXException
+     * @throws ParserConfigurationException
+     * @see #newSAXParser(String, boolean, boolean, Source...)
+     * @since 1.8.7
+     */
+    public static SAXParser newSAXParser(String schemaLanguage, Source... schemas) throws SAXException, ParserConfigurationException {
+        return newSAXParser(schemaLanguage, true, false, schemas);
+    }
+
+    /**
+     * Factory method to create a SAXParser configured to validate according to a particular schema language and
+     * optionally providing the schema sources to validate with.
+     *
+     * @param schemaLanguage the schema language used, e.g. XML Schema or RelaxNG (as per the String representation in javax.xml.XMLConstants)
+     * @param namespaceAware will the parser be namespace aware
+     * @param validating     will the parser also validate against DTDs
+     * @param schemas        the schemas to validate against
+     * @return the created SAXParser
+     * @throws SAXException
+     * @throws ParserConfigurationException
+     * @since 1.8.7
+     */
+    public static SAXParser newSAXParser(String schemaLanguage, boolean namespaceAware, boolean validating, Source... schemas) throws SAXException, ParserConfigurationException {
+        SAXParserFactory factory = SAXParserFactory.newInstance();
+        factory.setValidating(validating);
+        factory.setNamespaceAware(namespaceAware);
+        if (schemas.length != 0) {
+            SchemaFactory schemaFactory = SchemaFactory.newInstance(schemaLanguage);
+            factory.setSchema(schemaFactory.newSchema(schemas));
+        }
+        SAXParser saxParser = factory.newSAXParser();
+        if (schemas.length == 0) {
+            saxParser.setProperty("http://java.sun.com/xml/jaxp/properties/schemaLanguage", schemaLanguage);
+        }
+        return saxParser;
+    }
+
+    /**
+     * Factory method to create a SAXParser configured to validate according to a particular schema language and
+     * a File containing the schema to validate against.
+     * The created SAXParser will be namespace-aware and not validate against DTDs.
+     *
+     * @param schemaLanguage the schema language used, e.g. XML Schema or RelaxNG (as per the String representation in javax.xml.XMLConstants)
+     * @param schema         a file containing the schema to validate against
+     * @return the created SAXParser
+     * @throws SAXException
+     * @throws ParserConfigurationException
+     * @see #newSAXParser(String, boolean, boolean, File)
+     * @since 1.8.7
+     */
+    public static SAXParser newSAXParser(String schemaLanguage, File schema) throws SAXException, ParserConfigurationException {
+        return newSAXParser(schemaLanguage, true, false, schema);
+    }
+
+    /**
+     * Factory method to create a SAXParser configured to validate according to a particular schema language and
+     * a File containing the schema to validate against.
+     *
+     * @param schemaLanguage the schema language used, e.g. XML Schema or RelaxNG (as per the String representation in javax.xml.XMLConstants)
+     * @param namespaceAware will the parser be namespace aware
+     * @param validating     will the parser also validate against DTDs
+     * @param schema         a file containing the schema to validate against
+     * @return the created SAXParser
+     * @throws SAXException
+     * @throws ParserConfigurationException
+     * @since 1.8.7
+     */
+    public static SAXParser newSAXParser(String schemaLanguage, boolean namespaceAware, boolean validating, File schema) throws SAXException, ParserConfigurationException {
+        SchemaFactory schemaFactory = SchemaFactory.newInstance(schemaLanguage);
+        return newSAXParser(namespaceAware, validating, schemaFactory.newSchema(schema));
+    }
+
+    /**
+     * Factory method to create a SAXParser configured to validate according to a particular schema language and
+     * an URL pointing to the schema to validate against.
+     * The created SAXParser will be namespace-aware and not validate against DTDs.
+     *
+     * @param schemaLanguage the schema language used, e.g. XML Schema or RelaxNG (as per the String representation in javax.xml.XMLConstants)
+     * @param schema         a URL pointing to the schema to validate against
+     * @return the created SAXParser
+     * @throws SAXException
+     * @throws ParserConfigurationException
+     * @see #newSAXParser(String, boolean, boolean, URL)
+     * @since 1.8.7
+     */
+    public static SAXParser newSAXParser(String schemaLanguage, URL schema) throws SAXException, ParserConfigurationException {
+        return newSAXParser(schemaLanguage, true, false, schema);
+    }
+
+    /**
+     * Factory method to create a SAXParser configured to validate according to a particular schema language and
+     * an URL pointing to the schema to validate against.
+     *
+     * @param schemaLanguage the schema language used, e.g. XML Schema or RelaxNG (as per the String representation in javax.xml.XMLConstants)
+     * @param namespaceAware will the parser be namespace aware
+     * @param validating     will the parser also validate against DTDs
+     * @param schema         a URL pointing to the schema to validate against
+     * @return the created SAXParser
+     * @throws SAXException
+     * @throws ParserConfigurationException
+     * @since 1.8.7
+     */
+    public static SAXParser newSAXParser(String schemaLanguage, boolean namespaceAware, boolean validating, URL schema) throws SAXException, ParserConfigurationException {
+        SchemaFactory schemaFactory = SchemaFactory.newInstance(schemaLanguage);
+        return newSAXParser(namespaceAware, validating, schemaFactory.newSchema(schema));
+    }
+
+    private static SAXParser newSAXParser(boolean namespaceAware, boolean validating, Schema schema1) throws ParserConfigurationException, SAXException {
+        SAXParserFactory factory = SAXParserFactory.newInstance();
+        factory.setValidating(validating);
+        factory.setNamespaceAware(namespaceAware);
+        factory.setSchema(schema1);
+        return factory.newSAXParser();
     }
 
     private static String asString(Node node) {
