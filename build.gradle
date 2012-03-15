@@ -133,8 +133,9 @@ dependencies {
     antlr "org.apache.ant:ant-antlr:1.8.3"
 
 //    groovy project(':subprojects:groovy-ant')
-    // TODO M12N temporarily use gradle's groovy
-    groovy localGroovy()
+    // TODO remove once M12N refactoring finished
+    // uncomment to temporarily use gradle's groovy
+//    groovy localGroovy()
     testCompile project(':subprojects:groovy-test')
 }
 
@@ -248,21 +249,7 @@ task ensureGrammars {
 
 compileJava {
     dependsOn ensureGrammars
-    doLast {
-        mkdir "$sourceSets.main.output.classesDir/META-INF"
-        ant {
-            java(classname: "org.codehaus.groovy.tools.DgmConverter",
-                    fork: "true",
-                    failonerror: "true",
-                    outputproperty: 'outy',
-                    errorproperty: 'errr',
-                    classpath: sourceSets.main.runtimeClasspath.asPath) 
-        }
-//        println "Out: " + ant.properties.outy
-//        println "Err: " + ant.properties.errr
-    }
 }
-
 
 compileGroovy {
     groovyOptions.fork(memoryMaximumSize: groovycMain_mx)

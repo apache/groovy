@@ -1,6 +1,4 @@
-import java.util.jar.Manifest
 import org.apache.tools.ant.filters.ReplaceTokens
-//import org.apache.tools.ant.taskdefs.Replace
 import java.text.SimpleDateFormat
 
 apply plugin: 'osgi'
@@ -216,84 +214,5 @@ task distSrc(type: Zip, dependsOn: [javadoc, groovydoc, docGDK]) {
     from(projectDir) {
         exclude 'target', buildDir.path, 'classes/**', 'cruise/**', '.clover/*', 'local.build.properties',
                 'cobertura.ser', 'junitvmwatcher*.properties'
-    }
-}
-
-task compareArchives << {
-    jarTasks = tasks.withType(Zip)
-    jarTasks.each {jar ->
-        File antJar = "$projectDir/target/dist/${jar.archivePath.name}" as File
-        println "Comparing $jar.name with ant jar $antJar. Ant jar exists=${antJar.isFile()}"
-        if (antJar.isFile()) {
-            compare(jar.archiveName, jar.archivePath, antJar, true)
-        }
-    }
-}
-
-def compare(String name, File gradleJar, File antJar, boolean checkManifest) {
-    def File diffDir = new File(buildDir, "diff/$name")
-    ant.delete(dir: diffDir)
-    def unzipGradle = new File(diffDir, "gradle")
-    def unzipAnt = new File(diffDir, "ant")
-    ant.unzip(src: gradleJar, dest: unzipGradle)
-    ant.unzip(src: antJar, dest: unzipAnt)
-
-    def antFiles = [:]
-    def gradleFiles = [:]
-
-    FileUtils.listFiles(unzipAnt, null, true).each {File file ->
-        antFiles[file.absolutePath - unzipAnt.absolutePath] = file
-    }
-    FileUtils.listFiles(unzipGradle, null, true).each {File file ->
-        gradleFiles[file.absolutePath - unzipGradle.absolutePath] = file
-    }
-
-    antFiles.each {key, value ->
-        if (!gradleFiles[key]) {
-            println "ant only: $key"
-        } else if (checkManifest && key == '/META-INF/MANIFEST.MF') {
-            Manifest manifestAnt = new Manifest(new FileInputStream(antFiles[key]))
-            Manifest manifestGradle = new Manifest(new FileInputStream(gradleFiles[key]))
-            if (!manifestAnt.equals(manifestGradle)) {
-                def ant = manifestAnt.mainAttributes
-                def gradle = manifestGradle.mainAttributes
-                compareMap(ant, gradle)
-            }
-        }
-        gradleFiles.remove(key)
-    }
-
-    gradleFiles.keySet().each {file ->
-        println "gradle only: $file"
-    }
-}
-
-def compareMap(Map ant, Map gradle) {
-    (ant.keySet() + gradle.keySet()).each {attribute ->
-        antValue = ant[attribute]
-        gradleValue = gradle[attribute]
-        if (!(['Ant-Version', 'Created-By', 'Bnd-LastModified', 'Tool', 'Originally-Created-By'].contains(attribute as String))) {
-            if (antValue) {
-                if (!gradleValue) {
-                    println "$attribute: ant only"
-                } else if (antValue != gradleValue) {
-                    if (attribute.toString() == 'Export-Package' || attribute.toString() == 'Import-Package') {
-                        def antOnly = antValue.split(',') as LinkedHashSet
-                        def gradleOnly = gradleValue.split(',') as LinkedHashSet
-                        antOnly.removeAll(gradleOnly)
-                        gradleOnly.removeAll(antValue.split(',') as LinkedHashSet)
-                        println("""$attribute:
-                            ant only: $antOnly
-                            gradle only: $gradleOnly""")
-                    } else {
-                        println("""$attribute:
-                            ant value: ${antValue}
-                            gradle value: ${gradleValue}""")
-                    }
-                }
-            } else {
-                println "$attribute: gradle only"
-            }
-        }
     }
 }

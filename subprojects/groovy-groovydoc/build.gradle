@@ -12,3 +12,19 @@ dependencies {
 }
 
 sourceSets.main.resources.srcDir 'src/main/java'
+
+compileJava {
+    doLast {
+        mkdir "$sourceSets.main.output.classesDir/META-INF"
+        ant {
+            java(classname: "org.codehaus.groovy.tools.DgmConverter",
+                    fork: "true",
+                    failonerror: "true",
+                    outputproperty: 'outy',
+                    errorproperty: 'errr',
+                    classpath: sourceSets.main.runtimeClasspath.asPath)
+        }
+        println "Out: " + ant.properties.outy
+        println "Err: " + ant.properties.errr
+    }
+}
