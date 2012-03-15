@@ -125,7 +125,7 @@ ruleset {
                 'gls.annotations.closures.CallOnThisObject,gls.annotations.closures.JavaCompatibilityParameterized,' +
                 'gls.annotations.closures.UnqualifiedCall,groovy.CompileOrderTest,' +
                 'gls.annotations.closures.ClosureWithParameters,EscapedUnicodeTest,' +
-                'groovy.bugs.Groovy2365Base,groovy.bugs.Groovy249_Bug,' + 
+                'groovy.bugs.Groovy2365Base,groovy.bugs.Groovy249_Bug,' +
                 'groovy.bugs.Groovy3139Bug,groovy.bugs.Get2,groovy.bugs.Groovy3511Bug,' + 
                 'org.codehaus.groovy.tools.LoaderConfigurationTest' 
         }
