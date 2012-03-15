@@ -33,4 +33,27 @@ import org.codehaus.groovy.transform.stc.TypeCheckerPluginFactory;
 public @interface TypeChecked {
     Class<? extends TypeCheckerPluginFactory> pluginFactory() default TypeCheckerPluginFactory.class;
     TypeCheckingMode value() default TypeCheckingMode.PASS;
+
+    /**
+     * This annotation is added by @TypeChecked on methods which have type checking turned on.
+     * It is used to embed type information into binary, so that the type checker can use this information,
+     * if available, for precompiled classes.
+     */
+
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target(ElementType.METHOD)
+    public @interface TypeCheckingInfo {
+        /**
+         * Returns the type checker information protocol number. This is used if the format of the
+         * string used in {@link #inferredType()} changes.
+         * @return the protocol version
+         */
+        int version() default 0;
+
+        /**
+         * An encoded type information.
+         * @return
+         */
+        String inferredType();
+    }
 }

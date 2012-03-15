@@ -28,10 +28,8 @@ import javax.servlet.http.HttpServletResponse;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.runtime.MethodClosure;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.PrintWriter;
+import java.io.*;
+import java.lang.reflect.Constructor;
 import java.util.Enumeration;
 import java.util.LinkedHashMap;
 import java.util.Locale;
@@ -57,6 +55,7 @@ import java.util.Map;
  * <li><tt>"out"</tt> : <code>response.getWriter()</code></li>
  * <li><tt>"sout"</tt> : <code>response.getOutputStream()</code></li>
  * <li><tt>"html"</tt> : <code>new MarkupBuilder(response.getWriter())</code> - <code>expandEmptyElements</code> flag is set to true</li>
+ * <li><tt>"json"</tt> : <code>new JsonBuilder()</code></li>
  * </ul>
  * As per the Servlet specification, a call to <code>response.getWriter()</code> should not be
  * done if a call to <code>response.getOutputStream()</code> has already occurred or the other way
@@ -271,6 +270,7 @@ public class ServletBinding extends Binding {
         excludeReservedName(name, "out");
         excludeReservedName(name, "sout");
         excludeReservedName(name, "html");
+		excludeReservedName(name, "json");
         excludeReservedName(name, "forward");
         excludeReservedName(name, "include");
         excludeReservedName(name, "redirect");
@@ -296,14 +296,24 @@ public class ServletBinding extends Binding {
     private void lazyInit() {
         if (initialized) return;
         initialized = true;
+
         HttpServletResponse response = (HttpServletResponse) super.getVariable("response");
         ServletOutput output = new ServletOutput(response);
         super.setVariable("out", output.getWriter());
         super.setVariable("sout", output.getOutputStream());
+
         MarkupBuilder builder = new MarkupBuilder(output.getWriter());
         builder.setExpandEmptyElements(true);
         super.setVariable("html", builder);
-        
+
+        try {
+            Class jsonBuilderClass = this.getClass().getClassLoader().loadClass("groovy.json.StreamingJsonBuilder");
+            Constructor writerConstructor = jsonBuilderClass.getConstructor(Writer.class);
+            super.setVariable("json", writerConstructor.newInstance(output.getWriter()));
+        } catch (Throwable t) {
+            t.printStackTrace();
+        }
+
         // bind forward method
         MethodClosure c = new MethodClosure(this, "forward");
         super.setVariable("forward", c);

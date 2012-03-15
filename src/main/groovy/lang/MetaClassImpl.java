@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2009 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1532,11 +1532,11 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
         // check for a category method named like a getter
         if (!useSuper && !isStatic && GroovyCategorySupport.hasCategoryInCurrentThread()) {
-        	String getterName = GroovyCategorySupport.getPropertyCategoryGetterName(name);
-        	if (getterName != null) {
-	            MetaMethod categoryMethod = getCategoryMethodGetter(sender, getterName, false);
-	            if (categoryMethod != null) method = categoryMethod;
-        	}
+            String getterName = GroovyCategorySupport.getPropertyCategoryGetterName(name);
+            if (getterName != null) {
+                MetaMethod categoryMethod = getCategoryMethodGetter(sender, getterName, false);
+                if (categoryMethod != null) method = categoryMethod;
+            }
         }
 
         //----------------------------------------------------------------------
@@ -1656,11 +1656,11 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
         // check for a category method named like a getter
         if (!useSuper && !isStatic && GroovyCategorySupport.hasCategoryInCurrentThread()) {
-        	String getterName = GroovyCategorySupport.getPropertyCategoryGetterName(name);
+            String getterName = GroovyCategorySupport.getPropertyCategoryGetterName(name);
             if (getterName != null) {
-            	MetaMethod categoryMethod = getCategoryMethodGetter(sender, getterName, false);
-            	if (categoryMethod != null)
-            		method = categoryMethod;
+                MetaMethod categoryMethod = getCategoryMethodGetter(sender, getterName, false);
+                if (categoryMethod != null)
+                    method = categoryMethod;
             }
         }
 
@@ -2319,14 +2319,14 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         // check for a category method named like a setter
         if (!useSuper && !isStatic && GroovyCategorySupport.hasCategoryInCurrentThread()
                 && name.length() > 0) {
-        	String getterName = GroovyCategorySupport.getPropertyCategorySetterName(name);
-        	if (getterName != null) {
-	            MetaMethod categoryMethod = getCategoryMethodSetter(sender, getterName, false);
-	            if (categoryMethod != null) {
-	                method = categoryMethod;
-	                arguments = new Object[]{newValue};
-	            }
-        	}
+            String getterName = GroovyCategorySupport.getPropertyCategorySetterName(name);
+            if (getterName != null) {
+                MetaMethod categoryMethod = getCategoryMethodSetter(sender, getterName, false);
+                if (categoryMethod != null) {
+                    method = categoryMethod;
+                    arguments = new Object[]{newValue};
+                }
+            }
         }
 
         //----------------------------------------------------------------------

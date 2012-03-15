@@ -488,7 +488,7 @@ public class WideningCategories {
      * to return a name and a type class.
      *
      */
-    protected static class LowestUpperBoundClassNode extends ClassNode {
+    public static class LowestUpperBoundClassNode extends ClassNode {
         private final ClassNode compileTimeClassNode;
         protected final String name;
 		
@@ -504,6 +504,10 @@ public class WideningCategories {
 					addMethod(methodNode.getName(), methodNode.getModifiers(), methodNode.getReturnType(), methodNode.getParameters(), methodNode.getExceptions(), methodNode.getCode());
 				}
 			}
+        }
+
+        public String getLubName() {
+            return this.name;
         }
 
         @Override
