@@ -134,8 +134,8 @@ dependencies {
 
 //    groovy project(':subprojects:groovy-ant')
     // TODO remove once M12N refactoring finished
-    // uncomment to temporarily use gradle's groovy
-//    groovy localGroovy()
+    // uncomment to temporarily use gradle's groovy (groovyc needs AntBuilder)
+    groovy localGroovy()
     testCompile project(':subprojects:groovy-test')
 }
 
