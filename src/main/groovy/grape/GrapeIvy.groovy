@@ -42,6 +42,7 @@ import org.apache.ivy.util.Message
 import org.codehaus.groovy.reflection.ReflectionUtils
 import java.util.zip.ZipFile
 import java.util.zip.ZipEntry
+import javax.xml.parsers.DocumentBuilderFactory
 
 /**
  * @author Danno Ferrin
@@ -407,19 +408,27 @@ class GrapeIvy implements GrapeEngine {
                 if (moduleDir.name == module) moduleDir.eachFileMatch(ivyFilePattern) { File ivyFile ->
                     def m = ivyFilePattern.matcher(ivyFile.name)
                     if (m.matches() && m.group(1) == rev) {
-                        def root = new XmlParser(false, false).parse(ivyFile)
                         // TODO handle other types? e.g. 'dlls'
                         def jardir = new File(moduleDir, 'jars')
                         if (!jardir.exists()) return
-                        root.publications.artifact.each {
-                            def name = it.@name + "-$rev"
-                            def classifier = it.'@m:classifier'
-                            if (classifier) name += "-$classifier"
-                            name += ".${it.@ext}"
-                            def jarfile = new File(jardir, name)
-                            if (jarfile.exists()) {
-                                println "Deleting ${jarfile.name}"
-                                jarfile.delete()
+                        def dbf = DocumentBuilderFactory.newInstance()
+                        def db = dbf.newDocumentBuilder()
+                        def root = db.parse(ivyFile).documentElement
+                        def publis = root.getElementsByTagName('publications')
+                        for (int i=0; i<publis.length;i++) {
+                            def artifacts = publis.item(i).getElementsByTagName('artifact')
+                            for (int j=0; j<artifacts.length; j++) {
+                                def artifact = artifacts.item(j)
+                                def attrs = artifact.attributes
+                                def name = attrs.getNamedItem('name')+ "-$rev"
+                                def classifier = attrs.getNamedItemNS("m", "classifier")
+                                if (classifier) name += "-$classifier"
+                                name += ".${attrs.getNamedItem('ext')}"
+                                def jarfile = new File(jardir, name)
+                                if (jarfile.exists()) {
+                                    println "Deleting ${jarfile.name}"
+                                    jarfile.delete()
+                                }
                             }
                         }
                         ivyFile.delete()
