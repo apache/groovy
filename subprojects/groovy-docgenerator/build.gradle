@@ -4,6 +4,7 @@ apply plugin: 'checkstyle'
 
 dependencies {
     compile project(':')
+    compile project(':subprojects:groovy-templates')
     groovy project(':')
     testCompile project(':subprojects:groovy-test')
     compile "com.thoughtworks.qdox:qdox:1.12"

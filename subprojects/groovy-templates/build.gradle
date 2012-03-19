@@ -4,6 +4,7 @@ apply plugin: 'checkstyle'
 
 dependencies {
     compile project(':')
+    compile project(':subprojects:groovy-xml')
     groovy project(':')
     testCompile project(':subprojects:groovy-test')
 }

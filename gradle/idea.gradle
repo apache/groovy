@@ -72,10 +72,11 @@ idea {
 
         // replace groovy-1.8.6.jar in libraries with the one generated in target
         def entry = node.component.find { it.'@name' == 'NewModuleRootManager' }.orderEntry.find { oe ->
-            oe.library.CLASSES.root.'@url' =~ /groovy-all-[0-9]\.[0-9]\.[0-9](-SNAPSHOT)?\.jar/
+            oe.library.CLASSES.root.'@url' =~ /groovy-(all-)?[0-9]\.[0-9]\.[0-9](-SNAPSHOT)?\.jar/
         }
         if (entry) {
-            entry.library.CLASSES.root[0].'@url' = "jar://\$MODULE_DIR\$/target/libs/groovy-all-${groovyVersion}.jar!/"
+            //entry.library.CLASSES.root[0].'@url' = "jar://\$MODULE_DIR\$/target/libs/groovy-all-${groovyVersion}.jar!/"
+            entry.library.CLASSES.root[0].'@url' = "jar://\$MODULE_DIR\$/target/libs/groovy-${groovyVersion}.jar!/"
         }
     }
 

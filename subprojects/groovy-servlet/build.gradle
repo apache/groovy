@@ -10,5 +10,7 @@ dependencies {
     testCompile "jmock:jmock:1.2.0"
     // needed for MarkupBuilder
     compile project(':subprojects:groovy-xml')
+    // needed by TemplateServlet
+    compile project(':subprojects:groovy-templates')
     testCompile project(':subprojects:groovy-test')
 }
