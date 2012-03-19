@@ -1,0 +1,28 @@
+/**
+ * This module is special in the sense that it is not supposed to produce an artifact. Instead, it's used for
+ * internal testing, benchmarks, ...
+ *
+ * It can be used for tests which are more advanced and may require dependencies on different modules, but are
+ * not possible to put in a dedicated module without introducing a dependency.
+ *
+ * Basically, this is used <b>only</b> to avoid introducing dependencies between modules.
+ *
+ */
+
+apply plugin: 'groovy'
+apply plugin: 'codenarc'
+apply plugin: 'checkstyle'
+
+dependencies {
+    compile project(':')
+    groovy project(':')
+//    testCompile project(':').sourceSets.test.runtimeClasspath
+
+    // add every other module as a dependency
+    project.parent.subprojects.each { p ->
+       def name = p.name
+       if (name != 'groovy-all-tests') {
+          testCompile project(":subprojects:$name")
+       }
+    }
+}
