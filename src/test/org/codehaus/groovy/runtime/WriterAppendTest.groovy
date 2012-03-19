@@ -41,7 +41,7 @@ class WriterAppendTest extends GroovyTestCase {
               </characters>
             </groovy>
             """
-    static gPathResult = new XmlSlurper().parseText(text)
+    static gPathResult = new DummyGString(text)
     static gPathWriteTo
     static defaultEncoding
     static UTF8_ENCODING
