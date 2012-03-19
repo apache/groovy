@@ -1,7 +1,5 @@
 package groovy.sql
 
-import groovy.xml.MarkupBuilder
-
 /**
  * @author Brian McCallister
  * @version $Revision$
@@ -12,7 +10,7 @@ class SqlWithBuilderTest extends SqlHelperTestCase {
          def sql = createSql()
          println "Created ${sql}"
         
-         def doc = new MarkupBuilder()
+         def doc = new NodeBuilder()
         
          doc.people {
              sql.eachRow("select * from PERSON") {
