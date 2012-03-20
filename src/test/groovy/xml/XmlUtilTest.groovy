@@ -44,6 +44,9 @@ class XmlUtilTest extends GroovyTestCase {
 
     // GROOVY-5361
     void testSchemaValidationUtilityMethod() {
+        Locale dl = Locale.getDefault()
+        Locale.setDefault(Locale.ENGLISH)
+
         def cases = [
             "<person><first>James</first><last>Kirk</last></person>",
             "<person><first>James</first><middle>T.</middle><last>Kirk</last></person>",
@@ -67,18 +70,22 @@ class XmlUtilTest extends GroovyTestCase {
             /Kirk, James .*title.*not allowed.*in element.*person/
         ]
 
-        def message
-        def parser = new XmlParser(newSAXParser(W3C_XML_SCHEMA_NS_URI, new StreamSource(new StringReader(xsd))))
-        def results = []
-        parser.errorHandler = { message = it.message } as ErrorHandler
-        cases.each {
-            message = 'No Error'
-            def p = parser.parseText(it)
-            results << "${p.last.text()}, ${p.first.text()} $message"
-        }
-        assert results.size() == 3
-        (0..2).each {
-            assert results[it] =~ expected[it]
+        try {
+            def message
+            def parser = new XmlParser(newSAXParser(W3C_XML_SCHEMA_NS_URI, new StreamSource(new StringReader(xsd))))
+            def results = []
+            parser.errorHandler = { message = it.message } as ErrorHandler
+            cases.each {
+                message = 'No Error'
+                def p = parser.parseText(it)
+                results << "${p.last.text()}, ${p.first.text()} $message"
+            }
+            assert results.size() == 3
+            (0..2).each {
+                assert results[it] =~ expected[it]
+            }
+        } finally {
+            Locale.setDefault(dl)
         }
     }
 }
