@@ -59,12 +59,32 @@ public @interface Commons {
     Class<? extends LogASTTransformation.LoggingStrategy> loggingStrategy() default CommonsLoggingStrategy.class;
 
     public  static class CommonsLoggingStrategy implements LogASTTransformation.LoggingStrategy {
+
+        private static final ClassNode LOGGER_CLASSNODE;
+        private static final ClassNode LOGGERFACTORY_CLASSNODE;
+
+        static {
+            ClassNode tmp1 = null;
+            ClassNode tmp2 = null;
+
+            try {
+                tmp1 = ClassHelper.make(Class.forName("org.apache.commons.logging.Log"));
+                tmp2 = ClassHelper.make(Class.forName("org.apache.commons.logging.LogFactory"));
+            } catch (ClassNotFoundException e) {
+                tmp1 = ClassHelper.make("org.apache.commons.logging.Log");
+                tmp2 = ClassHelper.make("org.apache.commons.logging.LogFactory");
+            } finally {
+                LOGGER_CLASSNODE = tmp1;
+                LOGGERFACTORY_CLASSNODE = tmp2;
+            }
+        }
+
         public FieldNode addLoggerFieldToClass(ClassNode classNode, String logFieldName) {
             return classNode.addField(logFieldName,
                     Opcodes.ACC_FINAL | Opcodes.ACC_TRANSIENT | Opcodes.ACC_STATIC | Opcodes.ACC_PRIVATE,
-                    new ClassNode("org.apache.commons.logging.Log", Opcodes.ACC_PUBLIC, ClassHelper.OBJECT_TYPE),
+                    LOGGER_CLASSNODE,
                     new MethodCallExpression(
-                            new ClassExpression(new ClassNode("org.apache.commons.logging.LogFactory", Opcodes.ACC_PUBLIC, ClassHelper.OBJECT_TYPE)),
+                            new ClassExpression(LOGGERFACTORY_CLASSNODE),
                             "getLog",
                             new ClassExpression(classNode)));
         }

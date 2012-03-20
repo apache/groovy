@@ -59,12 +59,31 @@ public @interface Slf4j {
     Class<? extends LogASTTransformation.LoggingStrategy> loggingStrategy() default Slf4jLoggingStrategy.class;
 
     public static class Slf4jLoggingStrategy implements LogASTTransformation.LoggingStrategy {
+        private static final ClassNode LOGGER_CLASSNODE;
+        private static final ClassNode FACTORY_CLASSNODE;
+
+        static {
+            ClassNode tmp1 = null;
+            ClassNode tmp2 = null;
+
+            try {
+                tmp1 = ClassHelper.make(Class.forName("org.slf4j.Logger"));
+                tmp2 = ClassHelper.make(Class.forName("org.slf4j.LoggerFactory"));
+            } catch (ClassNotFoundException e) {
+                tmp1 = ClassHelper.make("org.slf4j.Logger");
+                tmp2 = ClassHelper.make("org.slf4j.LoggerFactory");
+            } finally {
+                LOGGER_CLASSNODE = tmp1;
+                FACTORY_CLASSNODE = tmp2;
+            }
+        }
+
         public FieldNode addLoggerFieldToClass(ClassNode classNode, String logFieldName) {
             return classNode.addField(logFieldName,
                     Opcodes.ACC_FINAL | Opcodes.ACC_TRANSIENT | Opcodes.ACC_STATIC | Opcodes.ACC_PRIVATE,
-                    new ClassNode("org.slf4j.Logger", Opcodes.ACC_PUBLIC, ClassHelper.OBJECT_TYPE),
+                    LOGGER_CLASSNODE,
                     new MethodCallExpression(
-                            new ClassExpression(new ClassNode("org.slf4j.LoggerFactory", Opcodes.ACC_PUBLIC, ClassHelper.OBJECT_TYPE)),
+                            new ClassExpression(FACTORY_CLASSNODE),
                             "getLogger",
                             new ClassExpression(classNode)));
 
