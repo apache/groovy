@@ -254,6 +254,9 @@ task dgmConverter(type: JavaExec, dependsOn: 'classes') {
     classpath = files(file('target/classes')) + configurations.compile
     main = 'org.codehaus.groovy.tools.DgmConverter'
     args = ['--info']
+    doFirst {
+        new File('target/classes/META-INF').mkdirs()
+    }
 }
 
 compileJava {
