@@ -1,3 +1,5 @@
+import org.codehaus.groovy.tools.DgmConverter
+
 apply plugin: 'groovy'
 apply plugin: 'codenarc'
 apply plugin: 'checkstyle'
@@ -245,6 +247,13 @@ task ensureGrammars {
             }
         }
     }
+}
+
+task dgmConverter(type: JavaExec, dependsOn: 'classes') {
+    description = 'Generates DGM info file required for faster startup.'
+    classpath = files(file('target/classes')) + configurations.compile
+    main = 'org.codehaus.groovy.tools.DgmConverter'
+    args = ['--info']
 }
 
 compileJava {

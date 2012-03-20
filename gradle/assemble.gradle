@@ -76,6 +76,7 @@ ext.commonOsgiManifest = {
 }
 
 jar {
+    dependsOn('dgmConverter')
     metaInf binaryJarsMetaInf
     manifest = osgiManifest {
         symbolicName = 'groovy'
