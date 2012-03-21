@@ -278,7 +278,8 @@ public class DataSet extends Sql {
             ClassNode classNode = closure.getMetaClass().getClassNode();
             if (classNode == null) {
                 throw new GroovyRuntimeException(
-                        "Could not find the ClassNode for MetaClass: " + closure.getMetaClass());
+                        "DataSet unable to evaluate expression. AST not available for closure: " + closure.getMetaClass().getTheClass().getName() +
+                                ". Is the source code on the classpath?");
             }
             List methods = classNode.getDeclaredMethods("doCall");
             if (!methods.isEmpty()) {

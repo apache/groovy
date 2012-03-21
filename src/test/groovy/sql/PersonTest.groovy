@@ -78,6 +78,17 @@ order by firstName DESC, age'''
         assert message.contains("DataSet currently doesn't support arbitrary variables, only literals")
     }
 
+    void testDataSetSourceNotAvailable() {
+        def closure = new GroovyShell().evaluate("def c = { p -> p.foo = 'bar' }; c")
+        def message = shouldFail {
+            people.findAll(closure).sql
+        }
+        // testing that the error message contains some useful info
+        // not necessarily trying to lock in the exact wording over time
+        assert message.contains("AST not available for closure")
+        assert message.contains("DataSet unable to evaluate expression")
+    }
+
     protected def assertSql(dataSet, expectedSql, expectedParams) {
         assert dataSet.sql == expectedSql
         assert dataSet.parameters == expectedParams
