@@ -19,37 +19,46 @@ import javax.sql.DataSource
 
 class PersonTest extends GroovyTestCase {
 
+    DataSet people
+
+    @Override
+    protected void setUp() {
+        super.setUp()
+        people = createDataSet()
+    }
+
+    @Override
+    protected void tearDown() {
+        super.tearDown()
+        people.close()
+    }
+
     void testFoo() {
-        def persons = createDataSet()
-        def blogs = persons.findAll { it.lastName == "Bloggs" }
+        def blogs = people.findAll { it.lastName == "Bloggs" }
         assertSql(blogs, "select * from person where lastName = ?", ['Bloggs'])
     }
 
     void testWhereWithAndClause() {
-        def persons = createDataSet()
-        def blogs = persons.findAll { it.lastName == "Bloggs" }
+        def blogs = people.findAll { it.lastName == "Bloggs" }
         def bigBlogs = blogs.findAll { it.size > 100 }
         assertSql(bigBlogs, "select * from person where lastName = ? and size > ?", ['Bloggs', 100])
     }
 
     void testWhereClosureWithAnd() {
-        def persons = createDataSet()
-        def blogs = persons.findAll { it.size < 10 && it.lastName == "Bloggs" }
+        def blogs = people.findAll { it.size < 10 && it.lastName == "Bloggs" }
         assertSql(blogs, "select * from person where (size < ? and lastName = ?)", [10, 'Bloggs'])
     }
- 
+
     void testComplex() {
         def persons = createDataSet()
         def blogs = persons.findAll { it.size < 10 && it.lastName == "Bloggs" }
-
         def complexBlogs = blogs.
-            findAll{ it.lastName < 'Zulu' || it.lastName > 'Alpha' }.
-            findAll{ it.age < 99 }.
-            findAll{ it.age > 5 }.
-            sort{ it.firstName }.reverse().
-            findAll{ it.firstName != 'Bert' }.
-            sort{ it.age }
-
+                findAll { it.lastName < 'Zulu' || it.lastName > 'Alpha' }.
+                findAll { it.age < 99 }.
+                findAll { it.age > 5 }.
+                sort { it.firstName }.reverse().
+                findAll { it.firstName != 'Bert' }.
+                sort { it.age }
         def expectedParams = [10, "Bloggs", "Zulu", "Alpha", 99, 5, "Bert"]
         def expectedSql = '''select * from person \
 where (size < ? and lastName = ?) and (lastName < ? or lastName > ?) and age < ? and age > ? and firstName != ? \
@@ -58,10 +67,15 @@ order by firstName DESC, age'''
         assertSql(complexBlogs, expectedSql, expectedParams)
     }
 
-    protected def compareFn(value) {
-        value > 1 && value < 10
+    // GROOVY-5371 can be removed once GROOVY-5375 is completed and this is supported
+    void testNonLiteralExpressionsCurrentlyNotSupported() {
+        def cutoff = 10
+        def message = shouldFail {
+            people.findAll { it.size < cutoff && it.lastName == "Bloggs" }.rows()
+        }
+        assert message.contains("DataSet currently doesn't support arbitrary variables, only literals")
     }
-    
+
     protected def assertSql(dataSet, expectedSql, expectedParams) {
         assert dataSet.sql == expectedSql
         assert dataSet.parameters == expectedParams
@@ -74,15 +88,13 @@ order by firstName DESC, age'''
         ds.password = ''
         return ds
     }
-    
-    protected def createDataSet() {
+
+    protected createDataSet() {
         def type = Person
         assert type != null , "failed to load Person class"
-
         def dataSource = createDataSource()
         def sql = new Sql(dataSource)
         return sql.dataSet(type)
     }
-
 
 }

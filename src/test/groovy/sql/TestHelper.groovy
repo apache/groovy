@@ -41,22 +41,7 @@ class TestHelper extends GroovyTestCase {
     protected createSql() {
         def sql = newSql(getURI())
 
-        ["PERSON", "FOOD", "FEATURE"].each { tryDrop(it) }
-
-        def ignoreErrors = { Closure c ->
-            try {
-                c()
-            } catch (java.sql.SQLException se) {}
-        }
-        ignoreErrors {
-            sql.execute "drop table PERSON"
-        }
-        ignoreErrors {
-            sql.execute "drop table FOOD"
-        }
-        ignoreErrors {
-            sql.execute "drop table FEATURE"
-        }
+        ["PERSON", "FOOD", "FEATURE"].each { tryDrop(sql, it) }
 
         sql.execute("create table PERSON ( firstname varchar(100), lastname varchar(100), id integer, location_id integer, location_name varchar(100) )")
         sql.execute("create table FOOD ( type varchar(100), name varchar(100))")
@@ -82,7 +67,7 @@ class TestHelper extends GroovyTestCase {
         return sql
     }
 
-    protected tryDrop(String tableName) {
+    protected tryDrop(Sql sql, String tableName) {
         try {
             sql.execute("drop table $tableName")
         } catch (Exception e) {}

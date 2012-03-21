@@ -35,6 +35,7 @@ class SqlCacheTest extends GroovyTestCase {
     int createStatementExpectedCall
     int createStatementCallCounter
 
+    @Override
     void setUp() {
         ds = new org.hsqldb.jdbc.jdbcDataSource()
         ds.database = "jdbc:hsqldb:mem:foo" + getMethodName()
@@ -87,6 +88,12 @@ class SqlCacheTest extends GroovyTestCase {
         prepareStatementCallCounter = 0
     }
 
+    @Override
+    void tearDown() {
+        super.tearDown()
+        sql.close()
+    }
+
     /**
      * Validation of ConnectionWrapper expectation.
      */
@@ -109,7 +116,6 @@ class SqlCacheTest extends GroovyTestCase {
             invokeQuery()
         }
         assert prepareStatementCallCounter == 3 // 3 diff statements
-        sql.close()
     }
 
     void testCacheConnection() {
@@ -124,7 +130,6 @@ class SqlCacheTest extends GroovyTestCase {
         prepareStatementCallCounter = 0
         invokeQuery()
         assert prepareStatementCallCounter == 13
-        sql.close()
     }
 
     private invokeQuery() {

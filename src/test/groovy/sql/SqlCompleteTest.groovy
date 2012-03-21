@@ -19,6 +19,19 @@ class SqlCompleteTest extends TestHelper {
 
     boolean personMetaClosureCalled = false
     boolean foodMetaClosureCalled = false
+    Sql sql
+
+    @Override
+    protected void setUp() {
+        super.setUp()
+        sql = createSql()
+    }
+
+    @Override
+    protected void tearDown() {
+        super.tearDown()
+        sql.close()
+    }
 
     def personMetaClosure = {metaData ->
         assert metaData.columnCount == 5
@@ -42,7 +55,6 @@ class SqlCompleteTest extends TestHelper {
     }
 
     void testEachRowWithString() {
-        def sql = createSql()
         def results = [:]
         sql.eachRow("select * from PERSON") {
             results.put(it.firstname, it['lastname'])
@@ -53,7 +65,6 @@ class SqlCompleteTest extends TestHelper {
     }
 
     void testEachRowWithNamedParams() {
-        def sql = createSql()
         def results = [:]
         sql.eachRow("select * from PERSON where firstname like :firstPat and lastname like ?.lastPat", [[firstPat:'%am%', lastPat:'%a%']]) {
             results.put(it.firstname, it['lastname'])
@@ -63,7 +74,6 @@ class SqlCompleteTest extends TestHelper {
     }
 
     void testEachRowWithParamsAndEmbeddedString() {
-        def sql = createSql()
         def results = [:]
         sql.eachRow("select * from PERSON where firstname != ':dummy' and lastname = ?", ["Mcwhirter"]) {
             results.put(it.firstname, it['lastname'])
@@ -75,7 +85,6 @@ class SqlCompleteTest extends TestHelper {
     void testEachRowWithNamedOrdinalParams() {
         def lastPatHolder = new Expando()
         lastPatHolder.lastPat = '%a%'
-        def sql = createSql()
         def results = [:]
         sql.eachRow("select * from PERSON where firstname like ?1.firstPat and lastname like ?2.lastPat", [[firstPat:'%am%'], lastPatHolder]) {
             results.put(it.firstname, it['lastname'])
@@ -85,7 +94,6 @@ class SqlCompleteTest extends TestHelper {
     }
 
     void testEachRowWithStringAndClosure() {
-        def sql = createSql()
         def results = [:]
         sql.eachRow("select * from PERSON", personMetaClosure) {
             results.put(it.firstname, it['lastname'])
@@ -96,7 +104,6 @@ class SqlCompleteTest extends TestHelper {
     }
 
     void testEachRowWithStringAndList() {
-        def sql = createSql()
         def results = []
         sql.eachRow("select * from FOOD where type=? and name != ?", ["cheese", "edam"]) { results.add(it.name) }
         def expected = ["brie", "cheddar"]
@@ -105,7 +112,6 @@ class SqlCompleteTest extends TestHelper {
     }
 
     void testEachRowWithStringAndListAndClosure() {
-        def sql = createSql()
         def results = []
         sql.eachRow("select * from FOOD where type=? and name != ?", ["cheese", "edam"], foodMetaClosure) { results.add(it.name) }
         def expected = ["brie", "cheddar"]
@@ -114,7 +120,6 @@ class SqlCompleteTest extends TestHelper {
     }
 
     void testEachRowWithGString() {
-        def sql = createSql()
         def foo = "drink"
         def results = []
         sql.eachRow("select * from FOOD where type=${foo}") { results.add(it.name) }
@@ -124,7 +129,6 @@ class SqlCompleteTest extends TestHelper {
     }
 
     void testEachRowWithGStringAndClosure() {
-        def sql = createSql()
         def foo = "drink"
         def results = []
         sql.eachRow("select * from FOOD where type=${foo}", foodMetaClosure) { results.add(it.name) }
@@ -134,7 +138,6 @@ class SqlCompleteTest extends TestHelper {
     }
 
     void testEachRowWithGString2Parameters() {
-        def sql = createSql()
         def foo = "cheese"
         def bar = "edam"
         def results = []
@@ -144,7 +147,6 @@ class SqlCompleteTest extends TestHelper {
     }
 
     void testRowsWithString() {
-        def sql = createSql()
         def result = sql.rows("select * from PERSON order by firstname")
         assert result.size() == 3
         assert result[0].firstname == "Bob"
@@ -157,7 +159,6 @@ class SqlCompleteTest extends TestHelper {
     }
 
     void testRowsWithStringAndClosure() {
-        def sql = createSql()
         def result = sql.rows("select * from PERSON order by firstname", personMetaClosure)
         assert result.size() == 3
         assert result[0].firstname == "Bob"
@@ -170,7 +171,6 @@ class SqlCompleteTest extends TestHelper {
     }
 
     void testRowsWithStringAndList() {
-        def sql = createSql()
         def result = sql.rows("select * from FOOD where type=? and name != ? order by name", ["cheese", "edam"])
         assert result.size() == 2
         assert result[0].name == "brie"
@@ -181,7 +181,6 @@ class SqlCompleteTest extends TestHelper {
     }
 
     void testRowsWithStringAndListAndClosure() {
-        def sql = createSql()
         def result = sql.rows("select * from FOOD where type=? and name != ? order by name", ["cheese", "edam"], foodMetaClosure)
         assert result.size() == 2
         assert result[0].name == "brie"
@@ -192,7 +191,6 @@ class SqlCompleteTest extends TestHelper {
     }
 
     void testRowsWithGString() {
-        def sql = createSql()
         def foo = "drink"
         def result = sql.rows("select * from FOOD where type=${foo} order by name")
         assert result.size() == 2
@@ -204,7 +202,6 @@ class SqlCompleteTest extends TestHelper {
     }
 
     void testRowsWithGStringAndClosure() {
-        def sql = createSql()
         def foo = "drink"
         def result = sql.rows("select * from FOOD where type=${foo} order by name", foodMetaClosure)
         assert result.size() == 2
@@ -216,20 +213,17 @@ class SqlCompleteTest extends TestHelper {
     }
 
     void testFirstRowWithStringAndList() {
-        def sql = createSql();
         def row = sql.firstRow("select * from FOOD where type=? and name=?", ["cheese", "edam"])
         assert row.type == "cheese"
     }
 
     /** When no results, firstRow should return null  */
     void testFirstRowWithStringAndListNoResults() {
-        def sql = createSql();
         def row = sql.firstRow("select * from FOOD where type=?", ["nothing"])
         assert row == null
     }
 
     void testFirstRowWithGString() {
-        def sql = createSql()
         def foo = "drink"
         def result = sql.firstRow("select * from FOOD where type=${foo} order by name")
         assert result.name == "beer"
@@ -237,7 +231,6 @@ class SqlCompleteTest extends TestHelper {
     }
 
     void testFirstRowShowingGStringCoercionToString() {
-        def sql = createSql()
         def table = 'PERSON'
         GString query = "select * from $table"
         // table name can't be a parameter so make it a string
@@ -246,7 +239,6 @@ class SqlCompleteTest extends TestHelper {
     }
 
     void testFirstRowShowingGStringEscaping() {
-        def sql = createSql()
         def table = 'PERSON'
         // table name can't be a parameter so escape it
         def samPattern = 'Sa%'
@@ -255,14 +247,12 @@ class SqlCompleteTest extends TestHelper {
     }
 
     void testRowResultOtherMethods() {
-        def sql = createSql()
         def resultSet = sql.firstRow("select * from PERSON")
         assert resultSet.containsKey('FIRSTNAME')
         assert resultSet.size() > 0
     }
 
     void testGroovyRowResultAsMapConstructor() {
-        def sql = createSql()
         def resultSet = sql.firstRow('select * from PERSON')
         assert resultSet == [FIRSTNAME: 'James', LASTNAME: 'Strachan', ID: 1, LOCATION_ID: 10, LOCATION_NAME: 'London']
         def p = new PersonDTO(resultSet)
@@ -270,7 +260,6 @@ class SqlCompleteTest extends TestHelper {
     }
 
     void testDataSet() {
-        def sql = createSql()
         def results = []
         def people = sql.dataSet("PERSON")
         people.each { results.add(it.firstname) }
@@ -279,7 +268,6 @@ class SqlCompleteTest extends TestHelper {
     }
 
     void testDataSetWithNotEqual() {
-        def sql = createSql()
         def expected = ["James", "Sam"]
         def answer = []
         def people = sql.dataSet(Person)
@@ -289,7 +277,6 @@ class SqlCompleteTest extends TestHelper {
     }
 
     void testDataSetWithFindAllPredicate() {
-        def sql = createSql()
         def results = []
         def food = sql.dataSet("FOOD")
         food.findAll { it.type == "cheese" }.each { results.add(it.name) }
@@ -297,7 +284,6 @@ class SqlCompleteTest extends TestHelper {
     }
 
     void testUpdatingDataSet() {
-        def sql = createSql()
         def results = []
         def features = sql.dataSet("FEATURE")
         features.each {
@@ -316,7 +302,6 @@ class SqlCompleteTest extends TestHelper {
     void testGStringToSqlConversion() {
         def foo = 'loincloth'
         def bar = 'wasteband'
-        def sql = createSql()
         def expected = "A narrow ? supported by a ?!!"
         def gstring = "A narrow ${foo} supported by a ${bar}!!"
         def result = sql.asSql(gstring, gstring.values.toList())
@@ -328,24 +313,22 @@ class SqlCompleteTest extends TestHelper {
         def food = 'food'
         def drink = 'drink'
         def bar = 'guinness'
-        def sql = createSql();
         def expected = 0
-        def result = sql.executeUpdate("update FOOD set type=? where name=?", [foo, bar]);
+        def result = sql.executeUpdate("update FOOD set type=? where name=?", [foo, bar])
         assert result == expected
         expected = 1
-        result = sql.executeUpdate("insert into FOOD (type,name) values (${food},${bar})");
+        result = sql.executeUpdate("insert into FOOD (type,name) values (${food},${bar})")
         assert result == expected
-        result = sql.executeUpdate("insert into FOOD (type,name) values (${drink},${bar})");
+        result = sql.executeUpdate("insert into FOOD (type,name) values (${drink},${bar})")
         assert result == expected
-        result = sql.executeUpdate("insert into FOOD (type,name) values ('drink','guinness')");
+        result = sql.executeUpdate("insert into FOOD (type,name) values ('drink','guinness')")
         assert result == expected
         expected = 3
-        result = sql.executeUpdate("update FOOD set type=? where name=?", [foo, bar]);
+        result = sql.executeUpdate("update FOOD set type=? where name=?", [foo, bar])
         assert result == expected
     }
 
     void testDataSetWithRows() {
-        def sql = createSql()
         def dataSet = new DataSet(sql, "FOOD")
         def rows = dataSet.rows()
 
@@ -362,7 +345,6 @@ class SqlCompleteTest extends TestHelper {
     }
 
     void testDataSetWithFirstRow() {
-        def sql = createSql()
         def dataSet = new DataSet(sql, "FOOD")
         def result = dataSet.firstRow()
         assert result != null
@@ -370,7 +352,6 @@ class SqlCompleteTest extends TestHelper {
     }
     
     void testEachRowPaging() {
-        def sql = createSql()
         def names = []
         sql.eachRow("select name from FOOD order by name", 2, 2) { row ->
             names << row.name
@@ -381,7 +362,6 @@ class SqlCompleteTest extends TestHelper {
     }
 
     void testEachRowPagingWithParams() {
-        def sql = createSql()
         def names = []
         sql.eachRow("select name from FOOD where name <> ? order by name", ['brie'], 2, 2) { row ->
             names << row.name
@@ -392,7 +372,6 @@ class SqlCompleteTest extends TestHelper {
     }
 
     void testEachRowPagingGString() {
-        def sql = createSql()
         def name = "brie"
         def names = []
         sql.eachRow("select name from FOOD where name <> $name order by name", 2, 2) { row ->
@@ -405,7 +384,6 @@ class SqlCompleteTest extends TestHelper {
 
 
     void testRowsPaging() {
-        def sql = createSql()
         def names = sql.rows("select name from FOOD order by name", 2, 2)
         assert names.size() == 2
         assert names[0] == ["NAME":"brie"]
@@ -413,7 +391,6 @@ class SqlCompleteTest extends TestHelper {
     }
 
     void testRowsPagingWithParams() {
-        def sql = createSql()
         def names = sql.rows("select name from FOOD where name <> ? order by name", ['brie'], 2, 2)
         assert names.size() == 2
         assert names[0] == ["NAME":"cheddar"]
@@ -421,7 +398,6 @@ class SqlCompleteTest extends TestHelper {
     }
 
     void testGStringRowsPaging() {
-        def sql = createSql()
         def name = "brie"
         def names = sql.rows("select name from FOOD where name <> $name order by name", 2, 2)
         assert names.size() == 2

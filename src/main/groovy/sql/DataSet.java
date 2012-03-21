@@ -238,9 +238,9 @@ public class DataSet extends Sql {
             if (whereClaus.length() > 0) {
                 sql += " where " + whereClaus;
             }
-            String orerByClaus = getSqlOrderBy();
-            if (orerByClaus.length() > 0) {
-                sql += " order by " + orerByClaus;
+            String orderByClaus = getSqlOrderBy();
+            if (orderByClaus.length() > 0) {
+                sql += " order by " + orderByClaus;
             }
         }
         return sql;
@@ -321,5 +321,11 @@ public class DataSet extends Sql {
         List rows = rows();
         if (rows.isEmpty()) return null;
         return (rows.get(0));
+    }
+
+    @Override
+    public void close() {
+        delegate.close();
+        super.close();
     }
 }

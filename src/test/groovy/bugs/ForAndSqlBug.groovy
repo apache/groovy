@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,37 +19,34 @@ import groovy.sql.TestHelper
 
 /**
  * @author Jonathan Carlson
- * @version $Revision$
  */
 class ForAndSqlBug extends GroovyTestCase {
-    
+
     void testBugInNormalMethod() {
         def sql = TestHelper.makeSql()
-        
         def li = ["a", "b"]
         for (x in li) {
             sql.eachRow("SELECT count(*) FROM FOOD") { e ->
                 println " ${x}"
-
                 assert x != null
             }
         }
+        sql.close()
     }
 
     void testBugInsideScript() {
-        assertScript( """
-import groovy.sql.TestHelper
-def sql = TestHelper.makeSql()
-
-def li = ["a", "b"]
-for (x in li) {
-    sql.eachRow("SELECT count(*) FROM FOOD") { e ->
-        println " \${x}"
-        
-        assert x != null
-    }
-}
-""")        
+        assertScript """
+            import groovy.sql.TestHelper
+            def sql = TestHelper.makeSql()
+            def li = ["a", "b"]
+            for (x in li) {
+                sql.eachRow("SELECT count(*) FROM FOOD") { e ->
+                    println " \${x}"
+                    assert x != null
+                }
+            }
+            sql.close()
+        """
     }
 
 }
