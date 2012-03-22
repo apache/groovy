@@ -139,6 +139,8 @@ import org.codehaus.groovy.runtime.SqlGroovyMethods;
  * handling is performed transparently on our behalf; however, it doesn't hurt to
  * have it there as it will return silently in that case.
  * <p/>
+ * If instead of <code>newInstance</code> you use <code>withInstance</code>, then
+ * <code>close()</code> will be called automatically for you.
  *
  * <h4>Named and named ordinal parameters</h4>
  *
@@ -234,6 +236,26 @@ public class Sql {
     }
 
     /**
+     * Invokes a closure passing it a new Sql instance created from the given JDBC connection URL.
+     * The created connection will be closed if required.
+     *
+     * @param url a database url of the form
+     *            <code> jdbc:<em>subprotocol</em>:<em>subname</em></code>
+     * @param c the Closure to call
+     * @see #newInstance(String)
+     * @throws SQLException if a database access error occurs
+     */
+    public static void withInstance(String url, Closure c) throws SQLException {
+        Sql sql = null;
+        try {
+            sql = newInstance(url);
+            c.call(sql);
+        } finally {
+            if (sql != null) sql.close();
+        }
+    }
+
+    /**
      * Creates a new Sql instance given a JDBC connection URL
      * and some properties.
      *
@@ -251,6 +273,29 @@ public class Sql {
     }
 
     /**
+     * Invokes a closure passing it a new Sql instance created from the given JDBC connection URL and properties.
+     * The created connection will be closed if required.
+     *
+     * @param url a database url of the form
+     *            <code> jdbc:<em>subprotocol</em>:<em>subname</em></code>
+     * @param properties a list of arbitrary string tag/value pairs
+     *                   as connection arguments; normally at least a "user" and
+     *                   "password" property should be included
+     * @param c the Closure to call
+     * @see #newInstance(String, java.util.Properties)
+     * @throws SQLException if a database access error occurs
+     */
+    public static void withInstance(String url, Properties properties, Closure c) throws SQLException {
+        Sql sql = null;
+        try {
+            sql = newInstance(url, properties);
+            c.call(sql);
+        } finally {
+            if (sql != null) sql.close();
+        }
+    }
+
+    /**
      * Creates a new Sql instance given a JDBC connection URL,
      * some properties and a driver class name.
      *
@@ -262,12 +307,38 @@ public class Sql {
      * @param driverClassName the fully qualified class name of the driver class
      * @return a new Sql instance with a connection
      * @throws SQLException           if a database access error occurs
-     * @throws ClassNotFoundException if the class cannot be found or loaded
+     * @throws ClassNotFoundException if the driver class cannot be found or loaded
      */
     public static Sql newInstance(String url, Properties properties, String driverClassName)
             throws SQLException, ClassNotFoundException {
         loadDriver(driverClassName);
         return newInstance(url, properties);
+    }
+
+    /**
+     * Invokes a closure passing it a new Sql instance created from the given JDBC connection URL,
+     * properties and driver classname. The created connection will be closed if required.
+     *
+     * @param url a database url of the form
+     *            <code> jdbc:<em>subprotocol</em>:<em>subname</em></code>
+     * @param properties a list of arbitrary string tag/value pairs
+     *                   as connection arguments; normally at least a "user" and
+     *                   "password" property should be included
+     * @param driverClassName the fully qualified class name of the driver class
+     * @param c the Closure to call
+     * @see #newInstance(String, java.util.Properties, String)
+     * @throws SQLException if a database access error occurs
+     * @throws ClassNotFoundException if the driver class cannot be found or loaded
+     */
+    public static void withInstance(String url, Properties properties, String driverClassName, Closure c)
+            throws SQLException, ClassNotFoundException {
+        Sql sql = null;
+        try {
+            sql = newInstance(url, properties, driverClassName);
+            c.call(sql);
+        } finally {
+            if (sql != null) sql.close();
+        }
     }
 
     /**
@@ -288,6 +359,29 @@ public class Sql {
     }
 
     /**
+     * Invokes a closure passing it a new Sql instance created from the given JDBC connection URL, user and password.
+     * The created connection will be closed if required.
+     *
+     * @param url a database url of the form
+     *            <code> jdbc:<em>subprotocol</em>:<em>subname</em></code>
+     * @param user     the database user on whose behalf the connection
+     *                 is being made
+     * @param password the user's password
+     * @param c the Closure to call
+     * @see #newInstance(String, String, String)
+     * @throws SQLException if a database access error occurs
+     */
+    public static void withInstance(String url, String user, String password, Closure c) throws SQLException {
+        Sql sql = null;
+        try {
+            sql = newInstance(url, user, password);
+            c.call(sql);
+        } finally {
+            if (sql != null) sql.close();
+        }
+    }
+
+    /**
      * Creates a new Sql instance given a JDBC connection URL,
      * a username, a password and a driver class name.
      *
@@ -299,12 +393,38 @@ public class Sql {
      * @param driverClassName the fully qualified class name of the driver class
      * @return a new Sql instance with a connection
      * @throws SQLException           if a database access error occurs
-     * @throws ClassNotFoundException if the class cannot be found or loaded
+     * @throws ClassNotFoundException if the driver class cannot be found or loaded
      */
-    public static Sql newInstance(String url, String user, String password, String driverClassName) throws SQLException,
-            ClassNotFoundException {
+    public static Sql newInstance(String url, String user, String password, String driverClassName)
+            throws SQLException, ClassNotFoundException {
         loadDriver(driverClassName);
         return newInstance(url, user, password);
+    }
+
+    /**
+     * Invokes a closure passing it a new Sql instance created from the given JDBC connection URL.
+     * The created connection will be closed if required.
+     *
+     * @param url a database url of the form
+     *            <code> jdbc:<em>subprotocol</em>:<em>subname</em></code>
+     * @param user            the database user on whose behalf the connection
+     *                        is being made
+     * @param password        the user's password
+     * @param driverClassName the fully qualified class name of the driver class
+     * @param c the Closure to call
+     * @see #newInstance(String, String, String, String)
+     * @throws SQLException if a database access error occurs
+     * @throws ClassNotFoundException if the driver class cannot be found or loaded
+     */
+    public static void withInstance(String url, String user, String password, String driverClassName, Closure c)
+            throws SQLException, ClassNotFoundException {
+        Sql sql = null;
+        try {
+            sql = newInstance(url, user, password, driverClassName);
+            c.call(sql);
+        } finally {
+            if (sql != null) sql.close();
+        }
     }
 
     /**
@@ -316,11 +436,34 @@ public class Sql {
      * @param driverClassName the fully qualified class name of the driver class
      * @return a new Sql instance with a connection
      * @throws SQLException           if a database access error occurs
-     * @throws ClassNotFoundException if the class cannot be found or loaded
+     * @throws ClassNotFoundException if the driver class cannot be found or loaded
      */
     public static Sql newInstance(String url, String driverClassName) throws SQLException, ClassNotFoundException {
         loadDriver(driverClassName);
         return newInstance(url);
+    }
+
+    /**
+     * Invokes a closure passing it a new Sql instance created from the given JDBC connection URL.
+     * The created connection will be closed if required.
+     *
+     * @param url a database url of the form
+     *            <code> jdbc:<em>subprotocol</em>:<em>subname</em></code>
+     * @param driverClassName the fully qualified class name of the driver class
+     * @param c the Closure to call
+     * @see #newInstance(String, String)
+     * @throws SQLException if a database access error occurs
+     * @throws ClassNotFoundException if the driver class cannot be found or loaded
+     */
+    public static void withInstance(String url, String driverClassName, Closure c)
+            throws SQLException, ClassNotFoundException {
+        Sql sql = null;
+        try {
+            sql = newInstance(url, driverClassName);
+            c.call(sql);
+        } finally {
+            if (sql != null) sql.close();
+        }
     }
 
     /**
@@ -359,7 +502,7 @@ public class Sql {
      * @param args a Map contain further arguments
      * @return a new Sql instance with a connection
      * @throws SQLException           if a database access error occurs
-     * @throws ClassNotFoundException if the class cannot be found or loaded
+     * @throws ClassNotFoundException if the driver class cannot be found or loaded
      */
     public static Sql newInstance(Map<String, Object> args) throws SQLException, ClassNotFoundException {
         if (!args.containsKey("url"))
@@ -405,6 +548,26 @@ public class Sql {
         Sql result = (Sql) InvokerHelper.invokeConstructorOf(Sql.class, sqlArgs);
         result.setConnection(connection);
         return result;
+    }
+
+    /**
+     * Invokes a closure passing it a new Sql instance created from the given map of arguments.
+     * The created connection will be closed if required.
+     *
+     * @param args a Map contain further arguments
+     * @param c the Closure to call
+     * @see #newInstance(java.util.Map)
+     * @throws SQLException if a database access error occurs
+     * @throws ClassNotFoundException if the driver class cannot be found or loaded
+     */
+    public static void withInstance(Map<String, Object> args, Closure c) throws SQLException, ClassNotFoundException {
+        Sql sql = null;
+        try {
+            sql = newInstance(args);
+            c.call(sql);
+        } finally {
+            if (sql != null) sql.close();
+        }
     }
 
     /**

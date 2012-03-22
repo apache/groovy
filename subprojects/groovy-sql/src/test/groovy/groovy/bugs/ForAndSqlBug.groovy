@@ -19,7 +19,6 @@ import groovy.sql.SqlHelperTestCase
 
 /**
  * @author Jonathan Carlson
- * @version $Revision$
  */
 class ForAndSqlBug extends GroovyTestCase {
 
@@ -32,6 +31,7 @@ class ForAndSqlBug extends GroovyTestCase {
                 assert x != null
             }
         }
+        sql.close()
     }
 
     void testBugInsideScript() {
@@ -45,6 +45,7 @@ class ForAndSqlBug extends GroovyTestCase {
                     assert x != null
                 }
             }
+            sql.close()
         '''
     }
 

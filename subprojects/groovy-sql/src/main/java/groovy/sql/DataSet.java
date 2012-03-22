@@ -238,9 +238,9 @@ public class DataSet extends Sql {
             if (whereClaus.length() > 0) {
                 sql += " where " + whereClaus;
             }
-            String orerByClaus = getSqlOrderBy();
-            if (orerByClaus.length() > 0) {
-                sql += " order by " + orerByClaus;
+            String orderByClaus = getSqlOrderBy();
+            if (orderByClaus.length() > 0) {
+                sql += " order by " + orderByClaus;
             }
         }
         return sql;
@@ -278,7 +278,8 @@ public class DataSet extends Sql {
             ClassNode classNode = closure.getMetaClass().getClassNode();
             if (classNode == null) {
                 throw new GroovyRuntimeException(
-                        "Could not find the ClassNode for MetaClass: " + closure.getMetaClass());
+                        "DataSet unable to evaluate expression. AST not available for closure: " + closure.getMetaClass().getTheClass().getName() +
+                                ". Is the source code on the classpath?");
             }
             List methods = classNode.getDeclaredMethods("doCall");
             if (!methods.isEmpty()) {
@@ -321,5 +322,11 @@ public class DataSet extends Sql {
         List rows = rows();
         if (rows.isEmpty()) return null;
         return (rows.get(0));
+    }
+
+    @Override
+    public void close() {
+        delegate.close();
+        super.close();
     }
 }
