@@ -2,4 +2,4 @@ include 'subprojects:groovy-ant', 'subprojects:groovy-bsf', 'subprojects:groovy-
         'subprojects:groovy-groovydoc', 'subprojects:groovy-groovysh', 'subprojects:groovy-jmx', 'subprojects:groovy-json',
         'subprojects:groovy-jsr223', 'subprojects:groovy-servlet', 'subprojects:groovy-sql', 'subprojects:groovy-swing',
         'subprojects:groovy-templates', 'subprojects:groovy-test', 'subprojects:groovy-testng', 'subprojects:groovy-xml',
-	'subprojects:groovy-all-tests'
+        'subprojects:groovy-all-tests'
