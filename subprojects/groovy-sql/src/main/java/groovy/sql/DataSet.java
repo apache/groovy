@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,7 +56,9 @@ import java.util.Map;
  *     sort{ it.age }
  * </pre>
  * Currently, the Groovy source code for any accessed POGO must be on the
- * classpath at runtime.
+ * classpath at runtime. Also, at the moment, the expressions (or nested expressions) can only contain
+ * references to fields of the POGO or literals (i.e. constant Strings or numbers). This limitation
+ * may be removed in a future version of Groovy.
  *
  * @author Chris Stevenson
  * @author Paul King

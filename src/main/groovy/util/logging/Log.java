@@ -68,12 +68,16 @@ public @interface Log {
      * This class contains the logic of how to weave a Java Util Logging logger into the host class.
      */
     public static class JavaUtilLoggingStrategy implements LoggingStrategy {
+
+        private static final ClassNode LOGGER_CLASSNODE = ClassHelper.make(java.util.logging.Logger.class);
+        private static final ClassNode LEVEL_CLASSNODE = ClassHelper.make(java.util.logging.Level.class);
+
         public FieldNode addLoggerFieldToClass(ClassNode classNode, String logFieldName) {
             return classNode.addField(logFieldName,
                         Opcodes.ACC_FINAL | Opcodes.ACC_TRANSIENT | Opcodes.ACC_STATIC | Opcodes.ACC_PRIVATE,
-                        new ClassNode("java.util.logging.Logger", Opcodes.ACC_PUBLIC, ClassHelper.OBJECT_TYPE),
+                        LOGGER_CLASSNODE,
                         new MethodCallExpression(
-                                new ClassExpression(new ClassNode("java.util.logging.Logger", Opcodes.ACC_PUBLIC, ClassHelper.OBJECT_TYPE)),
+                                new ClassExpression(LOGGER_CLASSNODE),
                                 "getLogger",
                                 new ConstantExpression(classNode.getName())));
         }
@@ -83,9 +87,8 @@ public @interface Log {
         }
 
         public Expression wrapLoggingMethodCall(Expression logVariable, String methodName, Expression originalExpression) {
-            ClassNode levelClass = new ClassNode("java.util.logging.Level", 0, ClassHelper.OBJECT_TYPE);
             AttributeExpression logLevelExpression = new AttributeExpression(
-                    new ClassExpression(levelClass),
+                    new ClassExpression(LEVEL_CLASSNODE),
                     new ConstantExpression(methodName.toUpperCase()));
 
             ArgumentListExpression args = new ArgumentListExpression();

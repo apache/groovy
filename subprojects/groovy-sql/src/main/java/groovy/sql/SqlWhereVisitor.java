@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,18 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package groovy.sql;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import groovy.lang.GroovyRuntimeException;
 import org.codehaus.groovy.ast.CodeVisitorSupport;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.BooleanExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
+import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.Types;
@@ -49,7 +50,7 @@ public class SqlWhereVisitor extends CodeVisitorSupport {
     public void visitBinaryExpression(BinaryExpression expression) {
         Expression left = expression.getLeftExpression();
         Expression right = expression.getRightExpression();
-        boolean leaf = (right instanceof ConstantExpression);
+        boolean leaf = (right instanceof ConstantExpression || left instanceof ConstantExpression);
 
         if (!leaf) buffer.append("(");
         left.visit(this);
@@ -70,26 +71,30 @@ public class SqlWhereVisitor extends CodeVisitorSupport {
     public void visitConstantExpression(ConstantExpression expression) {
         getParameters().add(expression.getValue());
         buffer.append("?");
-        
     }
 
     public void visitPropertyExpression(PropertyExpression expression) {
         buffer.append(expression.getPropertyAsString());
     }
-    
+
+    @Override
+    public void visitVariableExpression(VariableExpression expression) {
+        throw new GroovyRuntimeException("DataSet currently doesn't support arbitrary variables, only literals: found attempted reference to variable '" + expression.getName() + "'");
+    }
+
     public List getParameters() {
         return parameters;
     }
-    
+
     protected String tokenAsSql(Token token) {
         switch (token.getType()) {
-            case Types.COMPARE_EQUAL :
+            case Types.COMPARE_EQUAL:
                 return "=";
-            case Types.LOGICAL_AND :
+            case Types.LOGICAL_AND:
                 return "and";
-            case Types.LOGICAL_OR :
+            case Types.LOGICAL_OR:
                 return "or";
-            default :
+            default:
                 return token.getText();
         }
     }
