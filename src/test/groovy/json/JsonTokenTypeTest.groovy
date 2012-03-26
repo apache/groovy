@@ -82,6 +82,10 @@ class JsonTokenTypeTest extends GroovyTestCase {
         assert STRING.matching('"a\\""')
     }
 
+    void testMatchingLongStringWithBackslashes() {
+        assert STRING.matching('"a' + '\\"'*10000 + '"')
+    }
+
     void testTokenStartingWithChar() {
         assert startingWith('{' as char)      == OPEN_CURLY
         assert startingWith('}' as char)      == CLOSE_CURLY
