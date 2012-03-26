@@ -15,6 +15,8 @@
  */
 package groovy.json;
 
+import groovy.lang.Closure;
+
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -35,7 +37,21 @@ public enum JsonTokenType {
     TRUE            ( "the constant 'true'",                "true"      ),
     FALSE           ( "the constant 'false'",               "false"     ),
     NUMBER          ( "a number",                           Pattern.compile("-?\\d+(\\.\\d+)?((e|E)(\\+|-)?\\d+)?")),
-    STRING          ( "a string",                           Pattern.compile("\"([^\"\\\\]*|\\\\[\"\\\\bfnrt\\/]|\\\\u[0-9a-fA-F]{4})*\"", Pattern.DOTALL));
+    //STRING          ( "a string",                           Pattern.compile("\"([^\"\\\\]*|\\\\[\"\\\\bfnrt\\/]|\\\\u[0-9a-fA-F]{4})*\"", Pattern.DOTALL));
+    /**
+     * Original pattern throws the StackOverflowError for long strings with backslashes.
+     * So it is replaced by a 2-step approach inspired from json2.js sources:
+     *     https://github.com/douglascrockford/JSON-js/blob/master/json2.js#L462
+     *
+     * See {@link JsonTokenTypeTest#testMatchingLongStringWithBackslashes()} for details.
+     */
+    STRING          ( "a string",                           new Closure(null) {
+        private Pattern replacePattern = Pattern.compile("(?:\\\\[\"\\\\bfnrt\\/]|\\\\u[0-9a-fA-F]{4})");
+        private Pattern validatePattern = Pattern.compile("\"[^\"\\\\]*\"");
+        boolean doCall(String it) {
+            return validatePattern.matcher(replacePattern.matcher(it).replaceAll("@")).matches();
+        }
+    });
 
     /**
      * A String constant or a Pattern, serving as a validator for matching tokens.
@@ -72,6 +88,8 @@ public enum JsonTokenType {
         if (validator instanceof Pattern) {
             Matcher matcher = ((Pattern)validator).matcher(input);
             return matcher.matches();
+        } else if (validator instanceof Closure) {
+            return (Boolean)((Closure) validator).call(input);
         } else if (validator instanceof String) {
             return input.equals(validator);
         } else {
