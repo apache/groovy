@@ -313,7 +313,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
     void testTernaryOperatorAssignementShouldFailBecauseOfIncompatibleGenericTypes() {
         shouldFailWithMessages '''
             List<Integer> foo = true?new LinkedList<String>():new LinkedList<Integer>();
-        ''', 'Incompatible generic argument types. Cannot assign java.util.LinkedList <? extends java.lang.Comparable> to: java.util.List <Integer>'
+        ''', 'Incompatible generic argument types. Cannot assign java.util.LinkedList <? extends java.io.Serializable <? extends java.io.Serializable>> to: java.util.List <Integer>'
     }
 
     void testCastStringToChar() {

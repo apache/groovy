@@ -83,7 +83,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
                 }
             }
             byte res = cl(0) // should throw an error because return type inference should be a Number
-        ''', 'Cannot assign value of type java.lang.Number to variable of type byte'
+        ''', 'Cannot assign value of type java.lang.Number or java.lang.Comparable to variable of type byte'
     }
 
     void testClosureWithoutParam() {

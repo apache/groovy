@@ -183,8 +183,8 @@ class WideningCategoriesTest extends GenericsTestCase {
     void testDistinctPrimitiveTypes() {
         ClassNode a = int_TYPE // primitive int
         ClassNode b = long_TYPE // primitive long
-        assert lowestUpperBound(a,b) == Number_TYPE
-        assert lowestUpperBound(b,a) == Number_TYPE
+        assert lowestUpperBound(a,b).superClass == Number_TYPE
+        assert lowestUpperBound(b,a).interfaces == [make(Comparable)]
     }
 
     void testIdenticalPrimitiveTypes() {
@@ -210,7 +210,8 @@ class WideningCategoriesTest extends GenericsTestCase {
         assert lub == make(List)
         assert lub.genericsTypes.length == 1
         assert lub.genericsTypes[0].wildcard
-        assert lub.genericsTypes[0].upperBounds[0] == Number_TYPE
+        assert lub.genericsTypes[0].upperBounds[0].superClass == Number_TYPE
+        assert lub.genericsTypes[0].upperBounds[0].interfaces == [ make(Comparable) ]
     }
 
     void testLUBWithTwoInterfacesAndSingleCommonInterface() {
@@ -265,7 +266,7 @@ class WideningCategoriesTest extends GenericsTestCase {
         assert lub.unresolvedSuperClass.genericsTypes[0].wildcard // ? extends Number
         ClassNode genericType = lub.unresolvedSuperClass.genericsTypes[0].upperBounds[0]
         assert genericType instanceof LowestUpperBoundClassNode // a virtual class which extends Number and implements Comparable<itself>
-        assert genericType == make(Number)
+        assert genericType.superClass == make(Number)
         assert genericType.interfaces == [make(Comparable)]
         assert lub.interfaces == [make(Serializable)]
     }

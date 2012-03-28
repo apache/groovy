@@ -518,7 +518,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 ClassNode elemType = getType(listExpression);
                 ClassNode tupleType = getType(tupleExpression);
                 if (!isAssignableTo(elemType, tupleType)) {
-                    addStaticTypeError("Cannot assign value of type " + elemType.getName() + " to variable of type " + tupleType.getName(), rightExpression);
+                    addStaticTypeError("Cannot assign value of type " + elemType.getText() + " to variable of type " + tupleType.getText(), rightExpression);
                     break; // avoids too many errors
                 }
             }
@@ -530,7 +530,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             addStaticTypeError("Cannot set read-only property: " + ((PropertyExpression) leftExpression).getPropertyAsString(), leftExpression);
         }
         if (!compatible) {
-            addStaticTypeError("Cannot assign value of type " + inferredRightExpressionType.getName() + " to variable of type " + leftExpressionType.getName(), assignmentExpression);
+            addAssignmentError(leftExpressionType, inferredRightExpressionType, assignmentExpression);
         } else {
             // if closure expression on RHS, then copy the inferred closure return type
             if (rightExpression instanceof ClosureExpression) {
@@ -554,13 +554,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 if (rightRedirect.isArray()) {
                     ClassNode rightComponentType = rightRedirect.getComponentType();
                     if (!checkCompatibleAssignmentTypes(leftComponentType, rightComponentType)) {
-                        addStaticTypeError("Cannot assign value of type " + rightComponentType + " into array of type " + leftExpressionType, assignmentExpression);
+                        addStaticTypeError("Cannot assign value of type " + rightComponentType.getText() + " into array of type " + leftExpressionType.getText(), assignmentExpression);
                     }
                 } else if (rightExpression instanceof ListExpression) {
                     for (Expression element : ((ListExpression) rightExpression).getExpressions()) {
                         ClassNode rightComponentType = element.getType().redirect();
                         if (!checkCompatibleAssignmentTypes(leftComponentType, rightComponentType)) {
-                            addStaticTypeError("Cannot assign value of type " + rightComponentType + " into array of type " + leftExpressionType, assignmentExpression);
+                            addStaticTypeError("Cannot assign value of type " + rightComponentType.getText() + " into array of type " + leftExpressionType.getText(), assignmentExpression);
                         }
                     }
                 }
@@ -575,7 +575,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 checkGroovyStyleConstructor(leftRedirect, args);
             } else if (!implementsInterfaceOrIsSubclassOf(inferredRightExpressionType, leftRedirect)
                     && implementsInterfaceOrIsSubclassOf(inferredRightExpressionType, LIST_TYPE)) {
-                addStaticTypeError("Cannot assign value of type " + inferredRightExpressionType.getName() + " to variable of type " + leftExpressionType.getName(), assignmentExpression);
+                addAssignmentError(leftExpressionType, inferredRightExpressionType, assignmentExpression);
             }
 
             // if left type is not a list but right type is a map, then we're in the case of a groovy
@@ -607,6 +607,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
     }
 
+    private void addAssignmentError(final ClassNode leftType, final ClassNode rightType, final Expression assignmentExpression) {
+        addStaticTypeError("Cannot assign value of type " + rightType.getText() + " to variable of type " + leftType.getText(), assignmentExpression);
+    }
+
     private void checkGroovyConstructorMap(final Expression receiver, final ClassNode receiverType, final MapExpression mapExpression) {
         for (MapEntryExpression entryExpression : mapExpression.getMapEntryExpressions()) {
             Expression keyExpr = entryExpression.getKeyExpression();
@@ -626,7 +630,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 } else if (propertyNode != null) {
                     ClassNode valueType = getType(entryExpression.getValueExpression());
                     if (!isAssignableTo(propertyNode.getType(), valueType)) {
-                        addStaticTypeError("Cannot assign value of type " + valueType.getName() + " to field of type " + propertyNode.getType().getName(), entryExpression);
+                        addAssignmentError(propertyNode.getType(), valueType, entryExpression);
                     }
                 }
             }
@@ -1013,6 +1017,14 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     && !type.equals(VOID_TYPE)
                     && !checkCompatibleAssignmentTypes(methodNode.getReturnType(), type)) {
                 addStaticTypeError("Cannot return value of type " + type + " on method returning type " + methodNode.getReturnType(), statement.getExpression());
+            } else if (!methodNode.isVoidMethod()) {
+                ClassNode previousType = (ClassNode) methodNode.getNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE);
+                ClassNode inferred = previousType == null ? type : lowestUpperBound(type, previousType);
+                if (implementsInterfaceOrIsSubclassOf(inferred, methodNode.getReturnType())) {
+                    methodNode.putNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE, inferred);
+                } else {
+                    methodNode.putNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE, methodNode.getReturnType());
+                }
             }
         }
         return type;
@@ -1251,7 +1263,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 }
             }
             if (mn.isEmpty()) {
-                addStaticTypeError("Cannot find matching method " + receiver.getName() + "#" + toMethodParametersString(name, args), call);
+                addStaticTypeError("Cannot find matching method " + receiver.getText() + "#" + toMethodParametersString(name, args), call);
             } else {
                 if (mn.size() == 1) {
                     MethodNode directMethodCallCandidate = mn.get(0);
@@ -1268,7 +1280,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     classNode = currentClassNode;
                     ClassNode returnType = getType(directMethodCallCandidate);
                     if (returnType.isUsingGenerics() && !returnType.isEnum()) {
-                        returnType = inferReturnTypeGenerics(chosenReceiver, directMethodCallCandidate, callArguments);
+                        ClassNode irtg = inferReturnTypeGenerics(chosenReceiver, directMethodCallCandidate, callArguments);
+                        returnType = irtg!=null && implementsInterfaceOrIsSubclassOf(irtg, returnType)?irtg:returnType;
                     }
                     storeType(call, returnType);
                     storeTargetMethod(call, directMethodCallCandidate);
@@ -1481,7 +1494,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     }
                 }
                 if (mn.isEmpty()) {
-                    addStaticTypeError("Cannot find matching method " + receiver.getName() + "#" + toMethodParametersString(name, args), call);
+                    addStaticTypeError("Cannot find matching method " + receiver.getText() + "#" + toMethodParametersString(name, args), call);
                 } else {
                     if (mn.size() == 1) {
                         MethodNode directMethodCallCandidate = mn.get(0);
@@ -1499,7 +1512,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         classNode = currentClassNode;
                         ClassNode returnType = getType(directMethodCallCandidate);
                         if (isUsingGenericsOrIsArrayUsingGenerics(returnType)) {
-                            returnType = inferReturnTypeGenerics(chosenReceiver, directMethodCallCandidate, callArguments);
+                            ClassNode irtg = inferReturnTypeGenerics(chosenReceiver, directMethodCallCandidate, callArguments);
+                            returnType = irtg!=null && implementsInterfaceOrIsSubclassOf(irtg, returnType)?irtg:returnType;
                         }
                         storeType(call, returnType);
                         storeTargetMethod(call, directMethodCallCandidate);
@@ -1850,7 +1864,16 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             // check if any generic information could help
             GenericsType[] types = containerType.getGenericsTypes();
             if (types != null && types.length == 1) {
-                return types[0].getType();
+                GenericsType type = types[0];
+                if (type.isWildcard()) {
+                    ClassNode[] upperBounds = type.getUpperBounds();
+                    if (upperBounds.length==1) {
+                        return upperBounds[0];
+                    }
+                    ClassNode lowerBound = type.getLowerBound();
+                    if (lowerBound!=null) return lowerBound;
+                }
+                return type.getType();
             }
             return OBJECT_TYPE;
         } else {
@@ -1863,7 +1886,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             ClassNode receiver, String name, ClassNode... args) {
         final List<MethodNode> methods = findMethod(receiver, name, args);
         if (methods.isEmpty()) {
-            addStaticTypeError("Cannot find matching method " + receiver.getName() + "#" + toMethodParametersString(name, args), expr);
+            addStaticTypeError("Cannot find matching method " + receiver.getText() + "#" + toMethodParametersString(name, args), expr);
         } else if (methods.size() == 1) {
             return methods.get(0);
         } else {

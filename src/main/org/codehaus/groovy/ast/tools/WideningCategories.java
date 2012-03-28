@@ -20,7 +20,6 @@ import static org.codehaus.groovy.ast.ClassHelper.*;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GenericsType;
 import org.codehaus.groovy.ast.MethodNode;
-import org.codehaus.groovy.vmplugin.VMPluginFactory;
 
 import java.util.*;
 
@@ -271,6 +270,13 @@ public class WideningCategories {
         }
         if (a.equals(OBJECT_TYPE) || b.equals(OBJECT_TYPE)) {
             // one of the objects is at the top of the hierarchy
+            GenericsType[] gta = a.getGenericsTypes();
+            GenericsType[] gtb = b.getGenericsTypes();
+            if (gta !=null && gtb !=null && gta.length==1 && gtb.length==1) {
+                if (gta[0].getName().equals(gtb[0].getName())) {
+                    return a;
+                }
+            }
             return OBJECT_TYPE;
         }
         if (a.equals(VOID_TYPE) || b.equals(VOID_TYPE)) {
@@ -361,18 +367,12 @@ public class WideningCategories {
         ClassNode sb = b.getUnresolvedSuperClass();
 
         // extract implemented interfaces before "going up"
-        ClassNode[] interfacesFromA = a.getInterfaces();
-        ClassNode[] interfacesFromB = b.getInterfaces();
-        if (interfacesFromA.length>0 || interfacesFromB.length>0) {
-            if (interfacesImplementedByA==null) {
-                interfacesImplementedByA = new ArrayList<ClassNode>();
-            }
-            if (interfacesImplementedByB==null) {
-                interfacesImplementedByB = new ArrayList<ClassNode>();
-            }
-            Collections.addAll(interfacesImplementedByA, interfacesFromA);
-            Collections.addAll(interfacesImplementedByB, interfacesFromB);
-        }
+        Set<ClassNode> ifa = new HashSet<ClassNode>();
+        extractInterfaces(a, ifa);
+        Set<ClassNode> ifb = new HashSet<ClassNode>();
+        extractInterfaces(b, ifb);
+        interfacesImplementedByA = interfacesImplementedByA==null?new LinkedList<ClassNode>(ifa):interfacesImplementedByA;
+        interfacesImplementedByB = interfacesImplementedByB==null?new LinkedList<ClassNode>(ifb):interfacesImplementedByB;
 
         // check if no superclass is defined
         // meaning that we reached the top of the object hierarchy
@@ -389,6 +389,12 @@ public class WideningCategories {
         return lowestUpperBound(sa, sb, interfacesImplementedByA, interfacesImplementedByB);
     }
 
+    private static void extractInterfaces(ClassNode node, Set<ClassNode> interfaces) {
+        if (node==null) return;
+        Collections.addAll(interfaces, node.getInterfaces());
+        extractInterfaces(node.getSuperClass(), interfaces);
+    }
+    
     /**
      * Given the list of interfaces implemented by two class nodes, returns the list of the most specific common
      * implemented interfaces.
@@ -463,17 +469,30 @@ public class WideningCategories {
             return interfaces.iterator().next();
         }
         LowestUpperBoundClassNode type;
-        ClassNode[] interfaceArray = interfaces.toArray(new ClassNode[interfaces.size()]);
-        Arrays.sort(interfaceArray, INTERFACE_CLASSNODE_COMPARATOR);
+        ClassNode superClass;
+        String name;
         if (baseType1.equals(baseType2)) {
             if (OBJECT_TYPE.equals(baseType1)) {
-                type = new LowestUpperBoundClassNode("Virtual$Object", OBJECT_TYPE, interfaceArray);
+                superClass = baseType1;
+                name = "Virtual$Object";
             } else {
-                type = new LowestUpperBoundClassNode("Virtual$"+baseType1.getName(), baseType1, interfaceArray);
+                superClass = baseType1;
+                name = "Virtual$"+baseType1.getName();
             }
         } else {
-            type = new LowestUpperBoundClassNode("CommonAssignOf$"+baseType1.getName()+"$"+baseType2.getName(), OBJECT_TYPE, interfaceArray);
+            superClass = OBJECT_TYPE;
+            name = "CommonAssignOf$"+baseType1.getName()+"$"+baseType2.getName();
         }
+        Iterator<ClassNode> itcn = interfaces.iterator();
+        while (itcn.hasNext()) {
+            ClassNode next = itcn.next();
+            if (superClass.isDerivedFrom(next) || superClass.implementsInterface(next)) {
+                itcn.remove();
+            }
+        }
+        ClassNode[] interfaceArray = interfaces.toArray(new ClassNode[interfaces.size()]);
+        Arrays.sort(interfaceArray, INTERFACE_CLASSNODE_COMPARATOR);
+        type = new LowestUpperBoundClassNode(name, superClass, interfaceArray);
         return type;
     }
 
@@ -489,30 +508,56 @@ public class WideningCategories {
      *
      */
     public static class LowestUpperBoundClassNode extends ClassNode {
+        private static final Comparator<ClassNode> CLASS_NODE_COMPARATOR = new Comparator<ClassNode>() {
+            public int compare(final ClassNode o1, final ClassNode o2) {
+                String n1 = o1 instanceof LowestUpperBoundClassNode?((LowestUpperBoundClassNode)o1).name:o1.getName();
+                String n2 = o2 instanceof LowestUpperBoundClassNode?((LowestUpperBoundClassNode)o2).name:o2.getName();
+                return n1.compareTo(n2);
+            }
+        };
         private final ClassNode compileTimeClassNode;
-        protected final String name;
-		
+        private final String name;
+        private final String text;
+
         public LowestUpperBoundClassNode(String name, ClassNode upper, ClassNode... interfaces) {
             super(name, ACC_PUBLIC|ACC_FINAL, upper, interfaces, null);
+            boolean usesGenerics;
+            Arrays.sort(interfaces, CLASS_NODE_COMPARATOR);
             compileTimeClassNode = upper.equals(OBJECT_TYPE) && interfaces.length>0?interfaces[0]:upper;
             this.name = name;
-            if (upper.isUsingGenerics()) {
-                setGenericsTypes(upper.getGenericsTypes());
-            }
+            usesGenerics = upper.isUsingGenerics();
+            List<GenericsType[]> genericsTypesList = new LinkedList<GenericsType[]>();
+            genericsTypesList.add(upper.getGenericsTypes());
 			for (ClassNode anInterface : interfaces) {
+                usesGenerics |= anInterface.isUsingGenerics();
+                genericsTypesList.add(anInterface.getGenericsTypes());
 				for (MethodNode methodNode : anInterface.getMethods()) {
 					addMethod(methodNode.getName(), methodNode.getModifiers(), methodNode.getReturnType(), methodNode.getParameters(), methodNode.getExceptions(), methodNode.getCode());
 				}
 			}
+            setUsingGenerics(usesGenerics);
+            if (usesGenerics) {
+                List<GenericsType> asArrayList = new ArrayList<GenericsType>();
+                for (GenericsType[] genericsTypes : genericsTypesList) {
+                    if (genericsTypes!=null) {
+                        Collections.addAll(asArrayList, genericsTypes);
+                    }
+                }
+                setGenericsTypes(asArrayList.toArray(new GenericsType[asArrayList.size()]));
+            }
+            StringBuilder sb = new StringBuilder();
+            if (!upper.equals(OBJECT_TYPE)) sb.append(upper.getName());
+            for (ClassNode anInterface : interfaces) {
+                if (sb.length()>0) {
+                    sb.append(" or ");
+                }
+                sb.append(anInterface.getName());
+            }
+            this.text = sb.toString();
         }
 
         public String getLubName() {
             return this.name;
-        }
-
-        @Override
-        public String getNameWithoutPackage() {
-            return compileTimeClassNode.getNameWithoutPackage();
         }
 
         @Override
@@ -525,10 +570,19 @@ public class WideningCategories {
             return compileTimeClassNode.getTypeClass();
         }
 
-		/*public ClassNode[] getInterfaces() {
-			return interfaces;
-		}*/
-	}
+        @Override
+        public int hashCode() {
+            int result = super.hashCode();
+//            result = 31 * result + (compileTimeClassNode != null ? compileTimeClassNode.hashCode() : 0);
+            result = 31 * result + (name != null ? name.hashCode() : 0);
+            return result;
+        }
+
+        @Override
+        public String getText() {
+            return text;
+        }
+    }
 
     /**
      * Compares two class nodes, but including their generics types.

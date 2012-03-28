@@ -148,7 +148,7 @@ class ConstructorsSTCTest extends StaticTypeCheckingTestCase {
                 int y
             }
             A a = [x:'100', y:200]
-        ''', 'Cannot assign value of type java.lang.String to field of type int'
+        ''', 'Cannot assign value of type java.lang.String to variable of type int'
     }
 
     void testConstructFromValuedMapAndDynamicKey() {
