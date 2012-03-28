@@ -312,7 +312,7 @@ class ListenerListASTTransformation implements ASTTransformation, Opcodes {
         def args = new ArgumentListExpression(method.parameters)
 
         BlockStatement block = new BlockStatement()
-        def listenerListType = ClassHelper.make(ArrayList)
+        def listenerListType = ClassHelper.make(ArrayList).plainNodeReference
         listenerListType.setGenericsTypes(types)
         block.addStatements([
                 new IfStatement(
