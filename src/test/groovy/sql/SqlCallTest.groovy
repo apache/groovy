@@ -42,6 +42,7 @@ class SqlCallTest extends GroovyTestCase {
         } catch(Exception e){ }
     }
 
+    @Override
     void setUp() {
         sql = setUpSql()
         ["PERSON"].each{ tryDrop(it) }
@@ -55,6 +56,12 @@ class SqlCallTest extends GroovyTestCase {
         people.add(id: 3, firstname: "Sam", lastname: "Pullara")
         people.add(id: 4, firstname: "Jean", lastname: "Gabin")
         people.add(id: 5, firstname: "Lino", lastname: "Ventura")
+    }
+
+    @Override
+    void tearDown() {
+        super.tearDown()
+        sql.close()
     }
 
     void testBuiltinStoredProcedureQuery() {

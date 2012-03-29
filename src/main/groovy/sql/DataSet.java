@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,7 +56,9 @@ import java.util.Map;
  *     sort{ it.age }
  * </pre>
  * Currently, the Groovy source code for any accessed POGO must be on the
- * classpath at runtime.
+ * classpath at runtime. Also, at the moment, the expressions (or nested expressions) can only contain
+ * references to fields of the POGO or literals (i.e. constant Strings or numbers). This limitation
+ * may be removed in a future version of Groovy.
  *
  * @author Chris Stevenson
  * @author Paul King
@@ -236,9 +238,9 @@ public class DataSet extends Sql {
             if (whereClaus.length() > 0) {
                 sql += " where " + whereClaus;
             }
-            String orerByClaus = getSqlOrderBy();
-            if (orerByClaus.length() > 0) {
-                sql += " order by " + orerByClaus;
+            String orderByClaus = getSqlOrderBy();
+            if (orderByClaus.length() > 0) {
+                sql += " order by " + orderByClaus;
             }
         }
         return sql;
@@ -276,7 +278,8 @@ public class DataSet extends Sql {
             ClassNode classNode = closure.getMetaClass().getClassNode();
             if (classNode == null) {
                 throw new GroovyRuntimeException(
-                        "Could not find the ClassNode for MetaClass: " + closure.getMetaClass());
+                        "DataSet unable to evaluate expression. AST not available for closure: " + closure.getMetaClass().getTheClass().getName() +
+                                ". Is the source code on the classpath?");
             }
             List methods = classNode.getDeclaredMethods("doCall");
             if (!methods.isEmpty()) {
@@ -319,5 +322,11 @@ public class DataSet extends Sql {
         List rows = rows();
         if (rows.isEmpty()) return null;
         return (rows.get(0));
+    }
+
+    @Override
+    public void close() {
+        delegate.close();
+        super.close();
     }
 }

@@ -139,6 +139,8 @@ import org.codehaus.groovy.runtime.SqlGroovyMethods;
  * handling is performed transparently on our behalf; however, it doesn't hurt to
  * have it there as it will return silently in that case.
  * <p/>
+ * If instead of <code>newInstance</code> you use <code>withInstance</code>, then
+ * <code>close()</code> will be called automatically for you.
  *
  * <h4>Named and named ordinal parameters</h4>
  *
@@ -234,6 +236,26 @@ public class Sql {
     }
 
     /**
+     * Invokes a closure passing it a new Sql instance created from the given JDBC connection URL.
+     * The created connection will be closed if required.
+     *
+     * @param url a database url of the form
+     *            <code> jdbc:<em>subprotocol</em>:<em>subname</em></code>
+     * @param c the Closure to call
+     * @see #newInstance(String)
+     * @throws SQLException if a database access error occurs
+     */
+    public static void withInstance(String url, Closure c) throws SQLException {
+        Sql sql = null;
+        try {
+            sql = newInstance(url);
+            c.call(sql);
+        } finally {
+            if (sql != null) sql.close();
+        }
+    }
+
+    /**
      * Creates a new Sql instance given a JDBC connection URL
      * and some properties.
      *
@@ -251,6 +273,29 @@ public class Sql {
     }
 
     /**
+     * Invokes a closure passing it a new Sql instance created from the given JDBC connection URL and properties.
+     * The created connection will be closed if required.
+     *
+     * @param url a database url of the form
+     *            <code> jdbc:<em>subprotocol</em>:<em>subname</em></code>
+     * @param properties a list of arbitrary string tag/value pairs
+     *                   as connection arguments; normally at least a "user" and
+     *                   "password" property should be included
+     * @param c the Closure to call
+     * @see #newInstance(String, java.util.Properties)
+     * @throws SQLException if a database access error occurs
+     */
+    public static void withInstance(String url, Properties properties, Closure c) throws SQLException {
+        Sql sql = null;
+        try {
+            sql = newInstance(url, properties);
+            c.call(sql);
+        } finally {
+            if (sql != null) sql.close();
+        }
+    }
+
+    /**
      * Creates a new Sql instance given a JDBC connection URL,
      * some properties and a driver class name.
      *
@@ -262,12 +307,38 @@ public class Sql {
      * @param driverClassName the fully qualified class name of the driver class
      * @return a new Sql instance with a connection
      * @throws SQLException           if a database access error occurs
-     * @throws ClassNotFoundException if the class cannot be found or loaded
+     * @throws ClassNotFoundException if the driver class cannot be found or loaded
      */
     public static Sql newInstance(String url, Properties properties, String driverClassName)
             throws SQLException, ClassNotFoundException {
         loadDriver(driverClassName);
         return newInstance(url, properties);
+    }
+
+    /**
+     * Invokes a closure passing it a new Sql instance created from the given JDBC connection URL,
+     * properties and driver classname. The created connection will be closed if required.
+     *
+     * @param url a database url of the form
+     *            <code> jdbc:<em>subprotocol</em>:<em>subname</em></code>
+     * @param properties a list of arbitrary string tag/value pairs
+     *                   as connection arguments; normally at least a "user" and
+     *                   "password" property should be included
+     * @param driverClassName the fully qualified class name of the driver class
+     * @param c the Closure to call
+     * @see #newInstance(String, java.util.Properties, String)
+     * @throws SQLException if a database access error occurs
+     * @throws ClassNotFoundException if the driver class cannot be found or loaded
+     */
+    public static void withInstance(String url, Properties properties, String driverClassName, Closure c)
+            throws SQLException, ClassNotFoundException {
+        Sql sql = null;
+        try {
+            sql = newInstance(url, properties, driverClassName);
+            c.call(sql);
+        } finally {
+            if (sql != null) sql.close();
+        }
     }
 
     /**
@@ -288,6 +359,29 @@ public class Sql {
     }
 
     /**
+     * Invokes a closure passing it a new Sql instance created from the given JDBC connection URL, user and password.
+     * The created connection will be closed if required.
+     *
+     * @param url a database url of the form
+     *            <code> jdbc:<em>subprotocol</em>:<em>subname</em></code>
+     * @param user     the database user on whose behalf the connection
+     *                 is being made
+     * @param password the user's password
+     * @param c the Closure to call
+     * @see #newInstance(String, String, String)
+     * @throws SQLException if a database access error occurs
+     */
+    public static void withInstance(String url, String user, String password, Closure c) throws SQLException {
+        Sql sql = null;
+        try {
+            sql = newInstance(url, user, password);
+            c.call(sql);
+        } finally {
+            if (sql != null) sql.close();
+        }
+    }
+
+    /**
      * Creates a new Sql instance given a JDBC connection URL,
      * a username, a password and a driver class name.
      *
@@ -299,12 +393,38 @@ public class Sql {
      * @param driverClassName the fully qualified class name of the driver class
      * @return a new Sql instance with a connection
      * @throws SQLException           if a database access error occurs
-     * @throws ClassNotFoundException if the class cannot be found or loaded
+     * @throws ClassNotFoundException if the driver class cannot be found or loaded
      */
-    public static Sql newInstance(String url, String user, String password, String driverClassName) throws SQLException,
-            ClassNotFoundException {
+    public static Sql newInstance(String url, String user, String password, String driverClassName)
+            throws SQLException, ClassNotFoundException {
         loadDriver(driverClassName);
         return newInstance(url, user, password);
+    }
+
+    /**
+     * Invokes a closure passing it a new Sql instance created from the given JDBC connection URL.
+     * The created connection will be closed if required.
+     *
+     * @param url a database url of the form
+     *            <code> jdbc:<em>subprotocol</em>:<em>subname</em></code>
+     * @param user            the database user on whose behalf the connection
+     *                        is being made
+     * @param password        the user's password
+     * @param driverClassName the fully qualified class name of the driver class
+     * @param c the Closure to call
+     * @see #newInstance(String, String, String, String)
+     * @throws SQLException if a database access error occurs
+     * @throws ClassNotFoundException if the driver class cannot be found or loaded
+     */
+    public static void withInstance(String url, String user, String password, String driverClassName, Closure c)
+            throws SQLException, ClassNotFoundException {
+        Sql sql = null;
+        try {
+            sql = newInstance(url, user, password, driverClassName);
+            c.call(sql);
+        } finally {
+            if (sql != null) sql.close();
+        }
     }
 
     /**
@@ -316,11 +436,34 @@ public class Sql {
      * @param driverClassName the fully qualified class name of the driver class
      * @return a new Sql instance with a connection
      * @throws SQLException           if a database access error occurs
-     * @throws ClassNotFoundException if the class cannot be found or loaded
+     * @throws ClassNotFoundException if the driver class cannot be found or loaded
      */
     public static Sql newInstance(String url, String driverClassName) throws SQLException, ClassNotFoundException {
         loadDriver(driverClassName);
         return newInstance(url);
+    }
+
+    /**
+     * Invokes a closure passing it a new Sql instance created from the given JDBC connection URL.
+     * The created connection will be closed if required.
+     *
+     * @param url a database url of the form
+     *            <code> jdbc:<em>subprotocol</em>:<em>subname</em></code>
+     * @param driverClassName the fully qualified class name of the driver class
+     * @param c the Closure to call
+     * @see #newInstance(String, String)
+     * @throws SQLException if a database access error occurs
+     * @throws ClassNotFoundException if the driver class cannot be found or loaded
+     */
+    public static void withInstance(String url, String driverClassName, Closure c)
+            throws SQLException, ClassNotFoundException {
+        Sql sql = null;
+        try {
+            sql = newInstance(url, driverClassName);
+            c.call(sql);
+        } finally {
+            if (sql != null) sql.close();
+        }
     }
 
     /**
@@ -359,7 +502,7 @@ public class Sql {
      * @param args a Map contain further arguments
      * @return a new Sql instance with a connection
      * @throws SQLException           if a database access error occurs
-     * @throws ClassNotFoundException if the class cannot be found or loaded
+     * @throws ClassNotFoundException if the driver class cannot be found or loaded
      */
     public static Sql newInstance(Map<String, Object> args) throws SQLException, ClassNotFoundException {
         if (!args.containsKey("url"))
@@ -405,6 +548,26 @@ public class Sql {
         Sql result = (Sql) InvokerHelper.invokeConstructorOf(Sql.class, sqlArgs);
         result.setConnection(connection);
         return result;
+    }
+
+    /**
+     * Invokes a closure passing it a new Sql instance created from the given map of arguments.
+     * The created connection will be closed if required.
+     *
+     * @param args a Map contain further arguments
+     * @param c the Closure to call
+     * @see #newInstance(java.util.Map)
+     * @throws SQLException if a database access error occurs
+     * @throws ClassNotFoundException if the driver class cannot be found or loaded
+     */
+    public static void withInstance(Map<String, Object> args, Closure c) throws SQLException, ClassNotFoundException {
+        Sql sql = null;
+        try {
+            sql = newInstance(args);
+            c.call(sql);
+        } finally {
+            if (sql != null) sql.close();
+        }
     }
 
     /**
@@ -2843,7 +3006,12 @@ public class Sql {
     //-------------------------------------------------------------------------
 
     /**
-     * Hook to allow derived classes to access ResultSet returned from query.
+     * Useful helper method which handles resource management when executing a
+     * query which returns a result set.
+     * Derived classes of Sql can override "createQueryCommand" and then call
+     * this method to access the ResultSet returned from the provided query
+     * or alternatively can use the higher-level method of Sql which return
+     * result sets which are funnelled through this method, e.g. eachRow, query.
      *
      * @param sql query to execute
      * @return the resulting ResultSet
@@ -2861,7 +3029,10 @@ public class Sql {
     }
 
     /**
-     * Hook to allow derived classes to access ResultSet returned from query.
+     * Useful helper method which handles resource management when executing a
+     * prepared query which returns a result set.
+     * Derived classes of Sql can override "createPreparedQueryCommand" and then
+     * call this method to access the ResultSet returned from the provided query.
      *
      * @param sql query to execute
      * @param params parameters matching question mark placeholders in the query
@@ -3448,17 +3619,17 @@ public class Sql {
          * @return statement that can be cached, etc.
          * @throws SQLException if a database error occurs
          */
-        abstract Statement execute(Connection conn, String sql) throws SQLException;
+        protected abstract Statement execute(Connection conn, String sql) throws SQLException;
     }
 
     private class CreatePreparedStatementCommand extends AbstractStatementCommand {
         private final int returnGeneratedKeys;
 
-        CreatePreparedStatementCommand(int returnGeneratedKeys) {
+        private CreatePreparedStatementCommand(int returnGeneratedKeys) {
             this.returnGeneratedKeys = returnGeneratedKeys;
         }
 
-        PreparedStatement execute(Connection connection, String sql) throws SQLException {
+        protected PreparedStatement execute(Connection connection, String sql) throws SQLException {
             if (returnGeneratedKeys != 0)
                 return connection.prepareStatement(sql, returnGeneratedKeys);
             if (appearsLikeStoredProc(sql))
@@ -3466,18 +3637,16 @@ public class Sql {
             return connection.prepareStatement(sql);
         }
 
-        boolean appearsLikeStoredProc(String sql) {
+        private boolean appearsLikeStoredProc(String sql) {
             return sql.matches("\\s*[{]?\\s*[?]?\\s*[=]?\\s*[cC][aA][lL][lL].*");
         }
     }
 
     private class CreateStatementCommand extends AbstractStatementCommand {
-
         @Override
-        Statement execute(Connection conn, String sql) throws SQLException {
+        protected Statement execute(Connection conn, String sql) throws SQLException {
             return createStatement(conn);
         }
-
     }
 
     protected abstract class AbstractQueryCommand {
@@ -3485,7 +3654,7 @@ public class Sql {
         protected Statement statement;
         private Connection connection;
 
-        AbstractQueryCommand(String sql) {
+        protected AbstractQueryCommand(String sql) {
             // Don't create statement in subclass constructors to avoid throw in constructors
             this.sql = sql;
         }
@@ -3497,9 +3666,9 @@ public class Sql {
          * @return ResultSet from executing a query
          * @throws SQLException if a database error occurs
          */
-         final ResultSet execute() throws SQLException {
-             connection = createConnection();
-             setInternalConnection(connection);
+        protected final ResultSet execute() throws SQLException {
+            connection = createConnection();
+            setInternalConnection(connection);
             statement = null;
             try {
                 // The variation in the pattern is isolated
@@ -3513,40 +3682,41 @@ public class Sql {
                 statement = null;
                 throw e;
             }
-         }
+        }
 
-         /**
-          * After performing the execute operation and making use of its return, it's necessary
-          * to free the resources allocated for the statement.
-          */
-         public final void closeResources(){
-             Sql.this.closeResources(connection, statement);
-         }
+        /**
+         * After performing the execute operation and making use of its return, it's necessary
+         * to free the resources allocated for the statement.
+         */
+        protected final void closeResources() {
+            Sql.this.closeResources(connection, statement);
+        }
 
-         /**
-          * After performing the execute operation and making use of its return, it's necessary
-          * to free the resources allocated for the statement.
-          *
-          * @param rs allows the caller to conveniently close its resource as well
-          */
-         public final void closeResources(ResultSet rs) {
-             Sql.this.closeResources(connection, statement, rs);
-         }
+        /**
+         * After performing the execute operation and making use of its return, it's necessary
+         * to free the resources allocated for the statement.
+         *
+         * @param rs allows the caller to conveniently close its resource as well
+         */
+        protected final void closeResources(ResultSet rs) {
+            Sql.this.closeResources(connection, statement, rs);
+        }
 
-         /**
-          * Perform the query. Must set statement field so that the main ({@link #execute()}) method can clean up.
-          * This is the method that encloses the variant part of the code.
-          * @param connection the connection to use
-          * @return ResultSet from an executeQuery method.
-          * @throws SQLException if a database error occurs
-          */
-         protected abstract ResultSet runQuery(Connection connection) throws SQLException;
+        /**
+         * Perform the query. Must set statement field so that the main ({@link #execute()}) method can clean up.
+         * This is the method that encloses the variant part of the code.
+         *
+         * @param connection the connection to use
+         * @return ResultSet from an executeQuery method.
+         * @throws SQLException if a database error occurs
+         */
+        protected abstract ResultSet runQuery(Connection connection) throws SQLException;
     }
 
-    protected final class PreparedQueryCommand extends AbstractQueryCommand {
+    private final class PreparedQueryCommand extends AbstractQueryCommand {
         private List<Object> params;
 
-        PreparedQueryCommand(String sql, List<Object> queryParams) {
+        private PreparedQueryCommand(String sql, List<Object> queryParams) {
             super(sql);
             params = queryParams;
         }
@@ -3559,9 +3729,9 @@ public class Sql {
         }
     }
 
-    protected final class QueryCommand extends AbstractQueryCommand {
+    private final class QueryCommand extends AbstractQueryCommand {
 
-        QueryCommand(String sql) {
+        private QueryCommand(String sql) {
             super(sql);
         }
 
@@ -3579,7 +3749,7 @@ public class Sql {
      *  <pre>
      * AbstractQueryCommand q = createQueryCommand("update TABLE set count = 0) where count is null");
      * try {
-     *        ResultSet rs = q.execute();
+     *     ResultSet rs = q.execute();
      *     return asList(rs);
      * } finally {
      *     q.closeResources();
@@ -3617,19 +3787,19 @@ public class Sql {
         private List<Tuple> indexPropList;
         private String newSql;
 
-        public ExtractIndexAndSql(String sql) {
+        private ExtractIndexAndSql(String sql) {
             this.sql = sql;
         }
 
-        public List<Tuple> getIndexPropList() {
+        private List<Tuple> getIndexPropList() {
             return indexPropList;
         }
 
-        public String getNewSql() {
+        private String getNewSql() {
             return newSql;
         }
 
-        public ExtractIndexAndSql invoke() {
+        private ExtractIndexAndSql invoke() {
             if (cacheNamedQueries && namedParamSqlCache.containsKey(sql)) {
                 newSql = namedParamSqlCache.get(sql);
                 indexPropList = namedParamIndexPropCache.get(sql);

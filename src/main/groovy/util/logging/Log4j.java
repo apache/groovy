@@ -59,12 +59,31 @@ public @interface Log4j {
     Class<? extends LogASTTransformation.LoggingStrategy> loggingStrategy() default Log4jLoggingStrategy.class;
 
     public static class Log4jLoggingStrategy implements LogASTTransformation.LoggingStrategy {
+        private static final ClassNode LOGGER_CLASSNODE;
+        private static final ClassNode PRIORITY_CLASSNODE;
+
+        static {
+            ClassNode tmp1 = null;
+            ClassNode tmp2 = null;
+
+            try {
+                tmp1 = ClassHelper.make(Class.forName("org.apache.log4j.Logger"));
+                tmp2 = ClassHelper.make(Class.forName("org.apache.log4j.Priority"));
+            } catch (ClassNotFoundException e) {
+                tmp1 = ClassHelper.make("org.apache.log4j.Logger");
+                tmp2 = ClassHelper.make("org.apache.log4j.Priority");
+            } finally {
+                LOGGER_CLASSNODE = tmp1;
+                PRIORITY_CLASSNODE = tmp2;
+            }
+        }
+
         public FieldNode addLoggerFieldToClass(ClassNode classNode, String logFieldName) {
             return classNode.addField(logFieldName,
                     Opcodes.ACC_FINAL | Opcodes.ACC_TRANSIENT | Opcodes.ACC_STATIC | Opcodes.ACC_PRIVATE,
-                    new ClassNode("org.apache.log4j.Logger", Opcodes.ACC_PUBLIC, ClassHelper.OBJECT_TYPE),
+                    LOGGER_CLASSNODE,
                     new MethodCallExpression(
-                            new ClassExpression(new ClassNode("org.apache.log4j.Logger", Opcodes.ACC_PUBLIC, ClassHelper.OBJECT_TYPE)),
+                            new ClassExpression(LOGGER_CLASSNODE),
                             "getLogger",
                             new ClassExpression(classNode)));
         }
@@ -76,9 +95,8 @@ public @interface Log4j {
         public Expression wrapLoggingMethodCall(Expression logVariable, String methodName, Expression originalExpression) {
             final MethodCallExpression condition;
             if (!"trace".equals(methodName)) {
-                ClassNode levelClass = new ClassNode("org.apache.log4j.Priority", 0, ClassHelper.OBJECT_TYPE);
                 AttributeExpression logLevelExpression = new AttributeExpression(
-                        new ClassExpression(levelClass),
+                        new ClassExpression(PRIORITY_CLASSNODE),
                         new ConstantExpression(methodName.toUpperCase()));
                 ArgumentListExpression args = new ArgumentListExpression();
                 args.addExpression(logLevelExpression);

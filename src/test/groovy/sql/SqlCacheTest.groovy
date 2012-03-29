@@ -37,6 +37,7 @@ class SqlCacheTest extends GroovyTestCase {
     int createStatementExpectedCall
     int createStatementCallCounter
 
+    @Override
     void setUp() {
         ds = DB_DATASOURCE.newInstance(
                 (DB_DS_KEY): DB_URL_PREFIX + getMethodName(),
@@ -89,6 +90,12 @@ class SqlCacheTest extends GroovyTestCase {
         prepareStatementCallCounter = 0
     }
 
+    @Override
+    void tearDown() {
+        super.tearDown()
+        sql.close()
+    }
+
     /**
      * Validation of ConnectionWrapper expectation.
      */
@@ -111,7 +118,6 @@ class SqlCacheTest extends GroovyTestCase {
             invokeQuery()
         }
         assert prepareStatementCallCounter == 3 // 3 diff statements
-        sql.close()
     }
 
     void testCacheConnection() {
@@ -126,7 +132,6 @@ class SqlCacheTest extends GroovyTestCase {
         prepareStatementCallCounter = 0
         invokeQuery()
         assert prepareStatementCallCounter == 13
-        sql.close()
     }
 
     private invokeQuery() {

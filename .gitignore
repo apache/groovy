@@ -18,3 +18,4 @@ src/main/org/codehaus/groovy/antlr/java/JavaTokenTypes.txt
 *.iml
 *.ipr
 *.iws
+.idea

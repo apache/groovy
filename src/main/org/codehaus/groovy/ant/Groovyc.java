@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.codehaus.groovy.ant;
 
 import groovy.lang.GroovyClassLoader;
@@ -88,7 +87,7 @@ import java.util.StringTokenizer;
  * @author Hein Meling
  * @author <a href="mailto:russel.winder@concertant.com">Russel Winder</a>
  * @author Danno Ferrin
- * @version $Revision$
+ * @author Paul King
  */
 public class Groovyc extends MatchingTask {
     private final LoggingHelper log = new LoggingHelper(this);
@@ -103,7 +102,8 @@ public class Groovyc extends MatchingTask {
     private boolean includeAntRuntime = true;
     private boolean includeJavaRuntime = false;
     private boolean fork = false;
-    private File forkJDK;
+    private File forkJavaHome;
+    private String forkedExecutable = null;
     private String memoryInitialSize;
     private String memoryMaximumSize;
     private String scriptExtension = "*.groovy";
@@ -497,11 +497,33 @@ public class Groovyc extends MatchingTask {
 
     /**
      * The JDK Home to use when forked.
+     * Ignored if "executable" is specified.
      *
      * @param home the java.home value to use, default is the current JDK's home
      */
     public void setJavaHome(File home) {
-        forkJDK = home;
+        forkJavaHome = home;
+    }
+
+    /**
+     * Sets the name of the java executable to use when
+     * invoking the compiler in forked mode, ignored otherwise.
+     *
+     * @since Groovy 1.8.7
+     * @param forkExecPath the name of the executable
+     */
+    public void setExecutable(String forkExecPath) {
+        forkedExecutable = forkExecPath;
+    }
+
+    /**
+     * The value of the executable attribute, if any.
+     *
+     * @since Groovy 1.8.7
+     * @return the name of the java executable
+     */
+    public String getExecutable() {
+        return forkedExecutable;
     }
 
     /**
@@ -763,13 +785,7 @@ public class Groovyc extends MatchingTask {
     
     private void doForkCommandLineList(List<String> commandLineList, Path classpath, String separator) {
         if (!fork) return;
-        
-        String javaHome;
-        if (forkJDK != null) {
-            javaHome = forkJDK.getPath();
-        } else {
-            javaHome = System.getProperty("java.home");
-        }
+
         if (includeAntRuntime) {
             classpath.addExisting((new Path(getProject())).concatSystemClasspath("last"));
         }
@@ -777,7 +793,17 @@ public class Groovyc extends MatchingTask {
             classpath.addJavaRuntime();
         }
 
-        commandLineList.add(javaHome + separator + "bin" + separator + "java");
+        if (forkedExecutable != null && !forkedExecutable.equals("")) {
+            commandLineList.add(forkedExecutable);
+        } else {
+            String javaHome;
+            if (forkJavaHome != null) {
+                javaHome = forkJavaHome.getPath();
+            } else {
+                javaHome = System.getProperty("java.home");
+            }
+            commandLineList.add(javaHome + separator + "bin" + separator + "java");
+        }
         commandLineList.add("-classpath");
         commandLineList.add(classpath.toString());
 
@@ -810,8 +836,10 @@ public class Groovyc extends MatchingTask {
             commandLineList.add("-j");
             commandLineList.addAll(jointOptions);
         }
-        commandLineList.add("-d");
-        commandLineList.add(destDir.getPath());
+        if (destDir != null) {
+            commandLineList.add("-d");
+            commandLineList.add(destDir.getPath());
+        }
         if (encoding != null) {
             commandLineList.add("--encoding");
             commandLineList.add(encoding);

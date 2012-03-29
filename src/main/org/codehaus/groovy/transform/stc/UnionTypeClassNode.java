@@ -42,6 +42,10 @@ class UnionTypeClassNode extends ClassNode {
         delegates = classNodes==null?new ClassNode[0] : classNodes;
     }
 
+    public ClassNode[] getDelegates() {
+        return delegates;
+    }
+
     @Override
     public ConstructorNode addConstructor(final int modifiers, final Parameter[] parameters, final ClassNode[] exceptions, final Statement code) {
         throw new UnsupportedOperationException();

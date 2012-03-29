@@ -137,7 +137,7 @@ class ServletBindingTest extends GroovyTestCase {
     void testGetVariables_Contract() {
 
         def expectedVariables = ["request", "response", "context", "application",
-                "session", "params", "headers", "out", "sout", "html"]
+                "session", "params", "headers", "out", "sout", "html", "json"]
         def request = makeDefaultRequest()
         def binding = makeDefaultBinding(request)
         def keys = binding.variables.keySet()
@@ -169,6 +169,7 @@ class ServletBindingTest extends GroovyTestCase {
         assert binding.getVariable("out") instanceof PrintWriter
         assert binding.getVariable("html") instanceof groovy.xml.MarkupBuilder
         assert binding.getVariable("sout") instanceof ServletOutputStream
+        assert binding.getVariable("json") instanceof groovy.json.StreamingJsonBuilder
     }
     
     void testOutSoutWriteException() {
@@ -190,6 +191,7 @@ class ServletBindingTest extends GroovyTestCase {
 
         binding.out.print("foo")
         binding.html.foo()
+		binding.out.print(binding.json.foo())
         shouldFail(IllegalStateException) {
             binding.sout.print("foo")
         }
@@ -234,6 +236,7 @@ class ServletBindingTest extends GroovyTestCase {
         shouldFail(IllegalArgumentException) { binding.setVariable("out", null) }
         shouldFail(IllegalArgumentException) { binding.setVariable("sout", null) }
         shouldFail(IllegalArgumentException) { binding.setVariable("html", null) }
+		shouldFail(IllegalArgumentException) { binding.setVariable("json", null) }
     }
 
     /**
