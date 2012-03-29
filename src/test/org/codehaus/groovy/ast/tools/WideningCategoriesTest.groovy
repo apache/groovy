@@ -293,6 +293,43 @@ class WideningCategoriesTest extends GenericsTestCase {
         assert superType == make(Collection)
     }
 
+    void testLUBOfTwoListTypes() {
+        def typeA = extractTypesFromCode('ArrayList type').type
+        def typeB = extractTypesFromCode('LinkedList type').type
+        def superType = lowestUpperBound(typeA, typeB)
+        assert superType instanceof LowestUpperBoundClassNode
+        assert superType.superClass == make(AbstractList)
+        assert superType.interfaces as Set == [make(Serializable), make(Cloneable)] as Set
+    }
+
+    void testLUBOfTwoListTypesWithSameGenerics() {
+        def typeA = extractTypesFromCode('ArrayList<String> type').type
+        def typeB = extractTypesFromCode('LinkedList<String> type').type
+        def superType = lowestUpperBound(typeA, typeB)
+        assert superType instanceof LowestUpperBoundClassNode
+        assert superType.superClass == make(AbstractList)
+        assert superType.interfaces as Set == [make(Serializable), make(Cloneable)] as Set
+        assert superType.genericsTypes.length == 1
+        assert superType.genericsTypes[0].type == STRING_TYPE
+
+    }
+
+    void testLUBOfTwoListTypesWithDistinctGenerics() {
+        def typeA = extractTypesFromCode('ArrayList<String> type').type
+        def typeB = extractTypesFromCode('LinkedList<Integer> type').type
+        def superType = lowestUpperBound(typeA, typeB)
+        assert superType instanceof LowestUpperBoundClassNode
+        assert superType.superClass == make(AbstractList)
+        assert superType.interfaces as Set == [make(Serializable), make(Cloneable)] as Set
+        assert superType.genericsTypes.length == 1
+        def type = superType.genericsTypes[0]
+        assert type.wildcard
+        assert type.upperBounds[0] instanceof LowestUpperBoundClassNode
+        assert type.upperBounds[0].interfaces as Set == [make(Serializable), make(Comparable)] as Set
+
+
+    }
+
     // ---------- Classes and Interfaces used in this unit test ----------------
     private static interface InterfaceA {}
     private static interface InterfaceB {}

@@ -257,6 +257,24 @@ public class WideningCategories {
             }
         }
         ClassNode superClass = source.getUnresolvedSuperClass();
+        // copy generic type information if available
+        if (superClass!=null && superClass.isUsingGenerics()) {
+            Map<String, GenericsType> genericsTypeMap = GenericsUtils.extractPlaceholders(source);
+            GenericsType[] genericsTypes = superClass.getGenericsTypes();
+            if (genericsTypes!=null) {
+                GenericsType[] copyTypes = new GenericsType[genericsTypes.length];
+                for (int i = 0; i < genericsTypes.length; i++) {
+                    GenericsType genericsType = genericsTypes[i];
+                    if (genericsType.isPlaceholder() && genericsTypeMap.containsKey(genericsType.getName())) {
+                        copyTypes[i] = genericsTypeMap.get(genericsType.getName());
+                    } else {
+                        copyTypes[i] = genericsType;
+                    }
+                }
+                superClass = superClass.getPlainNodeReference();
+                superClass.setGenericsTypes(copyTypes);
+            }
+        }
         if (superClass!=null) return findGenericsTypeHolderForClass(superClass, type);
         return null;
     }
@@ -481,6 +499,11 @@ public class WideningCategories {
             }
         } else {
             superClass = OBJECT_TYPE;
+            if (baseType1.isDerivedFrom(baseType2)) {
+                superClass = baseType2;
+            } else if (baseType2.isDerivedFrom(baseType1)) {
+                superClass = baseType1;
+            }
             name = "CommonAssignOf$"+baseType1.getName()+"$"+baseType2.getName();
         }
         Iterator<ClassNode> itcn = interfaces.iterator();
