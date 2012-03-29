@@ -31,6 +31,7 @@ import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.tools.GroovyClass;
 import org.codehaus.groovy.transform.ASTTransformationVisitor;
 import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.ClassWriter;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -759,26 +760,28 @@ public class CompilationUnit extends ProcessingUnit {
             //
             // Prep the generator machinery
             //
+            ClassVisitor visitor = createClassVisitor();
+            
             String sourceName = (source == null ? classNode.getModule().getDescription() : source.getName());
             // only show the file name and its extension like javac does in its stacktraces rather than the full path
             // also takes care of both \ and / depending on the host compiling environment
             if (sourceName != null)
                 sourceName = sourceName.substring(Math.max(sourceName.lastIndexOf('\\'), sourceName.lastIndexOf('/')) + 1);
-            AsmClassGenerator generator = new AsmClassGenerator(source, context, null, sourceName);
+            AsmClassGenerator generator = new AsmClassGenerator(source, context, visitor, sourceName);
 
             //
             // Run the generation and create the class (if required)
             //
             generator.visitClass(classNode);
 
-            byte[] bytes = generator.toByteArray();
+            byte[] bytes = ((ClassWriter) visitor).toByteArray();
             generatedClasses.add(new GroovyClass(classNode.getName(), bytes));
 
             //
             // Handle any callback that's been set
             //
             if (CompilationUnit.this.classgenCallback != null) {
-                classgenCallback.call(generator.getController().getCv(), classNode);
+                classgenCallback.call(visitor, classNode);
             }
 
             //
@@ -791,6 +794,47 @@ public class CompilationUnit extends ProcessingUnit {
         }
     };
 
+    protected ClassVisitor createClassVisitor() {
+        return new ClassWriter(ClassWriter.COMPUTE_FRAMES+ClassWriter.COMPUTE_MAXS) {
+            private ClassNode getClassNode(String name) {
+                // try classes under compilation
+                CompileUnit cu = getAST();
+                ClassNode cn = cu.getClass(name);
+                if (cn!=null) return cn;
+                // try inner classes
+                cn = cu.getGeneratedInnerClass(name);
+                if (cn!=null) return cn;
+                // try class loader classes
+                try {
+                    cn = ClassHelper.make(
+                            cu.getClassLoader().loadClass(name,false,true),
+                            false);
+                } catch (Exception e) {
+                    throw new GroovyBugError(e);
+                }
+                return cn;
+            }
+            private ClassNode getCommonSuperClassNode(ClassNode c, ClassNode d) {
+                // adapted from ClassWriter code
+                if (c.isDerivedFrom(d)) return d;
+                if (d.isDerivedFrom(c)) return c;
+                if (c.isInterface() || d.isInterface()) return ClassHelper.OBJECT_TYPE;
+                do {
+                    c = c.getSuperClass();
+                } while (c!=null && !d.isDerivedFrom(c));
+                if (c==null) return ClassHelper.OBJECT_TYPE;
+                return c;
+            }
+            @Override
+            protected String getCommonSuperClass(String arg1, String arg2) {
+                ClassNode a = getClassNode(arg1.replace('/', '.')); 
+                ClassNode b = getClassNode(arg2.replace('/', '.'));
+                return getCommonSuperClassNode(a,b).getName().replace('.','/');
+            }
+
+        };
+    }
+    
     //---------------------------------------------------------------------------
     // PHASE HANDLING
 
