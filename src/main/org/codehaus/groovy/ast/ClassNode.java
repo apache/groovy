@@ -677,7 +677,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         if (redirect!=null) return redirect().equals(o);
         if (!(o instanceof ClassNode)) return false;
         ClassNode cn = (ClassNode) o;
-        return (cn.getName().equals(getName()));
+        return (cn.getText().equals(getText()));
     }
 
     public int hashCode() {
@@ -1450,5 +1450,10 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     
     public boolean isRedirectNode() {
         return redirect!=null;
+    }
+
+    @Override
+    public String getText() {
+        return getName();
     }
 }

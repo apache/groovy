@@ -183,8 +183,8 @@ class WideningCategoriesTest extends GenericsTestCase {
     void testDistinctPrimitiveTypes() {
         ClassNode a = int_TYPE // primitive int
         ClassNode b = long_TYPE // primitive long
-        assert lowestUpperBound(a,b) == Number_TYPE
-        assert lowestUpperBound(b,a) == Number_TYPE
+        assert lowestUpperBound(a,b).superClass == Number_TYPE
+        assert lowestUpperBound(b,a).interfaces == [make(Comparable)]
     }
 
     void testIdenticalPrimitiveTypes() {
@@ -210,7 +210,8 @@ class WideningCategoriesTest extends GenericsTestCase {
         assert lub == make(List)
         assert lub.genericsTypes.length == 1
         assert lub.genericsTypes[0].wildcard
-        assert lub.genericsTypes[0].upperBounds[0] == Number_TYPE
+        assert lub.genericsTypes[0].upperBounds[0].superClass == Number_TYPE
+        assert lub.genericsTypes[0].upperBounds[0].interfaces == [ make(Comparable) ]
     }
 
     void testLUBWithTwoInterfacesAndSingleCommonInterface() {
@@ -265,7 +266,7 @@ class WideningCategoriesTest extends GenericsTestCase {
         assert lub.unresolvedSuperClass.genericsTypes[0].wildcard // ? extends Number
         ClassNode genericType = lub.unresolvedSuperClass.genericsTypes[0].upperBounds[0]
         assert genericType instanceof LowestUpperBoundClassNode // a virtual class which extends Number and implements Comparable<itself>
-        assert genericType == make(Number)
+        assert genericType.superClass == make(Number)
         assert genericType.interfaces == [make(Comparable)]
         assert lub.interfaces == [make(Serializable)]
     }
@@ -290,6 +291,43 @@ class WideningCategoriesTest extends GenericsTestCase {
         def typeB = extractTypesFromCode('List<String> type').type
         def superType = lowestUpperBound(typeA, typeB)
         assert superType == make(Collection)
+    }
+
+    void testLUBOfTwoListTypes() {
+        def typeA = extractTypesFromCode('ArrayList type').type
+        def typeB = extractTypesFromCode('LinkedList type').type
+        def superType = lowestUpperBound(typeA, typeB)
+        assert superType instanceof LowestUpperBoundClassNode
+        assert superType.superClass == make(AbstractList)
+        assert superType.interfaces as Set == [make(Serializable), make(Cloneable)] as Set
+    }
+
+    void testLUBOfTwoListTypesWithSameGenerics() {
+        def typeA = extractTypesFromCode('ArrayList<String> type').type
+        def typeB = extractTypesFromCode('LinkedList<String> type').type
+        def superType = lowestUpperBound(typeA, typeB)
+        assert superType instanceof LowestUpperBoundClassNode
+        assert superType.superClass == make(AbstractList)
+        assert superType.interfaces as Set == [make(Serializable), make(Cloneable)] as Set
+        assert superType.genericsTypes.length == 1
+        assert superType.genericsTypes[0].type == STRING_TYPE
+
+    }
+
+    void testLUBOfTwoListTypesWithDistinctGenerics() {
+        def typeA = extractTypesFromCode('ArrayList<String> type').type
+        def typeB = extractTypesFromCode('LinkedList<Integer> type').type
+        def superType = lowestUpperBound(typeA, typeB)
+        assert superType instanceof LowestUpperBoundClassNode
+        assert superType.superClass == make(AbstractList)
+        assert superType.interfaces as Set == [make(Serializable), make(Cloneable)] as Set
+        assert superType.genericsTypes.length == 1
+        def type = superType.genericsTypes[0]
+        assert type.wildcard
+        assert type.upperBounds[0] instanceof LowestUpperBoundClassNode
+        assert type.upperBounds[0].interfaces as Set == [make(Serializable), make(Comparable)] as Set
+
+
     }
 
     // ---------- Classes and Interfaces used in this unit test ----------------

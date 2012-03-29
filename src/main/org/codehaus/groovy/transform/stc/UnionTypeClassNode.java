@@ -38,8 +38,17 @@ class UnionTypeClassNode extends ClassNode {
     private final ClassNode[] delegates;
     
     public UnionTypeClassNode(ClassNode... classNodes) {
-        super("<UnionType"+classNodes+">", 0, ClassHelper.OBJECT_TYPE);
+        super("<UnionType"+asArrayDescriptor(classNodes)+">", 0, ClassHelper.OBJECT_TYPE);
         delegates = classNodes==null?new ClassNode[0] : classNodes;
+    }
+    
+    private static String asArrayDescriptor(ClassNode... nodes) {
+        StringBuilder sb = new StringBuilder();
+        for (ClassNode node : nodes) {
+            if (sb.length()>0) sb.append("+");
+            sb.append(node.getText());
+        }
+        return sb.toString();
     }
 
     public ClassNode[] getDelegates() {
@@ -132,12 +141,6 @@ class UnionTypeClassNode extends ClassNode {
             if (delegate.declaresInterface(classNode)) return true;
         }
         return false;
-    }
-
-    @Override
-    public boolean equals(final Object o) {
-        if (!(o instanceof UnionTypeClassNode)) return false;
-        return Arrays.equals(delegates, ((UnionTypeClassNode)o).delegates);
     }
 
     @Override

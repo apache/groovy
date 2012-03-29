@@ -23,6 +23,7 @@ import org.codehaus.groovy.classgen.GeneratorContext
 import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.transform.stc.StaticTypesMarker
+import org.codehaus.groovy.ast.tools.WideningCategories
 
 /**
  * Unit tests for static type checking : type inference.
@@ -419,7 +420,9 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
                 o = 'String'
             }
         '''
-        assert method.code.statements[0].expression.leftExpression.getNodeMetaData(StaticTypesMarker.DECLARATION_INFERRED_TYPE) == ClassHelper.make(Comparable)
+        def inft = method.code.statements[0].expression.leftExpression.getNodeMetaData(StaticTypesMarker.DECLARATION_INFERRED_TYPE)
+        assert inft instanceof WideningCategories.LowestUpperBoundClassNode
+        assert inft.interfaces as Set == [ClassHelper.make(Comparable), ClassHelper.make(Serializable)] as Set
 
         assertScript '''
             void method() {
@@ -437,7 +440,10 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
                 o = 2
             }
         '''
-        assert method.code.statements[0].expression.leftExpression.getNodeMetaData(StaticTypesMarker.DECLARATION_INFERRED_TYPE) == ClassHelper.Number_TYPE
+        inft = method.code.statements[0].expression.leftExpression.getNodeMetaData(StaticTypesMarker.DECLARATION_INFERRED_TYPE)
+        assert inft instanceof WideningCategories.LowestUpperBoundClassNode
+        assert inft.superClass == ClassHelper.Number_TYPE
+        assert inft.interfaces == [ClassHelper.make(Comparable)]
 
         assertScript '''
             void method() {

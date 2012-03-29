@@ -207,7 +207,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     void testCompatibleGenericAssignmentWithInferrence() {
         shouldFailWithMessages '''
             List<String> elements = ['a','b', 1]
-        ''', 'Incompatible generic argument types. Cannot assign java.util.List <java.lang.Comparable> to: java.util.List <String>'
+        ''', 'Incompatible generic argument types. Cannot assign java.util.List <java.io.Serializable> to: java.util.List <String>'
     }
 
     void testGenericAssignmentWithSubClass() {
@@ -404,6 +404,31 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             Map<String, Integer> map = new HashMap<String,Integer>()
             map['hello'] = 1
         '''
+    }
+
+    void testShouldComplainAboutToInteger() {
+        shouldFailWithMessages '''
+            class Test {
+                static test2() {
+                    if (new Random().nextBoolean()) {
+                        def a = new ArrayList<String>()
+                        a << "a" << "b" << "c"
+                        return a
+                    } else {
+                        def b = new LinkedList<Number>()
+                        b << 1 << 2 << 3
+                        return b
+                    }
+                }
+
+                static test() {
+                    def result = test2()
+                    result[0].toInteger()
+                    //result[0].toString()
+                }
+            }
+            new Test()
+        ''', 'Cannot find matching method java.io.Serializable#toInteger()'
     }
 
     void testAssignmentOfNewInstance() {

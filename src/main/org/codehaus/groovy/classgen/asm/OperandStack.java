@@ -27,6 +27,7 @@ import org.codehaus.groovy.ast.expr.CastExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.tools.WideningCategories;
 import org.codehaus.groovy.classgen.ClassGeneratorException;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 import org.objectweb.asm.Label;
@@ -353,7 +354,7 @@ public class OperandStack {
             BytecodeHelper.doCastToPrimitive(mv, top, targetType);
         } else {
             top = stack.get(size-1);
-            if (!top.isDerivedFrom(targetType) && !top.implementsInterface(targetType)) {
+            if (!implementsInterfaceOrSubclassOf(top, targetType)) {
                 BytecodeHelper.doCast(mv,targetType);
             }
         }
@@ -361,12 +362,32 @@ public class OperandStack {
     }
 
     private void castToTypeIfNecessary(final ClassNode sourceType, final ClassNode targetType) {
-        if (!sourceType.isDerivedFrom(targetType) && !sourceType.implementsInterface(targetType)) {
+        if (!implementsInterfaceOrSubclassOf(sourceType, targetType)) {
             MethodVisitor mv = controller.getMethodVisitor();
             (new ClassExpression(targetType)).visit(controller.getAcg());
             remove(1);
             castToTypeMethod.call(mv);
         }
+    }
+
+    /**
+     * Determines if the source class implements an interface or subclasses the target type.
+     * This method takes the {@link org.codehaus.groovy.ast.tools.WideningCategories.LowestUpperBoundClassNode lowest
+     * upper bound class node} type into account, allowing to remove unnecessary casts.
+     * @param source
+     * @param targetType
+     * @return
+     */
+    private static boolean implementsInterfaceOrSubclassOf(final ClassNode source, final ClassNode targetType) {
+        if (source.isDerivedFrom(targetType) || source.implementsInterface(targetType)) return true;
+        if (targetType instanceof WideningCategories.LowestUpperBoundClassNode) {
+            WideningCategories.LowestUpperBoundClassNode lub = (WideningCategories.LowestUpperBoundClassNode) targetType;
+            if (implementsInterfaceOrSubclassOf(source, lub.getSuperClass())) return true;
+            for (ClassNode classNode : lub.getInterfaces()) {
+                if (source.implementsInterface(classNode)) return true;
+            }
+        }
+        return false;
     }
 
     private boolean convertFromInt(ClassNode target) {
