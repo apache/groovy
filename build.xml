@@ -71,10 +71,6 @@ $Date$
         <contains string="${ant.java.version}" substring="1.6"/>
     </condition>
 
-    <condition property="groovy.build.vm7">
-        <contains string="${ant.java.version}" substring="1.7"/>
-    </condition>
-
     <presetdef name="javac">
         <javac memoryMaximumSize="500m"/>
     </presetdef>
@@ -100,7 +96,7 @@ $Date$
         </antlr>
     </target>
 
-    <target name="-init" depends="-fetchDependencies"/>
+    <target name="-init" depends="-banner,-fetchDependencies"/>
 
     <target name="-banner">
         <echo message="Java Runtime Environment version: ${java.version}"/>
@@ -111,6 +107,10 @@ $Date$
         <echo message="Operating system version: ${os.version}"/>
         <echo message="Base directory: ${basedir}"/>
         <echo message="Java Home: ${java.home}"/>
+        <echo message="Compilation using invokedynamic: ${useIndy}"/>
+    </target>
+
+    <target name="-buildVersionCheck" depends="-jvm14BuildWarning">
     </target>
 
     <target name="-jvm14BuildWarning" if="groovy.build.vm4">
@@ -158,8 +158,14 @@ $Date$
     <target name="compileMain" depends="stagedcompile"
             description="Compile the Java and Groovy code in the main source.">
     </target>
+    
+    <target name="stagedcompile" depends="-init,ensureGrammars,-buildVersionCheck" unless="uber">
+        <property name="vm5GroovySourceFiles" value="**/*.groovy"/>
+        <property name="vm5JavaSourceFiles" value="**/*.java"/>
+        <property name="anotherGroovyExtTestFiles" value="**/*.foogroovy"/>
+        <property name="vm6GroovySourceFiles" value="groovy/**/vm6/*Test.groovy,org/codehaus/groovy/**/vm6/*Test.groovy"/>
+        <property name="vm7JavaSourceFiles" value="**/vm7/*.java,**/indy/*.java"/>
 
-    <target name="stagedcompile" depends="-init,ensureGrammars,-jvm14BuildWarning" unless="uber">
         <mkdir dir="${mainClassesDirectory}"/>
         <mkdir dir="${toolsClassesDirectory}"/>
         <mkdir dir="${mainClassesDirectory}/META-INF"/>
@@ -167,6 +173,7 @@ $Date$
         <javac srcdir="${mainSourcePath}" includeantruntime="false" destdir="${mainClassesDirectory}"
                deprecation="on" debug="yes" source="1.5" target="1.5" fork="true" classpathref="compilePath">
             <exclude name="groovy/ui/**/*.java"/>
+            <exclude name="${vm7JavaSourceFiles}"/>
         </javac>
         <java classname="org.codehaus.groovy.tools.DgmConverter" fork="yes" failonerror="true">
             <classpath>
@@ -175,8 +182,20 @@ $Date$
             </classpath>
             <arg line="--info"/>
         </java>
+        <antcall inheritrefs="true" target="-stagedcompile-indy"/>
         <antcall inheritrefs="true" target="-stagedcompile-groovy"/>
         <antcall target="-includeResources"/>
+    </target>
+
+    <target name="-stagedcompile-indy" if="useIndy">
+        <javac srcdir="${mainSourcePath}" includeantruntime="false" destdir="${mainClassesDirectory}"
+               deprecation="on" debug="yes" source="1.5" target="1.5" fork="true"
+               includes="${vm7JavaSourceFiles}">
+            <classpath>
+                <pathelement path="${mainClassesDirectory}"/>
+                <path refid="compilePath"/>
+            </classpath>
+        </javac>
     </target>
 
     <target name="-stagedcompile-groovy" depends="-initGroovyc">
@@ -190,11 +209,6 @@ $Date$
             <javac deprecation="on" debug="yes" source="1.5" target="1.5"/>
         </groovyc>
     </target>
-
-    <property name="vm5GroovySourceFiles" value="**/*.groovy"/>
-    <property name="vm5JavaSourceFiles" value="**/*.java"/>
-    <property name="anotherGroovyExtTestFiles" value="**/*.foogroovy"/>
-    <property name="vm6GroovySourceFiles" value="groovy/**/vm6/*Test.groovy,org/codehaus/groovy/**/vm6/*Test.groovy"/>
 
     <target name="-initGroovyc">
         <path id="groovyMainClasses">
@@ -779,7 +793,7 @@ $Date$
 
     <target name="doc" depends="javadoc, groovydoc" description="Create the documentation."/>
 
-    <target name="javadoc" depends="-fetchDependencies,-docInit,-jvm14BuildWarning,ensureGrammars"
+    <target name="javadoc" depends="-fetchDependencies,-docInit,-buildVersionCheck,ensureGrammars"
             unless="_skipDocs_" description="Create the javadoc documentation.">
         <javadoc destdir="${docsDirectory}/api" author="true" version="true"
                  windowtitle="${title}" doctitle="${title}"

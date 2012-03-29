@@ -15,6 +15,9 @@
  */
 package org.codehaus.groovy.classgen.asm;
 
+import groovy.lang.GroovyRuntimeException;
+
+import java.lang.reflect.Constructor;
 import java.util.Map;
 
 import org.codehaus.groovy.GroovyBugError;
@@ -34,6 +37,15 @@ import org.objectweb.asm.Opcodes;
 
 public class WriterController {
 
+    private static Constructor indyWriter;
+    static {
+        try {
+            Class indyClass = WriterController.class.getClassLoader().loadClass("org.codehaus.groovy.classgen.asm.indy.InvokeDynamicWriter");
+            indyWriter = indyClass.getConstructor(WriterController.class);
+        } catch (Exception e) {
+            indyWriter = null;
+        }        
+    }
     private AsmClassGenerator acg;
     private MethodVisitor methodVisitor;
     private CompileStack compileStack;
@@ -80,7 +92,11 @@ public class WriterController {
         
         if (invokedynamic) {
             bytecodeVersion = Opcodes.V1_7;
-            this.invocationWriter = new InvokeDynamicWriter(this);
+            try {
+                this.invocationWriter = (InvocationWriter) indyWriter.newInstance(this);
+            } catch (Exception e) {
+                throw new GroovyRuntimeException("Cannot use invokedynamic, indy module was excluded from this build.");
+            }
         } else {
             this.invocationWriter = new InvocationWriter(this);
         }
