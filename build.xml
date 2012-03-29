@@ -51,6 +51,10 @@ $Date$
         <istrue value="${skipOsgi}"/>
     </condition>
 
+    <condition property="_useIndy_">
+        <istrue value="${useIndy}"/>
+    </condition>
+
     <condition property="_skipFetch_">
         <istrue value="${skipFetch}"/>
     </condition>
@@ -164,16 +168,17 @@ $Date$
         <property name="vm5JavaSourceFiles" value="**/*.java"/>
         <property name="anotherGroovyExtTestFiles" value="**/*.foogroovy"/>
         <property name="vm6GroovySourceFiles" value="groovy/**/vm6/*Test.groovy,org/codehaus/groovy/**/vm6/*Test.groovy"/>
-        <property name="vm7JavaSourceFiles" value="**/vm7/*.java,**/indy/*.java"/>
+        <property name="vm7JavaSourceFiles" value="**/indy/*.java,**/v7/*.java,**/vm7/*.java"/>
 
         <mkdir dir="${mainClassesDirectory}"/>
         <mkdir dir="${toolsClassesDirectory}"/>
         <mkdir dir="${mainClassesDirectory}/META-INF"/>
 
         <javac srcdir="${mainSourcePath}" includeantruntime="false" destdir="${mainClassesDirectory}"
-               deprecation="on" debug="yes" source="1.5" target="1.5" fork="true" classpathref="compilePath">
+               deprecation="on" debug="yes" source="1.5" target="1.5" fork="true" classpathref="compilePath"
+               excludes="${vm7JavaSourceFiles}"
+        >
             <exclude name="groovy/ui/**/*.java"/>
-            <exclude name="${vm7JavaSourceFiles}"/>
         </javac>
         <java classname="org.codehaus.groovy.tools.DgmConverter" fork="yes" failonerror="true">
             <classpath>
@@ -187,7 +192,7 @@ $Date$
         <antcall target="-includeResources"/>
     </target>
 
-    <target name="-stagedcompile-indy" if="useIndy">
+    <target name="-stagedcompile-indy" if="_useIndy_">
         <javac srcdir="${mainSourcePath}" includeantruntime="false" destdir="${mainClassesDirectory}"
                deprecation="on" debug="yes" source="1.5" target="1.5" fork="true"
                includes="${vm7JavaSourceFiles}">
@@ -200,7 +205,7 @@ $Date$
 
     <target name="-stagedcompile-groovy" depends="-initGroovyc">
         <groovyc srcdir="${mainSourcePath}" destdir="${mainClassesDirectory}" 
-                 fork="true" stacktrace="true" indy="${useIndy}"
+                 fork="true" stacktrace="true" indy="${useIndy}" excludes="${vm7JavaSourceFiles}"
                  memorymaximumsize="${groovycMain_mx}">
             <classpath>
                 <pathelement path="${mainClassesDirectory}"/>
