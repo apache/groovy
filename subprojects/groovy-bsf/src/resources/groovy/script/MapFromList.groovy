@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,25 +16,20 @@
 package groovy.script
 
 class MapFromList {
-    void talk(a) {
-        println("hello "+a)
-    }
-
-    void doit(args) {
+    def doit(args) {
         def i = 1
-        def l = [:]
-        args.each { 
-        talk(it)
-        l.put(it,i++)
+        def result = [:]
+        args.each {
+            result.put(it, i++)
         }
-        l.each {
-           println(it)
-        }
+        result
     }
 
     static void main(args) {
-        def a = ['tom','dick','harry']
-        def t = new MapFromList()
-        t.doit(a)
+        def a = ['tom', 'dick', 'harry']
+        def answer = new MapFromList().doit(a)
+        assert answer instanceof Map
+        assert answer.size() == 3
+        assert answer.values() == 1..3 as Set
     }
 }

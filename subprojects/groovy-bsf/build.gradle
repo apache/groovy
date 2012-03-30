@@ -1,9 +1,6 @@
 apply plugin: 'java'
 apply plugin: 'checkstyle'
 
-// TODO set these using subprojects?
-ext.checkstyleConfigFileName = "../../config/checkstyle/checkstyle.xml"
-
 dependencies {
     compile("bsf:bsf:2.4.0") {
         exclude(group: 'commons-logging', module: 'commons-logging')

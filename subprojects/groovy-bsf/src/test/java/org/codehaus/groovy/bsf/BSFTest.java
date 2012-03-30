@@ -30,7 +30,6 @@ import java.util.Vector;
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @author Paul King
- * @version $Revision$
  */
 public class BSFTest extends TestCase {
 
@@ -57,7 +56,7 @@ public class BSFTest extends TestCase {
             fail("Should have caught compile exception");
         } catch (BSFException e) {
             assertTrue("e.getMessage() should contain CompilationError: " + e.getMessage(),
-                    e.getMessage().indexOf("CompilationError") != -1);
+                    e.getMessage().contains("CompilationError"));
         }
     }
 
@@ -67,7 +66,7 @@ public class BSFTest extends TestCase {
             fail("Should have caught compile exception");
         } catch (BSFException e) {
             assertTrue("e.getMessage() should contain CompilationError: " + e.getMessage(),
-                    e.getMessage().indexOf("CompilationError") != -1);
+                    e.getMessage().contains("CompilationError"));
         }
     }
 
@@ -85,10 +84,10 @@ public class BSFTest extends TestCase {
 
     public void testApply() throws Exception {
         Vector ignoreParamNames = null;
-        Vector args = new Vector();
-        args.add(new Integer(2));
-        args.add(new Integer(5));
-        args.add(new Integer(1));
+        Vector<Integer> args = new Vector<Integer>();
+        args.add(2);
+        args.add(5);
+        args.add(1);
         Integer actual = (Integer) manager.apply("groovy", "applyTest", 0, 0,
                 "def summer = { a, b, c -> a * 100 + b * 10 + c }", ignoreParamNames, args);
         assertEquals(251, actual.intValue());
@@ -126,24 +125,24 @@ public class BSFTest extends TestCase {
     }
 
     public void testNotFoundVariables() throws Exception {
-        manager.registerBean("x", new Integer(4));
+        manager.registerBean("x", 4);
         Object answer = manager.eval("groovy", "Test1.groovy", 0, 0,
                 "def valueOfX = this.bsf.lookupBean('y'); assert valueOfX == null");
         assertNull("Undeclared beans should yield null", answer);
     }
 
     public void testRegisteredVariables() throws Exception {
-        manager.registerBean("x", new Integer(4));
+        manager.registerBean("x", 4);
         Object answer = manager.eval("groovy", "Test1.groovy", 0, 0,
                 "def valueOfX = this.bsf.lookupBean('x'); assert valueOfX == 4; valueOfX + 1");
-        assertEquals("Incorrect return", new Integer(5), answer);
+        assertEquals("Incorrect return", 5, answer);
     }
 
     public void testUnregisteredVariables() throws Exception {
-        manager.registerBean("x", new Integer(4));
+        manager.registerBean("x", 4);
         Object answer = manager.eval("groovy", "Test1.groovy", 0, 0,
                 "def valueOfX = this.bsf.lookupBean('x'); assert valueOfX == 4; valueOfX + 1");
-        assertEquals("Incorrect return", new Integer(5), answer);
+        assertEquals("Incorrect return", 5, answer);
         manager.unregisterBean("x");
         // have to lookup registered beans
         answer = manager.eval("groovy", "Test1.groovy", 0, 0,
@@ -152,16 +151,16 @@ public class BSFTest extends TestCase {
     }
 
     public void testDeclaredVariables() throws Exception {
-        manager.declareBean("xyz", new Integer(4), Integer.class);
+        manager.declareBean("xyz", 4, Integer.class);
         Object answer = manager.eval("groovy", "Test1.groovy", 0, 0, "xyz + 1");
-        assertEquals("Incorrect return", new Integer(5), answer);
+        assertEquals("Incorrect return", 5, answer);
     }
 
     public void testUndeclaredVariables() throws Exception {
-        manager.declareBean("abc", new Integer(4), Integer.class);
+        manager.declareBean("abc", 4, Integer.class);
         // declared beans should just be available
         Object answer = manager.eval("groovy", "Test1.groovy", 0, 0, "abc + 1");
-        assertEquals("Incorrect return", new Integer(5), answer);
+        assertEquals("Incorrect return", 5, answer);
         manager.undeclareBean("abc");
         answer = manager.eval("groovy", "Test1.groovy", 0, 0, "abc");
         assertNull("Undeclared beans should yield null", answer);
@@ -175,10 +174,8 @@ public class BSFTest extends TestCase {
         assertEquals("olleh", result);
     }
 
-    // TODO don't rely on scripts outside this subproject?
     public void testExecFile() throws Exception {
-        execScript("src/test/groovy/script/MapFromList.groovy");
-        execScript("src/test/groovy/script/AtomTestScript.groovy");
+        execScript("src/resources/groovy/script/MapFromList.groovy");
     }
 
     protected void execScript(String fileName) throws Exception {
