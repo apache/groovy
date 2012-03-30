@@ -51,5 +51,13 @@ class ArraysAndCollectionsStaticCompileTest extends ArraysAndCollectionsSTCTest 
             assert result == ['A',null,'C']
         '''
     }
+
+    void testShouldNotThrowVerifyError() {
+        assertScript '''
+            def al = new ArrayList<Double>()
+            al.add(2.0d)
+            assert al.get(0) + 1 == 3.0d
+        '''
+    }
 }
 
