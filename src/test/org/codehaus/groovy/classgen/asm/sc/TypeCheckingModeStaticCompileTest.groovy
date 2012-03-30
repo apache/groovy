@@ -46,12 +46,12 @@ class TypeCheckingModeStaticCompileTest extends TypeCheckingModeTest {
         int st = bytecodeAsString.indexOf('foo()Ljava/lang/String;')
         int ed = bytecodeAsString.indexOf('ARETURN', st)
         int linesOfCode = bytecodeAsString.substring(st, ed).count('\n')
-        assert linesOfCode == 3
+        assert linesOfCode == 2
 
         st = bytecodeAsString.indexOf('bar()Ljava/lang/String;')
         ed = bytecodeAsString.indexOf('ARETURN', st)
         linesOfCode = bytecodeAsString.substring(st, ed).count('\n')
-        assert linesOfCode == 5
+        assert linesOfCode == 4
     }
 }
 

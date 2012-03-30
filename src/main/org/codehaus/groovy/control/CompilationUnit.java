@@ -795,7 +795,12 @@ public class CompilationUnit extends ProcessingUnit {
     };
 
     protected ClassVisitor createClassVisitor() {
-        return new ClassWriter(ClassWriter.COMPUTE_FRAMES+ClassWriter.COMPUTE_MAXS) {
+        CompilerConfiguration config = getConfiguration();
+        int computeMaxStackAndFrames = ClassWriter.COMPUTE_MAXS;
+        if (config.getOptimizationOptions().get("indy")==Boolean.TRUE) {
+            computeMaxStackAndFrames += ClassWriter.COMPUTE_FRAMES;
+        }
+        return new ClassWriter(computeMaxStackAndFrames) {
             private ClassNode getClassNode(String name) {
                 // try classes under compilation
                 CompileUnit cu = getAST();
