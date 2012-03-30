@@ -30,7 +30,6 @@ import org.codehaus.groovy.util.StringUtil
  * @author Mike Dillon
  * @author Tim Yates
  * @author Dinko Srkoc
- * @version $Revision$
  */
 class GroovyMethodsTest extends GroovySwingTestCase {
     void testCollect() {
@@ -96,7 +95,7 @@ class GroovyMethodsTest extends GroovySwingTestCase {
         assert ol.observed == letters
     }
 
-    @groovy.transform.PackageScope class ObserverLike {
+    private class ObserverLike {
       def observed = []
       void update(Observable o, arg) {observed << arg }
     }
@@ -1141,6 +1140,18 @@ class GroovyMethodsTest extends GroovySwingTestCase {
         assert !chars.contains('b' as char)
     }
 
+    void testCollectEntriesIterator() {
+        def items = ['a', 'bb', 'ccc'].iterator()
+        def map = items.collectEntries { [it, it.size()] }
+        assert map == [a: 1, bb: 2, ccc: 3]
+    }
+
+    void testCollectEntriesIterable() {
+        def things = new Things()
+        def map = things.collectEntries { [it.toLowerCase(), it.toUpperCase()] }
+        assert map == [a: 'A', b: 'B', c: 'C']
+    }
+
     void testArrayContains() {
         String[] vowels = ['a', 'e', 'i', 'o', 'u']
         assert vowels.contains('u')
@@ -1156,6 +1167,12 @@ class WackyList extends LinkedList {
 
 class WackyHashCode {
     int hashCode() {return 1;}
+}
+
+class Things implements Iterable<String> {
+    Iterator iterator() {
+        ["a", "B", "c"].iterator()
+    }
 }
 
 enum Suit { HEARTS, CLUBS, SPADES, DIAMONDS }

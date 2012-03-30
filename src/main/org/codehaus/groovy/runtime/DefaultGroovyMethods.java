@@ -1886,6 +1886,18 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Convert an Iterable to a List. The Iterable's iterator will
+     * become exhausted of elements after making this conversion.
+     *
+     * @param self an Iterable
+     * @return a List
+     * @since 1.8.7
+     */
+    public static <T> List<T> toList(Iterable<T> self) {
+        return toList(self.iterator());
+    }
+
+    /**
      * Convert an enumeration to a List.
      *
      * @param self an enumeration
@@ -2345,7 +2357,35 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * A variant of collectEntries using the identity closure as the transform.
+     * A variant of collectEntries for Iterators.
+     *
+     * @param self      an Iterator
+     * @param transform the closure used for transforming, which has an item from self as the parameter and
+     *                  should return a Map.Entry, a Map or a two-element list containing the resulting key and value
+     * @return a Map of the transformed entries
+     * @see #collectEntries(Collection, Closure)
+     * @since 1.8.7
+     */
+    public static <K, V> Map<K, V> collectEntries(Iterator<?> self, Closure<?> transform) {
+        return collectEntries(toList(self), transform);
+    }
+
+    /**
+     * A variant of collectEntries for Iterables.
+     *
+     * @param self      an Iterable
+     * @param transform the closure used for transforming, which has an item from self as the parameter and
+     *                  should return a Map.Entry, a Map or a two-element list containing the resulting key and value
+     * @return a Map of the transformed entries
+     * @see #collectEntries(Iterator, Closure)
+     * @since 1.8.7
+     */
+    public static <K, V> Map<K, V> collectEntries(Iterable<?> self, Closure<?> transform) {
+        return collectEntries(self.iterator(), transform);
+    }
+
+    /**
+     * A variant of collectEntries for Collections using the identity closure as the transform.
      * The source collection should be a list of <code>[key, value]</code> tuples or a <code>Map.Entry</code>.
      * <pre class="groovyTestCase">
      * def nums = [1, 10, 100, 1000]
@@ -2365,8 +2405,32 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * A variant of collectEntries for Iterators using the identity closure as the transform.
+     *
+     * @param self an Iterator
+     * @return a Map of the transformed entries
+     * @see #collectEntries(Collection)
+     * @since 1.8.7
+     */
+    public static <K, V> Map<K, V> collectEntries(Iterator<?> self) {
+        return collectEntries(toList(self));
+    }
+
+    /**
+     * A variant of collectEntries for Iterables using the identity closure as the transform.
+     *
+     * @param self an Iterable
+     * @return a Map of the transformed entries
+     * @see #collectEntries(Iterator)
+     * @since 1.8.7
+     */
+    public static <K, V> Map<K, V> collectEntries(Iterable<?> self) {
+        return collectEntries(self.iterator());
+    }
+
+    /**
      * Iterates through this Collection transforming each item using the closure
-     * as a transformer into a map entry, returning a map of the transformed entries.
+     * as a transformer into a map entry, returning the supplied map with all of the transformed entries added to it.
      * <pre class="groovyTestCase">
      * def letters = "abc"
      * // collect letters with index
@@ -2391,7 +2455,38 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * A variant of collectEntries using the identity closure as the transform.
+     * A variant of collectEntries for Iterators using a supplied map as the destination of transformed entries.
+     *
+     * @param self      an Iterator
+     * @param collector the Map into which the transformed entries are put
+     * @param transform the closure used for transforming, which has an item from self as the parameter and
+     *                  should return a Map.Entry, a Map or a two-element list containing the resulting key and value
+     * @return the collector with all transformed values added to it
+     * @see #collectEntries(Collection, Map, Closure)
+     * @since 1.8.7
+     */
+    public static <K, V> Map<K, V> collectEntries(Iterator<?> self, Map<K, V> collector, Closure<?> transform) {
+        return collectEntries(toList(self), collector, transform);
+    }
+
+    /**
+     * A variant of collectEntries for Iterables using a supplied map as the destination of transformed entries.
+     *
+     * @param self      an Iterable
+     * @param collector the Map into which the transformed entries are put
+     * @param transform the closure used for transforming, which has an item from self as the parameter and
+     *                  should return a Map.Entry, a Map or a two-element list containing the resulting key and value
+     * @return the collector with all transformed values added to it
+     * @see #collectEntries(Iterator, Map, Closure)
+     * @since 1.8.7
+     */
+    public static <K, V> Map<K, V> collectEntries(Iterable<?> self, Map<K, V> collector, Closure<?> transform) {
+        return collectEntries(self.iterator(), collector, transform);
+    }
+
+    /**
+     * A variant of collectEntries for Collections using the identity closure as the
+     * transform and a supplied map as the destination of transformed entries.
      *
      * @param self      a Collection
      * @param collector the Map into which the transformed entries are put
@@ -2401,6 +2496,34 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <K, V> Map<K, V> collectEntries(Collection<?> self, Map<K, V> collector) {
         return collectEntries(self, collector, Closure.IDENTITY);
+    }
+
+    /**
+     * A variant of collectEntries for Iterators using the identity closure as the
+     * transform and a supplied map as the destination of transformed entries.
+     *
+     * @param self      an Iterator
+     * @param collector the Map into which the transformed entries are put
+     * @return the collector with all transformed values added to it
+     * @see #collectEntries(Collection, Map)
+     * @since 1.8.7
+     */
+    public static <K, V> Map<K, V> collectEntries(Iterator<?> self, Map<K, V> collector) {
+        return collectEntries(toList(self), collector);
+    }
+
+    /**
+     * A variant of collectEntries for Iterables using the identity closure as the
+     * transform and a supplied map as the destination of transformed entries.
+     *
+     * @param self      an Iterable
+     * @param collector the Map into which the transformed entries are put
+     * @return the collector with all transformed values added to it
+     * @see #collectEntries(Iterator, Map)
+     * @since 1.8.7
+     */
+    public static <K, V> Map<K, V> collectEntries(Iterable<?> self, Map<K, V> collector) {
+        return collectEntries(self.iterator(), collector);
     }
 
     /**
