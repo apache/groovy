@@ -119,7 +119,9 @@ public class VerifyClass extends MatchingTask {
                     log("verifying of class " + clazz + " failed");
                 }
                 if (verbose) log(method.name + method.desc);
-                TraceMethodVisitor mv = new TraceMethodVisitor(null) {
+                
+                TraceMethodVisitor mv = new TraceMethodVisitor(null); 
+                /*= new TraceMethodVisitor(null) {
                     public void visitMaxs(int maxStack, int maxLocals) {
                         StringBuffer buffer = new StringBuffer();
                         for (int i = 0; i < text.size(); ++i) {
@@ -135,7 +137,7 @@ public class VerifyClass extends MatchingTask {
                         }
                         if (verbose) log(buffer.toString());
                     }
-                };
+                };*/
                 for (int j = 0; j < method.instructions.size(); ++j) {
                     Object insn = method.instructions.get(j);
                     if (insn instanceof AbstractInsnNode) {

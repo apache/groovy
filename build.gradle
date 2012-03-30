@@ -32,12 +32,12 @@ dependencies {
 // TODO use antlr plugin
 //    antlr "antlr:antlr:2.7.7"
     groovy files("$buildDir/classes")
-    groovy "asm:asm:3.3.1"
     groovy "antlr:antlr:2.7.7"
-    groovy "asm:asm-commons:3.3.1"
-    groovy "asm:asm-util:3.3.1"
-    groovy "asm:asm-analysis:3.3.1"
-    groovy "asm:asm-tree:3.3.1"
+    groovy "org.ow2.asm:asm:4.0"
+    groovy "org.ow2.asm:asm-analysis:4.0"
+    groovy "org.ow2.asm:asm-commons:4.0"
+    groovy "org.ow2.asm:asm-tree:4.0"
+    groovy "org.ow2.asm:asm-util:4.0"
 
     compile "commons-cli:commons-cli:1.2"
     compile "org.apache.ant:ant:1.8.3"
@@ -88,7 +88,7 @@ dependencies {
         exclude(module: 'asm')
         exclude(module: 'ant')
     }
-    tools "asm:asm:3.3.1"
+    tools "org.ow2.asm:asm-all:4.0.0"
     tools "com.thoughtworks.qdox:qdox:1.12"
     tools "biz.aQute:bnd:0.0.401"
 

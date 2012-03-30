@@ -63,7 +63,7 @@ public class StaticTypesTransformation implements ASTTransformation {
             }
         }
         AnnotatedNode node = (AnnotatedNode) nodes[1];
-		StaticTypeCheckingVisitor visitor = null;
+        StaticTypeCheckingVisitor visitor = null;
         if (node instanceof ClassNode) {
             ClassNode classNode = (ClassNode) node;
             visitor = newVisitor(source, classNode, pluginFactory);
@@ -76,9 +76,9 @@ public class StaticTypesTransformation implements ASTTransformation {
         } else {
             source.addError(new SyntaxException(STATIC_ERROR_PREFIX + "Unimplemented node type", node.getLineNumber(), node.getColumnNumber()));
         }
-		if (visitor!=null) {
-			visitor.performSecondPass();
-		}
+        if (visitor!=null) {
+            visitor.performSecondPass();
+        }
     }
 
     /**

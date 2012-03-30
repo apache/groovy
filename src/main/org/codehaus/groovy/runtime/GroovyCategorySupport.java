@@ -37,7 +37,7 @@ public class GroovyCategorySupport {
 
     private static int categoriesInUse = 0;
     private static AtomicInteger atomicCategoryUsageCounter = new AtomicInteger();
-    
+
     public static class CategoryMethodList extends ArrayList<CategoryMethod> {
         public final int level;
         final CategoryMethodList previous;
@@ -63,10 +63,10 @@ public class GroovyCategorySupport {
 
     public static class ThreadCategoryInfo extends HashMap<String, CategoryMethodList>{
         int level;
-        
+
         private Map<String, String> propertyGetterMap;
         private Map<String, String> propertySetterMap;
-        
+
         private void newScope () {
             atomicCategoryUsageCounter.incrementAndGet();
             categoriesInUse = atomicCategoryUsageCounter.get();
@@ -94,7 +94,7 @@ public class GroovyCategorySupport {
             atomicCategoryUsageCounter.getAndDecrement();
             categoriesInUse = atomicCategoryUsageCounter.get();
             if (categoriesInUse==0) DefaultMetaClassInfo.setCategoryUsed(false);
-			if (level == 0) {
+            if (level == 0) {
                 THREAD_INFO.remove();
             }
         }
@@ -120,7 +120,7 @@ public class GroovyCategorySupport {
                 endScope();
             }
         }
-        
+
         private void applyUse(CachedClass cachedClass) {
             CachedMethod[] methods = cachedClass.getMethods();
             for (CachedMethod cachedMethod : methods) {
@@ -142,27 +142,27 @@ public class GroovyCategorySupport {
                 }
             }
         }
-        
+
         private void cachePropertyAccessor(CategoryMethod method) {
-        	 String name = method.getName();             
+             String name = method.getName();
              int parameterLength = method.getParameterTypes().length;
-             
-             if (name.startsWith("get") && name.length() > 3 && parameterLength == 0) {            	 
-            	 propertyGetterMap = putPropertyAccessor(3, name, propertyGetterMap);
-             }             
+
+             if (name.startsWith("get") && name.length() > 3 && parameterLength == 0) {
+                 propertyGetterMap = putPropertyAccessor(3, name, propertyGetterMap);
+             }
              else if (name.startsWith("set") && name.length() > 3 && parameterLength == 1) {
-            	 propertySetterMap = putPropertyAccessor(3, name, propertySetterMap);
-             }  
+                 propertySetterMap = putPropertyAccessor(3, name, propertySetterMap);
+             }
         }
-        
+
         // Precondition: accessorName.length() > prefixLength
         private Map<String, String> putPropertyAccessor(int prefixLength, String accessorName, Map<String, String> map) {
-        	if (map == null) {
-       		  map = new HashMap<String, String>();
-       	    }	   
-        	String property = accessorName.substring(prefixLength, prefixLength+1).toLowerCase() + accessorName.substring(prefixLength+1);
-        	map.put(property, accessorName);
-        	return map;
+            if (map == null) {
+              map = new HashMap<String, String>();
+            }
+            String property = accessorName.substring(prefixLength, prefixLength+1).toLowerCase() + accessorName.substring(prefixLength+1);
+            map.put(property, accessorName);
+            return map;
         }
 
         private void use(Class categoryClass) {
@@ -171,7 +171,7 @@ public class GroovyCategorySupport {
             for (CachedClass superClass = cachedClass; superClass.getTheClass()!=Object.class; superClass = superClass.getCachedSuperClass()) {
                 classStack.add(superClass);
             }
-            
+
             while (!classStack.isEmpty()) {
                 CachedClass klazz = classStack.removeLast();
                 applyUse(klazz);
@@ -181,14 +181,14 @@ public class GroovyCategorySupport {
         public CategoryMethodList getCategoryMethods(String name) {
             return level == 0 ? null : get(name);
         }
-        
-        
+
+
         String getPropertyCategoryGetterName(String propertyName){
-        	return propertyGetterMap != null ? propertyGetterMap.get(propertyName) : null; 
+            return propertyGetterMap != null ? propertyGetterMap.get(propertyName) : null;
         }
-        
+
         String getPropertyCategorySetterName(String propertyName){
-        	return propertySetterMap != null ? propertySetterMap.get(propertyName) : null; 
+            return propertySetterMap != null ? propertySetterMap.get(propertyName) : null;
         }
     }
 
@@ -259,7 +259,7 @@ public class GroovyCategorySupport {
 
     public static boolean hasCategoryInCurrentThread() {
         if (categoriesInUse == 0) return false;
-		ThreadCategoryInfo infoNullable = THREAD_INFO.getInfoNullable();
+        ThreadCategoryInfo infoNullable = THREAD_INFO.getInfoNullable();
         return infoNullable != null && infoNullable.level != 0;
     }
 
@@ -279,15 +279,15 @@ public class GroovyCategorySupport {
     }
 
     public static String getPropertyCategoryGetterName(String propertyName) {
-    	 final ThreadCategoryInfo categoryInfo = THREAD_INFO.getInfoNullable();
-    	 return categoryInfo == null ? null : categoryInfo.getPropertyCategoryGetterName(propertyName);
+         final ThreadCategoryInfo categoryInfo = THREAD_INFO.getInfoNullable();
+         return categoryInfo == null ? null : categoryInfo.getPropertyCategoryGetterName(propertyName);
     }
-    
+
     public static String getPropertyCategorySetterName(String propertyName) {
-   	     final ThreadCategoryInfo categoryInfo = THREAD_INFO.getInfoNullable();
-   	     return categoryInfo == null ? null : categoryInfo.getPropertyCategorySetterName(propertyName); 
+         final ThreadCategoryInfo categoryInfo = THREAD_INFO.getInfoNullable();
+         return categoryInfo == null ? null : categoryInfo.getPropertyCategorySetterName(propertyName);
    }
-    
+
     private static class MyThreadLocal extends ThreadLocal<SoftReference> {
 
         ConcurrentHashMap<String,AtomicInteger> usage = new ConcurrentHashMap<String,AtomicInteger> ();

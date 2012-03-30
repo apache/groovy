@@ -384,21 +384,34 @@ public class BinaryExpressionHelper {
 
     protected void evaluateCompareExpression(MethodCaller compareMethod, BinaryExpression expression) {
         Expression leftExp = expression.getLeftExpression();
+        ClassNode leftType = leftExp.getType();
         Expression rightExp = expression.getRightExpression();
-        AsmClassGenerator acg = controller.getAcg();
-        OperandStack operandStack = controller.getOperandStack();
+        ClassNode rightType = rightExp.getType();
         
-        leftExp.visit(acg);
-        operandStack.box();
-        rightExp.visit(acg);
-        operandStack.box();
-
-        compareMethod.call(controller.getMethodVisitor());
-        ClassNode resType = ClassHelper.boolean_TYPE;
-        if (compareMethod==findRegexMethod) {
-            resType = ClassHelper.OBJECT_TYPE;
-        } 
-        operandStack.replace(resType,2);
+        boolean done = false;
+        if (    ClassHelper.isPrimitiveType(leftType) &&
+                ClassHelper.isPrimitiveType(rightType)) 
+        {
+            BinaryExpressionMultiTypeDispatcher helper = new BinaryExpressionMultiTypeDispatcher(getController());
+            done = helper.doPrimtiveCompare(leftType, rightType, expression);
+        }
+        
+        if (!done) {
+            AsmClassGenerator acg = controller.getAcg();
+            OperandStack operandStack = controller.getOperandStack();
+            
+            leftExp.visit(acg);
+            operandStack.box();
+            rightExp.visit(acg);
+            operandStack.box();
+    
+            compareMethod.call(controller.getMethodVisitor());
+            ClassNode resType = ClassHelper.boolean_TYPE;
+            if (compareMethod==findRegexMethod) {
+                resType = ClassHelper.OBJECT_TYPE;
+            } 
+            operandStack.replace(resType,2);
+        }
     }
     
     private void evaluateCompareTo(BinaryExpression expression) {

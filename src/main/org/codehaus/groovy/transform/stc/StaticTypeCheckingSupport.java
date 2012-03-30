@@ -57,7 +57,7 @@ public abstract class StaticTypeCheckingSupport {
      * we use this one as a wildcard.
      */
     final static ClassNode UNKNOWN_PARAMETER_TYPE = ClassHelper.make("<unknown parameter type>");
-    
+
     /**
      * This comparator is used when we return the list of methods from DGM which name correspond to a given
      * name. As we also lookup for DGM methods of superclasses or interfaces, it may be possible to find
@@ -524,7 +524,7 @@ public abstract class StaticTypeCheckingSupport {
                 return WideningCategories.isBigIntCategory(rightRedirect);
             }
         }
-        
+
         // if rightExpression is null and leftExpression is not a primitive type, it's ok
         boolean rightExpressionIsNull = rightExpression instanceof ConstantExpression && ((ConstantExpression) rightExpression).getValue()==null;
         if (rightExpressionIsNull && !isPrimitiveType(left)) {

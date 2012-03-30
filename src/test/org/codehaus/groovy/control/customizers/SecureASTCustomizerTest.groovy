@@ -400,7 +400,7 @@ class SecureASTCustomizerTest extends GroovyTestCase {
         def shell = new GroovyShell(configuration)
         customizer.importsBlacklist = [
                 "java.lang.System",
-		        "groovy.lang.GroovyShell",
+                "groovy.lang.GroovyShell",
                 "groovy.lang.GroovyClassLoader"]
         customizer.indirectImportCheckEnabled = true
 

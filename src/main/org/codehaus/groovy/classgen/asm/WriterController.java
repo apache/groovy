@@ -15,6 +15,9 @@
  */
 package org.codehaus.groovy.classgen.asm;
 
+import groovy.lang.GroovyRuntimeException;
+
+import java.lang.reflect.Constructor;
 import java.util.Map;
 
 import org.codehaus.groovy.GroovyBugError;
@@ -26,13 +29,22 @@ import org.codehaus.groovy.ast.InterfaceHelperClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.classgen.GeneratorContext;
-import org.codehaus.groovy.classgen.asm.indy.InvokeDynamicWriter;
 import org.codehaus.groovy.control.SourceUnit;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
 
 public class WriterController {
 
+    private static Constructor indyWriter;
+    static {
+        try {
+            Class indyClass = WriterController.class.getClassLoader().loadClass("org.codehaus.groovy.classgen.asm.indy.InvokeDynamicWriter");
+            indyWriter = indyClass.getConstructor(WriterController.class);
+        } catch (Exception e) {
+            indyWriter = null;
+        }        
+    }
     private AsmClassGenerator acg;
     private MethodVisitor methodVisitor;
     private CompileStack compileStack;
@@ -57,6 +69,7 @@ public class WriterController {
     private StatementWriter statementWriter;
     private boolean fastPath = false;
     private TypeChooser typeChooser;
+    private int bytecodeVersion = Opcodes.V1_5; 
 
     public void init(AsmClassGenerator asmClassGenerator, GeneratorContext gcon, ClassVisitor cv, ClassNode cn) {
         Map<String,Boolean> optOptions = cn.getCompileUnit().getConfig().getOptimizationOptions();
@@ -77,7 +90,12 @@ public class WriterController {
         this.callSiteWriter = new CallSiteWriter(this);
         
         if (invokedynamic) {
-            this.invocationWriter = new InvokeDynamicWriter(this);
+            bytecodeVersion = Opcodes.V1_7;
+            try {
+                this.invocationWriter = (InvocationWriter) indyWriter.newInstance(this);
+            } catch (Exception e) {
+                throw new GroovyRuntimeException("Cannot use invokedynamic, indy module was excluded from this build.");
+            }
         } else {
             this.invocationWriter = new InvocationWriter(this);
         }
@@ -321,5 +339,9 @@ public class WriterController {
 
     public boolean isFastPath() {
         return fastPath;
+    }
+    
+    public int getBytecodeVersion() {
+        return bytecodeVersion;
     }
 }

@@ -21,7 +21,6 @@ import groovy.lang.GroovyRuntimeException;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 import org.objectweb.asm.*;
-import org.objectweb.asm.commons.EmptyVisitor;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -57,9 +56,8 @@ import java.util.concurrent.atomic.AtomicLong;
  *
  * @since 2.0.0
  */
-public class ProxyGeneratorAdapter extends ClassAdapter implements Opcodes {
+public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
     private static final Map<String, Boolean> EMPTY_DELEGATECLOSURE_MAP = Collections.emptyMap();
-    private static final EmptyVisitor EMPTY_VISITOR = new EmptyVisitor();
     private static final Set<String> EMPTY_STRING_SET = Collections.emptySet();
 
     private static final String CLOSURES_MAP_FIELD = "$closures$delegate$map";
@@ -117,7 +115,7 @@ public class ProxyGeneratorAdapter extends ClassAdapter implements Opcodes {
             final ClassLoader proxyLoader,
             final boolean emptyBody,
             final Class delegateClass) {
-        super(new ClassWriter(0));
+        super(Opcodes.ASM4, new ClassWriter(0));
         this.visitedMethods = new LinkedHashSet<Object>();
         this.delegatedClosures = closureMap.isEmpty()? EMPTY_DELEGATECLOSURE_MAP :new HashMap<String, Boolean>();
         boolean wildcard = false;
@@ -461,10 +459,10 @@ public class ProxyGeneratorAdapter extends ClassAdapter implements Opcodes {
     @Override
     public MethodVisitor visitMethod(final int access, final String name, final String desc, final String signature, final String[] exceptions) {
         Object key = Arrays.asList(name, desc);
-        if (visitedMethods.contains(key)) return EMPTY_VISITOR;
+        if (visitedMethods.contains(key)) return null;
         if (Modifier.isPrivate(access) || Modifier.isNative(access) || ((access&ACC_SYNTHETIC)!=0)) {
             // do not generate bytecode for private methods
-            return EMPTY_VISITOR;
+            return null;
         }
         int accessFlags = access;
         visitedMethods.add(key);
@@ -523,7 +521,7 @@ public class ProxyGeneratorAdapter extends ClassAdapter implements Opcodes {
             }
             mv.visitEnd();
         }
-        return EMPTY_VISITOR;
+        return null;
     }
 
     private int registerLen(Type[] args) {
@@ -570,7 +568,7 @@ public class ProxyGeneratorAdapter extends ClassAdapter implements Opcodes {
         int max = idx + 1 + (generateDelegateField?1:0);
         mv.visitMaxs(max, max);
         mv.visitEnd();
-        return EMPTY_VISITOR;
+        return null;
     }
 
     private void initializeDelegateClosure(final MethodVisitor mv, int argStart) {
@@ -625,7 +623,7 @@ public class ProxyGeneratorAdapter extends ClassAdapter implements Opcodes {
         unwrapResult(mv, desc);
         mv.visitMaxs(size, registerLen(args) + 1);
 
-        return EMPTY_VISITOR;
+        return null;
     }
     
     protected MethodVisitor makeDelegateToClosureCall(final String name, final String desc, final String signature, final String[] exceptions, final int accessFlags) {
@@ -689,7 +687,7 @@ public class ProxyGeneratorAdapter extends ClassAdapter implements Opcodes {
         mv.visitMaxs(stackSize, arrayStore+1);
         mv.visitEnd();
 //        System.out.println("tmv.getText() = " + tmv.getText());
-        return EMPTY_VISITOR;
+        return null;
     }
 
     private void unwrapResult(final MethodVisitor mv, final String desc) {

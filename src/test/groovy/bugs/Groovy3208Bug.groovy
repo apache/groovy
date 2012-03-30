@@ -17,7 +17,7 @@ public class Groovy3208Bug extends GroovyTestCase {
 class Super {
    static final String PROP = "ABC"
    def doIt = { PROP }
-//   def static doItStatically = { PROP }
+//   static doItStatically = { PROP }
 }
 
 class Sub extends Super {

@@ -168,7 +168,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Allows the closure to be called for the object reference self. 
+     * Allows the closure to be called for the object reference self.
      * Synonym for 'with()'.
      *
      * @param self    the object to have a closure act upon
@@ -182,18 +182,18 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Allows the closure to be called for the object reference self. <br/><br/>
-     * Any method invoked inside the closure will first be invoked on the 
+     * Any method invoked inside the closure will first be invoked on the
      * self reference. For instance, the following method calls to the append()
-     * method are invoked on the StringBuilder instance: 
+     * method are invoked on the StringBuilder instance:
      * <pre>
      * def b = new StringBuilder().with {
      *   append('foo')
      *   append('bar')
      *   return it
      * }
-     * assert b.toString() == 'foobar' 
+     * assert b.toString() == 'foobar'
      * </pre>
-     * This is commonly used to simplify object creation, such as this example: 
+     * This is commonly used to simplify object creation, such as this example:
      * <pre>
      * def p = new Person().with {
      *   firstName = 'John'
@@ -3235,9 +3235,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Adds GroovyCollections#transpose(List) as a method on lists. <br/>
-     * A TransposeFunction takes a collection of columns and returns a collection of 
-     * rows. The first row consists of the first element from each column. Successive 
-     * rows are constructed similarly.      
+     * A TransposeFunction takes a collection of columns and returns a collection of
+     * rows. The first row consists of the first element from each column. Successive
+     * rows are constructed similarly.
      * <p>
      * Example usage:
      * <pre class="groovyTestCase">def result = [['a', 'b'], [1, 2]].transpose()

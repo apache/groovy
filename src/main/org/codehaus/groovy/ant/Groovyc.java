@@ -125,6 +125,7 @@ public class Groovyc extends MatchingTask {
     private List<File> temporaryFiles = new ArrayList<File>(2);
     private File stubDir;
     private boolean keepStubs;
+    private boolean useIndy;
 
     private Set<String> scriptExtensions = new LinkedHashSet<String>();
 
@@ -707,252 +708,290 @@ public class Groovyc extends MatchingTask {
         }
     }
 
-    protected void compile() {
-        try {
-            if (compileList.length > 0) {
-                log("Compiling " + compileList.length + " source file"
-                        + (compileList.length == 1 ? "" : "s")
-                        + (destDir != null ? " to " + destDir : ""));
+    private void listFiles() {
+        if (listFiles) {
+            for (File srcFile : compileList) {
+                log(srcFile.getAbsolutePath());
+            }
+        }
+    }
+    
+    private List<String> extractJointOptions(Path classpath){
+        List<String> jointOptions = new ArrayList<String>();
+        if (!jointCompilation) return jointOptions;
 
-                if (listFiles) {
-                    for (File srcFile : compileList) {
-                        log(srcFile.getAbsolutePath());
-                    }
+        // extract joint options, some get pushed up...
+        RuntimeConfigurable rc = javac.getRuntimeConfigurableWrapper();
+        for (Iterator i = rc.getAttributeMap().entrySet().iterator(); i.hasNext();) {
+            final Map.Entry e = (Map.Entry) i.next();
+            final String key = e.getKey().toString();
+            final String value = getProject().replaceProperties(e.getValue().toString());
+            if (key.contains("debug")) {
+                String level = "";
+                if (javac.getDebugLevel() != null) {
+                    level = ":" + javac.getDebugLevel();
                 }
-
-                Path classpath = getClasspath() != null ? getClasspath() : new Path(getProject());
-                // extract joint options, some get pushed up...
-                List<String> jointOptions = new ArrayList<String>();
-                if (jointCompilation) {
-                    RuntimeConfigurable rc = javac.getRuntimeConfigurableWrapper();
-                    for (Iterator i = rc.getAttributeMap().entrySet().iterator(); i.hasNext();) {
-                        final Map.Entry e = (Map.Entry) i.next();
-                        final String key = e.getKey().toString();
+                jointOptions.add("-Fg" + level);
+            } else if (key.contains("debugLevel")) {
+                // ignore, taken care of in debug
+            } else if ((key.contains("nowarn"))
+                    || (key.contains("verbose"))
+                    || (key.contains("deprecation"))) {
+                // false is default, so something to do only in true case
+                if ("on".equalsIgnoreCase(value) || "true".equalsIgnoreCase(value) || "yes".equalsIgnoreCase("value"))
+                    jointOptions.add("-F" + key);
+            } else if (key.contains("classpath")) {
+                classpath.add(javac.getClasspath());
+            } else if ((key.contains("depend"))
+                    || (key.contains("extdirs"))
+                    || (key.contains("encoding"))
+                    || (key.contains("source"))
+                    || (key.contains("target"))
+                    || (key.contains("verbose"))) { // TODO remove extra verbose?
+                jointOptions.add("-J" + key + "=" + value);
+            } else {
+                log("The option " + key + " cannot be set on the contained <javac> element. The option will be ignored", Project.MSG_WARN);
+            }
+            // includes? excludes?
+        }
+        
+        // ant's <javac> supports nested <compilerarg value=""> elements (there can be multiple of them)
+        // for additional options to be passed to javac.
+        Enumeration children = rc.getChildren();
+        while (children.hasMoreElements()) {
+            RuntimeConfigurable childrc = (RuntimeConfigurable) children.nextElement();
+            if (childrc.getElementTag().equals("compilerarg")) {
+                for (Iterator i = childrc.getAttributeMap().entrySet().iterator(); i.hasNext();) {
+                    final Map.Entry e = (Map.Entry) i.next();
+                    final String key = e.getKey().toString();
+                    if (key.equals("value")) {
                         final String value = getProject().replaceProperties(e.getValue().toString());
-                        if (key.contains("debug")) {
-                            String level = "";
-                            if (javac.getDebugLevel() != null) {
-                                level = ":" + javac.getDebugLevel();
+                        StringTokenizer st = new StringTokenizer(value, " ");
+                        while (st.hasMoreTokens()) {
+                            String optionStr = st.nextToken();
+                            String replaced = optionStr.replace("-X", "-FX");
+                            if(optionStr == replaced) {
+                                replaced = optionStr.replace("-W", "-FW"); // GROOVY-5063
                             }
-                            jointOptions.add("-Fg" + level);
-                        } else if (key.contains("debugLevel")) {
-                            // ignore, taken care of in debug
-                        } else if ((key.contains("nowarn"))
-                                || (key.contains("verbose"))
-                                || (key.contains("deprecation"))) {
-                            // false is default, so something to do only in true case
-                            if ("on".equalsIgnoreCase(value) || "true".equalsIgnoreCase(value) || "yes".equalsIgnoreCase("value"))
-                                jointOptions.add("-F" + key);
-                        } else if (key.contains("classpath")) {
-                            classpath.add(javac.getClasspath());
-                        } else if ((key.contains("depend"))
-                                || (key.contains("extdirs"))
-                                || (key.contains("encoding"))
-                                || (key.contains("source"))
-                                || (key.contains("target"))
-                                || (key.contains("verbose"))) { // TODO remove extra verbose?
-                            jointOptions.add("-J" + key + "=" + value);
-                        } else {
-                            log("The option " + key + " cannot be set on the contained <javac> element. The option will be ignored", Project.MSG_WARN);
-                        }
-                        // includes? excludes?
-                    }
-                    // ant's <javac> supports nested <compilerarg value=""> elements (there can be multiple of them)
-                    // for additional options to be passed to javac.
-                    Enumeration children = rc.getChildren();
-                    while (children.hasMoreElements()) {
-                        RuntimeConfigurable childrc = (RuntimeConfigurable) children.nextElement();
-                        if (childrc.getElementTag().equals("compilerarg")) {
-                            for (Iterator i = childrc.getAttributeMap().entrySet().iterator(); i.hasNext();) {
-                                final Map.Entry e = (Map.Entry) i.next();
-                                final String key = e.getKey().toString();
-                                if (key.equals("value")) {
-                                    final String value = getProject().replaceProperties(e.getValue().toString());
-                                    StringTokenizer st = new StringTokenizer(value, " ");
-                                    while (st.hasMoreTokens()) {
-                                        String optionStr = st.nextToken();
-                                        String replaced = optionStr.replace("-X", "-FX");
-                                        if(optionStr == replaced) {
-                                            replaced = optionStr.replace("-W", "-FW"); // GROOVY-5063
-                                        }
-                                        jointOptions.add(replaced);
-                                    }
-                                }
-                            }
+                            jointOptions.add(replaced);
                         }
                     }
                 }
+            }
+        }
+        
+        return jointOptions;
+    }
+    
+    private void doForkCommandLineList(List<String> commandLineList, Path classpath, String separator) {
+        if (!fork) return;
 
-                String separator = System.getProperty("file.separator");
-                List<String> commandLineList = new ArrayList<String>();
+        if (includeAntRuntime) {
+            classpath.addExisting((new Path(getProject())).concatSystemClasspath("last"));
+        }
+        if (includeJavaRuntime) {
+            classpath.addJavaRuntime();
+        }
 
-                if (fork) {
-                    if (includeAntRuntime) {
-                        classpath.addExisting((new Path(getProject())).concatSystemClasspath("last"));
-                    }
-                    if (includeJavaRuntime) {
-                        classpath.addJavaRuntime();
-                    }
+        if (forkedExecutable != null && !forkedExecutable.equals("")) {
+            commandLineList.add(forkedExecutable);
+        } else {
+            String javaHome;
+            if (forkJavaHome != null) {
+                javaHome = forkJavaHome.getPath();
+            } else {
+                javaHome = System.getProperty("java.home");
+            }
+            commandLineList.add(javaHome + separator + "bin" + separator + "java");
+        }
+        commandLineList.add("-classpath");
+        commandLineList.add(classpath.toString());
 
-                    if (forkedExecutable != null && !forkedExecutable.equals("")) {
-                        commandLineList.add(forkedExecutable);
-                    } else {
-                        String javaHome;
-                        if (forkJavaHome != null) {
-                            javaHome = forkJavaHome.getPath();
-                        } else {
-                            javaHome = System.getProperty("java.home");
-                        }
-                        commandLineList.add(javaHome + separator + "bin" + separator + "java");
-                    }
+        final String fileEncodingProp = System.getProperty("file.encoding");
+        if ((fileEncodingProp != null) && !fileEncodingProp.equals("")) {
+            commandLineList.add("-Dfile.encoding=" + fileEncodingProp);
+        }
+        if (targetBytecode != null) {
+            commandLineList.add("-Dgroovy.target.bytecode=" + targetBytecode);
+        }
 
-                    final String fileEncodingProp = System.getProperty("file.encoding");
-                    if ((fileEncodingProp != null) && !fileEncodingProp.equals("")) {
-                        commandLineList.add("-Dfile.encoding=" + fileEncodingProp);
-                    }
-                    if (targetBytecode != null) {
-                        commandLineList.add("-Dgroovy.target.bytecode=" + targetBytecode);
-                    }
+        if ((memoryInitialSize != null) && !memoryInitialSize.equals("")) {
+            commandLineList.add("-Xms" + memoryInitialSize);
+        }
+        if ((memoryMaximumSize != null) && !memoryMaximumSize.equals("")) {
+            commandLineList.add("-Xmx" + memoryMaximumSize);
+        }
+        if (!"*.groovy".equals(getScriptExtension())) {
+            String tmpExtension = getScriptExtension();
+            if (tmpExtension.startsWith("*.")) tmpExtension = tmpExtension.substring(1);
+            commandLineList.add("-Dgroovy.default.scriptExtension=" + tmpExtension);
+        }
+        commandLineList.add(FileSystemCompilerFacade.class.getName());
+    }
+    
+    private void doNormalCommandLineList(List<String> commandLineList, List<String> jointOptions, Path classpath) {
+        commandLineList.add("--classpath");
+        commandLineList.add(classpath.toString());
+        if (jointCompilation) {
+            commandLineList.add("-j");
+            commandLineList.addAll(jointOptions);
+        }
+        if (destDir != null) {
+            commandLineList.add("-d");
+            commandLineList.add(destDir.getPath());
+        }
+        if (encoding != null) {
+            commandLineList.add("--encoding");
+            commandLineList.add(encoding);
+        }
+        if (stacktrace) {
+            commandLineList.add("-e");
+        }
+        if (useIndy) {
+            commandLineList.add("-indy");
+        }
+    }
 
-                    if ((memoryInitialSize != null) && !memoryInitialSize.equals("")) {
-                        commandLineList.add("-Xms" + memoryInitialSize);
-                    }
-                    if ((memoryMaximumSize != null) && !memoryMaximumSize.equals("")) {
-                        commandLineList.add("-Xmx" + memoryMaximumSize);
-                    }
-                    if (!"*.groovy".equals(getScriptExtension())) {
-                        String tmpExtension = getScriptExtension();
-                        if (tmpExtension.startsWith("*.")) tmpExtension = tmpExtension.substring(1);
-                        commandLineList.add("-Dgroovy.default.scriptExtension=" + tmpExtension);
-                    }
-                    commandLineList.add(FileSystemCompilerFacade.class.getName());
+    private void addSourceFiles(List<String> commandLineList) {
+        // check to see if an external file is needed
+        int count = 0;
+        if (fork) {
+            for (File srcFile : compileList) {
+                count += srcFile.getPath().length();
+            }
+            for (Object commandLineArg : commandLineList) {
+                count += commandLineArg.toString().length();
+            }
+            count += compileList.length;
+            count += commandLineList.size();
+        }
+        // 32767 is the command line length limit on Windows
+        if (fork && (count > 32767)) {
+            try {
+                File tempFile = File.createTempFile("groovyc-files-", ".txt");
+                temporaryFiles.add(tempFile);
+                PrintWriter pw = new PrintWriter(new FileWriter(tempFile));
+                for (File srcFile : compileList) {
+                    pw.println(srcFile.getPath());
                 }
-                commandLineList.add("--classpath");
-                commandLineList.add(classpath.toString());
-                if (jointCompilation) {
-                    commandLineList.add("-j");
-                    commandLineList.addAll(jointOptions);
-                }
-                if (destDir != null) {
-                    commandLineList.add("-d");
-                    commandLineList.add(destDir.getPath());
-                }
-                if (encoding != null) {
-                    commandLineList.add("--encoding");
-                    commandLineList.add(encoding);
-                }
-                if (stacktrace) {
-                    commandLineList.add("-e");
-                }
+                pw.close();
+                commandLineList.add("@" + tempFile.getPath());
+            } catch (IOException e) {
+                log("Error creating file list", e, Project.MSG_ERR);
+            }
+        } else {
+            for (File srcFile : compileList) {
+                commandLineList.add(srcFile.getPath());
+            }
+        }
+    }
+    
+    private String[] makeCommandLine(List<String> commandLineList) {
+        final String[] commandLine = new String[commandLineList.size()];
+        for (int i = 0; i < commandLine.length; ++i) {
+            commandLine[i] = commandLineList.get(i);
+        }
+        log("Compilation arguments:", Project.MSG_VERBOSE);
+        log(DefaultGroovyMethods.join(commandLine, "\n"), Project.MSG_VERBOSE);
+        return commandLine;
+    }
+    
+    private void runForked(String[] commandLine) {
+        // use the main method in FileSystemCompiler
+        final Execute executor = new Execute(); // new LogStreamHandler ( attributes , Project.MSG_INFO , Project.MSG_WARN ) ) ;
+        executor.setAntRun(getProject());
+        executor.setWorkingDirectory(getProject().getBaseDir());
+        executor.setCommandline(commandLine);
+        try {
+            executor.execute();
+        } catch (final IOException ioe) {
+            throw new BuildException("Error running forked groovyc.", ioe);
+        }
+        final int returnCode = executor.getExitValue();
+        if (returnCode != 0) {
+            if (failOnError) {
+                throw new BuildException("Forked groovyc returned error code: " + returnCode);
+            } else {
+                log("Forked groovyc returned error code: " + returnCode, Project.MSG_ERR);
+            }
+        }
+    }
+    
+    private void runCompiler(String[] commandLine) {
+     // hand crank it so we can add our own compiler configuration
+        try {
+            Options options = FileSystemCompiler.createCompilationOptions();
 
-                // check to see if an external file is needed
-                int count = 0;
-                if (fork) {
+            PosixParser cliParser = new PosixParser();
 
-                    for (File srcFile : compileList) {
-                        count += srcFile.getPath().length();
-                    }
-                    for (Object commandLineArg : commandLineList) {
-                        count += commandLineArg.toString().length();
-                    }
-                    count += compileList.length;
-                    count += commandLineList.size();
-                }
-                // 32767 is the command line length limit on Windows
-                if (fork && (count > 32767)) {
-                    try {
-                        File tempFile = File.createTempFile("groovyc-files-", ".txt");
-                        temporaryFiles.add(tempFile);
-                        PrintWriter pw = new PrintWriter(new FileWriter(tempFile));
-                        for (File srcFile : compileList) {
-                            pw.println(srcFile.getPath());
-                        }
-                        pw.close();
-                        commandLineList.add("@" + tempFile.getPath());
-                    } catch (IOException e) {
-                        log("Error creating file list", e, Project.MSG_ERR);
-                    }
-                } else {
-                    for (File srcFile : compileList) {
-                        commandLineList.add(srcFile.getPath());
-                    }
-                }
-                final String[] commandLine = new String[commandLineList.size()];
-                for (int i = 0; i < commandLine.length; ++i) {
-                    commandLine[i] = commandLineList.get(i);
-                }
-                log("Compilation arguments:", Project.MSG_VERBOSE);
-                log(DefaultGroovyMethods.join(commandLine, "\n"), Project.MSG_VERBOSE);
+            CommandLine cli;
+            cli = cliParser.parse(options, commandLine);
 
-                if (fork) {
-                    // use the main method in FileSystemCompiler
-                    final Execute executor = new Execute(); // new LogStreamHandler ( attributes , Project.MSG_INFO , Project.MSG_WARN ) ) ;
-                    executor.setAntRun(getProject());
-                    executor.setWorkingDirectory(getProject().getBaseDir());
-                    executor.setEnvironment(addClasspathToEnvironment(executor.getEnvironment(), classpath.toString()));
-                    executor.setCommandline(commandLine);
-                    try {
-                        executor.execute();
-                    } catch (final IOException ioe) {
-                        throw new BuildException("Error running forked groovyc.", ioe);
-                    }
-                    final int returnCode = executor.getExitValue();
-                    if (returnCode != 0) {
+            configuration = FileSystemCompiler.generateCompilerConfigurationFromOptions(cli);
+            configuration.setScriptExtensions(getScriptExtensions());
+            String tmpExtension = getScriptExtension();
+            if (tmpExtension.startsWith("*.")) tmpExtension = tmpExtension.substring(1);
+            configuration.setDefaultScriptExtension(tmpExtension);
 
-                        if (failOnError) {
-                            throw new BuildException("Forked groovyc returned error code: " + returnCode);
-                        } else {
-                            log("Forked groovyc returned error code: " + returnCode, Project.MSG_ERR);
-                        }
-                    }
-                } else {
-                    // hand crank it so we can add our own compiler configuration
-                    try {
-                        Options options = FileSystemCompiler.createCompilationOptions();
+            // Load the file name list
+            String[] filenames = FileSystemCompiler.generateFileNamesFromOptions(cli);
+            boolean fileNameErrors = filenames == null;
 
-                        PosixParser cliParser = new PosixParser();
+            fileNameErrors = fileNameErrors && !FileSystemCompiler.validateFiles(filenames);
 
-                        CommandLine cli;
-                        cli = cliParser.parse(options, commandLine);
+            if (targetBytecode != null) {
+                configuration.setTargetBytecode(targetBytecode);
+            }
 
-                        configuration = FileSystemCompiler.generateCompilerConfigurationFromOptions(cli);
-                        configuration.setScriptExtensions(getScriptExtensions());
-                        String tmpExtension = getScriptExtension();
-                        if (tmpExtension.startsWith("*.")) tmpExtension = tmpExtension.substring(1);
-                        configuration.setDefaultScriptExtension(tmpExtension);
+            if (!fileNameErrors) {
+                FileSystemCompiler.doCompilation(configuration, makeCompileUnit(), filenames, false);
+            }
 
-                        // Load the file name list
-                        String[] filenames = FileSystemCompiler.generateFileNamesFromOptions(cli);
-                        boolean fileNameErrors = filenames == null;
+        } catch (Exception re) {
+            Throwable t = re;
+            if ((re.getClass() == RuntimeException.class) && (re.getCause() != null)) {
+                // unwrap to the real exception
+                t = re.getCause();
+            }
+            StringWriter writer = new StringWriter();
+            new ErrorReporter(t, false).write(new PrintWriter(writer));
+            String message = writer.toString();
 
-                        fileNameErrors = fileNameErrors && !FileSystemCompiler.validateFiles(filenames);
+            if (failOnError) {
+                log(message, Project.MSG_INFO);
+                throw new BuildException("Compilation Failed", t, getLocation());
+            } else {
+                log(message, Project.MSG_ERR);
+            }
+        }
+    }
+    
+    protected void compile() {
+        if (compileList.length == 0) return;
+        
+        try {
+            log("Compiling " + compileList.length + " source file"
+                    + (compileList.length == 1 ? "" : "s")
+                    + (destDir != null ? " to " + destDir : ""));
 
-                        if (targetBytecode != null) {
-                            configuration.setTargetBytecode(targetBytecode);
-                        }
+            listFiles();
+            Path classpath = getClasspath() != null ? getClasspath() : new Path(getProject());
+            List<String> jointOptions = extractJointOptions(classpath);
 
-                        if (!fileNameErrors) {
-                            FileSystemCompiler.doCompilation(configuration, makeCompileUnit(), filenames, false);
-                        }
+            String separator = System.getProperty("file.separator");
+            List<String> commandLineList = new ArrayList<String>();
 
-                    } catch (Exception re) {
-                        Throwable t = re;
-                        if ((re.getClass() == RuntimeException.class) && (re.getCause() != null)) {
-                            // unwrap to the real exception
-                            t = re.getCause();
-                        }
-                        StringWriter writer = new StringWriter();
-                        new ErrorReporter(t, false).write(new PrintWriter(writer));
-                        String message = writer.toString();
+            doForkCommandLineList(commandLineList, classpath, separator);
+            doNormalCommandLineList(commandLineList, jointOptions, classpath);
+            addSourceFiles(commandLineList);
+            
+            String[] commandLine = makeCommandLine(commandLineList);
 
-                        if (failOnError) {
-                            log(message, Project.MSG_INFO);
-                            throw new BuildException("Compilation Failed", t, getLocation());
-                        } else {
-                            log(message, Project.MSG_ERR);
-                        }
-                    }
-                }
+
+            if (fork) {
+                runForked(commandLine);
+            } else {
+                runCompiler(commandLine);
             }
         } finally {
             for (File temporaryFile : temporaryFiles) {
@@ -1100,5 +1139,21 @@ public class Groovyc extends MatchingTask {
             }
             scriptExtensions.addAll(SourceExtensionHandler.getRegisteredExtensions(loader));
         }
+    }
+    
+    /**
+     * Set the indy flag.
+     * @param useIndy the indy flag
+     */
+    public void setIndy(boolean useIndy){
+        this.useIndy = useIndy;
+    }
+    
+    /**
+     * Get the value of the indy flag.
+     * @return if to use indy
+     */
+    public boolean getIndy() {
+        return this.useIndy;
     }
 }
