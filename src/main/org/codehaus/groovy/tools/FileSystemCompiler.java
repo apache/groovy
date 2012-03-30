@@ -282,6 +282,7 @@ public class FileSystemCompiler {
         }
         
         if (cli.hasOption("indy")) {
+            configuration.getOptimizationOptions().put("int", false);
             configuration.getOptimizationOptions().put("indy", true);
         }
         

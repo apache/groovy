@@ -18,7 +18,7 @@ package groovy.bugs
 
 class Groovy5033Bug extends GroovyTestCase {
     void testAnnotationsOnAdditionalMethodsCreatedForOptionalParams() {
-		assertScript """
+        assertScript """
             class MyService5033 {
                 @Deprecated
                 def update(a, b = null, c = null) {} 
@@ -29,6 +29,6 @@ class Groovy5033Bug extends GroovyTestCase {
                 assert it.getAnnotation(Deprecated) 
             }
             assert count == 3
-		"""
+        """
     }
 }

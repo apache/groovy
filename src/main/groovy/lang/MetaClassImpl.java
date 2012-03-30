@@ -799,7 +799,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             Class instanceKlazz = instance.getClass();
             if (theClass != instanceKlazz && theClass.isAssignableFrom(instanceKlazz))
               instanceKlazz = theClass;
-            
+
             Class[] argClasses = MetaClassHelper.castArgumentsToClassArray(arguments);
 
             MetaMethod method = findMixinMethod(methodName, argClasses);
@@ -1196,7 +1196,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
           return null;
 
         cacheEntry = e.cachedMethodForSuper;
-        
+
         if (cacheEntry != null &&
             MetaClassHelper.sameClasses(cacheEntry.params, arguments, e.methodsForSuper instanceof MetaMethod))
         {
@@ -1232,7 +1232,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         cacheEntry = new MetaMethodIndex.CacheEntry (classes, (MetaMethod) chooseMethod(e.name, methods, classes));
 
         e.cachedMethod = cacheEntry;
-        
+
         return cacheEntry.method;
     }
 
@@ -1264,7 +1264,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             cacheEntry = new MetaMethodIndex.CacheEntry (classes, pickStaticMethod(methodName, classes));
 
             e.cachedStaticMethod = cacheEntry;
-            
+
             return cacheEntry.method;
         }
         else
@@ -1843,7 +1843,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                     setter = false;
                 }
                 if (!setter && !getter) continue;
-//  TODO: I (ait) don't know why these strange tricks needed and comment following as it effects some Grails tests             
+//  TODO: I (ait) don't know why these strange tricks needed and comment following as it effects some Grails tests
 //                if (!setter && mp.getSetter() != null) {
 //                    element = new MetaBeanProperty(mp.getName(), mp.getType(), mp.getGetter(), null);
 //                }

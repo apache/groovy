@@ -262,12 +262,12 @@ public class InvokerHelper {
             return -number;
         }
         if (value instanceof Short) {
-        	Short number = (Short) value;
-        	return Short.valueOf((short) -number.shortValue());
+            Short number = (Short) value;
+            return Short.valueOf((short) -number.shortValue());
         }
         if (value instanceof Byte) {
-        	Byte number = (Byte) value;
-        	return Byte.valueOf((byte) -number.byteValue());
+            Byte number = (Byte) value;
+            return Byte.valueOf((byte) -number.byteValue());
         }
         if (value instanceof ArrayList) {
             // value is an list.
@@ -287,8 +287,8 @@ public class InvokerHelper {
                 value instanceof BigInteger ||
                 value instanceof BigDecimal ||
                 value instanceof Double ||
-                value instanceof Float || 
-                value instanceof Short || 
+                value instanceof Float ||
+                value instanceof Short ||
                 value instanceof Byte) {
             return value;
         }

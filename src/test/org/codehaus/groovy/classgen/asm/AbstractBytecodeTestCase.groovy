@@ -2,11 +2,9 @@ package org.codehaus.groovy.classgen.asm
 
 import org.codehaus.groovy.control.CompilationUnit
 import org.objectweb.asm.util.TraceClassVisitor
-import org.objectweb.asm.MethodVisitor
-import org.objectweb.asm.FieldVisitor
-import org.objectweb.asm.ClassReader
+import org.objectweb.asm.tree.*
+import org.objectweb.asm.*
 import org.codehaus.groovy.control.Phases
-import org.objectweb.asm.commons.EmptyVisitor
 import org.codehaus.groovy.control.CompilerConfiguration
 import java.security.CodeSource
 
@@ -95,48 +93,31 @@ abstract class AbstractBytecodeTestCase extends GroovyTestCase {
     InstructionSequence extractSequence(byte[] bytes, Map options=[method:"run"]) {
         InstructionSequence sequence
         def output = new StringWriter()
-
-        def tcf = new TraceClassVisitor(new PrintWriter(output)) {
-            MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
+        def tcf;
+        tcf = new TraceClassVisitor(new ClassVisitor(Opcodes.ASM4) {
+            MethodVisitor visitMethod(int access, String name, String desc, String signature, String... exceptions) {
                 if (options.method == name) {
-                    text << '--BEGIN--'
+                    tcf.p.text << '--BEGIN--'
                     def res = super.visitMethod(access, name, desc, signature, exceptions)
-                    text << '--END--'
+                    tcf.p.text << '--END--'
                     res
                 } else {
-                    new EmptyVisitor()
+                    null
                 }
             }
 
             FieldVisitor visitField(int access, String name, String desc, String signature, Object value) {
                 if (options.field == name) {
-                    text << '--BEGIN--'
+                    tcf.p.text << '--BEGIN--'
                     def res = super.visitField(access, name, desc, signature, value)
-                    text << '--END--'
+                    tcf.p.text << '--END--'
                     res
                 } else {
-                    new EmptyVisitor()
+                    null
                 }
             }
 
-            @Override
-            void visitEnd() {
-                Iterator it = text.iterator()
-                boolean drop = true
-                while (it.hasNext()) {
-                    Object o = it.next();
-                    if ('--BEGIN--'==o) {
-                        drop = false
-                        it.remove()
-                    } else if ('--END--'==o) {
-                        drop = true
-                    }
-                    if (drop) it.remove()
-                }
-                super.visitEnd()
-            }
-
-        }
+        }, new PrintWriter(output))
         def cr = new ClassReader(bytes)
         cr.accept(tcf, 0)
 

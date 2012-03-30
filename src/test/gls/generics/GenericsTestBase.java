@@ -52,9 +52,9 @@ public class GenericsTestBase extends GroovyTestCase {
             return super.createClass(code,classNode);
         }        
     }
-    private class GenericsTester  extends ClassAdapter {
+    private class GenericsTester extends ClassVisitor {
         public GenericsTester(ClassVisitor cv) {
-            super(cv);
+            super(Opcodes.ASM4,cv);
         }
         public void visit(int version, int access, String name,
                 String signature, String superName, String[] interfaces) {

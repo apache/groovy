@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2011 the original author or authors.
+ * Copyright 2010-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -103,19 +103,19 @@ ruleset {
         }
     }
     ruleset('rulesets/unused.xml') {
-        'UnusedVariable'  {
-            doNotApplyToClassNames='SourceBaseTestCase,SAXTest,groovy.ForLoopTest,groovy.bugs.Groovy3894Bug,' + 
-                'ExpandoMetaClassTest,ExceptionTest,JSR223Test,'  + 
-                'groovy.util.GroovyShellTestCase,org.codehaus.groovy.tools.shell.ShellRunner,' + 
-                'groovy.bugs.Bytecode7Bug,groovy.mock.interceptor.HalfMockTest,' + 
-                'groovy.mock.interceptor.MockSingleCallTest,groovy.mock.interceptor.StubSingleCallTest,' + 
-                'groovy.operator.TernaryOperatorsTest,groovy.swing.SwingBuilderTableTest,' + 
-                'groovy.swing.SwingBuilderTest,groovy.util.BuilderSupportTest,' + 
-                'groovy.util.GroovyScriptEngineTest,groovy.util.ObservableMapTest,' + 
-                'groovy.xml.NamespaceNodeGPathTest,groovy.bugs.ClassGeneratorFixesTest,' + 
-                'groovy.bugs.ClosureWithBitwiseDefaultParamTest,groovy.bugs.ConstructorThisCallBug,' + 
-                'groovy.bugs.InconsistentStackHeightBug,groovy.bugs.InterfaceImplBug,' + 
-                'groovy.bugs.TedsClosureBug,org.codehaus.groovy.ast.builder.AstBuilderFromCodeTest,' + 
+        'UnusedVariable' {
+            doNotApplyToClassNames = 'SourceBaseTestCase,SAXTest,groovy.ForLoopTest,groovy.bugs.Groovy3894Bug,' +
+                'ExpandoMetaClassTest,ExceptionTest,JSR223Test,' +
+                'groovy.util.GroovyShellTestCase,org.codehaus.groovy.tools.shell.ShellRunner,' +
+                'groovy.bugs.Bytecode7Bug,groovy.mock.interceptor.HalfMockTest,' +
+                'groovy.mock.interceptor.MockSingleCallTest,groovy.mock.interceptor.StubSingleCallTest,' +
+                'groovy.operator.TernaryOperatorsTest,groovy.swing.SwingBuilderTableTest,' +
+                'groovy.swing.SwingBuilderTest,groovy.util.BuilderSupportTest,' +
+                'groovy.util.GroovyScriptEngineTest,groovy.util.ObservableMapTest,' +
+                'groovy.xml.NamespaceNodeGPathTest,groovy.bugs.ClassGeneratorFixesTest,' +
+                'groovy.bugs.ClosureWithBitwiseDefaultParamTest,groovy.bugs.ConstructorThisCallBug,' +
+                'groovy.bugs.InconsistentStackHeightBug,groovy.bugs.InterfaceImplBug,' +
+                'groovy.bugs.TedsClosureBug,org.codehaus.groovy.ast.builder.AstBuilderFromCodeTest,' +
                 'SubscriptTest,UnsafeNavigationTest,' +
                 'GStringTest,GeneratorTest,GroovyClosureMethodsTest,' +
                 'GroovyMethodsTest,ImmutableModificationTest,LittleClosureTest,' +
@@ -126,8 +126,8 @@ ruleset {
                 'gls.annotations.closures.UnqualifiedCall,groovy.CompileOrderTest,' +
                 'gls.annotations.closures.ClosureWithParameters,EscapedUnicodeTest,' +
                 'groovy.bugs.Groovy2365Base,groovy.bugs.Groovy249_Bug,' +
-                'groovy.bugs.Groovy3139Bug,groovy.bugs.Get2,groovy.bugs.Groovy3511Bug,' + 
-                'org.codehaus.groovy.tools.LoaderConfigurationTest' 
+                'groovy.bugs.Groovy3139Bug,groovy.bugs.Get2,groovy.bugs.Groovy3511Bug,' +
+                'org.codehaus.groovy.tools.LoaderConfigurationTest'
         }
 
         'UnusedPrivateField' {
@@ -185,7 +185,7 @@ ruleset {
         exclude 'ElseBlockBraces'   // else statements without braces seems acceptable in our coding standards
     }
     ruleset('rulesets/basic.xml') {
-	/* not available with gradle 0.9.2
+    /* not available with gradle 0.9.2
         'ConsecutiveStringConcatenation' {
             doNotApplyToClassNames='groovy.DynamicMemberTest,groovy.StaticImportTest,groovy.bugs.Groovy675_Bug,groovy.bugs.MorgansBug,' + 
                         'groovy.bugs.WriteOnlyPropertyBug,groovy.operator.StringOperatorsTest,groovy.swing.SwingBuilderTest,' + 
@@ -195,7 +195,7 @@ ruleset {
         'DeadCode' {
             doNotApplyToClassNames='ThrowTest'
         }
-	/* not available with gradle 0.9.2
+    /* not available with gradle 0.9.2
         'ConsecutiveLiteralAppends' {
             doNotApplyToClassNames='groovy.bugs.ByteIndexBug'
         }

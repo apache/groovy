@@ -106,6 +106,10 @@ public class ParameterTypes
 
     protected Class[] getPT() { throw new UnsupportedOperationException(getClass().getName()); }
 
+    public boolean isVargsMethod() {
+        return isVargsMethod;
+    }
+    
     public boolean isVargsMethod(Object[] arguments) {
         // Uncomment if at some point this method can be called before parameterTypes initialized
         // getParameterTypes();

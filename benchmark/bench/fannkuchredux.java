@@ -11,14 +11,14 @@ import java.util.concurrent.atomic.AtomicInteger;
 public final class fannkuchredux implements Runnable
 {
     private static final int NCHUNKS = 150;
-    private static       int CHUNKSZ;
-    private static       int NTASKS;
+    private static int CHUNKSZ;
+    private static int NTASKS;
     private static int n;
     private static int[] Fact;
     private static int[] maxFlips;
     private static int[] chkSums;
     private static AtomicInteger taskId;
-    
+
     int[] p, pp, count;
 
     void print()
@@ -52,8 +52,8 @@ public final class fannkuchredux implements Runnable
         int first = p[1];
         p[1] = p[0];
         p[0] = first;
-        
-        int i=1; 
+
+        int i=1;
         while ( ++count[i] > i ) {
             count[i++] = 0;
             int next = p[0] = p[1];
@@ -69,7 +69,7 @@ public final class fannkuchredux implements Runnable
     int countFlips()
     {
         int flips = 1;
-	int first = p[0];
+        int first = p[0];
         if ( p[first] != 0 ) {
             System.arraycopy( p, 0, pp, 0, pp.length );
             do {
@@ -84,7 +84,7 @@ public final class fannkuchredux implements Runnable
                  first = t;
             } while ( pp[first] != 0 );
         }
-	return flips;
+        return flips;
     }
 
     void runTask( int task )
@@ -92,7 +92,7 @@ public final class fannkuchredux implements Runnable
         int idxMin = task*CHUNKSZ;
         int idxMax = Math.min( Fact[n], idxMin+CHUNKSZ );
 
-	firstPermutation( idxMin );
+        firstPermutation( idxMin );
 
         int maxflips = 1;
         int chksum = 0;
@@ -101,28 +101,28 @@ public final class fannkuchredux implements Runnable
             if ( p[0] != 0 ) {
                 int flips = countFlips();
                 maxflips = Math.max( maxflips, flips );
-		chksum += i%2 ==0 ? flips : -flips;
+                chksum += i%2 ==0 ? flips : -flips;
             }
 
-	    if ( ++i == idxMax ) {
-	        break;
-	    }
+            if ( ++i == idxMax ) {
+                break;
+            }
 
             nextPermutation();
         }
-	maxFlips[task] = maxflips;
-	chkSums[task]  = chksum;
+        maxFlips[task] = maxflips;
+        chkSums[task]  = chksum;
     }
 
     public void run()
     {
         p     = new int[n];
         pp    = new int[n];
-        count = new int[n];        
+        count = new int[n];
 
         int task;
         while ( ( task = taskId.getAndIncrement() ) < NTASKS ) {
-	    runTask( task );
+            runTask( task );
         }
     }
 
@@ -132,7 +132,7 @@ public final class fannkuchredux implements Runnable
     }
 
     public static void main( String[] args )
-    {        
+    {
         n = args.length > 0 ? Integer.parseInt( args[0] ) : 12;
         if ( n < 0 || n > 12 ) {         // 13! won't fit into int
             printResult( n, -1, -1 );
@@ -148,9 +148,9 @@ public final class fannkuchredux implements Runnable
         for ( int i=1; i<Fact.length; ++i ) {
             Fact[i] = Fact[i-1] * i;
         }
-        
+
         CHUNKSZ = (Fact[n] + NCHUNKS - 1) / NCHUNKS;
-	NTASKS = (Fact[n] + CHUNKSZ - 1) / CHUNKSZ;
+        NTASKS = (Fact[n] + CHUNKSZ - 1) / CHUNKSZ;
         maxFlips = new int[NTASKS];
         chkSums  = new int[NTASKS];
         taskId = new AtomicInteger(0);
@@ -167,7 +167,7 @@ public final class fannkuchredux implements Runnable
             }
             catch ( InterruptedException e ) {}
         }
-        
+
         int res = 0;
         for ( int v : maxFlips ) {
             res = Math.max( res, v );
@@ -176,7 +176,7 @@ public final class fannkuchredux implements Runnable
         for ( int v : chkSums ) {
             chk += v;
         }
-        
+
         printResult( n, res, chk );
     }
 }

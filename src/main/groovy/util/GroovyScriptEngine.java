@@ -128,16 +128,16 @@ public class GroovyScriptEngine implements ResourceConnector {
             final GroovyResourceLoader rl = getResourceLoader();
             setResourceLoader(new GroovyResourceLoader() {
                 public URL loadGroovySource(String className) throws MalformedURLException {
-                	String filename;
-                	for (String extension : getConfig().getScriptExtensions()) {
+                    String filename;
+                    for (String extension : getConfig().getScriptExtensions()) {
                         filename = className.replace('.', File.separatorChar) + "." + extension;
-		                try {
-		                    URLConnection dependentScriptConn = rc.getResourceConnection(filename);
-		                    return dependentScriptConn.getURL();
-		                } catch (ResourceException e) {
-		                    //TODO: maybe do something here?
-		                }
-                	}
+                        try {
+                            URLConnection dependentScriptConn = rc.getResourceConnection(filename);
+                            return dependentScriptConn.getURL();
+                        } catch (ResourceException e) {
+                            //TODO: maybe do something here?
+                        }
+                    }
                     return rl.loadGroovySource(className);
                 }
             });
@@ -180,7 +180,7 @@ public class GroovyScriptEngine implements ResourceConnector {
                     cu.addPhaseOperation(customizer, customizer.getPhase().getPhaseNumber());
                 }
             }
-            
+
             return cu;
         }
 
@@ -190,7 +190,7 @@ public class GroovyScriptEngine implements ResourceConnector {
             ThreadLocal<CompilationUnit> localCu = getLocalCompilationUnit();
             ThreadLocal<StringSetMap> localCache = getDepCache();
 
-            // we put the old dependencies into local cache so createCompilationUnit 
+            // we put the old dependencies into local cache so createCompilationUnit
             // can pick it up. We put that entry under the name "."
             ScriptCacheEntry origEntry = scriptCache.get(codeSource.getName());
             Set<String> origDep = null;

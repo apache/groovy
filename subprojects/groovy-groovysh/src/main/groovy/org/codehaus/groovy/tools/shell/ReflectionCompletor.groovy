@@ -96,10 +96,10 @@ class ReflectionCompletor implements Completor {
             if (it.name.startsWith(prefix))
                 rv << it.name + (it.parameterTypes.length == 0 ? "()" : "(")
         }
-		InvokerHelper.getMetaClass(instance).metaMethods.each {
+        InvokerHelper.getMetaClass(instance).metaMethods.each {
             if (it.name.startsWith(prefix))
                 rv << it.name + (it.parameterTypes.length == 0 ? "()" : "(")
-		}
+        }
         return rv.sort().unique()
     }
 

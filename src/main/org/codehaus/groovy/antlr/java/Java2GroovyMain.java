@@ -95,7 +95,7 @@ public class Java2GroovyMain {
         // groovify the fat Java-Like Groovy AST
         groovifyFatJavaLikeGroovyAST(ast, groovyTokenNames);
 
-        // now output        
+        // now output
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         Visitor visitor = new SourcePrinter(new PrintStream(baos), groovyTokenNames, withNewLines);
         AntlrASTProcessor traverser = new SourceCodeTraversal(visitor);
@@ -168,7 +168,7 @@ public class Java2GroovyMain {
         // groovify the fat Java-Like Groovy AST
         groovifyFatJavaLikeGroovyAST(ast, groovyTokenNames);
 
-        // now output        
+        // now output
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         Visitor visitor = new MindMapPrinter(new PrintStream(baos), groovyTokenNames);
         AntlrASTProcessor traverser = new SourceCodeTraversal(visitor);
@@ -189,7 +189,7 @@ public class Java2GroovyMain {
         // groovify the fat Java-Like Groovy AST
         groovifyFatJavaLikeGroovyAST(ast, groovyTokenNames);
 
-        // now output        
+        // now output
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         Visitor visitor = new NodePrinter(new PrintStream(baos), groovyTokenNames);
         AntlrASTProcessor traverser = new SourceCodeTraversal(visitor);

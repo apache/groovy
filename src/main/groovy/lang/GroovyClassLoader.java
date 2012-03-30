@@ -17,8 +17,8 @@
 /*
  * @todo multi threaded compiling of the same class but with different roots
  * for compilation... T1 compiles A, which uses B, T2 compiles B... mark A and B
- * as parsed and then synchronize compilation. Problems: How to synchronize? 
- * How to get error messages?   
+ * as parsed and then synchronize compilation. Problems: How to synchronize?
+ * How to get error messages?
  *
  */
 package groovy.lang;
@@ -66,22 +66,22 @@ public class GroovyClassLoader extends URLClassLoader {
     protected final Map<String, Class> sourceCache = new HashMap<String, Class>();
     private final CompilerConfiguration config;
     private Boolean recompile;
-    // use 1000000 as offset to avoid conflicts with names form the GroovyShell 
+    // use 1000000 as offset to avoid conflicts with names form the GroovyShell
     private static int scriptNameCounter = 1000000;
 
     private GroovyResourceLoader resourceLoader = new GroovyResourceLoader() {
         public URL loadGroovySource(final String filename) throws MalformedURLException {
             return AccessController.doPrivileged(new PrivilegedAction<URL>() {
                 public URL run() {
-                	for (String extension : config.getScriptExtensions()) {
-                		try {
-                			URL ret = getSourceFile(filename, extension);
-                			if (ret != null)
-                				return ret;
-                		} catch (Throwable t) { //
-                		}
-                	}
-            		return null;
+                    for (String extension : config.getScriptExtensions()) {
+                        try {
+                            URL ret = getSourceFile(filename, extension);
+                            if (ret != null)
+                                return ret;
+                        } catch (Throwable t) { //
+                        }
+                    }
+                    return null;
                 }
             });
         }

@@ -51,9 +51,10 @@
             </exclusions>
         </dependency>
         <dependency>
-            <groupId>asm</groupId>
+            <groupId>org.ow2.asm</groupId>
             <artifactId>asm</artifactId>
-            <version>3.3.1</version>
+            <version>4.0</version>
+            <scope>compile</scope>
         </dependency>
 
         <!-- used for the JavaDoc generator script -->

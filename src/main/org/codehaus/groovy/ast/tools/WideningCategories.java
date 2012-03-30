@@ -24,18 +24,18 @@ import org.codehaus.groovy.ast.MethodNode;
 import java.util.*;
 
 /**
- * This class provides helper methods to determine the type from a widening 
+ * This class provides helper methods to determine the type from a widening
  * operation for example for a plus operation.<br/>
  * To determine the resulting type of for example a=exp1+exp2 we look at the
  * conditions {@link #isIntCategory(ClassNode)}, {@link #isLongCategory(ClassNode)},
  * {@link #isBigIntCategory(ClassNode)}, {@link #isDoubleCategory(ClassNode)} and
  * {@link #isBigDecCategory(ClassNode)} in that order. The first case applying to
  * exp1 and exp2 is defining the result type of the expression. <br/>
- * If for example you look at x = 1 + 2l we have the first category applying to 
+ * If for example you look at x = 1 + 2l we have the first category applying to
  * the number 1 being int, since the 1 is an int. The 2l is a long, therefore the
- * int category will not apply and the result type can't be int. The next category 
+ * int category will not apply and the result type can't be int. The next category
  * in the list is long, and since both apply to long, the result type is a long.<br/>
- * 
+ *
  * @author <a href="mailto:blackdrag@gmx.org">Jochen "blackdrag" Theodorou</a>
  * @author Cedric Champeau
  */

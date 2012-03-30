@@ -47,7 +47,7 @@ import org.codehaus.groovy.control.CompilationFailedException
  */
 class ScriptToTreeNodeAdapter {
 
-    def static Properties classNameToStringForm
+    static Properties classNameToStringForm
     boolean showScriptFreeForm, showScriptClass
     final GroovyClassLoader classLoader
     final AstBrowserNodeMaker nodeMaker
@@ -170,7 +170,7 @@ class ScriptToTreeNodeAdapter {
  * This Node Operation builds up a root tree node for the viewer.
  * @author Hamlet D'Arcy
  */
-@groovy.transform.PackageScope class TreeNodeBuildingNodeOperation extends PrimaryClassNodeOperation {
+class TreeNodeBuildingNodeOperation extends PrimaryClassNodeOperation {
 
     final def root
     final def sourceCollected = new AtomicBoolean(false)

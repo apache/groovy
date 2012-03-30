@@ -871,7 +871,7 @@ options:
             currentClasspathJarDir = fc.currentDirectory
             Preferences.userNodeForPackage(Console).put('currentClasspathJarDir', currentClasspathJarDir.path)
             fc.selectedFiles?.each { file ->
-	            shell.getClassLoader().addURL(file.toURL())
+                shell.getClassLoader().addURL(file.toURL())
             }
         }
     }
