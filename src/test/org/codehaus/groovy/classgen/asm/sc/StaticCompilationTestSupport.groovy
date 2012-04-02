@@ -27,6 +27,7 @@ import org.codehaus.groovy.ast.ClassNode
 import org.objectweb.asm.ClassReader
 import org.objectweb.asm.ClassWriter
 import org.objectweb.asm.util.CheckClassAdapter
+import org.codehaus.groovy.control.customizers.ImportCustomizer
 
 /**
  * A mixin class which can be used to transform a static type checking test case into a
@@ -51,7 +52,15 @@ class StaticCompilationTestSupport {
         currentClassVisitor = null
         def mixed = metaClass.owner
         mixed.config = new CompilerConfiguration()
-        mixed.config.addCompilationCustomizers(new ASTTransformationCustomizer(CompileStatic), new ASTTreeCollector())
+        def imports = new ImportCustomizer()
+        imports.addImports(
+                'groovy.transform.ASTTest', 'org.codehaus.groovy.transform.stc.StaticTypesMarker',
+                'org.codehaus.groovy.ast.ClassHelper'
+        )
+        imports.addStaticStars('org.codehaus.groovy.control.CompilePhase')
+        imports.addStaticStars('org.codehaus.groovy.transform.stc.StaticTypesMarker')
+        imports.addStaticStars('org.codehaus.groovy.ast.ClassHelper')
+        mixed.config.addCompilationCustomizers(imports,new ASTTransformationCustomizer(CompileStatic), new ASTTreeCollector())
         mixed.configure()
         mixed.shell = new GroovyShell(mixed.config)
         // trick because GroovyShell doesn't allow to provide our own GroovyClassLoader

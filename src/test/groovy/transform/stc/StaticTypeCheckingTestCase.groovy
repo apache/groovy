@@ -20,6 +20,7 @@ import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
 import groovy.transform.TypeChecked
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage
+import org.codehaus.groovy.control.customizers.ImportCustomizer
 
 /**
  * Support class for static type checking test cases.
@@ -34,7 +35,15 @@ abstract class StaticTypeCheckingTestCase extends GroovyTestCase {
     protected void setUp() {
         super.setUp()
         config = new CompilerConfiguration()
-        config.addCompilationCustomizers(new ASTTransformationCustomizer(TypeChecked))
+        def imports = new ImportCustomizer()
+        imports.addImports(
+                'groovy.transform.ASTTest', 'org.codehaus.groovy.transform.stc.StaticTypesMarker',
+                'org.codehaus.groovy.ast.ClassHelper'
+            )
+        imports.addStaticStars('org.codehaus.groovy.control.CompilePhase')
+        imports.addStaticStars('org.codehaus.groovy.transform.stc.StaticTypesMarker')
+        imports.addStaticStars('org.codehaus.groovy.ast.ClassHelper')
+        config.addCompilationCustomizers(new ASTTransformationCustomizer(TypeChecked), imports)
         configure()
         shell = new GroovyShell(config)
     }

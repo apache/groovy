@@ -134,6 +134,101 @@ class UnaryOperatorSTCTest extends StaticTypeCheckingTestCase {
          '''
      }
 
+    void testIntXIntInferredType() {
+        assertScript '''
+            int x = 1
+            int y = 2
+            @ASTTest(phase=INSTRUCTION_SELECTION, value= {
+                assert node.getNodeMetaData(INFERRED_TYPE) == int_TYPE
+                def right = node.rightExpression
+                assert right.getNodeMetaData(INFERRED_TYPE) == int_TYPE
+            })
+            def zp = x+y
+
+            @ASTTest(phase=INSTRUCTION_SELECTION, value= {
+                assert node.getNodeMetaData(INFERRED_TYPE) == int_TYPE
+                def right = node.rightExpression
+                assert right.getNodeMetaData(INFERRED_TYPE) == int_TYPE
+            })
+            def zm = x*y
+
+            @ASTTest(phase=INSTRUCTION_SELECTION, value= {
+                assert node.getNodeMetaData(INFERRED_TYPE) == int_TYPE
+                def right = node.rightExpression
+                assert right.getNodeMetaData(INFERRED_TYPE) == int_TYPE
+            })
+            def zmi = x-y
+
+            @ASTTest(phase=INSTRUCTION_SELECTION, value= {
+                assert node.getNodeMetaData(INFERRED_TYPE) == BigDecimal_TYPE
+                def right = node.rightExpression
+                assert right.getNodeMetaData(INFERRED_TYPE) == BigDecimal_TYPE
+            })
+            def zd = x/y
+
+            @ASTTest(phase=INSTRUCTION_SELECTION, value= {
+                assert node.getNodeMetaData(INFERRED_TYPE) == int_TYPE
+                def right = node.rightExpression
+                assert right.getNodeMetaData(INFERRED_TYPE) == int_TYPE
+            })
+            def zmod = x%y
+
+            @ASTTest(phase=INSTRUCTION_SELECTION, value= {
+                assert node.getNodeMetaData(INFERRED_TYPE) == int_TYPE
+                def right = node.rightExpression
+                assert right.getNodeMetaData(INFERRED_TYPE) == int_TYPE
+            })
+            def zpeq = (x+=y)
+        '''
+    }
+
+    void testDoubleXDoubleInferredType() {
+        assertScript '''
+            double x = 1
+            double y = 2
+            @ASTTest(phase=INSTRUCTION_SELECTION, value= {
+                assert node.getNodeMetaData(INFERRED_TYPE) == double_TYPE
+                def right = node.rightExpression
+                assert right.getNodeMetaData(INFERRED_TYPE) == double_TYPE
+            })
+            def zp = x+y
+
+            @ASTTest(phase=INSTRUCTION_SELECTION, value= {
+                assert node.getNodeMetaData(INFERRED_TYPE) == double_TYPE
+                def right = node.rightExpression
+                assert right.getNodeMetaData(INFERRED_TYPE) == double_TYPE
+            })
+            def zm = x*y
+
+            @ASTTest(phase=INSTRUCTION_SELECTION, value= {
+                assert node.getNodeMetaData(INFERRED_TYPE) == double_TYPE
+                def right = node.rightExpression
+                assert right.getNodeMetaData(INFERRED_TYPE) == double_TYPE
+            })
+            def zmi = x-y
+
+            @ASTTest(phase=INSTRUCTION_SELECTION, value= {
+                assert node.getNodeMetaData(INFERRED_TYPE) == double_TYPE
+                def right = node.rightExpression
+                assert right.getNodeMetaData(INFERRED_TYPE) == double_TYPE
+            })
+            def zd = x/y
+
+            @ASTTest(phase=INSTRUCTION_SELECTION, value= {
+                assert node.getNodeMetaData(INFERRED_TYPE) == double_TYPE
+                def right = node.rightExpression
+                assert right.getNodeMetaData(INFERRED_TYPE) == double_TYPE
+            })
+            def zmod = x%y
+
+            @ASTTest(phase=INSTRUCTION_SELECTION, value= {
+                assert node.getNodeMetaData(INFERRED_TYPE) == double_TYPE
+                def right = node.rightExpression
+                assert right.getNodeMetaData(INFERRED_TYPE) == double_TYPE
+            })
+            def zpeq = (x+=y)
+        '''
+    }
 
 }
 

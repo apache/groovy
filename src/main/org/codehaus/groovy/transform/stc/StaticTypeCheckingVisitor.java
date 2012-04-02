@@ -1811,14 +1811,22 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         // Divisions may produce different results depending on operand types
         if (DIVIDE == op || DIVIDE_EQUAL == op) {
             if (isFloatingCategory(leftRedirect) || isFloatingCategory(rightRedirect)) {
-                return Double_TYPE;
-            } else if (BigDecimal_TYPE.equals(leftRedirect) || BigDecimal_TYPE.equals(rightRedirect)) {
+                if (!isPrimitiveType(leftRedirect) || !isPrimitiveType(rightRedirect)) {
+                    return Double_TYPE;
+                }
+                return double_TYPE;
+            }
+            if (DIVIDE == op) {
                 return BigDecimal_TYPE;
             }
+            return leftRedirect;
         } else if (isOperationInGroup(op)) {
             if (isNumberCategory(getWrapper(leftRedirect)) && isNumberCategory(getWrapper(rightRedirect))) {
                 return getGroupOperationResultType(leftRedirect, rightRedirect);
             }
+        }
+        if (MOD == op || MOD_EQUAL==op) {
+            return leftRedirect;
         }
 
         MethodNode method = findMethodOrFail(expr, left, operationName, right);
