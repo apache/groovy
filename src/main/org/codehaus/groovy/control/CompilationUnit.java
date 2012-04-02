@@ -477,6 +477,14 @@ public class CompilationUnit extends ProcessingUnit {
         this.progressCallback = callback;
     }
 
+    public ClassgenCallback getClassgenCallback() {
+        return classgenCallback;
+    }
+
+    public ProgressCallback getProgressCallback() {
+        return progressCallback;
+    }
+
     //---------------------------------------------------------------------------
     // ACTIONS
 
