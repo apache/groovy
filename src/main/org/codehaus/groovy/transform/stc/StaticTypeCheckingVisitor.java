@@ -32,6 +32,7 @@ import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.ErrorCollector;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
+import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.EncodingGroovyMethods;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.syntax.SyntaxException;
@@ -61,6 +62,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     private static final ClassNode TYPECHECKED_CLASSNODE = ClassHelper.make(TypeChecked.class);
     private static final ClassNode[] TYPECHECKING_ANNOTATIONS = new ClassNode[]{TYPECHECKED_CLASSNODE};
     private static final ClassNode TYPECHECKING_INFO_NODE = ClassHelper.make(TypeChecked.TypeCheckingInfo.class);
+    private static final ClassNode DGM_CLASSNODE = ClassHelper.make(DefaultGroovyMethods.class);
     private static final int CURRENT_SIGNATURE_PROTOCOL_VERSION = 1;
     private static final Expression CURRENT_SIGNATURE_PROTOCOL = new ConstantExpression(CURRENT_SIGNATURE_PROTOCOL_VERSION, true);
 
@@ -1287,7 +1289,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     storeTargetMethod(call, directMethodCallCandidate);
 
                 } else {
-                    addStaticTypeError("Reference to method is ambiguous. Cannot choose between " + mn, call);
+                    addAmbiguousOrDynamicErrorMessage(mn, name, args, call);
                 }
             }
         } finally {
@@ -1525,7 +1527,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         }
 
                     } else {
-                        addStaticTypeError("Reference to method is ambiguous. Cannot choose between " + mn, call);
+                        addAmbiguousOrDynamicErrorMessage(mn, name, args, call);
                     }
                 }
             }
@@ -1898,9 +1900,26 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         } else if (methods.size() == 1) {
             return methods.get(0);
         } else {
-            addStaticTypeError("Reference to method is ambiguous. Cannot choose between " + methods, expr);
+            addAmbiguousOrDynamicErrorMessage(methods, name, args, expr);
         }
         return null;
+    }
+
+    private void addAmbiguousOrDynamicErrorMessage(final List<MethodNode> foundMethods, final String name, final ClassNode[] args, final Expression expr) {
+        boolean category = false;
+        if ("use".equals(name) && args!=null && args.length==2 && args[1].equals(ClassHelper.CLOSURE_TYPE)) {
+            category = true;
+            for (MethodNode method : foundMethods) {
+                if (!(method instanceof ExtensionMethodNode) || !((ExtensionMethodNode)method).getExtensionMethodNode().getDeclaringClass().equals(DGM_CLASSNODE)) {
+                    category = false;
+                }
+            }
+        }
+        if (category) {
+            addStaticTypeError("Due to their dynamic nature, usage of categories is not possible with static type checking active", expr);
+        } else {
+            addStaticTypeError("Reference to method is ambiguous. Cannot choose between " + foundMethods, expr);
+        }
     }
 
     private List<MethodNode> findMethod(
