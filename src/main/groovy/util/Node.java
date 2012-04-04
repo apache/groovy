@@ -408,7 +408,9 @@ public class Node implements Serializable {
                 Node childNode = (Node) child;
                 List children = childNode.depthFirstRest();
                 answer.add(childNode);
-                answer.addAll(children);
+                if (children.size() > 1 || (children.size() == 1 && !(children.get(0) instanceof String))) answer.addAll(children);
+            } else if (child instanceof String) {
+                answer.add(child);
             }
         }
         return answer;
@@ -431,12 +433,15 @@ public class Node implements Serializable {
         List answer = new NodeList();
         List nextLevelChildren = getDirectChildren();
         while (!nextLevelChildren.isEmpty()) {
-            List<Node> working = new NodeList(nextLevelChildren);
+            List working = new NodeList(nextLevelChildren);
             nextLevelChildren = new NodeList();
-            for (Node childNode : working) {
-                answer.add(childNode);
-                List children = childNode.getDirectChildren();
-                nextLevelChildren.addAll(children);
+            for (Object child : working) {
+                answer.add(child);
+                if (child instanceof Node) {
+                    Node childNode = (Node) child;
+                    List children = childNode.getDirectChildren();
+                    if (children.size() > 1 || (children.size() == 1 && !(children.get(0) instanceof String))) nextLevelChildren.addAll(children);
+                }
             }
         }
         return answer;
@@ -449,6 +454,8 @@ public class Node implements Serializable {
             if (child instanceof Node) {
                 Node childNode = (Node) child;
                 answer.add(childNode);
+            } else if (child instanceof String) {
+                answer.add(child);
             }
         }
         return answer;
