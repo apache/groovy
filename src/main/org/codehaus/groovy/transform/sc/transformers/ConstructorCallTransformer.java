@@ -81,10 +81,12 @@ public class ConstructorCallTransformer {
                                     Token.newSymbol("=", line, col),
                                     valueExpression
                             );
+                            bexp.setSourcePosition(entryExpression);
                             stmt.addStatement(new ExpressionStatement(bexp));
                         }
                         stmt.addStatement(new ReturnStatement(vexp));
                         ClosureExpression cl = new ClosureExpression(Parameter.EMPTY_ARRAY, stmt);
+                        cl.setSourcePosition(call);
                         MethodCallExpression result = new MethodCallExpression(cl, "call", ArgumentListExpression.EMPTY_ARGUMENTS);
                         result.setMethodTarget(StaticTypeCheckingVisitor.CLOSURE_CALL_NO_ARG);
                         VariableScopeVisitor visitor = new VariableScopeVisitor(staticCompilationTransformer.getSourceUnit());

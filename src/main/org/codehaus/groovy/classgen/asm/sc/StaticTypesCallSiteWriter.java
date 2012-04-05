@@ -96,7 +96,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
             return;
         }
         if (receiver instanceof ClassExpression) {
-            if (makeGetField(receiver, receiver.getType(), methodName, implicitThis, samePackages(receiverType.getPackageName(), classNode.getPackageName()))) return;
+            if (makeGetField(receiver, receiver.getType(), methodName, implicitThis, samePackages(receiver.getType().getPackageName(), classNode.getPackageName()))) return;
             if (makeGetPropertyWithGetter(receiver, receiver.getType(), methodName)) return;
         }
         if (isClassReceiver) {
@@ -105,9 +105,12 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
             if (makeGetPropertyWithGetter(receiver, ClassHelper.CLASS_Type, methodName)) return;
         }
         if (makeGetPrivateFieldWithBridgeMethod(receiver, receiverType, methodName, implicitThis)) return;
+
         controller.getSourceUnit().addError(
                 new SyntaxException(
-                        "Access to "+receiverType.toString(false)+"#"+methodName+" is forbidden",
+                        "Access to "+
+                                (receiver instanceof ClassExpression?receiver.getType():receiverType).toString(false)
+                                +"#"+methodName+" is forbidden",
                         receiver.getLineNumber(),
                         receiver.getColumnNumber()
                 )
