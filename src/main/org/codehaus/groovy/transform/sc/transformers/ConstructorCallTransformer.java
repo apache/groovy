@@ -15,10 +15,7 @@
  */
 package org.codehaus.groovy.transform.sc.transformers;
 
-import org.codehaus.groovy.ast.ClassHelper;
-import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.ConstructorNode;
-import org.codehaus.groovy.ast.Parameter;
+import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.EmptyStatement;
@@ -91,6 +88,7 @@ public class ConstructorCallTransformer {
                         MethodCallExpression result = new MethodCallExpression(cl, "call", ArgumentListExpression.EMPTY_ARGUMENTS);
                         result.setMethodTarget(StaticTypeCheckingVisitor.CLOSURE_CALL_NO_ARG);
                         VariableScopeVisitor visitor = new VariableScopeVisitor(staticCompilationTransformer.getSourceUnit());
+                        visitor.prepareVisit(staticCompilationTransformer.getClassNode());
                         visitor.visitClosureExpression(cl);
                         return result;
                     }
