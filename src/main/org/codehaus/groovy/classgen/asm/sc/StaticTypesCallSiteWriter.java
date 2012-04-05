@@ -26,6 +26,9 @@ import org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.lang.reflect.Modifier;
 import java.util.Collection;
 import java.util.List;
@@ -189,6 +192,10 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
             call.visit(controller.getAcg());
             return true;
         }
+        ClassNode superClass = receiverType.getSuperClass();
+        if (superClass !=null) {
+            return makeGetPropertyWithGetter(receiver, superClass, methodName);
+        }
         return false;
     }
 
@@ -198,29 +205,26 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         if (field !=null 
                 && (field.isPublic() 
                     || (samePackage && field.isProtected())
-                    || Modifier.isPrivate(field.getModifiers()) && receiverType.redirect()==controller.getClassNode().redirect())) {
+                    || Modifier.isPrivate(field.getModifiers()) && field.getOwner().redirect()==controller.getClassNode().redirect())) {
             CompileStack compileStack = controller.getCompileStack();
             MethodVisitor mv = controller.getMethodVisitor();
             if (field.isStatic()) {
-                mv.visitFieldInsn(GETSTATIC, BytecodeHelper.getClassInternalName(receiverType), fieldName, BytecodeHelper.getTypeDescription(field.getOriginType()));
-                controller.getOperandStack().push(ClassHelper.OBJECT_TYPE);
+                mv.visitFieldInsn(GETSTATIC, BytecodeHelper.getClassInternalName(field.getOwner()), fieldName, BytecodeHelper.getTypeDescription(field.getOriginType()));
+                controller.getOperandStack().push(field.getOriginType());
             } else {
                 if (implicitThis) {
                     compileStack.pushImplicitThis(implicitThis);
                 }
                 receiver.visit(controller.getAcg());
                 if (implicitThis) compileStack.popImplicitThis();
-                mv.visitFieldInsn(GETFIELD, BytecodeHelper.getClassInternalName(receiverType), fieldName, BytecodeHelper.getTypeDescription(field.getOriginType()));
+                mv.visitFieldInsn(GETFIELD, BytecodeHelper.getClassInternalName(field.getOwner()), fieldName, BytecodeHelper.getTypeDescription(field.getOriginType()));
             }
             controller.getOperandStack().replace(field.getOriginType());
             return true;
         }
         ClassNode superClass = receiverType.getSuperClass();
         if (superClass !=null) {
-            String receiverTypePackageName = receiverType.getPackageName();
-            String superClassPackageName = superClass.getPackageName();
-            boolean same = samePackage && samePackages(receiverTypePackageName, superClassPackageName);
-            return makeGetField(receiver, superClass, fieldName, implicitThis, same);
+            return makeGetField(receiver, superClass, fieldName, implicitThis, false);
         }
         return false;
     }
