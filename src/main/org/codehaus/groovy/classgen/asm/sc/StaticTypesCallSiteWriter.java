@@ -149,6 +149,9 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         TypeChooser typeChooser = controller.getTypeChooser();
         ClassNode classNode = controller.getClassNode();
         ClassNode receiverType = typeChooser.resolveType(receiver, classNode);
+        if (receiver instanceof VariableExpression && ((VariableExpression) receiver).isThisExpression() && !controller.isInClosure()) {
+            receiverType = classNode;
+        }
         
         String property = methodName;
         if (classNode.getNodeMetaData(StaticCompilationMetadataKeys.WITH_CLOSURE)!=null && "owner".equals(property)) {
