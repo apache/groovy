@@ -1953,7 +1953,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 }
                 if (pname != null) {
                     // we don't use property exists there because findMethod is called on super clases recursively
-                    PropertyNode property = receiver.getProperty(pname);
+                    PropertyNode property = null;
+                    ClassNode curNode = receiver;
+                    while (property==null && curNode!=null) {
+                        property = curNode.getProperty(pname);
+                        curNode = curNode.getSuperClass();
+                    }
                     if (property != null) {
                         MethodNode node = new MethodNode(name, Opcodes.ACC_PUBLIC, property.getType(), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, EmptyStatement.INSTANCE);
                         node.setDeclaringClass(receiver);
@@ -1966,7 +1971,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 // maybe we are looking for a setter ?
                 if (name.startsWith("set")) {
                     String pname = java.beans.Introspector.decapitalize(name.substring(3));
-                    PropertyNode property = receiver.getProperty(pname);
+                    ClassNode curNode = receiver;
+                    PropertyNode property = null;
+                    while (property==null && curNode!=null) {
+                        property = curNode.getProperty(pname);
+                        curNode = curNode.getSuperClass();
+                    }
                     if (property != null) {
                         ClassNode type = property.getOriginType();
                         if (implementsInterfaceOrIsSubclassOf(args[0], type)) {
@@ -1975,6 +1985,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                             }, ClassNode.EMPTY_ARRAY, EmptyStatement.INSTANCE);
                             node.setDeclaringClass(receiver);
                             return Collections.singletonList(node);
+                        } else {
+                            System.out.println();
                         }
                     }
                 }
