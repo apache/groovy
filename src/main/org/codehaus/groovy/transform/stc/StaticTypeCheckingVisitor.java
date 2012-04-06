@@ -833,8 +833,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             // for (int i=0; i<...; i++) style loop
             super.visitForLoop(forLoop);
         } else {
+            collectionExpression.visit(this);
             final ClassNode collectionType = getType(collectionExpression);
             ClassNode componentType = inferLoopElementType(collectionType);
+            if (ClassHelper.getUnwrapper(componentType) == forLoop.getVariableType()) {
+                // prefer primitive type over boxed type
+                componentType = forLoop.getVariableType();
+            }
             forLoopVariableTypes.put(forLoop.getVariable(), componentType);
             if (!checkCompatibleAssignmentTypes(forLoop.getVariableType(), componentType)) {
                 addStaticTypeError("Cannot loop with element of type " + forLoop.getVariableType() + " with collection of type " + collectionType, forLoop);

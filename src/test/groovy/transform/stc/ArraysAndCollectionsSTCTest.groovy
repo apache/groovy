@@ -225,6 +225,42 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    void testForInLoopWithRangeUsingVariable() {
+        assertScript '''
+            int n = 10
+            for (int i in 1..n) {
+                @ASTTest(phase=INSTRUCTION_SELECTION, value= {
+                    assert node.getNodeMetaData(DECLARATION_INFERRED_TYPE) == int_TYPE
+                })
+                def k = i
+            }
+        '''
+    }
+
+    void testForInLoopWithRangeUsingComputedBound() {
+        assertScript '''
+            int n = 10
+            for (int i in 1..(n-1)) {
+                @ASTTest(phase=INSTRUCTION_SELECTION, value= {
+                    assert node.getNodeMetaData(DECLARATION_INFERRED_TYPE) == int_TYPE
+                })
+                def k = i
+            }
+        '''
+    }
+
+    void testForInLoopWithRangeUsingListOfInts() {
+        assertScript '''
+            int n = 10
+            for (int i in [-1,1]) {
+                @ASTTest(phase=INSTRUCTION_SELECTION, value= {
+                    assert node.getNodeMetaData(DECLARATION_INFERRED_TYPE) == int_TYPE
+                })
+                def k = i
+            }
+        '''
+    }
+
     // GROOVY-5177
     void testShouldNotAllowArrayAssignment() {
         shouldFailWithMessages '''
