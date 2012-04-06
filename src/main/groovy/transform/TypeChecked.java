@@ -52,7 +52,7 @@ public @interface TypeChecked {
 
         /**
          * An encoded type information.
-         * @return
+         * @return the inferred type
          */
         String inferredType();
     }

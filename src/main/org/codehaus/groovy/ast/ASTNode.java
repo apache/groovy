@@ -139,7 +139,6 @@ public class ASTNode {
      * Sets the node meta data but allows overwriting values.
      *
      * @param key   - the meta data key
-     * @param key - the meta data key
      * @param value - the meta data value
      * @return the old node meta data value for this key
      * @throws GroovyBugError if key is null
