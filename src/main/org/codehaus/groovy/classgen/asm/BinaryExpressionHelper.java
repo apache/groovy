@@ -272,7 +272,7 @@ public class BinaryExpressionHelper {
                 !(leftExpression instanceof TupleExpression) )
         {
             VariableExpression ve = (VariableExpression) leftExpression;
-            BytecodeVariable var = compileStack.defineVariable(ve, false);
+            BytecodeVariable var = compileStack.defineVariable(ve, controller.getTypeChooser().resolveType(ve, controller.getClassNode()), false);
             operandStack.loadOrStoreVariable(var, false);
             return;
         }

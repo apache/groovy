@@ -17,6 +17,7 @@ package org.codehaus.groovy.ast.tools;
 
 import static org.codehaus.groovy.ast.ClassHelper.*;
 
+import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GenericsType;
 import org.codehaus.groovy.ast.MethodNode;
@@ -42,6 +43,15 @@ import java.util.*;
 public class WideningCategories {
 
     private static final List<ClassNode> EMPTY_CLASSNODE_LIST = Collections.emptyList();
+
+    private static final Map<ClassNode, Integer> NUMBER_TYPES_PRECEDENCE = Collections.unmodifiableMap(new HashMap<ClassNode, Integer>() {{
+        put(ClassHelper.double_TYPE, 0);
+        put(ClassHelper.float_TYPE, 1);
+        put(ClassHelper.long_TYPE, 2);
+        put(ClassHelper.int_TYPE, 3);
+        put(ClassHelper.short_TYPE, 4);
+        put(ClassHelper.byte_TYPE, 5);
+    }});
 
     /**
      * A comparator which is used in case we generate a virtual lower upper bound class node. In that case,
@@ -315,7 +325,23 @@ public class WideningCategories {
             return lowestUpperBound(a, getWrapper(b), null, null);
         }
         if (isPrimitiveA && isPrimitiveB) {
+            Integer pa = NUMBER_TYPES_PRECEDENCE.get(a);
+            Integer pb = NUMBER_TYPES_PRECEDENCE.get(b);
+            if (pa!=null && pb!=null) {
+                if (pa<=pb) return a;
+                return b;
+            }
             return a.equals(b)?a:lowestUpperBound(getWrapper(a), getWrapper(b), null, null);
+        }
+        if (isNumberType(a.redirect()) && isNumberType(b.redirect())) {
+            ClassNode ua = getUnwrapper(a);
+            ClassNode ub = getUnwrapper(b);
+            Integer pa = NUMBER_TYPES_PRECEDENCE.get(ua);
+            Integer pb = NUMBER_TYPES_PRECEDENCE.get(ub);
+            if (pa!=null && pb!=null) {
+                if (pa<=pb) return a;
+                return b;
+            }
         }
 
         // handle interfaces

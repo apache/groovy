@@ -45,8 +45,8 @@ class LoopsSTCTest extends StaticTypeCheckingTestCase {
 
     void testMethodCallWithEachAndDefAndTwoFooMethods() {
         shouldFailWithMessages '''
-            Double foo(Integer x) { x+1 }
-            Integer foo(Double x) { x+1 }
+            Date foo(Integer x) { new Date() }
+            Integer foo(Date x) { 1 }
             def x = 0
             10.times {
                  // there are two possible target methods. This is not a problem for STC, but it is for static compilation
@@ -57,8 +57,8 @@ class LoopsSTCTest extends StaticTypeCheckingTestCase {
 
     void testMethodCallInLoopAndDefAndTwoFooMethods() {
         shouldFailWithMessages '''
-            Double foo(Integer x) { x+1 }
-            Integer foo(Double x) { x+1 }
+            Date foo(Integer x) { new Date() }
+            Integer foo(Date x) { 1 }
             def x = 0
             for (int i=0;i<10;i++) {
                  // there are two possible target methods. This is not a problem for STC, but it is for static compilation

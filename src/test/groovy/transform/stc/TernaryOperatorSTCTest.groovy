@@ -83,5 +83,50 @@ class TernaryOperatorSTCTest extends StaticTypeCheckingTestCase {
             def y = true?true:false
         '''
     }
+
+    void testDoubleFloatTernary() {
+        assertScript '''
+            @ASTTest(phase=INSTRUCTION_SELECTION, value= {
+                assert node.getNodeMetaData(INFERRED_TYPE) == double_TYPE
+            })
+            def y = true?1d:1f
+        '''
+    }
+
+    void testDoubleDoubleTernaryWithBoxedTypes() {
+        assertScript '''
+            @ASTTest(phase=INSTRUCTION_SELECTION, value= {
+                assert node.getNodeMetaData(INFERRED_TYPE) == Double_TYPE
+            })
+            def y = true?new Double(1d):new Double(1f)
+        '''
+    }
+
+    void testDoubleFloatTernaryWithBoxedTypes() {
+        assertScript '''
+            @ASTTest(phase=INSTRUCTION_SELECTION, value= {
+                assert node.getNodeMetaData(INFERRED_TYPE) == Double_TYPE
+            })
+            def y = true?new Double(1d):new Float(1f)
+        '''
+    }
+
+    void testDoubleFloatTernaryWithOneBoxedType() {
+        assertScript '''
+            @ASTTest(phase=INSTRUCTION_SELECTION, value= {
+                assert node.getNodeMetaData(INFERRED_TYPE) == Double_TYPE
+            })
+            def y = true?1d:new Float(1f)
+        '''
+    }
+
+    void testDoubleFloatTernaryWithOneBoxedType2() {
+        assertScript '''
+            @ASTTest(phase=INSTRUCTION_SELECTION, value= {
+                assert node.getNodeMetaData(INFERRED_TYPE) == Double_TYPE
+            })
+            def y = true?new Double(1d):1f
+        '''
+    }
 }
 

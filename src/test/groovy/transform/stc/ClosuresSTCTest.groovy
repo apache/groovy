@@ -82,8 +82,8 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
                     x // int
                 }
             }
-            byte res = cl(0) // should throw an error because return type inference should be a Number
-        ''', 'Cannot assign value of type java.lang.Number or java.lang.Comparable to variable of type byte'
+            byte res = cl(0) // should throw an error because return type inference should be a long
+        ''', 'Possible loose of precision from long to byte'
     }
 
     void testClosureWithoutParam() {
