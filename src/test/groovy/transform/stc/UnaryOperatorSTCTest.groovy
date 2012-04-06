@@ -230,5 +230,64 @@ class UnaryOperatorSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    void testIntUnaryMinusInferredType() {
+        assertScript '''
+            int x = 1
+            @ASTTest(phase=INSTRUCTION_SELECTION, value= {
+                assert node.getNodeMetaData(INFERRED_TYPE) == int_TYPE
+            })
+            def y = -x
+        '''
+    }
+
+    void testShortUnaryMinusInferredType() {
+        assertScript '''
+            short x = 1
+            @ASTTest(phase=INSTRUCTION_SELECTION, value= {
+                assert node.getNodeMetaData(INFERRED_TYPE) == short_TYPE
+            })
+            def y = -x
+        '''
+    }
+
+    void testByteUnaryMinusInferredType() {
+        assertScript '''
+            byte x = 1
+            @ASTTest(phase=INSTRUCTION_SELECTION, value= {
+                assert node.getNodeMetaData(INFERRED_TYPE) == byte_TYPE
+            })
+            def y = -x
+        '''
+    }
+
+    void testLongUnaryMinusInferredType() {
+        assertScript '''
+            long x = 1
+            @ASTTest(phase=INSTRUCTION_SELECTION, value= {
+                assert node.getNodeMetaData(INFERRED_TYPE) == long_TYPE
+            })
+            def y = -x
+        '''
+    }
+
+    void testFloatUnaryMinusInferredType() {
+        assertScript '''
+            float x = 1
+            @ASTTest(phase=INSTRUCTION_SELECTION, value= {
+                assert node.getNodeMetaData(INFERRED_TYPE) == float_TYPE
+            })
+            def y = -x
+        '''
+    }
+
+    void testDoubleUnaryMinusInferredType() {
+        assertScript '''
+            double x = 1
+            @ASTTest(phase=INSTRUCTION_SELECTION, value= {
+                assert node.getNodeMetaData(INFERRED_TYPE) == double_TYPE
+            })
+            def y = -x
+        '''
+    }
 }
 
