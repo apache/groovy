@@ -200,6 +200,34 @@ public class DataSet extends Sql {
         eachRow(getSql(), getParameters(), closure);
     }
 
+    /**
+     * Performs the given SQL query calling the given <code>closure</code> with each row of the result set starting at 
+     * the provided <code>offset</code>, and including up to <code>maxRows</code> number of rows.
+     * The row will be a <code>GroovyResultSet</code> which is a <code>ResultSet</code>
+     * that supports accessing the fields using property style notation and ordinal index values.
+     * <p/>
+     * Note that the underlying implementation is based on either invoking <code>ResultSet.absolute()</code>, 
+     * or if the ResultSet type is <code>ResultSet.TYPE_FORWARD_ONLY</code>, the <code>ResultSet.next()</code> method
+     * is invoked equivalently.  The first row of a ResultSet is 1, so passing in an offset of 1 or less has no effect 
+     * on the initial positioning within the result set.
+     * 
+     * <p/>
+     * Note that different database and JDBC driver implementations may work differently with respect to this method.  
+     * Specifically, one should expect that <code>ResultSet.TYPE_FORWARD_ONLY</code> may be less efficient than a 
+     * "scrollable" type.
+     * 
+     * <p/>
+     * Resource handling is performed automatically where appropriate.
+     *
+     * @param offset  the 1-based offset for the first row to be processed
+     * @param maxRows the maximum number of rows to be processed
+     * @param closure called for each row with a GroovyResultSet
+     * @throws SQLException if a database access error occurs
+     */
+    public void each(int offset, int maxRows, Closure closure) throws SQLException {
+        eachRow(getSql(), getParameters(), offset, maxRows, closure);
+    }
+
     private String getSqlWhere() {
         String whereClaus = "";
         String parentClaus = "";
@@ -309,6 +337,20 @@ public class DataSet extends Sql {
      */
     public List rows() throws SQLException {
         return rows(getSql(), getParameters());
+    }
+
+    /**
+     * Returns a "page" of the rows from the table a DataSet represents. A page
+     * is defined as starting at a 1-based offset, and containing a maximum number
+     * of rows.
+     *
+     * @param offset the 1-based offset for the first row to be processed
+     * @param maxRows the maximum number of rows to be processed
+     * @return Returns a list of GroovyRowResult objects from the dataset
+     * @throws SQLException if a database error occurs
+     */
+    public List rows(int offset, int maxRows) throws SQLException {
+        return rows(getSql(), getParameters(), offset, maxRows);
     }
 
     /**
