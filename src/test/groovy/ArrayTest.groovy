@@ -418,6 +418,9 @@ class ArrayTest extends GroovyTestCase {
         def result = a + b
         assert result == [ 1, 2, 3, 3, 4, 5 ]
         assert result.class.isArray()
+        // check the originals are untouched
+        assert a == [ 1, 2, 3 ]
+        assert b == [ 3, 4, 5 ]
 
         result = a + 4
         assert result == [ 1, 2, 3, 4 ]
