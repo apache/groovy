@@ -7112,6 +7112,54 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Create an array as a union of two arrays.
+     * <pre class="groovyTestCase">Integer[] a = [ 1, 2, 3 ]
+     * Integer[] b = [ 4, 5, 6 ]
+     * assert a + b == [1,2,3,4,5,6] as Integer[]</pre>
+     *
+     * @param left  the left Array
+     * @param right the right Array
+     * @return A new array containing right appended to left.
+     * @since 1.8.7
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> T[] plus( T[] left, T[] right ) {
+        return (T[])plus( toList( left), toList( right ) ).toArray() ;
+    }
+
+    /**
+     * Append a value on to an array.
+     * <pre class="groovyTestCase">Integer[] a = [ 1, 2, 3 ]
+     * Integer[] result = a + 4
+     * assert result == [ 1, 2, 3, 4 ] as Integer[]</pre>
+     *
+     * @param self the array
+     * @param val the value to append
+     * @return A new array containing self with val appended to it.
+     * @since 1.8.7
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> T[] plus( T[] left, T right ) {
+        return (T[])plus( toList( left), right ).toArray() ;
+    }
+
+    /**
+     * Append a Collection on to an array.
+     * <pre class="groovyTestCase">Integer[] a = [ 1, 2, 3 ]
+     * def additions = [ 7, 8 ]
+     * assert a + additions == [1,2,3,7,8] as Integer[] </pre>
+     *
+     * @param self the array
+     * @param val A Collection to be appended
+     * @return A new array containing self with val appended to it.
+     * @since 1.8.7
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> T[] plus( T[] left, Collection<T> right ) {
+        return (T[])plus( toList( left), right ).toArray() ;
+    }
+
+    /**
      * A convenience method for creating a synchronized SortedSet.
      *
      * @param self a SortedSet
