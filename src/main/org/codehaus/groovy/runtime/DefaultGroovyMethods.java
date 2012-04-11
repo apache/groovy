@@ -6943,13 +6943,35 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * </pre>
      *
      * @param left  the array
-     * @param right A Collection to be appended
+     * @param right a Collection to be appended
      * @return A new array containing left with right appended to it.
      * @since 1.8.7
      */
     @SuppressWarnings("unchecked")
     public static <T> T[] plus(T[] left, Collection<T> right) {
         return (T[]) plus(toList(left), right).toArray();
+    }
+
+    /**
+     * Create an array containing elements from an original array plus those from an Iterable.
+     * <pre class="groovyTestCase">
+     * class AbcIterable implements Iterable<String> {
+     *     Iterator<String> iterator() { "abc".iterator() }
+     * }
+     * String[] letters = ['x', 'y', 'z']
+     * def result = letters + new AbcIterable()
+     * assert result == ['x', 'y', 'z', 'a', 'b', 'c'] as String[]
+     * assert result.class.array
+     * </pre>
+     *
+     * @param left  the array
+     * @param right an Iterable to be appended
+     * @return A new array containing elements from left with those from right appended.
+     * @since 1.8.7
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> T[] plus(T[] left, Iterable<T> right) {
+        return (T[]) plus(toList(left), toList(right)).toArray();
     }
 
     /**
@@ -6971,12 +6993,31 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Creates a new list by adding all of the elements in the specified array to the elements from the original list at the specified index.
+     * Create a Collection as a union of a Collection and an Iterable. If the left collection
+     * is a Set, then the returned collection will be a Set otherwise a List.
+     * This operation will always create a new object for the result,
+     * while the operands remain unchanged.
+     *
+     * @param left  the left Collection
+     * @param right the right Iterable
+     * @return the merged Collection
+     * @since 1.8.7
+     * @see #plus(Collection, Collection)
+     */
+    public static <T> Collection<T> plus(Collection<T> left, Iterable<T> right) {
+        return plus(left, toList(right));
+    }
+
+    /**
+     * Creates a new List by inserting all of the elements in the specified array
+     * to the elements from the original List at the specified index.
      * Shifts the element currently at that index (if any) and any subsequent
-     * elements to the right (increasing their indices).  The new elements
-     * will appear in this list in the order that they occur in the array.
-     * The behavior of this operation is undefined if the specified array
-     * is modified while the operation is in progress. The original list remains unchanged.
+     * elements to the right (increasing their indices).
+     * The new elements will appear in the resulting List in the order that
+     * they occur in the original array.
+     * The behavior of this operation is undefined if the list or
+     * array operands are modified while the operation is in progress.
+     * The original list and array operands remain unchanged.
      *
      * <pre class="groovyTestCase">
      * def items = [1, 2, 3]
@@ -7000,13 +7041,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Creates a new list by adding all of the elements in the specified list
-     * to the elements from this list at the specified index.
+     * Creates a new List by inserting all of the elements in the given additions List
+     * to the elements from the original List at the specified index.
      * Shifts the element currently at that index (if any) and any subsequent
      * elements to the right (increasing their indices).  The new elements
-     * will appear in this list in the order that they occur in the array.
-     * The behavior of this operation is undefined if the specified array
-     * is modified while the operation is in progress. The original list remains unchanged.
+     * will appear in the resulting List in the order that they occur in the original lists.
+     * The behavior of this operation is undefined if the original lists
+     * are modified while the operation is in progress. The original lists remain unchanged.
      *
      * <pre class="groovyTestCase">
      * def items = [1, 2, 3]
@@ -7018,9 +7059,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * See also <code>addAll</code> for similar functionality with modify semantics, i.e. which performs
      * the changes on the original list itself.
      *
-     * @param self      an original list
-     * @param additions array containing elements to be merged with elements from the original list
-     * @param index     index at which to insert the first element from the specified list
+     * @param self      an original List
+     * @param additions a List containing elements to be merged with elements from the original List
+     * @param index     index at which to insert the first element from the given additions List
      * @return the new list
      * @since 1.8.1
      */
@@ -7028,6 +7069,21 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         final List<T> answer = new ArrayList<T>(self);
         answer.addAll(index, additions);
         return answer;
+    }
+
+    /**
+     * Creates a new List by inserting all of the elements in the given Iterable
+     * to the elements from this List at the specified index.
+     *
+     * @param self      an original list
+     * @param additions an Iterable containing elements to be merged with the elements from the original List
+     * @param index     index at which to insert the first element from the given additions Iterable
+     * @return the new list
+     * @since 1.8.7
+     * @see #plus(List, int, List)
+     */
+    public static <T> List<T> plus(List<T> self, int index, Iterable<T> additions) {
+        return plus(self, index, toList(additions));
     }
 
     /**
@@ -7117,12 +7173,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static <K,V> Map<K,V> intersect(Map<K,V> left, Map<K,V> right) {
         final Map<K,V> ansMap = createSimilarMap(left);
         if (right != null && right.size() > 0) {
-            final Iterator<Map.Entry<K,V>> it1 = left.entrySet().iterator();
-            while (it1.hasNext()) {
-                final Map.Entry<K,V> e1 = it1.next();
-                final Iterator<Map.Entry<K,V>> it2 = right.entrySet().iterator();
-                while (it2.hasNext()) {
-                    final Map.Entry<K,V> e2 = it2.next();
+            for (Map.Entry<K, V> e1 : left.entrySet()) {
+                for (Map.Entry<K, V> e2 : right.entrySet()) {
                     if (DefaultTypeTransformation.compareEqual(e1, e2)) {
                         ansMap.put(e1.getKey(), e1.getValue());
                     }
@@ -7161,8 +7213,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Compare the contents of this array to the contents of the given array.
      *
-     * @param left an int array
-     * @param right the operand array.
+     * @param left  an int array
+     * @param right the array being compared
      * @return true if the contents of both arrays are equal.
      * @since 1.5.0
      */
@@ -7190,8 +7242,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * contents of the given list, in the same order.  This returns
      * <code>false</code> if either collection is <code>null</code>.
      *
-     * @param left  this array
-     * @param right the list being compared
+     * @param left  an array
+     * @param right the List being compared
      * @return true if the contents of both collections are equal
      * @since 1.5.0
      */
@@ -7205,8 +7257,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * <code>false</code> if either collection is <code>null</code>.
      * <pre class="groovyTestCase">assert [1, "a"].equals( [ 1, "a" ] as Object[] )</pre>
      *
-     * @param left  this List
-     * @param right this Object[] being compared to
+     * @param left  a List
+     * @param right the Object[] being compared to
      * @return true if the contents of both collections are equal
      * @since 1.5.0
      */
@@ -7255,8 +7307,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * assert ![2, "a"].equals("a", 2)
      * assert [2.0, "a"].equals(2L, "a") // number comparison at work</pre>
      *
-     * @param left  this List
-     * @param right the List being compared to.
+     * @param left  a List
+     * @param right the List being compared to
      * @return boolean   <code>true</code> if the contents of both lists are identical,
      *         <code>false</code> otherwise.
      * @since 1.0
@@ -7308,7 +7360,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * assert s1.equals(s4)
      * assert s1.equals(s5)</pre>
      *
-     * @param self  this Set
+     * @param self  a Set
      * @param other the Set being compared to
      * @return <tt>true</tt> if the contents of both sets are identical
      * @since 1.8.0
@@ -7382,27 +7434,22 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Create a Set composed of the elements of the first set minus the
-     * elements of the given collection.
-     * <p/>
+     * Create a Set composed of the elements of the first Set minus the
+     * elements of the given Collection.
      *
-     * @param self     a set object
-     * @param operands the items to remove from the set
-     * @return the resulting set
+     * @param self     a Set object
+     * @param removeMe the items to remove from the Set
+     * @return the resulting Set
      * @since 1.5.0
      */
-    public static <T> Set<T> minus(Set<T> self, Collection operands) {
+    public static <T> Set<T> minus(Set<T> self, Collection<?> removeMe) {
         Comparator comparator = (self instanceof SortedSet) ? ((SortedSet) self).comparator() : null;
         final Set<T> ansSet = createSimilarSet(self);
         ansSet.addAll(self);
-        if (operands != null && operands.size() > 0) {
-            final Iterator it1 = self.iterator();
-            while (it1.hasNext()) {
-                final Object o1 = it1.next();
-                final Iterator it2 = operands.iterator();
-                while (it2.hasNext()) {
-                    final Object o2 = it2.next();
-                    boolean areEqual = (comparator != null)? (comparator.compare(o1, o2) == 0) : coercedEquals(o1, o2);
+        if (removeMe != null) {
+            for (T o1 : self) {
+                for (Object o2 : removeMe) {
+                    boolean areEqual = (comparator != null) ? (comparator.compare(o1, o2) == 0) : coercedEquals(o1, o2);
                     if (areEqual) {
                         ansSet.remove(o1);
                     }
@@ -7413,18 +7460,31 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Create a Set composed of the elements of the first set minus the operand.
+     * Create a Set composed of the elements of the first Set minus the
+     * elements from the given Iterable.
      *
-     * @param self    a set object
-     * @param operand the operand to remove from the set
-     * @return the resulting set
+     * @param self     a Set object
+     * @param removeMe the items to remove from the Set
+     * @return the resulting Set
+     * @since 1.8.7
+     */
+    public static <T> Set<T> minus(Set<T> self, Iterable<?> removeMe) {
+        return minus(self, toList(removeMe));
+    }
+
+    /**
+     * Create a Set composed of the elements of the first Set minus the given element.
+     *
+     * @param self     a Set object
+     * @param removeMe the element to remove from the Set
+     * @return the resulting Set
      * @since 1.5.0
      */
-    public static <T> Set<T> minus(Set<T> self, Object operand) {
+    public static <T> Set<T> minus(Set<T> self, Object removeMe) {
         Comparator comparator = (self instanceof SortedSet) ? ((SortedSet) self).comparator() : null;
         final Set<T> ansSet = createSimilarSet(self);
         for (T t : self) {
-            boolean areEqual = (comparator != null)? (comparator.compare(t, operand) == 0) : coercedEquals(t, operand);
+            boolean areEqual = (comparator != null)? (comparator.compare(t, removeMe) == 0) : coercedEquals(t, removeMe);
             if (!areEqual) ansSet.add(t);
         }
         return ansSet;
@@ -7432,7 +7492,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Create an array composed of the elements of the first array minus the
-     * elements of the given collection.
+     * elements of the given Iterable.
      *
      * @param self     an object array
      * @param removeMe a Collection of elements to remove
@@ -7440,7 +7500,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.5.5
      */
     @SuppressWarnings("unchecked")
-    public static <T> T[] minus(T[] self, Collection<T> removeMe) {
+    public static <T> T[] minus(T[] self, Iterable removeMe) {
         return (T[]) minus(toList(self), removeMe).toArray();
     }
 
@@ -7454,21 +7514,21 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.5.5
      */
     @SuppressWarnings("unchecked")
-    public static <T> T[] minus(T[] self, T[] removeMe) {
+    public static <T> T[] minus(T[] self, Object[] removeMe) {
         return (T[]) minus(toList(self), toList(removeMe)).toArray();
     }
 
     /**
      * Create a List composed of the elements of the first list minus
-     * every occurrence of elements of the given collection.
+     * every occurrence of elements of the given Collection.
      * <pre class="groovyTestCase">assert [1, "a", true, true, false, 5.3] - [true, 5.3] == [1, "a", false]</pre>
      *
      * @param self     a List
      * @param removeMe a Collection of elements to remove
-     * @return a List with the supplied elements removed
+     * @return a List with the given elements removed
      * @since 1.0
      */
-    public static <T> List<T> minus(List<T> self, Collection<T> removeMe) {
+    public static <T> List<T> minus(List<T> self, Collection<?> removeMe) {
 
         if (self.size() == 0)
             return new ArrayList<T>();
@@ -7489,9 +7549,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                 answer.addAll(self);
                 for (T t : self) {
                     if (Number.class.isInstance(t)) {
-                        for (T t2 : removeMe) {
+                        for (Object t2 : removeMe) {
                             if (Number.class.isInstance(t2)) {
-                                if (numberComparator.compare(t, t2) == 0)
+                                if (numberComparator.compare(t, (T)t2) == 0)
                                     answer.remove(t);
                             }
                         }
@@ -7518,9 +7578,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             for (Iterator<T> iter = tmpAnswer.iterator(); iter.hasNext();) {
                 T element = iter.next();
                 boolean elementRemoved = false;
-                for (Iterator<T> iterator = removeMe.iterator(); iterator.hasNext() && !elementRemoved;) {
-                    T elt = iterator.next();
-                    if (numberComparator.compare(element, elt) == 0) {
+                for (Iterator<?> iterator = removeMe.iterator(); iterator.hasNext() && !elementRemoved;) {
+                    Object elt = iterator.next();
+                    if (numberComparator.compare(element, (T)elt) == 0) {
                         iter.remove();
                         elementRemoved = true;
                     }
@@ -7534,34 +7594,54 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Create a List composed of the elements of the first list minus
+     * every occurrence of elements of the given Iterable.
+     * <pre class="groovyTestCase">
+     * class AbcIterable implements Iterable<String> {
+     *     Iterator<String> iterator() { "abc".iterator() }
+     * }
+     * assert "backtrack".toList() - new AbcIterable() == ["k", "t", "r", "k"]
+     * </pre>
+     *
+     * @param self     a List
+     * @param removeMe an Iterable of elements to remove
+     * @return a List with the supplied elements removed
+     * @since 1.8.7
+     */
+    public static <T> List<T> minus(List<T> self, Iterable<?> removeMe) {
+        return minus(self, toList(removeMe));
+    }
+
+    /**
      * Create a new List composed of the elements of the first list minus every occurrence of the
-     * operand.
+     * given element to remove.
      * <pre class="groovyTestCase">assert ["a", 5, 5, true] - 5 == ["a", true]</pre>
      *
-     * @param self    a List object
-     * @param operand an element to remove from the list
-     * @return the resulting List with the operand removed
+     * @param self     a List object
+     * @param removeMe an element to remove from the list
+     * @return the resulting List with the given element removed
      * @since 1.0
      */
-    public static <T> List<T> minus(List<T> self, Object operand) {
+    public static <T> List<T> minus(List<T> self, Object removeMe) {
         List<T> ansList = new ArrayList<T>();
         for (T t : self) {
-            if (!coercedEquals(t, operand)) ansList.add(t);
+            if (!coercedEquals(t, removeMe)) ansList.add(t);
         }
         return ansList;
     }
 
     /**
      * Create a new object array composed of the elements of the first array
-     * minus the operand.
+     * minus the element to remove.
      *
      * @param self    an object array
-     * @param operand an element to remove from the array
+     * @param removeMe an element to remove from the array
      * @return a new array with the operand removed
      * @since 1.5.5
      */
-    public static <T> T[] minus(T[] self, Object operand) {
-        return (T[]) minus(toList(self), operand).toArray();
+    @SuppressWarnings("unchecked")
+    public static <T> T[] minus(T[] self, Object removeMe) {
+        return (T[]) minus(toList(self), removeMe).toArray();
     }
 
     /**
@@ -7569,20 +7649,16 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * entries of the given map.
      *
      * @param self     a map object
-     * @param operands the entries to remove from the map
+     * @param removeMe the entries to remove from the map
      * @return the resulting map
      * @since 1.7.4
      */
-    public static <K,V> Map<K,V> minus(Map<K,V> self, Map<K,V> operands) {
+    public static <K,V> Map<K,V> minus(Map<K,V> self, Map removeMe) {
         final Map<K,V> ansMap = createSimilarMap(self);
         ansMap.putAll(self);
-        if (operands != null && operands.size() > 0) {
-            final Iterator<Map.Entry<K,V>> it1 = self.entrySet().iterator();
-            while (it1.hasNext()) {
-                final Map.Entry<K,V> e1 = it1.next();
-                final Iterator<Map.Entry<K,V>> it2 = operands.entrySet().iterator();
-                while (it2.hasNext()) {
-                    final Map.Entry<K,V> e2 = it2.next();
+        if (removeMe != null && removeMe.size() > 0) {
+            for (Map.Entry<K, V> e1 : self.entrySet()) {
+                for (Object e2 : removeMe.entrySet()) {
                     if (DefaultTypeTransformation.compareEqual(e1, e2)) {
                         ansMap.remove(e1.getKey());
                     }
