@@ -601,6 +601,10 @@
             <name>Joachim Baumann</name>
             <email></email>
         </contributor>
+        <contributor>
+            <name>David Sutherland</name>
+            <email></email>
+        </contributor>
     </contributors>
 
     <dependencies>

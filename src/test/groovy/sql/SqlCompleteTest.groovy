@@ -68,11 +68,32 @@ class SqlCompleteTest extends TestHelper {
 
     void testEachRowWithNamedParams() {
         def results = [:]
-        sql.eachRow("select * from PERSON where firstname like :firstPat and lastname like ?.lastPat", [[firstPat:'%am%', lastPat:'%a%']]) {
+        sql.eachRow("select * from PERSON where firstname like :firstPat and lastname like ?.lastPat", [[firstPat: '%am%', lastPat: '%a%']]) {
             results.put(it.firstname, it['lastname'])
         }
         def expected = ["James": "Strachan", "Sam": "Pullara"]
         assert results == expected
+    }
+
+    void testEachRowWithNamedParamsAsMap_Groovy5405() {
+        def results = [:]
+        sql.eachRow("select * from PERSON where firstname like :firstPat and lastname like ?.lastPat", [firstPat: '%am%', lastPat: '%a%']) {
+            results.put(it.firstname, it['lastname'])
+        }
+        def expected = ["James": "Strachan", "Sam": "Pullara"]
+        assert results == expected
+    }
+
+    void testEachRowWithNamedParametersAndOffset_Groovy5405() {
+        sql.eachRow('select * from FOOD where type=:foo', [foo: 'drink'], 2, 1) { row ->
+            assert [row[0], row[1]] == ['drink', 'coffee']
+        }
+    }
+
+    void testRowsWithNamedParametersAndOffset_Groovy5405() {
+        def rows = sql.rows('select * from FOOD where type=:foo', [foo: 'drink'], 2, 1)
+        assert rows.size() == 1
+        assert [rows[0][0], rows[0][1]] == ['drink', 'coffee']
     }
 
     void testEachRowWithParamsAndEmbeddedString() {
