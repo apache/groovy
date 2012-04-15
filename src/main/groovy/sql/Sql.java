@@ -152,7 +152,7 @@ import org.codehaus.groovy.runtime.SqlGroovyMethods;
  * <code>sql.firstRow('select * from PersonTable where SurnameColumn = ' + userInput)</code>
  * This in turn will be fine if '<code>userInput</code>' is something like 'Smith' but maybe
  * not so fine if '<code>userInput</code>' is something like 'Smith; DROP table PersonTable'.
- * Instead use one of the variants with parameters and placeholders:
+ * Instead, use one of the variants with parameters and placeholders:
  * <code>sql.firstRow("select * from PersonTable where SurnameColumn = ?", [userInput])</code>
  * or the GString variants which will be converted to the placeholder variants under the covers:
  * <code>sql.firstRow("select * from PersonTable where SurnameColumn = $userInput")</code>
@@ -160,23 +160,35 @@ import org.codehaus.groovy.runtime.SqlGroovyMethods;
  *
  * <h4>Named and named ordinal parameters</h4>
  *
- * Several of the methods in this class which have a String-based sql query and
- * params in a List<Object> or Object[] support <em>named</em> or <em>named ordinal</em> parameters.
+ * Several of the methods in this class (ones which have a String-based sql query and params in
+ * a List<Object> or Object[] or Map) support <em>named</em> or <em>named ordinal</em> parameters.
  * These methods are useful for queries with large numbers of parameters - though the GString
- * variations are often preferred in such cases too.
+ * variations are often preferred in such cases too. Reminder: when you see a variant with Object[] as
+ * the type of the last parameter, Groovy allows vararg style parameters so you don't explicitly need to
+ * create an Object[] and if the first parameter is of type Map, Groovy supports named arguments - examples
+ * of both are contained in the examples below.
  * <p/>
  * Named parameter queries use placeholder values in the query String. Two forms are supported
  * ':propname1' and '?.propname2'. For these variations, a single <em>model</em> object is
- * supplied in the parameter list. The propname refers to a property of that model object.
+ * supplied in the parameter list/array/map. The propname refers to a property of that model object.
  * The model object could be a map, Expando or domain class instance. Here are some examples:
  * <pre>
+ * // using rows() with a named parameter with the parameter supplied in a map
  * println sql.rows('select * from PROJECT where name=:foo', [foo:'Gradle'])
+ * // as above for eachRow()
  * sql.eachRow('select * from PROJECT where name=:foo', [foo:'Gradle']) {
  *     // process row
  * }
+ *
+ * // an example using both the ':' and '?.' variants of the notation
  * println sql.rows('select * from PROJECT where name=:foo and id=?.bar', [foo:'Gradle', bar:40])
+ * // as above but using Groovy's named arguments instead of an explicit map
+ * println sql.rows('select * from PROJECT where name=:foo and id=?.bar', foo:'Gradle', bar:40)
+ *
+ * // an example showing rows() with a domain object instead of a map
  * class MyDomainClass { def baz = 'Griffon' }
  * println sql.rows('select * from PROJECT where name=?.baz', new MyDomainClass())
+ * // as above for eachRow() with the domain object supplied in a list
  * sql.eachRow('select * from PROJECT where name=?.baz', [new MyDomainClass()]) {
  *     // process row
  * }
@@ -185,7 +197,10 @@ import org.codehaus.groovy.runtime.SqlGroovyMethods;
  * at 1) also supplied in the placeholder. Only the question mark variation of placeholder is supported.
  * Here are some examples:
  * <pre>
+ * // an example showing the model objects as vararg style parameters (since rows() has an Object[] variant)
  * println sql.rows("select * from PROJECT where name=?1.baz and id=?2.num", new MyDomainClass(), [num:30])
+ *
+ * // an example showing the model objects (one domain class and one map) provided in a list
  * sql.eachRow("select * from PROJECT where name=?1.baz and id=?2.num", [new MyDomainClass(), [num:30]]) {
  *     // do something with row
  * }
@@ -252,7 +267,7 @@ public class Sql {
      * Creates a new Sql instance given a JDBC connection URL.
      *
      * @param url a database url of the form
-     *            <code> jdbc:<em>subprotocol</em>:<em>subname</em></code>
+     *            <code>jdbc:<em>subprotocol</em>:<em>subname</em></code>
      * @return a new Sql instance with a connection
      * @throws SQLException if a database access error occurs
      */
@@ -266,7 +281,7 @@ public class Sql {
      * The created connection will be closed if required.
      *
      * @param url a database url of the form
-     *            <code> jdbc:<em>subprotocol</em>:<em>subname</em></code>
+     *            <code>jdbc:<em>subprotocol</em>:<em>subname</em></code>
      * @param c the Closure to call
      * @see #newInstance(String)
      * @throws SQLException if a database access error occurs
@@ -286,7 +301,7 @@ public class Sql {
      * and some properties.
      *
      * @param url        a database url of the form
-     *                   <code> jdbc:<em>subprotocol</em>:<em>subname</em></code>
+     *                   <code>jdbc:<em>subprotocol</em>:<em>subname</em></code>
      * @param properties a list of arbitrary string tag/value pairs
      *                   as connection arguments; normally at least a "user" and
      *                   "password" property should be included
@@ -303,7 +318,7 @@ public class Sql {
      * The created connection will be closed if required.
      *
      * @param url a database url of the form
-     *            <code> jdbc:<em>subprotocol</em>:<em>subname</em></code>
+     *            <code>jdbc:<em>subprotocol</em>:<em>subname</em></code>
      * @param properties a list of arbitrary string tag/value pairs
      *                   as connection arguments; normally at least a "user" and
      *                   "password" property should be included
@@ -346,7 +361,7 @@ public class Sql {
      * properties and driver classname. The created connection will be closed if required.
      *
      * @param url a database url of the form
-     *            <code> jdbc:<em>subprotocol</em>:<em>subname</em></code>
+     *            <code>jdbc:<em>subprotocol</em>:<em>subname</em></code>
      * @param properties a list of arbitrary string tag/value pairs
      *                   as connection arguments; normally at least a "user" and
      *                   "password" property should be included
@@ -389,7 +404,7 @@ public class Sql {
      * The created connection will be closed if required.
      *
      * @param url a database url of the form
-     *            <code> jdbc:<em>subprotocol</em>:<em>subname</em></code>
+     *            <code>jdbc:<em>subprotocol</em>:<em>subname</em></code>
      * @param user     the database user on whose behalf the connection
      *                 is being made
      * @param password the user's password
@@ -432,7 +447,7 @@ public class Sql {
      * The created connection will be closed if required.
      *
      * @param url a database url of the form
-     *            <code> jdbc:<em>subprotocol</em>:<em>subname</em></code>
+     *            <code>jdbc:<em>subprotocol</em>:<em>subname</em></code>
      * @param user            the database user on whose behalf the connection
      *                        is being made
      * @param password        the user's password
@@ -474,7 +489,7 @@ public class Sql {
      * The created connection will be closed if required.
      *
      * @param url a database url of the form
-     *            <code> jdbc:<em>subprotocol</em>:<em>subname</em></code>
+     *            <code>jdbc:<em>subprotocol</em>:<em>subname</em></code>
      * @param driverClassName the fully qualified class name of the driver class
      * @param c the Closure to call
      * @see #newInstance(String, String)
@@ -498,7 +513,7 @@ public class Sql {
      * <pre>
      * driverClassName the fully qualified class name of the driver class
      * driver          a synonym for driverClassName
-     * url             a database url of the form: jdbc:<em>subprotocol</em>:<em>subname</em>
+     * url             a database url of the form: <code>jdbc:<em>subprotocol</em>:<em>subname</em></code>
      * user            the database user on whose behalf the connection is being made
      * password        the user's password
      * properties      a list of arbitrary string tag/value pairs as connection arguments;
@@ -988,6 +1003,20 @@ public class Sql {
         query(sql, singletonList(map), closure);
     }
 
+    /**
+     * A variant of {@link #query(String, java.util.List, groovy.lang.Closure)}
+     * useful when providing the named parameters as named arguments.
+     *
+     * @param map     a map containing the named parameters
+     * @param sql     the sql statement
+     * @param closure called for each row with a GroovyResultSet
+     * @throws SQLException if a database access error occurs
+     * @since 1.8.7
+     */
+    public void query(Map map, String sql, Closure closure) throws SQLException {
+        query(sql, singletonList(map), closure);
+    }
+
     private ArrayList<Object> singletonList(Object item) {
         ArrayList<Object> params = new ArrayList<Object>();
         params.add(item);
@@ -1241,6 +1270,23 @@ public class Sql {
     }
 
     /**
+     * A variant of {@link #eachRow(String, java.util.List, groovy.lang.Closure, int, int, groovy.lang.Closure)}
+     * allowing the named parameters to be supplied as named arguments.
+     *
+     * @param map         a map containing the named parameters
+     * @param sql         the sql statement
+     * @param offset      the 1-based offset for the first row to be processed
+     * @param maxRows     the maximum number of rows to be processed
+     * @param metaClosure called for meta data (only once after sql execution)
+     * @param rowClosure  called for each row with a GroovyResultSet
+     * @throws SQLException if a database access error occurs
+     * @since 1.8.7
+     */
+    public void eachRow(Map map, String sql, Closure metaClosure, int offset, int maxRows, Closure rowClosure) throws SQLException {
+        eachRow(sql, singletonList(map), metaClosure, offset, maxRows, rowClosure);
+    }
+
+    /**
      * Performs the given SQL query calling the given Closure with each row of the result set.
      * The row will be a <code>GroovyResultSet</code> which is a <code>ResultSet</code>
      * that supports accessing the fields using property style notation and ordinal index values.
@@ -1294,6 +1340,21 @@ public class Sql {
     }
 
     /**
+     * A variant of {@link #eachRow(String, java.util.List, groovy.lang.Closure, groovy.lang.Closure)}
+     * useful when providing the named parameters as named arguments.
+     *
+     * @param params      a map of named parameters
+     * @param sql         the sql statement
+     * @param metaClosure called for meta data (only once after sql execution)
+     * @param rowClosure  called for each row with a GroovyResultSet
+     * @throws SQLException if a database access error occurs
+     * @since 1.8.7
+     */
+    public void eachRow(Map params, String sql, Closure metaClosure, Closure rowClosure) throws SQLException {
+        eachRow(sql, singletonList(params), metaClosure, rowClosure);
+    }
+
+    /**
      * Performs the given SQL query calling the given Closure with each row of the result set.
      * The row will be a <code>GroovyResultSet</code> which is a <code>ResultSet</code>
      * that supports accessing the fields using property style notation and ordinal index values.
@@ -1328,6 +1389,20 @@ public class Sql {
      * @since 1.8.7
      */
     public void eachRow(String sql, Map params, Closure closure) throws SQLException {
+        eachRow(sql, singletonList(params), closure);
+    }
+
+    /**
+     * A variant of {@link #eachRow(String, java.util.List, groovy.lang.Closure)}
+     * useful when providing the named parameters as named arguments.
+     *
+     * @param params  a map of named parameters
+     * @param sql     the sql statement
+     * @param closure called for each row with a GroovyResultSet
+     * @throws SQLException if a database access error occurs
+     * @since 1.8.7
+     */
+    public void eachRow(Map params, String sql, Closure closure) throws SQLException {
         eachRow(sql, singletonList(params), closure);
     }
 
@@ -1371,6 +1446,22 @@ public class Sql {
      * @since 1.8.7
      */
     public void eachRow(String sql, Map params, int offset, int maxRows, Closure closure) throws SQLException {
+        eachRow(sql, singletonList(params), offset, maxRows, closure);
+    }
+
+    /**
+     * A variant of {@link #eachRow(String, java.util.List, int, int, groovy.lang.Closure)}
+     * useful when providing the named parameters as named arguments.
+     *
+     * @param params  a map of named parameters
+     * @param sql     the sql statement
+     * @param offset  the 1-based offset for the first row to be processed
+     * @param maxRows the maximum number of rows to be processed
+     * @param closure called for each row with a GroovyResultSet
+     * @throws SQLException if a database access error occurs
+     * @since 1.8.7
+     */
+    public void eachRow(Map params, String sql, int offset, int maxRows, Closure closure) throws SQLException {
         eachRow(sql, singletonList(params), offset, maxRows, closure);
     }
 
@@ -1622,9 +1713,22 @@ public class Sql {
      * @return a list of GroovyRowResult objects
      * @throws SQLException if a database access error occurs
      */
-    public List<GroovyRowResult> rows(String sql, List<Object> params)
-            throws SQLException {
+    public List<GroovyRowResult> rows(String sql, List<Object> params) throws SQLException {
         return rows(sql, params, null);
+    }
+
+    /**
+     * A variant of {@link #rows(String, java.util.List)}
+     * useful when providing the named parameters as named arguments.
+     *
+     * @param params a map containing the named parameters
+     * @param sql    the SQL statement
+     * @return a list of GroovyRowResult objects
+     * @throws SQLException if a database access error occurs
+     * @since 1.8.7
+     */
+    public List<GroovyRowResult> rows(Map params, String sql) throws SQLException {
+        return rows(sql, singletonList(params));
     }
 
     /**
@@ -1670,6 +1774,22 @@ public class Sql {
      * @since 1.8.7
      */
     public List<GroovyRowResult> rows(String sql, Map params, int offset, int maxRows) throws SQLException {
+        return rows(sql, singletonList(params), offset, maxRows);
+    }
+
+    /**
+     * A variant of {@link #rows(String, java.util.List, int, int)}
+     * useful when providing the named parameters as named arguments.
+     *
+     * @param params  a map of named parameters
+     * @param sql     the SQL statement
+     * @param offset  the 1-based offset for the first row to be processed
+     * @param maxRows the maximum number of rows to be processed
+     * @return a list of GroovyRowResult objects
+     * @throws SQLException if a database access error occurs
+     * @since 1.8.7
+     */
+    public List<GroovyRowResult> rows(Map params, String sql, int offset, int maxRows) throws SQLException {
         return rows(sql, singletonList(params), offset, maxRows);
     }
 
@@ -1769,6 +1889,21 @@ public class Sql {
     }
 
     /**
+     * A variant of {@link #rows(String, java.util.List, groovy.lang.Closure)}
+     * useful when providing the named parameters as named arguments.
+     *
+     * @param params      a map of named parameters
+     * @param sql         the SQL statement
+     * @param metaClosure called for meta data (only once after sql execution)
+     * @return a list of GroovyRowResult objects
+     * @throws SQLException if a database access error occurs
+     * @since 1.8.7
+     */
+    public List<GroovyRowResult> rows(Map params, String sql, Closure metaClosure) throws SQLException {
+        return rows(sql, singletonList(params), metaClosure);
+    }
+
+    /**
      * Performs the given SQL query and return a "page" of rows from the result set.  A page is defined as starting at
      * a 1-based offset, and containing a maximum number of rows.
      * In addition, the <code>metaClosure</code> will be called once passing in the
@@ -1822,6 +1957,23 @@ public class Sql {
      * @since 1.8.7
      */
     public List<GroovyRowResult> rows(String sql, Map params, int offset, int maxRows, Closure metaClosure) throws SQLException {
+        return rows(sql, singletonList(params), offset, maxRows, metaClosure);
+    }
+
+    /**
+     * A variant of {@link #rows(String, java.util.List, int, int, groovy.lang.Closure)}
+     * useful when providing the named parameters as named arguments.
+     *
+     * @param params      a map of named parameters
+     * @param sql         the SQL statement
+     * @param offset      the 1-based offset for the first row to be processed
+     * @param maxRows     the maximum number of rows to be processed
+     * @param metaClosure called for meta data (only once after sql execution)
+     * @return a list of GroovyRowResult objects
+     * @throws SQLException if a database access error occurs
+     * @since 1.8.7
+     */
+    public List<GroovyRowResult> rows(Map params, String sql, int offset, int maxRows, Closure metaClosure) throws SQLException {
         return rows(sql, singletonList(params), offset, maxRows, metaClosure);
     }
 
@@ -2021,6 +2173,20 @@ public class Sql {
     }
 
     /**
+     * A variant of {@link #firstRow(String, java.util.List)}
+     * useful when providing the named parameters as named arguments.
+     *
+     * @param params a map containing the named parameters
+     * @param sql    the SQL statement
+     * @return a GroovyRowResult object or <code>null</code> if no row is found
+     * @throws SQLException if a database access error occurs
+     * @since 1.8.7
+     */
+    public GroovyRowResult firstRow(Map params, String sql) throws SQLException {
+        return firstRow(sql, singletonList(params));
+    }
+
+    /**
      * Performs the given SQL query and return the first row of the result set.
      * <p/>
      * An Object array variant of {@link #firstRow(String, List)}.
@@ -2124,6 +2290,22 @@ public class Sql {
         } finally {
             closeResources(connection, statement);
         }
+    }
+
+    /**
+     * A variant of {@link #execute(String, java.util.List)}
+     * useful when providing the named parameters as named arguments.
+     *
+     * @param params a map containing the named parameters
+     * @param sql    the SQL statement
+     * @return <code>true</code> if the first result is a <code>ResultSet</code>
+     *         object; <code>false</code> if it is an update count or there are
+     *         no results
+     * @throws SQLException if a database access error occurs
+     * @since 1.8.7
+     */
+    public boolean execute(Map params, String sql) throws SQLException {
+        return execute(sql, singletonList(params));
     }
 
     /**
@@ -2235,6 +2417,21 @@ public class Sql {
         } finally {
             closeResources(connection, statement);
         }
+    }
+
+    /**
+     * A variant of {@link #firstRow(String, java.util.List)}
+     * useful when providing the named parameters as named arguments.
+     *
+     * @param params a map containing the named parameters
+     * @param sql    The SQL statement to execute
+     * @return A list of the auto-generated column values for each
+     *         inserted row (typically auto-generated keys)
+     * @throws SQLException if a database access error occurs
+     * @since 1.8.7
+     */
+    public List<List<Object>> executeInsert(Map params, String sql) throws SQLException {
+        return executeInsert(sql, singletonList(params));
     }
 
     /**
@@ -2354,6 +2551,20 @@ public class Sql {
         } finally {
             closeResources(connection, statement);
         }
+    }
+
+    /**
+     * A variant of {@link #executeUpdate(String, java.util.List)}
+     * useful when providing the named parameters as named arguments.
+     *
+     * @param params a map containing the named parameters
+     * @param sql    the SQL statement
+     * @return the number of rows updated or 0 for SQL statements that return nothing
+     * @throws SQLException if a database access error occurs
+     * @since 1.8.7
+     */
+    public int executeUpdate(Map params, String sql) throws SQLException {
+        return executeUpdate(sql, singletonList(params));
     }
 
     /**
