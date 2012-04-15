@@ -61,8 +61,7 @@ class SqlCompleteTest extends TestHelper {
         sql.eachRow("select * from PERSON") {
             results.put(it.firstname, it['lastname'])
         }
-        def expected = ["James": "Strachan", "Bob": "Mcwhirter", "Sam": "Pullara"]
-        assert results == expected
+        assert results == ["James": "Strachan", "Bob": "Mcwhirter", "Sam": "Pullara"]
         assert !personMetaClosureCalled
     }
 
@@ -71,8 +70,7 @@ class SqlCompleteTest extends TestHelper {
         sql.eachRow("select * from PERSON where firstname like :firstPat and lastname like ?.lastPat", [[firstPat: '%am%', lastPat: '%a%']]) {
             results.put(it.firstname, it['lastname'])
         }
-        def expected = ["James": "Strachan", "Sam": "Pullara"]
-        assert results == expected
+        assert results == ["James": "Strachan", "Sam": "Pullara"]
     }
 
     void testEachRowWithNamedParamsAsMap_Groovy5405() {
@@ -80,8 +78,7 @@ class SqlCompleteTest extends TestHelper {
         sql.eachRow("select * from PERSON where firstname like :firstPat and lastname like ?.lastPat", [firstPat: '%am%', lastPat: '%a%']) {
             results.put(it.firstname, it['lastname'])
         }
-        def expected = ["James": "Strachan", "Sam": "Pullara"]
-        assert results == expected
+        assert results == ["James": "Strachan", "Sam": "Pullara"]
     }
 
     void testEachRowWithNamedParametersAndOffset_Groovy5405() {
@@ -96,13 +93,39 @@ class SqlCompleteTest extends TestHelper {
         assert [rows[0][0], rows[0][1]] == ['drink', 'coffee']
     }
 
+    void testEachRowWithNamedParamsAsNamedArgs_Groovy5405() {
+        def results = [:]
+        sql.eachRow("select * from PERSON where firstname like :firstPat and lastname like ?.lastPat", firstPat: '%am%', lastPat: '%a%') {
+            results.put(it.firstname, it['lastname'])
+        }
+        assert results == ["James": "Strachan", "Sam": "Pullara"]
+    }
+
+    void testEachRowWithNamedParamsAsNamedArgsAndOffset_Groovy5405() {
+        sql.eachRow('select * from FOOD where type=:foo', foo: 'drink', 2, 1) { row ->
+            assert [row[0], row[1]] == ['drink', 'coffee']
+        }
+    }
+
+    void testRowsWithNamedParamsAsNamedArgs_Groovy5405() {
+        def rows = sql.rows('select * from FOOD where type=:foo', foo: 'drink')
+        assert rows.size() == 2
+        assert rows[0] == [TYPE: 'drink', NAME: 'beer']
+        assert rows[1] == [TYPE: 'drink', NAME: 'coffee']
+    }
+
+    void testRowsWithNamedParamsAsNamedArgsAndOffset_Groovy5405() {
+        def rows = sql.rows('select * from FOOD where type=:foo', foo: 'drink', 2, 1)
+        assert rows.size() == 1
+        assert [rows[0][0], rows[0][1]] == ['drink', 'coffee']
+    }
+
     void testEachRowWithParamsAndEmbeddedString() {
         def results = [:]
         sql.eachRow("select * from PERSON where firstname != ':dummy' and lastname = ?", ["Mcwhirter"]) {
             results.put(it.firstname, it['lastname'])
         }
-        def expected = ["Bob": "Mcwhirter"]
-        assert results == expected
+        assert results == ["Bob": "Mcwhirter"]
     }
 
     void testEachRowWithNamedOrdinalParams() {
@@ -112,8 +135,7 @@ class SqlCompleteTest extends TestHelper {
         sql.eachRow("select * from PERSON where firstname like ?1.firstPat and lastname like ?2.lastPat", [[firstPat:'%am%'], lastPatHolder]) {
             results.put(it.firstname, it['lastname'])
         }
-        def expected = ["James": "Strachan", "Sam": "Pullara"]
-        assert results == expected
+        assert results == ["James": "Strachan", "Sam": "Pullara"]
     }
 
     void testEachRowWithStringAndClosure() {
@@ -121,24 +143,21 @@ class SqlCompleteTest extends TestHelper {
         sql.eachRow("select * from PERSON", personMetaClosure) {
             results.put(it.firstname, it['lastname'])
         }
-        def expected = ["James": "Strachan", "Bob": "Mcwhirter", "Sam": "Pullara"]
-        assert results == expected
+        assert results == ["James": "Strachan", "Bob": "Mcwhirter", "Sam": "Pullara"]
         assert personMetaClosureCalled
     }
 
     void testEachRowWithStringAndList() {
         def results = []
         sql.eachRow("select * from FOOD where type=? and name != ?", ["cheese", "edam"]) { results.add(it.name) }
-        def expected = ["brie", "cheddar"]
-        assert results == expected
+        assert results == ["brie", "cheddar"]
         assert !foodMetaClosureCalled
     }
 
     void testEachRowWithStringAndListAndClosure() {
         def results = []
         sql.eachRow("select * from FOOD where type=? and name != ?", ["cheese", "edam"], foodMetaClosure) { results.add(it.name) }
-        def expected = ["brie", "cheddar"]
-        assert results == expected
+        assert results == ["brie", "cheddar"]
         assert foodMetaClosureCalled
     }
 
@@ -146,8 +165,7 @@ class SqlCompleteTest extends TestHelper {
         def foo = "drink"
         def results = []
         sql.eachRow("select * from FOOD where type=${foo}") { results.add(it.name) }
-        def expected = ["beer", "coffee"]
-        assert results == expected
+        assert results == ["beer", "coffee"]
         assert !foodMetaClosureCalled
     }
 
@@ -155,8 +173,7 @@ class SqlCompleteTest extends TestHelper {
         def foo = "drink"
         def results = []
         sql.eachRow("select * from FOOD where type=${foo}", foodMetaClosure) { results.add(it.name) }
-        def expected = ["beer", "coffee"]
-        assert results == expected
+        assert results == ["beer", "coffee"]
         assert foodMetaClosureCalled
     }
 
@@ -165,8 +182,7 @@ class SqlCompleteTest extends TestHelper {
         def bar = "edam"
         def results = []
         sql.eachRow("select * from FOOD where type=${foo} and name != ${bar}") { results.add(it.name) }
-        def expected = ["brie", "cheddar"]
-        assert results == expected
+        assert results == ["brie", "cheddar"]
     }
 
     void testRowsWithString() {
@@ -286,17 +302,15 @@ class SqlCompleteTest extends TestHelper {
         def results = []
         def people = sql.dataSet("PERSON")
         people.each { results.add(it.firstname) }
-        def expected = ["James", "Bob", "Sam"]
-        assert results == expected
+        assert results == ["James", "Bob", "Sam"]
     }
 
     void testDataSetWithNotEqual() {
-        def expected = ["James", "Sam"]
         def answer = []
         def people = sql.dataSet(Person)
         def list = people.findAll { it.firstname != 'Bob' }
         list.each{ answer << it.firstname }
-        assert answer == expected
+        assert answer == ["James", "Sam"]
     }
 
     void testDataSetWithFindAllPredicate() {
@@ -318,17 +332,15 @@ class SqlCompleteTest extends TestHelper {
              /* */
             results.add(it.name)
         }
-        def expected = ["GDO", "GPath", "GroovyMarkup"]
-        assert results == expected
+        assert results == ["GDO", "GPath", "GroovyMarkup"]
     }
 
     void testGStringToSqlConversion() {
         def foo = 'loincloth'
         def bar = 'wasteband'
-        def expected = "A narrow ? supported by a ?!!"
         def gstring = "A narrow ${foo} supported by a ${bar}!!"
         def result = sql.asSql(gstring, gstring.values.toList())
-        assert result == expected
+        assert result == "A narrow ? supported by a ?!!"
     }
 
     void testExecuteUpdate() {
@@ -354,17 +366,10 @@ class SqlCompleteTest extends TestHelper {
     void testDataSetWithRows() {
         def dataSet = new DataSet(sql, "FOOD")
         def rows = dataSet.rows()
-
-        //Expected names of the food items
-        def expected = ["edam", "brie", "cheddar", "beer", "coffee"]
-
-        //Checking to make sure I got one item back
         assert rows.size() == 5
         def results = []
         rows.each {results.add(it.name)}
-
-        //Checking to make sure the results retrieved match the expected results
-        assert results == expected
+        assert results == ["edam", "brie", "cheddar", "beer", "coffee"]
     }
 
     void testDataSetWithFirstRow() {
@@ -467,7 +472,7 @@ class SqlCompleteTest extends TestHelper {
 
         // First pass with user/password and no properties
         def args = [url: url, driver: driver, user: user, password: password]
-        def sql = Sql.newInstance(args)
+        Sql.newInstance(args)
         assert args == [url: url, driver: driver, user: user, password: password]
 
         // Second pass with properties
@@ -476,7 +481,7 @@ class SqlCompleteTest extends TestHelper {
         props.user = user
         props.password = password
         def args2 = [url: url2, driver: driver, properties: props]
-        def sql2 = Sql.newInstance(args2)
+        Sql.newInstance(args2)
         assert args2 == [url: url2, driver:  driver, properties: [user: user, password:  password]]
     }
 
