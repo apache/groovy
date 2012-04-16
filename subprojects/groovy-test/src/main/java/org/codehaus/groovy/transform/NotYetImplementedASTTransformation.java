@@ -41,7 +41,7 @@ import java.util.Arrays;
 public class NotYetImplementedASTTransformation extends AbstractASTTransformation {
 
     private static final ClassNode CATCHED_THROWABLE_TYPE = ClassHelper.make(Throwable.class);
-    private static final ClassNode ASSERTION_FAILED_ERROR_TYPE = ClassHelper.make(AssertionFailedError.class);
+    private static final ClassNode ASSERTION_FAILED_ERROR_TYPE = ClassHelper.make("junit.framework.AssertionFailedError");
 
     public void visit(ASTNode[] nodes, SourceUnit source) {
         if (nodes.length != 2 || !(nodes[0] instanceof AnnotationNode) || !(nodes[1] instanceof AnnotatedNode)) {
