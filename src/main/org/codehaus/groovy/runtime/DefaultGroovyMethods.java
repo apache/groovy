@@ -8024,9 +8024,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the last item from the List.
-     * <pre class="groovyTestCase">def list = [3, 4, 2]
+     * <pre class="groovyTestCase">
+     * def list = [3, 4, 2]
      * assert list.last() == 2
-     * assert list == [3, 4, 2]</pre>
+     * // check original is unaltered
+     * assert list == [3, 4, 2]
+     * </pre>
      *
      * @param self a List
      * @return the last item from the List
@@ -8041,12 +8044,43 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Returns the last item from the Object array.
-     * <pre class="groovyTestCase">def array = [3, 4, 2].toArray()
-     * assert array.last() == 2</pre>
+     * Returns the last item from the Iterable.
+     * <pre class="groovyTestCase">
+     * def set = [3, 4, 2] as LinkedHashSet
+     * assert set.last() == 2
+     * // check original unaltered
+     * assert set == [3, 4, 2] as Set
+     * </pre>
+     * The first element returned by the Iterable's iterator is returned.
+     * If the Iterable doesn't guarantee a defined order it may appear like
+     * a random element is returned.
      *
-     * @param self an ObjectArray
-     * @return the last item from the Object array
+     * @param self an Iterable
+     * @return the first item from the Iterable
+     * @throws NoSuchElementException if the Iterable is empty and you try to access the last() item.
+     * @since 1.8.7
+     */
+    public static <T> T last(Iterable<T> self) {
+        Iterator<T> iterator = self.iterator();
+        if (!iterator.hasNext()) {
+            throw new NoSuchElementException("Cannot access last() element from an empty Iterable");
+        }
+        T result = null;
+        while (iterator.hasNext()) {
+            result = iterator.next();
+        }
+        return result;
+    }
+
+    /**
+     * Returns the last item from the array.
+     * <pre class="groovyTestCase">
+     * def array = [3, 4, 2].toArray()
+     * assert array.last() == 2
+     * </pre>
+     *
+     * @param self an array
+     * @return the last item from the array
      * @throws NoSuchElementException if the array is empty and you try to access the last() item.
      * @since 1.7.3
      */
@@ -8059,9 +8093,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the first item from the List.
-     * <pre class="groovyTestCase">def list = [3, 4, 2]
+     * <pre class="groovyTestCase">
+     * def list = [3, 4, 2]
      * assert list.first() == 3
-     * assert list == [3, 4, 2]</pre>
+     * // check original is unaltered
+     * assert list == [3, 4, 2]
+     * </pre>
      *
      * @param self a List
      * @return the first item from the List
@@ -8076,18 +8113,45 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Returns the first item from the Object array.
-     * <pre class="groovyTestCase">def array = [3, 4, 2].toArray()
-     * assert array.first() == 3</pre>
+     * Returns the first item from the Iterable.
+     * <pre class="groovyTestCase">
+     * def set = [3, 4, 2] as LinkedHashSet
+     * assert set.first() == 3
+     * // check original is unaltered
+     * assert set == [3, 4, 2] as Set
+     * </pre>
+     * The first element returned by the Iterable's iterator is returned.
+     * If the Iterable doesn't guarantee a defined order it may appear like
+     * a random element is returned.
      *
-     * @param self an Object array
-     * @return the first item from the Object array
+     * @param self an Iterable
+     * @return the first item from the Iterable
+     * @throws NoSuchElementException if the Iterable is empty and you try to access the first() item.
+     * @since 1.8.7
+     */
+    public static <T> T first(Iterable<T> self) {
+        Iterator<T> iterator = self.iterator();
+        if (!iterator.hasNext()) {
+            throw new NoSuchElementException("Cannot access first() element from an empty Iterable");
+        }
+        return iterator.next();
+    }
+
+    /**
+     * Returns the first item from the array.
+     * <pre class="groovyTestCase">
+     * def array = [3, 4, 2].toArray()
+     * assert array.first() == 3
+     * </pre>
+     *
+     * @param self an array
+     * @return the first item from the array
      * @throws NoSuchElementException if the array is empty and you try to access the first() item.
      * @since 1.7.3
      */
     public static <T> T first(T[] self) {
         if (self.length == 0) {
-            throw new NoSuchElementException("Cannot access first() element from an empty List");
+            throw new NoSuchElementException("Cannot access first() element from an empty array");
         }
         return self[0];
     }
