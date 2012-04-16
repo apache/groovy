@@ -63,7 +63,6 @@ import java.util.Map;
  * @author Chris Stevenson
  * @author Paul King
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 public class DataSet extends Sql {
 
@@ -75,7 +74,7 @@ public class DataSet extends Sql {
     private SqlWhereVisitor visitor;
     private SqlOrderByVisitor sortVisitor;
     private String sql;
-    private List params;
+    private List<Object> params;
     private Sql delegate;
 
     public DataSet(Sql sql, Class type) {
@@ -156,10 +155,10 @@ public class DataSet extends Sql {
     }
 
     public void add(Map<String, Object> map) throws SQLException {
-        StringBuffer buffer = new StringBuffer("insert into ");
+        StringBuilder buffer = new StringBuilder("insert into ");
         buffer.append(table);
         buffer.append(" (");
-        StringBuffer paramBuffer = new StringBuffer();
+        StringBuilder paramBuffer = new StringBuilder();
         boolean first = true;
         for (String column : map.keySet()) {
             if (first) {
@@ -196,33 +195,26 @@ public class DataSet extends Sql {
         return new DataSet(this);
     }
 
+    /**
+     * Calls the provided closure for each of the rows of the table represented by this DataSet.
+     *
+     * @param closure called for each row with a GroovyResultSet
+     * @throws SQLException if a database access error occurs
+     * @see groovy.sql.Sql#eachRow(String, java.util.List, groovy.lang.Closure)
+     */
     public void each(Closure closure) throws SQLException {
         eachRow(getSql(), getParameters(), closure);
     }
 
     /**
-     * Performs the given SQL query calling the given <code>closure</code> with each row of the result set starting at 
-     * the provided <code>offset</code>, and including up to <code>maxRows</code> number of rows.
-     * The row will be a <code>GroovyResultSet</code> which is a <code>ResultSet</code>
-     * that supports accessing the fields using property style notation and ordinal index values.
-     * <p/>
-     * Note that the underlying implementation is based on either invoking <code>ResultSet.absolute()</code>, 
-     * or if the ResultSet type is <code>ResultSet.TYPE_FORWARD_ONLY</code>, the <code>ResultSet.next()</code> method
-     * is invoked equivalently.  The first row of a ResultSet is 1, so passing in an offset of 1 or less has no effect 
-     * on the initial positioning within the result set.
-     * 
-     * <p/>
-     * Note that different database and JDBC driver implementations may work differently with respect to this method.  
-     * Specifically, one should expect that <code>ResultSet.TYPE_FORWARD_ONLY</code> may be less efficient than a 
-     * "scrollable" type.
-     * 
-     * <p/>
-     * Resource handling is performed automatically where appropriate.
+     * Calls the provided closure for a "page" of rows from the table represented by this DataSet.
+     * A page is defined as starting at a 1-based offset, and containing a maximum number of rows.
      *
      * @param offset  the 1-based offset for the first row to be processed
      * @param maxRows the maximum number of rows to be processed
      * @param closure called for each row with a GroovyResultSet
      * @throws SQLException if a database access error occurs
+     * @see groovy.sql.Sql#eachRow(String, java.util.List, int, int, groovy.lang.Closure)
      */
     public void each(int offset, int maxRows, Closure closure) throws SQLException {
         eachRow(getSql(), getParameters(), offset, maxRows, closure);
@@ -274,9 +266,9 @@ public class DataSet extends Sql {
         return sql;
     }
 
-    public List getParameters() {
+    public List<Object> getParameters() {
         if (params == null) {
-            params = new ArrayList();
+            params = new ArrayList<Object>();
             if (parent != null) {
                 params.addAll(parent.getParameters());
             }
@@ -331,7 +323,7 @@ public class DataSet extends Sql {
 
     /**
      * Returns a List of all of the rows from the table a DataSet
-     * represents
+     * represents.
      *
      * @return Returns a list of GroovyRowResult objects from the dataset
      * @throws SQLException if a database error occurs
