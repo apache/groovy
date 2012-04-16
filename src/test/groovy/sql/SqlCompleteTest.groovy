@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2011 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -475,6 +475,7 @@ class SqlCompleteTest extends TestHelper {
         assert args == [url: url, driver: driver, user: user, password: password]
 
         // Second pass with properties
+        String url2 = getURI()
         def props = new Properties()
         props.user = user
         props.password = password
