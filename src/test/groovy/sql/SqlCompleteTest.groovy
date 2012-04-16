@@ -370,6 +370,30 @@ class SqlCompleteTest extends TestHelper {
         assert results == ["edam", "brie", "cheddar", "beer", "coffee"]
     }
 
+    void testDataSetWithPaging() {
+        def results = []
+        def people = sql.dataSet("PERSON")
+        people.each(2,1) { results.add(it.firstname) }
+        def expected = ["Bob"]
+        assert results == expected
+    }
+
+    void testDataSetPagingWithRows() {
+        def dataSet = new DataSet(sql, "FOOD")
+        def rows = dataSet.rows(2,2)
+
+        //Expected names of the food items
+        def expected = ["brie", "cheddar"]
+
+        //Checking to make sure I got two items back
+        assert rows.size() == 2
+        def results = []
+        rows.each {results.add(it.name)}
+
+        //Checking to make sure the results retrieved match the expected results
+        assert results == expected
+    }
+
     void testDataSetWithFirstRow() {
         def dataSet = new DataSet(sql, "FOOD")
         def result = dataSet.firstRow()
