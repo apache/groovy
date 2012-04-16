@@ -18,6 +18,7 @@ package groovy.util;
 import groovy.lang.Closure;
 import groovy.lang.GroovyRuntimeException;
 import groovy.lang.GroovyShell;
+import groovy.test.GroovyAssert;
 import junit.framework.TestCase;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
@@ -211,58 +212,30 @@ public class GroovyTestCase extends TestCase {
     }
 
     /**
-     * Asserts that the given code closure fails when it is evaluated
+     * Asserts that the given code closure fails when it is evaluated.
      *
-     * @param code
+     * @param code  the closure that should fail
      * @return the message of the thrown Throwable
      */
     protected String shouldFail(Closure code) {
-        boolean failed = false;
-        String result = null;
-        try {
-            code.call();
-        }
-        catch (GroovyRuntimeException gre) {
-            failed = true;
-            result = ScriptBytecodeAdapter.unwrap(gre).getMessage();
-        }
-        catch (Throwable e) {
-            failed = true;
-            result = e.getMessage();
-        }
-        assertTrue("Closure " + code + " should have failed", failed);
-        return result;
+        return GroovyAssert.shouldFail(code).getMessage();
     }
 
     /**
      * Asserts that the given code closure fails when it is evaluated
-     * and that a particular exception is thrown.
+     * and that a particular exception type is thrown.
      *
      * @param clazz the class of the expected exception
      * @param code  the closure that should fail
      * @return the message of the expected Throwable
      */
     protected String shouldFail(Class clazz, Closure code) {
-        Throwable th = null;
-        try {
-            code.call();
-        } catch (GroovyRuntimeException gre) {
-            th = ScriptBytecodeAdapter.unwrap(gre);
-        } catch (Throwable e) {
-            th = e;
-        }
-
-        if (th == null) {
-            fail("Closure " + code + " should have failed with an exception of type " + clazz.getName());
-        } else if (!clazz.isInstance(th)) {
-            fail("Closure " + code + " should have failed with an exception of type " + clazz.getName() + ", instead got Exception " + th);
-        }
-        return th.getMessage();
+        return GroovyAssert.shouldFail(clazz, code).getMessage();
     }
 
     /**
      * Asserts that the given code closure fails when it is evaluated
-     * and that a particular exception can be attributed to the cause.
+     * and that a particular exception type can be attributed to the cause.
      * The expected exception class is compared recursively with any nested
      * exceptions using getCause() until either a match is found or no more
      * nested exceptions exist.
@@ -275,52 +248,7 @@ public class GroovyTestCase extends TestCase {
      * @return the message of the expected Throwable
      */
     protected String shouldFailWithCause(Class clazz, Closure code) {
-        Throwable th = null;
-        Throwable orig = null;
-        int level = 0;
-        try {
-            code.call();
-        } catch (GroovyRuntimeException gre) {
-            orig = ScriptBytecodeAdapter.unwrap(gre);
-            th = orig.getCause();
-        } catch (Throwable e) {
-            orig = e;
-            th = orig.getCause();
-        }
-
-        while (th != null && !clazz.isInstance(th) && th != th.getCause() && level < MAX_NESTED_EXCEPTIONS) {
-            th = th.getCause();
-            level++;
-        }
-
-        if (orig == null) {
-            fail("Closure " + code + " should have failed with an exception caused by type " + clazz.getName());
-        } else if (th == null || !clazz.isInstance(th)) {
-            fail("Closure " + code + " should have failed with an exception caused by type " + clazz.getName() + ", instead found these Exceptions:\n" + buildExceptionList(orig));
-        }
-        return th.getMessage();
-    }
-
-    private String buildExceptionList(Throwable th) {
-        StringBuilder sb = new StringBuilder();
-        int level = 0;
-        while (th != null) {
-            if (level > 1) {
-                for (int i = 0; i < level - 1; i++) sb.append("   ");
-            }
-            if (level > 0) sb.append("-> ");
-            if (level > MAX_NESTED_EXCEPTIONS) {
-                sb.append("...");
-                break;
-            }
-            sb.append(th.getClass().getName()).append(": ").append(th.getMessage()).append("\n");
-            if (th == th.getCause()) {
-                break;
-            }
-            th = th.getCause();
-            level++;
-        }
-        return sb.toString();
+        return GroovyAssert.shouldFailWithCause(clazz, code).getMessage();
     }
 
     /**

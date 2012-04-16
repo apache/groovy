@@ -28,8 +28,8 @@ public class GroovyAssert {
     /**
      * Asserts that the given code closure fails when it is evaluated
      *
-     * @param code the code expected to throw the exception
-     * @return the message of the thrown Throwable
+     * @param code the code expected to fail
+     * @return the caught exception
      */
     public static Throwable shouldFail(Closure code) {
         boolean failed = false;
@@ -49,11 +49,11 @@ public class GroovyAssert {
 
     /**
      * Asserts that the given code closure fails when it is evaluated
-     * and that a particular exception is thrown.
+     * and that a particular type of exception is thrown.
      *
      * @param clazz the class of the expected exception
      * @param code  the closure that should fail
-     * @return the message of the expected Throwable
+     * @return the caught exception
      */
     public static Throwable shouldFail(Class clazz, Closure code) {
         Throwable th = null;
@@ -75,43 +75,51 @@ public class GroovyAssert {
 
     /**
      * Asserts that the given code closure fails when it is evaluated
-     * and that a particular exception can be attributed to the cause.
+     * and that a particular Exception type can be attributed to the cause.
      * The expected exception class is compared recursively with any nested
      * exceptions using getCause() until either a match is found or no more
      * nested exceptions exist.
      * <p/>
-     * If a match is found the error message associated with the matching
-     * exception is returned. If no match was found the method will fail.
+     * If a match is found, the matching exception is returned
+     * otherwise the method will fail.
      *
-     * @param clazz the class of the expected exception
-     * @param code  the closure that should fail
-     * @return the message of the expected Throwable
+     * @param expectedCause the class of the expected exception
+     * @param code          the closure that should fail
+     * @return the cause
      */
-    public static Throwable shouldFailWithCause(Class clazz, Closure code) {
-        Throwable th = null;
+    public static Throwable shouldFailWithCause(Class expectedCause, Closure code) {
+        if (expectedCause == null) {
+            fail("The expectedCause class cannot be null");
+        }
+        Throwable cause = null;
         Throwable orig = null;
         int level = 0;
         try {
             code.call();
         } catch (GroovyRuntimeException gre) {
             orig = ScriptBytecodeAdapter.unwrap(gre);
-            th = orig.getCause();
+            cause = orig.getCause();
         } catch (Throwable e) {
             orig = e;
-            th = orig.getCause();
+            cause = orig.getCause();
         }
 
-        while (th != null && !clazz.isInstance(th) && th != th.getCause() && level < MAX_NESTED_EXCEPTIONS) {
-            th = th.getCause();
+        if (orig != null && cause == null) {
+            fail("Closure " + code + " was expected to fail due to a nested cause of type " + expectedCause.getName() +
+            " but instead got a direct exception of type " + orig.getClass().getName() + " with no nested cause(s). Code under test has a bug or perhaps you meant shouldFail?");
+        }
+
+        while (cause != null && !expectedCause.isInstance(cause) && cause != cause.getCause() && level < MAX_NESTED_EXCEPTIONS) {
+            cause = cause.getCause();
             level++;
         }
 
         if (orig == null) {
-            fail("Closure " + code + " should have failed with an exception caused by type " + clazz.getName());
-        } else if (th == null || !clazz.isInstance(th)) {
-            fail("Closure " + code + " should have failed with an exception caused by type " + clazz.getName() + ", instead found these Exceptions:\n" + buildExceptionList(orig));
+            fail("Closure " + code + " should have failed with an exception having a nested cause of type " + expectedCause.getName());
+        } else if (cause == null || !expectedCause.isInstance(cause)) {
+            fail("Closure " + code + " should have failed with an exception having a nested cause of type " + expectedCause.getName() + ", instead found these Exceptions:\n" + buildExceptionList(orig));
         }
-        return th;
+        return cause;
     }
 
     private static String buildExceptionList(Throwable th) {
