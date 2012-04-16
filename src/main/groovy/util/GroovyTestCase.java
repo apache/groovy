@@ -218,7 +218,20 @@ public class GroovyTestCase extends TestCase {
      * @return the message of the thrown Throwable
      */
     protected String shouldFail(Closure code) {
-        return GroovyAssert.shouldFail(code).getMessage();
+        // TODO call equivalent GroovyAssert method instead of duplicating code
+        boolean failed = false;
+        Throwable th = null;
+        try {
+            code.call();
+        } catch (GroovyRuntimeException gre) {
+            failed = true;
+            th = ScriptBytecodeAdapter.unwrap(gre);
+        } catch (Throwable e) {
+            failed = true;
+            th = e;
+        }
+        assertTrue("Closure " + code + " should have failed", failed);
+        return th.getMessage();
     }
 
     /**
@@ -230,7 +243,22 @@ public class GroovyTestCase extends TestCase {
      * @return the message of the expected Throwable
      */
     protected String shouldFail(Class clazz, Closure code) {
-        return GroovyAssert.shouldFail(clazz, code).getMessage();
+        // TODO call equivalent GroovyAssert method instead of duplicating code
+        Throwable th = null;
+        try {
+            code.call();
+        } catch (GroovyRuntimeException gre) {
+            th = ScriptBytecodeAdapter.unwrap(gre);
+        } catch (Throwable e) {
+            th = e;
+        }
+
+        if (th == null) {
+            fail("Closure " + code + " should have failed with an exception of type " + clazz.getName());
+        } else if (!clazz.isInstance(th)) {
+            fail("Closure " + code + " should have failed with an exception of type " + clazz.getName() + ", instead got Exception " + th);
+        }
+        return th.getMessage();
     }
 
     /**
@@ -248,7 +276,62 @@ public class GroovyTestCase extends TestCase {
      * @return the message of the expected Throwable
      */
     protected String shouldFailWithCause(Class clazz, Closure code) {
-        return GroovyAssert.shouldFailWithCause(clazz, code).getMessage();
+        // TODO call equivalent GroovyAssert method instead of duplicating code
+        if (clazz == null) {
+            fail("The expectedCause class cannot be null");
+        }
+        Throwable cause = null;
+        Throwable orig = null;
+        int level = 0;
+        try {
+            code.call();
+        } catch (GroovyRuntimeException gre) {
+            orig = ScriptBytecodeAdapter.unwrap(gre);
+            cause = orig.getCause();
+        } catch (Throwable e) {
+            orig = e;
+            cause = orig.getCause();
+        }
+
+        if (orig != null && cause == null) {
+            fail("Closure " + code + " was expected to fail due to a nested cause of type " + clazz.getName() +
+            " but instead got a direct exception of type " + orig.getClass().getName() + " with no nested cause(s). Code under test has a bug or perhaps you meant shouldFail?");
+        }
+
+        while (cause != null && !clazz.isInstance(cause) && cause != cause.getCause() && level < MAX_NESTED_EXCEPTIONS) {
+            cause = cause.getCause();
+            level++;
+        }
+
+        if (orig == null) {
+            fail("Closure " + code + " should have failed with an exception having a nested cause of type " + clazz.getName());
+        } else if (cause == null || !clazz.isInstance(cause)) {
+            fail("Closure " + code + " should have failed with an exception having a nested cause of type " + clazz.getName() + ", instead found these Exceptions:\n" + buildExceptionList(orig));
+        }
+        return cause.getMessage();
+    }
+
+    // TODO delete once using GroovyAssert methods above
+    private static String buildExceptionList(Throwable th) {
+        StringBuilder sb = new StringBuilder();
+        int level = 0;
+        while (th != null) {
+            if (level > 1) {
+                for (int i = 0; i < level - 1; i++) sb.append("   ");
+            }
+            if (level > 0) sb.append("-> ");
+            if (level > MAX_NESTED_EXCEPTIONS) {
+                sb.append("...");
+                break;
+            }
+            sb.append(th.getClass().getName()).append(": ").append(th.getMessage()).append("\n");
+            if (th == th.getCause()) {
+                break;
+            }
+            th = th.getCause();
+            level++;
+        }
+        return sb.toString();
     }
 
     /**
