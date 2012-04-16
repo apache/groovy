@@ -28,8 +28,9 @@ $Date: 2007-03-11 19:14:07 +1000 (Sun, 11 Mar 2007) $
     <!-- TODO temp hack - remove once modules are in place -->
     <property name="jmxSourceDirectory" location="subprojects/groovy-jmx/src"/>
     <property name="bsfSourceDirectory" location="subprojects/groovy-bsf/src"/>
-    <property name="mainSourcePath" value="${sourceDirectory}/main:${jmxSourceDirectory}/main/java:${jmxSourceDirectory}/main/groovy:${bsfSourceDirectory}/main/java"/>
-    <property name="testSourcePath" value="${sourceDirectory}/test:${jmxSourceDirectory}/test/java:${jmxSourceDirectory}/test/groovy:${bsfSourceDirectory}/test/java"/>
+    <property name="groovyTestSourceDirectory" location="subprojects/groovy-test/src"/>
+    <property name="mainSourcePath" value="${sourceDirectory}/main:${jmxSourceDirectory}/main/java:${jmxSourceDirectory}/main/groovy:${bsfSourceDirectory}/main/java:${groovyTestSourceDirectory}/main/java"/>
+    <property name="testSourcePath" value="${sourceDirectory}/test:${jmxSourceDirectory}/test/java:${jmxSourceDirectory}/test/groovy:${bsfSourceDirectory}/test/java:${groovyTestSourceDirectory}/test/groovy"/>
     <property name="toolsSourceDirectory" location="${sourceDirectory}/tools"/>
     <property name="examplesSourceDirectory" location="${sourceDirectory}/examples"/>
     
