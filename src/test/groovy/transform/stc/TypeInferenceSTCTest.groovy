@@ -441,9 +441,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
             }
         '''
         inft = method.code.statements[0].expression.leftExpression.getNodeMetaData(StaticTypesMarker.DECLARATION_INFERRED_TYPE)
-        assert inft instanceof WideningCategories.LowestUpperBoundClassNode
-        assert inft.superClass == ClassHelper.Number_TYPE
-        assert inft.interfaces == [ClassHelper.make(Comparable)]
+        assert inft  == ClassHelper.long_TYPE
 
         assertScript '''
             void method() {
@@ -507,6 +505,18 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         assertScript '''
             String str = new Object() // type checker will not complain, anything assignable to a String
             str.toUpperCase() // should not complain
+        '''
+    }
+
+    void testDefTypeAfterLongThenIntAssignments() {
+        assertScript '''
+            def o
+            o = 1L
+            o = 2
+            @ASTTest(phase=INSTRUCTION_SELECTION, value= {
+                assert node.rightExpression.accessedVariable.getNodeMetaData(DECLARATION_INFERRED_TYPE) == long_TYPE
+            })
+            def z = o
         '''
     }
 }

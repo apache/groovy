@@ -454,11 +454,19 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
 
         pushState();
 
-        currentClass = node;
-        currentScope.setClassScope(node);
+        prepareVisit(node);
 
         super.visitClass(node);
         popState();
+    }
+
+    /**
+     * Setup the current class node context.
+     * @param node
+     */
+    public void prepareVisit(ClassNode node) {
+        currentClass = node;
+        currentScope.setClassScope(node);
     }
 
     protected void visitConstructorOrMethod(MethodNode node, boolean isConstructor) {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2008 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -209,7 +209,7 @@ public class XmlParser implements ContentHandler {
     }
 
     /**
-     * Determine if namspace handling is enabled.
+     * Determine if namespace handling is enabled.
      *
      * @return true if namespace handling is enabled
      */
@@ -218,7 +218,7 @@ public class XmlParser implements ContentHandler {
     }
 
     /**
-     * Enable and/or disable namspace handling.
+     * Enable and/or disable namespace handling.
      *
      * @param namespaceAware the new desired value
      */
@@ -348,6 +348,8 @@ public class XmlParser implements ContentHandler {
     }
 
     public void ignorableWhitespace(char buffer[], int start, int len) throws SAXException {
+// TODO GROOVY-5360: do we want to capture all whitespace when trim is off? or do we need additional flags?
+//        if (!trimWhitespace) characters(buffer, start, len);
     }
 
     public void processingInstruction(String target, String data) throws SAXException {
@@ -373,6 +375,8 @@ public class XmlParser implements ContentHandler {
 
     protected void addTextToNode() {
         String text = bodyText.toString();
+//        if (!trimWhitespace || text.trim().length() > 0) {
+// TODO GROOVY-5360: replace next 4 lines with above commented out line (trimming more similar to XmlSlurper)
         if (trimWhitespace) {
             text = text.trim();
         }

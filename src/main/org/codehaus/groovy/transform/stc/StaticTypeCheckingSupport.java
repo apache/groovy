@@ -315,6 +315,33 @@ public abstract class StaticTypeCheckingSupport {
         }
         if (isPrimitiveType(toBeAssignedTo)) toBeAssignedTo = getWrapper(toBeAssignedTo);
         if (isPrimitiveType(type)) type = getWrapper(type);
+        if (ClassHelper.Double_TYPE==toBeAssignedTo) {
+            return type.isDerivedFrom(Number_TYPE);
+        }
+        if (ClassHelper.Float_TYPE==toBeAssignedTo) {
+            return type.isDerivedFrom(Number_TYPE) && ClassHelper.Double_TYPE!=type;
+        }
+        if (ClassHelper.Long_TYPE==toBeAssignedTo) {
+            return type.isDerivedFrom(Number_TYPE)
+                    && ClassHelper.Double_TYPE!=type
+                    && ClassHelper.Float_TYPE!=type;
+        }
+        if (ClassHelper.Integer_TYPE==toBeAssignedTo) {
+            return type.isDerivedFrom(Number_TYPE)
+                    && ClassHelper.Double_TYPE!=type
+                    && ClassHelper.Float_TYPE!=type
+                    && ClassHelper.Long_TYPE!=type;
+        }
+        if (ClassHelper.Short_TYPE==toBeAssignedTo) {
+            return type.isDerivedFrom(Number_TYPE)
+                    && ClassHelper.Double_TYPE!=type
+                    && ClassHelper.Float_TYPE!=type
+                    && ClassHelper.Long_TYPE!=type
+                    && ClassHelper.Integer_TYPE!=type;
+        }
+        if (ClassHelper.Byte_TYPE==toBeAssignedTo) {
+            return type == ClassHelper.Byte_TYPE;
+        }
         if (type.isArray() && toBeAssignedTo.isArray()) {
             return type.getComponentType().equals(toBeAssignedTo.getComponentType());
         }
@@ -689,6 +716,13 @@ public abstract class StaticTypeCheckingSupport {
 
     static int getDistance(final ClassNode receiver, final ClassNode compare) {
         int dist = 0;
+        ClassNode unwrapReceiver = ClassHelper.getUnwrapper(receiver);
+        ClassNode unwrapCompare = ClassHelper.getUnwrapper(compare);
+        if (ClassHelper.isPrimitiveType(unwrapReceiver)
+                && ClassHelper.isPrimitiveType(unwrapCompare)
+                && unwrapReceiver!=unwrapCompare) {
+            dist = 1;
+        }
         ClassNode ref = compare;
         while (ref!=null) {
             if (receiver.equals(ref) || receiver == UNKNOWN_PARAMETER_TYPE) {

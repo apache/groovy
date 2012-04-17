@@ -59,6 +59,8 @@ public class ConstantExpression extends Expression {
                     setType(ClassHelper.boolean_TYPE);
                 } else if (value instanceof Double) {
                     setType(ClassHelper.double_TYPE);
+                } else if (value instanceof Float) {
+                    setType(ClassHelper.float_TYPE);
                 } else {
                     setType(ClassHelper.make(value.getClass()));
                 }

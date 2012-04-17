@@ -507,6 +507,33 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    void testShouldBeAbleToCallMethodUsingDoubleWithDoubleFloatLongIntShortOrByte() {
+        assertScript '''
+            double square(double x) { x*x }
+            assert square(2.0d) == 4.0d
+            assert square(2.0f) == 4.0d
+            assert square(2L) == 4.0d
+            assert square(2) == 4.0d
+            assert square((short)2) == 4.0d
+            assert square((byte)2) == 4.0d
+        '''
+    }
+
+    void testShouldNotBeAbleToCallMethodUsingFloatWithDouble() {
+        shouldFailWithMessages '''
+            float square(float x) { x*x }
+            assert square(2.0d) == 4.0d
+        ''', '#square(double)'
+    }
+
+    void testShouldNotBeAbleToCallMethodUsingLongWithFloatOrDouble() {
+        shouldFailWithMessages '''
+            float square(long x) { x*x }
+            assert square(2.0d) == 4.0d
+            assert square(2.0f) == 4.0d
+        ''', '#square(double)', '#square(float)'
+    }
+
     static class MyMethodCallTestClass {
 
         static int mul(int... args) { args.toList().inject(1) { x,y -> x*y } }

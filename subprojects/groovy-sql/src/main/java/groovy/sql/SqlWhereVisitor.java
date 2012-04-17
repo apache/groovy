@@ -37,7 +37,7 @@ import org.codehaus.groovy.syntax.Types;
 public class SqlWhereVisitor extends CodeVisitorSupport {
 
     private final StringBuffer buffer = new StringBuffer();
-    private final List parameters = new ArrayList();
+    private final List<Object> parameters = new ArrayList<Object>();
 
     public String getWhere() {
         return buffer.toString();
@@ -82,7 +82,7 @@ public class SqlWhereVisitor extends CodeVisitorSupport {
         throw new GroovyRuntimeException("DataSet currently doesn't support arbitrary variables, only literals: found attempted reference to variable '" + expression.getName() + "'");
     }
 
-    public List getParameters() {
+    public List<Object> getParameters() {
         return parameters;
     }
 

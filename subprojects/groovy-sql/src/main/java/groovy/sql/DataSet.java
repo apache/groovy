@@ -63,7 +63,6 @@ import java.util.Map;
  * @author Chris Stevenson
  * @author Paul King
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 public class DataSet extends Sql {
 
@@ -75,7 +74,7 @@ public class DataSet extends Sql {
     private SqlWhereVisitor visitor;
     private SqlOrderByVisitor sortVisitor;
     private String sql;
-    private List params;
+    private List<Object> params;
     private Sql delegate;
 
     public DataSet(Sql sql, Class type) {
@@ -156,10 +155,10 @@ public class DataSet extends Sql {
     }
 
     public void add(Map<String, Object> map) throws SQLException {
-        StringBuffer buffer = new StringBuffer("insert into ");
+        StringBuilder buffer = new StringBuilder("insert into ");
         buffer.append(table);
         buffer.append(" (");
-        StringBuffer paramBuffer = new StringBuffer();
+        StringBuilder paramBuffer = new StringBuilder();
         boolean first = true;
         for (String column : map.keySet()) {
             if (first) {
@@ -196,8 +195,29 @@ public class DataSet extends Sql {
         return new DataSet(this);
     }
 
+    /**
+     * Calls the provided closure for each of the rows of the table represented by this DataSet.
+     *
+     * @param closure called for each row with a GroovyResultSet
+     * @throws SQLException if a database access error occurs
+     * @see groovy.sql.Sql#eachRow(String, java.util.List, groovy.lang.Closure)
+     */
     public void each(Closure closure) throws SQLException {
         eachRow(getSql(), getParameters(), closure);
+    }
+
+    /**
+     * Calls the provided closure for a "page" of rows from the table represented by this DataSet.
+     * A page is defined as starting at a 1-based offset, and containing a maximum number of rows.
+     *
+     * @param offset  the 1-based offset for the first row to be processed
+     * @param maxRows the maximum number of rows to be processed
+     * @param closure called for each row with a GroovyResultSet
+     * @throws SQLException if a database access error occurs
+     * @see groovy.sql.Sql#eachRow(String, java.util.List, int, int, groovy.lang.Closure)
+     */
+    public void each(int offset, int maxRows, Closure closure) throws SQLException {
+        eachRow(getSql(), getParameters(), offset, maxRows, closure);
     }
 
     private String getSqlWhere() {
@@ -246,9 +266,9 @@ public class DataSet extends Sql {
         return sql;
     }
 
-    public List getParameters() {
+    public List<Object> getParameters() {
         if (params == null) {
-            params = new ArrayList();
+            params = new ArrayList<Object>();
             if (parent != null) {
                 params.addAll(parent.getParameters());
             }
@@ -303,13 +323,27 @@ public class DataSet extends Sql {
 
     /**
      * Returns a List of all of the rows from the table a DataSet
-     * represents
+     * represents.
      *
      * @return Returns a list of GroovyRowResult objects from the dataset
      * @throws SQLException if a database error occurs
      */
     public List rows() throws SQLException {
         return rows(getSql(), getParameters());
+    }
+
+    /**
+     * Returns a "page" of the rows from the table a DataSet represents. A page
+     * is defined as starting at a 1-based offset, and containing a maximum number
+     * of rows.
+     *
+     * @param offset the 1-based offset for the first row to be processed
+     * @param maxRows the maximum number of rows to be processed
+     * @return a list of GroovyRowResult objects from the dataset
+     * @throws SQLException if a database error occurs
+     */
+    public List rows(int offset, int maxRows) throws SQLException {
+        return rows(getSql(), getParameters(), offset, maxRows);
     }
 
     /**

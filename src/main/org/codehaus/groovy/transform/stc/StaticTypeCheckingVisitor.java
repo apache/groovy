@@ -32,6 +32,7 @@ import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.ErrorCollector;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
+import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.EncodingGroovyMethods;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.syntax.SyntaxException;
@@ -61,6 +62,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     private static final ClassNode TYPECHECKED_CLASSNODE = ClassHelper.make(TypeChecked.class);
     private static final ClassNode[] TYPECHECKING_ANNOTATIONS = new ClassNode[]{TYPECHECKED_CLASSNODE};
     private static final ClassNode TYPECHECKING_INFO_NODE = ClassHelper.make(TypeChecked.TypeCheckingInfo.class);
+    private static final ClassNode DGM_CLASSNODE = ClassHelper.make(DefaultGroovyMethods.class);
     private static final int CURRENT_SIGNATURE_PROTOCOL_VERSION = 1;
     private static final Expression CURRENT_SIGNATURE_PROTOCOL = new ConstantExpression(CURRENT_SIGNATURE_PROTOCOL_VERSION, true);
 
@@ -831,8 +833,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             // for (int i=0; i<...; i++) style loop
             super.visitForLoop(forLoop);
         } else {
+            collectionExpression.visit(this);
             final ClassNode collectionType = getType(collectionExpression);
             ClassNode componentType = inferLoopElementType(collectionType);
+            if (ClassHelper.getUnwrapper(componentType) == forLoop.getVariableType()) {
+                // prefer primitive type over boxed type
+                componentType = forLoop.getVariableType();
+            }
             forLoopVariableTypes.put(forLoop.getVariable(), componentType);
             if (!checkCompatibleAssignmentTypes(forLoop.getVariableType(), componentType)) {
                 addStaticTypeError("Cannot loop with element of type " + forLoop.getVariableType() + " with collection of type " + collectionType, forLoop);
@@ -1287,7 +1294,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     storeTargetMethod(call, directMethodCallCandidate);
 
                 } else {
-                    addStaticTypeError("Reference to method is ambiguous. Cannot choose between " + mn, call);
+                    addAmbiguousOrDynamicErrorMessage(mn, name, args, call);
                 }
             }
         } finally {
@@ -1525,7 +1532,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         }
 
                     } else {
-                        addStaticTypeError("Reference to method is ambiguous. Cannot choose between " + mn, call);
+                        addAmbiguousOrDynamicErrorMessage(mn, name, args, call);
                     }
                 }
             }
@@ -1811,14 +1818,22 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         // Divisions may produce different results depending on operand types
         if (DIVIDE == op || DIVIDE_EQUAL == op) {
             if (isFloatingCategory(leftRedirect) || isFloatingCategory(rightRedirect)) {
-                return Double_TYPE;
-            } else if (BigDecimal_TYPE.equals(leftRedirect) || BigDecimal_TYPE.equals(rightRedirect)) {
+                if (!isPrimitiveType(leftRedirect) || !isPrimitiveType(rightRedirect)) {
+                    return Double_TYPE;
+                }
+                return double_TYPE;
+            }
+            if (DIVIDE == op) {
                 return BigDecimal_TYPE;
             }
+            return leftRedirect;
         } else if (isOperationInGroup(op)) {
             if (isNumberCategory(getWrapper(leftRedirect)) && isNumberCategory(getWrapper(rightRedirect))) {
                 return getGroupOperationResultType(leftRedirect, rightRedirect);
             }
+        }
+        if (MOD == op || MOD_EQUAL==op) {
+            return leftRedirect;
         }
 
         MethodNode method = findMethodOrFail(expr, left, operationName, right);
@@ -1890,9 +1905,26 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         } else if (methods.size() == 1) {
             return methods.get(0);
         } else {
-            addStaticTypeError("Reference to method is ambiguous. Cannot choose between " + methods, expr);
+            addAmbiguousOrDynamicErrorMessage(methods, name, args, expr);
         }
         return null;
+    }
+
+    private void addAmbiguousOrDynamicErrorMessage(final List<MethodNode> foundMethods, final String name, final ClassNode[] args, final Expression expr) {
+        boolean category = false;
+        if ("use".equals(name) && args!=null && args.length==2 && args[1].equals(ClassHelper.CLOSURE_TYPE)) {
+            category = true;
+            for (MethodNode method : foundMethods) {
+                if (!(method instanceof ExtensionMethodNode) || !((ExtensionMethodNode)method).getExtensionMethodNode().getDeclaringClass().equals(DGM_CLASSNODE)) {
+                    category = false;
+                }
+            }
+        }
+        if (category) {
+            addStaticTypeError("Due to their dynamic nature, usage of categories is not possible with static type checking active", expr);
+        } else {
+            addStaticTypeError("Reference to method is ambiguous. Cannot choose between " + foundMethods, expr);
+        }
     }
 
     private List<MethodNode> findMethod(
@@ -1926,7 +1958,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 }
                 if (pname != null) {
                     // we don't use property exists there because findMethod is called on super clases recursively
-                    PropertyNode property = receiver.getProperty(pname);
+                    PropertyNode property = null;
+                    ClassNode curNode = receiver;
+                    while (property==null && curNode!=null) {
+                        property = curNode.getProperty(pname);
+                        curNode = curNode.getSuperClass();
+                    }
                     if (property != null) {
                         MethodNode node = new MethodNode(name, Opcodes.ACC_PUBLIC, property.getType(), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, EmptyStatement.INSTANCE);
                         node.setDeclaringClass(receiver);
@@ -1939,7 +1976,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 // maybe we are looking for a setter ?
                 if (name.startsWith("set")) {
                     String pname = java.beans.Introspector.decapitalize(name.substring(3));
-                    PropertyNode property = receiver.getProperty(pname);
+                    ClassNode curNode = receiver;
+                    PropertyNode property = null;
+                    while (property==null && curNode!=null) {
+                        property = curNode.getProperty(pname);
+                        curNode = curNode.getSuperClass();
+                    }
                     if (property != null) {
                         ClassNode type = property.getOriginType();
                         if (implementsInterfaceOrIsSubclassOf(args[0], type)) {
@@ -1948,6 +1990,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                             }, ClassNode.EMPTY_ARRAY, EmptyStatement.INSTANCE);
                             node.setDeclaringClass(receiver);
                             return Collections.singletonList(node);
+                        } else {
+                            System.out.println();
                         }
                     }
                 }

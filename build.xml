@@ -763,9 +763,12 @@ $Date$
     </target>
 
     <target name="-compileTools" depends="-initGroovyc,compileMain">
+        <path id="docGeneratorPath">
+            <fileset dir="${toolsLibDirectory}" excludes="asm*.jar"/>
+        </path>
         <groovyc srcdir="${toolsSourceDirectory}" destdir="${toolsClassesDirectory}" fork="true">
             <classpath>
-                <path refid="toolsPath"/>
+                <path refid="docGeneratorPath"/>
                 <pathelement path="${mainClassesDirectory}"/>
                 <path refid="compilePath"/>
             </classpath>
@@ -870,10 +873,14 @@ $Date$
     </target>
 
     <target name="docGDK" depends="-fetchDependencies,-compileTools" description="Create the GDK documentation">
+        <path id="docGeneratorPath">
+            <fileset dir="${toolsLibDirectory}" excludes="asm*.jar"/>
+            <fileset dir="${compileLibDirectory}" includes="asm*.jar"/>
+        </path>
         <java classname="org.codehaus.groovy.tools.DocGenerator" fork="yes" failonerror="true">
             <classpath>
                 <pathelement path="${toolsClassesDirectory}"/>
-                <path refid="toolsPath"/>
+                <path refid="docGeneratorPath"/>
                 <pathelement path="${mainClassesDirectory}"/>
             </classpath>
             <arg value="org.codehaus.groovy.runtime.DefaultGroovyMethods"/>

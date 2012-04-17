@@ -18,6 +18,8 @@ package org.codehaus.groovy.ast;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.util.ListHashMap;
 
+import java.util.Set;
+
 /**
  * Base class for any AST node. This class supports basic information used in all
  * nodes of the AST<ul>
@@ -139,7 +141,6 @@ public class ASTNode {
      * Sets the node meta data but allows overwriting values.
      *
      * @param key   - the meta data key
-     * @param key - the meta data key
      * @param value - the meta data value
      * @return the old node meta data value for this key
      * @throws GroovyBugError if key is null

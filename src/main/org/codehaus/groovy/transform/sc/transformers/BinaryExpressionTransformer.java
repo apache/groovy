@@ -15,12 +15,16 @@
  */
 package org.codehaus.groovy.transform.sc.transformers;
 
+import org.codehaus.groovy.ast.ClassHelper;
+import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.expr.*;
+import org.codehaus.groovy.classgen.asm.sc.StaticTypesTypeChooser;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.Types;
 import org.codehaus.groovy.transform.sc.ListOfExpressionsExpression;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport;
+import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 
 import java.util.Iterator;
 import java.util.List;
@@ -28,6 +32,18 @@ import java.util.List;
 import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.*;
 
 public class BinaryExpressionTransformer {
+    private final static MethodNode COMPARE_TO_METHOD = ClassHelper.COMPARABLE_TYPE.getMethods("compareTo").get(0);
+
+    private static final ConstantExpression CONSTANT_ZERO = new ConstantExpression(0, true);
+    private static final ConstantExpression CONSTANT_MINUS_ONE = new ConstantExpression(-1, true);
+    private static final ConstantExpression CONSTANT_ONE = new ConstantExpression(1, true);
+
+    static {
+        CONSTANT_ZERO.setType(ClassHelper.int_TYPE);
+        CONSTANT_ONE.setType(ClassHelper.int_TYPE);
+        CONSTANT_MINUS_ONE.setType(ClassHelper.int_TYPE);
+    }
+
     private final StaticCompilationTransformer staticCompilationTransformer;
 
     public BinaryExpressionTransformer(StaticCompilationTransformer staticCompilationTransformer) {
@@ -45,6 +61,44 @@ public class BinaryExpressionTransformer {
                     return new CompareToNullExpression(staticCompilationTransformer.transform(bin.getRightExpression()), operationType==Types.COMPARE_EQUAL);
                 } else if (isNullConstant(bin.getRightExpression())) {
                     return new CompareToNullExpression(staticCompilationTransformer.transform(bin.getLeftExpression()), operationType==Types.COMPARE_EQUAL);
+                }
+            }
+            if (operationType == Types.COMPARE_TO) {
+                StaticTypesTypeChooser typeChooser = staticCompilationTransformer.getTypeChooser();
+                ClassNode classNode = staticCompilationTransformer.getClassNode();
+                ClassNode leftType = typeChooser.resolveType(bin.getLeftExpression(), classNode);
+                if (leftType.implementsInterface(ClassHelper.COMPARABLE_TYPE)) {
+                    ClassNode rightType = typeChooser.resolveType(bin.getRightExpression(), classNode);
+                    if (rightType.implementsInterface(ClassHelper.COMPARABLE_TYPE)) {
+                        Expression left = staticCompilationTransformer.transform(bin.getLeftExpression());
+                        Expression right = staticCompilationTransformer.transform(bin.getRightExpression());
+                        MethodCallExpression call = new MethodCallExpression(left, "compareTo", new ArgumentListExpression(right));
+                        call.setMethodTarget(COMPARE_TO_METHOD);
+
+                        CompareIdentityExpression compareIdentity = new CompareIdentityExpression(
+                                left, right
+                        );
+                        compareIdentity.putNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE, ClassHelper.boolean_TYPE);
+                        TernaryExpression result = new TernaryExpression(
+                                new BooleanExpression(compareIdentity), // a==b
+                                CONSTANT_ZERO,
+                                new TernaryExpression(
+                                        new BooleanExpression(new CompareToNullExpression(left, true)), // a==null
+                                        CONSTANT_MINUS_ONE,
+                                        new TernaryExpression(
+                                                new BooleanExpression(new CompareToNullExpression(right, true)), // b==null
+                                                CONSTANT_ONE,
+                                                call
+                                        )
+                                )
+                        );
+                        compareIdentity.putNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE, ClassHelper.int_TYPE);
+                        result.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, ClassHelper.int_TYPE);
+                        TernaryExpression expr = (TernaryExpression) result.getFalseExpression();
+                        expr.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, ClassHelper.int_TYPE);
+                        expr.getFalseExpression().putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, ClassHelper.int_TYPE);
+                        return result;
+                    }
                 }
             }
             boolean isAssignment = StaticTypeCheckingSupport.isAssignment(operationType);

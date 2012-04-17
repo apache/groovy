@@ -411,4 +411,23 @@ class ArrayTest extends GroovyTestCase {
         def flat = orig.flatten()
         assert flat == [1, 2, 3, 4, 5, 6]
     }
+
+    void testGroovy5402ArrayPlus() {
+        Integer[] a = [ 1, 2, 3 ]
+        Integer[] b = [ 3, 4, 5 ]
+        def result = a + b
+        assert result == [ 1, 2, 3, 3, 4, 5 ]
+        assert result.class.isArray()
+        // check the originals are untouched
+        assert a == [ 1, 2, 3 ]
+        assert b == [ 3, 4, 5 ]
+
+        result = a + 4
+        assert result == [ 1, 2, 3, 4 ]
+        assert result.class.isArray()
+
+        result = a + [ 4, 5 ]
+        assert result == [ 1, 2, 3, 4, 5 ]
+        assert result.class.isArray()
+    }
 }
