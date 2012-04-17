@@ -47,11 +47,16 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
     private boolean keepStubs;
     
     public JavaAwareCompilationUnit(CompilerConfiguration configuration) {
-        this(configuration,null);
+        this(configuration,null,null);
     }
     
     public JavaAwareCompilationUnit(CompilerConfiguration configuration, GroovyClassLoader groovyClassLoader) {
-        super(configuration,null,groovyClassLoader);
+        this(configuration,groovyClassLoader,null);
+    }
+
+    public JavaAwareCompilationUnit(CompilerConfiguration configuration, GroovyClassLoader groovyClassLoader,
+                                    GroovyClassLoader transformClassLoader) {
+        super(configuration,null,groovyClassLoader,transformClassLoader);
         javaSources = new LinkedList<String>();
         Map options = configuration.getJointCompilationOptions();
         generationGoal = (File) options.get("stubDir");
