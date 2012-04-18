@@ -86,6 +86,8 @@ import static org.codehaus.groovy.runtime.DefaultGroovyMethods.each;
  * @author Cedric Champeau
  * @author Tim Yates
  * @author Dinko Srkoc
+ * @author Pascal Lombard
+ * @author Christophe Charles
  */
 public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
 
@@ -1369,6 +1371,33 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
         catch (IllegalStateException ex) {
             return null;
         }
+    }
+
+    /**
+     * Given a matcher that matches a string against a pattern,
+     * this method returns true when the string matches the pattern or if a longer string, could match the pattern.
+     *
+     * For example:
+     * <pre class="groovyTestCase">
+     *     def emailPattern = /\w+@\w+\.\w{2,}/
+     *
+     *     def matcher = "john@doe" =~ emailPattern
+     *     assert matcher.matchesPartially()
+     *
+     *     matcher = "john@doe.com" =~ emailPattern
+     *     assert matcher.matchesPartially()
+     *
+     *     matcher = "john@@" =~ emailPattern
+     *     assert !matcher.matchesPartially()
+     * </pre>
+     *
+     * @param matcher the Matcher
+     * @return true if more input to the String could make the matcher match the associated pattern, false otherwise.
+     *
+     * @since 1.8.7
+     */
+    public static boolean matchesPartially(Matcher matcher) {
+        return matcher.matches() || matcher.hitEnd();
     }
 
     /**
