@@ -24,6 +24,7 @@ import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.ConfigurationException;
 import org.codehaus.groovy.control.customizers.ImportCustomizer;
+import org.codehaus.groovy.runtime.DefaultGroovyStaticMethods;
 import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit;
 
 import groovy.lang.GroovySystem;
@@ -190,8 +191,9 @@ public class FileSystemCompiler {
         // if there are any joint compilation options set stubDir if not set
         try {
             if ((configuration.getJointCompilationOptions() != null)
-                    && !configuration.getJointCompilationOptions().containsKey("stubDir")) {
-                tmpDir = createTempDir();
+                && !configuration.getJointCompilationOptions().containsKey("stubDir"))
+            {
+                tmpDir = DefaultGroovyStaticMethods.createTempDir(null, "groovy-generated-", "-java-source");
                 configuration.getJointCompilationOptions().put("stubDir", tmpDir);
             }
             FileSystemCompiler compiler = new FileSystemCompiler(configuration, unit);
@@ -342,42 +344,15 @@ public class FileSystemCompiler {
         return options;
     }
 
+    /**
+     * Creates a temporary directory in the default temporary directory (as specified by the system
+     * propery <i>java.io.tmpdir</i>.
+     *
+     * @deprecated Use {@link DefaultGroovyStaticMethods#createTempDir(java.io.File, String, String)} instead.
+     */
+    @Deprecated
     public static File createTempDir() throws IOException {
-        final int MAXTRIES = 3;
-        int accessDeniedCounter = 0;
-        File tempFile = null;
-        for (int i = 0; i < MAXTRIES; i++) {
-            try {
-                tempFile = File.createTempFile("groovy-generated-", "-java-source");
-                tempFile.delete();
-                tempFile.mkdirs();
-                break;
-            } catch (IOException ioe) {
-                if (ioe.getMessage().startsWith("Access is denied")) {
-                    accessDeniedCounter++;
-                    try {
-                        Thread.sleep(100);
-                    } catch (InterruptedException e) {
-                        /* ignore */
-                    }
-                }
-                if (i == MAXTRIES - 1) {
-                    if (accessDeniedCounter == MAXTRIES) {
-                        String msg =
-                                "Access is denied.\nWe tried " + accessDeniedCounter +
-                                        " times to create a temporary directory" +
-                                        " and failed each time. If you are on Windows" +
-                                        " you are possibly victim to" +
-                                        " http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6325169. " +
-                                        " this is not a bug in Groovy.";
-                        throw new IOException(msg);
-                    } else {
-                        throw ioe;
-                    }
-                }
-            }
-        }
-        return tempFile;
+        return DefaultGroovyStaticMethods.createTempDir(null);
     }
 
     public static void deleteRecursive(File file) {

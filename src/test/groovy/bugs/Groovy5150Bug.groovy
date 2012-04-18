@@ -181,10 +181,6 @@ class Groovy5150Bug extends GroovyTestCase {
     }
 
     private static File createTempDir() {
-        def dir = new File(System.getProperty('java.io.tmpdir'), "groovyTest${System.currentTimeMillis()}")
-        dir.delete()
-        dir.mkdir()
-
-        dir
+        File.createTempDir("groovyTest${System.currentTimeMillis()}", "")
     }
 }

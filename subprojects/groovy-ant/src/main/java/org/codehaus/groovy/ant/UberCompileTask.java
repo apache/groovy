@@ -22,6 +22,7 @@ import org.apache.tools.ant.taskdefs.Javac;
 import org.apache.tools.ant.types.FileSet;
 import org.apache.tools.ant.types.Path;
 import org.apache.tools.ant.types.Reference;
+import org.codehaus.groovy.runtime.DefaultGroovyStaticMethods;
 
 import java.io.File;
 import java.io.IOException;
@@ -204,10 +205,7 @@ public class UberCompileTask
 
     private File createTempDir()  {
         try {
-            File dir = File.createTempFile("groovy-", "stubs");
-            dir.delete();
-            dir.mkdirs();
-            return dir;
+            return DefaultGroovyStaticMethods.createTempDir(null, "groovy-", "stubs");
         }
         catch (IOException e) {
             throw new BuildException(e, getLocation());
