@@ -83,9 +83,7 @@ class InterfaceTest extends GroovyTestCase {
     }
 
     private File createTempDir(prefix, suffix) {
-        File tempFile = File.createTempFile(prefix, suffix);
-        tempFile.delete();
-        tempFile.mkdirs();
+        File tempFile = File.createTempDir(prefix, suffix);
         tempFile.deleteOnExit()
         filesToDelete.add(tempFile)
         return tempFile;

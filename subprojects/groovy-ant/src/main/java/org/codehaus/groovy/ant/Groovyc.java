@@ -36,6 +36,7 @@ import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.SourceExtensionHandler;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
+import org.codehaus.groovy.runtime.DefaultGroovyStaticMethods;
 import org.codehaus.groovy.tools.ErrorReporter;
 import org.codehaus.groovy.tools.FileSystemCompiler;
 import org.codehaus.groovy.tools.RootLoader;
@@ -1149,7 +1150,7 @@ public class Groovyc extends MatchingTask {
                 options.put("stubDir", stubDir);
             } else {
                 try {
-                    File tempStubDir = FileSystemCompiler.createTempDir();
+                    File tempStubDir = DefaultGroovyStaticMethods.createTempDir(null, "groovy-generated-", "-java-source");
                     temporaryFiles.add(tempStubDir);
                     options.put("stubDir", tempStubDir);
                 } catch (IOException ioe) {
