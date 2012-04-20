@@ -1394,7 +1394,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param matcher the Matcher
      * @return true if more input to the String could make the matcher match the associated pattern, false otherwise.
      *
-     * @since 1.8.7
+     * @since 2.0.0
      */
     public static boolean matchesPartially(Matcher matcher) {
         return matcher.matches() || matcher.hitEnd();
