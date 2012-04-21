@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 package org.codehaus.groovy.classgen;
-
-import java.lang.annotation.Target;
 
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
@@ -123,6 +121,7 @@ public class ExtendedVerifier implements GroovyClassVisitor {
                         visited);
             }
             visitDeprecation(node, visited);
+            visitOverride(node, visited);
         }
     }
 
@@ -137,6 +136,37 @@ public class ExtendedVerifier implements GroovyClassVisitor {
             } else if (node instanceof ClassNode) {
                 ClassNode cn = (ClassNode) node;
                 cn.setModifiers(cn.getModifiers() | Opcodes.ACC_DEPRECATED);
+            }
+        }
+    }
+
+    // TODO GROOVY-5011 handle case of @Override on a property
+    private void visitOverride(AnnotatedNode node, AnnotationNode visited) {
+        ClassNode annotationClassNode = visited.getClassNode();
+        if (annotationClassNode.isResolved() && annotationClassNode.getName().equals("java.lang.Override")) {
+            if (node instanceof MethodNode) {
+                MethodNode mn = (MethodNode) node;
+                ClassNode cNode = node.getDeclaringClass();
+                ClassNode sNode = cNode.getSuperClass();
+                while (sNode != null) {
+                    if (sNode.getMethod(mn.getName(), mn.getParameters()) != null) break;
+                    sNode = sNode.getSuperClass();
+                }
+                if (sNode == null) {
+                    for (ClassNode anInterface : cNode.getInterfaces()) {
+                        sNode = anInterface;
+                        while (sNode != null) {
+                            if (sNode.getMethod(mn.getName(), mn.getParameters()) != null) break;
+                            sNode = sNode.getSuperClass();
+                        }
+                        if (sNode != null) break;
+                    }
+                }
+                if (sNode == null) {
+                    addError("Method '" + mn.getName() + "' from class '" + cNode.getName() +
+                            "' does not override method from its superclass but is annotated with @Override.",
+                            visited);
+                }
             }
         }
     }
