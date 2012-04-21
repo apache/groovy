@@ -1147,6 +1147,49 @@ class GroovyMethodsTest extends GroovySwingTestCase {
         assert !vowels.contains('x')
     }
 
+    void testListTakeWhile() {
+        def data = [
+            new ArrayList( [ 1, 3, 2 ] ),
+            new LinkedList( [ 1, 3, 2 ] ),
+            new Stack() {{ addAll( [ 1, 3, 2 ] ) }},
+            new Vector( [ 1, 3, 2 ] ),
+        ]
+        data.each {
+            assert it.takeWhile{ it < 0 } == []
+            assert it.takeWhile{ it < 1 } == []
+            assert it.takeWhile{ it < 3 } == [ 1 ]
+            assert it.takeWhile{ it < 4 } == [ 1, 3, 2 ]
+        }
+    }
+
+    void testArrayTakeWhile() {
+        String[] items = [ 'ant', 'bee', 'cat' ]
+
+        assert items.takeWhile{ it == '' } == [] as String[]
+        assert items.takeWhile{ it != 'cat' } == [ 'ant', 'bee' ] as String[]
+        assert items.takeWhile{ it != '' } == [ 'ant', 'bee', 'cat' ] as String[]
+    }
+
+    void testIteratorTakeWhile() {
+        int a = 1
+        Iterator items = [ hasNext:{ true }, next:{ a++ } ] as Iterator
+
+        assert items.takeWhile{ it < 5 }.collect { it } == [ 1, 2, 3, 4 ]
+    }
+
+    void testCharSequenceTakeWhile() {
+        def data = [ 'groovy',      // String
+                     "${'groovy'}", // GString
+                     java.nio.CharBuffer.wrap( 'groovy' ),
+                     new StringBuffer( 'groovy' ),
+                     new StringBuilder( 'groovy' ) ]
+        data.each {
+            // Need toString() as CharBuffer.subSequence returns a java.nio.StringCharBuffer
+            assert it.takeWhile{ it == '' }.toString() == ''
+            assert it.takeWhile{ it != 'v' }.toString() == 'groo'
+            assert it.takeWhile{ it }.toString() == 'groovy'
+        }
+    }
 }
 
 class WackyList extends LinkedList {
