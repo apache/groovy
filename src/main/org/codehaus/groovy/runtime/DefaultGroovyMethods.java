@@ -6475,6 +6475,128 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Returns the longest prefix of this list where each element
+     * passed to the given closure evalutes to true.
+     * <pre class="groovyTestCase">
+     *     def nums = [ 1, 3, 2 ]
+     *     assert nums.takeWhile{ it &lt; 1 } == []
+     *     assert nums.takeWhile{ it &lt; 3 } == [ 1 ]
+     *     assert nums.takeWhile{ it &lt; 4 } == [ 1, 3, 2 ]
+     * </pre>
+     *
+     * @param self the original list
+     * @param closure the closure that must evaluate to true to
+     *        continue taking elements
+     * @return a prefix of the given list where each element passed to
+     *         the given closure evaluates to true
+     * @since 1.8.7
+     */
+    public static <T> List<T> takeWhile(List<T> self, Closure closure) {
+        int num = 0;
+        for (T value : self) {
+            if (DefaultTypeTransformation.castToBoolean(closure.call(value))) {
+                num += 1;
+            } else {
+                break;
+            }
+        }
+        return take(self, num);
+    }
+
+    /**
+     * Returns the longest prefix of this array where each element
+     * passed to the given closure evalutes to true.
+     * <pre class="groovyTestCase">
+     *     def nums = [ 1, 3, 2 ] as Integer[]
+     *     assert nums.takeWhile{ it &lt; 1 } == [] as Integer[]
+     *     assert nums.takeWhile{ it &lt; 3 ) == [ 1 ] as Integer[]
+     *     assert nums.takeWhile{ it &lt; 4 } == [ 1, 3, 2 ] as Integer[]
+     * </pre>
+     *
+     * @param self the original array
+     * @param closure the closure that must evaluate to true to
+     *        continue taking elements
+     * @return a prefix of the given array where each element passed to
+     *         the given closure evaluates to true
+     * @since 1.8.7
+     */
+    public static <T> T[] takeWhile(T[] self, Closure closure) {
+        int num = 0;
+        while (num < self.length) {
+            T value = self[num];
+            if (DefaultTypeTransformation.castToBoolean(closure.call(value))) {
+                num += 1;
+            } else {
+                break;
+            }
+        }
+        return take(self, num);
+    }
+
+    /**
+     * Returns the longest prefix of elements in this iterator where
+     * each element passed to the given closure evalutes to true.
+     *
+     * <pre class="groovyTestCase">
+     *     def a = 0
+     *     def iter = [ hasNext:{ true }, next:{ a++ } ] as Iterator
+     *
+     *     assert [].iterator().takeWhile{ it &lt; 3 } == []
+     *     assert [1, 2, 3, 4, 5].iterator().takeWhile{ it &lt; 3 } == [ 1, 2 ]
+     *     assert iter.takeWhile{ it &lt; 5 ) == [ 0, 1, 2, 3, 4 ]
+     * </pre>
+     *
+     * @param self the Iterator
+     * @param closure the closure that must evaluate to true to
+     *        continue taking elements
+     * @return a prefix of elements in the given iterator where each
+     *         element passed to the given closure evaluates to true
+     * @since 1.8.7
+     */
+    public static <T> List<T> takeWhile(Iterator<T> self, Closure closure) {
+        List<T> ret = new ArrayList<T>();
+        while (self.hasNext()) {
+            T value = self.next();
+            if (DefaultTypeTransformation.castToBoolean(closure.call(value))) {
+                ret.add(value);
+            } else {
+                break;
+            }
+        }
+        return ret;
+    }
+
+    /**
+     * Returns the longest prefix of this CharSequence where each
+     * element passed to the given closure evalutes to true.
+     * 
+     * <pre class="groovyTestCase">
+     *     def text = "Groovy"
+     *     assert text.takeWhile{ it &lt; 'A' } == ''
+     *     assert text.takeWhile{ it &lt; 'Z' } == 'G'
+     *     assert text.takeWhile{ it &lt; 'z'  } == 'Groovy'
+     * </pre>
+     *
+     * @param self the original CharSequence
+     * @param num the number of chars to take from this CharSequence
+     * @return a CharSequence consisting of the first <code>num</code> chars,
+     *         or else the whole CharSequence if it has less then <code>num</code> elements.
+     * @since 1.8.1
+     */
+    public static CharSequence takeWhile(CharSequence self, Closure closure) {
+        int num = 0;
+        while (num < self.length()) {
+            char value = self.charAt(num);
+            if (DefaultTypeTransformation.castToBoolean(closure.call(value))) {
+                num += 1;
+            } else {
+                break;
+            }
+        }
+        return take(self, num);
+    }
+
+    /**
      * Converts this Collection to a List. Returns the original Collection
      * if it is already a List.
      * <p>
