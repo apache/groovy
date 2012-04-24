@@ -545,7 +545,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      *                  the front of the original CharSequence
      * @return the shortest suffix of the given CharSequence such that the given closure condition
      *         evaluates to true for each element dropped from the front of the CharSequence
-     * @since 1.8.7
+     * @since 2.0.0
      */
     public static CharSequence dropWhile(CharSequence self, Closure condition) {
         int num = 0;
@@ -3307,7 +3307,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      *                  continue taking elements
      * @return a prefix of elements in the CharSequence where each
      *         element passed to the given closure evaluates to true
-     * @since 1.8.7
+     * @since 2.0.0
      */
     public static CharSequence takeWhile(CharSequence self, Closure condition) {
         int num = 0;
