@@ -40,7 +40,7 @@ import java.lang.annotation.ElementType
  */
 class TransformsAndCustomClassLoadersTest extends GroovyTestCase {
     URL[] urls = collectUrls(getClass().classLoader)
-    GroovyClassLoader dependencyLoader = new GroovyClassLoader(new URLClassLoader(urls, null))
+    GroovyClassLoader dependencyLoader = new GroovyClassLoader(new URLClassLoader(urls, (ClassLoader)null))
     GroovyClassLoader transformLoader = new GroovyClassLoader(new URLClassLoader(urls, new GroovyOnlyClassLoader()))
 
     void setUp() {
