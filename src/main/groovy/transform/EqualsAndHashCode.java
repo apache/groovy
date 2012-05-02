@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2011 the original author or authors.
+ * Copyright 2008-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -153,6 +153,29 @@ import java.lang.annotation.Target;
  * assert p1.hasEqualXY(t1) && t1.hasEqualXY(p1)
  * assert p2.hasEqualXY(t1) && t1.hasEqualXY(p2)
  * assert p3.hasEqualXY(t1) && t1.hasEqualXY(p3)
+ * </pre>
+ * There is also support for including or excluding fields/properties by name when constructing
+ * the equals and hashCode methods as shown here:
+ * <pre>
+ * import groovy.transform.*
+ * {@code @EqualsAndHashCode}(excludes="z")
+ * {@code @TupleConstructor}
+ * public class Point2D {
+ *     int x, y, z
+ * }
+ *
+ * assert  new Point2D(1, 1, 1).equals(new Point2D(1, 1, 2))
+ * assert !new Point2D(1, 1, 1).equals(new Point2D(2, 1, 1))
+ *
+ * {@code @EqualsAndHashCode}(excludes="y,z")
+ * {@code @TupleConstructor}
+ * public class Point2D {
+ *     int x, y, z
+ * }
+ *
+ * assert  new Point1D(1, 1, 1).equals(new Point1D(1, 1, 2))
+ * assert  new Point1D(1, 1, 1).equals(new Point1D(1, 2, 1))
+ * assert !new Point1D(1, 1, 1).equals(new Point1D(2, 1, 1))
  * </pre>
  *
  * @see org.codehaus.groovy.util.HashCodeHelper
