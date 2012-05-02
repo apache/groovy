@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2011 the original author or authors.
+ * Copyright 2008-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -165,16 +165,18 @@ import java.lang.annotation.Target;
 @GroovyASTTransformationClass("org.codehaus.groovy.transform.EqualsAndHashCodeASTTransformation")
 public @interface EqualsAndHashCode {
     /**
-     * Comma separated list of field and/or property names to exclude from the equals and hashCode calculations.
-     * Must not be used if 'includes' is used.
+     * List of field and/or property names to exclude from the equals and hashCode calculations.
+     * Must not be used if 'includes' is used. For convenience, a String with comma separated names
+     * can be used in addition to an array (using Groovy's literal list notation) of String values.
      */
-    String excludes() default "";
+    String[] excludes();
 
     /**
-     * Comma separated list of field and/or property names to include within the equals and hashCode calculations.
-     * Must not be used if 'excludes' is used.
+     * List of field and/or property names to include within the equals and hashCode calculations.
+     * Must not be used if 'excludes' is used. For convenience, a String with comma separated names
+     * can be used in addition to an array (using Groovy's literal list notation) of String values.
      */
-    String includes() default "";
+    String[] includes();
 
     /**
      * Whether to include super in equals and hashCode calculations

@@ -53,8 +53,8 @@ public class CanonicalASTTransformation extends AbstractASTTransformation {
                 addError(MY_TYPE_NAME + " class '" + cNode.getName() + "' can't also be " + ImmutableASTTransformation.MY_TYPE_NAME, parent);
             }
             checkNotInterface(cNode, MY_TYPE_NAME);
-            List<String> excludes = tokenize((String) getMemberValue(anno, "excludes"));
-            List<String> includes = tokenize((String) getMemberValue(anno, "includes"));
+            List<String> excludes = getMemberList(anno, "excludes");
+            List<String> includes = getMemberList(anno, "includes");
             if (includes != null && !includes.isEmpty() && excludes != null && !excludes.isEmpty()) {
                 addError("Error during " + MY_TYPE_NAME + " processing: Only one of 'includes' and 'excludes' should be supplied not both.", anno);
             }

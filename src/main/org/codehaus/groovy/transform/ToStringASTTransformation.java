@@ -36,8 +36,6 @@ import org.codehaus.groovy.classgen.Verifier;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.runtime.InvokerHelper;
-import org.codehaus.groovy.syntax.Token;
-import org.codehaus.groovy.syntax.Types;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -63,7 +61,6 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
     static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
     private static final ClassNode STRINGBUILDER_TYPE = ClassHelper.make(StringBuilder.class);
     private static final ClassNode INVOKER_TYPE = ClassHelper.make(InvokerHelper.class);
-    private static final Token ASSIGN = Token.newSymbol(Types.ASSIGN, -1, -1);
 
     public void visit(ASTNode[] nodes, SourceUnit source) {
         init(nodes, source);
@@ -80,8 +77,8 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
             }
             boolean includeNames = memberHasValue(anno, "includeNames", true);
             boolean includeFields = memberHasValue(anno, "includeFields", true);
-            List<String> excludes = tokenize((String) getMemberValue(anno, "excludes"));
-            List<String> includes = tokenize((String) getMemberValue(anno, "includes"));
+            List<String> excludes = getMemberList(anno, "excludes");
+            List<String> includes = getMemberList(anno, "includes");
             boolean ignoreNulls = memberHasValue(anno, "ignoreNulls", true);
 
             if (hasAnnotation(cNode, CanonicalASTTransformation.MY_TYPE)) {
