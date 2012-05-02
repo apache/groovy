@@ -445,6 +445,42 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-5415
+    void testShouldUseMethodGenericType1() {
+        assertScript '''import groovy.transform.stc.GenericsSTCTest.ClassA
+        class ClassB {
+            void bar() {
+                def ClassA<Long> a = new ClassA<Long>();
+                a.foo(this.getClass());
+            }
+        }
+        new ClassB()
+        '''
+    }
+    // GROOVY-5415
+    void testShouldUseMethodGenericType2() {
+        shouldFailWithMessages '''import groovy.transform.stc.GenericsSTCTest.ClassA
+        class ClassB {
+            void bar() {
+                def ClassA<Long> a = new ClassA<Long>();
+                a.bar(this.getClass());
+            }
+        }
+        new ClassB()
+        ''', 'Cannot find matching method groovy.transform.stc.GenericsSTCTest$ClassA#bar'
+    }
+
     static class MyList extends LinkedList<String> {}
+
+    public static class ClassA<T> {
+        public <X> Class<X> foo(Class<X> classType){
+            return classType;
+        }
+
+        public <X> Class<X> bar(Class<T> classType){
+            return null;
+        }
+    }
+
 }
 
