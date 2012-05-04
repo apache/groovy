@@ -43,6 +43,10 @@ import org.codehaus.groovy.reflection.ReflectionUtils
 import java.util.zip.ZipFile
 import java.util.zip.ZipEntry
 import javax.xml.parsers.DocumentBuilderFactory
+import org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl
+import java.util.jar.JarFile
+import org.codehaus.groovy.runtime.m12n.PropertiesModuleFactory
+import org.codehaus.groovy.reflection.CachedClass
 
 /**
  * @author Danno Ferrin
@@ -248,8 +252,29 @@ class GrapeIvy implements GrapeEngine {
 
             for (URI uri in resolve(loader, args, dependencies)) {
                 //TODO check artifact type, jar vs library, etc
-                processServices(new File(uri), loader);
-                loader.addURL(uri.toURL())
+                File file = new File(uri)
+                processServices(file, loader);
+                URL url = uri.toURL()
+                loader.addURL(url)
+                // register extension methods if jar
+                if (file.name.toLowerCase().endsWith(".jar")) {
+                    def mcRegistry = GroovySystem.metaClassRegistry
+                    if (mcRegistry instanceof MetaClassRegistryImpl) {
+                        // should always be the case
+                        JarFile jar = new JarFile(file)
+                        def entry = jar.getEntry(MetaClassRegistryImpl.MODULE_META_INF_FILE)
+                        if (entry) {
+                            Properties props = new Properties()
+                            props.load(jar.getInputStream(entry))
+                            Map<CachedClass, List<MetaMethod>> metaMethods = new HashMap<CachedClass, List<MetaMethod>>()
+                            mcRegistry.registerExtensionModuleFromProperties(props, loader, metaMethods)
+                            // add old methods to the map
+                            metaMethods.each { CachedClass c, List<MetaMethod> methods ->
+                                c.addNewMopMethods(methods)
+                            }
+                        }
+                    }
+                }
             }
         } catch (Exception e) {
             // clean-up the state first
