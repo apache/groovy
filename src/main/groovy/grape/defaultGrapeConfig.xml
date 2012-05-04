@@ -16,13 +16,11 @@
 <ivysettings>
   <settings defaultResolver="downloadGrapes"/>
   <resolvers>
-    <chain name="downloadGrapes">
-      <!--
-      <filesystem name="cachedGrapes" checkmodified="true">
+    <chain name="downloadGrapes" returnFirst="true">
+      <filesystem name="cachedGrapes">
         <ivy pattern="${user.home}/.groovy/grapes/[organisation]/[module]/ivy-[revision].xml"/>
-        <artifact pattern="${user.home}/.groovy/grapes/[organisation]/[module]/[type]s/[artifact]-[revision].[ext]"/>
-      </filesystem>
-      -->
+        <artifact pattern="${user.home}/.groovy/grapes/[organisation]/[module]/[type]s/[artifact]-[revision](-[classifier]).[ext]"/>
+	  </filesystem>
       <ibiblio name="localm2" root="file:${user.home}/.m2/repository/" checkmodified="true" changingPattern=".*" changingMatcher="regexp" m2compatible="true"/>
       <!-- todo add 'endorsed groovy extensions' resolver here -->
       <ibiblio name="codehaus" root="http://repository.codehaus.org/" m2compatible="true"/>
