@@ -100,22 +100,24 @@ import java.lang.annotation.Target;
 @GroovyASTTransformationClass("org.codehaus.groovy.transform.CanonicalASTTransformation")
 public @interface Canonical {
     /**
-     * Comma separated list of field and/or property names to exclude.
-     * Must not be used if 'includes' is used.
+     * List of field and/or property names to exclude.
+     * Must not be used if 'includes' is used. For convenience, a String with comma separated names
+     * can be used in addition to an array (using Groovy's literal list notation) of String values.
      *
      * If the {@code @Canonical} behavior is customised by using it in conjunction with one of the more specific
      * related annotations (i.e. {@code @ToString}, {@code @EqualsAndHashCode} or {@code @TupleConstructor}), then
      * the value of this attribute can be overriden within the more specific annotation.
      */
-    String excludes() default "";
+    String[] excludes();
 
     /**
-     * Comma separated list of field and/or property names to include.
-     * Must not be used if 'excludes' is used.
+     * List of field and/or property names to include.
+     * Must not be used if 'excludes' is used. For convenience, a String with comma separated names
+     * can be used in addition to an array (using Groovy's literal list notation) of String values.
      *
      * If the {@code @Canonical} behavior is customised by using it in conjunction with one of the more specific
      * related annotations (i.e. {@code @ToString}, {@code @EqualsAndHashCode} or {@code @TupleConstructor}), then
      * the value of this attribute can be overriden within the more specific annotation.
      */
-    String includes() default "";
+    String[] includes();
 }

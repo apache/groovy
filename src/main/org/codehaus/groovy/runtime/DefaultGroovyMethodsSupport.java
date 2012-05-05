@@ -21,6 +21,7 @@ import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.lang.reflect.Array;
 import java.util.*;
 import java.util.logging.Logger;
 
@@ -112,6 +113,7 @@ public class DefaultGroovyMethodsSupport {
         }
     }
 
+    @SuppressWarnings("unchecked")
     protected static <T> Collection<T> cloneSimilarCollection(Collection<T> orig, int newCapacity) {
         Collection<T> answer = (Collection<T>) cloneObject(orig);
         if (answer != null) return answer;
@@ -170,6 +172,13 @@ public class DefaultGroovyMethodsSupport {
         return new ArrayList<T>(newCapacity);
     }
 
+    @SuppressWarnings("unchecked")
+    protected static <T> T[] createSimilarArray(T[] orig, int newCapacity) {
+        Class<T> componentType = (Class<T>) orig.getClass().getComponentType();
+        return (T[]) Array.newInstance(componentType, newCapacity);
+    }
+
+    @SuppressWarnings("unchecked")
     protected static <T> Set<T> createSimilarSet(Set<T> orig) {
         if (orig instanceof SortedSet) {
             return new TreeSet<T>(((SortedSet)orig).comparator());
@@ -177,6 +186,7 @@ public class DefaultGroovyMethodsSupport {
         return new LinkedHashSet<T>();
     }
 
+    @SuppressWarnings("unchecked")
     protected static <K, V> Map<K, V> createSimilarMap(Map<K, V> orig) {
         if (orig instanceof SortedMap) {
             return new TreeMap<K, V>(((SortedMap)orig).comparator());
@@ -190,6 +200,7 @@ public class DefaultGroovyMethodsSupport {
         return new LinkedHashMap<K, V>();
     }
 
+    @SuppressWarnings("unchecked")
     protected static <K, V> Map<K ,V> cloneSimilarMap(Map<K, V> orig) {
         Map<K, V> answer = (Map<K, V>) cloneObject(orig);
         if (answer != null) return answer;
@@ -216,6 +227,7 @@ public class DefaultGroovyMethodsSupport {
      * @param cols an array of collections
      * @return true if the collections are all of the same type
      */
+    @SuppressWarnings("unchecked")
     protected static boolean sameType(Collection[] cols) {
         List all = new LinkedList();
         for (Collection col : cols) {

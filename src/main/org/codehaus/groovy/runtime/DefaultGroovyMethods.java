@@ -6210,159 +6210,186 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Returns the first <code>num</code> elements from the head of this list.
      * <pre class="groovyTestCase">
-     *     def strings = [ 'a', 'b', 'c' ]
-     *     assert strings.take( 0 ) == []
-     *     assert strings.take( 2 ) == [ 'a', 'b' ]
-     *     assert strings.take( 5 ) == [ 'a', 'b', 'c' ]
+     * def strings = [ 'a', 'b', 'c' ]
+     * assert strings.take( 0 ) == []
+     * assert strings.take( 2 ) == [ 'a', 'b' ]
+     * assert strings.take( 5 ) == [ 'a', 'b', 'c' ]
      * </pre>
+     * Similar to {@link #take(Iterable, int)}
+     * except that it attempts to preserve the type of the original list.
      *
      * @param self the original list
-     * @param num the number of elements to take from this list
+     * @param num  the number of elements to take from this list
      * @return a list consisting of the first <code>num</code> elements of this list,
      *         or else the whole list if it has less then <code>num</code> elements.
      * @since 1.8.1
      */
-    public static <T> List<T> take( List<T> self, int num ) {
-        if( self.isEmpty() || num <= 0 ) {
-            return createSimilarList( self, 0 ) ;
+    public static <T> List<T> take(List<T> self, int num) {
+        if (self.isEmpty() || num <= 0) {
+            return createSimilarList(self, 0);
         }
-        if( self.size() <= num ) {
-            List<T> ret = createSimilarList( self, self.size() ) ;
-            ret.addAll( self ) ;
-            return ret ;
+        if (self.size() <= num) {
+            List<T> ret = createSimilarList(self, self.size());
+            ret.addAll(self);
+            return ret;
         }
-        List<T> ret = createSimilarList( self, num ) ;
-        ret.addAll( self.subList( 0, num ) ) ;
-        return ret ;
+        List<T> ret = createSimilarList(self, num);
+        ret.addAll(self.subList(0, num));
+        return ret;
     }
 
     /**
      * Returns the first <code>num</code> elements from the head of this array.
      * <pre class="groovyTestCase">
-     *     String[] strings = [ 'a', 'b', 'c' ]
-     *     assert strings.take( 0 ) == [] as String[]
-     *     assert strings.take( 2 ) == [ 'a', 'b' ] as String[]
-     *     assert strings.take( 5 ) == [ 'a', 'b', 'c' ] as String[]
+     * String[] strings = [ 'a', 'b', 'c' ]
+     * assert strings.take( 0 ) == [] as String[]
+     * assert strings.take( 2 ) == [ 'a', 'b' ] as String[]
+     * assert strings.take( 5 ) == [ 'a', 'b', 'c' ] as String[]
      * </pre>
      *
      * @param self the original array
-     * @param num the number of elements to take from this array
+     * @param num  the number of elements to take from this array
      * @return an array consisting of the first <code>num</code> elements of this array,
      *         or else the whole array if it has less then <code>num</code> elements.
      * @since 1.8.1
      */
-    public static <T> T[] take( T[] self, int num ) {
-        Class<T> componentType = (Class<T>) self.getClass().getComponentType();
-        if( self.length == 0 || num <= 0 ) {
-            return (T[]) Array.newInstance(componentType, 0);
+    public static <T> T[] take(T[] self, int num) {
+        if (self.length == 0 || num <= 0) {
+            return createSimilarArray(self, 0);
         }
-        if( self.length <= num ) {
-            T[] ret = (T[]) Array.newInstance(componentType, self.length);
+
+        if (self.length <= num) {
+            T[] ret = createSimilarArray(self, self.length);
             System.arraycopy(self, 0, ret, 0, self.length);
             return ret;
         }
 
-        T[] ret = (T[]) Array.newInstance(componentType, num);
+        T[] ret = createSimilarArray(self, num);
         System.arraycopy(self, 0, ret, 0, num);
         return ret;
     }
 
     /**
+     * Returns the first <code>num</code> elements from the head of this Iterable.
+     * <pre class="groovyTestCase">
+     * class AbcIterable implements Iterable<String> {
+     *     Iterator<String> iterator() { "abc".iterator() }
+     * }
+     * def abc = new AbcIterable()
+     * assert abc.take(0) == []
+     * assert abc.take(1) == ['a']
+     * assert abc.take(3) == ['a', 'b', 'c']
+     * assert abc.take(5) == ['a', 'b', 'c']
+     * </pre>
+     *
+     * @param self the original Iterable
+     * @param num  the number of elements to take from this Iterable
+     * @return a List consisting of the first <code>num</code> elements from this Iterable,
+     *         or else all the elements from the Iterable if it has less then <code>num</code> elements.
+     * @since 1.8.7
+     */
+    public static <T> List<T> take(Iterable<T> self, int num) {
+        return toList(take(self.iterator(), num));
+    }
+
+    /**
      * Returns a new map containing the first <code>num</code> elements from the head of this map.
      * If the map instance does not have ordered keys, then this function could return a random <code>num</code>
-     * entries.  Groovy by default used LinkedHashMap, so this shouldn't be an issue in the main.
+     * entries. Groovy by default uses LinkedHashMap, so this shouldn't be an issue in the main.
      * <pre class="groovyTestCase">
-     *     def strings = [ 'a':10, 'b':20, 'c':30 ]
-     *     assert strings.take( 0 ) == [:]
-     *     assert strings.take( 2 ) == [ 'a':10, 'b':20 ]
-     *     assert strings.take( 5 ) == [ 'a':10, 'b':20, 'c':30 ]
+     * def strings = [ 'a':10, 'b':20, 'c':30 ]
+     * assert strings.take( 0 ) == [:]
+     * assert strings.take( 2 ) == [ 'a':10, 'b':20 ]
+     * assert strings.take( 5 ) == [ 'a':10, 'b':20, 'c':30 ]
      * </pre>
      *
      * @param self the original map
-     * @param num the number of elements to take from this map
+     * @param num  the number of elements to take from this map
      * @return a new map consisting of the first <code>num</code> elements of this map,
      *         or else the whole map if it has less then <code>num</code> elements.
      * @since 1.8.1
      */
-    public static <K,V> Map<K,V> take( Map<K,V> self, int num ) {
-        if( self.isEmpty() || num <= 0 ) {
-            return createSimilarMap( self ) ;
+    public static <K, V> Map<K, V> take(Map<K, V> self, int num) {
+        if (self.isEmpty() || num <= 0) {
+            return createSimilarMap(self);
         }
-        Map<K,V> ret = createSimilarMap( self ) ;
-        for( K key : self.keySet() ) {
-            ret.put( key, self.get( key ) ) ;
-            if( --num <= 0 ) {
-                break ;
+        Map<K, V> ret = createSimilarMap(self);
+        for (K key : self.keySet()) {
+            ret.put(key, self.get(key));
+            if (--num <= 0) {
+                break;
             }
         }
-        return ret ;
+        return ret;
     }
 
     /**
-     * Returns an iterator to up to the first <code>num</code> elements from this iterator.
+     * Returns an iterator of up to the first <code>num</code> elements from this iterator.
      * The original iterator is stepped along by <code>num</code> elements.
      * <pre class="groovyTestCase">
-     *     def a = 0
-     *     def iter = [ hasNext:{ true }, next:{ a++ } ] as Iterator
-     *
-     *     def iteratorCompare( Iterator a, List b ) {
-     *       a.collect { it } == b
-     *     }
-     *     assert iteratorCompare( iter.take( 0 ), [] )
-     *     assert iteratorCompare( iter.take( 2 ), [ 0, 1 ] )
-     *     assert iteratorCompare( iter.take( 5 ), [ 2, 3, 4, 5, 6 ] )
+     * def a = 0
+     * def iter = [ hasNext:{ true }, next:{ a++ } ] as Iterator
+     * def iteratorCompare( Iterator a, List b ) {
+     *     a.collect { it } == b
+     * }
+     * assert iteratorCompare( iter.take( 0 ), [] )
+     * assert iteratorCompare( iter.take( 2 ), [ 0, 1 ] )
+     * assert iteratorCompare( iter.take( 5 ), [ 2, 3, 4, 5, 6 ] )
      * </pre>
      *
      * @param self the Iterator
-     * @param num the number of elements to take from this iterator
-     * @return a list consisting of up to the first <code>num</code> elements of this iterator.
+     * @param num  the number of elements to take from this iterator
+     * @return an iterator consisting of up to the first <code>num</code> elements of this iterator.
      * @since 1.8.1
      */
-    public static <T> Iterator<T> take( Iterator<T> self, int num ) {
-        List<T> ret = new ArrayList<T>() ;
-        while( num-- > 0 && self.hasNext() ) {
-            ret.add( self.next() ) ;
-        }
-        return ret.listIterator() ;
+    @SuppressWarnings("unchecked")
+    public static <T> Iterator<T> take(Iterator<T> self, int num) {
+        return new TakeIterator(self, num);
     }
 
-    /**
-     * Returns the first <code>num</code> elements from this CharSequence.
-     * <pre class="groovyTestCase">
-     *     def text = "Groovy"
-     *     assert text.take( 0 ) == ''
-     *     assert text.take( 2 ) == 'Gr'
-     *     assert text.take( 7 ) == 'Groovy'
-     * </pre>
-     *
-     * @param self the original CharSequence
-     * @param num the number of chars to take from this CharSequence
-     * @return a CharSequence consisting of the first <code>num</code> chars,
-     *         or else the whole CharSequence if it has less then <code>num</code> elements.
-     * @since 1.8.1
-     */
-    public static CharSequence take( CharSequence self, int num ) {
-        if( num < 0 ) {
-            return self.subSequence( 0, 0 ) ;
+    private static class TakeIterator<E> implements Iterator<E> {
+        private final Iterator<E> delegate;
+        private Integer num;
+
+        private TakeIterator(Iterator<E> delegate, Integer num) {
+            this.delegate = delegate;
+            this.num = num;
         }
-        if( self.length() <= num ) {
-            return self ;
+
+        public boolean hasNext() {
+            return delegate.hasNext() && num > 0;
         }
-        return self.subSequence( 0, num ) ;
+
+        public E next() {
+            if (num == 0) throw new NoSuchElementException();
+            num--;
+            return delegate.next();
+        }
+
+        public void remove() {
+            delegate.remove();
+        }
+    }
+
+    @Deprecated
+    public static CharSequence take(CharSequence self, int num) {
+        return StringGroovyMethods.take(self, num);
     }
 
     /**
      * Drops the given number of elements from the head of this list
      * if they are available.
      * <pre class="groovyTestCase">
-     *     def strings = [ 'a', 'b', 'c' ]
-     *     assert strings.drop( 0 ) == [ 'a', 'b', 'c' ]
-     *     assert strings.drop( 2 ) == [ 'c' ]
-     *     assert strings.drop( 5 ) == []
+     * def strings = [ 'a', 'b', 'c' ]
+     * assert strings.drop( 0 ) == [ 'a', 'b', 'c' ]
+     * assert strings.drop( 2 ) == [ 'c' ]
+     * assert strings.drop( 5 ) == []
      * </pre>
+     * Similar to {@link #drop(Iterable, int)}
+     * except that it attempts to preserve the type of the original list.
      *
      * @param self the original list
-     * @param num the number of elements to drop from this list
+     * @param num  the number of elements to drop from this list
      * @return a list consisting of all elements of this list except the first
      *         <code>num</code> ones, or else the empty list, if this list has
      *         less than <code>num</code> elements.
@@ -6370,102 +6397,124 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <T> List<T> drop(List<T> self, int num) {
         if (self.size() <= num) {
-            return createSimilarList( self, 0 ) ;
+            return createSimilarList(self, 0);
         }
         if (num <= 0) {
-            List<T> ret = createSimilarList( self, self.size() ) ;
-            ret.addAll( self ) ;
-            return ret ;
+            List<T> ret = createSimilarList(self, self.size());
+            ret.addAll(self);
+            return ret;
         }
-        List<T> ret = createSimilarList( self, self.size() - num ) ;
-        ret.addAll(self.subList(num, self.size())) ;
-        return ret ;
+        List<T> ret = createSimilarList(self, self.size() - num);
+        ret.addAll(self.subList(num, self.size()));
+        return ret;
+    }
+
+    /**
+     * Drops the given number of elements from the head of this Iterable.
+     * <pre class="groovyTestCase">
+     * class AbcIterable implements Iterable<String> {
+     *     Iterator<String> iterator() { "abc".iterator() }
+     * }
+     * def abc = new AbcIterable()
+     * assert abc.drop(0) == ['a', 'b', 'c']
+     * assert abc.drop(1) == ['b', 'c']
+     * assert abc.drop(3) == []
+     * assert abc.drop(5) == []
+     * </pre>
+     *
+     * @param self the original Iterable
+     * @param num  the number of elements to drop from this Iterable
+     * @return a List consisting of all the elements of this Iterable minus the first <code>num</code> elements,
+     *         or an empty list if it has less then <code>num</code> elements.
+     * @since 1.8.7
+     */
+    public static <T> List<T> drop(Iterable<T> self, int num) {
+        return toList(drop(self.iterator(), num));
     }
 
     /**
      * Drops the given number of elements from the head of this array
      * if they are available.
      * <pre class="groovyTestCase">
-     *     String[] strings = [ 'a', 'b', 'c' ]
-     *     assert strings.drop( 0 ) == [ 'a', 'b', 'c' ] as String[]
-     *     assert strings.drop( 2 ) == [ 'c' ] as String[]
-     *     assert strings.drop( 5 ) == [] as String[]
+     * String[] strings = [ 'a', 'b', 'c' ]
+     * assert strings.drop( 0 ) == [ 'a', 'b', 'c' ] as String[]
+     * assert strings.drop( 2 ) == [ 'c' ] as String[]
+     * assert strings.drop( 5 ) == [] as String[]
      * </pre>
      *
      * @param self the original array
-     * @param num the number of elements to drop from this array
+     * @param num  the number of elements to drop from this array
      * @return an array consisting of all elements of this array except the
      *         first <code>num</code> ones, or else the empty array, if this
      *         array has less than <code>num</code> elements.
      * @since 1.8.1
      */
     public static <T> T[] drop(T[] self, int num) {
-        Class<T> componentType = (Class<T>) self.getClass().getComponentType();
         if (self.length <= num) {
-            return (T[]) Array.newInstance(componentType, 0);
+            return createSimilarArray(self, 0);
         }
         if (num <= 0) {
-            T[] ret = (T[]) Array.newInstance(componentType, self.length);
+            T[] ret = createSimilarArray(self, self.length);
             System.arraycopy(self, 0, ret, 0, self.length);
             return ret;
         }
 
-        T[] ret = (T[]) Array.newInstance(componentType, self.length - num);
+        T[] ret = createSimilarArray(self, self.length - num);
         System.arraycopy(self, num, ret, 0, self.length - num);
         return ret;
     }
 
     /**
      * Drops the given number of key/value pairs from the head of this map if they are available.
-     * If the map instance does not have ordered keys, then this function could drop a random <code>num</code>
-     * entries.  Groovy by default used LinkedHashMap, so this shouldn't be an issue in the main.
      * <pre class="groovyTestCase">
-     *     def strings = [ 'a':10, 'b':20, 'c':30 ]
-     *     assert strings.drop( 0 ) == [ 'a':10, 'b':20, 'c':30 ]
-     *     assert strings.drop( 2 ) == [ 'c':30 ]
-     *     assert strings.drop( 5 ) == [:]
+     * def strings = [ 'a':10, 'b':20, 'c':30 ]
+     * assert strings.drop( 0 ) == [ 'a':10, 'b':20, 'c':30 ]
+     * assert strings.drop( 2 ) == [ 'c':30 ]
+     * assert strings.drop( 5 ) == [:]
      * </pre>
+     * If the map instance does not have ordered keys, then this function could drop a random <code>num</code>
+     * entries. Groovy by default uses LinkedHashMap, so this shouldn't be an issue in the main.
      *
      * @param self the original map
-     * @param num the number of elements to drop from this map
+     * @param num  the number of elements to drop from this map
      * @return a map consisting of all key/value pairs of this map except the first
      *         <code>num</code> ones, or else the empty map, if this map has
      *         less than <code>num</code> elements.
      * @since 1.8.1
      */
-    public static <K,V> Map<K,V> drop( Map<K,V> self, int num ) {
-        if( self.size() <= num ) {
-            return createSimilarMap( self ) ;
+    public static <K, V> Map<K, V> drop(Map<K, V> self, int num) {
+        if (self.size() <= num) {
+            return createSimilarMap(self);
         }
-        if( num == 0 ) {
-            return cloneSimilarMap( self ) ;
+        if (num == 0) {
+            return cloneSimilarMap(self);
         }
-        Map<K,V> ret = createSimilarMap( self ) ;
-        for( K key : self.keySet() ) {
-            if( num-- <= 0 ) {
-                ret.put( key, self.get( key ) ) ;
+        Map<K, V> ret = createSimilarMap(self);
+        for (K key : self.keySet()) {
+            if (num-- <= 0) {
+                ret.put(key, self.get(key));
             }
         }
-        return ret ;
+        return ret;
     }
-    
+
     /**
      * Drops the given number of elements from the head of this iterator if they are available.
      * The original iterator is stepped along by <code>num</code> elements.
      * <pre class="groovyTestCase">
-     *     def iteratorCompare( Iterator a, List b ) {
-     *       a.collect { it } == b
-     *     }
-     *     def iter = [ 1, 2, 3, 4, 5 ].listIterator()
-     *     assert iteratorCompare( iter.drop( 0 ), [ 1, 2, 3, 4, 5 ] )
-     *     iter = [ 1, 2, 3, 4, 5 ].listIterator()
-     *     assert iteratorCompare( iter.drop( 2 ), [ 3, 4, 5 ] )
-     *     iter = [ 1, 2, 3, 4, 5 ].listIterator()
-     *     assert iteratorCompare( iter.drop( 5 ), [] )
+     * def iteratorCompare( Iterator a, List b ) {
+     *     a.collect { it } == b
+     * }
+     * def iter = [ 1, 2, 3, 4, 5 ].listIterator()
+     * assert iteratorCompare( iter.drop( 0 ), [ 1, 2, 3, 4, 5 ] )
+     * iter = [ 1, 2, 3, 4, 5 ].listIterator()
+     * assert iteratorCompare( iter.drop( 2 ), [ 3, 4, 5 ] )
+     * iter = [ 1, 2, 3, 4, 5 ].listIterator()
+     * assert iteratorCompare( iter.drop( 5 ), [] )
      * </pre>
      *
      * @param self the original iterator
-     * @param num the number of elements to drop from this iterator
+     * @param num  the number of elements to drop from this iterator
      * @return The iterator stepped along by <code>num</code> elements if they exist.
      * @since 1.8.1
      */
@@ -6473,7 +6522,374 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         while (num-- > 0 && self.hasNext()) {
             self.next();
         }
-        return self ;
+        return self;
+    }
+
+    /**
+     * Returns the longest prefix of this list where each element
+     * passed to the given closure condition evaluates to true.
+     * Similar to {@link #takeWhile(Iterable, groovy.lang.Closure)}
+     * except that it attempts to preserve the type of the original list.
+     * <pre class="groovyTestCase">
+     * def nums = [ 1, 3, 2 ]
+     * assert nums.takeWhile{ it < 1 } == []
+     * assert nums.takeWhile{ it < 3 } == [ 1 ]
+     * assert nums.takeWhile{ it < 4 } == [ 1, 3, 2 ]
+     * </pre>
+     *
+     * @param self      the original list
+     * @param condition the closure that must evaluate to true to
+     *                  continue taking elements
+     * @return a prefix of the given list where each element passed to
+     *         the given closure evaluates to true
+     * @since 1.8.7
+     */
+    public static <T> List<T> takeWhile(List<T> self, Closure condition) {
+        int num = 0;
+        for (T value : self) {
+            if (DefaultTypeTransformation.castToBoolean(condition.call(value))) {
+                num += 1;
+            } else {
+                break;
+            }
+        }
+        return take(self, num);
+    }
+
+    /**
+     * Returns a List containing the longest prefix of the elements from this Iterable
+     * where each element passed to the given closure evaluates to true.
+     * <pre class="groovyTestCase">
+     * class AbcIterable implements Iterable<String> {
+     *     Iterator<String> iterator() { "abc".iterator() }
+     * }
+     * def abc = new AbcIterable()
+     * assert abc.takeWhile{ it < 'b' } == ['a']
+     * assert abc.takeWhile{ it <= 'b' } == ['a', 'b']
+     * </pre>
+     *
+     * @param self      an Iterable
+     * @param condition the closure that must evaluate to true to
+     *                  continue taking elements
+     * @return a List containing a prefix of the elements from the given Iterable where
+     *         each element passed to the given closure evaluates to true
+     * @since 1.8.7
+     */
+    public static <T> List<T> takeWhile(Iterable<T> self, Closure condition) {
+        return toList(takeWhile(self.iterator(), condition));
+    }
+
+    /**
+     * Returns the longest prefix of this Map where each entry (or key/value pair) when
+     * passed to the given closure evaluates to true.
+     * <pre class="groovyTestCase">
+     * def shopping = [milk:1, bread:2, chocolate:3]
+     * assert shopping.takeWhile{ it.key.size() < 6 } == [milk:1, bread:2]
+     * assert shopping.takeWhile{ it.value % 2 } == [milk:1]
+     * assert shopping.takeWhile{ k, v -> k.size() + v <= 7 } == [milk:1, bread:2]
+     * </pre>
+     * If the map instance does not have ordered keys, then this function could appear to take random
+     * entries. Groovy by default uses LinkedHashMap, so this shouldn't be an issue in the main.
+     *
+     * @param self      a Map
+     * @param condition a 1 (or 2) arg Closure that must evaluate to true for the
+     *                  entry (or key and value) to continue taking elements
+     * @return a prefix of the given Map where each entry (or key/value pair) passed to
+     *         the given closure evaluates to true
+     * @since 1.8.7
+     */
+    public static <K, V> Map<K, V> takeWhile(Map<K, V> self, Closure<?> condition) {
+        if (self.isEmpty()) {
+            return createSimilarMap(self);
+        }
+        Map<K, V> ret = createSimilarMap(self);
+        for (Map.Entry<K, V> entry : self.entrySet()) {
+            if (!DefaultTypeTransformation.castToBoolean(callClosureForMapEntry(condition, entry))) break;
+            ret.put(entry.getKey(), entry.getValue());
+        }
+        return ret;
+    }
+
+    /**
+     * Returns the longest prefix of this array where each element
+     * passed to the given closure evaluates to true.
+     * <pre class="groovyTestCase">
+     * def nums = [ 1, 3, 2 ] as Integer[]
+     * assert nums.takeWhile{ it < 1 } == [] as Integer[]
+     * assert nums.takeWhile{ it < 3 } == [ 1 ] as Integer[]
+     * assert nums.takeWhile{ it < 4 } == [ 1, 3, 2 ] as Integer[]
+     * </pre>
+     *
+     * @param self      the original array
+     * @param condition the closure that must evaluate to true to
+     *                  continue taking elements
+     * @return a prefix of the given array where each element passed to
+     *         the given closure evaluates to true
+     * @since 1.8.7
+     */
+    public static <T> T[] takeWhile(T[] self, Closure condition) {
+        int num = 0;
+        while (num < self.length) {
+            T value = self[num];
+            if (DefaultTypeTransformation.castToBoolean(condition.call(value))) {
+                num += 1;
+            } else {
+                break;
+            }
+        }
+        return take(self, num);
+    }
+
+    /**
+     * Returns the longest prefix of elements in this iterator where
+     * each element passed to the given condition closure evaluates to true.
+     * <p/>
+     * <pre class="groovyTestCase">
+     * def a = 0
+     * def iter = [ hasNext:{ true }, next:{ a++ } ] as Iterator
+     *
+     * assert [].iterator().takeWhile{ it < 3 }.toList() == []
+     * assert [1, 2, 3, 4, 5].iterator().takeWhile{ it < 3 }.toList() == [ 1, 2 ]
+     * assert iter.takeWhile{ it < 5 }.toList() == [ 0, 1, 2, 3, 4 ]
+     * </pre>
+     *
+     * @param self      the Iterator
+     * @param condition the closure that must evaluate to true to
+     *                  continue taking elements
+     * @return a prefix of elements in the given iterator where each
+     *         element passed to the given closure evaluates to true
+     * @since 1.8.7
+     */
+    public static <T> Iterator<T> takeWhile(Iterator<T> self, Closure condition) {
+        return new TakeWhileIterator<T>(self, condition);
+    }
+
+    private static class TakeWhileIterator<E> implements Iterator<E> {
+        private final Iterator<E> delegate;
+        private final Closure condition;
+        private boolean exhausted;
+        private E next;
+
+        private TakeWhileIterator(Iterator<E> delegate, Closure condition) {
+            this.delegate = delegate;
+            this.condition = condition;
+            advance();
+        }
+
+        public boolean hasNext() {
+            return !exhausted;
+        }
+
+        public E next() {
+            if (exhausted) throw new NoSuchElementException();
+            E result = next;
+            advance();
+            return result;
+        }
+
+        public void remove() {
+            if (exhausted) throw new NoSuchElementException();
+            delegate.remove();
+        }
+
+        private void advance() {
+            exhausted = !delegate.hasNext();
+            if (!exhausted) {
+                next = delegate.next();
+                if (!DefaultTypeTransformation.castToBoolean(condition.call(next))) {
+                    exhausted = true;
+                    next = null;
+                }
+            }
+        }
+    }
+
+    /**
+     * Returns a suffix of this List where elements are dropped from the front
+     * while the given Closure evaluates to true.
+     * Similar to {@link #dropWhile(Iterable, groovy.lang.Closure)}
+     * except that it attempts to preserve the type of the original list.
+     * <pre class="groovyTestCase">
+     * def nums = [ 1, 3, 2 ]
+     * assert nums.dropWhile{ it < 4 } == []
+     * assert nums.dropWhile{ it < 3 } == [ 3, 2 ]
+     * assert nums.dropWhile{ it != 2 } == [ 2 ]
+     * assert nums.dropWhile{ it == 0 } == [ 1, 3, 2 ]
+     * </pre>
+     *
+     * @param self      the original list
+     * @param condition the closure that must evaluate to true to continue dropping elements
+     * @return the shortest suffix of the given List such that the given closure condition
+     *         evaluates to true for each element dropped from the front of the List
+     * @since 1.8.7
+     */
+    public static <T> List<T> dropWhile(List<T> self, Closure<?> condition) {
+        int num = 0;
+        for (T value : self) {
+            if (DefaultTypeTransformation.castToBoolean(condition.call(value))) {
+                num += 1;
+            } else {
+                break;
+            }
+        }
+        return drop(self, num);
+    }
+
+    /**
+     * Returns a suffix of this Iterable where elements are dropped from the front
+     * while the given closure evaluates to true.
+     * <pre class="groovyTestCase">
+     * class AbcIterable implements Iterable<String> {
+     *     Iterator<String> iterator() { "abc".iterator() }
+     * }
+     * def abc = new AbcIterable()
+     * assert abc.dropWhile{ it < 'b' } == ['b', 'c']
+     * assert abc.dropWhile{ it <= 'b' } == ['c']
+     * </pre>
+     *
+     * @param self      an Iterable
+     * @param condition the closure that must evaluate to true to continue dropping elements
+     * @return the shortest suffix of the given Iterable such that the given closure condition
+     *         evaluates to true for each element dropped from the front of the Iterable
+     * @since 1.8.7
+     */
+    public static <T> List<T> dropWhile(Iterable<T> self, Closure<?> condition) {
+        return toList(dropWhile(self.iterator(), condition));
+    }
+
+    /**
+     * Create a suffix of the given Map by dropping as many entries as possible from the
+     * front of the original Map such that calling the given closure condition evaluates to
+     * true when passed each of the dropped entries (or key/value pairs).
+     * <pre class="groovyTestCase">
+     * def shopping = [milk:1, bread:2, chocolate:3]
+     * assert shopping.takeWhile{ it.key.size() < 6 } == [milk:1, bread:2]
+     * assert shopping.takeWhile{ it.value % 2 } == [milk:1]
+     * assert shopping.takeWhile{ k, v -> k.size() + v <= 7 } == [milk:1, bread:2]
+     * </pre>
+     * If the map instance does not have ordered keys, then this function could appear to drop random
+     * entries. Groovy by default uses LinkedHashMap, so this shouldn't be an issue in the main.
+     *
+     * @param self      a Map
+     * @param condition a 1 (or 2) arg Closure that must evaluate to true for the
+     *                  entry (or key and value) to continue dropping elements
+     * @return the shortest suffix of the given Map such that the given closure condition
+     *         evaluates to true for each element dropped from the front of the Map
+     * @since 1.8.7
+     */
+    public static <K, V> Map<K, V> dropWhile(Map<K, V> self, Closure<?> condition) {
+        if (self.isEmpty()) {
+            return createSimilarMap(self);
+        }
+        Map<K, V> ret = createSimilarMap(self);
+        boolean dropping = true;
+        for (Map.Entry<K, V> entry : self.entrySet()) {
+            if (dropping && !DefaultTypeTransformation.castToBoolean(callClosureForMapEntry(condition, entry))) dropping = false;
+            if (!dropping) ret.put(entry.getKey(), entry.getValue());
+        }
+        return ret;
+    }
+
+    /**
+     * Create a suffix of the given array by dropping as many elements as possible from the
+     * front of the original array such that calling the given closure condition evaluates to
+     * true when passed each of the dropped elements.
+     * <pre class="groovyTestCase">
+     * def nums = [ 1, 3, 2 ] as Integer[]
+     * assert nums.dropWhile{ it <= 3 } == [ ] as Integer[]
+     * assert nums.dropWhile{ it < 3 } == [ 3, 2 ] as Integer[]
+     * assert nums.dropWhile{ it != 2 } == [ 2 ] as Integer[]
+     * assert nums.dropWhile{ it == 0 } == [ 1, 3, 2 ] as Integer[]
+     * </pre>
+     *
+     * @param self      the original array
+     * @param condition the closure that must evaluate to true to
+     *                  continue dropping elements
+     * @return the shortest suffix of the given array such that the given closure condition
+     *         evaluates to true for each element dropped from the front of the array
+     * @since 1.8.7
+     */
+    public static <T> T[] dropWhile(T[] self, Closure<?> condition) {
+        int num = 0;
+        while (num < self.length) {
+            if (DefaultTypeTransformation.castToBoolean(condition.call(self[num]))) {
+                num += 1;
+            } else {
+                break;
+            }
+        }
+        return drop(self, num);
+    }
+
+    /**
+     * Creates an Iterator that returns a suffix of the elements from an original Iterator. As many elements
+     * as possible are dropped from the front of the original Iterator such that calling the given closure
+     * condition evaluates to true when passed each of the dropped elements.
+     * <p/>
+     * <pre class="groovyTestCase">
+     * def a = 0
+     * def iter = [ hasNext:{ a < 10 }, next:{ a++ } ] as Iterator
+     * assert [].iterator().dropWhile{ it < 3 }.toList() == []
+     * assert [1, 2, 3, 4, 5].iterator().dropWhile{ it < 3 }.toList() == [ 3, 4, 5 ]
+     * assert iter.dropWhile{ it < 5 }.toList() == [ 5, 6, 7, 8, 9 ]
+     * </pre>
+     *
+     * @param self      the Iterator
+     * @param condition the closure that must evaluate to true to continue dropping elements
+     * @return the shortest suffix of elements from the given Iterator such that the given closure condition
+     *         evaluates to true for each element dropped from the front of the Iterator
+     * @since 1.8.7
+     */
+    public static <T> Iterator<T> dropWhile(Iterator<T> self, Closure<?> condition) {
+        return new DropWhileIterator<T>(self, condition);
+    }
+
+    private static class DropWhileIterator<E> implements Iterator<E> {
+        private final Iterator<E> delegate;
+        private final Closure condition;
+        private boolean buffering = false;
+        private E buffer = null;
+
+        private DropWhileIterator(Iterator<E> delegate, Closure condition) {
+            this.delegate = delegate;
+            this.condition = condition;
+            prepare();
+        }
+
+        public boolean hasNext() {
+            return buffering || delegate.hasNext();
+        }
+
+        public E next() {
+            if (buffering) {
+                E result = buffer;
+                buffering = false;
+                buffer = null;
+                return result;
+            } else {
+                return delegate.next();
+            }
+        }
+
+        public void remove() {
+            if (buffering) {
+                buffering = false;
+                buffer = null;
+            } else {
+                delegate.remove();
+            }
+        }
+
+        private void prepare() {
+            while (delegate.hasNext()) {
+                E next = delegate.next();
+                if (!DefaultTypeTransformation.castToBoolean(condition.call(next))) {
+                    buffer = next;
+                    buffering = true;
+                    break;
+                }
+            }
+        }
     }
 
     /**
@@ -11658,7 +12074,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     @Deprecated
-    public static CharSequence drop(CharSequence self, int num) {
+    public static CharSequence
+    drop(CharSequence self, int num) {
         return StringGroovyMethods.drop(self, num);
     }
 

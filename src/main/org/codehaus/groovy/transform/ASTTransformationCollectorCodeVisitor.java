@@ -28,6 +28,9 @@ import groovy.lang.GroovyClassLoader;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * This visitor walks the AST tree and collects references to Annotations that
@@ -78,19 +81,13 @@ public class ASTTransformationCollectorCodeVisitor extends ClassCodeVisitorSuppo
             addTransformsToClassNode(annotation, transformClassAnnotation);
         }
     }
-    
+
     private void addTransformsToClassNode(AnnotationNode annotation, Annotation transformClassAnnotation) {
-        String[] transformClassNames = getTransformClassNames(transformClassAnnotation);
-        Class[] transformClasses = getTransformClasses(transformClassAnnotation);
+        List<String> transformClassNames = getTransformClassNames(annotation, transformClassAnnotation);
 
-        if(transformClassNames.length == 0 && transformClasses.length == 0) {
-            source.getErrorCollector().addError(new SimpleMessage("@GroovyASTTransformationClass in " + 
+        if(transformClassNames.isEmpty()) {
+            source.getErrorCollector().addError(new SimpleMessage("@GroovyASTTransformationClass in " +
                     annotation.getClassNode().getName() + " does not specify any transform class names/classes", source));
-        }
-
-        if(transformClassNames.length > 0 && transformClasses.length > 0) {
-            source.getErrorCollector().addError(new SimpleMessage("@GroovyASTTransformationClass in " + 
-                    annotation.getClassNode().getName() +  " should specify transforms only by class names or by classes and not by both", source));
         }
 
         for (String transformClass : transformClassNames) {
@@ -105,9 +102,6 @@ public class ASTTransformationCollectorCodeVisitor extends ClassCodeVisitorSuppo
                                 + " declared by " + annotation.getClassNode().getName(),
                                 source));
             }
-        }
-        for (Class klass : transformClasses) {
-            verifyAndAddTransform(annotation, klass);
         }
     }
 
@@ -151,28 +145,34 @@ public class ASTTransformationCollectorCodeVisitor extends ClassCodeVisitorSuppo
             if (ann.annotationType().getName().equals(GroovyASTTransformationClass.class.getName())){
                 return ann;
             }
-        }  
+        }
 
         return null;
     }
 
-    private String[] getTransformClassNames(Annotation transformClassAnnotation) {
+    private List<String> getTransformClassNames(AnnotationNode annotation, Annotation transformClassAnnotation) {
+        List<String> result = new ArrayList<String>();
+
         try {
             Method valueMethod = transformClassAnnotation.getClass().getMethod("value");
-            return (String[]) valueMethod.invoke(transformClassAnnotation);
-        } catch (Exception e) {
-            source.addException(e);
-            return new String[0];
-        }
-    }
+            String[] names = (String[]) valueMethod.invoke(transformClassAnnotation);
+            result.addAll(Arrays.asList(names));
 
-    private Class[] getTransformClasses(Annotation transformClassAnnotation) {
-        try {
             Method classesMethod = transformClassAnnotation.getClass().getMethod("classes");
-            return (Class[]) classesMethod.invoke(transformClassAnnotation);
+            Class[] classes = (Class[]) classesMethod.invoke(transformClassAnnotation);
+            for (Class klass : classes) {
+                result.add(klass.getName());
+            }
+
+            if(names.length > 0 && classes.length > 0) {
+                source.getErrorCollector().addError(new SimpleMessage("@GroovyASTTransformationClass in " +
+                        annotation.getClassNode().getName() +
+                        " should specify transforms only by class names or by classes and not by both", source));
+            }
         } catch (Exception e) {
             source.addException(e);
-            return new Class[0];
         }
+
+        return result;
     }
 }

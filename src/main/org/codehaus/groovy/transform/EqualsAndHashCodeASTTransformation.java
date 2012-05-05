@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2011 the original author or authors.
+ * Copyright 2008-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -60,12 +60,12 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
                 addError("Error during " + MY_TYPE_NAME + " processing: callSuper=true but '" + cNode.getName() + "' has no super class.", anno);
             }
             boolean includeFields = memberHasValue(anno, "includeFields", true);
-            List<String> excludes = tokenize((String) getMemberValue(anno, "excludes"));
-            List<String> includes = tokenize((String) getMemberValue(anno, "includes"));
+            List<String> excludes = getMemberList(anno, "excludes");
+            List<String> includes = getMemberList(anno, "includes");
             if (hasAnnotation(cNode, CanonicalASTTransformation.MY_TYPE)) {
                 AnnotationNode canonical = cNode.getAnnotations(CanonicalASTTransformation.MY_TYPE).get(0);
-                if (excludes == null || excludes.isEmpty()) excludes = tokenize((String) getMemberValue(canonical, "excludes"));
-                if (includes == null || includes.isEmpty()) includes = tokenize((String) getMemberValue(canonical, "includes"));
+                if (excludes == null || excludes.isEmpty()) excludes = getMemberList(canonical, "excludes");
+                if (includes == null || includes.isEmpty()) includes = getMemberList(canonical, "includes");
             }
             if (includes != null && !includes.isEmpty() && excludes != null && !excludes.isEmpty()) {
                 addError("Error during " + MY_TYPE_NAME + " processing: Only one of 'includes' and 'excludes' should be supplied not both.", anno);

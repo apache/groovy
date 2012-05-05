@@ -103,16 +103,18 @@ import java.lang.annotation.Target;
 @GroovyASTTransformationClass("org.codehaus.groovy.transform.ToStringASTTransformation")
 public @interface ToString {
     /**
-     * Comma separated list of field and/or property names to exclude from generated toString.
-     * Must not be used if 'includes' is used.
+     * List of field and/or property names to exclude from generated toString.
+     * Must not be used if 'includes' is used. For convenience, a String with comma separated names
+     * can be used in addition to an array (using Groovy's literal list notation) of String values.
      */
-    String excludes() default "";
+    String[] excludes();
 
     /**
-     * Comma separated list of field and/or property names to include within the generated toString.
-     * Must not be used if 'excludes' is used.
+     * List of field and/or property names to include within the generated toString.
+     * Must not be used if 'excludes' is used. For convenience, a String with comma separated names
+     * can be used in addition to an array (using Groovy's literal list notation) of String values.
      */
-    String includes() default "";
+    String[] includes();
 
     /**
      * Whether to include super in generated toString

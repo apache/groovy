@@ -91,6 +91,7 @@ public class PogoMetaMethodSite extends MetaMethodSite {
     protected boolean checkCall(Object receiver) {
         try {
             return !GroovyCategorySupport.hasCategoryInCurrentThread()
+               && receiver instanceof GroovyObject
                && ((GroovyObject)receiver).getMetaClass() == metaClass // metaClass still be valid
                && MetaClassHelper.sameClasses(params);
         }
@@ -109,6 +110,7 @@ public class PogoMetaMethodSite extends MetaMethodSite {
     protected boolean checkCall(Object receiver, Object arg1) {
         try {
             return !GroovyCategorySupport.hasCategoryInCurrentThread()
+               && receiver instanceof GroovyObject
                && ((GroovyObject)receiver).getMetaClass() == metaClass // metaClass still be valid
                && MetaClassHelper.sameClasses(params, arg1);
         }
@@ -127,6 +129,7 @@ public class PogoMetaMethodSite extends MetaMethodSite {
     protected boolean checkCall(Object receiver, Object arg1, Object arg2) {
         try {
             return !GroovyCategorySupport.hasCategoryInCurrentThread()
+               && receiver instanceof GroovyObject
                && ((GroovyObject)receiver).getMetaClass() == metaClass // metaClass still be valid
                && MetaClassHelper.sameClasses(params, arg1, arg2);
         }
@@ -145,6 +148,7 @@ public class PogoMetaMethodSite extends MetaMethodSite {
     protected boolean checkCall(Object receiver, Object arg1, Object arg2, Object arg3) {
         try {
             return !GroovyCategorySupport.hasCategoryInCurrentThread()
+               && receiver instanceof GroovyObject
                && ((GroovyObject)receiver).getMetaClass() == metaClass // metaClass still be valid
                && MetaClassHelper.sameClasses(params, arg1, arg2, arg3);
         }
@@ -163,6 +167,7 @@ public class PogoMetaMethodSite extends MetaMethodSite {
     protected boolean checkCall(Object receiver, Object arg1, Object arg2, Object arg3, Object arg4) {
         try {
             return !GroovyCategorySupport.hasCategoryInCurrentThread()
+               && receiver instanceof GroovyObject
                && ((GroovyObject)receiver).getMetaClass() == metaClass // metaClass still be valid
                && MetaClassHelper.sameClasses(params, arg1, arg2, arg3, arg4);
         }

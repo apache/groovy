@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2011 the original author or authors.
+ * Copyright 2008-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -154,6 +154,29 @@ import java.lang.annotation.Target;
  * assert p2.hasEqualXY(t1) && t1.hasEqualXY(p2)
  * assert p3.hasEqualXY(t1) && t1.hasEqualXY(p3)
  * </pre>
+ * There is also support for including or excluding fields/properties by name when constructing
+ * the equals and hashCode methods as shown here:
+ * <pre>
+ * import groovy.transform.*
+ * {@code @EqualsAndHashCode}(excludes="z")
+ * {@code @TupleConstructor}
+ * public class Point2D {
+ *     int x, y, z
+ * }
+ *
+ * assert  new Point2D(1, 1, 1).equals(new Point2D(1, 1, 2))
+ * assert !new Point2D(1, 1, 1).equals(new Point2D(2, 1, 1))
+ *
+ * {@code @EqualsAndHashCode}(excludes=["y", "z"])
+ * {@code @TupleConstructor}
+ * public class Point2D {
+ *     int x, y, z
+ * }
+ *
+ * assert  new Point1D(1, 1, 1).equals(new Point1D(1, 1, 2))
+ * assert  new Point1D(1, 1, 1).equals(new Point1D(1, 2, 1))
+ * assert !new Point1D(1, 1, 1).equals(new Point1D(2, 1, 1))
+ * </pre>
  *
  * @see org.codehaus.groovy.util.HashCodeHelper
  * @author Paul King
@@ -165,16 +188,18 @@ import java.lang.annotation.Target;
 @GroovyASTTransformationClass("org.codehaus.groovy.transform.EqualsAndHashCodeASTTransformation")
 public @interface EqualsAndHashCode {
     /**
-     * Comma separated list of field and/or property names to exclude from the equals and hashCode calculations.
-     * Must not be used if 'includes' is used.
+     * List of field and/or property names to exclude from the equals and hashCode calculations.
+     * Must not be used if 'includes' is used. For convenience, a String with comma separated names
+     * can be used in addition to an array (using Groovy's literal list notation) of String values.
      */
-    String excludes() default "";
+    String[] excludes();
 
     /**
-     * Comma separated list of field and/or property names to include within the equals and hashCode calculations.
-     * Must not be used if 'excludes' is used.
+     * List of field and/or property names to include within the equals and hashCode calculations.
+     * Must not be used if 'excludes' is used. For convenience, a String with comma separated names
+     * can be used in addition to an array (using Groovy's literal list notation) of String values.
      */
-    String includes() default "";
+    String[] includes();
 
     /**
      * Whether to include super in equals and hashCode calculations
