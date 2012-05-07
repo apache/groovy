@@ -133,6 +133,7 @@ $Date$
                 <pom refid="@{prefix}.pom"/>
                 <attach file="${targetDistDirectory}/@{prefix}-@{version}-sources.jar" classifier="sources"/>
                 <attach file="${targetDistDirectory}/@{prefix}-@{version}-javadoc.jar" classifier="javadoc"/>
+                <attach file="${targetDistDirectory}/@{prefix}-@{version}-indy.jar" classifier="indy"/>
             </artifact:deploy>
         </sequential>
     </macrodef>
@@ -146,6 +147,7 @@ $Date$
                 <pom refid="@{prefix}.pom"/>
                 <attach file="${targetDistDirectory}/@{prefix}-@{version}-sources.jar" classifier="sources"/>
                 <attach file="${targetDistDirectory}/@{prefix}-@{version}-javadoc.jar" classifier="javadoc"/>
+                <attach file="${targetDistDirectory}/@{prefix}-@{version}-indy.jar" classifier="indy"/>
             </artifact:deploy>
         </sequential>
     </macrodef>
@@ -158,6 +160,7 @@ $Date$
                 <pom refid="@{prefix}.pom"/>
                 <attach file="${targetDistDirectory}/@{prefix}-@{version}-sources.jar" classifier="sources"/>
                 <attach file="${targetDistDirectory}/@{prefix}-@{version}-javadoc.jar" classifier="javadoc"/>
+                <attach file="${targetDistDirectory}/@{prefix}-@{version}-indy.jar" classifier="indy"/>
             </artifact:install>
         </sequential>
     </macrodef>
