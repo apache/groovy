@@ -36,6 +36,7 @@ import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.EncodingGroovyMethods;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.syntax.SyntaxException;
+import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.transform.StaticTypesTransformation;
 import org.codehaus.groovy.util.ListHashMap;
 import org.objectweb.asm.Opcodes;
@@ -86,6 +87,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     private MethodNode methodNode;
     private Set<MethodNode> methodsToBeVisited = Collections.emptySet();
     private ErrorCollector errorCollector;
+    private boolean isInStaticContext = false;
 
     // used for closure return type inference
     private ClosureExpression closureExpression;
@@ -821,6 +823,28 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     @Override
+    public void visitField(final FieldNode node) {
+        final boolean osc = isInStaticContext;
+        try {
+            isInStaticContext = node.isInStaticContext();
+            super.visitField(node);
+            Expression init = node.getInitialExpression();
+            if (init!=null) {
+                FieldExpression left = new FieldExpression(node);
+                BinaryExpression bexp = new BinaryExpression(
+                        left,
+                        Token.newSymbol("=", node.getLineNumber(), node.getColumnNumber()),
+                        init
+                );
+                bexp.setSourcePosition(init);
+                typeCheckAssignment(bexp, left, node.getOriginType(), init, getType(init));
+            }
+        } finally {
+            isInStaticContext = osc;
+        }
+    }
+
+    @Override
     public void visitForLoop(final ForStatement forLoop) {
         // collect every variable expression used in the loop body
         final Map<VariableExpression, ClassNode> varOrigType = new HashMap<VariableExpression, ClassNode>();
@@ -1181,8 +1205,14 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         // We do not check for an annotation because some other AST transformations
         // may use this visitor without the annotation being explicitely set
         if (!methodsToBeVisited.isEmpty() && !methodsToBeVisited.contains(node)) return;
+        final boolean osc = isInStaticContext;
+        try {
+            isInStaticContext = node.isStatic();
         super.visitMethod(node);
         addTypeCheckingInfoAnnotation(node);
+        } finally {
+            isInStaticContext = osc;
+    }
     }
 
     protected void addTypeCheckingInfoAnnotation(final MethodNode node) {
@@ -1494,6 +1524,31 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 ClassNode chosenReceiver = null;
                 for (ClassNode currentReceiver : receivers) {
                     mn = findMethod(currentReceiver, name, args);
+
+                    // if the receiver is "this" or "implicit this", then we must make sure that the compatible
+                    // methods are only static if we are in a static context
+                    if (!mn.isEmpty() && isInStaticContext && (call.isImplicitThis()
+                            || (objectExpression instanceof VariableExpression && ((VariableExpression)objectExpression).isThisExpression()))) {
+                        // we create a separate method list just to be able to print out
+                        // a nice error message to the user
+                        List<MethodNode> staticMethods = new LinkedList<MethodNode>();
+                        List<MethodNode> nonStaticMethods = new LinkedList<MethodNode>();
+                        for (final MethodNode node : mn) {
+                            if (node.isStatic()) {
+                                staticMethods.add(node);
+                            } else {
+                                nonStaticMethods.add(node);
+                            }
+                        }
+                        mn = staticMethods;
+                        if (staticMethods.isEmpty()) {
+                            // choose an arbitrary method to display an error message
+                            MethodNode node = nonStaticMethods.get(0);
+                            ClassNode owner = node.getDeclaringClass();
+                            addStaticTypeError("Non static method "+owner.getName()+"#"+node.getName()+" cannot be called from static context", call);
+                        }
+                    }
+
                     if (!mn.isEmpty()) {
                         if (mn.size() == 1) typeCheckMethodsWithGenerics(currentReceiver, args, mn.get(0), call);
                         chosenReceiver = currentReceiver;

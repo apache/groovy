@@ -213,6 +213,36 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-5443
+    void testFieldInitShouldPass() {
+        assertScript '''
+            class Foo {
+                int x = 1
+            }
+            1
+        '''
+    }
+
+    // GROOVY-5443
+    void testFieldInitShouldNotPassBecauseOfIncompatibleTypes() {
+        shouldFailWithMessages '''
+            class Foo {
+                int x = new Date()
+            }
+            1
+        ''', 'Cannot assign value of type java.util.Date to variable of type int'
+    }
+
+    // GROOVY-5443
+    void testFieldInitShouldNotPassBecauseOfIncompatibleTypesWithClosure() {
+        shouldFailWithMessages '''
+            class Foo {
+                Closure<List> cls = { Date aDate ->  aDate.getTime() }
+            }
+            1
+        ''', 'Incompatible generic argument types. Cannot assign groovy.lang.Closure <java.lang.Long> to: groovy.lang.Closure <List>'
+    }
+
     public static class BaseClass {
         int x
     }

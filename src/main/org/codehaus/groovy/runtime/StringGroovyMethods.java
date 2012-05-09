@@ -86,6 +86,8 @@ import static org.codehaus.groovy.runtime.DefaultGroovyMethods.each;
  * @author Cedric Champeau
  * @author Tim Yates
  * @author Dinko Srkoc
+ * @author Pascal Lombard
+ * @author Christophe Charles
  */
 public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
 
@@ -523,6 +525,39 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
             return self.subSequence( 0, 0 ) ;
         }
         return self.subSequence(num, self.length()) ;
+    }
+
+    /**
+     * Create a suffix of the given CharSequence by dropping as many characters as possible from the
+     * front of the original CharSequence such that calling the given closure condition evaluates to
+     * true when passed each of the dropped characters.
+     * <p/>
+     * <pre class="groovyTestCase">
+     * def text = "Groovy"
+     * assert text.dropWhile{ false } == 'Groovy'
+     * assert text.dropWhile{ true } == ''
+     * assert text.dropWhile{ it < 'Z' } == 'roovy'
+     * assert text.dropWhile{ it != 'v' } == 'vy'
+     * </pre>
+     *
+     * @param self      the original CharSequence
+     * @param condition the closure that while continuously evaluating to true will cause us to drop elements from
+     *                  the front of the original CharSequence
+     * @return the shortest suffix of the given CharSequence such that the given closure condition
+     *         evaluates to true for each element dropped from the front of the CharSequence
+     * @since 2.0.0
+     */
+    public static CharSequence dropWhile(CharSequence self, Closure condition) {
+        int num = 0;
+        while (num < self.length()) {
+            char value = self.charAt(num);
+            if (DefaultTypeTransformation.castToBoolean(condition.call(value))) {
+                num += 1;
+            } else {
+                break;
+            }
+        }
+        return drop(self, num);
     }
 
     /**
@@ -1369,6 +1404,33 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
         catch (IllegalStateException ex) {
             return null;
         }
+    }
+
+    /**
+     * Given a matcher that matches a string against a pattern,
+     * this method returns true when the string matches the pattern or if a longer string, could match the pattern.
+     *
+     * For example:
+     * <pre class="groovyTestCase">
+     *     def emailPattern = /\w+@\w+\.\w{2,}/
+     *
+     *     def matcher = "john@doe" =~ emailPattern
+     *     assert matcher.matchesPartially()
+     *
+     *     matcher = "john@doe.com" =~ emailPattern
+     *     assert matcher.matchesPartially()
+     *
+     *     matcher = "john@@" =~ emailPattern
+     *     assert !matcher.matchesPartially()
+     * </pre>
+     *
+     * @param matcher the Matcher
+     * @return true if more input to the String could make the matcher match the associated pattern, false otherwise.
+     *
+     * @since 2.0.0
+     */
+    public static boolean matchesPartially(Matcher matcher) {
+        return matcher.matches() || matcher.hitEnd();
     }
 
     /**
@@ -3201,6 +3263,63 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
         int index = 0;
         while (index < length && line.charAt(index) <= ' ') index++;
         return (index < length && line.charAt(index) == marginChar) ? line.substring(index + 1) : line;
+    }
+
+    /**
+     * Returns the first <code>num</code> elements from this CharSequence.
+     * <pre class="groovyTestCase">
+     * def text = "Groovy"
+     * assert text.take( 0 ) == ''
+     * assert text.take( 2 ) == 'Gr'
+     * assert text.take( 7 ) == 'Groovy'
+     * </pre>
+     *
+     * @param self the original CharSequence
+     * @param num  the number of chars to take from this CharSequence
+     * @return a CharSequence consisting of the first <code>num</code> chars,
+     *         or else the whole CharSequence if it has less then <code>num</code> elements.
+     * @since 1.8.1
+     */
+    public static CharSequence take(CharSequence self, int num) {
+        if (num < 0) {
+            return self.subSequence(0, 0);
+        }
+        if (self.length() <= num) {
+            return self;
+        }
+        return self.subSequence(0, num);
+    }
+
+    /**
+     * Returns the longest prefix of this CharSequence where each
+     * element passed to the given closure evaluates to true.
+     * <p/>
+     * <pre class="groovyTestCase">
+     * def text = "Groovy"
+     * assert text.takeWhile{ it < 'A' } == ''
+     * assert text.takeWhile{ it < 'Z' } == 'G'
+     * assert text.takeWhile{ it != 'v' } == 'Groo'
+     * assert text.takeWhile{ it < 'z' } == 'Groovy'
+     * </pre>
+     *
+     * @param self      the original CharSequence
+     * @param condition the closure that must evaluate to true to
+     *                  continue taking elements
+     * @return a prefix of elements in the CharSequence where each
+     *         element passed to the given closure evaluates to true
+     * @since 2.0.0
+     */
+    public static CharSequence takeWhile(CharSequence self, Closure condition) {
+        int num = 0;
+        while (num < self.length()) {
+            char value = self.charAt(num);
+            if (DefaultTypeTransformation.castToBoolean(condition.call(value))) {
+                num += 1;
+            } else {
+                break;
+            }
+        }
+        return take(self, num);
     }
 
     /**

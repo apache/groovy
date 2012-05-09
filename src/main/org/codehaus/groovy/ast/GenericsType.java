@@ -287,12 +287,14 @@ public class GenericsType extends ASTNode {
             for (int i = 0; i < redirectBoundGenericTypes.length && match; i++) {
                 GenericsType redirectBoundType = redirectBoundGenericTypes[i];
                 GenericsType classNodeType = cnTypes[i];
-                if (classNodeType.isWildcard()) {
+                // The following code has been commented out because it causes GROOVY-5415
+                // However, commenting doesn't make any test fail, which is curious...
+ /*               if (classNodeType.isWildcard()) {
                     for (ClassNode node : classNodeType.getUpperBounds()) {
                         match = compareGenericsWithBound(node, bound);
                         if (!match) return false;
                     }
-                } else if (classNodeType.isPlaceholder()) {
+                } else */if (classNodeType.isPlaceholder()) {
                     if (redirectBoundType.isPlaceholder()) {
                         match = classNodeType.getName().equals(redirectBoundType.getName());
                     } else {

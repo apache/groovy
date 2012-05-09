@@ -540,4 +540,23 @@ class RegularExpressionsTest extends GroovyTestCase {
         assert ["c+cat+t", "s+sat+t", "h+hat+t"] == orig.findAll(p, closureSingleVar)
         assert ["c+cat+t", "s+sat+t", "h+hat+t"] == orig.findAll(compiledPattern, closureSingleVar)
     }
+
+    void testMatchesPartially() {
+
+        def pattern = /\w+@\w+\.\w{2,}/
+
+        def useCases = [
+                "glaforge@gmail.com"    : true,
+                "glaforge"              : true,
+                "!!!!"                  : false,
+                "glaforge@"             : true,
+                "glaforge@@"            : false
+        ]
+
+        useCases.each { String email, boolean bool ->
+            def matcher = email =~ pattern
+
+            assert matcher.matchesPartially() == bool
+        }
+    }
 }

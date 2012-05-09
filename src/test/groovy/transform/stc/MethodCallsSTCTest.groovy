@@ -534,6 +534,43 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         ''', '#square(double)', '#square(float)'
     }
 
+    void testShouldNotAllowMethodCallFromStaticContext() {
+        shouldFailWithMessages '''
+            class A {
+                void instanceMethod() {}
+
+                static void staticMethod() {
+                    instanceMethod() // calling instance method from static context
+                }
+            }
+            A.staticMethod()
+        ''', 'Non static method A#instanceMethod cannot be called from static context'
+    }
+
+    void testShouldNotAllowMethodCallFromStaticConstructor() {
+        shouldFailWithMessages '''
+            class A {
+                void instanceMethod() {}
+
+                static {
+                    instanceMethod() // calling instance method from static context
+                }
+            }
+            new A()
+        ''', 'Non static method A#instanceMethod cannot be called from static context'
+    }
+
+    void testShouldNotAllowMethodCallFromStaticField() {
+        shouldFailWithMessages '''
+            class A {
+                boolean instanceMethod() { true }
+
+                static FOO = instanceMethod()
+            }
+            new A()
+        ''', 'Non static method A#instanceMethod cannot be called from static context'
+    }
+
     static class MyMethodCallTestClass {
 
         static int mul(int... args) { args.toList().inject(1) { x,y -> x*y } }

@@ -468,7 +468,11 @@ $Date$
 
     <target name="-actuallyCreateJars"
             depends="-makeManifest,-initializeJars,-createBaseJar,-createEmbeddableJar"
-            unless="testFailed"/>
+            unless="testFailed">
+        <copy toDir="${targetDistDirectory}" failonerror="false">
+            <fileset dir="${basedir}/extraArtifacts"/>
+        </copy>
+    </target>
 
     <target name="-makeManifest">
         <mkdir dir="${mainClassesDirectory}/META-INF"/>
@@ -715,6 +719,13 @@ $Date$
         <mkdir dir="${installDirectory}/embeddable"/>
         <copy todir="${installDirectory}/embeddable">
             <fileset dir="${targetDistDirectory}" includes="groovy-all-${groovyVersion}.jar"/>
+        </copy>
+
+        <!-- Install the indy artifacts if available bits -->
+        <mkdir dir="${installDirectory}/indy"/>
+        <copy todir="${installDirectory}/indy">
+            <fileset dir="${targetDistDirectory}" includes="groovy-${groovyVersion}-indy.jar"/>
+            <fileset dir="${targetDistDirectory}" includes="groovy-all-${groovyVersion}-indy.jar"/>
         </copy>
 
         <!-- Install configuration files -->
@@ -991,6 +1002,14 @@ $Date$
                 <exclude name="junitvmwatcher*.properties"/>
             </zipfileset>
         </zip>
+    </target>
+
+    <target name="prepare-indy" depends="clean" if="_useIndy_" description="Prepare a release by putting indy artifacts apart">
+        <delete dir="${basedir}/extraArtifacts"/>
+        <mkdir dir="${basedir}/extraArtifacts"/>
+        <antcall target="createJars"/>
+        <copy file="${targetDistDirectory}/groovy.jar" tofile="${basedir}/extraArtifacts/groovy-${groovyVersion}-indy.jar"/>
+        <copy file="${targetDistDirectory}/groovy-all.jar" tofile="${basedir}/extraArtifacts/groovy-all-${groovyVersion}-indy.jar"/>
     </target>
 
 </project>
