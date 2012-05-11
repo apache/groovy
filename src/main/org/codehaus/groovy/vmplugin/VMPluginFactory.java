@@ -15,8 +15,6 @@
  */
 package org.codehaus.groovy.vmplugin;
 
-import org.codehaus.groovy.vmplugin.v4.Java4;
-
 /**
  * Factory class to get functionality based on the VM version.
  * The usage of this class is not for public use, only for the
@@ -44,9 +42,6 @@ public class VMPluginFactory {
         }
         if (plugin == null) {
             plugin = createPlugin(JDK5_CLASSNAME_CHECK, JDK5_PLUGIN_NAME);
-        }
-        if (plugin == null) {
-            plugin = new Java4();
         }
     }
 

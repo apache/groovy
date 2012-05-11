@@ -120,10 +120,15 @@ abstract class StubTestCase extends GroovyTestCase {
         def nameWithoutTest = this.class.simpleName - 'Test'
         def folder = nameWithoutTest[0].toLowerCase() + nameWithoutTest[1..-1]
 
-        // TODO following works for gradle build - find something that works for both
-//        return new File("target/resources/test/stubgenerator/${folder}")
         def testDirectory = new File(StubTestCase.class.classLoader.getResource('.').toURI())
-        return new File(testDirectory, "../../src/test-resources/stubgenerator/${folder}")
+        // for Ant build
+        def result = new File(testDirectory, "../../src/test-resources/stubgenerator/${folder}")
+        if (!result.exists()) {
+            // For Gradle build
+            result = new File("target/resources/test/stubgenerator/${folder}")
+        }
+
+        result
     }
 
     /**

@@ -21,9 +21,8 @@ package groovy.lang;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class DummyGString extends GString {
+public class DummyGString extends DummyGStringBase {
 
-    private String[] strings;
     private MetaClass metaClass;
 
     public DummyGString(Object[] values) {
@@ -31,12 +30,7 @@ public class DummyGString extends GString {
     }
 
     public DummyGString(Object[] values, String[] strings) {
-        super(values);
-        this.strings = strings;
-    }
-
-    public String[] getStrings() {
-        return strings;
+        super(values, strings);
     }
 
     public MetaClass getMetaClass() {
