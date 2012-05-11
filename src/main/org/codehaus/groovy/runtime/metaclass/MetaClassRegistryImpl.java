@@ -198,6 +198,10 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
         }
     }
 
+    public ExtensionModuleRegistry getModuleRegistry() {
+        return moduleRegistry;
+    }
+
     /**
      * Looks for a class called 'groovy.runtime.metaclass.CustomMetaClassCreationHandle' and if it exists uses it as the MetaClassCreationHandle
      * otherwise uses the default
