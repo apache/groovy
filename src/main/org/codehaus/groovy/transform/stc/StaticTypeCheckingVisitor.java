@@ -36,6 +36,7 @@ import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.EncodingGroovyMethods;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.syntax.SyntaxException;
+import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.transform.StaticTypesTransformation;
 import org.codehaus.groovy.util.ListHashMap;
 import org.objectweb.asm.Opcodes;
@@ -827,6 +828,17 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         try {
             isInStaticContext = node.isInStaticContext();
             super.visitField(node);
+            Expression init = node.getInitialExpression();
+            if (init!=null) {
+                FieldExpression left = new FieldExpression(node);
+                BinaryExpression bexp = new BinaryExpression(
+                        left,
+                        Token.newSymbol("=", node.getLineNumber(), node.getColumnNumber()),
+                        init
+                );
+                bexp.setSourcePosition(init);
+                typeCheckAssignment(bexp, left, node.getOriginType(), init, getType(init));
+            }
         } finally {
             isInStaticContext = osc;
         }
