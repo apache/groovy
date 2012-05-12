@@ -233,7 +233,7 @@ public class Sql {
 
     private static final List<Object> EMPTY_LIST = Collections.emptyList();
 
-    private static final Pattern NAMED_QUERY_PATTERN = Pattern.compile("(?::|\\?(\\d?)\\.?)(\\w*)");
+    private static final Pattern NAMED_QUERY_PATTERN = Pattern.compile("(?<!:)(:)(\\w+)|\\?(\\d*)(?:\\.(\\w+))?");
 
     private DataSource dataSource;
 
@@ -4195,9 +4195,11 @@ public class Sql {
             while (matcher.find()) {
                 newSql.append(sql.substring(txtIndex, matcher.start())).append('?');
                 String indexStr = matcher.group(1);
-                int index = (indexStr == null || indexStr.length() == 0) ? 0 : new Integer(indexStr) - 1;
+                if (indexStr == null) indexStr = matcher.group(3);
+                int index = (indexStr == null || indexStr.length() == 0 || ":".equals(indexStr)) ? 0 : new Integer(indexStr) - 1;
                 String prop = matcher.group(2);
-                indexPropList.add(new Tuple(new Object[]{index, prop.length() == 0 ? "<this>" : prop}));
+                if (prop == null) prop = matcher.group(4);
+                indexPropList.add(new Tuple(new Object[]{index, prop == null || prop.length() == 0 ? "<this>" : prop}));
                 txtIndex = matcher.end();
             }
             newSql.append(sql.substring(txtIndex)); // append ending SQL after last param.
