@@ -150,7 +150,7 @@ public abstract class StaticTypeCheckingSupport {
             for (ExtensionModule module : modules) {
                 if (module instanceof MetaInfExtensionModule) {
                     MetaInfExtensionModule extensionModule = (MetaInfExtensionModule) module;
-                    List<Class> extensionClasses = extensionModule.getStaticMethodsExtensionClasses();
+                    List<Class> extensionClasses = extensionModule.getInstanceMethodsExtensionClasses();
                     classes.addAll(extensionClasses);
                 }
             }
