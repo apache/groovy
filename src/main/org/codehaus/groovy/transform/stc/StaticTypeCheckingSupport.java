@@ -15,11 +15,16 @@
  */
 package org.codehaus.groovy.transform.stc;
 
+import groovy.lang.GroovySystem;
+import groovy.lang.MetaClassRegistry;
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.tools.GenericsUtils;
 import org.codehaus.groovy.ast.tools.WideningCategories;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
+import org.codehaus.groovy.runtime.m12n.ExtensionModule;
+import org.codehaus.groovy.runtime.m12n.MetaInfExtensionModule;
+import org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl;
 
 import java.util.*;
 import java.util.regex.Matcher;
@@ -31,11 +36,12 @@ import static org.codehaus.groovy.syntax.Types.*;
  * Static support methods for {@link StaticTypeCheckingVisitor}.
  */
 public abstract class StaticTypeCheckingSupport {
-    final static Map<String, List<MethodNode>> VIRTUAL_DGM_METHODS = getDGMMethods();
     final static ClassNode
             Collection_TYPE = makeWithoutCaching(Collection.class);
+    final static ClassNode Deprecated_TYPE = makeWithoutCaching(Deprecated.class);
     final static ClassNode Matcher_TYPE = makeWithoutCaching(Matcher.class);
     final static ClassNode ArrayList_TYPE = makeWithoutCaching(ArrayList.class);
+    final static Map<String, List<MethodNode>> VIRTUAL_DGM_METHODS = getDGMMethods();
     final static Map<ClassNode, Integer> NUMBER_TYPES = Collections.unmodifiableMap(
             new HashMap<ClassNode, Integer>() {{
                 put(ClassHelper.byte_TYPE, 0);
@@ -136,8 +142,20 @@ public abstract class StaticTypeCheckingSupport {
      * @return
      */
     private static Map<String, List<MethodNode>> getDGMMethods() {
+        MetaClassRegistry registry = GroovySystem.getMetaClassRegistry();
+        Set<Class> classes = new LinkedHashSet<Class>();
+        if (registry instanceof MetaClassRegistryImpl) {
+            MetaClassRegistryImpl impl = (MetaClassRegistryImpl) registry;
+            List<ExtensionModule> modules = impl.getModuleRegistry().getModules();
+            for (ExtensionModule module : modules) {
+                if (module instanceof MetaInfExtensionModule) {
+                    MetaInfExtensionModule extensionModule = (MetaInfExtensionModule) module;
+                    List<Class> extensionClasses = extensionModule.getStaticMethodsExtensionClasses();
+                    classes.addAll(extensionClasses);
+                }
+            }
+        }
         Map<String, List<MethodNode>> methods = new HashMap<String, List<MethodNode>>();
-        List<Class> classes = new LinkedList<Class>();
         Collections.addAll(classes, DefaultGroovyMethods.DGM_LIKE_CLASSES);
         Collections.addAll(classes, DefaultGroovyMethods.additionals);
         classes.add(ObjectArrayStaticTypesHelper.class);
@@ -145,7 +163,8 @@ public abstract class StaticTypeCheckingSupport {
 			ClassNode cn = ClassHelper.makeWithoutCaching(dgmLikeClass, true);
 			for (MethodNode metaMethod : cn.getMethods()) {
 				Parameter[] types = metaMethod.getParameters();
-				if (metaMethod.isStatic() && metaMethod.isPublic() && types.length > 0) {
+				if (metaMethod.isStatic() && metaMethod.isPublic() && types.length > 0
+                        && metaMethod.getAnnotations(Deprecated_TYPE).isEmpty()) {
 					Parameter[] parameters = new Parameter[types.length - 1];
 					System.arraycopy(types, 1, parameters, 0, parameters.length);
 					MethodNode node = new ExtensionMethodNode(
