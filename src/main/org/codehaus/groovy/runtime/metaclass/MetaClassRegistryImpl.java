@@ -49,7 +49,8 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
     private FastArray instanceMethods = new FastArray();
     private FastArray staticMethods = new FastArray();
 
-    private LinkedList changeListenerList = new LinkedList();
+    private LinkedList<MetaClassRegistryChangeEventListener> changeListenerList = new LinkedList();
+    private LinkedList<MetaClassRegistryChangeEventListener> nonRemoveableChangeListenerList = new LinkedList();
     private ManagedLinkedList metaClassInfo = new ManagedLinkedList<MetaClass>(ReferenceBundle.getWeakBundle());
 
     public static final int LOAD_DEFAULT = 0;
@@ -109,7 +110,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
         ClassInfo.getClassInfo(ExpandoMetaClass.class).setStrongMetaClass(emcMetaClass);
         
 
-        addMetaClassRegistryChangeEventListener(new MetaClassRegistryChangeEventListener(){
+        addNonRemovableMetaClassRegistryChangeEventListener(new MetaClassRegistryChangeEventListener(){
             public void updateConstantMetaClass(MetaClassRegistryChangeEvent cmcu) {
                 synchronized (metaClassInfo) {
                    metaClassInfo.add(cmcu.getNewMetaClass());
@@ -325,6 +326,17 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
             changeListenerList.add(listener);
         }
     }
+    
+
+    /**
+     * Adds a listener for constant meta classes. This listener cannot be removed!
+     * @param listener the listener
+     */
+    public void addNonRemovableMetaClassRegistryChangeEventListener(MetaClassRegistryChangeEventListener listener) {
+        synchronized (changeListenerList) {
+            nonRemoveableChangeListenerList.add(listener);
+        }
+    }
 
     /**
      * Removes a constant meta class listener.
@@ -332,10 +344,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
      */
     public void removeMetaClassRegistryChangeEventListener(MetaClassRegistryChangeEventListener listener) {
         synchronized (changeListenerList) {
-            Object first = changeListenerList.getFirst();
             changeListenerList.remove(listener);
-            // we want to keep the first entry!
-            if (changeListenerList.size() == 0) changeListenerList.addFirst(first);
         }
     }
 
@@ -362,8 +371,10 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
      */
     public MetaClassRegistryChangeEventListener[] getMetaClassRegistryChangeEventListeners() {
         synchronized (changeListenerList) {
-            return (MetaClassRegistryChangeEventListener[]) changeListenerList.toArray(
-                    new MetaClassRegistryChangeEventListener[changeListenerList.size()]);
+            ArrayList<MetaClassRegistryChangeEventListener> ret = new ArrayList(changeListenerList.size()+nonRemoveableChangeListenerList.size());
+            ret.addAll(nonRemoveableChangeListenerList);
+            ret.addAll(changeListenerList);
+            return (MetaClassRegistryChangeEventListener[]) ret.toArray(new MetaClassRegistryChangeEventListener[ret.size()]);
         }
     }
     
