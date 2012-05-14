@@ -571,6 +571,15 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         ''', 'Non static method A#instanceMethod cannot be called from static context'
     }
 
+    // test that methods defined in DefaultGroovyStaticMethods are recognized too
+    void testCallDefaultGroovyStaticMethod() {
+        assertScript '''
+            Thread.start {
+                println 'hello'
+            }
+        '''
+    }
+
     static class MyMethodCallTestClass {
 
         static int mul(int... args) { args.toList().inject(1) { x,y -> x*y } }

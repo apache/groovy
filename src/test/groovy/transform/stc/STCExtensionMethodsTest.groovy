@@ -15,6 +15,8 @@
  */
 package groovy.transform.stc
 
+import org.codehaus.groovy.runtime.m12n.ExtensionModuleRegistry
+
 /**
  * Unit tests for static type checking : extension methods.
  *
@@ -27,8 +29,32 @@ class STCExtensionMethodsTest extends StaticTypeCheckingTestCase {
             // reverteToUpperCase is an extension method specific to unit tests
             def str = 'This is a string'
             assert str.reverseToUpperCase() == str.toUpperCase().reverse()
+
+            assert String.answer() == 42
         '''
     }
 
+    void testShouldFindExtensionMethodWithGrab() {
+        ExtensionModuleRegistry registry = GroovySystem.metaClassRegistry.moduleRegistry
+        // ensure that the module isn't loaded
+        assert registry.modules.any { it.name == 'Test module for Grab' && it.version == '1.0-test' } == false
+
+        // find jar resource
+        def jarURL = this.class.getResource("/jars")
+        assert jarURL
+
+        def resolver = "@GrabResolver(name='local',root='$jarURL')"
+
+        assertScript resolver+'''
+        @Grab('module-test:module-test:1.0-test')
+        import org.codehaus.groovy.runtime.m12n.*
+
+        // the following methods are added by the Grab test module
+        def str = 'This is a string'
+        assert str.reverseToUpperCase2() == str.toUpperCase().reverse()
+        // a static method added to String thanks to a @Grab extension
+        assert String.answer2() == 42
+        '''
+    }
 }
 
