@@ -20,14 +20,19 @@ import groovy.lang.*;
 import org.codehaus.groovy.classgen.Verifier;
 import org.codehaus.groovy.reflection.*;
 import org.codehaus.groovy.runtime.*;
+import org.codehaus.groovy.runtime.m12n.ExtensionModule;
+import org.codehaus.groovy.runtime.m12n.ExtensionModuleRegistry;
+import org.codehaus.groovy.runtime.m12n.StandardPropertiesModuleFactory;
 import org.codehaus.groovy.vmplugin.VMPluginFactory;
 import org.codehaus.groovy.util.FastArray;
 import org.codehaus.groovy.util.ManagedLinkedList;
 import org.codehaus.groovy.util.ReferenceBundle;
 
+import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.net.URL;
 import java.util.*;
 
 /**
@@ -44,6 +49,8 @@ import java.util.*;
  * @version $Revision$
  */
 public class MetaClassRegistryImpl implements MetaClassRegistry{
+    public final static String MODULE_META_INF_FILE = "META-INF/services/org.codehaus.groovy.runtime.ExtensionModule";
+
     private boolean useAccessible;
 
     private FastArray instanceMethods = new FastArray();
@@ -51,6 +58,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
 
     private LinkedList changeListenerList = new LinkedList();
     private ManagedLinkedList metaClassInfo = new ManagedLinkedList<MetaClass>(ReferenceBundle.getWeakBundle());
+    private ExtensionModuleRegistry moduleRegistry = new ExtensionModuleRegistry();
 
     public static final int LOAD_DEFAULT = 0;
     public static final int DONT_LOAD_DEFAULT = 1;
@@ -96,10 +104,10 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
                 registerMethods(plugin, false, false, map);
             }
 
-            for (Map.Entry<CachedClass, List<MetaMethod>> e : map.entrySet()) {
-                CachedClass cls = e.getKey();
-                cls.setNewMopMethods(e.getValue());
-            }
+            registerClasspathModules(map, this.getClass().getClassLoader());
+
+            refreshMopMethods(map);
+
         }
 
         installMetaClassCreationHandle();
@@ -128,6 +136,71 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
             }
         });
    }
+
+    private void refreshMopMethods(final Map<CachedClass, List<MetaMethod>> map) {
+        for (Map.Entry<CachedClass, List<MetaMethod>> e : map.entrySet()) {
+            CachedClass cls = e.getKey();
+            cls.setNewMopMethods(e.getValue());
+        }
+    }
+
+    private void registerClasspathModules(final Map<CachedClass, List<MetaMethod>> map, final ClassLoader classLoader) {
+        try {
+            Enumeration<URL> resources = classLoader.getResources(MODULE_META_INF_FILE);
+            while (resources.hasMoreElements()) {
+                URL url = resources.nextElement();
+                registerExtensionModuleFromMetaInf(url, map, classLoader);
+            }
+        } catch (IOException e) {
+            // DO NOTHING
+        }
+    }
+
+    private void registerExtensionModuleFromMetaInf(final URL metadata, final Map<CachedClass, List<MetaMethod>> map, final ClassLoader classLoader) {
+        Properties properties = new Properties();
+        try {
+            properties.load(metadata.openStream());
+        } catch (IOException e) {
+            throw new GroovyRuntimeException("Unable to load module META-INF descriptor",e);
+        }
+        registerExtensionModuleFromProperties(properties, classLoader, map);
+    }
+
+    public void registerExtensionModuleFromProperties(final Properties properties, final ClassLoader classLoader, final Map<CachedClass, List<MetaMethod>> map) {
+        StandardPropertiesModuleFactory factory = new StandardPropertiesModuleFactory();
+        ExtensionModule module = factory.newModule(properties, classLoader);
+        if (moduleRegistry.hasModule(module.getName())) {
+            ExtensionModule loadedModule = moduleRegistry.getModule(module.getName());
+            if (loadedModule.getVersion().equals(module.getVersion())) {
+                // already registered
+                return;
+            } else {
+                throw new GroovyRuntimeException("Conflicting module versions. Module ["+module.getName()+" is loaded in version "+
+                loadedModule.getVersion()+" and you are trying to load version "+module.getVersion());
+            }
+        }
+        moduleRegistry.addModule(module);
+        // register MetaMethods
+        List<MetaMethod> metaMethods = module.getMetaMethods();
+        for (MetaMethod metaMethod : metaMethods) {
+            CachedClass cachedClass = metaMethod.getDeclaringClass();
+            List<MetaMethod> methods = map.get(cachedClass);
+            if (methods==null) {
+                methods = new ArrayList<MetaMethod>(4);
+                map.put(cachedClass, methods);
+            }
+            methods.add(metaMethod);
+            if (metaMethod.isStatic()) {
+                staticMethods.add(metaMethod);
+            } else {
+                instanceMethods.add(metaMethod);
+            }
+        }
+    }
+
+    public ExtensionModuleRegistry getModuleRegistry() {
+        return moduleRegistry;
+    }
 
     /**
      * Looks for a class called 'groovy.runtime.metaclass.CustomMetaClassCreationHandle' and if it exists uses it as the MetaClassCreationHandle

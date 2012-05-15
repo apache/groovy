@@ -128,6 +128,10 @@ class SqlCompleteTest extends SqlHelperTestCase {
         assert results == ["Bob": "Mcwhirter"]
     }
 
+    void testCastingNotConfusedWithNamedParameters_5111() {
+        assert !sql.preCheckForNamedParams("select * from TABLE where TEXTFIELD::integer = 3")
+    }
+
     void testEachRowWithNamedOrdinalParams() {
         def lastPatHolder = new Expando()
         lastPatHolder.lastPat = '%a%'
