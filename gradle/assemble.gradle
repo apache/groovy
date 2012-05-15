@@ -123,6 +123,9 @@ task jarAll(type: Jar, dependsOn: jar) {
         classesDir = jar.archivePath
     }
     manifest commonOsgiManifest
+
+    // TODO: scan the various org.codehaus.groovy.runtime.ExtensionModule extension module descriptors
+    // and replace them with a single descriptor find which will be bundled into the groovy-all jar
 }
 
 task sourceJar(type: Jar) {

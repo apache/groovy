@@ -46,6 +46,7 @@ repositories {
 
 // todo do we need compile and runtime scope for examples?
 configurations {
+    compilerCompile
     tools
     examplesCompile.extendsFrom compile
     examplesRuntime.extendsFrom examplesCompile
@@ -53,9 +54,30 @@ configurations {
 }
 
 dependencies {
+    compilerCompile "antlr:antlr:2.7.7"
+    compilerCompile "org.ow2.asm:asm:4.0"
+    compilerCompile "org.ow2.asm:asm-analysis:4.0"
+    compilerCompile "org.ow2.asm:asm-commons:4.0"
+    compilerCompile "org.ow2.asm:asm-tree:4.0"
+    compilerCompile "org.ow2.asm:asm-util:4.0"
+
+    compilerCompile "commons-cli:commons-cli:1.2"
+    compilerCompile "org.apache.ant:ant:1.8.3"
+    compilerCompile("com.thoughtworks.xstream:xstream:1.4.2") {
+        exclude(group: 'xpp3', module: 'xpp3_min')
+        exclude(group: 'junit', module: 'junit')
+        exclude(group: 'jmock', module: 'jmock')
+    }
+    compilerCompile("jline:jline:1.0") {
+        exclude(group: 'junit', module: 'junit')
+    }
+    compilerCompile "org.fusesource.jansi:jansi:1.6"
+    compilerCompile("org.apache.ivy:ivy:2.2.0") {
+        transitive = false
+    }
 // TODO use antlr plugin
 //    antlr "antlr:antlr:2.7.7"
-    groovy files("$buildDir/classes")
+    groovy files("$buildDir/classes/compiler")
     groovy "antlr:antlr:2.7.7"
     groovy "org.ow2.asm:asm:4.0"
     groovy "org.ow2.asm:asm-analysis:4.0"
@@ -136,11 +158,26 @@ dependencies {
 //    groovy project(':subprojects:groovy-ant')
     // TODO remove once M12N refactoring finished
     // uncomment to temporarily use gradle's groovy (groovyc needs AntBuilder)
-    groovy localGroovy()
+    //groovy localGroovy()
+    testCompile project(':subprojects:groovy-ant')
     testCompile project(':subprojects:groovy-test')
 }
 
 sourceSets {
+    compiler {
+        // This sourceSet corresponds to the minimal "bootstrap" Groovy compiler
+        // which will be used by the build itself to compile the groovy files
+        java {
+            srcDirs = [
+                    "$projectDir/src/main",
+                    "$projectDir/subprojects/groovy-ant/src/main",
+                    "$projectDir/subprojects/groovy-groovydoc/src/main",
+                    "$projectDir/subprojects/groovy-templates/src/main",
+                    "$projectDir/subprojects/groovy-xml/src/main",
+                    "$projectDir/subprojects/groovy-jmx/src/main",
+            ]
+        }
+    }
     main {
         java {
             srcDirs = [
@@ -258,8 +295,18 @@ task dgmConverter(type: JavaExec, dependsOn: 'classes') {
     }
 }
 
+task compilerDgmConverter(type: JavaExec) {
+    description = 'Generates DGM info file for the bootstrap compiler'
+    classpath = files(file('target/classes/compiler')) + configurations.compilerCompile
+    main = 'org.codehaus.groovy.tools.DgmConverter'
+    args = ['--info', 'target/classes/compiler']
+    doFirst {
+        new File('target/classes/compiler/META-INF').mkdirs()
+    }
+}
+
 compileJava {
-    dependsOn ensureGrammars
+    dependsOn compilerClasses,compilerDgmConverter,ensureGrammars
 }
 
 compileGroovy {
@@ -297,5 +344,5 @@ apply from: "$projectDir/gradle/idea.gradle"
 task wrapper(type: Wrapper) {
 //    gradleVersion = '1.0-milestone-5-20110929000016+0200'
 //    distributionUrl = "http://repo.gradle.org/gradle/distributions-snapshots/gradle-${gradleVersion}-bin.zip"
-    gradleVersion = '1.0-milestone-9'
+    gradleVersion = '1.0-rc-3'
 }

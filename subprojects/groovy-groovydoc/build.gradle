@@ -16,7 +16,9 @@ sourceSets.main.resources.srcDir 'src/main/java'
 compileJava {
     doLast {
         mkdir "$sourceSets.main.output.classesDir/META-INF"
-        ant {
+        // todo: building dgminfo for modules should be replaced with
+        // the appropriate META-INF/ module extension descriptor
+        /*ant {
             java(classname: "org.codehaus.groovy.tools.DgmConverter",
                     fork: "true",
                     failonerror: "true",
@@ -25,6 +27,6 @@ compileJava {
                     classpath: sourceSets.main.runtimeClasspath.asPath)
         }
         println "Out: " + ant.properties.outy
-        println "Err: " + ant.properties.errr
+        println "Err: " + ant.properties.errr*/
     }
 }
