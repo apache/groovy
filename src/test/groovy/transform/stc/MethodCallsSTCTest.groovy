@@ -571,6 +571,12 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         ''', 'Non static method A#instanceMethod cannot be called from static context'
     }
 
+    void testShouldNotBeAmbiguousCall() {
+        assertScript '''
+            (0..10).find { int x -> x < 5 }
+        '''
+    }
+
     static class MyMethodCallTestClass {
 
         static int mul(int... args) { args.toList().inject(1) { x,y -> x*y } }
