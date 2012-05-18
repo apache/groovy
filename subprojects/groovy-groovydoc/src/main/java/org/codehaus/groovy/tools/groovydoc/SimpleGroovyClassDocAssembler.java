@@ -267,7 +267,8 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
 
     @Override
     public void visitAnnotationFieldDef(GroovySourceAST t, int visit) {
-        if (visit == OPENING_VISIT) {
+        if (isGroovy) visitMethodDef(t, visit);
+        else if (visit == OPENING_VISIT) {
             visitVariableDef(t, visit);
             String defaultText = getDefaultValue(t);
             if (defaultText != null) {
@@ -510,7 +511,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
                 // in groovy methods and classes are assumed public, unless informed otherwise
                 memberOrClass.setPublic(true);
             } else if (!hasNonPublicVisibility && !hasPublicVisibility && !isGroovy) {
-                if (insideInterface(memberOrClass)) {
+                if (insideInterface(memberOrClass) || insideAnnotationDef(memberOrClass)) {
                     memberOrClass.setPublic(true);
                 } else {
                     memberOrClass.setPackagePrivate(true);
@@ -521,7 +522,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
             // in groovy methods and classes are assumed public, unless informed otherwise
             memberOrClass.setPublic(true);
         } else if (!isGroovy) {
-            if (insideInterface(memberOrClass)) {
+            if (insideInterface(memberOrClass) || insideAnnotationDef(memberOrClass)) {
                 memberOrClass.setPublic(true);
             } else {
                 memberOrClass.setPackagePrivate(true);
@@ -534,6 +535,12 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
         SimpleGroovyClassDoc current = getCurrentClassDoc();
         if (current == null || current == memberOrClass) return false;
         return current.isInterface();
+    }
+
+    private boolean insideAnnotationDef(SimpleGroovyAbstractableElementDoc memberOrClass) {
+        SimpleGroovyClassDoc current = getCurrentClassDoc();
+        if (current == null || current == memberOrClass) return false;
+        return current.isAnnotationType();
     }
 
     // todo - If no comment before node, then get comment from same node on parent class - ouch!
