@@ -1324,7 +1324,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     storeTargetMethod(call, directMethodCallCandidate);
 
                 } else {
-                    addAmbiguousOrDynamicErrorMessage(mn, name, args, call);
+                    addAmbiguousErrorMessage(mn, name, args, call);
                 }
             }
         } finally {
@@ -1558,6 +1558,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 if (mn.isEmpty()) {
                     addStaticTypeError("Cannot find matching method " + receiver.getText() + "#" + toMethodParametersString(name, args), call);
                 } else {
+                    if (areCategoryMethodCalls(mn, name, args)) {
+                        addCategoryMethodCallError(call);
+                    }
                     if (mn.size() == 1) {
                         MethodNode directMethodCallCandidate = mn.get(0);
                         // visit the method to obtain inferred return type
@@ -1587,7 +1590,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         }
 
                     } else {
-                        addAmbiguousOrDynamicErrorMessage(mn, name, args, call);
+                        addAmbiguousErrorMessage(mn, name, args, call);
                     }
                 }
             }
@@ -1871,7 +1874,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
 
         // Divisions may produce different results depending on operand types
-        if (DIVIDE == op || DIVIDE_EQUAL == op) {
+        if (isNumberCategory(getWrapper(leftRedirect)) && (DIVIDE == op || DIVIDE_EQUAL == op)) {
             if (isFloatingCategory(leftRedirect) || isFloatingCategory(rightRedirect)) {
                 if (!isPrimitiveType(leftRedirect) || !isPrimitiveType(rightRedirect)) {
                     return Double_TYPE;
@@ -1957,15 +1960,28 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         final List<MethodNode> methods = findMethod(receiver, name, args);
         if (methods.isEmpty()) {
             addStaticTypeError("Cannot find matching method " + receiver.getText() + "#" + toMethodParametersString(name, args), expr);
-        } else if (methods.size() == 1) {
-            return methods.get(0);
         } else {
-            addAmbiguousOrDynamicErrorMessage(methods, name, args, expr);
+            if (areCategoryMethodCalls(methods, name, args)) {
+                addCategoryMethodCallError(expr);
+            }
+            if (methods.size() == 1) {
+                return methods.get(0);
+            } else {
+                addAmbiguousErrorMessage(methods, name, args, expr);
+            }
         }
         return null;
     }
 
-    private void addAmbiguousOrDynamicErrorMessage(final List<MethodNode> foundMethods, final String name, final ClassNode[] args, final Expression expr) {
+    private void addAmbiguousErrorMessage(final List<MethodNode> foundMethods, final String name, final ClassNode[] args, final Expression expr) {
+        addStaticTypeError("Reference to method is ambiguous. Cannot choose between " + foundMethods, expr);
+    }
+
+    private void addCategoryMethodCallError(final Expression call) {
+        addStaticTypeError("Due to their dynamic nature, usage of categories is not possible with static type checking active", call);
+    }
+
+    private boolean areCategoryMethodCalls(final List<MethodNode> foundMethods, final String name, final ClassNode[] args) {
         boolean category = false;
         if ("use".equals(name) && args!=null && args.length==2 && args[1].equals(ClassHelper.CLOSURE_TYPE)) {
             category = true;
@@ -1975,11 +1991,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 }
             }
         }
-        if (category) {
-            addStaticTypeError("Due to their dynamic nature, usage of categories is not possible with static type checking active", expr);
-        } else {
-            addStaticTypeError("Reference to method is ambiguous. Cannot choose between " + foundMethods, expr);
-        }
+        return category;
     }
 
     private List<MethodNode> findMethod(

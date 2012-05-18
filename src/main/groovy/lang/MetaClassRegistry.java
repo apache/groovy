@@ -67,21 +67,29 @@ public interface MetaClassRegistry {
     void setMetaClassCreationHandle(MetaClassCreationHandle handle);
 
     /**
-     * adds a ConstantMetaClassChangeListener
+     * adds a meta class change listener for constant meta classes
      *
      * @param listener - the update listener
      */
     void addMetaClassRegistryChangeEventListener(MetaClassRegistryChangeEventListener listener);
+    
+    /**
+     * adds a meta class change listener for constant meta classes. 
+     * This listener cannot be removed!
+     *
+     * @param listener - the update listener
+     */
+    void addNonRemovableMetaClassRegistryChangeEventListener(MetaClassRegistryChangeEventListener listener);
 
     /**
-     * removes a ConstantMetaClassChangeListener
+     * removes a meta class change listener for constant meta classes
      *
      * @param listener - the update listener
      */
     void removeMetaClassRegistryChangeEventListener(MetaClassRegistryChangeEventListener listener);
 
     /**
-     * Returns all registered ConstantMetaClassChangeListener objects.
+     * Returns all registered class change listener for constant meta classes.
      *
      * @return an array containing all change listener
      */

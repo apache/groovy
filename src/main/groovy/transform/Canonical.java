@@ -39,17 +39,19 @@ import java.lang.annotation.Target;
  * def c1 = new Customer(first:'Tom', last:'Jones', age:21, since:d, favItems:['Books', 'Games'], object: anyObject)
  * def c2 = new Customer('Tom', 'Jones', 21, d, ['Books', 'Games'], anyObject)
  * assert c1 == c2
+ * </pre>
  *
  * If you set the autoDefaults flag to true, you don't need to provide all arguments in constructors calls,
- * in this case all properties not present are initialized to the default value:
+ * in this case all properties not present are initialized to the default value, e.g.:
+ * <pre>
  * def c3 = new Customer(last: 'Jones', age: 21)
  * def c4 = new Customer('Tom', 'Jones')
  * 
  * assert null == c3.since
  * assert 0 == c4.age
  * assert c3.favItems == ['Food'] && c4.favItems == ['Food']
- * 
  * </pre>
+ *
  * The {@code @Canonical} annotation instructs the compiler to execute an
  * AST transformation which adds positional constructors,
  * equals, hashCode and a pretty print toString to your class. There are additional
@@ -85,6 +87,7 @@ import java.lang.annotation.Target;
  * <li>
  * If you explicitly add your own constructors, then the transformation will not add any other constructor to the class.
  * </li>
+ * </ul>
  *
  * @author Paulo Poiati
  * @author Paul King
