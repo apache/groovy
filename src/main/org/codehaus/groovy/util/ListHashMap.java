@@ -84,7 +84,7 @@ public class ListHashMap<K,V> implements Map<K,V> {
     
     public Set<java.util.Map.Entry<K, V>> entrySet() {
         Map m;
-        if (size>maxListFill) {
+        if (size>=maxListFill) {
             m = innerMap;
         } else {
             m = makeMap();
