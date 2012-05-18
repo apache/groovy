@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2011 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,8 +29,6 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.io.StringWriter;
 import java.io.Writer;
-import java.util.List;
-import java.util.Map;
 
 /**
  * Represents any closure object in Groovy.
@@ -38,9 +36,9 @@ import java.util.Map;
  * Groovy allows instances of Closures to be called in a
  * short form. For example:
  * <pre>
- *   def a = 1
- *   def c = {a}
- *   assert c() == 1
+ * def a = 1
+ * def c = { a }
+ * assert c() == 1
  * </pre>
  * To be able to use a Closure in this way with your own
  * subclass, you need to provide a doCall method with any
@@ -50,9 +48,9 @@ import java.util.Map;
  * additional code. If no doCall method is provided a
  * closure must be used in its long form like
  * <pre>
- *   def a = 1
- *   def c = {a}
- *   assert c.call() == 1
+ * def a = 1
+ * def c = {a}
+ * assert c.call() == 1
  * </pre>
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
@@ -71,28 +69,28 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      *
      * For example the following code :
      * <pre>
-     *  class Test {
-     *    def x = 30
-     *    def y = 40
+     * class Test {
+     *     def x = 30
+     *     def y = 40
      *
-     *    def run() {
-     *        def data = [ x: 10, y: 20 ]
-     *        def cl = { y = x + y }
-     *        cl.delegate = data
-     *        cl()
-     *        println x
-     *        println y
-     *        println data
-     *    }
-     *  }
+     *     def run() {
+     *         def data = [ x: 10, y: 20 ]
+     *         def cl = { y = x + y }
+     *         cl.delegate = data
+     *         cl()
+     *         println x
+     *         println y
+     *         println data
+     *     }
+     * }
      *
-     *  new Test().run()
+     * new Test().run()
      * </pre>
      * will output :
      * <pre>
-     *     30
-     *     70
-     *     [x:10, y:20]
+     * 30
+     * 70
+     * [x:10, y:20]
      * </pre>
      * because the x and y fields declared in the Test class the variables in the delegate.<p>
      * <i>Note that local variables are always looked up first, independently of the resolution strategy.</i>
@@ -105,29 +103,29 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      *
      * For example the following code :
      * <pre>
-     *  class Test {
-     *    def x = 30
-     *    def y = 40
+     * class Test {
+     *     def x = 30
+     *     def y = 40
      *
-     *    def run() {
-     *        def data = [ x: 10, y: 20 ]
-     *        def cl = { y = x + y }
-     *        cl.delegate = data
-     *        cl.resolveStrategy = Closure.DELEGATE_FIRST
-     *        cl()
-     *        println x
-     *        println y
-     *        println data
-     *    }
-     *  }
+     *     def run() {
+     *         def data = [ x: 10, y: 20 ]
+     *         def cl = { y = x + y }
+     *         cl.delegate = data
+     *         cl.resolveStrategy = Closure.DELEGATE_FIRST
+     *         cl()
+     *         println x
+     *         println y
+     *         println data
+     *     }
+     * }
      *
-     *  new Test().run()
+     * new Test().run()
      * </pre>
      * will output :
      * <pre>
-     *     30
-     *     40
-     *     [x:10, y:30]
+     * 30
+     * 40
+     * [x:10, y:30]
      * </pre>
      * because the x and y variables declared in the delegate shadow the fields in the owner class.<p>
      * <i>Note that local variables are always looked up first, independently of the resolution strategy.</i>
@@ -139,23 +137,23 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      * and not call the delegate at all. For example the following code :
      *
      * <pre>
-     *  class Test {
-     *    def x = 30
-     *    def y = 40
+     * class Test {
+     *     def x = 30
+     *     def y = 40
      *
-     *    def run() {
-     *        def data = [ x: 10, y: 20, z: 30 ]
-     *        def cl = { y = x + y }
-     *        cl.delegate = data
-     *        cl.resolveStrategy = Closure.OWNER_ONLY
-     *        cl()
-     *        println x
-     *        println y
-     *        println data
-     *    }
-     *  }
+     *     def run() {
+     *         def data = [ x: 10, y: 20, z: 30 ]
+     *         def cl = { y = x + y + z }
+     *         cl.delegate = data
+     *         cl.resolveStrategy = Closure.OWNER_ONLY
+     *         cl()
+     *         println x
+     *         println y
+     *         println data
+     *     }
+     * }
      *
-     *  new Test().run()
+     * new Test().run()
      * </pre>
      *
      * will throw "No such property: z" error because even if the z variable is declared in the delegate, no
@@ -169,24 +167,24 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      * only and entirely bypass the owner. For example the following code :
      *
      * <pre>
-     *  class Test {
-     *    def x = 30
-     *    def y = 40
-     *    def z = 50
+     * class Test {
+     *     def x = 30
+     *     def y = 40
+     *     def z = 50
      *
-     *    def run() {
-     *        def data = [ x: 10, y: 20 ]
-     *        def cl = { y = x + y + z}
-     *        cl.delegate = data
-     *        cl.resolveStrategy = Closure.DELEGATE_ONLY
-     *        cl()
-     *        println x
-     *        println y
-     *        println data
-     *    }
-     *  }
+     *     def run() {
+     *         def data = [ x: 10, y: 20 ]
+     *         def cl = { y = x + y + z }
+     *         cl.delegate = data
+     *         cl.resolveStrategy = Closure.DELEGATE_ONLY
+     *         cl()
+     *         println x
+     *         println y
+     *         println data
+     *     }
+     * }
      *
-     *  new Test().run()
+     * new Test().run()
      * </pre>
      *
      * will throw an error because even if the owner declares a "z" field, the resolution strategy will bypass
