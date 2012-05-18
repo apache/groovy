@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2009 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -571,12 +571,9 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         ''', 'Non static method A#instanceMethod cannot be called from static context'
     }
 
-    // test that methods defined in DefaultGroovyStaticMethods are recognized too
-    void testCallDefaultGroovyStaticMethod() {
+    void testShouldNotBeAmbiguousCall() {
         assertScript '''
-            Thread.start {
-                println 'hello'
-            }
+            (0..10).find { int x -> x < 5 }
         '''
     }
 

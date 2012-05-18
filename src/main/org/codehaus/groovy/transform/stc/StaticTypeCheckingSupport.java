@@ -701,7 +701,7 @@ public abstract class StaticTypeCheckingSupport {
             }
             ref = ref.getSuperClass();
             if (ref == null) dist += 2;
-            dist++;
+            dist = (dist+1)<<1;
         }
         return dist;
     }
@@ -844,7 +844,8 @@ public abstract class StaticTypeCheckingSupport {
         ClassNode actualReceiver;
         Collection<MethodNode> choicesLeft = removeCovariants(methods);
         for (MethodNode m : choicesLeft) {
-            actualReceiver = receiver!=null?receiver:m.getDeclaringClass();
+            final ClassNode declaringClass = m.getDeclaringClass();
+            actualReceiver = receiver!=null?receiver: declaringClass;
             // todo : corner case
             /*
                 class B extends A {}
@@ -860,7 +861,7 @@ public abstract class StaticTypeCheckingSupport {
             if (params.length > args.length && ! isVargs(params)) {
                 // GROOVY-5231
                 int dist = allParametersAndArgumentsMatchWithDefaultParams(params, args);
-                if (dist>=0 && !actualReceiver.equals(m.getDeclaringClass())) dist+=getDistance(actualReceiver, m.getDeclaringClass());
+                if (dist>=0 && !actualReceiver.equals(declaringClass)) dist+=getDistance(actualReceiver, declaringClass);
                 if (dist>=0 && dist<bestDist) {
                     bestChoices.clear();
                     bestChoices.add(m);
@@ -873,7 +874,7 @@ public abstract class StaticTypeCheckingSupport {
                 int lastArgMatch = isVargs(params)?lastArgMatchesVarg(params, args):-1;
                 if (lastArgMatch>=0) lastArgMatch++; // ensure exact matches are preferred over vargs
                 int dist = allPMatch>=0?Math.max(allPMatch, lastArgMatch):lastArgMatch;
-                if (dist>=0 && !actualReceiver.equals(m.getDeclaringClass())) dist+=getDistance(actualReceiver, m.getDeclaringClass());
+                if (dist>=0 && !actualReceiver.equals(declaringClass)) dist+=getDistance(actualReceiver, declaringClass);
                 if (dist>=0 && dist<bestDist) {
                     bestChoices.clear();
                     bestChoices.add(m);
@@ -903,7 +904,7 @@ public abstract class StaticTypeCheckingSupport {
                         //      that case is handled above already
                         // (3) there is more than one argument for the vargs array
                         int dist = excessArgumentsMatchesVargsParameter(params, args);
-                        if (dist >= 0 && !actualReceiver.equals(m.getDeclaringClass())) dist++;
+                        if (dist >= 0 && !actualReceiver.equals(declaringClass)) dist++;
                         // varargs methods must not be preferred to methods without varargs
                         // for example :
                         // int sum(int x) should be preferred to int sum(int x, int... y)
