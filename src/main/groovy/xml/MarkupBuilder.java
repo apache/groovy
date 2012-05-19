@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2011 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,7 +53,6 @@ import java.util.Iterator;
  * @author Stefan Matthias Aust
  * @author <a href="mailto:scottstirling@rcn.com">Scott Stirling</a>
  * @author Paul King
- * @version $Revision$
  */
 public class MarkupBuilder extends BuilderSupport {
     private IndentPrinter out;
@@ -64,6 +63,31 @@ public class MarkupBuilder extends BuilderSupport {
     private boolean omitNullAttributes = false;
     private boolean omitEmptyAttributes = false;
     private boolean expandEmptyElements = false;
+    private boolean escapeAttributes = true;
+
+    /**
+     * Returns the escapeAttributes property value.
+     *
+     * @return the escapeAttributes property value
+     * @see #setEscapeAttributes(boolean)
+     */
+    public boolean isEscapeAttributes() {
+        return escapeAttributes;
+    }
+
+    /**
+     * Defaults to true.&nbsp;If set to false then you must escape any special
+     * characters within attribute values such as '&amp;', '&lt;', CR/LF, single
+     * and double quotes etc.&nbsp;manually as needed. The builder will not guard
+     * against producing invalid XML when in this mode and the output may not
+     * be able to be parsed/round-tripped but it does give you full control when
+     * producing for instance HTML output.
+     *
+     * @param escapeAttributes the new value
+     */
+    public void setEscapeAttributes(boolean escapeAttributes) {
+        this.escapeAttributes = escapeAttributes;
+    }
 
     /**
      * Prints markup to System.out
@@ -281,7 +305,7 @@ public class MarkupBuilder extends BuilderSupport {
                 // Output the attribute value within quotes. Use whichever
                 // type of quotes are currently configured.
                 out.print(useDoubleQuotes ? "=\"" : "='");
-                print(attributeValue == null ? "" : escapeAttributeValue(attributeValue.toString()));
+                print(attributeValue == null ? "" : escapeAttributes ? escapeAttributeValue(attributeValue.toString()) : attributeValue.toString());
                 out.print(useDoubleQuotes ? "\"" : "'");
             }
         }

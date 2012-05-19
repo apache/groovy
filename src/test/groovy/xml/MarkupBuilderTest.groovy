@@ -249,6 +249,21 @@ class MarkupBuilderTest extends BuilderTestSupport {
         assert writer.toString() == "<element att1='attr'><subelement>foo</subelement></element>"
     }
 
+    void testEscapingOfAttributes() {
+        def writer = new StringWriter()
+        def builder = new groovy.xml.MarkupBuilder(writer)
+        builder.a(href: "http://www.example.com?foo=1&bar=2")
+        assert writer.toString().contains('http://www.example.com?foo=1&amp;bar=2')
+    }
+
+    void testNoEscapingOfAttributes() {
+        def writer = new StringWriter()
+        def builder = new groovy.xml.MarkupBuilder(writer)
+        builder.escapeAttributes = false
+        builder.a(href: "http://www.example.com?foo=1&bar=2")
+        assert writer.toString().contains('http://www.example.com?foo=1&bar=2')
+    }
+
     private myMethod(x) {
       x.value='call to outside'
       return x
