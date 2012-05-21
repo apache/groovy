@@ -26,9 +26,16 @@ allprojects { p ->
     task(copyResources, type: Copy)
             .from('src/main/groovy')
             .into("$buildDir/classes/main")
-            .include('**/*.txt', '**/*.xml', '**/*.properties', '**/*.png')
+            .include('**/*.txt', '**/*.xml', '**/*.properties', '**/*.png', '**/*.html')
 
     compileJava.dependsOn(copyResources)
+
+    task(copyTestResources, type: Copy)
+            .from('src/test/groovy')
+            .into("$buildDir/classes/test")
+            .include('**/*.txt', '**/*.xml', '**/*.properties', '**/*.png', '**/*.html')
+
+    compileTestJava.dependsOn(copyTestResources)
 }
 
 // don't fail build on CodeNarc tasks

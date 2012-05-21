@@ -45,7 +45,7 @@ public class GroovyDocTest extends BuildFileTest {
         executeTarget("doc");
 
         final File testfilesPackageDir = new File(tmpDir, "org/codehaus/groovy/tools/groovydoc/testfiles");
-
+        System.err.println("testfilesPackageDir = " + testfilesPackageDir);
         final String[] list = testfilesPackageDir.list(new FilenameFilter() {
             public boolean accept(File file, String name) {
                 return name.equals("DocumentedClass.html");
