@@ -32,10 +32,12 @@ import java.util.Vector;
  * @author Paul King
  */
 public class BSFTest extends TestCase {
+    private static final Class ENGINE = GroovyEngine.class;
 
     protected BSFManager manager;
 
     protected void setUp() throws Exception {
+        BSFManager.registerScriptingEngine("groovy", ENGINE.getName(), new String[]{"groovy", "gy"});
         manager = new BSFManager();
     }
 

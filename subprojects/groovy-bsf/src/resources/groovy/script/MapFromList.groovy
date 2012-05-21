@@ -30,6 +30,6 @@ class MapFromList {
         def answer = new MapFromList().doit(a)
         assert answer instanceof Map
         assert answer.size() == 3
-        assert answer.values() == 1..3 as Set
+        assert answer.values() as Set == 1..3 as Set
     }
 }
