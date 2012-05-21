@@ -10,12 +10,12 @@ package groovy.lang
 class MetaClassRegistryTest extends GroovyTestCase {
 
     def registry = GroovySystem.metaClassRegistry
-    static initSize = 1
+    static initSize
     static {
         try {
             this.classLoader.loadClass("org.codehaus.groovy.vmplugin.v7.IndyInterface", true)
-            initSize++
         } catch(e){}
+        initSize = GroovySystem.metaClassRegistry.metaClassRegistryChangeEventListeners.size()
     }
 
     void testListenerAdditionAndRemoval() {
