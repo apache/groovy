@@ -20,6 +20,15 @@ allprojects { p ->
 //    test {
 //        excludes = ['**/*TestCase.class', '**/*$*.class']
 //    }
+
+    // todo: when we get rid of the Ant build, it will be much cleaner to use
+    // the conventional "resources" directory for classpath resources
+    task(copyResources, type: Copy)
+            .from('src/main/groovy')
+            .into("$buildDir/classes/main")
+            .include('**/*.txt', '**/*.xml', '**/*.properties', '**/*.png')
+
+    compileJava.dependsOn(copyResources)
 }
 
 // don't fail build on CodeNarc tasks

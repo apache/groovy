@@ -13,3 +13,4 @@ dependencies {
 
 // Required for MessageSourceTest
 sourceSets.test.runtimeClasspath += files(sourceSets.test.groovy.srcDirs)
+
