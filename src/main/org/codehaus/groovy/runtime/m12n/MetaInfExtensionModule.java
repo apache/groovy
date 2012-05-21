@@ -67,21 +67,27 @@ public class MetaInfExtensionModule extends SimpleExtensionModule {
         List<String> errors = new LinkedList<String>();
         for (String extensionClass : extensionClasses) {
             try {
-                instanceClasses.add(loader.loadClass(extensionClass));
+                extensionClass = extensionClass.trim();
+                if (extensionClass.length()>0) {
+                    instanceClasses.add(loader.loadClass(extensionClass));
+                }
             } catch (ClassNotFoundException e) {
                 errors.add(extensionClass);
             }
         }
         for (String extensionClass : staticExtensionClasses) {
             try {
-                staticClasses.add(loader.loadClass(extensionClass));
+                extensionClass = extensionClass.trim();
+                if (extensionClass.length()>0) {
+                    staticClasses.add(loader.loadClass(extensionClass));
+                }
             } catch (ClassNotFoundException e) {
                 errors.add(extensionClass);
             }
         }
         if (!errors.isEmpty()) {
             for (String error : errors) {
-                LOG.warning("Unable to load extension class "+error);
+                LOG.warning("Module ["+name+"] - Unable to load extension class ["+error+"]");
             }
         }
         return new MetaInfExtensionModule(name, version, instanceClasses, staticClasses);
