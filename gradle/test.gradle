@@ -51,7 +51,6 @@ def getIncludePattern() {
                 "UberTestCaseGroovySourceCodehausPackages_VM6.class"
         ]
     }
-    println "Including tests: $baseInclude"
     baseInclude
 }
 
