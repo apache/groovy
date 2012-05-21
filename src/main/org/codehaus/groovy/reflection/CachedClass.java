@@ -416,8 +416,13 @@ public class CachedClass {
         if (metaClass != null) {
           if (metaClass.getClass() == MetaClassImpl.class) {
               classInfo.setStrongMetaClass(null);
-              updateAddNewMopMethods(arr);
-              classInfo.setStrongMetaClass(new MetaClassImpl(metaClass.getTheClass()));
+              List<MetaMethod> res = new ArrayList<MetaMethod>();
+              Collections.addAll(res, classInfo.newMetaMethods);
+              res.addAll(arr);
+              updateSetNewMopMethods(res);
+              MetaClassImpl answer = new MetaClassImpl(((MetaClassImpl)metaClass).getRegistry(),metaClass.getTheClass());
+              answer.initialize();
+              classInfo.setStrongMetaClass(answer);
               return;
           }
 
