@@ -12,3 +12,7 @@ dependencies {
     groovy project(':')
     testCompile project(':subprojects:groovy-test')
 }
+
+sourceSets.main.resources {
+    srcDirs = [ "$projectDir/src/resources" ]
+}
