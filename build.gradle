@@ -5,6 +5,8 @@ apply plugin: 'checkstyle'
 //apply plugin: 'antlr'
 
 allprojects { p ->
+    apply plugin: 'java'
+
     group = 'org.codehaus.groovy'
     version = groovyVersion
 //    tasks.withType(Checkstyle).all { t -> t.ignoreFailures = true }
@@ -36,6 +38,12 @@ allprojects { p ->
             .include('**/*.txt', '**/*.xml', '**/*.properties', '**/*.png', '**/*.html')
 
     compileTestJava.dependsOn(copyTestResources)
+
+    task sourceJar(type: Jar) {
+        classifier = 'sources'
+        from sourceSets.main.allSource
+    }
+
 }
 
 // don't fail build on CodeNarc tasks

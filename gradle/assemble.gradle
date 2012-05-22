@@ -168,16 +168,14 @@ task jarAll(type: Jar, dependsOn: { modules()*.jar }) {
     // and replace them with a single descriptor find which will be bundled into the groovy-all jar
 }
 
-task sourceJar(type: Jar) {
-    classifier = 'sources'
-    //    from sourceSets.main.allSource
-    from "$projectDir/src/main"
-}
-
-task sourceAllJar(type: Jar, dependsOn: sourceJar) {
+task sourceAllJar(type: Jar, dependsOn: { modules()*.sourceJar }) {
+    with sourceJar.rootSpec
+    modules()*.sourceJar.each {
+        with it.rootSpec
+    }
     appendix = 'all'
     classifier = 'sources'
-    with sourceJar.rootSpec
+    //with sourceJar.rootSpec
 }
 
 task javadocJar(type: Jar, dependsOn: javadoc) {
