@@ -13,4 +13,6 @@ dependencies {
     // needed by TemplateServlet
     compile project(':subprojects:groovy-templates')
     testCompile project(':subprojects:groovy-test')
+    // for compilation, dependency is not necessary because the classes are loaded using Class.forName
+    testCompile project(':subprojects:groovy-json')
 }
