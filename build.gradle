@@ -139,7 +139,7 @@ dependencies {
     testCompile "com.thoughtworks.qdox:qdox:1.12"
     runtime "org.codehaus.gpars:gpars:0.12"
 
-    tools "com.googlecode.jarjar:jarjar:1.1"
+    tools "com.googlecode.jarjar:jarjar:1.3"
     tools("checkstyle:checkstyle:4.4") {
         exclude(module: 'junit')
     }
@@ -149,7 +149,7 @@ dependencies {
         exclude(module: 'asm')
         exclude(module: 'ant')
     }
-    tools "org.ow2.asm:asm-all:4.0.0"
+    tools "org.ow2.asm:asm-all:4.0"
     tools "com.thoughtworks.qdox:qdox:1.12"
     tools "biz.aQute:bnd:0.0.401"
 
