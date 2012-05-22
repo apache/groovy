@@ -309,7 +309,7 @@ public class GroovyDocToolTest extends GroovyTestCase {
         MockOutputTool output = new MockOutputTool();
         xmlTool.renderToOutput(output, MOCK_DIR);
         String sqlDoc = output.getText(MOCK_DIR + "/groovy/sql/Sql.html");
-        assertTrue(sqlDoc.indexOf("<method modifiers=\"public static \" returns=\"groovy.sql.InParameter\" name=\"VARBINARY\">") > 0); // VARBINARY() and other methods in Sql.java were assumed to be Constructors, make sure they aren't anymore...
+        assertTrue(sqlDoc.indexOf("<method modifiers=\"public static \" returns=\"InParameter\" name=\"VARBINARY\">") > 0); // VARBINARY() and other methods in Sql.java were assumed to be Constructors, make sure they aren't anymore...
     }
 
     public void testReturnTypeResolution() throws Exception {
