@@ -40,27 +40,12 @@ ext.licenseSpec = copySpec {
     }
 }
 
-ext.binaryJarsMetaInf = {
-    Date buildTime = new Date()
-    from "$projectDir/LICENSE.txt"
-    from("$projectDir/src/main/META-INF/groovy-release-info.properties") {
-        filter {String line ->
-            ['##ImplementationVersion##': project.version, '##BundleVersion##': project.groovyBundleVersion,
-                    '##BuildDate##': new SimpleDateFormat('dd-MMM-yyyy').format(buildTime),
-                    '##BuildTime##': new SimpleDateFormat('hh:mm aa').format(buildTime)].each {key, value ->
-                line = line.replace(key, value)
-            }
-            line
-        }
-    }
-}
-
 task copy(type: Copy) {
     into "$buildDir/meta"
     with licenseSpec
 }
 
-ext.commonOsgiManifest = {
+def commonOsgiManifest = {
     // We exclude the Bnd-LastModified attribute as it always triggers a rebuild without being really needed.
     from(allManifest) {
         eachEntry {details ->
@@ -77,23 +62,75 @@ ext.commonOsgiManifest = {
 
 jar {
     dependsOn('dgmConverter')
-    metaInf binaryJarsMetaInf
+    metaInf {
+        Date buildTime = new Date()
+        from "$projectDir/LICENSE.txt"
+        from("$projectDir/src/main/META-INF/groovy-release-info.properties") {
+            filter {String line ->
+                ['##ImplementationVersion##': project.version, '##BundleVersion##': project.groovyBundleVersion,
+                        '##BuildDate##': new SimpleDateFormat('dd-MMM-yyyy').format(buildTime),
+                        '##BuildTime##': new SimpleDateFormat('hh:mm aa').format(buildTime)].each {key, value ->
+                    line = line.replace(key, value)
+                }
+                line
+            }
+        }
+    }
     manifest = osgiManifest {
         symbolicName = 'groovy'
         instruction 'Import-Package', "antlr", "org.objectweb.asm", "*;resolution:=optional"
         classesDir = sourceSets.main.output.classesDir
     }
     manifest commonOsgiManifest
-    exclude '**/package-info.class'
+    exclude '**/package-info.class', 'compiler', 'META-INF/groovy-release-info.properties'
 }
 
-task jarAll(type: Jar, dependsOn: jar) {
+def modules() {
+    subprojects.findAll { it.name =~ /groovy/ }
+}
+
+def moduleJars() {
+    modules()*.jar.archivePath
+}
+
+def mergeModuleDescriptors() {
+
+    new File("$buildDir/tmp/").mkdirs()
+
+    def extensionClasses = []
+    def staticExtensionClasses = []
+
+    subprojects.collect {
+        new File("${it.buildDir}/classes/main/META-INF/services/org.codehaus.groovy.runtime.ExtensionModule")
+    }.findAll { it.exists() }.each {
+        def props = new Properties()
+        props.load(it.newInputStream())
+        extensionClasses += props.get('extensionClasses').split(',').findAll { it }
+        staticExtensionClasses += props.get('staticExtensionClasses').split(',').findAll { it }
+    }
+
+
+    def descriptor = new File("$buildDir/tmp/org.codehaus.groovy.runtime.ExtensionModule")
+    descriptor.withWriter('UTF-8') {
+        it << '# This is a generated file, do not edit\n'
+        it << "moduleName=groovy-all\n"
+        it << "moduleVersion=${project.version}\n"
+        it << "extensionClasses=${extensionClasses.join(',')}\n"
+        it << "staticExtensionClasses=${staticExtensionClasses.join(',')}\n"
+    }
+
+    descriptor
+}
+
+task jarAll(type: Jar, dependsOn: { modules()*.jar }) {
     ext.metaInfDir = "$buildDir/tmp/groovy-all-metainf"
-    inputs.files jar.archivePath
-    inputs.dir metaInfDir
     appendix = 'all'
     doLast {
         manifest.writeTo("$metaInfDir/MANIFEST.MF")
+        copy {
+            from(mergeModuleDescriptors())
+            into "$buildDir/tmp/groovy-all-metainf/services"
+        }
         copy {
             into "$buildDir/tmp/groovy-all-metainf"
             with licenseSpec
@@ -101,8 +138,11 @@ task jarAll(type: Jar, dependsOn: jar) {
         project.ant {
             taskdef name: "jarjar", classname: "com.tonicsystems.jarjar.JarJarTask", classpath: configurations.tools.asPath
             jarjar(jarfile: archivePath, manifest: "$metaInfDir/MANIFEST.MF") {
-                zipfileset(dir: "$metaInfDir", prefix: 'META-INF')
+                zipfileset(dir: "$ext.metaInfDir", prefix: 'META-INF')
                 zipfileset(src: jar.archivePath)
+                moduleJars().each {
+                    zipfileset(src: it, excludes: '**/org.codehaus.groovy.runtime.ExtensionModule')
+                }
                 configurations.runtime.files.findAll {file ->
                     ['antlr', 'asm', 'commons-cli'].any { file.name.startsWith(it) } && ['asm-attr', 'asm-util', 'asm-analysis'].every { !file.name.startsWith(it) }
                 }.each {jarjarFile ->
