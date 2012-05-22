@@ -1,7 +1,3 @@
-apply plugin: 'groovy'
-apply plugin: 'codenarc'
-apply plugin: 'checkstyle'
-
 dependencies {
     compile "javax.servlet:servlet-api:2.4"
     compile "javax.servlet:jsp-api:2.0"

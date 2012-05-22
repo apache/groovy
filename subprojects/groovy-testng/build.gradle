@@ -1,7 +1,3 @@
-apply plugin: 'groovy'
-apply plugin: 'codenarc'
-apply plugin: 'checkstyle'
-
 dependencies {
     groovy project(':')
     compile "junit:junit:4.10"

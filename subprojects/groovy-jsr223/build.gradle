@@ -1,7 +1,3 @@
-apply plugin: 'groovy'
-apply plugin: 'codenarc'
-apply plugin: 'checkstyle'
-
 // TODO set these using subprojects?
 ext.checkstyleConfigFileName = "../../config/checkstyle/checkstyle.xml"
 

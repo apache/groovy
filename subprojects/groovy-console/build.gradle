@@ -1,7 +1,3 @@
-apply plugin: 'groovy'
-apply plugin: 'codenarc'
-apply plugin: 'checkstyle'
-
 evaluationDependsOn(':subprojects:groovy-swing')
 
 dependencies {

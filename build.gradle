@@ -27,15 +27,17 @@ allprojects { p ->
     // the conventional "resources" directory for classpath resources
     task(copyResources, type: Copy)
             .from('src/main/groovy')
+            .from('src/main/java')
             .into("$buildDir/classes/main")
-            .include('**/*.txt', '**/*.xml', '**/*.properties', '**/*.png', '**/*.html')
+            .include('**/*.txt', '**/*.xml', '**/*.properties', '**/*.png', '**/*.html', '**/*.gif', '**/*.ico', '**/*.css')
 
     compileJava.dependsOn(copyResources)
 
     task(copyTestResources, type: Copy)
             .from('src/test/groovy')
+            .from('src/test/java')
             .into("$buildDir/classes/test")
-            .include('**/*.txt', '**/*.xml', '**/*.properties', '**/*.png', '**/*.html')
+            .include('**/*.txt', '**/*.xml', '**/*.properties', '**/*.png', '**/*.html', '**/*.gif', '**/*.ico', '**/*.css')
 
     compileTestJava.dependsOn(copyTestResources)
 
@@ -44,6 +46,11 @@ allprojects { p ->
         from sourceSets.main.allSource
     }
 
+    apply plugin: 'java'
+    apply plugin: 'checkstyle'
+    apply plugin: 'groovy'
+    apply plugin: 'codenarc'
+    apply from: "${project(':').projectDir}/gradle/groovydoc.gradle"
 }
 
 // don't fail build on CodeNarc tasks
@@ -370,3 +377,6 @@ task wrapper(type: Wrapper) {
 //    distributionUrl = "http://repo.gradle.org/gradle/distributions-snapshots/gradle-${gradleVersion}-bin.zip"
     gradleVersion = '1.0-rc-3'
 }
+
+// Define a GroovyDoc task which depends on the generated groovydoc tool
+apply from: "$projectDir/gradle/groovydoc.gradle"

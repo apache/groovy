@@ -9,10 +9,6 @@
  *
  */
 
-apply plugin: 'groovy'
-apply plugin: 'codenarc'
-apply plugin: 'checkstyle'
-
 dependencies {
     compile project(':')
     groovy project(':')

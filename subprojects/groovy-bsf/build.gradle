@@ -1,6 +1,3 @@
-apply plugin: 'java'
-apply plugin: 'checkstyle'
-
 dependencies {
     compile("bsf:bsf:2.4.0") {
         exclude(group: 'commons-logging', module: 'commons-logging')
