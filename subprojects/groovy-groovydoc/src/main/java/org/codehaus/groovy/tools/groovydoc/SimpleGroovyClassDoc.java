@@ -40,6 +40,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
         TAG_TEXT.put("since", "Since");
         TAG_TEXT.put("author", "Authors");
         TAG_TEXT.put("version", "Version");
+        TAG_TEXT.put("default", "Default");
     }
     private final List<GroovyConstructorDoc> constructors;
     private final List<GroovyFieldDoc> fields;
