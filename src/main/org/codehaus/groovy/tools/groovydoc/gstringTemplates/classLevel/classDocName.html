@@ -379,7 +379,7 @@ ${classDoc.commentText()}
                 <% if (isRequired(element, v)) { %>
                 <TR BGCOLOR="white" CLASS="TableRowColor">
                 <TD ALIGN="right" VALIGN="top" WIDTH="1%"><FONT SIZE="-1">
-                <CODE>${modifiersBrief(element) + element.type().typeName()}</CODE></FONT></TD>
+                <CODE>${modifiersBrief(element) + linkable(element.type())}</CODE></FONT></TD>
                 <TD>
                     <CODE><B><A HREF="#${element.name()}">${element.name()}</A></B></CODE>
                     <BR>
