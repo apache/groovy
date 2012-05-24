@@ -3,49 +3,51 @@ task doc(dependsOn: [javadoc, groovydoc, 'docGDK']) {
     ext.title = "Groovy ${groovyVersion}"
 }
 
-javadoc {
-    maxMemory = javaDoc_mx
-    project.configure(options) {
-        windowTitle = doc.title
-        docTitle = doc.title
-        encoding = "ISO-8859-1"
-        author = true
-        version = true
-        overview = "src/main/overview.html"
+allprojects {
+    javadoc {
+        maxMemory = javaDoc_mx
+        project.configure(options) {
+            windowTitle = doc.title
+            docTitle = doc.title
+            encoding = "ISO-8859-1"
+            author = true
+            version = true
+            overview = "src/main/overview.html"
+            footer = doc.footer
+            source = rootProject.useIndy()?'1.7':'1.5'
+            links("http://docs.oracle.com/javase/6/docs/api/", "http://evgeny-goldin.org/javadoc/ant/api/",
+                    "http://commons.apache.org/cli/api-release", "http://kentbeck.github.com/junit/javadoc/latest/",
+                    "http://docs.oracle.com/javaee/6/api/", "http://www.antlr2.org/javadoc")
+        }
+    }
+
+    groovydoc {
+        use = true
+        ext.windowtitle = doc.title
+        ext.doctitle = doc.title
+        header = doc.title
         footer = doc.footer
-        source = "1.5"
-        links("http://docs.oracle.com/javase/6/docs/api/", "http://evgeny-goldin.org/javadoc/ant/api/",
-                "http://commons.apache.org/cli/api-release", "http://kentbeck.github.com/junit/javadoc/latest/",
-                "http://docs.oracle.com/javaee/6/api/", "http://www.antlr2.org/javadoc")
+        overview = file("src/main/overview.html")
+        includePrivate = false
+        link "http://docs.oracle.com/javaee/6/api/", "javax.servlet.", "javax.management."
+        link "http://docs.oracle.com/javase/6/docs/api/", "java.", "org.xml.", "javax.", "org.w3c."
+        link "http://evgeny-goldin.org/javadoc/ant/api/", "org.apache.ant.", "org.apache.tools.ant."
+        link "http://kentbeck.github.com/junit/javadoc/latest/", "org.junit.", "junit."
+        link "http://www.antlr2.org/javadoc", "antlr."
+        link "http://commons.apache.org/cli/api-release", "org.apache.commons.cli."
     }
 }
 
-groovydoc {
-    dependsOn classes
-    groovyClasspath = configurations.compile
-    use = true
-    ext.windowtitle = doc.title
-    ext.doctitle = doc.title
-    header = doc.title
-    footer = doc.footer
-    overview = file("src/main/overview.html")
-    includePrivate = false
-    link "http://docs.oracle.com/javaee/6/api/", "javax.servlet.", "javax.management."
-    link "http://docs.oracle.com/javase/6/docs/api/", "java.", "org.xml.", "javax.", "org.w3c."
-    link "http://evgeny-goldin.org/javadoc/ant/api/", "org.apache.ant.", "org.apache.tools.ant."
-    link "http://kentbeck.github.com/junit/javadoc/latest/", "org.junit.", "junit."
-    link "http://www.antlr2.org/javadoc", "antlr."
-    link "http://commons.apache.org/cli/api-release", "org.apache.commons.cli."
-}
-
 task docGDK {
+    dependsOn([project(':subprojects:groovy-groovydoc'), project(':subprojects:groovy-docgenerator')]*.classes)
     ext.destinationDir = "$buildDir/html/groovy-jdk"
     inputs.files sourceSets.tools.runtimeClasspath
     outputs.dir destinationDir
-    doFirst {task ->
+    doLast {task ->
+        try {
         ant {
-            java(classname: "org.codehaus.groovy.tools.DocGenerator", fork: "yes", failonerror: "true",
-                    classpath: sourceSets.tools.runtimeClasspath.asPath,
+            java(classname: "org.codehaus.groovy.tools.DocGenerator", fork: "true", failonerror: "true",
+                    classpath: (configurations.tools + groovydoc.groovyClasspath).asPath,
                     errorproperty: 'edr',
                     outputproperty: 'odr') {
                 arg(value: "org.codehaus.groovy.runtime.DefaultGroovyMethods")
@@ -64,8 +66,14 @@ task docGDK {
                 arg(value: "org.codehaus.groovy.vmplugin.v6.PluginDefaultGroovyMethods")
                 arg(value: "org.codehaus.groovy.vmplugin.v6.PluginStaticGroovyMethods")
             }
-//            println "Out: " + ant.properties.edr
-//            println "Err: " + ant.properties.odr
+        }
+        } finally {
+            if (ant.properties.odr) {
+                logger.info "Out: " + ant.properties.odr
+            }
+            if (ant.properties.edr) {
+                logger.error "Err: " + ant.properties.edr
+            }
         }
         copy {
             into task.destinationDir
