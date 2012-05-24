@@ -231,7 +231,7 @@ ext.distSpec = copySpec {
     into("indy") {
         from { new File(jar.archivePath.parent, "${jar.baseName}-${jar.version}-indy.jar") }
         from {
-            modules()*.jar.each { j ->
+            modules()*.jar.collect { j ->
                 new File(j.archivePath.parent, "${j.baseName}-${j.version}-indy.jar")
             }
         }
