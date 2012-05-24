@@ -1,0 +1,31 @@
+/*
+ * Copyright 2008-2012 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+// This file contains support tools for the Gradle build
+// with regards to invoke dynamic support (indy)
+
+project(':').ext.useIndy = {
+    boolean indy = false
+
+    // first, check if a system property activates indy support
+    indy |= System.hasProperty('indy') && Boolean.valueOf(System.getProperty('indy'))
+
+    // ultimately, check if the main project has an extension property setting indy to true
+    // which is the case if the build is started with -Pindy=true or during install/dist tasks
+    indy |= project(':').hasProperty('indy') && (Boolean.valueOf(project(':').indy))
+
+    indy
+}

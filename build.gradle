@@ -1,11 +1,17 @@
 apply plugin: 'groovy'
 apply plugin: 'codenarc'
 apply plugin: 'checkstyle'
+apply from: "$projectDir/gradle/indy.gradle"
+
 // TODO use antlr plugin
 //apply plugin: 'antlr'
 
 allprojects { p ->
     apply plugin: 'java'
+
+    buildDir = 'target'
+    sourceCompatibility = 1.5
+    targetCompatibility = 1.5
 
     group = 'org.codehaus.groovy'
     version = groovyVersion
@@ -18,10 +24,6 @@ allprojects { p ->
         compile.transitive = true
         testCompile.transitive = true
     }
-    // TODO why doesn't this work?
-//    test {
-//        excludes = ['**/*TestCase.class', '**/*$*.class']
-//    }
 
     // todo: when we get rid of the Ant build, it will be much cleaner to use
     // the conventional "resources" directory for classpath resources
@@ -46,11 +48,52 @@ allprojects { p ->
         from sourceSets.main.allSource
     }
 
-    apply plugin: 'java'
     apply plugin: 'checkstyle'
     apply plugin: 'groovy'
     apply plugin: 'codenarc'
     apply from: "${project(':').projectDir}/gradle/groovydoc.gradle"
+    apply from: "${project(':').projectDir}/gradle/indy.gradle"
+
+    if (useIndy()) {
+        def indyGroovy = {
+            options.useAnt = true
+            // todo: when Gradle includes support for "indy" option, replace this
+            // with groovyOptions.indy = true
+            groovyOptions.metaClass.optionMap = {
+                ['indy':true,
+                        memoryMaximumSize:'384m',
+                        fork:true,
+                        includeJavaRuntime:false,
+                        verbose:false,
+                        encoding:'UTF-8',
+                        failonerror:true,
+                        stacktrace:false,
+                        listfiles:false]
+            }
+            groovyOptions.useAnt = true
+            sourceCompatibility = 1.7
+            targetCompatibility = 1.7
+            groovyClasspath = files(
+                    project(':').compileJava.destinationDir,
+                    project(':').compileJava.classpath,
+                    { project(':subprojects:groovy-docgenerator').compileJava.destinationDir },
+                    { project(':subprojects:groovy-groovydoc').compileJava.destinationDir },
+                    { project(':subprojects:groovy-ant').compileJava.destinationDir },
+                    { project(':subprojects:groovy-templates').compileJava.destinationDir },
+            )
+        }
+        // add tasks to compile the invokedynamic version
+
+        compileGroovy indyGroovy.clone()
+        compileTestGroovy indyGroovy.clone()
+
+        compileJava.sourceCompatibility = 1.7
+        compileJava.targetCompatibility = 1.7
+        jar {
+            classifier = 'indy'
+        }
+    }
+
 }
 
 // don't fail build on CodeNarc tasks
@@ -62,11 +105,6 @@ tasks.withType(Checkstyle).all { checkstyleTask ->
     checkstyleTask.ignoreFailures = true
     checkstyleTask.configFile = file("./config/checkstyle/checkstyle.xml")
 }
-
-sourceCompatibility = 1.5
-targetCompatibility = 1.5
-
-buildDir = 'target'
 
 repositories {
     // todo Some repos are needed only for some configs. Declare them just for the configuration once Gradle allows this.
@@ -207,6 +245,11 @@ sourceSets {
                     "$projectDir/subprojects/groovy-xml/src/main",
                     "$projectDir/subprojects/groovy-jmx/src/main",
             ]
+            if (!useIndy()) {
+                exclude '**/indy/*'
+                exclude '**/v7/*'
+                exclude '**/vm7/*'
+            }
         }
     }
     main {
@@ -220,6 +263,11 @@ sourceSets {
                 exclude 'GroovyMain.java', 'GroovySocketServer.java'
             }.visit {details ->
                 exclude "groovy/ui/$details.path"
+            }
+            if (!useIndy()) {
+                exclude '**/indy/*'
+                exclude '**/v7/*'
+                exclude '**/vm7/*'
             }
         }
         groovy {
@@ -341,6 +389,11 @@ compileJava {
 }
 
 compileGroovy {
+    doFirst {
+        if (useIndy()) {
+            logger.info('Building with InvokeDynamic support activated')
+        }
+    }
     groovyOptions.fork(memoryMaximumSize: groovycMain_mx)
 }
 
@@ -380,3 +433,7 @@ task wrapper(type: Wrapper) {
 
 // Define a GroovyDoc task which depends on the generated groovydoc tool
 apply from: "$projectDir/gradle/groovydoc.gradle"
+
+class MyGroovyOptions extends org.gradle.api.tasks.compile.GroovyCompileOptions {
+    boolean indy = true
+}

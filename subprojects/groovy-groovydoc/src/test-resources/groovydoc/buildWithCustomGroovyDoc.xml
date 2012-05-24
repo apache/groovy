@@ -1,12 +1,12 @@
 <project name="CustomGroovyDocTestProject" basedir="../../../">
     <property name="test" location="src/test/groovy"/>
-    <property name="target" location="build"/>
+    <property name="target" location="target"/>
     <property name="tmpdir" value="${java.io.tmpdir}/${user.name}/${ant.project.name}"/>
 
     <path id="classpath">
-        <fileset dir="build/classes/main" includes="**/*.*"/>
-        <fileset dir="build/resources/main" includes="**/*.*"/>
-        <fileset dir="build/classes/test" includes="**/*.*"/>
+        <fileset dir="target/classes/main" includes="**/*.*"/>
+        <fileset dir="target/resources/main" includes="**/*.*"/>
+        <fileset dir="target/classes/test" includes="**/*.*"/>
     </path>
 
     <taskdef name="groovydoc" classpathref="classpath"

@@ -17,6 +17,7 @@
 package org.codehaus.groovy.tools;
 
 import groovy.lang.GroovyResourceLoader;
+import groovy.util.FileLog;
 import org.apache.commons.cli.*;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilerConfiguration;
@@ -25,10 +26,7 @@ import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit;
 
 import groovy.lang.GroovySystem;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.*;
@@ -160,7 +158,7 @@ public class FileSystemCompiler {
      * @param args command line arguments
      */
     public static void main(String[] args) {
-        commandLineCompileWithErrorHandling(args,true);
+        commandLineCompileWithErrorHandling(args, true);
     }
     
     /**

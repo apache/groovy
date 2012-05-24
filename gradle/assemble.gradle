@@ -1,7 +1,9 @@
 import org.apache.tools.ant.filters.ReplaceTokens
 import java.text.SimpleDateFormat
 
-apply plugin: 'osgi'
+if (!rootProject.useIndy()) {
+    apply plugin: 'osgi'
+}
 
 group = 'org.codehaus.groovy'
 archivesBaseName = 'groovy'
@@ -45,19 +47,23 @@ task copy(type: Copy) {
     with licenseSpec
 }
 
-def commonOsgiManifest = {
-    // We exclude the Bnd-LastModified attribute as it always triggers a rebuild without being really needed.
-    from(allManifest) {
-        eachEntry {details ->
-            if (details.key == 'Bnd-LastModified') {
-                details.exclude()
+def commonOsgiManifest
+
+if (!rootProject.useIndy()) {
+    commonOsgiManifest = {
+        // We exclude the Bnd-LastModified attribute as it always triggers a rebuild without being really needed.
+        from(allManifest) {
+            eachEntry {details ->
+                if (details.key == 'Bnd-LastModified') {
+                    details.exclude()
+                }
             }
         }
+        version = groovyBundleVersion
+        instruction '-nouses', 'true'
+        instruction 'Export-Package', "*;version=${version}"
+        classpath = sourceSets.main.runtimeClasspath
     }
-    version = groovyBundleVersion
-    instruction '-nouses', 'true'
-    instruction 'Export-Package', "*;version=${version}"
-    classpath = sourceSets.main.runtimeClasspath
 }
 
 jar {
@@ -76,12 +82,14 @@ jar {
             }
         }
     }
-    manifest = osgiManifest {
-        symbolicName = 'groovy'
-        instruction 'Import-Package', "antlr", "org.objectweb.asm", "*;resolution:=optional"
-        classesDir = sourceSets.main.output.classesDir
+    if (!rootProject.useIndy()) {
+        manifest = osgiManifest {
+            symbolicName = 'groovy'
+            instruction 'Import-Package', "antlr", "org.objectweb.asm", "*;resolution:=optional"
+            classesDir = sourceSets.main.output.classesDir
+        }
+        manifest commonOsgiManifest
     }
-    manifest commonOsgiManifest
     exclude '**/package-info.class', 'compiler', 'META-INF/groovy-release-info.properties'
 }
 
@@ -125,6 +133,9 @@ def mergeModuleDescriptors() {
 task jarAll(type: Jar, dependsOn: { modules()*.jar }) {
     ext.metaInfDir = "$buildDir/tmp/groovy-all-metainf"
     appendix = 'all'
+    if (rootProject.useIndy()) {
+        classifier = 'indy'
+    }
     doLast {
         manifest.writeTo("$metaInfDir/MANIFEST.MF")
         copy {
@@ -156,16 +167,15 @@ task jarAll(type: Jar, dependsOn: { modules()*.jar }) {
             }
         }
     }
-    // We exclude the Bnd-LastModified attribute as it always triggers a rebuild without being really needed.
-    manifest = osgiManifest {
-        symbolicName = 'groovy-all'
-        instruction 'Import-Package', "*;resolution:=optional"
-        classesDir = jar.archivePath
+    if (!rootProject.useIndy()) {
+        // We exclude the Bnd-LastModified attribute as it always triggers a rebuild without being really needed.
+        manifest = osgiManifest {
+            symbolicName = 'groovy-all'
+            instruction 'Import-Package', "*;resolution:=optional"
+            classesDir = jar.archivePath
+        }
+        manifest commonOsgiManifest
     }
-    manifest commonOsgiManifest
-
-    // TODO: scan the various org.codehaus.groovy.runtime.ExtensionModule extension module descriptors
-    // and replace them with a single descriptor find which will be bundled into the groovy-all jar
 }
 
 task sourceAllJar(type: Jar, dependsOn: { modules()*.sourceJar }) {
@@ -174,18 +184,18 @@ task sourceAllJar(type: Jar, dependsOn: { modules()*.sourceJar }) {
         with it.rootSpec
     }
     appendix = 'all'
-    classifier = 'sources'
+    classifier = rootProject.useIndy()?'indy-sources':'sources'
     //with sourceJar.rootSpec
 }
 
 task javadocJar(type: Jar, dependsOn: javadoc) {
-    classifier = 'javadoc'
+    classifier = rootProject.useIndy()?'indy-javadoc':'javadoc'
     from javadoc.destinationDir
 }
 
 task javadocAllJar(type: Jar, dependsOn: javadocJar) {
     appendix = 'all'
-    classifier = 'javadoc'
+    classifier = rootProject.useIndy()?'indy-javadoc':'javadoc'
     with javadocJar.rootSpec
 }
 
@@ -258,3 +268,5 @@ task distSrc(type: Zip, dependsOn: [javadoc, groovydoc, docGDK]) {
                 'cobertura.ser', 'junitvmwatcher*.properties'
     }
 }
+
+//task
