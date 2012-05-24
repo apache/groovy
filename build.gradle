@@ -433,3 +433,9 @@ task wrapper(type: Wrapper) {
 
 // Define a GroovyDoc task which depends on the generated groovydoc tool
 apply from: "$projectDir/gradle/groovydoc.gradle"
+
+classes {
+    doFirst {
+        logger.lifecycle "InvokeDynamic support ${useIndy()?'on':'off'}"
+    }
+}

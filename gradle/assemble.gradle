@@ -178,6 +178,24 @@ task jarAll(type: Jar, dependsOn: { modules()*.jar }) {
     }
 }
 
+task jarAllWithIndy(type: GradleBuild) {
+    description = 'Triggers an external build generating the indy jarAll'
+    buildFile = 'build.gradle'
+    startParameter.projectProperties['indy']=true
+    tasks = ['jarAll']
+}
+
+task jarAllAll(dependsOn: [jarAll, jarAllWithIndy]) {
+    description = 'Generates groovy-all and groovy-all-indy jars'
+    doFirst {
+        if (useIndy()) {
+            logger.lifecycle('InvokeDynamic support was activated but needs to be off for this pass. Disabling.')
+            ext.useIndy = false
+        }
+    }
+
+}
+
 task sourceAllJar(type: Jar, dependsOn: { modules()*.sourceJar }) {
     with sourceJar.rootSpec
     modules()*.sourceJar.each {
@@ -205,11 +223,20 @@ ext.distSpec = copySpec {
         include "LICENSE.txt", "NOTICE.txt"
     }
     into("lib") {
-        from configurations.runtime.fileCollection {dep ->
-            System.err.println dep.dump()
-//            !(dep instanceof FileCollectionDependency) && !dep.name.startsWith('livetribe')
-        }, jar.archivePath
+        from configurations.runtime.findAll { it.name.endsWith 'jar' }
+        from jar.archivePath
+        from modules()*.jar.archivePath
     }
+
+    into("indy") {
+        from { new File(jar.archivePath.parent, "${jar.baseName}-${jar.version}-indy.jar") }
+        from {
+            modules()*.jar.each { j ->
+                new File(j.archivePath.parent, "${j.baseName}-${j.version}-indy.jar")
+            }
+        }
+    }
+
     into("conf") {
         from "src/conf"
     }
@@ -224,6 +251,7 @@ ext.distSpec = copySpec {
     }
     into("embeddable") {
         from jarAll.archivePath
+        from { new File(jarAll.archivePath.parent, "${jarAll.baseName}-${jarAll.appendix}-${jarAll.version}-indy.jar") }
     }
 }
 
@@ -235,7 +263,7 @@ task installGroovy(type: Sync, dependsOn: [jar, jarAll]) {
 //task jars(dependsOn: tasks.withType(Jar))
 //task dists(dependsOn: tasks.withType(Zip).matching {task -> !(task instanceof Jar)})
 
-task distBin(type: Zip, dependsOn: [jar, jarAll]) {
+task distBin(type: Zip, dependsOn: [jar, jarAllAll]) {
     appendix = 'binary'
     into("groovy-$version") {
         with distSpec
@@ -269,4 +297,6 @@ task distSrc(type: Zip, dependsOn: [javadoc, groovydoc, docGDK]) {
     }
 }
 
-//task
+task dist(dependsOn: [distBin, /*distSrc, distDoc*/]) {
+    description = 'Generates the binary, sources and documentation distributions'
+}
