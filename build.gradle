@@ -131,7 +131,7 @@ dependencies {
     compilerCompile "org.ow2.asm:asm-util:4.0"
 
     compilerCompile "commons-cli:commons-cli:1.2"
-    compilerCompile "org.apache.ant:ant:1.8.3"
+    compilerCompile "org.apache.ant:ant:1.8.4"
     compilerCompile("com.thoughtworks.xstream:xstream:1.4.2") {
         exclude(group: 'xpp3', module: 'xpp3_min')
         exclude(group: 'junit', module: 'junit')
@@ -155,7 +155,7 @@ dependencies {
     groovy "org.ow2.asm:asm-util:4.0"
 
     compile "commons-cli:commons-cli:1.2"
-    compile "org.apache.ant:ant:1.8.3"
+    compile "org.apache.ant:ant:1.8.4"
     compile "javax.servlet:servlet-api:2.4"
     compile "javax.servlet:jsp-api:2.0"
     compile("com.thoughtworks.xstream:xstream:1.4.2") {
@@ -170,11 +170,11 @@ dependencies {
     compile("org.apache.ivy:ivy:2.2.0") {
         transitive = false
     }
-    runtime("org.apache.ant:ant-junit:1.8.3") {
+    runtime("org.apache.ant:ant-junit:1.8.4") {
         exclude(group: 'junit', module: 'junit')
     }
-    runtime "org.apache.ant:ant-launcher:1.8.3"
-    runtime "org.apache.ant:ant-antlr:1.8.3"
+    runtime "org.apache.ant:ant-launcher:1.8.4"
+    runtime "org.apache.ant:ant-antlr:1.8.4"
     runtime("commons-logging:commons-logging:1.1.1") {
         exclude(group: 'log4j', module: 'log4j')
         exclude(group: 'logkit', module: 'logkit')
@@ -222,7 +222,7 @@ dependencies {
         exclude(module: 'geronimo-j2ee-connector_1.5_spec')
     }
 
-    antlr "org.apache.ant:ant-antlr:1.8.3"
+    antlr "org.apache.ant:ant-antlr:1.8.4"
 
 //    groovy project(':subprojects:groovy-ant')
     // TODO remove once M12N refactoring finished

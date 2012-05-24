@@ -1,10 +1,10 @@
 dependencies {
     compile project(':')
     groovy project(':')
-    compile "org.apache.ant:ant:1.8.2"
-    runtime "org.apache.ant:ant-junit:1.8.2"
-    runtime "org.apache.ant:ant-launcher:1.8.2"
-    runtime "org.apache.ant:ant-antlr:1.8.2"
+    compile "org.apache.ant:ant:1.8.4"
+    runtime "org.apache.ant:ant-junit:1.8.4"
+    runtime "org.apache.ant:ant-launcher:1.8.4"
+    runtime "org.apache.ant:ant-antlr:1.8.4"
     // for groovydoc ant command
     compile project(':subprojects:groovy-groovydoc')
     testCompile project(':subprojects:groovy-test')
