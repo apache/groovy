@@ -45,6 +45,7 @@ public class GroovyDocToolTest extends GroovyTestCase {
                 new FileSystemResourceManager("src"), // template storage
                 new String[] {"src/main/java", "../../src/main", // source file dirs
                         "../../subprojects/groovy-swing/src/main/groovy",
+                        "../../subprojects/groovy-swing/src/main/java",
                         "../../subprojects/groovy-xml/src/main/java",
                         "../../subprojects/groovy-console/src/main/groovy",
                         "../../subprojects/groovy-sql/src/main/java"},
