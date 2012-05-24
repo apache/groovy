@@ -17,7 +17,6 @@ package org.codehaus.groovy.ant;
 
 import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyResourceLoader;
-import groovy.util.FileLog;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.PosixParser;
@@ -1147,7 +1146,6 @@ public class Groovyc extends MatchingTask {
      * @param useIndy the indy flag
      */
     public void setIndy(boolean useIndy){
-        FileLog.log(useIndy, "/tmp/context.txt");
         this.useIndy = useIndy;
     }
     
