@@ -190,7 +190,7 @@ dependencies {
     testCompile "log4j:log4j:1.2.16"
     testCompile "org.slf4j:jcl-over-slf4j:1.6.0"
     testCompile "com.thoughtworks.qdox:qdox:1.12"
-    runtime "org.codehaus.gpars:gpars:0.12"
+    runtime "org.codehaus.gpars:gpars:1.0-beta-2"
 
     tools "com.googlecode.jarjar:jarjar:1.3"
     tools("checkstyle:checkstyle:4.4") {
