@@ -17,7 +17,6 @@
 package org.codehaus.groovy.tools;
 
 import groovy.lang.GroovyResourceLoader;
-import groovy.util.FileLog;
 import org.apache.commons.cli.*;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilerConfiguration;
