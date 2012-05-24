@@ -846,7 +846,7 @@
         <dependency>
             <groupId>org.codehaus.gpars</groupId>
             <artifactId>gpars</artifactId>
-            <version>0.12</version>
+            <version>1.0-beta-2</version>
             <scope>runtime</scope>
             <optional>true</optional>
         </dependency>
