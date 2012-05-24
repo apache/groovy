@@ -94,7 +94,7 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
     }
 
     public Object getProperty(final String property) {
-        if ("..".equals(property)) {
+        if ("src/main".equals(property)) {
             return parent();
         } else if ("*".equals(property)) {
             return children();
