@@ -433,7 +433,3 @@ task wrapper(type: Wrapper) {
 
 // Define a GroovyDoc task which depends on the generated groovydoc tool
 apply from: "$projectDir/gradle/groovydoc.gradle"
-
-class MyGroovyOptions extends org.gradle.api.tasks.compile.GroovyCompileOptions {
-    boolean indy = true
-}
