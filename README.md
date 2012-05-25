@@ -7,38 +7,51 @@
 Building
 ---
 
+_Starting from Groovy 2.0-0-rc-1, the Ant build is no longer supported_
+
 To build you will need:
 
-* [JDK 1.5+](http://www.oracle.com/technetwork/java/javase/downloads)
+* [JDK 1.7+](http://www.oracle.com/technetwork/java/javase/downloads)
 
-Plus one of the following (Gradle will download itself if needed):
-
-* [Apache Ant 1.7+](http://ant.apache.org)
-* [Gradle 0.9.2+](http://gradle.org/)
 
 For detailed instructions please see:
 
 * [http://groovy.codehaus.org/Building+Groovy+from+Source](http://groovy.codehaus.org/Building+Groovy+from+Source)
 
-To build everything using ant (including running tests and creating a complete installation):
+To build everything using Gradle (the command below will download Gradle automatically, you do not need to download it first).
 
-    ant install
+    ./gradlew clean dist
 
-To build without running tests or creating OSGi information:
+This will generate a distribution similar to the zip you can download on the Groovy download page.
 
-    ant install -DskipTests=true -DskipOsgi=true
+To build everything and launch unit tests, use
 
-To run tests from gradle (will download gradle the first time):
+    ./gradlew test
 
-    gradlew test
+To build from IntelliJ IDEA
+
+    ./gradlew idea
+    ./gradlew jarAll
+
+Then open the generated project in IDEA.
 
 To build from Eclipse:
 
-* ant install
-* ensure that the M2_REPO classpath variable exists and points to the correct place (typically ~/.m2/repository)
-    * To Change this, go to Preferences -> Java -> Build Path -> Classpath variables
-* Project -> Clean... and then build.  Should compile with no errors.  But if there are errors, then send a message to the groovy users mailing list
-* You will *not* be able to run the tests from inside of Eclipse. 
+TBD
+
+
+InvokeDynamic support
+---
+
+The Groovy build supports the new Java 7 JVM instruction ```invokedynamic```. If you want to build Groovy with invokedynamic, you can use the project property ```indy```:
+
+    ./gradlew -Pindy=true clean test
+
+Please note that the following Gradle tasks generate both indy and non indy variants of the jars, so you don't need to use the system property:
+
+* dist
+* install
+* uploadArchives
 
 License
 ---
