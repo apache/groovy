@@ -83,8 +83,8 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
 
             if (hasAnnotation(cNode, CanonicalASTTransformation.MY_TYPE)) {
                 AnnotationNode canonical = cNode.getAnnotations(CanonicalASTTransformation.MY_TYPE).get(0);
-                if (excludes == null || excludes.isEmpty()) excludes = tokenize((String) getMemberValue(canonical, "excludes"));
-                if (includes == null || includes.isEmpty()) includes = tokenize((String) getMemberValue(canonical, "includes"));
+                if (excludes == null || excludes.isEmpty()) excludes = getMemberList(canonical, "excludes");
+                if (includes == null || includes.isEmpty()) includes = getMemberList(canonical, "includes");
             }
             if (includes != null && !includes.isEmpty() && excludes != null && !excludes.isEmpty()) {
                 addError("Error during " + MY_TYPE_NAME + " processing: Only one of 'includes' and 'excludes' should be supplied not both.", anno);

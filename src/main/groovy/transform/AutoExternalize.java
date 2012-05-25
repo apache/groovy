@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 the original author or authors.
+ * Copyright 2008-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -74,8 +74,10 @@ import java.lang.annotation.Target;
 public @interface AutoExternalize {
     /**
      * Comma separated list of property names to exclude from externalizing
+     * For convenience, a String with comma separated names
+     * can be used in addition to an array (using Groovy's literal list notation) of String values.
      */
-    String excludes() default "";
+    String[] excludes();
 
     /**
      * Include fields as well as properties when externalizing
