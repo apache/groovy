@@ -228,10 +228,10 @@ allprojects {
     }
 }
 
-task javadocAllJar(type: Jar, dependsOn: javadocJar) {
+task javadocAllJar(type: Jar, dependsOn: javadocAll) {
     appendix = 'all'
     classifier = rootProject.useIndy()?'indy-javadoc':'javadoc'
-    with javadocJar.rootSpec
+    from javadocAll.destinationDir
 }
 
 

@@ -3,23 +3,25 @@ task doc(dependsOn: [javadoc, groovydoc, 'docGDK']) {
     ext.title = "Groovy ${groovyVersion}"
 }
 
-allprojects {
-    javadoc {
-        maxMemory = javaDoc_mx
-        project.configure(options) {
-            windowTitle = doc.title
-            docTitle = doc.title
-            encoding = "ISO-8859-1"
-            author = true
-            version = true
-            overview = "src/main/overview.html"
-            footer = doc.footer
-            source = rootProject.useIndy()?'1.7':'1.5'
-            links("http://docs.oracle.com/javase/6/docs/api/", "http://evgeny-goldin.org/javadoc/ant/api/",
-                    "http://commons.apache.org/cli/api-release", "http://kentbeck.github.com/junit/javadoc/latest/",
-                    "http://docs.oracle.com/javaee/6/api/", "http://www.antlr2.org/javadoc")
-        }
+def javadocSpec = {
+    maxMemory = javaDoc_mx
+    project.configure(options) {
+        windowTitle = doc.title
+        docTitle = doc.title
+        encoding = "ISO-8859-1"
+        author = true
+        version = true
+        overview = "src/main/overview.html"
+        footer = doc.footer
+        source = rootProject.useIndy()?'1.7':'1.5'
+        links("http://docs.oracle.com/javase/6/docs/api/", "http://evgeny-goldin.org/javadoc/ant/api/",
+                "http://commons.apache.org/cli/api-release", "http://kentbeck.github.com/junit/javadoc/latest/",
+                "http://docs.oracle.com/javaee/6/api/", "http://www.antlr2.org/javadoc")
     }
+}
+
+allprojects {
+    javadoc javadocSpec
 
     groovydoc {
         use = true
@@ -35,6 +37,18 @@ allprojects {
         link "http://kentbeck.github.com/junit/javadoc/latest/", "org.junit.", "junit."
         link "http://www.antlr2.org/javadoc", "antlr."
         link "http://commons.apache.org/cli/api-release", "org.apache.commons.cli."
+    }
+}
+
+// Root project has an extra 'all' javadoc task
+task javadocAll(type:Javadoc) << javadocSpec
+javadocAll {
+    destinationDir = new File(buildDir,'alljavadoc')
+    source = javadoc.source
+    classpath = javadoc.classpath
+    subprojects.each { sp ->
+        source += sp.javadoc.source
+        classpath += sp.javadoc.classpath
     }
 }
 
