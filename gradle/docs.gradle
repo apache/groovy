@@ -11,7 +11,7 @@ def javadocSpec = {
         encoding = "ISO-8859-1"
         author = true
         version = true
-        overview = "src/main/overview.html"
+        overview = rootProject.file("src/main/overview.html")
         footer = doc.footer
         source = rootProject.useIndy()?'1.7':'1.5'
         links("http://docs.oracle.com/javase/6/docs/api/", "http://evgeny-goldin.org/javadoc/ant/api/",
@@ -20,24 +20,28 @@ def javadocSpec = {
     }
 }
 
+def groovydocSpec = {
+    use = true
+    source = project.sourceSets.main.allSource
+    classpath = javadoc.classpath
+    ext.windowtitle = doc.title
+    ext.doctitle = doc.title
+    header = doc.title
+    footer = doc.footer
+    overview = rootProject.file("src/main/overview.html")
+    includePrivate = false
+    link "http://docs.oracle.com/javaee/6/api/", "javax.servlet.", "javax.management."
+    link "http://docs.oracle.com/javase/6/docs/api/", "java.", "org.xml.", "javax.", "org.w3c."
+    link "http://evgeny-goldin.org/javadoc/ant/api/", "org.apache.ant.", "org.apache.tools.ant."
+    link "http://kentbeck.github.com/junit/javadoc/latest/", "org.junit.", "junit."
+    link "http://www.antlr2.org/javadoc", "antlr."
+    link "http://commons.apache.org/cli/api-release", "org.apache.commons.cli."
+}
+
 allprojects {
     javadoc javadocSpec
 
-    groovydoc {
-        use = true
-        ext.windowtitle = doc.title
-        ext.doctitle = doc.title
-        header = doc.title
-        footer = doc.footer
-        overview = file("src/main/overview.html")
-        includePrivate = false
-        link "http://docs.oracle.com/javaee/6/api/", "javax.servlet.", "javax.management."
-        link "http://docs.oracle.com/javase/6/docs/api/", "java.", "org.xml.", "javax.", "org.w3c."
-        link "http://evgeny-goldin.org/javadoc/ant/api/", "org.apache.ant.", "org.apache.tools.ant."
-        link "http://kentbeck.github.com/junit/javadoc/latest/", "org.junit.", "junit."
-        link "http://www.antlr2.org/javadoc", "antlr."
-        link "http://commons.apache.org/cli/api-release", "org.apache.commons.cli."
-    }
+    groovydoc groovydocSpec
 }
 
 // Root project has an extra 'all' javadoc task
@@ -49,6 +53,20 @@ javadocAll {
     subprojects.each { sp ->
         source += sp.javadoc.source
         classpath += sp.javadoc.classpath
+    }
+}
+
+// Root project has an extra 'all' groovydoc task
+task groovydocAll(type:Groovydoc) << groovydocSpec
+groovydocAll {
+    destinationDir = new File(buildDir,'allgroovydoc')
+    source = groovydoc.source
+    classpath = groovydoc.classpath
+    groovyClasspath = groovydoc.groovyClasspath
+    subprojects.each { sp ->
+        source += sp.groovydoc.source
+        classpath += sp.groovydoc.classpath
+        groovyClasspath += sp.groovydoc.groovyClasspath
     }
 }
 

@@ -45,10 +45,12 @@ allprojects {
 
 // the root project generates an alternate 'groovy-all' artifact
 [uploadArchives, install]*.with {
-    dependsOn(sourceAllJar)
+    dependsOn([sourceAllJar, javadocAllJar, groovydocAllJar])
     doFirst {
         project.artifacts.add('archives', jarAll)
         project.artifacts.add('archives', sourceAllJar)
+        project.artifacts.add('archives', javadocAllJar)
+        project.artifacts.add('archives', groovydocAllJar)
         def archive = jarAll.archivePath
         def indyJar = new File(archive.parent, archive.name[0..archive.name.lastIndexOf('.')-1]+'-indy.jar')
         if (indyJar.exists()) {

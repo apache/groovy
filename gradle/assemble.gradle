@@ -234,6 +234,12 @@ task javadocAllJar(type: Jar, dependsOn: javadocAll) {
     from javadocAll.destinationDir
 }
 
+task groovydocAllJar(type: Jar, dependsOn: groovydocAll) {
+    appendix = 'all'
+    classifier = rootProject.useIndy()?'indy-groovydoc':'groovydoc'
+    from groovydocAll.destinationDir
+}
+
 
 ext.distSpec = copySpec {
     from("$projectDir") {
