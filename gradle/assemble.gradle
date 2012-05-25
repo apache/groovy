@@ -178,6 +178,16 @@ task jarAll(type: Jar, dependsOn: { modules()*.jar }) {
     }
 }
 
+allprojects {
+    task jarWithIndy(type: GradleBuild) {
+        description = 'Triggers an external build generating the indy jar'
+        buildFile = 'build.gradle'
+        startParameter.projectProperties['indy']=true
+        tasks = ['jar']
+    }
+}
+
+
 task jarAllWithIndy(type: GradleBuild) {
     description = 'Triggers an external build generating the indy jarAll'
     buildFile = 'build.gradle'
@@ -209,6 +219,13 @@ task sourceAllJar(type: Jar, dependsOn: { modules()*.sourceJar }) {
 task javadocJar(type: Jar, dependsOn: javadoc) {
     classifier = rootProject.useIndy()?'indy-javadoc':'javadoc'
     from javadoc.destinationDir
+}
+
+allprojects {
+    task groovydocJar(type: Jar, dependsOn: groovydoc) {
+        classifier = 'groovydoc'
+        from groovydoc.destinationDir
+    }
 }
 
 task javadocAllJar(type: Jar, dependsOn: javadocJar) {
