@@ -94,7 +94,7 @@ jar {
 }
 
 def modules() {
-    subprojects.findAll { it.name =~ /groovy/ }
+    subprojects.findAll { it.name =~ /groovy-(?!all-tests)/ }
 }
 
 def moduleJars() {
