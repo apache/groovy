@@ -192,27 +192,27 @@ public @interface EqualsAndHashCode {
      * Must not be used if 'includes' is used. For convenience, a String with comma separated names
      * can be used in addition to an array (using Groovy's literal list notation) of String values.
      */
-    String[] excludes();
+    String[] excludes() default {};
 
     /**
      * List of field and/or property names to include within the equals and hashCode calculations.
      * Must not be used if 'excludes' is used. For convenience, a String with comma separated names
      * can be used in addition to an array (using Groovy's literal list notation) of String values.
      */
-    String[] includes();
+    String[] includes() default {};
 
     /**
-     * Whether to include super in equals and hashCode calculations
+     * Whether to include super in equals and hashCode calculations.
      */
     boolean callSuper() default false;
 
     /**
-     * Include fields as well as properties in equals and hashCode calculations
+     * Include fields as well as properties in equals and hashCode calculations.
      */
     boolean includeFields() default false;
 
     /**
-     * Generate a canEqual method to be used by equals
+     * Generate a canEqual method to be used by equals.
      */
     boolean useCanEqual() default true;
 }

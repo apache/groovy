@@ -22,7 +22,7 @@ def javadocSpec = {
 
 def groovydocSpec = {
     use = true
-    source = project.sourceSets.main.allSource
+    if (project != rootProject) source = project.sourceSets.main.allSource
     classpath = javadoc.classpath
     ext.windowtitle = doc.title
     ext.doctitle = doc.title
@@ -40,7 +40,6 @@ def groovydocSpec = {
 
 allprojects {
     javadoc javadocSpec
-
     groovydoc groovydocSpec
 }
 

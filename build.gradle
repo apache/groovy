@@ -144,8 +144,6 @@ dependencies {
     compilerCompile("org.apache.ivy:ivy:2.2.0") {
         transitive = false
     }
-// TODO use antlr plugin
-//    antlr "antlr:antlr:2.7.7"
     groovy files("$buildDir/classes/compiler")
     groovy "antlr:antlr:2.7.7"
     groovy "org.ow2.asm:asm:4.0"
@@ -190,7 +188,6 @@ dependencies {
     testCompile "log4j:log4j:1.2.16"
     testCompile "org.slf4j:jcl-over-slf4j:1.6.0"
     testCompile "com.thoughtworks.qdox:qdox:1.12"
-//    testCompile "org.apache.ant:ant-testutil:1.8.4"
     runtime "org.codehaus.gpars:gpars:1.0-beta-2"
 
     tools "com.googlecode.jarjar:jarjar:1.3"
@@ -223,12 +220,11 @@ dependencies {
         exclude(module: 'geronimo-j2ee-connector_1.5_spec')
     }
 
+// TODO use antlr plugin
+//    antlr "antlr:antlr:2.7.7"
     antlr "org.apache.ant:ant-antlr:1.8.4"
 
-//    groovy project(':subprojects:groovy-ant')
     // TODO remove once M12N refactoring finished
-    // uncomment to temporarily use gradle's groovy (groovyc needs AntBuilder)
-    //groovy localGroovy()
     testCompile project(':subprojects:groovy-ant')
     testCompile project(':subprojects:groovy-test')
 }
@@ -257,8 +253,6 @@ sourceSets {
         java {
             srcDirs = [
                     "$projectDir/src/main",
-//                    "$projectDir/subprojects/groovy-jmx/src/main/java",
-//                    "$projectDir/subprojects/groovy-bsf/src/main/java",
             ]
             fileTree("$projectDir/src/main/groovy/ui").matching {
                 exclude 'GroovyMain.java', 'GroovySocketServer.java'
@@ -274,7 +268,6 @@ sourceSets {
         groovy {
             srcDirs = [
                     "$projectDir/src/main",
-                    "$projectDir/subprojects/groovy-jmx/src/main/groovy",
             ]
         }
         resources {
@@ -294,10 +287,6 @@ sourceSets {
         groovy {
             srcDirs = [
                     "$projectDir/src/test",
-//                    "$projectDir/subprojects/groovy-bsf/src/test/groovy",
-//                    "$projectDir/subprojects/groovy-jmx/src/test/groovy",
-//                    "$projectDir/subprojects/groovy-bsf/src/test/java",
-//                    "$projectDir/subprojects/groovy-jmx/src/test/java"
             ]
             if (!isJava16()) {
                 exclude "groovy/**/vm6/*Test.groovy"

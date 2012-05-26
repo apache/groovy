@@ -73,14 +73,14 @@ import java.lang.annotation.Target;
 @GroovyASTTransformationClass("org.codehaus.groovy.transform.AutoExternalizeASTTransformation")
 public @interface AutoExternalize {
     /**
-     * Comma separated list of property names to exclude from externalizing
+     * Comma separated list of property names to exclude from externalizing.
      * For convenience, a String with comma separated names
      * can be used in addition to an array (using Groovy's literal list notation) of String values.
      */
-    String[] excludes();
+    String[] excludes() default {};
 
     /**
-     * Include fields as well as properties when externalizing
+     * Include fields as well as properties when externalizing.
      */
     boolean includeFields() default false;
 }

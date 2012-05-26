@@ -111,7 +111,7 @@ public @interface Canonical {
      * related annotations (i.e. {@code @ToString}, {@code @EqualsAndHashCode} or {@code @TupleConstructor}), then
      * the value of this attribute can be overriden within the more specific annotation.
      */
-    String[] excludes();
+    String[] excludes() default {};
 
     /**
      * List of field and/or property names to include.
@@ -122,5 +122,5 @@ public @interface Canonical {
      * related annotations (i.e. {@code @ToString}, {@code @EqualsAndHashCode} or {@code @TupleConstructor}), then
      * the value of this attribute can be overriden within the more specific annotation.
      */
-    String[] includes();
+    String[] includes() default {};
 }

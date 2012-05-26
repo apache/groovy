@@ -66,37 +66,37 @@ public @interface TupleConstructor {
      * Must not be used if 'includes' is used. For convenience, a String with comma separated names
      * can be used in addition to an array (using Groovy's literal list notation) of String values.
      */
-    String[] excludes();
+    String[] excludes() default {};
 
     /**
      * List of field and/or property names to include within the constructor.
      * Must not be used if 'excludes' is used. For convenience, a String with comma separated names
      * can be used in addition to an array (using Groovy's literal list notation) of String values.
      */
-    String[] includes();
+    String[] includes() default {};
 
     /**
-     * Include fields in the constructor
+     * Include fields in the constructor.
      */
     boolean includeFields() default false;
 
     /**
-     * Include properties in the constructor
+     * Include properties in the constructor.
      */
     boolean includeProperties() default true;
 
     /**
-     * Include fields from super classes in the constructor
+     * Include fields from super classes in the constructor.
      */
     boolean includeSuperFields() default false;
 
     /**
-     * Include properties from super classes in the constructor
+     * Include properties from super classes in the constructor.
      */
     boolean includeSuperProperties() default false;
 
     /**
-     * Should super properties be called within a call to the parent constructor
+     * Should super properties be called within a call to the parent constructor.
      * rather than set as properties
      */
     boolean callSuper() default false;
