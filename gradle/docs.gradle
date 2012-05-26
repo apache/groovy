@@ -11,7 +11,7 @@ def javadocSpec = {
         encoding = "ISO-8859-1"
         author = true
         version = true
-        overview = rootProject.file("src/main/overview.html")
+        overview = rootProject.file("src/main/overviewj.html")
         footer = doc.footer
         source = rootProject.useIndy()?'1.7':'1.5'
         links("http://docs.oracle.com/javase/6/docs/api/", "http://evgeny-goldin.org/javadoc/ant/api/",
