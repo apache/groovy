@@ -278,14 +278,6 @@ ext.distSpec = copySpec {
     }
 }
 
-task installGroovy(type: Sync, dependsOn: [jar, jarAll]) {
-    from distSpec
-    into System.properties.installDirectory ?: "$buildDir/install"
-}
-
-//task jars(dependsOn: tasks.withType(Jar))
-//task dists(dependsOn: tasks.withType(Zip).matching {task -> !(task instanceof Jar)})
-
 task distBin(type: Zip, dependsOn: [jar, jarAllAll]) {
     appendix = 'binary'
     into("groovy-$version") {
@@ -318,6 +310,13 @@ task distSrc(type: Zip, dependsOn: [javadoc, groovydoc, docGDK]) {
         exclude 'target', buildDir.path, 'classes/**', 'cruise/**', '.clover/*', 'local.build.properties',
                 'cobertura.ser', 'junitvmwatcher*.properties'
     }
+}
+
+task installGroovy(type: Sync, dependsOn: distBin) {
+    description 'Generates a groovy distribution into an install directory'
+    with distSpec
+    with licenseSpec
+    into System.properties.installDirectory ?: "$buildDir/install"
 }
 
 task dist(dependsOn: [distBin, /*distSrc, distDoc*/]) {
