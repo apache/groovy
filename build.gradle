@@ -3,7 +3,7 @@ apply from: "$projectDir/gradle/indy.gradle"
 // TODO use antlr plugin
 //apply plugin: 'antlr'
 
-allprojects { p ->
+allprojects {
     apply plugin: 'java'
 
     buildDir = 'target'
@@ -16,10 +16,6 @@ allprojects { p ->
 //    tasks.withType(CodeNarc).all { t -> t.ignoreFailures = true }
     repositories {
         mavenCentral()
-    }
-    configurations {
-        compile.transitive = true
-        testCompile.transitive = true
     }
 
     // todo: when we get rid of the Ant build, it will be much cleaner to use
