@@ -12,8 +12,6 @@ allprojects {
 
     group = 'org.codehaus.groovy'
     version = groovyVersion
-//    tasks.withType(Checkstyle).all { t -> t.ignoreFailures = true }
-//    tasks.withType(CodeNarc).all { t -> t.ignoreFailures = true }
     repositories {
         mavenCentral()
     }

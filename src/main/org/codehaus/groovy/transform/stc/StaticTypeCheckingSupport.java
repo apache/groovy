@@ -970,9 +970,10 @@ public abstract class StaticTypeCheckingSupport {
     /**
      * Given a receiver and a method node, parameterize the method arguments using
      * available generic type information.
-     * @param receiver
-     * @param m
-     * @return
+     *
+     * @param receiver the class
+     * @param m the method
+     * @return the parameterized arguments
      */
     public static Parameter[] parameterizeArguments(final ClassNode receiver, final MethodNode m) {
         MethodNode mn = m;

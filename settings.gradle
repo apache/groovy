@@ -7,3 +7,5 @@ include 'groovy-ant', 'groovy-bsf', 'groovy-console', 'groovy-docgenerator',
 rootProject.children.each { prj ->
     prj.projectDir = new File("$rootDir/subprojects/$prj.name")
 }
+
+rootProject.name = 'groovy' // TODO should this be groovy-core?

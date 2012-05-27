@@ -43,7 +43,7 @@ public enum JsonTokenType {
      * So it is replaced by a 2-step approach inspired from json2.js sources:
      *     https://github.com/douglascrockford/JSON-js/blob/master/json2.js#L462
      *
-     * See {@link JsonTokenTypeTest#testMatchingLongStringWithBackslashes()} for details.
+     * See JsonTokenTypeTest#testMatchingLongStringWithBackslashes() for details.
      */
     STRING          ( "a string",                           new Closure(null) {
         private Pattern replacePattern = Pattern.compile("(?:\\\\[\"\\\\bfnrt\\/]|\\\\u[0-9a-fA-F]{4})");

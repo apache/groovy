@@ -216,14 +216,13 @@ task sourceAllJar(type: Jar, dependsOn: { modules()*.sourceJar }) {
     //with sourceJar.rootSpec
 }
 
-task javadocJar(type: Jar, dependsOn: javadoc) {
-    classifier = rootProject.useIndy()?'indy-javadoc':'javadoc'
-    from javadoc.destinationDir
-}
-
 allprojects {
+    task javadocJar(type: Jar, dependsOn: javadoc) {
+        classifier = rootProject.useIndy()?'indy-javadoc':'javadoc'
+        from javadoc.destinationDir
+    }
     task groovydocJar(type: Jar, dependsOn: groovydoc) {
-        classifier = 'groovydoc'
+        classifier = rootProject.useIndy()?'indy-groovydoc':'groovydoc'
         from groovydoc.destinationDir
     }
 }
