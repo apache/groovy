@@ -10,5 +10,5 @@ dependencies {
 }
 
 sourceSets.main.resources {
-    srcDirs = [ "$projectDir/src/resources" ]
+    srcDirs = [ "src/resources" ]
 }
