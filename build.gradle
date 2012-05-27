@@ -1,6 +1,3 @@
-apply plugin: 'groovy'
-apply plugin: 'codenarc'
-apply plugin: 'checkstyle'
 apply from: "$projectDir/gradle/indy.gradle"
 
 // TODO use antlr plugin
@@ -54,6 +51,16 @@ allprojects { p ->
     apply from: "${project(':').projectDir}/gradle/groovydoc.gradle"
     apply from: "${project(':').projectDir}/gradle/indy.gradle"
 
+    // don't fail build on CodeNarc tasks
+    tasks.withType(CodeNarc) {
+        ignoreFailures = true
+        configFile = file("$rootProject.projectDir/config/codenarc/codenarc.groovy")
+    }
+    tasks.withType(Checkstyle) {
+        ignoreFailures = true
+        configFile = file("$rootProject.projectDir/config/checkstyle/checkstyle.xml")
+    }
+    
     if (useIndy()) {
         def indyGroovy = {
             options.useAnt = true
@@ -94,16 +101,6 @@ allprojects { p ->
         }
     }
 
-}
-
-// don't fail build on CodeNarc tasks
-tasks.withType(CodeNarc).all { codeNarcTask ->
-    codeNarcTask.ignoreFailures = true
-    codeNarcTask.configFile = file("./config/codenarc/codenarc.groovy")
-}
-tasks.withType(Checkstyle).all { checkstyleTask ->
-    checkstyleTask.ignoreFailures = true
-    checkstyleTask.configFile = file("./config/checkstyle/checkstyle.xml")
 }
 
 repositories {
