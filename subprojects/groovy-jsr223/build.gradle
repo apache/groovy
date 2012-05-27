@@ -6,9 +6,9 @@ dependencies {
     compile "org.livetribe:livetribe-jsr223:2.0.6"
     compile project(':')
     groovy project(':')
-    testCompile project(':subprojects:groovy-test')
+    testCompile project(':groovy-test')
 }
 
 sourceSets.main.resources {
-    srcDirs = [ "$projectDir/src/resources" ]
+    srcDirs = [ "src/resources" ]
 }

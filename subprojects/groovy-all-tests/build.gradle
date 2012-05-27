@@ -15,10 +15,5 @@ dependencies {
 //    testCompile project(':').sourceSets.test.runtimeClasspath
 
     // add every other module as a dependency
-    project.parent.subprojects.each { p ->
-       def name = p.name
-       if (name != 'groovy-all-tests') {
-          testCompile project(":subprojects:$name")
-       }
-    }
+    testCompile(rootProject.subprojects - project)
 }

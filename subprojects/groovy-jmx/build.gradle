@@ -4,5 +4,5 @@ ext.checkstyleConfigFileName = "../../config/checkstyle/checkstyle.xml"
 dependencies {
     groovy project(':')
     compile project(':')
-    testCompile project(':subprojects:groovy-test')
+    testCompile project(':groovy-test')
 }

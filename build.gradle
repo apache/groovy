@@ -1,12 +1,9 @@
-apply plugin: 'groovy'
-apply plugin: 'codenarc'
-apply plugin: 'checkstyle'
-apply from: "$projectDir/gradle/indy.gradle"
+apply from: "gradle/indy.gradle"
 
 // TODO use antlr plugin
 //apply plugin: 'antlr'
 
-allprojects { p ->
+allprojects {
     apply plugin: 'java'
 
     buildDir = 'target'
@@ -19,10 +16,6 @@ allprojects { p ->
 //    tasks.withType(CodeNarc).all { t -> t.ignoreFailures = true }
     repositories {
         mavenCentral()
-    }
-    configurations {
-        compile.transitive = true
-        testCompile.transitive = true
     }
 
     // todo: when we get rid of the Ant build, it will be much cleaner to use
@@ -51,9 +44,19 @@ allprojects { p ->
     apply plugin: 'checkstyle'
     apply plugin: 'groovy'
     apply plugin: 'codenarc'
-    apply from: "${project(':').projectDir}/gradle/groovydoc.gradle"
-    apply from: "${project(':').projectDir}/gradle/indy.gradle"
+    apply from: "${rootProject.projectDir}/gradle/groovydoc.gradle"
+    apply from: "${rootProject.projectDir}/gradle/indy.gradle"
 
+    // don't fail build on CodeNarc tasks
+    tasks.withType(CodeNarc) {
+        ignoreFailures = true
+        configFile = file("$rootProject.projectDir/config/codenarc/codenarc.groovy")
+    }
+    tasks.withType(Checkstyle) {
+        ignoreFailures = true
+        configFile = file("$rootProject.projectDir/config/checkstyle/checkstyle.xml")
+    }
+    
     if (useIndy()) {
         def indyGroovy = {
             options.useAnt = true
@@ -74,12 +77,12 @@ allprojects { p ->
             sourceCompatibility = 1.7
             targetCompatibility = 1.7
             groovyClasspath = files(
-                    project(':').compileJava.destinationDir,
-                    project(':').compileJava.classpath,
-                    { project(':subprojects:groovy-docgenerator').compileJava.destinationDir },
-                    { project(':subprojects:groovy-groovydoc').compileJava.destinationDir },
-                    { project(':subprojects:groovy-ant').compileJava.destinationDir },
-                    { project(':subprojects:groovy-templates').compileJava.destinationDir },
+                    rootProject.compileJava.destinationDir,
+                    rootProject.compileJava.classpath,
+                    { project(':groovy-docgenerator').compileJava.destinationDir },
+                    { project(':groovy-groovydoc').compileJava.destinationDir },
+                    { project(':groovy-ant').compileJava.destinationDir },
+                    { project(':groovy-templates').compileJava.destinationDir },
             )
         }
         // add tasks to compile the invokedynamic version
@@ -96,21 +99,11 @@ allprojects { p ->
 
 }
 
-// don't fail build on CodeNarc tasks
-tasks.withType(CodeNarc).all { codeNarcTask ->
-    codeNarcTask.ignoreFailures = true
-    codeNarcTask.configFile = file("./config/codenarc/codenarc.groovy")
-}
-tasks.withType(Checkstyle).all { checkstyleTask ->
-    checkstyleTask.ignoreFailures = true
-    checkstyleTask.configFile = file("./config/checkstyle/checkstyle.xml")
-}
-
 repositories {
     // todo Some repos are needed only for some configs. Declare them just for the configuration once Gradle allows this.
 //    mavenCentral() // default, tools
-    mavenRepo url: "http://www.aQute.biz/repo" // tools
-    mavenRepo url: "http://repository.jboss.org/maven2" // examples, tools
+    maven { url "http://www.aQute.biz/repo" } // tools
+    maven { url "http://repository.jboss.org/maven2" } // examples, tools
 }
 
 // todo do we need compile and runtime scope for examples?
@@ -225,8 +218,8 @@ dependencies {
     antlr "org.apache.ant:ant-antlr:1.8.4"
 
     // TODO remove once M12N refactoring finished
-    testCompile project(':subprojects:groovy-ant')
-    testCompile project(':subprojects:groovy-test')
+    testCompile project(':groovy-ant')
+    testCompile project(':groovy-test')
 }
 
 sourceSets {
@@ -235,12 +228,12 @@ sourceSets {
         // which will be used by the build itself to compile the groovy files
         java {
             srcDirs = [
-                    "$projectDir/src/main",
-                    "$projectDir/subprojects/groovy-ant/src/main",
-                    "$projectDir/subprojects/groovy-groovydoc/src/main",
-                    "$projectDir/subprojects/groovy-templates/src/main",
-                    "$projectDir/subprojects/groovy-xml/src/main",
-                    "$projectDir/subprojects/groovy-jmx/src/main",
+                    "src/main",
+                    "subprojects/groovy-ant/src/main",
+                    "subprojects/groovy-groovydoc/src/main",
+                    "subprojects/groovy-templates/src/main",
+                    "subprojects/groovy-xml/src/main",
+                    "subprojects/groovy-jmx/src/main",
             ]
             if (!useIndy()) {
                 exclude '**/indy/*'
@@ -252,9 +245,9 @@ sourceSets {
     main {
         java {
             srcDirs = [
-                    "$projectDir/src/main",
+                    "src/main",
             ]
-            fileTree("$projectDir/src/main/groovy/ui").matching {
+            fileTree("src/main/groovy/ui").matching {
                 exclude 'GroovyMain.java', 'GroovySocketServer.java'
             }.visit {details ->
                 exclude "groovy/ui/$details.path"
@@ -267,11 +260,11 @@ sourceSets {
         }
         groovy {
             srcDirs = [
-                    "$projectDir/src/main",
+                    "src/main",
             ]
         }
         resources {
-            srcDirs = ["$projectDir/src/main", "$projectDir/src/tools"]
+            srcDirs = ["src/main", "src/tools"]
             include "META-INF/services/*", "META-INF/groovy-release-info.properties",
                     "groovy/grape/*.xml", "groovy/ui/*.properties", "groovy/ui/**/*.png",
                     "groovy/inspect/swingui/AstBrowserProperties.groovy",
@@ -286,7 +279,7 @@ sourceSets {
     test {
         groovy {
             srcDirs = [
-                    "$projectDir/src/test",
+                    "src/test",
             ]
             if (!isJava16()) {
                 exclude "groovy/**/vm6/*Test.groovy"
@@ -294,16 +287,16 @@ sourceSets {
             }
         }
         resources {
-            srcDirs = ["$projectDir/src/test-resources"]
+            srcDirs = ["src/test-resources"]
         }
         output.classesDir = "$buildDir/test-classes" as File
     }
     tools {
         groovy {
-            srcDirs = ["$projectDir/src/tools"]
+            srcDirs = ["src/tools"]
         }
         resources {
-            srcDirs = ["$projectDir/src/tools"]
+            srcDirs = ["src/tools"]
         }
         compileClasspath = configurations.tools + sourceSets.main.runtimeClasspath
         runtimeClasspath = output + compileClasspath
@@ -311,10 +304,10 @@ sourceSets {
     }
     examples {
         groovy {
-            srcDirs = ["$projectDir/src/examples"]
+            srcDirs = ["src/examples"]
         }
         resources {
-            srcDirs = ["$projectDir/src/examples"]
+            srcDirs = ["src/examples"]
         }
         compileClasspath = configurations.examplesRuntime + sourceSets.main.output
         output.classesDir = "$buildDir/examples-classes" as File
@@ -324,7 +317,7 @@ sourceSets {
 // remove this from config once GRADLE-854 is fixed.
 processResources.doLast {
     copy {
-        from("$projectDir/src/main") {
+        from("src/main") {
             include "groovy/inspect/swingui/AstBrowserProperties.groovy",
                     "org/codehaus/groovy/tools/groovydoc/gstringTemplates/GroovyDocTemplateInfo.java"
         }
@@ -409,11 +402,11 @@ task codenarcExamples(overwrite: true) << {}
 // provide to other build scripts
 ext.isJava6 = this.&isJava16()
 
-apply from: "$projectDir/gradle/test.gradle"
-apply from: "$projectDir/gradle/docs.gradle"
-apply from: "$projectDir/gradle/assemble.gradle"
-apply from: "$projectDir/gradle/upload.gradle"
-apply from: "$projectDir/gradle/idea.gradle"
+apply from: "gradle/test.gradle"
+apply from: "gradle/docs.gradle"
+apply from: "gradle/assemble.gradle"
+apply from: "gradle/upload.gradle"
+apply from: "gradle/idea.gradle"
 
 task wrapper(type: Wrapper) {
 //    gradleVersion = '1.0-milestone-5-20110929000016+0200'
@@ -422,7 +415,7 @@ task wrapper(type: Wrapper) {
 }
 
 // Define a GroovyDoc task which depends on the generated groovydoc tool
-apply from: "$projectDir/gradle/groovydoc.gradle"
+apply from: "gradle/groovydoc.gradle"
 
 classes {
     doFirst {

@@ -5,10 +5,10 @@ dependencies {
     groovy project(':')
     testCompile "jmock:jmock:1.2.0"
     // needed for MarkupBuilder
-    compile project(':subprojects:groovy-xml')
+    compile project(':groovy-xml')
     // needed by TemplateServlet
-    compile project(':subprojects:groovy-templates')
-    testCompile project(':subprojects:groovy-test')
+    compile project(':groovy-templates')
+    testCompile project(':groovy-test')
     // for compilation, dependency is not necessary because the classes are loaded using Class.forName
-    testCompile project(':subprojects:groovy-json')
+    testCompile project(':groovy-json')
 }

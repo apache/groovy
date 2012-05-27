@@ -1,10 +1,10 @@
-evaluationDependsOn(':subprojects:groovy-swing')
+evaluationDependsOn(':groovy-swing')
 
 dependencies {
     compile project(':')
     groovy project(':')
-    compile project(':subprojects:groovy-swing')
-    testCompile project(':subprojects:groovy-swing').sourceSets.test.runtimeClasspath
+    compile project(':groovy-swing')
+    testCompile project(':groovy-swing').sourceSets.test.runtimeClasspath
 }
 
 // Required for MessageSourceTest

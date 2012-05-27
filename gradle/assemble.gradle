@@ -31,7 +31,7 @@ ext.allManifest = manifest {
 }
 
 ext.licenseSpec = copySpec {
-    from "$projectDir/config/build"
+    from "config/build"
     from(zipTree(configurations.compile.fileCollection { it.name.startsWith 'commons-cli' }.singleFile).matching {
         include 'META-INF/LICENSE.txt'
     }) {
@@ -70,8 +70,8 @@ jar {
     dependsOn('dgmConverter')
     metaInf {
         Date buildTime = new Date()
-        from "$projectDir/LICENSE.txt"
-        from("$projectDir/src/main/META-INF/groovy-release-info.properties") {
+        from "LICENSE.txt"
+        from("src/main/META-INF/groovy-release-info.properties") {
             filter {String line ->
                 ['##ImplementationVersion##': project.version, '##BundleVersion##': project.groovyBundleVersion,
                         '##BuildDate##': new SimpleDateFormat('dd-MMM-yyyy').format(buildTime),
