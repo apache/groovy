@@ -1,6 +1,6 @@
 dependencies {
     compile project(':')
-    compile project(':subprojects:groovy-xml')
+    compile project(':groovy-xml')
     groovy project(':')
-    testCompile project(':subprojects:groovy-test')
+    testCompile project(':groovy-test')
 }

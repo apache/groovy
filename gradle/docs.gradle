@@ -70,7 +70,7 @@ groovydocAll {
 }
 
 task docGDK {
-    dependsOn([project(':subprojects:groovy-groovydoc'), project(':subprojects:groovy-docgenerator')]*.classes)
+    dependsOn([project(':groovy-groovydoc'), project(':groovy-docgenerator')]*.classes)
     ext.destinationDir = "$buildDir/html/groovy-jdk"
     inputs.files sourceSets.tools.runtimeClasspath
     outputs.dir destinationDir

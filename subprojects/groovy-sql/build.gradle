@@ -2,7 +2,7 @@ dependencies {
     compile project(':')
     groovy project(':')
     testCompile "hsqldb:hsqldb:1.8.0.10"
-    testCompile project(':subprojects:groovy-test')
+    testCompile project(':groovy-test')
 }
 
 // required for DataSet tests

@@ -3,7 +3,7 @@ dependencies {
     groovy project(':')
     testCompile project(':').sourceSets.test.runtimeClasspath
     testCompile "xmlunit:xmlunit:1.3"
-    testCompile project(':subprojects:groovy-test')
+    testCompile project(':groovy-test')
 }
 
 task moduleDescriptor(type: org.codehaus.groovy.gradle.WriteExtensionDescriptorTask) {

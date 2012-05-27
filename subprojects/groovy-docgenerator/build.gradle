@@ -1,7 +1,7 @@
 dependencies {
     compile project(':')
-    compile project(':subprojects:groovy-templates')
+    compile project(':groovy-templates')
     groovy project(':')
-    testCompile project(':subprojects:groovy-test')
+    testCompile project(':groovy-test')
     compile "com.thoughtworks.qdox:qdox:1.12"
 }

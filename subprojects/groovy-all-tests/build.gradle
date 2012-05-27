@@ -18,7 +18,7 @@ dependencies {
     project.parent.subprojects.each { p ->
        def name = p.name
        if (name != 'groovy-all-tests') {
-          testCompile project(":subprojects:$name")
+          testCompile project(":$name")
        }
     }
 }

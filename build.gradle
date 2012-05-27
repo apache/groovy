@@ -76,10 +76,10 @@ allprojects { p ->
             groovyClasspath = files(
                     project(':').compileJava.destinationDir,
                     project(':').compileJava.classpath,
-                    { project(':subprojects:groovy-docgenerator').compileJava.destinationDir },
-                    { project(':subprojects:groovy-groovydoc').compileJava.destinationDir },
-                    { project(':subprojects:groovy-ant').compileJava.destinationDir },
-                    { project(':subprojects:groovy-templates').compileJava.destinationDir },
+                    { project(':groovy-docgenerator').compileJava.destinationDir },
+                    { project(':groovy-groovydoc').compileJava.destinationDir },
+                    { project(':groovy-ant').compileJava.destinationDir },
+                    { project(':groovy-templates').compileJava.destinationDir },
             )
         }
         // add tasks to compile the invokedynamic version
@@ -225,8 +225,8 @@ dependencies {
     antlr "org.apache.ant:ant-antlr:1.8.4"
 
     // TODO remove once M12N refactoring finished
-    testCompile project(':subprojects:groovy-ant')
-    testCompile project(':subprojects:groovy-test')
+    testCompile project(':groovy-ant')
+    testCompile project(':groovy-test')
 }
 
 sourceSets {

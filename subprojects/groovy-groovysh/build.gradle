@@ -1,8 +1,8 @@
 dependencies {
     compile project(':')
     groovy project(':')
-    compile project(':subprojects:groovy-console')
-    testCompile project(':subprojects:groovy-test')
+    compile project(':groovy-console')
+    testCompile project(':groovy-test')
 }
 
 // required for MessageSourceTest to load messages property file (TODO move to resources?)
