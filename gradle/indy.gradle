@@ -17,7 +17,7 @@
 // This file contains support tools for the Gradle build
 // with regards to invoke dynamic support (indy)
 
-project(':').ext.useIndy = {
+rootProject.ext.useIndy = {
     boolean indy = false
 
     // first, check if a system property activates indy support
@@ -25,7 +25,7 @@ project(':').ext.useIndy = {
 
     // ultimately, check if the main project has an extension property setting indy to true
     // which is the case if the build is started with -Pindy=true or during install/dist tasks
-    indy |= project(':').hasProperty('indy') && (Boolean.valueOf(project(':').indy))
+    indy |= rootProject.hasProperty('indy') && (Boolean.valueOf(rootProject.indy))
 
     indy
 }

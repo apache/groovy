@@ -48,8 +48,8 @@ allprojects { p ->
     apply plugin: 'checkstyle'
     apply plugin: 'groovy'
     apply plugin: 'codenarc'
-    apply from: "${project(':').projectDir}/gradle/groovydoc.gradle"
-    apply from: "${project(':').projectDir}/gradle/indy.gradle"
+    apply from: "${rootProject.projectDir}/gradle/groovydoc.gradle"
+    apply from: "${rootProject.projectDir}/gradle/indy.gradle"
 
     // don't fail build on CodeNarc tasks
     tasks.withType(CodeNarc) {
@@ -81,8 +81,8 @@ allprojects { p ->
             sourceCompatibility = 1.7
             targetCompatibility = 1.7
             groovyClasspath = files(
-                    project(':').compileJava.destinationDir,
-                    project(':').compileJava.classpath,
+                    rootProject.compileJava.destinationDir,
+                    rootProject.compileJava.classpath,
                     { project(':groovy-docgenerator').compileJava.destinationDir },
                     { project(':groovy-groovydoc').compileJava.destinationDir },
                     { project(':groovy-ant').compileJava.destinationDir },

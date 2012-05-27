@@ -19,8 +19,8 @@ groovydoc {
     dependsOn( { project(':groovy-groovydoc').classes })
     dependsOn( { project(':groovy-docgenerator').classes })
     groovyClasspath = files(
-            project(':').compileJava.destinationDir,
-            project(':').compileJava.classpath,
+            rootProject.compileJava.destinationDir,
+            rootProject.compileJava.classpath,
             { project(':groovy-docgenerator').compileJava.destinationDir },
             { project(':groovy-groovydoc').compileJava.destinationDir },
             { project(':groovy-ant').compileJava.destinationDir },
