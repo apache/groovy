@@ -367,6 +367,10 @@ task compilerDgmConverter(type: JavaExec) {
     }
 }
 
+compileCompilerJava {
+    dependsOn ensureGrammars
+}
+
 compileJava {
     dependsOn compilerClasses,compilerDgmConverter,ensureGrammars
 }
