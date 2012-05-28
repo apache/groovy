@@ -45,7 +45,7 @@ import java.util.zip.ZipEntry
 import javax.xml.parsers.DocumentBuilderFactory
 import org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl
 import java.util.jar.JarFile
-import org.codehaus.groovy.runtime.m12n.PropertiesModuleFactory
+
 import org.codehaus.groovy.reflection.CachedClass
 
 /**
@@ -253,28 +253,8 @@ class GrapeIvy implements GrapeEngine {
             for (URI uri in resolve(loader, args, dependencies)) {
                 //TODO check artifact type, jar vs library, etc
                 File file = new File(uri)
-                processServices(file, loader);
-                URL url = uri.toURL()
-                loader.addURL(url)
-                // register extension methods if jar
-                if (file.name.toLowerCase().endsWith(".jar")) {
-                    def mcRegistry = GroovySystem.metaClassRegistry
-                    if (mcRegistry instanceof MetaClassRegistryImpl) {
-                        // should always be the case
-                        JarFile jar = new JarFile(file)
-                        def entry = jar.getEntry(MetaClassRegistryImpl.MODULE_META_INF_FILE)
-                        if (entry) {
-                            Properties props = new Properties()
-                            props.load(jar.getInputStream(entry))
-                            Map<CachedClass, List<MetaMethod>> metaMethods = new HashMap<CachedClass, List<MetaMethod>>()
-                            mcRegistry.registerExtensionModuleFromProperties(props, loader, metaMethods)
-                            // add old methods to the map
-                            metaMethods.each { CachedClass c, List<MetaMethod> methods ->
-                                c.addNewMopMethods(methods)
-                            }
-                        }
-                    }
-                }
+                processCategoryMethods(uri, loader, file)
+                processOtherServices(file, loader);
             }
         } catch (Exception e) {
             // clean-up the state first
@@ -291,20 +271,35 @@ class GrapeIvy implements GrapeEngine {
         return null
     }
 
-    void processServices(File f, ClassLoader loader) {
-        System.out.println('Processing ' + f.getCanonicalPath())
-        ZipFile zf = new ZipFile(f)
-        ZipEntry categoryMethods = zf.getEntry("META-INF/services/org.codehaus.groovy.runtime.CategoryMethods")
-        if (categoryMethods != null) {
-            processCategoryMethods(zf.getInputStream(categoryMethods))
+    private processCategoryMethods(URI uri, ClassLoader loader, File file) {
+        URL url = uri.toURL()
+        loader.addURL(url)
+        // register extension methods if jar
+        if (file.name.toLowerCase().endsWith(".jar")) {
+            def mcRegistry = GroovySystem.metaClassRegistry
+            if (mcRegistry instanceof MetaClassRegistryImpl) {
+                // should always be the case
+                JarFile jar = new JarFile(file)
+                def entry = jar.getEntry(MetaClassRegistryImpl.MODULE_META_INF_FILE)
+                if (entry) {
+                    Properties props = new Properties()
+                    props.load(jar.getInputStream(entry))
+                    Map<CachedClass, List<MetaMethod>> metaMethods = new HashMap<CachedClass, List<MetaMethod>>()
+                    mcRegistry.registerExtensionModuleFromProperties(props, loader, metaMethods)
+                    // add old methods to the map
+                    metaMethods.each { CachedClass c, List<MetaMethod> methods ->
+                        c.addNewMopMethods(methods)
+                    }
+                }
+            }
         }
+    }
+
+    void processOtherServices(File f, ClassLoader loader) {
+        ZipFile zf = new ZipFile(f)
         ZipEntry serializedCategoryMethods = zf.getEntry("META-INF/services/org.codehaus.groovy.runtime.SerializedCategoryMethods")
         if (serializedCategoryMethods != null) {
             processSerializedCategoryMethods(zf.getInputStream(serializedCategoryMethods))
-        }
-        ZipEntry staticCategoryMethods = zf.getEntry("META-INF/services/org.codehaus.groovy.runtime.StaticCategoryMethods")
-        if (staticCategoryMethods != null) {
-            processStaticCategoryMethods(zf.getInputStream(staticCategoryMethods))
         }
         ZipEntry pluginRunners = zf.getEntry("META-INF/services/org.codehaus.groovy.plugins.Runners")
         if (pluginRunners != null) {
@@ -312,21 +307,9 @@ class GrapeIvy implements GrapeEngine {
         }
     }
 
-    void processCategoryMethods(InputStream is) {
-        is.text.readLines().each {
-            println it.trim()
-        }
-    }
-
     void processSerializedCategoryMethods(InputStream is) {
         is.text.readLines().each {
-            println it.trim()
-        }
-    }
-
-    void processStaticCategoryMethods(InputStream is) {
-        is.text.readLines().each {
-            println it.trim()
+            println it.trim() // TODO implement this or delete it
         }
     }
 

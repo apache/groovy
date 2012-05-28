@@ -70,7 +70,7 @@ public class TestNgRunner implements GroovyRunner {
         } catch (Throwable e) {
             // fall through
         }
-        return isTest ? Boolean.TRUE : Boolean.FALSE;
+        return isTest;
     }
 
     /**

@@ -285,12 +285,19 @@ public class GroovyShell extends GroovyObjectSupport {
                     return runner.run(scriptClass, this.loader);
                 }
             }
-            throw new GroovyRuntimeException("This script or class could not be run.\n" +
+            String message = "This script or class could not be run.\n" +
                     "It should either:\n" +
                     "- have a main method,\n" +
-                    "- be a JUnit test or extend GroovyTestCase\n" +
-                    "- be compatible with a registered script runner\n" +
-                    "- or implement the Runnable interface.");
+                    "- be a JUnit test or extend GroovyTestCase,\n" +
+                    "- implement the Runnable interface,\n" +
+                    "- or be compatible with a registered script runner. Known runners:\n";
+            if (GroovySystem.RUNNER_REGISTRY.isEmpty()) {
+                message += "  * <none>";
+            }
+            for (Map.Entry<String, GroovyRunner> entry : GroovySystem.RUNNER_REGISTRY.entrySet()) {
+                message += "  * " + entry.getKey() + "\n";
+            }
+            throw new GroovyRuntimeException(message);
         }
     }
 
