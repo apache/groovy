@@ -328,6 +328,6 @@ task installGroovy(type: Sync, dependsOn: distBin) {
     into installDir
 }
 
-task dist(dependsOn: [distBin, distSrc, distDoc]) {
+task dist(dependsOn: [distBin/*, distSrc, distDoc*/]) {
     description = 'Generates the binary, sources and documentation distributions'
 }
