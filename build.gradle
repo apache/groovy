@@ -260,6 +260,11 @@ sourceSets {
             srcDirs = [
                     "src/main",
             ]
+            if (!useIndy()) {
+                exclude '**/indy/*'
+                exclude '**/v7/*'
+                exclude '**/vm7/*'
+            }
         }
         resources {
             srcDirs = ["src/main", "src/tools"]

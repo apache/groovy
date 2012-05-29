@@ -14,8 +14,21 @@
  * limitations under the License.
  */
 
+
+
 // This file contains support tools for the Gradle build
 // with regards to invoke dynamic support (indy)
+
+rootProject.ext.indyCapable = {
+    boolean capable = true
+    try {
+        Class.forName('java.lang.invoke.MethodHandle')
+    } catch (e) {
+        capable = false
+    }
+
+    capable && !rootProject.hasProperty('skipIndy')
+}
 
 rootProject.ext.useIndy = {
     boolean indy = false
@@ -27,5 +40,6 @@ rootProject.ext.useIndy = {
     // which is the case if the build is started with -Pindy=true or during install/dist tasks
     indy |= rootProject.hasProperty('indy') && (Boolean.valueOf(rootProject.indy))
 
-    indy
+    indy && rootProject.indyCapable()
 }
+
