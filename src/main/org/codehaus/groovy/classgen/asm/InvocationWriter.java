@@ -443,7 +443,7 @@ public class InvocationWriter {
                 false);
     }
 
-    private boolean writeAICCall(ConstructorCallExpression call) {
+    protected boolean writeAICCall(ConstructorCallExpression call) {
         if (!call.isUsingAnonymousInnerClass()) return false;
         ConstructorNode cn = call.getType().getDeclaredConstructors().get(0);
         OperandStack os = controller.getOperandStack();

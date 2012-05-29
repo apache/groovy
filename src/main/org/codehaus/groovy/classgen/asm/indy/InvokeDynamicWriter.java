@@ -18,7 +18,6 @@ package org.codehaus.groovy.classgen.asm.indy;
 import java.lang.invoke.*;
 import java.lang.invoke.MethodHandles.Lookup;
 
-import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
@@ -26,6 +25,7 @@ import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.CastExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
+import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
@@ -270,4 +270,11 @@ public class InvokeDynamicWriter extends InvocationWriter {
         int index = getPropertyHandleIndex(safe,implicitThis,groovyObject);
         finishIndyCall(GET_PROPERTY_BSM, propertyName, sig, 1, index);
     }
+    
+    @Override
+    public void writeInvokeConstructor(ConstructorCallExpression call) {
+        if (writeAICCall(call)) return;
+        makeCall(call, new ClassExpression(call.getType()), new ConstantExpression("<init>"), call.getArguments(), invokeMethod, false, false, false);
+    }
+    
 }
