@@ -18,6 +18,7 @@ package org.codehaus.groovy.classgen.asm.indy;
 import java.lang.invoke.*;
 import java.lang.invoke.MethodHandles.Lookup;
 
+import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
@@ -55,6 +56,17 @@ public class InvokeDynamicWriter extends InvocationWriter {
         MethodType.methodType(
                 CallSite.class, Lookup.class, String.class, MethodType.class
         ).toMethodDescriptorString();
+    
+    private static final String PROPERTY_BSM_METHOD_TYPE_DESCRIPTOR = 
+            MethodType.methodType(
+                    CallSite.class, Lookup.class, String.class, MethodType.class, int.class
+                    ).toMethodDescriptorString();    
+    private static final Handle GET_PROPERTY_BSM = 
+            new Handle(
+                    H_INVOKESTATIC,
+                    INDY_INTERFACE_NAME,
+                    "bootstrapGetProperty",
+                    PROPERTY_BSM_METHOD_TYPE_DESCRIPTOR);
     
     private static final Handle BSM = 
         new Handle(
@@ -181,21 +193,36 @@ public class InvokeDynamicWriter extends InvocationWriter {
         operandStack.replace(ClassHelper.OBJECT_TYPE,operandsToRemove);
     }
     
-    private void makeIndyCall(MethodCallerMultiAdapter adapter, Expression receiver, boolean implicitThis, boolean safe, String methodName, Expression arguments) {
+    private String prepareIndyCall(Expression receiver, boolean implicitThis) {
         CompileStack compileStack = controller.getCompileStack();
         OperandStack operandStack = controller.getOperandStack();
-        
-        compileStack.pushLHS(false);
 
-        String sig = "(";
+        compileStack.pushLHS(false);
         
         // load normal receiver as first argument
         compileStack.pushImplicitThis(implicitThis);
         receiver.visit(controller.getAcg());
         compileStack.popImplicitThis();
-        sig += getTypeDescription(operandStack.getTopOperand());
-        int numberOfArguments = 1;
+        return "("+getTypeDescription(operandStack.getTopOperand());
+    }
+    
+    private void finishIndyCall(Handle bsmHandle, String methodName, String sig, int numberOfArguments, Object... bsmArgs) {
+        CompileStack compileStack = controller.getCompileStack();
+        OperandStack operandStack = controller.getOperandStack();
+
+        controller.getMethodVisitor().visitInvokeDynamicInsn(methodName, sig, bsmHandle, bsmArgs);
+
+        operandStack.replace(ClassHelper.OBJECT_TYPE, numberOfArguments);
+        compileStack.popLHS();
+    }
+    
+    private void makeIndyCall(MethodCallerMultiAdapter adapter, Expression receiver, boolean implicitThis, boolean safe, String methodName, Expression arguments) {
+        OperandStack operandStack = controller.getOperandStack();
         
+        String sig = prepareIndyCall(receiver, implicitThis);
+        
+        // load arguments
+        int numberOfArguments = 1;
         ArgumentListExpression ae = makeArgumentList(arguments);
         for (Expression arg : ae.getExpressions()) {
             arg.visit(controller.getAcg());
@@ -211,10 +238,7 @@ public class InvokeDynamicWriter extends InvocationWriter {
         sig += ")Ljava/lang/Object;";
         
         Handle bsmHandle = getBsmHandle(adapter, safe);
-        controller.getMethodVisitor().visitInvokeDynamicInsn(methodName, sig, bsmHandle);
-        
-        operandStack.replace(ClassHelper.OBJECT_TYPE, numberOfArguments);
-        compileStack.popLHS();
+        finishIndyCall(bsmHandle, methodName, sig, numberOfArguments);
     }
     
     private Handle getBsmHandle(MethodCallerMultiAdapter adapter, boolean safe) {
@@ -230,5 +254,20 @@ public class InvokeDynamicWriter extends InvocationWriter {
     @Override
     public void makeSingleArgumentCall(Expression receiver, String message, Expression arguments) {
         makeIndyCall(null, receiver, false, false, message, arguments);
+    }
+
+    private int getPropertyHandleIndex(boolean safe, boolean implicitThis, boolean groovyObject) {
+        int index = 0;
+        if (implicitThis)   index += 1;
+        if (groovyObject)   index += 2;
+        if (safe)           index += 4;
+        return index;
+    }
+
+    protected void writeGetProperty(Expression receiver, String propertyName, boolean safe, boolean implicitThis, boolean groovyObject) {
+        String sig = prepareIndyCall(receiver, implicitThis);
+        sig += ")Ljava/lang/Object;";
+        int index = getPropertyHandleIndex(safe,implicitThis,groovyObject);
+        finishIndyCall(GET_PROPERTY_BSM, propertyName, sig, 1, index);
     }
 }

@@ -29,6 +29,7 @@ import org.codehaus.groovy.ast.InterfaceHelperClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.classgen.GeneratorContext;
+import org.codehaus.groovy.classgen.asm.indy.IndyCallSiteWriter;
 import org.codehaus.groovy.control.SourceUnit;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.MethodVisitor;
@@ -89,16 +90,17 @@ public class WriterController {
         this.classNode = cn;
         this.outermostClass = null;
         this.internalClassName = BytecodeHelper.getClassInternalName(classNode);
-        this.callSiteWriter = new CallSiteWriter(this);
         
         if (invokedynamic) {
             bytecodeVersion = Opcodes.V1_7;
             try {
                 this.invocationWriter = (InvocationWriter) indyWriter.newInstance(this);
+                this.callSiteWriter = new IndyCallSiteWriter(this);
             } catch (Exception e) {
                 throw new GroovyRuntimeException("Cannot use invokedynamic, indy module was excluded from this build.");
             }
         } else {
+            this.callSiteWriter = new CallSiteWriter(this);
             this.invocationWriter = new InvocationWriter(this);
         }
         
