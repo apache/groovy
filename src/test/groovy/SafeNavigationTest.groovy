@@ -37,4 +37,16 @@ class SafeNavigationTest extends GroovyTestCase {
         assert y == null
     }
 
+    // ------------------------------------
+    // GROOVY-5479
+    private checkDouble(x) {
+        x?.toString()
+    }
+
+    void testCachedSafeNavigation() {
+        assert checkDouble(1234)!=null
+        assert checkDouble(null)==null
+    }
+    // ------------------------------------
+
 }

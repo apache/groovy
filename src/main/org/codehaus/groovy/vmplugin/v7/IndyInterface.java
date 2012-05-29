@@ -196,7 +196,7 @@ public class IndyInterface {
             public MutableCallSite callSite;
             public Class sender;
             public boolean isVargs;
-            public boolean safeNavigation;
+            public boolean safeNavigation, safeNavigationOrig;
             public boolean thisCall;
             public Class methodSelectionBase;
         }
@@ -492,7 +492,7 @@ public class IndyInterface {
         private static void setGuards(CallInfo ci, Object receiver) {
             if (ci.handle==null) return;
             
-            MethodHandle fallback = makeFallBack(ci.callSite, ci.sender, ci.methodName, ci.targetType, ci.safeNavigation, ci.thisCall);
+            MethodHandle fallback = makeFallBack(ci.callSite, ci.sender, ci.methodName, ci.targetType, ci.safeNavigationOrig, ci.thisCall);
             
             // special guards for receiver
             if (receiver instanceof GroovyObject) {
@@ -657,6 +657,7 @@ public class IndyInterface {
             callInfo.args = arguments;
             callInfo.callSite = callSite;
             callInfo.sender = sender;
+            callInfo.safeNavigationOrig = safeNavigation;
             callInfo.safeNavigation = safeNavigation && arguments[0]==null;
             callInfo.thisCall = thisCall;
 
