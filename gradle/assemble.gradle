@@ -311,11 +311,19 @@ task distSrc(type: Zip, dependsOn: [javadoc, groovydoc, docGDK]) {
     }
 }
 
+def installDir = {
+    project.hasProperty('groovy_installPath')?project.groovy_installPath:
+        System.properties.installDirectory ?: "$buildDir/install"
+}
+
 task installGroovy(type: Sync, dependsOn: distBin) {
     description 'Generates a groovy distribution into an install directory'
+    doLast {
+        logger.lifecycle "Groovy installed under ${installDir()}"
+    }
     with distSpec
     with licenseSpec
-    into System.properties.installDirectory ?: "$buildDir/install"
+    into installDir
 }
 
 task dist(dependsOn: [distBin, /*distSrc, distDoc*/]) {
