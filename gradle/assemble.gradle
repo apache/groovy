@@ -304,6 +304,17 @@ task distDoc(type: Zip, dependsOn: doc) {
     }
 }
 
+task syncDoc(type: Copy, dependsOn: doc) {
+    destinationDir(file("$buildDir/html"))
+    into("api") {
+        from javadoc.destinationDir
+    }
+    into("gapi") {
+        from groovydoc.destinationDir
+    }
+    // groovy-jdk already at the good place
+}
+
 task distSrc(type: Zip, dependsOn: [javadoc, groovydoc, docGDK]) {
     appendix = 'src'
     into("groovy-$version")
@@ -331,6 +342,6 @@ task installGroovy(type: Sync, dependsOn: distBin) {
     into installDir
 }
 
-task dist(dependsOn: [distBin, distSrc, distDoc]) {
+task dist(dependsOn: [distBin, distSrc, distDoc, syncDoc]) {
     description = 'Generates the binary, sources and documentation distributions'
 }
