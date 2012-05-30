@@ -348,7 +348,7 @@ class GroovyMethodsTest extends GroovyTestCase {
     }
 
     void testFileSize() {
-        assert new File('build.properties').size()
+        assert new File('gradle.properties').size()
     }
 
     void testMatcherSize() {
@@ -696,25 +696,25 @@ class GroovyMethodsTest extends GroovyTestCase {
     }
 
     void testFileWithReader() {
-        def f = new File('build.properties')
+        def f = new File('gradle.properties')
         def expected = f.text
         assert expected == f.withReader { r -> r.text }
     }
 
     void testFileWithInputStream() {
-        def f = new File('build.properties')
+        def f = new File('gradle.properties')
         def buf = new byte[f.size()]
         assert buf.size() == f.withInputStream { i -> i.read(buf) }
     }
 
     void testUrlReader() {
-        def u = new File('build.properties').toURL()
+        def u = new File('gradle.properties').toURL()
         def expected = u.text
         assert expected == u.withReader { r -> r.text }
     }
 
     void testUrlWithInputStream() {
-        def f = new File('build.properties')
+        def f = new File('gradle.properties')
         def u = f.toURL()
         def buf = new byte[f.size()]
         assert buf.size() == u.withInputStream { i -> i.read(buf) } 
