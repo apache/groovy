@@ -69,17 +69,9 @@ if (!rootProject.useIndy()) {
 jar {
     dependsOn('dgmConverter')
     metaInf {
-        Date buildTime = new Date()
         from "LICENSE.txt"
         from("src/main/META-INF/groovy-release-info.properties") {
-            filter {String line ->
-                ['##ImplementationVersion##': project.version, '##BundleVersion##': project.groovyBundleVersion,
-                        '##BuildDate##': new SimpleDateFormat('dd-MMM-yyyy').format(buildTime),
-                        '##BuildTime##': new SimpleDateFormat('hh:mm aa').format(buildTime)].each {key, value ->
-                    line = line.replace(key, value)
-                }
-                line
-            }
+            filter(rootProject.propertiesFilter, org.apache.tools.ant.filters.ReplaceTokens)
         }
     }
     if (!rootProject.useIndy()) {

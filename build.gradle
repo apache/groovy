@@ -1,3 +1,4 @@
+apply from: 'gradle/filter.gradle'
 apply from: "gradle/indy.gradle"
 
 // TODO use antlr plugin
@@ -18,11 +19,22 @@ allprojects {
 
     // todo: when we get rid of the Ant build, it will be much cleaner to use
     // the conventional "resources" directory for classpath resources
-    task(copyResources, type: Copy)
-            .from('src/main/groovy')
-            .from('src/main/java')
-            .into("$buildDir/classes/main")
-            .include('**/*.txt', '**/*.xml', '**/*.properties', '**/*.png', '**/*.html', '**/*.gif', '**/*.ico', '**/*.css')
+    task(copyResources, type: Copy) {
+        destinationDir = file("$buildDir/classes")
+        // text files requiring filtering
+        into("main") {
+            from('src/main/groovy')
+            from('src/main/java')
+            include('**/*.txt', '**/*.xml', '**/*.properties', '**/*.html')
+            filter(rootProject.propertiesFilter, org.apache.tools.ant.filters.ReplaceTokens)
+        }
+        // other resources
+        into("main") {
+            from 'src/main/groovy'
+            from 'src/main/java'
+            include('**/*.png', '**/*.gif', '**/*.ico', '**/*.css')
+        }
+    }
 
     compileJava.dependsOn(copyResources)
 
