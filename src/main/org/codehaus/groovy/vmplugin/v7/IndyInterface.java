@@ -184,7 +184,7 @@ public class IndyInterface {
             }
         }
         
-        private static class CallInfo {
+        /*private static class CallInfo {
             public Object[] args;
             public MetaMethod method;
             public MethodType targetType;
@@ -198,7 +198,7 @@ public class IndyInterface {
             public boolean safeNavigation, safeNavigationOrig;
             public boolean thisCall;
             public Class methodSelectionBase;
-        }
+        }*/
         
         /**
          * Returns if a method is static
@@ -280,9 +280,9 @@ public class IndyInterface {
             } 
             
             if (receiver instanceof Class) {
-                ci.method = mci.retrieveStaticMethod(ci.methodName, removeRealReceiver(ci.args));
+                ci.method = mci.retrieveStaticMethod(ci.name, removeRealReceiver(ci.args));
             } else {
-                ci.method = mci.getMethodWithCaching(ci.methodSelectionBase, ci.methodName, removeRealReceiver(ci.args), false);
+                ci.method = mci.getMethodWithCaching(ci.selector, ci.name, removeRealReceiver(ci.args), false);
             }
         }
         
@@ -310,7 +310,7 @@ public class IndyInterface {
                     
                     ci.handle = ci.handle.bindTo(mc);
                     if (!useShortForm) {
-                        ci.handle = ci.handle.bindTo(ci.methodSelectionBase);
+                        ci.handle = ci.handle.bindTo(ci.selector);
                     }
                     
                     if (receiver instanceof GroovyObject) {
@@ -319,7 +319,7 @@ public class IndyInterface {
                         ci.handle = MethodHandles.catchException(ci.handle, MissingMethodException.class, GROOVY_OBJECT_INVOKER);
                     }
                 }
-                ci.handle = MethodHandles.insertArguments(ci.handle, 1, ci.methodName);
+                ci.handle = MethodHandles.insertArguments(ci.handle, 1, ci.name);
                 ci.handle = ci.handle.asCollector(Object[].class, ci.targetType.parameterCount()-1);
             } catch (Exception e) {
                 throw new GroovyBugError(e);
@@ -497,7 +497,7 @@ public class IndyInterface {
         private static void setGuards(CallInfo ci, Object receiver) {
             if (ci.handle==null) return;
             
-            MethodHandle fallback = makeFallBack(ci.callSite, ci.sender, ci.methodName, ci.targetType, ci.safeNavigationOrig, ci.thisCall);
+            MethodHandle fallback = makeFallBack(ci.callSite, ci.sender, ci.name, ci.targetType, ci.safeNavigationOrig, ci.thisCall);
             
             // special guards for receiver
             if (receiver instanceof GroovyObject) {
@@ -643,11 +643,11 @@ public class IndyInterface {
          */
         private static void setMethodSelectionBase(CallInfo ci, MetaClass mc) {
             if (ci.thisCall) {
-                ci.methodSelectionBase = ci.sender;
+                ci.selector = ci.sender;
             } else if (ci.args[0]==null) {
-                ci.methodSelectionBase = NullObject.class;
+                ci.selector = NullObject.class;
             } else {
-                ci.methodSelectionBase = mc.getTheClass();
+                ci.selector = mc.getTheClass();
             }
         }
         
@@ -658,7 +658,7 @@ public class IndyInterface {
             //TODO: handle GroovyInterceptable 
             CallInfo callInfo = new CallInfo();
             callInfo.targetType = callSite.type();
-            callInfo.methodName = methodName;
+            callInfo.name = methodName;
             callInfo.args = arguments;
             callInfo.callSite = callSite;
             callInfo.sender = sender;
