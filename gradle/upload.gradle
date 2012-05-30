@@ -81,19 +81,23 @@ ext.pomAll = {
     addFilter('all') { artifact, file ->
         artifact.name.contains('groovy-all')
     }
-    def pom = pom('all', pomConfigureClosure)
-    pom.artifactId = 'groovy-all'
-    pom.whenConfigured { p ->
+
+    // regular pom
+    def groovypom = pom('groovy',pomConfigureClosure)
+
+    // pom for 'all'
+    def allpom = pom('all', pomConfigureClosure)
+    allpom.artifactId = 'groovy-all'
+    allpom.whenConfigured { p ->
         p.dependencies.removeAll(p.dependencies.findAll {
             it.groupId == 'org.codehaus.groovy' ||
                     (['asm', 'asm-util', 'asm-analysis', 'asm-tree', 'asm-commons', 'antlr', 'commons-cli'].contains(it.artifactId))
         })
     }
     subprojects.eachWithIndex { sp, i ->
-        pom.scopeMappings.addMapping(11 + i, sp.configurations.compile, 'compile')
-        pom.scopeMappings.addMapping(21 + i, sp.configurations.groovy, 'compile')
+        allpom.scopeMappings.addMapping(11 + i, sp.configurations.compile, 'compile')
+        allpom.scopeMappings.addMapping(21 + i, sp.configurations.groovy, 'compile')
     }
-    pom
 }
 
 

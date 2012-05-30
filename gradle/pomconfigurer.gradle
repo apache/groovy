@@ -500,7 +500,8 @@ project.ext.pomConfigureClosure = {
 
         // make dependencies optional
         pom.dependencies.each { dep -> dep.optional = dep.scope != 'test' }
-        def groovyConfDeps = configurations.groovy.dependencies.collect { dep -> dep.name }
+        def groovyConfDeps =
+            configurations.groovy.dependencies.collect { dep -> dep.name } - rootProject.configurations.compile.dependencies.collect { dep -> dep.name }
         pom.dependencies.each { dep ->  if (groovyConfDeps.contains(dep.artifactId)) { dep.optional = false }}
 
         // add 'packaging' node
