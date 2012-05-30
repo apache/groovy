@@ -58,6 +58,8 @@ javadocAll {
 // Root project has an extra 'all' groovydoc task
 task groovydocAll(type:Groovydoc) << groovydocSpec
 groovydocAll {
+    dependsOn( { project(':groovy-groovydoc').classes })
+    dependsOn( { project(':groovy-docgenerator').classes })
     destinationDir = new File(buildDir,'allgroovydoc')
     source = groovydoc.source
     classpath = groovydoc.classpath
