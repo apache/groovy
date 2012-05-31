@@ -2,8 +2,9 @@
 ext.checkstyleConfigFileName = "../../config/checkstyle/checkstyle.xml"
 
 dependencies {
-    // todo delete this and assume java 6? or should this be "provided"?
-    compile "org.livetribe:livetribe-jsr223:2.0.6"
+    compile("org.livetribe:livetribe-jsr223:2.0.6") { dep ->
+        provided dep
+    }
     compile project(':')
     groovy project(':')
     testCompile project(':groovy-test')

@@ -2,6 +2,7 @@ dependencies {
     compile("bsf:bsf:2.4.0") {
         exclude(group: 'commons-logging', module: 'commons-logging')
     }
+    compile 'commons-logging:commons-logging:1.1.1'
     compile project(':')
     testCompile project(':groovy-test')
 }

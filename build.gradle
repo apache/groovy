@@ -156,9 +156,6 @@ dependencies {
     groovy "org.ow2.asm:asm-util:4.0"
 
     compile "commons-cli:commons-cli:1.2"
-    compile "org.apache.ant:ant:1.8.4"
-    compile "javax.servlet:servlet-api:2.4"
-    compile "javax.servlet:jsp-api:2.0"
     compile("com.thoughtworks.xstream:xstream:1.4.2") {
         exclude(group: 'xpp3', module: 'xpp3_min')
         exclude(group: 'junit', module: 'junit')
@@ -171,16 +168,7 @@ dependencies {
     compile("org.apache.ivy:ivy:2.2.0") {
         transitive = false
     }
-    runtime("org.apache.ant:ant-junit:1.8.4") {
-        exclude(group: 'junit', module: 'junit')
-    }
-    runtime "org.apache.ant:ant-launcher:1.8.4"
-    runtime "org.apache.ant:ant-antlr:1.8.4"
-    runtime("commons-logging:commons-logging:1.1.1") {
-        exclude(group: 'log4j', module: 'log4j')
-        exclude(group: 'logkit', module: 'logkit')
-        exclude(group: 'avalon-framework', module: 'avalon-framework')
-    }
+    runtime "org.codehaus.gpars:gpars:1.0-beta-2"
     testCompile "jmock:jmock:1.2.0"
     testCompile "jmock:jmock-cglib:1.2.0"
     testCompile "xmlunit:xmlunit:1.3"
@@ -191,7 +179,6 @@ dependencies {
     testCompile "log4j:log4j:1.2.16"
     testCompile "org.slf4j:jcl-over-slf4j:1.6.0"
     testCompile "com.thoughtworks.qdox:qdox:1.12"
-    runtime "org.codehaus.gpars:gpars:1.0-beta-2"
 
     tools "com.googlecode.jarjar:jarjar:1.3"
     tools("checkstyle:checkstyle:4.4") {

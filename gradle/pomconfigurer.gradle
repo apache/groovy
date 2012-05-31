@@ -1,5 +1,11 @@
 group = 'org.codehaus.groovy'
 
+project.ext.optionalDeps = []
+project.ext.providedDeps = []
+
+project.ext.optional = { project.ext.optionalDeps << it }
+project.ext.provided = { project.ext.providedDeps << it }
+
 project.ext.pomConfigureClosure = {
     scopeMappings.addMapping(10, configurations.groovy, 'compile')
     project {
@@ -487,22 +493,24 @@ project.ext.pomConfigureClosure = {
 
     // general pom tweaks
     whenConfigured { pom ->
-        // use this map to override scopes
-        [
-                provided: ['javax.servlet:servlet-api', 'javax.servlet:jsp-api', 'org.livetribe:livetribe-jsr223']
-
-        ].each { scope, depList ->
-            depList.each { dep ->
-                def (gid, aid) = dep.split(':')
-                pom.dependencies.find { it.groupId==gid && it.artifactId==aid }?.scope = scope
-            }
+        project.ext.optionalDeps.each { dep ->
+            pom.dependencies.find { it.artifactId == dep.name }?.optional = true
+        }
+        project.ext.providedDeps.each { dep ->
+            pom.dependencies.find { it.artifactId == dep.name }?.scope = 'provided'
         }
 
-        // make dependencies optional
-        pom.dependencies.each { dep -> dep.optional = dep.scope != 'test' }
-        def groovyConfDeps =
-            configurations.groovy.dependencies.collect { dep -> dep.name } - rootProject.configurations.compile.dependencies.collect { dep -> dep.name }
-        pom.dependencies.each { dep ->  if (groovyConfDeps.contains(dep.artifactId)) { dep.optional = false }}
+        // eliminate test-scoped dependencies (no need in maven central poms)
+        pom.dependencies.removeAll { dep ->
+            dep.scope == 'test'
+        }
+
+        if (project == rootProject) {
+            // make dependencies optional
+            def groovyConfDeps =
+                configurations.groovy.dependencies.collect { dep -> dep.name } - configurations.compile.dependencies.collect { dep -> dep.name }
+            pom.dependencies.each { dep ->  if (!groovyConfDeps.contains(dep.artifactId)) { dep.optional = true }}
+        }
 
         // add 'packaging' node
         pom.withXml { xmlProvider ->
