@@ -36,33 +36,53 @@ import static org.codehaus.groovy.vmplugin.v7.TypeHelper.*;
 public class IndyMath {
     
     private static final MethodType 
-        II = MethodType.methodType(Void.TYPE, int.class, int.class),
-        LL = MethodType.methodType(Void.TYPE, long.class, long.class), 
-        DD = MethodType.methodType(Void.TYPE, double.class, double.class),
-        GG = MethodType.methodType(Void.TYPE, BigDecimal.class, BigDecimal.class),
-        OO = MethodType.methodType(Void.TYPE, Object.class, Object.class);
+        II  = MethodType.methodType(Void.TYPE, int.class, int.class),
+        III = MethodType.methodType(int.class, int.class, int.class),
+        LL  = MethodType.methodType(Void.TYPE, long.class, long.class),
+        LLL = MethodType.methodType(long.class, long.class, long.class),
+        DD  = MethodType.methodType(Void.TYPE, double.class, double.class),
+        DDD = MethodType.methodType(double.class, double.class, double.class),
+        GG  = MethodType.methodType(Void.TYPE, BigDecimal.class, BigDecimal.class),
+        OO  = MethodType.methodType(Void.TYPE, Object.class, Object.class);
 
     private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
+    
+    private static void makeMapEntry(String method, MethodType[] keys, MethodType[] values) throws NoSuchMethodException, IllegalAccessException {
+        Map<MethodType,MethodHandle> xMap = new HashMap();
+        methods.put(method, xMap);
+        for (int i=0; i<keys.length; i++) {
+            xMap.put(keys[i], LOOKUP.findStatic(IndyMath.class, method, values[i]));
+        }
+    }
     
     private static Map<String, Map<MethodType,MethodHandle>> methods = new HashMap();
     static {
         try {
             
-            Map<MethodType,MethodHandle> xMap = new HashMap();
-            methods.put("minus", xMap);
-            
-            xMap.put(II, LOOKUP.findStatic(IndyMath.class, "minus", II.changeReturnType(int.class)));
-            
-            xMap = new HashMap();
-            methods.put("plus", xMap);
-            
-            xMap.put(II, LOOKUP.findStatic(IndyMath.class, "plus", II.changeReturnType(int.class)));
+            MethodType[] keys = new MethodType[]{II,LL,DD};
+            MethodType[] values = new MethodType[]{III,LLL,DDD};
+            makeMapEntry("minus",keys,values);
+            makeMapEntry("plus",keys,values);
+            makeMapEntry("multiply",keys,values);
+
+            keys = new MethodType[]{II,LL};
+            values = new MethodType[]{III,LLL};
+            makeMapEntry("mod",keys,values);
+            makeMapEntry("or",keys,values);
+            makeMapEntry("xor",keys,values);
+            makeMapEntry("and",keys,values);
+            makeMapEntry("leftShift",keys,values);
+            makeMapEntry("rightShift",keys,values);
             
         } catch (Exception e) {
             throw new GroovyBugError(e);
         }
     }
     
+    /**
+     * Choose a method to replace the originally chosen metaMethod to have a
+     * more efficient call path. 
+     */
     public static boolean chooseMathMethod(CallInfo info, MetaMethod metaMethod) {
         Map<MethodType,MethodHandle> xmap = methods.get(info.name);
         if (xmap==null) return false;
@@ -77,6 +97,14 @@ public class IndyMath {
         return true;
     }
     
+    /**
+     * Widens the operators. For math operations like a+b we generally
+     * execute them using a conversion to certain types. If a for example
+     * is an int and b a byte, we do the operation using integer math. This 
+     * method gives a simplified MethodType that contains the two operators
+     * with this widening according to Groovy rules applied. That means both
+     * parameters in the MethodType will have the same type. 
+     */
     private static MethodType widenOperators(MethodType mt) {
         Class leftType = mt.parameterType(0);
         Class rightType = mt.parameterType(1);
@@ -89,7 +117,40 @@ public class IndyMath {
         return OO;
     }
     
-    public static int minus(int a, int b) {return a-b;}
-
+    // math methods used by indy
+    
+    // int x int
     public static int plus(int a, int b) {return a+b;}
+    public static int minus(int a, int b) {return a-b;}
+    public static int multiply(int a, int b) {return a*b;}
+    public static int mod(int a, int b) {return a%b;}
+    public static int or(int a, int b) {return a|b;}
+    public static int xor(int a, int b) {return a^b;}
+    public static int and(int a, int b) {return a&b;}
+    public static int leftShift(int a, int b) {return a<<b;}
+    public static int rightShift(int a, int b) {return a>>b;}
+    
+    // long x long
+    public static long plus(long a, long b) {return a+b;}
+    public static long minus(long a, long b) {return a-b;}
+    public static long multiply(long a, long b) {return a*b;}
+    public static long mod(long a, long b) {return a%b;}
+    public static long or(long a, long b) {return a|b;}
+    public static long xor(long a, long b) {return a^b;}
+    public static long and(long a, long b) {return a&b;}
+    public static long leftShift(long a, long b) {return a<<b;}
+    public static long rightShift(long a, long b) {return a>>b;}
+    
+    // double x double
+    public static double plus(double a, double b) {return a+b;}
+    public static double minus(double a, double b) {return a-b;}
+    public static double multiply(double a, double b) {return a*b;}
+    
+    
+    /*
+     further operations to be handled here maybe:
+    a / b a.div(b) (if one is double, return double, otherwise BD)
+    a[b]    a.getAt(b)
+    a[b] = c    a.putAt(b, c)
+    */
 }
