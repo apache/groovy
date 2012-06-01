@@ -41,6 +41,7 @@ import org.codehaus.groovy.ast.expr.CastExpression;
 import org.codehaus.groovy.reflection.CachedMethod;
 import org.codehaus.groovy.runtime.NullObject;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
+import org.codehaus.groovy.runtime.dgmimpl.NumberNumberMetaMethod;
 import org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl;
 import org.codehaus.groovy.runtime.metaclass.MissingMethodExecutionFailed;
 import org.codehaus.groovy.runtime.metaclass.NewInstanceMetaMethod;
@@ -160,16 +161,6 @@ public class IndyInterface {
                     asType(type);
             return mh;
         }
-
-        /**
-         * Gets the class of an object.
-         * In case the object is a Class it will return the object itself,
-         * otherwise it will return the getClass() result of it.
-         */
-        private static Class getClass(Object x) {
-            if (x instanceof Class) return (Class) x;
-            return x.getClass();
-        }
         
         /**
          * Gives the meta class to an Object.
@@ -217,6 +208,12 @@ public class IndyInterface {
          */
         private static void setHandleForMetaMethod(CallInfo info) {
             MetaMethod metaMethod = info.method;
+                        
+            if (metaMethod instanceof NumberNumberMetaMethod) {
+                info.catchException = false;
+                if (IndyMath.chooseMathMethod(info, metaMethod)) return;
+            }        
+            
             boolean isCategoryTypeMethod = metaMethod instanceof NewInstanceMetaMethod;
             
             if (metaMethod instanceof ReflectionMetaMethod) {
@@ -455,7 +452,7 @@ public class IndyInterface {
                 if (arg==null) continue;
                 Class got = arg.getClass();
                 if (got==parameters[i]) continue;
-                Class wrappedPara = getWrapperClass(parameters[i]);
+                Class wrappedPara = TypeHelper.getWrapperClass(parameters[i]);
                 if (wrappedPara==got) continue;
                 if (parameters[i].isAssignableFrom(got)) continue;
                 if (isPrimitiveOrWrapper(parameters[i]) && isPrimitiveOrWrapper(got)) continue;
@@ -522,7 +519,7 @@ public class IndyInterface {
                     test = IS_NULL.asType(MethodType.methodType(boolean.class, pt[i]));
                 } else {
                     Class argClass = arg.getClass();
-                    if (Modifier.isFinal(argClass.getModifiers()) && argumentClassIsParameterClass(argClass,pt[i])) continue;
+                    if (Modifier.isFinal(argClass.getModifiers()) && TypeHelper.argumentClassIsParameterClass(argClass,pt[i])) continue;
                     test = SAME_CLASS.
                                 bindTo(argClass).
                                 asType(MethodType.methodType(boolean.class, pt[i]));
@@ -532,40 +529,6 @@ public class IndyInterface {
                 test = MethodHandles.dropArguments(test, 0, drops);
                 ci.handle = MethodHandles.guardWithTest(test, ci.handle, fallback);
             }
-        }
-        
-        /**
-         * Get wrapper class for a given class. 
-         * If the class is for a primitive number type, then the wrapper class
-         * will be returned. If it is no primtive number type, we return the 
-         * class itself.
-         */
-        protected static Class getWrapperClass(Class c) {
-            if (c == Integer.TYPE) {
-                c = Integer.class;
-            } else if (c == Byte.TYPE) {
-                c = Byte.class;
-            } else if (c == Long.TYPE) {
-                c = Long.class;
-            } else if (c == Double.TYPE) {
-                c = Double.class;
-            } else if (c == Float.TYPE) {
-                c = Float.class;
-            }
-            return c;
-        }
-        
-        /**
-         * Realizes an unsharp equal for the class. 
-         * In general we return true if the provided arguments are the same. But
-         * we will also return true if our argument class is a wrapper for
-         * the parameter class. For example the parameter is an int and the
-         * argument class is a wrapper.
-         */
-        private static boolean argumentClassIsParameterClass(Class argumentClass, Class parameterClass) {
-            if (argumentClass == parameterClass) return true;
-            if (getWrapperClass(parameterClass) == argumentClass) return true;
-            return false;
         }
         
         /**
@@ -616,7 +579,7 @@ public class IndyInterface {
         private static void addExceptionHandler(CallInfo info) {
             //TODO: if we would know exactly which paths require the exceptions
             //      and which paths not, we can sometimes save this guard 
-            if (info.handle==null) return;
+            if (info.handle==null || info.catchException==false) return;
             Class returnType = info.handle.type().returnType();
             if (returnType!=Object.class) {
                 MethodType mtype = MethodType.methodType(returnType, GroovyRuntimeException.class); 

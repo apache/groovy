@@ -40,4 +40,5 @@ public class CallInfo {
     public boolean safeNavigation, safeNavigationOrig;
     public boolean thisCall;
     public Class selector;
+    public boolean catchException = true;
 }
