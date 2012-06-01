@@ -79,7 +79,7 @@ public class TypeTransformers {
     }
 
     private static MethodHandle selectNumberTransformer(Class param, Object arg) {
-        param = IndyInterface.getWrapperClass(param);
+        param = TypeHelper.getWrapperClass(param);
         if (param == Byte.class) {
             return TO_BYTE;
         } else if (param == Character.class || param == Integer.class) {
