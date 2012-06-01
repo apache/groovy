@@ -242,8 +242,10 @@ ext.distSpec = copySpec {
         from configurations.runtime.findAll { it.name.endsWith 'jar' }
         from jar.archivePath
         from modules()*.jar.archivePath
+        from { subprojects.configurations.runtime*.findAll {
+            it.name.endsWith('jar') && !it.name.contains('livetribe-jsr223')
+        }.flatten() }
     }
-
     into("indy") {
         from { new File(jar.archivePath.parent, "${jar.baseName}-${jar.version}-indy.jar") }
         from {
