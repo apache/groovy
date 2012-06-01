@@ -82,7 +82,7 @@ jar {
         }
         manifest commonOsgiManifest
     }
-    exclude '**/package-info.class', 'compiler', 'META-INF/groovy-release-info.properties'
+    exclude '**/package-info.class', 'compiler', 'META-INF/groovy-release-info.properties', 'main'
 }
 
 def modules() {
@@ -125,6 +125,7 @@ def mergeModuleDescriptors() {
 task jarAll(type: Jar, dependsOn: { modules()*.jar }) {
     ext.metaInfDir = "$buildDir/tmp/groovy-all-metainf"
     appendix = 'all'
+    includeEmptyDirs = false
     if (rootProject.useIndy()) {
         classifier = 'indy'
     }
@@ -138,11 +139,14 @@ task jarAll(type: Jar, dependsOn: { modules()*.jar }) {
             into "$buildDir/tmp/groovy-all-metainf"
             with licenseSpec
         }
+        logger.info "Packaging with jarjar"
         project.ant {
             taskdef name: "jarjar", classname: "com.tonicsystems.jarjar.JarJarTask", classpath: configurations.tools.asPath
             jarjar(jarfile: archivePath, manifest: "$metaInfDir/MANIFEST.MF") {
                 zipfileset(dir: "$ext.metaInfDir", prefix: 'META-INF')
-                zipfileset(src: jar.archivePath)
+                zipfileset(
+                        src: jar.archivePath,
+                        excludes: 'groovy/util/CliBuilder*.class,groovy/util/OptionAccessor*.class,org/codehaus/groovy/tools/shell/util/HelpFormatter*.class')
                 moduleJars().each {
                     zipfileset(src: it, excludes: '**/org.codehaus.groovy.runtime.ExtensionModule')
                 }
@@ -156,6 +160,13 @@ task jarAll(type: Jar, dependsOn: { modules()*.jar }) {
                 rule pattern: "antlr.**", result: "groovyjarjarantlr.@1"
                 rule pattern: "org.objectweb.**", result: "groovyjarjarasm.@1"
                 rule pattern: "org.apache.commons.cli.**", result: "groovyjarjarcommonscli.@1"
+            }
+        }
+        project.ant {
+            jar(destfile: archivePath, update:true, filesonly:true) {
+                zipfileset(
+                        src: jar.archivePath,
+                        includes: 'groovy/util/CliBuilder*.class,groovy/util/OptionAccessor*.class,org/codehaus/groovy/tools/shell/util/HelpFormatter*.class')
             }
         }
     }
