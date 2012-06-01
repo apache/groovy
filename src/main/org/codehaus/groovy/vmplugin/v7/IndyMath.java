@@ -16,11 +16,14 @@
 package org.codehaus.groovy.vmplugin.v7;
 
 import java.lang.invoke.*;
+import java.math.BigDecimal;
 import java.util.*;
 
 import org.codehaus.groovy.GroovyBugError;
 
 import groovy.lang.MetaMethod;
+
+import static org.codehaus.groovy.vmplugin.v7.TypeHelper.*;
 
 /**
  * This class contains math operations used by indy instead of the normal
@@ -31,8 +34,14 @@ import groovy.lang.MetaMethod;
  * @author <a href="mailto:blackdrag@gmx.org">Jochen "blackdrag" Theodorou</a>
  */
 public class IndyMath {
-    private static final MethodType II = MethodType.methodType(Void.TYPE, int.class, int.class);
-    private static final MethodType OO = MethodType.methodType(Void.TYPE, Object.class, Object.class);
+    
+    private static final MethodType 
+        II = MethodType.methodType(Void.TYPE, int.class, int.class),
+        LL = MethodType.methodType(Void.TYPE, long.class, long.class), 
+        DD = MethodType.methodType(Void.TYPE, double.class, double.class),
+        GG = MethodType.methodType(Void.TYPE, BigDecimal.class, BigDecimal.class),
+        OO = MethodType.methodType(Void.TYPE, Object.class, Object.class);
+
     private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
     
     private static Map<String, Map<MethodType,MethodHandle>> methods = new HashMap();
@@ -47,7 +56,7 @@ public class IndyMath {
             xMap = new HashMap();
             methods.put("plus", xMap);
             
-            xMap.put(OO, LOOKUP.findStatic(IndyMath.class, "plus", II.changeReturnType(int.class)));
+            xMap.put(II, LOOKUP.findStatic(IndyMath.class, "plus", II.changeReturnType(int.class)));
             
         } catch (Exception e) {
             throw new GroovyBugError(e);
@@ -55,10 +64,12 @@ public class IndyMath {
     }
     
     public static boolean chooseMathMethod(CallInfo info, MetaMethod metaMethod) {
-        MethodType type = info.targetType.changeReturnType(Void.TYPE);
-        
         Map<MethodType,MethodHandle> xmap = methods.get(info.name);
         if (xmap==null) return false;
+
+        MethodType type = replaceWithMoreSpecificType(info.args, info.targetType); 
+        type = widenOperators(type); 
+        
         MethodHandle handle = xmap.get(type);
         if (handle==null) return false;
         
@@ -66,6 +77,17 @@ public class IndyMath {
         return true;
     }
     
+    private static MethodType widenOperators(MethodType mt) {
+        Class leftType = mt.parameterType(0);
+        Class rightType = mt.parameterType(1);
+        
+        if (isIntCategory(leftType) && isIntCategory(rightType)) return II;
+        if (isLongCategory(leftType) && isLongCategory(rightType)) return LL;
+        if (isBigDecCategory(leftType) && isBigDecCategory(rightType)) return GG;
+        if (isDoubleCategory(leftType) && isDoubleCategory(rightType)) return DD;
+        
+        return OO;
+    }
     
     public static int minus(int a, int b) {return a-b;}
 
