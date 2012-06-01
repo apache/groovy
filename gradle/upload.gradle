@@ -73,7 +73,6 @@ allprojects {
         }
     }
 }
-
 ext.pomAll = {
     addFilter('groovy') { artifact, file ->
         !(artifact.name.contains('groovy-all'))
@@ -88,26 +87,39 @@ ext.pomAll = {
     // pom for 'all'
     def allpom = pom('all', pomConfigureClosure)
     allpom.artifactId = 'groovy-all'
+
+    subprojects.each { sp ->
+        sp.install.repositories.mavenInstaller.pom.whenConfigured { subpom ->
+            // add dependencies of other modules
+            allpom.dependencies.addAll(subpom.dependencies)
+        }
+        sp.uploadArchives.repositories.mavenDeployer.pom.whenConfigured { subpom ->
+            // add dependencies of other modules
+            allpom.dependencies.addAll(subpom.dependencies)
+        }
+    }
+
     allpom.whenConfigured { p ->
         p.dependencies.removeAll(p.dependencies.findAll {
             it.groupId == 'org.codehaus.groovy' ||
                     (['asm', 'asm-util', 'asm-analysis', 'asm-tree', 'asm-commons', 'antlr', 'commons-cli'].contains(it.artifactId))
         })
     }
-    subprojects.eachWithIndex { sp, i ->
-        allpom.scopeMappings.addMapping(11 + i, sp.configurations.compile, 'compile')
-        allpom.scopeMappings.addMapping(21 + i, sp.configurations.groovy, 'compile')
-    }
 }
 
 
+
 install {
+    // make sure dependencies poms are built *before* the all pom
+    dependsOn(subprojects*.install)
     repositories {
         mavenInstaller pomAll
     }
 }
 
 uploadArchives {
+    // make sure dependencies poms are built *before* the all pom
+    dependsOn(subprojects*.uploadArchives)
     repositories {
         mavenDeployer pomAll
     }
