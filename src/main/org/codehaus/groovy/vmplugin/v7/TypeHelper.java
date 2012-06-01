@@ -15,6 +15,11 @@
  */
 package org.codehaus.groovy.vmplugin.v7;
 
+
+import java.lang.invoke.MethodType;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+
 /**
  * This class contains helper methods for converting and comparing types.
  * WARNING: This class is for internal use only. do not use it outside of its 
@@ -56,4 +61,47 @@ public class TypeHelper {
         if (getWrapperClass(parameterClass) == argumentClass) return true;
         return false;
     }
+    
+    /**
+     * Replaces the types in the callSiteType parameter if more specific types
+     * given through the arguments. This is in general the case, unless
+     * the argument is null.
+     */
+    protected static MethodType replaceWithMoreSpecificType(Object[] args, MethodType callSiteType) {
+        for (int i=0; i<args.length; i++) {
+            // if argument null, take the static type
+            if (args[i]==null) continue;
+            if (callSiteType.parameterType(i).isPrimitive()) continue;
+            Class argClass = args[i].getClass();
+            callSiteType = callSiteType.changeParameterType(i, argClass);
+        }
+        return callSiteType;
+    }
+    
+    protected static boolean isIntCategory(Class x) {
+        return  x==Integer.class    ||  x==int.class    ||
+                x==Byte.class       ||  x==byte.class   ||
+                x==Character.class  ||  x==char.class   ||
+                x==Short.class      ||  x==short.class;
+    }
+    
+    protected static boolean isLongCategory(Class x) {
+        return  x==Long.class       ||  x==long.class   ||
+                isIntCategory(x);
+    }
+    
+    private static boolean isBigIntCategory(Class x) {
+        return  x==BigInteger.class || isLongCategory(x);
+    }
+    
+    protected static boolean isBigDecCategory(Class x) {
+        return  x==BigDecimal.class || isBigIntCategory(x);
+    }
+    
+    protected static boolean isDoubleCategory(Class x) {
+        return  x==Float.class      ||  x==float.class  ||
+                x==Double.class     ||  x==double.class ||
+                isBigDecCategory(x);
+    }
+    
 }
