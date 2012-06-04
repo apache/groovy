@@ -355,7 +355,7 @@ task dgmConverter(type: JavaExec, dependsOn: 'classes') {
     main = 'org.codehaus.groovy.tools.DgmConverter'
     args = ['--info']
     doFirst {
-        new File('target/classes/META-INF').mkdirs()
+        file('target/classes/META-INF').mkdirs()
     }
 }
 
