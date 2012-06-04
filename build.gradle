@@ -363,9 +363,10 @@ task compilerDgmConverter(type: JavaExec) {
     description = 'Generates DGM info file for the bootstrap compiler'
     classpath = files(file('target/classes/compiler')) + configurations.compilerCompile
     main = 'org.codehaus.groovy.tools.DgmConverter'
-    args = ['--info', 'target/classes/compiler']
+    ext.compilerDirPath = file('target/classes/compiler').absolutePath
+    args = ['--info', compilerDirPath]
     doFirst {
-        new File('target/classes/compiler/META-INF').mkdirs()
+        file('target/classes/compiler/META-INF').mkdirs()
     }
 }
 
