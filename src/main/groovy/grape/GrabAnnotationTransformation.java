@@ -29,6 +29,7 @@ import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
+import org.codehaus.groovy.tools.GrapeUtil;
 import org.codehaus.groovy.transform.ASTTransformation;
 import org.codehaus.groovy.transform.ASTTransformationVisitor;
 import org.codehaus.groovy.transform.GroovyASTTransformation;
@@ -423,22 +424,13 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
         } else if (allstr.contains(":")) {
             // assume gradle syntax
             // see: http://www.gradle.org/latest/docs/userguide/dependency_management.html#sec:how_to_declare_your_dependencies
-            String ext = "";
-            String[] parts;
-            if (allstr.contains("@")) {
-                parts = allstr.split("@");
-                if (parts.length > 2) return;
-                allstr = parts[0];
-                ext = parts[1];
+            Map<String, Object> parts = GrapeUtil.getIvyParts(allstr);
+            for (String key : parts.keySet()) {
+                String value = parts.get(key).toString();
+                if (!key.equals("version") || !value.equals("*") || !exclude) {
+                    node.addMember(key, new ConstantExpression(value));
+                }
             }
-            parts = allstr.split(":");
-            if (parts.length > 4) return;
-            if (parts.length > 3) node.addMember("classifier", new ConstantExpression(parts[3]));
-            if (parts.length > 2) node.addMember("version", new ConstantExpression(parts[2]));
-            else if (!exclude && node.getMember("version") == null) node.addMember("version", new ConstantExpression("*"));
-            if (ext.length() > 0) node.addMember("ext", new ConstantExpression(ext));
-            node.addMember("module", new ConstantExpression(parts[1]));
-            node.addMember("group", new ConstantExpression(parts[0]));
             node.getMembers().remove("value");
         }
     }

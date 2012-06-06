@@ -35,8 +35,13 @@ import java.util.List;
 public class DgmConverter implements Opcodes {
 
     public static void main(String[] args) throws IOException, ClassNotFoundException {
-        boolean info = args.length == 1 && args[0].equals("--info");
-
+        String targetDirectory = "target/classes/";
+        boolean info = (args.length == 1 && args[0].equals("--info"))
+                || (args.length==2 && args[0].equals("--info"));
+        if (info && args.length==2) {
+            targetDirectory = args[1];
+            if (!targetDirectory.endsWith("/")) targetDirectory += "/";
+        }
         List<CachedMethod> cachedMethodsList = new ArrayList<CachedMethod>();
         for (Class aClass : DefaultGroovyMethods.DGM_LIKE_CLASSES) {
             Collections.addAll(cachedMethodsList, ReflectionCache.getCachedClass(aClass).getMethods());
@@ -84,15 +89,15 @@ public class DgmConverter implements Opcodes {
             cw.visitEnd();
 
             final byte[] bytes = cw.toByteArray();
-            final FileOutputStream fileOutputStream = new FileOutputStream("target/classes/" + className + ".class");
+            final FileOutputStream fileOutputStream = new FileOutputStream(targetDirectory + className + ".class");
             fileOutputStream.write(bytes);
             fileOutputStream.flush();
             fileOutputStream.close();
         }
 
-        GeneratedMetaMethod.DgmMethodRecord.saveDgmInfo(records, "target/classes/META-INF/dgminfo");
+        GeneratedMetaMethod.DgmMethodRecord.saveDgmInfo(records, targetDirectory+"/META-INF/dgminfo");
         if (info)
-            System.out.println("Saved " + cur + " dgm records to: target/classes/META-INF/dgminfo");
+            System.out.println("Saved " + cur + " dgm records to: "+targetDirectory+"/META-INF/dgminfo");
     }
 
     private static void createConstructor(ClassWriter cw) {

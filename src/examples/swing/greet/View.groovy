@@ -4,7 +4,7 @@
  * Date: Apr 26, 2008
  * Time: 8:31:21 AM
  */
-package swing.greet
+package groovy.swing.greet
 
 import java.awt.Cursor
 import java.beans.PropertyChangeListener

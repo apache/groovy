@@ -1,12 +1,5 @@
-apply plugin: 'groovy'
-apply plugin: 'codenarc'
-apply plugin: 'checkstyle'
-
-repositories {
-    mavenCentral()
-}
-
 dependencies {
     groovy project(':')
     compile "junit:junit:4.10"
+    testRuntime project(':groovy-ant')
 }

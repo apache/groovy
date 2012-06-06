@@ -3,6 +3,7 @@ package groovy.swing
 import java.awt.BorderLayout
 import javax.swing.BorderFactory
 import groovy.model.MvcDemo
+import groovy.swing.SwingBuilder
 
 class SwingDemo {
 

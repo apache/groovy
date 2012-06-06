@@ -1,0 +1,16 @@
+dependencies {
+    compile project(':')
+    testCompile project(':').sourceSets.test.runtimeClasspath
+    groovy project(':')
+    compile project(':groovy-templates')
+    testCompile project(':groovy-test')
+    testCompile "org.apache.ant:ant-testutil:1.8.4"
+}
+
+sourceSets.main.resources.srcDir 'src/main/java'
+
+compileJava {
+    doLast {
+        mkdir "$sourceSets.main.output.classesDir/META-INF"
+    }
+}

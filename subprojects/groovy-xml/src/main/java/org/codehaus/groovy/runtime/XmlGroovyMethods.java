@@ -1,0 +1,59 @@
+/*
+ * Copyright 2003-2009 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.codehaus.groovy.runtime;
+
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+
+import java.util.Iterator;
+
+/**
+ * This class defines all the new XML-related groovy methods which enhance
+ * the normal JDK XML classes when inside the Groovy environment.
+ * Static methods are used with the first parameter the destination class.
+ *
+ * @author Paul King
+ * @author Jochen Theodorou
+ */
+public class XmlGroovyMethods {
+
+    /**
+     * Makes NodeList iterable by returning a read-only Iterator which traverses
+     * over each Node.
+     *
+     * @param nodeList a NodeList
+     * @return an Iterator for a NodeList
+     * @since 1.0
+     */
+    public static Iterator<Node> iterator(final NodeList nodeList) {
+        return new Iterator<Node>() {
+            private int current /* = 0 */;
+
+            public boolean hasNext() {
+                return current < nodeList.getLength();
+            }
+
+            public Node next() {
+                return nodeList.item(current++);
+            }
+
+            public void remove() {
+                throw new UnsupportedOperationException("Cannot remove() from a NodeList iterator");
+            }
+        };
+    }
+
+}

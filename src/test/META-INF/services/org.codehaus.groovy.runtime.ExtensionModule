@@ -1,0 +1,5 @@
+// This file is used to test the extension module framework
+moduleName=Test module
+moduleVersion=1.0-test
+extensionClasses=org.codehaus.groovy.runtime.m12n.TestStringExtension
+staticExtensionClasses=org.codehaus.groovy.runtime.m12n.TestStaticStringExtension

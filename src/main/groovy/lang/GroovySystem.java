@@ -15,9 +15,13 @@
  */
 package groovy.lang;
 
+import org.codehaus.groovy.plugin.GroovyRunner;
 import org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl;
 import org.codehaus.groovy.util.ReferenceBundle;
 import org.codehaus.groovy.util.ReleaseInfo;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public final class GroovySystem {
     //
@@ -37,10 +41,16 @@ public final class GroovySystem {
      * If true then the MetaClass will only use reflection for method dispatch, property access, etc.
      */
     private static final boolean USE_REFLECTION;
+
     /**
-     * Reference to the MetaClass Registry to be used by the Groovy run time system to map classes to MetaClasses
+     * Reference to the MetaClass Registry to be used by the Groovy run-time system to map classes to MetaClasses
      */
     private static final MetaClassRegistry META_CLASS_REGISTRY;
+
+    /**
+     * Reference to the Runtime Registry to be used by the Groovy run-time system to find classes capable of running scripts
+     */
+    public static final Map<String, GroovyRunner> RUNNER_REGISTRY = new HashMap<String, GroovyRunner>();
 
     private static boolean keepJavaMetaClasses=false;
     

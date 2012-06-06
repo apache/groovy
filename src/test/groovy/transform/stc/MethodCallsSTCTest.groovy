@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2009 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -532,6 +532,49 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
             assert square(2.0d) == 4.0d
             assert square(2.0f) == 4.0d
         ''', '#square(double)', '#square(float)'
+    }
+
+    void testShouldNotAllowMethodCallFromStaticContext() {
+        shouldFailWithMessages '''
+            class A {
+                void instanceMethod() {}
+
+                static void staticMethod() {
+                    instanceMethod() // calling instance method from static context
+                }
+            }
+            A.staticMethod()
+        ''', 'Non static method A#instanceMethod cannot be called from static context'
+    }
+
+    void testShouldNotAllowMethodCallFromStaticConstructor() {
+        shouldFailWithMessages '''
+            class A {
+                void instanceMethod() {}
+
+                static {
+                    instanceMethod() // calling instance method from static context
+                }
+            }
+            new A()
+        ''', 'Non static method A#instanceMethod cannot be called from static context'
+    }
+
+    void testShouldNotAllowMethodCallFromStaticField() {
+        shouldFailWithMessages '''
+            class A {
+                boolean instanceMethod() { true }
+
+                static FOO = instanceMethod()
+            }
+            new A()
+        ''', 'Non static method A#instanceMethod cannot be called from static context'
+    }
+
+    void testShouldNotBeAmbiguousCall() {
+        assertScript '''
+            (0..10).find { int x -> x < 5 }
+        '''
     }
 
     static class MyMethodCallTestClass {

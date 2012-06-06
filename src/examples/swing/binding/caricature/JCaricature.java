@@ -7,13 +7,12 @@
  * and open the template in the editor.
  */
 
-package swing.binding.caricature;
+package groovy.swing.binding.caricature;
 
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Image;
-import java.awt.RenderingHints;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;

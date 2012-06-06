@@ -1,16 +1,8 @@
-apply plugin: 'groovy'
-apply plugin: 'codenarc'
-apply plugin: 'checkstyle'
-
 // TODO set these using subprojects?
-checkstyleConfigFileName = "../../config/checkstyle/checkstyle.xml"
-
-repositories {
-    mavenCentral()
-}
+ext.checkstyleConfigFileName = "../../config/checkstyle/checkstyle.xml"
 
 dependencies {
     groovy project(':')
     compile project(':')
-    testCompile project(':subprojects:groovy-test')
+    testCompile project(':groovy-test')
 }

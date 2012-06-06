@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2011 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,8 @@
  */
 import junit.framework.Test;
 import junit.framework.TestSuite;
-import org.codehaus.groovy.ant.GroovyTest;
-import org.codehaus.groovy.ant.GroovycTest;
+//import org.codehaus.groovy.ant.GroovyTest;
+//import org.codehaus.groovy.ant.GroovycTest;
 import org.codehaus.groovy.antlr.AnnotationSourceParsingTest;
 import org.codehaus.groovy.antlr.EnumSourceParsingTest;
 import org.codehaus.groovy.antlr.GroovySourceASTTest;
@@ -36,7 +36,7 @@ import org.codehaus.groovy.runtime.*;
 import org.codehaus.groovy.syntax.TokenTest;
 import org.codehaus.groovy.tools.CompilerTest;
 import org.codehaus.groovy.tools.FileSystemCompilerTest;
-import org.codehaus.groovy.tools.groovydoc.GroovyDocToolTest;
+//import org.codehaus.groovy.tools.groovydoc.GroovyDocToolTest;
 import org.codehaus.groovy.tools.gse.DependencyTest;
 
 /**
@@ -59,10 +59,10 @@ public class JavaSourceCodehausPackagesSuite {
         suite.addTestSuite(FileSystemCompilerTest.class);
         suite.addTestSuite(ForTest.class);
         suite.addTestSuite(GetPropertyTest.class);
-        suite.addTest(GroovyTest.suite());
-        suite.addTestSuite(GroovycTest.class);
+//        suite.addTest(GroovyTest.suite());
+//        suite.addTestSuite(GroovycTest.class);
         suite.addTestSuite(GroovyClassLoaderTest.class);
-        suite.addTestSuite(GroovyDocToolTest.class);
+//        suite.addTestSuite(GroovyDocToolTest.class);
         suite.addTestSuite(GroovySourceASTTest.class);
         suite.addTestSuite(EnumSourceParsingTest.class);
         suite.addTestSuite(AnnotationSourceParsingTest.class);

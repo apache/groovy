@@ -36,6 +36,7 @@ import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.EncodingGroovyMethods;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.syntax.SyntaxException;
+import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.transform.StaticTypesTransformation;
 import org.codehaus.groovy.util.ListHashMap;
 import org.objectweb.asm.Opcodes;
@@ -86,6 +87,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     private MethodNode methodNode;
     private Set<MethodNode> methodsToBeVisited = Collections.emptySet();
     private ErrorCollector errorCollector;
+    private boolean isInStaticContext = false;
 
     // used for closure return type inference
     private ClosureExpression closureExpression;
@@ -821,6 +823,28 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     @Override
+    public void visitField(final FieldNode node) {
+        final boolean osc = isInStaticContext;
+        try {
+            isInStaticContext = node.isInStaticContext();
+            super.visitField(node);
+            Expression init = node.getInitialExpression();
+            if (init!=null) {
+                FieldExpression left = new FieldExpression(node);
+                BinaryExpression bexp = new BinaryExpression(
+                        left,
+                        Token.newSymbol("=", node.getLineNumber(), node.getColumnNumber()),
+                        init
+                );
+                bexp.setSourcePosition(init);
+                typeCheckAssignment(bexp, left, node.getOriginType(), init, getType(init));
+            }
+        } finally {
+            isInStaticContext = osc;
+        }
+    }
+
+    @Override
     public void visitForLoop(final ForStatement forLoop) {
         // collect every variable expression used in the loop body
         final Map<VariableExpression, ClassNode> varOrigType = new HashMap<VariableExpression, ClassNode>();
@@ -1181,8 +1205,14 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         // We do not check for an annotation because some other AST transformations
         // may use this visitor without the annotation being explicitely set
         if (!methodsToBeVisited.isEmpty() && !methodsToBeVisited.contains(node)) return;
+        final boolean osc = isInStaticContext;
+        try {
+            isInStaticContext = node.isStatic();
         super.visitMethod(node);
         addTypeCheckingInfoAnnotation(node);
+        } finally {
+            isInStaticContext = osc;
+    }
     }
 
     protected void addTypeCheckingInfoAnnotation(final MethodNode node) {
@@ -1294,7 +1324,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     storeTargetMethod(call, directMethodCallCandidate);
 
                 } else {
-                    addAmbiguousOrDynamicErrorMessage(mn, name, args, call);
+                    addAmbiguousErrorMessage(mn, name, args, call);
                 }
             }
         } finally {
@@ -1494,6 +1524,31 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 ClassNode chosenReceiver = null;
                 for (ClassNode currentReceiver : receivers) {
                     mn = findMethod(currentReceiver, name, args);
+
+                    // if the receiver is "this" or "implicit this", then we must make sure that the compatible
+                    // methods are only static if we are in a static context
+                    if (!mn.isEmpty() && isInStaticContext && (call.isImplicitThis()
+                            || (objectExpression instanceof VariableExpression && ((VariableExpression)objectExpression).isThisExpression()))) {
+                        // we create a separate method list just to be able to print out
+                        // a nice error message to the user
+                        List<MethodNode> staticMethods = new LinkedList<MethodNode>();
+                        List<MethodNode> nonStaticMethods = new LinkedList<MethodNode>();
+                        for (final MethodNode node : mn) {
+                            if (node.isStatic()) {
+                                staticMethods.add(node);
+                            } else {
+                                nonStaticMethods.add(node);
+                            }
+                        }
+                        mn = staticMethods;
+                        if (staticMethods.isEmpty()) {
+                            // choose an arbitrary method to display an error message
+                            MethodNode node = nonStaticMethods.get(0);
+                            ClassNode owner = node.getDeclaringClass();
+                            addStaticTypeError("Non static method "+owner.getName()+"#"+node.getName()+" cannot be called from static context", call);
+                        }
+                    }
+
                     if (!mn.isEmpty()) {
                         if (mn.size() == 1) typeCheckMethodsWithGenerics(currentReceiver, args, mn.get(0), call);
                         chosenReceiver = currentReceiver;
@@ -1503,6 +1558,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 if (mn.isEmpty()) {
                     addStaticTypeError("Cannot find matching method " + receiver.getText() + "#" + toMethodParametersString(name, args), call);
                 } else {
+                    if (areCategoryMethodCalls(mn, name, args)) {
+                        addCategoryMethodCallError(call);
+                    }
                     if (mn.size() == 1) {
                         MethodNode directMethodCallCandidate = mn.get(0);
                         // visit the method to obtain inferred return type
@@ -1532,7 +1590,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         }
 
                     } else {
-                        addAmbiguousOrDynamicErrorMessage(mn, name, args, call);
+                        addAmbiguousErrorMessage(mn, name, args, call);
                     }
                 }
             }
@@ -1816,7 +1874,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
 
         // Divisions may produce different results depending on operand types
-        if (DIVIDE == op || DIVIDE_EQUAL == op) {
+        if (isNumberCategory(getWrapper(leftRedirect)) && (DIVIDE == op || DIVIDE_EQUAL == op)) {
             if (isFloatingCategory(leftRedirect) || isFloatingCategory(rightRedirect)) {
                 if (!isPrimitiveType(leftRedirect) || !isPrimitiveType(rightRedirect)) {
                     return Double_TYPE;
@@ -1902,15 +1960,28 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         final List<MethodNode> methods = findMethod(receiver, name, args);
         if (methods.isEmpty()) {
             addStaticTypeError("Cannot find matching method " + receiver.getText() + "#" + toMethodParametersString(name, args), expr);
-        } else if (methods.size() == 1) {
-            return methods.get(0);
         } else {
-            addAmbiguousOrDynamicErrorMessage(methods, name, args, expr);
+            if (areCategoryMethodCalls(methods, name, args)) {
+                addCategoryMethodCallError(expr);
+            }
+            if (methods.size() == 1) {
+                return methods.get(0);
+            } else {
+                addAmbiguousErrorMessage(methods, name, args, expr);
+            }
         }
         return null;
     }
 
-    private void addAmbiguousOrDynamicErrorMessage(final List<MethodNode> foundMethods, final String name, final ClassNode[] args, final Expression expr) {
+    private void addAmbiguousErrorMessage(final List<MethodNode> foundMethods, final String name, final ClassNode[] args, final Expression expr) {
+        addStaticTypeError("Reference to method is ambiguous. Cannot choose between " + foundMethods, expr);
+    }
+
+    private void addCategoryMethodCallError(final Expression call) {
+        addStaticTypeError("Due to their dynamic nature, usage of categories is not possible with static type checking active", call);
+    }
+
+    private boolean areCategoryMethodCalls(final List<MethodNode> foundMethods, final String name, final ClassNode[] args) {
         boolean category = false;
         if ("use".equals(name) && args!=null && args.length==2 && args[1].equals(ClassHelper.CLOSURE_TYPE)) {
             category = true;
@@ -1920,11 +1991,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 }
             }
         }
-        if (category) {
-            addStaticTypeError("Due to their dynamic nature, usage of categories is not possible with static type checking active", expr);
-        } else {
-            addStaticTypeError("Reference to method is ambiguous. Cannot choose between " + foundMethods, expr);
-        }
+        return category;
     }
 
     private List<MethodNode> findMethod(

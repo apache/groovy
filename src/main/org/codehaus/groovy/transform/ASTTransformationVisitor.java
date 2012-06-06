@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 the original author or authors.
+ * Copyright 2008-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -304,7 +304,7 @@ public final class ASTTransformationVisitor extends ClassCodeVisitorSupport {
                         WarningMessage.POSSIBLE_ERRORS,
                         "Transform Class " + entry.getKey() + " is specified as a global transform in " + entry.getValue().toExternalForm()
                         + " but it is not annotated by " + GroovyASTTransformation.class.getName()
-                        + " the global tranform associated with it may fail and cause the compilation to fail.", 
+                        + " the global transform associated with it may fail and cause the compilation to fail.",
                         null,
                         null));
                     continue;

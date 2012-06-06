@@ -1,4 +1,4 @@
-package swing.timelog
+package groovy.swing.timelog
 
 import java.text.SimpleDateFormat
 import javax.swing.JFrame

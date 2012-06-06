@@ -1,0 +1,6 @@
+dependencies {
+    compile project(':')
+    compile project(':groovy-xml')
+    groovy project(':')
+    testCompile project(':groovy-test')
+}

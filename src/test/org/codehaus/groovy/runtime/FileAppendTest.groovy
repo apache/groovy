@@ -41,7 +41,7 @@ class FileAppendTest extends GroovyTestCase {
               </characters>
             </groovy>
             """.stripIndent()
-    static gPathResult = new XmlSlurper().parseText(text)
+    static Writable gPathResult = new DummyGStringBase(text)
     static gPathWriteTo;
 
     public FileAppendTest() {

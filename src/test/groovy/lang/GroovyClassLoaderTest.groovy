@@ -108,6 +108,11 @@ public class GroovyClassLoaderTest extends GroovyTestCase implements Opcodes {
             } catch (NoClassDefFoundError ncdfe) {
                 // TODO: hack for running when under coverage - find a better way
                 assert ncdfe.message.indexOf("TestCase") > 0 || ncdfe.message.indexOf("cobertura") > 0
+            } catch (MultipleCompilationErrorsException mce) {
+                mce.errorCollector.errors.each { err ->
+                    assert err instanceof org.codehaus.groovy.control.messages.SyntaxErrorMessage
+                    assert err.cause.message.indexOf("TestCase") > 0 || err.cause.message.indexOf("cobertura") > 0
+                }
             }
         } finally {
             try {

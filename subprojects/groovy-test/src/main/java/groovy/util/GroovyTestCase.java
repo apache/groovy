@@ -47,9 +47,6 @@ public class GroovyTestCase extends TestCase {
 
     private boolean useAgileDoxNaming = false;
 
-    public GroovyTestCase() {
-    }
-
     /**
      * Overload the getName() method to make the test cases look more like AgileDox
      * (thanks to Joe Walnes for this tip!)

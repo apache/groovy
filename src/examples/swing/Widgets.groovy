@@ -1,4 +1,4 @@
-package swing
+package groovy.swing
 
 import java.awt.Color
 import javax.swing.SwingConstants

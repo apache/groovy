@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import groovy.security.GroovyCodeSourcePermission;
 
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilerConfiguration;
+import org.codehaus.groovy.plugin.GroovyRunner;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.InvokerInvocationException;
 
@@ -31,6 +32,7 @@ import java.security.PrivilegedAction;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Represents a groovy shell capable of running arbitrary groovy scripts
@@ -277,15 +279,25 @@ public class GroovyShell extends GroovyObjectSupport {
             if (isJUnit4Test(scriptClass)) {
                 return runJUnit4Test(scriptClass);
             }
-            // if it's a TestNG tst, run it with an appropriate runner
-            if (isTestNgTest(scriptClass)) {
-                return runTestNgTest(scriptClass);
+            for (Map.Entry<String, GroovyRunner> entry : GroovySystem.RUNNER_REGISTRY.entrySet()) {
+                GroovyRunner runner = entry.getValue();
+                if (runner != null && runner.canRun(scriptClass, this.loader)) {
+                    return runner.run(scriptClass, this.loader);
+                }
             }
-            throw new GroovyRuntimeException("This script or class could not be run.\n" +
-                    "It should either: \n" +
-                    "- have a main method, \n" +
-                    "- be a JUnit test, TestNG test or extend GroovyTestCase, \n" +
-                    "- or implement the Runnable interface.");
+            String message = "This script or class could not be run.\n" +
+                    "It should either:\n" +
+                    "- have a main method,\n" +
+                    "- be a JUnit test or extend GroovyTestCase,\n" +
+                    "- implement the Runnable interface,\n" +
+                    "- or be compatible with a registered script runner. Known runners:\n";
+            if (GroovySystem.RUNNER_REGISTRY.isEmpty()) {
+                message += "  * <none>";
+            }
+            for (Map.Entry<String, GroovyRunner> entry : GroovySystem.RUNNER_REGISTRY.entrySet()) {
+                message += "  * " + entry.getKey() + "\n";
+            }
+            throw new GroovyRuntimeException(message);
         }
     }
 
@@ -336,7 +348,7 @@ public class GroovyShell extends GroovyObjectSupport {
      */
     private Object runJUnit3Test(Class scriptClass) {
         try {
-            Object testSuite = InvokerHelper.invokeConstructorOf("junit.framework.TestSuite",new Object[]{scriptClass});
+            Object testSuite = InvokerHelper.invokeConstructorOf("junit.framework.TestSuite", new Object[]{scriptClass});
             return InvokerHelper.invokeStaticMethod("junit.textui.TestRunner", "run", new Object[]{testSuite});
         } catch (ClassNotFoundException e) {
             throw new GroovyRuntimeException("Failed to run the unit test. JUnit is not on the Classpath.", e);
@@ -366,15 +378,6 @@ public class GroovyShell extends GroovyObjectSupport {
                     "realRunJUnit4Test", new Object[]{scriptClass, this.loader});
         } catch (ClassNotFoundException e) {
             throw new GroovyRuntimeException("Failed to run the JUnit 4 test.", e);
-        }
-    }
-
-    private Object runTestNgTest(Class scriptClass) {
-        try {
-            return InvokerHelper.invokeStaticMethod("org.codehaus.groovy.vmplugin.v5.TestNgUtils",
-                    "realRunTestNgTest", new Object[]{scriptClass, this.loader});
-        } catch (ClassNotFoundException e) {
-            throw new GroovyRuntimeException("Failed to run the TestNG test.", e);
         }
     }
 
@@ -454,37 +457,9 @@ public class GroovyShell extends GroovyObjectSupport {
             if (InvokerHelper.invokeStaticMethod("org.codehaus.groovy.vmplugin.v5.JUnit4Utils",
                     "realIsJUnit4Test", new Object[]{scriptClass, this.loader}) == Boolean.TRUE) {
                 isTest = true;
-            };
+            }
         } catch (ClassNotFoundException e) {
             throw new GroovyRuntimeException("Failed to invoke the JUnit 4 helper class.", e);
-        }
-        return isTest;
-    }
-
-    /**
-     * Utility method to check via reflection if the parsed class appears to be a TestNG
-     * test, i.e.&nsbp;checks whether it appears to be using the relevant TestNG annotations.
-     *
-     * @param scriptClass the class we want to check
-     * @return true if the class appears to be a test
-     */
-    private boolean isTestNgTest(Class scriptClass) {
-        char version = System.getProperty("java.version").charAt(2);
-        if (version < '5') {
-            return false;
-        }
-
-        // check if there are appropriate class or method annotations
-        // that suggest we have a TestNG test
-        boolean isTest = false;
-
-        try {
-            if (InvokerHelper.invokeStaticMethod("org.codehaus.groovy.vmplugin.v5.TestNgUtils",
-                    "realIsTestNgTest", new Object[]{scriptClass, this.loader}) == Boolean.TRUE) {
-                isTest = true;
-            };
-        } catch (ClassNotFoundException e) {
-            throw new GroovyRuntimeException("Failed to invoke the TestNG helper class.", e);
         }
         return isTest;
     }

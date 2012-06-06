@@ -1,0 +1,119 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<% def title = "Overview" + (props.windowTitle ? " (${props.windowTitle})" : "") %>
+<html>
+<head>
+<title>${title}</title>
+<meta http-equiv="Content-Type" content="text/html; charset=${props.charset}">
+<META NAME="keywords" CONTENT="Overview">
+<LINK REL ="stylesheet" TYPE="text/css" HREF="stylesheet.css" TITLE="Style">
+<link href="groovy.ico" type="image/x-icon" rel="shortcut icon">
+<link href="groovy.ico" type="image/x-icon" rel="icon">
+<SCRIPT type="text/javascript">
+function windowTitle()
+{
+    parent.document.title="${title}";
+}
+</SCRIPT>
+<NOSCRIPT>
+</NOSCRIPT>
+</head>
+<body BGCOLOR="white" onload="windowTitle();">
+<hr>
+
+<!-- ========= START OF TOP NAVBAR ======= -->
+<a name="navbar_top"><!-- --></a>
+<table summary="" width="100%" border="0" cellpadding="1" cellspacing="0">
+<tbody><tr>
+<td colspan="2" class="NavBarCell1" bgcolor="#eeeeff">
+<a name="navbar_top_firstrow"><!-- --></a>
+<table summary="" border="0" cellpadding="0" cellspacing="3">
+  <tbody><tr valign="top" align="center">
+  <td class="NavBarCell1Rev" bgcolor="#ffffff"> &nbsp;<font class="NavBarFont1Rev"><b>Overview</b></font>&nbsp;</td>
+  <td class="NavBarCell1" bgcolor="#eeeeff">    <font class="NavBarFont1">Package</font>&nbsp;</td>
+  <td class="NavBarCell1" bgcolor="#eeeeff">    <font class="NavBarFont1">Class</font>&nbsp;</td>
+  <!--
+  <td class="NavBarCell1" bgcolor="#eeeeff">    <a href="overview-tree.html"><font class="NavBarFont1"><b>Tree</b></font></a>&nbsp;</td>
+  -->
+  <td class="NavBarCell1" bgcolor="#eeeeff">    <a href="deprecated-list.html"><font class="NavBarFont1"><b>Deprecated</b></font></a>&nbsp;</td>
+  <td class="NavBarCell1" bgcolor="#eeeeff">    <a href="index-all.html"><font class="NavBarFont1"><b>Index</b></font></a>&nbsp;</td>
+  <td class="NavBarCell1" bgcolor="#eeeeff">    <a href="help-doc.html"><font class="NavBarFont1"><b>Help</b></font></a>&nbsp;</td>
+  </tr>
+</tbody></table>
+</td>
+<td rowspan="3" valign="top" align="right"><em>
+<% if (props.header) { %><b>${props.header}</b><% } %>
+</em>
+</td>
+</tr>
+
+<tr>
+<td class="NavBarCell2" bgcolor="white"><font size="-2">
+&nbsp;PREV&nbsp;
+&nbsp;NEXT</font></td>
+<td class="NavBarCell2" bgcolor="white"><font size="-2">
+  <a href="index.html?overview-summary.html" target="_top"><b>FRAMES</b></a>  &nbsp;
+&nbsp;<a href="overview-summary.html" target="_top"><b>NO FRAMES</b></a>  &nbsp;
+&nbsp;<script type="text/javascript">
+  <!--
+  if(window==top) {
+    document.writeln('<A HREF="allclasses-frame.html"><B>All Classes</B></A>');
+  }
+  //-->
+</script>
+<noscript>
+  <A HREF="allclasses-frame.html"><B>All Classes</B></A>
+</noscript>
+
+
+</font></td>
+</tr>
+</tbody></table>
+<!-- ========= END OF TOP NAVBAR ========= -->
+
+<HR>
+<center>
+<h1>
+${props.docTitle ?: ''}</h1>
+</center>
+<p>${rootDoc.summary()}</p>
+<P>
+<%
+    def s = rootDoc.summary().trim()
+    def d = rootDoc.description().trim()
+    if (d && d != s) {
+%>
+<B>See:</B>
+<BR>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<A HREF="#overview_description"><B>Description</B></A>
+<P>
+<% } %>
+<TABLE BORDER="1" WIDTH="100%" CELLPADDING="3" CELLSPACING="0" SUMMARY="">
+<TR BGCOLOR="#90DDF7" CLASS="TableHeadingColor">
+<TH ALIGN="left" COLSPAN="2"><FONT SIZE="+2">
+<B>Packages</B></FONT></TH>
+</TR>
+<% for (packageDoc in rootDoc.specifiedPackages()) { %>
+<TR BGCOLOR="white" CLASS="TableRowColor">
+<TD WIDTH="20%"><B><A HREF="${packageDoc.name()}/package-summary.html">${packageDoc.nameWithDots()}</A></B></TD>
+<TD>${packageDoc.summary() ?: ''}</TD>
+</TR>
+<% } %>
+</TABLE>
+
+<P>
+<%
+    if (d && d != s) {
+%>
+&nbsp;<A NAME="overview_description"><!-- --></A>
+<P>
+
+<p>${rootDoc.description()}</p>
+
+<hr>
+<%
+    }
+%>
+<P>${props['footer']?:""}</P>
+<hr>
+</body>
+</html>

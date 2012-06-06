@@ -2,6 +2,7 @@ package groovy.swing
 
 import java.awt.BorderLayout
 import javax.swing.BorderFactory
+import groovy.swing.SwingBuilder
 
 /**
  * Demonstrates the use of the Groovy TableModels for viewing tables of any List of objects

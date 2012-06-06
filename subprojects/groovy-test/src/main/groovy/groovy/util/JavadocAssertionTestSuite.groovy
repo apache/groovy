@@ -39,6 +39,8 @@ import junit.textui.TestRunner
  * java groovy.util.JavadocAssertionTestSuite src/main
  * </code>
  *
+ * <b>Note: this class requires the Ant module at runtime.</b>
+ *
  * @author Merlyn Albery-Speyer
  */
 class JavadocAssertionTestSuite extends TestSuite {
@@ -66,7 +68,7 @@ class JavadocAssertionTestSuite extends TestSuite {
     public static final String SYSPROP_SRC_EXCLUDES_PATTERN = "javadocAssertion.src.excludesPattern";
     
     private static JavadocAssertionTestBuilder testBuilder = new JavadocAssertionTestBuilder()
-    private static IFileNameFinder finder = new FileNameFinder()
+    private static IFileNameFinder finder = Class.forName('groovy.util.FileNameFinder').newInstance()
     
     static Test suite() {
         String basedir = System.getProperty(SYSPROP_SRC_DIR, "./src/")

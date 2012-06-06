@@ -117,7 +117,7 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure a closure
      * @return the value returned by the closure
      * @throws IOException if an IOException occurs.
-     * @see #IOGroovyMethodswithStream(java.io.OutputStream, groovy.lang.Closure)
+     * @see IOGroovyMethods#withStream(java.io.OutputStream, groovy.lang.Closure)
      * @since 1.5.0
      */
     public static <T> T withObjectOutputStream(File file, Closure<T> closure) throws IOException {

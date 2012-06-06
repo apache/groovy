@@ -408,55 +408,6 @@ class A {
             }
         """
     }
-    
-    void testAICParameter() {
-        // GROOVY-5041
-        assertScript """
-            import java.sql.Connection
-            import groovy.sql.Sql
-            
-            class GrailsPrecondition {
-            
-                Connection getConnection() { database?.connection?.wrappedConnection }
-                
-                Sql getSql() {
-                    if (!connection) return null
-            
-                    if (!sql) {
-                        sql = new Sql(connection) {
-                            protected void closeResources(Connection c) {
-                                // do nothing, let Liquibase close the connection
-                            }
-                        }
-                    }
-            
-                    sql
-                }
-            }
-            def x = new GrailsPrecondition()
-            try {
-                x.sql
-                assert false
-            } catch (MissingPropertyException mpe) {
-                assert true
-            }
-        """
-        assertScript """
-            class Foo {
-              def call(){}    
-              def Foo(x){}
-            }
-            
-            def x = 1
-            def caller = new Foo(x) {
-               def call(){x}   
-            }
-            assert caller.call() == 1
-            x = 2
-            assert caller.call() == 2
-        """
-    }
-     
 
 } 
 

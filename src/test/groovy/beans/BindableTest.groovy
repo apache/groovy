@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2009 the original author or authors.
+ * Copyright 2008-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import org.codehaus.groovy.control.CompilationFailedException
 /**
  * @author Danno Ferrin (shemnon)
  */
-class BindableTest extends GroovySwingTestCase {
+class BindableTest extends GroovyTestCase {
 
     public void testSimpleBindableProperty() {
         GroovyShell shell = new GroovyShell()
@@ -176,27 +176,7 @@ class BindableTest extends GroovySwingTestCase {
         }
     }
 
-    public void testExtendsComponent() {
-        testInEDT {
-            GroovyShell shell = new GroovyShell()
-            shell.evaluate("""
-                import groovy.beans.Bindable
-
-                class BindableTestBean6 extends javax.swing.JPanel {
-                    @Bindable String testField
-                }
-
-                sb = new BindableTestBean6()
-                sb.testField = "bar"
-                changed = false
-                sb.propertyChange = {changed = true}
-                sb.testField = "foo"
-                assert changed
-            """)
-        }
-    }
-
-    public void testPrimitaveTypes() {
+    public void testPrimitiveTypes() {
         GroovyShell shell = new GroovyShell()
         shell.evaluate("""
             import groovy.beans.Bindable

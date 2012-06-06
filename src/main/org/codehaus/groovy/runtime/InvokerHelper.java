@@ -16,7 +16,6 @@
 package org.codehaus.groovy.runtime;
 
 import groovy.lang.*;
-import groovy.xml.XmlUtil;
 import org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl;
 import org.codehaus.groovy.runtime.metaclass.MissingMethodExecutionFailed;
 import org.codehaus.groovy.runtime.powerassert.PowerAssertionError;
@@ -30,6 +29,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.Writer;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -534,7 +535,18 @@ public class InvokerHelper {
             return formatMap((Map) arguments, verbose, maxSize);
         }
         if (arguments instanceof Element) {
-            return XmlUtil.serialize((Element) arguments);
+            try {
+                Method serialize = Class.forName("groovy.xml.XmlUtil").getMethod("serialize", Element.class);
+                return (String) serialize.invoke(null, arguments);
+            } catch (ClassNotFoundException e) {
+                throw new RuntimeException(e);
+            } catch (NoSuchMethodException e) {
+                throw new RuntimeException(e);
+            } catch (InvocationTargetException e) {
+                throw new RuntimeException(e);
+            } catch (IllegalAccessException e) {
+                throw new RuntimeException(e);
+            }
         }
         if (arguments instanceof String) {
             if (verbose) {

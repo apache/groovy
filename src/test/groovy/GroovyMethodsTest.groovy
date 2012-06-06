@@ -31,7 +31,7 @@ import org.codehaus.groovy.util.StringUtil
  * @author Tim Yates
  * @author Dinko Srkoc
  */
-class GroovyMethodsTest extends GroovySwingTestCase {
+class GroovyMethodsTest extends GroovyTestCase {
     void testCollect() {
         assert [2, 4, 6].collect {it * 2} == [4, 8, 12]
         def answer = [2, 4, 6].collect(new Vector()) {it * 2}
@@ -70,7 +70,7 @@ class GroovyMethodsTest extends GroovySwingTestCase {
     }
 
     void testAsCoercion() {
-        if (headless) return
+        if (HeadlessTestSupport.headless) return
 
         def d0 = new Dimension(100, 200)
         assert d0 == new Dimension(width: 100, height: 200)
@@ -348,7 +348,7 @@ class GroovyMethodsTest extends GroovySwingTestCase {
     }
 
     void testFileSize() {
-        assert new File('build.properties').size()
+        assert new File('gradle.properties').size()
     }
 
     void testMatcherSize() {
@@ -696,25 +696,25 @@ class GroovyMethodsTest extends GroovySwingTestCase {
     }
 
     void testFileWithReader() {
-        def f = new File('build.properties')
+        def f = new File('gradle.properties')
         def expected = f.text
         assert expected == f.withReader { r -> r.text }
     }
 
     void testFileWithInputStream() {
-        def f = new File('build.properties')
+        def f = new File('gradle.properties')
         def buf = new byte[f.size()]
         assert buf.size() == f.withInputStream { i -> i.read(buf) }
     }
 
     void testUrlReader() {
-        def u = new File('build.properties').toURL()
+        def u = new File('gradle.properties').toURL()
         def expected = u.text
         assert expected == u.withReader { r -> r.text }
     }
 
     void testUrlWithInputStream() {
-        def f = new File('build.properties')
+        def f = new File('gradle.properties')
         def u = f.toURL()
         def buf = new byte[f.size()]
         assert buf.size() == u.withInputStream { i -> i.read(buf) } 
@@ -1158,6 +1158,49 @@ class GroovyMethodsTest extends GroovySwingTestCase {
         assert !vowels.contains('x')
     }
 
+    void testListTakeWhile() {
+        def data = [
+            new ArrayList( [ 1, 3, 2 ] ),
+            new LinkedList( [ 1, 3, 2 ] ),
+            new Stack() {{ addAll( [ 1, 3, 2 ] ) }},
+            new Vector( [ 1, 3, 2 ] ),
+        ]
+        data.each {
+            assert it.takeWhile{ it < 0 } == []
+            assert it.takeWhile{ it < 1 } == []
+            assert it.takeWhile{ it < 3 } == [ 1 ]
+            assert it.takeWhile{ it < 4 } == [ 1, 3, 2 ]
+        }
+    }
+
+    void testArrayTakeWhile() {
+        String[] items = [ 'ant', 'bee', 'cat' ]
+
+        assert items.takeWhile{ it == '' } == [] as String[]
+        assert items.takeWhile{ it != 'cat' } == [ 'ant', 'bee' ] as String[]
+        assert items.takeWhile{ it != '' } == [ 'ant', 'bee', 'cat' ] as String[]
+    }
+
+    void testIteratorTakeWhile() {
+        int a = 1
+        Iterator items = [ hasNext:{ true }, next:{ a++ } ] as Iterator
+
+        assert items.takeWhile{ it < 5 }.collect { it } == [ 1, 2, 3, 4 ]
+    }
+
+    void testCharSequenceTakeWhile() {
+        def data = [ 'groovy',      // String
+                     "${'groovy'}", // GString
+                     java.nio.CharBuffer.wrap( 'groovy' ),
+                     new StringBuffer( 'groovy' ),
+                     new StringBuilder( 'groovy' ) ]
+        data.each {
+            // Need toString() as CharBuffer.subSequence returns a java.nio.StringCharBuffer
+            assert it.takeWhile{ it == '' }.toString() == ''
+            assert it.takeWhile{ it != 'v' }.toString() == 'groo'
+            assert it.takeWhile{ it }.toString() == 'groovy'
+        }
+    }
 }
 
 class WackyList extends LinkedList {

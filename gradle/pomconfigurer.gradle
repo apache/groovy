@@ -1,30 +1,14 @@
-project.pomConfigureClosure = {
-    // todo The maven pom builder is not fully compatible with the 2.x Maven model shipped with Gradle. As soon as we update
-    // to Maven 3 we can also add the distribution management in builder notation
-/*
-    model.distributionManagement = configure(new org.apache.maven.model.DistributionManagement()) {
-        repository = configure(new org.apache.maven.model.DeploymentRepository()) {
-            id = 'codehaus.org'
-            name = 'Groovy Central Repository'
-            url = 'dav:https://dav.codehaus.org/repository/groovy/'
-        }
-        snapshotRepository = configure(new org.apache.maven.model.DeploymentRepository()) {
-            id = 'codehaus.org'
-            name = 'Groovy Central Development Repository'
-            url = 'dav:https://dav.codehaus.org/snapshots.repository/groovy/'
-        }
-        site = configure(new org.apache.maven.model.Site()) {
-            id = 'codehaus.org'
-            name = 'Groovy Web Site'
-            url = 'dav:https://dav.codehaus.org/groovy'
-        }
-    }
-*/
+group = 'org.codehaus.groovy'
+
+project.ext.optionalDeps = []
+project.ext.providedDeps = []
+
+project.ext.optional = { project.ext.optionalDeps << it }
+project.ext.provided = { project.ext.providedDeps << it }
+
+project.ext.pomConfigureClosure = {
+    scopeMappings.addMapping(10, configurations.groovy, 'compile')
     project {
-        modelVersion '4.0.0'
-        groupId 'org.codehaus.groovy'
-        artifactId 'groovy'
-        version '2.0.0-beta-3-SNAPSHOT'
         name 'Groovy'
         description 'Groovy: A powerful, dynamic language for the JVM'
         url 'http://groovy.codehaus.org/'
@@ -312,7 +296,7 @@ project.pomConfigureClosure = {
             }
             developer {
                 id 'melix'
-                name 'Cédric Champeau'
+                name 'Cedric Champeau'
                 email 'cedric.champeau@gmail.com'
                 roles {
                     role 'Developer'
@@ -501,95 +485,46 @@ project.pomConfigureClosure = {
             }
         }
         scm {
-            connection 'scm:svn:http://svn.groovy.codehaus.org/browse/groovy/trunk/groovy/groovy-core'
-            developerConnection 'scm:svn:https://${maven.username}@svn.groovy.codehaus.org/browse/groovy/trunk/groovy/groovy-core'
-            url 'http://svn.groovy.codehaus.org/browse/groovy/trunk/groovy/groovy-core'
+            connection 'scm:git:git@github.com:groovy/groovy-core.git'
+            developerConnection 'scm:git:git@github.com:groovy/groovy-core.git'
+            url 'git@github.com:groovy/groovy-core.git'
         }
-        build {
-            sourceDirectory 'src/main'
-            testSourceDirectory 'src/test'
-            defaultGoal 'install'
-            pluginManagement {
-                plugins {
-                    plugin {
-                        artifactId 'maven-antrun-plugin'
-                        version '1.1'
-                    }
-                    plugin {
-                        artifactId 'maven-idea-plugin'
-                        version '2.1'
-                        configuration {
-                            jdkName '1.4'
-                            jdkLevel '1.4'
-                            linkModules 'true'
-                        }
-                    }
-                    plugin {
-                        artifactId 'maven-compiler-plugin'
-                        version '2.0.2'
-                        configuration {
-                            excludes {
-                                exclude '**'
-                            }
-                            skip 'true'
-                        }
-                    }
-                    plugin {
-                        artifactId 'maven-surefire-plugin'
-                        version '2.3'
-                        configuration {
-                            skip 'true'
-                        }
-                    }
-                }
-            }
-            plugins {
-                plugin {
-                    artifactId 'maven-antrun-plugin'
-                    executions {
-                        execution {
-                            phase 'install'
-                            goals {
-                                goal 'run'
-                            }
-                            configuration {
-                                tasks {
-                                    exec(dir: '${pom.basedir}', executable: 'ant') {
-                                        arg(value: 'installRepo')
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+    }
+
+    // general pom tweaks
+    whenConfigured { pom ->
+        project.ext.optionalDeps.each { dep ->
+            pom.dependencies.find { it.artifactId == dep.name }?.optional = true
         }
-        profiles {
-            profile {
-                id 'idea'
-                build {
-                    defaultGoal 'validate'
-                    plugins {
-                        plugin {
-                            artifactId 'maven-idea-plugin'
-                            executions {
-                                execution {
-                                    phase 'validate'
-                                    goals {
-                                        goal 'clean'
-                                        goal 'idea'
-                                    }
-                                }
-                            }
-                            configuration {
-                                overwrite 'true'
-                                downloadSources 'true'
-                                downloadJavadocs 'true'
-                            }
-                        }
-                    }
-                }
-            }
+        project.ext.providedDeps.each { dep ->
+            pom.dependencies.find { it.artifactId == dep.name }?.scope = 'provided'
+        }
+
+        // eliminate test-scoped dependencies (no need in maven central poms)
+        pom.dependencies.removeAll { dep ->
+            dep.scope == 'test'
+        }
+
+        if (project == rootProject) {
+            // make dependencies optional
+            def groovyConfDeps =
+                configurations.groovy.dependencies.collect { dep -> dep.name } - configurations.compile.dependencies.collect { dep -> dep.name }
+            pom.dependencies.each { dep ->  if (!groovyConfDeps.contains(dep.artifactId)) { dep.optional = true }}
+        }
+
+        // add 'packaging' node
+        pom.withXml { xmlProvider ->
+            def xml = xmlProvider.asString()
+            def pomXml = new XmlParser().parse(new ByteArrayInputStream(xml.toString().bytes))
+
+            pomXml.version[0] + { packaging('jar') }
+
+            def newXml = new StringWriter()
+            def printer = new XmlNodePrinter(new PrintWriter(newXml))
+            printer.preserveWhitespace = true
+            printer.print(pomXml)
+            xml.setLength(0)
+            xml.append(newXml.toString())
         }
     }
 }

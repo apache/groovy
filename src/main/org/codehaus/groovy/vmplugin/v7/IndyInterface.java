@@ -22,6 +22,8 @@ import groovy.lang.GroovyRuntimeException;
 import groovy.lang.GroovySystem;
 import groovy.lang.MetaClass;
 import groovy.lang.MetaClassImpl;
+import groovy.lang.MetaClassRegistryChangeEvent;
+import groovy.lang.MetaClassRegistryChangeEventListener;
 import groovy.lang.MetaMethod;
 import groovy.lang.MetaObjectProtocol;
 import groovy.lang.MissingMethodException;
@@ -37,12 +39,10 @@ import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.reflection.CachedMethod;
 import org.codehaus.groovy.runtime.NullObject;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
-import org.codehaus.groovy.runtime.metaclass.DefaultMetaClassInfo;
 import org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl;
 import org.codehaus.groovy.runtime.metaclass.MissingMethodExecutionFailed;
 import org.codehaus.groovy.runtime.metaclass.NewInstanceMetaMethod;
 import org.codehaus.groovy.runtime.metaclass.ReflectionMetaMethod;
-import org.codehaus.groovy.runtime.metaclass.DefaultMetaClassInfo.ConstantMetaClassVersioning;
 import org.codehaus.groovy.runtime.wrappers.Wrapper;
 
 /**
@@ -99,17 +99,20 @@ public class IndyInterface {
             }
         }
         private static final MethodHandle NULL_REF = MethodHandles.constant(Object.class, null);
-
-        private static final MethodHandle VALID_MC_VERSION;
-        static {
-            try {
-                VALID_MC_VERSION = LOOKUP.findVirtual(ConstantMetaClassVersioning.class, "isValid", MethodType.methodType(boolean.class));
-            } catch (Exception e) {
-                throw new GroovyBugError(e);
-            }
-        }
         
-        // the 4 entry points from bytecode
+        private static SwitchPoint switchPoint = new SwitchPoint();
+        static {
+            GroovySystem.getMetaClassRegistry().addMetaClassRegistryChangeEventListener(new MetaClassRegistryChangeEventListener() {
+                public void updateConstantMetaClass(MetaClassRegistryChangeEvent cmcu) {
+                    SwitchPoint old = switchPoint;
+                    switchPoint = new SwitchPoint();
+                    synchronized(this) { SwitchPoint.invalidateAll(new SwitchPoint[]{old}); }
+                }
+            });
+        }
+
+        
+        // the entry points from bytecode
         
         /**
          * bootstrap method for method calls with "this" as receiver
@@ -193,7 +196,7 @@ public class IndyInterface {
             public MutableCallSite callSite;
             public Class sender;
             public boolean isVargs;
-            public boolean safeNavigation;
+            public boolean safeNavigation, safeNavigationOrig;
             public boolean thisCall;
             public Class methodSelectionBase;
         }
@@ -489,32 +492,27 @@ public class IndyInterface {
         private static void setGuards(CallInfo ci, Object receiver) {
             if (ci.handle==null) return;
             
-            MethodHandle fallback = makeFallBack(ci.callSite, ci.sender, ci.methodName, ci.targetType, ci.safeNavigation, ci.thisCall);
+            MethodHandle fallback = makeFallBack(ci.callSite, ci.sender, ci.methodName, ci.targetType, ci.safeNavigationOrig, ci.thisCall);
             
             // special guards for receiver
-            MethodHandle test=null;
             if (receiver instanceof GroovyObject) {
                 GroovyObject go = (GroovyObject) receiver;
                 MetaClass mc = (MetaClass) go.getMetaClass();
-                test = SAME_MC.bindTo(mc); 
+                MethodHandle test = SAME_MC.bindTo(mc); 
                 // drop dummy receiver
                 test = test.asType(MethodType.methodType(boolean.class,ci.targetType.parameterType(0)));
+                ci.handle = MethodHandles.guardWithTest(test, ci.handle, fallback);
             } else if (receiver != null) {
                 // handle constant meta class
-                ConstantMetaClassVersioning mcv = DefaultMetaClassInfo.getCurrentConstantMetaClassVersioning();
-                test = VALID_MC_VERSION.bindTo(mcv);
-                ci.handle = MethodHandles.guardWithTest(test, ci.handle, fallback);
-                // check for not being null
-                test = IS_NOT_NULL.asType(MethodType.methodType(boolean.class,ci.targetType.parameterType(0)));
-            }
-            if (test!=null) {
-                ci.handle = MethodHandles.guardWithTest(test, ci.handle, fallback);
+                ci.handle = switchPoint.guardWithTest(ci.handle, fallback);
+                
             }
             
             // guards for receiver and parameter
             Class[] pt = ci.handle.type().parameterArray();
             for (int i=0; i<ci.args.length; i++) {
                 Object arg = ci.args[i];
+                MethodHandle test = null;
                 if (arg==null) {
                     test = IS_NULL.asType(MethodType.methodType(boolean.class, pt[i]));
                 } else {
@@ -659,6 +657,7 @@ public class IndyInterface {
             callInfo.args = arguments;
             callInfo.callSite = callSite;
             callInfo.sender = sender;
+            callInfo.safeNavigationOrig = safeNavigation;
             callInfo.safeNavigation = safeNavigation && arguments[0]==null;
             callInfo.thisCall = thisCall;
 

@@ -15,8 +15,12 @@
  */
 package org.codehaus.groovy.tools;
 
+import java.io.File;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 
@@ -108,6 +112,22 @@ public class RootLoader extends URLClassLoader {
         URL[] urls = lc.getClassPathUrls();
         for (URL url : urls) {
             addURL(url);
+        }
+        // TODO M12N eventually defer this until later when we have a full Groovy
+        // environment and use normal Grape.grab()
+        String groovyHome = System.getProperty("groovy.home");
+        List<String> grabUrls = lc.getGrabUrls();
+        for (String grabUrl : grabUrls) {
+            Map<String, Object> grabParts = GrapeUtil.getIvyParts(grabUrl);
+            String group = grabParts.get("group").toString();
+            String module = grabParts.get("module").toString();
+            String name = grabParts.get("module").toString() + "-" + grabParts.get("version") + ".jar";
+            File jar = new File(groovyHome + "/repo/" + group + "/" + module + "/jars/" + name);
+            try {
+                addURL(jar.toURI().toURL());
+            } catch (MalformedURLException e) {
+                // ignore
+            }
         }
     }
 

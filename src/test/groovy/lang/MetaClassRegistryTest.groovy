@@ -10,18 +10,25 @@ package groovy.lang
 class MetaClassRegistryTest extends GroovyTestCase {
 
     def registry = GroovySystem.metaClassRegistry
+    static initSize
+    static {
+        try {
+            this.classLoader.loadClass("org.codehaus.groovy.vmplugin.v7.IndyInterface", true)
+        } catch(e){}
+        initSize = GroovySystem.metaClassRegistry.metaClassRegistryChangeEventListeners.size()
+    }
 
     void testListenerAdditionAndRemoval() {
         def called = null
-        def registry = GroovySystem.metaClassRegistry
-        registry.updateConstantMetaClass = { event -> called = event }
+        def listener = { event -> called = event } as MetaClassRegistryChangeEventListener
+        GroovySystem.metaClassRegistry.addMetaClassRegistryChangeEventListener listener
 
         Integer.metaClass.foo = {->}
         assert 1.foo() == null
         assert called != null
-        assert registry.metaClassRegistryChangeEventListeners.size() == 2
-        registry.removeMetaClassRegistryChangeEventListener(registry.metaClassRegistryChangeEventListeners[1])
-        assert registry.metaClassRegistryChangeEventListeners.size() == 1
+        assert registry.metaClassRegistryChangeEventListeners.size() == initSize + 1 
+        registry.removeMetaClassRegistryChangeEventListener(listener)
+        assert registry.metaClassRegistryChangeEventListeners.size() == initSize
 
         def oldCalled = called;
         Integer.metaClass = null
@@ -40,9 +47,9 @@ class MetaClassRegistryTest extends GroovyTestCase {
     }
 
     void testDefaultListenerRemoval() {
-        assert registry.metaClassRegistryChangeEventListeners.size() == 1
+        assert registry.metaClassRegistryChangeEventListeners.size() == initSize
         registry.removeMetaClassRegistryChangeEventListener(registry.metaClassRegistryChangeEventListeners[0])
-        assert registry.metaClassRegistryChangeEventListeners.size() == 1
+        assert registry.metaClassRegistryChangeEventListeners.size() == initSize
     }
 
     void testIteratorIteration() {
@@ -55,8 +62,6 @@ class MetaClassRegistryTest extends GroovyTestCase {
         // we add one more constant meta class and then count them to
         // see if the number fits
         Integer.metaClass.foo = {}
-
-        println metaClasses
 
         def count = 0;
         registry.each { count++ }

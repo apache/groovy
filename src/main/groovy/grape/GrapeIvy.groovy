@@ -40,8 +40,13 @@ import org.apache.ivy.plugins.resolver.IBiblioResolver
 import org.apache.ivy.util.DefaultMessageLogger
 import org.apache.ivy.util.Message
 import org.codehaus.groovy.reflection.ReflectionUtils
-//import java.util.zip.ZipFile
-//import java.util.zip.ZipEntry
+import java.util.zip.ZipFile
+import java.util.zip.ZipEntry
+import javax.xml.parsers.DocumentBuilderFactory
+import org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl
+import java.util.jar.JarFile
+
+import org.codehaus.groovy.reflection.CachedClass
 
 /**
  * @author Danno Ferrin
@@ -247,8 +252,9 @@ class GrapeIvy implements GrapeEngine {
 
             for (URI uri in resolve(loader, args, dependencies)) {
                 //TODO check artifact type, jar vs library, etc
-//                processServices(new File(uri));
-                loader.addURL(uri.toURL())
+                File file = new File(uri)
+                processCategoryMethods(uri, loader, file)
+                processOtherServices(file, loader);
             }
         } catch (Exception e) {
             // clean-up the state first
@@ -265,17 +271,53 @@ class GrapeIvy implements GrapeEngine {
         return null
     }
 
-//    void processServices(File f) {
-//        System.out.println('Processing ' + f.getCanonicalPath())
-//        ZipFile zf = new ZipFile(f)
-//        ZipEntry dgmMethods = zf.getEntry("META-INF/services/groovy/defaultGroovyMethods")
-//        if (dgmMethods == null) return
-//        InputStream is = zf.getInputStream(dgmMethods)
-//        List<String> classNames = is.text.readLines()
-//        classNames.each {
-//            println it.trim()
-//        }
-//    }
+    private processCategoryMethods(URI uri, ClassLoader loader, File file) {
+        URL url = uri.toURL()
+        loader.addURL(url)
+        // register extension methods if jar
+        if (file.name.toLowerCase().endsWith(".jar")) {
+            def mcRegistry = GroovySystem.metaClassRegistry
+            if (mcRegistry instanceof MetaClassRegistryImpl) {
+                // should always be the case
+                JarFile jar = new JarFile(file)
+                def entry = jar.getEntry(MetaClassRegistryImpl.MODULE_META_INF_FILE)
+                if (entry) {
+                    Properties props = new Properties()
+                    props.load(jar.getInputStream(entry))
+                    Map<CachedClass, List<MetaMethod>> metaMethods = new HashMap<CachedClass, List<MetaMethod>>()
+                    mcRegistry.registerExtensionModuleFromProperties(props, loader, metaMethods)
+                    // add old methods to the map
+                    metaMethods.each { CachedClass c, List<MetaMethod> methods ->
+                        c.addNewMopMethods(methods)
+                    }
+                }
+            }
+        }
+    }
+
+    void processOtherServices(File f, ClassLoader loader) {
+        ZipFile zf = new ZipFile(f)
+        ZipEntry serializedCategoryMethods = zf.getEntry("META-INF/services/org.codehaus.groovy.runtime.SerializedCategoryMethods")
+        if (serializedCategoryMethods != null) {
+            processSerializedCategoryMethods(zf.getInputStream(serializedCategoryMethods))
+        }
+        ZipEntry pluginRunners = zf.getEntry("META-INF/services/org.codehaus.groovy.plugins.Runners")
+        if (pluginRunners != null) {
+            processRunners(zf.getInputStream(pluginRunners), f.getName(), loader)
+        }
+    }
+
+    void processSerializedCategoryMethods(InputStream is) {
+        is.text.readLines().each {
+            println it.trim() // TODO implement this or delete it
+        }
+    }
+
+    void processRunners(InputStream is, String name, ClassLoader loader) {
+        is.text.readLines().each {
+            GroovySystem.RUNNER_REGISTRY[name] = loader.loadClass(it.trim()).newInstance()
+        }
+    }
 
     public ResolveReport getDependencies(Map args, IvyGrabRecord... grabRecords) {
         ResolutionCacheManager cacheManager = ivyInstance.resolutionCacheManager
@@ -374,19 +416,27 @@ class GrapeIvy implements GrapeEngine {
                 if (moduleDir.name == module) moduleDir.eachFileMatch(ivyFilePattern) { File ivyFile ->
                     def m = ivyFilePattern.matcher(ivyFile.name)
                     if (m.matches() && m.group(1) == rev) {
-                        def root = new XmlParser(false, false).parse(ivyFile)
                         // TODO handle other types? e.g. 'dlls'
                         def jardir = new File(moduleDir, 'jars')
                         if (!jardir.exists()) return
-                        root.publications.artifact.each {
-                            def name = it.@name + "-$rev"
-                            def classifier = it.'@m:classifier'
-                            if (classifier) name += "-$classifier"
-                            name += ".${it.@ext}"
-                            def jarfile = new File(jardir, name)
-                            if (jarfile.exists()) {
-                                println "Deleting ${jarfile.name}"
-                                jarfile.delete()
+                        def dbf = DocumentBuilderFactory.newInstance()
+                        def db = dbf.newDocumentBuilder()
+                        def root = db.parse(ivyFile).documentElement
+                        def publis = root.getElementsByTagName('publications')
+                        for (int i=0; i<publis.length;i++) {
+                            def artifacts = publis.item(i).getElementsByTagName('artifact')
+                            for (int j=0; j<artifacts.length; j++) {
+                                def artifact = artifacts.item(j)
+                                def attrs = artifact.attributes
+                                def name = attrs.getNamedItem('name')+ "-$rev"
+                                def classifier = attrs.getNamedItemNS("m", "classifier")
+                                if (classifier) name += "-$classifier"
+                                name += ".${attrs.getNamedItem('ext')}"
+                                def jarfile = new File(jardir, name)
+                                if (jarfile.exists()) {
+                                    println "Deleting ${jarfile.name}"
+                                    jarfile.delete()
+                                }
                             }
                         }
                         ivyFile.delete()

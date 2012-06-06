@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2011 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -66,61 +66,60 @@ public class RunBugsTest extends TestSupport {
         GroovyObject object = compile("src/test/groovy/PrimitiveTypeFieldTest.groovy");
         object.invokeMethod("testPrimitiveField", null);
     }
-    
+
     public void testMethodDispatchBug() throws Exception {
         GroovyObject object = compile("src/test/groovy/bugs/MethodDispatchBug.groovy");
         object.invokeMethod("testBug", null);
     }
+
     public void testClosureInClosureTest() throws Exception {
         GroovyObject object = compile("src/test/groovy/ClosureInClosureTest.groovy");
         object.invokeMethod("testInvisibleVariable", null);
     }
-    public void testStaticMarkupBug() throws Exception {
-        GroovyObject object = compile("src/test/groovy/bugs/StaticMarkupBug.groovy");
-        object.invokeMethod("testBug", null);
-    }
+
     public void testOverloadInvokeMethodBug() throws Exception {
         GroovyObject object = compile("src/test/groovy/bugs/OverloadInvokeMethodBug.groovy");
         object.invokeMethod("testBug", null);
     }
+
     public void testClosureVariableBug() throws Exception {
         GroovyObject object = compile("src/test/groovy/bugs/ClosureVariableBug.groovy");
         object.invokeMethod("testBug", null);
     }
-    
+
     public void testMarkupAndMethodBug() throws Exception {
         GroovyObject object = compile("src/test/groovy/bugs/MarkupAndMethodBug.groovy");
         object.invokeMethod("testBug", null);
     }
+
     public void testClosureParameterPassingBug() throws Exception {
         GroovyObject object = compile("src/test/groovy/bugs/ClosureParameterPassingBug.groovy");
         object.invokeMethod("testBug", null);
     }
+
     public void testNestedClosureBug() throws Exception {
         GroovyObject object = compile("src/test/groovy/bugs/NestedClosure2Bug.groovy");
         object.invokeMethod("testFieldBug", null);
     }
+
     public void testSuperMethod2Bug() throws Exception {
         GroovyObject object = compile("src/test/groovy/bugs/SuperMethod2Bug.groovy");
         object.invokeMethod("testBug", null);
     }
+
     public void testToStringBug() throws Exception {
         GroovyObject object = compile("src/test/groovy/bugs/ToStringBug.groovy");
         object.invokeMethod("testBug", null);
     }
+
     public void testByteIndexBug() throws Exception {
         GroovyObject object = compile("src/test/groovy/bugs/ByteIndexBug.groovy");
         object.invokeMethod("testBug", null);
     }
+
     public void testGroovy252_Bug() throws Exception {
         GroovyObject object = compile("src/test/groovy/bugs/Groovy252_Bug.groovy");
         object.invokeMethod("testBug", null);
     }
-
-    public void testGroovy303_Bug() throws Exception {
-        GroovyObject object = compile("src/test/groovy/bugs/Groovy303_Bug.groovy");
-        object.invokeMethod("testBug", null);
-    }
-
 
 }

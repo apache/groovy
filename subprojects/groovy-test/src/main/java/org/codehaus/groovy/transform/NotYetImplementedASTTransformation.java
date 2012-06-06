@@ -15,7 +15,6 @@
  */
 package org.codehaus.groovy.transform;
 
-import junit.framework.AssertionFailedError;
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;

@@ -189,6 +189,10 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         this(registry, theClass, null);
     }
 
+    public MetaClassRegistry getRegistry() {
+        return registry;
+    }
+
     /**
      * @see MetaObjectProtocol#respondsTo(Object, String, Object[])
      */

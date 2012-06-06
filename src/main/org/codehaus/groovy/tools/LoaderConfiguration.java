@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2009 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,11 +15,15 @@
  */
 package org.codehaus.groovy.tools;
 
+import groovy.grape.Grape;
+
 import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -71,14 +75,15 @@ import java.util.regex.Pattern;
  */
 public class LoaderConfiguration {
 
-    private static final String MAIN_PREFIX = "main is", LOAD_PREFIX = "load", PROP_PREFIX = "property";
-    private List classPath = new ArrayList();
+    private static final String MAIN_PREFIX = "main is", LOAD_PREFIX = "load", GRAB_PREFIX = "grab", PROP_PREFIX = "property";
+    private List<URL> classPath = new ArrayList<URL>();
     private String main;
     private boolean requireMain;
     private static final char WILDCARD = '*';
     private static final String ALL_WILDCARD = "" + WILDCARD + WILDCARD;
     private static final String MATCH_FILE_NAME = "\\\\E[^/]+?\\\\Q";
     private static final String MATCH_ALL = "\\\\E.+?\\\\Q";
+    private final List<String> grabList = new ArrayList<String>();
 
     /**
      * creates a new loader configuration
@@ -110,6 +115,9 @@ public class LoaderConfiguration {
                 String loadPath = line.substring(LOAD_PREFIX.length()).trim();
                 loadPath = assignProperties(loadPath);
                 loadFilteredPath(loadPath);
+            } else if (line.startsWith(GRAB_PREFIX)) {
+                String grabParams = line.substring(GRAB_PREFIX.length()).trim();
+                grabList.add(assignProperties(grabParams));
             } else if (line.startsWith(MAIN_PREFIX)) {
                 if (main != null)
                     throw new IOException("duplicate definition of main in line " + lineNumber + " : " + line);
@@ -121,7 +129,7 @@ public class LoaderConfiguration {
                     throw new IOException("unexpected property format - expecting name=value" + lineNumber + " : " + line);
                 }
                 String propName = params.substring(0, index);
-                String propValue= assignProperties(params.substring(index+1));
+                String propValue = assignProperties(params.substring(index + 1));
                 System.setProperty(propName, propValue);
             } else {
                 throw new IOException("unexpected line in " + lineNumber + " : " + line);
@@ -136,7 +144,7 @@ public class LoaderConfiguration {
     */
     private String assignProperties(String str) {
         int propertyIndexStart = 0, propertyIndexEnd = 0;
-        boolean requireProperty = false;
+        boolean requireProperty;
         String result = "";
 
         while (propertyIndexStart < str.length()) {
@@ -169,7 +177,7 @@ public class LoaderConfiguration {
                 }
             }
             propertyValue = getSlashyPath(propertyValue);
-            propertyValue = correctDoubleSlash(propertyValue,propertyIndexEnd,str);
+            propertyValue = correctDoubleSlash(propertyValue, propertyIndexEnd, str);
             result += propertyValue;
 
             propertyIndexEnd++;
@@ -187,13 +195,12 @@ public class LoaderConfiguration {
 
 
     private String correctDoubleSlash(String propertyValue, int propertyIndexEnd, String str) {
-        int index = propertyIndexEnd+1;
-        if ( index<str.length() && str.charAt(index)=='/' && 
-             propertyValue.endsWith("/") &&
-             propertyValue.length()>0)
-        {
-            propertyValue = propertyValue.substring(0,propertyValue.length()-1);
-        } 
+        int index = propertyIndexEnd + 1;
+        if (index < str.length() && str.charAt(index) == '/' &&
+                propertyValue.endsWith("/") &&
+                propertyValue.length() > 0) {
+            propertyValue = propertyValue.substring(0, propertyValue.length() - 1);
+        }
         return propertyValue;
     }
 
@@ -209,10 +216,10 @@ public class LoaderConfiguration {
             addFile(new File(filter));
             return;
         }
-        boolean recursive = filter.indexOf(ALL_WILDCARD) != -1;
+        boolean recursive = filter.contains(ALL_WILDCARD);
 
-        if (filter.lastIndexOf('/')<starIndex) {
-            starIndex=filter.lastIndexOf('/')+1;
+        if (filter.lastIndexOf('/') < starIndex) {
+            starIndex = filter.lastIndexOf('/') + 1;
         }
         String startDir = filter.substring(0, starIndex - 1);
         File root = new File(startDir);
@@ -229,8 +236,7 @@ public class LoaderConfiguration {
     }
 
     private void findMatchingFiles(File[] files, Pattern pattern, boolean recursive) {
-        for (int i = 0; i < files.length; i++) {
-            File file = files[i];
+        for (File file : files) {
             String fileString = getSlashyPath(file.getPath());
             Matcher m = pattern.matcher(fileString);
             if (m.matches() && file.isFile()) {
@@ -253,24 +259,6 @@ public class LoaderConfiguration {
             changedPath = changedPath.replace(File.separatorChar, '/');
 
         return changedPath;
-    }
-
-    /*
-     * return true if the parent of the path inside the given
-     * string does exist
-     */
-    private boolean parentPathDoesExist(String path) {
-        File dir = new File(path).getParentFile();
-        return dir.exists();
-    }
-
-    /*
-     * separates the given path at the last '/'
-     */
-    private String getParentPath(String filter) {
-        int index = filter.lastIndexOf('/');
-        if (index == -1) return "";
-        return filter.substring(index + 1);
     }
 
     /**
@@ -306,7 +294,7 @@ public class LoaderConfiguration {
      * @see java.io.File#pathSeparator
      */
     public void addClassPath(String path) {
-       String[] paths = path.split(File.pathSeparator);
+        String[] paths = path.split(File.pathSeparator);
         for (String cpPath : paths) {
             // Check to support wild card classpath
             if (cpPath.endsWith("*")) {
@@ -331,7 +319,16 @@ public class LoaderConfiguration {
      * @see java.net.URLClassLoader
      */
     public URL[] getClassPathUrls() {
-        return (URL[]) classPath.toArray(new URL[classPath.size()]);
+        return classPath.toArray(new URL[classPath.size()]);
+    }
+
+    /**
+     * The extra grab configuration.
+     *
+     * @return the list of grab urls
+     */
+    public List<String> getGrabUrls() {
+        return grabList;
     }
 
     /**

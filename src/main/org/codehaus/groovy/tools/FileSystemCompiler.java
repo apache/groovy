@@ -25,10 +25,7 @@ import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit;
 
 import groovy.lang.GroovySystem;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.*;
@@ -160,7 +157,7 @@ public class FileSystemCompiler {
      * @param args command line arguments
      */
     public static void main(String[] args) {
-        commandLineCompileWithErrorHandling(args,true);
+        commandLineCompileWithErrorHandling(args, true);
     }
     
     /**

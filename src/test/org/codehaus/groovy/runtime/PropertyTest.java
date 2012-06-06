@@ -16,7 +16,8 @@
 package org.codehaus.groovy.runtime;
 
 import groovy.lang.MissingMethodException;
-import groovy.util.GroovySwingTestCase;
+import groovy.util.GroovyTestCase;
+import groovy.util.HeadlessTestSupport;
 import groovy.util.Node;
 
 import javax.swing.*;
@@ -32,7 +33,7 @@ import java.util.Map;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class PropertyTest extends GroovySwingTestCase {
+public class PropertyTest extends GroovyTestCase {
 
     public void testMapProperties() throws Exception {
         Map map = new HashMap();
@@ -118,7 +119,7 @@ public class PropertyTest extends GroovySwingTestCase {
     }
 
     public void testListCoercionPropertyOnJFrame() throws Exception {
-        if (isHeadless()) return;
+        if (HeadlessTestSupport.isHeadless()) return;
 
         try {
             JFrame bean = new JFrame();
@@ -197,7 +198,7 @@ public class PropertyTest extends GroovySwingTestCase {
     }
 
     public void testComponentParent() {
-        if (isHeadless()) return;
+        if (HeadlessTestSupport.isHeadless()) return;
 
         JPanel panel = new JPanel();
         JButton bean = new JButton();
