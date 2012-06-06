@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2009 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 package org.codehaus.groovy.classgen.asm;
 
+import groovy.lang.GroovyRuntimeException;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
@@ -38,6 +39,8 @@ import org.codehaus.groovy.ast.tools.WideningCategories;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.classgen.BytecodeExpression;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
+import org.codehaus.groovy.syntax.SyntaxException;
+import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.Types;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
@@ -242,12 +245,18 @@ public class BinaryExpressionHelper {
             evaluateCompareExpression(isCaseMethod, expression);
             break;
 
+        case COMPARE_IDENTICAL:
+        case COMPARE_NOT_IDENTICAL:
+            Token op = expression.getOperation();
+            Throwable cause = new SyntaxException("Operator " + op + " not supported", op.getStartLine(), op.getStartColumn());
+            throw new GroovyRuntimeException(cause);
+
         default:
             throw new GroovyBugError("Operation: " + expression.getOperation() + " not supported");
         }
     }
     
-    protected void assignToArray(Expression parrent, Expression receiver, Expression index, Expression rhsValueLoader) {
+    protected void assignToArray(Expression parent, Expression receiver, Expression index, Expression rhsValueLoader) {
         // let's replace this assignment to a subscript operator with a
         // method call
         // e.g. x[5] = 10
