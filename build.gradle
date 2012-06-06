@@ -332,6 +332,9 @@ task ensureGrammars {
     ext.antlrDirectory = "$projectDir/src/main/org/codehaus/groovy/antlr"
     ext.groovyParserDirectory = "$ext.antlrDirectory/parser"
     ext.javaParserDirectory = "$ext.antlrDirectory/java"
+    inputs.dir(antlrDirectory)
+    outputs.dir(groovyParserDirectory)
+    outputs.dir(javaParserDirectory)
     doFirst {
         ant {
             taskdef(name: 'antlr',
@@ -357,6 +360,8 @@ task dgmConverter(type: JavaExec, dependsOn: 'classes') {
     doFirst {
         file('target/classes/META-INF').mkdirs()
     }
+    inputs.files fileTree(dir: projectDir, includes: ['src/**/*GroovyMethods.java'])
+    outputs.file file('target/classes/META-INF/dgminfo')
 }
 
 task compilerDgmConverter(type: JavaExec) {
@@ -368,6 +373,8 @@ task compilerDgmConverter(type: JavaExec) {
     doFirst {
         file('target/classes/compiler/META-INF').mkdirs()
     }
+    inputs.files fileTree(dir: projectDir, includes: ['src/**/*GroovyMethods.java'])
+    outputs.file file('target/classes/compiler/META-INF/dgminfo')
 }
 
 compileCompilerJava {

@@ -16,13 +16,20 @@ test {
 //        systemProperties "gradle.junit": configurations.testCompile.fileCollection { dep -> dep.name == 'junit' }.singleFile.absolutePath
     }
     classpath = files('src/test') + classpath
-    forkEvery = 1
+//    forkEvery = 10
+//    maxParallelForks = Runtime.runtime.availableProcessors()
     scanForTestClasses = false
     ignoreFailures = false
     ext.resultText = ''
     includes = getIncludePattern()
 }
 
+allprojects {
+    test {
+        forkEvery = 50
+        maxParallelForks = Runtime.runtime.availableProcessors()
+    }
+}
 tasks.addRule("Pattern: testSingle<Name> will test **/<Name>.class") {String taskName ->
     if (taskName.startsWith("testSingle")) {
         tasks.add(taskName).dependsOn(test)

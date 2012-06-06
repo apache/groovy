@@ -10,8 +10,8 @@
  */
 
 dependencies {
-    compile project(':')
-    groovy project(':')
+    compile rootProject
+    groovy rootProject
 //    testCompile project(':').sourceSets.test.runtimeClasspath
 
     // add every other module as a dependency
