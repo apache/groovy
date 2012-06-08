@@ -23,14 +23,4 @@ import org.codehaus.groovy.vmplugin.v5.Java5;
  * @author Jochen Theodorou
  */
 public class Java6 extends Java5 {
-    private static Class[] EMPTY_CLASS_ARRAY = new Class[0];
-
-    public Class[] getPluginDefaultGroovyMethods() {
-        return EMPTY_CLASS_ARRAY;
-    }
-
-    public Class[] getPluginStaticGroovyMethods() {
-        return EMPTY_CLASS_ARRAY;
-    }
-
 }
