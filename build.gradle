@@ -219,6 +219,8 @@ dependencies {
     testCompile project(':groovy-test')
 }
 
+ext.generatedDirectory = "${buildDir}/generated-sources"
+
 sourceSets {
     compiler {
         // This sourceSet corresponds to the minimal "bootstrap" Groovy compiler
@@ -231,6 +233,7 @@ sourceSets {
                     "subprojects/groovy-templates/src/main",
                     "subprojects/groovy-xml/src/main",
                     "subprojects/groovy-jmx/src/main",
+                    "$generatedDirectory/src/main"
             ]
             if (!useIndy()) {
                 exclude '**/indy/*'
@@ -243,6 +246,7 @@ sourceSets {
         java {
             srcDirs = [
                     "src/main",
+                    "$generatedDirectory/src/main"
             ]
             fileTree("src/main/groovy/ui").matching {
                 exclude 'GroovyMain.java', 'GroovySocketServer.java'
@@ -258,6 +262,7 @@ sourceSets {
         groovy {
             srcDirs = [
                     "src/main",
+                    "$generatedDirectory/src/main"
             ]
             if (!useIndy()) {
                 exclude '**/indy/*'
@@ -332,20 +337,25 @@ task ensureGrammars {
     ext.antlrDirectory = "$projectDir/src/main/org/codehaus/groovy/antlr"
     ext.groovyParserDirectory = "$ext.antlrDirectory/parser"
     ext.javaParserDirectory = "$ext.antlrDirectory/java"
+    ext.genPath = "$generatedDirectory/src/main/org/codehaus/groovy/antlr"
+    ext.groovyOutDir = "$ext.genPath/parser"
+    ext.javaOutDir = "$ext.genPath/java"
     inputs.dir(antlrDirectory)
-    outputs.dir(groovyParserDirectory)
-    outputs.dir(javaParserDirectory)
+    outputs.dir(groovyOutDir)
+    outputs.dir(javaOutDir)
     doFirst {
+        new File(groovyOutDir).mkdirs()
+        new File(javaOutDir).mkdirs()
         ant {
             taskdef(name: 'antlr',
                     classname: 'org.apache.tools.ant.taskdefs.optional.ANTLR',
                     classpath: configurations.antlr.asPath)
 
             mkdir dir: ext.groovyParserDirectory
-            antlr(target: "$ext.antlrDirectory/groovy.g", outputdirectory: ext.groovyParserDirectory) {
+            antlr(target: "$ext.antlrDirectory/groovy.g", outputdirectory: ext.groovyOutDir) {
                 classpath path: configurations.compile.asPath
             }
-            antlr(target: "$ext.javaParserDirectory/java.g", outputdirectory: ext.javaParserDirectory) {
+            antlr(target: "$ext.javaParserDirectory/java.g", outputdirectory: ext.javaOutDir) {
                 classpath path: configurations.compile.asPath
             }
         }
