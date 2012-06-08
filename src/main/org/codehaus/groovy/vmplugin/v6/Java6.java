@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,28 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.codehaus.groovy.vmplugin.v6;
 
 import org.codehaus.groovy.vmplugin.v5.Java5;
 
 /**
- * Java 6 based functions
+ * Java 6 based functions. M12n moved these to modules.
  *
  * @author Jochen Theodorou
  */
 public class Java6 extends Java5 {
-    private static final Class[] PLUGIN_DGM = {PluginDefaultGroovyMethods.class,
-            org.codehaus.groovy.vmplugin.v5.PluginDefaultGroovyMethods.class};
-    private static final Class[] STATIC_PLUGIN_DGM = {PluginStaticGroovyMethods.class};
+    private static Class[] EMPTY_CLASS_ARRAY = new Class[0];
 
     public Class[] getPluginDefaultGroovyMethods() {
-        return PLUGIN_DGM;
+        return EMPTY_CLASS_ARRAY;
     }
 
     public Class[] getPluginStaticGroovyMethods() {
-        return STATIC_PLUGIN_DGM;
+        return EMPTY_CLASS_ARRAY;
     }
 
 }
-
