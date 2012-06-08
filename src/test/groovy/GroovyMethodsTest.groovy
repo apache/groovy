@@ -777,8 +777,7 @@ class GroovyMethodsTest extends GroovyTestCase {
         }
     }
 
-    // TODO reinstate this test
-    void _testJavaEnumType() {
+    void testJavaEnumType() {
         def x = Language.English
         x++
         assert x == Language.French
@@ -788,8 +787,7 @@ class GroovyMethodsTest extends GroovyTestCase {
         assert Language.French in Language.English..Language.Spanish
     }
 
-    // TODO reinstate this test
-    void _testStringBuilderPlusPutAtSizeLeftShift() {
+    void testStringBuilderPlusPutAtSizeLeftShift() {
         def sb = new StringBuilder('foo')
         assert sb + 'bar' == 'foobar'
         sb << 'baz'
