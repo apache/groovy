@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -101,10 +101,11 @@ public final class CurriedClosure<V> extends Closure<V> {
             return newCurriedParams;
         }
         final Object newCurriedParams[] = new Object[curriedParams.length + arguments.length];
-        System.arraycopy(arguments, 0, newCurriedParams, 0, index);
-        System.arraycopy(curriedParams, 0, newCurriedParams, index, curriedParams.length);
-        if (arguments.length - index > 0)
-            System.arraycopy(arguments, index, newCurriedParams, curriedParams.length + index, arguments.length - index);
+        int newIndex = Math.min(index, curriedParams.length + arguments.length - 1);
+        System.arraycopy(arguments, 0, newCurriedParams, 0, newIndex);
+        System.arraycopy(curriedParams, 0, newCurriedParams, newIndex, curriedParams.length);
+        if (arguments.length - newIndex > 0)
+            System.arraycopy(arguments, newIndex, newCurriedParams, curriedParams.length + newIndex, arguments.length - newIndex);
         return newCurriedParams;
     }
 
