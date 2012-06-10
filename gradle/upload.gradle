@@ -112,7 +112,6 @@ ext.pomAll = {
 install {
     // make sure dependencies poms are built *before* the all pom
     dependsOn(subprojects*.install)
-    dependsOn(dist)
     repositories {
         mavenInstaller pomAll
     }
@@ -121,7 +120,6 @@ install {
 uploadArchives {
     // make sure dependencies poms are built *before* the all pom
     dependsOn(subprojects*.uploadArchives)
-    dependsOn(dist)
     repositories {
         mavenDeployer pomAll
     }
