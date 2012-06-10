@@ -1,9 +1,19 @@
 dependencies {
-    compile project(':')
-    groovy project(':')
-    testCompile project(':').sourceSets.test.runtimeClasspath
+    compile rootProject
+    groovy rootProject
+    testCompile rootProject.sourceSets.test.runtimeClasspath
     testCompile "xmlunit:xmlunit:1.3"
     testCompile project(':groovy-test')
+}
+
+sourceSets {
+    test {
+        groovy {
+            if (isJava15()) {
+                exclude "**/vm6/*Test.groovy"
+            }
+        }
+    }
 }
 
 task moduleDescriptor(type: org.codehaus.groovy.gradle.WriteExtensionDescriptorTask) {

@@ -288,7 +288,7 @@ sourceSets {
             srcDirs = [
                     "src/test",
             ]
-            if (!isJava16()) {
+            if (isJava15()) {
                 exclude "groovy/**/vm6/*Test.groovy"
                 exclude "org/codehaus/groovy/**/vm6/*Test.groovy"
             }
@@ -362,6 +362,17 @@ task ensureGrammars {
     }
 }
 
+def isJava16() {
+    System.properties['java.version'].contains('1.6')
+}
+def isJava15() {
+    System.properties['java.version'].contains('1.5')
+}
+
+// provide to other build scripts
+ext.isJava6 = this.&isJava16()
+ext.isJava5 = this.&isJava15()
+
 task dgmConverter(type: JavaExec, dependsOn: 'classes') {
     description = 'Generates DGM info file required for faster startup.'
     classpath = files(file('target/classes')) + configurations.compile
@@ -413,13 +424,6 @@ compileTestGroovy {
 compileExamplesGroovy {
     groovyOptions.fork(memoryMaximumSize: groovycExamples_mx)
 }
-
-def isJava16() {
-    System.properties['java.version'].contains('1.6')
-}
-
-// provide to other build scripts
-ext.isJava6 = this.&isJava16()
 
 // suppress CheckStyle/CodeNarc
 task checkstyleExamples(overwrite: true) << {}
