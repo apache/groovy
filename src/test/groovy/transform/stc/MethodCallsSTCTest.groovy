@@ -571,6 +571,28 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         ''', 'Non static method A#instanceMethod cannot be called from static context'
     }
 
+    // GROOVY-5495
+    void testShouldFindMethodFromSuperInterface() {
+        assertScript '''
+            class ClassUnderTest {
+                void methodFromString(SecondInterface si) {
+                    si.methodFromSecondInterface();
+                    si.methodFromFirstInterface();
+                }
+            }
+
+            interface FirstInterface {
+                void methodFromFirstInterface();
+            }
+
+            interface SecondInterface extends FirstInterface {
+                void methodFromSecondInterface();
+            }
+
+            new ClassUnderTest()
+            '''
+    }
+
     void testShouldNotBeAmbiguousCall() {
         assertScript '''
             (0..10).find { int x -> x < 5 }

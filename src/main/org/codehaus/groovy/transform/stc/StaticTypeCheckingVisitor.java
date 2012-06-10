@@ -2007,6 +2007,16 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
         } else {
             methods = receiver.getMethods(name);
+            if (receiver.isInterface()) {
+                ClassNode[] interfaces = receiver.getInterfaces();
+                if (interfaces!=null && interfaces.length>0) {
+                    methods = new ArrayList<MethodNode>(methods);
+                    for (ClassNode node : interfaces) {
+                        List<MethodNode> intfMethods = node.getMethods(name);
+                        methods.addAll(intfMethods);
+                    }
+                }
+            }
             if (closureExpression == null) {
                 // not in a closure
                 ClassNode parent = receiver;
