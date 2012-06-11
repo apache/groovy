@@ -17,3 +17,6 @@ dependencies {
     // add every other module as a dependency
     testCompile(rootProject.subprojects - project)
 }
+
+install.enabled = false
+uploadArchives.enabled = false
