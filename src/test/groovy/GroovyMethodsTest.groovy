@@ -804,9 +804,9 @@ class GroovyMethodsTest extends GroovyTestCase {
 
     void testThreadNaming() {
         def t = Thread.start("MyNamedThread"){
-            sleep 500 // give ourselves time to find the thread
+            sleep 1000 // give ourselves time to find the thread
         }
-        sleep 100 // a little bit of time for t to start
+        sleep 200 // a little bit of time for t to start
         assert Thread.allStackTraces.keySet().any{ thread -> thread.name == 'MyNamedThread' }
         t.join()
     }
