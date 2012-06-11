@@ -8,7 +8,7 @@ def javadocSpec = {
     project.configure(options) {
         windowTitle = doc.title
         docTitle = doc.title
-        encoding = "ISO-8859-1"
+        encoding = "UTF-8"
         author = true
         version = true
         overview = rootProject.file("src/main/overviewj.html")
