@@ -368,10 +368,14 @@ def isJava16() {
 def isJava15() {
     System.properties['java.version'].contains('1.5')
 }
+def modules() {
+    subprojects.findAll { it.name =~ /groovy-(?!all-tests)/ }
+}
 
 // provide to other build scripts
 ext.isJava6 = this.&isJava16()
 ext.isJava5 = this.&isJava15()
+ext.modules = this.&modules()
 
 task dgmConverter(type: JavaExec, dependsOn: 'classes') {
     description = 'Generates DGM info file required for faster startup.'

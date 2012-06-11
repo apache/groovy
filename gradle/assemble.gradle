@@ -1,5 +1,4 @@
 import org.apache.tools.ant.filters.ReplaceTokens
-import java.text.SimpleDateFormat
 
 if (!rootProject.useIndy()) {
     apply plugin: 'osgi'
@@ -83,10 +82,6 @@ jar {
         manifest commonOsgiManifest
     }
     exclude '**/package-info.class', 'compiler', 'META-INF/groovy-release-info.properties', 'main'
-}
-
-def modules() {
-    subprojects.findAll { it.name =~ /groovy-(?!all-tests)/ }
 }
 
 def moduleJars() {
