@@ -95,7 +95,7 @@ def mergeModuleDescriptors() {
     def extensionClasses = []
     def staticExtensionClasses = []
 
-    subprojects.collect {
+    modules().collect {
         new File("${it.buildDir}/classes/main/META-INF/services/org.codehaus.groovy.runtime.ExtensionModule")
     }.findAll { it.exists() }.each {
         def props = new Properties()
@@ -249,7 +249,7 @@ ext.distSpec = copySpec {
         from({
             configurations.runtime.findAll { it.name.endsWith 'jar' } +
                     modules()*.jar.archivePath +
-                    subprojects.configurations.runtime*.findAll {
+                    modules().configurations.runtime*.findAll {
                         it.name.endsWith('jar') && !it.name.contains('livetribe-jsr223')
                     }.flatten() as Set
         })

@@ -1,6 +1,3 @@
-// TODO set these using subprojects?
-ext.checkstyleConfigFileName = "../../config/checkstyle/checkstyle.xml"
-
 ext.scriptingCapable = {
     try {
         Class.forName('javax.script.ScriptEngine')
@@ -16,8 +13,8 @@ dependencies {
             provided dep
         }
     }
-    compile project(':')
-    groovy project(':')
+    compile rootProject
+    groovy rootProject
     testCompile project(':groovy-test')
 }
 
