@@ -30,5 +30,26 @@ class BugsStaticCompileTest extends BugsSTCTest {
         super.setUp()
         extraSetup()
     }
+
+    void testGroovy5498PropertyAccess() {
+        assertScript '''
+            class Test {
+
+              List getListVar() {
+                new ArrayList()
+              }
+
+              void someMethod() {
+                 def t = new Object()
+                 t = this
+
+                 t.getListVar()     //No error here
+                 t.listVar          //error is being reported here
+                 assert t.listVar == t.getListVar()
+              }
+            }
+            new Test().someMethod()
+        '''
+    }
 }
 
