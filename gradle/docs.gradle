@@ -84,35 +84,40 @@ task docProjectVersionInfo(type: Copy) {
 }
 
 task docGDK {
+//    ext.extraDocGDKclasses = []
     dependsOn([project(':groovy-groovydoc'), project(':groovy-docgenerator')]*.classes)
+    // TODO don't hard-code these
+    dependsOn([project(':groovy-sql'), project(':groovy-sql'), project(':groovy-swing')]*.classes)
     dependsOn docProjectVersionInfo
     ext.destinationDir = "$buildDir/html/groovy-jdk"
     inputs.files sourceSets.tools.runtimeClasspath
     outputs.dir destinationDir
     doLast {task ->
         try {
-        ant {
-            java(classname: "org.codehaus.groovy.tools.DocGenerator", fork: "true", failonerror: "true",
-                    classpath: (configurations.tools + groovydoc.groovyClasspath).asPath,
-                    errorproperty: 'edr',
-                    outputproperty: 'odr') {
-                arg(value: "org.codehaus.groovy.runtime.DefaultGroovyMethods")
-                arg(value: "org.codehaus.groovy.runtime.DefaultGroovyStaticMethods")
-                arg(value: "org.codehaus.groovy.runtime.DateGroovyMethods")
-                arg(value: "org.codehaus.groovy.runtime.EncodingGroovyMethods")
-                arg(value: "org.codehaus.groovy.runtime.IOGroovyMethods")
-                arg(value: "org.codehaus.groovy.runtime.ProcessGroovyMethods")
-                arg(value: "org.codehaus.groovy.runtime.ResourceGroovyMethods")
-                arg(value: "org.codehaus.groovy.runtime.SocketGroovyMethods")
-//                arg(value: "org.codehaus.groovy.runtime.SqlGroovyMethods")
-                arg(value: "org.codehaus.groovy.runtime.StringGroovyMethods")
-//                arg(value: "org.codehaus.groovy.runtime.SwingGroovyMethods")
-//                arg(value: "org.codehaus.groovy.runtime.XmlGroovyMethods")
-                arg(value: "org.codehaus.groovy.vmplugin.v5.PluginDefaultGroovyMethods")
-                arg(value: "org.codehaus.groovy.vmplugin.v6.PluginDefaultGroovyMethods")
-                arg(value: "org.codehaus.groovy.vmplugin.v6.PluginStaticGroovyMethods")
+            ant {
+                java(classname: "org.codehaus.groovy.tools.DocGenerator", fork: "true", failonerror: "true",
+                        classpath: (configurations.tools + groovydocAll.groovyClasspath).asPath,
+                        errorproperty: 'edr',
+                        outputproperty: 'odr') {
+                    // either package name if in core or fully qualified path otherwise
+                    arg(value: "org.codehaus.groovy.runtime.DefaultGroovyMethods")
+                    arg(value: "org.codehaus.groovy.runtime.DefaultGroovyStaticMethods")
+                    arg(value: "org.codehaus.groovy.runtime.DateGroovyMethods")
+                    arg(value: "org.codehaus.groovy.runtime.EncodingGroovyMethods")
+                    arg(value: "org.codehaus.groovy.runtime.IOGroovyMethods")
+                    arg(value: "org.codehaus.groovy.runtime.ProcessGroovyMethods")
+                    arg(value: "org.codehaus.groovy.runtime.ResourceGroovyMethods")
+                    arg(value: "org.codehaus.groovy.runtime.SocketGroovyMethods")
+                    arg(value: "org.codehaus.groovy.runtime.StringGroovyMethods")
+                    arg(value: "org.codehaus.groovy.vmplugin.v5.PluginDefaultGroovyMethods")
+                    arg(value: "org.codehaus.groovy.vmplugin.v6.PluginDefaultGroovyMethods")
+                    arg(value: "org.codehaus.groovy.vmplugin.v6.PluginStaticGroovyMethods")
+                    // TODO don't hard-code these
+                    arg(value: "subprojects/groovy-sql/src/main/java/org/codehaus/groovy/runtime/SqlGroovyMethods.java")
+                    arg(value: "subprojects/groovy-swing/src/main/java/org/codehaus/groovy/runtime/SwingGroovyMethods.java")
+                    arg(value: "subprojects/groovy-xml/src/main/java/org/codehaus/groovy/runtime/XmlGroovyMethods.java")
+                }
             }
-        }
         } finally {
             if (ant.properties.odr) {
                 logger.info "Out: " + ant.properties.odr

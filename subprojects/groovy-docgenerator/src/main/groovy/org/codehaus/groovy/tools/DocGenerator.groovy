@@ -431,6 +431,8 @@ class DocGenerator {
     }
 
     private static File getSourceFile(String classname) {
+        // TODO don't hardcode like this
+        if (classname.contains("/")) return new File(classname)
         new File("src/main/" + classname.replace('.', '/') + ".java")
     }
 }
