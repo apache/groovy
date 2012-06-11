@@ -1225,7 +1225,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         // if a returned inferred type is available and no @TypeCheckingInfo is on node, then add an
         // annotation to the method node
         ClassNode rtype = (ClassNode) node.getNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE);
-        if (rtype != null && rtype.getAnnotations(TYPECHECKING_INFO_NODE).isEmpty()) {
+        if (rtype != null && node.getAnnotations(TYPECHECKING_INFO_NODE).isEmpty()) {
             AnnotationNode anno = new AnnotationNode(TYPECHECKING_INFO_NODE);
             anno.setMember("version", CURRENT_SIGNATURE_PROTOCOL);
             SignatureCodec codec = SignatureCodecFactory.getCodec(CURRENT_SIGNATURE_PROTOCOL_VERSION);

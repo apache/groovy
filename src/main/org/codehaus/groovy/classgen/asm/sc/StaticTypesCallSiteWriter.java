@@ -23,6 +23,7 @@ import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport;
+import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
@@ -67,6 +68,18 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         TypeChooser typeChooser = controller.getTypeChooser();
         ClassNode classNode = controller.getClassNode();
         ClassNode receiverType = typeChooser.resolveType(receiver, classNode);
+        Object type = receiver.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
+        if (type==null && receiver instanceof VariableExpression) {
+            Variable variable = ((VariableExpression) receiver).getAccessedVariable();
+            if (variable instanceof Expression) {
+                type = ((Expression) variable).getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
+            }
+        }
+        if (type!=null) {
+            // in case a "flow type" is found, it is preferred to use it instead of
+            // the declaration type
+            receiverType = (ClassNode) type;
+        }
         boolean isClassReceiver = false;
         if (receiverType.equals(ClassHelper.CLASS_Type)
                 && receiverType.getGenericsTypes()!=null
