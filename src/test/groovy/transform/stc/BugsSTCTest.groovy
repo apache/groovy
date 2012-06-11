@@ -30,4 +30,36 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
                 }'''
 
     }
+
+    void testGroovy5487ReturnNull() {
+        assertScript '''
+        @ASTTest(phase=INSTRUCTION_SELECTION, value= {
+            assert node.getNodeMetaData(INFERRED_RETURN_TYPE) == make(List)
+        })
+        List getList() {
+            null
+        }
+        '''
+    }
+
+    void testGroovy5487ReturnNullWithExplicitReturn() {
+        assertScript '''
+        @ASTTest(phase=INSTRUCTION_SELECTION, value= {
+            assert node.getNodeMetaData(INFERRED_RETURN_TYPE) == make(List)
+        })
+        List getList() {
+            return null
+        }
+        '''
+    }
+
+    void testGroovy5487ReturnNullWithEmptyBody() {
+        assertScript '''
+        @ASTTest(phase=INSTRUCTION_SELECTION, value= {
+            assert node.getNodeMetaData(INFERRED_RETURN_TYPE) == make(List)
+        })
+        List getList() {
+        }
+        '''
+    }
 }

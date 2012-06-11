@@ -1041,13 +1041,15 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     private ClassNode checkReturnType(final ReturnStatement statement) {
-        ClassNode type = getType(statement.getExpression());
+        Expression expression = statement.getExpression();
+        ClassNode type = getType(expression);
         if (methodNode != null) {
             if (!methodNode.isVoidMethod()
                     && !type.equals(void_WRAPPER_TYPE)
                     && !type.equals(VOID_TYPE)
-                    && !checkCompatibleAssignmentTypes(methodNode.getReturnType(), type)) {
-                addStaticTypeError("Cannot return value of type " + type + " on method returning type " + methodNode.getReturnType(), statement.getExpression());
+                    && !checkCompatibleAssignmentTypes(methodNode.getReturnType(), type)
+                    && !(expression instanceof ConstantExpression && ((ConstantExpression) expression).getValue()==null)) {
+                addStaticTypeError("Cannot return value of type " + type + " on method returning type " + methodNode.getReturnType(), expression);
             } else if (!methodNode.isVoidMethod()) {
                 ClassNode previousType = (ClassNode) methodNode.getNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE);
                 ClassNode inferred = previousType == null ? type : lowestUpperBound(type, previousType);
@@ -1209,6 +1211,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         try {
             isInStaticContext = node.isStatic();
         super.visitMethod(node);
+        ClassNode rtype = (ClassNode) node.getNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE);
+        if (rtype==null) {
+            node.putNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE, node.getReturnType());
+        }
         addTypeCheckingInfoAnnotation(node);
         } finally {
             isInStaticContext = osc;
