@@ -13,6 +13,60 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
             def bar() { foo { it / 2 } }
         ''', 'Cannot find matching method java.lang.Object#div(int)'
     }
+    void testShouldNotAllowDivBynUntypedVariable() {
+        shouldFailWithMessages '''
+            def foo(Closure cls) {}
+            def bar() { foo { 2 / it } }
+        ''', 'Cannot find matching method int#div(java.lang.Object)'
+    }
+    void testShouldNotAllowModOnUntypedVariable() {
+        shouldFailWithMessages '''
+            def foo(Closure cls) {}
+            def bar() { foo { it % 2 } }
+        ''', 'Cannot find matching method java.lang.Object#mod(int)'
+    }
+    void testShouldNotAllowModBynUntypedVariable() {
+        shouldFailWithMessages '''
+            def foo(Closure cls) {}
+            def bar() { foo { 2 % it } }
+        ''', 'Cannot find matching method int#mod(java.lang.Object)'
+    }
+    void testShouldNotAllowMulOnUntypedVariable() {
+        shouldFailWithMessages '''
+            def foo(Closure cls) {}
+            def bar() { foo { it * 2 } }
+        ''', 'Cannot find matching method java.lang.Object#multiply(int)'
+    }
+    void testShouldNotAllowMulBynUntypedVariable() {
+        shouldFailWithMessages '''
+            def foo(Closure cls) {}
+            def bar() { foo { 2 * it } }
+        ''', 'Cannot find matching method int#multiply(java.lang.Object)'
+    }
+    void testShouldNotAllowPlusOnUntypedVariable() {
+        shouldFailWithMessages '''
+            def foo(Closure cls) {}
+            def bar() { foo { it + 2 } }
+        ''', 'Cannot find matching method java.lang.Object#plus(int)'
+    }
+    void testShouldNotAllowPlusWithUntypedVariable() {
+        shouldFailWithMessages '''
+            def foo(Closure cls) {}
+            def bar() { foo { 2 + it } }
+        ''', 'Cannot find matching method int#plus(java.lang.Object)'
+    }
+    void testShouldNotAllowMinusOnUntypedVariable() {
+        shouldFailWithMessages '''
+            def foo(Closure cls) {}
+            def bar() { foo { it - 2 } }
+        ''', 'Cannot find matching method java.lang.Object#minus(int)'
+    }
+    void testShouldNotAllowMinusBynUntypedVariable() {
+        shouldFailWithMessages '''
+            def foo(Closure cls) {}
+            def bar() { foo { 2 - it } }
+        ''', 'Cannot find matching method int#minus(java.lang.Object)'
+    }
 
     void testGroovy5444() {
         assertScript '''
