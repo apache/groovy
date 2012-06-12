@@ -135,4 +135,71 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
         }
         new StaticGroovy2()'''
     }
+
+    void testClosureDelegateThisOwner() {
+        assertScript '''
+            class A {
+                A that = this
+                void m() {
+                    def cl = {
+                        @ASTTest(phase=INSTRUCTION_SELECTION, value= {
+                            assert node.getNodeMetaData(INFERRED_TYPE)?.name == 'A'
+                        })
+                        def foo = this
+                        assert this == that
+                    }
+                    cl()
+                    cl = {
+                        @ASTTest(phase=INSTRUCTION_SELECTION, value= {
+                            assert node.getNodeMetaData(INFERRED_TYPE)?.name == 'A'
+                        })
+                        def foo = delegate
+                        assert delegate == that
+                    }
+                    cl()
+                    cl = {
+                        @ASTTest(phase=INSTRUCTION_SELECTION, value= {
+                            assert node.getNodeMetaData(INFERRED_TYPE)?.name == 'A'
+                        })
+                        def foo = owner
+                        assert owner == that
+                    }
+                }
+            }
+            new A().m()
+        '''
+    }
+    void testClosureDelegateThisOwnerUsingGetters() {
+        assertScript '''
+            class A {
+                A that = this
+                void m() {
+                    def cl = {
+                        @ASTTest(phase=INSTRUCTION_SELECTION, value= {
+                            assert node.getNodeMetaData(INFERRED_TYPE)?.name == 'A'
+                        })
+                        def foo = getThisObject()
+                        assert getThisObject() == that
+                    }
+                    cl()
+                    cl = {
+                        @ASTTest(phase=INSTRUCTION_SELECTION, value= {
+                            assert node.getNodeMetaData(INFERRED_TYPE)?.name == 'A'
+                        })
+                        def foo = getDelegate()
+                        assert getDelegate() == that
+                    }
+                    cl()
+                    cl = {
+                        @ASTTest(phase=INSTRUCTION_SELECTION, value= {
+                            assert node.getNodeMetaData(INFERRED_TYPE)?.name == 'A'
+                        })
+                        def foo = getOwner()
+                        assert getOwner() == that
+                    }
+                }
+            }
+            new A().m()
+        '''
+    }
 }

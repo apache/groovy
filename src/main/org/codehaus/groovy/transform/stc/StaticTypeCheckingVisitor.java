@@ -66,6 +66,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     private static final ClassNode DGM_CLASSNODE = ClassHelper.make(DefaultGroovyMethods.class);
     private static final int CURRENT_SIGNATURE_PROTOCOL_VERSION = 1;
     private static final Expression CURRENT_SIGNATURE_PROTOCOL = new ConstantExpression(CURRENT_SIGNATURE_PROTOCOL_VERSION, true);
+    private static final MethodNode GET_DELEGATE = CLOSURE_TYPE.getGetterMethod("getDelegate");
+    private static final MethodNode GET_OWNER = CLOSURE_TYPE.getGetterMethod("getOwner");
+    private static final MethodNode GET_THISOBJECT = CLOSURE_TYPE.getGetterMethod("getThisObject");
 
     public static final MethodNode CLOSURE_CALL_NO_ARG;
     public static final MethodNode CLOSURE_CALL_ONE_ARG;
@@ -281,6 +284,14 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 vexp != VariableExpression.SUPER_EXPRESSION) {
             if (vexp.getName().equals("this")) storeType(vexp, classNode);
             if (vexp.getName().equals("super")) storeType(vexp, classNode.getSuperClass());
+            if (closureExpression!=null) {
+                if (vexp.getName().equals("owner")
+                        || vexp.getName().equals("delegate")
+                        || vexp.getName().equals("thisObject")) {
+                    storeType(vexp, classNode);
+                    return;
+                }
+            }
         }
         if (vexp.getAccessedVariable() instanceof DynamicVariable) {
             // a dynamic variable is either an undeclared variable
@@ -1561,6 +1572,16 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         break;
                     }
                 }
+                if (mn.isEmpty() && closureExpression!=null && args.length==0) {
+                    // add special handling of getDelegate() and getOwner()
+                    if ("getDelegate".equals(name)) {
+                        mn = Collections.singletonList(GET_DELEGATE);
+                    } else if ("getOwner".equals(name)) {
+                        mn = Collections.singletonList(GET_OWNER);
+                    }else if ("getThisObject".equals(name)) {
+                        mn = Collections.singletonList(GET_THISOBJECT);
+                    }
+                }
                 if (mn.isEmpty()) {
                     addStaticTypeError("Cannot find matching method " + receiver.getText() + "#" + toMethodParametersString(name, args), call);
                 } else {
@@ -2168,6 +2189,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             return inferMapExpressionType((MapExpression) exp);
         }
         if (exp instanceof MethodNode) {
+            if ((exp==GET_DELEGATE || exp==GET_OWNER || exp==GET_THISOBJECT) && closureExpression!=null) {
+                return classNode;
+            }
             ClassNode ret = (ClassNode) exp.getNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE);
             return ret != null ? ret : ((MethodNode) exp).getReturnType();
         }
