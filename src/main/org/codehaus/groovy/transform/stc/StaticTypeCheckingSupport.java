@@ -675,6 +675,22 @@ public abstract class StaticTypeCheckingSupport {
         if (result) {
             return true;
         }
+        if (superOrInterface instanceof WideningCategories.LowestUpperBoundClassNode) {
+            WideningCategories.LowestUpperBoundClassNode cn = (WideningCategories.LowestUpperBoundClassNode) superOrInterface;
+            result = implementsInterfaceOrIsSubclassOf(type, cn.getSuperClass());
+            if (result) {
+                for (ClassNode interfaceNode : cn.getInterfaces()) {
+                    result = type.implementsInterface(interfaceNode);
+                    if (!result) break;
+                }
+            }
+            if (result) return true;
+        } else if (superOrInterface instanceof UnionTypeClassNode) {
+            UnionTypeClassNode union = (UnionTypeClassNode) superOrInterface;
+            for (ClassNode delegate : union.getDelegates()) {
+                if (implementsInterfaceOrIsSubclassOf(type, delegate)) return true;
+            }
+        }
         if (type.isArray() && superOrInterface.isArray()) {
             return implementsInterfaceOrIsSubclassOf(type.getComponentType(), superOrInterface.getComponentType());
         }

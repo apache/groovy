@@ -62,4 +62,23 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
         }
         '''
     }
+
+    void testGroovy5482ListsAndFlowTyping() {
+        assertScript '''
+        class StaticGroovy2 {
+            def bar() {
+
+                def foo = [new Date(), 1, new C()]
+                foo.add( 2 ) // Compiles
+                foo.add( new Date() )
+                foo.add( new C() )
+
+                foo = [new Date(), 1]
+                foo.add( 2 ) // Does not compile
+            }
+        }
+        class C{
+        }
+        new StaticGroovy2()'''
+    }
 }
