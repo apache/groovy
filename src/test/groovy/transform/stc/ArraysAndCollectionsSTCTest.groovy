@@ -378,5 +378,21 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
             assert m()=='2'
         '''
     }
+
+    void testInferredTypeWithListAndFind() {
+        assertScript '''List<Integer> list = [ 1, 2, 3, 4 ]
+
+        @ASTTest(phase=INSTRUCTION_SELECTION, value= {
+            assert node.getNodeMetaData(INFERRED_TYPE) == Integer_TYPE
+        })
+        Integer j = org.codehaus.groovy.runtime.DefaultGroovyMethods.find(list) { it%2 == 0 }
+
+        @ASTTest(phase=INSTRUCTION_SELECTION, value= {
+            assert node.getNodeMetaData(INFERRED_TYPE) == Integer_TYPE
+        })
+        Integer i = list.find { it % 2 == 0 }
+        '''
+    }
+
 }
 
