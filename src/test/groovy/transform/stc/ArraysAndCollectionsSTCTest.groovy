@@ -385,12 +385,12 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         @ASTTest(phase=INSTRUCTION_SELECTION, value= {
             assert node.getNodeMetaData(INFERRED_TYPE) == Integer_TYPE
         })
-        Integer j = org.codehaus.groovy.runtime.DefaultGroovyMethods.find(list) { it%2 == 0 }
+        Integer j = org.codehaus.groovy.runtime.DefaultGroovyMethods.find(list) { int it -> it%2 == 0 }
 
         @ASTTest(phase=INSTRUCTION_SELECTION, value= {
             assert node.getNodeMetaData(INFERRED_TYPE) == Integer_TYPE
         })
-        Integer i = list.find { it % 2 == 0 }
+        Integer i = list.find { int it -> it % 2 == 0 }
         '''
     }
 
