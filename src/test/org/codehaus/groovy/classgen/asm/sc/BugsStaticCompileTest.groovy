@@ -51,5 +51,23 @@ class BugsStaticCompileTest extends BugsSTCTest {
             new Test().someMethod()
         '''
     }
+
+    // GROOVY-5512
+    void testCreateRangeInInnerClass() {
+        def shell = new GroovyShell()
+        shell.evaluate '''
+            class Outer {
+                static class Inner {
+                    @groovy.transform.CompileStatic
+                    int m() {
+                        int x = 0
+                        for (int i in 1..10) {x++}
+                        x
+                    }
+                }
+            }
+            assert new Outer.Inner().m() == 10
+        '''
+    }
 }
 
