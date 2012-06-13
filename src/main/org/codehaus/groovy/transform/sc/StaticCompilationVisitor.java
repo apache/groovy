@@ -91,8 +91,8 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
         }
         while (innerClasses.hasNext()) {
             InnerClassNode innerClassNode = innerClasses.next();
-            innerClassNode.setNodeMetaData(STATIC_COMPILE_NODE, !skip);
-            innerClassNode.setNodeMetaData(WriterControllerFactory.class, node.getNodeMetaData(WriterControllerFactory.class));
+            innerClassNode.putNodeMetaData(STATIC_COMPILE_NODE, !skip);
+            innerClassNode.putNodeMetaData(WriterControllerFactory.class, node.getNodeMetaData(WriterControllerFactory.class));
             addPrivateBridgeMethods(innerClassNode);
             addPrivateFieldsAccessors(innerClassNode);
         }
