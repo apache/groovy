@@ -2434,7 +2434,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                                 receiver.getGenericsTypes(),
                                 type.getGenericsTypes());
                 if (methodGenericTypes.length == 1) {
-                    ClassNode nodeType = getWrapper(methodGenericTypes[0].getType());
+                    // if it is a wildcard, we're only able, for now, to perform limited type checking
+                    // todo: improve type checking, which probably means having a more interesting data structure too
+                    ClassNode nodeType = methodGenericTypes[0].isWildcard()?OBJECT_TYPE:getWrapper(methodGenericTypes[0].getType());
                     GenericsType[] argumentGenericTypes = arguments[argNum].getGenericsTypes();
                     ClassNode actualType = argumentGenericTypes != null ? getWrapper(argumentGenericTypes[0].getType()) : nodeType;
                     if (!implementsInterfaceOrIsSubclassOf(actualType, nodeType)) {
@@ -2452,13 +2454,18 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                                 componentType.getGenericsTypes());
                 if (methodGenericTypes.length == 1) {
                     ClassNode nodeType = getWrapper(methodGenericTypes[0].getType());
-                    ClassNode actualType = getWrapper(arguments[argNum].getComponentType());
-                    if (!implementsInterfaceOrIsSubclassOf(actualType, nodeType)) {
+                    ClassNode argComponentType = arguments[argNum].getComponentType();
+                    if (argComponentType==null) {
                         failure = true;
-                        // for proper error message
-                        GenericsType baseGT = methodGenericTypes[0];
-                        methodGenericTypes[0] = new GenericsType(baseGT.getType(), baseGT.getUpperBounds(), baseGT.getLowerBound());
-                        methodGenericTypes[0].setType(methodGenericTypes[0].getType().makeArray());
+                    } else {
+                        ClassNode actualType = getWrapper(argComponentType);
+                        if (!implementsInterfaceOrIsSubclassOf(actualType, nodeType)) {
+                            failure = true;
+                            // for proper error message
+                            GenericsType baseGT = methodGenericTypes[0];
+                            methodGenericTypes[0] = new GenericsType(baseGT.getType(), baseGT.getUpperBounds(), baseGT.getLowerBound());
+                            methodGenericTypes[0].setType(methodGenericTypes[0].getType().makeArray());
+                        }
                     }
                 } else {
                     // not sure this is possible !
