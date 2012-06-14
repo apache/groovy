@@ -470,6 +470,22 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         ''', 'Cannot find matching method groovy.transform.stc.GenericsSTCTest$ClassA#bar'
     }
 
+    // GROOVY-5516
+    void testAddAllWithCollectionShouldBeAllowed() {
+        assertScript '''
+            List<String> list = ['a','b','c']
+            Collection<String> e = list.findAll { it }
+            list.addAll(e)
+        '''
+    }
+    void testAddAllWithCollectionShouldNotBeAllowed() {
+        shouldFailWithMessages '''
+            List<String> list = ['a','b','c']
+            Collection<Integer> e = (Collection<Integer>) [1,2,3]
+            list.addAll(e)
+        ''', 'Cannot call java.util.List#addAll(java.lang.String) with arguments [java.util.Collection <Integer>]'
+    }
+
     static class MyList extends LinkedList<String> {}
 
     public static class ClassA<T> {
