@@ -1096,12 +1096,18 @@ public abstract class StaticTypeCheckingSupport {
                         lock.writeLock().unlock();
                         lock.readLock().lock();
                     }
+                } else if (cachedMethods==null) {
+                    lock.readLock().unlock();
+                    lock.writeLock().lock();
+                    try {
+                        cachedMethods = getDGMMethods(registry);
+                    } finally {
+                        lock.writeLock().unlock();
+                        lock.readLock().lock();
+                    }
                 }
             }
             try {
-                if (cachedMethods==null) {
-                    cachedMethods = Collections.emptyMap();
-                }
                 return Collections.unmodifiableMap(cachedMethods);
             } finally {
                 lock.readLock().unlock();
