@@ -143,6 +143,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     // this map is used to ensure that two errors are not reported on the same line/column
     private final Set<Long> reportedErrors = new TreeSet<Long>();
 
+    // stores the current binary expresssion. This is used when assignments are made with a null object, for type
+    // inference
+    private BinaryExpression currentBinaryExpression;
+
     private final ReturnAdder returnAdder = new ReturnAdder(new ReturnAdder.ReturnStatementListener() {
         public void returnStatementAdded(final ReturnStatement returnStatement) {
             if (returnStatement.getExpression().equals(ConstantExpression.NULL)) return;
@@ -365,64 +369,70 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     @Override
     public void visitBinaryExpression(BinaryExpression expression) {
-        super.visitBinaryExpression(expression);
-        final Expression leftExpression = expression.getLeftExpression();
-        ClassNode lType = getType(leftExpression);
-        final Expression rightExpression = expression.getRightExpression();
-        ClassNode rType = getType(rightExpression);
-        if (rightExpression instanceof ConstantExpression && ((ConstantExpression) rightExpression).getValue() == null) {
-            if (!isPrimitiveType(lType))
-                rType = UNKNOWN_PARAMETER_TYPE; // primitive types should be ignored as they will result in another failure
-        }
-        int op = expression.getOperation().getType();
-        ClassNode resultType = getResultType(lType, op, rType, expression);
-        if (resultType == null) {
-            resultType = lType;
-        }
-        boolean isEmptyDeclaration = expression instanceof DeclarationExpression && rightExpression instanceof EmptyExpression;
-        if (!isEmptyDeclaration) storeType(expression, resultType);
-        if (!isEmptyDeclaration && isAssignment(op)) {
-            if (rightExpression instanceof ConstructorCallExpression) {
-                inferDiamondType((ConstructorCallExpression) rightExpression, lType);
+        BinaryExpression oldBinaryExpression = currentBinaryExpression;
+        currentBinaryExpression = expression;
+        try {
+            super.visitBinaryExpression(expression);
+            final Expression leftExpression = expression.getLeftExpression();
+            ClassNode lType = getType(leftExpression);
+            final Expression rightExpression = expression.getRightExpression();
+            ClassNode rType = getType(rightExpression);
+            if (isNullConstant(rightExpression)) {
+                if (!isPrimitiveType(lType))
+                    rType = UNKNOWN_PARAMETER_TYPE; // primitive types should be ignored as they will result in another failure
             }
-
-            ClassNode originType = getOriginalDeclarationType(leftExpression);
-            typeCheckAssignment(expression, leftExpression, originType, rightExpression, resultType);
-            // if assignment succeeds but result type is not a subtype of original type, then we are in a special cast handling
-            // and we must update the result type
-            if (!implementsInterfaceOrIsSubclassOf(getWrapper(resultType), getWrapper(originType))) {
-                resultType = originType;
-            } else if (lType.isUsingGenerics() && !lType.isEnum() && hasRHSIncompleteGenericTypeInfo(resultType)) {
-                // for example, LHS is List<ConcreteClass> and RHS is List<T> where T is a placeholder
+            int op = expression.getOperation().getType();
+            ClassNode resultType = getResultType(lType, op, rType, expression);
+            if (resultType == null) {
                 resultType = lType;
             }
-
-            // if we are in an if/else branch, keep track of assignment
-            if (ifElseForWhileAssignmentTracker != null && leftExpression instanceof VariableExpression) {
-                Variable accessedVariable = ((VariableExpression) leftExpression).getAccessedVariable();
-                if (accessedVariable instanceof VariableExpression) {
-                    VariableExpression var = (VariableExpression) accessedVariable;
-                    List<ClassNode> types = ifElseForWhileAssignmentTracker.get(var);
-                    if (types == null) {
-                        types = new LinkedList<ClassNode>();
-                        ClassNode type = (ClassNode) var.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
-                        if (type != null) types.add(type);
-                        ifElseForWhileAssignmentTracker.put(var, types);
-                    }
-                    types.add(resultType);
+            boolean isEmptyDeclaration = expression instanceof DeclarationExpression && rightExpression instanceof EmptyExpression;
+            if (!isEmptyDeclaration) storeType(expression, resultType);
+            if (!isEmptyDeclaration && isAssignment(op)) {
+                if (rightExpression instanceof ConstructorCallExpression) {
+                    inferDiamondType((ConstructorCallExpression) rightExpression, lType);
                 }
+
+                ClassNode originType = getOriginalDeclarationType(leftExpression);
+                typeCheckAssignment(expression, leftExpression, originType, rightExpression, resultType);
+                // if assignment succeeds but result type is not a subtype of original type, then we are in a special cast handling
+                // and we must update the result type
+                if (!implementsInterfaceOrIsSubclassOf(getWrapper(resultType), getWrapper(originType))) {
+                    resultType = originType;
+                } else if (lType.isUsingGenerics() && !lType.isEnum() && hasRHSIncompleteGenericTypeInfo(resultType)) {
+                    // for example, LHS is List<ConcreteClass> and RHS is List<T> where T is a placeholder
+                    resultType = lType;
+                }
+
+                // if we are in an if/else branch, keep track of assignment
+                if (ifElseForWhileAssignmentTracker != null && leftExpression instanceof VariableExpression) {
+                    Variable accessedVariable = ((VariableExpression) leftExpression).getAccessedVariable();
+                    if (accessedVariable instanceof VariableExpression) {
+                        VariableExpression var = (VariableExpression) accessedVariable;
+                        List<ClassNode> types = ifElseForWhileAssignmentTracker.get(var);
+                        if (types == null) {
+                            types = new LinkedList<ClassNode>();
+                            ClassNode type = (ClassNode) var.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
+                            if (type != null) types.add(type);
+                            ifElseForWhileAssignmentTracker.put(var, types);
+                        }
+                        types.add(resultType);
+                    }
+                }
+                storeType(leftExpression, resultType);
+
+                // if right expression is a ClosureExpression, store parameter type information
+                if (leftExpression instanceof VariableExpression && rightExpression instanceof ClosureExpression) {
+                    Parameter[] parameters = ((ClosureExpression) rightExpression).getParameters();
+                    leftExpression.putNodeMetaData(StaticTypesMarker.CLOSURE_ARGUMENTS, parameters);
+                }
+
+
+            } else if (op == KEYWORD_INSTANCEOF) {
+                pushInstanceOfTypeInfo(leftExpression, rightExpression);
             }
-            storeType(leftExpression, resultType);
-
-            // if right expression is a ClosureExpression, store parameter type information
-            if (leftExpression instanceof VariableExpression && rightExpression instanceof ClosureExpression) {
-                Parameter[] parameters = ((ClosureExpression) rightExpression).getParameters();
-                leftExpression.putNodeMetaData(StaticTypesMarker.CLOSURE_ARGUMENTS, parameters);
-            }
-
-
-        } else if (op == KEYWORD_INSTANCEOF) {
-            pushInstanceOfTypeInfo(leftExpression, rightExpression);
+        } finally {
+            currentBinaryExpression = oldBinaryExpression;
         }
     }
 
@@ -1059,7 +1069,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     && !type.equals(void_WRAPPER_TYPE)
                     && !type.equals(VOID_TYPE)
                     && !checkCompatibleAssignmentTypes(methodNode.getReturnType(), type)
-                    && !(expression instanceof ConstantExpression && ((ConstantExpression) expression).getValue()==null)) {
+                    && !(isNullConstant(expression))) {
                 addStaticTypeError("Cannot return value of type " + type + " on method returning type " + methodNode.getReturnType(), expression);
             } else if (!methodNode.isVoidMethod()) {
                 ClassNode previousType = (ClassNode) methodNode.getNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE);
@@ -1114,7 +1124,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         int i = 0;
         Map<Object, List<ClassNode>> info = temporaryIfBranchTypeInformation.empty() ? null : temporaryIfBranchTypeInformation.peek();
         for (Expression exp : arglist) {
-            if (exp instanceof ConstantExpression && ((ConstantExpression) exp).getValue() == null) {
+            if (isNullConstant(exp)) {
                 ret[i] = UNKNOWN_PARAMETER_TYPE;
             } else {
                 ret[i] = getType(exp);
@@ -1741,7 +1751,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     private boolean checkCast(final ClassNode targetType, final Expression source) {
-        boolean sourceIsNull = source instanceof ConstantExpression && ((ConstantExpression) source).getValue() == null;
+        boolean sourceIsNull = isNullConstant(source);
         ClassNode expressionType = getType(source);
         if (targetType.isArray() && expressionType.isArray()) {
             return checkCast(targetType.getComponentType(), new VariableExpression("foo", expressionType.getComponentType()));
@@ -1769,14 +1779,28 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         // create a new temporary element in the if-then-else type info
         pushTemporaryTypeInfo();
         expression.getBooleanExpression().visit(this);
-        expression.getTrueExpression().visit(this);
+        Expression trueExpression = expression.getTrueExpression();
+        Expression falseExpression = expression.getFalseExpression();
+        trueExpression.visit(this);
         // pop if-then-else temporary type info
         temporaryIfBranchTypeInformation.pop();
-        expression.getFalseExpression().visit(this);
-        // store type information
-        final ClassNode typeOfTrue = getType(expression.getTrueExpression());
-        final ClassNode typeOfFalse = getType(expression.getFalseExpression());
-        storeType(expression, lowestUpperBound(typeOfTrue, typeOfFalse));
+        falseExpression.visit(this);
+        ClassNode resultType = OBJECT_TYPE;
+        if (isNullConstant(trueExpression) && isNullConstant(falseExpression)) {
+            if (currentBinaryExpression != null) {
+                resultType = getType(currentBinaryExpression.getLeftExpression());
+            }
+        } else if (isNullConstant(trueExpression)) {
+            resultType = getType(falseExpression);
+        } else if (isNullConstant(falseExpression)) {
+            resultType = getType(trueExpression);
+        } else {
+            // store type information
+            final ClassNode typeOfTrue = getType(trueExpression);
+            final ClassNode typeOfFalse = getType(falseExpression);
+            resultType = lowestUpperBound(typeOfTrue, typeOfFalse);
+        }
+        storeType(expression, resultType);
         popAssignmentTracking(oldTracker);
     }
 
@@ -2252,7 +2276,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             // maybe we can infer the component type
             List<ClassNode> nodes = new LinkedList<ClassNode>();
             for (Expression expression : expressions) {
-                if (expression instanceof ConstantExpression && ((ConstantExpression) expression).getValue() == null) {
+                if (isNullConstant(expression)) {
                     // a null element is found in the list, skip it because we'll use the other elements from the list
                 } else {
                     nodes.add(getType(expression));
@@ -2268,6 +2292,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             return inferred;
         }
         return listType;
+    }
+
+    private static boolean isNullConstant(final Expression expression) {
+        return expression instanceof ConstantExpression && ((ConstantExpression) expression).getValue() == null;
     }
 
     private ClassNode inferMapExpressionType(final MapExpression map) {
