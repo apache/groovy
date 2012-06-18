@@ -1533,6 +1533,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     GenericsType clazzGT = receiver.getGenericsTypes()[0];
                     receivers.add(clazzGT.getType());
                 }
+                if (receiver.isInterface()) {
+                    // GROOVY-xxxx
+                    receivers.add(OBJECT_TYPE);
+                }
                 if (!temporaryIfBranchTypeInformation.empty()) {
                     List<ClassNode> potentialReceiverType = getTemporaryTypesForExpression(objectExpression);
                     if (potentialReceiverType != null) receivers.addAll(potentialReceiverType);
@@ -2043,6 +2047,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         methods.addAll(intfMethods);
                     }
                 }
+                methods.addAll(OBJECT_TYPE.getMethods(name));
             }
             if (closureExpression == null) {
                 // not in a closure
