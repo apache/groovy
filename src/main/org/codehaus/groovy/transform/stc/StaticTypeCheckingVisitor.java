@@ -1410,7 +1410,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 return;
             } else {
                 // type check call as if it was made on component type
-                ClassNode componentType = inferComponentType(expressionType);
+                ClassNode componentType = inferComponentType(expressionType, OBJECT_TYPE);
                 MethodCallExpression subcall = new MethodCallExpression(
                         new CastExpression(componentType, EmptyExpression.INSTANCE),
                         name,
@@ -1914,7 +1914,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 // special case here
                 return ClassHelper.STRING_TYPE;
             }
-            return inferComponentType(left);
+            return inferComponentType(left, right);
         } else if (op == FIND_REGEX) {
             // this case always succeeds the result is a Matcher
             return Matcher_TYPE;
@@ -2003,7 +2003,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         return Number_TYPE;
     }
 
-    private ClassNode inferComponentType(final ClassNode containerType) {
+    private ClassNode inferComponentType(final ClassNode containerType, final ClassNode indexType) {
         final ClassNode componentType = containerType.getComponentType();
         if (componentType == null) {
             // check if any generic information could help
@@ -2020,7 +2020,17 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 }
                 return type.getType();
             }
-            return OBJECT_TYPE;
+            // GROOVY-5521
+            // try to identify a getAt method
+            ErrorCollector oldCollector = errorCollector;
+            errorCollector = new ErrorCollector(new CompilerConfiguration());
+            MethodCallExpression vcall = new MethodCallExpression(new VariableExpression("_hash_", containerType), "getAt", new VariableExpression("_index_", indexType));
+            try {
+                visitMethodCallExpression(vcall);
+            } finally {
+                errorCollector = oldCollector;
+            }
+            return getType(vcall);
         } else {
             return componentType;
         }

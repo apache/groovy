@@ -533,5 +533,17 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
             }
         '''
     }
+
+    void testInferMapValueType() {
+        assertScript '''
+            Map<String, Integer> map = new HashMap<String,Integer>()
+            map['foo'] = 123
+            map['bar'] = 246
+            Integer foo = map['foo']
+            assert foo == 123
+            Integer bar = map.get('bar')
+            assert bar == 246
+        '''
+    }
 }
 
