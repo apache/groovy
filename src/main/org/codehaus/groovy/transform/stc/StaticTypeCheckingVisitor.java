@@ -138,7 +138,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
      */
     private final TypeCheckerPluginFactory pluginFactory;
 
-    private Map<Parameter, ClassNode> forLoopVariableTypes = new HashMap<Parameter, ClassNode>();
+    private Map<Parameter, ClassNode> controlStructureVariables = new HashMap<Parameter, ClassNode>();
 
     // this map is used to ensure that two errors are not reported on the same line/column
     private final Set<Long> reportedErrors = new TreeSet<Long>();
@@ -885,14 +885,14 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 // prefer primitive type over boxed type
                 componentType = forLoop.getVariableType();
             }
-            forLoopVariableTypes.put(forLoop.getVariable(), componentType);
+            controlStructureVariables.put(forLoop.getVariable(), componentType);
             if (!checkCompatibleAssignmentTypes(forLoop.getVariableType(), componentType)) {
                 addStaticTypeError("Cannot loop with element of type " + forLoop.getVariableType() + " with collection of type " + collectionType, forLoop);
             }
             try {
                 super.visitForLoop(forLoop);
             } finally {
-                forLoopVariableTypes.remove(forLoop.getVariable());
+                controlStructureVariables.remove(forLoop.getVariable());
             }
         }
         boolean typeChanged = isSecondPassNeededForControlStructure(varOrigType, oldTracker);
@@ -1804,6 +1804,23 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         popAssignmentTracking(oldTracker);
     }
 
+    @Override
+    public void visitTryCatchFinally(final TryCatchStatement statement) {
+        final List<CatchStatement> catchStatements = statement.getCatchStatements();
+        for (CatchStatement catchStatement : catchStatements) {
+            ClassNode exceptionType = catchStatement.getExceptionType();
+            controlStructureVariables.put(catchStatement.getVariable(), exceptionType);
+        }
+        try {
+            super.visitTryCatchFinally(statement);
+        } finally {
+            for (CatchStatement catchStatement : catchStatements) {
+                controlStructureVariables.remove(catchStatement.getVariable());
+            }
+        }
+
+    }
+
     private void pushTemporaryTypeInfo() {
         Map<Object, List<ClassNode>> potentialTypes = new HashMap<Object, List<ClassNode>>();
         temporaryIfBranchTypeInformation.push(potentialTypes);
@@ -2173,7 +2190,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
             if (variable instanceof Parameter) {
                 Parameter parameter = (Parameter) variable;
-                ClassNode type = forLoopVariableTypes.get(parameter);
+                ClassNode type = controlStructureVariables.get(parameter);
                 if (type != null) return type;
             }
         } else if (exp instanceof PropertyExpression) {

@@ -519,5 +519,19 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
             def z = o
         '''
     }
+
+    // GROOVY-5519
+    void testInferThrowable() {
+        assertScript '''
+            try {
+                throw new RuntimeException('ok')
+            } catch (e) {
+                handleError(e)
+            }
+            void handleError(Throwable e) {
+                assert e.message == 'ok'
+            }
+        '''
+    }
 }
 
