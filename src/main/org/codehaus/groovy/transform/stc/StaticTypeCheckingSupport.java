@@ -310,7 +310,7 @@ public abstract class StaticTypeCheckingSupport {
             return type == ClassHelper.Byte_TYPE;
         }
         if (type.isArray() && toBeAssignedTo.isArray()) {
-            return type.getComponentType().equals(toBeAssignedTo.getComponentType());
+            return isAssignableTo(type.getComponentType(),toBeAssignedTo.getComponentType());
         }
         if (implementsInterfaceOrIsSubclassOf(type, toBeAssignedTo)) {
             if (OBJECT_TYPE.equals(toBeAssignedTo)) return true;
