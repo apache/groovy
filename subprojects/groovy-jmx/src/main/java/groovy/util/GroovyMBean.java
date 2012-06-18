@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,6 @@ import java.util.*;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @author Steve Button
  * @author Paul King
- * @version $Revision$
  */
 public class GroovyMBean extends GroovyObjectSupport {
     private final MBeanServerConnection server;
@@ -62,9 +61,7 @@ public class GroovyMBean extends GroovyObjectSupport {
         MBeanOperationInfo[] operationInfos = beanInfo.getOperations();
         for (MBeanOperationInfo info : operationInfos) {
             String signature[] = createSignature(info);
-
-            // Include a simple fix here to support overloaded operations on the MBean.
-            // Construct a simple key for an operation by adding the number of parameters it uses
+            // Construct a simplistic key to support overloaded operations on the MBean.
             String operationKey = createOperationKey(info.getName(), signature.length);
             operations.put(operationKey, signature);
         }
@@ -109,8 +106,6 @@ public class GroovyMBean extends GroovyObjectSupport {
     }
 
     public Object invokeMethod(String method, Object arguments) {
-        // Moved this outside the try block so we can obtain the number of parameters
-        // specified in the arguments array, which is needed to find the correct method.
         Object[] argArray;
         if (arguments instanceof Object[]) {
             argArray = (Object[]) arguments;
@@ -155,6 +150,8 @@ public class GroovyMBean extends GroovyObjectSupport {
      */
     protected String createOperationKey(String operation, int params) {
         // This could be changed to support some hash of the parameter types, etc.
+        // but should distinguish between reordered params while allowing normal
+        // type coercions to be honored
         return operation + "_" + params;
     }
 
@@ -163,7 +160,7 @@ public class GroovyMBean extends GroovyObjectSupport {
      *
      * @return list of attribute names
      */
-    public Collection listAttributeNames() {
+    public Collection<String> listAttributeNames() {
         List<String> list = new ArrayList<String>();
         try {
             MBeanAttributeInfo[] attrs = beanInfo.getAttributes();
@@ -181,11 +178,10 @@ public class GroovyMBean extends GroovyObjectSupport {
      *
      * @return list of values of each attribute
      */
-    public List listAttributeValues() {
+    public List<String> listAttributeValues() {
         List<String> list = new ArrayList<String>();
-        Collection names = listAttributeNames();
-        for (Object name1 : names) {
-            String name = (String) name1;
+        Collection<String> names = listAttributeNames();
+        for (String name : names) {
             try {
                 Object val = this.getProperty(name);
                 if (val != null) {
@@ -203,7 +199,7 @@ public class GroovyMBean extends GroovyObjectSupport {
      *
      * @return list of descriptions of each attribute on the mbean
      */
-    public Collection listAttributeDescriptions() {
+    public Collection<String> listAttributeDescriptions() {
         List<String> list = new ArrayList<String>();
         try {
             MBeanAttributeInfo[] attrs = beanInfo.getAttributes();
@@ -223,7 +219,7 @@ public class GroovyMBean extends GroovyObjectSupport {
      * @return String the description
      */
     protected String describeAttribute(MBeanAttributeInfo attr) {
-        StringBuffer buf = new StringBuffer();
+        StringBuilder buf = new StringBuilder();
         buf.append("(");
         if (attr.isReadable()) {
             buf.append("r");
@@ -264,7 +260,7 @@ public class GroovyMBean extends GroovyObjectSupport {
      *
      * @return all the operations on the MBean
      */
-    public Collection listOperationNames() {
+    public Collection<String> listOperationNames() {
         List<String> list = new ArrayList<String>();
         try {
             MBeanOperationInfo[] operations = beanInfo.getOperations();
@@ -282,7 +278,7 @@ public class GroovyMBean extends GroovyObjectSupport {
      *
      * @return full description of each operation on the MBean
      */
-    public Collection listOperationDescriptions() {
+    public Collection<String> listOperationDescriptions() {
         List<String> list = new ArrayList<String>();
         try {
             MBeanOperationInfo[] operations = beanInfo.getOperations();
@@ -302,7 +298,7 @@ public class GroovyMBean extends GroovyObjectSupport {
      * @param operationName the name of the operation to describe
      * @return Collection of operation description
      */
-    public List describeOperation(String operationName) {
+    public List<String> describeOperation(String operationName) {
         List<String> list = new ArrayList<String>();
         try {
             MBeanOperationInfo[] operations = beanInfo.getOperations();
@@ -324,7 +320,7 @@ public class GroovyMBean extends GroovyObjectSupport {
      * @return pretty-printed description
      */
     protected String describeOperation(MBeanOperationInfo operation) {
-        StringBuffer buf = new StringBuffer();
+        StringBuilder buf = new StringBuilder();
         buf.append(operation.getReturnType())
                 .append(" ")
                 .append(operation.getName())
@@ -350,21 +346,21 @@ public class GroovyMBean extends GroovyObjectSupport {
      * @return the user readable description
      */
     public String toString() {
-        StringBuffer buf = new StringBuffer();
+        StringBuilder buf = new StringBuilder();
         buf.append("MBean Name:")
                 .append("\n  ")
                 .append(name.getCanonicalName())
                 .append("\n  ");
         if (!listAttributeDescriptions().isEmpty()) {
             buf.append("\nAttributes:");
-            for (Object o : listAttributeDescriptions()) {
-                buf.append("\n  ").append((String) o);
+            for (String attrDesc : listAttributeDescriptions()) {
+                buf.append("\n  ").append(attrDesc);
             }
         }
         if (!listOperationDescriptions().isEmpty()) {
             buf.append("\nOperations:");
-            for (Object o : listOperationDescriptions()) {
-                buf.append("\n  ").append((String) o);
+            for (String attrDesc : listOperationDescriptions()) {
+                buf.append("\n  ").append(attrDesc);
             }
         }
         return buf.toString();
