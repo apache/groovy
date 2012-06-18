@@ -599,6 +599,30 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+
+    void testEqualsCalledOnInterface() {
+        assertScript '''
+            Serializable ser = (Serializable) new Integer(1)
+            if (ser !=null) { // ser.equals(null)
+                println 'ok'
+                int hash = ser.hashCode()
+                String str = ser.toString()
+                try {
+                    ser.notify()
+                } catch (e) {}
+                try {
+                    ser.notifyAll()
+                } catch (e) {}
+
+                try {
+                    ser.wait()
+                } catch (e) {}
+
+            }
+
+        '''
+    }
+
     static class MyMethodCallTestClass {
 
         static int mul(int... args) { args.toList().inject(1) { x,y -> x*y } }
