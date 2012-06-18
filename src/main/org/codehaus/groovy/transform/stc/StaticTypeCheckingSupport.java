@@ -1099,6 +1099,9 @@ public abstract class StaticTypeCheckingSupport {
                 }
             }
             try {
+                if (cachedMethods==null) {
+                    cachedMethods = Collections.emptyMap();
+                }
                 return Collections.unmodifiableMap(cachedMethods);
             } finally {
                 lock.readLock().unlock();
