@@ -623,20 +623,6 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    // GROOVY-5525
-    void testFindMethodFromArraysClass() {
-        assertScript '''import groovy.transform.TypeChecked
-        import java.util.Arrays
-
-        class ArrayCopying {
-            public static void main(String[] args) {
-                def acopy = Arrays.copyOf(args, 1)
-            }
-
-        }
-        '''
-    }
-
     static class MyMethodCallTestClass {
 
         static int mul(int... args) { args.toList().inject(1) { x,y -> x*y } }
