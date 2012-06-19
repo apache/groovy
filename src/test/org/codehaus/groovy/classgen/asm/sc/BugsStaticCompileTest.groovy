@@ -69,5 +69,22 @@ class BugsStaticCompileTest extends BugsSTCTest {
             assert new Outer.Inner().m() == 10
         '''
     }
+
+    // GROOVY-5526
+    void testAssertEqualsShouldNotThrowVerifyError() {
+        assertScript '''
+            import static org.junit.Assert.*;
+            import groovy.transform.CompileStatic;
+
+            class CompilerBugs {
+
+              public static void main(String[] args) {
+                int expected = 0
+                assertEquals(expected, args.length)
+              }
+
+            }
+        '''
+    }
 }
 
