@@ -25,5 +25,6 @@ public enum StaticCompilationMetadataKeys {
     BINARY_EXP_TARGET, // use to tell which method should be used in a binary expression
     PRIVATE_BRIDGE_METHODS, // private bridge methods are methods used by an outer class to access an inner class method
     PRIVATE_FIELDS_ACCESSORS, // private constants methods are methods used by an outer class to access an outer class constant
-    WITH_CLOSURE // used to mark some closures as being "with" calls, so "owner" can be replaced with "delegate"
+    WITH_CLOSURE, // used to mark some closures as being "with" calls, so "owner" can be replaced with "delegate"
+    COMPONENT_TYPE // for list.property expressions, we need the inferred component type
 }

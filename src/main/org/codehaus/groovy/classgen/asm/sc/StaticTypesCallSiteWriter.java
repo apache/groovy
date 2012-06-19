@@ -18,19 +18,19 @@ package org.codehaus.groovy.classgen.asm.sc;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
+import org.codehaus.groovy.classgen.BytecodeExpression;
 import org.codehaus.groovy.classgen.asm.*;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport;
 import org.codehaus.groovy.transform.stc.StaticTypesMarker;
+import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
 import java.lang.reflect.Modifier;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -95,13 +95,13 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         if (!isStaticProperty) {
             if (receiverType.implementsInterface(ClassHelper.MAP_TYPE)) {
                 // for maps, replace map.foo with map.get('foo')
-                receiver.visit(controller.getAcg()); // load receiver
-                mv.visitLdcInsn(methodName); // load property name
-                mv.visitMethodInsn(INVOKEINTERFACE, "java/util/Map", "get", "(Ljava/lang/Object;)Ljava/lang/Object;");
-                controller.getOperandStack().replace(ClassHelper.OBJECT_TYPE);
+                writeMapDotProperty(receiver, methodName, mv);
                 return;
             }
-
+            if (receiverType.implementsInterface(ClassHelper.LIST_TYPE)) {
+                writeListDotProperty(receiver, methodName, mv);
+                return;
+            }
         }
 
         if (receiverType.isArray() && methodName.equals("length")) {
@@ -149,6 +149,84 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         );
         controller.getMethodVisitor().visitInsn(ACONST_NULL);
         controller.getOperandStack().push(ClassHelper.OBJECT_TYPE);
+    }
+
+    private void writeMapDotProperty(final Expression receiver, final String methodName, final MethodVisitor mv) {
+        receiver.visit(controller.getAcg()); // load receiver
+        mv.visitLdcInsn(methodName); // load property name
+        mv.visitMethodInsn(INVOKEINTERFACE, "java/util/Map", "get", "(Ljava/lang/Object;)Ljava/lang/Object;");
+        controller.getOperandStack().replace(ClassHelper.OBJECT_TYPE);
+    }
+
+    private void writeListDotProperty(final Expression receiver, final String methodName, final MethodVisitor mv) {
+        ClassNode componentType = (ClassNode) receiver.getNodeMetaData(StaticCompilationMetadataKeys.COMPONENT_TYPE);
+        if (componentType==null) {
+            componentType = ClassHelper.OBJECT_TYPE;
+        }
+        // for lists, replace list.foo with:
+        // def result = new ArrayList(list.size())
+        // for (e in list) { result.add (e.foo) }
+        // result
+        CompileStack compileStack = controller.getCompileStack();
+        Variable tmpList = new VariableExpression("tmpList", ClassHelper.make(ArrayList.class));
+        int var = compileStack.defineTemporaryVariable(tmpList, false);
+        Variable iterator = new VariableExpression("iterator", ClassHelper.Iterator_TYPE);
+        int it = compileStack.defineTemporaryVariable(iterator, false);
+        Variable nextVar = new VariableExpression("next", componentType);
+        final int next = compileStack.defineTemporaryVariable(nextVar, false);
+
+        mv.visitTypeInsn(NEW, "java/util/ArrayList");
+        mv.visitInsn(DUP);
+        receiver.visit(controller.getAcg());
+        mv.visitMethodInsn(INVOKEINTERFACE, "java/util/List", "size", "()I");
+        controller.getOperandStack().remove(1);
+        mv.visitMethodInsn(INVOKESPECIAL, "java/util/ArrayList", "<init>", "(I)V");
+        mv.visitVarInsn(ASTORE, var);
+        Label l1 = new Label();
+        mv.visitLabel(l1);
+        receiver.visit(controller.getAcg());
+        mv.visitMethodInsn(INVOKEINTERFACE, "java/util/List", "iterator", "()Ljava/util/Iterator;");
+        controller.getOperandStack().remove(1);
+        mv.visitVarInsn(ASTORE, it);
+        Label l2 = new Label();
+        mv.visitLabel(l2);
+        mv.visitVarInsn(ALOAD, it);
+        mv.visitMethodInsn(INVOKEINTERFACE, "java/util/Iterator", "hasNext", "()Z");
+        Label l3 = new Label();
+        mv.visitJumpInsn(IFEQ, l3);
+        mv.visitVarInsn(ALOAD, it);
+        mv.visitMethodInsn(INVOKEINTERFACE, "java/util/Iterator", "next", "()Ljava/lang/Object;");
+        mv.visitTypeInsn(CHECKCAST, BytecodeHelper.getClassInternalName(componentType));
+        mv.visitVarInsn(ASTORE, next);
+        Label l4 = new Label();
+        mv.visitLabel(l4);
+        mv.visitVarInsn(ALOAD, var);
+        final ClassNode finalComponentType = componentType;
+        PropertyExpression pexp = new PropertyExpression(new BytecodeExpression() {
+            @Override
+            public void visit(final MethodVisitor mv) {
+                mv.visitVarInsn(ALOAD, next);
+            }
+
+            @Override
+            public ClassNode getType() {
+                return finalComponentType;
+            }
+        }, methodName);
+        pexp.visit(controller.getAcg());
+        controller.getOperandStack().box();
+        controller.getOperandStack().remove(1);
+        mv.visitMethodInsn(INVOKEINTERFACE, "java/util/List", "add", "(Ljava/lang/Object;)Z");
+        mv.visitInsn(POP);
+        Label l5 = new Label();
+        mv.visitLabel(l5);
+        mv.visitJumpInsn(GOTO, l2);
+        mv.visitLabel(l3);
+        mv.visitVarInsn(ALOAD, var);
+        controller.getOperandStack().push(ClassHelper.make(ArrayList.class));
+        controller.getCompileStack().removeVar(next);
+        controller.getCompileStack().removeVar(it);
+        controller.getCompileStack().removeVar(var);
     }
 
     @SuppressWarnings("unchecked")

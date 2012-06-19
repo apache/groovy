@@ -739,7 +739,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
      * @param visitor          if not null, when the property node is found, visit it with the provided visitor
      * @return true if the property is defined in any of the possible receiver classes
      */
-    private boolean existsProperty(final PropertyExpression pexp, final boolean checkForReadOnly, final ClassCodeVisitorSupport visitor) {
+    protected boolean existsProperty(final PropertyExpression pexp, final boolean checkForReadOnly, final ClassCodeVisitorSupport visitor) {
         Expression objectExpression = pexp.getObjectExpression();
         ClassNode clazz = getType(objectExpression);
         if (clazz.isArray() && "length".equals(pexp.getPropertyAsString())) {
@@ -2021,7 +2021,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         return Number_TYPE;
     }
 
-    private ClassNode inferComponentType(final ClassNode containerType, final ClassNode indexType) {
+    protected ClassNode inferComponentType(final ClassNode containerType, final ClassNode indexType) {
         final ClassNode componentType = containerType.getComponentType();
         if (componentType == null) {
             // check if any generic information could help
