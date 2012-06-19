@@ -58,6 +58,7 @@ import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.*;
  * @author Jochen Theodorou
  */
 public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
+	private final static Object ERROR_COLLECTOR = ErrorCollector.class;
     private static final ClassNode ITERABLE_TYPE = ClassHelper.make(Iterable.class);
     private final static List<MethodNode> EMPTY_METHODNODE_LIST = Collections.emptyList();
     private static final ClassNode TYPECHECKED_CLASSNODE = ClassHelper.make(TypeChecked.class);
@@ -1216,11 +1217,17 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     @Override
     public void visitMethod(final MethodNode node) {
+        ErrorCollector collector = (ErrorCollector) node.getNodeMetaData(ERROR_COLLECTOR);
+        if (collector!=null) {
+            errorCollector.addCollectorContents(collector);
+        } else {
+        	startMethodInference(node, errorCollector);
+        }
+        node.removeNodeMetaData(ERROR_COLLECTOR);
+    }
+
+    private void startMethodInference(final MethodNode node, ErrorCollector collector) {
         if (isSkipMode(node)) return;
-        // alreadyVisitedMethods prevents from visiting the same method multiple times
-        // and prevents from infinite loops
-        if (alreadyVisitedMethods.contains(node)) return;
-        alreadyVisitedMethods.add(node);
 
         // second, we must ensure that this method MUST be statically checked
         // for example, in a mixed mode where only some methods are statically checked
@@ -1228,18 +1235,30 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         // We do not check for an annotation because some other AST transformations
         // may use this visitor without the annotation being explicitely set
         if (!methodsToBeVisited.isEmpty() && !methodsToBeVisited.contains(node)) return;
+
+        // alreadyVisitedMethods prevents from visiting the same method multiple times
+        // and prevents from infinite loops
+        if (alreadyVisitedMethods.contains(node)) return;
+        alreadyVisitedMethods.add(node);
+
+        ErrorCollector oldCollector = errorCollector;
+        errorCollector = collector;
+
         final boolean osc = isInStaticContext;
         try {
             isInStaticContext = node.isStatic();
-        super.visitMethod(node);
-        ClassNode rtype = (ClassNode) node.getNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE);
-        if (rtype==null) {
-            node.putNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE, node.getReturnType());
-        }
-        addTypeCheckingInfoAnnotation(node);
+            super.visitMethod(node);
+            ClassNode rtype = (ClassNode) node.getNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE);
+            if (rtype==null) {
+                node.putNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE, node.getReturnType());
+            }
+            addTypeCheckingInfoAnnotation(node);
         } finally {
             isInStaticContext = osc;
-    }
+        }
+        
+        errorCollector = oldCollector;
+        node.putNodeMetaData(ERROR_COLLECTOR, collector);
     }
 
     protected void addTypeCheckingInfoAnnotation(final MethodNode node) {
@@ -1375,17 +1394,15 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
     }
 
+    /**
+     * visit a method call target, to infer the type. Don't report errors right 
+     * away, that will be done by a later visitMethod call
+     */
     private void silentlyVisitMethodNode(final MethodNode directMethodCallCandidate) {
         // visit is authorized because the classnode belongs to the same source unit
-        ErrorCollector currentCollector = errorCollector;
-        // create a dummy collector, we don't want errors to be reported for this visit
-        errorCollector = new ErrorCollector(new CompilerConfiguration());
-        try {
-            visitMethod(directMethodCallCandidate);
-        } finally {
-            // restore error collector
-            errorCollector = currentCollector;
-        }
+    	//TODO: add method to ErrorCollector to get a CompilerConfiguration from it instead of simply using a new one with maybe wrong settings
+        ErrorCollector collector = new ErrorCollector(new CompilerConfiguration());
+        startMethodInference(directMethodCallCandidate, collector);
     }
 
     @Override
