@@ -486,6 +486,13 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         ''', 'Cannot call java.util.List#addAll(java.lang.String) with arguments [java.util.Collection <Integer>]'
     }
 
+    // GROOVY-5528
+    void testAssignmentToInterfaceFromUserClassWithGenerics() {
+        assertScript '''class UserList<T> extends LinkedList<T> {}
+        List<String> list = new UserList<String>()
+        '''
+    }
+
     static class MyList extends LinkedList<String> {}
 
     public static class ClassA<T> {
