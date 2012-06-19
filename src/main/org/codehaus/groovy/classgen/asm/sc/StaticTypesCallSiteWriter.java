@@ -88,6 +88,22 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
             receiverType = receiverType.getGenericsTypes()[0].getType();
         }
         MethodVisitor mv = controller.getMethodVisitor();
+
+        boolean isStaticProperty = receiver instanceof ClassExpression
+                && (receiverType.isDerivedFrom(receiver.getType()) || receiverType.implementsInterface(receiver.getType()));
+
+        if (!isStaticProperty) {
+            if (receiverType.implementsInterface(ClassHelper.MAP_TYPE)) {
+                // for maps, replace map.foo with map.get('foo')
+                receiver.visit(controller.getAcg()); // load receiver
+                mv.visitLdcInsn(methodName); // load property name
+                mv.visitMethodInsn(INVOKEINTERFACE, "java/util/Map", "get", "(Ljava/lang/Object;)Ljava/lang/Object;");
+                controller.getOperandStack().replace(ClassHelper.OBJECT_TYPE);
+                return;
+            }
+
+        }
+
         if (receiverType.isArray() && methodName.equals("length")) {
             receiver.visit(controller.getAcg());
             mv.visitInsn(ARRAYLENGTH);
