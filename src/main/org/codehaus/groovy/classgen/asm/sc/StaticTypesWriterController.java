@@ -74,7 +74,7 @@ public class StaticTypesWriterController extends DelegatingController {
 
         isInStaticallyCheckedMethod = mn != null && (
                 StaticCompilationVisitor.isStaticallyCompiled(node)
-                        || classNode.getNodeMetaData(StaticCompilationMetadataKeys.STATIC_COMPILE_NODE)!=null);
+                        || classNode.implementsInterface(ClassHelper.GENERATED_CLOSURE_Type)&&classNode.getNodeMetaData(StaticCompilationMetadataKeys.STATIC_COMPILE_NODE)!=null);
 
 /*      if (isInStaticallyCheckedMethod) {
             System.out.println("Entering statically compiled method: "+mn.getDeclaringClass()+"#"+mn);
