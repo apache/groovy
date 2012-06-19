@@ -130,6 +130,9 @@ public class GenericsUtils {
                 if (!map.containsKey(name)) map.put(name, parameterized[i]);
             }
         }
+        if (node.isArray()) {
+            extractPlaceholders(node.getComponentType(), map);
+        }
     }
 
     /**

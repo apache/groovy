@@ -2428,11 +2428,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         actualType = actualType.getComponentType();
                     }
                     actualType = wrapTypeIfNecessary(actualType);
-                    Map<String, GenericsType> typePlaceholders = GenericsUtils.extractPlaceholders(type.isArray() ? type.getComponentType() : type);
+                    Map<String, GenericsType> typePlaceholders = GenericsUtils.extractPlaceholders(type);
                     if (OBJECT_TYPE.equals(type)) {
                         // special case for handing Object<E> -> Object
                         for (String key : typePlaceholders.keySet()) {
-                            resolvedPlaceholders.put(key, new GenericsType(actualType));
+                            resolvedPlaceholders.put(key, new GenericsType(actualType.isArray()?actualType.getComponentType():actualType));
                         }
                     } else {
                         while (!actualType.equals(type)) {
