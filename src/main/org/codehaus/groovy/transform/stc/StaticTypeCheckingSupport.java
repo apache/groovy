@@ -713,6 +713,10 @@ public abstract class StaticTypeCheckingSupport {
         if (isPrimitiveType(receiver) && !isPrimitiveType(compare)) {
             dist = (dist+1)<<1;
         }
+        if (receiver.isArray() && !compare.isArray()) {
+            // Object[] vs Object
+            dist += 256;
+        }
 
         ClassNode ref = compare;
         while (ref!=null) {
