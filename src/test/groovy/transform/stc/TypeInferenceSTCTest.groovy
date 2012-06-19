@@ -545,5 +545,15 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
             assert bar == 246
         '''
     }
+
+    // GROOVY-5522
+    void testTypeInferenceWithArrayAndFind() {
+        assertScript '''
+            File findFile() {
+                new File[0].find { File f -> f.hidden }
+            }
+            findFile()
+        '''
+    }
 }
 
