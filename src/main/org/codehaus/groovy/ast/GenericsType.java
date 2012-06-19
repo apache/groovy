@@ -307,7 +307,7 @@ public class GenericsType extends ASTNode {
                     }
                     if (success) return true;
                 }
-                return compareGenericsWithBound(classNode.getUnresolvedSuperClass(), bound);
+                return compareGenericsWithBound(getParameterizedSuperClass(classNode), bound);
             }
             GenericsType[] cnTypes = classNode.getGenericsTypes();
             if (cnTypes==null && classNode.isRedirectNode()) cnTypes=classNode.redirect().getGenericsTypes();
@@ -394,5 +394,37 @@ public class GenericsType extends ASTNode {
             if (!match) return false;
             return true;
         }
+    }
+
+    /**
+     * If you have a class which extends a class using generics, returns the superclass with parameterized types. For
+     * example, if you have:
+     * <code>class MyList&lt;T&gt; extends LinkedList&lt;T&gt;
+     * def list = new MyList&lt;String&gt;
+     * </code>
+     * then the parameterized superclass for MyList&lt;String&gt; is LinkedList&lt;String&gt;
+     * @param classNode the class for which we want to return the parameterized superclass
+     * @return the parameterized superclass
+     */
+    private static ClassNode getParameterizedSuperClass(ClassNode classNode) {
+        ClassNode superClass = classNode.getUnresolvedSuperClass();
+        if (!classNode.isUsingGenerics() || !superClass.isUsingGenerics()) return superClass;
+        GenericsType[] genericsTypes = classNode.getGenericsTypes();
+        GenericsType[] redirectGenericTypes = classNode.redirect().getGenericsTypes();
+        superClass = superClass.getPlainNodeReference();
+        if (genericsTypes==null || redirectGenericTypes==null || superClass.getGenericsTypes()==null) return superClass;
+        for (int i = 0, genericsTypesLength = genericsTypes.length; i < genericsTypesLength; i++) {
+            if (redirectGenericTypes[i].isPlaceholder()) {
+                final GenericsType genericsType = genericsTypes[i];
+                GenericsType[] superGenericTypes = superClass.getGenericsTypes();
+                for (int j = 0, superGenericTypesLength = superGenericTypes.length; j < superGenericTypesLength; j++) {
+                    final GenericsType superGenericType = superGenericTypes[j];
+                    if (superGenericType.isPlaceholder() && superGenericType.getName().equals(redirectGenericTypes[i].getName())) {
+                        superGenericTypes[j] = genericsType;
+                    }
+                }
+            }
+        }
+        return superClass;
     }
 }
