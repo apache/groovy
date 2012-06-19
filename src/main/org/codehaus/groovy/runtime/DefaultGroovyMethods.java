@@ -39,6 +39,7 @@ import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import org.codehaus.groovy.runtime.typehandling.GroovyCastException;
 import org.codehaus.groovy.runtime.typehandling.NumberMath;
 import org.codehaus.groovy.tools.RootLoader;
+import org.codehaus.groovy.util.ArrayIterator;
 
 import java.io.*;
 import java.lang.reflect.Array;
@@ -1589,6 +1590,66 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Iterates over the collection of items and returns each item that matches
+     * the given filter - calling the <code>{@link #isCase(java.lang.Object, java.lang.Object)}</code>
+     * method used by switch statements.  This method can be used with different
+     * kinds of filters like regular expressions, classes, ranges etc.
+     * Example:
+     * <pre class="groovyTestCase">
+     * def list = ['a', 'b', 'aa', 'bc', 3, 4.5]
+     * assert list.grep( ~/a+/ )  == ['a', 'aa']
+     * assert list.grep( ~/../ )  == ['aa', 'bc']
+     * assert list.grep( Number ) == [ 3, 4.5 ]
+     * assert list.grep{ it.toString().size() == 1 } == [ 'a', 'b', 3 ]
+     * </pre>
+     *
+     * @param self   a collection
+     * @param filter the filter to perform on each element of the collection (using the {@link #isCase(java.lang.Object, java.lang.Object)} method)
+     * @return a collection of objects which match the filter
+     * @since 2.0
+     */
+    public static <T> Collection<T> grep(Collection<T> self, Object filter) {
+        Collection<T> answer = createSimilarCollection(self);
+        MetaClass metaClass = InvokerHelper.getMetaClass(filter);
+        for (T element : self) {
+            if (DefaultTypeTransformation.castToBoolean(metaClass.invokeMethod(filter, "isCase", element))) {
+                answer.add(element);
+            }
+        }
+        return answer;
+    }
+
+    /**
+     * Iterates over the array of items and returns a collection of items that match
+     * the given filter - calling the <code>{@link #isCase(java.lang.Object, java.lang.Object)}</code>
+     * method used by switch statements. This method can be used with different
+     * kinds of filters like regular expressions, classes, ranges etc.
+     * Example:
+     * <pre class="groovyTestCase">
+     * def list = ['a', 'b', 'aa', 'bc', 3, 4.5] as Object[]
+     * assert list.grep( ~/a+/ )  == ['a', 'aa']
+     * assert list.grep( ~/../ )  == ['aa', 'bc']
+     * assert list.grep( Number ) == [ 3, 4.5 ]
+     * assert list.grep{ it.toString().size() == 1 } == [ 'a', 'b', 3 ]
+     * </pre>
+     *
+     * @param self   an array
+     * @param filter the filter to perform on each element of the array (using the {@link #isCase(java.lang.Object, java.lang.Object)} method)
+     * @return a collection of objects which match the filter
+     * @since 2.0
+     */
+    public static <T> Collection<T> grep(T[] self, Object filter) {
+        Collection<T> answer = new ArrayList<T>();
+        MetaClass metaClass = InvokerHelper.getMetaClass(filter);
+        for (T element : self) {
+            if (DefaultTypeTransformation.castToBoolean(metaClass.invokeMethod(filter, "isCase", element))) {
+                answer.add(element);
+            }
+        }
+        return answer;
+    }
+
+    /**
      * Iterates over the collection of items which this Object represents and returns each item that matches
      * using the IDENTITY Closure as a filter - effectively returning all elements which satisfy Groovy truth.
      * <p/>
@@ -1604,6 +1665,46 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see Closure#IDENTITY
      */
     public static Collection grep(Object self) {
+        return grep(self, Closure.IDENTITY);
+    }
+
+    /**
+     * Iterates over the collection returning each element that matches
+     * using the IDENTITY Closure as a filter - effectively returning all elements which satisfy Groovy truth.
+     * <p/>
+     * Example:
+     * <pre class="groovyTestCase">
+     * def items = [1, 2, 0, false, true, '', 'foo', [], [4, 5], null]
+     * assert items.grep() == [1, 2, true, 'foo', [4, 5]]
+     * </pre>
+     *
+     * @param self a Collection
+     * @return a collection of elements satisfy Groovy truth
+     * @see Closure#IDENTITY
+     * @since 2.0
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> Collection<T> grep(Collection<T> self) {
+        return grep(self, Closure.IDENTITY);
+    }
+
+    /**
+     * Iterates over the array returning each element that matches
+     * using the IDENTITY Closure as a filter - effectively returning all elements which satisfy Groovy truth.
+     * <p/>
+     * Example:
+     * <pre class="groovyTestCase">
+     * def items = [1, 2, 0, false, true, '', 'foo', [], [4, 5], null] as Object[]
+     * assert items.grep() == [1, 2, true, 'foo', [4, 5]]
+     * </pre>
+     *
+     * @param self an array
+     * @return a collection of elements which satisfy Groovy truth
+     * @see Closure#IDENTITY
+     * @since 2.0
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> Collection<T> grep(T[] self) {
         return grep(self, Closure.IDENTITY);
     }
 
@@ -2705,6 +2806,29 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Finds the first element in the array that matches the given closure condition.
+     * Example:
+     * <pre class="groovyTestCase">
+     * def list = [1,2,3] as Integer[]
+     * assert 2 == list.find { it > 1 }
+     * assert null == list.find { it > 5 }
+     * </pre>
+     *
+     * @param self      an Array
+     * @param condition a closure condition
+     * @return the first element from the array that matches the condition or null if no element matches
+     * @since 2.0
+     */
+    public static <T> T find(T[] self, Closure condition) {
+        for (T element : self) {
+            if (DefaultTypeTransformation.castToBoolean(condition.call(element))) {
+                return element;
+            }
+        }
+        return null;
+    }
+
+    /**
      * Finds the first item matching the IDENTITY Closure (i.e.&nbsp;matching Groovy truth).
      * <p/>
      * Example:
@@ -2909,6 +3033,23 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Finds all elements of the array matching the given Closure condition.
+     * <pre class="groovyTestCase">
+     * def items = [1,2,3,4] as Integer[]
+     * assert [2,4] == items.findAll { it % 2 == 0 }
+     * </pre>
+     *
+     * @param self      an array
+     * @param condition a closure condition
+     * @return a list of matching values
+     * @since 2.0
+     */
+    public static <T> Collection<T> findAll(T[] self, Closure condition) {
+        Collection<T> answer = new ArrayList<T>();
+        return findAll(condition, answer, new ArrayIterator<T>(self));
+    }
+
+    /**
      * Finds the items matching the IDENTITY Closure (i.e.&nbsp;matching Groovy truth).
      * <p/>
      * Example:
@@ -2923,6 +3064,24 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see Closure#IDENTITY
      */
     public static <T> Collection<T>  findAll(Collection<T> self) {
+        return findAll(self, Closure.IDENTITY);
+    }
+
+    /**
+     * Finds the elements of the array matching the IDENTITY Closure (i.e.&nbsp;matching Groovy truth).
+     * <p/>
+     * Example:
+     * <pre class="groovyTestCase">
+     * def items = [1, 2, 0, false, true, '', 'foo', [], [4, 5], null] as Object[]
+     * assert items.findAll() == [1, 2, true, 'foo', [4, 5]]
+     * </pre>
+     *
+     * @param self an array
+     * @return a collection of the elements found
+     * @see Closure#IDENTITY
+     * @since 2.0
+     */
+    public static <T> Collection<T> findAll(T[] self) {
         return findAll(self, Closure.IDENTITY);
     }
 
