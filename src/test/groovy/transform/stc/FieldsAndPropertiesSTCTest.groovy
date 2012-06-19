@@ -243,6 +243,23 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         ''', 'Incompatible generic argument types. Cannot assign groovy.lang.Closure <java.lang.Long> to: groovy.lang.Closure <List>'
     }
 
+    // GROOVY-5517
+    void testShouldFindStaticPropertyEvenIfObjectImplementsMap() {
+        assertScript '''
+            class MyHashMap extends HashMap {
+                public static int version = 666
+            }
+            def map = new MyHashMap()
+            map['foo'] = 123
+            Object value = map.foo
+            assert value == 123
+            value = map['foo']
+            assert value == 123
+            int v = MyHashMap.version
+            assert v == 666
+        '''
+    }
+
     public static class BaseClass {
         int x
     }

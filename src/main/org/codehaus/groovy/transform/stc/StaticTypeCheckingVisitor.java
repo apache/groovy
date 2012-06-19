@@ -769,8 +769,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         String capName = MetaClassHelper.capitalize(propertyName);
         boolean isAttributeExpression = pexp instanceof AttributeExpression;
         for (ClassNode testClass : tests) {
+            boolean isStaticProperty = pexp.getObjectExpression() instanceof ClassExpression && implementsInterfaceOrIsSubclassOf(testClass, pexp.getObjectExpression().getType());
             // maps and lists have special handling for property expressions
-            if (!implementsInterfaceOrIsSubclassOf(testClass, MAP_TYPE) && !implementsInterfaceOrIsSubclassOf(testClass, LIST_TYPE)) {
+            if (isStaticProperty || (!implementsInterfaceOrIsSubclassOf(testClass, MAP_TYPE) && !implementsInterfaceOrIsSubclassOf(testClass, LIST_TYPE))) {
                 ClassNode current = testClass;
                 while (current != null) {
                     current = current.redirect();
