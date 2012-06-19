@@ -86,5 +86,31 @@ class BugsStaticCompileTest extends BugsSTCTest {
             }
         '''
     }
+
+    // GROOVY-5529
+    void testStaticCompilationOfClosureWhenSingleMethodAnnotated() {
+        new GroovyShell().evaluate '''import groovy.transform.ASTTest
+        import static org.codehaus.groovy.control.CompilePhase.*
+
+        interface Row {
+            int getKey()
+        }
+
+        class RowImpl implements Row {
+            int getKey() { 1 }
+        }
+
+        @groovy.transform.CompileStatic
+        def test() {
+            def rows = [new RowImpl(), new RowImpl(), new RowImpl()]
+
+            rows.each { Row row ->
+                println row.key
+            }
+        }
+
+        test()
+        '''
+    }
 }
 

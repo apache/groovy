@@ -209,7 +209,7 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
         if (StaticTypeCheckingSupport.isWithCall(call.getMethodAsString(), call.getArguments())) {
             // no check is required, ensured by isWithCall
             ClosureExpression closure = (ClosureExpression) ((ArgumentListExpression) call.getArguments()).getExpression(0);
-            closure.setNodeMetaData(StaticCompilationMetadataKeys.WITH_CLOSURE, Boolean.TRUE);
+            closure.putNodeMetaData(StaticCompilationMetadataKeys.WITH_CLOSURE, Boolean.TRUE);
         }
     }
 
