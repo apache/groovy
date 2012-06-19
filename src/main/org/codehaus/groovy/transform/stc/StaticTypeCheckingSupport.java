@@ -697,6 +697,10 @@ public abstract class StaticTypeCheckingSupport {
         return false;
     }
 
+    static int getPrimitiveDistance(ClassNode primA, ClassNode primB) {
+        return Math.abs(NUMBER_TYPES.get(primA)-NUMBER_TYPES.get(primB));
+    }
+
     static int getDistance(final ClassNode receiver, final ClassNode compare) {
         int dist = 0;
         ClassNode unwrapReceiver = ClassHelper.getUnwrapper(receiver);
@@ -704,8 +708,12 @@ public abstract class StaticTypeCheckingSupport {
         if (ClassHelper.isPrimitiveType(unwrapReceiver)
                 && ClassHelper.isPrimitiveType(unwrapCompare)
                 && unwrapReceiver!=unwrapCompare) {
-            dist = 1;
+            dist = getPrimitiveDistance(unwrapReceiver, unwrapCompare);
         }
+        if (isPrimitiveType(receiver) && !isPrimitiveType(compare)) {
+            dist = (dist+1)<<1;
+        }
+
         ClassNode ref = compare;
         while (ref!=null) {
             if (receiver.equals(ref) || receiver == UNKNOWN_PARAMETER_TYPE) {
@@ -887,7 +895,14 @@ public abstract class StaticTypeCheckingSupport {
                 }
             } else if (params.length == args.length) {
                 int allPMatch = allParametersAndArgumentsMatch(params, args);
-                int lastArgMatch = isVargs(params)?lastArgMatchesVarg(params, args):-1;
+                boolean firstParamMatches = true;
+                // check first parameters
+                if (args.length > 0) {
+                    Parameter[] firstParams = new Parameter[params.length - 1];
+                    System.arraycopy(params, 0, firstParams, 0, firstParams.length);
+                    firstParamMatches = allParametersAndArgumentsMatch(firstParams, args) >= 0;
+                }
+                int lastArgMatch = isVargs(params) && firstParamMatches?lastArgMatchesVarg(params, args):-1;
                 if (lastArgMatch>=0) lastArgMatch++; // ensure exact matches are preferred over vargs
                 int dist = allPMatch>=0?Math.max(allPMatch, lastArgMatch):lastArgMatch;
                 if (dist>=0 && !actualReceiver.equals(declaringClass)) dist+=getDistance(actualReceiver, declaringClass);
