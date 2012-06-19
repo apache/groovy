@@ -258,4 +258,17 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
         }
         return methodNode;
     }
+
+    @Override
+    protected boolean existsProperty(final PropertyExpression pexp, final boolean checkForReadOnly, final ClassCodeVisitorSupport visitor) {
+        boolean exists = super.existsProperty(pexp, checkForReadOnly, visitor);
+        if (exists) {
+            Expression objectExpression = pexp.getObjectExpression();
+            ClassNode objectExpressionType = getType(objectExpression);
+            if (objectExpressionType.implementsInterface(ClassHelper.LIST_TYPE)) {
+                objectExpression.putNodeMetaData(COMPONENT_TYPE, inferComponentType(objectExpressionType, ClassHelper.OBJECT_TYPE));
+            }
+        }
+        return exists;
+    }
 }

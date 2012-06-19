@@ -260,6 +260,28 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    void testListDotProperty() {
+        assertScript '''class Elem { int value }
+            List<Elem> list = new LinkedList<Elem>()
+            list.add(new Elem(value:123))
+            list.add(new Elem(value:456))
+            assert list.value == [ 123, 456 ]
+            list.add(new Elem(value:789))
+            assert list.value == [ 123, 456, 789 ]
+        '''
+
+        assertScript '''class Elem { String value }
+            List<Elem> list = new LinkedList<Elem>()
+            list.add(new Elem(value:'123'))
+            list.add(new Elem(value:'456'))
+            assert list.value == [ '123', '456' ]
+            list.add(new Elem(value:'789'))
+            assert list.value == [ '123', '456', '789' ]
+        '''
+    }
+
+
+
     public static class BaseClass {
         int x
     }
