@@ -112,5 +112,15 @@ class BugsStaticCompileTest extends BugsSTCTest {
         test()
         '''
     }
+
+    // GROOVY-5536
+    void testShouldNotThrowVerifyErrorWithNullDereferenceInIf() {
+        assertScript '''
+                boolean getDescriptorForPlugin(File pluginDir) {
+                    if (pluginDir?.exists()) { true } else { false }
+                }
+                assert getDescriptorForPlugin(null) == false
+        '''
+    }
 }
 
