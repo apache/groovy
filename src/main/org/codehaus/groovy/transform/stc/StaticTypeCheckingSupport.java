@@ -724,13 +724,17 @@ public abstract class StaticTypeCheckingSupport {
             dist += 256;
         }
 
-        ClassNode ref = compare;
+        if (receiver == UNKNOWN_PARAMETER_TYPE) {
+            return dist;
+        }
+
+        ClassNode ref = receiver;
         while (ref!=null) {
-            if (receiver.equals(ref) || receiver == UNKNOWN_PARAMETER_TYPE) {
+            if (compare.equals(ref)) {
                 break;
             }
-            if (ref.isInterface() && receiver.implementsInterface(ref)) {
-                dist += getMaximumInterfaceDistance(receiver, ref);
+            if (compare.isInterface() && ref.implementsInterface(compare)) {
+                dist += getMaximumInterfaceDistance(ref, compare);
                 break;
             }
             ref = ref.getSuperClass();
