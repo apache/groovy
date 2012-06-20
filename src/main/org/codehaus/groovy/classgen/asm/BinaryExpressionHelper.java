@@ -816,7 +816,11 @@ public class BinaryExpressionHelper {
         controller.getOperandStack().replace(common, 2);        
         
     }
-    
+
+    private static boolean isNullConstant(Expression expression) {
+        return expression instanceof ConstantExpression && ((ConstantExpression) expression).getValue()==null;
+    }
+
     private void evaluateNormalTernary(TernaryExpression expression) {
         MethodVisitor mv = controller.getMethodVisitor();
         OperandStack operandStack = controller.getOperandStack();
@@ -828,8 +832,17 @@ public class BinaryExpressionHelper {
         
         ClassNode truePartType = typeChooser.resolveType(truePart, controller.getClassNode());
         ClassNode falsePartType = typeChooser.resolveType(falsePart, controller.getClassNode());
-        ClassNode common = WideningCategories.lowestUpperBound(truePartType, falsePartType);
-        
+        ClassNode common;
+        if (isNullConstant(truePart) && isNullConstant(falsePart)) {
+            common = ClassHelper.OBJECT_TYPE;
+        } else if (isNullConstant(truePart)) {
+            common = falsePartType;
+        } else if (isNullConstant(falsePart)) {
+            common = truePartType;
+        } else {
+            common = WideningCategories.lowestUpperBound(truePartType, falsePartType);
+        }
+
         // we compile b?x:y as 
         //      boolean(b)?S(x):S(y), S = common super type of x,y
         // so we load b, do boolean conversion. 
