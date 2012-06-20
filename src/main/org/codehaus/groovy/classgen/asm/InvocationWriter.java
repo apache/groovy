@@ -109,10 +109,7 @@ public class InvocationWriter {
                     // we are calling an outer class method
                     compileStack.pushImplicitThis(false);
                     if (controller.isInClosure()) {
-                        Expression expr = new PropertyExpression(
-                                VariableExpression.THIS_EXPRESSION, "owner"
-                        );
-                        expr.visit(controller.getAcg());
+                        new VariableExpression("owner").visit(controller.getAcg());
                     } else {
                         Expression expr = new PropertyExpression(new ClassExpression(declaringClass), "this");
                         expr.visit(controller.getAcg());
