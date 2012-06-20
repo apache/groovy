@@ -406,7 +406,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 }
 
                 // if we are in an if/else branch, keep track of assignment
-                if (ifElseForWhileAssignmentTracker != null && leftExpression instanceof VariableExpression) {
+                if (ifElseForWhileAssignmentTracker != null && leftExpression instanceof VariableExpression
+                        && !isNullConstant(rightExpression)) {
                     Variable accessedVariable = ((VariableExpression) leftExpression).getAccessedVariable();
                     if (accessedVariable instanceof VariableExpression) {
                         VariableExpression var = (VariableExpression) accessedVariable;
