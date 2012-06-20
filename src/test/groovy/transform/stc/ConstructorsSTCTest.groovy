@@ -189,5 +189,27 @@ class ConstructorsSTCTest extends StaticTypeCheckingTestCase {
         Person.create()
         '''
     }
+
+    // GROOVY-5531
+    void testAccessToClosureVariableFromNamedParamConstructor() {
+        // test using "str" as name
+        assertScript '''
+            class Person { String name }
+            def cl = { String str ->
+                new Person(name: str)
+            }
+            assert cl('Cédric').name == 'Cédric'
+        '''
+
+        // test using "it" as name
+        assertScript '''
+            class Person { String name }
+            def cl = { String it ->
+                new Person(name: it)
+            }
+            assert cl('Cédric').name == 'Cédric'
+        '''
+
+    }
 }
 
