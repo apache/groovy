@@ -312,6 +312,12 @@ public abstract class StaticTypeCheckingSupport {
         if (type.isArray() && toBeAssignedTo.isArray()) {
             return isAssignableTo(type.getComponentType(),toBeAssignedTo.getComponentType());
         }
+        if (type.isDerivedFrom(GSTRING_TYPE) && STRING_TYPE.equals(toBeAssignedTo)) {
+            return true;
+        }
+        if (toBeAssignedTo.isDerivedFrom(GSTRING_TYPE) && STRING_TYPE.equals(type)) {
+            return true;
+        }
         if (implementsInterfaceOrIsSubclassOf(type, toBeAssignedTo)) {
             if (OBJECT_TYPE.equals(toBeAssignedTo)) return true;
             if (toBeAssignedTo.isUsingGenerics()) {
