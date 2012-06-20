@@ -122,5 +122,14 @@ class BugsStaticCompileTest extends BugsSTCTest {
                 assert getDescriptorForPlugin(null) == false
         '''
     }
+
+    // GROOVY-
+    void testPowerShouldNotThrowVerifyError() {
+        assertScript '''int squarePlusOne(int num) {
+                num ** num + 1
+            }
+            assert squarePlusOne(2) == 5
+        '''
+    }
 }
 

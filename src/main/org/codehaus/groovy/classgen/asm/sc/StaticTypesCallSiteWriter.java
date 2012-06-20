@@ -443,12 +443,12 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
             mv.visitMethodInsn(INVOKESTATIC,
                     "org/codehaus/groovy/runtime/DefaultGroovyMethods",
                     "power",
-                    "(Ljava/lang/Integer;Ljava/lang/Integer;)Ljava/lang/Number;");
+                    "(Ljava/lang/Long;Ljava/lang/Integer;)Ljava/lang/Number;");
         } else if (ClassHelper.Integer_TYPE.equals(ClassHelper.getWrapper(rType)) && ClassHelper.Integer_TYPE.equals(ClassHelper.getWrapper(aType))) {
             mv.visitMethodInsn(INVOKESTATIC,
                     "org/codehaus/groovy/runtime/DefaultGroovyMethods",
                     "power",
-                    "(Ljava/lang/Long;Ljava/lang/Integer;)Ljava/lang/Number;");
+                    "(Ljava/lang/Integer;Ljava/lang/Integer;)Ljava/lang/Number;");
         } else {
             mv.visitMethodInsn(INVOKESTATIC,
                     "org/codehaus/groovy/runtime/DefaultGroovyMethods",
