@@ -59,5 +59,14 @@ class ArraysAndCollectionsStaticCompileTest extends ArraysAndCollectionsSTCTest 
             assert al.get(0) + 1 == 3.0d
         '''
     }
+
+    @Override
+    void testForInLoopWithDefaultListType() {
+        try {
+            super.testForInLoopWithDefaultListType()
+        } finally {
+            println astTrees
+        }
+    }
 }
 
