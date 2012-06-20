@@ -635,6 +635,23 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-5540
+    void testChoosePublicMethodInHierarchy() {
+        assertScript '''import groovy.transform.stc.MethodCallsSTCTest.Child2
+            class A {
+                int delegate() {
+                    @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                        def md = node.rightExpression.getNodeMetaData(DIRECT_METHOD_CALL_TARGET)
+                        assert md.declaringClass.nameWithoutPackage == 'MethodCallsSTCTest$ChildWithPublic'
+                    })
+                    int res = new Child2().m()
+                    res
+                }
+            }
+            assert new A().delegate() == 2
+        '''
+    }
+
     static class MyMethodCallTestClass {
 
         static int mul(int... args) { args.toList().inject(1) { x,y -> x*y } }
@@ -657,5 +674,16 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
     static class GroovyPage {
         public final void printHtmlPart(final int partNumber) {}
         public final void createTagBody(int bodyClosureIndex, Closure<?> bodyClosure) {}
+    }
+
+    public static class BaseWithProtected {
+        protected int m() { 1 }
+    }
+
+    public static class ChildWithPublic extends BaseWithProtected {
+        public int m() { 2 }
+    }
+
+    public static class Child2 extends ChildWithPublic {
     }
 }
