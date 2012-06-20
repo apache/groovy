@@ -64,7 +64,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
     }
 
     @Override
-    public void makeGetPropertySite(final Expression receiver, final String methodName, final boolean safe, final boolean implicitThis) {
+    public void makeGetPropertySite(Expression receiver, final String methodName, final boolean safe, final boolean implicitThis) {
         TypeChooser typeChooser = controller.getTypeChooser();
         ClassNode classNode = controller.getClassNode();
         ClassNode receiverType = typeChooser.resolveType(receiver, classNode);
@@ -117,11 +117,12 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
             );
             expr.setMethodTarget(COLLECTION_SIZE_METHOD);
             expr.setImplicitThis(implicitThis);
+            expr.setSafe(safe);
             expr.visit(controller.getAcg());
             return;
         }
         if (makeGetField(receiver, receiverType, methodName, implicitThis, samePackages(receiverType.getPackageName(), classNode.getPackageName()))) return;
-        if (makeGetPropertyWithGetter(receiver, receiverType, methodName)) return;
+        if (makeGetPropertyWithGetter(receiver, receiverType, methodName, safe, implicitThis)) return;
         if (receiverType.isEnum()) {
             mv.visitFieldInsn(GETSTATIC, BytecodeHelper.getClassInternalName(receiverType), methodName, BytecodeHelper.getTypeDescription(receiverType));
             controller.getOperandStack().push(receiverType);
@@ -129,14 +130,14 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         }
         if (receiver instanceof ClassExpression) {
             if (makeGetField(receiver, receiver.getType(), methodName, implicitThis, samePackages(receiver.getType().getPackageName(), classNode.getPackageName()))) return;
-            if (makeGetPropertyWithGetter(receiver, receiver.getType(), methodName)) return;
+            if (makeGetPropertyWithGetter(receiver, receiver.getType(), methodName, safe, implicitThis)) return;
         }
         if (isClassReceiver) {
             // we are probably looking for a property of the class
             if (makeGetField(receiver, ClassHelper.CLASS_Type, methodName, false, true)) return;
-            if (makeGetPropertyWithGetter(receiver, ClassHelper.CLASS_Type, methodName)) return;
+            if (makeGetPropertyWithGetter(receiver, ClassHelper.CLASS_Type, methodName, safe, implicitThis)) return;
         }
-        if (makeGetPrivateFieldWithBridgeMethod(receiver, receiverType, methodName, implicitThis)) return;
+        if (makeGetPrivateFieldWithBridgeMethod(receiver, receiverType, methodName, safe, implicitThis)) return;
 
         controller.getSourceUnit().addError(
                 new SyntaxException(
@@ -230,7 +231,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
     }
 
     @SuppressWarnings("unchecked")
-    private boolean makeGetPrivateFieldWithBridgeMethod(final Expression receiver, final ClassNode receiverType, final String fieldName, final boolean implicitThis) {
+    private boolean makeGetPrivateFieldWithBridgeMethod(final Expression receiver, final ClassNode receiverType, final String fieldName, final boolean safe, final boolean implicitThis) {
         FieldNode field = receiverType.getField(fieldName);
         ClassNode classNode = controller.getClassNode();
         if (field!=null && Modifier.isPrivate(field.getModifiers())
@@ -242,6 +243,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
                 if (methodNode!=null) {
                     MethodCallExpression mce = new MethodCallExpression(receiver, methodNode.getName(), ArgumentListExpression.EMPTY_ARGUMENTS);
                     mce.setMethodTarget(methodNode);
+                    mce.setSafe(safe);
                     mce.setImplicitThis(implicitThis);
                     mce.visit(controller.getAcg());
                     return true;
@@ -267,13 +269,15 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         }
         
         if (makeGetField(receiver, receiverType, property, implicitThis, samePackages(receiverType.getPackageName(), classNode.getPackageName()))) return;
-        if (makeGetPropertyWithGetter(receiver, receiverType, property)) return;
+        if (makeGetPropertyWithGetter(receiver, receiverType, property, safe, implicitThis)) return;
         
         MethodCallExpression call = new MethodCallExpression(
                 receiver,
                 "getProperty",
                 new ArgumentListExpression(new ConstantExpression(property))
         );
+        call.setImplicitThis(implicitThis);
+        call.setSafe(safe);
         call.setMethodTarget(GROOVYOBJECT_GETPROPERTY_METHOD);
         call.visit(controller.getAcg());
         return;
@@ -283,7 +287,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
     public void makeCallSiteArrayInitializer() {
     }
 
-    private boolean makeGetPropertyWithGetter(final Expression receiver, final ClassNode receiverType, final String methodName) {
+    private boolean makeGetPropertyWithGetter(final Expression receiver, final ClassNode receiverType, final String methodName, final boolean safe, final boolean implicitThis) {
         // does a getter exists ?
         String getterName = "get" + MetaClassHelper.capitalize(methodName);
         MethodNode getterNode = receiverType.getGetterMethod(getterName);
@@ -298,13 +302,14 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
                     new ArgumentListExpression()
             );
             call.setMethodTarget(getterNode);
-            call.setImplicitThis(false);
+            call.setImplicitThis(implicitThis);
+            call.setSafe(safe);
             call.visit(controller.getAcg());
             return true;
         }
         ClassNode superClass = receiverType.getSuperClass();
         if (superClass !=null) {
-            return makeGetPropertyWithGetter(receiver, superClass, methodName);
+            return makeGetPropertyWithGetter(receiver, superClass, methodName, safe, implicitThis);
         }
         return false;
     }

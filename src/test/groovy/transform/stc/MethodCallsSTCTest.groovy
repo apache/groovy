@@ -623,6 +623,18 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-5534
+    void testSafeDereference() {
+        assertScript '''
+        def foo() {
+           File bar
+           bar?.name
+        }
+
+        assert foo() == null
+        '''
+    }
+
     static class MyMethodCallTestClass {
 
         static int mul(int... args) { args.toList().inject(1) { x,y -> x*y } }
