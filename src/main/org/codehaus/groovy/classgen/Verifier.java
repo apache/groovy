@@ -169,8 +169,8 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         addInitialization(node);
         checkReturnInObjectInitializer(node.getObjectInitializerStatements());
         node.getObjectInitializerStatements().clear();
-        addCovariantMethods(node);
         node.visitContents(this);
+        addCovariantMethods(node);
     }
 
     private FieldNode checkFieldDoesNotExist(ClassNode node, String fieldName) {
