@@ -95,8 +95,6 @@ public class AsmClassGenerator extends ClassGenerator {
     public static final boolean CREATE_DEBUG_INFO = true;
     public static final boolean CREATE_LINE_NUMBER_INFO = true;
     public static final boolean ASM_DEBUG = false; // add marker in the bytecode to show source-bytecode relationship
-    
-    private int lineNumber = -1;
     private ASTNode currentASTNode = null;
     private Map genericParameterNames = null;
     private SourceUnit source;
@@ -243,7 +241,7 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     protected void visitConstructorOrMethod(MethodNode node, boolean isConstructor) {
-        lineNumber = -1;
+        controller.resetLineNumber();
         Parameter[] parameters = node.getParameters();
         String methodType = BytecodeHelper.getMethodDescriptor(node.getReturnType(), parameters);
         String signature = BytecodeHelper.getGenericsMethodSignature(node);
@@ -2061,9 +2059,9 @@ public class AsmClassGenerator extends ClassGenerator {
         this.currentASTNode = statement;
 
         if (line < 0) return;
-        if (!ASM_DEBUG && line==lineNumber) return;
+        if (!ASM_DEBUG && line==controller.getLineNumber()) return;
 
-        lineNumber = line;
+        controller.setLineNumber(line);
         if (mv != null) {
             Label l = new Label();
             mv.visitLabel(l);
