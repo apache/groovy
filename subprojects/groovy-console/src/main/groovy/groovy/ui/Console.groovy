@@ -308,11 +308,26 @@ options:
         swing.bind(source:swing.inputEditor.redoAction, sourceProperty:'enabled', target:swing.redoAction, targetProperty:'enabled')
 
         if (swing.consoleFrame instanceof java.awt.Window) {
+            nativeFullScreenForMac(swing.consoleFrame)
             swing.consoleFrame.pack()
             swing.consoleFrame.show()
         }
         installInterceptor()
         swing.doLater inputArea.&requestFocus
+    }
+
+    /**
+     * Make the console frames capable of native fullscreen
+     * for Mac OS X Lion and beyond.
+     *
+     * @param frame the application window
+     */
+    private void nativeFullScreenForMac(java.awt.Window frame) {
+        if (System.getProperty("os.name").contains("Mac OS X")) {
+            new GroovyShell(new Binding([frame: frame])).evaluate('''
+                    com.apple.eawt.FullScreenUtilities.setWindowCanFullScreen(frame, true)
+                ''')
+        }
     }
 
 
@@ -599,6 +614,7 @@ options:
         swing.build(ConsoleActions)
         swing.build(ConsoleView)
         installInterceptor()
+        nativeFullScreenForMac(swing.consoleFrame)
         swing.consoleFrame.pack()
         swing.consoleFrame.show()
         swing.doLater swing.inputArea.&requestFocus
