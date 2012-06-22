@@ -325,7 +325,11 @@ options:
     private void nativeFullScreenForMac(java.awt.Window frame) {
         if (System.getProperty("os.name").contains("Mac OS X")) {
             new GroovyShell(new Binding([frame: frame])).evaluate('''
-                    com.apple.eawt.FullScreenUtilities.setWindowCanFullScreen(frame, true)
+                    try {
+                        com.apple.eawt.FullScreenUtilities.setWindowCanFullScreen(frame, true)
+                    } catch (Throwable t) {
+                        // simply ignore as full screen capability is not available
+                    }
                 ''')
         }
     }
