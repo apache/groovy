@@ -250,7 +250,7 @@ ext.distSpec = copySpec {
             configurations.runtime.findAll { it.name.endsWith 'jar' } +
                     modules()*.jar.archivePath +
                     modules().configurations.runtime*.findAll {
-                        it.name.endsWith('jar') && !it.name.contains('livetribe-jsr223')
+                        it.name.endsWith('jar') && !it.name.contains('livetribe-jsr223') && !it.name.matches(/groovy-\d.*/)
                     }.flatten() as Set
         })
     }
@@ -270,7 +270,7 @@ ext.distSpec = copySpec {
         from("src/bin") {
             filter(ReplaceTokens, tokens: [GROOVYJAR:jar.archiveName])
             fileMode = 0755
-            ext.exclude = "groovy.icns"
+            exclude "groovy.icns"
         }
         from("src/bin/groovy.icns")
         from("src/tools/org/codehaus/groovy/tools/groovy.ico")
