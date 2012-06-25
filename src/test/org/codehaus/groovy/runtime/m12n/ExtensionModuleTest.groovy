@@ -35,7 +35,7 @@ class ExtensionModuleTest extends GroovyTestCase {
     void testThatModuleCanBeLoadedWithGrab() {
         ExtensionModuleRegistry registry = GroovySystem.metaClassRegistry.moduleRegistry
         // ensure that the module isn't loaded
-        assert registry.modules.any { it.name == 'Test module for Grab' && it.version == '1.1-test' } == false
+        assert registry.modules.any { it.name == 'Test module for Grab' && it.version == '1.2-test' } == false
 
         // find jar resource
         def jarURL = this.class.getResource("/jars")
@@ -44,14 +44,14 @@ class ExtensionModuleTest extends GroovyTestCase {
         def resolver = "@GrabResolver(name='local',root='$jarURL')"
 
         assertScript resolver+'''
-        @Grab('module-test:module-test:1.1-test')
+        @Grab('module-test:module-test:1.2-test')
         import org.codehaus.groovy.runtime.m12n.*
 
         ExtensionModuleRegistry registry = GroovySystem.metaClassRegistry.moduleRegistry
         registry.modules.each { println "Found module ${it.name}" }
 
         // ensure that the module isn't loaded
-        assert registry.modules.any { it.name == 'Test module for Grab' && it.version == '1.1-test' }
+        assert registry.modules.any { it.name == 'Test module for Grab' && it.version == '1.2-test' }
 
         // the following methods are added by the Grab test module
         def str = 'This is a string'
@@ -64,7 +64,7 @@ class ExtensionModuleTest extends GroovyTestCase {
     void testExtensionModuleUsingGrabAndMap() {
         ExtensionModuleRegistry registry = GroovySystem.metaClassRegistry.moduleRegistry
         // ensure that the module isn't loaded
-        assert registry.modules.any { it.name == 'Test module for Grab' && it.version == '1.1-test' } == false
+        assert registry.modules.any { it.name == 'Test module for Grab' && it.version == '1.2-test' } == false
 
         // find jar resource
         def jarURL = this.class.getResource("/jars")
@@ -73,7 +73,7 @@ class ExtensionModuleTest extends GroovyTestCase {
         def resolver = "@GrabResolver(name='local',root='$jarURL')"
 
         assertScript resolver+'''
-        @Grab('module-test:module-test:1.1-test')
+        @Grab('module-test:module-test:1.2-test')
         import org.codehaus.groovy.runtime.m12n.*
 
         def map = [:]
