@@ -103,6 +103,16 @@ public class ClassInfo extends ManagedConcurrentMap.Entry<Class,ClassInfo> {
         return (ClassInfo) globalClassSet.getOrPut(cls,null);
     }
 
+    public static Collection<ClassInfo> getAllClassInfo () {
+        ThreadLocalMapHandler handler = localMapRef.get();
+        SoftReference<LocalMap> ref=null;
+        if (handler!=null) ref = handler.get();
+        LocalMap map=null;
+        if (ref!=null) map = ref.get();
+        if (map!=null) return map.values();
+        return globalClassSet.values();
+    }
+
     public MetaClass getStrongMetaClass() {
         return strongMetaClass;
     }
