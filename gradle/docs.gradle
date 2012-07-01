@@ -1,4 +1,4 @@
-task doc(dependsOn: [javadoc, groovydoc, 'docGDK']) {
+task doc(dependsOn: ['javadocAll', 'groovydocAll', 'docGDK']) {
     ext.footer = "Copyright &amp;copy; 2003-2012 The Codehaus. All rights reserved."
     ext.title = "Groovy ${groovyVersion}"
 }
