@@ -18,6 +18,7 @@ package groovy.json
 import static JsonTokenType.*
 import java.text.SimpleDateFormat
 import java.text.DateFormat
+import org.codehaus.groovy.runtime.DefaultGroovyMethods
 
 /**
  * Class responsible for the actual String serialization of the possible values of a JSON structure.
@@ -127,7 +128,7 @@ class JsonOutput {
         } else if (object instanceof Enum) {
             '"' + object.name() + '"'
         } else {
-            def properties = object.properties
+            def properties = DefaultGroovyMethods.getProperties(object)
             properties.remove('class')
             properties.remove('declaringClass')
             properties.remove('metaClass')
