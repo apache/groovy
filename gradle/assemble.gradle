@@ -296,10 +296,10 @@ task distDoc(type: Zip, dependsOn: doc) {
         from 'src/wiki-snapshot.pdf'
     }
     into("html/api") {
-        from javadoc.destinationDir
+        from javadocAll.destinationDir
     }
     into("html/gapi") {
-        from groovydoc.destinationDir
+        from groovydocAll.destinationDir
     }
     into("html/groovy-jdk") {
         from docGDK.destinationDir
