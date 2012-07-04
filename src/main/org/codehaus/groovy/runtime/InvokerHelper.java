@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.io.StringWriter;
 import java.io.Writer;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -467,7 +468,7 @@ public class InvokerHelper {
     }
 
     /**
-     * Writes the given object to the given stream
+     * Writes an object to a Writer using Groovy's default representation for the object.
      */
     public static void write(Writer out, Object object) throws IOException {
         if (object instanceof String) {
@@ -497,6 +498,44 @@ public class InvokerHelper {
             reader.close();
         } else {
             out.write(toString(object));
+        }
+    }
+
+    /**
+     * Appends an object to an Appendable using Groovy's default representation for the object.
+     */
+    public static void append(Appendable out, Object object) throws IOException {
+        if (object instanceof String) {
+            out.append((String) object);
+        } else if (object instanceof Object[]) {
+            out.append(toArrayString((Object[]) object));
+        } else if (object instanceof Map) {
+            out.append(toMapString((Map) object));
+        } else if (object instanceof Collection) {
+            out.append(toListString((Collection) object));
+        } else if (object instanceof Writable) {
+            Writable writable = (Writable) object;
+            StringWriter stringWriter = new StringWriter();
+            writable.writeTo(stringWriter);
+            out.append(stringWriter.toString());
+        } else if (object instanceof InputStream || object instanceof Reader) {
+            // Copy stream to stream
+            Reader reader;
+            if (object instanceof InputStream) {
+                reader = new InputStreamReader((InputStream) object);
+            } else {
+                reader = (Reader) object;
+            }
+            char[] chars = new char[8192];
+            int i;
+            while ((i = reader.read(chars)) != -1) {
+                for (int j = 0; j < i; j++) {
+                    out.append(chars[j]);
+                }
+            }
+            reader.close();
+        } else {
+            out.append(toString(object));
         }
     }
 
@@ -570,7 +609,7 @@ public class InvokerHelper {
         if (map.isEmpty()) {
             return "[:]";
         }
-        StringBuffer buffer = new StringBuffer("[");
+        StringBuilder buffer = new StringBuilder("[");
         boolean first = true;
         for (Object o : map.entrySet()) {
             if (first) {
@@ -595,12 +634,12 @@ public class InvokerHelper {
         return buffer.toString();
     }
 
-    private static int sizeLeft(int maxSize, StringBuffer buffer) {
+    private static int sizeLeft(int maxSize, StringBuilder buffer) {
         return maxSize == -1 ? maxSize : Math.max(0, maxSize - buffer.length());
     }
 
     private static String formatList(Collection collection, boolean verbose, int maxSize) {
-        StringBuffer buffer = new StringBuffer("[");
+        StringBuilder buffer = new StringBuilder("[");
         boolean first = true;
         for (Object item : collection) {
             if (first) {
@@ -632,7 +671,7 @@ public class InvokerHelper {
         if (arguments == null) {
             return "null";
         }
-        StringBuffer argBuf = new StringBuffer();
+        StringBuilder argBuf = new StringBuilder();
         for (int i = 0; i < arguments.length; i++) {
             if (i > 0) {
                 argBuf.append(", ");
@@ -697,7 +736,7 @@ public class InvokerHelper {
         }
         String sbdry = "[";
         String ebdry = "]";
-        StringBuffer argBuf = new StringBuffer(sbdry);
+        StringBuilder argBuf = new StringBuilder(sbdry);
         for (int i = 0; i < arguments.length; i++) {
             if (i > 0) {
                 argBuf.append(", ");
