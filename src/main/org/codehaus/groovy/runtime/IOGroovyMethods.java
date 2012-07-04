@@ -101,7 +101,7 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param value an Object whose default representation will be appended to the Appendable
      * @return the Appendable on which this operation was invoked
      * @throws IOException if an I/O error occurs.
-     * @since 2.0.1
+     * @since 2.1.0
      */
     public static Appendable leftShift(Appendable self, Object value) throws IOException {
         InvokerHelper.append(self, value);
@@ -117,7 +117,7 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self    an Appendable
      * @param closure a 1-arg Closure which will be called with a Formatter as its argument
      * @return the Appendable on which this operation was invoked
-     * @since 2.0.1
+     * @since 2.1.0
      */
     public static Appendable withFormatter(Appendable self, Closure closure) {
         Formatter formatter = new Formatter(self);
@@ -135,7 +135,7 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param locale  a Locale used when creating the Formatter
      * @param closure a 1-arg Closure which will be called with a Formatter as its argument
      * @return the Appendable on which this operation was invoked
-     * @since 2.0.1
+     * @since 2.1.0
      */
     public static Appendable withFormatter(Appendable self, Locale locale, Closure closure) {
         Formatter formatter = new Formatter(self, locale);
