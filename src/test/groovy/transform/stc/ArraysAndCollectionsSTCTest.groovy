@@ -394,5 +394,16 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-5573
+    void testArrayNewInstance() {
+        assertScript '''import java.lang.reflect.Array
+            @ASTTest(phase=INSTRUCTION_SELECTION, value= {
+                assert node.rightExpression.getNodeMetaData(INFERRED_TYPE) == OBJECT_TYPE
+            })
+            def object = Array.newInstance(Integer.class, 10)
+            Object[] joinedArray = (Object[]) object
+            assert joinedArray.length == 10
+        '''
+    }
 }
 
