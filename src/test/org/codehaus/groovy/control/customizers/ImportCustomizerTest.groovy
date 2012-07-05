@@ -17,6 +17,7 @@
 package org.codehaus.groovy.control.customizers
 
 import org.codehaus.groovy.control.CompilerConfiguration
+import org.codehaus.groovy.control.CompilePhase
 
 /**
  * Tests the import customizer.

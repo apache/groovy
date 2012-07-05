@@ -16,7 +16,9 @@
 
 package org.codehaus.groovy.tools;
 
+import groovy.lang.Binding;
 import groovy.lang.GroovyResourceLoader;
+import groovy.lang.GroovyShell;
 import org.apache.commons.cli.*;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilerConfiguration;
@@ -244,7 +246,7 @@ public class FileSystemCompiler {
         }
     }
 
-    public static CompilerConfiguration generateCompilerConfigurationFromOptions(CommandLine cli) {
+    public static CompilerConfiguration generateCompilerConfigurationFromOptions(CommandLine cli) throws IOException {
         //
         // Setup the configuration data
 
@@ -284,6 +286,15 @@ public class FileSystemCompiler {
             configuration.getOptimizationOptions().put("indy", true);
         }
 
+        if (cli.hasOption("configurator")) {
+            String path = cli.getOptionValue("configurator");
+            File groovyConfigurator = new File(path);
+            Binding binding = new Binding();
+            binding.setVariable("configuration", configuration);
+            GroovyShell shell = new GroovyShell(binding);
+            shell.evaluate(groovyConfigurator);
+        }
+        
         return configuration;
     }
 
@@ -320,7 +331,7 @@ public class FileSystemCompiler {
                         .create("F"));
 
         options.addOption(OptionBuilder.withLongOpt("indy").withDescription("enables compilation using invokedynamic").create());
-
+        options.addOption(OptionBuilder.withLongOpt("configurator").hasArg().withDescription("A script for tweaking the configuration options").create());
         return options;
     }
 
