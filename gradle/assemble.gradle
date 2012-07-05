@@ -46,14 +46,28 @@ task copy(type: Copy) {
     with licenseSpec
 }
 
-def commonOsgiManifest
+def groovyOsgiManifest, subprojectOsgiManifest
 
 if (!rootProject.useIndy()) {
-    commonOsgiManifest = {
-        // We exclude the Bnd-LastModified attribute as it always triggers a rebuild without being really needed.
+    groovyOsgiManifest = {
+        // Exclude the Bnd-LastModified attribute as it always triggers a rebuild without being really needed.
         from(allManifest) {
             eachEntry {details ->
                 if (details.key == 'Bnd-LastModified') {
+                    details.exclude()
+                }
+            }
+        }
+        version = groovyBundleVersion
+        instruction '-nouses', 'true'
+        instruction 'Export-Package', "*;version=${version}"
+        classpath = sourceSets.main.runtimeClasspath
+    }
+    subprojectOsgiManifest = {
+        // Exclude attributes not needed for subprojects.
+        from(allManifest) {
+            eachEntry {details ->
+                if (details.key in ['Bnd-LastModified', 'Extension-Name', 'Bundle-Name', 'Bundle-Description', 'Main-class']) {
                     details.exclude()
                 }
             }
@@ -79,9 +93,28 @@ jar {
             instruction 'Import-Package', "antlr", "org.objectweb.asm", "*;resolution:=optional"
             classesDir = sourceSets.main.output.classesDir
         }
-        manifest commonOsgiManifest
+        manifest groovyOsgiManifest
     }
     exclude '**/package-info.class', 'compiler', 'META-INF/groovy-release-info.properties', 'main'
+}
+
+subprojects {
+    jar {
+        metaInf {
+            from "${rootProject.projectDir}/LICENSE.txt"
+            from("${rootProject.projectDir}/src/main/META-INF/groovy-release-info.properties") {
+                filter(rootProject.propertiesFilter, org.apache.tools.ant.filters.ReplaceTokens)
+            }
+        }
+        if (!rootProject.useIndy()) {
+            manifest = osgiManifest {
+                symbolicName = project.name
+                classesDir = sourceSets.main.output.classesDir
+            }
+            manifest subprojectOsgiManifest
+        }
+        exclude '**/package-info.class', 'compiler', 'META-INF/groovy-release-info.properties', 'main'
+    }
 }
 
 def moduleJars() {
@@ -172,7 +205,7 @@ task jarAll(type: Jar, dependsOn: { modules()*.jar }) {
             instruction 'Import-Package', "*;resolution:=optional"
             classesDir = jar.archivePath
         }
-        manifest commonOsgiManifest
+        manifest groovyOsgiManifest
     }
 }
 
