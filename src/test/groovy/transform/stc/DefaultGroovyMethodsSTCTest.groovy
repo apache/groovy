@@ -74,5 +74,16 @@ class DefaultGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
         println s.format("yyyyMMdd")
       '''
     }
+
+    // GROOVY-5568
+    void testDGMMethodAsProperty() {
+        assertScript '''
+            String foo(InputStream input) {
+                input.text
+            }
+            def text = new ByteArrayInputStream('foo'.getBytes())
+            assert foo(text) == 'foo'
+        '''
+    }
 }
 

@@ -35,6 +35,9 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
+import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.chooseBestMethod;
+import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.findDGMMethodsByNameAndArguments;
+
 /**
  * A call site writer which replaces call site caching with static calls. This means that the generated code
  * looks more like Java code than dynamic Groovy code. Best effort is made to use JVM instructions instead of
@@ -138,6 +141,25 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
             if (makeGetPropertyWithGetter(receiver, ClassHelper.CLASS_Type, methodName, safe, implicitThis)) return;
         }
         if (makeGetPrivateFieldWithBridgeMethod(receiver, receiverType, methodName, safe, implicitThis)) return;
+
+        // GROOVY-5568, we would be facing a DGM call, but instead of foo.getText(), have foo.text
+        List<MethodNode> methods = findDGMMethodsByNameAndArguments(receiverType, "get"+MetaClassHelper.capitalize(methodName), ClassNode.EMPTY_ARRAY);
+        if (!methods.isEmpty()) {
+            List<MethodNode> methodNodes = chooseBestMethod(receiverType, methods, ClassNode.EMPTY_ARRAY);
+            if (methodNodes.size()==1) {
+                MethodNode getter = methodNodes.get(0);
+                MethodCallExpression call = new MethodCallExpression(
+                        receiver,
+                        "get"+MetaClassHelper.capitalize(methodName),
+                        ArgumentListExpression.EMPTY_ARGUMENTS
+                );
+                call.setMethodTarget(getter);
+                call.setImplicitThis(false);
+                call.setSourcePosition(receiver);
+                call.visit(controller.getAcg());
+                return;
+            }
+        }
 
         controller.getSourceUnit().addError(
                 new SyntaxException(
