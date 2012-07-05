@@ -2186,8 +2186,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                             }, ClassNode.EMPTY_ARRAY, EmptyStatement.INSTANCE);
                             node.setDeclaringClass(receiver);
                             return Collections.singletonList(node);
-                        } else {
-                            System.out.println();
                         }
                     }
                 }
