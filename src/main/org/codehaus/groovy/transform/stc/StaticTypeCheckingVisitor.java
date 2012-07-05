@@ -834,6 +834,19 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         current = isAttributeExpression ? null : current.getSuperClass();
                     }
                 }
+                // GROOVY-5568, the property may be defined by DGM
+                List<MethodNode> methods = findDGMMethodsByNameAndArguments(testClass, "get"+capName, ClassNode.EMPTY_ARRAY);
+                if (!methods.isEmpty()) {
+                    List<MethodNode> methodNodes = chooseBestMethod(testClass, methods, ClassNode.EMPTY_ARRAY);
+                    if (methodNodes.size()==1) {
+                        MethodNode getter = methodNodes.get(0);
+                        if (visitor!=null) {
+                            visitor.visitMethod(getter);
+                        }
+                        storeType(pexp, getter.getReturnType());
+                        return true;
+                    }
+                }
             } else {
                 if (visitor != null) {
                     // todo : type inferrence on maps and lists, if possible
