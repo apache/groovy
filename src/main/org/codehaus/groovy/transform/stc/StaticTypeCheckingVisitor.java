@@ -2195,6 +2195,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
         List<MethodNode> chosen = chooseBestMethod(receiver, methods, args);
         if (!chosen.isEmpty()) return chosen;
+        if (receiver.equals(CLASS_Type) && receiver.getGenericsTypes() != null) {
+            List<MethodNode> result = findMethod(receiver.getGenericsTypes()[0].getType(), name, args);
+            if (!result.isEmpty()) return result;
+        }
+
         // perform a lookup in DGM methods
         methods.clear();
         chosen = findDGMMethodsByNameAndArguments(receiver, name, args, methods);
