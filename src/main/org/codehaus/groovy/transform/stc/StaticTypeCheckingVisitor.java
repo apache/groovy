@@ -634,10 +634,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
     }
 
-    private void addAssignmentError(final ClassNode leftType, final ClassNode rightType, final Expression assignmentExpression) {
-        addStaticTypeError("Cannot assign value of type " + rightType.getText() + " to variable of type " + leftType.getText(), assignmentExpression);
-    }
-
     private void checkGroovyConstructorMap(final Expression receiver, final ClassNode receiverType, final MapExpression mapExpression) {
         for (MapEntryExpression entryExpression : mapExpression.getMapEntryExpressions()) {
             Expression keyExpr = entryExpression.getKeyExpression();
@@ -1361,7 +1357,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 }
             }
             if (mn.isEmpty()) {
-                addStaticTypeError("Cannot find matching method " + receiver.getText() + "#" + toMethodParametersString(name, args), call);
+                addNoMatchingMethodError(receiver, name, args, call);
             } else {
                 if (mn.size() == 1) {
                     MethodNode directMethodCallCandidate = mn.get(0);
@@ -1629,7 +1625,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     }
                 }
                 if (mn.isEmpty()) {
-                    addStaticTypeError("Cannot find matching method " + receiver.getText() + "#" + toMethodParametersString(name, args), call);
+                    addNoMatchingMethodError(receiver, name, args, call);
                 } else {
                     if (areCategoryMethodCalls(mn, name, args)) {
                         addCategoryMethodCallError(call);
@@ -2073,7 +2069,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             ClassNode receiver, String name, ClassNode... args) {
         final List<MethodNode> methods = findMethod(receiver, name, args);
         if (methods.isEmpty()) {
-            addStaticTypeError("Cannot find matching method " + receiver.getText() + "#" + toMethodParametersString(name, args), expr);
+            addNoMatchingMethodError(receiver, name, args, expr);
         } else {
             if (areCategoryMethodCalls(methods, name, args)) {
                 addCategoryMethodCallError(expr);
@@ -2087,12 +2083,20 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         return null;
     }
 
+    private void addNoMatchingMethodError(final ClassNode receiver, final String name, final ClassNode[] args, final Expression call) {
+        addStaticTypeError("Cannot find matching method " + receiver.getText() + "#" + toMethodParametersString(name, args) + ". Please check if the declared type is right and if the method exists.", call);
+    }
+
     private void addAmbiguousErrorMessage(final List<MethodNode> foundMethods, final String name, final ClassNode[] args, final Expression expr) {
         addStaticTypeError("Reference to method is ambiguous. Cannot choose between " + foundMethods, expr);
     }
 
     private void addCategoryMethodCallError(final Expression call) {
         addStaticTypeError("Due to their dynamic nature, usage of categories is not possible with static type checking active", call);
+    }
+
+    private void addAssignmentError(final ClassNode leftType, final ClassNode rightType, final Expression assignmentExpression) {
+        addStaticTypeError("Cannot assign value of type " + rightType.getText() + " to variable of type " + leftType.getText(), assignmentExpression);
     }
 
     private boolean areCategoryMethodCalls(final List<MethodNode> foundMethods, final String name, final ClassNode[] args) {
