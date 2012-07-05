@@ -23,8 +23,10 @@ import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 import java.io.*;
 import java.util.Arrays;
+import java.util.Formatter;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
@@ -77,11 +79,11 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
     private static final Logger LOG = Logger.getLogger(IOGroovyMethods.class.getName());
 
     /**
-     * Overloads the left shift operator to provide a mechanism to append
-     * values to a writer.
+     * Overloads the leftShift operator for Writer to allow an object to be written
+     * using Groovy's default representation for the object.
      *
      * @param self  a Writer
-     * @param value a value to append
+     * @param value an Object whose default representation will be written to the Writer
      * @return the writer on which this operation was invoked
      * @throws IOException if an I/O error occurs.
      * @since 1.0
@@ -89,6 +91,65 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
     public static Writer leftShift(Writer self, Object value) throws IOException {
         InvokerHelper.write(self, value);
         return self;
+    }
+
+    /**
+     * Overloads the leftShift operator for Appendable to allow an object to be appended
+     * using Groovy's default representation for the object.
+     *
+     * @param self  an Appendable
+     * @param value an Object whose default representation will be appended to the Appendable
+     * @return the Appendable on which this operation was invoked
+     * @throws IOException if an I/O error occurs.
+     * @since 2.1.0
+     */
+    public static Appendable leftShift(Appendable self, Object value) throws IOException {
+        InvokerHelper.append(self, value);
+        return self;
+    }
+
+    /**
+     * Invokes a Closure that uses a Formatter taking care of resource handling.
+     * A Formatter is created and passed to the Closure as its argument.
+     * After the Closure executes, the Formatter is flushed and closed releasing any
+     * associated resources.
+     *
+     * @param self    an Appendable
+     * @param closure a 1-arg Closure which will be called with a Formatter as its argument
+     * @return the Appendable on which this operation was invoked
+     * @since 2.1.0
+     */
+    public static Appendable withFormatter(Appendable self, Closure closure) {
+        Formatter formatter = new Formatter(self);
+        callWithFormatter(closure, formatter);
+        return self;
+    }
+
+    /**
+     * Invokes a Closure that uses a Formatter taking care of resource handling.
+     * A Formatter is created using the given Locale and passed to the Closure as its argument.
+     * After the Closure executes, the Formatter is flushed and closed releasing any
+     * associated resources.
+     *
+     * @param self    an Appendable
+     * @param locale  a Locale used when creating the Formatter
+     * @param closure a 1-arg Closure which will be called with a Formatter as its argument
+     * @return the Appendable on which this operation was invoked
+     * @since 2.1.0
+     */
+    public static Appendable withFormatter(Appendable self, Locale locale, Closure closure) {
+        Formatter formatter = new Formatter(self, locale);
+        callWithFormatter(closure, formatter);
+        return self;
+    }
+
+    private static void callWithFormatter(Closure closure, Formatter formatter) {
+        try {
+            closure.call(formatter);
+        } finally {
+            formatter.flush();
+            formatter.close();
+        }
     }
 
     /**
@@ -612,13 +673,13 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
         }
 
         // could be changed into do..while, but then
-        // we might create an additional StringBuffer
+        // we might create an additional StringBuilder
         // instance at the end of the stream
         int count = input.read(cbuf);
         if (count == EOF) // we are at the end of the input data
             return null;
 
-        StringBuffer line = new StringBuffer(expectedLineLength);
+        StringBuilder line = new StringBuilder(expectedLineLength);
         // now work on the buffer(s)
         int ls = lineSeparatorIndex(cbuf, count);
         while (ls == -1) {
@@ -663,7 +724,7 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
         int c = input.read();
         if (c == -1)
             return null;
-        StringBuffer line = new StringBuffer(expectedLineLength);
+        StringBuilder line = new StringBuilder(expectedLineLength);
 
         while (c != EOF && c != '\n' && c != '\r') {
             char ch = (char) c;
@@ -730,7 +791,7 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static List<String> readLines(Reader reader) throws IOException {
-        IteratorClosureAdapter closure = new IteratorClosureAdapter(reader);
+        IteratorClosureAdapter<String> closure = new IteratorClosureAdapter<String>(reader);
         eachLine(reader, closure);
         return closure.asList();
     }
@@ -1236,10 +1297,10 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static void eachByte(InputStream is, int bufferLen, Closure closure) throws IOException {
         byte[] buffer = new byte[bufferLen];
-        int bytesRead = 0;
+        int bytesRead;
         try {
             while ((bytesRead = is.read(buffer, 0, bufferLen)) > 0) {
-                closure.call(new Object[]{buffer, bytesRead});
+                closure.call(buffer, bytesRead);
             }
 
             InputStream temp = is;

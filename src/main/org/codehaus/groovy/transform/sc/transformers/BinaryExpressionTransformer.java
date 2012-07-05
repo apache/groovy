@@ -56,10 +56,15 @@ public class BinaryExpressionTransformer {
         int operationType = operation.getType();
         if (operationType==Types.COMPARE_EQUAL || operationType == Types.COMPARE_NOT_EQUAL) {
             // let's check if one of the operands is the null constant
+            CompareToNullExpression compareToNullExpression = null;
             if (isNullConstant(bin.getLeftExpression())) {
-                return new CompareToNullExpression(staticCompilationTransformer.transform(bin.getRightExpression()), operationType==Types.COMPARE_EQUAL);
+                compareToNullExpression = new CompareToNullExpression(staticCompilationTransformer.transform(bin.getRightExpression()), operationType==Types.COMPARE_EQUAL);
             } else if (isNullConstant(bin.getRightExpression())) {
-                return new CompareToNullExpression(staticCompilationTransformer.transform(bin.getLeftExpression()), operationType==Types.COMPARE_EQUAL);
+                compareToNullExpression = new CompareToNullExpression(staticCompilationTransformer.transform(bin.getLeftExpression()), operationType==Types.COMPARE_EQUAL);
+            }
+            if (compareToNullExpression != null) {
+                compareToNullExpression.setSourcePosition(bin);
+                return compareToNullExpression;
             }
         }
         if (list != null) {
