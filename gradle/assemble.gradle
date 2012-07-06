@@ -106,7 +106,7 @@ subprojects {
                 filter(rootProject.propertiesFilter, org.apache.tools.ant.filters.ReplaceTokens)
             }
         }
-        if (!rootProject.useIndy()) {
+        if (!rootProject.useIndy() && project.name != 'groovy-all-tests') {
             manifest = osgiManifest {
                 symbolicName = project.name
                 classesDir = sourceSets.main.output.classesDir
