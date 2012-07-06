@@ -44,5 +44,22 @@ class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCTest {
         '''
     }
 
+    // GROOVY-5561
+    void testShouldNotThrowAccessForbidden() {
+        assertScript '''
+        class Test {
+            def foo() {
+                def bar = createBar()
+                bar.foo
+            }
+
+            Bar createBar() { new Bar() }
+        }
+        class Bar {
+            List<String> foo = ['1','2']
+        }
+        assert new Test().foo() == ['1','2']
+        '''
+    }
 
 }
