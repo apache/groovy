@@ -15,12 +15,15 @@
  */
 package org.codehaus.groovy.transform;
 
+import groovy.lang.GroovyClassLoader;
+import groovy.lang.GroovyRuntimeException;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
+import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.syntax.SyntaxException;
 
 import java.lang.reflect.Method;
@@ -51,7 +54,7 @@ public class LogASTTransformation implements ASTTransformation {
         AnnotatedNode targetClass = (AnnotatedNode) nodes[1];
         AnnotationNode logAnnotation = (AnnotationNode) nodes[0];
 
-        final LoggingStrategy loggingStrategy = createLoggingStrategy(logAnnotation);
+        final LoggingStrategy loggingStrategy = createLoggingStrategy(logAnnotation, source.getClassLoader());
         if (loggingStrategy == null) return;
 
         final String logFieldName = lookupLogFieldName(logAnnotation);
@@ -151,7 +154,7 @@ public class LogASTTransformation implements ASTTransformation {
         );
     }
 
-    private LoggingStrategy createLoggingStrategy(AnnotationNode logAnnotation) {
+    private LoggingStrategy createLoggingStrategy(AnnotationNode logAnnotation, GroovyClassLoader loader) {
 
         String annotationName = logAnnotation.getClassNode().getName();
 
@@ -182,7 +185,11 @@ public class LogASTTransformation implements ASTTransformation {
 
         try {
             Class<? extends LoggingStrategy> strategyClass = (Class<? extends LoggingStrategy>) defaultValue;
-            return strategyClass.newInstance();
+            if (AbstractLoggingStrategy.class.isAssignableFrom(strategyClass)) {
+                return DefaultGroovyMethods.newInstance(strategyClass, new Object[]{loader});
+            } else {
+                return strategyClass.newInstance();
+            }
         } catch (Exception e) {
             return null;
         }
@@ -208,5 +215,26 @@ public class LogASTTransformation implements ASTTransformation {
         boolean isLoggingMethod(String methodName);
 
         Expression wrapLoggingMethodCall(Expression logVariable, String methodName, Expression originalExpression);
+    }
+
+    public static abstract class AbstractLoggingStrategy implements LoggingStrategy {
+        protected final GroovyClassLoader loader;
+
+        protected AbstractLoggingStrategy(final GroovyClassLoader loader) {
+            this.loader = loader;
+        }
+
+        protected AbstractLoggingStrategy() {
+            this(null);
+        }
+
+        protected ClassNode classNode(String name) {
+            ClassLoader cl = loader==null?this.getClass().getClassLoader():loader;
+            try {
+                return ClassHelper.make(Class.forName(name, false, cl));
+            } catch (ClassNotFoundException e) {
+                throw new GroovyRuntimeException(e);
+            }
+        }
     }
 }

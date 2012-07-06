@@ -20,6 +20,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import groovy.lang.GroovyClassLoader;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
@@ -58,32 +59,20 @@ public @interface Slf4j {
     String value() default "log";
     Class<? extends LogASTTransformation.LoggingStrategy> loggingStrategy() default Slf4jLoggingStrategy.class;
 
-    public static class Slf4jLoggingStrategy implements LogASTTransformation.LoggingStrategy {
-        private static final ClassNode LOGGER_CLASSNODE;
-        private static final ClassNode FACTORY_CLASSNODE;
+    public static class Slf4jLoggingStrategy extends LogASTTransformation.AbstractLoggingStrategy {
+        private static final String LOGGER_NAME = "org.slf4j.Logger";
+        private static final String FACTORY_NAME = "org.slf4j.LoggerFactory";
 
-        static {
-            ClassNode tmp1 = null;
-            ClassNode tmp2 = null;
-
-            try {
-                tmp1 = ClassHelper.make(Class.forName("org.slf4j.Logger"));
-                tmp2 = ClassHelper.make(Class.forName("org.slf4j.LoggerFactory"));
-            } catch (ClassNotFoundException e) {
-                tmp1 = ClassHelper.make("org.slf4j.Logger");
-                tmp2 = ClassHelper.make("org.slf4j.LoggerFactory");
-            } finally {
-                LOGGER_CLASSNODE = tmp1;
-                FACTORY_CLASSNODE = tmp2;
-            }
+        protected Slf4jLoggingStrategy(final GroovyClassLoader loader) {
+            super(loader);
         }
 
         public FieldNode addLoggerFieldToClass(ClassNode classNode, String logFieldName) {
             return classNode.addField(logFieldName,
                     Opcodes.ACC_FINAL | Opcodes.ACC_TRANSIENT | Opcodes.ACC_STATIC | Opcodes.ACC_PRIVATE,
-                    LOGGER_CLASSNODE,
+                    classNode(LOGGER_NAME),
                     new MethodCallExpression(
-                            new ClassExpression(FACTORY_CLASSNODE),
+                            new ClassExpression(classNode(FACTORY_NAME)),
                             "getLogger",
                             new ClassExpression(classNode)));
 

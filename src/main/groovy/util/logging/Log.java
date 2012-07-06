@@ -15,11 +15,13 @@
  */
 package groovy.util.logging;
 
+import groovy.lang.GroovyClassLoader;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.transform.GroovyASTTransformationClass;
+import org.codehaus.groovy.transform.LogASTTransformation;
 import org.codehaus.groovy.transform.LogASTTransformation.LoggingStrategy;
 import org.objectweb.asm.Opcodes;
 
@@ -67,10 +69,14 @@ public @interface Log {
     /**
      * This class contains the logic of how to weave a Java Util Logging logger into the host class.
      */
-    public static class JavaUtilLoggingStrategy implements LoggingStrategy {
+    public static class JavaUtilLoggingStrategy extends LogASTTransformation.AbstractLoggingStrategy {
 
         private static final ClassNode LOGGER_CLASSNODE = ClassHelper.make(java.util.logging.Logger.class);
         private static final ClassNode LEVEL_CLASSNODE = ClassHelper.make(java.util.logging.Level.class);
+
+        protected JavaUtilLoggingStrategy(final GroovyClassLoader loader) {
+            super(loader);
+        }
 
         public FieldNode addLoggerFieldToClass(ClassNode classNode, String logFieldName) {
             return classNode.addField(logFieldName,

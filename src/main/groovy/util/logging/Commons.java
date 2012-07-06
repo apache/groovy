@@ -15,6 +15,7 @@
  */
 package groovy.util.logging;
 
+import groovy.lang.GroovyClassLoader;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
@@ -58,33 +59,21 @@ public @interface Commons {
     String value() default "log";
     Class<? extends LogASTTransformation.LoggingStrategy> loggingStrategy() default CommonsLoggingStrategy.class;
 
-    public  static class CommonsLoggingStrategy implements LogASTTransformation.LoggingStrategy {
+    public  static class CommonsLoggingStrategy extends LogASTTransformation.AbstractLoggingStrategy {
 
-        private static final ClassNode LOGGER_CLASSNODE;
-        private static final ClassNode LOGGERFACTORY_CLASSNODE;
+        private static final String LOGGER_NAME = "org.apache.commons.logging.Log";
+        private static final String LOGGERFACTORY_NAME = "org.apache.commons.logging.LogFactory";
 
-        static {
-            ClassNode tmp1 = null;
-            ClassNode tmp2 = null;
-
-            try {
-                tmp1 = ClassHelper.make(Class.forName("org.apache.commons.logging.Log"));
-                tmp2 = ClassHelper.make(Class.forName("org.apache.commons.logging.LogFactory"));
-            } catch (ClassNotFoundException e) {
-                tmp1 = ClassHelper.make("org.apache.commons.logging.Log");
-                tmp2 = ClassHelper.make("org.apache.commons.logging.LogFactory");
-            } finally {
-                LOGGER_CLASSNODE = tmp1;
-                LOGGERFACTORY_CLASSNODE = tmp2;
-            }
+        protected CommonsLoggingStrategy(final GroovyClassLoader loader) {
+            super(loader);
         }
 
         public FieldNode addLoggerFieldToClass(ClassNode classNode, String logFieldName) {
             return classNode.addField(logFieldName,
                     Opcodes.ACC_FINAL | Opcodes.ACC_TRANSIENT | Opcodes.ACC_STATIC | Opcodes.ACC_PRIVATE,
-                    LOGGER_CLASSNODE,
+                    classNode(LOGGER_NAME),
                     new MethodCallExpression(
-                            new ClassExpression(LOGGERFACTORY_CLASSNODE),
+                            new ClassExpression(classNode(LOGGERFACTORY_NAME)),
                             "getLog",
                             new ClassExpression(classNode)));
         }
