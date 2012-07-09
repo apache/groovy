@@ -769,8 +769,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             boolean isStaticProperty = pexp.getObjectExpression() instanceof ClassExpression && implementsInterfaceOrIsSubclassOf(testClass, pexp.getObjectExpression().getType());
             // maps and lists have special handling for property expressions
             if (isStaticProperty || (!implementsInterfaceOrIsSubclassOf(testClass, MAP_TYPE) && !implementsInterfaceOrIsSubclassOf(testClass, LIST_TYPE))) {
-                ClassNode current = testClass;
-                while (current != null) {
+                LinkedList<ClassNode> queue = new LinkedList<ClassNode>();
+                queue.add(testClass);
+                if (testClass.isInterface()) {
+                    queue.addAll(testClass.getAllInterfaces());
+                }
+                while (!queue.isEmpty()) {
+                    ClassNode current = queue.removeFirst();
                     current = current.redirect();
                     PropertyNode propertyNode = current.getProperty(propertyName);
                     if (propertyNode != null) {
@@ -799,11 +804,18 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     }
                     // if the property expression is an attribute expression (o.@attr), then
                     // we stop now, otherwise we must check the parent class
-                    current = isAttributeExpression ? null : current.getSuperClass();
+                    if (!isAttributeExpression && current.getSuperClass()!=null) {
+                        queue.add(current.getSuperClass());
+                    }
                 }
                 if (checkForReadOnly) {
-                    current = testClass;
-                    while (current != null) {
+                    queue = new LinkedList<ClassNode>();
+                    queue.add(testClass);
+                    if (testClass.isInterface()) {
+                        queue.addAll(testClass.getAllInterfaces());
+                    }
+                    while (!queue.isEmpty()) {
+                        ClassNode current = queue.removeFirst();
                         current = current.redirect();
 
                         MethodNode getter = current.getGetterMethod("get" + capName);
@@ -827,7 +839,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         }
                         // if the property expression is an attribute expression (o.@attr), then
                         // we stop now, otherwise we must check the parent class
-                        current = isAttributeExpression ? null : current.getSuperClass();
+                        if (!isAttributeExpression && current.getSuperClass()!=null) {
+                            queue.add(current.getSuperClass());
+                        }
                     }
                 }
                 // GROOVY-5568, the property may be defined by DGM
