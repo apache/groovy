@@ -652,6 +652,74 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-5580
+    void testGetNameAsPropertyFromSuperInterface() {
+        assertScript '''interface Upper { String getName() }
+        interface Lower extends Upper {}
+        String foo(Lower impl) {
+            impl.name // getName() called with the property notation
+        }
+        assert foo({ 'bar' } as Lower) == 'bar'
+        '''
+    }
+
+    void testGetNameAsPropertyFromSuperInterfaceUsingConcreteImpl() {
+        assertScript '''interface Upper { String getName() }
+        interface Lower extends Upper {}
+        class Foo implements Lower { String getName() { 'bar' } }
+        String foo(Foo impl) {
+            impl.name // getName() called with the property notation
+        }
+        assert foo(new Foo()) == 'bar'
+        '''
+    }
+
+    void testGetNameAsPropertyFromSuperInterfaceUsingConcreteImplSubclass() {
+        assertScript '''interface Upper { String getName() }
+        interface Lower extends Upper {}
+        class Foo implements Lower { String getName() { 'bar' } }
+        class Bar extends Foo {}
+        String foo(Bar impl) {
+            impl.name // getName() called with the property notation
+        }
+        assert foo(new Bar()) == 'bar'
+        '''
+    }
+
+    // GROOVY-5580: getName variant
+    void testGetNameFromSuperInterface() {
+        assertScript '''interface Upper { String getName() }
+        interface Lower extends Upper {}
+        String foo(Lower impl) {
+            impl.getName()
+        }
+        assert foo({ 'bar' } as Lower) == 'bar'
+        '''
+    }
+
+    void testGetNameFromSuperInterfaceUsingConcreteImpl() {
+        assertScript '''interface Upper { String getName() }
+        interface Lower extends Upper {}
+        class Foo implements Lower { String getName() { 'bar' } }
+        String foo(Foo impl) {
+             impl.getName()
+        }
+        assert foo(new Foo()) == 'bar'
+        '''
+    }
+
+    void testGetNameFromSuperInterfaceUsingConcreteImplSubclass() {
+        assertScript '''interface Upper { String getName() }
+        interface Lower extends Upper {}
+        class Foo implements Lower { String getName() { 'bar' } }
+        class Bar extends Foo {}
+        String foo(Bar impl) {
+             impl.getName()
+        }
+        assert foo(new Bar()) == 'bar'
+        '''
+    }
+
     static class MyMethodCallTestClass {
 
         static int mul(int... args) { args.toList().inject(1) { x,y -> x*y } }

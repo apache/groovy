@@ -31,10 +31,7 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
 import java.lang.reflect.Modifier;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.chooseBestMethod;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.findDGMMethodsByNameAndArguments;
@@ -142,6 +139,26 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
             if (makeGetPropertyWithGetter(receiver, ClassHelper.CLASS_Type, methodName, safe, implicitThis)) return;
         }
         if (makeGetPrivateFieldWithBridgeMethod(receiver, receiverType, methodName, safe, implicitThis)) return;
+
+        // GROOVY-5580, it is still possible that we're calling a superinterface property
+        if (receiverType.isInterface()) {
+            Set<ClassNode> allInterfaces = receiverType.getAllInterfaces();
+            for (ClassNode anInterface : allInterfaces) {
+                MethodNode getterMethod = anInterface.getGetterMethod("get" + MetaClassHelper.capitalize(methodName));
+                if (getterMethod!=null) {
+                    MethodCallExpression call = new MethodCallExpression(
+                            receiver,
+                            "get"+MetaClassHelper.capitalize(methodName),
+                            ArgumentListExpression.EMPTY_ARGUMENTS
+                    );
+                    call.setMethodTarget(getterMethod);
+                    call.setImplicitThis(false);
+                    call.setSourcePosition(receiver);
+                    call.visit(controller.getAcg());
+                    return;
+                }
+            }
+        }
 
         // GROOVY-5568, we would be facing a DGM call, but instead of foo.getText(), have foo.text
         List<MethodNode> methods = findDGMMethodsByNameAndArguments(receiverType, "get"+MetaClassHelper.capitalize(methodName), ClassNode.EMPTY_ARRAY);
