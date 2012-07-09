@@ -240,5 +240,24 @@ class ConstructorsSTCTest extends StaticTypeCheckingTestCase {
         assert users.get(0).login == "login1"
         '''
     }
+
+    // GROOVY-5578
+    void testConstructJavaBeanFromMap() {
+        assertScript '''import groovy.transform.stc.MyBean
+
+        MyBean bean = new MyBean(name:'Cedric')
+        assert bean.name == 'Cedric'
+        '''
+    }
+    void testConstructJavaBeanFromMapAndSubclass() {
+        assertScript '''import groovy.transform.stc.MyBean
+        class MyBean2 extends MyBean {
+            int age
+        }
+        MyBean2 bean = new MyBean2(name:'Cedric', age:33)
+        assert bean.name == 'Cedric'
+        assert bean.age == 33
+        '''
+    }
 }
 

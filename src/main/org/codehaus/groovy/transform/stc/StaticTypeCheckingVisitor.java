@@ -640,20 +640,15 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             if (!(keyExpr instanceof ConstantExpression)) {
                 addStaticTypeError("Dynamic keys in map-style constructors are unsupported in static type checking", keyExpr);
             } else {
-                String property = keyExpr.getText();
-                ClassNode currentNode = receiverType;
-                PropertyNode propertyNode = null;
-                while (propertyNode == null && currentNode != null) {
-                    propertyNode = currentNode.getProperty(property);
-                    currentNode = currentNode.getSuperClass();
-                }
-                if (propertyNode == null) {
-                    addStaticTypeError("No such property: " + property +
+                AtomicReference<ClassNode> lookup = new AtomicReference<ClassNode>();
+                boolean hasProperty = existsProperty(new PropertyExpression(new VariableExpression("_", receiverType), keyExpr.getText()), false, new PropertyLookupVisitor(lookup));
+                if (!hasProperty) {
+                    addStaticTypeError("No such property: " + keyExpr.getText() +
                             " for class: " + receiverType.getName(), receiver);
-                } else if (propertyNode != null) {
+                } else {
                     ClassNode valueType = getType(entryExpression.getValueExpression());
-                    if (!isAssignableTo(propertyNode.getType(), valueType)) {
-                        addAssignmentError(propertyNode.getType(), valueType, entryExpression);
+                    if (!isAssignableTo(lookup.get(), valueType)) {
+                        addAssignmentError(lookup.get(), valueType, entryExpression);
                     }
                 }
             }
@@ -1122,26 +1117,40 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 call.isSuperCall() ? classNode.getSuperClass() : call.getType();
         Expression arguments = call.getArguments();
         ClassNode[] args = getArgumentTypes(InvocationWriter.makeArgumentList(arguments));
-        MethodNode node = findMethodOrFail(call, receiver, "<init>", args);
+        MethodNode node = null;
+        if (args.length == 1 && implementsInterfaceOrIsSubclassOf(args[0], MAP_TYPE) && findMethod(receiver, "<init>", ClassNode.EMPTY_ARRAY).size()==1) {
+            // bean-style constructor
+            node = typeCheckMapConstructor(call, receiver, arguments);
+            if (node!=null) {
+                storeTargetMethod(call, node);
+                return;
+            }
+        }
+        node = findMethodOrFail(call, receiver, "<init>", args);
         if (node != null) {
             if (node.getParameters().length == 0 && args.length == 1 && implementsInterfaceOrIsSubclassOf(args[0], MAP_TYPE)) {
-                if (arguments instanceof TupleExpression) {
-                    TupleExpression texp = (TupleExpression) arguments;
-                    List<Expression> expressions = texp.getExpressions();
-                    if (expressions.size() == 1) {
-                        Expression expression = expressions.get(0);
-                        if (expression instanceof MapExpression) {
-                            MapExpression argList = (MapExpression) expression;
-                            checkGroovyConstructorMap(call, receiver, argList);
-                            node = new ConstructorNode(Opcodes.ACC_PUBLIC, new Parameter[]{new Parameter(MAP_TYPE, "map")}, ClassNode.EMPTY_ARRAY, EmptyStatement.INSTANCE);
-                            node.setDeclaringClass(receiver);
+                node = typeCheckMapConstructor(call, receiver, arguments);
+            }
+            if (node!=null) storeTargetMethod(call, node);
+        }
+    }
 
-                        }
-                    }
+    private MethodNode typeCheckMapConstructor(final ConstructorCallExpression call, final ClassNode receiver, final Expression arguments) {
+        MethodNode node = null;
+        if (arguments instanceof TupleExpression) {
+            TupleExpression texp = (TupleExpression) arguments;
+            List<Expression> expressions = texp.getExpressions();
+            if (expressions.size() == 1) {
+                Expression expression = expressions.get(0);
+                if (expression instanceof MapExpression) {
+                    MapExpression argList = (MapExpression) expression;
+                    checkGroovyConstructorMap(call, receiver, argList);
+                    node = new ConstructorNode(Opcodes.ACC_PUBLIC, new Parameter[]{new Parameter(MAP_TYPE, "map")}, ClassNode.EMPTY_ARRAY, EmptyStatement.INSTANCE);
+                    node.setDeclaringClass(receiver);
                 }
             }
-            storeTargetMethod(call, node);
         }
+        return node;
     }
 
     private ClassNode[] getArgumentTypes(ArgumentListExpression args) {
