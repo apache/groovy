@@ -301,6 +301,10 @@ public class BinaryExpressionHelper {
         if (directAssignment) {
             VariableExpression var = (VariableExpression) leftExpression;
             rhsType = controller.getTypeChooser().resolveType(var, controller.getClassNode());
+            if (var.isClosureSharedVariable() && ClassHelper.isPrimitiveType(rhsType)) {
+                // GROOVY-5570: if a closure shared variable is a primitive type, it must be boxed
+                rhsType = ClassHelper.getWrapper(rhsType);
+            }
             if (!(rightExpression instanceof ConstantExpression) || (((ConstantExpression) rightExpression).getValue()!=null)) {
                 operandStack.doGroovyCast(rhsType);
             } else {

@@ -131,5 +131,21 @@ class BugsStaticCompileTest extends BugsSTCTest {
             assert squarePlusOne(2) == 5
         '''
     }
+
+    // GROOVY-5570
+    void testShouldNotThrowVerifyErrorRegisterContainsWrongType() {
+        assertScript '''
+                void foo() {
+                boolean idx = false
+                def cl = { idx }
+                }
+            '''
+        assertScript '''
+                void foo() {
+                int idx = 0
+                def cl = { idx }
+                }
+            '''
+    }
 }
 
