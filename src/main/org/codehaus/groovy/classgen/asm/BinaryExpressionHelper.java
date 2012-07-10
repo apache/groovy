@@ -836,16 +836,7 @@ public class BinaryExpressionHelper {
         
         ClassNode truePartType = typeChooser.resolveType(truePart, controller.getClassNode());
         ClassNode falsePartType = typeChooser.resolveType(falsePart, controller.getClassNode());
-        ClassNode common;
-        if (isNullConstant(truePart) && isNullConstant(falsePart)) {
-            common = ClassHelper.OBJECT_TYPE;
-        } else if (isNullConstant(truePart)) {
-            common = falsePartType;
-        } else if (isNullConstant(falsePart)) {
-            common = truePartType;
-        } else {
-            common = WideningCategories.lowestUpperBound(truePartType, falsePartType);
-        }
+        ClassNode common = WideningCategories.lowestUpperBound(truePartType, falsePartType);
 
         // we compile b?x:y as 
         //      boolean(b)?S(x):S(y), S = common super type of x,y

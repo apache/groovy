@@ -91,6 +91,7 @@ public class BooleanExpressionTransformer {
                 WriterController controller = acg.getController();
                 if (type == ClassHelper.boolean_TYPE) {
                     expression.visit(visitor);
+                    controller.getOperandStack().doGroovyCast(ClassHelper.boolean_TYPE);
                     return;
                 }
                 if (type == ClassHelper.Boolean_TYPE) {

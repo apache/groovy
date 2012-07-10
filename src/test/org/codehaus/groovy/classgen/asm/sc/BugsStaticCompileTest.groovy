@@ -147,5 +147,12 @@ class BugsStaticCompileTest extends BugsSTCTest {
                 }
             '''
     }
+
+    // GROOVY-5572
+    void testTernaryOperatorWithNull() {
+        assertScript '''
+            assert (true ? null : true) == null
+        '''
+    }
 }
 
