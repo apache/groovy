@@ -113,4 +113,18 @@ class AnonymousInnerClassSTCTest extends StaticTypeCheckingTestCase {
             assert new Outer().test() == 1
         '''
     }
+
+    // GROOVY-5566
+    void testAICReferencingOuterLocalVariable() {
+        assertScript '''
+            def foo() {
+                List things = []
+                Serializable s = new Serializable() {
+                  def size() {
+                    things.size()
+                  }
+                }
+                s.size()
+            }'''
+    }
 }

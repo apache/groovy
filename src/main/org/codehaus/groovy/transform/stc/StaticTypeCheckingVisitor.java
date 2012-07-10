@@ -2218,6 +2218,15 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
         List<MethodNode> chosen = chooseBestMethod(receiver, methods, args);
         if (!chosen.isEmpty()) return chosen;
+
+        // GROOVY-5566
+        if (receiver instanceof InnerClassNode && ((InnerClassNode) receiver).isAnonymous() && methods.size()==1 && args!=null && "<init>".equals(name)) {
+            MethodNode constructor = methods.get(0);
+            if (constructor.getParameters().length == args.length) {
+                return methods;
+            }
+        }
+
         if (receiver.equals(CLASS_Type) && receiver.getGenericsTypes() != null) {
             List<MethodNode> result = findMethod(receiver.getGenericsTypes()[0].getType(), name, args);
             if (!result.isEmpty()) return result;
