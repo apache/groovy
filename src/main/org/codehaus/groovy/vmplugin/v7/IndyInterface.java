@@ -33,6 +33,7 @@ import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.reflect.Array;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.math.BigDecimal;
 import java.math.BigInteger;
 
 import org.codehaus.groovy.GroovyBugError;
@@ -77,16 +78,12 @@ public class IndyInterface {
         private static final MethodType INVOKE_METHOD_SIGNATURE = MethodType.methodType(Object.class, Class.class, Object.class, String.class, Object[].class, boolean.class, boolean.class);
         private static final MethodType O2O = MethodType.methodType(Object.class, Object.class);
         private static final MethodHandle   
-            UNWRAP_METHOD,  TO_STRING,          TO_BYTE,        
-            TO_BIGINT,      SAME_MC,            IS_NULL,
+            UNWRAP_METHOD,  SAME_MC,            IS_NULL,
             IS_NOT_NULL,    UNWRAP_EXCEPTION,   SAME_CLASS,
             META_METHOD_INVOKER,    GROOVY_OBJECT_INVOKER;
         static {
             try {
                 UNWRAP_METHOD = LOOKUP.findStatic(IndyInterface.class, "unwrap", O2O);
-                TO_STRING = LOOKUP.findStatic(IndyInterface.class, "coerceToString", MethodType.methodType(String.class, Object.class));
-                TO_BYTE = LOOKUP.findStatic(IndyInterface.class, "coerceToByte", O2O);
-                TO_BIGINT = LOOKUP.findStatic(IndyInterface.class, "coerceToBigInt", O2O);
                 SAME_MC = LOOKUP.findStatic(IndyInterface.class, "isSameMetaClass", MethodType.methodType(boolean.class, MetaClass.class, Object.class));
                 IS_NULL = LOOKUP.findStatic(IndyInterface.class, "isNull", MethodType.methodType(boolean.class, Object.class));
                 IS_NOT_NULL = LOOKUP.findStatic(IndyInterface.class, "isNotNull", MethodType.methodType(boolean.class, Object.class));
@@ -378,33 +375,6 @@ public class IndyInterface {
         }
         
         /**
-         * Converts an Object to String.
-         * This method is called by the handle to convert for example 
-         * a GString to String.
-         */
-        public static String coerceToString(Object o) {
-            return o.toString();
-        }
-        
-        /**
-         * Converts a Number to Byte.
-         * This method is called by the handle to convert
-         * Numbers to Byte.
-         */
-        public static Object coerceToByte(Object o) {
-            return new Byte(((Number) o).byteValue());
-        }
-        
-        /**
-         * Converts an Object to BigInteger.
-         * This method is called by the handle to convert
-         * Numbers to BigInteger using {@link String#valueOf(Object)} 
-         */
-        public static Object coerceToBigInt(Object o) {
-            return new BigInteger(String.valueOf((Number) o));
-        }
-        
-        /**
          * Guard to check if the argument is null.
          * This method is called by the handle to check
          * if the provided argument is null.
@@ -459,22 +429,49 @@ public class IndyInterface {
             if (ci.useMetaClass) return;
             Class[] parameters = ci.handle.type().parameterArray();
             if (ci.args.length != parameters.length) {
-                throw new GroovyBugError("at this point argument array length and parameter array length should be the same");
+                throw new GroovyBugError("At this point argument array length and parameter array length should be the same");
             }
             for (int i=1; i<ci.args.length; i++) {
+            	if (parameters[i]==Object.class) continue; 
                 Object arg = ci.args[i];
+                // we have to handle here different cases in which we do no
+                // transformations. We depend on our method selection to have
+                // selected only a compatible method, that means for a null
+                // argument we don't have to do anything. Same of course is if
+                // the argument is an instance of the parameter type. We also
+                // exclude boxing, since the MethodHandles will do that part
+                // already for us. Another case is the conversion of a primitive
+                // to another primitive or of the wrappers, or a combination of 
+                // these. This is also handled already. What is left is the 
+                // GString conversion and the number conversions.
                 if (arg==null) continue;
-                Class got = arg.getClass(); 
-                if (arg instanceof GString && parameters[i] == String.class) {
-                    ci.handle = MethodHandles.filterArguments(ci.handle, i, TO_STRING);                    
-                } else if (parameters[i] == Byte.class && got != Byte.class) {
-                    ci.handle = MethodHandles.filterArguments(ci.handle, i, TO_BYTE);
-                } else if (parameters[i] == BigInteger.class && got != BigInteger.class) {
-                    ci.handle = MethodHandles.filterArguments(ci.handle, i, TO_BIGINT);
-                }
+                Class got = arg.getClass();
+                if (got==parameters[i]) continue;
+                Class wrappedPara = getWrapperClass(parameters[i]);
+                if (wrappedPara==got) continue;
+                if (parameters[i].isAssignableFrom(got)) continue;
+                if (isPrimitiveOrWrapper(parameters[i]) && isPrimitiveOrWrapper(got)) continue;
+                ci.handle = TypeTransformers.addTransformer(ci.handle, i, arg, wrappedPara);
             }
         }
-        
+
+        /**
+         * Return true if the given argument is either a primitive or
+         * one of its wrapper. 
+         */
+        private static boolean isPrimitiveOrWrapper(Class c) {
+            return  c == byte.class    || c == Byte.class      ||
+                    c == int.class     || c == Integer.class   ||
+                    c == long.class    || c == Long.class      ||
+                    c == float.class   || c == Float.class     ||
+                    c == double.class  || c == Double.class    ||
+                    c == short.class   || c == Short.class     ||
+                    c == boolean.class || c == Boolean.class   ||
+                    c == char.class    || c == Character.class;
+        }
+
+
+
         /**
          * Gives a replacement receiver for null.
          * In case of the receiver being null we want to do the method
@@ -535,7 +532,7 @@ public class IndyInterface {
          * will be returned. If it is no primtive number type, we return the 
          * class itself.
          */
-        private static Class getWrapperClass(Class c) {
+        protected static Class getWrapperClass(Class c) {
             if (c == Integer.TYPE) {
                 c = Integer.class;
             } else if (c == Byte.TYPE) {
