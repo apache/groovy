@@ -1837,14 +1837,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         temporaryIfBranchTypeInformation.pop();
         falseExpression.visit(this);
         ClassNode resultType = OBJECT_TYPE;
-        if (isNullConstant(trueExpression) && isNullConstant(falseExpression)) {
+        if (isNullConstant(trueExpression) || isNullConstant(falseExpression)) {
             if (currentBinaryExpression != null) {
                 resultType = getType(currentBinaryExpression.getLeftExpression());
             }
-        } else if (isNullConstant(trueExpression)) {
-            resultType = getType(falseExpression);
-        } else if (isNullConstant(falseExpression)) {
-            resultType = getType(trueExpression);
         } else {
             // store type information
             final ClassNode typeOfTrue = getType(trueExpression);
