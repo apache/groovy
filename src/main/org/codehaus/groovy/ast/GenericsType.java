@@ -165,6 +165,10 @@ public class GenericsType extends ASTNode {
             if (result) {
                 return true;
             }
+            if (ClassHelper.GSTRING_TYPE.equals(type) && ClassHelper.STRING_TYPE.equals(superOrInterface)) {
+                // GROOVY-5559
+                return true;
+            }
             if (superOrInterface instanceof WideningCategories.LowestUpperBoundClassNode) {
                 WideningCategories.LowestUpperBoundClassNode cn = (WideningCategories.LowestUpperBoundClassNode) superOrInterface;
                 result = implementsInterfaceOrIsSubclassOf(type, cn.getSuperClass());
@@ -232,6 +236,10 @@ public class GenericsType extends ASTNode {
             }
             // if this is not a generics placeholder, first compare that types represent the same type
             if ((type!=null && !type.equals(classNode))) {
+                if (ClassHelper.GSTRING_TYPE.equals(classNode) && ClassHelper.STRING_TYPE.equals(type)) {
+                    // GROOVY-5559
+                    return true;
+                }
                 return false;
             }
             // last, we could have the spec saying List<String> and a classnode saying List<Integer> so
