@@ -493,6 +493,48 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-5559
+    void testGStringInListShouldBeConsideredAsAString() {
+        assertScript '''
+        def bar = 1
+        @ASTTest(phase=INSTRUCTION_SELECTION, value={
+            assert node.getNodeMetaData(INFERRED_TYPE) == LIST_TYPE
+            assert node.getNodeMetaData(INFERRED_TYPE).genericsTypes[0].type == STRING_TYPE
+        })
+        def list = ["foo", "$bar"]
+        '''
+
+        assertScript '''
+        def bar = 1
+        @ASTTest(phase=INSTRUCTION_SELECTION, value={
+            assert node.getNodeMetaData(INFERRED_TYPE) == LIST_TYPE
+            assert node.getNodeMetaData(INFERRED_TYPE).genericsTypes[0].type == STRING_TYPE
+        })
+        List<String> list = ["foo", "$bar"]
+        '''
+
+        assertScript '''
+        def bar = 1
+        @ASTTest(phase=INSTRUCTION_SELECTION, value={
+            assert node.getNodeMetaData(INFERRED_TYPE) == LIST_TYPE
+            assert node.getNodeMetaData(INFERRED_TYPE).genericsTypes[0].type == GSTRING_TYPE
+        })
+        List<String> list = ["$bar"] // single element means no LUB
+        '''
+    }
+
+    // GROOVY-5559: related behaviour
+    void testGStringString() {
+        assertScript '''
+            int i = 1
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                assert node.getNodeMetaData(INFERRED_TYPE) == GSTRING_TYPE
+            })
+            def str = "foo$i"
+            assert str == 'foo1'
+        '''
+    }
+
     static class MyList extends LinkedList<String> {}
 
     public static class ClassA<T> {
