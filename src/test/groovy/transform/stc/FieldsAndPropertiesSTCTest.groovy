@@ -297,6 +297,32 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    void testSetterUsingPropertyNotation() {
+        assertScript '''
+            class A {
+                boolean ok = false;
+                void setFoo(String foo) { ok = foo == 'foo' }
+            }
+            def a = new A()
+            a.foo = 'foo'
+            assert a.ok
+        '''
+    }
+
+    void testSetterUsingPropertyNotationOnInterface() {
+        assertScript '''
+                interface FooAware { void setFoo(String arg) }
+                class A implements FooAware {
+                    void setFoo(String foo) { }
+                }
+                void test(FooAware a) {
+                    a.foo = 'foo'
+                }
+                def a = new A()
+                test(a)
+            '''
+    }
+
 
     public static class BaseClass {
         int x
