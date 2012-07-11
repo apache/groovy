@@ -206,25 +206,19 @@ public class Numbers
         // Build the specified type or, if no type was specified, the
         // smallest type in which the number will fit.
 
+        BigInteger value = new BigInteger( text, radix );
+
         switch (type)
         {
             case 'i':
-                return Integer.valueOf( Integer.parseInt(text, radix) );
-
+                return Integer.valueOf( value.intValue() );
             case 'l':
-                return new Long( Long.parseLong(text, radix) );
-
+                return new Long( value.longValue() );
             case 'g':
-                return new BigInteger( text, radix );
-
+                return value ;
             default:
-
-                //
                 // If not specified, we will return the narrowest possible
                 // of Integer, Long, and BigInteger.
-
-                BigInteger value = new BigInteger( text, radix );
-
                 if( value.compareTo(MAX_INTEGER) <= 0 && value.compareTo(MIN_INTEGER) >= 0 )
                 {
                     return Integer.valueOf(value.intValue());
@@ -233,7 +227,6 @@ public class Numbers
                 {
                     return new Long(value.longValue());
                 }
-
                 return value;
         }
     }
