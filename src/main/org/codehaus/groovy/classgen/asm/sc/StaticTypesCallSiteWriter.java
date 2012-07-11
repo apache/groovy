@@ -141,34 +141,43 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         if (makeGetPrivateFieldWithBridgeMethod(receiver, receiverType, methodName, safe, implicitThis)) return;
 
         // GROOVY-5580, it is still possible that we're calling a superinterface property
+        String getterName = "get" + MetaClassHelper.capitalize(methodName);
         if (receiverType.isInterface()) {
             Set<ClassNode> allInterfaces = receiverType.getAllInterfaces();
+            MethodNode getterMethod = null;
             for (ClassNode anInterface : allInterfaces) {
-                MethodNode getterMethod = anInterface.getGetterMethod("get" + MetaClassHelper.capitalize(methodName));
-                if (getterMethod!=null) {
-                    MethodCallExpression call = new MethodCallExpression(
-                            receiver,
-                            "get"+MetaClassHelper.capitalize(methodName),
-                            ArgumentListExpression.EMPTY_ARGUMENTS
-                    );
-                    call.setMethodTarget(getterMethod);
-                    call.setImplicitThis(false);
-                    call.setSourcePosition(receiver);
-                    call.visit(controller.getAcg());
-                    return;
-                }
+                getterMethod = anInterface.getGetterMethod(getterName);
+                if (getterMethod!=null) break;
             }
+            // GROOVY-5585
+            if (getterMethod==null) {
+                getterMethod = ClassHelper.OBJECT_TYPE.getGetterMethod(getterName);
+            }
+
+            if (getterMethod!=null) {
+                MethodCallExpression call = new MethodCallExpression(
+                        receiver,
+                        getterName,
+                        ArgumentListExpression.EMPTY_ARGUMENTS
+                );
+                call.setMethodTarget(getterMethod);
+                call.setImplicitThis(false);
+                call.setSourcePosition(receiver);
+                call.visit(controller.getAcg());
+                return;
+            }
+
         }
 
         // GROOVY-5568, we would be facing a DGM call, but instead of foo.getText(), have foo.text
-        List<MethodNode> methods = findDGMMethodsByNameAndArguments(receiverType, "get"+MetaClassHelper.capitalize(methodName), ClassNode.EMPTY_ARRAY);
+        List<MethodNode> methods = findDGMMethodsByNameAndArguments(receiverType, getterName, ClassNode.EMPTY_ARRAY);
         if (!methods.isEmpty()) {
             List<MethodNode> methodNodes = chooseBestMethod(receiverType, methods, ClassNode.EMPTY_ARRAY);
             if (methodNodes.size()==1) {
                 MethodNode getter = methodNodes.get(0);
                 MethodCallExpression call = new MethodCallExpression(
                         receiver,
-                        "get"+MetaClassHelper.capitalize(methodName),
+                        getterName,
                         ArgumentListExpression.EMPTY_ARGUMENTS
                 );
                 call.setMethodTarget(getter);
