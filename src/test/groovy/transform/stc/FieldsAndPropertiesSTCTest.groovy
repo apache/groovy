@@ -280,6 +280,22 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    void testClassPropertyOnInterface() {
+        assertScript '''
+            Class test(Serializable arg) {
+                Class<?> clazz = arg.class
+                clazz
+            }
+            assert test('foo') == String
+        '''
+        assertScript '''
+            Class test(Serializable arg) {
+                Class<?> clazz = arg.getClass()
+                clazz
+            }
+            assert test('foo') == String
+        '''
+    }
 
 
     public static class BaseClass {
