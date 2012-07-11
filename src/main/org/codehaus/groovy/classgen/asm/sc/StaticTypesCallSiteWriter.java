@@ -57,12 +57,16 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
     }
 
     @Override
-    public void generateCallSiteArray() {
-    }
-
-    @Override
     public void makeCallSite(final Expression receiver, final String message, final Expression arguments, final boolean safe, final boolean implicitThis, final boolean callCurrent, final boolean callStatic) {
     }
+
+/*
+    @Override
+    public void generateCallSiteArray() {
+        // todo
+        // GROOVY-5564: call site array may be skipped if the class is fully statically compiled
+    }
+*/
 
     @Override
     public void makeGetPropertySite(Expression receiver, final String methodName, final boolean safe, final boolean implicitThis) {
