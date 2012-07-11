@@ -21,7 +21,6 @@ import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.vmplugin.VMPlugin;
-import sun.reflect.generics.scope.ClassScope;
 
 import java.lang.annotation.*;
 import java.lang.reflect.*;
