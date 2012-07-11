@@ -546,6 +546,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         prepareSiteAndReceiver(receiver, message, false, controller.getCompileStack().isLHS());
         controller.getOperandStack().doGroovyCast(ClassHelper.Number_TYPE);
         visitBoxedArgument(arguments);
+        controller.getOperandStack().doGroovyCast(ClassHelper.Number_TYPE);
         int m2 = operandStack.getStackLength();
         MethodVisitor mv = controller.getMethodVisitor();
         mv.visitMethodInsn(INVOKESTATIC,
