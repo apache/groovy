@@ -85,5 +85,23 @@ class DefaultGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
             assert foo(text) == 'foo'
         '''
     }
+
+    // GROOVY-5584
+    void testEachOnMap() {
+        assertScript '''import org.codehaus.groovy.transform.stc.ExtensionMethodNode
+            import org.codehaus.groovy.runtime.DefaultGroovyMethods
+
+            @ASTTest(phase=INSTRUCTION_SELECTION, value= {
+                def mn = node.rightExpression.getNodeMetaData(DIRECT_METHOD_CALL_TARGET)
+                assert mn
+                assert mn instanceof ExtensionMethodNode
+                assert mn.declaringClass == MAP_TYPE
+                def en = mn.extensionMethodNode
+                assert en.declaringClass == make(DefaultGroovyMethods)
+                assert en.parameters[0].type == MAP_TYPE
+            })
+            def x = [a:1, b:3].each { k, v -> "$k$v" }
+        '''
+    }
 }
 
