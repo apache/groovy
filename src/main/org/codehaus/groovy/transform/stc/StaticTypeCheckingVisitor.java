@@ -340,6 +340,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     public void visitPropertyExpression(final PropertyExpression pexp) {
         super.visitPropertyExpression(pexp);
         if (!existsProperty(pexp, true)) {
+            // if the property doesn't exist, we can do a last check, which is verifying if a setter exists
+            // and that the expression is the left hand side of an assignment
+            if (currentBinaryExpression!=null && currentBinaryExpression.getLeftExpression()==pexp && isAssignment(currentBinaryExpression.getOperation().getType())) {
+                if (hasSetter(pexp)) return;
+            }
+
             Expression objectExpression = pexp.getObjectExpression();
             addStaticTypeError("No such property: " + pexp.getPropertyAsString() +
                     " for class: " + findCurrentInstanceOfClass(objectExpression, getType(objectExpression)).toString(false), pexp);
@@ -860,6 +866,51 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     visitor.visitProperty(node);
                 }
                 return true;
+            }
+        }
+        return false;
+    }
+
+    protected boolean hasSetter(final PropertyExpression pexp) {
+        Expression objectExpression = pexp.getObjectExpression();
+        ClassNode clazz = getType(objectExpression);
+        List<ClassNode> tests = new LinkedList<ClassNode>();
+        tests.add(clazz);
+        if (clazz.equals(CLASS_Type) && clazz.getGenericsTypes() != null) {
+            tests.add(clazz.getGenericsTypes()[0].getType());
+        }
+        if (!temporaryIfBranchTypeInformation.empty()) {
+            List<ClassNode> classNodes = getTemporaryTypesForExpression(objectExpression);
+            if (classNodes != null) tests.addAll(classNodes);
+        }
+        if (lastImplicitItType != null
+                && pexp.getObjectExpression() instanceof VariableExpression
+                && ((VariableExpression) pexp.getObjectExpression()).getName().equals("it")) {
+            tests.add(lastImplicitItType);
+        }
+        String propertyName = pexp.getPropertyAsString();
+        if (propertyName == null) return false;
+        String capName = MetaClassHelper.capitalize(propertyName);
+        boolean isAttributeExpression = pexp instanceof AttributeExpression;
+        if (clazz.isInterface()) tests.add(OBJECT_TYPE);
+        for (ClassNode testClass : tests) {
+            LinkedList<ClassNode> queue = new LinkedList<ClassNode>();
+            queue.add(testClass);
+            if (testClass.isInterface()) {
+                queue.addAll(testClass.getAllInterfaces());
+            }
+            while (!queue.isEmpty()) {
+                ClassNode current = queue.removeFirst();
+                current = current.redirect();
+                // check that a setter also exists
+                MethodNode setterMethod = current.getSetterMethod("set" + capName, false);
+                if (setterMethod!=null) {
+                    storeType(pexp, setterMethod.getParameters()[0].getType());
+                    return true;
+                }
+                if (!isAttributeExpression && current.getSuperClass() != null) {
+                    queue.add(current.getSuperClass());
+                }
             }
         }
         return false;
