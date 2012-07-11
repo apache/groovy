@@ -154,5 +154,22 @@ class BugsStaticCompileTest extends BugsSTCTest {
             assert (true ? null : true) == null
         '''
     }
+
+    // GROOVY-5564
+    void testSkipStaticCompile() {
+        new GroovyShell().evaluate '''import groovy.transform.CompileStatic
+            import static groovy.transform.TypeCheckingMode.SKIP
+
+            @CompileStatic
+            class A {
+                @CompileStatic(SKIP)
+                String toString(Object o) { o }
+            }
+
+            def a = new A()
+            assert a.toString('foo')=='foo'
+            assert a.toString(1) == '1'
+            '''
+    }
 }
 
