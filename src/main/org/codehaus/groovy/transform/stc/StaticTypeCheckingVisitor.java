@@ -630,7 +630,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 boolean incomplete = hasRHSIncompleteGenericTypeInfo(inferredRightExpressionType);
                 if (!incomplete) {
                     GenericsType gt = GenericsUtils.buildWildcardType(leftExpressionType);
-                    if (!gt.isCompatibleWith(inferredRightExpressionType)) {
+                    if (!UNKNOWN_PARAMETER_TYPE.equals(inferredRightExpressionType) && !gt.isCompatibleWith(inferredRightExpressionType)) {
                         addStaticTypeError("Incompatible generic argument types. Cannot assign "
                                 + inferredRightExpressionType.toString(false)
                                 + " to: " + leftExpressionType.toString(false), assignmentExpression);
