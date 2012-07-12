@@ -10,6 +10,11 @@ import org.codehaus.groovy.control.io.ReaderSource
 import org.codehaus.groovy.tools.Utilities
 import org.codehaus.groovy.control.*
 import groovy.transform.CompilationUnitAware
+import org.codehaus.groovy.ast.ClassCodeVisitorSupport
+import org.codehaus.groovy.ast.stmt.Statement
+import org.codehaus.groovy.ast.MethodNode
+import org.codehaus.groovy.ast.ClassNode
+import org.codehaus.groovy.runtime.MethodClosure
 
 @GroovyASTTransformation(phase = CompilePhase.SEMANTIC_ANALYSIS)
 class ASTTestTransformation extends AbstractASTTransformation implements CompilationUnitAware {
@@ -54,6 +59,8 @@ class ASTTestTransformation extends AbstractASTTransformation implements Compila
                     config.addCompilationCustomizers(customizer)
                     def binding = new Binding()
                     binding['node'] = nodes[1]
+                    binding['lookup'] = new MethodClosure(LabelFinder, "lookup").curry(nodes[1])
+
                     GroovyShell shell = new GroovyShell(binding, config)
 
                     source.AST.imports.each {
@@ -145,4 +152,49 @@ class ASTTestTransformation extends AbstractASTTransformation implements Compila
             chain*.call(context, phase)
         }
     }
+
+    public static class LabelFinder extends ClassCodeVisitorSupport {
+
+
+        public static List<Statement> lookup(MethodNode node, String label) {
+            LabelFinder finder = new LabelFinder(label, null)
+            node.code.visit(finder)
+
+            finder.targets
+        }
+
+        public static List<Statement> lookup(ClassNode node, String label) {
+            LabelFinder finder = new LabelFinder(label, null)
+            node.methods*.code*.visit(finder)
+            node.declaredConstructors*.code*.visit(finder)
+
+            finder.targets
+        }
+
+        private final String label
+        private final SourceUnit unit
+
+        private List<Statement> targets = new LinkedList<Statement>();
+
+        LabelFinder(final String label, final SourceUnit unit) {
+            this.label = label
+            this.unit = unit;
+        }
+
+        @Override
+        protected SourceUnit getSourceUnit() {
+            unit
+        }
+
+        @Override
+        protected void visitStatement(final Statement statement) {
+            super.visitStatement(statement)
+            if (statement.statementLabel==label) targets << statement
+        }
+
+        List<Statement> getTargets() {
+            return Collections.unmodifiableList(targets)
+        }
+    }
+
 }
