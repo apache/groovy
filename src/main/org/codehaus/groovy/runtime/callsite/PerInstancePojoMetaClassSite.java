@@ -30,14 +30,14 @@ public class PerInstancePojoMetaClassSite extends AbstractCallSite{
     }
 
     public Object call(Object receiver, Object[] args) throws Throwable {
-        if (info.hasPerInstanceMetaClasses()) {
-          try {
-              return InvokerHelper.getMetaClass(receiver).invokeMethod(receiver, name, args);
-          } catch (GroovyRuntimeException gre) {
-              throw ScriptBytecodeAdapter.unwrap(gre);
-          }
+        if (receiver != null && info.hasPerInstanceMetaClasses()) {
+            try {
+                return InvokerHelper.getMetaClass(receiver).invokeMethod(receiver, name, args);
+            } catch (GroovyRuntimeException gre) {
+                throw ScriptBytecodeAdapter.unwrap(gre);
+            }
         } else {
-          return CallSiteArray.defaultCall(this, receiver, args);
+            return CallSiteArray.defaultCall(this, receiver, args);
         }
     }
 }
