@@ -607,6 +607,14 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
 
     }
 
+    void testMethodCallWithArgumentUsingNestedGenerics() {
+        assertScript '''
+           ThreadLocal<Map<Integer, String>> cachedConfigs = new ThreadLocal<Map<Integer, String>>()
+           def configs = new HashMap<Integer, String>()
+           cachedConfigs.set configs
+        '''
+    }
+
     static class MyList extends LinkedList<String> {}
 
     public static class ClassA<T> {
