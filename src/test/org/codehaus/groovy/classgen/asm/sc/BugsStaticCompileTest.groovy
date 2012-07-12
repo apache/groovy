@@ -171,5 +171,22 @@ class BugsStaticCompileTest extends BugsSTCTest {
             assert a.toString(1) == '1'
             '''
     }
+
+    // GROOVY-5586
+    void testCanonicalInInnerClass() {
+        new GroovyShell().evaluate '''import groovy.transform.*
+            @CompileStatic
+            class CanonicalStaticTest extends GroovyTestCase {
+              @Canonical class Thing {
+                String stuff
+              }
+
+              Thing testCanonical() {
+                new Thing()
+              }
+            }
+            assert new CanonicalStaticTest().testCanonical().toString() == 'CanonicalStaticTest$Thing(null)'
+        '''
+    }
 }
 

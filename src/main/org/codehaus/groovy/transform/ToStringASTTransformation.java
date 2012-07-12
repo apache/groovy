@@ -145,7 +145,9 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
 
         // wrap up
         body.addStatement(append(result, new ConstantExpression(")")));
-        body.addStatement(new ReturnStatement(new MethodCallExpression(result, "toString", MethodCallExpression.NO_ARGUMENTS)));
+        MethodCallExpression toString = new MethodCallExpression(result, "toString", MethodCallExpression.NO_ARGUMENTS);
+        toString.setImplicitThis(false);
+        body.addStatement(new ReturnStatement(toString));
         cNode.addMethod(new MethodNode(hasExistingToString ? "_toString" : "toString", hasExistingToString ? ACC_PRIVATE : ACC_PUBLIC,
                 ClassHelper.STRING_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, body));
     }
@@ -177,7 +179,9 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
     }
 
     private static ExpressionStatement append(Expression result, Expression expr) {
-        return new ExpressionStatement(new MethodCallExpression(result, "append", expr));
+        MethodCallExpression append = new MethodCallExpression(result, "append", expr);
+        append.setImplicitThis(false);
+        return new ExpressionStatement(append);
     }
 
     private static boolean shouldSkip(String name, List<String> excludes, List<String> includes) {
