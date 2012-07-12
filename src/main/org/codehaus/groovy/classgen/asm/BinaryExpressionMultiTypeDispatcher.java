@@ -169,11 +169,7 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
                 rightExp.visit(acg);
                 os.doGroovyCast(int_TYPE);
                 bew.arrayGet(operation, false);
-                if(bew instanceof BinaryObjectExpressionHelper) {
-                    os.replace(ClassHelper.OBJECT_TYPE,2);
-                } else {
-                    os.replace(leftType,2);
-                }
+                os.replace(bew.getArrayGetResultType(),2);
             } else {
                 super.evaluateBinaryExpression(message, binExp);
             }
@@ -282,6 +278,7 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
         
         // load array: load x and DUP [load sub, call arrayGet, load b, call operation, load sub, call arraySet] 
         arrayWithSubscript.getLeftExpression().visit(acg);
+        operandStack.doGroovyCast(bew.getNormalOpResultType().makeArray());
         operandStack.dup();
         
         // array get: load sub, call arrayGet [load b, call operation, load sub, call arraySet]
