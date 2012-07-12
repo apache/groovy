@@ -71,5 +71,10 @@ class MultiDimArraysTest extends GroovyTestCase {
         assert "[[Lgroovy.MultiDimArraysTest;" == ff.class.name;
     }
 
+    void testIntArrayIncrement() {
+        int[][] x = new int[10][10]
+        x[1][1] += 5
+        assert x[1][1] == 5
+    }
 }
 

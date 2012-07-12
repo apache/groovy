@@ -16,6 +16,7 @@
 package org.codehaus.groovy.classgen.asm;
 
 import org.codehaus.groovy.GroovyBugError;
+import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.runtime.BytecodeInterface8;
 import org.objectweb.asm.MethodVisitor;
@@ -87,4 +88,9 @@ public class BinaryObjectExpressionHelper extends BinaryExpressionWriter {
     protected void writePlusPlus(MethodVisitor mv) {}
     protected void writeMinusMinus(MethodVisitor mv) {}
     protected void doubleTwoOperands(MethodVisitor mv) {}
+    
+    @Override
+    protected ClassNode getArrayGetResultType() {
+    	return ClassHelper.OBJECT_TYPE;
+    }
 }
