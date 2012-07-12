@@ -2663,11 +2663,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     // if it is a wildcard, we're only able, for now, to perform limited type checking
                     // todo: improve type checking, which probably means having a more interesting data structure too
                     ClassNode nodeType = methodGenericTypes[0].isWildcard()?OBJECT_TYPE:getWrapper(methodGenericTypes[0].getType());
-                    GenericsType[] argumentGenericTypes = arguments[argNum].getGenericsTypes();
-                    ClassNode actualType = argumentGenericTypes != null ? getWrapper(argumentGenericTypes[0].getType()) : nodeType;
-                    if (!implementsInterfaceOrIsSubclassOf(actualType, nodeType)) {
-                        failure = true;
-                    }
+                    GenericsType gt = GenericsUtils.buildWildcardType(nodeType);
+                    failure = !UNKNOWN_PARAMETER_TYPE.equals(arguments[argNum]) && !gt.isCompatibleWith(getWrapper(arguments[argNum]));
                 } else {
                     // not sure this is possible !
                 }
