@@ -15,6 +15,12 @@
  */
 package groovy.transform.stc
 
+import org.codehaus.groovy.ast.ClassCodeVisitorSupport
+import org.codehaus.groovy.control.SourceUnit
+import org.codehaus.groovy.ast.stmt.Statement
+import org.codehaus.groovy.ast.MethodNode
+import org.codehaus.groovy.ast.ClassNode
+
 /**
  * Unit tests for static type checking : loops.
  *
@@ -106,6 +112,68 @@ class LoopsSTCTest extends StaticTypeCheckingTestCase {
                 x = y
             }
         ''', 'Cannot find matching method'
+    }
+
+    // GROOVY-5587
+    void testMapEntryInForInLoop() {
+        assertScript '''
+            void test() {
+                def result = ""
+                def sum = 0
+                forLoop:
+                for ( Map.Entry<String, Integer> it in [a:1, b:3].entrySet() ) {
+                   result += it.getKey()
+                   sum += it.getValue()
+                }
+                assert result == "ab"
+                assert sum == 4
+            }
+            test()
+        '''
+    }
+
+    public static class LabelFinder extends ClassCodeVisitorSupport {
+
+
+        public static List<Statement> lookup(MethodNode node, String label) {
+            LabelFinder finder = new LabelFinder(label, null)
+            node.code.visit(finder)
+
+            finder.targets
+        }
+
+        public static List<Statement> lookup(ClassNode node, String label) {
+            LabelFinder finder = new LabelFinder(label, null)
+            node.methods*.code*.visit(finder)
+            node.declaredConstructors*.code*.visit(finder)
+
+            finder.targets
+        }
+
+        private final String label
+        private final SourceUnit unit
+
+        private List<Statement> targets = new LinkedList<Statement>();
+
+        LabelFinder(final String label, final SourceUnit unit) {
+            this.label = label
+            this.unit = unit;
+        }
+
+        @Override
+        protected SourceUnit getSourceUnit() {
+            unit
+        }
+
+        @Override
+        protected void visitStatement(final Statement statement) {
+            super.visitStatement(statement)
+            if (statement.statementLabel==label) targets << statement
+        }
+
+        List<Statement> getTargets() {
+            return Collections.unmodifiableList(targets)
+        }
     }
 }
 
