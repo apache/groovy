@@ -584,6 +584,29 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    void testAssignNullMapWithGenerics() {
+        assertScript '''
+            Map<String, Integer> foo = null
+            Integer result = foo?.get('a')
+        '''
+    }
+
+    void testAssignNullListWithGenerics() {
+        assertScript '''
+            List<Integer> foo = null
+            Integer result = foo?.get(0)
+        '''
+    }
+
+    void testAssignNullListWithGenericsWithSequence() {
+        assertScript '''
+            List<Integer> foo = [1]
+            foo = null
+            Integer result = foo?.get(0)
+        '''
+
+    }
+
     static class MyList extends LinkedList<String> {}
 
     public static class ClassA<T> {
