@@ -4,7 +4,6 @@ dependencies {
     compile project(':')
     groovy project(':')
     compile project(':groovy-swing')
-    compile project(':groovy-templates')
     testCompile project(':groovy-swing').sourceSets.test.runtimeClasspath
 }
 
