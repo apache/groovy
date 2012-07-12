@@ -2565,15 +2565,14 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
 
         GenericsType[] copy = new GenericsType[returnTypeGenerics.length];
-        Set<GenericsType> visitedResolvedGenericsTypes = new LinkedHashSet<GenericsType>();
         for (int i = 0; i < copy.length; i++) {
             GenericsType returnTypeGeneric = returnTypeGenerics[i];
             if (returnTypeGeneric.isPlaceholder() || returnTypeGeneric.isWildcard()) {
                 GenericsType resolved = resolvedPlaceholders.get(returnTypeGeneric.getName());
                 if (resolved == null) resolved = returnTypeGeneric;
-                copy[i] = fullyResolve(resolved, resolvedPlaceholders, visitedResolvedGenericsTypes);
+                copy[i] = fullyResolve(resolved, resolvedPlaceholders);
             } else {
-                copy[i] = fullyResolve(returnTypeGeneric, resolvedPlaceholders, visitedResolvedGenericsTypes);
+                copy[i] = fullyResolve(returnTypeGeneric, resolvedPlaceholders);
             }
         }
         if (returnType.equals(OBJECT_TYPE)) {
@@ -2602,38 +2601,44 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
      * Given a generics type representing SomeClass&lt;T,V&gt; and a resolved placeholder map, returns a new generics type
      * for which placeholders are resolved recursively.
      */
-    private static GenericsType fullyResolve(GenericsType gt, Map<String, GenericsType> placeholders, Set<GenericsType> visited) {
-        if (visited.contains(gt)) return gt;
-        visited.add(gt);
-        if (gt.isPlaceholder() && placeholders.containsKey(gt.getName())) {
+    private static GenericsType fullyResolve(GenericsType gt, Map<String, GenericsType> placeholders) {
+        if (gt.isPlaceholder() && placeholders.containsKey(gt.getName()) && !placeholders.get(gt.getName()).isPlaceholder()) {
             gt = placeholders.get(gt.getName());
         }
-        ClassNode type = gt.getType();
-        fullyResolveType(type, placeholders, visited);
+
+        ClassNode type = fullyResolveType(gt.getType(), placeholders);
         ClassNode lowerBound = gt.getLowerBound();
-        if (lowerBound!=null) fullyResolveType(lowerBound, placeholders, visited);
+        if (lowerBound!=null) lowerBound = fullyResolveType(lowerBound, placeholders);
         ClassNode[] upperBounds = gt.getUpperBounds();
         if (upperBounds!=null) {
-            for (ClassNode upperBound : upperBounds) {
-                fullyResolveType(upperBound, placeholders, visited);
+            ClassNode[] copy = new ClassNode[upperBounds.length];
+            for (int i = 0, upperBoundsLength = upperBounds.length; i < upperBoundsLength; i++) {
+                final ClassNode upperBound = upperBounds[i];
+                copy[i] = fullyResolveType(upperBound, placeholders);
             }
+            upperBounds = copy;
         }
-        return gt;
+        return new GenericsType(type, upperBounds, lowerBound);
     }
 
-    private static void fullyResolveType(final ClassNode type, final Map<String, GenericsType> placeholders, Set<GenericsType> visited) {
-        if (type.isUsingGenerics()) {
+    private static ClassNode fullyResolveType(final ClassNode type, final Map<String, GenericsType> placeholders) {
+        if (type.isUsingGenerics() && !type.isGenericsPlaceHolder()) {
             GenericsType[] gts = type.getGenericsTypes();
             if (gts!=null) {
+                GenericsType[] copy = new GenericsType[gts.length];
                 for (int i = 0; i < gts.length; i++) {
                     GenericsType genericsType = gts[i];
-                    gts[i] = fullyResolve(genericsType, placeholders, visited);
+                    copy[i] = fullyResolve(genericsType, placeholders);
                 }
+                gts = copy;
             }
-            type.setGenericsTypes(gts);
+            ClassNode result = type.getPlainNodeReference();
+            result.setGenericsTypes(gts);
+            return result;
         } else if (type.isArray()) {
-            fullyResolveType(type.getComponentType(), placeholders, visited);
+            return fullyResolveType(type.getComponentType(), placeholders).makeArray();
         }
+        return type;
     }
 
     private void typeCheckMethodsWithGenerics(ClassNode receiver, ClassNode[] arguments, MethodNode candidateMethod, Expression location) {
