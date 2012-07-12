@@ -166,6 +166,7 @@ public class GenericsUtils {
         extractPlaceholders(classNode, parameters);
         ClassNode node = interfaceFromClassNode.getPlainNodeReference();
         GenericsType[] interfaceGTs = interfaceFromClassNode.getGenericsTypes();
+        if (interfaceGTs==null) return anInterface;
         GenericsType[] types = new GenericsType[interfaceGTs.length];
         for (int i = 0; i < interfaceGTs.length; i++) {
             GenericsType interfaceGT = interfaceGTs[i];

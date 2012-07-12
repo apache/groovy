@@ -535,6 +535,55 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-5594
+    void testMapEntryUsingPropertyNotation() {
+        assertScript '''
+        Map.Entry<Date, Integer> entry
+
+        @ASTTest(phase=INSTRUCTION_SELECTION, value={
+            assert node.getNodeMetaData(INFERRED_TYPE) == make(Date)
+        })
+        def k = entry?.key
+
+        @ASTTest(phase=INSTRUCTION_SELECTION, value={
+            assert node.getNodeMetaData(INFERRED_TYPE) == Integer_TYPE
+        })
+        def v = entry?.value
+        '''
+    }
+
+    void testInferenceFromMap() {
+        assertScript '''
+        Map<Date, Integer> map
+
+        @ASTTest(phase=INSTRUCTION_SELECTION, value={
+            def infType = node.getNodeMetaData(INFERRED_TYPE)
+            assert infType == make(Set)
+            def entryInfType = infType.genericsTypes[0].type
+            assert entryInfType == make(Map.Entry)
+            assert entryInfType.genericsTypes[0].type == make(Date)
+            assert entryInfType.genericsTypes[1].type == Integer_TYPE
+        })
+        def entries = map?.entrySet()
+        '''
+    }
+
+    void testInferenceFromListOfMaps() {
+        assertScript '''
+        List<Map<Date, Integer>> maps
+
+        @ASTTest(phase=INSTRUCTION_SELECTION, value={
+            def listType = node.getNodeMetaData(INFERRED_TYPE)
+            assert listType == Iterator_TYPE
+            def infType = listType.genericsTypes[0].type
+            assert infType == make(Map)
+            assert infType.genericsTypes[0].type == make(Date)
+            assert infType.genericsTypes[1].type == Integer_TYPE
+        })
+        def iter = maps?.iterator()
+        '''
+    }
+
     static class MyList extends LinkedList<String> {}
 
     public static class ClassA<T> {

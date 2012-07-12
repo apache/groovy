@@ -774,7 +774,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 LinkedList<ClassNode> queue = new LinkedList<ClassNode>();
                 queue.add(testClass);
                 if (testClass.isInterface()) {
-                    queue.addAll(testClass.getAllInterfaces());
+                    Set<ClassNode> allInterfaces = testClass.getAllInterfaces();
+                    for (ClassNode intf : allInterfaces) {
+                        queue.add(GenericsUtils.parameterizeInterfaceGenerics(testClass, intf));
+                    }
                 }
                 while (!queue.isEmpty()) {
                     ClassNode current = queue.removeFirst();
@@ -792,7 +795,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         MethodNode setterMethod = current.getSetterMethod("set" + capName);
                         if (setterMethod != null) {
                             if (visitor != null) visitor.visitMethod(getter);
-                            storeType(pexp, getter.getReturnType());
+                            storeType(pexp, inferReturnTypeGenerics(current, getter, ArgumentListExpression.EMPTY_ARGUMENTS));
                             return true;
                         }
                     }
@@ -813,19 +816,19 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 if (checkForReadOnly) {
                     queue = new LinkedList<ClassNode>();
                     queue.add(testClass);
-                    if (testClass.isInterface()) {
-                        queue.addAll(testClass.getAllInterfaces());
+                    Set<ClassNode> allInterfaces = testClass.getAllInterfaces();
+                    for (ClassNode intf : allInterfaces) {
+                        queue.add(GenericsUtils.parameterizeInterfaceGenerics(testClass, intf));
                     }
                     while (!queue.isEmpty()) {
                         ClassNode current = queue.removeFirst();
-                        current = current.redirect();
 
                         MethodNode getter = current.getGetterMethod("get" + capName);
                         if (getter == null) getter = current.getGetterMethod("is" + capName);
                         if (getter != null) {
                             if (visitor != null) visitor.visitMethod(getter);
                             pexp.putNodeMetaData(StaticTypesMarker.READONLY_PROPERTY, Boolean.TRUE);
-                            storeType(pexp, getter.getReturnType());
+                            storeType(pexp, inferReturnTypeGenerics(current, getter, ArgumentListExpression.EMPTY_ARGUMENTS));
                             return true;
                         }
                         if (pluginFactory != null) {
@@ -855,7 +858,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         if (visitor!=null) {
                             visitor.visitMethod(getter);
                         }
-                        storeType(pexp, getter.getReturnType());
+                        storeType(pexp, inferReturnTypeGenerics(testClass, getter, ArgumentListExpression.EMPTY_ARGUMENTS));
                         return true;
                     }
                 }
@@ -954,14 +957,19 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             collectionExpression.visit(this);
             final ClassNode collectionType = getType(collectionExpression);
             ClassNode componentType = inferLoopElementType(collectionType);
-            if (ClassHelper.getUnwrapper(componentType) == forLoop.getVariableType()) {
+            ClassNode forLoopVariableType = forLoop.getVariableType();
+            if (ClassHelper.getUnwrapper(componentType) == forLoopVariableType) {
                 // prefer primitive type over boxed type
-                componentType = forLoop.getVariableType();
+                componentType = forLoopVariableType;
+            }
+            if (!checkCompatibleAssignmentTypes(forLoopVariableType, componentType)) {
+                addStaticTypeError("Cannot loop with element of type " + forLoopVariableType + " with collection of type " + collectionType, forLoop);
+            }
+            if (forLoopVariableType!=DYNAMIC_TYPE) {
+                // user has specified a type, prefer it over the inferred type
+                componentType = forLoopVariableType;
             }
             controlStructureVariables.put(forLoop.getVariable(), componentType);
-            if (!checkCompatibleAssignmentTypes(forLoop.getVariableType(), componentType)) {
-                addStaticTypeError("Cannot loop with element of type " + forLoop.getVariableType() + " with collection of type " + collectionType, forLoop);
-            }
             try {
                 super.visitForLoop(forLoop);
             } finally {
@@ -2502,16 +2510,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
         if (!isUsingGenericsOrIsArrayUsingGenerics(returnType)) return returnType;
         GenericsType[] returnTypeGenerics = returnType.isArray() ? returnType.getComponentType().getGenericsTypes() : returnType.getGenericsTypes();
-        List<GenericsType> placeholders = new LinkedList<GenericsType>();
-        for (GenericsType returnTypeGeneric : returnTypeGenerics) {
-            if (returnTypeGeneric.isPlaceholder() || returnTypeGeneric.isWildcard()) {
-                placeholders.add(returnTypeGeneric);
-            }
-        }
-        if (placeholders.isEmpty()) return returnType; // nothing to infer
         Map<String, GenericsType> resolvedPlaceholders = new HashMap<String, GenericsType>();
         GenericsUtils.extractPlaceholders(receiver, resolvedPlaceholders);
         GenericsUtils.extractPlaceholders(method.getReturnType(), resolvedPlaceholders);
+        if (resolvedPlaceholders.isEmpty()) return returnType;
         // then resolve receivers from method arguments
         Parameter[] parameters = method.getParameters();
         boolean isVargs = isVargs(parameters);
@@ -2561,15 +2563,17 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 }
             }
         }
+
         GenericsType[] copy = new GenericsType[returnTypeGenerics.length];
+        Set<GenericsType> visitedResolvedGenericsTypes = new LinkedHashSet<GenericsType>();
         for (int i = 0; i < copy.length; i++) {
             GenericsType returnTypeGeneric = returnTypeGenerics[i];
             if (returnTypeGeneric.isPlaceholder() || returnTypeGeneric.isWildcard()) {
                 GenericsType resolved = resolvedPlaceholders.get(returnTypeGeneric.getName());
                 if (resolved == null) resolved = returnTypeGeneric;
-                copy[i] = resolved;
+                copy[i] = fullyResolve(resolved, resolvedPlaceholders, visitedResolvedGenericsTypes);
             } else {
-                copy[i] = returnTypeGeneric;
+                copy[i] = fullyResolve(returnTypeGeneric, resolvedPlaceholders, visitedResolvedGenericsTypes);
             }
         }
         if (returnType.equals(OBJECT_TYPE)) {
@@ -2592,6 +2596,44 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             return returnType.getGenericsTypes()[0].getType();
         }
         return returnType;
+    }
+
+    /**
+     * Given a generics type representing SomeClass&lt;T,V&gt; and a resolved placeholder map, returns a new generics type
+     * for which placeholders are resolved recursively.
+     */
+    private static GenericsType fullyResolve(GenericsType gt, Map<String, GenericsType> placeholders, Set<GenericsType> visited) {
+        if (visited.contains(gt)) return gt;
+        visited.add(gt);
+        if (gt.isPlaceholder() && placeholders.containsKey(gt.getName())) {
+            gt = placeholders.get(gt.getName());
+        }
+        ClassNode type = gt.getType();
+        fullyResolveType(type, placeholders, visited);
+        ClassNode lowerBound = gt.getLowerBound();
+        if (lowerBound!=null) fullyResolveType(lowerBound, placeholders, visited);
+        ClassNode[] upperBounds = gt.getUpperBounds();
+        if (upperBounds!=null) {
+            for (ClassNode upperBound : upperBounds) {
+                fullyResolveType(upperBound, placeholders, visited);
+            }
+        }
+        return gt;
+    }
+
+    private static void fullyResolveType(final ClassNode type, final Map<String, GenericsType> placeholders, Set<GenericsType> visited) {
+        if (type.isUsingGenerics()) {
+            GenericsType[] gts = type.getGenericsTypes();
+            if (gts!=null) {
+                for (int i = 0; i < gts.length; i++) {
+                    GenericsType genericsType = gts[i];
+                    gts[i] = fullyResolve(genericsType, placeholders, visited);
+                }
+            }
+            type.setGenericsTypes(gts);
+        } else if (type.isArray()) {
+            fullyResolveType(type.getComponentType(), placeholders, visited);
+        }
     }
 
     private void typeCheckMethodsWithGenerics(ClassNode receiver, ClassNode[] arguments, MethodNode candidateMethod, Expression location) {
