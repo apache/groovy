@@ -95,7 +95,7 @@ jar {
         }
         manifest groovyOsgiManifest
     }
-    exclude '**/package-info.class', 'compiler', 'META-INF/groovy-release-info.properties', 'main'
+    exclude '**/package-info.class', 'META-INF/groovy-release-info.properties'
 }
 
 subprojects {
@@ -113,7 +113,7 @@ subprojects {
             }
             manifest subprojectOsgiManifest
         }
-        exclude '**/package-info.class', 'compiler', 'META-INF/groovy-release-info.properties', 'main'
+        exclude '**/package-info.class', 'META-INF/groovy-release-info.properties'
     }
 }
 
@@ -219,7 +219,6 @@ allprojects {
     }
 }
 
-
 task jarAllWithIndy(type: GradleBuild) {
     onlyIf rootProject.indyCapable
     description = 'Triggers an external build generating the indy jarAll'
@@ -272,7 +271,6 @@ task groovydocAllJar(type: Jar, dependsOn: groovydocAll) {
     from groovydocAll.destinationDir
 }
 
-
 ext.distSpec = copySpec {
     from("$projectDir") {
         include "LICENSE.txt", "NOTICE.txt"
@@ -295,7 +293,6 @@ ext.distSpec = copySpec {
             }
         }
     }
-
     into("conf") {
         from "src/conf"
     }
