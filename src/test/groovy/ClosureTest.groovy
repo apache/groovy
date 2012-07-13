@@ -182,6 +182,9 @@ class ClosureTest extends GroovyTestCase {
     }
 
     void testGetPropertiesGenerically() {
+        // ensure closure metaclass is the original one
+        Closure.metaClass = null
+
         Closure.metaClass.properties.each { property ->
             def closure = { println it }
             closure."$property.name" == closure."${MetaProperty.getGetterName(property.name, property.type)}"()
