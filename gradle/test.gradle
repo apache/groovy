@@ -24,10 +24,16 @@ test {
     includes = getIncludePattern()
 }
 
+boolean isRunningOnCI() {
+    System.getProperty('buildNumber', '-1') != '-1'
+}
+
+logger.lifecycle "Detected ${isRunningOnCI()?'Continuous Integration environment':'development environment'}"
+
 allprojects {
     test {
-        forkEvery = 50
-        maxParallelForks = Runtime.runtime.availableProcessors()
+        forkEvery = isRunningOnCI()?400:200
+        maxParallelForks = isRunningOnCI()?1:Runtime.runtime.availableProcessors()
     }
 }
 tasks.addRule("Pattern: testSingle<Name> will test **/<Name>.class") {String taskName ->
