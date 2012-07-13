@@ -32,7 +32,7 @@ logger.lifecycle "Detected ${isRunningOnCI()?'Continuous Integration environment
 
 allprojects {
     test {
-        forkEvery = isRunningOnCI()?400:200
+        forkEvery = isRunningOnCI()?50:200
         maxParallelForks = isRunningOnCI()?1:Runtime.runtime.availableProcessors()
     }
 }
