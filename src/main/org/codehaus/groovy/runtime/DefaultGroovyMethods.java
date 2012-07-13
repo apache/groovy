@@ -4885,6 +4885,30 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Creates a sub-Map containing the given keys. This method is similar to
+     * List.subList() but uses keys rather than index ranges. The original
+     * map is unaltered.
+     * <pre class="groovyTestCase">
+     * def orig = [1:10, 2:20, 3:30, 4:40]
+     * assert orig.subMap([1, 3] as int[]) == [1:10, 3:30]
+     * assert orig.subMap([2, 4] as Integer[]) == [2:20, 4:40]
+     * assert orig.size() == 4
+     * </pre>
+     *
+     * @param map  a Map
+     * @param keys an array of keys
+     * @return a new Map containing the given keys
+     * @since 2.1.0
+     */
+    public static <K, V> Map<K, V> subMap(Map<K, V> map, K[] keys) {
+        Map<K, V> answer = new LinkedHashMap<K, V>(keys.length);
+        for (K key : keys) {
+            answer.put(key, map.get(key));
+        }
+        return answer;
+    }
+
+    /**
      * Looks up an item in a Map for the given key and returns the value - unless
      * there is no entry for the given key in which case add the default value
      * to the map and return that.
