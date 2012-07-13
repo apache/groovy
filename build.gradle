@@ -17,35 +17,6 @@ allprojects {
         mavenCentral()
     }
 
-    // todo: when we get rid of the Ant build, it will be much cleaner to use
-    // the conventional "resources" directory for classpath resources
-    task(copyResources, type: Copy) {
-        destinationDir = file("$buildDir/classes")
-        // text files requiring filtering
-        into("main") {
-            from('src/main/groovy')
-            from('src/main/java')
-            include('**/*.txt', '**/*.xml', '**/*.properties', '**/*.html')
-            filter(rootProject.propertiesFilter, org.apache.tools.ant.filters.ReplaceTokens)
-        }
-        // other resources
-        into("main") {
-            from 'src/main/groovy'
-            from 'src/main/java'
-            include('**/*.png', '**/*.gif', '**/*.ico', '**/*.css')
-        }
-    }
-
-    compileJava.dependsOn(copyResources)
-
-    task(copyTestResources, type: Copy)
-            .from('src/test/groovy')
-            .from('src/test/java')
-            .into("$buildDir/classes/test")
-            .include('**/*.txt', '**/*.xml', '**/*.properties', '**/*.png', '**/*.html', '**/*.gif', '**/*.ico', '**/*.css')
-
-    compileTestJava.dependsOn(copyTestResources)
-
     task sourceJar(type: Jar) {
         classifier = 'sources'
         from sourceSets.main.allSource
@@ -107,6 +78,55 @@ allprojects {
         }
     }
 
+}
+
+// todo: use the conventional "resources" directory for classpath resources
+task(copyResources, type: Copy) {
+    destinationDir = file("$buildDir/classes")
+    // text files requiring filtering
+    into("main") {
+        from('src/main')
+        include('**/*.txt', '**/*.xml', '**/*.properties', '**/*.html')
+        filter(rootProject.propertiesFilter, org.apache.tools.ant.filters.ReplaceTokens)
+    }
+    // other resources
+    into("main") {
+        from 'src/main'
+        include('**/*.png', '**/*.gif', '**/*.ico', '**/*.css')
+    }
+}
+compileJava.dependsOn(copyResources)
+task(copyTestResources, type: Copy)
+        .from('src/test')
+        .into("$buildDir/classes/test")
+        .include('**/*.txt', '**/*.xml', '**/*.properties', '**/*.png', '**/*.html', '**/*.gif', '**/*.ico', '**/*.css')
+compileTestJava.dependsOn(copyTestResources)
+
+subprojects {
+    // todo: use the conventional "resources" directory for classpath resources
+    task(copyResources, type: Copy) {
+        destinationDir = file("$buildDir/classes")
+        // text files requiring filtering
+        into("main") {
+            from('src/main/groovy')
+            from('src/main/java')
+            include('**/*.txt', '**/*.xml', '**/*.properties', '**/*.html')
+            filter(rootProject.propertiesFilter, org.apache.tools.ant.filters.ReplaceTokens)
+        }
+        // other resources
+        into("main") {
+            from 'src/main/groovy'
+            from 'src/main/java'
+            include('**/*.png', '**/*.gif', '**/*.ico', '**/*.css')
+        }
+    }
+    compileJava.dependsOn(copyResources)
+    task(copyTestResources, type: Copy)
+            .from('src/test/groovy')
+            .from('src/test/java')
+            .into("$buildDir/classes/test")
+            .include('**/*.txt', '**/*.xml', '**/*.properties', '**/*.png', '**/*.html', '**/*.gif', '**/*.ico', '**/*.css')
+    compileTestJava.dependsOn(copyTestResources)
 }
 
 repositories {
@@ -281,7 +301,6 @@ sourceSets {
                     "org/codehaus/groovy/tools/groovydoc/gstringTemplates/**/*.*",
                     "org/codehaus/groovy/tools/groovy.ico"
         }
-        output.classesDir = "$buildDir/classes" as File
     }
     test {
         groovy {
@@ -379,27 +398,28 @@ ext.modules = this.&modules()
 
 task dgmConverter(type: JavaExec, dependsOn: 'classes') {
     description = 'Generates DGM info file required for faster startup.'
-    classpath = files(file('target/classes')) + configurations.compile
+    ext.classesDir = sourceSets.main.output.classesDir
+    classpath = files(classesDir) + configurations.compile
     main = 'org.codehaus.groovy.tools.DgmConverter'
-    args = ['--info']
+    args = ['--info', classesDir.absolutePath]
     doFirst {
-        file('target/classes/META-INF').mkdirs()
+        file("$classesDir/META-INF").mkdirs()
     }
     inputs.files fileTree(dir: projectDir, includes: ['src/**/*GroovyMethods.java'])
-    outputs.file file('target/classes/META-INF/dgminfo')
+    outputs.file file("$classesDir/META-INF/dgminfo")
 }
 
 task compilerDgmConverter(type: JavaExec) {
     description = 'Generates DGM info file for the bootstrap compiler'
-    classpath = files(file('target/classes/compiler')) + configurations.compilerCompile
+    ext.compilerClassesDir = sourceSets.compiler.output.classesDir
+    classpath = files(compilerClassesDir) + configurations.compilerCompile
     main = 'org.codehaus.groovy.tools.DgmConverter'
-    ext.compilerDirPath = file('target/classes/compiler').absolutePath
-    args = ['--info', compilerDirPath]
+    args = ['--info', compilerClassesDir.absolutePath]
     doFirst {
-        file('target/classes/compiler/META-INF').mkdirs()
+        file("$compilerClassesDir/META-INF").mkdirs()
     }
     inputs.files fileTree(dir: projectDir, includes: ['src/**/*GroovyMethods.java'])
-    outputs.file file('target/classes/compiler/META-INF/dgminfo')
+    outputs.file file("$compilerClassesDir/META-INF/dgminfo")
 }
 
 compileCompilerJava {
