@@ -16,6 +16,8 @@
 package groovy.transform.stc
 
 import org.codehaus.groovy.runtime.m12n.ExtensionModuleRegistry
+import org.codehaus.groovy.runtime.m12n.ExtensionModule
+import java.lang.reflect.Modifier
 
 /**
  * Unit tests for static type checking : extension methods.
@@ -24,12 +26,30 @@ import org.codehaus.groovy.runtime.m12n.ExtensionModuleRegistry
  */
 class STCExtensionMethodsTest extends StaticTypeCheckingTestCase {
 
+    private List<ExtensionModule> savedModules
+
+    @Override
+    protected void setUp() {
+        super.setUp()
+        // save modules here to clean up after ourselves
+        savedModules = GroovySystem.metaClassRegistry.moduleRegistry.modules
+    }
+
+    @Override
+    protected void tearDown() {
+        super.tearDown()
+        GroovySystem.metaClassRegistry.moduleRegistry.class.getDeclaredField('modules').with {
+            accessible = true
+            modifiers = modifiers & ~Modifier.FINAL
+            set(GroovySystem.metaClassRegistry.moduleRegistry, savedModules)
+        }
+    }
+
     void testShouldFindExtensionMethod() {
         assertScript '''
-            // reverteToUpperCase is an extension method specific to unit tests
+            // reverseToUpperCase is an extension method specific to unit tests
             def str = 'This is a string'
             assert str.reverseToUpperCase() == str.toUpperCase().reverse()
-
             assert String.answer() == 42
         '''
     }
@@ -40,7 +60,7 @@ class STCExtensionMethodsTest extends StaticTypeCheckingTestCase {
         String.metaClass = impl
         ExtensionModuleRegistry registry = GroovySystem.metaClassRegistry.moduleRegistry
         // ensure that the module isn't loaded
-        assert registry.modules.any { it.name == 'Test module for Grab' && it.version == '1.0-test' } == false
+        assert !registry.modules.any { it.name == 'Test module for Grab' && it.version == '1.2-test' }
 
         // find jar resource
         def jarURL = this.class.getResource("/jars")
@@ -48,8 +68,8 @@ class STCExtensionMethodsTest extends StaticTypeCheckingTestCase {
 
         def resolver = "@GrabResolver(name='local',root='$jarURL')"
 
-        assertScript resolver+'''
-        @Grab('module-test:module-test:1.0-test')
+        assertScript resolver + '''
+        @Grab('module-test:module-test:1.2-test')
         import org.codehaus.groovy.runtime.m12n.*
 
         // the following methods are added by the Grab test module
