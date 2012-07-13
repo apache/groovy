@@ -50,7 +50,7 @@ class ExtensionModuleTest extends GroovyTestCase {
         def resolver = "@GrabResolver(name='local',root='$jarURL')"
 
         assertScript resolver + '''
-        @Grab('module-test:module-test:1.2-test')
+        @Grab(value='module-test:module-test:1.2-test', changing=true)
         import org.codehaus.groovy.runtime.m12n.*
 
         // ensure that the module is now loaded
@@ -80,7 +80,7 @@ class ExtensionModuleTest extends GroovyTestCase {
         def resolver = "@GrabResolver(name='local',root='$jarURL')"
 
         assertScript resolver + '''
-        @Grab('module-test:module-test:1.2-test')
+        @Grab(value='module-test:module-test:1.2-test', changing=true)
         import org.codehaus.groovy.runtime.m12n.*
 
         def map = [:]
