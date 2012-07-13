@@ -115,7 +115,14 @@ public class StaticInvocationWriter extends InvocationWriter {
             MethodVisitor mv = controller.getMethodVisitor();
             int argumentsToRemove = 0;
             List<Expression> argumentList = new LinkedList<Expression> (args.getExpressions());
-            argumentList.add(0, receiver);
+
+            if (receiver instanceof ClassExpression) {
+                // it's a static extension method
+                argumentList.add(0, ConstantExpression.NULL);
+            } else {
+                argumentList.add(0, receiver);
+            }
+
             Parameter[] parameters = node.getParameters();
             loadArguments(argumentList, parameters);
 
