@@ -95,7 +95,7 @@ jar {
         }
         manifest groovyOsgiManifest
     }
-    exclude '**/package-info.class', 'compiler', 'META-INF/groovy-release-info.properties', 'main'
+    exclude '**/package-info.class', 'META-INF/groovy-release-info.properties'
 }
 
 subprojects {
@@ -113,7 +113,7 @@ subprojects {
             }
             manifest subprojectOsgiManifest
         }
-        exclude '**/package-info.class', 'compiler', 'META-INF/groovy-release-info.properties', 'main'
+        exclude '**/package-info.class', 'META-INF/groovy-release-info.properties'
     }
 }
 
