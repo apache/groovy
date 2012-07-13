@@ -350,7 +350,7 @@ task syncDoc(type: Copy, dependsOn: doc) {
     // groovy-jdk already at the good place
 }
 
-task distSrc(type: Zip, dependsOn: [javadoc, groovydoc, docGDK]) {
+task distSrc(type: Zip) {
     appendix = 'src'
     into("groovy-$version")
     from(projectDir) {
