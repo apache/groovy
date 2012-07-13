@@ -24,6 +24,7 @@ import org.codehaus.groovy.runtime.metaclass.NewStaticMetaMethod;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.logging.Logger;
 
 /**
  * An extension module which provides extension methods using a {@link org.codehaus.groovy.runtime.DefaultGroovyMethods}-like implementation, that
@@ -76,6 +77,8 @@ import java.util.List;
  */
 public abstract class SimpleExtensionModule extends ExtensionModule {
 
+    private final static Logger LOG = Logger.getLogger(SimpleExtensionModule.class.getName());
+
     public SimpleExtensionModule(final String moduleName, final String moduleVersion) {
         super(moduleName, moduleVersion);
     }
@@ -86,11 +89,19 @@ public abstract class SimpleExtensionModule extends ExtensionModule {
         List<MetaMethod> metaMethods = new LinkedList<MetaMethod>();
         List<Class> extensionClasses = getInstanceMethodsExtensionClasses();
         for (Class extensionClass : extensionClasses) {
-            createMetaMethods(extensionClass, metaMethods, false);
+            try {
+                createMetaMethods(extensionClass, metaMethods, false);
+            } catch (LinkageError e) {
+                LOG.warning("Module ["+getName()+"] - Unable to load extension class ["+extensionClass+"] due to ["+e.getMessage()+"]. Maybe this module is not supported by your JVM version.");
+            }
         }
         extensionClasses = getStaticMethodsExtensionClasses();
         for (Class extensionClass : extensionClasses) {
-            createMetaMethods(extensionClass, metaMethods, true);
+            try {
+                createMetaMethods(extensionClass, metaMethods, true);
+            } catch (LinkageError e) {
+                LOG.warning("Module ["+getName()+"] - Unable to load extension class ["+extensionClass+"] due to ["+e.getMessage()+"]. Maybe this module is not supported by your JVM version.");
+            }
         }
         return metaMethods;
     }
