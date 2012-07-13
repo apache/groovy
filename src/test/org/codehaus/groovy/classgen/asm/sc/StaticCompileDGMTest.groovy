@@ -31,5 +31,26 @@ class StaticCompileDGMTest extends DefaultGroovyMethodsSTCTest {
         extraSetup()
     }
 
+    void testThreadDotStart() {
+        assertScript '''
+            @ASTTest(phase = INSTRUCTION_SELECTION, value = {
+                lookup('start').each {
+                    def target = it.expression.target
+                    assert target instanceof org.codehaus.groovy.transform.stc.ExtensionMethodNode
+                    assert target.name == 'start'
+                    assert target.parameters.size() == 1
+                    assert target.parameters[0].type.nameWithoutPackage == 'Closure'
+                    assert target.returnType.nameWithoutPackage == 'Thread'
+                }
+            })
+            void foo() {
+                start:
+                Thread.start {
+                    println 'ok'
+                }
+            }
+            foo()
+        '''
+    }
 }
 
