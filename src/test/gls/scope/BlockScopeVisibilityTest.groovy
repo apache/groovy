@@ -45,4 +45,13 @@ class BlockScopeVisibilityTest extends CompilableTestSupport {
         assert c(1)() == 1
     }
 
+    public void testForLoopStatement() {
+        // this example requires not to put the declaration
+        // into a block !
+        if (false)
+        int number = 1
+
+        shouldFail{ number }
+    }
+
 }
