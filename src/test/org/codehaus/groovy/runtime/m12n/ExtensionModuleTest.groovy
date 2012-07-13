@@ -1,54 +1,12 @@
 package org.codehaus.groovy.runtime.m12n
 
-import org.codehaus.groovy.tools.FileSystemCompiler
-
 /**
  * Unit tests for extension methods loading.
  */
 class ExtensionModuleTest extends GroovyTestCase {
 
-    private void doInFork(String code) {
-        File baseDir = FileSystemCompiler.createTempDir()
-        File source = new File(baseDir, 'Temp.groovy')
-        source << """import org.codehaus.groovy.runtime.m12n.*
-    class TempTest extends GroovyTestCase {
-        void testCode() {
-            $code
-        }
-    }
-    new TempTest().testCode()
-"""
-        def cl = this.class.classLoader
-        while (!(cl instanceof URLClassLoader)) {
-            cl = cl.parent
-            if (cl ==null) {
-                throw new RuntimeException("Unable to find class loader")
-            }
-        }
-        def cp = ((URLClassLoader)cl).URLs.collect{ new File(it.toURI()).absolutePath}.join("${File.pathSeparatorChar}")
-        def ant = new AntBuilder()
-        try {
-            ant.with {
-                taskdef(name:'groovyc', classname:"org.codehaus.groovy.ant.Groovyc")
-                groovyc(srcdir: baseDir.absolutePath, destdir:baseDir.absolutePath, includes:'Temp.groovy', fork:true)
-                java(classpath: "$cp${File.pathSeparatorChar}${baseDir.absolutePath}",
-                        classname:'Temp',
-                        fork:'true',
-                        outputproperty: 'out',
-                        errorproperty: 'err'
-                )
-            }
-        } finally {
-            String err = ant.project.properties.err
-            baseDir.deleteDir()
-            if (err) {
-                throw new RuntimeException(err)
-            }
-        }
-    }
-
     void testThatModuleHasBeenLoaded() {
-        doInFork '''
+        ExtensionModuleHelperForTests.doInFork '''
             ExtensionModuleRegistry registry = GroovySystem.metaClassRegistry.moduleRegistry
             assert registry.modules
             // look for the module
@@ -62,7 +20,7 @@ class ExtensionModuleTest extends GroovyTestCase {
     }
 
     void testThatModuleCanBeLoadedWithGrab() {
-        doInFork 'ExtensionModuleRegistry registry = GroovySystem.metaClassRegistry.moduleRegistry\n' +
+        ExtensionModuleHelperForTests.doInFork 'ExtensionModuleRegistry registry = GroovySystem.metaClassRegistry.moduleRegistry\n' +
                 '        // ensure that the module isn\'t loaded\n' +
                 '        assert !registry.modules.any { it.name == \'Test module for Grab\' && it.version == \'1.2-test\' }\n' +
                 '\n' +
@@ -92,7 +50,7 @@ class ExtensionModuleTest extends GroovyTestCase {
     }
 
     void testExtensionModuleUsingGrabAndMap() {
-        doInFork 'println "ExtensionModuleTest.testExtensionModuleUsingGrabAndMap"\n' +
+        ExtensionModuleHelperForTests.doInFork 'println "ExtensionModuleTest.testExtensionModuleUsingGrabAndMap"\n' +
                 '        ExtensionModuleRegistry registry = GroovySystem.metaClassRegistry.moduleRegistry\n' +
                 '        // ensure that the module isn\'t loaded\n' +
                 '        assert !registry.modules.any { it.name == \'Test module for Grab\' && it.version == \'1.2-test\' }\n' +
