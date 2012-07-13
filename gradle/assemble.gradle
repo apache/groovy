@@ -239,14 +239,13 @@ task jarAllAll(dependsOn: [jarAll, jarAllWithIndy]) {
 
 }
 
-task sourceAllJar(type: Jar, dependsOn: { modules()*.sourceJar }) {
+task sourceAllJar(type: Jar, dependsOn: { modules()*.sourceJar + rootProject.sourceJar }) {
     with sourceJar.rootSpec
     modules()*.sourceJar.each {
         with it.rootSpec
     }
     appendix = 'all'
     classifier = rootProject.useIndy()?'indy-sources':'sources'
-    //with sourceJar.rootSpec
 }
 
 allprojects {

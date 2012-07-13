@@ -17,11 +17,6 @@ allprojects {
         mavenCentral()
     }
 
-    task sourceJar(type: Jar) {
-        classifier = 'sources'
-        from sourceSets.main.allSource
-    }
-
     apply plugin: 'checkstyle'
     apply plugin: 'groovy'
     apply plugin: 'codenarc'
@@ -102,6 +97,11 @@ task(copyTestResources, type: Copy)
         .include('**/*.txt', '**/*.xml', '**/*.properties', '**/*.png', '**/*.html', '**/*.gif', '**/*.ico', '**/*.css')
 compileTestJava.dependsOn(copyTestResources)
 
+task sourceJar(type: Jar) {
+    classifier = 'sources'
+    from 'src/main'
+}
+
 subprojects {
     // todo: use the conventional "resources" directory for classpath resources
     task(copyResources, type: Copy) {
@@ -127,6 +127,11 @@ subprojects {
             .into("$buildDir/classes/test")
             .include('**/*.txt', '**/*.xml', '**/*.properties', '**/*.png', '**/*.html', '**/*.gif', '**/*.ico', '**/*.css')
     compileTestJava.dependsOn(copyTestResources)
+    task sourceJar(type: Jar) {
+        classifier = 'sources'
+        from sourceSets.main.allSource
+    }
+
 }
 
 repositories {
