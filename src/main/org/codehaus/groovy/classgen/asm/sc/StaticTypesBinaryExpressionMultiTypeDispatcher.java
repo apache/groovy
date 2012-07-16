@@ -15,13 +15,12 @@
  */
 package org.codehaus.groovy.classgen.asm.sc;
 
-import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.MethodNode;
-import org.codehaus.groovy.ast.expr.ArgumentListExpression;
-import org.codehaus.groovy.ast.expr.Expression;
-import org.codehaus.groovy.ast.expr.MethodCallExpression;
+import org.codehaus.groovy.ast.*;
+import org.codehaus.groovy.ast.expr.*;
+import org.codehaus.groovy.ast.stmt.EmptyStatement;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.classgen.asm.*;
+import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.transform.sc.StaticCompilationVisitor;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor;
 import org.codehaus.groovy.transform.stc.StaticTypesMarker;
@@ -56,6 +55,62 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
         } else {
             super.writePostOrPrefixMethod(op, method, expression, orig);
         }
+    }
+
+    @Override
+    public void evaluateEqual(final BinaryExpression expression, final boolean defineVariable) {
+        if (!defineVariable) {
+            Expression leftExpression = expression.getLeftExpression();
+            if (leftExpression instanceof PropertyExpression) {
+                PropertyExpression pexp = (PropertyExpression) leftExpression;
+                if (makeSetProperty(
+                        pexp.getObjectExpression(),
+                        pexp.getProperty(),
+                        new ArgumentListExpression(expression.getRightExpression()),
+                        pexp.isSafe(),
+                        pexp.isSpreadSafe(),
+                        pexp.isImplicitThis()
+                )) return;
+            }
+        }
+        super.evaluateEqual(expression, defineVariable);
+    }
+
+    private boolean makeSetProperty(final Expression receiver, final Expression message, final Expression arguments, final boolean safe, final boolean spreadSafe, final boolean implicitThis) {
+        WriterController controller = getController();
+        TypeChooser typeChooser = controller.getTypeChooser();
+        ClassNode receiverType = typeChooser.resolveType(receiver, controller.getClassNode());
+        String property = message.getText();
+        String setter = "set"+ MetaClassHelper.capitalize(property);
+        MethodNode setterMethod = receiverType.getSetterMethod(setter);
+        if (setterMethod==null) {
+            PropertyNode propertyNode = receiverType.getProperty(property);
+            if (propertyNode!=null) {
+                setterMethod = new MethodNode(
+                        setter,
+                        ACC_PUBLIC,
+                        ClassHelper.VOID_TYPE,
+                        new Parameter[] { new Parameter(propertyNode.getOriginType(), "value")},
+                        ClassNode.EMPTY_ARRAY,
+                        EmptyStatement.INSTANCE
+                );
+                setterMethod.setDeclaringClass(receiverType);
+            }
+        }
+        if (setterMethod!=null) {
+            MethodCallExpression call = new MethodCallExpression(
+                    receiver,
+                    setter,
+                    arguments
+            );
+            call.setImplicitThis(implicitThis);
+            call.setSafe(safe);
+            call.setSpreadSafe(spreadSafe);
+            call.setMethodTarget(setterMethod);
+            call.visit(controller.getAcg());
+            return true;
+        }
+        return false;
     }
 
     protected void assignToArray(Expression parrent, Expression receiver, Expression index, Expression rhsValueLoader) {

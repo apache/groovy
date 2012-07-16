@@ -62,4 +62,17 @@ class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCTest {
         '''
     }
 
+    // GROOVY-5579
+    void testUseSetterAndNotSetProperty() {
+        assertScript '''
+                Date d = new Date()
+                d.time = 1
+
+                assert d.time == 1
+                '''
+        assert astTrees.values().any {
+            it.toString().contains 'INVOKEVIRTUAL java/util/Date.setTime (J)V'
+        }
+    }
+
 }
