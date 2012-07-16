@@ -615,6 +615,12 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    void testInferDiamondUsingAIC() {
+        shouldFailWithMessages '''
+            Map<String,Date> map = new HashMap<>() {}
+        ''', 'Cannot use diamond <> with anonymous inner classes'
+    }
+
     static class MyList extends LinkedList<String> {}
 
     public static class ClassA<T> {
