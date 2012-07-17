@@ -666,12 +666,19 @@ public abstract class StaticTypeCheckingSupport {
         if (parameters != null) {
             for (int i = 0, parametersLength = parameters.length; i < parametersLength; i++) {
                 final ClassNode parameter = parameters[i];
-                sb.append(parameter.toString(false));
+                sb.append(prettyPrintType(parameter));
                 if (i < parametersLength - 1) sb.append(", ");
             }
         }
         sb.append(")");
         return sb.toString();
+    }
+
+    static String prettyPrintType(ClassNode type) {
+        if (type.isArray()) {
+            return prettyPrintType(type.getComponentType())+"[]";
+        }
+        return type.toString(false);
     }
 
     public static boolean implementsInterfaceOrIsSubclassOf(ClassNode type, ClassNode superOrInterface) {
