@@ -188,5 +188,29 @@ class BugsStaticCompileTest extends BugsSTCTest {
             assert new CanonicalStaticTest().testCanonical().toString() == 'CanonicalStaticTest$Thing(null)'
         '''
     }
+
+    // GROOVY-5607
+    // duplicate of GROOVY-5573, see ArraysAndCollectionsSTCTest#testArrayNewInstance()
+    void testStaticNewInstanceMethodClash() {
+        assertScript '''
+            class Sql {
+                static Sql newInstance(String s1, String s2, String s3, String s4) {
+                    new Sql()
+                }
+            }
+
+            @groovy.transform.CompileStatic
+            class Main {
+                void test() {
+                    @ASTTest(phase=INSTRUCTION_SELECTION, value= {
+                        assert node.rightExpression.getNodeMetaData(INFERRED_TYPE).nameWithoutPackage == 'Sql'
+                    })
+                    def sql = Sql.newInstance("a", "b", "c", "d")
+                }
+            }
+
+            new Main().test()
+        '''
+    }
 }
 
