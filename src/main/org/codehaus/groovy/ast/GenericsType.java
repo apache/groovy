@@ -416,6 +416,9 @@ public class GenericsType extends ASTNode {
      */
     private static ClassNode getParameterizedSuperClass(ClassNode classNode) {
         ClassNode superClass = classNode.getUnresolvedSuperClass();
+        if (superClass==null) {
+            return ClassHelper.OBJECT_TYPE;
+        }
         if (!classNode.isUsingGenerics() || !superClass.isUsingGenerics()) return superClass;
         GenericsType[] genericsTypes = classNode.getGenericsTypes();
         GenericsType[] redirectGenericTypes = classNode.redirect().getGenericsTypes();

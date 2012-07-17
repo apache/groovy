@@ -472,18 +472,24 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
 
     // GROOVY-5516
     void testAddAllWithCollectionShouldBeAllowed() {
-        assertScript '''
+        assertScript '''import org.codehaus.groovy.transform.stc.ExtensionMethodNode
             List<String> list = ['a','b','c']
             Collection<String> e = list.findAll { it }
-            list.addAll(e)
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                def dmt = node.rightExpression.getNodeMetaData(DIRECT_METHOD_CALL_TARGET)
+                assert dmt instanceof ExtensionMethodNode == false
+                assert dmt.name == 'addAll'
+                assert dmt.declaringClass == make(List)
+            })
+            boolean r = list.addAll(e)
         '''
     }
     void testAddAllWithCollectionShouldNotBeAllowed() {
         shouldFailWithMessages '''
             List<String> list = ['a','b','c']
             Collection<Integer> e = (Collection<Integer>) [1,2,3]
-            list.addAll(e)
-        ''', 'Cannot call java.util.List#addAll(java.lang.String) with arguments [java.util.Collection <Integer>]'
+            boolean r = list.addAll(e)
+        ''', 'Cannot call org.codehaus.groovy.runtime.DefaultGroovyMethods#addAll(java.util.Collection <java.lang.String>, java.lang.String[]) with arguments [java.util.List <java.lang.String>, java.util.Collection <Integer>]'
     }
 
     // GROOVY-5528
@@ -619,6 +625,28 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         shouldFailWithMessages '''
             Map<String,Date> map = new HashMap<>() {}
         ''', 'Cannot use diamond <> with anonymous inner classes'
+    }
+
+    void testCallMethodWithParameterizedArrayList() {
+        assertScript '''
+        class MyUtility {
+            def methodOne() {
+                def someFiles = new ArrayList<File>()
+                def someString = ''
+                methodTwo someString, someFiles
+            }
+
+            def methodTwo(String s, List<File> files) {}
+        }
+        new MyUtility()
+        '''
+    }
+
+    void testGenericTypeArrayOfDGMMethod() {
+        assertScript '''
+            int[] arr = [0,1,2,3]
+            assert arr.findAll() == [1,2,3]
+        '''
     }
 
     static class MyList extends LinkedList<String> {}
