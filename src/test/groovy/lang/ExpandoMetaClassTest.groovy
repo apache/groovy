@@ -20,6 +20,23 @@ package groovy.lang
  */
 class ExpandoMetaClassTest extends GroovyTestCase {
 
+    @Override
+    protected void setUp() {
+        super.setUp()
+        def reg = GroovySystem.metaClassRegistry
+        reg.removeMetaClass(EMCT_Another)
+        reg.removeMetaClass(EMCT_Child)
+        reg.removeMetaClass(EMCT_ChildClass)
+        reg.removeMetaClass(EMCT_Class)
+        reg.removeMetaClass(EMCT_GetProperty)
+        reg.removeMetaClass(EMCT_Implemented)
+        reg.removeMetaClass(EMCT_InterfaceWithFormat)
+        reg.removeMetaClass(EMCT_InvokeMethod)
+        reg.removeMetaClass(EMCT_Static)
+        reg.removeMetaClass(EMCT_Another)
+        reg.removeMetaClass(EMCT_SuperClass)
+    }
+
     void testMethodsAfterAddingNewMethod() {
         EMCT_Class.metaClass.newMethod = {-> "foo" }
 
