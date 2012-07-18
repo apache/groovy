@@ -212,5 +212,47 @@ class BugsStaticCompileTest extends BugsSTCTest {
             new Main().test()
         '''
     }
+
+    void testCompileStaticTwiceShouldNotBeAProblem() {
+        new GroovyShell().evaluate '''import groovy.transform.CompileStatic
+        @CompileStatic
+        class Tool {
+            @CompileStatic // annotated too, even if class is already annotated
+            String relativePath(File relbase, File file) {
+                def pathParts = []
+                def currentFile = file
+                while (currentFile != null && currentFile != relbase) {
+                    pathParts += currentFile.name
+                    currentFile = currentFile.parentFile
+                }
+                pathParts.reverse().join('/')
+            }
+        }
+        File a = new File('foo')
+        File b = new File(new File(a, 'bar'), 'baz')
+        assert new Tool().relativePath(a,b) == 'bar/baz'
+        '''
+    }
+
+    void testCompileStaticTwiceShouldNotBeAProblemUsingCustomizer() {
+        assertScript '''import groovy.transform.CompileStatic
+        @CompileStatic
+        class Tool {
+            @CompileStatic // annotated too, even if class is already annotated
+            String relativePath(File relbase, File file) {
+                def pathParts = []
+                def currentFile = file
+                while (currentFile != null && currentFile != relbase) {
+                    pathParts += currentFile.name
+                    currentFile = currentFile.parentFile
+                }
+                pathParts.reverse().join('/')
+            }
+        }
+        File a = new File('foo')
+        File b = new File(new File(a, 'bar'), 'baz')
+        assert new Tool().relativePath(a,b) == 'bar/baz'
+        '''
+    }
 }
 

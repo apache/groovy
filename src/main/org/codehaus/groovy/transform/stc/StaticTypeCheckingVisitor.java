@@ -222,6 +222,14 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         alreadyVisitedMethods = oldVisitedMethod;
         classNode = oldCN;
         node.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, node);
+        // mark all methods as visited. We can't do this in visitMethod because the type checker
+        // works in a two pass sequence and we don't want to skip the second pass
+        for (MethodNode methodNode : node.getAllDeclaredMethods()) {
+            methodNode.putNodeMetaData(StaticTypeCheckingVisitor.class, Boolean.TRUE);
+        }
+        for (ConstructorNode constructorNode : node.getDeclaredConstructors()) {
+            constructorNode.putNodeMetaData(StaticTypeCheckingVisitor.class, Boolean.TRUE);
+        }
     }
 
     protected boolean shouldSkipClassNode(final ClassNode node) {
@@ -1315,8 +1323,17 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
     }
 
+    protected boolean shouldSkipMethodNode(final MethodNode node) {
+        Object type = node.getNodeMetaData(StaticTypeCheckingVisitor.class);
+        return Boolean.TRUE.equals(type);
+    }
+
     @Override
     public void visitMethod(final MethodNode node) {
+        if (shouldSkipMethodNode(node)) {
+            // method has already been visited by a static type checking visitor
+            return;
+        }
         ErrorCollector collector = (ErrorCollector) node.getNodeMetaData(ERROR_COLLECTOR);
         if (collector!=null) {
             errorCollector.addCollectorContents(collector);
