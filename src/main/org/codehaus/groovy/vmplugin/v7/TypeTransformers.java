@@ -66,7 +66,16 @@ public class TypeTransformers {
             transformer = selectNumberTransformer(parameter, arg);
         } 
         if (transformer==null) throw new GroovyBugError("Unknown transformation for argument "+arg+" at position "+pos+" with "+arg.getClass()+" for parameter of type "+parameter);
-    	return MethodHandles.filterArguments(handle, pos, transformer);
+        return applyUnsharpFilter(handle, pos, transformer);
+    }
+    
+    public static MethodHandle applyUnsharpFilter(MethodHandle handle, int pos, MethodHandle transformer) {
+        MethodType type = transformer.type();
+        Class given = handle.type().parameterType(pos);
+        if (type.returnType() != given || type.parameterType(0) != given) {
+            transformer = transformer.asType(MethodType.methodType(given, type.parameterType(0)));
+        }
+        return MethodHandles.filterArguments(handle, pos, transformer);
     }
 
     private static MethodHandle selectNumberTransformer(Class param, Object arg) {

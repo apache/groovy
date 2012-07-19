@@ -37,6 +37,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 
 import org.codehaus.groovy.GroovyBugError;
+import org.codehaus.groovy.ast.expr.CastExpression;
 import org.codehaus.groovy.reflection.CachedMethod;
 import org.codehaus.groovy.runtime.NullObject;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
@@ -187,6 +188,7 @@ public class IndyInterface {
             public Object[] args;
             public MetaMethod method;
             public MethodType targetType;
+            public MethodType currentType;
             public String methodName;
             public MethodHandle handle;
             public boolean useMetaClass = false;
@@ -253,8 +255,12 @@ public class IndyInterface {
                     // the method expects the arguments as Object[] in a Object[]
                     info.handle = info.handle.asCollector(Object[].class, 1);
                     info.handle = info.handle.asCollector(Object[].class, info.targetType.parameterCount()-1);
+                    info.currentType = MethodType.methodType(info.method.getReturnType(), info.method.getNativeParameterTypes());
+                    info.currentType = info.currentType.insertParameterTypes(0, info.method.getDeclaringClass().getTheClass());
                 } else {
                     info.handle = info.handle.asCollector(Object[].class, info.targetType.parameterCount()-1);
+                    info.currentType = MethodType.methodType(info.method.getReturnType(), info.method.getNativeParameterTypes());
+                    info.currentType = info.currentType.insertParameterTypes(0, info.method.getDeclaringClass().getTheClass());
                 }
             }
         }
@@ -411,6 +417,7 @@ public class IndyInterface {
         private static void correctWrapping(CallInfo ci) {
             if (ci.useMetaClass) return;
             Class[] pt = ci.handle.type().parameterArray();
+            if (ci.currentType!=null) pt = ci.currentType.parameterArray();
             for (int i=1; i<ci.args.length; i++) {
                 if (ci.args[i] instanceof Wrapper) {
                     Class type = pt[i];
@@ -428,6 +435,7 @@ public class IndyInterface {
         private static void correctCoerce(CallInfo ci) {
             if (ci.useMetaClass) return;
             Class[] parameters = ci.handle.type().parameterArray();
+            if (ci.currentType!=null) parameters = ci.currentType.parameterArray();
             if (ci.args.length != parameters.length) {
                 throw new GroovyBugError("At this point argument array length and parameter array length should be the same");
             }
