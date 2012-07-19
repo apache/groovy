@@ -1544,7 +1544,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 return;
             } else {
                 // type check call as if it was made on component type
-                ClassNode componentType = inferComponentType(expressionType, OBJECT_TYPE);
+                ClassNode componentType = inferComponentType(expressionType, int_TYPE);
                 MethodCallExpression subcall = new MethodCallExpression(
                         new CastExpression(componentType, EmptyExpression.INSTANCE),
                         name,
@@ -2136,20 +2136,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     protected ClassNode inferComponentType(final ClassNode containerType, final ClassNode indexType) {
         final ClassNode componentType = containerType.getComponentType();
         if (componentType == null) {
-            // check if any generic information could help
-            GenericsType[] types = containerType.getGenericsTypes();
-            if (types != null && types.length == 1) {
-                GenericsType type = types[0];
-                if (type.isWildcard()) {
-                    ClassNode[] upperBounds = type.getUpperBounds();
-                    if (upperBounds.length==1) {
-                        return upperBounds[0];
-                    }
-                    ClassNode lowerBound = type.getLowerBound();
-                    if (lowerBound!=null) return lowerBound;
-                }
-                return type.getType();
-            }
             // GROOVY-5521
             // try to identify a getAt method
             ErrorCollector oldCollector = errorCollector;
@@ -2598,16 +2584,26 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 copy[i] = fullyResolve(returnTypeGeneric, resolvedPlaceholders);
             }
         }
+        GenericsType firstGenericsType = copy[0];
         if (returnType.equals(OBJECT_TYPE)) {
-            if (copy[0].getType().isGenericsPlaceHolder()) return OBJECT_TYPE;
-            return copy[0].getType();
+            if (firstGenericsType.getType().isGenericsPlaceHolder()) return OBJECT_TYPE;
+
+            if (firstGenericsType.isWildcard()) {
+                // ? extends Foo
+                // ? super Foo
+                if (firstGenericsType.getLowerBound()!=null) return firstGenericsType.getLowerBound();
+                ClassNode[] upperBounds = firstGenericsType.getUpperBounds();
+                if (upperBounds.length==1) return upperBounds[0];
+                return new UnionTypeClassNode(upperBounds);
+            }
+            return firstGenericsType.getType();
         }
         if (returnType.isArray()) {
             returnType = returnType.getComponentType().getPlainNodeReference();
             returnType.setGenericsTypes(copy);
             if (OBJECT_TYPE.equals(returnType)) {
                 // replace Object<Component> with Component
-                returnType = copy[0].getType();
+                returnType = firstGenericsType.getType();
             }
             returnType = returnType.makeArray();
         } else {
