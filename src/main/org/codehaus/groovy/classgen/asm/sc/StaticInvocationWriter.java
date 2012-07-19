@@ -377,17 +377,45 @@ public class StaticInvocationWriter extends InvocationWriter {
                     origMCE.getMethodAsString(),
                     origMCE.getArguments()
             );
-            newMCE.setMethodTarget(origMCE.getMethodTarget());
+            MethodNode methodTarget = origMCE.getMethodTarget();
+            newMCE.setMethodTarget(methodTarget);
             newMCE.setSafe(false);
+            newMCE.setImplicitThis(origMCE.isImplicitThis());
+            newMCE.setSourcePosition(origMCE);
             newMCE.visit(controller.getAcg());
             Label endof = compileStack.createLocalLabel("endof_" + counter);
             mv.visitJumpInsn(GOTO,endof);
             mv.visitLabel(ifnull);
             // else { null }
-            mv.visitInsn(ACONST_NULL);
+            ClassNode returnType = methodTarget.getReturnType();
+            if (ClassHelper.isPrimitiveType(returnType)
+                    && !ClassHelper.VOID_TYPE.equals(returnType)) {
+                pushZero(mv, returnType);
+            } else {
+                mv.visitInsn(ACONST_NULL);
+            }
             mv.visitLabel(endof);
         } else {
             super.makeCall(origin, receiver, message, arguments, adapter, safe, spreadSafe, implicitThis);
+        }
+    }
+
+    private static void pushZero(final MethodVisitor mv, final ClassNode type) {
+        boolean isInt = ClassHelper.int_TYPE.equals(type);
+        boolean isShort = ClassHelper.short_TYPE.equals(type);
+        boolean isByte = ClassHelper.byte_TYPE.equals(type);
+        if (isInt || isShort || isByte) {
+            mv.visitInsn(ICONST_0);
+        } else if (ClassHelper.long_TYPE.equals(type)) {
+            mv.visitInsn(LCONST_0);
+        } else if (ClassHelper.float_TYPE.equals(type)) {
+            mv.visitInsn(FCONST_0);
+        } else if (ClassHelper.double_TYPE.equals(type)) {
+            mv.visitInsn(DCONST_0);
+        } else if (ClassHelper.boolean_TYPE.equals(type)) {
+            mv.visitInsn(ICONST_0);
+        } else {
+            mv.visitLdcInsn(0);
         }
     }
 
