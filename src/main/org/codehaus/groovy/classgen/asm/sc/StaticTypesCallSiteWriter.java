@@ -459,8 +459,28 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
             writeArrayGet(receiver, arguments, rType, aType);
             return;
         }
-        ClassNode[] args = {aType};
+
+        // check if a getAt method can be found on the receiver
+        ClassNode current = rType;
+        MethodNode getAtNode = null;
+        while (current!=null && getAtNode==null) {
+            getAtNode = current.getMethod("getAt", new Parameter[]{new Parameter(aType, "index")});
+            current = current.getSuperClass();
+        }
+        if (getAtNode!=null) {
+            MethodCallExpression call = new MethodCallExpression(
+                    receiver,
+                    "getAt",
+                    arguments
+            );
+            call.setImplicitThis(false);
+            call.setMethodTarget(getAtNode);
+            call.visit(controller.getAcg());
+            return;
+        }
+
         // make sure Map#getAt() and List#getAt handled with the bracket syntax are properly compiled
+        ClassNode[] args = {aType};
         boolean acceptAnyMethod =
                 ClassHelper.MAP_TYPE.equals(rType) || rType.implementsInterface(ClassHelper.MAP_TYPE)
                 || ClassHelper.LIST_TYPE.equals(rType) || rType.implementsInterface(ClassHelper.LIST_TYPE);
