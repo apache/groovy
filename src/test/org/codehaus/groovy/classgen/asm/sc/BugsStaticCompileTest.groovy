@@ -254,5 +254,54 @@ class BugsStaticCompileTest extends BugsSTCTest {
         assert new Tool().relativePath(a,b) == 'bar/baz'
         '''
     }
+
+    // GROOVY-5613
+    void testNullSafeAssignment() {
+        assertScript '''
+        class A {
+            int x = -1
+        }
+        A a = new A()
+        @ASTTest(phase=INSTRUCTION_SELECTION, value={
+            assert node.getNodeMetaData(INFERRED_TYPE) == int_TYPE
+        })
+        def x = a?.x
+        '''
+    }
+    void testNullSafeAssignmentWithLong() {
+        assertScript '''
+        class A {
+            long x = -1
+        }
+        A a = new A()
+        @ASTTest(phase=INSTRUCTION_SELECTION, value={
+            assert node.getNodeMetaData(INFERRED_TYPE) == long_TYPE
+        })
+        def x = a?.x
+        '''
+    }
+    void testNullSafeAssignmentWithChar() {
+        assertScript '''
+        class A {
+            char x = 'a'
+        }
+        A a = new A()
+        @ASTTest(phase=INSTRUCTION_SELECTION, value={
+            assert node.getNodeMetaData(INFERRED_TYPE) == char_TYPE
+        })
+        def x = a?.x
+        assert x == 'a'
+        '''
+    }
+    void testCallStaticallyImportedMethodWithNullSafeArgument() {
+        assertScript '''import static java.lang.Math.abs
+        class A {
+            int x = -1
+        }
+        def a = new A()
+        def x = a?.x
+        assert abs(a?.x) == 1
+        '''
+    }
 }
 
