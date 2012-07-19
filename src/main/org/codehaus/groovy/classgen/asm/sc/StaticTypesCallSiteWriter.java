@@ -473,6 +473,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
                     "getAt",
                     arguments
             );
+            call.setSourcePosition(arguments);
             call.setImplicitThis(false);
             call.setMethodTarget(getAtNode);
             call.visit(controller.getAcg());
@@ -493,6 +494,8 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
                     message,
                     arguments
             );
+            call.setSourcePosition(arguments);
+            call.setImplicitThis(false);
             call.setMethodTarget(methodNode);
             call.visit(controller.getAcg());
             return;
