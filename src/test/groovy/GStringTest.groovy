@@ -548,4 +548,11 @@ class GStringTest extends GroovyTestCase {
         assert gs.split() == ['The', 'quick', 'brown', 'fox'] as String[]
         assert gs.split('o') == ['The quick br', 'wn f', 'x'] as String[]
     }
+
+    def foo(String s) {1}
+    void testGStringArgumentForStringParameter() {
+        def a = 1
+        def b = "$a"
+        assert foo(b) == 1 
+    }
 }
