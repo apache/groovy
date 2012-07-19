@@ -127,6 +127,40 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         def bars = foos[0..1]
         println bars[0].substring(1)
         '''
+
+        // GROOVY-5608
+        assertScript '''
+            List<Integer> a = [1, 3, 5]
+
+            @ASTTest(phase = INSTRUCTION_SELECTION, value = {
+                def type = node.rightExpression.getNodeMetaData(INFERRED_TYPE)
+                assert type == make(List)
+                assert type.genericsTypes.length == 1
+                assert type.genericsTypes[0].type == Integer_TYPE
+            })
+            List<Integer> b = a[1..2]
+
+            List<Integer> c = (List<Integer>)a[1..2]
+         '''
+
+        // check that it also works for custom getAt methods
+        assertScript '''
+            class SpecialCollection {
+                List<Date> getAt(IntRange irange) {
+                    return [new Date(), new Date()+1]
+                }
+            }
+
+            def sc = new SpecialCollection()
+
+            @ASTTest(phase = INSTRUCTION_SELECTION, value = {
+                def type = node.rightExpression.getNodeMetaData(INFERRED_TYPE)
+                assert type == make(List)
+                assert type.genericsTypes.length == 1
+                assert type.genericsTypes[0].type == make(Date)
+            })
+            List<Date> dates = sc[1..3]
+        '''
     }
 
     void testListStarProperty() {
