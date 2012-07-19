@@ -18,6 +18,7 @@ package groovy.transform.stc
 import org.codehaus.groovy.runtime.m12n.ExtensionModuleRegistry
 import org.codehaus.groovy.runtime.m12n.ExtensionModule
 import java.lang.reflect.Modifier
+import org.codehaus.groovy.runtime.m12n.ExtensionModuleHelperForTests
 
 /**
  * Unit tests for static type checking : extension methods.
@@ -25,25 +26,6 @@ import java.lang.reflect.Modifier
  * @author Cedric Champeau
  */
 class STCExtensionMethodsTest extends StaticTypeCheckingTestCase {
-
-    private List<ExtensionModule> savedModules
-
-    @Override
-    protected void setUp() {
-        super.setUp()
-        // save modules here to clean up after ourselves
-        savedModules = GroovySystem.metaClassRegistry.moduleRegistry.modules
-    }
-
-    @Override
-    protected void tearDown() {
-        super.tearDown()
-        GroovySystem.metaClassRegistry.moduleRegistry.class.getDeclaredField('modules').with {
-            accessible = true
-            modifiers = modifiers & ~Modifier.FINAL
-            set(GroovySystem.metaClassRegistry.moduleRegistry, savedModules)
-        }
-    }
 
     void testShouldFindExtensionMethod() {
         assertScript '''
@@ -55,6 +37,7 @@ class STCExtensionMethodsTest extends StaticTypeCheckingTestCase {
     }
 
     void testShouldFindExtensionMethodWithGrab() {
+        ExtensionModuleHelperForTests.doInFork('groovy.transform.stc.StaticTypeCheckingTestCase', '''
         def impl = new MetaClassImpl(String)
         impl.initialize()
         String.metaClass = impl
@@ -68,7 +51,7 @@ class STCExtensionMethodsTest extends StaticTypeCheckingTestCase {
 
         def resolver = "@GrabResolver(name='local',root='$jarURL')"
 
-        assertScript resolver + '''
+        assertScript resolver + """
         @Grab('module-test:module-test:1.2-test')
         import org.codehaus.groovy.runtime.m12n.*
 
@@ -77,7 +60,7 @@ class STCExtensionMethodsTest extends StaticTypeCheckingTestCase {
         assert str.reverseToUpperCase2() == str.toUpperCase().reverse()
         // a static method added to String thanks to a @Grab extension
         assert String.answer2() == 42
-        '''
+        """
+        ''')
     }
 }
-

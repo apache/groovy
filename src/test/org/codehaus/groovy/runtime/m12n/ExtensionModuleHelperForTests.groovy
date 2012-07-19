@@ -21,15 +21,19 @@ import org.codehaus.groovy.tools.FileSystemCompiler;
 
 public class ExtensionModuleHelperForTests {
     static void doInFork(String code) {
+        doInFork("GroovyTestCase", code)
+    }
+
+    static void doInFork(String baseTestClass, String code) {
         File baseDir = FileSystemCompiler.createTempDir()
         File source = new File(baseDir, 'Temp.groovy')
         source << """import org.codehaus.groovy.runtime.m12n.*
-    class TempTest extends GroovyTestCase {
+    class TempTest extends $baseTestClass {
         void testCode() {
             $code
         }
     }
-    new TempTest().testCode()
+    org.junit.runner.JUnitCore.main('TempTest')
 """
         def cl = ExtensionModuleHelperForTests.classLoader
         while (!(cl instanceof URLClassLoader)) {
