@@ -344,12 +344,6 @@ public class WideningCategories {
             }
         }
 
-        // GROOVY-5559: Consider GString a "substitute" for String
-        if (GSTRING_TYPE.equals(a) && STRING_TYPE.equals(b)
-                || STRING_TYPE.equals(a) && GSTRING_TYPE.equals(b)) {
-            return STRING_TYPE;
-        }
-
         // handle interfaces
         boolean isInterfaceA = a.isInterface();
         boolean isInterfaceB = b.isInterface();

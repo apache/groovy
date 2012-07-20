@@ -493,33 +493,33 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5559
-    void testGStringInListShouldBeConsideredAsAString() {
-        assertScript '''
+    void testGStringInListShouldNotBeConsideredAsAString() {
+        assertScript '''import org.codehaus.groovy.ast.tools.WideningCategories.LowestUpperBoundClassNode as LUB
         def bar = 1
         @ASTTest(phase=INSTRUCTION_SELECTION, value={
             assert node.getNodeMetaData(INFERRED_TYPE) == LIST_TYPE
-            assert node.getNodeMetaData(INFERRED_TYPE).genericsTypes[0].type == STRING_TYPE
+            assert node.getNodeMetaData(INFERRED_TYPE).genericsTypes[0].type instanceof LUB
         })
         def list = ["foo", "$bar"]
         '''
 
-        assertScript '''
+        shouldFailWithMessages '''import org.codehaus.groovy.ast.tools.WideningCategories.LowestUpperBoundClassNode as LUB
         def bar = 1
         @ASTTest(phase=INSTRUCTION_SELECTION, value={
             assert node.getNodeMetaData(INFERRED_TYPE) == LIST_TYPE
-            assert node.getNodeMetaData(INFERRED_TYPE).genericsTypes[0].type == STRING_TYPE
+            assert node.getNodeMetaData(INFERRED_TYPE).genericsTypes[0].type instanceof LUB
         })
         List<String> list = ["foo", "$bar"]
-        '''
+        ''', 'You are trying to use a GString'
 
-        assertScript '''
+        shouldFailWithMessages '''
         def bar = 1
         @ASTTest(phase=INSTRUCTION_SELECTION, value={
             assert node.getNodeMetaData(INFERRED_TYPE) == LIST_TYPE
             assert node.getNodeMetaData(INFERRED_TYPE).genericsTypes[0].type == GSTRING_TYPE
         })
         List<String> list = ["$bar"] // single element means no LUB
-        '''
+        ''', 'You are trying to use a GString'
     }
 
     // GROOVY-5559: related behaviour
