@@ -202,4 +202,46 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
             new A().m()
         '''
     }
+
+    // GROOVY-5616
+    void testAssignToGroovyObject() {
+        assertScript '''
+        class A {}
+        GroovyObject obj = new A()
+        '''
+    }
+
+    void testAssignJavaClassToGroovyObject() {
+        shouldFailWithMessages '''
+        GroovyObject obj = 'foo'
+        ''', 'Cannot assign value of type java.lang.String to variable of type groovy.lang.GroovyObject'
+    }
+
+    void testCastToGroovyObject() {
+        assertScript '''
+        class A {}
+        GroovyObject obj = new A()
+        '''
+    }
+
+    void testAssignInnerClassToGroovyObject() {
+        assertScript '''
+        class A { static class B {} }
+        GroovyObject obj = new A.B()
+        '''
+    }
+    void testCastInnerClassToGroovyObject() {
+        assertScript '''
+        class A { static class B {} }
+        GroovyObject obj = new A.B()
+        '''
+    }
+
+    void testGroovyObjectInGenerics() {
+        assertScript '''
+        class A {}
+        List<? extends GroovyObject> list = new LinkedList<? extends GroovyObject>()
+        list.add(new A())
+        '''
+    }
 }
