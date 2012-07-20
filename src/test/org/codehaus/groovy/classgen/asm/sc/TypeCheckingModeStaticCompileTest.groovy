@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,6 @@
 package org.codehaus.groovy.classgen.asm.sc
 
 import groovy.transform.stc.TypeCheckingModeTest
-import org.objectweb.asm.util.TraceClassVisitor
-import org.objectweb.asm.ClassReader
 
 /**
  * Unit tests for static type checking : type checking mode.

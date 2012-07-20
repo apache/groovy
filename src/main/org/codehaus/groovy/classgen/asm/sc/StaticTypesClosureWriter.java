@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2009 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,15 +19,12 @@ import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
-import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.classgen.asm.ClosureWriter;
 import org.codehaus.groovy.classgen.asm.WriterController;
-import org.codehaus.groovy.classgen.asm.WriterControllerFactory;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys;
-import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 
 import java.util.List;
 
@@ -46,8 +43,8 @@ public class StaticTypesClosureWriter extends ClosureWriter {
         ClassNode closureClass = super.createClosureClass(expression, mods);
         List<MethodNode> methods = closureClass.getMethods("call");
         List<MethodNode> doCall = closureClass.getMethods("doCall");
-        if (doCall.size()!=1) {
-            throw new GroovyBugError("Expected to find one (1) doCall method on generated closure, but found "+doCall.size());
+        if (doCall.size() != 1) {
+            throw new GroovyBugError("Expected to find one (1) doCall method on generated closure, but found " + doCall.size());
         }
         MethodTargetCompletionVisitor visitor = new MethodTargetCompletionVisitor(doCall.get(0));
         for (MethodNode method : methods) {
@@ -75,7 +72,7 @@ public class StaticTypesClosureWriter extends ClosureWriter {
         public void visitMethodCallExpression(final MethodCallExpression call) {
             super.visitMethodCallExpression(call);
             MethodNode mn = call.getMethodTarget();
-            if (mn==null) {
+            if (mn == null) {
                 call.setMethodTarget(doCallMethod);
             }
         }

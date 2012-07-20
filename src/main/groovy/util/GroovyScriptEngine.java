@@ -36,7 +36,6 @@ import org.codehaus.groovy.tools.gse.StringSetMap;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -336,7 +335,7 @@ public class GroovyScriptEngine implements ResourceConnector {
      * and relies on garbage collection to close the underlying connection to the file.
      * Relying on garbage collection could lead to the application exhausting the number of files the
      * user is allowed to have open at any one point in time and cause the application to crash
-     * ({@link FileNotFoundException} (Too many open files)).
+     * ({@link java.io.FileNotFoundException} (Too many open files)).
      * Hence the need for this method to explicitly close the underlying connection to the file.
      *
      * @param urlConnection the {@link URLConnection} to be "closed" to close the underlying file descriptors.

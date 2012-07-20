@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2009 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,19 +15,28 @@
  */
 package org.codehaus.groovy.classgen.asm.sc;
 
-import org.codehaus.groovy.ast.*;
+import org.codehaus.groovy.ast.ClassHelper;
+import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.ConstructorNode;
+import org.codehaus.groovy.ast.GroovyCodeVisitor;
+import org.codehaus.groovy.ast.InnerClassNode;
+import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.stmt.EmptyStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
-import org.codehaus.groovy.classgen.BytecodeExpression;
-import org.codehaus.groovy.classgen.asm.*;
-import org.codehaus.groovy.runtime.DefaultGroovyMethods;
+import org.codehaus.groovy.classgen.asm.BytecodeHelper;
+import org.codehaus.groovy.classgen.asm.CompileStack;
+import org.codehaus.groovy.classgen.asm.InvocationWriter;
+import org.codehaus.groovy.classgen.asm.MethodCallerMultiAdapter;
+import org.codehaus.groovy.classgen.asm.OperandStack;
+import org.codehaus.groovy.classgen.asm.TypeChooser;
+import org.codehaus.groovy.classgen.asm.WriterController;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.syntax.Token;
-import org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys;
 import org.codehaus.groovy.transform.stc.ExtensionMethodNode;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor;
@@ -41,25 +50,24 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.*;
+import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.PRIVATE_BRIDGE_METHODS;
 import static org.objectweb.asm.Opcodes.*;
-import static org.objectweb.asm.Opcodes.ACONST_NULL;
 
 public class StaticInvocationWriter extends InvocationWriter {
     private static final ClassNode INVOKERHELPER_CLASSNODE = ClassHelper.make(InvokerHelper.class);
     private static final Expression INVOKERHELER_RECEIVER = new ClassExpression(INVOKERHELPER_CLASSNODE);
     private static final MethodNode INVOKERHELPER_INVOKEMETHOD = INVOKERHELPER_CLASSNODE.getMethod(
             "invokeMethodSafe",
-            new Parameter[] {
+            new Parameter[]{
                     new Parameter(ClassHelper.OBJECT_TYPE, "object"),
                     new Parameter(ClassHelper.STRING_TYPE, "name"),
                     new Parameter(ClassHelper.OBJECT_TYPE, "args")
             }
     );
-    
+
     private static final MethodNode INVOKERHELPER_INVOKESTATICMETHOD = INVOKERHELPER_CLASSNODE.getMethod(
             "invokeStaticMethod",
-            new Parameter[] {
+            new Parameter[]{
                     new Parameter(ClassHelper.CLASS_Type, "clazz"),
                     new Parameter(ClassHelper.STRING_TYPE, "name"),
                     new Parameter(ClassHelper.OBJECT_TYPE, "args")
@@ -67,7 +75,7 @@ public class StaticInvocationWriter extends InvocationWriter {
     );
     private static final ClassNode ARRAYLIST_CLASSNODE = ClassHelper.make(ArrayList.class);
     private static final MethodNode ARRAYLIST_CONSTRUCTOR;
-    private static final MethodNode ARRAYLIST_ADD_METHOD = ARRAYLIST_CLASSNODE.getMethod("add", new Parameter[]{new Parameter(ClassHelper.OBJECT_TYPE,"o")});
+    private static final MethodNode ARRAYLIST_ADD_METHOD = ARRAYLIST_CLASSNODE.getMethod("add", new Parameter[]{new Parameter(ClassHelper.OBJECT_TYPE, "o")});
 
     static {
         ARRAYLIST_CONSTRUCTOR = new ConstructorNode(ACC_PUBLIC, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, EmptyStatement.INSTANCE);
@@ -75,9 +83,9 @@ public class StaticInvocationWriter extends InvocationWriter {
     }
 
     private final AtomicInteger labelCounter = new AtomicInteger();
-    
+
     private final WriterController controller;
-    
+
     public StaticInvocationWriter(WriterController wc) {
         super(wc);
         controller = wc;
@@ -86,7 +94,7 @@ public class StaticInvocationWriter extends InvocationWriter {
     @Override
     public void writeInvokeConstructor(final ConstructorCallExpression call) {
         MethodNode mn = (MethodNode) call.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET);
-        if (mn==null) {
+        if (mn == null) {
             super.writeInvokeConstructor(call);
             return;
         }
@@ -102,19 +110,19 @@ public class StaticInvocationWriter extends InvocationWriter {
         TupleExpression args = makeArgumentList(call.getArguments());
         int before = controller.getOperandStack().getStackLength();
         loadArguments(args.getExpressions(), cn.getParameters());
-        finnishConstructorCall(cn, ownerDescriptor, controller.getOperandStack().getStackLength()-before);
+        finnishConstructorCall(cn, ownerDescriptor, controller.getOperandStack().getStackLength() - before);
 
     }
 
     @Override
     protected boolean writeDirectMethodCall(final MethodNode target, final boolean implicitThis, final Expression receiver, final TupleExpression args) {
-        if (target instanceof ExtensionMethodNode) {            
-            MethodNode node = ((ExtensionMethodNode)target).getExtensionMethodNode();
+        if (target instanceof ExtensionMethodNode) {
+            MethodNode node = ((ExtensionMethodNode) target).getExtensionMethodNode();
             String methodName = target.getName();
 
             MethodVisitor mv = controller.getMethodVisitor();
             int argumentsToRemove = 0;
-            List<Expression> argumentList = new LinkedList<Expression> (args.getExpressions());
+            List<Expression> argumentList = new LinkedList<Expression>(args.getExpressions());
 
             if (receiver instanceof ClassExpression) {
                 // it's a static extension method
@@ -130,7 +138,7 @@ public class StaticInvocationWriter extends InvocationWriter {
             String desc = BytecodeHelper.getMethodDescriptor(target.getReturnType(), parameters);
             mv.visitMethodInsn(INVOKESTATIC, owner, methodName, desc);
             ClassNode ret = target.getReturnType().redirect();
-            if (ret== ClassHelper.VOID_TYPE) {
+            if (ret == ClassHelper.VOID_TYPE) {
                 ret = ClassHelper.OBJECT_TYPE;
                 mv.visitInsn(ACONST_NULL);
             }
@@ -145,11 +153,11 @@ public class StaticInvocationWriter extends InvocationWriter {
                 return super.writeDirectMethodCall(target, implicitThis, receiver, new ArgumentListExpression(arr));
             }
             ClassNode classNode = controller.getClassNode();
-            if (target!=null
+            if (target != null
                     && classNode.isDerivedFrom(ClassHelper.CLOSURE_TYPE)
                     && controller.isInClosure()
                     && !target.isPublic()
-                    && target.getDeclaringClass()!= classNode) {
+                    && target.getDeclaringClass() != classNode) {
                 // replace call with an invoker helper call
                 // todo: use MOP generated methods instead
                 ArrayExpression arr = new ArrayExpression(ClassHelper.OBJECT_TYPE, args.getExpressions());
@@ -166,28 +174,28 @@ public class StaticInvocationWriter extends InvocationWriter {
                 mce.visit(controller.getAcg());
                 return true;
             }
-            if (target!=null && target.isPrivate()) {
+            if (target != null && target.isPrivate()) {
                 ClassNode declaringClass = target.getDeclaringClass();
                 if ((isPrivateBridgeMethodsCallAllowed(declaringClass, classNode) || isPrivateBridgeMethodsCallAllowed(classNode, declaringClass))
-                        && declaringClass.getNodeMetaData(PRIVATE_BRIDGE_METHODS)!=null
+                        && declaringClass.getNodeMetaData(PRIVATE_BRIDGE_METHODS) != null
                         && !declaringClass.equals(classNode)) {
                     @SuppressWarnings("unchecked")
                     Map<MethodNode, MethodNode> bridges = (Map<MethodNode, MethodNode>) declaringClass.redirect().getNodeMetaData(PRIVATE_BRIDGE_METHODS);
                     MethodNode bridge = bridges.get(target);
-                    if (bridge!=null) {
+                    if (bridge != null) {
                         return writeDirectMethodCall(bridge, implicitThis, receiver, args);
                     }
                 }
                 if (declaringClass != classNode) {
                     controller.getSourceUnit().addError(new SyntaxException(
-                            "Cannot call private method " + (target.isStatic()?"static ":"") +
+                            "Cannot call private method " + (target.isStatic() ? "static " : "") +
                                     declaringClass.toString(false) + "#" + target.getName() + " from class " + classNode.toString(false),
                             receiver.getLineNumber(),
                             receiver.getColumnNumber()
                     ));
                 }
             }
-            if (target!=null && receiver!=null) {
+            if (target != null && receiver != null) {
                 if (!(receiver instanceof VariableExpression) || !((VariableExpression) receiver).isSuperExpression()) {
                     // in order to avoid calls to castToType, which is the dynamic behaviour, we make sure that we call CHECKCAST instead
                     // then replace the top operand type
@@ -200,29 +208,29 @@ public class StaticInvocationWriter extends InvocationWriter {
     }
 
     protected static boolean isPrivateBridgeMethodsCallAllowed(ClassNode receiver, ClassNode caller) {
-        if (receiver==null) return false;
-        if (receiver.redirect()==caller) return true;
+        if (receiver == null) return false;
+        if (receiver.redirect() == caller) return true;
         if (caller.redirect() instanceof InnerClassNode) return
                 isPrivateBridgeMethodsCallAllowed(receiver, caller.redirect().getOuterClass()) ||
-                isPrivateBridgeMethodsCallAllowed(receiver.getOuterClass(), caller);
+                        isPrivateBridgeMethodsCallAllowed(receiver.getOuterClass(), caller);
         return false;
     }
 
     protected void loadArguments(List<Expression> argumentList, Parameter[] para) {
-        if (para.length==0) return;
+        if (para.length == 0) return;
         ClassNode lastParaType = para[para.length - 1].getOriginType();
         AsmClassGenerator acg = controller.getAcg();
         OperandStack operandStack = controller.getOperandStack();
         if (lastParaType.isArray()
-                && (argumentList.size()>para.length || argumentList.size()==para.length-1 || !argumentList.get(para.length-1).getType().isArray())) {
-            int stackLen = operandStack.getStackLength()+argumentList.size();
+                && (argumentList.size() > para.length || argumentList.size() == para.length - 1 || !argumentList.get(para.length - 1).getType().isArray())) {
+            int stackLen = operandStack.getStackLength() + argumentList.size();
             MethodVisitor mv = controller.getMethodVisitor();
             MethodVisitor orig = mv;
             //mv = new org.objectweb.asm.util.TraceMethodVisitor(mv);
             controller.setMethodVisitor(mv);
             // varg call
             // first parameters as usual
-            for (int i = 0; i < para.length-1; i++) {
+            for (int i = 0; i < para.length - 1; i++) {
                 Expression expression = argumentList.get(i);
                 expression.visit(acg);
                 if (!isNullConstant(expression)) {
@@ -231,7 +239,7 @@ public class StaticInvocationWriter extends InvocationWriter {
             }
             // last parameters wrapped in an array
             List<Expression> lastParams = new LinkedList<Expression>();
-            for (int i=para.length-1; i<argumentList.size();i++) {
+            for (int i = para.length - 1; i < argumentList.size(); i++) {
                 lastParams.add(argumentList.get(i));
             }
             ArrayExpression array = new ArrayExpression(
@@ -240,13 +248,13 @@ public class StaticInvocationWriter extends InvocationWriter {
             );
             array.visit(acg);
             // adjust stack length
-            while (operandStack.getStackLength()<stackLen) {
+            while (operandStack.getStackLength() < stackLen) {
                 operandStack.push(ClassHelper.OBJECT_TYPE);
             }
-            if (argumentList.size()==para.length-1) {
+            if (argumentList.size() == para.length - 1) {
                 operandStack.remove(1);
             }
-        } else if (argumentList.size()==para.length) {
+        } else if (argumentList.size() == para.length) {
             for (int i = 0; i < argumentList.size(); i++) {
                 Expression expression = argumentList.get(i);
                 expression.visit(acg);
@@ -259,15 +267,16 @@ public class StaticInvocationWriter extends InvocationWriter {
             TypeChooser typeChooser = controller.getTypeChooser();
             ClassNode classNode = controller.getClassNode();
             Expression[] arguments = new Expression[para.length];
-            for (int i=0, j=0 ; i<para.length;i++) {
+            for (int i = 0, j = 0; i < para.length; i++) {
                 Parameter curParam = para[i];
                 ClassNode curParamType = curParam.getType();
-                Expression curArg = j<argumentList.size()?argumentList.get(j):null;
+                Expression curArg = j < argumentList.size() ? argumentList.get(j) : null;
                 Expression initialExpression = (Expression) curParam.getNodeMetaData(StaticTypesMarker.INITIAL_EXPRESSION);
-                if (initialExpression==null && curParam.hasInitialExpression()) initialExpression = curParam.getInitialExpression();
-                ClassNode curArgType = curArg==null?null:typeChooser.resolveType(curArg, classNode);
+                if (initialExpression == null && curParam.hasInitialExpression())
+                    initialExpression = curParam.getInitialExpression();
+                ClassNode curArgType = curArg == null ? null : typeChooser.resolveType(curArg, classNode);
 
-                if (initialExpression!=null && !compatibleArgumentType(curArgType, curParamType)) {
+                if (initialExpression != null && !compatibleArgumentType(curArgType, curParamType)) {
                     // use default expression
                     arguments[i] = initialExpression;
                 } else {
@@ -290,10 +299,11 @@ public class StaticInvocationWriter extends InvocationWriter {
     }
 
     private boolean compatibleArgumentType(ClassNode argumentType, ClassNode paramType) {
-        if (argumentType==null) return false;
+        if (argumentType == null) return false;
         if (ClassHelper.getWrapper(argumentType).equals(ClassHelper.getWrapper(paramType))) return true;
         if (paramType.isInterface()) return argumentType.implementsInterface(paramType);
-        if (paramType.isArray() && argumentType.isArray()) return compatibleArgumentType(argumentType.getComponentType(),paramType.getComponentType());
+        if (paramType.isArray() && argumentType.isArray())
+            return compatibleArgumentType(argumentType.getComponentType(), paramType.getComponentType());
         return ClassHelper.getWrapper(argumentType).isDerivedFrom(ClassHelper.getWrapper(paramType));
     }
 
@@ -310,7 +320,7 @@ public class StaticInvocationWriter extends InvocationWriter {
 
             // create an empty arraylist
             VariableExpression result = new VariableExpression(
-                    "spreadresult"+counter,
+                    "spreadresult" + counter,
                     ARRAYLIST_CLASSNODE
             );
             ConstructorCallExpression cce = new ConstructorCallExpression(ARRAYLIST_CLASSNODE, ArgumentListExpression.EMPTY_ARGUMENTS);
@@ -384,7 +394,7 @@ public class StaticInvocationWriter extends InvocationWriter {
             newMCE.setSourcePosition(origMCE);
             newMCE.visit(controller.getAcg());
             Label endof = compileStack.createLocalLabel("endof_" + counter);
-            mv.visitJumpInsn(GOTO,endof);
+            mv.visitJumpInsn(GOTO, endof);
             mv.visitLabel(ifnull);
             // else { null }
             ClassNode returnType = methodTarget.getReturnType();
@@ -442,7 +452,7 @@ public class StaticInvocationWriter extends InvocationWriter {
                 if (target instanceof ExtensionMethodNode) {
                     type = ((ExtensionMethodNode) target).getExtensionMethodNode().getDeclaringClass();
                 } else {
-                   type = target.getDeclaringClass();
+                    type = target.getDeclaringClass();
                 }
                 if (ClassHelper.GSTRING_TYPE.equals(topOperand) && ClassHelper.STRING_TYPE.equals(type)) {
                     // perform regular type conversion
