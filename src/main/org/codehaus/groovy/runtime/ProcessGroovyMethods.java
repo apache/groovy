@@ -68,7 +68,11 @@ public class ProcessGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static String getText(Process self) throws IOException {
-        return IOGroovyMethods.getText(new BufferedReader(new InputStreamReader(self.getInputStream())));
+        String text = IOGroovyMethods.getText(new BufferedReader(new InputStreamReader(self.getInputStream())));
+        try { self.getErrorStream().close(); } catch (IOException ignore) {}
+        try { self.getInputStream().close(); } catch (IOException ignore) {}
+        try { self.getOutputStream().close(); } catch (IOException ignore) {}
+        return text;
     }
 
     /**
@@ -224,6 +228,7 @@ public class ProcessGroovyMethods extends DefaultGroovyMethodsSupport {
         try { self.waitFor(); } catch (InterruptedException ignore) {}
         try { self.getErrorStream().close(); } catch (IOException ignore) {}
         try { self.getInputStream().close(); } catch (IOException ignore) {}
+        try { self.getOutputStream().close(); } catch (IOException ignore) {}
     }
 
     /**
@@ -247,6 +252,7 @@ public class ProcessGroovyMethods extends DefaultGroovyMethodsSupport {
         try { self.waitFor(); } catch (InterruptedException ignore) {}
         try { self.getErrorStream().close(); } catch (IOException ignore) {}
         try { self.getInputStream().close(); } catch (IOException ignore) {}
+        try { self.getOutputStream().close(); } catch (IOException ignore) {}
     }
 
     /**
