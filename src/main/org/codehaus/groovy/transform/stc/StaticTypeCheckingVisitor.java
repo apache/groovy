@@ -401,6 +401,23 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             if (resultType == null) {
                 resultType = lType;
             }
+            if (isArrayOp(op) &&
+                    oldBinaryExpression!=null
+                    && oldBinaryExpression.getLeftExpression()==expression
+                    && isAssignment(oldBinaryExpression.getOperation().getType())
+                    && !lType.isArray()) {
+                // left hand side of an assignment : map['foo'] = ...
+                ClassNode[] arguments = {rType, getType(oldBinaryExpression.getRightExpression())};
+                List<MethodNode> nodes = findMethod(lType.redirect(), "putAt", arguments);
+                /*if (nodes.isEmpty() && lType.implementsInterface(MAP_TYPE)) {
+                    nodes = findMethod(lType, "put", arguments);
+                } else if (nodes.isEmpty() && lType.implementsInterface(LIST_TYPE)) {
+                    nodes = findMethod(lType, "add", arguments);
+                }*/
+                if (nodes.size()==1) {
+                    typeCheckMethodsWithGenerics(lType, arguments, nodes.get(0), expression);
+                }
+            }
             boolean isEmptyDeclaration = expression instanceof DeclarationExpression && rightExpression instanceof EmptyExpression;
             if (!isEmptyDeclaration) storeType(expression, resultType);
             if (!isEmptyDeclaration && isAssignment(op)) {
@@ -503,6 +520,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     node.setGenericsTypes(copy);
                 }
             }
+            // store inferred type on CCE
+            storeType(cce, node);
         }
     }
 
@@ -954,6 +973,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 );
                 bexp.setSourcePosition(init);
                 typeCheckAssignment(bexp, left, node.getOriginType(), init, getType(init));
+                if (init instanceof ConstructorCallExpression) {
+                    inferDiamondType((ConstructorCallExpression)init, node.getOriginType());
+                }
             }
         } finally {
             isInStaticContext = osc;

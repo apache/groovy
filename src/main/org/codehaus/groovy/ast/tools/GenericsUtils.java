@@ -118,7 +118,7 @@ public class GenericsUtils {
         if (node == null) return;
         if (!node.isUsingGenerics() || !node.isRedirectNode()) return;
         GenericsType[] parameterized = node.getGenericsTypes();
-        if (parameterized == null) return;
+        if (parameterized == null || parameterized.length == 0) return;
         GenericsType[] redirectGenericsTypes = node.redirect().getGenericsTypes();
         if (redirectGenericsTypes==null) redirectGenericsTypes = parameterized;
         for (int i = 0; i < redirectGenericsTypes.length; i++) {

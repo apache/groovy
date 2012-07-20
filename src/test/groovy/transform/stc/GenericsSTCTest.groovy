@@ -620,6 +620,150 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         ''', 'Cannot use diamond <> with anonymous inner classes'
     }
 
+    // GROOVY-5614
+    void testInferDiamondForFields() {
+        assertScript '''
+            class Rules {
+                @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                    def type = node.initialExpression.getNodeMetaData(INFERRED_TYPE)
+                    assert type == make(HashMap)
+                    assert type.genericsTypes.length == 2
+                    assert type.genericsTypes[0].type == Integer_TYPE
+                    assert type.genericsTypes[1].type == make(Date)
+                })
+
+                final Map<Integer, Date> bindings1  = new HashMap<>();
+                @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                    def type = node.initialExpression.getNodeMetaData(INFERRED_TYPE)
+                    assert type == make(HashMap)
+                    assert type.genericsTypes.length == 2
+                    assert type.genericsTypes[0].type == STRING_TYPE
+                    assert type.genericsTypes[1].type == STRING_TYPE
+                })
+                final Map<String, String> bindings2 = new HashMap<>();
+            }
+            def r = new Rules()
+
+            r.bindings1[3] = new Date()
+            assert r.bindings1.containsKey(3)
+
+            r.bindings2['a'] = 'A'
+            r.bindings2.put('b', 'B')
+
+        '''
+    }
+    void testInferDiamondForAssignment() {
+        assertScript '''
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                def type = node.getNodeMetaData(INFERRED_TYPE)
+                assert type == make(HashMap)
+                assert type.genericsTypes.length == 2
+                assert type.genericsTypes[0].type == STRING_TYPE
+                assert type.genericsTypes[1].type == STRING_TYPE
+                type = node.rightExpression.getNodeMetaData(INFERRED_TYPE)
+                assert type == make(HashMap)
+                assert type.genericsTypes.length == 2
+                assert type.genericsTypes[0].type == STRING_TYPE
+                assert type.genericsTypes[1].type == STRING_TYPE
+            })
+            Map<String, String> map = new HashMap<>()
+        '''
+    }
+    void testInferDiamondForAssignmentWithDates() {
+        assertScript '''
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                def DATE = make(Date)
+                def type = node.getNodeMetaData(INFERRED_TYPE)
+                assert type == make(HashMap)
+                assert type.genericsTypes.length == 2
+                assert type.genericsTypes[0].type == DATE
+                assert type.genericsTypes[1].type == DATE
+                type = node.rightExpression.getNodeMetaData(INFERRED_TYPE)
+                assert type == make(HashMap)
+                assert type.genericsTypes.length == 2
+                assert type.genericsTypes[0].type == DATE
+                assert type.genericsTypes[1].type == DATE
+            })
+            Map<Date, Date> map = new HashMap<>()
+        '''
+    }
+    void testInferDiamondForAssignmentWithDatesAndIllegalKeyUsingPut() {
+        shouldFailWithMessages '''
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                def DATE = make(Date)
+                def type = node.getNodeMetaData(INFERRED_TYPE)
+                assert type == make(HashMap)
+                assert type.genericsTypes.length == 2
+                assert type.genericsTypes[0].type == DATE
+                assert type.genericsTypes[1].type == DATE
+                type = node.rightExpression.getNodeMetaData(INFERRED_TYPE)
+                assert type == make(HashMap)
+                assert type.genericsTypes.length == 2
+                assert type.genericsTypes[0].type == DATE
+                assert type.genericsTypes[1].type == DATE
+            })
+            Map<Date, Date> map = new HashMap<>()
+            map.put('foo', new Date())
+        ''', 'Cannot find matching method java.util.HashMap#put(java.lang.String, java.util.Date)'
+    }
+    void testInferDiamondForAssignmentWithDatesAndIllegalKeyUsingSquareBracket() {
+        shouldFailWithMessages '''
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                def DATE = make(Date)
+                def type = node.getNodeMetaData(INFERRED_TYPE)
+                assert type == make(HashMap)
+                assert type.genericsTypes.length == 2
+                assert type.genericsTypes[0].type == DATE
+                assert type.genericsTypes[1].type == DATE
+                type = node.rightExpression.getNodeMetaData(INFERRED_TYPE)
+                assert type == make(HashMap)
+                assert type.genericsTypes.length == 2
+                assert type.genericsTypes[0].type == DATE
+                assert type.genericsTypes[1].type == DATE
+            })
+            Map<Date, Date> map = new HashMap<>()
+            map['foo'] = new Date()
+        ''', 'Cannot call org.codehaus.groovy.runtime.DefaultGroovyMethods#putAt(java.util.Map <java.util.Date, java.util.Date>, java.util.Date, java.util.Date) with arguments [java.util.HashMap <java.util.Date, java.util.Date>, java.lang.String, java.util.Date]'
+    }
+    void testInferDiamondForAssignmentWithDatesAndIllegalValueUsingPut() {
+        shouldFailWithMessages '''
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                def DATE = make(Date)
+                def type = node.getNodeMetaData(INFERRED_TYPE)
+                assert type == make(HashMap)
+                assert type.genericsTypes.length == 2
+                assert type.genericsTypes[0].type == DATE
+                assert type.genericsTypes[1].type == DATE
+                type = node.rightExpression.getNodeMetaData(INFERRED_TYPE)
+                assert type == make(HashMap)
+                assert type.genericsTypes.length == 2
+                assert type.genericsTypes[0].type == DATE
+                assert type.genericsTypes[1].type == DATE
+            })
+            Map<Date, Date> map = new HashMap<>()
+            map.put(new Date(), 'foo')
+        ''', 'Cannot find matching method java.util.HashMap#put(java.util.Date, java.lang.String)'
+    }
+    void testInferDiamondForAssignmentWithDatesAndIllegalValueUsingSquareBracket() {
+        shouldFailWithMessages '''
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                def DATE = make(Date)
+                def type = node.getNodeMetaData(INFERRED_TYPE)
+                assert type == make(HashMap)
+                assert type.genericsTypes.length == 2
+                assert type.genericsTypes[0].type == DATE
+                assert type.genericsTypes[1].type == DATE
+                type = node.rightExpression.getNodeMetaData(INFERRED_TYPE)
+                assert type == make(HashMap)
+                assert type.genericsTypes.length == 2
+                assert type.genericsTypes[0].type == DATE
+                assert type.genericsTypes[1].type == DATE
+            })
+            Map<Date, Date> map = new HashMap<>()
+            map[new Date()] = 'foo'
+        ''', 'Cannot assign value of type java.lang.String to variable of type java.util.Date'
+    }
+
     void testCallMethodWithParameterizedArrayList() {
         assertScript '''
         class MyUtility {
