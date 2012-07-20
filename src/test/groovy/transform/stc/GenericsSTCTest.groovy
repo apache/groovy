@@ -642,6 +642,32 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-5617
+    void testIntermediateListAssignmentOfGStrings() {
+        assertScript '''
+        def test() {
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                def type = node.getNodeMetaData(INFERRED_TYPE)
+                assert type == make(List)
+                assert type.genericsTypes.length==1
+                assert type.genericsTypes[0].type == GSTRING_TYPE
+            })
+            List<GString> dates = ["${new Date()-1}", "${new Date()}", "${new Date()+1}"]
+            dates*.toUpperCase()
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                def type = node.getNodeMetaData(INFERRED_TYPE)
+                assert type == make(List)
+                assert type.genericsTypes.length==1
+                assert type.genericsTypes[0].type == GSTRING_TYPE
+            })
+            List<GString> copied = []
+            copied.addAll(dates)
+            List<String> upper = copied*.toUpperCase()
+        }
+        test()
+        '''
+    }
+
     static class MyList extends LinkedList<String> {}
 
     public static class ClassA<T> {
