@@ -665,8 +665,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     GenericsType gt = GenericsUtils.buildWildcardType(leftExpressionType);
                     if (!UNKNOWN_PARAMETER_TYPE.equals(inferredRightExpressionType) && !gt.isCompatibleWith(inferredRightExpressionType)) {
                         if (isParameterizedWithString(leftExpressionType) && isParameterizedWithGStringOrGStringString(inferredRightExpressionType)) {
-                            addStaticTypeError("You are trying to use a GString in place of a String in a type which explicitely declares accepting String. " +
-                                    "Make sure you use toString() to all of your GString values.", assignmentExpression.getRightExpression());
+                            addStaticTypeError("You are trying to use a GString in place of a String in a type which explicitly declares accepting String. " +
+                                    "Make sure to call toString() on all GString values.", assignmentExpression.getRightExpression());
                         } else {
                             addStaticTypeError("Incompatible generic argument types. Cannot assign "
                                 + inferredRightExpressionType.toString(false)
