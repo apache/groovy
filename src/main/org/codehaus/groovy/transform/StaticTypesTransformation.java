@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,19 @@
 package org.codehaus.groovy.transform;
 
 import org.codehaus.groovy.GroovyBugError;
-import org.codehaus.groovy.ast.*;
+import org.codehaus.groovy.ast.ASTNode;
+import org.codehaus.groovy.ast.AnnotatedNode;
+import org.codehaus.groovy.ast.AnnotationNode;
+import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.Expression;
-import org.codehaus.groovy.ast.stmt.ExpressionStatement;
-import org.codehaus.groovy.control.*;
+import org.codehaus.groovy.control.CompilePhase;
+import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor;
 import org.codehaus.groovy.transform.stc.TypeCheckerPluginFactory;
 
-import java.lang.reflect.Modifier;
 import java.util.Collections;
 import java.util.Map;
 
@@ -41,12 +44,12 @@ public class StaticTypesTransformation implements ASTTransformation {
 
     public static final String STATIC_ERROR_PREFIX = "[Static type checking] - ";
 
-//    @Override
+    //    @Override
     public void visit(ASTNode[] nodes, SourceUnit source) {
         AnnotationNode annotationInformation = (AnnotationNode) nodes[0];
-        Map<String,Expression> members = annotationInformation.getMembers();
+        Map<String, Expression> members = annotationInformation.getMembers();
         TypeCheckerPluginFactory pluginFactory = null;
-        if (members!=null) {
+        if (members != null) {
             Expression exp = members.get("pluginFactory");
             if (exp instanceof ClassExpression) {
                 ClassNode type = exp.getType();
@@ -69,14 +72,14 @@ public class StaticTypesTransformation implements ASTTransformation {
             visitor = newVisitor(source, classNode, pluginFactory);
             visitor.visitClass(classNode);
         } else if (node instanceof MethodNode) {
-            MethodNode methodNode = (MethodNode)node;
+            MethodNode methodNode = (MethodNode) node;
             visitor = newVisitor(source, methodNode.getDeclaringClass(), pluginFactory);
             visitor.setMethodsToBeVisited(Collections.singleton(methodNode));
             visitor.visitMethod(methodNode);
         } else {
             source.addError(new SyntaxException(STATIC_ERROR_PREFIX + "Unimplemented node type", node.getLineNumber(), node.getColumnNumber()));
         }
-        if (visitor!=null) {
+        if (visitor != null) {
             visitor.performSecondPass();
         }
     }
@@ -84,6 +87,7 @@ public class StaticTypesTransformation implements ASTTransformation {
     /**
      * Allows subclasses to provide their own visitor. This is useful for example for transformations relying
      * on the static type checker.
+     *
      * @param unit the source unit
      * @param node the current classnode
      * @return a static type checking visitor

@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2009 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@ package org.codehaus.groovy.classgen.asm.sc;
 
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.classgen.asm.StatementMetaTypeChooser;
@@ -38,7 +37,7 @@ public class StaticTypesTypeChooser extends StatementMetaTypeChooser {
             inferredType = (ClassNode) target.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
         }
         if (inferredType != null) {
-            if (ClassHelper.VOID_TYPE==inferredType) {
+            if (ClassHelper.VOID_TYPE == inferredType) {
                 // we are in a case of a type inference failure, probably because code was generated
                 // it is better to avoid using this
                 inferredType = super.resolveType(exp, current);
@@ -51,11 +50,13 @@ public class StaticTypesTypeChooser extends StatementMetaTypeChooser {
     /**
      * The inferred type, in case of a variable expression, can be set on the accessed variable, so we take it instead
      * of the facade one.
+     *
      * @param ve the variable expression for which to return the target expression
      * @return the target variable expression
      */
     private static VariableExpression getTarget(VariableExpression ve) {
-        if (ve.getAccessedVariable()==null || ve.getAccessedVariable()==ve || (!(ve.getAccessedVariable() instanceof VariableExpression))) return ve;
+        if (ve.getAccessedVariable() == null || ve.getAccessedVariable() == ve || (!(ve.getAccessedVariable() instanceof VariableExpression)))
+            return ve;
         return getTarget((VariableExpression) ve.getAccessedVariable());
     }
 }

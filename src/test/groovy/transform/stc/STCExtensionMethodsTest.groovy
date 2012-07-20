@@ -15,9 +15,6 @@
  */
 package groovy.transform.stc
 
-import org.codehaus.groovy.runtime.m12n.ExtensionModuleRegistry
-import org.codehaus.groovy.runtime.m12n.ExtensionModule
-import java.lang.reflect.Modifier
 import org.codehaus.groovy.runtime.m12n.ExtensionModuleHelperForTests
 
 /**

@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,14 +14,6 @@
  * limitations under the License.
  */
 package groovy.transform.stc
-
-import org.codehaus.groovy.control.customizers.CompilationCustomizer
-import org.codehaus.groovy.control.CompilePhase
-import org.codehaus.groovy.ast.ClassCodeVisitorSupport
-import org.codehaus.groovy.ast.expr.VariableExpression
-import org.codehaus.groovy.ast.expr.Expression
-import org.codehaus.groovy.transform.stc.StaticTypesMarker
-import org.codehaus.groovy.ast.ClassHelper
 
 /**
  * Unit tests for static type checking : generics.
@@ -73,7 +65,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             list.add 'Hello'
         '''
     }
-    
+
     void testAddOnListUsingLeftShift() {
         shouldFailWithMessages '''
             List<String> list = []
@@ -300,12 +292,12 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     void testVoidReturnTypeInferrence() {
-      assertScript '''
+        assertScript '''
         Object m() {
           def s = '1234'
           println 'Hello'
         }
-      '''
+        '''
     }
 
     // GROOVY-5237
@@ -349,7 +341,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             new Foo().m(B)
         '''
     }
-  
+
     void testMethodCallWithClassParameterUsingClassLiteralArgWithoutWrappingClass() {
         assertScript '''
             class A {}
@@ -484,6 +476,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             boolean r = list.addAll(e)
         '''
     }
+
     void testAddAllWithCollectionShouldNotBeAllowed() {
         shouldFailWithMessages '''
             List<String> list = ['a','b','c']
@@ -652,11 +645,11 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     static class MyList extends LinkedList<String> {}
 
     public static class ClassA<T> {
-        public <X> Class<X> foo(Class<X> classType){
+        public <X> Class<X> foo(Class<X> classType) {
             return classType;
         }
 
-        public <X> Class<X> bar(Class<T> classType){
+        public <X> Class<X> bar(Class<T> classType) {
             return null;
         }
     }
