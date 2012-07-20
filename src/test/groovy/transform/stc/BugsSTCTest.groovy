@@ -233,7 +233,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
     void testCastInnerClassToGroovyObject() {
         assertScript '''
         class A { static class B {} }
-        GroovyObject obj = new A.B()
+        GroovyObject obj = (GroovyObject)new A.B()
         '''
     }
 
