@@ -126,18 +126,6 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    void testAttributeWithInheritance() {
-        shouldFailWithMessages '''
-            class A {
-                int x
-            }
-            class B extends A {
-            }
-            B b = new B()
-            b.@x = 2
-        ''', 'No such property: x for class: B'
-    }
-
     void testFieldTypeWithInheritance() {
         shouldFailWithMessages '''
             class A {

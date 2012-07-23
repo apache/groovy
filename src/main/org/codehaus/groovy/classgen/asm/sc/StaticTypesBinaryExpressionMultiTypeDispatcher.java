@@ -24,6 +24,7 @@ import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.transform.sc.StaticCompilationVisitor;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor;
 import org.codehaus.groovy.transform.stc.StaticTypesMarker;
+import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
 import static org.codehaus.groovy.ast.ClassHelper.int_TYPE;
@@ -66,49 +67,84 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
                 if (makeSetProperty(
                         pexp.getObjectExpression(),
                         pexp.getProperty(),
-                        new ArgumentListExpression(expression.getRightExpression()),
+                        expression.getRightExpression(),
                         pexp.isSafe(),
                         pexp.isSpreadSafe(),
-                        pexp.isImplicitThis()
-                )) return;
+                        pexp.isImplicitThis(),
+                        pexp instanceof AttributeExpression)) return;
             }
         }
         super.evaluateEqual(expression, defineVariable);
     }
 
-    private boolean makeSetProperty(final Expression receiver, final Expression message, final Expression arguments, final boolean safe, final boolean spreadSafe, final boolean implicitThis) {
+    private boolean makeSetProperty(final Expression receiver, final Expression message, final Expression arguments, final boolean safe, final boolean spreadSafe, final boolean implicitThis, final boolean isAttribute) {
         WriterController controller = getController();
         TypeChooser typeChooser = controller.getTypeChooser();
         ClassNode receiverType = typeChooser.resolveType(receiver, controller.getClassNode());
         String property = message.getText();
-        String setter = "set"+ MetaClassHelper.capitalize(property);
-        MethodNode setterMethod = receiverType.getSetterMethod(setter);
-        if (setterMethod==null) {
-            PropertyNode propertyNode = receiverType.getProperty(property);
-            if (propertyNode!=null) {
-                setterMethod = new MethodNode(
-                        setter,
-                        ACC_PUBLIC,
-                        ClassHelper.VOID_TYPE,
-                        new Parameter[] { new Parameter(propertyNode.getOriginType(), "value")},
-                        ClassNode.EMPTY_ARRAY,
-                        EmptyStatement.INSTANCE
-                );
-                setterMethod.setDeclaringClass(receiverType);
+        if (isAttribute) {
+            ClassNode current = receiverType;
+            FieldNode fn = null;
+            while (fn==null && current!=null) {
+                fn = current.getDeclaredField(property);
+                if (fn==null){
+                    current = current.getSuperClass();
+                }
             }
-        }
-        if (setterMethod!=null) {
-            MethodCallExpression call = new MethodCallExpression(
-                    receiver,
-                    setter,
-                    arguments
-            );
-            call.setImplicitThis(implicitThis);
-            call.setSafe(safe);
-            call.setSpreadSafe(spreadSafe);
-            call.setMethodTarget(setterMethod);
-            call.visit(controller.getAcg());
-            return true;
+            if (fn!=null && receiverType!=current && !fn.isPublic()) {
+                // check that direct access is allowed
+                if (!fn.isProtected()) {
+                    return false;
+                }
+                String pkg1 = receiverType.getPackageName();
+                String pkg2 = current.getPackageName();
+                if (pkg1!=pkg2 && !pkg1.equals(pkg2)) {
+                    return false;
+                }
+                OperandStack operandStack = controller.getOperandStack();
+                MethodVisitor mv = controller.getMethodVisitor();
+                if (!fn.isStatic()) {
+                    receiver.visit(controller.getAcg());
+                }
+                arguments.visit(controller.getAcg());
+                operandStack.doGroovyCast(fn.getOriginType());
+                mv.visitFieldInsn(fn.isStatic() ? PUTSTATIC : PUTFIELD,
+                        BytecodeHelper.getClassInternalName(fn.getOwner()),
+                        property,
+                        BytecodeHelper.getTypeDescription(fn.getOriginType()));
+                operandStack.remove(fn.isStatic()?1:2);
+                return true;
+            }
+        } else {
+            String setter = "set" + MetaClassHelper.capitalize(property);
+            MethodNode setterMethod = receiverType.getSetterMethod(setter);
+            if (setterMethod == null) {
+                PropertyNode propertyNode = receiverType.getProperty(property);
+                if (propertyNode != null) {
+                    setterMethod = new MethodNode(
+                            setter,
+                            ACC_PUBLIC,
+                            ClassHelper.VOID_TYPE,
+                            new Parameter[]{new Parameter(propertyNode.getOriginType(), "value")},
+                            ClassNode.EMPTY_ARRAY,
+                            EmptyStatement.INSTANCE
+                    );
+                    setterMethod.setDeclaringClass(receiverType);
+                }
+            }
+            if (setterMethod != null) {
+                MethodCallExpression call = new MethodCallExpression(
+                        receiver,
+                        setter,
+                        arguments
+                );
+                call.setImplicitThis(implicitThis);
+                call.setSafe(safe);
+                call.setSpreadSafe(spreadSafe);
+                call.setMethodTarget(setterMethod);
+                call.visit(controller.getAcg());
+                return true;
+            }
         }
         return false;
     }

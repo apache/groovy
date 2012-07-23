@@ -26,7 +26,10 @@ import org.codehaus.groovy.classgen.asm.InvocationWriter;
 import org.codehaus.groovy.classgen.asm.TypeChooser;
 import org.codehaus.groovy.classgen.asm.WriterControllerFactory;
 import org.codehaus.groovy.classgen.asm.sc.StaticTypesTypeChooser;
+import org.codehaus.groovy.control.ErrorCollector;
 import org.codehaus.groovy.control.SourceUnit;
+import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
+import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor;
 import org.codehaus.groovy.transform.stc.StaticTypesMarker;
@@ -271,4 +274,22 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
         }
         return exists;
     }
+
+    @Override
+    public void visitBinaryExpression(final BinaryExpression expression) {
+        super.visitBinaryExpression(expression);
+        if (StaticTypeCheckingSupport.isAssignment(expression.getOperation().getType())) {
+            Expression left = expression.getLeftExpression();
+            if (left instanceof PropertyExpression && ((PropertyExpression) left).isSpreadSafe()) {
+                ErrorCollector errorCollector = getSourceUnit().getErrorCollector();
+                errorCollector.addErrorAndContinue(
+                        new SyntaxErrorMessage(
+                                new SyntaxException("Spread-safe operator is not available with @CompileStatic" + '\n',
+                                        expression.getLineNumber(),
+                                        expression.getColumnNumber()), getSourceUnit()
+                ));
+            }
+        }
+    }
+
 }
