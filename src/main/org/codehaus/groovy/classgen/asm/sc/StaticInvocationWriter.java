@@ -23,7 +23,6 @@ import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.*;
-import org.codehaus.groovy.ast.stmt.EmptyStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
@@ -31,6 +30,7 @@ import org.codehaus.groovy.classgen.asm.*;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.syntax.Token;
+import org.codehaus.groovy.transform.sc.StaticCompilationVisitor;
 import org.codehaus.groovy.transform.stc.ExtensionMethodNode;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor;
@@ -38,7 +38,6 @@ import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -67,14 +66,6 @@ public class StaticInvocationWriter extends InvocationWriter {
                     new Parameter(ClassHelper.OBJECT_TYPE, "args")
             }
     );
-    private static final ClassNode ARRAYLIST_CLASSNODE = ClassHelper.make(ArrayList.class);
-    private static final MethodNode ARRAYLIST_CONSTRUCTOR;
-    private static final MethodNode ARRAYLIST_ADD_METHOD = ARRAYLIST_CLASSNODE.getMethod("add", new Parameter[]{new Parameter(ClassHelper.OBJECT_TYPE, "o")});
-
-    static {
-        ARRAYLIST_CONSTRUCTOR = new ConstructorNode(ACC_PUBLIC, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, EmptyStatement.INSTANCE);
-        ARRAYLIST_CONSTRUCTOR.setDeclaringClass(ARRAYLIST_CLASSNODE);
-    }
 
     private final AtomicInteger labelCounter = new AtomicInteger();
 
@@ -315,10 +306,10 @@ public class StaticInvocationWriter extends InvocationWriter {
             // create an empty arraylist
             VariableExpression result = new VariableExpression(
                     "spreadresult" + counter,
-                    ARRAYLIST_CLASSNODE
+                    StaticCompilationVisitor.ARRAYLIST_CLASSNODE
             );
-            ConstructorCallExpression cce = new ConstructorCallExpression(ARRAYLIST_CLASSNODE, ArgumentListExpression.EMPTY_ARGUMENTS);
-            cce.setNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET, ARRAYLIST_CONSTRUCTOR);
+            ConstructorCallExpression cce = new ConstructorCallExpression(StaticCompilationVisitor.ARRAYLIST_CLASSNODE, ArgumentListExpression.EMPTY_ARGUMENTS);
+            cce.setNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET, StaticCompilationVisitor.ARRAYLIST_CONSTRUCTOR);
             DeclarationExpression declr = new DeclarationExpression(
                     result,
                     Token.newSymbol("=", origin.getLineNumber(), origin.getColumnNumber()),
@@ -348,7 +339,7 @@ public class StaticInvocationWriter extends InvocationWriter {
                     "add",
                     newMCE
             );
-            add.setMethodTarget(ARRAYLIST_ADD_METHOD);
+            add.setMethodTarget(StaticCompilationVisitor.ARRAYLIST_ADD_METHOD);
             // for (e in receiver) { result.add(e?.method(arguments) }
             ForStatement stmt = new ForStatement(
                     iterator,
