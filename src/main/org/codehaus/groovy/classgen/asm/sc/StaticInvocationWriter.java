@@ -27,13 +27,7 @@ import org.codehaus.groovy.ast.stmt.EmptyStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
-import org.codehaus.groovy.classgen.asm.BytecodeHelper;
-import org.codehaus.groovy.classgen.asm.CompileStack;
-import org.codehaus.groovy.classgen.asm.InvocationWriter;
-import org.codehaus.groovy.classgen.asm.MethodCallerMultiAdapter;
-import org.codehaus.groovy.classgen.asm.OperandStack;
-import org.codehaus.groovy.classgen.asm.TypeChooser;
-import org.codehaus.groovy.classgen.asm.WriterController;
+import org.codehaus.groovy.classgen.asm.*;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.syntax.Token;
@@ -406,6 +400,18 @@ public class StaticInvocationWriter extends InvocationWriter {
             }
             mv.visitLabel(endof);
         } else {
+            if ((adapter == AsmClassGenerator.getGroovyObjectField
+                    || adapter == AsmClassGenerator.getField ) && origin instanceof AttributeExpression) {
+                String pname = ((PropertyExpression) origin).getPropertyAsString();
+                CallSiteWriter callSiteWriter = controller.getCallSiteWriter();
+                if (pname!=null && callSiteWriter instanceof StaticTypesCallSiteWriter) {
+                    StaticTypesCallSiteWriter stcsw = (StaticTypesCallSiteWriter) callSiteWriter;
+                    TypeChooser typeChooser = controller.getTypeChooser();
+                    if (stcsw.makeGetField(receiver, typeChooser.resolveType(receiver, controller.getClassNode()), pname, false, true)) {
+                        return;
+                    }
+                }
+            }
             super.makeCall(origin, receiver, message, arguments, adapter, safe, spreadSafe, implicitThis);
         }
     }

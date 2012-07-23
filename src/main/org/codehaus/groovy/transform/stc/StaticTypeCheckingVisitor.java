@@ -590,7 +590,16 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
             return;
         }
-        boolean compatible = checkCompatibleAssignmentTypes(leftRedirect, inferredRightExpressionType, rightExpression);
+        // imagine we have: list*.foo = 100
+        // then the assignment must be checked against [100], not 100
+        ClassNode wrappedRHS = inferredRightExpressionType;
+        if (leftExpression instanceof PropertyExpression && ((PropertyExpression) leftExpression).isSpreadSafe()) {
+            wrappedRHS = LIST_TYPE.getPlainNodeReference();
+            wrappedRHS.setGenericsTypes(new GenericsType[]{
+                    new GenericsType(getWrapper(inferredRightExpressionType))
+            });
+        }
+        boolean compatible = checkCompatibleAssignmentTypes(leftRedirect, wrappedRHS, rightExpression);
         // if leftRedirect is of READONLY_PROPERTY_RETURN type, then it means we are on a missing property
         if (leftExpression.getNodeMetaData(StaticTypesMarker.READONLY_PROPERTY) != null && (leftExpression instanceof PropertyExpression)) {
             addStaticTypeError("Cannot set read-only property: " + ((PropertyExpression) leftExpression).getPropertyAsString(), leftExpression);
@@ -660,16 +669,16 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
             // last, check generic type information to ensure that inferred types are compatible
             if (leftExpressionType.isUsingGenerics() && !leftExpressionType.isEnum()) {
-                boolean incomplete = hasRHSIncompleteGenericTypeInfo(inferredRightExpressionType);
+                boolean incomplete = hasRHSIncompleteGenericTypeInfo(wrappedRHS);
                 if (!incomplete) {
                     GenericsType gt = GenericsUtils.buildWildcardType(leftExpressionType);
-                    if (!UNKNOWN_PARAMETER_TYPE.equals(inferredRightExpressionType) && !gt.isCompatibleWith(inferredRightExpressionType)) {
-                        if (isParameterizedWithString(leftExpressionType) && isParameterizedWithGStringOrGStringString(inferredRightExpressionType)) {
+                    if (!UNKNOWN_PARAMETER_TYPE.equals(wrappedRHS) && !gt.isCompatibleWith(wrappedRHS)) {
+                        if (isParameterizedWithString(leftExpressionType) && isParameterizedWithGStringOrGStringString(wrappedRHS)) {
                             addStaticTypeError("You are trying to use a GString in place of a String in a type which explicitly declares accepting String. " +
                                     "Make sure to call toString() on all GString values.", assignmentExpression.getRightExpression());
                         } else {
                             addStaticTypeError("Incompatible generic argument types. Cannot assign "
-                                + inferredRightExpressionType.toString(false)
+                                + wrappedRHS.toString(false)
                                 + " to: " + leftExpressionType.toString(false), assignmentExpression.getRightExpression());
                         }
                     }
@@ -837,17 +846,15 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                             return true;
                         }
                     }
-                    if (!isAttributeExpression) {
-                        FieldNode field = current.getDeclaredField(propertyName);
-                        if (field != null) {
-                            if (visitor != null) visitor.visitField(field);
-                            storeType(pexp, field.getOriginType());
-                            return true;
-                        }
+                    FieldNode field = current.getDeclaredField(propertyName);
+                    if (field != null) {
+                        if (visitor != null) visitor.visitField(field);
+                        storeType(pexp, field.getOriginType());
+                        return true;
                     }
                     // if the property expression is an attribute expression (o.@attr), then
                     // we stop now, otherwise we must check the parent class
-                    if (!isAttributeExpression && current.getSuperClass()!=null) {
+                    if (/*!isAttributeExpression && */current.getSuperClass()!=null) {
                         queue.add(current.getSuperClass());
                     }
                 }
@@ -1004,7 +1011,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 componentType = forLoopVariableType;
             }
             if (!checkCompatibleAssignmentTypes(forLoopVariableType, componentType)) {
-                addStaticTypeError("Cannot loop with element of type " + forLoopVariableType + " with collection of type " + collectionType, forLoop);
+                addStaticTypeError("Cannot loop with element of type " + forLoopVariableType.toString(false) + " with collection of type " + collectionType.toString(false), forLoop);
             }
             if (forLoopVariableType!=DYNAMIC_TYPE) {
                 // user has specified a type, prefer it over the inferred type
@@ -2277,6 +2284,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     }
                     if (property != null) {
                         MethodNode node = new MethodNode(name, Opcodes.ACC_PUBLIC, property.getType(), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, EmptyStatement.INSTANCE);
+                        if (property.isStatic()) {
+                            node.setModifiers(Opcodes.ACC_PUBLIC + Opcodes.ACC_STATIC);
+                        }
                         node.setDeclaringClass(receiver);
                         return Collections.singletonList(
                                 node);
@@ -2299,6 +2309,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                             MethodNode node = new MethodNode(name, Opcodes.ACC_PUBLIC, VOID_TYPE, new Parameter[]{
                                     new Parameter(type, "arg")
                             }, ClassNode.EMPTY_ARRAY, EmptyStatement.INSTANCE);
+                            if (property.isStatic()) {
+                                node.setModifiers(Opcodes.ACC_PUBLIC + Opcodes.ACC_STATIC);
+                            }
                             node.setDeclaringClass(receiver);
                             return Collections.singletonList(node);
                         }

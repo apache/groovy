@@ -126,8 +126,8 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
             expr.visit(controller.getAcg());
             return;
         }
-        if (makeGetField(receiver, receiverType, methodName, implicitThis, samePackages(receiverType.getPackageName(), classNode.getPackageName()))) return;
         if (makeGetPropertyWithGetter(receiver, receiverType, methodName, safe, implicitThis)) return;
+        if (makeGetField(receiver, receiverType, methodName, implicitThis, samePackages(receiverType.getPackageName(), classNode.getPackageName()))) return;
         if (receiverType.isEnum()) {
             mv.visitFieldInsn(GETSTATIC, BytecodeHelper.getClassInternalName(receiverType), methodName, BytecodeHelper.getTypeDescription(receiverType));
             controller.getOperandStack().push(receiverType);
@@ -139,8 +139,8 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         }
         if (isClassReceiver) {
             // we are probably looking for a property of the class
-            if (makeGetField(receiver, ClassHelper.CLASS_Type, methodName, false, true)) return;
             if (makeGetPropertyWithGetter(receiver, ClassHelper.CLASS_Type, methodName, safe, implicitThis)) return;
+            if (makeGetField(receiver, ClassHelper.CLASS_Type, methodName, false, true)) return;
         }
         if (makeGetPrivateFieldWithBridgeMethod(receiver, receiverType, methodName, safe, implicitThis)) return;
 
@@ -321,9 +321,9 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
             property = "delegate";
         }
         
-        if (makeGetField(receiver, receiverType, property, implicitThis, samePackages(receiverType.getPackageName(), classNode.getPackageName()))) return;
         if (makeGetPropertyWithGetter(receiver, receiverType, property, safe, implicitThis)) return;
-        
+        if (makeGetField(receiver, receiverType, property, implicitThis, samePackages(receiverType.getPackageName(), classNode.getPackageName()))) return;
+
         MethodCallExpression call = new MethodCallExpression(
                 receiver,
                 "getProperty",
@@ -392,13 +392,12 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         return false;
     }
 
-    private boolean makeGetField(final Expression receiver, final ClassNode receiverType, final String fieldName, final boolean implicitThis, final boolean samePackage) {
+    boolean makeGetField(final Expression receiver, final ClassNode receiverType, final String fieldName, final boolean implicitThis, final boolean samePackage) {
         FieldNode field = receiverType.getField(fieldName);
-        // is direct access possible ?
+        // direct access is allowed if we are in the same class as the declaring class
+        // or we are in an inner class
         if (field !=null 
-                && (field.isPublic() 
-                    || (samePackage && field.isProtected())
-                    || Modifier.isPrivate(field.getModifiers()) && field.getOwner().redirect()==controller.getClassNode().redirect())) {
+                && isDirectAccessAllowed(field, controller.getClassNode(), samePackage)) {
             CompileStack compileStack = controller.getCompileStack();
             MethodVisitor mv = controller.getMethodVisitor();
             if (field.isStatic()) {
@@ -427,6 +426,23 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
                 (pkg1 ==null && pkg2 ==null)
                 || pkg1 !=null && pkg1.equals(pkg2)
                 );
+    }
+
+    private static boolean isDirectAccessAllowed(FieldNode a, ClassNode receiver, boolean isSamePackage) {
+        ClassNode declaringClass = a.getDeclaringClass().redirect();
+        ClassNode receiverType = receiver.redirect();
+
+        // first, direct access from within the class or inner class nodes
+        if (declaringClass.equals(receiverType)) return true;
+        if (receiverType instanceof InnerClassNode) {
+            while (receiverType!=null && receiverType instanceof InnerClassNode) {
+                if (declaringClass.equals(receiverType)) return true;
+                receiverType = receiverType.getOuterClass();
+            }
+        }
+
+        // no getter
+        return a.isPublic() || (a.isProtected() && isSamePackage);
     }
 
     @Override
