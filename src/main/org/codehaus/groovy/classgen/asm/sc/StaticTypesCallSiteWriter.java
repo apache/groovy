@@ -409,6 +409,9 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
                 }
                 receiver.visit(controller.getAcg());
                 if (implicitThis) compileStack.popImplicitThis();
+                if (!controller.getOperandStack().getTopOperand().isDerivedFrom(field.getOwner())) {
+                    mv.visitTypeInsn(CHECKCAST, BytecodeHelper.getClassInternalName(field.getOwner()));
+                }
                 mv.visitFieldInsn(GETFIELD, BytecodeHelper.getClassInternalName(field.getOwner()), fieldName, BytecodeHelper.getTypeDescription(field.getOriginType()));
             }
             controller.getOperandStack().replace(field.getOriginType());

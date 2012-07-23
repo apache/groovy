@@ -330,30 +330,7 @@ class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCTest {
         '''
     }
 
-    @NotYetImplemented
     void testUseAttributeExternalSpread() {
-        try {
-            assertScript '''
-                class A {
-                    boolean setterCalled = false
-                    public int x
-                    void setX(int a) {
-                        setterCalled = true
-                        x = a
-                    }
-                }
-                List<A> a = [new A(), new A()]
-                a*.@x = 100
-//              assert a[0].x == 100
-//              assert a[0].isSetterCalled() == false
-            '''
-        } finally {
-            println astTrees
-        }
-    }
-
-    @NotYetImplemented
-    void testUseAttributeExternalSpreadSafeWithNull() {
         assertScript '''
             class A {
                 boolean setterCalled = false
@@ -365,13 +342,29 @@ class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCTest {
             }
             List<A> a = [new A(), new A()]
             a*.@x = 100
+          println a[0].x == 100
+          println a[0].isSetterCalled() == false
+        '''
+    }
+
+    void testUseAttributeExternalSpreadSafeWithNull() {
+        assertScript '''
+            class A {
+                boolean setterCalled = false
+                public int x
+                void setX(int a) {
+                    setterCalled = true
+                    x = a
+                }
+            }
+            List<A> a = [new A(), null]
+            a*.@x = 100
             assert a[0].x == 100
             assert a[0].isSetterCalled() == false
             assert a[1] == null
         '''
     }
 
-    @NotYetImplemented
     void testUseAttributeExternalSpreadUsingSetter() {
         assertScript '''
             class A {
@@ -389,7 +382,6 @@ class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCTest {
         '''
     }
 
-    @NotYetImplemented
     void testUseAttributeExternalSpreadSafeWithNullUsingSetter() {
         assertScript '''
             class A {
@@ -400,7 +392,7 @@ class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCTest {
                     x = a
                 }
             }
-            List<A> a = [new A(), new A()]
+            List<A> a = [new A(), null]
             a*.x = 100
             assert a[0].x == 100
             assert a[0].isSetterCalled() == true
