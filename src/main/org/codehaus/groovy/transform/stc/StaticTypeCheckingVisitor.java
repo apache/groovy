@@ -846,11 +846,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                             return true;
                         }
                     }
-                    FieldNode field = current.getDeclaredField(propertyName);
-                    if (field != null) {
-                        if (visitor != null) visitor.visitField(field);
-                        storeType(pexp, field.getOriginType());
-                        return true;
+                    if (getter==null && checkForReadOnly) {
+                        FieldNode field = current.getDeclaredField(propertyName);
+                        if (field != null) {
+                            if (visitor != null) visitor.visitField(field);
+                            storeType(pexp, field.getOriginType());
+                            return true;
+                        }
                     }
                     // if the property expression is an attribute expression (o.@attr), then
                     // we stop now, otherwise we must check the parent class
