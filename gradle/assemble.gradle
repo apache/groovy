@@ -208,11 +208,6 @@ task jarAll(type: Jar, dependsOn: { modules()*.jar }) {
                         src: jar.archivePath,
                         includes: 'groovy/util/CliBuilder*.class,groovy/util/OptionAccessor*.class,org/codehaus/groovy/tools/shell/util/HelpFormatter*.class')
             }
-            jar(destfile: archivePath, update:true, filesonly:true) {
-                fileset(
-                        dir: temporaryDir,
-                        includes: 'META-INF/MANIFEST.MF')
-            }
         }
     }
 }
