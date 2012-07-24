@@ -138,5 +138,27 @@ class LoopsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    void testShouldNotInferSoftReferenceAsComponentType() {
+        assertScript '''import java.lang.reflect.Field
+            import org.codehaus.groovy.ast.stmt.ForStatement
+
+            @ASTTest(phase=INSTRUCTION_SELECTION, value= {
+                def FIELD_ARRAY = make(Field).makeArray()
+                def forStmt = lookup('myLoop')[0]
+                assert forStmt instanceof ForStatement
+                def collectionType = forStmt.collectionExpression.getNodeMetaData(INFERRED_TYPE)
+                assert collectionType == FIELD_ARRAY
+            })
+            void forInTest() {
+                int i = 0;
+                myLoop:
+                for (def field : String.class.declaredFields) {
+                    i++;
+                }
+                assert i > 0
+            }
+        '''
+    }
+
 }
 
