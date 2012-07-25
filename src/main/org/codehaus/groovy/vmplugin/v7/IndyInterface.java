@@ -32,6 +32,8 @@ import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.reflect.Array;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.reflection.CachedMethod;
@@ -51,7 +53,17 @@ import org.codehaus.groovy.runtime.wrappers.Wrapper;
  * @author <a href="mailto:blackdrag@gmx.org">Jochen "blackdrag" Theodorou</a>
  */
 public class IndyInterface {
-    
+        private final static Logger LOG;
+        private final static boolean LOG_ENABLED;
+        static {
+            LOG = Logger.getLogger(IndyInterface.class.getName());
+            if (System.getProperty("groovy.indy.logging")!=null) {
+                LOG.setLevel(Level.ALL);
+                LOG_ENABLED = true;
+            } else {
+                LOG_ENABLED = false;
+            }
+        }
     /*
      * notes:
      *      MethodHandles#dropArguments: 
@@ -110,6 +122,9 @@ public class IndyInterface {
         }
 
         protected static void invalidateSwitchPoints() {
+            if (LOG_ENABLED) {
+                 LOG.info("invalidating switch point");
+            }
         	SwitchPoint old = switchPoint;
             switchPoint = new SwitchPoint();
             synchronized(IndyInterface.class) { SwitchPoint.invalidateAll(new SwitchPoint[]{old}); }
@@ -153,7 +168,7 @@ public class IndyInterface {
             MutableCallSite mc = new MutableCallSite(type);
             MethodHandle mh = makeFallBack(mc,caller.lookupClass(),name,type,safe,thisCall);
             mc.setTarget(mh);
-            return mc;            
+            return mc;
         }
         
         /**
@@ -179,22 +194,6 @@ public class IndyInterface {
             }
         }
         
-        /*private static class CallInfo {
-            public Object[] args;
-            public MetaMethod method;
-            public MethodType targetType;
-            public MethodType currentType;
-            public String methodName;
-            public MethodHandle handle;
-            public boolean useMetaClass = false;
-            public MutableCallSite callSite;
-            public Class sender;
-            public boolean isVargs;
-            public boolean safeNavigation, safeNavigationOrig;
-            public boolean thisCall;
-            public Class methodSelectionBase;
-        }*/
-        
         /**
          * Returns if a method is static
          */
@@ -212,25 +211,33 @@ public class IndyInterface {
          */
         private static void setHandleForMetaMethod(CallInfo info) {
             MetaMethod metaMethod = info.method;
-                        
+
             if (metaMethod instanceof NumberNumberMetaMethod) {
+            	if (LOG_ENABLED) LOG.info("meta method is number method");
                 info.catchException = false;
-                if (IndyMath.chooseMathMethod(info, metaMethod)) return;
-            }        
+                if (IndyMath.chooseMathMethod(info, metaMethod)) {
+                    if (LOG_ENABLED) LOG.info("indy math successfull");
+                    return;
+                }
+            }
             
             boolean isCategoryTypeMethod = metaMethod instanceof NewInstanceMetaMethod;
+            if (LOG_ENABLED) LOG.info("meta method is category type method: "+isCategoryTypeMethod);
             
             if (metaMethod instanceof ReflectionMetaMethod) {
+                if (LOG_ENABLED) LOG.info("meta method is reflective method");
                 ReflectionMetaMethod rmm = (ReflectionMetaMethod) metaMethod;
                 metaMethod = rmm.getCachedMethod();
             }
             
             if (metaMethod instanceof CachedMethod) {
+                if (LOG_ENABLED) LOG.info("meta method is CachedMethod instance");
                 CachedMethod cm = (CachedMethod) metaMethod;
                 info.isVargs = cm.isVargsMethod();
                 try {
                     Method m = cm.getCachedMethod();
                     info.handle = LOOKUP.unreflect(m);
+                    if (LOG_ENABLED) LOG.info("successfully unreflected");
                     if (!isCategoryTypeMethod && isStatic(m)) {
                         info.handle = MethodHandles.dropArguments(info.handle, 0, Class.class);
                     }
@@ -238,9 +245,11 @@ public class IndyInterface {
                     throw new GroovyBugError(e);
                 }
             } else if (info.method != null) {
+                if (LOG_ENABLED) LOG.info("meta method is dgm helper");
                 // dgm method helper path
                 info.handle = META_METHOD_INVOKER;
                 info.handle = info.handle.bindTo(info.method);
+                if (LOG_ENABLED) LOG.info("bound method name to META_METHOD_INVOKER");
                 if (info.method.getNativeParameterTypes().length==1 && 
                     info.args.length==1) 
                 {
@@ -252,16 +261,19 @@ public class IndyInterface {
                     // we need to wrap the array that represents our argument in
                     // another one for the vargs call
                     info.handle = MethodHandles.insertArguments(info.handle, 1, new Object[]{new Object[]{null}});
+                    if (LOG_ENABLED) LOG.info("null argument expansion");
                 } else if (info.method.isVargsMethod()) {
                     // the method expects the arguments as Object[] in a Object[]
                     info.handle = info.handle.asCollector(Object[].class, 1);
                     info.handle = info.handle.asCollector(Object[].class, info.targetType.parameterCount()-1);
                     info.currentType = MethodType.methodType(info.method.getReturnType(), info.method.getNativeParameterTypes());
                     info.currentType = info.currentType.insertParameterTypes(0, info.method.getDeclaringClass().getTheClass());
+                    if (LOG_ENABLED) LOG.info("wrapping vargs for dgm helper");
                 } else {
                     info.handle = info.handle.asCollector(Object[].class, info.targetType.parameterCount()-1);
                     info.currentType = MethodType.methodType(info.method.getReturnType(), info.method.getNativeParameterTypes());
                     info.currentType = info.currentType.insertParameterTypes(0, info.method.getDeclaringClass().getTheClass());
+                    if (LOG_ENABLED) LOG.info("normal dgm helper wrapping");
                 }
             }
         }
@@ -272,19 +284,26 @@ public class IndyInterface {
          * or the meta class is an AdaptingMetaClass.
          */
         private static void chooseMethod(MetaClass mc, CallInfo ci) {
-            if (!(mc instanceof MetaClassImpl) || mc instanceof AdaptingMetaClass) {return;}
+            if (!(mc instanceof MetaClassImpl) || mc instanceof AdaptingMetaClass) {
+            	if (LOG_ENABLED) LOG.info("meta class is neither MetaClassImpl nor AdoptingMetaClass, normal method selection path disabled.");
+                return;
+            }
+            if (LOG_ENABLED) LOG.info("meta class is a MetaClassImpl");
             
             MetaClassImpl mci = (MetaClassImpl) mc;
             Object receiver = ci.args[0];
             if (receiver==null) {
+                if (LOG_ENABLED) LOG.info("receiver is null");
                 receiver = NullObject.getNullObject();
             } 
             
             if (receiver instanceof Class) {
+                if (LOG_ENABLED) LOG.info("receiver is a class");
                 ci.method = mci.retrieveStaticMethod(ci.name, removeRealReceiver(ci.args));
             } else {
                 ci.method = mci.getMethodWithCaching(ci.selector, ci.name, removeRealReceiver(ci.args), false);
             }
+            if (LOG_ENABLED) LOG.info("retrieved method from meta class: "+ci.method);
         }
         
         /**
@@ -296,10 +315,12 @@ public class IndyInterface {
             if (ci.handle!=null) return;
             try {
                 ci.useMetaClass = true;
+                if (LOG_ENABLED) LOG.info("set meta class invocation path");
                 Object receiver = ci.args[0];
                 if (receiver instanceof Class) {
                     ci.handle = LOOKUP.findVirtual(mc.getClass(), "invokeStaticMethod", MethodType.methodType(Object.class, Object.class, String.class, Object[].class));
                     ci.handle = ci.handle.bindTo(mc);
+                    if (LOG_ENABLED) LOG.info("use invokeStaticMethod with bound meta class");
                 } else {
                     boolean useShortForm = mc instanceof AdaptingMetaClass;
                     if (useShortForm) {
@@ -313,15 +334,18 @@ public class IndyInterface {
                     if (!useShortForm) {
                         ci.handle = ci.handle.bindTo(ci.selector);
                     }
+                    if (LOG_ENABLED) LOG.info("use invokeMethod with bound meta class");
                     
                     if (receiver instanceof GroovyObject) {
                         // if the meta class call fails we may still want to fall back to call
                         // GroovyObject#invokeMethod if the receiver is a GroovyObject
+                        if (LOG_ENABLED) LOG.info("add MissingMethod handler for GrooObject#invokeMethod fallback path");
                         ci.handle = MethodHandles.catchException(ci.handle, MissingMethodException.class, GROOVY_OBJECT_INVOKER);
                     }
                 }
                 ci.handle = MethodHandles.insertArguments(ci.handle, 1, ci.name);
                 ci.handle = ci.handle.asCollector(Object[].class, ci.targetType.parameterCount()-1);
+                if (LOG_ENABLED) LOG.info("bind method name and create collector for arguments");
             } catch (Exception e) {
                 throw new GroovyBugError(e);
             }
@@ -431,6 +455,7 @@ public class IndyInterface {
                     Class type = pt[i];
                     MethodType mt = MethodType.methodType(type, Object.class);
                     ci.handle = MethodHandles.filterArguments(ci.handle, i, UNWRAP_METHOD.asType(mt));
+                    if (LOG_ENABLED) LOG.info("added filter for Wrapper for argument at pos "+i);
                 }
             }
         }
@@ -468,6 +493,7 @@ public class IndyInterface {
                 if (parameters[i].isAssignableFrom(got)) continue;
                 if (isPrimitiveOrWrapper(parameters[i]) && isPrimitiveOrWrapper(got)) continue;
                 ci.handle = TypeTransformers.addTransformer(ci.handle, i, arg, wrappedPara);
+                if (LOG_ENABLED) LOG.info("added transformer at pos "+i+" for type "+got+" to type "+wrappedPara);
             }
         }
 
@@ -497,6 +523,7 @@ public class IndyInterface {
             if (ci.args[0]!=null) return;
             ci.handle = ci.handle.bindTo(NullObject.getNullObject());
             ci.handle = MethodHandles.dropArguments(ci.handle, 0, ci.targetType.parameterType(0));
+            if (LOG_ENABLED) LOG.info("binding null object receiver and dropping old receiver");
         }
         
         /**
@@ -515,6 +542,7 @@ public class IndyInterface {
                 // drop dummy receiver
                 test = test.asType(MethodType.methodType(boolean.class,ci.targetType.parameterType(0)));
                 ci.handle = MethodHandles.guardWithTest(test, ci.handle, fallback);
+                if (LOG_ENABLED) LOG.info("added meta class equality check");
             }
             
             if (!ci.useMetaClass) {
@@ -528,13 +556,15 @@ public class IndyInterface {
                 //     Since entering/leaving a category will invalidate, there is no need for any special check
                 // (3) method is not in use scope /and not from category
                 //     Since entering/leaving a category will invalidate, there is no need for any special check
-            	if (ci.method instanceof NewInstanceMetaMethod) {
-            		ci.handle = MethodHandles.guardWithTest(HAS_CATEGORY_IN_CURRENT_THREAD_GUARD, ci.handle, fallback);
-            	}
+                if (ci.method instanceof NewInstanceMetaMethod) {
+                	ci.handle = MethodHandles.guardWithTest(HAS_CATEGORY_IN_CURRENT_THREAD_GUARD, ci.handle, fallback);
+                    if (LOG_ENABLED) LOG.info("added category-in-current-thread-guard for category method");
+                }
             }
             
             // handle constant meta class and category changes
             ci.handle = switchPoint.guardWithTest(ci.handle, fallback);
+            if (LOG_ENABLED) LOG.info("added switch point guard");
             
             // guards for receiver and parameter
             Class[] pt = ci.handle.type().parameterArray();
@@ -543,12 +573,14 @@ public class IndyInterface {
                 MethodHandle test = null;
                 if (arg==null) {
                     test = IS_NULL.asType(MethodType.methodType(boolean.class, pt[i]));
+                    if (LOG_ENABLED) LOG.info("added null argument check at pos "+i);
                 } else { 
                     Class argClass = arg.getClass();
                     if (Modifier.isFinal(argClass.getModifiers()) && TypeHelper.argumentClassIsParameterClass(argClass,pt[i])) continue;
                     test = SAME_CLASS.
                                 bindTo(argClass).
                                 asType(MethodType.methodType(boolean.class, pt[i]));
+                    if (LOG_ENABLED) LOG.info("added same class check at pos "+i);
                 }
                 Class[] drops = new Class[i];
                 for (int j=0; j<drops.length; j++) drops[j] = pt[j];
@@ -588,6 +620,7 @@ public class IndyInterface {
                 // we have no argument for the array, meaning params.length is
                 // args.length+1. In that case we have to fill in an empty array
                 info.handle = MethodHandles.insertArguments(info.handle, params.length-1, Array.newInstance(lastParam.getComponentType(), 0));
+                if (LOG_ENABLED) LOG.info("added empty array for missing vargs part");
             } else { //params.length < args.length
                 // we depend on the method selection having done a good 
                 // job before already, so the only case for this here is, that
@@ -595,6 +628,7 @@ public class IndyInterface {
                 info.handle = info.handle.asCollector(
                         lastParam,
                         info.args.length - params.length + 1);
+                if (LOG_ENABLED) LOG.info("changed surplus arguments to be collected for vargs call");
             }
             
         }
@@ -613,6 +647,7 @@ public class IndyInterface {
             } else {
                 info.handle = MethodHandles.catchException(info.handle, GroovyRuntimeException.class, UNWRAP_EXCEPTION);
             }
+            if (LOG_ENABLED) LOG.info("added GroovyRuntimeException unwrapper");
         }
         
         /**
@@ -624,6 +659,7 @@ public class IndyInterface {
         private static boolean setNullForSafeNavigation(CallInfo info) {
             if (!info.safeNavigation) return false;
             info.handle = MethodHandles.dropArguments(NULL_REF,0,info.targetType.parameterArray());
+            if (LOG_ENABLED) LOG.info("set null returning handle for safe navigation");
             return true;
         }
         
@@ -638,6 +674,7 @@ public class IndyInterface {
             } else {
                 ci.selector = mc.getTheClass();
             }
+            if (LOG_ENABLED) LOG.info("method selection base set to "+ci.selector);
         }
         
         /**
@@ -654,10 +691,25 @@ public class IndyInterface {
             callInfo.safeNavigationOrig = safeNavigation;
             callInfo.safeNavigation = safeNavigation && arguments[0]==null;
             callInfo.thisCall = thisCall;
+            if (LOG_ENABLED) {
+                String msg =
+                    "----------------------------------------------------"+
+                    "\n\t\tinvocation of method '"+methodName+"'"+
+                    "\n\t\tsender: "+sender+
+                    "\n\t\ttargetType: "+callInfo.targetType+
+                    "\n\t\tsafe navigation: "+safeNavigation+
+                    "\n\t\tthisCall: "+thisCall+
+                    "\n\t\twith "+arguments.length+" arguments";
+                for (int i=0; i<arguments.length; i++) {
+                    msg += "\n\t\t\targument["+i+"] = "+arguments[i];
+                }
+                LOG.info(msg);
+            }
 
             if (!setNullForSafeNavigation(callInfo)) {
                 //            setInterceptableHandle(callInfo);
                 MetaClass mc = getMetaClass(callInfo.args[0]);
+                if (LOG_ENABLED) LOG.info("meta class is "+mc);
                 setMethodSelectionBase(callInfo, mc);
                 chooseMethod(mc, callInfo);
                 setHandleForMetaMethod(callInfo);
@@ -666,12 +718,14 @@ public class IndyInterface {
                 correctParameterLength(callInfo);
                 correctCoerce(callInfo);
                 correctNullReceiver(callInfo);
+                if (LOG_ENABLED) LOG.info("casting explicit from "+callInfo.handle.type()+" to "+callInfo.targetType);
                 callInfo.handle =  MethodHandles.explicitCastArguments(callInfo.handle,callInfo.targetType);
-
+                
                 addExceptionHandler(callInfo);
             } 
             setGuards(callInfo, callInfo.args[0]);
             callSite.setTarget(callInfo.handle);
+            if (LOG_ENABLED) LOG.info("call site target set, preparing outside invocation");
             
             MethodHandle call = callInfo.handle.asSpreader(Object[].class, callInfo.args.length);
             call = call.asType(MethodType.methodType(Object.class,Object[].class));

@@ -83,6 +83,7 @@ public class WriterController {
         } else {
             if (Boolean.TRUE.equals(optOptions.get("indy"))) invokedynamic=true;
             if (Boolean.FALSE.equals(optOptions.get("int"))) optimizeForInt=false;
+            if (invokedynamic) optimizeForInt=false;
             // set other optimizations options to false here
         }
         this.classNode = cn;
