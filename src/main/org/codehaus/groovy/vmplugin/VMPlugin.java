@@ -29,4 +29,5 @@ public interface VMPlugin {
     Class[] getPluginStaticGroovyMethods();
     void configureAnnotation(AnnotationNode an);
     void configureClassNode(CompileUnit compileUnit, ClassNode classNode);
+    void invalidateCallSites();
 }

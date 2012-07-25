@@ -159,7 +159,45 @@ class CategoryTest extends GroovyTestCase {
              }
         """
     }
+
+
+    def foo(x){x.bar()}
+    void testMethodHiding1() {
+        def x = new X()
+        assert foo(x) == 1
+        use (XCat) {
+	        assert foo(x) == 2
+	        def t = Thread.start {assert foo(x)==1}
+	        t.join()
+        }
+        assert foo(x) == 1
+        def t = Thread.start {use (XCat2){assert foo(x)==3}}
+        t.join()
+        assert foo(x) == 1
+    }
+
+    void testMethodHiding2() {
+        def x = new X()
+        assert foo(x) == 1
+        use (XCat) {
+	        assert foo(x) == 2
+        	def t = Thread.start {use (XCat2){assert foo(x)==3}}
+        	t.join()
+        	assert foo(x) == 2
+	        t = Thread.start {assert foo(x)==1}
+	        t.join()
+        }
+        assert foo(x) == 1
+        def t = Thread.start {use (XCat2){assert foo(x)==3}}
+        t.join()
+        assert foo(x) == 1
+    }
+
 }
+
+class X{ def bar(){1}}
+class XCat{ static bar(X x){2}}
+class XCat2{ static bar(X x){3}}
 
 class StringCategory {
     static String lower(String string) {

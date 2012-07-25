@@ -16,7 +16,6 @@
 package org.codehaus.groovy.vmplugin.v7;
 
 import groovy.lang.AdaptingMetaClass;
-import groovy.lang.GString;
 import groovy.lang.GroovyObject;
 import groovy.lang.GroovyRuntimeException;
 import groovy.lang.GroovySystem;
@@ -33,12 +32,10 @@ import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.reflect.Array;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.math.BigDecimal;
-import java.math.BigInteger;
 
 import org.codehaus.groovy.GroovyBugError;
-import org.codehaus.groovy.ast.expr.CastExpression;
 import org.codehaus.groovy.reflection.CachedMethod;
+import org.codehaus.groovy.runtime.GroovyCategorySupport;
 import org.codehaus.groovy.runtime.NullObject;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 import org.codehaus.groovy.runtime.dgmimpl.NumberNumberMetaMethod;
@@ -82,7 +79,9 @@ public class IndyInterface {
         private static final MethodHandle   
             UNWRAP_METHOD,  SAME_MC,            IS_NULL,
             IS_NOT_NULL,    UNWRAP_EXCEPTION,   SAME_CLASS,
-            META_METHOD_INVOKER,    GROOVY_OBJECT_INVOKER;
+            META_METHOD_INVOKER,    GROOVY_OBJECT_INVOKER,
+            HAS_CATEGORY_IN_CURRENT_THREAD_GUARD,
+            NEGATE_BOOL;
         static {
             try {
                 UNWRAP_METHOD = LOOKUP.findStatic(IndyInterface.class, "unwrap", O2O);
@@ -93,6 +92,8 @@ public class IndyInterface {
                 SAME_CLASS = LOOKUP.findStatic(IndyInterface.class, "sameClass", MethodType.methodType(boolean.class, Class.class, Object.class));
                 META_METHOD_INVOKER = LOOKUP.findVirtual(MetaMethod.class, "invoke", GENERAL_INVOKER_SIGNATURE);
                 GROOVY_OBJECT_INVOKER = LOOKUP.findStatic(IndyInterface.class, "invokeGroovyObjectInvoker", MethodType.methodType(Object.class, MissingMethodException.class, Object.class, String.class, Object[].class));
+                HAS_CATEGORY_IN_CURRENT_THREAD_GUARD = LOOKUP.findStatic(GroovyCategorySupport.class, "hasCategoryInCurrentThread", MethodType.methodType(boolean.class));
+                NEGATE_BOOL = LOOKUP.findStatic(IndyInterface.class, "negateBool", MethodType.methodType(boolean.class,boolean.class));
             } catch (Exception e) {
                 throw new GroovyBugError(e);
             }
@@ -103,13 +104,16 @@ public class IndyInterface {
         static {
             GroovySystem.getMetaClassRegistry().addMetaClassRegistryChangeEventListener(new MetaClassRegistryChangeEventListener() {
                 public void updateConstantMetaClass(MetaClassRegistryChangeEvent cmcu) {
-                    SwitchPoint old = switchPoint;
-                    switchPoint = new SwitchPoint();
-                    synchronized(this) { SwitchPoint.invalidateAll(new SwitchPoint[]{old}); }
+                	invalidateSwitchPoints();
                 }
             });
         }
 
+        protected static void invalidateSwitchPoints() {
+        	SwitchPoint old = switchPoint;
+            switchPoint = new SwitchPoint();
+            synchronized(IndyInterface.class) { SwitchPoint.invalidateAll(new SwitchPoint[]{old}); }
+        }
         
         // the entry points from bytecode
         
@@ -396,6 +400,13 @@ public class IndyInterface {
         }
         
         /**
+         * Filter to negate a boolean
+         */
+        public static boolean negateBool(boolean b) {
+        	return !b;
+        }
+        
+        /**
          * Guard to check if the provided Object has the same
          * class as the provided Class. This method will
          * return false if the Object is null.
@@ -504,11 +515,26 @@ public class IndyInterface {
                 // drop dummy receiver
                 test = test.asType(MethodType.methodType(boolean.class,ci.targetType.parameterType(0)));
                 ci.handle = MethodHandles.guardWithTest(test, ci.handle, fallback);
-            } else if (receiver != null) {
-                // handle constant meta class
-                ci.handle = switchPoint.guardWithTest(ci.handle, fallback);
-                
             }
+            
+            if (!ci.useMetaClass) {
+                // category method needs Thread check
+                // cases:
+                // (1) method is a category method
+                //     We need to check if the category in the current thread is still active.
+                //     Since we invalidate on leaving the category checking for it being
+                //     active directly is good enough.
+                // (2) method is in use scope, but not from category
+                //     Since entering/leaving a category will invalidate, there is no need for any special check
+                // (3) method is not in use scope /and not from category
+                //     Since entering/leaving a category will invalidate, there is no need for any special check
+            	if (ci.method instanceof NewInstanceMetaMethod) {
+            		ci.handle = MethodHandles.guardWithTest(HAS_CATEGORY_IN_CURRENT_THREAD_GUARD, ci.handle, fallback);
+            	}
+            }
+            
+            // handle constant meta class and category changes
+            ci.handle = switchPoint.guardWithTest(ci.handle, fallback);
             
             // guards for receiver and parameter
             Class[] pt = ci.handle.type().parameterArray();
@@ -517,7 +543,7 @@ public class IndyInterface {
                 MethodHandle test = null;
                 if (arg==null) {
                     test = IS_NULL.asType(MethodType.methodType(boolean.class, pt[i]));
-                } else {
+                } else { 
                     Class argClass = arg.getClass();
                     if (Modifier.isFinal(argClass.getModifiers()) && TypeHelper.argumentClassIsParameterClass(argClass,pt[i])) continue;
                     test = SAME_CLASS.
@@ -536,7 +562,7 @@ public class IndyInterface {
          * using the parameters. This might be needed for vargs and for one 
          * parameter calls without arguments (null is used then).  
          */
-        private static void correctParameterLenth(CallInfo info) {
+        private static void correctParameterLength(CallInfo info) {
             Class[] params = info.handle.type().parameterArray();
             
             if (info.handle==null) return;
@@ -637,7 +663,7 @@ public class IndyInterface {
                 setHandleForMetaMethod(callInfo);
                 setMetaClassCallHandleIfNedded(mc, callInfo);
                 correctWrapping(callInfo);
-                correctParameterLenth(callInfo);
+                correctParameterLength(callInfo);
                 correctCoerce(callInfo);
                 correctNullReceiver(callInfo);
                 callInfo.handle =  MethodHandles.explicitCastArguments(callInfo.handle,callInfo.targetType);
