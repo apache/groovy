@@ -41,4 +41,10 @@ public @interface Singleton {
      * @return if this singleton should be lazy
      */
     boolean lazy () default false;
+
+
+    /**
+     * @return the singleton property name
+     */
+    String property() default "instance";
 }
