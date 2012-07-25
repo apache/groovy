@@ -405,5 +405,8 @@ public class Java5 implements VMPlugin {
         setAnnotationMetaData(annotations, parameter);
         return parameter;
     }
+    
+    @Override
+    public void invalidateCallSites() {}
 }
 
