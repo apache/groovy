@@ -35,6 +35,8 @@ import java.util.Iterator;
 @GroovyASTTransformation(phase= CompilePhase.CANONICALIZATION)
 public class SingletonASTTransformation implements ASTTransformation, Opcodes {
 
+    private String propertyName = "instance";
+
     /**
      *
      * @param nodes   the ast nodes
@@ -55,6 +57,9 @@ public class SingletonASTTransformation implements ASTTransformation, Opcodes {
 
         if (parent instanceof ClassNode) {
             ClassNode classNode = (ClassNode) parent;
+            final Expression fieldNameAttribute = node.getMember("property");
+            if (fieldNameAttribute instanceof ConstantExpression)
+                propertyName = (String) ((ConstantExpression) fieldNameAttribute).getValue();
             final Expression member = node.getMember("lazy");
             if(member instanceof ConstantExpression && ((ConstantExpression)member).getValue().equals(true))
                createLazy(classNode);
@@ -64,16 +69,20 @@ public class SingletonASTTransformation implements ASTTransformation, Opcodes {
     }
 
     private void createNonLazy(ClassNode classNode) {
-        final FieldNode fieldNode = classNode.addField("instance", ACC_PUBLIC|ACC_FINAL|ACC_STATIC, classNode.getPlainNodeReference(), new ConstructorCallExpression(classNode, new ArgumentListExpression()));
+        final FieldNode fieldNode = classNode.addField(propertyName, ACC_PUBLIC | ACC_FINAL | ACC_STATIC, classNode.getPlainNodeReference(), new ConstructorCallExpression(classNode, new ArgumentListExpression()));
         createConstructor(classNode, fieldNode);
 
         final BlockStatement body = new BlockStatement();
         body.addStatement(new ReturnStatement(new VariableExpression(fieldNode)));
-        classNode.addMethod("getInstance", ACC_STATIC|ACC_PUBLIC, classNode.getPlainNodeReference(), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, body);
+        classNode.addMethod(getGetterName(), ACC_STATIC | ACC_PUBLIC, classNode.getPlainNodeReference(), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, body);
+    }
+
+    private String getGetterName() {
+        return "get" + Character.toUpperCase(propertyName.charAt(0)) + propertyName.substring(1);
     }
 
     private void createLazy(ClassNode classNode) {
-        final FieldNode fieldNode = classNode.addField("instance", ACC_PRIVATE|ACC_STATIC|ACC_VOLATILE, classNode.getPlainNodeReference(), null);
+        final FieldNode fieldNode = classNode.addField(propertyName, ACC_PRIVATE | ACC_STATIC | ACC_VOLATILE, classNode.getPlainNodeReference(), null);
         createConstructor(classNode, fieldNode);
 
         final BlockStatement body = new BlockStatement();
@@ -90,7 +99,7 @@ public class SingletonASTTransformation implements ASTTransformation, Opcodes {
                     )
             )
         ));
-        classNode.addMethod("getInstance", ACC_STATIC|ACC_PUBLIC, classNode.getPlainNodeReference(), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, body);
+        classNode.addMethod(getGetterName(), ACC_STATIC | ACC_PUBLIC, classNode.getPlainNodeReference(), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, body);
     }
 
     private void createConstructor(ClassNode classNode, FieldNode field) {
@@ -113,7 +122,7 @@ public class SingletonASTTransformation implements ASTTransformation, Opcodes {
                 new ThrowStatement(
                         new ConstructorCallExpression(ClassHelper.make(RuntimeException.class),
                                 new ArgumentListExpression(
-                                        new ConstantExpression("Can't instantiate singleton " + classNode.getName() + ". Use " + classNode.getName() + ".instance" )))),
+                                            new ConstantExpression("Can't instantiate singleton " + classNode.getName() + ". Use " + classNode.getName() + "." + propertyName)))),
                 new EmptyStatement()));
             classNode.addConstructor(new ConstructorNode(ACC_PRIVATE, body));
         }
