@@ -472,7 +472,7 @@ public class IndyInterface {
             if (ci.args.length != parameters.length) {
                 throw new GroovyBugError("At this point argument array length and parameter array length should be the same");
             }
-            for (int i=1; i<ci.args.length; i++) {
+            for (int i=0; i<ci.args.length; i++) {
             	if (parameters[i]==Object.class) continue; 
                 Object arg = ci.args[i];
                 // we have to handle here different cases in which we do no
