@@ -92,7 +92,7 @@ class SingletonTransformTest extends GroovyShellTestCase {
 
         def invoker = new GroovyClassLoader()
         def clazz = invoker.parseClass("""
-            @CustomSingleton(property ='$propertyName')
+            @Singleton(property ='$propertyName')
             public class $className {
             } """);
         def modifiers = clazz.getDeclaredField(propertyName).modifiers //should be public final static for non-lazy singleton
