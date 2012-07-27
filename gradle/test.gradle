@@ -22,6 +22,11 @@ test {
     ignoreFailures = false
     ext.resultText = ''
     includes = getIncludePattern()
+    doLast {
+        ant.delete {
+            fileset(dir: '.', includes: '*.class')
+        }
+    }
 }
 
 boolean isRunningOnCI() {
