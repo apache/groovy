@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,23 +26,37 @@ import org.codehaus.groovy.GroovyException;
 public class SyntaxException extends GroovyException {
 
     /** Line upon which the error occurred. */
-    private final int line;
+    private final int startLine;
+    private final int endLine;
 
     /** Column upon which the error occurred. */
-    private final int column;
+    private final int startColumn;
+    private final int endColumn;
 
     private String sourceLocator;
 
-    public SyntaxException(String message, int line, int column) {
-        super(message, false);
-        this.line = line;
-        this.column = column;
+    public SyntaxException(String message, int startLine, int startColumn) {
+        this(message, startLine, startColumn, startLine, startColumn+1);
     }
 
-    public SyntaxException(String message, Throwable cause, int line, int column) {
+    public SyntaxException(String message, int startLine, int startColumn, int endLine, int endColumn) {
+        super(message, false);
+        this.startLine = startLine;
+        this.startColumn = startColumn;
+        this.endLine = endLine;
+        this.endColumn = endColumn;
+    }
+
+    public SyntaxException(String message, Throwable cause, int startLine, int startColumn) {
+        this(message, cause, startLine, startColumn, startLine, startColumn+1);
+    }
+
+    public SyntaxException(String message, Throwable cause, int startLine, int startColumn, int endLine, int endColumn) {
         super(message, cause);
-        this.line = line;
-        this.column = column;
+        this.startLine = startLine;
+        this.startColumn = startColumn;
+        this.endLine = endLine;
+        this.endColumn = endColumn;
     }
 
     // Properties
@@ -60,29 +74,37 @@ public class SyntaxException extends GroovyException {
      *  @return The line.
      */
     public int getLine() {
-        return line;
+        return getStartLine();
     }
 
-    /** Retrieve the column upon which the error occurred.
+    /**
+     * @return the line on which the error occurs
+     */
+    public int getStartLine() {
+        return startLine;
+    }
+
+    /**
+     * Retrieve the column upon which the error occurred.
      *
      *  @return The column.
      */
     public int getStartColumn() {
-        return column;
+        return startColumn;
     }
-    
-    /** 
-     * @return the end of the line on which the error occurs
+
+    /**
+     * @return the end line on which the error occurs
      */
-    public int getStartLine() {
-        return getLine();
+    public int getEndLine() {
+        return endLine;
     }
 
     /**
      * @return the end column on which the error occurs
      */
     public int getEndColumn() {
-        return getStartColumn() + 1;
+        return endColumn;
     }
 
     public String getOriginalMessage() {
@@ -90,6 +112,6 @@ public class SyntaxException extends GroovyException {
     }
 
     public String getMessage() {
-        return super.getMessage() + " @ line " + line + ", column " + column + ".";
+        return super.getMessage() + " @ line " + startLine + ", column " + startColumn + ".";
     }
 }

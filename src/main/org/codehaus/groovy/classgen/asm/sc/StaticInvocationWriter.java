@@ -172,12 +172,8 @@ public class StaticInvocationWriter extends InvocationWriter {
                     }
                 }
                 if (declaringClass != classNode) {
-                    controller.getSourceUnit().addError(new SyntaxException(
-                            "Cannot call private method " + (target.isStatic() ? "static " : "") +
-                                    declaringClass.toString(false) + "#" + target.getName() + " from class " + classNode.toString(false),
-                            receiver.getLineNumber(),
-                            receiver.getColumnNumber()
-                    ));
+                    controller.getSourceUnit().addError(new SyntaxException("Cannot call private method " + (target.isStatic() ? "static " : "") +
+                                                        declaringClass.toString(false) + "#" + target.getName() + " from class " + classNode.toString(false), receiver.getLineNumber(), receiver.getColumnNumber(), receiver.getLastLineNumber(), receiver.getLastColumnNumber()));
                 }
             }
             if (target != null && receiver != null) {
