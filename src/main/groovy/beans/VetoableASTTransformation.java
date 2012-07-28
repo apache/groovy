@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2009 the original author or authors.
+ * Copyright 2008-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -91,12 +91,10 @@ public class VetoableASTTransformation extends BindableASTTransformation {
             addListenerToClass(source, node, (ClassNode) nodes[1]);
         } else {
             if ((((FieldNode)nodes[1]).getModifiers() & Opcodes.ACC_FINAL) != 0) {
-                source.getErrorCollector().addErrorAndContinue(
-                            new SyntaxErrorMessage(new SyntaxException(
-                                "@groovy.beans.Vetoable cannot annotate a final property.",
-                                node.getLineNumber(),
-                                node.getColumnNumber()),
-                                source));
+                source.getErrorCollector().addErrorAndContinue(new SyntaxErrorMessage(
+                        new SyntaxException("@groovy.beans.Vetoable cannot annotate a final property.",
+                                node.getLineNumber(), node.getColumnNumber(), node.getLastLineNumber(), node.getLastColumnNumber()),
+                        source));
             }
 
             addListenerToProperty(source, node, (AnnotatedNode) nodes[1]);
@@ -109,30 +107,26 @@ public class VetoableASTTransformation extends BindableASTTransformation {
         String fieldName = field.getName();
         for (PropertyNode propertyNode : declaringClass.getProperties()) {
             boolean bindable = BindableASTTransformation.hasBindableAnnotation(parent)
-                || BindableASTTransformation.hasBindableAnnotation(parent.getDeclaringClass());
+                    || BindableASTTransformation.hasBindableAnnotation(parent.getDeclaringClass());
 
             if (propertyNode.getName().equals(fieldName)) {
                 if (field.isStatic()) {
                     //noinspection ThrowableInstanceNeverThrown
-                    source.getErrorCollector().addErrorAndContinue(
-                                new SyntaxErrorMessage(new SyntaxException(
-                                    "@groovy.beans.Vetoable cannot annotate a static property.",
-                                    node.getLineNumber(),
-                                    node.getColumnNumber()),
-                                    source));
+                    source.getErrorCollector().addErrorAndContinue(new SyntaxErrorMessage(
+                            new SyntaxException("@groovy.beans.Vetoable cannot annotate a static property.",
+                                    node.getLineNumber(), node.getColumnNumber(), node.getLastLineNumber(), node.getLastColumnNumber()),
+                            source));
                 } else {
-                    createListenerSetter(source, node, bindable, declaringClass,  propertyNode);
+                    createListenerSetter(source, node, bindable, declaringClass, propertyNode);
                 }
                 return;
             }
         }
         //noinspection ThrowableInstanceNeverThrown
-        source.getErrorCollector().addErrorAndContinue(
-                    new SyntaxErrorMessage(new SyntaxException(
-                        "@groovy.beans.Vetoable must be on a property, not a field.  Try removing the private, protected, or public modifier.",
-                        node.getLineNumber(),
-                        node.getColumnNumber()),
-                        source));
+        source.getErrorCollector().addErrorAndContinue(new SyntaxErrorMessage(
+                new SyntaxException("@groovy.beans.Vetoable must be on a property, not a field.  Try removing the private, protected, or public modifier.",
+                        node.getLineNumber(), node.getColumnNumber(), node.getLastLineNumber(), node.getLastColumnNumber()),
+                source));
     }
 
 

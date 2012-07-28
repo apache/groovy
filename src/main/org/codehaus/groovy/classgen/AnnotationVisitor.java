@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2009 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -295,10 +295,7 @@ public class AnnotationVisitor {
 
     protected void addError(String msg, ASTNode expr) {
         this.errorCollector.addErrorAndContinue(
-                new SyntaxErrorMessage(new SyntaxException(
-                        msg + " in @" + this.reportClass.getName() + '\n',
-                        expr.getLineNumber(),
-                        expr.getColumnNumber()), this.source)
+                new SyntaxErrorMessage(new SyntaxException(msg + " in @" + this.reportClass.getName() + '\n', expr.getLineNumber(), expr.getColumnNumber(), expr.getLastLineNumber(), expr.getLastColumnNumber()), this.source)
         );
     }
 

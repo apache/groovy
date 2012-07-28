@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,8 @@ public class RuntimeParserException extends GroovyRuntimeException {
     }
 
     public void throwParserException() throws SyntaxException {
-        throw new SyntaxException(getMessage(), getNode().getLineNumber(), getNode().getColumnNumber());
+        final ASTNode node = getNode();
+        throw new SyntaxException(getMessage(), node.getLineNumber(), node.getColumnNumber(), node.getLastLineNumber(), node.getLastColumnNumber());
     }
 
 }

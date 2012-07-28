@@ -67,7 +67,8 @@ public class StaticCompileTransformation extends StaticTypesTransformation {
             visitor.setMethodsToBeVisited(Collections.singleton(methodNode));
             visitor.visitMethod(methodNode);
         } else {
-            source.addError(new SyntaxException(STATIC_ERROR_PREFIX + "Unimplemented node type", node.getLineNumber(), node.getColumnNumber()));
+            source.addError(new SyntaxException(STATIC_ERROR_PREFIX + "Unimplemented node type",
+                    node.getLineNumber(), node.getColumnNumber(), node.getLastLineNumber(), node.getLastColumnNumber()));
         }
         if (visitor != null) {
             visitor.performSecondPass();
