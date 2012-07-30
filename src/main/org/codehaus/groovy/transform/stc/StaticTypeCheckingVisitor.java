@@ -1226,7 +1226,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         ClassNode receiver = call.isThisCall() ? classNode :
                 call.isSuperCall() ? classNode.getSuperClass() : call.getType();
         Expression arguments = call.getArguments();
-        ClassNode[] args = getArgumentTypes(InvocationWriter.makeArgumentList(arguments));
+
+        ArgumentListExpression argumentList = InvocationWriter.makeArgumentList(arguments);
+
+        checkForbiddenSpreadArgument(argumentList);
+
+        ClassNode[] args = getArgumentTypes(argumentList);
         MethodNode node = null;
         if (args.length == 1 && implementsInterfaceOrIsSubclassOf(args[0], MAP_TYPE) && findMethod(receiver, "<init>", ClassNode.EMPTY_ARRAY).size() == 1) {
             // bean-style constructor
@@ -1443,6 +1448,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         final ClassNode rememberLastItType = lastImplicitItType;
         Expression callArguments = call.getArguments();
 
+        ArgumentListExpression argumentList = InvocationWriter.makeArgumentList(callArguments);
+
+        checkForbiddenSpreadArgument(argumentList);
+
         boolean isWithCall = isWithCall(name, callArguments);
 
         if (!isWithCall) {
@@ -1450,7 +1459,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             callArguments.visit(this);
         }
 
-        ClassNode[] args = getArgumentTypes(InvocationWriter.makeArgumentList(callArguments));
+        ClassNode[] args = getArgumentTypes(argumentList);
         final ClassNode receiver = call.getOwnerType();
 
         if (isWithCall) {
@@ -1602,6 +1611,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
         final ClassNode rememberLastItType = lastImplicitItType;
         Expression callArguments = call.getArguments();
+        ArgumentListExpression argumentList = InvocationWriter.makeArgumentList(callArguments);
+
+        checkForbiddenSpreadArgument(argumentList);
 
         boolean isWithCall = isWithCall(name, callArguments);
 
@@ -1610,7 +1622,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             callArguments.visit(this);
         }
 
-        ClassNode[] args = getArgumentTypes(InvocationWriter.makeArgumentList(callArguments));
+        ClassNode[] args = getArgumentTypes(argumentList);
         final boolean isCallOnClosure = isClosureCall(name, objectExpression, callArguments);
         final ClassNode receiver = getType(objectExpression);
 
@@ -1809,6 +1821,14 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             if (isWithCall) {
                 lastImplicitItType = rememberLastItType;
                 withReceiverList.removeFirst();
+            }
+        }
+    }
+
+    private void checkForbiddenSpreadArgument(ArgumentListExpression argumentList) {
+        for (Expression arg : argumentList.getExpressions()) {
+            if (arg instanceof SpreadExpression) {
+                addStaticTypeError("The spread operator cannot be used as argument of method or closure calls with static type checking because the number of arguments cannot be determined at compile time", arg);
             }
         }
     }
