@@ -720,6 +720,51 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    void testSpreadArgsForbiddenInMethodCall() {
+        shouldFailWithMessages '''
+            void foo(String a, String b, int c, double d1, double d2) {}
+            void bar(String[] args, int c, double[] nums) {
+                foo(*args, c, *nums)
+            }
+        ''',
+                'The spread operator cannot be used as argument of method or closure calls with static type checking because the number of arguments cannot be determined at compile time',
+                'The spread operator cannot be used as argument of method or closure calls with static type checking because the number of arguments cannot be determined at compile time',
+                'Cannot find matching method'
+    }
+
+    void testSpreadArgsForbiddenInStaticMethodCall() {
+        shouldFailWithMessages '''
+            static void foo(String a, String b, int c, double d1, double d2) {}
+            static void bar(String[] args, int c, double[] nums) {
+                foo(*args, c, *nums)
+            }
+        ''',
+                'The spread operator cannot be used as argument of method or closure calls with static type checking because the number of arguments cannot be determined at compile time',
+                'The spread operator cannot be used as argument of method or closure calls with static type checking because the number of arguments cannot be determined at compile time',
+                'Cannot find matching method'
+    }
+
+    void testSpreadArgsForbiddenInConstructorCall() {
+        shouldFailWithMessages '''
+            class SpreadInCtor {
+                SpreadInCtor(String a, String b) { }
+            }
+
+            new SpreadInCtor(*['A', 'B'])
+        ''',
+                'The spread operator cannot be used as argument of method or closure calls with static type checking because the number of arguments cannot be determined at compile time',
+                'Cannot find matching method'
+    }
+
+    void testSpreadArgsForbiddenInClosureCall() {
+        shouldFailWithMessages '''
+            def closure = { String a, String b, String c -> println "$a $b $c" }
+            def strings = ['A', 'B', 'C']
+            closure(*strings)
+        ''',
+                'The spread operator cannot be used as argument of method or closure calls with static type checking because the number of arguments cannot be determined at compile time'
+    }
+
     static class MyMethodCallTestClass {
 
         static int mul(int... args) { args.toList().inject(1) { x,y -> x*y } }
