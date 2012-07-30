@@ -83,4 +83,34 @@ class SingletonTransformTest extends GroovyShellTestCase {
 
             assertEquals("Hello, World!", res)
     }
+    
+    void testSingletonCustomPropertyName() {
+        def propertyName = 'myProp'
+        def getterName = 'getMyProp'
+        def className = 'X'
+        def defaultPropertyName = 'instance'
+
+        def invoker = new GroovyClassLoader()
+        def clazz = invoker.parseClass("""
+            @Singleton(property ='$propertyName')
+            public class $className {
+            } """);
+        def modifiers = clazz.getDeclaredField(propertyName).modifiers //should be public final static for non-lazy singleton
+        assert isPublic(modifiers) && isFinal(modifiers) && isStatic(modifiers)
+        def object = clazz.getMethod(getterName).invoke(null);
+        assertEquals className, object.class.name;
+        try {
+            clazz.newInstance() //should throw exception here
+            fail() //shouldn't get here
+        } catch (RuntimeException e) {//for tests run in Groovy (which can access privates)
+            assert e.message.contains(propertyName)
+        }
+        try {
+            clazz.getField(defaultPropertyName) //should throw exception here
+            fail() //shouldn't get here
+        } catch (NoSuchFieldException e) {
+            assert e.message.contains(defaultPropertyName)
+        }
+    }
+
 }
