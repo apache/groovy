@@ -114,4 +114,11 @@ public class MethodCallsStaticCompilationTest extends MethodCallsSTCTest {
             assert foo((Object)'call') == 'OBJECT'
         '''
     }
+
+    void testPlusStaticMethodCall() {
+        assertScript '''
+            static foo() { 1 }
+            assert 1+foo() == 2
+        '''
+    }
 }
