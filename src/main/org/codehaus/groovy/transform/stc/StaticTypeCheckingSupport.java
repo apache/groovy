@@ -186,7 +186,9 @@ public abstract class StaticTypeCheckingSupport {
      * not of the exact type but still match
      */
     public static int allParametersAndArgumentsMatch(Parameter[] params, ClassNode[] args) {
-        if (params==null) return args.length==0?0:-1;
+        if (params==null) {
+            params = Parameter.EMPTY_ARRAY;
+        }
         int dist = 0;
         // we already know the lengths are equal
         for (int i = 0; i < params.length; i++) {
@@ -940,7 +942,9 @@ public abstract class StaticTypeCheckingSupport {
                     firstParamMatches = allParametersAndArgumentsMatch(firstParams, args) >= 0;
                 }
                 int lastArgMatch = isVargs(params) && firstParamMatches?lastArgMatchesVarg(params, args):-1;
-                if (lastArgMatch>=0) lastArgMatch++; // ensure exact matches are preferred over vargs
+                if (lastArgMatch>=0) {
+                    lastArgMatch+=((args.length-params.length)+1); // ensure exact matches are preferred over vargs
+                }
                 int dist = allPMatch>=0?Math.max(allPMatch, lastArgMatch):lastArgMatch;
                 if (dist>=0 && !actualReceiver.equals(declaringClass)) dist+=getDistance(actualReceiver, declaringClass);
                 if (dist>=0 && dist<bestDist) {
@@ -972,11 +976,11 @@ public abstract class StaticTypeCheckingSupport {
                         //      that case is handled above already
                         // (3) there is more than one argument for the vargs array
                         int dist = excessArgumentsMatchesVargsParameter(params, args);
-                        if (dist >= 0 && !actualReceiver.equals(declaringClass)) dist++;
+                        if (dist >= 0 && !actualReceiver.equals(declaringClass)) dist+=getDistance(actualReceiver, declaringClass);
                         // varargs methods must not be preferred to methods without varargs
                         // for example :
                         // int sum(int x) should be preferred to int sum(int x, int... y)
-                        dist++;
+                        dist+=((args.length-params.length)+1);
                         if (params.length < args.length && dist >= 0) {
                             if (dist >= 0 && dist < bestDist) {
                                 bestChoices.clear();

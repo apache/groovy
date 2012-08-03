@@ -765,6 +765,44 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
                 'The spread operator cannot be used as argument of method or closure calls with static type checking because the number of arguments cannot be determined at compile time'
     }
 
+    void testBoxingShouldCostMore() {
+        assertScript '''
+            int foo(int x) { 1 }
+            int foo(Integer x) { 2 }
+            int bar() {
+                foo(1)
+            }
+            assert bar() == 1
+        '''
+    }
+
+    // GROOVY-5645
+    void testSuperCallWithVargs() {
+        assertScript '''
+            class Base {
+                int foo(int x, Object... args) { 1 }
+                int foo(Object... args) { 2 }
+            }
+            class Child extends Base {
+                void bar() {
+                    assert foo(1, 'a') == 1
+                    super.foo(1, 'a') == 1
+                }
+            }
+            new Child().bar()
+        '''
+    }
+
+    void testVargsSelection() {
+        assertScript '''
+            int foo(int x, Object... args) { 1 }
+            int foo(Object... args) { 2 }
+            assert foo(1) == 1
+            assert foo() == 2
+            assert foo(1,2) == 1
+        '''
+    }
+
     static class MyMethodCallTestClass {
 
         static int mul(int... args) { args.toList().inject(1) { x,y -> x*y } }

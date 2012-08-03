@@ -2232,7 +2232,22 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     private void addAmbiguousErrorMessage(final List<MethodNode> foundMethods, final String name, final ClassNode[] args, final Expression expr) {
-        addStaticTypeError("Reference to method is ambiguous. Cannot choose between " + foundMethods, expr);
+        addStaticTypeError("Reference to method is ambiguous. Cannot choose between " + prettyPrintMethodList(foundMethods), expr);
+    }
+
+    private static String prettyPrintMethodList(List<MethodNode> nodes) {
+        StringBuilder sb = new StringBuilder("[");
+        for (int i = 0, nodesSize = nodes.size(); i < nodesSize; i++) {
+            final MethodNode node = nodes.get(i);
+            sb.append(node.getReturnType().toString(false));
+            sb.append(" ");
+            sb.append(node.getDeclaringClass().toString(false));
+            sb.append("#");
+            sb.append(toMethodParametersString(node.getName(), extractTypesFromParameters(node.getParameters())));
+            if (i<nodesSize-1) sb.append(", ");
+        }
+        sb.append("]");
+        return sb.toString();
     }
 
     private void addCategoryMethodCallError(final Expression call) {
