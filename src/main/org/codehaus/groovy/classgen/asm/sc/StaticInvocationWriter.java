@@ -201,9 +201,14 @@ public class StaticInvocationWriter extends InvocationWriter {
         if (para.length == 0) return;
         ClassNode lastParaType = para[para.length - 1].getOriginType();
         AsmClassGenerator acg = controller.getAcg();
+        TypeChooser typeChooser = controller.getTypeChooser();
         OperandStack operandStack = controller.getOperandStack();
+        ClassNode lastArgType = argumentList.size()>0?
+                typeChooser.resolveType(argumentList.get(argumentList.size()-1), controller.getClassNode()):null;
         if (lastParaType.isArray()
-                && (argumentList.size() > para.length || argumentList.size() == para.length - 1 || !argumentList.get(para.length - 1).getType().isArray())) {
+                && (argumentList.size() > para.length
+                    || (argumentList.size() == para.length - 1 && !lastParaType.equals(lastArgType)))
+                ) {
             int stackLen = operandStack.getStackLength() + argumentList.size();
             MethodVisitor mv = controller.getMethodVisitor();
             MethodVisitor orig = mv;
@@ -245,7 +250,6 @@ public class StaticInvocationWriter extends InvocationWriter {
             }
         } else {
             // method call with default arguments
-            TypeChooser typeChooser = controller.getTypeChooser();
             ClassNode classNode = controller.getClassNode();
             Expression[] arguments = new Expression[para.length];
             for (int i = 0, j = 0; i < para.length; i++) {
