@@ -24,7 +24,6 @@ ext.allManifest = manifest {
             "Bundle-ClassPath": '.',
             "Bundle-RequiredExecutionEnvironment": 'J2SE-1.5',
             "Eclipse-BuddyPolicy": 'dependent',
-            "Bundle-ActivationPolicy": 'lazy',
             "DynamicImport-Package": '*',
             "Main-class": 'groovy.ui.GroovyMain')
 }
