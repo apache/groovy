@@ -449,7 +449,7 @@ public class GroovyScriptEngine implements ResourceConnector {
      */
     public Class loadScriptByName(String scriptName) throws ResourceException, ScriptException {
         URLConnection conn = rc.getResourceConnection(scriptName);
-        String path = conn.getURL().getPath();
+        String path = conn.getURL().toExternalForm();
         ScriptCacheEntry entry = scriptCache.get(path);
         Class clazz = null;
         if (entry != null) clazz = entry.scriptClass;
