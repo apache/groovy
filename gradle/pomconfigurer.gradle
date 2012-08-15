@@ -462,6 +462,9 @@ project.ext.pomConfigureClosure = {
             contributor {
                 name 'David Sutherland'
             }
+            contributor {
+                name 'Mattias Reichel'
+            }
         }
         mailingLists {
             mailingList {
