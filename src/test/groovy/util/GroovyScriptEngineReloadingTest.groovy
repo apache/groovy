@@ -12,10 +12,11 @@ class GroovyScriptEngineReloadingTest extends GroovyTestCase {
     void setUp() {
         MapFileSystem.instance.registerMapFileSystem()
         gse = new GroovyScriptEngine([MapUrlConnection.URL_SCHEME] as String[])
-        gse.config.minimumRecompilationInterval = 0
     }
 
-    void testIsSourceNewer() {
+    private void execute(intervall, expected) {
+        gse.config.minimumRecompilationInterval = intervall
+
         Binding binding = new Binding()
         int val = 0
         binding.setVariable("val", val)
@@ -29,7 +30,19 @@ class GroovyScriptEngineReloadingTest extends GroovyTestCase {
         MapFileSystem.instance.modFile("s_1", "val = 2", new Date().time)
         gse.run("s_1", binding)
 
-        assert binding.getVariable("val") == 2
+        assert binding.getVariable("val") == expected
+
+    }
+
+    // test to ensure new source is no picked up
+    void testIsSourceNewer() {
+        execute(0, 2)
+    }
+
+    // test to ensure new source is ignored till minimumRecompilationIntervall is passed
+    void testRecompilationIntervall() {
+        execute (100000, 1)
+        execute (100000, 1)
     }
 }
 

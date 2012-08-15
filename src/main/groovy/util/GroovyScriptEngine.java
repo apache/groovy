@@ -58,6 +58,7 @@ import org.codehaus.groovy.tools.gse.StringSetMap;
  * @author Marc Palmer
  * @author Guillaume Laforge
  * @author Jochen Theodorou
+ * @author Mattias Reichel
  */
 public class GroovyScriptEngine implements ResourceConnector {
 
@@ -101,11 +102,13 @@ public class GroovyScriptEngine implements ResourceConnector {
     private static class ScriptCacheEntry {
         private final Class scriptClass;
         private final long lastModified;
+        private long lastCheckedForModification;
         private final Set<String> dependencies;
 
         public ScriptCacheEntry(Class clazz, long modified, Set<String> depend) {
             this.scriptClass = clazz;
             this.lastModified = modified;
+            this.lastCheckedForModification = modified;
             this.dependencies = depend;
         }
     }
@@ -545,8 +548,11 @@ public class GroovyScriptEngine implements ResourceConnector {
 
         for (String scriptName : entry.dependencies) {
             ScriptCacheEntry depEntry = scriptCache.get(scriptName);
-            long nextPossibleRecompilationTime = depEntry.lastModified + config.getMinimumRecompilationInterval();
-            if (nextPossibleRecompilationTime > now) continue;
+            long nextPossibleRecompilationTime = Math.max(depEntry.lastModified, depEntry.lastCheckedForModification) + config.getMinimumRecompilationInterval();
+            if (nextPossibleRecompilationTime > now) {
+                depEntry.lastCheckedForModification = now;
+                continue;
+            }
 
             URLConnection conn = rc.getResourceConnection(scriptName);
             // getLastModified() truncates up to 999 ms from the true modification time, let's fix that
@@ -558,6 +564,9 @@ public class GroovyScriptEngine implements ResourceConnector {
                 ScriptCacheEntry newEntry = new ScriptCacheEntry(depEntry.scriptClass, lastMod, depEntry.dependencies);
                 scriptCache.put(scriptName, newEntry);
                 return true;
+            }
+            else {
+                depEntry.lastCheckedForModification = now;
             }
         }
 

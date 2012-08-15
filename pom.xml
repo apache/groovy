@@ -605,6 +605,10 @@
             <name>David Sutherland</name>
             <email></email>
         </contributor>
+        <contributor>
+            <name>Mattias Reichel</name>
+            <email></email>
+        </contibutor>
     </contributors>
 
     <dependencies>
