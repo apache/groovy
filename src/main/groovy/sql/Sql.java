@@ -3573,6 +3573,8 @@ public class Sql {
                         if (inWhere == whereChars.length) {
                             return i;
                         }
+                    } else {
+                        inWhere = 0;
                     }
             }
             i++;
