@@ -347,6 +347,12 @@ class SqlCompleteTest extends SqlHelperTestCase {
         assert result == "A narrow ? supported by a ?!!"
     }
 
+    void testNullHandling() {
+        def (wh, ere, anotherfield) = [null, null, null]
+        def query = "update tbl set wh=$wh, ere=$ere, anotherfield=$anotherfield where id=1"
+        assert sql.asSql(query, sql.getParameters(query)) == 'update tbl set wh=null, ere=null, anotherfield=null where id=1'
+    }
+
     void testExecuteUpdate() {
         def foo = 'food-drink'
         def food = 'food'
