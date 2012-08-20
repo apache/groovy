@@ -217,8 +217,8 @@ public class DOMCategory {
         return new NodesHolder(nodes);
     }
 
-    public static String name(Element element) {
-        return element.getNodeName();
+    public static String name(Node node) {
+        return node.getNodeName();
     }
 
     public static Node parent(Node node) {
