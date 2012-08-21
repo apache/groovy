@@ -82,6 +82,7 @@ public class CompilationUnit extends ProcessingUnit {
     protected ResolveVisitor resolveVisitor;
     protected StaticImportVisitor staticImportVisitor;
     protected OptimizerVisitor optimizer;
+    protected ClassNodeResolver classNodeResolver;
 
     LinkedList[] phaseOperations;
     LinkedList[] newPhaseOperations;
@@ -216,6 +217,7 @@ public class CompilationUnit extends ProcessingUnit {
             }
         }
         this.classgenCallback = null;
+        this.classNodeResolver = new ClassNodeResolver();
     }
 
     /**
@@ -618,6 +620,7 @@ public class CompilationUnit extends ProcessingUnit {
                 VariableScopeVisitor scopeVisitor = new VariableScopeVisitor(source);
                 scopeVisitor.visitClass(node);
 
+                resolveVisitor.setClassNodeResolver(classNodeResolver);
                 resolveVisitor.startResolving(node, source);
             }
 
@@ -1080,4 +1083,14 @@ public class CompilationUnit extends ProcessingUnit {
     private void changeBugText(GroovyBugError e, SourceUnit context) {
         e.setBugText("exception in phase '" + getPhaseDescription() + "' in source unit '" + ((context != null) ? context.getName() : "?") + "' " + e.getBugText());
     }
+    
+    public ClassNodeResolver getClassNodeResolver() {
+        return classNodeResolver;
+    }
+
+
+    public void setClassNodeResolver(ClassNodeResolver classNodeResolver) {
+        this.classNodeResolver = classNodeResolver;
+    }
+
 }
