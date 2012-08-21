@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2009 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,8 @@ import java.io.InputStream;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Properties;
+
+import static org.codehaus.groovy.runtime.DefaultGroovyMethodsSupport.closeQuietly;
 
 /**
  * Exposes the Groovy release information 
@@ -49,13 +51,16 @@ public class ReleaseInfo {
             url = cl.getResource(RELEASE_INFO_FILE);
         }
         if (url != null) {
+            InputStream is = null;
             try {
-                InputStream is = url.openStream();
-                if(is != null) {
+                is = url.openStream();
+                if (is != null) {
                     RELEASE_INFO.load(is);
                 }
-            } catch(IOException ioex) {
+            } catch (IOException ioex) {
                 // ignore. In case of some exception, release info is not available
+            } finally {
+                closeQuietly(is);
             }
         }
     }
