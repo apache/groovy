@@ -744,6 +744,7 @@ public abstract class StaticTypeCheckingSupport {
         if (isPrimitiveType(receiver) && !isPrimitiveType(compare)) {
             dist = (dist+1)<<1;
         }
+        if (unwrapCompare.equals(unwrapReceiver)) return dist;
         if (receiver.isArray() && !compare.isArray()) {
             // Object[] vs Object
             dist += 256;

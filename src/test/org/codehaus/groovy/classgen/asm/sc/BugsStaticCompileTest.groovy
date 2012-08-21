@@ -303,5 +303,13 @@ class BugsStaticCompileTest extends BugsSTCTest {
         assert abs(a?.x) == 1
         '''
     }
+
+    void testClosureAsInterfaceArgument() {
+        assertScript '''
+                Closure c = { Integer x, Integer y -> x <=> y }
+                def list = [ 3,1,5,2,4 ]
+                assert list.sort(c) == [1,2,3,4,5]
+            '''
+    }
 }
 
