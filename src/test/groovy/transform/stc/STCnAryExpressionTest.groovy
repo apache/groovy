@@ -132,5 +132,13 @@ class STCnAryExpressionTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-5644
+    void testSpaceshipOperatorShouldNotThrowAmbiguousError() {
+        assertScript '''
+            Integer x = 3
+            Integer y = 4
+            assert (x <=> y) == -1
+        '''
+    }
 }
 
