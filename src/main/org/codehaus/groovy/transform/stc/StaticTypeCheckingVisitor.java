@@ -2919,7 +2919,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                             // we must check that such a method exists on the LUB
                             Parameter[] parameters = methodNode.getParameters();
                             ClassNode[] params = extractTypesFromParameters(parameters);
-                            List<MethodNode> method = findMethod(lub, methodNode.getName(), params);
+                            ArgumentListExpression argumentList = InvocationWriter.makeArgumentList(call.getArguments());
+                            ClassNode[] argTypes = getArgumentTypes(argumentList);
+                            List<MethodNode> method = findMethod(lub, methodNode.getName(), argTypes);
                             if (method.size() != 1) {
                                 addStaticTypeError("A closure shared variable [" + target.getName() + "] has been assigned with various types and the method" +
                                         " [" + toMethodParametersString(methodNode.getName(), params) + "]" +
