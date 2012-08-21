@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,11 +29,14 @@ import org.codehaus.groovy.util.ManagedLinkedList;
 import org.codehaus.groovy.util.ReferenceBundle;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.net.URL;
 import java.util.*;
+
+import static org.codehaus.groovy.runtime.DefaultGroovyMethodsSupport.closeQuietly;
 
 /**
  * A registry of MetaClass instances which caches introspection &
@@ -159,10 +162,14 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
 
     private void registerExtensionModuleFromMetaInf(final URL metadata, final Map<CachedClass, List<MetaMethod>> map, final ClassLoader classLoader) {
         Properties properties = new Properties();
+        InputStream inStream = null;
         try {
-            properties.load(metadata.openStream());
+            inStream = metadata.openStream();
+            properties.load(inStream);
         } catch (IOException e) {
-            throw new GroovyRuntimeException("Unable to load module META-INF descriptor",e);
+            throw new GroovyRuntimeException("Unable to load module META-INF descriptor", e);
+        } finally {
+            closeQuietly(inStream);
         }
         registerExtensionModuleFromProperties(properties, classLoader, map);
     }
