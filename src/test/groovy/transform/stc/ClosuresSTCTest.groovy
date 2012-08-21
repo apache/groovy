@@ -203,6 +203,17 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-
+    // GROOVY-5639
+    void testShouldNotThrowClosureSharedVariableError() {
+        assertScript '''
+        Closure<Void> c = {
+            List<String> list = new ArrayList<String>()
+            String s = "foo"
+            10.times {
+                list.add(s)
+            }
+        }
+        '''
+    }
 }
 
