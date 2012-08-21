@@ -29,32 +29,35 @@ import java.util.Set;
 /**
  * Looks for source file extensions in META-INF/services/org.codehaus.groovy.source.Extensions
  */
-
 public class SourceExtensionHandler {
 
 	public static Set<String> getRegisteredExtensions(ClassLoader loader) {
         Set<String> extensions = new LinkedHashSet<String>();
         extensions.add("groovy");
-        URL service = null;
         try {
             Enumeration<URL> globalServices = loader.getResources("META-INF/services/org.codehaus.groovy.source.Extensions");
             while (globalServices.hasMoreElements()) {
-                service = globalServices.nextElement();
-                String extension;
-                BufferedReader svcIn = new BufferedReader(new InputStreamReader(service.openStream()));
-
-                extension = svcIn.readLine();
-                while (extension != null) {
-                	extension = extension.trim();
-                    if (!extension.startsWith("#") && extension.length() > 0) {
-                    	extensions.add(extension);
+                BufferedReader svcIn = null;
+                URL service = globalServices.nextElement();
+                try {
+                    svcIn = new BufferedReader(new InputStreamReader(service.openStream()));
+                    String extension = svcIn.readLine();
+                    while (extension != null) {
+                        extension = extension.trim();
+                        if (!extension.startsWith("#") && extension.length() > 0) {
+                            extensions.add(extension);
+                        }
+                        extension = svcIn.readLine();
                     }
-                    extension = svcIn.readLine();
+                } catch (IOException ex) {
+                    throw new GroovyRuntimeException("IO Exception attempting to load registered source extension " +
+                            service.toExternalForm() + ". Exception: " + ex.toString());
+                } finally {
+                    if (svcIn != null) svcIn.close();
                 }
             }
         } catch (IOException ex) {
-        	throw new GroovyRuntimeException("IO Exception attempting to load source extension registerers. Exception: " + 
-        			ex.toString() + (service == null ? "" : service.toExternalForm()));
+            throw new GroovyRuntimeException("IO Exception getting registered source extensions. Exception: " + ex.toString());
         }
         return extensions;
 	}
