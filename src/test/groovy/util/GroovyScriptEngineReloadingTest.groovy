@@ -5,6 +5,8 @@ import java.util.concurrent.ConcurrentHashMap
 /**
  *
  * @author Guillaume Laforge
+ * @author David Lee
+ * @author Jochen Theodorou
  */
 class GroovyScriptEngineReloadingTest extends GroovyTestCase {
     GroovyScriptEngine gse;
@@ -43,6 +45,90 @@ class GroovyScriptEngineReloadingTest extends GroovyTestCase {
     void testRecompilationIntervall() {
         execute (100000, 1)
         execute (100000, 1)
+    }
+
+    public void testReloadWith2ScriptsDependentOnSameBeanAndReloadForSecond() {
+        gse.config.minimumRecompilationInterval = 0
+        writeBean(1)
+        writeScript(1)
+
+        def val1 = gse.run("script1.groovy", "")
+        assert val1 =='1', "script1 should have returned 1"
+
+        writeBean(2)
+        writeScript(2)
+        sleep(1000)
+
+        def val2 = gse.run("script2.groovy", "")
+        assert val2 =='2', "script2 should have returned 2"
+    }    
+
+    public void testReloadWith2ScriptsDependentOnSameBean() {
+        gse.config.minimumRecompilationInterval = 0
+        writeBean(1)
+        writeScript(1)
+        writeScript(2)
+
+        def val1 = gse.run("script2.groovy", "")
+        assert val1 == '1', "script2 should have returned 1"
+
+        def val2 = gse.run("script1.groovy", "")
+        assert val2 == '1', "script1 should have returned 1"
+
+        writeBean(2)
+        sleep(1000)
+
+        def val3 = gse.run("script1.groovy", "")
+        assert val3 == '2', "script1 should have returned 2 after bean was modified but returned $val3"
+
+        def val4 = gse.run("script2.groovy", "")
+        assert val4 == '2', "script2 should have returned 2 after bean was modified but returned $val4"
+    }
+
+    public void testReloadWhenModifyingAllScripts() {
+        gse.config.minimumRecompilationInterval = 0
+        writeBean(1)
+        writeScript(1)
+        writeScript(2)
+
+        def val1 = gse.run("script2.groovy", "")
+        assert val1 == '1', "script2 should have returned 1"
+
+        def val2 = gse.run("script1.groovy", "")
+        assert val2 == '1', "script1 should have returned 1"
+
+        // Modify Bean to return new value
+        writeBean(2)
+        // write Scripts stay the same, timestamps updated
+        writeScript(1)
+        writeScript(2)
+
+        sleep(1000)
+
+        def val3 = gse.run("script1.groovy", "")
+        assert val3 == '2', "script1 should have returned 2 after bean was modified but returned $val3"
+
+        def val4 = gse.run("script2.groovy", "")
+        assert val4 == '2', "script2 should have returned 2 after bean was modified but returned $val4"
+    }
+
+    public void writeScript(int name) throws IOException {
+        def s = """
+            def b = new Bean()
+            return b.getVal()
+        """
+        MapFileSystem.instance.modFile("script${name}.groovy", s, new Date().time)
+    }
+
+    public void writeBean(int d) throws IOException {
+        def s = """
+            class Bean {
+                String prop0
+                String prop${d}
+                def getVal(){"$d"}
+            }
+        """
+        MapFileSystem.instance.modFile("Bean.groovy", s, new Date().time)
     }
 }
 
