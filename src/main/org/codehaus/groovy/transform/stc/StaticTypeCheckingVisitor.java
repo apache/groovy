@@ -2604,7 +2604,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (!isUsingGenericsOrIsArrayUsingGenerics(returnType)) return returnType;
         GenericsType[] returnTypeGenerics = returnType.isArray() ? returnType.getComponentType().getGenericsTypes() : returnType.getGenericsTypes();
         Map<String, GenericsType> resolvedPlaceholders = new HashMap<String, GenericsType>();
-        GenericsUtils.extractPlaceholders(receiver, resolvedPlaceholders);
+        if (method.isStatic() && CLASS_Type.equals(receiver) && receiver.isUsingGenerics() && receiver.getGenericsTypes().length>0) {
+            GenericsUtils.extractPlaceholders(receiver.getGenericsTypes()[0].getType(), resolvedPlaceholders);
+        } else {
+            GenericsUtils.extractPlaceholders(receiver, resolvedPlaceholders);
+        }
         GenericsUtils.extractPlaceholders(method.getReturnType(), resolvedPlaceholders);
         if (resolvedPlaceholders.isEmpty()) return returnType;
         // then resolve receivers from method arguments
