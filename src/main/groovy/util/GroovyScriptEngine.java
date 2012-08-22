@@ -23,6 +23,7 @@ import groovy.lang.Script;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.classgen.GeneratorContext;
+import org.codehaus.groovy.control.ClassNodeResolver;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilerConfiguration;
@@ -174,6 +175,41 @@ public class GroovyScriptEngine implements ResourceConnector {
                     dt.visitClass(classNode);
                 }
             }, Phases.CLASS_GENERATION);
+
+            cu.setClassNodeResolver(new ClassNodeResolver() {
+                @Override
+                public LookupResult findClassNode(String origName, CompilationUnit compilationUnit) {
+                    CompilerConfiguration cc = compilationUnit.getConfiguration();
+                    String name = origName.replace('.', '/');
+                    for (String ext : cc.getScriptExtensions()) {
+                        try {
+                            String finalName = name+"."+ext;
+                            URLConnection conn = rc.getResourceConnection(finalName);
+                            URL url = conn.getURL();
+                            String path = url.toExternalForm();
+                            ScriptCacheEntry entry = scriptCache.get(path);
+                            Class clazz = null;
+                            if (entry != null) clazz = entry.scriptClass;
+                            try {
+                                if (GroovyScriptEngine.this.isSourceNewer(entry)) {
+                                    //String encoding = conn.getContentEncoding() != null ? conn.getContentEncoding() : "UTF-8";
+                                    SourceUnit su = compilationUnit.addSource(url);
+                                    return new LookupResult(su, null);
+                                }
+                            } finally {
+                                forceClose(conn);
+                            }
+                            if (clazz!=null) {
+                                ClassNode cn = new ClassNode(clazz);
+                                return new LookupResult(null, cn);
+                            }
+                        } catch (ResourceException re) {
+                            // skip
+                        }
+                    }
+                    return super.findClassNode(origName, compilationUnit);
+                }
+            });
 
             final List<CompilationCustomizer> customizers = config.getCompilationCustomizers();
             if (customizers!=null) {
