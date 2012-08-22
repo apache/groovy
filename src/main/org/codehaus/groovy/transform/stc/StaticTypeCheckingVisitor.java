@@ -20,6 +20,7 @@ import groovy.lang.IntRange;
 import groovy.lang.ObjectRange;
 import groovy.transform.TypeChecked;
 import groovy.transform.TypeCheckingMode;
+import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.stmt.*;
@@ -126,7 +127,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
      * is assigned to a closure shared variable, then a second pass to ensure that every method call on
      * such a variable is made on a LUB.
      */
-    private final LinkedHashSet<Expression> secondPassExpressions = new LinkedHashSet<Expression>();
+    private final LinkedHashSet<SecondPassExpression> secondPassExpressions = new LinkedHashSet<SecondPassExpression>();
 
     /**
      * A map used to store every type used in closure shared variable assignments. In a second pass, we will
@@ -1809,7 +1810,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         // if the object expression is a closure shared variable, we will have to perform a second pass
                         if (objectExpression instanceof VariableExpression) {
                             VariableExpression var = (VariableExpression) objectExpression;
-                            if (var.isClosureSharedVariable()) secondPassExpressions.add(call);
+                            if (var.isClosureSharedVariable()) {
+                                SecondPassExpression<ClassNode[]> wrapper = new SecondPassExpression<ClassNode[]>(
+                                        call,
+                                        args
+                                );
+                                secondPassExpressions.add(wrapper);
+                            }
                         }
 
                     } else {
@@ -2903,7 +2910,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     public void performSecondPass() {
-        for (Expression expression : secondPassExpressions) {
+        for (SecondPassExpression wrapper : secondPassExpressions) {
+            Expression expression = wrapper.getExpression();
             if (expression instanceof MethodCallExpression) {
                 MethodCallExpression call = (MethodCallExpression) expression;
                 Expression objectExpression = call.getObjectExpression();
@@ -2919,8 +2927,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                             // we must check that such a method exists on the LUB
                             Parameter[] parameters = methodNode.getParameters();
                             ClassNode[] params = extractTypesFromParameters(parameters);
-                            ArgumentListExpression argumentList = InvocationWriter.makeArgumentList(call.getArguments());
-                            ClassNode[] argTypes = getArgumentTypes(argumentList);
+                            ClassNode[] argTypes = (ClassNode[]) wrapper.getData();
                             List<MethodNode> method = findMethod(lub, methodNode.getName(), argTypes);
                             if (method.size() != 1) {
                                 addStaticTypeError("A closure shared variable [" + target.getName() + "] has been assigned with various types and the method" +

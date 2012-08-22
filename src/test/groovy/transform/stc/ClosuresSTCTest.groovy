@@ -215,5 +215,25 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         }
         '''
     }
+    // a case in Grails
+    void testShouldNotThrowClosureSharedVariableError2() {
+        assertScript '''
+            class AntPathMatcher {
+                boolean match(String x, String y) { true }
+            }
+            private String relativePath() { '' }
+            def foo() {
+                AntPathMatcher pathMatcher = new AntPathMatcher()
+                def relPath = relativePath()
+                def cl = { String it ->
+                    pathMatcher.match(it, relPath)
+                }
+                cl('foo')
+            }
+
+            foo()
+        '''
+    }
+
 }
 
