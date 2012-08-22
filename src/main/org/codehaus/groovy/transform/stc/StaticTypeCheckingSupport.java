@@ -190,6 +190,7 @@ public abstract class StaticTypeCheckingSupport {
             params = Parameter.EMPTY_ARRAY;
         }
         int dist = 0;
+        if (args.length<params.length) return -1;
         // we already know the lengths are equal
         for (int i = 0; i < params.length; i++) {
             ClassNode paramType = params[i].getType();
