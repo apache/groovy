@@ -812,6 +812,15 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-5650
+    void testRegressionInGenericsTypeInference() {
+        assertScript '''import groovy.transform.stc.GenericsSTCTest.JavaClassSupport as JavaClass
+        List<JavaClass.StringContainer> containers = new ArrayList<>();
+        containers.add(new JavaClass.StringContainer());
+        List<String> strings = JavaClass.unwrap(containers);
+        '''
+    }
+
     static class MyList extends LinkedList<String> {}
 
     public static class ClassA<T> {
@@ -821,6 +830,17 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
 
         public <X> Class<X> bar(Class<T> classType) {
             return null;
+        }
+    }
+
+    public static class JavaClassSupport {
+        public static class Container<T> {
+        }
+
+        public static class StringContainer extends Container<String> {
+        }
+
+        public static <T> List<T> unwrap(Collection<? extends Container<T>> list) {
         }
     }
 
