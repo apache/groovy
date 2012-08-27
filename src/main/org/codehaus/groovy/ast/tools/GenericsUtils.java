@@ -138,33 +138,52 @@ public class GenericsUtils {
      * or {@link org.codehaus.groovy.ast.ClassNode#getAllInterfaces()} are returned with generic type
      * arguments. This method allows returning a parameterized interface given the parameterized class
      * node which implements this interface.
-     * @param classNode the class node where generics types are parameterized
-     * @param anInterface the interface we want to parameterize generics types
+     * @param hint the class node where generics types are parameterized
+     * @param target the interface we want to parameterize generics types
+     * @return a parameterized interface class node
+     * @deprecated Use #parameterizeType instead
+     */
+    public static ClassNode parameterizeInterfaceGenerics(final ClassNode hint, final ClassNode target) {
+        return parameterizeType(hint, target);
+    }
+
+    /**
+     * Interface class nodes retrieved from {@link org.codehaus.groovy.ast.ClassNode#getInterfaces()}
+     * or {@link org.codehaus.groovy.ast.ClassNode#getAllInterfaces()} are returned with generic type
+     * arguments. This method allows returning a parameterized interface given the parameterized class
+     * node which implements this interface.
+     * @param hint the class node where generics types are parameterized
+     * @param target the interface we want to parameterize generics types
      * @return a parameterized interface class node
      */
-    public static ClassNode parameterizeInterfaceGenerics(final ClassNode classNode, final ClassNode anInterface) {
+    public static ClassNode parameterizeType(final ClassNode hint, final ClassNode target) {
         ClassNode interfaceFromClassNode = null;
-        ClassNode[] interfaces = classNode.getInterfaces();
-        for (ClassNode node : interfaces) {
-            if (node.equals(anInterface)) {
-                interfaceFromClassNode = node;
-                break;
-            } else if (node.implementsInterface(anInterface)) {
-                // ex: classNode = LinkedList<A> , node=List<E> , anInterface = Iterable<T>
-                return parameterizeInterfaceGenerics(parameterizeInterfaceGenerics(classNode, node), anInterface);
+        if (hint.equals(target)) interfaceFromClassNode = hint;
+        if (interfaceFromClassNode==null) {
+            ClassNode[] interfaces = hint.getInterfaces();
+            for (ClassNode node : interfaces) {
+                if (node.equals(target)) {
+                    interfaceFromClassNode = node;
+                    break;
+                } else if (node.implementsInterface(target)) {
+                    // ex: classNode = LinkedList<A> , node=List<E> , anInterface = Iterable<T>
+                    return parameterizeType(parameterizeType(hint, node), target);
+                }
             }
         }
-        if (interfaceFromClassNode==null && classNode.getUnresolvedSuperClass()!=null) {
-            return parameterizeInterfaceGenerics(classNode.getUnresolvedSuperClass(), anInterface);
+        if (interfaceFromClassNode==null && hint.getUnresolvedSuperClass()!=null) {
+            return parameterizeType(hint.getUnresolvedSuperClass(), target);
         }
         if (interfaceFromClassNode==null) {
-            return anInterface;
+
+//            return target;
+            interfaceFromClassNode = hint;
         }
         Map<String,GenericsType> parameters = new HashMap<String, GenericsType>();
-        extractPlaceholders(classNode, parameters);
-        ClassNode node = interfaceFromClassNode.getPlainNodeReference();
+        extractPlaceholders(hint, parameters);
+        ClassNode node = target.getPlainNodeReference();
         GenericsType[] interfaceGTs = interfaceFromClassNode.getGenericsTypes();
-        if (interfaceGTs==null) return anInterface;
+        if (interfaceGTs==null) return target;
         GenericsType[] types = new GenericsType[interfaceGTs.length];
         for (int i = 0; i < interfaceGTs.length; i++) {
             GenericsType interfaceGT = interfaceGTs[i];

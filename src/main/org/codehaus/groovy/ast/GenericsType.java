@@ -290,7 +290,7 @@ public class GenericsType extends ASTNode {
                             // class node are not parameterized. This means that we must create a
                             // new class node with the parameterized types that the current class node
                             // has defined.
-                            ClassNode node = GenericsUtils.parameterizeInterfaceGenerics(classNode, anInterface);
+                            ClassNode node = GenericsUtils.parameterizeType(classNode, anInterface);
                             return compareGenericsWithBound(node, bound);
                         }
                     }

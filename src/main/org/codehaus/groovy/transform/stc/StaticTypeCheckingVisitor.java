@@ -402,6 +402,22 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             if (resultType == null) {
                 resultType = lType;
             }
+
+            if (lType.isUsingGenerics() && missesGenericsTypes(resultType) && isAssignment(op)) {
+                // unchecked assignment
+                // examples:
+                // List<A> list = new LinkedList()
+                // List<A> list = []
+                // Iterable<A> list = new LinkedList()
+
+                // in that case, the inferred type of the binary expression is the type of the RHS
+                // "completed" with generics type information available in the LHS
+                ClassNode completedType = GenericsUtils.parameterizeType(lType, resultType.getPlainNodeReference());
+
+//                addStaticTypeError("Unchecked assignment: " + WideningCategories.lowestUpperBound(lType, resultType).toString(false), expression);
+                resultType = completedType;
+
+            }
             if (isArrayOp(op) &&
                     oldBinaryExpression != null
                     && oldBinaryExpression.getLeftExpression() == expression
@@ -824,7 +840,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 if (testClass.isInterface()) {
                     Set<ClassNode> allInterfaces = testClass.getAllInterfaces();
                     for (ClassNode intf : allInterfaces) {
-                        queue.add(GenericsUtils.parameterizeInterfaceGenerics(testClass, intf));
+                        queue.add(GenericsUtils.parameterizeType(testClass, intf));
                     }
                 }
                 while (!queue.isEmpty()) {
@@ -866,7 +882,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     queue.add(testClass);
                     Set<ClassNode> allInterfaces = testClass.getAllInterfaces();
                     for (ClassNode intf : allInterfaces) {
-                        queue.add(GenericsUtils.parameterizeInterfaceGenerics(testClass, intf));
+                        queue.add(GenericsUtils.parameterizeType(testClass, intf));
                     }
                     while (!queue.isEmpty()) {
                         ClassNode current = queue.removeFirst();
@@ -1042,7 +1058,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         ClassNode componentType = collectionType.getComponentType();
         if (componentType == null) {
             if (collectionType.implementsInterface(ITERABLE_TYPE)) {
-                ClassNode intf = GenericsUtils.parameterizeInterfaceGenerics(collectionType, ITERABLE_TYPE);
+                ClassNode intf = GenericsUtils.parameterizeType(collectionType, ITERABLE_TYPE);
                 GenericsType[] genericsTypes = intf.getGenericsTypes();
                 componentType = genericsTypes[0].getType();
             } else if (collectionType == ClassHelper.STRING_TYPE) {
@@ -1207,9 +1223,21 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 ClassNode previousType = (ClassNode) methodNode.getNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE);
                 ClassNode inferred = previousType == null ? type : lowestUpperBound(type, previousType);
                 if (implementsInterfaceOrIsSubclassOf(inferred, methodNode.getReturnType())) {
+                    if (missesGenericsTypes(inferred)) {
+                        DeclarationExpression virtualDecl = new DeclarationExpression(
+                                new VariableExpression("{target}", methodNode.getReturnType()),
+                                Token.newSymbol(EQUAL, -1, -1),
+                                new VariableExpression("{source}", inferred)
+                        );
+                        virtualDecl.setSourcePosition(statement);
+                        virtualDecl.visit(this);
+                        inferred = (ClassNode) virtualDecl.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
+                    }
                     methodNode.putNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE, inferred);
+                    return inferred;
                 } else {
                     methodNode.putNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE, methodNode.getReturnType());
+                    return methodNode.getReturnType();
                 }
             }
         }
@@ -2641,7 +2669,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                             for (ClassNode anInterface : interfaces) {
                                 if (anInterface.equals(type)) {
                                     intf = true;
-                                    actualType = GenericsUtils.parameterizeInterfaceGenerics(actualType, anInterface);
+                                    actualType = GenericsUtils.parameterizeType(actualType, anInterface);
                                 }
                             }
                             if (!intf) actualType = actualType.getUnresolvedSuperClass();
@@ -2822,7 +2850,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
             // todo: what if it's not an interface?
             if (dgmMethodFirstArgType.isUsingGenerics() && dgmMethodFirstArgType.isInterface()) {
-                ClassNode firstArgType = GenericsUtils.parameterizeInterfaceGenerics(receiver, dgmMethodFirstArgType);
+                ClassNode firstArgType = GenericsUtils.parameterizeType(receiver, dgmMethodFirstArgType);
 
 
                 Map<String, GenericsType> placeholders = new HashMap<String, GenericsType>();
