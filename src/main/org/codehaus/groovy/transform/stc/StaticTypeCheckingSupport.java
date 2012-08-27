@@ -1279,4 +1279,16 @@ public abstract class StaticTypeCheckingSupport {
         }
         return node.getSuperClass() != null && isParameterizedWithString(node.getUnresolvedSuperClass());
     }
+
+    public static boolean missesGenericsTypes(ClassNode cn) {
+        if (cn.isArray()) return missesGenericsTypes(cn.getComponentType());
+        if (cn.redirect().isUsingGenerics() && !cn.isUsingGenerics()) return true;
+        if (cn.isUsingGenerics()) {
+            if (cn.getGenericsTypes()==null) return true;
+            for (GenericsType genericsType : cn.getGenericsTypes()) {
+                if (genericsType.isPlaceholder()) return true;
+            }
+        }
+        return false;
+    }
 }

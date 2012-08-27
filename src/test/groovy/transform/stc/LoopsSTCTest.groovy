@@ -160,5 +160,46 @@ class LoopsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-5640
+    void testShouldInferComponentTypeAsIterableOfNodes() {
+        assertScript '''import org.codehaus.groovy.ast.stmt.ForStatement
+        class Node {}
+
+        interface Traverser {
+            Iterable<Node> nodes()
+        }
+
+        class MyTraverser implements Traverser {
+
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                def irt = node.getNodeMetaData(INFERRED_RETURN_TYPE)
+                assert irt == make(List)
+                assert irt.isUsingGenerics()
+                assert irt.genericsTypes.length == 1
+                assert irt.genericsTypes[0].type.name == 'Node'
+            })
+            Iterable<Node> nodes() {
+                []
+            }
+        }
+
+        @ASTTest(phase=INSTRUCTION_SELECTION, value= {
+            def forStmt = lookup('loop')[0]
+            assert forStmt instanceof ForStatement
+            def collectionType = forStmt.collectionExpression.getNodeMetaData(INFERRED_TYPE)
+            assert collectionType == make(List)
+            assert collectionType.isUsingGenerics()
+            assert collectionType.genericsTypes.length == 1
+            assert collectionType.genericsTypes[0].type.name == 'Node'
+        })
+        void test() {
+            loop:
+            for (def node : new MyTraverser().nodes()) {
+                println node.class.name
+            }
+        }
+
+        '''
+    }
 }
 
