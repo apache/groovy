@@ -56,13 +56,13 @@ class ArraysAndCollectionsStaticCompileTest extends ArraysAndCollectionsSTCTest 
         '''
     }
 
-    @Override
-    void testForInLoopWithDefaultListType() {
-        try {
-            super.testForInLoopWithDefaultListType()
-        } finally {
-            println astTrees
-        }
+    // GROOVY-5654
+    void testShouldNotThrowForbiddenAccessWithMapProperty() {
+        assertScript '''
+            Map<String, Integer> m = ['abcd': 1234]
+            assert m['abcd'] == 1234
+            assert m.abcd == 1234
+        '''
     }
 }
 

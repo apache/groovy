@@ -33,6 +33,7 @@ import org.objectweb.asm.Opcodes;
 import java.lang.reflect.Modifier;
 import java.util.*;
 
+import static org.codehaus.groovy.ast.ClassHelper.*;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.chooseBestMethod;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.findDGMMethodsByNameAndArguments;
 
@@ -45,8 +46,8 @@ import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.findDG
  */
 public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes {
 
-    private static final MethodNode GROOVYOBJECT_GETPROPERTY_METHOD = ClassHelper.GROOVY_OBJECT_TYPE.getMethod("getProperty", new Parameter[]{new Parameter(ClassHelper.STRING_TYPE, "propertyName")});
-    private static final ClassNode COLLECTION_TYPE = ClassHelper.make(Collection.class);
+    private static final MethodNode GROOVYOBJECT_GETPROPERTY_METHOD = GROOVY_OBJECT_TYPE.getMethod("getProperty", new Parameter[]{new Parameter(STRING_TYPE, "propertyName")});
+    private static final ClassNode COLLECTION_TYPE = make(Collection.class);
     private static final MethodNode COLLECTION_SIZE_METHOD = COLLECTION_TYPE.getMethod("size", Parameter.EMPTY_ARRAY);
 
     private WriterController controller;
@@ -86,7 +87,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
             receiverType = (ClassNode) type;
         }
         boolean isClassReceiver = false;
-        if (receiverType.equals(ClassHelper.CLASS_Type)
+        if (receiverType.equals(CLASS_Type)
                 && receiverType.getGenericsTypes()!=null
                 && !receiverType.getGenericsTypes()[0].isPlaceholder()) {
             isClassReceiver = true;
@@ -98,12 +99,12 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
                 && (receiverType.isDerivedFrom(receiver.getType()) || receiverType.implementsInterface(receiver.getType()));
 
         if (!isStaticProperty) {
-            if (receiverType.implementsInterface(ClassHelper.MAP_TYPE)) {
+            if (receiverType.implementsInterface(MAP_TYPE) || MAP_TYPE.equals(receiverType)) {
                 // for maps, replace map.foo with map.get('foo')
                 writeMapDotProperty(receiver, methodName, mv);
                 return;
             }
-            if (receiverType.implementsInterface(ClassHelper.LIST_TYPE)) {
+            if (receiverType.implementsInterface(LIST_TYPE) || LIST_TYPE.equals(receiverType)) {
                 writeListDotProperty(receiver, methodName, mv);
                 return;
             }
@@ -112,9 +113,11 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         if (receiverType.isArray() && methodName.equals("length")) {
             receiver.visit(controller.getAcg());
             mv.visitInsn(ARRAYLENGTH);
-            controller.getOperandStack().replace(ClassHelper.int_TYPE);
+            controller.getOperandStack().replace(int_TYPE);
             return;
-        } else if (receiverType.implementsInterface(COLLECTION_TYPE) && ("size".equals(methodName) || "length".equals(methodName))) {
+        } else if (
+                (receiverType.implementsInterface(COLLECTION_TYPE)
+                        || COLLECTION_TYPE.equals(receiverType)) && ("size".equals(methodName) || "length".equals(methodName))) {
             MethodCallExpression expr = new MethodCallExpression(
                     receiver,
                     "size",
@@ -139,8 +142,8 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         }
         if (isClassReceiver) {
             // we are probably looking for a property of the class
-            if (makeGetPropertyWithGetter(receiver, ClassHelper.CLASS_Type, methodName, safe, implicitThis)) return;
-            if (makeGetField(receiver, ClassHelper.CLASS_Type, methodName, false, true)) return;
+            if (makeGetPropertyWithGetter(receiver, CLASS_Type, methodName, safe, implicitThis)) return;
+            if (makeGetField(receiver, CLASS_Type, methodName, false, true)) return;
         }
         if (makeGetPrivateFieldWithBridgeMethod(receiver, receiverType, methodName, safe, implicitThis)) return;
 
@@ -155,7 +158,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
             }
             // GROOVY-5585
             if (getterMethod==null) {
-                getterMethod = ClassHelper.OBJECT_TYPE.getGetterMethod(getterName);
+                getterMethod = OBJECT_TYPE.getGetterMethod(getterName);
             }
 
             if (getterMethod!=null) {
@@ -198,29 +201,29 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
                                                 +"#"+methodName+" is forbidden", receiver.getLineNumber(), receiver.getColumnNumber(), receiver.getLastLineNumber(), receiver.getLastColumnNumber())
         );
         controller.getMethodVisitor().visitInsn(ACONST_NULL);
-        controller.getOperandStack().push(ClassHelper.OBJECT_TYPE);
+        controller.getOperandStack().push(OBJECT_TYPE);
     }
 
     private void writeMapDotProperty(final Expression receiver, final String methodName, final MethodVisitor mv) {
         receiver.visit(controller.getAcg()); // load receiver
         mv.visitLdcInsn(methodName); // load property name
         mv.visitMethodInsn(INVOKEINTERFACE, "java/util/Map", "get", "(Ljava/lang/Object;)Ljava/lang/Object;");
-        controller.getOperandStack().replace(ClassHelper.OBJECT_TYPE);
+        controller.getOperandStack().replace(OBJECT_TYPE);
     }
 
     private void writeListDotProperty(final Expression receiver, final String methodName, final MethodVisitor mv) {
         ClassNode componentType = (ClassNode) receiver.getNodeMetaData(StaticCompilationMetadataKeys.COMPONENT_TYPE);
         if (componentType==null) {
-            componentType = ClassHelper.OBJECT_TYPE;
+            componentType = OBJECT_TYPE;
         }
         // for lists, replace list.foo with:
         // def result = new ArrayList(list.size())
         // for (e in list) { result.add (e.foo) }
         // result
         CompileStack compileStack = controller.getCompileStack();
-        Variable tmpList = new VariableExpression("tmpList", ClassHelper.make(ArrayList.class));
+        Variable tmpList = new VariableExpression("tmpList", make(ArrayList.class));
         int var = compileStack.defineTemporaryVariable(tmpList, false);
-        Variable iterator = new VariableExpression("iterator", ClassHelper.Iterator_TYPE);
+        Variable iterator = new VariableExpression("iterator", Iterator_TYPE);
         int it = compileStack.defineTemporaryVariable(iterator, false);
         Variable nextVar = new VariableExpression("next", componentType);
         final int next = compileStack.defineTemporaryVariable(nextVar, false);
@@ -273,7 +276,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         mv.visitJumpInsn(GOTO, l2);
         mv.visitLabel(l3);
         mv.visitVarInsn(ALOAD, var);
-        controller.getOperandStack().push(ClassHelper.make(ArrayList.class));
+        controller.getOperandStack().push(make(ArrayList.class));
         controller.getCompileStack().removeVar(next);
         controller.getCompileStack().removeVar(it);
         controller.getCompileStack().removeVar(var);
@@ -352,7 +355,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         if (propertyNode!=null) {
             // it is possible to use a getter
             String prefix = "get";
-            if (ClassHelper.boolean_TYPE.equals(propertyNode.getOriginType())) {
+            if (boolean_TYPE.equals(propertyNode.getOriginType())) {
                 prefix = "is";
             }
             getterName = prefix + MetaClassHelper.capitalize(methodName);
@@ -458,8 +461,8 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         ClassNode classNode = controller.getClassNode();
         ClassNode rType = typeChooser.resolveType(receiver, classNode);
         ClassNode aType = typeChooser.resolveType(arguments, classNode);
-        if (ClassHelper.getWrapper(rType).isDerivedFrom(ClassHelper.Number_TYPE)
-                && ClassHelper.getWrapper(aType).isDerivedFrom(ClassHelper.Number_TYPE)) {
+        if (getWrapper(rType).isDerivedFrom(Number_TYPE)
+                && getWrapper(aType).isDerivedFrom(Number_TYPE)) {
             if ("plus".equals(message) || "minus".equals(message) || "multiply".equals(message) || "div".equals(message)) {
                 writeNumberNumberCall(receiver, message, arguments);
                 return;
@@ -467,7 +470,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
                 writePowerCall(receiver, arguments, rType, aType);
                 return;
             }
-        } else if (ClassHelper.STRING_TYPE.equals(rType) && "plus".equals(message)) {
+        } else if (STRING_TYPE.equals(rType) && "plus".equals(message)) {
             writeStringPlusCall(receiver, message, arguments);
             return;
         } else if (rType.isArray() && "getAt".equals(message)) {
@@ -498,8 +501,8 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         // make sure Map#getAt() and List#getAt handled with the bracket syntax are properly compiled
         ClassNode[] args = {aType};
         boolean acceptAnyMethod =
-                ClassHelper.MAP_TYPE.equals(rType) || rType.implementsInterface(ClassHelper.MAP_TYPE)
-                || ClassHelper.LIST_TYPE.equals(rType) || rType.implementsInterface(ClassHelper.LIST_TYPE);
+                MAP_TYPE.equals(rType) || rType.implementsInterface(MAP_TYPE)
+                || LIST_TYPE.equals(rType) || rType.implementsInterface(LIST_TYPE);
         List<MethodNode> nodes = StaticTypeCheckingSupport.findDGMMethodsByNameAndArguments(rType, message, args);
         nodes = StaticTypeCheckingSupport.chooseBestMethod(rType, nodes, args);
         if (nodes.size()==1 || nodes.size()>1 && acceptAnyMethod) {
@@ -530,7 +533,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         receiver.visit(controller.getAcg());
         // visit arguments as array index
         arguments.visit(controller.getAcg());
-        operandStack.doGroovyCast(ClassHelper.int_TYPE);
+        operandStack.doGroovyCast(int_TYPE);
         int m2 = operandStack.getStackLength();
         // array access
         controller.getMethodVisitor().visitInsn(AALOAD);
@@ -545,22 +548,22 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         visitBoxedArgument(arguments);
         int m2 = operandStack.getStackLength();
         MethodVisitor mv = controller.getMethodVisitor();
-        if (ClassHelper.BigDecimal_TYPE.equals(rType) && ClassHelper.Integer_TYPE.equals(ClassHelper.getWrapper(aType))) {
+        if (BigDecimal_TYPE.equals(rType) && Integer_TYPE.equals(getWrapper(aType))) {
             mv.visitMethodInsn(INVOKESTATIC,
                     "org/codehaus/groovy/runtime/DefaultGroovyMethods",
                     "power",
                     "(Ljava/math/BigDecimal;Ljava/lang/Integer;)Ljava/lang/Number;");
-        } else if (ClassHelper.BigInteger_TYPE.equals(rType) && ClassHelper.Integer_TYPE.equals(ClassHelper.getWrapper(aType))) {
+        } else if (BigInteger_TYPE.equals(rType) && Integer_TYPE.equals(getWrapper(aType))) {
             mv.visitMethodInsn(INVOKESTATIC,
                     "org/codehaus/groovy/runtime/DefaultGroovyMethods",
                     "power",
                     "(Ljava/math/BigInteger;Ljava/lang/Integer;)Ljava/lang/Number;");
-        } else if (ClassHelper.Long_TYPE.equals(ClassHelper.getWrapper(rType)) && ClassHelper.Integer_TYPE.equals(ClassHelper.getWrapper(aType))) {
+        } else if (Long_TYPE.equals(getWrapper(rType)) && Integer_TYPE.equals(getWrapper(aType))) {
             mv.visitMethodInsn(INVOKESTATIC,
                     "org/codehaus/groovy/runtime/DefaultGroovyMethods",
                     "power",
                     "(Ljava/lang/Long;Ljava/lang/Integer;)Ljava/lang/Number;");
-        } else if (ClassHelper.Integer_TYPE.equals(ClassHelper.getWrapper(rType)) && ClassHelper.Integer_TYPE.equals(ClassHelper.getWrapper(aType))) {
+        } else if (Integer_TYPE.equals(getWrapper(rType)) && Integer_TYPE.equals(getWrapper(aType))) {
             mv.visitMethodInsn(INVOKESTATIC,
                     "org/codehaus/groovy/runtime/DefaultGroovyMethods",
                     "power",
@@ -571,7 +574,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
                     "power",
                     "(Ljava/lang/Number;Ljava/lang/Number;)Ljava/lang/Number;");
         }
-        controller.getOperandStack().replace(ClassHelper.Number_TYPE, m2 - m1);
+        controller.getOperandStack().replace(Number_TYPE, m2 - m1);
     }
 
     private void writeStringPlusCall(final Expression receiver, final String message, final Expression arguments) {
@@ -587,7 +590,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
                 "org/codehaus/groovy/runtime/DefaultGroovyMethods",
                 "plus",
                 "(Ljava/lang/String;Ljava/lang/Object;)Ljava/lang/String;");
-        controller.getOperandStack().replace(ClassHelper.STRING_TYPE, m2-m1);
+        controller.getOperandStack().replace(STRING_TYPE, m2-m1);
     }
 
     private void writeNumberNumberCall(final Expression receiver, final String message, final Expression arguments) {
@@ -595,16 +598,16 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         int m1 = operandStack.getStackLength();
         //slow Path
         prepareSiteAndReceiver(receiver, message, false, controller.getCompileStack().isLHS());
-        controller.getOperandStack().doGroovyCast(ClassHelper.Number_TYPE);
+        controller.getOperandStack().doGroovyCast(Number_TYPE);
         visitBoxedArgument(arguments);
-        controller.getOperandStack().doGroovyCast(ClassHelper.Number_TYPE);
+        controller.getOperandStack().doGroovyCast(Number_TYPE);
         int m2 = operandStack.getStackLength();
         MethodVisitor mv = controller.getMethodVisitor();
         mv.visitMethodInsn(INVOKESTATIC,
                 "org/codehaus/groovy/runtime/dgmimpl/NumberNumber" + MetaClassHelper.capitalize(message),
                 message,
                 "(Ljava/lang/Number;Ljava/lang/Number;)Ljava/lang/Number;");
-        controller.getOperandStack().replace(ClassHelper.Number_TYPE, m2 - m1);
+        controller.getOperandStack().replace(Number_TYPE, m2 - m1);
     }
 
 
