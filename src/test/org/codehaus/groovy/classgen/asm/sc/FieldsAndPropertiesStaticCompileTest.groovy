@@ -400,4 +400,40 @@ class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCTest {
         '''
     }
 
+    // GROOVY-5649
+    void testShouldNotThrowStackOverflowUsingThis() {
+        new GroovyShell().evaluate '''class HaveOption {
+
+          private String helpOption;
+
+
+          @groovy.transform.CompileStatic
+          public void setHelpOption(String helpOption) {
+            this.helpOption = helpOption
+          }
+
+        }
+        def o = new HaveOption()
+        o.setHelpOption 'foo'
+        assert o.helpOption
+        '''
+    }
+    void testShouldNotThrowStackOverflow() {
+        new GroovyShell().evaluate '''class HaveOption {
+
+          private String helpOption;
+
+
+          @groovy.transform.CompileStatic
+          public void setHelpOption(String ho) {
+            helpOption = ho
+          }
+
+        }
+        def o = new HaveOption()
+        o.setHelpOption 'foo'
+        assert o.helpOption
+        '''
+    }
+
 }
