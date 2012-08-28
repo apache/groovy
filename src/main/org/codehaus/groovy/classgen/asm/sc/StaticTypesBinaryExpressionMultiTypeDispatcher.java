@@ -169,7 +169,9 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
         TypeChooser typeChooser = controller.getTypeChooser();
         ClassNode receiverType = typeChooser.resolveType(receiver, controller.getClassNode());
         String property = message.getText();
-        if (isAttribute) {
+        if (isAttribute
+                || ((receiver instanceof VariableExpression && ((VariableExpression) receiver).isThisExpression()) &&
+                    receiverType.getDeclaredField(property)!=null)) {
             ClassNode current = receiverType;
             FieldNode fn = null;
             while (fn==null && current!=null) {
