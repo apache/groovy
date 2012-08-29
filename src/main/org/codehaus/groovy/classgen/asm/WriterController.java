@@ -29,7 +29,6 @@ import org.codehaus.groovy.ast.InterfaceHelperClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.classgen.GeneratorContext;
-import org.codehaus.groovy.classgen.asm.indy.IndyCallSiteWriter;
 import org.codehaus.groovy.control.SourceUnit;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.MethodVisitor;
@@ -37,13 +36,17 @@ import org.objectweb.asm.Opcodes;
 
 public class WriterController {
 
-    private static Constructor indyWriter;
+    private static Constructor indyWriter, indyCallSiteWriter;
     static {
         try {
-            Class indyClass = WriterController.class.getClassLoader().loadClass("org.codehaus.groovy.classgen.asm.indy.InvokeDynamicWriter");
+            ClassLoader cl = WriterController.class.getClassLoader();
+            Class indyClass = cl.loadClass("org.codehaus.groovy.classgen.asm.indy.InvokeDynamicWriter");
             indyWriter = indyClass.getConstructor(WriterController.class);
+            indyClass = cl.loadClass("org.codehaus.groovy.classgen.asm.indy.IndyCallSiteWriter");
+            indyCallSiteWriter = indyClass.getConstructor(WriterController.class);
         } catch (Exception e) {
             indyWriter = null;
+            indyCallSiteWriter = null;
         }        
     }
     private AsmClassGenerator acg;
@@ -95,7 +98,7 @@ public class WriterController {
             bytecodeVersion = Opcodes.V1_7;
             try {
                 this.invocationWriter = (InvocationWriter) indyWriter.newInstance(this);
-                this.callSiteWriter = new IndyCallSiteWriter(this);
+                this.callSiteWriter = (CallSiteWriter) indyCallSiteWriter.newInstance(this);
             } catch (Exception e) {
                 throw new GroovyRuntimeException("Cannot use invokedynamic, indy module was excluded from this build.");
             }
