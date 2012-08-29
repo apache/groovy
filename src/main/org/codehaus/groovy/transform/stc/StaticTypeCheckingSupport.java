@@ -253,7 +253,7 @@ public abstract class StaticTypeCheckingSupport {
         ClassNode vargsBase = params[params.length - 1].getType().getComponentType();
         for (int i = params.length; i < args.length; i++) {
             if (!isAssignableTo(args[i],vargsBase)) return -1;
-            else if (!args[i].equals(vargsBase)) dist++;
+            else if (!args[i].equals(vargsBase)) dist+=getDistance(args[i], vargsBase);
         }
         return dist;
     }
@@ -274,7 +274,7 @@ public abstract class StaticTypeCheckingSupport {
         ClassNode ptype = params[params.length - 1].getType().getComponentType();
         ClassNode arg = args[args.length - 1];
         if (isNumberType(ptype) && isNumberType(arg) && !ptype.equals(arg)) return -1;
-        return isAssignableTo(arg, ptype)?(ptype.equals(arg)?0:1):-1;
+        return isAssignableTo(arg, ptype)?getDistance(arg,ptype):-1;
     }
 
     /**
@@ -945,7 +945,7 @@ public abstract class StaticTypeCheckingSupport {
                 }
                 int lastArgMatch = isVargs(params) && firstParamMatches?lastArgMatchesVarg(params, args):-1;
                 if (lastArgMatch>=0) {
-                    lastArgMatch+=((args.length-params.length)+1); // ensure exact matches are preferred over vargs
+                    lastArgMatch += 256-params.length; // ensure exact matches are preferred over vargs
                 }
                 int dist = allPMatch>=0?Math.max(allPMatch, lastArgMatch):lastArgMatch;
                 if (dist>=0 && !actualReceiver.equals(declaringClass)) dist+=getDistance(actualReceiver, declaringClass);
@@ -982,7 +982,7 @@ public abstract class StaticTypeCheckingSupport {
                         // varargs methods must not be preferred to methods without varargs
                         // for example :
                         // int sum(int x) should be preferred to int sum(int x, int... y)
-                        dist+=((args.length-params.length)+1);
+                        dist+=256-params.length;
                         if (params.length < args.length && dist >= 0) {
                             if (dist >= 0 && dist < bestDist) {
                                 bestChoices.clear();
