@@ -244,4 +244,26 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
         list.add(new A())
         '''
     }
+
+    // GROOVY-5656
+    void testShouldNotThrowAmbiguousMethodError() {
+        assertScript '''import groovy.transform.*
+
+        class Expr {}
+        class VarExpr extends Expr {}
+
+        class ArgList {
+            ArgList(Expr e1) {  }
+            ArgList(Expr[] es) {  }
+        }
+
+        class Bug4 {
+            void test() {
+                new ArgList(new VarExpr())
+            }
+        }
+
+        new Bug4().test()
+        '''
+    }
 }
