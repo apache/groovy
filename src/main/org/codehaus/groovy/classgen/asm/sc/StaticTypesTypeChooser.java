@@ -15,8 +15,10 @@
  */
 package org.codehaus.groovy.classgen.asm.sc;
 
+import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.classgen.asm.StatementMetaTypeChooser;
@@ -31,10 +33,14 @@ import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 public class StaticTypesTypeChooser extends StatementMetaTypeChooser {
     @Override
     public ClassNode resolveType(final Expression exp, final ClassNode current) {
-        Expression target = exp instanceof VariableExpression ? getTarget((VariableExpression) exp) : exp;
+        ASTNode target = exp instanceof VariableExpression ? getTarget((VariableExpression) exp) : exp;
         ClassNode inferredType = (ClassNode) target.getNodeMetaData(StaticTypesMarker.DECLARATION_INFERRED_TYPE);
         if (inferredType == null) {
             inferredType = (ClassNode) target.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
+            if (inferredType == null && target instanceof VariableExpression && ((VariableExpression) target).getAccessedVariable() instanceof Parameter) {
+                target = (Parameter) ((VariableExpression) target).getAccessedVariable();
+                inferredType = ((Parameter) target).getOriginType();
+            }
         }
         if (inferredType != null) {
             if (ClassHelper.VOID_TYPE == inferredType) {

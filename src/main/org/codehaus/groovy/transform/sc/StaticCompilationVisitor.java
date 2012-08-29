@@ -256,6 +256,7 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
             final ClassNode collectionType = getType(forLoop.getCollectionExpression());
             ClassNode componentType = inferLoopElementType(collectionType);
             forLoop.getVariable().setType(componentType);
+            forLoop.getVariable().setOriginType(componentType);
         }
     }
 
