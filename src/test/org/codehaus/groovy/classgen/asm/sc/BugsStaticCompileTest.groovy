@@ -324,5 +324,19 @@ class BugsStaticCompileTest extends BugsSTCTest {
             assert initPlugins(true) == true
         '''
     }
+
+    // GROOVY-5657
+    void testShouldNotPopEmptyStackWithDefaultParameters() {
+        assertScript '''
+            class EntityTransformation {
+                void visit() {
+                    addStaticDelegatedMethod([:])
+                }
+                public String addStaticDelegatedMethod(Map params, String returnType = 'foo') { returnType }
+            }
+            def et = new EntityTransformation()
+            assert et.addStaticDelegatedMethod([:]) == 'foo'
+        '''
+    }
 }
 
