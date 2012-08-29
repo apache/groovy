@@ -49,6 +49,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
 
     public static final String STATIC_METACLASS_BOOL = "__$stMC";
     public static final String SWAP_INIT = "__$swapInit";
+    public static final String INITIAL_EXPRESSION = "INITIAL_EXPRESSION";
 
     public static final String __TIMESTAMP = "__timeStamp";
     public static final String __TIMESTAMP__ = "__timeStamp__239_neverHappen";
@@ -786,7 +787,8 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         }
 
         for (Parameter parameter : parameters) {
-            // remove default expression
+            // remove default expression and store it as node metadata
+            parameter.putNodeMetaData(Verifier.INITIAL_EXPRESSION, parameter.getInitialExpression());
             parameter.setInitialExpression(null);
         }
     }

@@ -26,6 +26,7 @@ import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
+import org.codehaus.groovy.classgen.Verifier;
 import org.codehaus.groovy.classgen.asm.*;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.syntax.SyntaxException;
@@ -259,6 +260,9 @@ public class StaticInvocationWriter extends InvocationWriter {
                 Expression initialExpression = (Expression) curParam.getNodeMetaData(StaticTypesMarker.INITIAL_EXPRESSION);
                 if (initialExpression == null && curParam.hasInitialExpression())
                     initialExpression = curParam.getInitialExpression();
+                if (initialExpression == null && curParam.getNodeMetaData(Verifier.INITIAL_EXPRESSION)!=null) {
+                    initialExpression = (Expression) curParam.getNodeMetaData(Verifier.INITIAL_EXPRESSION);
+                }
                 ClassNode curArgType = curArg == null ? null : typeChooser.resolveType(curArg, classNode);
 
                 if (initialExpression != null && !compatibleArgumentType(curArgType, curParamType)) {

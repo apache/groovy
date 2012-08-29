@@ -311,5 +311,18 @@ class BugsStaticCompileTest extends BugsSTCTest {
                 assert list.sort(c) == [1,2,3,4,5]
             '''
     }
+
+    // GROOVY-5658
+    void testShouldNotThrowNPEUsingDefaultArgumentValues() {
+        assertScript '''
+            boolean event() {
+                initPlugins()
+            }
+            static boolean initPlugins(ignoreBinary = false) { ignoreBinary }
+            assert event() == false
+            assert initPlugins(false) == false
+            assert initPlugins(true) == true
+        '''
+    }
 }
 
