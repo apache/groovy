@@ -125,8 +125,10 @@ public class InvocationWriter {
                 mv.visitIntInsn(ALOAD,0);
             }
         }
-        
+
+        int stackSize = operandStack.getStackLength();
         loadArguments(args.getExpressions(), target.getParameters());
+
 
         String owner = BytecodeHelper.getClassInternalName(target.getDeclaringClass());
         String desc = BytecodeHelper.getMethodDescriptor(target.getReturnType(), target.getParameters());
@@ -136,7 +138,7 @@ public class InvocationWriter {
             ret = ClassHelper.OBJECT_TYPE;
             mv.visitInsn(ACONST_NULL);
         }
-        argumentsToRemove += args.getExpressions().size();
+        argumentsToRemove += (operandStack.getStackLength()-stackSize);
         controller.getOperandStack().remove(argumentsToRemove);
         controller.getOperandStack().push(ret);
         return true;
