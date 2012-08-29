@@ -288,11 +288,15 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
         
         // complete rhs: load b, call operation [load sub, call arraySet]
         binExp.getRightExpression().visit(acg);
+        if (! (bew instanceof BinaryObjectExpressionHelper)) {
+            // in primopts we convert to the left type for supported binary operations
+            operandStack.doGroovyCast(leftType);  
+        }
         bew.write(operation, false);
         
         // let us save that value for the return
         operandStack.dup();
-        int resultValueId = compileStack.defineTemporaryVariable("$result", rightType, true);               
+        int resultValueId = compileStack.defineTemporaryVariable("$result", rightType, true);
 
         // array set: load sub, call arraySet []
         operandStack.load(ClassHelper.int_TYPE, subscriptValueId);
