@@ -201,5 +201,24 @@ class LoopsSTCTest extends StaticTypeCheckingTestCase {
 
         '''
     }
+
+    // GROOVY-5641
+    void testShouldInferLoopElementTypeWithUndeclaredType() {
+        assertScript '''import org.codehaus.groovy.ast.stmt.ForStatement
+        @ASTTest(phase=INSTRUCTION_SELECTION, value= {
+            def forStmt = lookup('loop')[0]
+            assert forStmt instanceof ForStatement
+            def collectionType = forStmt.collectionExpression.getNodeMetaData(INFERRED_TYPE)
+            assert collectionType == make(IntRange)
+        })
+        void foo() {
+            int[] perm = new int[10]
+            loop:
+            for (i in 0..<10) {
+              assert perm[i-0] == 0
+            }
+        }
+        '''
+    }
 }
 
