@@ -108,6 +108,55 @@ class MethodPatternsTest extends AbstractBytecodeTestCase {
         ])
     }
 
+    void testArrayIncrement() {
+        assert compile('''
+            int n = 10
+            int[] x = new int[n]
+            for (int i = 0; i < n; i++) x[i]++
+        ''').hasSequence([
+            'ICONST_0',
+            'ISTORE',
+            'ILOAD',
+            'POP',
+            'ILOAD',
+            'ILOAD',
+            'IF_ICMPGE',
+            'ICONST_1',
+            'GOTO',
+            'ICONST_0',
+            'IFEQ',
+            'ILOAD',
+            'ISTORE',
+            'ALOAD',
+            'ILOAD',
+            'INVOKESTATIC org/codehaus/groovy/runtime/BytecodeInterface8.intArrayGet ([II)I',
+            'DUP',
+            'ISTORE',
+            'ICONST_1',
+            'IADD',
+            'ISTORE',
+            'ALOAD',
+            'ILOAD',
+            'ILOAD',
+            'INVOKESTATIC org/codehaus/groovy/runtime/BytecodeInterface8.intArraySet ([III)V',
+            'ILOAD',
+            'POP',
+            'ILOAD',
+            'POP',
+            'ILOAD',
+            'DUP',
+            'ISTORE',
+            'ICONST_1',
+            'IADD',
+            'DUP',
+            'ISTORE',
+            'POP',
+            'ILOAD',
+            'POP',
+            'GOTO',
+        ])
+    }
+
     void testForLoopSettingArrayWithOperatorUsedInAssignmentAndArrayRHS() {
         assert compile('''
             int n = 10
