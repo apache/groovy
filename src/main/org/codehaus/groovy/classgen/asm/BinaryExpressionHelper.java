@@ -649,11 +649,12 @@ public class BinaryExpressionHelper {
                 // we store the result of the subscription on the stack
                 Expression subscript = be.getRightExpression();
                 subscript.visit(controller.getAcg());
-                operandStack.box(); //TODO: maybe not box here anymore, but need subscript type then
-                int id = controller.getCompileStack().defineTemporaryVariable("$subscript", true);
-                VariableSlotLoader subscriptExpression = new VariableSlotLoader(id,operandStack);
+                ClassNode subscriptType = operandStack.getTopOperand();
+                int id = controller.getCompileStack().defineTemporaryVariable("$subscript", subscriptType, true);
+                VariableSlotLoader subscriptExpression = new VariableSlotLoader(subscriptType, id, operandStack);
                 // do modified visit
                 BinaryExpression newBe = new BinaryExpression(be.getLeftExpression(), be.getOperation(), subscriptExpression);
+                newBe.copyNodeMetaData(be);
                 newBe.setSourcePosition(be);
                 newBe.visit(controller.getAcg());
                 return subscriptExpression;
