@@ -312,31 +312,100 @@ class BugsStaticCompileTest extends BugsSTCTest {
             '''
     }
 
-    // GROOVY-5658
-    void testShouldNotThrowNPEUsingDefaultArgumentValues() {
+    void testInferredTypeForInteger() {
         assertScript '''
-            boolean event() {
-                initPlugins()
-            }
-            static boolean initPlugins(ignoreBinary = false) { ignoreBinary }
-            assert event() == false
-            assert initPlugins(false) == false
-            assert initPlugins(true) == true
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                assert node.getNodeMetaData(INFERRED_TYPE) == Integer_TYPE
+            })
+            Integer x = 1
         '''
     }
 
-    // GROOVY-5657
-    void testShouldNotPopEmptyStackWithDefaultParameters() {
+    // GROOVY-5671
+    void testPostfixIncPrimitiveInteger() {
         assertScript '''
-            class EntityTransformation {
-                void visit() {
-                    addStaticDelegatedMethod([:])
-                }
-                public String addStaticDelegatedMethod(Map params, String returnType = 'foo') { returnType }
-            }
-            def et = new EntityTransformation()
-            assert et.addStaticDelegatedMethod([:]) == 'foo'
+            int x = 0
+            x++
+            x++
+            assert x == 2
+            assert x++ == 2
+            assert x == 3
         '''
+    }
+
+    void testPostfixIncInteger() {
+        assertScript '''
+                Integer x = 0
+                x++
+                x++
+                assert x == 2
+                assert x++ == 2
+                assert x == 3
+            '''
+    }
+
+    void testPostfixDecInt() {
+        assertScript '''
+                int x = 0
+                x--
+                x--
+                assert x == -2
+                assert x-- == -2
+                assert x == -3
+            '''
+    }
+
+    void testPostfixDecInteger() {
+        assertScript '''
+                Integer x = 0
+                x--
+                x--
+                assert x == -2
+                assert x-- == -2
+                assert x == -3
+            '''
+    }
+
+    void testPrefixIncPrimitiveInteger() {
+        assertScript '''
+            int x = 0
+            ++x
+            ++x
+            assert x == 2
+            assert ++x == 3
+            assert x == 3
+        '''
+    }
+
+    void testPrefixIncInteger() {
+        assertScript '''
+                Integer x = 0
+                ++x
+                ++x
+                assert x == 2
+                assert ++x == 3
+                assert x == 3
+            '''
+    }
+
+    void testPrefixDecInt() {
+        assertScript '''
+                int x = 0
+                --x
+                --x
+                assert --x == -3
+                assert x == -3
+            '''
+    }
+
+    void testPrefixDecInteger() {
+        assertScript '''
+                Integer x = 0
+                --x
+                --x
+                assert --x == -3
+                assert x == -3
+            '''
     }
 }
 
