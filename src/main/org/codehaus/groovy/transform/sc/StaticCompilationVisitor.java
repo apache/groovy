@@ -282,9 +282,4 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
         return exists;
     }
 
-    @Override
-    public void visitPostfixExpression(final PostfixExpression expression) {
-        super.visitPostfixExpression(expression);
-//        if (!getType(expression.getExpression()))
-    }
 }

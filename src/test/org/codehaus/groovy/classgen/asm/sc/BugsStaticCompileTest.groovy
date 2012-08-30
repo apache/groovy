@@ -407,5 +407,24 @@ class BugsStaticCompileTest extends BugsSTCTest {
                 assert x == -3
             '''
     }
+
+    void testShouldSkipSpreadOperator() {
+        new GroovyShell().evaluate '''import groovy.transform.TypeCheckingMode
+            import groovy.transform.CompileStatic
+
+            @CompileStatic // top level must be @CS
+            class Foo {
+                @CompileStatic(TypeCheckingMode.SKIP)
+                static void foo(fun, args) {
+                    new Runnable() { // create an anonymous class which should *not* be visited
+                        void run() {
+                            fun(*args) // spread operator is disallowed with STC/SC, but SKIP should prevent from an error
+                        }
+                    }
+                }
+            }
+            new Foo()
+        '''
+    }
 }
 

@@ -279,6 +279,28 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (node instanceof MethodNode) {
             return isSkipMode(node.getDeclaringClass());
         }
+        if (isSkippedInnerClass(node)) return true;
+        return false;
+    }
+
+    /**
+     * Test if a node is an inner class node, and if it is, then checks if the enclosing method is skipped.
+     * @param node
+     * @return true if the inner class node should be skipped
+     */
+    private boolean isSkippedInnerClass(AnnotatedNode node) {
+        if (!(node instanceof InnerClassNode)) return false;
+        ClassNode outerClass = ((InnerClassNode) node).getOuterClass();
+        // inner.getEnclosingMethod() returns null, so we must perform a "dirty" check based on line numbers to figure
+        // out if the class was created in a skipped method node
+        List<MethodNode> methods = new LinkedList<MethodNode>();
+        methods.addAll(outerClass.getDeclaredMethodsMap().values());
+        methods.addAll(outerClass.getDeclaredConstructors());
+        for (MethodNode mn : methods) {
+            if (mn.getLineNumber()>0 && mn.getLineNumber()<=node.getLineNumber() && mn.getLastLineNumber()>=node.getLastLineNumber()) {
+                return isSkipMode(mn);
+            }
+        }
         return false;
     }
 
