@@ -1130,13 +1130,21 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         Expression inner = expression.getExpression();
         ClassNode exprType = getType(inner);
         int type = expression.getOperation().getType();
+        String name = type == PLUS_PLUS ? "next" : type == MINUS_MINUS ? "previous" : null;
         if (isPrimitiveType(exprType) || isPrimitiveType(getUnwrapper(exprType))) {
-            if (type == PLUS_PLUS || type == MINUS_MINUS) return;
+            if (type == PLUS_PLUS || type == MINUS_MINUS) {
+                if (!isPrimitiveType(exprType)) {
+                    MethodNode node = findMethodOrFail(inner, exprType, name);
+                    if (node != null) {
+                        storeTargetMethod(expression, node);
+                    }
+                }
+                return;
+            }
             addStaticTypeError("Unsupported postfix operation type [" + expression.getOperation() + "]", expression);
             return;
         }
         // not a primitive type. We must find a method which is called next
-        String name = type == PLUS_PLUS ? "next" : type == MINUS_MINUS ? "previous" : null;
         if (name == null) {
             addStaticTypeError("Unsupported postfix operation type [" + expression.getOperation() + "]", expression);
             return;
@@ -1153,13 +1161,21 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         Expression inner = expression.getExpression();
         ClassNode exprType = getType(inner);
         int type = expression.getOperation().getType();
+        String name = type == PLUS_PLUS ? "next" : type == MINUS_MINUS ? "previous" : null;
         if (isPrimitiveType(exprType) || isPrimitiveType(getUnwrapper(exprType))) {
-            if (type == PLUS_PLUS || type == MINUS_MINUS) return;
+            if (type == PLUS_PLUS || type == MINUS_MINUS) {
+                if (!isPrimitiveType(exprType)) {
+                    MethodNode node = findMethodOrFail(inner, exprType, name);
+                    if (node != null) {
+                        storeTargetMethod(expression, node);
+                    }
+                }
+                return;
+            }
             addStaticTypeError("Unsupported prefix operation type [" + expression.getOperation() + "]", expression);
             return;
         }
         // not a primitive type. We must find a method which is called next or previous
-        String name = type == PLUS_PLUS ? "next" : type == MINUS_MINUS ? "previous" : null;
         if (name == null) {
             addStaticTypeError("Unsupported prefix operation type [" + expression.getOperation() + "]", expression);
             return;
@@ -2120,6 +2136,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
             if (leftExpression instanceof VariableExpression) {
                 ClassNode initialType = getOriginalDeclarationType(leftExpression).redirect();
+                if (isPrimitiveType(right) && initialType.isDerivedFrom(Number_TYPE)) {
+                    return getWrapper(right);
+                }
                 // as anything can be assigned to a String, Class or boolean, return the left type instead
                 if (STRING_TYPE.equals(initialType)
                         || CLASS_Type.equals(initialType)

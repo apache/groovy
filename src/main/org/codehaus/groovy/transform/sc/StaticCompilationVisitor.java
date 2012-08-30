@@ -283,8 +283,8 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
     }
 
     @Override
-    public void visitBinaryExpression(final BinaryExpression expression) {
-        super.visitBinaryExpression(expression);
+    public void visitPostfixExpression(final PostfixExpression expression) {
+        super.visitPostfixExpression(expression);
+//        if (!getType(expression.getExpression()))
     }
-
 }

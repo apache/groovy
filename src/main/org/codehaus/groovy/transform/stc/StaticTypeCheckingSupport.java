@@ -530,7 +530,7 @@ public abstract class StaticTypeCheckingSupport {
                return true;
            }
             if (BigInteger_TYPE==leftRedirect) {
-                return WideningCategories.isBigIntCategory(rightRedirect);
+                return WideningCategories.isBigIntCategory(getUnwrapper(rightRedirect));
             }
         }
 
