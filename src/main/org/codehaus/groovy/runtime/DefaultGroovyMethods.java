@@ -2322,6 +2322,48 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Projects each item from a source map to a result collection and concatenates (flattens) the resulting
+     * collections adding them into the <code>collector</code>.
+     * <p/>
+     * <pre class="groovyTestCase">
+     * def map = [bread:3, milk:5, butter:2]
+     * def result = map.collectMany(['x']){ k, v -> k.startsWith('b') ? k.toList() : [] }
+     * assert result == ['x', 'b', 'r', 'e', 'a', 'd', 'b', 'u', 't', 't', 'e', 'r']
+     * </pre>
+     *
+     * @param self       a map
+     * @param collector  an initial collection to add the projected items to
+     * @param projection a projecting Closure returning a collection of items
+     * @return the collector with the projected collections concatenated (flattened) to it
+     * @since 1.8.8
+     */
+    public static <T> Collection<T> collectMany(Map<?, ?> self, Collection<T> collector, Closure<Collection<? extends T>> projection) {
+        for (Map.Entry<?, ?> entry : self.entrySet()) {
+            collector.addAll(callClosureForMapEntry(projection, entry));
+        }
+        return collector;
+    }
+
+    /**
+     * Projects each item from a source map to a result collection and concatenates (flattens) the resulting
+     * collections adding them into a collection.
+     * <p/>
+     * <pre class="groovyTestCase">
+     * def map = [bread:3, milk:5, butter:2]
+     * def result = map.collectMany{ k, v -> k.startsWith('b') ? k.toList() : [] }
+     * assert result == ['b', 'r', 'e', 'a', 'd', 'b', 'u', 't', 't', 'e', 'r']
+     * </pre>
+     *
+     * @param self       a map
+     * @param projection a projecting Closure returning a collection of items
+     * @return the collector with the projected collections concatenated (flattened) to it
+     * @since 1.8.8
+     */
+    public static <T> Collection<T> collectMany(Map<?, ?> self, Closure<Collection<? extends T>> projection) {
+        return collectMany(self, new ArrayList<T>(), projection);
+    }
+
+    /**
      * Projects each item from a source array to a collection and concatenates (flattens) the resulting collections into a single list.
      * <p/>
      * <pre class="groovyTestCase">
