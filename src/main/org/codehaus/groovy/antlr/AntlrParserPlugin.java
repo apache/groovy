@@ -95,6 +95,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
 
     protected AST ast;
     private ClassNode classNode;
+    private MethodNode methodNode;
     private String[] tokenNames;
     private int innerClassCounter = 1;
     private boolean enumConstantBeingDef = false;
@@ -520,6 +521,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             classNode = new InnerClassNode(outerClass, fullName, Opcodes.ACC_PUBLIC, ClassHelper.OBJECT_TYPE);
         }
         ((InnerClassNode) classNode).setAnonymous(true);
+        classNode.setEnclosingMethod(methodNode);
 
         assertNodeType(OBJBLOCK, node);
         objectBlock(node);
@@ -730,6 +732,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     }
 
     protected void methodDef(AST methodDef) {
+        MethodNode oldNode = methodNode;
         List<AnnotationNode> annotations = new ArrayList<AnnotationNode>();
         AST node = methodDef.getFirstChild();
 
@@ -789,6 +792,9 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
 
         boolean hasAnnotationDefault = false;
         Statement code = null;
+        boolean syntheticPublic = ((modifiers & Opcodes.ACC_SYNTHETIC) != 0);
+        modifiers &= ~Opcodes.ACC_SYNTHETIC;
+        methodNode = new MethodNode(name, modifiers, returnType, parameters, exceptions, code);
         if ((modifiers & Opcodes.ACC_ABSTRACT) == 0) {
             if (node == null) {
                 throw new ASTRuntimeException(methodDef, "You defined a method without body. Try adding a body, or declare it abstract.");
@@ -803,10 +809,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
                 throw new ASTRuntimeException(methodDef, "Abstract methods do not define a body.");
             }
         }
-
-        boolean syntheticPublic = ((modifiers & Opcodes.ACC_SYNTHETIC) != 0);
-        modifiers &= ~Opcodes.ACC_SYNTHETIC;
-        MethodNode methodNode = new MethodNode(name, modifiers, returnType, parameters, exceptions, code);
+        methodNode.setCode(code);
         methodNode.addAnnotations(annotations);
         methodNode.setGenericsTypes(generics);
         methodNode.setAnnotationDefault(hasAnnotationDefault);
@@ -818,6 +821,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         } else {
             output.addMethod(methodNode);
         }
+        methodNode = oldNode;
     }
 
     private void checkNoInvalidModifier(AST node, String nodeType, int modifiers, int modifier, String modifierText) {
@@ -868,11 +872,14 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         }
 
         assertNodeType(SLIST, node);
-        Statement code = statementList(node);
-
         boolean syntheticPublic = ((modifiers & Opcodes.ACC_SYNTHETIC) != 0);
         modifiers &= ~Opcodes.ACC_SYNTHETIC;
-        ConstructorNode constructorNode = classNode.addConstructor(modifiers, parameters, exceptions, code);
+        ConstructorNode constructorNode = classNode.addConstructor(modifiers, parameters, exceptions, null);
+        MethodNode oldMethod = methodNode;
+        methodNode = constructorNode;
+        Statement code = statementList(node);
+        methodNode = oldMethod;
+        constructorNode.setCode(code);
         constructorNode.setSyntheticPublic(syntheticPublic);
         constructorNode.addAnnotations(annotations);
         configureAST(constructorNode, constructorDef);

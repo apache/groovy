@@ -458,6 +458,53 @@ class A {
     }
      
 
+    // GROOVY-5679
+    // GROOVY-5681
+    void testEnclosingMethodIsSet() {
+        new GroovyShell().evaluate '''import groovy.transform.ASTTest
+        import static org.codehaus.groovy.control.CompilePhase.*
+        import org.codehaus.groovy.ast.InnerClassNode
+        import org.codehaus.groovy.ast.expr.ConstructorCallExpression
+import org.codehaus.groovy.classgen.Verifier
+
+        class A {
+            int x
+
+            /*@ASTTest(phase=SEMANTIC_ANALYSIS, value={
+                def cce = lookup('inner')[0].expression
+                def icn = cce.type
+                assert icn instanceof InnerClassNode
+                assert icn.enclosingMethod == node
+            })
+            A() { inner: new Runnable() { void run() {} } }
+
+            @ASTTest(phase=SEMANTIC_ANALYSIS, value={
+                def cce = lookup('inner')[0].expression
+                def icn = cce.type
+                assert icn instanceof InnerClassNode
+                assert icn.enclosingMethod == node
+            })
+            void foo() { inner: new Runnable() { void run() {} } }*/
+
+            @ASTTest(phase=CLASS_GENERATION, value={
+                def initialExpression = node.parameters[0].getNodeMetaData(Verifier.INITIAL_EXPRESSION)
+                assert initialExpression instanceof ConstructorCallExpression
+                def icn = initialExpression.type
+                assert icn instanceof InnerClassNode
+                assert icn.enclosingMethod != null
+                assert icn.enclosingMethod.name == 'bar'
+                assert icn.enclosingMethod.parameters.length == 0 // ensure the enclosing method is bar(), not bar(Object)
+            })
+            void bar(action=new Runnable() { void run() { x = 123 }}) {
+                action.run()
+            }
+
+        }
+        def a = new A()
+        a.bar()
+        assert a.x == 123
+        '''
+    }
 } 
 
 class MyOuterClass4028 {
