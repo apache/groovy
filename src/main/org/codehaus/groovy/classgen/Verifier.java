@@ -683,8 +683,19 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                 } else {
                     code = new ReturnStatement(expression);
                 }
-
                 MethodNode newMethod = new MethodNode(method.getName(), method.getModifiers(), method.getReturnType(), newParams, method.getExceptions(), code);
+                // GROOVY-5681
+                for (Expression argument : arguments.getExpressions()) {
+                    if (argument instanceof CastExpression) {
+                        argument = ((CastExpression) argument).getExpression();
+                    }
+                    if (argument instanceof ConstructorCallExpression) {
+                        ClassNode type = argument.getType();
+                        if (type instanceof InnerClassNode && ((InnerClassNode) type).isAnonymous()) {
+                            type.setEnclosingMethod(newMethod);
+                        }
+                    }
+                }
                 List<AnnotationNode> annotations = method.getAnnotations();
                 if(annotations != null) {
                     newMethod.addAnnotations(annotations);
