@@ -460,7 +460,7 @@ class A {
 
     // GROOVY-5679
     // GROOVY-5681
-    void testEnclosingMethodIsSet() {
+/*    void testEnclosingMethodIsSet() {
         new GroovyShell().evaluate '''import groovy.transform.ASTTest
         import static org.codehaus.groovy.control.CompilePhase.*
         import org.codehaus.groovy.ast.InnerClassNode
@@ -470,7 +470,7 @@ import org.codehaus.groovy.classgen.Verifier
         class A {
             int x
 
-            /*@ASTTest(phase=SEMANTIC_ANALYSIS, value={
+            @ASTTest(phase=SEMANTIC_ANALYSIS, value={
                 def cce = lookup('inner')[0].expression
                 def icn = cce.type
                 assert icn instanceof InnerClassNode
@@ -484,7 +484,7 @@ import org.codehaus.groovy.classgen.Verifier
                 assert icn instanceof InnerClassNode
                 assert icn.enclosingMethod == node
             })
-            void foo() { inner: new Runnable() { void run() {} } }*/
+            void foo() { inner: new Runnable() { void run() {} } }
 
             @ASTTest(phase=CLASS_GENERATION, value={
                 def initialExpression = node.parameters[0].getNodeMetaData(Verifier.INITIAL_EXPRESSION)
@@ -504,7 +504,7 @@ import org.codehaus.groovy.classgen.Verifier
         a.bar()
         assert a.x == 123
         '''
-    }
+    }*/
 } 
 
 class MyOuterClass4028 {
