@@ -64,5 +64,14 @@ class ArraysAndCollectionsStaticCompileTest extends ArraysAndCollectionsSTCTest 
             assert m.abcd == 1234
         '''
     }
+
+    @Override
+    void testArrayLengthOnMultidimensionalArray() {
+        try {
+            super.testArrayLengthOnMultidimensionalArray()
+        } finally {
+            println astTrees
+        }
+    }
 }
 
