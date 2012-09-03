@@ -350,10 +350,10 @@ class GrapeIvy implements GrapeEngine {
                     grabRecord.mrid, grabRecord.force, grabRecord.changing, grabRecord.transitive)
             def conf = grabRecord.conf ?: ['*']
             conf.each {dd.addDependencyConfiguration('default', it)}
-            if (grabRecord.classifier) {
+            if (grabRecord.classifier || grabRecord.ext) {
                 def dad = new DefaultDependencyArtifactDescriptor(dd,
-                        grabRecord.mrid.name, grabRecord.type ?: 'jar', grabRecord.ext ?: 'jar', null, [classifier:grabRecord.classifier])
-                conf.each { dad.addConfiguration(it)  }
+                      grabRecord.mrid.name, grabRecord.type ?: 'jar', grabRecord.ext ?: 'jar', null, grabRecord.classifier ? [classifier:grabRecord.classifier] : null)
+                conf.each { dad.addConfiguration(it) }
                 dd.addDependencyArtifact('default', dad)
             }
             md.addDependency(dd)
