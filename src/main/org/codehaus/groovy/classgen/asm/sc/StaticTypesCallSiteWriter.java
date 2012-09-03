@@ -112,6 +112,8 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
 
         if (receiverType.isArray() && methodName.equals("length")) {
             receiver.visit(controller.getAcg());
+            ClassNode arrayGetReturnType = typeChooser.resolveType(receiver, classNode);
+            controller.getOperandStack().doGroovyCast(arrayGetReturnType);
             mv.visitInsn(ARRAYLENGTH);
             controller.getOperandStack().replace(int_TYPE);
             return;

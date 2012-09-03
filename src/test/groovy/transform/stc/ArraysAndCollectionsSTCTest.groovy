@@ -439,5 +439,16 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
             assert joinedArray.length == 10
         '''
     }
+
+    // GROOVY-5683
+    void testArrayLengthOnMultidimensionalArray() {
+        assertScript '''
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                assert node.getNodeMetaData(INFERRED_TYPE) == int_TYPE.makeArray().makeArray()
+            })
+            int[][] array = [[1]] as int[][]
+            array[0].length
+        '''
+    }
 }
 
