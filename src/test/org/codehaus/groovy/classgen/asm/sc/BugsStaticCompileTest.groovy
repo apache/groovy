@@ -426,5 +426,20 @@ class BugsStaticCompileTest extends BugsSTCTest {
             new Foo()
         '''
     }
+
+    // GROOVY-5672
+    void testTypeCheckedPlusCompileStatic() {
+        new GroovyShell().evaluate '''import groovy.transform.CompileStatic
+        import groovy.transform.TypeChecked
+
+        @TypeChecked
+        @CompileStatic
+        class SampleClass {
+            def a = "some string"
+            def b = a.toString()
+        }
+        new SampleClass()
+        '''
+    }
 }
 

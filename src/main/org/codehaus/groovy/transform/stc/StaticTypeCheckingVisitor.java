@@ -210,6 +210,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     @Override
     public void visitClass(final ClassNode node) {
         if (shouldSkipClassNode(node)) return;
+        Object type = node.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
+        if (type != null) {
+            // transformation has already been run on this class node
+            // so we'll use a silent collector in order not to duplicate errors
+            errorCollector = new ErrorCollector(errorCollector.getConfiguration());
+        }
         ClassNode oldCN = classNode;
         classNode = node;
         Set<MethodNode> oldVisitedMethod = alreadyVisitedMethods;
@@ -234,12 +240,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     protected boolean shouldSkipClassNode(final ClassNode node) {
-        Object type = node.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
-        if (type != null) {
-            // transformation has already been run on this class node
-            // prevent it from running twice
-            return true;
-        }
         if (isSkipMode(node)) return true;
         return false;
     }
