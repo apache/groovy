@@ -39,7 +39,7 @@ import java.util.*;
  * @author Paul King
  * @version $Revision$
  */
-public class Node implements Serializable {
+public class Node implements Serializable, Cloneable {
 
     static {
         // wrap the standard MetaClass with the delegate
@@ -55,6 +55,23 @@ public class Node implements Serializable {
     private Map attributes;
 
     private Object value;
+
+    /**
+     * Creates a new Node with the same name, no parent, shallow
+     * cloned attributes and if the value is a NodeList, a (deep) clone
+     * of those nodes.
+     *
+     * @return the clone
+     */
+    @Override
+    public Object clone() {
+        Object newValue = value;
+        if (value != null && value instanceof NodeList) {
+            NodeList nodes = (NodeList) value;
+            newValue = nodes.clone();
+        }
+        return new Node(null, name, new HashMap(attributes), newValue);
+    }
 
     /**
      * Creates a new Node named <code>name</code> and if a parent is supplied, adds
