@@ -284,4 +284,22 @@ p() {
         assert html.getClass() == CustomNode
         assert html.name() == new Integer(42)
     }
+
+    void testCloning() {
+        def xml = '<root><foo bar="baz"><inner/></foo></root>'
+        def parser = new XmlParser()
+        def root = parser.parseText(xml)
+        def foo = root.foo[0]
+
+        def foo2 = foo.clone()
+        foo2.@bar = 'zab'
+        foo2.inner[0].value = 'text'
+        root.append(foo2)
+
+        def writer = new StringWriter()
+        def ip = new IndentPrinter(new PrintWriter(writer), '', false)
+        new XmlNodePrinter(ip).print(root)
+        def result = writer.toString()
+        assert result == '<root><foo bar="baz"><inner/></foo><foo bar="zab"><inner>text</inner></foo></root>'
+    }
 }
