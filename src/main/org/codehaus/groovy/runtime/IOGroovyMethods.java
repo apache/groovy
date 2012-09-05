@@ -19,6 +19,8 @@ import groovy.io.GroovyPrintWriter;
 import groovy.lang.Closure;
 import groovy.lang.StringWriterIOException;
 import groovy.lang.Writable;
+
+import org.codehaus.groovy.runtime.callsite.BooleanClosureWrapper;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 import java.io.*;
@@ -1401,8 +1403,9 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
         BufferedWriter bw = new BufferedWriter(writer);
         String line;
         try {
+            BooleanClosureWrapper bcw = new BooleanClosureWrapper(closure);
             while ((line = br.readLine()) != null) {
-                if (DefaultTypeTransformation.castToBoolean(closure.call(line))) {
+                if (bcw.call(line)) {
                     bw.write(line);
                     bw.newLine();
                 }
@@ -1441,8 +1444,9 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
             public Writer writeTo(Writer out) throws IOException {
                 BufferedWriter bw = new BufferedWriter(out);
                 String line;
+                BooleanClosureWrapper bcw = new BooleanClosureWrapper(closure);
                 while ((line = br.readLine()) != null) {
-                    if (DefaultTypeTransformation.castToBoolean(closure.call(line))) {
+                    if (bcw.call(line)) {
                         bw.write(line);
                         bw.newLine();
                     }

@@ -20,6 +20,8 @@ import groovy.lang.EmptyRange;
 import groovy.lang.GString;
 import groovy.lang.IntRange;
 import groovy.lang.Range;
+
+import org.codehaus.groovy.runtime.callsite.BooleanClosureWrapper;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 import java.io.BufferedWriter;
@@ -549,9 +551,10 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static CharSequence dropWhile(CharSequence self, Closure condition) {
         int num = 0;
+        BooleanClosureWrapper bcw = new BooleanClosureWrapper(condition);
         while (num < self.length()) {
             char value = self.charAt(num);
-            if (DefaultTypeTransformation.castToBoolean(condition.call(value))) {
+            if (bcw.call(value)) {
                 num += 1;
             } else {
                 break;
@@ -3311,9 +3314,10 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static CharSequence takeWhile(CharSequence self, Closure condition) {
         int num = 0;
+        BooleanClosureWrapper bcw = new BooleanClosureWrapper(condition);
         while (num < self.length()) {
             char value = self.charAt(num);
-            if (DefaultTypeTransformation.castToBoolean(condition.call(value))) {
+            if (bcw.call(value)) {
                 num += 1;
             } else {
                 break;
