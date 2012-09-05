@@ -28,6 +28,7 @@ import org.codehaus.groovy.classgen.Verifier;
 import org.codehaus.groovy.reflection.ClassInfo;
 import org.codehaus.groovy.reflection.MixinInMetaClass;
 import org.codehaus.groovy.reflection.ReflectionCache;
+import org.codehaus.groovy.runtime.callsite.BooleanClosureWrapper;
 import org.codehaus.groovy.runtime.dgmimpl.NumberNumberDiv;
 import org.codehaus.groovy.runtime.dgmimpl.NumberNumberMinus;
 import org.codehaus.groovy.runtime.dgmimpl.NumberNumberMultiply;
@@ -1446,8 +1447,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static boolean every(Object self, Closure closure) {
+        BooleanClosureWrapper bcw = new BooleanClosureWrapper(closure);
         for (Iterator iter = InvokerHelper.asIterator(self); iter.hasNext();) {
-            if (!DefaultTypeTransformation.castToBoolean(closure.call(iter.next()))) {
+            if (!bcw.call(iter.next())) {
                 return false;
             }
         }
@@ -1470,8 +1472,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.5.0
      */
     public static <K, V> boolean every(Map<K, V> self, Closure closure) {
-        for (Map.Entry entry : self.entrySet()) {
-            if (!DefaultTypeTransformation.castToBoolean(callClosureForMapEntry(closure, entry))) {
+        BooleanClosureWrapper bcw = new BooleanClosureWrapper(closure);
+        for (Map.Entry<K, V> entry : self.entrySet()) {
+            if (!bcw.callForMap(entry)) {
                 return false;
             }
         }
@@ -1507,10 +1510,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static boolean any(Object self, Closure closure) {
+        BooleanClosureWrapper bcw = new BooleanClosureWrapper(closure);
         for (Iterator iter = InvokerHelper.asIterator(self); iter.hasNext();) {
-            if (DefaultTypeTransformation.castToBoolean(closure.call(iter.next()))) {
-                return true;
-            }
+            if (bcw.call(iter.next())) return true;
         }
         return false;
     }
@@ -1532,8 +1534,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.5.0
      */
     public static <K, V> boolean any(Map<K, V> self, Closure<?> closure) {
+        BooleanClosureWrapper bcw = new BooleanClosureWrapper(closure);
         for (Map.Entry<K, V> entry : self.entrySet()) {
-            if (DefaultTypeTransformation.castToBoolean(callClosureForMapEntry(closure, entry))) {
+            if (bcw.callForMap(entry)) {
                 return true;
             }
         }
@@ -1747,8 +1750,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static Number count(Iterator self, Closure closure) {
         long answer = 0;
+        BooleanClosureWrapper bcw = new BooleanClosureWrapper(closure);
         while (self.hasNext()) {
-            if (DefaultTypeTransformation.castToBoolean(closure.call(self.next()))) {
+            if (bcw.call(self.next())) {
                 ++answer;
             }
         }
@@ -1804,8 +1808,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static Number count(Map self, Closure<?> closure) {
         long answer = 0;
+        BooleanClosureWrapper bcw = new BooleanClosureWrapper(closure);
         for (Object entry : self.entrySet()) {
-            if (DefaultTypeTransformation.castToBoolean(callClosureForMapEntry(closure, (Map.Entry) entry))) {
+            if (bcw.callForMap((Map.Entry)entry)) {
                 ++answer;
             }
         }
@@ -2766,9 +2771,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static Object find(Object self, Closure closure) {
+        BooleanClosureWrapper bcw = new BooleanClosureWrapper(closure);
         for (Iterator iter = InvokerHelper.asIterator(self); iter.hasNext();) {
             Object value = iter.next();
-            if (DefaultTypeTransformation.castToBoolean(closure.call(value))) {
+            if (bcw.call(value)) {
                 return value;
             }
         }
@@ -2839,8 +2845,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static <T> T find(Collection<T> self, Closure closure) {
+        BooleanClosureWrapper bcw = new BooleanClosureWrapper(closure);
         for (T value : self) {
-            if (DefaultTypeTransformation.castToBoolean(closure.call(value))) {
+            if (bcw.call(value)) {
                 return value;
             }
         }
@@ -2862,8 +2869,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 2.0
      */
     public static <T> T find(T[] self, Closure condition) {
+        BooleanClosureWrapper bcw = new BooleanClosureWrapper(condition);
         for (T element : self) {
-            if (DefaultTypeTransformation.castToBoolean(condition.call(element))) {
+            if (bcw.call(element)) {
                 return element;
             }
         }
@@ -3004,8 +3012,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static <K, V> Map.Entry<K, V> find(Map<K, V> self, Closure<?> closure) {
+        BooleanClosureWrapper bcw = new BooleanClosureWrapper(closure);
         for (Map.Entry<K, V> entry : self.entrySet()) {
-            if (DefaultTypeTransformation.castToBoolean(callClosureForMapEntry(closure, entry))) {
+            if (bcw.callForMap(entry)) {
                 return entry;
             }
         }
@@ -3160,12 +3169,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     private static <T> Collection<T> findAll(Closure closure, Collection<T> answer, Iterator<? extends T> iter) {
-            while (iter.hasNext()) {
-                T value = iter.next();
-                if (DefaultTypeTransformation.castToBoolean(closure.call(value))) {
-                    answer.add(value);
-                }
+        BooleanClosureWrapper bcw = new BooleanClosureWrapper(closure);
+        while (iter.hasNext()) {
+            T value = iter.next();
+            if (bcw.call(value)) {
+                answer.add(value);
             }
+        }
         return answer;
     }
 
@@ -3235,10 +3245,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static boolean retainAll(Collection self, Closure condition) {
         Iterator iter = InvokerHelper.asIterator(self);
+        BooleanClosureWrapper bcw = new BooleanClosureWrapper(condition);
         boolean result = false;
         while (iter.hasNext()) {
             Object value = iter.next();
-            if (!DefaultTypeTransformation.castToBoolean(condition.call(value))) {
+            if (!bcw.call(value)) {
                 iter.remove();
                 result = true;
             }
@@ -3261,10 +3272,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static boolean removeAll(Collection self, Closure condition) {
         Iterator iter = InvokerHelper.asIterator(self);
+        BooleanClosureWrapper bcw = new BooleanClosureWrapper(condition);
         boolean result = false;
         while (iter.hasNext()) {
             Object value = iter.next();
-            if (DefaultTypeTransformation.castToBoolean(condition.call(value))) {
+            if (bcw.call(value)) {
                 iter.remove();
                 result = true;
             }
@@ -3352,9 +3364,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     private static <T> Collection<Collection<T>> split(Closure closure, Collection<T> accept, Collection<T> reject, Iterator<T> iter) {
         List<Collection<T>> answer = new ArrayList<Collection<T>>();
+        BooleanClosureWrapper bcw = new BooleanClosureWrapper(closure);
         while (iter.hasNext()) {
             T value = iter.next();
-            if (DefaultTypeTransformation.castToBoolean(closure.call(value))) {
+            if (bcw.call(value)) {
                 accept.add(value);
             } else {
                 reject.add(value);
@@ -3480,8 +3493,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <K, V> Map<K, V> findAll(Map<K, V> self, Closure closure) {
         Map<K, V> answer = createSimilarMap(self);
+        BooleanClosureWrapper bcw = new BooleanClosureWrapper(closure);
         for (Map.Entry<K, V> entry : self.entrySet()) {
-            if (DefaultTypeTransformation.castToBoolean(callClosureForMapEntry(closure, entry))) {
+            if (bcw.callForMap(entry)) {
                 answer.put(entry.getKey(), entry.getValue());
             }
         }
@@ -6771,8 +6785,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <T> List<T> takeWhile(List<T> self, Closure condition) {
         int num = 0;
+        BooleanClosureWrapper bcw = new BooleanClosureWrapper(condition);
         for (T value : self) {
-            if (DefaultTypeTransformation.castToBoolean(condition.call(value))) {
+            if (bcw.call(value)) {
                 num += 1;
             } else {
                 break;
@@ -6828,8 +6843,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             return createSimilarMap(self);
         }
         Map<K, V> ret = createSimilarMap(self);
+        BooleanClosureWrapper bcw = new BooleanClosureWrapper(condition);
         for (Map.Entry<K, V> entry : self.entrySet()) {
-            if (!DefaultTypeTransformation.castToBoolean(callClosureForMapEntry(condition, entry))) break;
+            if (!bcw.callForMap(entry)) break;
             ret.put(entry.getKey(), entry.getValue());
         }
         return ret;
@@ -6854,9 +6870,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <T> T[] takeWhile(T[] self, Closure condition) {
         int num = 0;
+        BooleanClosureWrapper bcw = new BooleanClosureWrapper(condition);
         while (num < self.length) {
             T value = self[num];
-            if (DefaultTypeTransformation.castToBoolean(condition.call(value))) {
+            if (bcw.call(value)) {
                 num += 1;
             } else {
                 break;
@@ -6891,13 +6908,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     private static class TakeWhileIterator<E> implements Iterator<E> {
         private final Iterator<E> delegate;
-        private final Closure condition;
+        private final BooleanClosureWrapper condition;
         private boolean exhausted;
         private E next;
 
         private TakeWhileIterator(Iterator<E> delegate, Closure condition) {
             this.delegate = delegate;
-            this.condition = condition;
+            this.condition = new BooleanClosureWrapper(condition);
             advance();
         }
 
@@ -6921,7 +6938,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             exhausted = !delegate.hasNext();
             if (!exhausted) {
                 next = delegate.next();
-                if (!DefaultTypeTransformation.castToBoolean(condition.call(next))) {
+                if (!condition.call(next)) {
                     exhausted = true;
                     next = null;
                 }
@@ -6950,8 +6967,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <T> List<T> dropWhile(List<T> self, Closure<?> condition) {
         int num = 0;
+        BooleanClosureWrapper bcw = new BooleanClosureWrapper(condition);
         for (T value : self) {
-            if (DefaultTypeTransformation.castToBoolean(condition.call(value))) {
+            if (bcw.call(value)) {
                 num += 1;
             } else {
                 break;
@@ -7008,8 +7026,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         }
         Map<K, V> ret = createSimilarMap(self);
         boolean dropping = true;
+        BooleanClosureWrapper bcw = new BooleanClosureWrapper(condition);
         for (Map.Entry<K, V> entry : self.entrySet()) {
-            if (dropping && !DefaultTypeTransformation.castToBoolean(callClosureForMapEntry(condition, entry))) dropping = false;
+            if (dropping && !bcw.callForMap(entry)) dropping = false;
             if (!dropping) ret.put(entry.getKey(), entry.getValue());
         }
         return ret;
@@ -7036,8 +7055,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <T> T[] dropWhile(T[] self, Closure<?> condition) {
         int num = 0;
+        BooleanClosureWrapper bcw = new BooleanClosureWrapper(condition);
         while (num < self.length) {
-            if (DefaultTypeTransformation.castToBoolean(condition.call(self[num]))) {
+            if (bcw.call(self[num])) {
                 num += 1;
             } else {
                 break;
@@ -7106,9 +7126,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         }
 
         private void prepare() {
+            BooleanClosureWrapper bcw = new BooleanClosureWrapper(condition);
             while (delegate.hasNext()) {
                 E next = delegate.next();
-                if (!DefaultTypeTransformation.castToBoolean(condition.call(next))) {
+                if (!bcw.call(next)) {
                     buffer = next;
                     buffering = true;
                     break;
@@ -11601,12 +11622,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static int findIndexOf(Object self, int startIndex, Closure closure) {
         int result = -1;
         int i = 0;
+        BooleanClosureWrapper bcw = new BooleanClosureWrapper(closure);
         for (Iterator iter = InvokerHelper.asIterator(self); iter.hasNext(); i++) {
             Object value = iter.next();
             if (i < startIndex) {
                 continue;
             }
-            if (DefaultTypeTransformation.castToBoolean(closure.call(value))) {
+            if (bcw.call(value)) {
                 result = i;
                 break;
             }
@@ -11641,12 +11663,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static int findLastIndexOf(Object self, int startIndex, Closure closure) {
         int result = -1;
         int i = 0;
+        BooleanClosureWrapper bcw = new BooleanClosureWrapper(closure);
         for (Iterator iter = InvokerHelper.asIterator(self); iter.hasNext(); i++) {
             Object value = iter.next();
             if (i < startIndex) {
                 continue;
             }
-            if (DefaultTypeTransformation.castToBoolean(closure.call(value))) {
+            if (bcw.call(value)) {
                 result = i;
             }
         }
@@ -11681,12 +11704,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         List<Number> result = new ArrayList<Number>();
         long count = 0;
         long startCount = startIndex.longValue();
+        BooleanClosureWrapper bcw = new BooleanClosureWrapper(closure);
         for (Iterator iter = InvokerHelper.asIterator(self); iter.hasNext(); count++) {
             Object value = iter.next();
             if (count < startCount) {
                 continue;
             }
-            if (DefaultTypeTransformation.castToBoolean(closure.call(value))) {
+            if (bcw.call(value)) {
                 result.add(count);
             }
         }
