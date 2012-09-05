@@ -86,6 +86,21 @@ $Date$
         </condition>
     </target>
 
+    <target name="exceptionUtils" description="Generate the ExceptionUtils class" depends="-init">
+        <mkdir dir="${targetDirectory}/tools"/>
+        <javac
+                srcdir="config/ant/src"
+                destdir="${targetDirectory}/tools"
+                includeantruntime="false"
+                source="1.5" target="1.5" fork="true" classpathref="compilePath"/>
+        <java classpath="${targetDirectory}/tools"
+              classpathref="compilePath"
+              classname="org.codehaus.groovy.ExceptionUtilsGenerator">
+            <arg value="${mainClassesDirectory}/org/codehaus/groovy/runtime/ExceptionUtils.class"/>
+        </java>
+
+    </target>
+
     <target name="ensureGrammars" description="Ensure all the Antlr generated files are up to date.">
         <mkdir dir="${groovyParserDirectory}"/>
         <antlr target="${antlrDirectory}/groovy.g" outputdirectory="${groovyParserDirectory}">
@@ -155,7 +170,7 @@ $Date$
             description="Compile the Java and Groovy code in the main source.">
     </target>
 
-    <target name="stagedcompile" depends="-init,ensureGrammars,-jvm14BuildWarning" unless="uber">
+    <target name="stagedcompile" depends="-init,ensureGrammars,-jvm14BuildWarning,exceptionUtils" unless="uber">
         <mkdir dir="${mainClassesDirectory}"/>
         <mkdir dir="${toolsClassesDirectory}"/>
         <mkdir dir="${mainClassesDirectory}/META-INF"/>
