@@ -172,6 +172,8 @@ dependencies {
     compilerCompile("org.apache.ivy:ivy:2.2.0") {
         transitive = false
     }
+    compilerCompile files("$buildDir/classes/compiler")
+
     groovy files("$buildDir/classes/compiler")
     groovy "antlr:antlr:2.7.7"
     groovy "org.ow2.asm:asm:4.0"
