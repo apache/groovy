@@ -18,6 +18,7 @@ package org.codehaus.groovy.runtime.callsite;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.codehaus.groovy.runtime.ExceptionUtils;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 import groovy.lang.Closure;
@@ -59,7 +60,9 @@ public class BooleanClosureWrapper {
             ret = csa.array[1].call(ret, CallSiteArray.NOPARAM);
             return ((Boolean) ret).booleanValue();
         } catch (Throwable t) {
-            sun.misc.Unsafe.getUnsafe().throwException(t);
+            // ExceptionUtils is a bytecode generated helper class 
+            // to allow throwing checked exceptions
+            ExceptionUtils.sneakyThrow(t);
             return false;
         }
     }
