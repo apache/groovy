@@ -386,6 +386,8 @@ task ensureGrammars {
     }
 }
 
+apply from: 'gradle/utils.gradle'
+
 def isJava16() {
     System.properties['java.version'].contains('1.6')
 }
@@ -428,7 +430,7 @@ task compilerDgmConverter(type: JavaExec) {
 }
 
 compileCompilerJava {
-    dependsOn ensureGrammars
+    dependsOn ensureGrammars, exceptionUtils
     options.fork(memoryMaximumSize: javacMain_mx)
 }
 
