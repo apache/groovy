@@ -27,7 +27,9 @@ class Groovy5687Bug extends GroovyTestCase {
         SimpleDateFormat MILITARY_TIME_FORMAT = new SimpleDateFormat("HH:mm")
     }
 
-    class DateTimeUtils implements DateTimeFormatConstants {
+    interface DateTimeFormatConstants2 extends DateTimeFormatConstants {}
+
+    class DateTimeUtils implements DateTimeFormatConstants2 {
         static String convertMilitaryTimeToAmPm(String militaryTime) {
             Date date = MILITARY_TIME_FORMAT.parse(militaryTime)
             AM_PM_TIME_FORMAT.format(date).toLowerCase()

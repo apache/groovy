@@ -18,6 +18,10 @@ package org.codehaus.groovy.control;
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 /**
  * Verifier to check non-static access in static contexts
  *
@@ -134,13 +138,12 @@ public class StaticVerifier extends ClassCodeVisitorSupport {
         while (node != null) {
             FieldNode fn = node.getDeclaredField(fieldName);
             if (fn != null) return fn;
-            for (ClassNode in : node.getInterfaces()) {
-                ClassNode sn = in;
-                while (sn != null && !sn.equals(ClassHelper.OBJECT_TYPE)) {
-                    fn = sn.getDeclaredField(fieldName);
-                    if (fn != null) return fn;
-                    sn = sn.getSuperClass();
-                }
+            List<ClassNode> interfacesToCheck = new ArrayList<ClassNode>(Arrays.asList(node.getInterfaces()));
+            while (!interfacesToCheck.isEmpty()) {
+                ClassNode nextInterface = interfacesToCheck.remove(0);
+                fn = nextInterface.getDeclaredField(fieldName);
+                if (fn != null) return fn;
+                interfacesToCheck.addAll(Arrays.asList(nextInterface.getInterfaces()));
             }
             node = node.getSuperClass();
         }
