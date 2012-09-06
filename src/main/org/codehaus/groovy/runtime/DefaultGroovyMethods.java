@@ -27,6 +27,7 @@ import org.codehaus.groovy.reflection.ClassInfo;
 import org.codehaus.groovy.reflection.MixinInMetaClass;
 import org.codehaus.groovy.reflection.ReflectionCache;
 import org.codehaus.groovy.runtime.callsite.BooleanClosureWrapper;
+import org.codehaus.groovy.runtime.callsite.BooleanReturningMethodInvoker;
 import org.codehaus.groovy.runtime.dgmimpl.NumberNumberDiv;
 import org.codehaus.groovy.runtime.dgmimpl.NumberNumberMinus;
 import org.codehaus.groovy.runtime.dgmimpl.NumberNumberMultiply;
@@ -1545,8 +1546,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.5.0
      */
     public static boolean every(Object self) {
+        BooleanReturningMethodInvoker bmi = new BooleanReturningMethodInvoker();
         for (Iterator iter = InvokerHelper.asIterator(self); iter.hasNext();) {
-            if (!DefaultTypeTransformation.castToBoolean(iter.next())) {
+            if (!bmi.convertToBoolean(iter.next())) {
                 return false;
             }
         }
@@ -1606,8 +1608,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.5.0
      */
     public static boolean any(Object self) {
+        BooleanReturningMethodInvoker bmi = new BooleanReturningMethodInvoker();
         for (Iterator iter = InvokerHelper.asIterator(self); iter.hasNext();) {
-            if (DefaultTypeTransformation.castToBoolean(iter.next())) {
+            if (bmi.convertToBoolean(iter.next())) {
                 return true;
             }
         }
@@ -1635,10 +1638,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static Collection grep(Object self, Object filter) {
         Collection answer = createSimilarOrDefaultCollection(self);
-        MetaClass metaClass = InvokerHelper.getMetaClass(filter);
+        BooleanReturningMethodInvoker bmi = new BooleanReturningMethodInvoker("isCase");
         for (Iterator iter = InvokerHelper.asIterator(self); iter.hasNext();) {
             Object object = iter.next();
-            if (DefaultTypeTransformation.castToBoolean(metaClass.invokeMethod(filter, "isCase", object))) {
+            if (bmi.invoke(filter, object)) {
                 answer.add(object);
             }
         }
