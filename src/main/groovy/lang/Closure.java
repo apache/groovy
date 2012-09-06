@@ -20,6 +20,7 @@ import org.codehaus.groovy.reflection.stdclasses.CachedClosureClass;
 import org.codehaus.groovy.runtime.ComposedClosure;
 import org.codehaus.groovy.runtime.CurriedClosure;
 import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.runtime.callsite.BooleanClosureWrapper;
 import org.codehaus.groovy.runtime.memoize.LRUCache;
 import org.codehaus.groovy.runtime.memoize.Memoize;
 import org.codehaus.groovy.runtime.memoize.UnlimitedConcurrentCache;
@@ -218,6 +219,7 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
     protected Class[] parameterTypes;
     protected int maximumNumberOfParameters;
     private static final long serialVersionUID = 4368710879820278874L;
+    private BooleanClosureWrapper bcw;
 
     public Closure(Object owner, Object thisObject) {
         this.owner = owner;
@@ -391,7 +393,10 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
     }
 
     public boolean isCase(Object candidate){
-        return DefaultTypeTransformation.castToBoolean(call(candidate));
+        if (bcw==null) {
+            bcw = new BooleanClosureWrapper(this);
+        }
+        return bcw.call(candidate);
     }
 
     /**

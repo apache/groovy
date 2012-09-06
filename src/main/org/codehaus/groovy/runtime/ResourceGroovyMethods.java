@@ -23,6 +23,8 @@ import groovy.lang.Closure;
 import groovy.lang.MetaClass;
 import groovy.lang.Writable;
 import groovy.util.CharsetToolkit;
+
+import org.codehaus.groovy.runtime.callsite.BooleanReturningMethodInvoker;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 import java.io.*;
@@ -1260,11 +1262,12 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
         final File[] files = self.listFiles();
         // null check because of http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4803836
         if (files == null) return;
-        final MetaClass metaClass = InvokerHelper.getMetaClass(nameFilter);
+        BooleanReturningMethodInvoker bmi = new BooleanReturningMethodInvoker("isCase");
         for (final File currentFile : files) {
             if ((fileType != FileType.FILES && currentFile.isDirectory()) ||
-                    (fileType != FileType.DIRECTORIES && currentFile.isFile())) {
-                if (DefaultTypeTransformation.castToBoolean(metaClass.invokeMethod(nameFilter, "isCase", currentFile.getName())))
+                (fileType != FileType.DIRECTORIES && currentFile.isFile())) 
+            {
+                if (bmi.invoke(nameFilter, currentFile.getName()))
                     closure.call(currentFile);
             }
         }

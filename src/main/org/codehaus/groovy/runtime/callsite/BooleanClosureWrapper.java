@@ -18,7 +18,6 @@ package org.codehaus.groovy.runtime.callsite;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.codehaus.groovy.runtime.ExceptionUtils;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 import groovy.lang.Closure;
@@ -31,16 +30,18 @@ import groovy.lang.Closure;
  * in case of a Boolean we simply unbox. This logic is designed after the one present 
  * in {@link DefaultTypeTransformation#castToBoolean(Object)}. The purpose of 
  * this class is to avoid the slow "asBoolean" call in that method.
+ * {@link BooleanReturningMethodInvoker} is used for caching.
  * @author <a href="mailto:blackdrag@gmx.org">Jochen "blackdrag" Theodorou</a>
  *
  */
 public class BooleanClosureWrapper {
-    private final CallSiteArray csa = new CallSiteArray(BooleanClosureWrapper.class, new String[]{"call", "asBoolean"});
+    private final BooleanReturningMethodInvoker bmi;
     private final Closure wrapped;
     private final int numberOfArguments;
     
     public BooleanClosureWrapper(Closure wrapped) {
         this.wrapped = wrapped;
+        this.bmi = new BooleanReturningMethodInvoker("call");
         numberOfArguments = wrapped.getMaximumNumberOfParameters();
     }
 
@@ -48,23 +49,7 @@ public class BooleanClosureWrapper {
      * normal closure call
      */
     public boolean call(Object... args) {
-        try {
-            // make cached call to doCall:
-            Object ret = csa.array[0].call(wrapped, args);
-            // handle conversion to boolean
-            if (ret == null) return false;
-            if (ret instanceof Boolean) {
-                return ((Boolean) ret).booleanValue();
-            }
-            // it was not null and not boolean, so call asBoolean
-            ret = csa.array[1].call(ret, CallSiteArray.NOPARAM);
-            return ((Boolean) ret).booleanValue();
-        } catch (Throwable t) {
-            // ExceptionUtils is a bytecode generated helper class 
-            // to allow throwing checked exceptions
-            ExceptionUtils.sneakyThrow(t);
-            return false;
-        }
+        return bmi.invoke(wrapped, args);
     }
     
     /**
