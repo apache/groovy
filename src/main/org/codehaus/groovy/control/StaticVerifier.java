@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -117,7 +117,7 @@ public class StaticVerifier extends ClassCodeVisitorSupport {
         if (ve.isThisExpression() || ve.isSuperExpression()) return;
         Variable v = ve.getAccessedVariable();
         if (currentMethod != null && currentMethod.isStatic()) {
-            FieldNode fieldNode = currentMethod.getDeclaringClass().getField(ve.getName());
+            FieldNode fieldNode = getDeclaredOrInheritedField(currentMethod.getDeclaringClass(), ve.getName());
             if (fieldNode != null && fieldNode.isStatic()) return;
         }
         if (v != null && !(v instanceof DynamicVariable) && v.isInStaticContext()) return;
@@ -128,4 +128,23 @@ public class StaticVerifier extends ClassCodeVisitorSupport {
                 "You attempted to use a method '" + ve.getName() +
                 "' but left out brackets in a place not allowed by the grammar.", ve);
     }
+
+    private FieldNode getDeclaredOrInheritedField(ClassNode cn, String fieldName) {
+        ClassNode node = cn;
+        while (node != null) {
+            FieldNode fn = node.getDeclaredField(fieldName);
+            if (fn != null) return fn;
+            for (ClassNode in : node.getInterfaces()) {
+                ClassNode sn = in;
+                while (sn != null && !sn.equals(ClassHelper.OBJECT_TYPE)) {
+                    fn = sn.getDeclaredField(fieldName);
+                    if (fn != null) return fn;
+                    sn = sn.getSuperClass();
+                }
+            }
+            node = node.getSuperClass();
+        }
+        return null;
+    }
+
 }
