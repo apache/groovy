@@ -17,16 +17,20 @@ package groovy.bugs
 
 import java.text.SimpleDateFormat
 
-interface DateTimeFormatConstants {
-    SimpleDateFormat AM_PM_TIME_FORMAT = new SimpleDateFormat("h:mma")
-    SimpleDateFormat MILITARY_TIME_FORMAT = new SimpleDateFormat("HH:mm")
-}
+class Groovy5687Bug extends GroovyTestCase {
+    void testStaticAccessToInterfaceConstant() {
+        assert DateTimeUtils.convertMilitaryTimeToAmPm('20:30') == '8:30pm'
+    }
 
-class DateTimeUtils implements DateTimeFormatConstants {
-    static String convertMilitaryTimeToAmPm(String militaryTime) {
-        Date date = MILITARY_TIME_FORMAT.parse(militaryTime)
-        AM_PM_TIME_FORMAT.format(date).toLowerCase()
-   }
-}
+    interface DateTimeFormatConstants {
+        SimpleDateFormat AM_PM_TIME_FORMAT = new SimpleDateFormat("h:mma")
+        SimpleDateFormat MILITARY_TIME_FORMAT = new SimpleDateFormat("HH:mm")
+    }
 
-assert DateTimeUtils.convertMilitaryTimeToAmPm('20:30') == '8:30pm'
+    class DateTimeUtils implements DateTimeFormatConstants {
+        static String convertMilitaryTimeToAmPm(String militaryTime) {
+            Date date = MILITARY_TIME_FORMAT.parse(militaryTime)
+            AM_PM_TIME_FORMAT.format(date).toLowerCase()
+        }
+    }
+}
