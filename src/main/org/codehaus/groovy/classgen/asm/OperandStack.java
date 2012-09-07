@@ -308,7 +308,9 @@ public class OperandStack {
     private void doConvertAndCast(ClassNode targetType, boolean coerce) {
         int size = stack.size();
         try {
-            if (size==0) throw new ArrayIndexOutOfBoundsException("size==0");
+            if (size==0) {
+                throw new ArrayIndexOutOfBoundsException("size==0");
+            }
         } catch (ArrayIndexOutOfBoundsException ai) {
             throw ai;
         }

@@ -231,7 +231,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         node.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, node);
         // mark all methods as visited. We can't do this in visitMethod because the type checker
         // works in a two pass sequence and we don't want to skip the second pass
-        for (MethodNode methodNode : node.getAllDeclaredMethods()) {
+        for (MethodNode methodNode : node.getMethods()) {
             methodNode.putNodeMetaData(StaticTypeCheckingVisitor.class, Boolean.TRUE);
         }
         for (ConstructorNode constructorNode : node.getDeclaredConstructors()) {
@@ -1619,8 +1619,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
      */
     private void silentlyVisitMethodNode(final MethodNode directMethodCallCandidate) {
         // visit is authorized because the classnode belongs to the same source unit
-        //TODO: add method to ErrorCollector to get a CompilerConfiguration from it instead of simply using a new one with maybe wrong settings
-        ErrorCollector collector = new ErrorCollector(new CompilerConfiguration());
+        ErrorCollector collector = new ErrorCollector(errorCollector.getConfiguration());
         startMethodInference(directMethodCallCandidate, collector);
     }
 
