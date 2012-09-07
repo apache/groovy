@@ -2917,13 +2917,55 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             // we cannot check generic type arguments if there are default parameters!
             return;
         }
+        Map<String, ClassNode> resolvedMethodGenerics = new HashMap<String, ClassNode>();
         ClassNode[] ptypes = new ClassNode[candidateMethod.getParameters().length];
+        final GenericsType[] methodNodeGenericsTypes = candidateMethod.getGenericsTypes();
+        final boolean shouldCheckMethodGenericTypes = methodNodeGenericsTypes!=null && methodNodeGenericsTypes.length>0;
         for (int i = 0; i < arguments.length; i++) {
             int pindex = Math.min(i, parameters.length - 1);
             ClassNode type = parameters[pindex].getType();
             type = fullyResolveType(type, classGTs);
             ptypes[pindex] = type;
             failure |= !typeCheckMethodArgumentWithGenerics(type, arguments[i], i >= parameters.length - 1);
+            if (shouldCheckMethodGenericTypes && !failure) {
+                // GROOVY-5692
+                // for example: public <T> foo(T arg0, List<T> arg1)
+                // we must check that T for arg0 and arg1 are the same
+                // so that if you call foo(String, List<Integer>) the compiler fails
+
+                // For that, we store the information for each argument, and for a new argument, we will
+                // check that is is the same as the previous one
+                GenericsType[] typeGenericsTypes = type.getGenericsTypes();
+                if (type.isUsingGenerics() && typeGenericsTypes !=null) {
+                    for (int gtIndex = 0, typeGenericsTypesLength = typeGenericsTypes.length; gtIndex < typeGenericsTypesLength; gtIndex++) {
+                        final GenericsType typeGenericsType = typeGenericsTypes[gtIndex];
+                        if (typeGenericsType.isPlaceholder()) {
+                            for (GenericsType methodNodeGenericsType : methodNodeGenericsTypes) {
+                                String placeholderName = methodNodeGenericsType.getName();
+                                if (methodNodeGenericsType.isPlaceholder() && placeholderName.equals(typeGenericsType.getName())) {
+                                    // match!
+                                    ClassNode parameterized = GenericsUtils.parameterizeType(arguments[i], type);
+                                    // retrieve the type of the generics placeholder we're looking for
+                                    // For example, if we have List<T> in the signature and List<String> as an argument
+                                    // we want to align T with String
+                                    // but first test is for Object<T> -> String which explains we don't use the generics types
+                                    ClassNode alignedType = parameterized;
+                                    if (parameterized.isUsingGenerics() && parameterized.getGenericsTypes()!=null) {
+                                        alignedType = parameterized.getGenericsTypes()[gtIndex].getType();
+                                    }
+                                    if (resolvedMethodGenerics.containsKey(placeholderName)) {
+                                        failure |= !resolvedMethodGenerics.get(placeholderName).equals(alignedType);
+                                    } else {
+                                        resolvedMethodGenerics.put(placeholderName, alignedType);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+
+            }
         }
         if (failure) {
             addStaticTypeError("Cannot call " + receiver.getName() + "#" +

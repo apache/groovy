@@ -159,6 +159,11 @@ public class GenericsUtils {
     public static ClassNode parameterizeType(final ClassNode hint, final ClassNode target) {
         ClassNode interfaceFromClassNode = null;
         if (hint.equals(target)) interfaceFromClassNode = hint;
+        if (ClassHelper.OBJECT_TYPE.equals(target) && target.isUsingGenerics() && target.getGenericsTypes()!=null
+                && target.getGenericsTypes()[0].isPlaceholder()) {
+            // Object<T>
+            return ClassHelper.getWrapper(hint);
+        }
         if (interfaceFromClassNode==null) {
             ClassNode[] interfaces = hint.getInterfaces();
             for (ClassNode node : interfaces) {
