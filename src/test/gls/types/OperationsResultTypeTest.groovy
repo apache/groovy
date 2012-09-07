@@ -14,4 +14,16 @@ public class OperationsResultTypeTest extends gls.CompilableTestSupport {
           }
       """
   }
+
+  void testDeclaredTypeIsKeptForSharedVariable() {
+    assertScript '''
+        float myFloat = 40f
+        myFloat -= 20f
+        assert myFloat.class == Float
+        println "$myFloat"
+        (0..1).each { i ->
+            assert myFloat.class == Float
+        }
+    '''
+  }
 }
