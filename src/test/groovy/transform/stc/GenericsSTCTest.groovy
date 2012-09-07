@@ -853,6 +853,23 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    void testIncompatibleGenericsForTwoArguments() {
+        shouldFailWithMessages '''
+            public <T> void printEqual(T arg1, T arg2) {
+                println arg1 == arg2
+            }
+            printEqual(1, 'foo')
+        ''', '#printEqual(java.lang.Object <T>, java.lang.Object <T>) with arguments [int, java.lang.String]'
+    }
+    void testIncompatibleGenericsForTwoArgumentsUsingEmbeddedPlaceholder() {
+        shouldFailWithMessages '''
+            public <T> void printEqual(T arg1, List<T> arg2) {
+                println arg1 == arg2
+            }
+            printEqual(1, ['foo'])
+        ''', '#printEqual(java.lang.Object <T>, java.util.List <T>) with arguments [int, java.util.List <java.lang.String>]'
+    }
+
     static class MyList extends LinkedList<String> {}
 
     public static class ClassA<T> {
