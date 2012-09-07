@@ -441,5 +441,24 @@ class BugsStaticCompileTest extends BugsSTCTest {
         new SampleClass()
         '''
     }
+
+    void testSubclassShouldNotThrowArrayIndexOutOfBoundsException() {
+        assertScript '''
+            // The error only shows up if the subclass is compiled *before* the superclass
+            class Subclass extends Z {
+                public Subclass(double x, double y, double z) {
+                    super(x,y,z)
+                }
+            }
+            class Z {
+               double x, y, z
+
+                public Z(double x, double y, double z) { this.x = x; this.y = y; this.z = z }
+
+                public Z negative() { return new Z(-x, -y, -z) }
+            }
+            new Subclass(0,0,0)
+        '''
+    }
 }
 
