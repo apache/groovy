@@ -669,6 +669,7 @@ public class OperandStack {
         ClassNode type = variable.getType();
         // value is on stack
         if (variable.isHolder()) {
+            doGroovyCast(type);
             box();
             mv.visitVarInsn(ALOAD, idx);
             mv.visitTypeInsn(CHECKCAST, "groovy/lang/Reference");
