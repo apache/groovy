@@ -73,7 +73,7 @@ dependencies {
     testCompile "org.slf4j:jcl-over-slf4j:1.6.0"
     testCompile "com.thoughtworks.qdox:qdox:1.12"
     testCompile "org.apache.ant:ant-testutil:1.8.3"
-    runtime "org.codehaus.gpars:gpars:0.12"
+    runtime "org.codehaus.gpars:gpars:1.0-beta-3"
 
     // todo this was provided
     compile "org.livetribe:livetribe-jsr223:2.0.6"
