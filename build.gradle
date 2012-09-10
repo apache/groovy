@@ -195,7 +195,7 @@ dependencies {
     compile("org.apache.ivy:ivy:2.2.0") {
         transitive = false
     }
-    runtime "org.codehaus.gpars:gpars:1.0-beta-2"
+    runtime "org.codehaus.gpars:gpars:1.0-beta-3"
     testCompile "jmock:jmock:1.2.0"
     testCompile "jmock:jmock-cglib:1.2.0"
     testCompile "xmlunit:xmlunit:1.3"
