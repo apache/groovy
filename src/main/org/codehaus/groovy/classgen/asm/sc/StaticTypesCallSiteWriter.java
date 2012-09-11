@@ -61,14 +61,6 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
     public void makeCallSite(final Expression receiver, final String message, final Expression arguments, final boolean safe, final boolean implicitThis, final boolean callCurrent, final boolean callStatic) {
     }
 
-/*
-    @Override
-    public void generateCallSiteArray() {
-        // todo
-        // GROOVY-5564: call site array may be skipped if the class is fully statically compiled
-    }
-*/
-
     @Override
     public void makeGetPropertySite(Expression receiver, final String methodName, final boolean safe, final boolean implicitThis) {
         TypeChooser typeChooser = controller.getTypeChooser();
@@ -94,21 +86,6 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
             receiverType = receiverType.getGenericsTypes()[0].getType();
         }
         MethodVisitor mv = controller.getMethodVisitor();
-
-        boolean isStaticProperty = receiver instanceof ClassExpression
-                && (receiverType.isDerivedFrom(receiver.getType()) || receiverType.implementsInterface(receiver.getType()));
-
-        if (!isStaticProperty) {
-            if (receiverType.implementsInterface(MAP_TYPE) || MAP_TYPE.equals(receiverType)) {
-                // for maps, replace map.foo with map.get('foo')
-                writeMapDotProperty(receiver, methodName, mv);
-                return;
-            }
-            if (receiverType.implementsInterface(LIST_TYPE) || LIST_TYPE.equals(receiverType)) {
-                writeListDotProperty(receiver, methodName, mv);
-                return;
-            }
-        }
 
         if (receiverType.isArray() && methodName.equals("length")) {
             receiver.visit(controller.getAcg());
@@ -196,6 +173,22 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
                 return;
             }
         }
+
+        boolean isStaticProperty = receiver instanceof ClassExpression
+                && (receiverType.isDerivedFrom(receiver.getType()) || receiverType.implementsInterface(receiver.getType()));
+
+        if (!isStaticProperty) {
+            if (receiverType.implementsInterface(MAP_TYPE) || MAP_TYPE.equals(receiverType)) {
+                // for maps, replace map.foo with map.get('foo')
+                writeMapDotProperty(receiver, methodName, mv);
+                return;
+            }
+            if (receiverType.implementsInterface(LIST_TYPE) || LIST_TYPE.equals(receiverType)) {
+                writeListDotProperty(receiver, methodName, mv);
+                return;
+            }
+        }
+
 
         controller.getSourceUnit().addError(
                 new SyntaxException("Access to "+

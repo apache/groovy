@@ -203,6 +203,21 @@ class MiscSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-5699
+    void testIntRangeInference() {
+        assertScript '''
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                assert node.getNodeMetaData(INFERRED_TYPE) == make(IntRange)
+            })
+            def range = 1..10
+
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                assert node.getNodeMetaData(INFERRED_TYPE) == int_TYPE
+            })
+            def from = range.fromInt
+        '''
+    }
+
     public static class MiscSTCTestSupport {
         static def foo() { '123' }
     }

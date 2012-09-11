@@ -20,7 +20,6 @@ import groovy.lang.IntRange;
 import groovy.lang.ObjectRange;
 import groovy.transform.TypeChecked;
 import groovy.transform.TypeCheckingMode;
-import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.stmt.*;
@@ -844,9 +843,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         boolean isAttributeExpression = pexp instanceof AttributeExpression;
         if (clazz.isInterface()) tests.add(OBJECT_TYPE);
         for (ClassNode testClass : tests) {
-            boolean isStaticProperty = pexp.getObjectExpression() instanceof ClassExpression && implementsInterfaceOrIsSubclassOf(testClass, pexp.getObjectExpression().getType());
-            // maps and lists have special handling for property expressions
-            if (isStaticProperty || (!implementsInterfaceOrIsSubclassOf(testClass, MAP_TYPE) && !implementsInterfaceOrIsSubclassOf(testClass, LIST_TYPE))) {
                 LinkedList<ClassNode> queue = new LinkedList<ClassNode>();
                 queue.add(testClass);
                 if (testClass.isInterface()) {
@@ -871,7 +867,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         MethodNode setterMethod = current.getSetterMethod("set" + capName);
                         if (setterMethod != null) {
                             if (visitor != null) visitor.visitMethod(getter);
-                            storeType(pexp, inferReturnTypeGenerics(current, getter, ArgumentListExpression.EMPTY_ARGUMENTS));
+                            ClassNode cn = inferReturnTypeGenerics(current, getter, ArgumentListExpression.EMPTY_ARGUMENTS);
+                            storeInferredTypeForPropertyExpression(pexp, cn);
                             return true;
                         }
                     }
@@ -879,6 +876,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         FieldNode field = current.getDeclaredField(propertyName);
                         if (field != null) {
                             if (visitor != null) visitor.visitField(field);
+                            storeInferredTypeForPropertyExpression(pexp, field.getOriginType());
                             storeType(pexp, field.getOriginType());
                             return true;
                         }
@@ -904,7 +902,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         if (getter != null) {
                             if (visitor != null) visitor.visitMethod(getter);
                             pexp.putNodeMetaData(StaticTypesMarker.READONLY_PROPERTY, Boolean.TRUE);
-                            storeType(pexp, inferReturnTypeGenerics(current, getter, ArgumentListExpression.EMPTY_ARGUMENTS));
+                            ClassNode cn = inferReturnTypeGenerics(current, getter, ArgumentListExpression.EMPTY_ARGUMENTS);
+                            storeInferredTypeForPropertyExpression(pexp, cn);
                             return true;
                         }
                         if (pluginFactory != null) {
@@ -913,7 +912,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                                 PropertyNode result = plugin.resolveProperty(current, propertyName);
                                 if (result != null) {
                                     if (visitor != null) visitor.visitProperty(result);
-                                    storeType(pexp, result.getType());
+                                    storeInferredTypeForPropertyExpression(pexp, result.getType());
                                     return true;
                                 }
                             }
@@ -934,11 +933,15 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         if (visitor != null) {
                             visitor.visitMethod(getter);
                         }
-                        storeType(pexp, inferReturnTypeGenerics(testClass, getter, ArgumentListExpression.EMPTY_ARGUMENTS));
+                        ClassNode cn = inferReturnTypeGenerics(testClass, getter, ArgumentListExpression.EMPTY_ARGUMENTS);
+                        storeInferredTypeForPropertyExpression(pexp, cn);
+
                         return true;
                     }
                 }
-            } else {
+        }
+        for (ClassNode testClass : tests) {
+            if (implementsInterfaceOrIsSubclassOf(testClass, MAP_TYPE) || implementsInterfaceOrIsSubclassOf(testClass, LIST_TYPE)) {
                 if (visitor != null) {
                     // todo : type inferrence on maps and lists, if possible
                     PropertyNode node = new PropertyNode(propertyName, Opcodes.ACC_PUBLIC, OBJECT_TYPE, clazz, null, null, null);
@@ -948,6 +951,18 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
         }
         return false;
+    }
+
+    private void storeInferredTypeForPropertyExpression(final PropertyExpression pexp, final ClassNode flatInferredType) {
+        if (pexp.isSpreadSafe()) {
+            ClassNode list = LIST_TYPE.getPlainNodeReference();
+            list.setGenericsTypes(new GenericsType[] {
+                    new GenericsType(flatInferredType)
+            });
+            storeType(pexp, list);
+        } else {
+            storeType(pexp, flatInferredType);
+        }
     }
 
     protected boolean hasSetter(final PropertyExpression pexp) {

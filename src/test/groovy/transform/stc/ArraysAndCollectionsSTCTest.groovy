@@ -166,8 +166,19 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
     void testListStarProperty() {
         assertScript '''
             List list = ['a','b','c']
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                def iType = node.getNodeMetaData(INFERRED_TYPE)
+                assert iType == make(List)
+                assert iType.isUsingGenerics()
+                assert iType.genericsTypes[0].type == CLASS_Type
+            })
             List classes = list*.class
             assert classes == [String,String,String]
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                assert node.getNodeMetaData(INFERRED_TYPE) == CLASS_Type
+            })
+            def listClass = list.class
+            assert listClass == ArrayList
         '''
     }
 
