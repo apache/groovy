@@ -66,12 +66,8 @@ class ArraysAndCollectionsStaticCompileTest extends ArraysAndCollectionsSTCTest 
     }
 
     @Override
-    void testArrayLengthOnMultidimensionalArray() {
-        try {
-            super.testArrayLengthOnMultidimensionalArray()
-        } finally {
-            println astTrees
-        }
+    void testListStarProperty() {
+        super.testListStarProperty()
     }
 }
 
