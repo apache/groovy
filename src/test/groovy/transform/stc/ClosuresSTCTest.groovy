@@ -235,5 +235,29 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-5693
+    void testClosureArgumentCheckWithFlowTyping() {
+        assertScript '''
+            Closure a = {
+                int i ->
+                println "First closure "+ i
+            }
+            Closure b = {
+                String s ->
+                println "Second closure "+ s
+            }
+            a(5)
+            Closure c = a
+            a=b
+            a("Testing!")
+            a = c
+            a(5)
+            a=a
+            a(5)
+            a = b
+            a('Testing!')
+        '''
+    }
+
 }
 
