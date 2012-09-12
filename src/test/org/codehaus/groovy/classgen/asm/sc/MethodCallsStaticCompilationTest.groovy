@@ -121,4 +121,19 @@ public class MethodCallsStaticCompilationTest extends MethodCallsSTCTest {
             assert 1+foo() == 2
         '''
     }
+
+    // GROOVY-5703
+    void testShouldNotConvertStringToStringArray() {
+        assertScript '''
+        int printMsgs(String ... msgs) {
+            int i = 0
+            for(String s : msgs) { i++ }
+
+            i
+        }
+        assert printMsgs('foo') == 1
+        assert printMsgs('foo','bar') == 2
+        '''
+    }
+
 }
