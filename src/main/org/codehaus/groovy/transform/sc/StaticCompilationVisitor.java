@@ -275,7 +275,7 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
         if (exists) {
             Expression objectExpression = pexp.getObjectExpression();
             ClassNode objectExpressionType = getType(objectExpression);
-            if (objectExpressionType.implementsInterface(ClassHelper.LIST_TYPE)) {
+            if (StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf(objectExpressionType, ClassHelper.LIST_TYPE)) {
                 objectExpression.putNodeMetaData(COMPONENT_TYPE, inferComponentType(objectExpressionType, ClassHelper.int_TYPE));
             }
         }

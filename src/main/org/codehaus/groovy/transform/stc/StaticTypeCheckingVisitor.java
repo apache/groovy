@@ -425,7 +425,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 // "completed" with generics type information available in the LHS
                 ClassNode completedType = GenericsUtils.parameterizeType(lType, resultType.getPlainNodeReference());
 
-//                addStaticTypeError("Unchecked assignment: " + WideningCategories.lowestUpperBound(lType, resultType).toString(false), expression);
                 resultType = completedType;
 
             }
@@ -437,11 +436,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 // left hand side of an assignment : map['foo'] = ...
                 ClassNode[] arguments = {rType, getType(oldBinaryExpression.getRightExpression())};
                 List<MethodNode> nodes = findMethod(lType.redirect(), "putAt", arguments);
-                /*if (nodes.isEmpty() && lType.implementsInterface(MAP_TYPE)) {
-                    nodes = findMethod(lType, "put", arguments);
-                } else if (nodes.isEmpty() && lType.implementsInterface(LIST_TYPE)) {
-                    nodes = findMethod(lType, "add", arguments);
-                }*/
                 if (nodes.size() == 1) {
                     typeCheckMethodsWithGenerics(lType, arguments, nodes.get(0), expression);
                 }
@@ -814,19 +808,19 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
      */
     protected boolean existsProperty(final PropertyExpression pexp, final boolean checkForReadOnly, final ClassCodeVisitorSupport visitor) {
         Expression objectExpression = pexp.getObjectExpression();
-        ClassNode clazz = getType(objectExpression);
-        if (clazz.isArray() && "length".equals(pexp.getPropertyAsString())) {
+        final ClassNode objectExpressionType = getType(objectExpression);
+        if (objectExpressionType.isArray() && "length".equals(pexp.getPropertyAsString())) {
             if (visitor != null) {
-                PropertyNode node = new PropertyNode("length", Opcodes.ACC_PUBLIC | Opcodes.ACC_FINAL, int_TYPE, clazz, null, null, null);
+                PropertyNode node = new PropertyNode("length", Opcodes.ACC_PUBLIC | Opcodes.ACC_FINAL, int_TYPE, objectExpressionType, null, null, null);
                 storeType(pexp, int_TYPE);
                 visitor.visitProperty(node);
             }
             return true;
         }
         List<ClassNode> tests = new LinkedList<ClassNode>();
-        tests.add(clazz);
-        if (clazz.equals(CLASS_Type) && clazz.getGenericsTypes() != null) {
-            tests.add(clazz.getGenericsTypes()[0].getType());
+        tests.add(objectExpressionType);
+        if (objectExpressionType.equals(CLASS_Type) && objectExpressionType.getGenericsTypes() != null) {
+            tests.add(objectExpressionType.getGenericsTypes()[0].getType());
         }
         if (!temporaryIfBranchTypeInformation.empty()) {
             List<ClassNode> classNodes = getTemporaryTypesForExpression(objectExpression);
@@ -841,7 +835,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (propertyName == null) return false;
         String capName = MetaClassHelper.capitalize(propertyName);
         boolean isAttributeExpression = pexp instanceof AttributeExpression;
-        if (clazz.isInterface()) tests.add(OBJECT_TYPE);
+        if (objectExpressionType.isInterface()) tests.add(OBJECT_TYPE);
         for (ClassNode testClass : tests) {
                 LinkedList<ClassNode> queue = new LinkedList<ClassNode>();
                 queue.add(testClass);
@@ -943,8 +937,30 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         for (ClassNode testClass : tests) {
             if (implementsInterfaceOrIsSubclassOf(testClass, MAP_TYPE) || implementsInterfaceOrIsSubclassOf(testClass, LIST_TYPE)) {
                 if (visitor != null) {
+                    ClassNode propertyType = OBJECT_TYPE;
+                    if (implementsInterfaceOrIsSubclassOf(objectExpressionType, MAP_TYPE)) {
+                        ClassNode intf = GenericsUtils.parameterizeType(objectExpressionType, MAP_TYPE.getPlainNodeReference());
+                        if (intf.isUsingGenerics() && intf.getGenericsTypes()!=null && intf.getGenericsTypes().length==2) {
+                            // should normally be the case
+                            propertyType = intf.getGenericsTypes()[1].getType(); // 0 is the key, 1 is the value
+                        }
+                    } else {
+                        // list type
+                        ClassNode intf = GenericsUtils.parameterizeType(objectExpressionType, LIST_TYPE.getPlainNodeReference());
+                        if (intf.isUsingGenerics() && intf.getGenericsTypes()!=null && intf.getGenericsTypes().length==1) {
+                            PropertyExpression subExp = new PropertyExpression(
+                                    new VariableExpression("{}", intf.getGenericsTypes()[0].getType()),
+                                    pexp.getPropertyAsString()
+                            );
+                            AtomicReference<ClassNode> result = new AtomicReference<ClassNode>();
+                            if (existsProperty(subExp, checkForReadOnly, new PropertyLookupVisitor(result))) {
+                                intf.setGenericsTypes(new GenericsType[] { new GenericsType(getWrapper(result.get()))});
+                                propertyType = intf;
+                            }
+                        }
+                    }
                     // todo : type inferrence on maps and lists, if possible
-                    PropertyNode node = new PropertyNode(propertyName, Opcodes.ACC_PUBLIC, OBJECT_TYPE, clazz, null, null, null);
+                    PropertyNode node = new PropertyNode(propertyName, Opcodes.ACC_PUBLIC, propertyType, objectExpressionType, null, null, null);
                     visitor.visitProperty(node);
                 }
                 return true;
