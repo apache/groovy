@@ -477,9 +477,20 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 storeType(leftExpression, resultType);
 
                 // if right expression is a ClosureExpression, store parameter type information
-                if (leftExpression instanceof VariableExpression && rightExpression instanceof ClosureExpression) {
-                    Parameter[] parameters = ((ClosureExpression) rightExpression).getParameters();
-                    leftExpression.putNodeMetaData(StaticTypesMarker.CLOSURE_ARGUMENTS, parameters);
+                if (leftExpression instanceof VariableExpression) {
+                    if (rightExpression instanceof ClosureExpression) {
+                        Parameter[] parameters = ((ClosureExpression) rightExpression).getParameters();
+                        leftExpression.putNodeMetaData(StaticTypesMarker.CLOSURE_ARGUMENTS, parameters);
+                    } else if (rightExpression instanceof VariableExpression &&
+                            ((VariableExpression)rightExpression).getAccessedVariable() instanceof Expression &&
+                            ((Expression)((VariableExpression)rightExpression).getAccessedVariable()).getNodeMetaData(StaticTypesMarker.CLOSURE_ARGUMENTS)!=null) {
+                        Variable targetVariable = findTargetVariable((VariableExpression)leftExpression);
+                        if (targetVariable instanceof ASTNode) {
+                            ((ASTNode)targetVariable).putNodeMetaData(
+                                StaticTypesMarker.CLOSURE_ARGUMENTS,
+                                ((Expression)((VariableExpression)rightExpression).getAccessedVariable()).getNodeMetaData(StaticTypesMarker.CLOSURE_ARGUMENTS));
+                        }
+                    }
                 }
 
 
