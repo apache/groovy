@@ -965,6 +965,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                             );
                             AtomicReference<ClassNode> result = new AtomicReference<ClassNode>();
                             if (existsProperty(subExp, checkForReadOnly, new PropertyLookupVisitor(result))) {
+                                intf = LIST_TYPE.getPlainNodeReference();
                                 intf.setGenericsTypes(new GenericsType[] { new GenericsType(getWrapper(result.get()))});
                                 propertyType = intf;
                             }
