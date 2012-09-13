@@ -803,6 +803,26 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-5702
+    void testShouldFindInterfaceMethod() {
+        assertScript '''
+
+            interface OtherCloseable {
+                void close()
+            }
+
+            abstract class MyCloseableChannel implements OtherCloseable {  }
+
+            class Test {
+                static void test(MyCloseableChannel mc) {
+                    mc?.close()
+                }
+            }
+
+            Test.test(null)
+        '''
+    }
+
     static class MyMethodCallTestClass {
 
         static int mul(int... args) { args.toList().inject(1) { x,y -> x*y } }
