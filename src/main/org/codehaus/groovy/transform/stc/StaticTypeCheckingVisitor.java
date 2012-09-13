@@ -2392,7 +2392,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         } else {
             methods = receiver.getMethods(name);
             if (receiver.isInterface()) {
-                methods = collectAllInterfaceMethodsByName(receiver, name, methods);
+                collectAllInterfaceMethodsByName(receiver, name, methods);
                 methods.addAll(OBJECT_TYPE.getMethods(name));
             }
             if (closureExpression == null) {
@@ -2460,7 +2460,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (methods.isEmpty()) {
             // look at the interfaces, there's a chance that a method is not implemented and we should not hide the
             // error from the compiler
-            methods = collectAllInterfaceMethodsByName(receiver, name, methods);
+            collectAllInterfaceMethodsByName(receiver, name, methods);
         }
 
         List<MethodNode> chosen = chooseBestMethod(receiver, methods, args);
@@ -2499,16 +2499,15 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         return EMPTY_METHODNODE_LIST;
     }
 
-    private List<MethodNode> collectAllInterfaceMethodsByName(final ClassNode receiver, final String name, List<MethodNode> methods) {
+    private void collectAllInterfaceMethodsByName(final ClassNode receiver, final String name, final List<MethodNode> methods) {
         ClassNode[] interfaces = receiver.getInterfaces();
         if (interfaces != null && interfaces.length > 0) {
-            methods = new ArrayList<MethodNode>(methods);
             for (ClassNode node : interfaces) {
                 List<MethodNode> intfMethods = node.getMethods(name);
                 methods.addAll(intfMethods);
+                collectAllInterfaceMethodsByName(node, name, methods);
             }
         }
-        return methods;
     }
 
     protected ClassNode getType(ASTNode exp) {
