@@ -41,6 +41,8 @@ import org.objectweb.asm.Handle;
 
 import static org.objectweb.asm.Opcodes.*;
 import static org.codehaus.groovy.classgen.asm.BytecodeHelper.*;
+import static org.codehaus.groovy.vmplugin.v7.IndyInterface.*;
+import static org.codehaus.groovy.vmplugin.v7.IndyInterface.CALL_TYPES.*;
 
 /**
  * This Writer is used to generate the call invocation byte codes
@@ -54,45 +56,16 @@ public class InvokeDynamicWriter extends InvocationWriter {
     private static final String INDY_INTERFACE_NAME = IndyInterface.class.getName().replace('.', '/');
     private static final String BSM_METHOD_TYPE_DESCRIPTOR = 
         MethodType.methodType(
-                CallSite.class, Lookup.class, String.class, MethodType.class
+                CallSite.class, Lookup.class, String.class, MethodType.class,
+                String.class, int.class
         ).toMethodDescriptorString();
-    
-    private static final String PROPERTY_BSM_METHOD_TYPE_DESCRIPTOR = 
-            MethodType.methodType(
-                    CallSite.class, Lookup.class, String.class, MethodType.class, int.class
-                    ).toMethodDescriptorString();    
-    private static final Handle GET_PROPERTY_BSM = 
-            new Handle(
-                    H_INVOKESTATIC,
-                    INDY_INTERFACE_NAME,
-                    "bootstrapGetProperty",
-                    PROPERTY_BSM_METHOD_TYPE_DESCRIPTOR);
-    
     private static final Handle BSM = 
         new Handle(
                 H_INVOKESTATIC,
                 INDY_INTERFACE_NAME,
                 "bootstrap",
                 BSM_METHOD_TYPE_DESCRIPTOR);
-    private static final Handle BSM_SAFE = 
-        new Handle(
-                H_INVOKESTATIC,
-                INDY_INTERFACE_NAME,
-                "bootstrapSafe",
-                BSM_METHOD_TYPE_DESCRIPTOR);
-    private static final Handle BSM_CURRENT = 
-        new Handle(
-                H_INVOKESTATIC,
-                INDY_INTERFACE_NAME,
-                "bootstrapCurrent",
-                BSM_METHOD_TYPE_DESCRIPTOR);
-    private static final Handle BSM_CURRENT_SAFE = 
-        new Handle(
-                H_INVOKESTATIC,
-                INDY_INTERFACE_NAME,
-                "bootstrapCurrentSafe",
-                BSM_METHOD_TYPE_DESCRIPTOR);
-    
+
     private WriterController controller;
 
     public InvokeDynamicWriter(WriterController wc) {
@@ -130,7 +103,7 @@ public class InvokeDynamicWriter extends InvocationWriter {
         AsmClassGenerator acg = controller.getAcg();
         
         // fixed number of arguments && name is a real String and no GString
-        if ((adapter == invokeMethod || adapter == invokeMethodOnCurrent || adapter == invokeStaticMethod) && !spreadSafe) {
+        if ((adapter == null || adapter == invokeMethod || adapter == invokeMethodOnCurrent || adapter == invokeStaticMethod) && !spreadSafe) {
             String methodName = getMethodName(message);
             
             if (methodName != null) {
@@ -236,19 +209,17 @@ public class InvokeDynamicWriter extends InvocationWriter {
             numberOfArguments++;
         }
         sig += ")Ljava/lang/Object;";
-        
-        Handle bsmHandle = getBsmHandle(adapter, safe);
-        finishIndyCall(bsmHandle, methodName, sig, numberOfArguments);
+        String callSiteName = METHOD.getCallSiteName();
+        if (adapter==null) callSiteName = INIT.getCallSiteName();
+        int flags = getMethodCallFlags(adapter, safe);
+        finishIndyCall(BSM, callSiteName, sig, numberOfArguments, methodName, flags);
     }
     
-    private Handle getBsmHandle(MethodCallerMultiAdapter adapter, boolean safe) {
-        if (adapter==invokeMethodOnCurrent) {
-            if (safe) return BSM_CURRENT_SAFE;
-            return BSM_CURRENT;
-        } else {
-            if (safe) return BSM_SAFE;
-            return BSM;
-        }
+    private int getMethodCallFlags(MethodCallerMultiAdapter adapter, boolean safe) {
+        int ret = 0;
+        if (safe)                           ret |= SAFE_NAVIGATION;
+        if (adapter==invokeMethodOnCurrent) ret |= THIS_CALL;
+        return ret;
     }
 
     @Override
@@ -256,25 +227,25 @@ public class InvokeDynamicWriter extends InvocationWriter {
         makeIndyCall(null, receiver, false, false, message, arguments);
     }
 
-    private int getPropertyHandleIndex(boolean safe, boolean implicitThis, boolean groovyObject) {
-        int index = 0;
-        if (implicitThis)   index += 1;
-        if (groovyObject)   index += 2;
-        if (safe)           index += 4;
-        return index;
+    private int getPropertyFlags(boolean safe, boolean implicitThis, boolean groovyObject) {
+        int flags = 0;
+        if (implicitThis)   flags |= IMPLICIT_THIS;
+        if (groovyObject)   flags |= GROOVY_OBJECT;
+        if (safe)           flags |= SAFE_NAVIGATION;
+        return flags;
     }
 
     protected void writeGetProperty(Expression receiver, String propertyName, boolean safe, boolean implicitThis, boolean groovyObject) {
         String sig = prepareIndyCall(receiver, implicitThis);
         sig += ")Ljava/lang/Object;";
-        int index = getPropertyHandleIndex(safe,implicitThis,groovyObject);
-        finishIndyCall(GET_PROPERTY_BSM, propertyName, sig, 1, index);
+        int flags = getPropertyFlags(safe,implicitThis,groovyObject);
+        finishIndyCall(BSM, GET.getCallSiteName(), sig, 1, propertyName, flags);
     }
     
     @Override
     public void writeInvokeConstructor(ConstructorCallExpression call) {
         if (writeAICCall(call)) return;
-        makeCall(call, new ClassExpression(call.getType()), new ConstantExpression("<init>"), call.getArguments(), invokeMethod, false, false, false);
+        makeCall(call, new ClassExpression(call.getType()), new ConstantExpression("<init>"), call.getArguments(), null, false, false, false);
     }
     
 }

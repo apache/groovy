@@ -21,6 +21,7 @@ import groovy.lang.GroovyRuntimeException;
 import groovy.lang.GroovySystem;
 import groovy.lang.MetaClass;
 import groovy.lang.MetaClassImpl;
+import groovy.lang.MetaClassImpl.MetaConstructor;
 import groovy.lang.MetaClassRegistryChangeEvent;
 import groovy.lang.MetaClassRegistryChangeEventListener;
 import groovy.lang.MetaMethod;
@@ -30,8 +31,11 @@ import groovy.lang.MissingMethodException;
 import java.lang.invoke.*;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.reflect.Array;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -53,6 +57,22 @@ import org.codehaus.groovy.runtime.wrappers.Wrapper;
  * @author <a href="mailto:blackdrag@gmx.org">Jochen "blackdrag" Theodorou</a>
  */
 public class IndyInterface {
+        /**
+         * flags for method and property calls
+         */
+        public static final int 
+            SAFE_NAVIGATION = 0x1,  THIS_CALL = 0x2, 
+            GROOVY_OBJECT = 0x4,    IMPLICIT_THIS = 0x8; 
+
+        public static enum CALL_TYPES {
+            METHOD("invoke"), INIT("init"), GET("getProperty"), SET("setProperty");
+            private final String name;
+            private CALL_TYPES(String callSiteName) {
+                this.name = callSiteName;
+            }
+            public String getCallSiteName(){ return name; }
+        }
+        
         private final static Logger LOG;
         private final static boolean LOG_ENABLED;
         static {
@@ -78,7 +98,7 @@ public class IndyInterface {
         private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
         private static final MethodHandle SELECT_METHOD;
         static {
-            MethodType mt = MethodType.methodType(Object.class, MutableCallSite.class, Class.class, String.class, Boolean.class, Boolean.class, Object.class, Object[].class);
+            MethodType mt = MethodType.methodType(Object.class, MutableCallSite.class, Class.class, String.class, int.class, Boolean.class, Boolean.class, Object.class, Object[].class);
             try {
                 SELECT_METHOD = LOOKUP.findStatic(IndyInterface.class, "selectMethod", mt);
             } catch (Exception e) {
@@ -90,22 +110,21 @@ public class IndyInterface {
         private static final MethodType O2O = MethodType.methodType(Object.class, Object.class);
         private static final MethodHandle   
             UNWRAP_METHOD,  SAME_MC,            IS_NULL,
-            IS_NOT_NULL,    UNWRAP_EXCEPTION,   SAME_CLASS,
+            UNWRAP_EXCEPTION,   SAME_CLASS,
             META_METHOD_INVOKER,    GROOVY_OBJECT_INVOKER,
             HAS_CATEGORY_IN_CURRENT_THREAD_GUARD,
-            NEGATE_BOOL;
+            BEAN_CONSTRUCOTOR_PROPERTY_SETTER;
         static {
             try {
                 UNWRAP_METHOD = LOOKUP.findStatic(IndyInterface.class, "unwrap", O2O);
                 SAME_MC = LOOKUP.findStatic(IndyInterface.class, "isSameMetaClass", MethodType.methodType(boolean.class, MetaClass.class, Object.class));
                 IS_NULL = LOOKUP.findStatic(IndyInterface.class, "isNull", MethodType.methodType(boolean.class, Object.class));
-                IS_NOT_NULL = LOOKUP.findStatic(IndyInterface.class, "isNotNull", MethodType.methodType(boolean.class, Object.class));
                 UNWRAP_EXCEPTION = LOOKUP.findStatic(IndyInterface.class, "unwrap", MethodType.methodType(Object.class, GroovyRuntimeException.class));
                 SAME_CLASS = LOOKUP.findStatic(IndyInterface.class, "sameClass", MethodType.methodType(boolean.class, Class.class, Object.class));
                 META_METHOD_INVOKER = LOOKUP.findVirtual(MetaMethod.class, "invoke", GENERAL_INVOKER_SIGNATURE);
                 GROOVY_OBJECT_INVOKER = LOOKUP.findStatic(IndyInterface.class, "invokeGroovyObjectInvoker", MethodType.methodType(Object.class, MissingMethodException.class, Object.class, String.class, Object[].class));
                 HAS_CATEGORY_IN_CURRENT_THREAD_GUARD = LOOKUP.findStatic(GroovyCategorySupport.class, "hasCategoryInCurrentThread", MethodType.methodType(boolean.class));
-                NEGATE_BOOL = LOOKUP.findStatic(IndyInterface.class, "negateBool", MethodType.methodType(boolean.class,boolean.class));
+                BEAN_CONSTRUCOTOR_PROPERTY_SETTER = LOOKUP.findStatic(IndyInterface.class, "setBeanProperties", MethodType.methodType(Object.class, MetaClass.class, Object.class, Map.class));
             } catch (Exception e) {
                 throw new GroovyBugError(e);
             }
@@ -133,40 +152,80 @@ public class IndyInterface {
         // the entry points from bytecode
         
         /**
-         * bootstrap method for method calls with "this" as receiver
+         * bootstrap method for method calls from Groovy compiled code with indy 
+         * enabled. This method gets a flags parameter which uses the following 
+         * encoding:<ul>
+         * <li>{@value #SAFE_NAVIGATION} is the flag value for safe navigation see {@link #SAFE_NAVIGATION}<li/>
+         * <li>{@value #THIS_CALL} is the flag value for a call on this see {@link #THIS_CALL}</li>
+         * </ul> 
+         * @param caller - the caller
+         * @param callType - the type of the call
+         * @param type - the call site type
+         * @param name - the real method name
+         * @param flags - call flags
+         * @return the produced CallSite
+         * @since Groovy 2.1.0
          */
-        public static CallSite bootstrapCurrent(Lookup caller, String name, MethodType type) {
-            return realBootstrap(caller, name, type, false, true);
+        public static CallSite bootstrap(Lookup caller, String callType, MethodType type, String name, int flags) {
+            boolean safe = (flags&0x1)!=0;
+            boolean thisCall = (flags&0x2)!=0;
+            int callID;
+            if (callType.equals(CALL_TYPES.METHOD.getCallSiteName())) {
+                callID = CALL_TYPES.METHOD.ordinal();
+            } else if (callType.equals(CALL_TYPES.INIT.getCallSiteName())) {
+                callID = CALL_TYPES.INIT.ordinal();
+            } else if (callType.equals(CALL_TYPES.GET.getCallSiteName())) {
+                callID = CALL_TYPES.GET.ordinal();
+            } else if (callType.equals(CALL_TYPES.SET.getCallSiteName())) {
+                callID = CALL_TYPES.SET.ordinal();
+            } else {
+                throw new GroovyBugError("Unknown call type: "+callType);
+            }
+            return realBootstrap(caller, name, callID, type, safe, thisCall);
         }
         
+        /**
+         * bootstrap method for method calls with "this" as receiver
+         * @deprecated since Groovy 2.1.0
+         */
+        public static CallSite bootstrapCurrent(Lookup caller, String name, MethodType type) {
+            return realBootstrap(caller, name, CALL_TYPES.METHOD.ordinal(), type, false, true);
+        }
+
+        /**
+         * bootstrap method for method calls with "this" as receiver safe
+         * @deprecated since Groovy 2.1.0
+         */
         public static CallSite bootstrapCurrentSafe(Lookup caller, String name, MethodType type) {
-            return realBootstrap(caller, name, type, true, true);
+            return realBootstrap(caller, name, CALL_TYPES.METHOD.ordinal(), type, true, true);
         }
         
         /**
          * bootstrap method for standard method calls
+         * @deprecated since Groovy 2.1.0
          */
         public static CallSite bootstrap(Lookup caller, String name, MethodType type) {
-            return realBootstrap(caller, name, type, false, false);
+            return realBootstrap(caller, name, CALL_TYPES.METHOD.ordinal(), type, false, false);
         }
         
         /**
          * bootstrap method for null safe standard method calls
+         * @deprecated since Groovy 2.1.0
          */
         public static CallSite bootstrapSafe(Lookup caller, String name, MethodType type) {
-            return realBootstrap(caller, name, type, true, false);
+            return realBootstrap(caller, name, CALL_TYPES.METHOD.ordinal(), type, true, false);
         }
         
         /**
          * backing bootstrap method with all parameters
          */
-        private static CallSite realBootstrap(Lookup caller, String name, MethodType type, boolean safe, boolean thisCall) {
+        private static CallSite realBootstrap(Lookup caller, String name, int callID, MethodType type, boolean safe, boolean thisCall) {
             // since indy does not give us the runtime types
             // we produce first a dummy call site, which then changes the target to one,
             // that does the method selection including the the direct call to the 
             // real method.
             MutableCallSite mc = new MutableCallSite(type);
-            MethodHandle mh = makeFallBack(mc,caller.lookupClass(),name,type,safe,thisCall);
+            MethodHandle mh = makeFallBack(mc,caller.lookupClass(),name,callID,type,safe,thisCall);
             mc.setTarget(mh);
             return mc;
         }
@@ -174,8 +233,8 @@ public class IndyInterface {
         /**
          * Makes a fallback method for an invalidated method selection
          */
-        private static MethodHandle makeFallBack(MutableCallSite mc, Class<?> sender, String name, MethodType type, boolean safeNavigation, boolean thisCall) {
-            MethodHandle mh = MethodHandles.insertArguments(SELECT_METHOD, 0, mc, sender, name, safeNavigation, thisCall, /*dummy receiver:*/ 1);
+        private static MethodHandle makeFallBack(MutableCallSite mc, Class<?> sender, String name, int callID, MethodType type, boolean safeNavigation, boolean thisCall) {
+            MethodHandle mh = MethodHandles.insertArguments(SELECT_METHOD, 0, mc, sender, name, callID, safeNavigation, thisCall, /*dummy receiver:*/ 1);
             mh =    mh.asCollector(Object[].class, type.parameterCount()).
                     asType(type);
             return mh;
@@ -184,11 +243,14 @@ public class IndyInterface {
         /**
          * Gives the meta class to an Object.
          */
-        private static MetaClass getMetaClass(Object receiver) {
+        private static MetaClass getMetaClass(CallInfo ci) {
+            Object receiver = ci.args[0];
             if (receiver == null) {
                 return NullObject.getNullObject().getMetaClass();
             } else if (receiver instanceof GroovyObject) {
-                return ((GroovyObject) receiver).getMetaClass(); 
+                return ((GroovyObject) receiver).getMetaClass();
+            } else if (ci.callID == CALL_TYPES.INIT.ordinal()) {
+                return GroovySystem.getMetaClassRegistry().getMetaClass((Class) receiver);
             } else {
                 return ((MetaClassRegistryImpl) GroovySystem.getMetaClassRegistry()).getMetaClass(receiver);
             }
@@ -237,10 +299,21 @@ public class IndyInterface {
                 try {
                     Method m = cm.getCachedMethod();
                     info.handle = LOOKUP.unreflect(m);
-                    if (LOG_ENABLED) LOG.info("successfully unreflected");
+                    if (LOG_ENABLED) LOG.info("successfully unreflected method");
                     if (!isCategoryTypeMethod && isStatic(m)) {
                         info.handle = MethodHandles.dropArguments(info.handle, 0, Class.class);
                     }
+                } catch (IllegalAccessException e) {
+                    throw new GroovyBugError(e);
+                }
+            } else if (metaMethod instanceof MetaConstructor) {
+                if (LOG_ENABLED) LOG.info("meta method is MetaConstructor instance");
+                MetaConstructor mc = (MetaConstructor) metaMethod;
+                info.isVargs = mc.isVargsMethod();
+                Constructor con = mc.getCachedConstrcutor().cachedConstructor;
+                try {
+                    info.handle = LOOKUP.unreflectConstructor(con);
+                    if (LOG_ENABLED) LOG.info("successfully unreflected constructor");
                 } catch (IllegalAccessException e) {
                     throw new GroovyBugError(e);
                 }
@@ -297,7 +370,18 @@ public class IndyInterface {
                 receiver = NullObject.getNullObject();
             } 
             
-            if (receiver instanceof Class) {
+            if (ci.callID==CALL_TYPES.INIT.ordinal()) {
+                if (LOG_ENABLED) LOG.info("getting constructor");
+                Object[] args = removeRealReceiver(ci.args);
+                ci.method = mci.retrieveConstructor(args);
+                if (ci.method instanceof MetaConstructor) {
+                    MetaConstructor mcon = (MetaConstructor) ci.method;
+                    if (mcon.isBeanConstructor()) {
+                        if (LOG_ENABLED) LOG.info("do beans constructor");
+                        ci.beanConstructor = true;
+                    }
+                }
+            } else if (receiver instanceof Class) {
                 if (LOG_ENABLED) LOG.info("receiver is a class");
                 ci.method = mci.retrieveStaticMethod(ci.name, removeRealReceiver(ci.args));
             } else {
@@ -351,6 +435,21 @@ public class IndyInterface {
             }
             
            
+        }
+        
+        /**
+         * This method is called by he handle to realize the bean constructor
+         * with property map.
+         */
+        public static Object setBeanProperties(MetaClass mc, Object bean, Map properties) {
+            for (Iterator iter = properties.entrySet().iterator(); iter.hasNext();) {
+                Map.Entry entry = (Map.Entry) iter.next();
+                String key = entry.getKey().toString();
+
+                Object value = entry.getValue();
+                mc.setProperty(bean, key, value);
+            }
+            return bean;
         }
 
         /**
@@ -467,6 +566,8 @@ public class IndyInterface {
          */
         private static void correctCoerce(CallInfo ci) {
             if (ci.useMetaClass) return;
+            if (ci.beanConstructor) return;
+            
             Class[] parameters = ci.handle.type().parameterArray();
             if (ci.currentType!=null) parameters = ci.currentType.parameterArray();
             if (ci.args.length != parameters.length) {
@@ -532,7 +633,7 @@ public class IndyInterface {
         private static void setGuards(CallInfo ci, Object receiver) {
             if (ci.handle==null) return;
             
-            MethodHandle fallback = makeFallBack(ci.callSite, ci.sender, ci.name, ci.targetType, ci.safeNavigationOrig, ci.thisCall);
+            MethodHandle fallback = makeFallBack(ci.callSite, ci.sender, ci.name, ci.callID, ci.targetType, ci.safeNavigationOrig, ci.thisCall);
             
             // special guards for receiver
             if (receiver instanceof GroovyObject) {
@@ -588,16 +689,33 @@ public class IndyInterface {
                 ci.handle = MethodHandles.guardWithTest(test, ci.handle, fallback);
             }
         }
-        
+
+        private static void correctConstructor(MetaClass mc, CallInfo info) {
+            if (info.handle==null) return;
+            if (info.callID == CALL_TYPES.INIT.ordinal()) {
+                if (info.beanConstructor) {
+                    // we have handle that takes no arguments to create the bean, 
+                    // we have to use its return value to call #setBeanProperties with it
+                    // and the meta class.
+
+                    // to do this we first bind the values to #setBeanProperties
+                    MethodHandle handle = BEAN_CONSTRUCOTOR_PROPERTY_SETTER.bindTo(mc);
+                    info.handle = MethodHandles.foldArguments(handle, info.handle.asType(MethodType.methodType(Object.class)));
+                }
+                info.handle = MethodHandles.dropArguments(info.handle, 0, Class.class);
+            }
+        }
+
         /**
          * Handles cases in which we have to correct the length of arguments
          * using the parameters. This might be needed for vargs and for one 
          * parameter calls without arguments (null is used then).  
          */
         private static void correctParameterLength(CallInfo info) {
-            Class[] params = info.handle.type().parameterArray();
-            
             if (info.handle==null) return;
+            if (info.beanConstructor) return;
+            
+            Class[] params = info.handle.type().parameterArray();
             if (!info.isVargs) {
                 if (params.length != info.args.length) {
                   //TODO: add null argument
@@ -680,9 +798,10 @@ public class IndyInterface {
         /**
          * Core method for indy method selection using runtime types.
          */
-        public static Object selectMethod(MutableCallSite callSite, Class sender, String methodName, Boolean safeNavigation, Boolean thisCall, Object dummyReceiver, Object[] arguments) throws Throwable {
+        public static Object selectMethod(MutableCallSite callSite, Class sender, String methodName, int callID, Boolean safeNavigation, Boolean thisCall, Object dummyReceiver, Object[] arguments) throws Throwable {
             //TODO: handle GroovyInterceptable 
             CallInfo callInfo = new CallInfo();
+            callInfo.callID = callID;
             callInfo.targetType = callSite.type();
             callInfo.name = methodName;
             callInfo.args = arguments;
@@ -708,11 +827,12 @@ public class IndyInterface {
 
             if (!setNullForSafeNavigation(callInfo)) {
                 //            setInterceptableHandle(callInfo);
-                MetaClass mc = getMetaClass(callInfo.args[0]);
+                MetaClass mc = getMetaClass(callInfo);
                 if (LOG_ENABLED) LOG.info("meta class is "+mc);
                 setMethodSelectionBase(callInfo, mc);
                 chooseMethod(mc, callInfo);
                 setHandleForMetaMethod(callInfo);
+                correctConstructor(mc, callInfo);
                 setMetaClassCallHandleIfNedded(mc, callInfo);
                 correctWrapping(callInfo);
                 correctParameterLength(callInfo);

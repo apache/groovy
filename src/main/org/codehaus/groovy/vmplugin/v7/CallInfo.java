@@ -41,4 +41,6 @@ public class CallInfo {
     public boolean thisCall;
     public Class selector;
     public boolean catchException = true;
+    public int callID;
+    public boolean beanConstructor;
 }
