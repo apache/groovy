@@ -259,5 +259,22 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-5705
+    void testNPEWhenCallingClosureFromAField() {
+        assertScript '''
+            import groovy.transform.*
+
+            class Test {
+                Closure c = { it }
+
+                @TypeChecked
+                void test() {
+                    c("123")
+                }
+            }
+
+            new Test().test()
+        '''
+    }
 }
 
