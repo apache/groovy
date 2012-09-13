@@ -1757,13 +1757,16 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 if (objectExpression == VariableExpression.THIS_EXPRESSION) {
                     // isClosureCall() check verified earlier that a field exists
                     FieldNode field = classNode.getDeclaredField(name);
-                    ClassNode closureReturnType = field.getType().getGenericsTypes()[0].getType();
-                    Object data = field.getNodeMetaData(StaticTypesMarker.CLOSURE_ARGUMENTS);
-                    if (data != null) {
-                        Parameter[] parameters = (Parameter[]) data;
-                        typeCheckClosureCall(callArguments, args, parameters);
+                    GenericsType[] genericsTypes = field.getType().getGenericsTypes();
+                    if (genericsTypes != null) {
+                        ClassNode closureReturnType = genericsTypes[0].getType();
+                        Object data = field.getNodeMetaData(StaticTypesMarker.CLOSURE_ARGUMENTS);
+                        if (data != null) {
+                            Parameter[] parameters = (Parameter[]) data;
+                            typeCheckClosureCall(callArguments, args, parameters);
+                        }
+                        storeType(call, closureReturnType);
                     }
-                    storeType(call, closureReturnType);
                 } else if (objectExpression instanceof VariableExpression) {
                     Variable variable = findTargetVariable((VariableExpression) objectExpression);
                     if (variable instanceof Expression) {
