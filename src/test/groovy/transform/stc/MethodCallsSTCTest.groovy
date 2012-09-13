@@ -822,6 +822,16 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
             Test.test(null)
         '''
     }
+    void testShouldFindInheritedInterfaceMethod() {
+        assertScript '''
+            interface Top { void close() }
+            interface Middle extends Top {}
+            interface Bottom extends Middle {}
+            void foo(Bottom obj) {
+               obj.close()
+            }
+        '''
+    }
 
     static class MyMethodCallTestClass {
 
