@@ -259,5 +259,49 @@ class ConstructorsSTCTest extends StaticTypeCheckingTestCase {
         assert bean.age == 33
         '''
     }
+
+    // GROOVY-5698
+    void testMapConstructorWithInterface() {
+        assertScript '''class CustomServletOutputStream extends OutputStream {
+                OutputStream out
+
+                void write(int i) {
+                    out.write(i)
+                }
+
+                void write(byte[] bytes) {
+                    out.write(bytes)
+                }
+
+                void write(byte[] bytes, int offset, int length) {
+                    out.write(bytes, offset, length)
+                }
+
+                void flush() {
+                    out.flush()
+                }
+
+                void close() {
+                    out.close()
+                }
+            }
+
+            class Test {
+                static void test() {
+                    def csos = new CustomServletOutputStream(out: new ByteArrayOutputStream())
+                }
+            }
+            Test.test()
+        '''
+    }
+
+    void testMapConstructorShouldFail() {
+        shouldFailWithMessages '''
+            class Foo {
+                ByteArrayOutputStream out
+            }
+            void m(OutputStream o) { new Foo(out:o) }
+        ''', 'Cannot assign value of type java.io.OutputStream to variable of type java.io.ByteArrayOutputStream'
+    }
 }
 

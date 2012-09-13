@@ -733,7 +733,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                             " for class: " + receiverType.getName(), receiver);
                 } else {
                     ClassNode valueType = getType(entryExpression.getValueExpression());
-                    if (!isAssignableTo(lookup.get(), valueType)) {
+                    if (!isAssignableTo(valueType, lookup.get())) {
                         addAssignmentError(lookup.get(), valueType, entryExpression);
                     }
                 }
