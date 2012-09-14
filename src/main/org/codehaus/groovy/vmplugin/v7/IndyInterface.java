@@ -26,6 +26,7 @@ import groovy.lang.MetaClassRegistryChangeEvent;
 import groovy.lang.MetaClassRegistryChangeEventListener;
 import groovy.lang.MetaMethod;
 import groovy.lang.MetaObjectProtocol;
+import groovy.lang.MetaProperty;
 import groovy.lang.MissingMethodException;
 
 import java.lang.invoke.*;
@@ -46,6 +47,7 @@ import org.codehaus.groovy.runtime.NullObject;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 import org.codehaus.groovy.runtime.dgmimpl.NumberNumberMetaMethod;
 import org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl;
+import org.codehaus.groovy.runtime.metaclass.MethodMetaProperty;
 import org.codehaus.groovy.runtime.metaclass.MissingMethodExecutionFailed;
 import org.codehaus.groovy.runtime.metaclass.NewInstanceMetaMethod;
 import org.codehaus.groovy.runtime.metaclass.ReflectionMetaMethod;
@@ -353,41 +355,14 @@ public class IndyInterface {
         
         /**
          * Uses the meta class to get a meta method.
-         * There will be no meta method selected, if the meta class is no MetaClassImpl
-         * or the meta class is an AdaptingMetaClass.
          */
-        private static void chooseMethod(MetaClass mc, CallInfo ci) {
-            if (!(mc instanceof MetaClassImpl) || mc instanceof AdaptingMetaClass) {
-            	if (LOG_ENABLED) LOG.info("meta class is neither MetaClassImpl nor AdoptingMetaClass, normal method selection path disabled.");
-                return;
-            }
-            if (LOG_ENABLED) LOG.info("meta class is a MetaClassImpl");
-            
-            MetaClassImpl mci = (MetaClassImpl) mc;
-            Object receiver = ci.args[0];
-            if (receiver==null) {
-                if (LOG_ENABLED) LOG.info("receiver is null");
-                receiver = NullObject.getNullObject();
-            } 
-            
-            if (ci.callID==CALL_TYPES.INIT.ordinal()) {
-                if (LOG_ENABLED) LOG.info("getting constructor");
-                Object[] args = removeRealReceiver(ci.args);
-                ci.method = mci.retrieveConstructor(args);
-                if (ci.method instanceof MetaConstructor) {
-                    MetaConstructor mcon = (MetaConstructor) ci.method;
-                    if (mcon.isBeanConstructor()) {
-                        if (LOG_ENABLED) LOG.info("do beans constructor");
-                        ci.beanConstructor = true;
-                    }
-                }
-            } else if (receiver instanceof Class) {
+        private static void chooseMethod(Object receiver, MetaClassImpl mci, CallInfo ci) {
+            if (receiver instanceof Class) {
                 if (LOG_ENABLED) LOG.info("receiver is a class");
                 ci.method = mci.retrieveStaticMethod(ci.name, removeRealReceiver(ci.args));
             } else {
                 ci.method = mci.getMethodWithCaching(ci.selector, ci.name, removeRealReceiver(ci.args), false);
             }
-            if (LOG_ENABLED) LOG.info("retrieved method from meta class: "+ci.method);
         }
         
         /**
@@ -814,6 +789,7 @@ public class IndyInterface {
                 String msg =
                     "----------------------------------------------------"+
                     "\n\t\tinvocation of method '"+methodName+"'"+
+                    "\n\t\tinvocation type: "+CALL_TYPES.values()[callID]+
                     "\n\t\tsender: "+sender+
                     "\n\t\ttargetType: "+callInfo.targetType+
                     "\n\t\tsafe navigation: "+safeNavigation+
@@ -830,7 +806,7 @@ public class IndyInterface {
                 MetaClass mc = getMetaClass(callInfo);
                 if (LOG_ENABLED) LOG.info("meta class is "+mc);
                 setMethodSelectionBase(callInfo, mc);
-                chooseMethod(mc, callInfo);
+                chooseMethodOrProperty(mc, callInfo);
                 setHandleForMetaMethod(callInfo);
                 correctConstructor(mc, callInfo);
                 setMetaClassCallHandleIfNedded(mc, callInfo);
@@ -851,7 +827,81 @@ public class IndyInterface {
             call = call.asType(MethodType.methodType(Object.class,Object[].class));
             return call.invokeExact(callInfo.args);
         }
-        
+
+        /**
+         * Uses the meta class to get a meta method for a method call, 
+         * constructor invocation, property set or property get.
+         * There will be no meta method selected, if the meta class is no MetaClassImpl
+         * or the meta class is an AdaptingMetaClass.
+         */
+        private static void chooseMethodOrProperty(MetaClass mc, CallInfo callInfo) {
+            int callID = callInfo.callID;
+            if (!(mc instanceof MetaClassImpl) || mc instanceof AdaptingMetaClass) {
+                if (LOG_ENABLED) LOG.info("meta class is neither MetaClassImpl nor AdoptingMetaClass, normal method selection path disabled.");
+                return;
+            }
+            if (LOG_ENABLED) LOG.info("meta class is a MetaClassImpl");
+            
+            MetaClassImpl mci = (MetaClassImpl) mc;
+            Object receiver = callInfo.args[0];
+            if (receiver==null) {
+                if (LOG_ENABLED) LOG.info("receiver is null");
+                receiver = NullObject.getNullObject();
+            }
+            
+            if (callID == CALL_TYPES.INIT.ordinal()) {
+                chooseConstructor(mci, callInfo);
+            } else if (callID == CALL_TYPES.METHOD.ordinal()) {
+                chooseMethod(receiver, mci, callInfo);
+            } else {
+                chooseProperty(receiver, mci, callInfo);
+            }
+            if (LOG_ENABLED) LOG.info("retrieved method from meta class: "+callInfo.method);
+        }
+
+        /**
+         * this method chooses a property from the meta class.
+         */
+        private static void chooseProperty(Object receiver, MetaClassImpl mci, CallInfo callInfo) {
+            if (receiver instanceof GroovyObject) {
+                Class aClass = receiver.getClass();
+                Method method = null;
+                try {
+                    method = aClass.getMethod("getProperty", String.class);
+                    if (!method.isSynthetic()) {
+                        callInfo.method = new ReflectionMetaMethod(new CachedMethod(method));
+                    }
+                } catch (NoSuchMethodException e) {}
+
+            } 
+            
+            if (callInfo.method==null) {
+                MetaProperty res = mci.getEffectiveGetMetaProperty(mci.getTheClass(), receiver, callInfo.name, false);
+                if (res instanceof MethodMetaProperty) {
+                    MethodMetaProperty mmp = (MethodMetaProperty) res;
+                    callInfo.method = mmp.getMetaMethod();
+                } else {
+                    callInfo.property = res;
+                } 
+            }
+        }
+
+        /**
+         * this method chooses a constructor from the meta class
+         */
+        private static void chooseConstructor(MetaClassImpl mci, CallInfo ci) {
+            if (LOG_ENABLED) LOG.info("getting constructor");
+            Object[] args = removeRealReceiver(ci.args);
+            ci.method = mci.retrieveConstructor(args);
+            if (ci.method instanceof MetaConstructor) {
+                MetaConstructor mcon = (MetaConstructor) ci.method;
+                if (mcon.isBeanConstructor()) {
+                    if (LOG_ENABLED) LOG.info("do beans constructor");
+                    ci.beanConstructor = true;
+                }
+            }
+        }
+
         /**
          * Helper method to remove the receiver from the argument array
          * by producing a new array.

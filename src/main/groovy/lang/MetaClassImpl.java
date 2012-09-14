@@ -46,6 +46,8 @@ import org.codehaus.groovy.runtime.callsite.PojoMetaMethodSite;
 import org.codehaus.groovy.runtime.callsite.StaticMetaClassSite;
 import org.codehaus.groovy.runtime.callsite.StaticMetaMethodSite;
 import org.codehaus.groovy.runtime.metaclass.ClosureMetaMethod;
+import org.codehaus.groovy.runtime.metaclass.MethodMetaProperty.GetBeanMethodMetaProperty;
+import org.codehaus.groovy.runtime.metaclass.MethodMetaProperty.GetMethodMetaProperty;
 import org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl;
 import org.codehaus.groovy.runtime.metaclass.MetaMethodIndex;
 import org.codehaus.groovy.runtime.metaclass.MethodSelectionException;
@@ -140,7 +142,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     // we only need one of these that can be reused over and over.
     private final MetaProperty arrayLengthProperty = new MetaArrayLengthProperty();
     private static final MetaMethod AMBIGUOUS_LISTENER_METHOD = new DummyMetaMethod();
-    private static final Object[] EMPTY_ARGUMENTS = {};
+    public static final Object[] EMPTY_ARGUMENTS = {};
     private final Set<MetaMethod> newGroovyMethodsSet = new HashSet<MetaMethod>();
 
     private MetaMethod genericGetMethod;
@@ -3498,40 +3500,6 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
         public Object invoke(Object object, Object[] arguments) {
             return null;
-        }
-    }
-
-    private static class GetMethodMetaProperty extends MetaProperty {
-        private final MetaMethod theMethod;
-
-        public GetMethodMetaProperty(String name, MetaMethod theMethod) {
-            super(name, Object.class);
-            this.theMethod = theMethod;
-        }
-
-        public Object getProperty(Object object) {
-            return theMethod.doMethodInvoke(object, new Object[]{name});
-        }
-
-        public void setProperty(Object object, Object newValue) {
-            throw new UnsupportedOperationException();
-        }
-    }
-
-    private static class GetBeanMethodMetaProperty extends MetaProperty {
-        private final MetaMethod theMethod;
-
-        public GetBeanMethodMetaProperty(String name, MetaMethod theMethod) {
-            super(name, Object.class);
-            this.theMethod = theMethod;
-        }
-
-        public Object getProperty(Object object) {
-            return theMethod.doMethodInvoke(object, EMPTY_ARGUMENTS);
-        }
-
-        public void setProperty(Object object, Object newValue) {
-            throw new UnsupportedOperationException();
         }
     }
 }

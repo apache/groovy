@@ -16,6 +16,7 @@
 package org.codehaus.groovy.vmplugin.v7;
 
 import groovy.lang.MetaMethod;
+import groovy.lang.MetaProperty;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
@@ -43,4 +44,5 @@ public class CallInfo {
     public boolean catchException = true;
     public int callID;
     public boolean beanConstructor;
+    public MetaProperty property;
 }
