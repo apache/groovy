@@ -865,6 +865,15 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         storeType(pexp, propertyNode.getOriginType());
                         return true;
                     }
+                    if (objectExpression instanceof VariableExpression && ((VariableExpression)objectExpression).isThisExpression()) {
+                        FieldNode field = current.getDeclaredField(propertyName);
+                        if (field != null) {
+                            if (visitor != null) visitor.visitField(field);
+                            storeInferredTypeForPropertyExpression(pexp, field.getOriginType());
+                            storeType(pexp, field.getOriginType());
+                            return true;
+                        }
+                    }
                     MethodNode getter = current.getGetterMethod("get" + capName);
                     if (getter == null) getter = current.getGetterMethod("is" + capName);
                     if (getter != null) {
