@@ -341,6 +341,32 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    void testTypeCheckerDoesNotThinkPropertyIsReadOnly() {
+        assertScript '''
+            // a base class defining a read-only property
+            class Top {
+                private String foo = 'foo'
+                String getFoo() { foo }
+                String getFooFromTop() { foo }
+            }
+
+            // a subclass defining it's own field
+            class Bottom extends Top {
+                private String foo
+
+                Bottom(String msg) {
+                    this.foo = msg
+                }
+
+                public String getFoo() { this.foo }
+            }
+
+            def b = new Bottom('bar')
+            assert b.foo == 'bar'
+            assert b.fooFromTop == 'foo'
+        '''
+    }
+
     public static class BaseClass {
         int x
     }
