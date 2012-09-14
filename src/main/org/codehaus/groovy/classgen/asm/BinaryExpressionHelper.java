@@ -262,7 +262,9 @@ public class BinaryExpressionHelper {
         // -> (x, [], 5), =, 10
         // -> methodCall(x, "putAt", [5, 10])
         ArgumentListExpression ae = new ArgumentListExpression(index,rhsValueLoader);
-        controller.getCallSiteWriter().makeCallSite(receiver, "putAt", ae, false, false, false, false);
+        controller.getInvocationWriter().makeCall(
+                parent, receiver, new ConstantExpression("putAt"),
+                ae, InvocationWriter.invokeMethod, false, false, false);
         controller.getOperandStack().pop();
         // return value of assignment
         rhsValueLoader.visit(controller.getAcg());
