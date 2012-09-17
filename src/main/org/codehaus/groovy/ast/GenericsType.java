@@ -76,27 +76,47 @@ public class GenericsType extends ASTNode {
     }
 
     private String genericsBounds(ClassNode theType, Set<String> visited) {
-        String ret = theType.isArray()?theType.getComponentType().getName()+"[]":theType.getName();
+
+        StringBuilder ret = new StringBuilder();
+
+        if (theType.isArray()) {
+            ret.append(theType.getComponentType().getName());
+            ret.append("[]");
+        } else if (theType.redirect() instanceof InnerClassNode) {
+            InnerClassNode innerClassNode = (InnerClassNode) theType.redirect();
+            String parentClassNodeName = innerClassNode.getOuterClass().getName();
+            ret.append(genericsBounds(innerClassNode.getOuterClass(), new HashSet<String>()));
+            ret.append(".");
+            String typeName = theType.getName();
+            ret.append(typeName.substring(parentClassNodeName.length() + 1));
+        } else {
+            ret.append(theType.getName());
+        }
+
         GenericsType[] genericsTypes = theType.getGenericsTypes();
-        if (genericsTypes == null || genericsTypes.length == 0) return ret;
+        if (genericsTypes == null || genericsTypes.length == 0)
+            return ret.toString();
+
         // TODO instead of catching Object<T> here stop it from being placed into type in first place
         if (genericsTypes.length == 1 && genericsTypes[0].isPlaceholder() && theType.getName().equals("java.lang.Object")) {
             return genericsTypes[0].getName();
         }
-        ret += "<";
+
+        ret.append("<");
         for (int i = 0; i < genericsTypes.length; i++) {
-            if (i != 0) ret += ", ";
+            if (i != 0) ret.append(", ");
 
             GenericsType type = genericsTypes[i];
             if (type.isPlaceholder() && visited.contains(type.getName())) {
-                ret += type.getName();
-        }
+                ret.append(type.getName());
+            }
             else {
-                ret += type.toString(visited);
+                ret.append(type.toString(visited));
             }
         }
-        ret += ">";
-        return ret;
+        ret.append(">");
+
+        return ret.toString();
     }
 
     public ClassNode[] getUpperBounds() {
