@@ -7,11 +7,6 @@ package org.codehaus.groovy.tools.stubgenerator
  */
 class DefaultValueReturnTypeShouldUseGenericsStubsTest extends StringSourcesStubTestCase  {
 
-    protected void setUp() {
-        super.setUp()
-        debug = true;
-    }
-
     Map<String, String> provideSources() {
         [
                 'GantBinding.groovy': '''
