@@ -8,12 +8,6 @@ package org.codehaus.groovy.tools.stubgenerator
  */
 class WrongCastForGenericReturnValueOfMethodStubsTest extends StringSourcesStubTestCase  {
 
-    @Override
-    protected void setUp() {
-        super.setUp()
-        debug = true
-    }
-
     Map<String, String> provideSources() {
         [
                 'HelperUtil.groovy': '''
