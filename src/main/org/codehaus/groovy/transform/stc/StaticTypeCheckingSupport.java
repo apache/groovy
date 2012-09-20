@@ -15,20 +15,27 @@
  */
 package org.codehaus.groovy.transform.stc;
 
+import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovySystem;
 import groovy.lang.MetaClassRegistry;
+import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
+import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.tools.GenericsUtils;
 import org.codehaus.groovy.ast.tools.WideningCategories;
+import org.codehaus.groovy.control.CompilationUnit;
+import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.DefaultGroovyStaticMethods;
 import org.codehaus.groovy.runtime.m12n.ExtensionModule;
 import org.codehaus.groovy.runtime.m12n.ExtensionModuleRegistry;
 import org.codehaus.groovy.runtime.m12n.MetaInfExtensionModule;
 import org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl;
+import org.codehaus.groovy.tools.GroovyClass;
 import org.objectweb.asm.Opcodes;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.regex.Matcher;
@@ -1290,5 +1297,37 @@ public abstract class StaticTypeCheckingSupport {
             }
         }
         return false;
+    }
+
+    /**
+     * A helper method that can be used to evaluate expressions as found in annotation
+     * parameters. For example, it will evaluate a constant, be it referenced directly as
+     * an integer or as a reference to a field.
+     *
+     * If this method throws an exception, then the expression cannot be evaluated on its own.
+     *
+     * @param expr the expression to be evaluated
+     * @return the result of the expression
+     */
+    public static Object evaluateExpression(Expression expr) {
+        String className = "Expression$" + UUID.randomUUID().toString().replace('-', '$');
+        ClassNode node = new ClassNode(className, Opcodes.ACC_PUBLIC, ClassHelper.OBJECT_TYPE);
+        ReturnStatement code = new ReturnStatement(expr);
+        node.addMethod(new MethodNode("eval", Opcodes.ACC_PUBLIC+Opcodes.ACC_STATIC, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, code));
+        CompilationUnit cu = new CompilationUnit();
+        cu.addClassNode(node);
+        cu.compile();
+        @SuppressWarnings("unchecked")
+        List<GroovyClass> classes = (List<GroovyClass>)cu.getClasses();
+        Class aClass = cu.getClassLoader().defineClass(className, classes.get(0).getBytes());
+        try {
+            return aClass.getMethod("eval").invoke(null);
+        } catch (IllegalAccessException e) {
+            throw new GroovyBugError(e);
+        } catch (InvocationTargetException e) {
+            throw new GroovyBugError(e);
+        } catch (NoSuchMethodException e) {
+            throw new GroovyBugError(e);
+        }
     }
 }

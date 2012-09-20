@@ -15,9 +15,7 @@
  */
 package org.codehaus.groovy.transform.stc;
 
-import groovy.lang.GroovyRuntimeException;
-import groovy.lang.IntRange;
-import groovy.lang.ObjectRange;
+import groovy.lang.*;
 import groovy.transform.TypeChecked;
 import groovy.transform.TypeCheckingMode;
 import org.codehaus.groovy.ast.*;
@@ -70,6 +68,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     private static final MethodNode GET_DELEGATE = CLOSURE_TYPE.getGetterMethod("getDelegate");
     private static final MethodNode GET_OWNER = CLOSURE_TYPE.getGetterMethod("getOwner");
     private static final MethodNode GET_THISOBJECT = CLOSURE_TYPE.getGetterMethod("getThisObject");
+    private static final ClassNode DELEGATES_TO = ClassHelper.make(DelegatesTo.class);
 
     public static final MethodNode CLOSURE_CALL_NO_ARG;
     public static final MethodNode CLOSURE_CALL_ONE_ARG;
@@ -1675,6 +1674,49 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         startMethodInference(directMethodCallCandidate, collector);
     }
 
+    private void visitMethodCallArguments(ArgumentListExpression arguments, boolean visitClosures, final MethodNode selectedMethod) {
+        Parameter[] params = selectedMethod!=null?selectedMethod.getParameters():Parameter.EMPTY_ARRAY;
+        final List<Expression> expressions = arguments.getExpressions();
+        for (int i = 0, expressionsSize = expressions.size(); i < expressionsSize; i++) {
+            final Expression expression = expressions.get(i);
+            if (visitClosures && expression instanceof ClosureExpression
+                    || !visitClosures && !(expression instanceof ClosureExpression)) {
+                if (i<params.length && visitClosures) {
+                    Parameter param = params[i];
+                    List<AnnotationNode> annotations = param.getAnnotations(DELEGATES_TO);
+                    if (annotations!=null) {
+                        for (AnnotationNode annotation : annotations) {
+                            // in theory, there can only be one annotation of that type
+                            Expression value = annotation.getMember("value");
+                            if (value instanceof ClassExpression) {
+                                Expression strategy = annotation.getMember("strategy");
+                                int stInt = Closure.OWNER_FIRST;
+                                if (strategy!=null) {
+                                    stInt = (Integer) evaluateExpression(new CastExpression(ClassHelper.Integer_TYPE,strategy));
+                                }
+                                switch (stInt) {
+                                    case Closure.OWNER_FIRST:
+                                        withReceiverList.add(value.getType());
+                                        break;
+                                    case Closure.DELEGATE_FIRST:
+                                        withReceiverList.add(0, value.getType());
+                                        break;
+                                    case Closure.OWNER_ONLY:
+                                        break;
+                                    case Closure.DELEGATE_ONLY:
+                                        withReceiverList.remove(0);
+                                        withReceiverList.add(value.getType());
+                                        break;
+                                }
+                            }
+                        }
+                    }
+                }
+                expression.visit(this);
+            }
+        }
+    }
+
     @Override
     public void visitMethodCallExpression(MethodCallExpression call) {
         final String name = call.getMethodAsString();
@@ -1723,12 +1765,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
         checkForbiddenSpreadArgument(argumentList);
 
+        // for arguments, we need to visit closures *after* the method has been chosen
+
+
         boolean isWithCall = isWithCall(name, callArguments);
 
-        if (!isWithCall) {
-            // if it is not a "with" call, arguments should be visited first
-            callArguments.visit(this);
-        }
+        visitMethodCallArguments(argumentList, false, null);
 
         ClassNode[] args = getArgumentTypes(argumentList);
         final boolean isCallOnClosure = isClosureCall(name, objectExpression, callArguments);
@@ -1755,12 +1797,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
 
         try {
-            if (isWithCall) {
-                // in case of a with call, arguments (the closure) should be visited now that we checked
-                // the arguments
-                callArguments.visit(this);
-            }
-
             if (isCallOnClosure) {
                 // this is a closure.call() call
                 if (objectExpression == VariableExpression.THIS_EXPRESSION) {
@@ -1934,6 +1970,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     }
                 }
             }
+            // now that a method has been chosen, we are allowed to visit the closures
+            visitMethodCallArguments(argumentList, true, (MethodNode)call.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET));
         } finally {
             if (isWithCall) {
                 lastImplicitItType = rememberLastItType;
