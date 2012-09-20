@@ -22,14 +22,14 @@ class Groovy5687Bug extends GroovyTestCase {
         assert DateTimeUtils.convertMilitaryTimeToAmPm('20:30') == '8:30pm'
     }
 
-    interface DateTimeFormatConstants {
+    static interface DateTimeFormatConstants {
         SimpleDateFormat AM_PM_TIME_FORMAT = new SimpleDateFormat("h:mma")
         SimpleDateFormat MILITARY_TIME_FORMAT = new SimpleDateFormat("HH:mm")
     }
 
-    interface DateTimeFormatConstants2 extends DateTimeFormatConstants {}
+    static interface DateTimeFormatConstants2 extends DateTimeFormatConstants {}
 
-    class DateTimeUtils implements DateTimeFormatConstants2 {
+    static class DateTimeUtils implements DateTimeFormatConstants2 {
         static String convertMilitaryTimeToAmPm(String militaryTime) {
             Date date = MILITARY_TIME_FORMAT.parse(militaryTime)
             AM_PM_TIME_FORMAT.format(date).toLowerCase()
