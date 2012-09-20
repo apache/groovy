@@ -92,6 +92,7 @@ class ImmutableTransformTest extends GroovyShellTestCase {
         }
     }
 
+
     void testImmutableFieldLegacy() {
         def person = evaluate("""
             // note: uses legacy groovy.lang.Immutable
@@ -103,6 +104,52 @@ class ImmutableTransformTest extends GroovyShellTestCase {
         shouldFail(ReadOnlyPropertyException) {
             person.married = true
         }
+    }
+
+    void testCloneableField() {
+        def (originalDolly, lab) = evaluate("""
+            import groovy.transform.Immutable
+
+            class Dolly implements Cloneable {
+                String name
+            }
+
+            @Immutable class Lab {
+                String name
+                Cloneable clone
+            }
+
+            def dolly = new Dolly(name: "The Sheep")
+            [dolly, new Lab(name: "Area 51", clone: dolly)]
+        """)
+
+        def clonedDolly = lab.clone
+
+        assert lab.name == 'Area 51'
+        assert !originalDolly.is(clonedDolly)
+        assert originalDolly.name == clonedDolly.name
+    }
+
+    void testCloneableFieldNotCloneableObject() {
+        def cls = shouldFail(CloneNotSupportedException) {
+            def objects = evaluate("""
+                import groovy.transform.Immutable
+
+                class Dolly {
+                    String name
+                }
+
+                @Immutable class Lab {
+                    String name
+                    Cloneable clone
+                }
+
+                def dolly = new Dolly(name: "The Sheep")
+                [dolly, new Lab(name: "Area 51", clone: dolly)]
+            """)
+        }
+
+        assert cls == 'Dolly'
     }
 
     void testImmutableCantAlsoBeMutable() {
