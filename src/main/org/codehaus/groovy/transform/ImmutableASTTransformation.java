@@ -311,7 +311,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
         FieldNode fNode = pNode.getField();
         final ClassNode fieldType = fNode.getType();
         Statement statement = null;
-        if (fieldType.isArray() || fieldType.implementsInterface(CLONEABLE_TYPE)) {
+        if (fieldType.isArray() || isOrImplements(fieldType, CLONEABLE_TYPE)) {
             statement = createConstructorStatementArrayOrCloneable(fNode);
         } else if (fieldType.isDerivedFrom(DATE_TYPE)) {
             statement = createConstructorStatementDate(fNode);
