@@ -92,10 +92,13 @@ class ImmutableTransformTest extends GroovyShellTestCase {
         """)
 
         def clonedDolly = lab.clone
+        def clonedDolly2 = lab.clone
 
         assert lab.name == 'Area 51'
         assert !originalDolly.is(clonedDolly)
         assert originalDolly.name == clonedDolly.name
+        assert !clonedDolly2.is(clonedDolly)
+        assert clonedDolly2.name == clonedDolly.name
     }
 
     void testCloneableFieldNotCloneableObject() {
