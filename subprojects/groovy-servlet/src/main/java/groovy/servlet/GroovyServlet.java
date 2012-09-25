@@ -137,7 +137,7 @@ public class GroovyServlet extends AbstractHttpServlet {
              * Null cause?!
              */
             if (e == null) {
-                error.append(" Script processing failed.");
+                error.append(" Script processing failed.\n");
                 error.append(runtimeException.getMessage());
                 if (runtimeException.getStackTrace().length > 0)
                     error.append(runtimeException.getStackTrace()[0].toString());
