@@ -37,6 +37,19 @@ class ExpandoMetaClassTest extends GroovyTestCase {
         reg.removeMetaClass(EMCT_SuperClass)
     }
 
+    void testClosureCallDoCall() {
+        ExpandoMetaClass.enableGlobally()
+        def cl = {assert it.class == Object[]}
+        Object[] item = [1]
+        try {
+            cl(item)
+        } finally {
+            ExpandoMetaClass.disableGlobally()
+            def reg = GroovySystem.metaClassRegistry
+            reg.removeMetaClass(cl.class)
+        }   
+    }
+
     void testMethodsAfterAddingNewMethod() {
         EMCT_Class.metaClass.newMethod = {-> "foo" }
 

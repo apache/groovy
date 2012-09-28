@@ -31,11 +31,13 @@ import org.codehaus.groovy.reflection.ReflectionCache;
 import org.codehaus.groovy.runtime.ConvertedClosure;
 import org.codehaus.groovy.runtime.CurriedClosure;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
+import org.codehaus.groovy.runtime.GeneratedClosure;
 import org.codehaus.groovy.runtime.GroovyCategorySupport;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.InvokerInvocationException;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.runtime.MethodClosure;
+import org.codehaus.groovy.runtime.callsite.AbstractCallSite;
 import org.codehaus.groovy.runtime.callsite.CallSite;
 import org.codehaus.groovy.runtime.callsite.ConstructorSite;
 import org.codehaus.groovy.runtime.callsite.MetaClassConstructorSite;
@@ -3025,6 +3027,9 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     public CallSite createPogoCallSite(CallSite site, Object[] args) {
         if (!GroovyCategorySupport.hasCategoryInCurrentThread() && !(this instanceof AdaptingMetaClass)) {
             Class [] params = MetaClassHelper.convertToTypeArray(args);
+            if (site.getName().equals("call") && GeneratedClosure.class.isAssignableFrom(theClass)) {
+                site = new AbstractCallSite(site.getArray(),site.getIndex(),"doCall");
+            }
             MetaMethod metaMethod = getMethodWithCachingInternal(theClass, site, params);
             if (metaMethod != null)
                return PogoMetaMethodSite.createPogoMetaMethodSite(site, this, metaMethod, params, args);
