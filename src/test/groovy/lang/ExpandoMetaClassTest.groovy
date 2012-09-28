@@ -50,6 +50,25 @@ class ExpandoMetaClassTest extends GroovyTestCase {
         }   
     }
 
+    void testFindAll() {
+        ExpandoMetaClass.enableGlobally()
+        try {
+            assertScript """
+                class A{}
+                class B extends A{}
+
+                def items = []
+                Object[] item = ["Fluff", new Date(), 11235813]
+                items << item
+                println items
+                assert !(items.findAll{it[0] == "Pelusa"})
+                assert items.findAll{it[0] == "Fluff"}
+            """
+        } finally {
+            ExpandoMetaClass.disableGlobally()
+        }   
+    }
+
     void testMethodsAfterAddingNewMethod() {
         EMCT_Class.metaClass.newMethod = {-> "foo" }
 
