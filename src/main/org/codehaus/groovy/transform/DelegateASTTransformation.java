@@ -33,6 +33,8 @@ import org.objectweb.asm.Opcodes;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -93,7 +95,7 @@ public class DelegateASTTransformation implements ASTTransformation, Opcodes {
             final Expression interfacesElement = node.getMember("interfaces");
             if (hasBooleanValue(interfacesElement, false)) return;
 
-            final Set<ClassNode> allInterfaces = type.getAllInterfaces();
+            final Set<ClassNode> allInterfaces = getInterfacesAndSuperInterfaces(type);
             final Set<ClassNode> ownerIfaces = owner.getAllInterfaces();
             for (ClassNode iface : allInterfaces) {
                 if (Modifier.isPublic(iface.getModifiers()) && !ownerIfaces.contains(iface)) {
@@ -105,6 +107,20 @@ public class DelegateASTTransformation implements ASTTransformation, Opcodes {
                 }
             }
         }
+    }
+
+    private Set<ClassNode> getInterfacesAndSuperInterfaces(ClassNode type) {
+        Set<ClassNode> res = new HashSet<ClassNode>();
+        if (type.isInterface()) {
+            res.add(type);
+            return res;
+        }
+        ClassNode next = type;
+        while (next != null) {
+            Collections.addAll(res, next.getInterfaces());
+            next = next.getSuperClass();
+        }
+        return res;
     }
 
     private List<MethodNode> getAllMethods(ClassNode type) {
