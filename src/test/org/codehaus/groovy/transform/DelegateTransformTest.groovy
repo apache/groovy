@@ -231,6 +231,27 @@ class DelegateTransformTest extends CompilableTestSupport {
             new ListWrapper()
         '''
     }
+
+    // GROOVY-5732
+    void testInterfacesFromSuperClasses() {
+        assertScript '''
+            interface I5732 {
+                void aMethod()
+            }
+
+            abstract class AbstractBaseClass implements I5732 { }
+
+            abstract class DelegatedClass extends AbstractBaseClass {
+                void aMethod() {}
+            }
+
+            class Delegator {
+                @Delegate private DelegatedClass delegate
+            }
+
+            assert I5732.isAssignableFrom(Delegator)
+        '''
+    }
 }
 
 interface DelegateFoo {
