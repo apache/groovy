@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -250,6 +250,34 @@ class DelegateTransformTest extends CompilableTestSupport {
             }
 
             assert I5732.isAssignableFrom(Delegator)
+        '''
+    }
+
+    // GROOVY-5729
+    void testDeprecationWithInterfaces() {
+        assertScript '''
+            interface I5729 {
+                @Deprecated
+                void aMethod()
+            }
+
+            class Delegator1 {
+                @Delegate private I5729 delegate
+            }
+            assert I5729.isAssignableFrom(Delegator1)
+            assert Delegator1.methods*.name.contains('aMethod')
+
+            class Delegator2 {
+                @Delegate(interfaces=false) private I5729 delegate
+            }
+            assert !I5729.isAssignableFrom(Delegator2)
+            assert !Delegator2.methods*.name.contains('aMethod')
+
+            class Delegator3 {
+                @Delegate(interfaces=false, deprecated=true) private I5729 delegate
+            }
+            assert !I5729.isAssignableFrom(Delegator3)
+            assert Delegator3.methods*.name.contains('aMethod')
         '''
     }
 }
