@@ -77,11 +77,13 @@ public class DelegateASTTransformation implements ASTTransformation, Opcodes {
                 fieldMethods.addAll(getAllMethods(next));
             }
             final Expression deprecatedElement = node.getMember("deprecated");
-            final boolean deprecated = hasBooleanValue(deprecatedElement, true);
+            final Expression interfacesElement = node.getMember("interfaces");
+            final boolean skipInterfaces = hasBooleanValue(interfacesElement, false);
+            final boolean includeDeprecated = hasBooleanValue(deprecatedElement, true) || (type.isInterface() && !skipInterfaces);
 
             final List<MethodNode> ownerMethods = getAllMethods(owner);
             for (MethodNode mn : fieldMethods) {
-                addDelegateMethod(fieldNode, owner, ownerMethods, mn, deprecated);
+                addDelegateMethod(fieldNode, owner, ownerMethods, mn, includeDeprecated);
             }
 
             for (PropertyNode prop : type.getProperties()) {
@@ -92,8 +94,7 @@ public class DelegateASTTransformation implements ASTTransformation, Opcodes {
                 addSetterIfNeeded(fieldNode, owner, prop, name);
             }
 
-            final Expression interfacesElement = node.getMember("interfaces");
-            if (hasBooleanValue(interfacesElement, false)) return;
+            if (skipInterfaces) return;
 
             final Set<ClassNode> allInterfaces = getInterfacesAndSuperInterfaces(type);
             final Set<ClassNode> ownerIfaces = owner.getAllInterfaces();
@@ -170,11 +171,11 @@ public class DelegateASTTransformation implements ASTTransformation, Opcodes {
         }
     }
 
-    private void addDelegateMethod(FieldNode fieldNode, ClassNode owner, List<MethodNode> ownMethods, MethodNode candidate, boolean deprecated) {
+    private void addDelegateMethod(FieldNode fieldNode, ClassNode owner, List<MethodNode> ownMethods, MethodNode candidate, boolean includeDeprecated) {
         if (!candidate.isPublic() || candidate.isStatic() || 0 != (candidate.getModifiers () & Opcodes.ACC_SYNTHETIC))
             return;
 
-        if (!candidate.getAnnotations(DEPRECATED_TYPE).isEmpty() && !deprecated)
+        if (!candidate.getAnnotations(DEPRECATED_TYPE).isEmpty() && !includeDeprecated)
             return;
 
         // ignore methods from GroovyObject
