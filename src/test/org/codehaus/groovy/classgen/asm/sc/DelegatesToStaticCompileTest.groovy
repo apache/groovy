@@ -33,10 +33,5 @@ class DelegatesToStaticCompileTest extends DelegatesToSTCTest {
         extraSetup()
     }
 
-    @Override
-    @NotYetImplemented
-    void testShouldAcceptMethodCall() {
-        super.testShouldAcceptMethodCall()
-    }
 }
 

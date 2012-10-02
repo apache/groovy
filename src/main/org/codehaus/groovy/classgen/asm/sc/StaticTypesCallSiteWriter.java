@@ -310,11 +310,32 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         }
         
         String property = methodName;
-        if (classNode.getNodeMetaData(StaticCompilationMetadataKeys.WITH_CLOSURE)!=null && "owner".equals(property)) {
-            // the current class node is a closure used in a "with"
-            property = "delegate";
+        if (implicitThis) {
+            if (controller.getInvocationWriter() instanceof StaticInvocationWriter) {
+                MethodCallExpression currentCall = ((StaticInvocationWriter) controller.getInvocationWriter()).getCurrentCall();
+                if (currentCall != null && currentCall.getNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER) != null) {
+                    property = (String) currentCall.getNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER);
+                    String[] props = property.split("\\.");
+                    BytecodeExpression thisLoader = new BytecodeExpression() {
+                        @Override
+                        public void visit(final MethodVisitor mv) {
+                            mv.visitVarInsn(ALOAD, 0); // load this
+                        }
+                    };
+                    thisLoader.setType(CLOSURE_TYPE);
+                    Expression pexp = new PropertyExpression(thisLoader, new ConstantExpression(props[0]), safe);
+                    for (int i = 1, propsLength = props.length; i < propsLength; i++) {
+                        final String prop = props[i];
+                        pexp.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, CLOSURE_TYPE);
+                        pexp = new PropertyExpression(pexp, prop);
+                    }
+                    pexp.visit(controller.getAcg());
+                    return;
+                }
+            }
         }
-        
+
+
         if (makeGetPropertyWithGetter(receiver, receiverType, property, safe, implicitThis)) return;
         if (makeGetField(receiver, receiverType, property, implicitThis, samePackages(receiverType.getPackageName(), classNode.getPackageName()))) return;
 

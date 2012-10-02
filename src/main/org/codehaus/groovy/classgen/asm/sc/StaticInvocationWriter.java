@@ -72,9 +72,19 @@ public class StaticInvocationWriter extends InvocationWriter {
 
     private final WriterController controller;
 
+    private MethodCallExpression currentCall;
+
     public StaticInvocationWriter(WriterController wc) {
         super(wc);
         controller = wc;
+    }
+
+    @Override
+    public void writeInvokeMethod(final MethodCallExpression call) {
+        MethodCallExpression old = currentCall;
+        currentCall = call;
+        super.writeInvokeMethod(call);
+        currentCall = old;
     }
 
     @Override
@@ -474,5 +484,9 @@ public class StaticInvocationWriter extends InvocationWriter {
                 controller.getOperandStack().replace(type);
             }
         }
+    }
+
+    public MethodCallExpression getCurrentCall() {
+        return currentCall;
     }
 }

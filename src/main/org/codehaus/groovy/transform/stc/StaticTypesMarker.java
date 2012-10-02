@@ -27,5 +27,7 @@ public enum StaticTypesMarker {
     CLOSURE_ARGUMENTS, // used to store closure argument types on a variable expression
     READONLY_PROPERTY, // used to tell that a property expression refers to a readonly property
     INITIAL_EXPRESSION, // used to store the default expression for a parameter
-    DIRECT_METHOD_CALL_TARGET // used to store the MethodNode a MethodCallExpression should target
+    DIRECT_METHOD_CALL_TARGET, // used to store the MethodNode a MethodCallExpression should target
+    DELEGATION_METADATA, // used to store the delegation strategy and delegate type of a closure when declared with @DelegatesTo
+    IMPLICIT_RECEIVER // if the receiver is implicit but not "this", store the name of the receiver (delegate or owner)
 }

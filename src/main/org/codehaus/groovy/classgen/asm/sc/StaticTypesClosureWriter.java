@@ -50,7 +50,6 @@ public class StaticTypesClosureWriter extends ClosureWriter {
         for (MethodNode method : methods) {
             visitor.visitMethod(method);
         }
-        closureClass.putNodeMetaData(StaticCompilationMetadataKeys.WITH_CLOSURE, expression.getNodeMetaData(StaticCompilationMetadataKeys.WITH_CLOSURE));
         closureClass.putNodeMetaData(StaticCompilationMetadataKeys.STATIC_COMPILE_NODE, Boolean.TRUE);
         return closureClass;
     }

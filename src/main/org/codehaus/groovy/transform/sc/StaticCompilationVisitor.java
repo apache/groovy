@@ -197,7 +197,6 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
 
     @Override
     public void visitSpreadExpression(final SpreadExpression expression) {
-        throw new UnsupportedOperationException("The spread operator cannot be used with static compilation because the number of arguments cannot be determined at compile time");
     }
 
     @Override
@@ -214,12 +213,6 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
             addError("Target method for method call expression hasn't been set", call);
         }
 
-        // add special metadata on closure if the call is a "with" call
-        if (StaticTypeCheckingSupport.isWithCall(call.getMethodAsString(), call.getArguments())) {
-            // no check is required, ensured by isWithCall
-            ClosureExpression closure = (ClosureExpression) ((ArgumentListExpression) call.getArguments()).getExpression(0);
-            closure.putNodeMetaData(StaticCompilationMetadataKeys.WITH_CLOSURE, Boolean.TRUE);
-        }
     }
 
     @Override
