@@ -122,4 +122,96 @@ class DelegatesToSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    void testEmbeddedWithAndShadowing() {
+        assertScript '''
+            class A {
+                int foo() { 1 }
+            }
+            class B {
+                int foo() { 2 }
+            }
+            def a = new A()
+            def b = new B()
+            int result
+            a.with {
+                b.with {
+                    result = foo()
+                }
+            }
+            assert result == 2
+        '''
+    }
+
+    void testEmbeddedWithAndShadowing2() {
+        assertScript '''
+            class A {
+                int foo() { 1 }
+            }
+            class B {
+                int foo() { 2 }
+            }
+            def a = new A()
+            def b = new B()
+            int result
+            b.with {
+                a.with {
+                    result = foo()
+                }
+            }
+            assert result == 1
+        '''
+    }
+
+    void testEmbeddedWithAndShadowing3() {
+        assertScript '''
+            class A {
+                int foo() { 1 }
+            }
+            class B {
+                int foo() { 2 }
+            }
+            class C {
+                int foo() { 3 }
+                void test() {
+                    def a = new A()
+                    def b = new B()
+                    int result
+                    b.with {
+                        a.with {
+                            result = foo()
+                        }
+                    }
+                    assert result == 1
+                }
+            }
+            new C().test()
+        '''
+    }
+
+    void testEmbeddedWithAndShadowing4() {
+        assertScript '''
+            class A {
+                int foo() { 1 }
+            }
+            class B {
+                int foo() { 2 }
+            }
+            class C {
+                int foo() { 3 }
+                void test() {
+                    def a = new A()
+                    def b = new B()
+                    int result
+                    b.with {
+                        a.with {
+                            result = this.foo()
+                        }
+                    }
+                    assert result == 3
+                }
+            }
+            new C().test()
+        '''
+    }
+
 }
