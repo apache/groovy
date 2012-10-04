@@ -3211,7 +3211,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.7.2
      */
     public static boolean removeAll(Collection self, Object[] items) {
-        return self.removeAll(Arrays.asList(items));
+        Collection pickFrom = new TreeSet(new NumberAwareComparator());
+        pickFrom.addAll(Arrays.asList(items));
+        return self.removeAll(pickFrom);
     }
 
     /**
@@ -3229,7 +3231,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.7.2
      */
     public static boolean retainAll(Collection self, Object[] items) {
-        return self.retainAll(Arrays.asList(items));
+        Collection pickFrom = new TreeSet(new NumberAwareComparator());
+        pickFrom.addAll(Arrays.asList(items));
+        return self.retainAll(pickFrom);
     }
 
     /**
