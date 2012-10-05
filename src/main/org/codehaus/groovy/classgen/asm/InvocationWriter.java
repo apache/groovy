@@ -152,7 +152,6 @@ public class InvocationWriter {
                 && (argumentList.size()>para.length || argumentList.size()==para.length-1 || !argumentList.get(para.length-1).getType().isArray())) {
             int stackLen = operandStack.getStackLength()+argumentList.size();
             MethodVisitor mv = controller.getMethodVisitor();
-            MethodVisitor orig = mv;
             //mv = new org.objectweb.asm.util.TraceMethodVisitor(mv);
             controller.setMethodVisitor(mv);
             // varg call
@@ -186,14 +185,14 @@ public class InvocationWriter {
         }
     }
 
-    private void makeCall(
-            Expression origin, ClassExpression sender,
-            Expression receiver, Expression message, Expression arguments,
-            MethodCallerMultiAdapter adapter,
-            boolean safe, boolean spreadSafe, boolean implicitThis
-    ) { 
+    protected boolean makeDirectCall(
+        Expression origin, Expression receiver, 
+        Expression message, Expression arguments,
+        MethodCallerMultiAdapter adapter,
+        boolean implicitThis, boolean containsSpreadExpression
+    ) {
         // optimization path
-        boolean fittingAdapter =    adapter == invokeMethodOnCurrent ||
+        boolean fittingAdapter =   adapter == invokeMethodOnCurrent ||
                                     adapter == invokeStaticMethod;
         if (fittingAdapter && controller.optimizeForInt && controller.isFastPath()) {
             String methodName = getMethodName(message);
@@ -209,18 +208,27 @@ public class InvocationWriter {
                 if (origin!=null) meta = (StatementMeta) origin.getNodeMetaData(StatementMeta.class);
                 MethodNode mn = null;
                 if (meta!=null) mn = meta.target;
-                
-                if (writeDirectMethodCall(mn, true, null, args)) return;                
+
+                if (writeDirectMethodCall(mn, true, null, args)) return true;
             }
         }
-        
-        boolean containsSpreadExpression = AsmClassGenerator.containsSpreadExpression(arguments);
-        if (!containsSpreadExpression && origin instanceof MethodCallExpression) {
+
+        if (containsSpreadExpression) return false;
+        if (origin instanceof MethodCallExpression) {
             MethodCallExpression mce = (MethodCallExpression) origin;
             MethodNode target = mce.getMethodTarget();
-            if (writeDirectMethodCall(target, implicitThis, receiver, makeArgumentList(arguments))) return;
+            return writeDirectMethodCall(target, implicitThis, receiver, makeArgumentList(arguments));
         }
-        
+        return false;
+    }
+
+    protected boolean makeCachedCall(
+            Expression origin, ClassExpression sender,
+            Expression receiver, Expression message, Expression arguments,
+            MethodCallerMultiAdapter adapter,
+            boolean safe, boolean spreadSafe, boolean implicitThis,
+            boolean containsSpreadExpression
+    ) {
         // prepare call site
         if ((adapter == invokeMethod || adapter == invokeMethodOnCurrent || adapter == invokeStaticMethod) && !spreadSafe) {
             String methodName = getMethodName(message);
@@ -230,10 +238,19 @@ public class InvocationWriter {
                         receiver, methodName, arguments, safe, implicitThis, 
                         adapter == invokeMethodOnCurrent, 
                         adapter == invokeStaticMethod);
-                return;
+                return true;
             }
         }
-
+        return false;
+    }
+    
+    protected void makeUncachedCall(
+            Expression origin, ClassExpression sender,
+            Expression receiver, Expression message, Expression arguments,
+            MethodCallerMultiAdapter adapter,
+            boolean safe, boolean spreadSafe, boolean implicitThis,
+            boolean containsSpreadExpression
+    ) {
         OperandStack operandStack = controller.getOperandStack();
         CompileStack compileStack = controller.getCompileStack();
         AsmClassGenerator acg = controller.getAcg();
@@ -283,10 +300,28 @@ public class InvocationWriter {
             }
         }
 
+        if (adapter==null) adapter = invokeMethod;
         adapter.call(controller.getMethodVisitor(), numberOfArguments, safe, spreadSafe);
 
         compileStack.popLHS();
         operandStack.replace(ClassHelper.OBJECT_TYPE,operandsToRemove);
+    }
+    
+    protected void makeCall(
+            Expression origin, ClassExpression sender,
+            Expression receiver, Expression message, Expression arguments,
+            MethodCallerMultiAdapter adapter,
+            boolean safe, boolean spreadSafe, boolean implicitThis
+    ) {
+        // direct method call paths
+        boolean containsSpreadExpression = AsmClassGenerator.containsSpreadExpression(arguments);
+        if (makeDirectCall(origin, receiver, message, arguments, adapter, implicitThis, containsSpreadExpression)) return;
+
+        // normal path
+        if (makeCachedCall(origin, sender, receiver, message, arguments, adapter, safe, spreadSafe, implicitThis, containsSpreadExpression)) return;
+
+        // path through ScriptBytecodeAdapter
+        makeUncachedCall(origin, sender, receiver, message, arguments, adapter, safe, spreadSafe, implicitThis, containsSpreadExpression);
     }
 
     public static ArgumentListExpression makeArgumentList(Expression arguments) {
@@ -423,10 +458,7 @@ public class InvocationWriter {
         controller.getOperandStack().push(cn.getDeclaringClass());
     }
 
-    public void writeInvokeConstructor(ConstructorCallExpression call) {
-        if (writeDirectConstructorCall(call)) return;
-        if (writeAICCall(call)) return;
-        
+    protected void writeNormalConstructorCall(ConstructorCallExpression call) {
         Expression arguments = call.getArguments();
         if (arguments instanceof TupleExpression) {
             TupleExpression tupleExpression = (TupleExpression) arguments;
@@ -441,6 +473,12 @@ public class InvocationWriter {
                 receiverClass, CallSiteWriter.CONSTRUCTOR,
                 arguments, false, false, false,
                 false);
+    }
+    
+    public void writeInvokeConstructor(ConstructorCallExpression call) {
+        if (writeDirectConstructorCall(call)) return;
+        if (writeAICCall(call)) return;
+        writeNormalConstructorCall(call);
     }
 
     protected boolean writeAICCall(ConstructorCallExpression call) {

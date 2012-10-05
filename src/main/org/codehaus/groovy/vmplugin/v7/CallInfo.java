@@ -38,7 +38,7 @@ public class CallInfo {
     public MutableCallSite callSite;
     public Class sender;
     public boolean isVargs;
-    public boolean safeNavigation, safeNavigationOrig;
+    public boolean safeNavigation, safeNavigationOrig, spread;
     public boolean thisCall;
     public Class selector;
     public boolean catchException = true;

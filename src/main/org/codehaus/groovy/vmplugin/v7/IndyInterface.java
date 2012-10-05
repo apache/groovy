@@ -63,8 +63,9 @@ public class IndyInterface {
          * flags for method and property calls
          */
         public static final int 
-            SAFE_NAVIGATION = 0x1,  THIS_CALL = 0x2, 
-            GROOVY_OBJECT = 0x4,    IMPLICIT_THIS = 0x8; 
+            SAFE_NAVIGATION = 0x1,  THIS_CALL     = 0x2, 
+            GROOVY_OBJECT   = 0x4,  IMPLICIT_THIS = 0x8,
+            SPREAD_CALL     = 0x16;
 
         public static enum CALL_TYPES {
             METHOD("invoke"), INIT("init"), GET("getProperty"), SET("setProperty");
@@ -100,7 +101,7 @@ public class IndyInterface {
         private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
         private static final MethodHandle SELECT_METHOD;
         static {
-            MethodType mt = MethodType.methodType(Object.class, MutableCallSite.class, Class.class, String.class, int.class, Boolean.class, Boolean.class, Object.class, Object[].class);
+            MethodType mt = MethodType.methodType(Object.class, MutableCallSite.class, Class.class, String.class, int.class, Boolean.class, Boolean.class, Boolean.class, Object.class, Object[].class);
             try {
                 SELECT_METHOD = LOOKUP.findStatic(IndyInterface.class, "selectMethod", mt);
             } catch (Exception e) {
@@ -169,8 +170,9 @@ public class IndyInterface {
          * @since Groovy 2.1.0
          */
         public static CallSite bootstrap(Lookup caller, String callType, MethodType type, String name, int flags) {
-            boolean safe = (flags&0x1)!=0;
-            boolean thisCall = (flags&0x2)!=0;
+            boolean safe = (flags&SAFE_NAVIGATION)!=0;
+            boolean thisCall = (flags&THIS_CALL)!=0;
+            boolean spreadCall = (flags&SPREAD_CALL)!=0;
             int callID;
             if (callType.equals(CALL_TYPES.METHOD.getCallSiteName())) {
                 callID = CALL_TYPES.METHOD.ordinal();
@@ -183,7 +185,7 @@ public class IndyInterface {
             } else {
                 throw new GroovyBugError("Unknown call type: "+callType);
             }
-            return realBootstrap(caller, name, callID, type, safe, thisCall);
+            return realBootstrap(caller, name, callID, type, safe, thisCall, spreadCall);
         }
         
         /**
@@ -191,7 +193,7 @@ public class IndyInterface {
          * @deprecated since Groovy 2.1.0
          */
         public static CallSite bootstrapCurrent(Lookup caller, String name, MethodType type) {
-            return realBootstrap(caller, name, CALL_TYPES.METHOD.ordinal(), type, false, true);
+            return realBootstrap(caller, name, CALL_TYPES.METHOD.ordinal(), type, false, true, false);
         }
 
         /**
@@ -199,7 +201,7 @@ public class IndyInterface {
          * @deprecated since Groovy 2.1.0
          */
         public static CallSite bootstrapCurrentSafe(Lookup caller, String name, MethodType type) {
-            return realBootstrap(caller, name, CALL_TYPES.METHOD.ordinal(), type, true, true);
+            return realBootstrap(caller, name, CALL_TYPES.METHOD.ordinal(), type, true, true, false);
         }
         
         /**
@@ -207,7 +209,7 @@ public class IndyInterface {
          * @deprecated since Groovy 2.1.0
          */
         public static CallSite bootstrap(Lookup caller, String name, MethodType type) {
-            return realBootstrap(caller, name, CALL_TYPES.METHOD.ordinal(), type, false, false);
+            return realBootstrap(caller, name, CALL_TYPES.METHOD.ordinal(), type, false, false, false);
         }
         
         /**
@@ -215,19 +217,19 @@ public class IndyInterface {
          * @deprecated since Groovy 2.1.0
          */
         public static CallSite bootstrapSafe(Lookup caller, String name, MethodType type) {
-            return realBootstrap(caller, name, CALL_TYPES.METHOD.ordinal(), type, true, false);
+            return realBootstrap(caller, name, CALL_TYPES.METHOD.ordinal(), type, true, false, false);
         }
         
         /**
          * backing bootstrap method with all parameters
          */
-        private static CallSite realBootstrap(Lookup caller, String name, int callID, MethodType type, boolean safe, boolean thisCall) {
+        private static CallSite realBootstrap(Lookup caller, String name, int callID, MethodType type, boolean safe, boolean thisCall, boolean spreadCall) {
             // since indy does not give us the runtime types
             // we produce first a dummy call site, which then changes the target to one,
             // that does the method selection including the the direct call to the 
             // real method.
             MutableCallSite mc = new MutableCallSite(type);
-            MethodHandle mh = makeFallBack(mc,caller.lookupClass(),name,callID,type,safe,thisCall);
+            MethodHandle mh = makeFallBack(mc,caller.lookupClass(),name,callID,type,safe,thisCall,spreadCall);
             mc.setTarget(mh);
             return mc;
         }
@@ -235,8 +237,8 @@ public class IndyInterface {
         /**
          * Makes a fallback method for an invalidated method selection
          */
-        private static MethodHandle makeFallBack(MutableCallSite mc, Class<?> sender, String name, int callID, MethodType type, boolean safeNavigation, boolean thisCall) {
-            MethodHandle mh = MethodHandles.insertArguments(SELECT_METHOD, 0, mc, sender, name, callID, safeNavigation, thisCall, /*dummy receiver:*/ 1);
+        private static MethodHandle makeFallBack(MutableCallSite mc, Class<?> sender, String name, int callID, MethodType type, boolean safeNavigation, boolean thisCall, boolean spreadCall) {
+            MethodHandle mh = MethodHandles.insertArguments(SELECT_METHOD, 0, mc, sender, name, callID, safeNavigation, thisCall, spreadCall, /*dummy receiver:*/ 1);
             mh =    mh.asCollector(Object[].class, type.parameterCount()).
                     asType(type);
             return mh;
@@ -607,8 +609,9 @@ public class IndyInterface {
          */
         private static void setGuards(CallInfo ci, Object receiver) {
             if (ci.handle==null) return;
+            if (ci.spread) return;
             
-            MethodHandle fallback = makeFallBack(ci.callSite, ci.sender, ci.name, ci.callID, ci.targetType, ci.safeNavigationOrig, ci.thisCall);
+            MethodHandle fallback = makeFallBack(ci.callSite, ci.sender, ci.name, ci.callID, ci.targetType, ci.safeNavigationOrig, ci.thisCall, ci.spread);
             
             // special guards for receiver
             if (receiver instanceof GroovyObject) {
@@ -773,18 +776,19 @@ public class IndyInterface {
         /**
          * Core method for indy method selection using runtime types.
          */
-        public static Object selectMethod(MutableCallSite callSite, Class sender, String methodName, int callID, Boolean safeNavigation, Boolean thisCall, Object dummyReceiver, Object[] arguments) throws Throwable {
+        public static Object selectMethod(MutableCallSite callSite, Class sender, String methodName, int callID, Boolean safeNavigation, Boolean thisCall, Boolean spreadCall, Object dummyReceiver, Object[] arguments) throws Throwable {
             //TODO: handle GroovyInterceptable 
             CallInfo callInfo = new CallInfo();
             callInfo.callID = callID;
             callInfo.targetType = callSite.type();
             callInfo.name = methodName;
-            callInfo.args = arguments;
+            callInfo.args = spread(arguments, spreadCall);
             callInfo.callSite = callSite;
             callInfo.sender = sender;
             callInfo.safeNavigationOrig = safeNavigation;
             callInfo.safeNavigation = safeNavigation && arguments[0]==null;
             callInfo.thisCall = thisCall;
+            callInfo.spread = spreadCall;
             if (LOG_ENABLED) {
                 String msg =
                     "----------------------------------------------------"+
@@ -794,6 +798,7 @@ public class IndyInterface {
                     "\n\t\ttargetType: "+callInfo.targetType+
                     "\n\t\tsafe navigation: "+safeNavigation+
                     "\n\t\tthisCall: "+thisCall+
+                    "\n\t\tspreadCall: "+spreadCall+
                     "\n\t\twith "+arguments.length+" arguments";
                 for (int i=0; i<arguments.length; i++) {
                     msg += "\n\t\t\targument["+i+"] = "+arguments[i];
@@ -814,18 +819,30 @@ public class IndyInterface {
                 correctParameterLength(callInfo);
                 correctCoerce(callInfo);
                 correctNullReceiver(callInfo);
+                correctSpreading(callInfo);
+
                 if (LOG_ENABLED) LOG.info("casting explicit from "+callInfo.handle.type()+" to "+callInfo.targetType);
                 callInfo.handle =  MethodHandles.explicitCastArguments(callInfo.handle,callInfo.targetType);
-                
+
                 addExceptionHandler(callInfo);
             } 
             setGuards(callInfo, callInfo.args[0]);
-            callSite.setTarget(callInfo.handle);
-            if (LOG_ENABLED) LOG.info("call site target set, preparing outside invocation");
-            
-            MethodHandle call = callInfo.handle.asSpreader(Object[].class, callInfo.args.length);
+
+            if (callInfo.spread) {
+                if (LOG_ENABLED) LOG.info("call site target kept for spread call");
+            } else {
+                callSite.setTarget(callInfo.handle);
+                if (LOG_ENABLED) LOG.info("call site target set, preparing outside invocation");
+            }
+
+            MethodHandle call = callInfo.handle.asSpreader(Object[].class, arguments.length);
             call = call.asType(MethodType.methodType(Object.class,Object[].class));
-            return call.invokeExact(callInfo.args);
+            return call.invokeExact(arguments);
+        }
+        
+        private static void correctSpreading(CallInfo ci) {
+            if (!ci.spread) return;
+            ci.handle = ci.handle.asSpreader(Object[].class, ci.args.length-1);
         }
 
         /**
@@ -912,5 +929,14 @@ public class IndyInterface {
                 ar[i-1] = args[i];
             }
             return ar;
+        }
+
+        private static Object[] spread(Object[] args, boolean spreadCall) {
+            if (!spreadCall) return args;
+            Object[] normalArguments = (Object[]) args[1];
+            Object[] ret = new Object[normalArguments.length+1];
+            ret[0] = args[0];
+            System.arraycopy(normalArguments, 0, ret, 1, ret.length-1);
+            return ret;
         }
 }

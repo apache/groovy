@@ -19,16 +19,12 @@ import java.lang.invoke.*;
 import java.lang.invoke.MethodHandles.Lookup;
 
 import org.codehaus.groovy.ast.ClassHelper;
-import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.CastExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.Expression;
-import org.codehaus.groovy.ast.expr.MethodCallExpression;
-import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.classgen.asm.CompileStack;
 import org.codehaus.groovy.classgen.asm.InvocationWriter;
@@ -74,91 +70,20 @@ public class InvokeDynamicWriter extends InvocationWriter {
     }
 
     @Override
-    public void makeCall(
-            Expression origin,  Expression receiver,
-            Expression message, Expression arguments,
-            MethodCallerMultiAdapter adapter, 
-            boolean safe, boolean spreadSafe, boolean implicitThis 
+    protected boolean makeCachedCall(Expression origin, ClassExpression sender,
+            Expression receiver, Expression message, Expression arguments,
+            MethodCallerMultiAdapter adapter, boolean safe, boolean spreadSafe,
+            boolean implicitThis, boolean containsSpreadExpression
     ) {
-        // direct method call
-        boolean containsSpreadExpression = AsmClassGenerator.containsSpreadExpression(arguments);
-        if (origin instanceof MethodCallExpression && !containsSpreadExpression) {
-            MethodCallExpression mce = (MethodCallExpression) origin;
-            MethodNode target = mce.getMethodTarget();
-            if (writeDirectMethodCall(target, implicitThis, receiver, makeArgumentList(arguments))) return;
-        }
-
-        // no direct method call, dynamic call site        
-        ClassNode cn = controller.getClassNode();
-        if (controller.isInClosure() && !implicitThis && AsmClassGenerator.isThisExpression(receiver)) cn=cn.getOuterClass();
-        ClassExpression sender = new ClassExpression(cn);
-
-        OperandStack operandStack = controller.getOperandStack();
-        CompileStack compileStack = controller.getCompileStack();
-        AsmClassGenerator acg = controller.getAcg();
-        
         // fixed number of arguments && name is a real String and no GString
         if ((adapter == null || adapter == invokeMethod || adapter == invokeMethodOnCurrent || adapter == invokeStaticMethod) && !spreadSafe) {
             String methodName = getMethodName(message);
-            
             if (methodName != null) {
                 makeIndyCall(adapter, receiver, implicitThis, safe, methodName, arguments);
-                return;
+                return true;
             }
         }
-
-        // variable number of arguments wrapped in a Object[]
-        
-        
-        // ensure VariableArguments are read, not stored
-        compileStack.pushLHS(false);
-
-        // sender only for call sites
-        if (adapter == AsmClassGenerator.setProperty) {
-            ConstantExpression.NULL.visit(acg);
-        } else {
-            sender.visit(acg);
-        }
-        
-        // receiver
-        compileStack.pushImplicitThis(implicitThis);
-        receiver.visit(acg);
-        operandStack.box();
-        compileStack.popImplicitThis();
-        
-        
-        int operandsToRemove = 2;
-        // message
-        if (message != null) {
-            message.visit(acg);
-            operandStack.box();
-            operandsToRemove++;
-        }
-
-        // arguments
-        int numberOfArguments = containsSpreadExpression ? -1 : AsmClassGenerator.argumentSize(arguments);
-        if (numberOfArguments > MethodCallerMultiAdapter.MAX_ARGS || containsSpreadExpression) {
-            ArgumentListExpression ae = makeArgumentList(arguments);
-            if (containsSpreadExpression) {
-                acg.despreadList(ae.getExpressions(), true);
-            } else {
-                ae.visit(acg);
-            }
-        } else if (numberOfArguments > 0) {
-            operandsToRemove += numberOfArguments;
-            TupleExpression te = (TupleExpression) arguments;
-            for (int i = 0; i < numberOfArguments; i++) {
-                Expression argument = te.getExpression(i);
-                argument.visit(acg);
-                operandStack.box();
-                if (argument instanceof CastExpression) acg.loadWrapper(argument);
-            }
-        }
-
-        adapter.call(controller.getMethodVisitor(), numberOfArguments, safe, spreadSafe);
-
-        compileStack.popLHS();
-        operandStack.replace(ClassHelper.OBJECT_TYPE,operandsToRemove);
+        return false;
     }
     
     private String prepareIndyCall(Expression receiver, boolean implicitThis) {
@@ -192,34 +117,42 @@ public class InvokeDynamicWriter extends InvocationWriter {
         // load arguments
         int numberOfArguments = 1;
         ArgumentListExpression ae = makeArgumentList(arguments);
-        for (Expression arg : ae.getExpressions()) {
-            arg.visit(controller.getAcg());
-            if (arg instanceof CastExpression) {
-                operandStack.box();
-                controller.getAcg().loadWrapper(arg);
-                sig += getTypeDescription(Wrapper.class);
-            } else {
-                sig += getTypeDescription(operandStack.getTopOperand());
+        boolean containsSpreadExpression = AsmClassGenerator.containsSpreadExpression(arguments);
+        if (containsSpreadExpression) {
+            controller.getAcg().despreadList(ae.getExpressions(), true);
+            sig += getTypeDescription(Object[].class);
+        } else {
+            for (Expression arg : ae.getExpressions()) {
+                arg.visit(controller.getAcg());
+                if (arg instanceof CastExpression) {
+                    operandStack.box();
+                    controller.getAcg().loadWrapper(arg);
+                    sig += getTypeDescription(Wrapper.class);
+                } else {
+                    sig += getTypeDescription(operandStack.getTopOperand());
+                }
+                numberOfArguments++;
             }
-            numberOfArguments++;
         }
+
         sig += ")Ljava/lang/Object;";
         String callSiteName = METHOD.getCallSiteName();
         if (adapter==null) callSiteName = INIT.getCallSiteName();
-        int flags = getMethodCallFlags(adapter, safe);
+        int flags = getMethodCallFlags(adapter, safe, containsSpreadExpression);
         finishIndyCall(BSM, callSiteName, sig, numberOfArguments, methodName, flags);
     }
     
-    private int getMethodCallFlags(MethodCallerMultiAdapter adapter, boolean safe) {
+    private int getMethodCallFlags(MethodCallerMultiAdapter adapter, boolean safe, boolean spread) {
         int ret = 0;
         if (safe)                           ret |= SAFE_NAVIGATION;
         if (adapter==invokeMethodOnCurrent) ret |= THIS_CALL;
+        if (spread)                         ret |= SPREAD_CALL;
         return ret;
     }
 
     @Override
     public void makeSingleArgumentCall(Expression receiver, String message, Expression arguments) {
-        makeIndyCall(null, receiver, false, false, message, arguments);
+        makeIndyCall(invokeMethod, receiver, false, false, message, arguments);
     }
 
     private int getPropertyFlags(boolean safe, boolean implicitThis, boolean groovyObject) {
@@ -238,8 +171,7 @@ public class InvokeDynamicWriter extends InvocationWriter {
     }
     
     @Override
-    public void writeInvokeConstructor(ConstructorCallExpression call) {
-        if (writeAICCall(call)) return;
+    protected void writeNormalConstructorCall(ConstructorCallExpression call) {
         makeCall(call, new ClassExpression(call.getType()), new ConstantExpression("<init>"), call.getArguments(), null, false, false, false);
     }
     
