@@ -5140,7 +5140,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * assert myIterable[1] == 2
      *
      * // Set example:
-     * def set = [1,2,3] as HashSet
+     * def set = [1,2,3] as LinkedHashSet
      * assert set[1] == 2
      * </pre>
      *
