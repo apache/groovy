@@ -63,9 +63,9 @@ public class IndyInterface {
          * flags for method and property calls
          */
         public static final int 
-            SAFE_NAVIGATION = 0x1,  THIS_CALL     = 0x2, 
-            GROOVY_OBJECT   = 0x4,  IMPLICIT_THIS = 0x8,
-            SPREAD_CALL     = 0x16;
+            SAFE_NAVIGATION = 1,  THIS_CALL     = 2, 
+            GROOVY_OBJECT   = 4,  IMPLICIT_THIS = 8,
+            SPREAD_CALL     = 16;
 
         public static enum CALL_TYPES {
             METHOD("invoke"), INIT("init"), GET("getProperty"), SET("setProperty");
