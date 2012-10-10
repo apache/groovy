@@ -1311,7 +1311,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         );
                         virtualDecl.setSourcePosition(statement);
                         virtualDecl.visit(this);
-                        inferred = (ClassNode) virtualDecl.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
+                        ClassNode newlyInferred = (ClassNode) virtualDecl.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
+                        if (!missesGenericsTypes(newlyInferred)) inferred = newlyInferred;
                     }
                     methodNode.putNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE, inferred);
                     return inferred;
@@ -2780,6 +2781,14 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     }
 
                 }
+            }
+        }
+
+        // GROOVY-5748
+        if (returnType.isGenericsPlaceHolder()) {
+            GenericsType resolved = resolvedPlaceholders.get(returnType.getUnresolvedName());
+            if (resolved!=null && !resolved.isPlaceholder() && !resolved.isWildcard()) {
+                return resolved.getType();
             }
         }
 
