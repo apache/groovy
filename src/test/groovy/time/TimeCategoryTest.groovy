@@ -218,4 +218,11 @@ class TimeCategoryTest extends GroovyTestCase {
         }
     }
 
+    void testToStringForOverflow() {
+        use(TimeCategory) {
+            def t = 800.milliseconds + 300.milliseconds
+            assert t.toString() == '1.100 seconds'
+        }
+    }
+
 }
