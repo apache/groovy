@@ -3211,7 +3211,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.7.2
      */
     public static boolean removeAll(Collection self, Object[] items) {
-        return self.removeAll(Arrays.asList(items));
+        Collection pickFrom = new TreeSet(new NumberAwareComparator());
+        pickFrom.addAll(Arrays.asList(items));
+        return self.removeAll(pickFrom);
     }
 
     /**
@@ -3229,7 +3231,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.7.2
      */
     public static boolean retainAll(Collection self, Object[] items) {
-        return self.retainAll(Arrays.asList(items));
+        Collection pickFrom = new TreeSet(new NumberAwareComparator());
+        pickFrom.addAll(Arrays.asList(items));
+        return self.retainAll(pickFrom);
     }
 
     /**
@@ -5124,6 +5128,31 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
         return null;
     }
+
+    /**
+     * Support the subscript operator for an Iterable. Typical usage:
+     * <pre class="groovyTestCase">
+     * // custom Iterable example:
+     * class MyIterable implements Iterable {
+     *   Iterator iterator() { [1, 2, 3].iterator() }
+     * }
+     * def myIterable = new MyIterable()
+     * assert myIterable[1] == 2
+     *
+     * // Set example:
+     * def set = [1,2,3] as LinkedHashSet
+     * assert set[1] == 2
+     * </pre>
+     *
+     * @param self an Iterable
+     * @param idx  an index value (-self.size() <= idx < self.size()) but using -ve index values will be inefficient
+     * @return the value at the given index (after normalisation) or null if no corresponding value was found
+     * @since 2.1.0
+     */
+    public static <T> T getAt(Iterable<T> self, int idx) {
+        return getAt(self.iterator(), idx);
+    }
+
     /**
      * A helper method to allow lists to work with subscript operators.
      * <pre class="groovyTestCase">def list = [2, 3]

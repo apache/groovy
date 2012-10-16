@@ -47,7 +47,7 @@ import java.lang.annotation.Target;
  * including all of the parameters - giving a no-arg constructor which can be used with the map-style naming conventions.
  * <p/>
  * The order of parameters is given by the properties of any super classes with most super first
- * (if {@code includeSuperProperties} is set) followed by the properties of the class followed by the
+ * (if {@code includeSuperProperties} is set) followed by the properties of the class followed
  * by the fields of the class (if {@code includeFields} is set). Within each grouping the order
  * is as attributes appear within the respective class.
  * <p/>
