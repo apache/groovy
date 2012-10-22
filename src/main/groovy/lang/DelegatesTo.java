@@ -45,4 +45,12 @@ import java.lang.annotation.Target;
 public @interface DelegatesTo {
     Class value();
     int strategy() default Closure.OWNER_FIRST;
+
+    String target() default "";
+
+    @Retention(RetentionPolicy.RUNTIME)
+    @java.lang.annotation.Target({ElementType.PARAMETER})
+    public static @interface Target {
+        String value() default ""; // optional id
+    }
 }

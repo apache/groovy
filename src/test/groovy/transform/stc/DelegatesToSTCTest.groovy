@@ -16,6 +16,8 @@
 
 
 
+
+
 package groovy.transform.stc
 
 /**
@@ -212,6 +214,90 @@ class DelegatesToSTCTest extends StaticTypeCheckingTestCase {
             }
             new C().test()
         '''
+    }
+
+    void testShouldDelegateToParameter() {
+        assertScript '''
+        class Foo {
+            boolean called = false
+            def foo() { called = true }
+        }
+
+        def with(@DelegatesTo.Target Object target, @DelegatesTo Closure arg) {
+            arg.delegate = target
+            arg()
+        }
+
+        def test() {
+            def obj = new Foo()
+            with(obj) { foo() }
+            assert obj.called
+        }
+        test()
+        '''
+    }
+
+    void testShouldDelegateToParameterUsingExplicitId() {
+        assertScript '''
+        class Foo {
+            boolean called = false
+            def foo() { called = true }
+        }
+
+        def with(@DelegatesTo.Target('target') Object target, @DelegatesTo(target='target') Closure arg) {
+            arg.delegate = target
+            arg()
+        }
+
+        def test() {
+            def obj = new Foo()
+            with(obj) { foo() }
+            assert obj.called
+        }
+        test()
+        '''
+    }
+
+    void testShouldFailDelegateToParameterUsingWrongId() {
+        shouldFailWithMessages '''
+        class Foo {
+            boolean called = false
+            def foo() { called = true }
+        }
+
+        def with(@DelegatesTo.Target('target') Object target, @DelegatesTo(target='wrongTarget') Closure arg) {
+            arg.delegate = target
+            arg()
+        }
+
+        def test() {
+            def obj = new Foo()
+            with(obj) { foo() }
+            assert obj.called
+        }
+        test()
+        ''', 'Not enough arguments found for a @DelegatesTo method call', 'Cannot find matching method'
+    }
+
+    void testShouldFailDelegateToParameterIfNoTargetSpecified() {
+        shouldFailWithMessages '''
+        class Foo {
+            boolean called = false
+            def foo() { called = true }
+        }
+
+        def with(Object target, @DelegatesTo Closure arg) {
+            arg.delegate = target
+            arg()
+        }
+
+        def test() {
+            def obj = new Foo()
+            with(obj) { foo() }
+            assert obj.called
+        }
+        test()
+        ''', 'Not enough arguments found for a @DelegatesTo method call', 'Cannot find matching method'
     }
 
 }

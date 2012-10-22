@@ -69,6 +69,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     private static final MethodNode GET_OWNER = CLOSURE_TYPE.getGetterMethod("getOwner");
     private static final MethodNode GET_THISOBJECT = CLOSURE_TYPE.getGetterMethod("getThisObject");
     private static final ClassNode DELEGATES_TO = ClassHelper.make(DelegatesTo.class);
+    private static final ClassNode DELEGATES_TO_TARGET = ClassHelper.make(DelegatesTo.Target.class);
 
     public static final MethodNode CLOSURE_CALL_NO_ARG;
     public static final MethodNode CLOSURE_CALL_ONE_ARG;
@@ -1713,14 +1714,36 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         for (AnnotationNode annotation : annotations) {
                             // in theory, there can only be one annotation of that type
                             Expression value = annotation.getMember("value");
+                            Expression strategy = annotation.getMember("strategy");
+                            Integer stInt = Closure.OWNER_FIRST;
+                            if (strategy!=null) {
+                                stInt = (Integer) evaluateExpression(new CastExpression(ClassHelper.Integer_TYPE,strategy));
+                            }
                             if (value instanceof ClassExpression) {
-                                Expression strategy = annotation.getMember("strategy");
-                                Integer stInt = Closure.OWNER_FIRST;
-                                if (strategy!=null) {
-                                    stInt = (Integer) evaluateExpression(new CastExpression(ClassHelper.Integer_TYPE,strategy));
-                                }
                                 // temporarily store the delegation strategy and the delegate type
                                 expression.putNodeMetaData(StaticTypesMarker.DELEGATION_METADATA, new DelegationMetadata(value.getType(), stInt, delegationMetadata));
+                            } else {
+                                Expression parameter = annotation.getMember("target");
+                                String parameterName = parameter!=null && parameter instanceof ConstantExpression?parameter.getText():"";
+                                // todo: handle vargs!
+                                for (int j = 0, paramsLength = params.length; j < paramsLength; j++) {
+                                    final Parameter methodParam = params[j];
+                                    List<AnnotationNode> targets = methodParam.getAnnotations(DELEGATES_TO_TARGET);
+                                    if (targets != null && targets.size() == 1) {
+                                        AnnotationNode targetAnnotation = targets.get(0); // @DelegatesTo.Target Obj foo
+                                        Expression idMember = targetAnnotation.getMember("value");
+                                        String id = idMember != null && idMember instanceof ConstantExpression ? idMember.getText() : "";
+                                        if (id.equals(parameterName)) {
+                                            if (j < expressionsSize) {
+                                                Expression actualArgument = expressions.get(j);
+                                                expression.putNodeMetaData(StaticTypesMarker.DELEGATION_METADATA, new DelegationMetadata(getType(actualArgument), stInt, delegationMetadata));
+                                            }
+                                        }
+                                    }
+                                }
+                                if (expression.getNodeMetaData(StaticTypesMarker.DELEGATION_METADATA)==null) {
+                                    addError("Not enough arguments found for a @DelegatesTo method call. Please check that you either use an explicit class or @DelegatesTo.Target with a correct id", arguments);
+                                }
                             }
                         }
                     }
