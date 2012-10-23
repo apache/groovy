@@ -27,6 +27,7 @@ import org.codehaus.groovy.ast.MethodNode
 import org.objectweb.asm.Opcodes
 import org.codehaus.groovy.ast.Parameter
 import org.codehaus.groovy.ast.PropertyNode
+import groovy.transform.NotYetImplemented
 
 /**
  * Unit tests for static type checking : plugins.
@@ -80,7 +81,8 @@ class TypeCheckerPluginSTCTest extends StaticTypeCheckingTestCase {
 
 
     }
-    
+
+    @NotYetImplemented
     void testDynamicVariableResolvedWithPlugin() {
         binding['mystring'] = 'test'
         assertScript '''
@@ -93,7 +95,8 @@ class TypeCheckerPluginSTCTest extends StaticTypeCheckingTestCase {
             foo
         ''', 'The variable [foo] is undeclared.'
     }
-    
+
+    @NotYetImplemented
     void testResolveUnknownMethodOnDeclaredVariable() {
         assertScript '''
             String foo = 'myVariable'
@@ -105,6 +108,7 @@ class TypeCheckerPluginSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @NotYetImplemented
     void testResolveUnknownProperty() {
         assertScript '''
             try {

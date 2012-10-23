@@ -94,7 +94,7 @@ public class StaticTypesTransformation implements ASTTransformation {
      * @return a static type checking visitor
      */
     protected StaticTypeCheckingVisitor newVisitor(SourceUnit unit, ClassNode node, TypeCheckerPluginFactory pluginFactory) {
-        return new StaticTypeCheckingVisitor(unit, node, pluginFactory);
+        return new StaticTypeCheckingVisitor(unit, node);
     }
 
 }

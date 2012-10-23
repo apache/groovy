@@ -39,7 +39,7 @@ class CustomErrorCollectorSTCTest extends StaticTypeCheckingTestCase {
         c.addCompilationCustomizers(new CompilationCustomizer(CompilePhase.INSTRUCTION_SELECTION) {
             @Override
             void call(final SourceUnit source, final GeneratorContext context, final ClassNode classNode) {
-                def visitor = new StaticTypeCheckingVisitor(source, classNode, null)
+                def visitor = new StaticTypeCheckingVisitor(source, classNode)
                 visitor.visitClass(classNode)
             }
         })
@@ -52,7 +52,7 @@ class CustomErrorCollectorSTCTest extends StaticTypeCheckingTestCase {
         c.addCompilationCustomizers(new CompilationCustomizer(CompilePhase.INSTRUCTION_SELECTION) {
             @Override
             void call(final SourceUnit source, final GeneratorContext context, final ClassNode classNode) {
-                def visitor = new StaticTypeCheckingVisitor(source, classNode, null)
+                def visitor = new StaticTypeCheckingVisitor(source, classNode)
                 visitor.errorCollector = new ErrorCollector(c)
                 visitor.visitClass(classNode)
             }

@@ -69,7 +69,7 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
     private ClassNode classNode;
 
     public StaticCompilationVisitor(final SourceUnit unit, final ClassNode node, final TypeCheckerPluginFactory pluginFactory) {
-        super(unit, node, pluginFactory);
+        super(unit, node);
     }
 
     @Override
