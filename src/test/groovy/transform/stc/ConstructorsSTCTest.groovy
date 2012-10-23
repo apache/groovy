@@ -74,7 +74,7 @@ class ConstructorsSTCTest extends StaticTypeCheckingTestCase {
             import java.awt.Dimension
             List args = [100,200]
             Dimension d = args // not supported
-        ''', 'Cannot assign value of type java.util.List to variable of type java.awt.Dimension'
+        ''', 'Cannot assign value of type java.util.List <java.lang.Integer> to variable of type java.awt.Dimension'
     }
 
     void testConstructFromMap() {

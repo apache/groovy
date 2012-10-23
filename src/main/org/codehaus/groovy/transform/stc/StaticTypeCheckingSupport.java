@@ -47,13 +47,13 @@ import static org.codehaus.groovy.syntax.Types.*;
  * Static support methods for {@link StaticTypeCheckingVisitor}.
  */
 public abstract class StaticTypeCheckingSupport {
-    final static ClassNode
+    protected final static ClassNode
             Collection_TYPE = makeWithoutCaching(Collection.class);
-    final static ClassNode Deprecated_TYPE = makeWithoutCaching(Deprecated.class);
-    final static ClassNode Matcher_TYPE = makeWithoutCaching(Matcher.class);
-    final static ClassNode ArrayList_TYPE = makeWithoutCaching(ArrayList.class);
-    final static ExtensionMethodCache EXTENSION_METHOD_CACHE = new ExtensionMethodCache();
-    final static Map<ClassNode, Integer> NUMBER_TYPES = Collections.unmodifiableMap(
+    protected final static ClassNode Deprecated_TYPE = makeWithoutCaching(Deprecated.class);
+    protected final static ClassNode Matcher_TYPE = makeWithoutCaching(Matcher.class);
+    protected final static ClassNode ArrayList_TYPE = makeWithoutCaching(ArrayList.class);
+    protected final static ExtensionMethodCache EXTENSION_METHOD_CACHE = new ExtensionMethodCache();
+    protected final static Map<ClassNode, Integer> NUMBER_TYPES = Collections.unmodifiableMap(
             new HashMap<ClassNode, Integer>() {{
                 put(ClassHelper.byte_TYPE, 0);
                 put(ClassHelper.Byte_TYPE, 0);
@@ -69,7 +69,7 @@ public abstract class StaticTypeCheckingSupport {
                 put(ClassHelper.Double_TYPE, 5);
             }});
 
-    final static ClassNode GSTRING_STRING_CLASSNODE = WideningCategories.lowestUpperBound(
+    protected final static ClassNode GSTRING_STRING_CLASSNODE = WideningCategories.lowestUpperBound(
             ClassHelper.STRING_TYPE,
             ClassHelper.GSTRING_TYPE
     );
@@ -78,7 +78,7 @@ public abstract class StaticTypeCheckingSupport {
      * This is for internal use only. When an argument method is null, we cannot determine its type, so
      * we use this one as a wildcard.
      */
-    final static ClassNode UNKNOWN_PARAMETER_TYPE = ClassHelper.make("<unknown parameter type>");
+    protected final static ClassNode UNKNOWN_PARAMETER_TYPE = ClassHelper.make("<unknown parameter type>");
 
     /**
      * This comparator is used when we return the list of methods from DGM which name correspond to a given
@@ -87,7 +87,7 @@ public abstract class StaticTypeCheckingSupport {
      * from superclass or interface otherwise the system won't be able to select the correct method, resulting
      * in an ambiguous method selection for similar methods.
      */
-    private static final Comparator<MethodNode> DGM_METHOD_NODE_COMPARATOR = new Comparator<MethodNode>() {
+    protected static final Comparator<MethodNode> DGM_METHOD_NODE_COMPARATOR = new Comparator<MethodNode>() {
         public int compare(final MethodNode o1, final MethodNode o2) {
             if (o1.getName().equals(o2.getName())) {
                 Parameter[] o1ps = o1.getParameters();
@@ -116,7 +116,7 @@ public abstract class StaticTypeCheckingSupport {
      * @param expression an expression
      * @return true for array access expressions
      */
-    static boolean isArrayAccessExpression(Expression expression) {
+    protected static boolean isArrayAccessExpression(Expression expression) {
         return expression instanceof BinaryExpression && isArrayOp(((BinaryExpression) expression).getOperation().getType());
     }
 
@@ -142,7 +142,7 @@ public abstract class StaticTypeCheckingSupport {
      * @param ve a variable expression
      * @return the target variable
      */
-    static Variable findTargetVariable(VariableExpression ve) {
+    protected static Variable findTargetVariable(VariableExpression ve) {
         final Variable accessedVariable = ve.getAccessedVariable() != null ? ve.getAccessedVariable() : ve;
         if (accessedVariable != ve) {
             if (accessedVariable instanceof VariableExpression)
@@ -152,13 +152,13 @@ public abstract class StaticTypeCheckingSupport {
     }
 
 
-    static Set<MethodNode> findDGMMethodsForClassNode(ClassNode clazz, String name) {
+    protected static Set<MethodNode> findDGMMethodsForClassNode(ClassNode clazz, String name) {
         TreeSet<MethodNode> accumulator = new TreeSet<MethodNode>(DGM_METHOD_NODE_COMPARATOR);
         findDGMMethodsForClassNode(clazz, name, accumulator);
         return accumulator;
     }
 
-    static void findDGMMethodsForClassNode(ClassNode clazz, String name, TreeSet<MethodNode> accumulator) {
+    protected static void findDGMMethodsForClassNode(ClassNode clazz, String name, TreeSet<MethodNode> accumulator) {
         List<MethodNode> fromDGM = EXTENSION_METHOD_CACHE.getExtensionMethods().get(clazz.getName());
         if (fromDGM != null) {
             for (MethodNode node : fromDGM) {
