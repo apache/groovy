@@ -106,8 +106,7 @@ public abstract class Selector {
                     reflectionMethod = aClass.getMethod("getProperty", String.class);
                     if (!reflectionMethod.isSynthetic()) {
                         handle = LOOKUP.unreflect(reflectionMethod);
-                        method = new ReflectionMetaMethod(new CachedMethod(reflectionMethod));
-                        args = new Object[]{args[0],name};;
+                        handle = MethodHandles.insertArguments(handle, 1, name);
                         genericInvoker = true;
                         return;
                     }
@@ -123,6 +122,12 @@ public abstract class Selector {
                     property = res;
                 } 
             }
+        }
+
+        @Override
+        public void setHandleForMetaMethod() {
+            if (handle!=null) return;
+            super.setHandleForMetaMethod();
         }
     }
 
@@ -241,6 +246,8 @@ public abstract class Selector {
                 mc = NullObject.getNullObject().getMetaClass();
             } else if (receiver instanceof GroovyObject) {
                 mc = ((GroovyObject) receiver).getMetaClass();
+            } else if (receiver instanceof Class) {
+                mc = GroovySystem.getMetaClassRegistry().getMetaClass((Class)receiver);
             } else {
                 mc = ((MetaClassRegistryImpl) GroovySystem.getMetaClassRegistry()).getMetaClass(receiver);
             }
