@@ -83,7 +83,7 @@ public class IndyMath {
      * Choose a method to replace the originally chosen metaMethod to have a
      * more efficient call path. 
      */
-    public static boolean chooseMathMethod(CallInfo info, MetaMethod metaMethod) {
+    public static boolean chooseMathMethod(Selector info, MetaMethod metaMethod) {
         Map<MethodType,MethodHandle> xmap = methods.get(info.name);
         if (xmap==null) return false;
 
