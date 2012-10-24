@@ -33,10 +33,12 @@ import java.lang.invoke.MethodType;
 import java.lang.invoke.MutableCallSite;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 
 import org.codehaus.groovy.GroovyBugError;
+import org.codehaus.groovy.reflection.CachedField;
 import org.codehaus.groovy.reflection.CachedMethod;
 import org.codehaus.groovy.runtime.NullObject;
 import org.codehaus.groovy.runtime.dgmimpl.NumberNumberMetaMethod;
@@ -113,15 +115,25 @@ public abstract class Selector {
                 } catch (ReflectiveOperationException e)  {}
             }
 
-            if (method==null) {
-                MetaProperty res = mci.getEffectiveGetMetaProperty(mci.getTheClass(), receiver, name, false);
-                if (res instanceof MethodMetaProperty) {
-                    MethodMetaProperty mmp = (MethodMetaProperty) res;
-                    method = mmp.getMetaMethod();
-                } else {
-                    property = res;
-                } 
-            }
+            if (method!=null) return;
+            MetaProperty res = mci.getEffectiveGetMetaProperty(mci.getTheClass(), receiver, name, false);
+            if (res instanceof MethodMetaProperty) {
+                MethodMetaProperty mmp = (MethodMetaProperty) res;
+                method = mmp.getMetaMethod();
+            } else if (res instanceof CachedField) {
+                CachedField cf = (CachedField) res;
+                Field f = cf.field;
+                try {
+                    handle = LOOKUP.unreflectGetter(f);
+                    if (Modifier.isStatic(f.getModifiers())) {
+                        handle = MethodHandles.dropArguments(handle,0,Class.class);
+                    }
+                } catch (IllegalAccessException iae) {
+                    throw new GroovyBugError(iae);
+                }
+            } else {
+                handle = META_PROPERTY_GETTER.bindTo(res);
+            } 
         }
 
         @Override
@@ -259,6 +271,7 @@ public abstract class Selector {
          * or the meta class is an AdaptingMetaClass.
          */
         public void chooseMeta(MetaClassImpl mci) {
+            if (mci==null) return;
             Object receiver = getCorrectedReceiver();
             if (receiver instanceof Class) {
                 if (LOG_ENABLED) LOG.info("receiver is a class");
