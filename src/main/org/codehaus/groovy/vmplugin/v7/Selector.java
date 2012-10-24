@@ -528,7 +528,7 @@ public abstract class Selector {
         }
 
         public void correctSpreading() {
-            if (!spread) return;
+            if (!spread || useMetaClass) return;
             handle = handle.asSpreader(Object[].class, args.length-1);
         }
 
