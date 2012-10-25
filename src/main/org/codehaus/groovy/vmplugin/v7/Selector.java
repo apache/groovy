@@ -218,6 +218,23 @@ public abstract class Selector {
             if (beanConstructor) return;
             super.correctCoerce();
         }
+        
+        @Override
+        public void setMetaClassCallHandleIfNedded() {
+            if (handle!=null) return;
+            try {
+                useMetaClass = true;
+                if (LOG_ENABLED) LOG.info("set meta class invocation path");
+                handle = LOOKUP.findVirtual(MetaObjectProtocol.class, "invokeConstructor", MethodType.methodType(Object.class, Object[].class));
+                handle = handle.bindTo(mc);
+                handle = handle.asCollector(Object[].class, targetType.parameterCount()-1);
+                handle = MethodHandles.dropArguments(handle, 0, Class.class);
+                if (LOG_ENABLED) LOG.info("create collector for arguments");
+            } catch (Exception e) {
+                throw new GroovyBugError(e);
+            }
+
+        }
     }
 
     private static class MethodSelector extends Selector {
