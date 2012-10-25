@@ -36,7 +36,7 @@ import org.objectweb.asm.Opcodes;
 
 public class WriterController {
 
-    private static Constructor indyWriter, indyCallSiteWriter;
+    private static Constructor indyWriter, indyCallSiteWriter, indyBinHelper;
     static {
         try {
             ClassLoader cl = WriterController.class.getClassLoader();
@@ -44,10 +44,13 @@ public class WriterController {
             indyWriter = indyClass.getConstructor(WriterController.class);
             indyClass = cl.loadClass("org.codehaus.groovy.classgen.asm.indy.IndyCallSiteWriter");
             indyCallSiteWriter = indyClass.getConstructor(WriterController.class);
+            indyClass = cl.loadClass("org.codehaus.groovy.classgen.asm.indy.IndyBinHelper");
+            indyBinHelper = indyClass.getConstructor(WriterController.class);
         } catch (Exception e) {
             indyWriter = null;
             indyCallSiteWriter = null;
-        }        
+            indyBinHelper = null;
+        }
     }
     private AsmClassGenerator acg;
     private MethodVisitor methodVisitor;
@@ -99,15 +102,16 @@ public class WriterController {
             try {
                 this.invocationWriter = (InvocationWriter) indyWriter.newInstance(this);
                 this.callSiteWriter = (CallSiteWriter) indyCallSiteWriter.newInstance(this);
+                this.binaryExpHelper = (BinaryExpressionHelper) indyBinHelper.newInstance(this);
             } catch (Exception e) {
                 throw new GroovyRuntimeException("Cannot use invokedynamic, indy module was excluded from this build.");
             }
         } else {
             this.callSiteWriter = new CallSiteWriter(this);
             this.invocationWriter = new InvocationWriter(this);
+            this.binaryExpHelper = new BinaryExpressionHelper(this);
         }
         
-        this.binaryExpHelper = new BinaryExpressionHelper(this);
         this.unaryExpressionHelper = new UnaryExpressionHelper(this);
         if (optimizeForInt) {
             this.fastPathBinaryExpHelper = new BinaryExpressionMultiTypeDispatcher(this);

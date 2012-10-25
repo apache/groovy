@@ -52,7 +52,7 @@ import org.codehaus.groovy.vmplugin.v7.IndyInterface.CALL_TYPES;
 import static org.codehaus.groovy.vmplugin.v7.IndyInterface.*;
 
 public abstract class Selector {
-    public Object[] args;
+    public Object[] args, originalArguments;
     public MetaMethod method;
     public MethodType targetType,currentType;
     public String name;
@@ -62,6 +62,7 @@ public abstract class Selector {
     public Class sender;
     public boolean isVargs;
     public boolean safeNavigation, safeNavigationOrig, spread, genericInvoker;
+    public boolean skipSpreadCollector;
     public boolean thisCall;
     public Class selectionBase;
     public boolean catchException = true;
@@ -243,6 +244,7 @@ public abstract class Selector {
             this.callType = callType;
             this.targetType = callSite.type();
             this.name = methodName;
+            this.originalArguments = arguments;
             this.args = spread(arguments, spreadCall);
             this.callSite = callSite;
             this.sender = sender;
@@ -374,9 +376,11 @@ public abstract class Selector {
                 handle = META_METHOD_INVOKER;
                 handle = handle.bindTo(method);
                 if (LOG_ENABLED) LOG.info("bound method name to META_METHOD_INVOKER");
-                if (method.getNativeParameterTypes().length==1 && 
-                        args.length==1) 
-                {
+
+                if (
+                        method.getNativeParameterTypes().length==1 && 
+                        args.length==1 
+                ) {
                     // the method expects a parameter but we don't provide an 
                     // argument for that. So we give in a Object[], containing 
                     // a null value
@@ -386,7 +390,7 @@ public abstract class Selector {
                     // another one for the vargs call
                     handle = MethodHandles.insertArguments(handle, 1, new Object[]{new Object[]{null}});
                     if (LOG_ENABLED) LOG.info("null argument expansion");
-                } else if (method.isVargsMethod()) {
+                } else if (method.isVargsMethod() && !spread) {
                     // the method expects the arguments as Object[] in a Object[]
                     handle = handle.asCollector(Object[].class, 1);
                     handle = handle.asCollector(Object[].class, targetType.parameterCount()-1);
@@ -397,6 +401,10 @@ public abstract class Selector {
                     handle = handle.asCollector(Object[].class, targetType.parameterCount()-1);
                     currentType = MethodType.methodType(method.getReturnType(), method.getNativeParameterTypes());
                     currentType = currentType.insertParameterTypes(0, method.getDeclaringClass().getTheClass());
+                    if (spread) {
+                        args = originalArguments;
+                        skipSpreadCollector = true;
+                    }
                     if (LOG_ENABLED) LOG.info("normal dgm helper wrapping");
                 }
             }
@@ -561,7 +569,7 @@ public abstract class Selector {
         }
 
         public void correctSpreading() {
-            if (!spread || useMetaClass) return;
+            if (!spread || useMetaClass || skipSpreadCollector) return;
             handle = handle.asSpreader(Object[].class, args.length-1);
         }
 
