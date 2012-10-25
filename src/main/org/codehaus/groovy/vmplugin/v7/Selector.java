@@ -89,7 +89,6 @@ public abstract class Selector {
     }
 
     private static class PropertySelector extends MethodSelector {
-        private MetaProperty property;
 
         public PropertySelector(MutableCallSite callSite, Class sender, String methodName, CALL_TYPES callType, boolean safeNavigation, boolean thisCall, boolean spreadCall, Object[] arguments) {
             super(callSite, sender, methodName, callType, safeNavigation, thisCall, spreadCall, arguments);
@@ -115,7 +114,7 @@ public abstract class Selector {
                 } catch (ReflectiveOperationException e)  {}
             }
 
-            if (method!=null) return;
+            if (method!=null || mci==null) return;
             MetaProperty res = mci.getEffectiveGetMetaProperty(mci.getTheClass(), receiver, name, false);
             if (res instanceof MethodMetaProperty) {
                 MethodMetaProperty mmp = (MethodMetaProperty) res;
@@ -126,7 +125,10 @@ public abstract class Selector {
                 try {
                     handle = LOOKUP.unreflectGetter(f);
                     if (Modifier.isStatic(f.getModifiers())) {
-                        handle = MethodHandles.dropArguments(handle,0,Class.class);
+                        // normally we would do the following
+                        // handle = MethodHandles.dropArguments(handle,0,Class.class);
+                        // but because there is a bug in invokedynamic in all jdk7 versions up to update 7
+                        handle = META_PROPERTY_GETTER.bindTo(res);
                     }
                 } catch (IllegalAccessException iae) {
                     throw new GroovyBugError(iae);
@@ -140,6 +142,20 @@ public abstract class Selector {
         public void setHandleForMetaMethod() {
             if (handle!=null) return;
             super.setHandleForMetaMethod();
+        }
+
+        @Override
+        public void setMetaClassCallHandleIfNedded() {
+            if (handle!=null) return;
+            useMetaClass = true;
+            try {
+                if (LOG_ENABLED) LOG.info("set meta class invocation path for property get.");
+                handle = LOOKUP.findVirtual(MetaClass.class, "getProperty", MethodType.methodType(Object.class, Class.class, Object.class, String.class, boolean.class, boolean.class));
+                handle = MethodHandles.insertArguments(handle, 0, mc, selectionBase);
+                handle = MethodHandles.insertArguments(handle, 1, this.name, false, false);
+            } catch (Exception e) {
+                throw new GroovyBugError(e);
+            }
         }
     }
 
@@ -381,7 +397,7 @@ public abstract class Selector {
                 if (LOG_ENABLED) LOG.info("set meta class invocation path");
                 Object receiver = args[0];
                 if (receiver instanceof Class) {
-                    handle = LOOKUP.findVirtual(mc.getClass(), "invokeStaticMethod", MethodType.methodType(Object.class, Object.class, String.class, Object[].class));
+                    handle = LOOKUP.findVirtual(MetaClass.class, "invokeStaticMethod", MethodType.methodType(Object.class, Object.class, String.class, Object[].class));
                     handle = handle.bindTo(mc);
                     if (LOG_ENABLED) LOG.info("use invokeStaticMethod with bound meta class");
                 } else {
