@@ -16,6 +16,7 @@
 package org.codehaus.groovy.vmplugin.v7;
 
 import groovy.lang.AdaptingMetaClass;
+import groovy.lang.GroovyInterceptable;
 import groovy.lang.GroovyObject;
 import groovy.lang.GroovyRuntimeException;
 import groovy.lang.GroovySystem;
@@ -95,6 +96,11 @@ public abstract class Selector {
             super(callSite, sender, methodName, callType, safeNavigation, thisCall, spreadCall, arguments);
         }
 
+        @Override
+        public boolean setInterceptor() {
+            return false;
+        }
+
         /**
          * this method chooses a property from the meta class.
          */
@@ -166,6 +172,11 @@ public abstract class Selector {
         
         public InitSelector(MutableCallSite callSite, Class sender, String methodName, CALL_TYPES callType, boolean safeNavigation, boolean thisCall, boolean spreadCall, Object[] arguments) {
             super(callSite, sender, methodName, callType, safeNavigation, thisCall, spreadCall, arguments);
+        }
+        
+        @Override
+        public boolean setInterceptor() {
+            return false;
         }
 
         @Override
@@ -677,10 +688,23 @@ public abstract class Selector {
             }
             if (LOG_ENABLED) LOG.info("selection base set to "+selectionBase);
         }
+        
+        public boolean setInterceptor() {
+            if (!(this.args[0] instanceof GroovyInterceptable)) return false;
+            try {
+                handle = LOOKUP.findVirtual(GroovyInterceptable.class, "invokeMethod", MethodType.methodType(Object.class, String.class, Object.class));
+            } catch (ReflectiveOperationException e) {
+                throw new GroovyBugError(e);
+            }
+            handle = MethodHandles.insertArguments(handle, 1, this.name);
+            handle = handle.asCollector(Object[].class, targetType.parameterCount()-1); 
+            handle = handle.asType(targetType);
+            return true;
+        }
 
         @Override
         public void setCallSiteTarget() {
-            if (!setNullForSafeNavigation()) {
+            if (!setNullForSafeNavigation() && !setInterceptor()) {
                 getMetaClass();
                 if (LOG_ENABLED) LOG.info("meta class is "+mc);
                 setSelectionBase();
