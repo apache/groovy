@@ -129,6 +129,7 @@ public abstract class Selector {
                         // normally we would do the following
                         // handle = MethodHandles.dropArguments(handle,0,Class.class);
                         // but because there is a bug in invokedynamic in all jdk7 versions up to update 7
+                        // maybe use Unsafe.ensureClassInitialized
                         handle = META_PROPERTY_GETTER.bindTo(res);
                     }
                 } catch (IllegalAccessException iae) {
