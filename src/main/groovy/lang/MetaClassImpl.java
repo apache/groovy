@@ -1466,6 +1466,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         private final boolean beanConstructor;
         private MetaConstructor(CachedConstructor cc, boolean bean) {
             super(cc.getNativeParameterTypes());
+            this.setParametersTypes(cc.getParameterTypes());
             this.cc = cc;
             this.beanConstructor = bean;
         }
