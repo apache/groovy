@@ -367,6 +367,13 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-5779
+    void testShouldNotUseNonStaticProperty() {
+        assertScript '''import java.awt.Color
+        Color c = Color.red // should not be interpreted as Color.getRed()
+        '''
+    }
+
     public static class BaseClass {
         int x
     }
