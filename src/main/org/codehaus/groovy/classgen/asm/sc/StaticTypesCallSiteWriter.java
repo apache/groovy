@@ -342,6 +342,9 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
             getterName = "is" + MetaClassHelper.capitalize(methodName);
             getterNode = receiverType.getGetterMethod(getterName);
         }
+        if (getterNode!=null && receiver instanceof ClassExpression && !CLASS_Type.equals(receiverType) && !getterNode.isStatic()) {
+            return false;
+        }
 
         // GROOVY-5561: if two files are compiled in the same source unit
         // and that one references the other, the getters for properties have not been
