@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.codehaus.groovy.transform.stc;
 
 import org.codehaus.groovy.ast.ClassNode;
@@ -24,7 +25,7 @@ import org.codehaus.groovy.ast.ClassNode;
  *
  * @author Cedric Champeau
  */
-interface SignatureCodec {
+public interface SignatureCodec {
     String encode(ClassNode node);
 
     ClassNode decode(String signature);

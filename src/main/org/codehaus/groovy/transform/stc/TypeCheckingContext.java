@@ -29,13 +29,17 @@ import java.util.*;
 
 public class TypeCheckingContext {
     protected SourceUnit source;
-    protected ClassNode classNode;
-    protected MethodNode methodNode;
+    protected ClassNode enclosingClassNode;
     protected Set<MethodNode> methodsToBeVisited = Collections.emptySet();
     protected ErrorCollector errorCollector;
-    protected boolean isInStaticContext = false;// used for closure return type inference
-    protected ClosureExpression closureExpression;
-    protected List<ClassNode> closureReturnTypes;// whenever a method using a closure as argument (typically, "with") is detected, this list is updated
+    protected boolean isInStaticContext = false;
+
+    protected final LinkedList<MethodNode> enclosingMethods = new LinkedList<MethodNode>();
+
+    // used for closure return type inference
+    protected final LinkedList<EnclosingClosure> enclosingClosures = new LinkedList<EnclosingClosure>();
+
+    // whenever a method using a closure as argument (typically, "with") is detected, this list is updated
     // with the receiver type of the with method
     protected DelegationMetadata delegationMetadata;
     /**
@@ -65,11 +69,148 @@ public class TypeCheckingContext {
      * LUB of each type and check that method calls on those variables are valid.
      */
     protected final Map<VariableExpression, List<ClassNode>> closureSharedVariablesAssignmentTypes = new HashMap<VariableExpression, List<ClassNode>>();
-    protected Map<Parameter, ClassNode> controlStructureVariables = new HashMap<Parameter, ClassNode>();// this map is used to ensure that two errors are not reported on the same line/column
-    protected final Set<Long> reportedErrors = new TreeSet<Long>();// stores the current binary expresssion. This is used when assignments are made with a null object, for type
+    protected Map<Parameter, ClassNode> controlStructureVariables = new HashMap<Parameter, ClassNode>();
+
+    // this map is used to ensure that two errors are not reported on the same line/column
+    protected final Set<Long> reportedErrors = new TreeSet<Long>();
+
+    // stores the current binary expresssion. This is used when assignments are made with a null object, for type
     // inference
-    protected BinaryExpression currentBinaryExpression;
+    protected final LinkedList<BinaryExpression> enclosingBinaryExpressions = new LinkedList<BinaryExpression>();
+
+    protected final StaticTypeCheckingVisitor visitor;
 
     public TypeCheckingContext(final StaticTypeCheckingVisitor staticTypeCheckingVisitor) {
+        this.visitor = staticTypeCheckingVisitor;
+    }
+
+    /**
+     * Pushes a binary expression into the binary expression stack.
+     * @param binaryExpression the binary expression to be pushed
+     */
+    public void pushEnclosingBinaryExpression(BinaryExpression binaryExpression) {
+        enclosingBinaryExpressions.push(binaryExpression);
+    }
+
+    /**
+     * Pops a binary expression from the binary expression stack.
+     * @return the popped binary expression
+     */
+    public BinaryExpression popEnclosingBinaryExpression() {
+        return enclosingBinaryExpressions.pop();
+    }
+
+    /**
+     * Returns the binary expression which is on the top of the stack, or null
+     * if there's no such element.
+     * @return the binary expression on top of the stack, or null if no such element.
+     */
+    public BinaryExpression getEnclosingBinaryExpression() {
+        return enclosingBinaryExpressions.peekFirst();
+    }
+
+    /**
+     * Returns the current stack of enclosing binary expressions. The first
+     * element is the top of the stack.
+     * @return an immutable list of binary expressions.
+     */
+    public List<BinaryExpression> getEnclosingBinaryExpressionStack() {
+        return Collections.unmodifiableList(enclosingBinaryExpressions);
+    }
+
+    /**
+     * Pushes a closure expression into the closure expression stack.
+     * @param closureExpression the binary expression to be pushed
+     */
+    public void pushEnclosingClosureExpression(ClosureExpression closureExpression) {
+        enclosingClosures.push(new EnclosingClosure(closureExpression));
+    }
+
+    /**
+     * Pops a closure expression from the closure expression stack.
+     * @return the popped closure expression
+     */
+    public EnclosingClosure popEnclosingClosure() {
+        return enclosingClosures.pop();
+    }
+
+    /**
+     * Returns the closure expression which is on the top of the stack, or null
+     * if there's no such element.
+     * @return the closure expression on top of the stack, or null if no such element.
+     */
+    public EnclosingClosure getEnclosingClosure() {
+        return enclosingClosures.peekFirst();
+    }
+
+    /**
+     * Returns the current stack of enclosing closure expressions. The first
+     * element is the top of the stack.
+     * @return an immutable list of closure expressions.
+     */
+    public List<EnclosingClosure> getEnclosingClosureStack() {
+        return Collections.unmodifiableList(enclosingClosures);
+    }
+
+    /**
+     * Pushes a method into the method stack.
+     * @param methodNode the binary expression to be pushed
+     */
+    public void pushEnclosingMethod(MethodNode methodNode) {
+        enclosingMethods.push(methodNode);
+    }
+
+    /**
+     * Pops a method from the enclosing methods stack.
+     * @return the popped method
+     */
+    public MethodNode popEnclosingMethod() {
+        return enclosingMethods.pop();
+    }
+
+    /**
+     * Returns the method node which is on the top of the stack, or null
+     * if there's no such element.
+     * @return the enclosing method on top of the stack, or null if no such element.
+     */
+    public MethodNode getEnclosingMethod() {
+        return enclosingMethods.peekFirst();
+    }
+
+    /**
+     * Returns the current stack of enclosing methods. The first
+     * element is the top of the stack, that is to say the last visited method.
+     * @return an immutable list of method nodes.
+     */
+    public List<MethodNode> getEnclosingMethods() {
+        return Collections.unmodifiableList(enclosingMethods);
+    }
+
+
+
+    /**
+     * Represents the context of an enclosing closure. An enclosing closure wraps
+     * a closure expression and the list of return types found in the closure body.
+     */
+    public static class EnclosingClosure {
+        private final ClosureExpression closureExpression;
+        private final List<ClassNode> returnTypes;
+
+        public EnclosingClosure(final ClosureExpression closureExpression) {
+            this.closureExpression = closureExpression;
+            this.returnTypes = new LinkedList<ClassNode>();
+        }
+
+        public ClosureExpression getClosureExpression() {
+            return closureExpression;
+        }
+
+        public List<ClassNode> getReturnTypes() {
+            return returnTypes;
+        }
+
+        public void addReturnType(ClassNode type) {
+            returnTypes.add(type);
+        }
     }
 }

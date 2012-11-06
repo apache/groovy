@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.codehaus.groovy.transform.stc;
 
 import groovy.lang.GroovyRuntimeException;
@@ -32,7 +33,7 @@ import static org.codehaus.groovy.ast.ClassHelper.*;
  *
  * @author Cedric Champeau
  */
-class SignatureCodecVersion1 implements SignatureCodec {
+public class SignatureCodecVersion1 implements SignatureCodec {
 
     private void doEncode(final ClassNode node, DataOutputStream dos) throws IOException {
         dos.writeUTF(node.getClass().getSimpleName());
