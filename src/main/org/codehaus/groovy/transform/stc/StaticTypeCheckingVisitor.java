@@ -3089,8 +3089,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         Long err = ((long) expr.getLineNumber()) << 16 + expr.getColumnNumber();
         if (!typeCheckingContext.reportedErrors.contains(err)) {
             typeCheckingContext.errorCollector.addErrorAndContinue(new SyntaxErrorMessage(
-                    new SyntaxException(msg + '\n'
-                            + typeCheckingContext.getEnclosingClosureStack(), expr.getLineNumber(), expr.getColumnNumber(), expr.getLastLineNumber(), expr.getLastColumnNumber()),
+                    new SyntaxException(msg + '\n', expr.getLineNumber(), expr.getColumnNumber(), expr.getLastLineNumber(), expr.getLastColumnNumber()),
                     typeCheckingContext.source)
             );
             typeCheckingContext.reportedErrors.add(err);
