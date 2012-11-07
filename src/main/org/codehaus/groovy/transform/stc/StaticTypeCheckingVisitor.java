@@ -755,6 +755,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     protected boolean existsProperty(final PropertyExpression pexp, final boolean checkForReadOnly, final ClassCodeVisitorSupport visitor) {
         Expression objectExpression = pexp.getObjectExpression();
         final ClassNode objectExpressionType = getType(objectExpression);
+        boolean staticProperty = false;
         if (objectExpressionType.isArray() && "length".equals(pexp.getPropertyAsString())) {
             if (visitor != null) {
                 PropertyNode node = new PropertyNode("length", Opcodes.ACC_PUBLIC | Opcodes.ACC_FINAL, int_TYPE, objectExpressionType, null, null, null);
@@ -767,6 +768,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         tests.add(objectExpressionType);
         if (objectExpressionType.equals(CLASS_Type) && objectExpressionType.getGenericsTypes() != null) {
             tests.add(objectExpressionType.getGenericsTypes()[0].getType());
+            staticProperty = true;
         }
         if (!typeCheckingContext.temporaryIfBranchTypeInformation.empty()) {
             List<ClassNode> classNodes = getTemporaryTypesForExpression(objectExpression);
@@ -811,7 +813,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     }
                     MethodNode getter = current.getGetterMethod("get" + capName);
                     if (getter == null) getter = current.getGetterMethod("is" + capName);
-                    if (getter != null) {
+                    if (getter != null && !(staticProperty && !CLASS_Type.equals(current) && !getter.isStatic())) {
                         // check that a setter also exists
                         MethodNode setterMethod = current.getSetterMethod("set" + capName);
                         if (setterMethod != null) {
@@ -848,12 +850,22 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
                         MethodNode getter = current.getGetterMethod("get" + capName);
                         if (getter == null) getter = current.getGetterMethod("is" + capName);
-                        if (getter != null) {
+                        if (getter != null && !(staticProperty && !CLASS_Type.equals(current) && !getter.isStatic())) {
                             if (visitor != null) visitor.visitMethod(getter);
                             pexp.putNodeMetaData(StaticTypesMarker.READONLY_PROPERTY, Boolean.TRUE);
                             ClassNode cn = inferReturnTypeGenerics(current, getter, ArgumentListExpression.EMPTY_ARGUMENTS);
                             storeInferredTypeForPropertyExpression(pexp, cn);
                             return true;
+                        }
+                        if (getter!=null) {
+                            // it's not a call on this, yet we need to check if a field is defined
+                            FieldNode field = current.getDeclaredField(propertyName);
+                            if (field != null) {
+                                if (visitor != null) visitor.visitField(field);
+                                storeInferredTypeForPropertyExpression(pexp, field.getOriginType());
+                                storeType(pexp, field.getOriginType());
+                                return true;
+                            }
                         }
 
                         // if the property expression is an attribute expression (o.@attr), then
