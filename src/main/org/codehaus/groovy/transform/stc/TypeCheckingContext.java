@@ -29,11 +29,11 @@ import java.util.*;
 
 public class TypeCheckingContext {
     protected SourceUnit source;
-    protected ClassNode enclosingClassNode;
     protected Set<MethodNode> methodsToBeVisited = Collections.emptySet();
     protected ErrorCollector errorCollector;
     protected boolean isInStaticContext = false;
 
+    protected final LinkedList<ClassNode> enclosingClassNodes = new LinkedList<ClassNode>();
     protected final LinkedList<MethodNode> enclosingMethods = new LinkedList<MethodNode>();
 
     // used for closure return type inference
@@ -56,7 +56,7 @@ public class TypeCheckingContext {
      * Stores information which is only valid in the "if" branch of an if-then-else statement. This is used when the if
      * condition expression makes use of an instanceof check
      */
-    protected Stack<Map<Object, List<ClassNode>>> temporaryIfBranchTypeInformation;
+    protected Stack<Map<Object, List<ClassNode>>> temporaryIfBranchTypeInformation = new Stack<Map<Object, List<ClassNode>>>();
     protected Set<MethodNode> alreadyVisitedMethods = new HashSet<MethodNode>();
     /**
      * Some expressions need to be visited twice, because type information may be insufficient at some point. For
@@ -186,7 +186,48 @@ public class TypeCheckingContext {
         return Collections.unmodifiableList(enclosingMethods);
     }
 
+    /**
+     * Pushes a method into the method stack.
+     * @param classNode the binary expression to be pushed
+     */
+    public void pushEnclosingClassNode(ClassNode classNode) {
+        enclosingClassNodes.push(classNode);
+    }
 
+    /**
+     * Pops a class from the enclosing classes stack.
+     * @return the popped class
+     */
+    public ClassNode popEnclosingClassNode() {
+        return enclosingClassNodes.pop();
+    }
+
+    /**
+     * Returns the method node which is on the top of the stack, or null
+     * if there's no such element.
+     * @return the enclosing method on top of the stack, or null if no such element.
+     */
+    public ClassNode getEnclosingClassNode() {
+        return enclosingClassNodes.peekFirst();
+    }
+
+    /**
+     * Returns the current stack of enclosing classes. The first
+     * element is the top of the stack, that is to say the currently visited class.
+     * @return an immutable list of class nodes.
+     */
+    public List<ClassNode> getEnclosingClassNodes() {
+        return Collections.unmodifiableList(enclosingClassNodes);
+    }
+
+    public void pushTemporaryTypeInfo() {
+        Map<Object, List<ClassNode>> potentialTypes = new HashMap<Object, List<ClassNode>>();
+        temporaryIfBranchTypeInformation.push(potentialTypes);
+    }
+
+    public void popTemporaryTypeInfo() {
+        temporaryIfBranchTypeInformation.pop();
+    }
 
     /**
      * Represents the context of an enclosing closure. An enclosing closure wraps
@@ -211,6 +252,16 @@ public class TypeCheckingContext {
 
         public void addReturnType(ClassNode type) {
             returnTypes.add(type);
+        }
+
+        @Override
+        public String toString() {
+            final StringBuilder sb = new StringBuilder();
+            sb.append("EnclosingClosure");
+            sb.append("{closureExpression=").append(closureExpression.getText());
+            sb.append(", returnTypes=").append(returnTypes);
+            sb.append('}');
+            return sb.toString();
         }
     }
 }
