@@ -137,6 +137,16 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         this.typeCheckingContext.errorCollector = errorCollector;
     }
 
+    /**
+     * Returns the current type checking context. The context is used internally by the type
+     * checker during type checking to store various state data.
+     *
+     * @return the type checking context
+     */
+    public TypeCheckingContext getTypeCheckingContext() {
+        return typeCheckingContext;
+    }
+
     @Override
     public void visitClass(final ClassNode node) {
         if (shouldSkipClassNode(node)) return;
@@ -1732,7 +1742,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             addStaticTypeError("cannot resolve dynamic method name at compile time.", call.getMethod());
             return;
         }
-
+        typeCheckingContext.pushEnclosingMethodCall(call);
         final Expression objectExpression = call.getObjectExpression();
 
         objectExpression.visit(this);
@@ -1763,6 +1773,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 storeType(call, listNode);
                 // store target method
                 storeTargetMethod(call, (MethodNode) subcall.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET));
+                typeCheckingContext.popEnclosingMethodCall();
                 return;
             }
         }
@@ -1908,6 +1919,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     }
                 }
                 if (mn.isEmpty()) {
+                    mn = errorHandler.handleMissingMethod(receiver, name, argumentList, args, call);
+                }
+                if (mn.isEmpty()) {
                     addNoMatchingMethodError(receiver, name, args, call);
                 } else {
                     if (areCategoryMethodCalls(mn, name, args)) {
@@ -1916,7 +1930,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     if (mn.size() == 1) {
                         MethodNode directMethodCallCandidate = mn.get(0);
                         // visit the method to obtain inferred return type
-                        ClassNode currentClassNode = typeCheckingContext.getEnclosingClassNode();
                         typeCheckingContext.pushEnclosingClassNode(directMethodCallCandidate.getDeclaringClass());
                         for (ClassNode node : typeCheckingContext.source.getAST().getClasses()) {
                             if (isClassInnerClassOrEqualTo(typeCheckingContext.getEnclosingClassNode(), node)) {
@@ -1964,6 +1977,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             if (isWithCall) {
                 typeCheckingContext.lastImplicitItType = rememberLastItType;
             }
+            typeCheckingContext.popEnclosingMethodCall();
         }
     }
 

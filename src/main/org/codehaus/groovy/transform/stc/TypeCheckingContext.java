@@ -19,9 +19,7 @@ package org.codehaus.groovy.transform.stc;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
-import org.codehaus.groovy.ast.expr.BinaryExpression;
-import org.codehaus.groovy.ast.expr.ClosureExpression;
-import org.codehaus.groovy.ast.expr.VariableExpression;
+import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.control.ErrorCollector;
 import org.codehaus.groovy.control.SourceUnit;
 
@@ -35,6 +33,7 @@ public class TypeCheckingContext {
 
     protected final LinkedList<ClassNode> enclosingClassNodes = new LinkedList<ClassNode>();
     protected final LinkedList<MethodNode> enclosingMethods = new LinkedList<MethodNode>();
+    protected final LinkedList<Expression> enclosingMethodCalls = new LinkedList<Expression>();
 
     // used for closure return type inference
     protected final LinkedList<EnclosingClosure> enclosingClosures = new LinkedList<EnclosingClosure>();
@@ -227,6 +226,44 @@ public class TypeCheckingContext {
 
     public void popTemporaryTypeInfo() {
         temporaryIfBranchTypeInformation.pop();
+    }
+
+    /**
+     * Pushes a method call into the method call stack.
+     * @param call the call expression to be pushed, either a {@link MethodCallExpression} or a {@link StaticMethodCallExpression}
+     */
+    public void pushEnclosingMethodCall(Expression call) {
+        if (call instanceof MethodCallExpression || call instanceof StaticMethodCallExpression) {
+            enclosingMethodCalls.push(call);
+        } else {
+            throw new IllegalArgumentException("Expression must be a method call or a static method call");
+        }
+    }
+
+    /**
+     * Pops a method call from the enclosing method call stack.
+     * @return the popped call
+     */
+    public Expression popEnclosingMethodCall() {
+        return enclosingMethodCalls.pop();
+    }
+
+    /**
+     * Returns the method call which is on the top of the stack, or null
+     * if there's no such element.
+     * @return the enclosing method call on top of the stack, or null if no such element.
+     */
+    public Expression getEnclosingMethodCall() {
+        return enclosingMethodCalls.peekFirst();
+    }
+
+    /**
+     * Returns the current stack of enclosing classes. The first
+     * element is the top of the stack, that is to say the currently visited class.
+     * @return an immutable list of class nodes.
+     */
+    public List<Expression> getEnclosingMethodCalls() {
+        return Collections.unmodifiableList(enclosingMethodCalls);
     }
 
     /**

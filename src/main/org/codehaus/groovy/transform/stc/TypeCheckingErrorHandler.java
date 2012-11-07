@@ -15,9 +15,11 @@
  */
 package org.codehaus.groovy.transform.stc;
 
-import org.codehaus.groovy.ast.expr.AttributeExpression;
-import org.codehaus.groovy.ast.expr.PropertyExpression;
-import org.codehaus.groovy.ast.expr.VariableExpression;
+import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.expr.*;
+
+import java.util.List;
 
 /**
  * This interface defines a high-level API for handling type checking errors. As a dynamic language and a platform
@@ -37,4 +39,7 @@ public interface TypeCheckingErrorHandler {
     boolean handleUnresolvedProperty(PropertyExpression pexp);
 
     boolean handleUnresolvedAttribute(AttributeExpression aexp);
+
+    List<MethodNode> handleMissingMethod(ClassNode receiver, String name, ArgumentListExpression argumentList, ClassNode[] argumentTypes, MethodCallExpression call);
+
 }

@@ -16,9 +16,9 @@
 
 package org.codehaus.groovy.transform.stc;
 
-import org.codehaus.groovy.ast.expr.AttributeExpression;
-import org.codehaus.groovy.ast.expr.PropertyExpression;
-import org.codehaus.groovy.ast.expr.VariableExpression;
+import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.expr.*;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -71,5 +71,13 @@ public class DefaultTypeCheckingErrorHandler implements TypeCheckingErrorHandler
             if (handler.handleUnresolvedAttribute(aexp)) return true;
         }
         return false;
+    }
+
+    public List<MethodNode> handleMissingMethod(final ClassNode receiver, final String name, final ArgumentListExpression argumentList, final ClassNode[] argumentTypes, final MethodCallExpression call) {
+        List<MethodNode> result = new LinkedList<MethodNode>();
+        for (TypeCheckingErrorHandler handler : handlers) {
+            result.addAll(handler.handleMissingMethod(receiver, name, argumentList, argumentTypes, call));
+        }
+        return result;
     }
 }
