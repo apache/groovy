@@ -46,6 +46,7 @@ import org.codehaus.groovy.runtime.dgmimpl.NumberNumberMetaMethod;
 import org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl;
 import org.codehaus.groovy.runtime.metaclass.MethodMetaProperty;
 import org.codehaus.groovy.runtime.metaclass.NewInstanceMetaMethod;
+import org.codehaus.groovy.runtime.metaclass.NewStaticMetaMethod;
 import org.codehaus.groovy.runtime.metaclass.ReflectionMetaMethod;
 import org.codehaus.groovy.runtime.wrappers.Wrapper;
 import org.codehaus.groovy.vmplugin.v7.IndyInterface.CALL_TYPES;
@@ -350,6 +351,8 @@ public abstract class Selector {
 
             boolean isCategoryTypeMethod = metaMethod instanceof NewInstanceMetaMethod;
             if (LOG_ENABLED) LOG.info("meta method is category type method: "+isCategoryTypeMethod);
+            boolean isStaticCategoryTypeMethod = metaMethod instanceof NewStaticMetaMethod;
+            if (LOG_ENABLED) LOG.info("meta method is static category type method: "+isCategoryTypeMethod);
 
             if (metaMethod instanceof ReflectionMetaMethod) {
                 if (LOG_ENABLED) LOG.info("meta method is reflective method");
@@ -365,13 +368,17 @@ public abstract class Selector {
                     Method m = cm.getCachedMethod();
                     handle = LOOKUP.unreflect(m);
                     if (LOG_ENABLED) LOG.info("successfully unreflected method");
-                    if (!isCategoryTypeMethod && isStatic(m)) {
+                    if (isStaticCategoryTypeMethod) {
+                        handle = MethodHandles.insertArguments(handle, 0, new Object[]{null});
+                        handle = MethodHandles.dropArguments(handle, 0, targetType.parameterType(0));
+                    } else if (!isCategoryTypeMethod && isStatic(m)) {
                         handle = MethodHandles.dropArguments(handle, 0, Class.class);
-                    }
+                    } 
                 } catch (IllegalAccessException e) {
                     throw new GroovyBugError(e);
                 }
             } else if (metaMethod instanceof MetaConstructor) {
+                //TODO: move this to init selector
                 if (LOG_ENABLED) LOG.info("meta method is MetaConstructor instance");
                 MetaConstructor mc = (MetaConstructor) metaMethod;
                 isVargs = mc.isVargsMethod();
