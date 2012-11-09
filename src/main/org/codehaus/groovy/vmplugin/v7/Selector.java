@@ -376,7 +376,10 @@ public abstract class Selector {
                         handle = MethodHandles.insertArguments(handle, 0, new Object[]{null});
                         handle = MethodHandles.dropArguments(handle, 0, targetType.parameterType(0));
                     } else if (!isCategoryTypeMethod && isStatic(m)) {
-                        handle = MethodHandles.dropArguments(handle, 0, Class.class);
+                        // we drop the receiver, which might be a Class (invocation on Class)
+                        // or it might be an object (static method invocation on instance)
+                        // Object.class handles both cases at once
+                        handle = MethodHandles.dropArguments(handle, 0, Object.class);
                     } 
                 } catch (IllegalAccessException e) {
                     throw new GroovyBugError(e);
