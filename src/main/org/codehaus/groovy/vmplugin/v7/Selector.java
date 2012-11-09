@@ -410,9 +410,16 @@ public abstract class Selector {
                     handle = MethodHandles.insertArguments(handle, 1, new Object[]{new Object[]{null}});
                     if (LOG_ENABLED) LOG.info("null argument expansion");
                 } else if (method.isVargsMethod() && !spread) {
-                    // the method expects the arguments as Object[] in a Object[]
+                    // the method expects the arguments as Object[] in the target[]
+                    // in case of the methods given as single arguments we need to create
+                    // the target array, in case the array is given already we do not. The
+                    // creation of the target array we will leave to #correctParameterLength
+                    // Thus we create only the wrapping Object[] and use currentType to hint 
+                    // the signature we would like to have
+
+                    // create Object[] wrapper, set vargs to true and set override type
                     handle = handle.asCollector(Object[].class, 1);
-                    handle = handle.asCollector(Object[].class, targetType.parameterCount()-1);
+                    isVargs = true;
                     currentType = MethodType.methodType(method.getReturnType(), method.getNativeParameterTypes());
                     currentType = currentType.insertParameterTypes(0, method.getDeclaringClass().getTheClass());
                     if (LOG_ENABLED) LOG.info("wrapping vargs for dgm helper");
@@ -503,6 +510,7 @@ public abstract class Selector {
             if (handle==null) return;
 
             Class[] params = handle.type().parameterArray();
+            if (currentType!=null) params = currentType.parameterArray();
             if (!isVargs) {
                 if (params.length != args.length) {
                   //TODO: add null argument
