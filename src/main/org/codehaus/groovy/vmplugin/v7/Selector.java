@@ -494,13 +494,13 @@ public abstract class Selector {
             for (int i=1; i<args.length; i++) {
                 if (args[i] instanceof Wrapper) {
                     Class type = pt[i];
-                    MethodType mt = MethodType.methodType(type, Object.class);
+                    MethodType mt = MethodType.methodType(type, Wrapper.class);
                     handle = MethodHandles.filterArguments(handle, i, UNWRAP_METHOD.asType(mt));
                     if (LOG_ENABLED) LOG.info("added filter for Wrapper for argument at pos "+i);
                 }
             }
         }
-
+        
         /**
          * Handles cases in which we have to correct the length of arguments
          * using the parameters. This might be needed for vargs and for one 
@@ -519,11 +519,12 @@ public abstract class Selector {
             }
 
             Class lastParam = params[params.length-1];
-            Object lastArg = args[args.length-1];
+            Object lastArg = unwrapIfWrapped(args[args.length-1]);
             if (params.length == args.length) {
                 // may need rewrap
                 if (lastParam == lastArg || lastArg == null) return;
                 if (lastParam.isInstance(lastArg)) return;
+                if (lastArg.getClass().isArray()) return;
                 // arg is not null and not assignment compatible
                 // so we really need to rewrap
                 handle = handle.asCollector(lastParam, 1);
@@ -560,7 +561,7 @@ public abstract class Selector {
             }
             for (int i=0; i<args.length; i++) {
                 if (parameters[i]==Object.class) continue; 
-                Object arg = args[i];
+                Object arg = unwrapIfWrapped(args[i]);
                 // we have to handle here different cases in which we do no
                 // transformations. We depend on our method selection to have
                 // selected only a compatible method, that means for a null
@@ -727,9 +728,9 @@ public abstract class Selector {
                 chooseMeta(mci);
                 setHandleForMetaMethod();
                 setMetaClassCallHandleIfNedded();
-                correctWrapping();
                 correctParameterLength();
                 correctCoerce();
+                correctWrapping();
                 correctNullReceiver();
                 correctSpreading();
 
@@ -758,6 +759,10 @@ public abstract class Selector {
                 c == char.class    || c == Character.class;
     }
 
+    private static Object unwrapIfWrapped(Object object) {
+        if (object instanceof Wrapper) return unwrap(object);
+        return object;
+    }
     public Object getCorrectedReceiver() {
         Object receiver = args[0];
         if (receiver==null) {

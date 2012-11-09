@@ -24,6 +24,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 
 import org.codehaus.groovy.GroovyBugError;
+import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 /**
  * This class contains several transformers for used during method invocation.
@@ -33,7 +34,7 @@ public class TypeTransformers {
 	private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
     private static final MethodHandle 
         TO_STRING, TO_BYTE,   TO_INT,     TO_LONG,    TO_SHORT,
-        TO_FLOAT,  TO_DOUBLE, TO_BIG_INT, TO_BIG_DEC;
+        TO_FLOAT,  TO_DOUBLE, TO_BIG_INT, TO_BIG_DEC, AS_ARRAY;
     static {
         try {
             TO_STRING   = LOOKUP.findVirtual(Object.class, "toString",      MethodType.methodType(String.class));
@@ -53,6 +54,9 @@ public class TypeTransformers {
             // if the given number
             tmp = LOOKUP.findConstructor(BigInteger.class, MethodType.methodType(Void.TYPE, String.class));
             TO_BIG_INT  = MethodHandles.filterReturnValue(TO_STRING, tmp);
+            
+            // generic array to array conversion
+            AS_ARRAY = LOOKUP.findStatic(DefaultTypeTransformation.class, "asArray", MethodType.methodType(Object.class, Object.class, Class.class));
         } catch (Exception e) {
             throw new GroovyBugError(e);
         }
@@ -64,7 +68,9 @@ public class TypeTransformers {
     		transformer = TO_STRING;
         } else if (Number.class.isAssignableFrom(parameter)) {
             transformer = selectNumberTransformer(parameter, arg);
-        } 
+        } else if (parameter.isArray()) {
+            transformer =  MethodHandles.insertArguments(AS_ARRAY, 1, parameter);
+        }
         if (transformer==null) throw new GroovyBugError("Unknown transformation for argument "+arg+" at position "+pos+" with "+arg.getClass()+" for parameter of type "+parameter);
         return applyUnsharpFilter(handle, pos, transformer);
     }
