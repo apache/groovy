@@ -63,7 +63,7 @@ public abstract class Selector {
     public MutableCallSite callSite;
     public Class sender;
     public boolean isVargs;
-    public boolean safeNavigation, safeNavigationOrig, spread, genericInvoker;
+    public boolean safeNavigation, safeNavigationOrig, spread;
     public boolean skipSpreadCollector;
     public boolean thisCall;
     public Class selectionBase;
@@ -116,10 +116,14 @@ public abstract class Selector {
                     if (!reflectionMethod.isSynthetic()) {
                         handle = LOOKUP.unreflect(reflectionMethod);
                         handle = MethodHandles.insertArguments(handle, 1, name);
-                        genericInvoker = true;
                         return;
                     }
                 } catch (ReflectiveOperationException e)  {}
+            } else if (receiver instanceof Class) {
+                handle = META_CLASS_GET;
+                handle = MethodHandles.insertArguments(handle, 2, name);
+                handle = MethodHandles.insertArguments(handle, 0, this.mc);
+                return;
             }
 
             if (method!=null || mci==null) return;

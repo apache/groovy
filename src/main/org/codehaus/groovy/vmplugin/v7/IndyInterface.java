@@ -22,6 +22,7 @@ import groovy.lang.MetaClass;
 import groovy.lang.MetaClassRegistryChangeEvent;
 import groovy.lang.MetaClassRegistryChangeEventListener;
 import groovy.lang.MetaMethod;
+import groovy.lang.MetaObjectProtocol;
 import groovy.lang.MetaProperty;
 import groovy.lang.MissingMethodException;
 
@@ -102,7 +103,7 @@ public class IndyInterface {
             META_METHOD_INVOKER,    GROOVY_OBJECT_INVOKER,
             HAS_CATEGORY_IN_CURRENT_THREAD_GUARD,
             BEAN_CONSTRUCTOR_PROPERTY_SETTER,
-            META_PROPERTY_GETTER;
+            META_PROPERTY_GETTER, META_CLASS_GET;
         static {
             try {
                 UNWRAP_METHOD = LOOKUP.findStatic(IndyInterface.class, "unwrap", O2O);
@@ -115,6 +116,7 @@ public class IndyInterface {
                 HAS_CATEGORY_IN_CURRENT_THREAD_GUARD = LOOKUP.findStatic(GroovyCategorySupport.class, "hasCategoryInCurrentThread", MethodType.methodType(boolean.class));
                 BEAN_CONSTRUCTOR_PROPERTY_SETTER = LOOKUP.findStatic(IndyInterface.class, "setBeanProperties", MethodType.methodType(Object.class, MetaClass.class, Object.class, Map.class));
                 META_PROPERTY_GETTER = LOOKUP.findVirtual(MetaProperty.class, "getProperty", O2O);
+                META_CLASS_GET = LOOKUP.findVirtual(MetaObjectProtocol.class, "getProperty", MethodType.methodType(Object.class, Object.class, String.class));
             } catch (Exception e) {
                 throw new GroovyBugError(e);
             }
