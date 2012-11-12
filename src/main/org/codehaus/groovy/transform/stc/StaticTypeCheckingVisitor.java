@@ -111,11 +111,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     protected final ReturnAdder returnAdder = new ReturnAdder(returnListener);
 
     protected TypeCheckingContext typeCheckingContext;
-    protected TypeCheckingErrorHandler errorHandler;
+    protected TypeCheckingExtension extension;
 
     public StaticTypeCheckingVisitor(SourceUnit source, ClassNode cn) {
         this.typeCheckingContext = new TypeCheckingContext(this);
-        this.errorHandler = new DefaultTypeCheckingErrorHandler(this);
+        DefaultTypeCheckingExtension handler = new DefaultTypeCheckingExtension(this);
+        this.extension = handler;
         this.typeCheckingContext.source = source;
         this.typeCheckingContext.pushEnclosingClassNode(cn);
         this.typeCheckingContext.errorCollector = source.getErrorCollector();
@@ -280,22 +281,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 }
             }
 
-            if (!errorHandler.handleUnresolvedVariableExpression(vexp)) {
+            if (!extension.handleUnresolvedVariableExpression(vexp)) {
                 addStaticTypeError("The variable [" + vexp.getName() + "] is undeclared.", vexp);
             }
         }
-    }
-
-    protected boolean handleUnresolvedVariableExpression(VariableExpression vexp) {
-        return errorHandler.handleUnresolvedVariableExpression(vexp);
-    }
-
-    protected boolean handleUnresolvedProperty(final PropertyExpression pexp) {
-        return errorHandler.handleUnresolvedProperty(pexp);
-    }
-
-    protected boolean handleUnresolvedAttribute(final AttributeExpression aexp) {
-        return errorHandler.handleUnresolvedAttribute(aexp);
     }
 
     @Override
@@ -309,7 +298,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 if (hasSetter(pexp)) return;
             }
 
-            if (!errorHandler.handleUnresolvedProperty(pexp)) {
+            if (!extension.handleUnresolvedProperty(pexp)) {
                 Expression objectExpression = pexp.getObjectExpression();
                 addStaticTypeError("No such property: " + pexp.getPropertyAsString() +
                         " for class: " + findCurrentInstanceOfClass(objectExpression, getType(objectExpression)).toString(false), pexp);
@@ -320,7 +309,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     @Override
     public void visitAttributeExpression(final AttributeExpression expression) {
         super.visitAttributeExpression(expression);
-        if (!existsProperty(expression, true) && !errorHandler.handleUnresolvedAttribute(expression)) {
+        if (!existsProperty(expression, true) && !extension.handleUnresolvedAttribute(expression)) {
             Expression objectExpression = expression.getObjectExpression();
             addStaticTypeError("No such property: " + expression.getPropertyAsString() +
                     " for class: " + findCurrentInstanceOfClass(objectExpression, objectExpression.getType()), expression);
@@ -583,7 +572,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             addStaticTypeError("Cannot set read-only property: " + ((PropertyExpression) leftExpression).getPropertyAsString(), leftExpression);
         }
         if (!compatible) {
-            addAssignmentError(leftExpressionType, inferredRightExpressionType, assignmentExpression.getRightExpression());
+            if (!extension.handleIncompatibleAssignment(leftExpressionType, inferredRightExpressionType, assignmentExpression)) {
+                addAssignmentError(leftExpressionType, inferredRightExpressionType, assignmentExpression.getRightExpression());
+            }
         } else {
             // if closure expression on RHS, then copy the inferred closure return type
             if (rightExpression instanceof ClosureExpression) {
@@ -628,7 +619,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 checkGroovyStyleConstructor(leftRedirect, args);
             } else if (!implementsInterfaceOrIsSubclassOf(inferredRightExpressionType, leftRedirect)
                     && implementsInterfaceOrIsSubclassOf(inferredRightExpressionType, LIST_TYPE)) {
-                addAssignmentError(leftExpressionType, inferredRightExpressionType, assignmentExpression);
+                if (!extension.handleIncompatibleAssignment(leftExpressionType, inferredRightExpressionType, assignmentExpression)) {
+                    addAssignmentError(leftExpressionType, inferredRightExpressionType, assignmentExpression);
+                }
             }
 
             // if left type is not a list but right type is a map, then we're in the case of a groovy
@@ -678,8 +671,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                             " for class: " + receiverType.getName(), receiver);
                 } else {
                     ClassNode valueType = getType(entryExpression.getValueExpression());
-                    if (!isAssignableTo(valueType, lookup.get())) {
-                        addAssignmentError(lookup.get(), valueType, entryExpression);
+                    ClassNode toBeAssignedTo = lookup.get();
+                    if (!isAssignableTo(valueType, toBeAssignedTo)
+                            && !extension.handleIncompatibleAssignment(toBeAssignedTo, valueType, entryExpression)) {
+                        addAssignmentError(toBeAssignedTo, valueType, entryExpression);
                     }
                 }
             }
@@ -1442,6 +1437,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             // method has already been visited by a static type checking visitor
             return;
         }
+        if (!extension.beforeVisitMethod(node)) {
         ErrorCollector collector = (ErrorCollector) node.getNodeMetaData(ERROR_COLLECTOR);
         if (collector != null) {
             typeCheckingContext.errorCollector.addCollectorContents(collector);
@@ -1449,6 +1445,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             startMethodInference(node, typeCheckingContext.errorCollector);
         }
         node.removeNodeMetaData(ERROR_COLLECTOR);
+        }
+        extension.afterVisitMethod(node);
     }
 
     protected void startMethodInference(final MethodNode node, ErrorCollector collector) {
@@ -1509,6 +1507,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         final String name = call.getMethod();
         if (name == null) {
             addStaticTypeError("cannot resolve dynamic method name at compile time.", call);
+            return;
+        }
+
+        if (extension.beforeMethodCall(call)) {
+            extension.afterMethodCall(call);
             return;
         }
 
@@ -1592,6 +1595,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             if (isWithCall) {
                 typeCheckingContext.lastImplicitItType = rememberLastItType;
             }
+            extension.afterMethodCall(call);
         }
     }
 
@@ -1740,6 +1744,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         final String name = call.getMethodAsString();
         if (name == null) {
             addStaticTypeError("cannot resolve dynamic method name at compile time.", call.getMethod());
+            return;
+        }
+        if (extension.beforeMethodCall(call)) {
+            extension.afterMethodCall(call);
             return;
         }
         typeCheckingContext.pushEnclosingMethodCall(call);
@@ -1919,7 +1927,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     }
                 }
                 if (mn.isEmpty()) {
-                    mn = errorHandler.handleMissingMethod(receiver, name, argumentList, args, call);
+                    mn = extension.handleMissingMethod(receiver, name, argumentList, args, call);
                 }
                 if (mn.isEmpty()) {
                     addNoMatchingMethodError(receiver, name, args, call);
@@ -1978,6 +1986,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 typeCheckingContext.lastImplicitItType = rememberLastItType;
             }
             typeCheckingContext.popEnclosingMethodCall();
+            extension.afterMethodCall(call);
         }
     }
 
@@ -2030,6 +2039,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     protected void storeTargetMethod(final Expression call, final MethodNode directMethodCallCandidate) {
         call.putNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET, directMethodCallCandidate);
+        extension.onMethodSelection(call, directMethodCallCandidate);
     }
 
     protected boolean isClosureCall(final String name, final Expression objectExpression, final Expression arguments) {
@@ -3181,6 +3191,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 }
             }
         }
+        // give a chance to type checker extensions to throw errors based on information gathered afterwards
+        extension.finish();
     }
 
     protected static ClassNode[] extractTypesFromParameters(final Parameter[] parameters) {
@@ -3211,6 +3223,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
         return false;
     }
+
 
     protected class VariableExpressionTypeMemoizer extends ClassCodeVisitorSupport {
         private final Map<VariableExpression, ClassNode> varOrigType;

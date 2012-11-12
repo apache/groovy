@@ -36,48 +36,107 @@ import java.util.List;
  * @author Cedric Champeau
  * @since 2.1.0
  */
-public class DefaultTypeCheckingErrorHandler implements TypeCheckingErrorHandler {
-    protected final StaticTypeCheckingVisitor typeCheckingVisitor;
-    protected final List<TypeCheckingErrorHandler> handlers = new LinkedList<TypeCheckingErrorHandler>();
+public class DefaultTypeCheckingExtension extends TypeCheckingExtension {
+    protected final List<TypeCheckingExtension> handlers = new LinkedList<TypeCheckingExtension>();
 
-    public DefaultTypeCheckingErrorHandler(final StaticTypeCheckingVisitor typeCheckingVisitor) {
-        this.typeCheckingVisitor = typeCheckingVisitor;
+    public DefaultTypeCheckingExtension(final StaticTypeCheckingVisitor typeCheckingVisitor) {
+        super(typeCheckingVisitor);
     }
 
-    public void addHandler(TypeCheckingErrorHandler handler) {
+    public void addHandler(TypeCheckingExtension handler) {
         handlers.add(handler);
     }
 
-    public void removeHandler(TypeCheckingErrorHandler handler) {
+    public void removeHandler(TypeCheckingExtension handler) {
         handlers.remove(handler);
     }
 
     public boolean handleUnresolvedVariableExpression(VariableExpression vexp) {
-        for (TypeCheckingErrorHandler handler : handlers) {
+        for (TypeCheckingExtension handler : handlers) {
             if (handler.handleUnresolvedVariableExpression(vexp)) return true;
         }
         return false;
     }
 
     public boolean handleUnresolvedProperty(final PropertyExpression pexp) {
-        for (TypeCheckingErrorHandler handler : handlers) {
+        for (TypeCheckingExtension handler : handlers) {
             if (handler.handleUnresolvedProperty(pexp)) return true;
         }
         return false;
     }
 
     public boolean handleUnresolvedAttribute(final AttributeExpression aexp) {
-        for (TypeCheckingErrorHandler handler : handlers) {
+        for (TypeCheckingExtension handler : handlers) {
             if (handler.handleUnresolvedAttribute(aexp)) return true;
+        }
+        return false;
+    }
+
+    @Override
+    public boolean handleIncompatibleAssignment(final ClassNode lhsType, final ClassNode rhsType, final Expression assignmentExpression) {
+        for (TypeCheckingExtension handler : handlers) {
+            if (handler.handleIncompatibleAssignment(lhsType, rhsType, assignmentExpression)) return true;
         }
         return false;
     }
 
     public List<MethodNode> handleMissingMethod(final ClassNode receiver, final String name, final ArgumentListExpression argumentList, final ClassNode[] argumentTypes, final MethodCallExpression call) {
         List<MethodNode> result = new LinkedList<MethodNode>();
-        for (TypeCheckingErrorHandler handler : handlers) {
+        for (TypeCheckingExtension handler : handlers) {
             result.addAll(handler.handleMissingMethod(receiver, name, argumentList, argumentTypes, call));
         }
         return result;
+    }
+
+    @Override
+    public void afterVisitMethod(final MethodNode node) {
+        for (TypeCheckingExtension handler : handlers) {
+            handler.afterVisitMethod(node);
+        }
+    }
+
+    @Override
+    public boolean beforeVisitMethod(final MethodNode node) {
+        for (TypeCheckingExtension handler : handlers) {
+            if (handler.beforeVisitMethod(node)) return true;
+        }
+        return false;
+    }
+
+    @Override
+    public void afterMethodCall(final Expression call) {
+        for (TypeCheckingExtension handler : handlers) {
+            handler.afterMethodCall(call);
+        }
+
+    }
+
+    @Override
+    public boolean beforeMethodCall(final Expression call) {
+        for (TypeCheckingExtension handler : handlers) {
+            if (handler.beforeMethodCall(call)) return true;
+        }
+        return false;
+    }
+
+    @Override
+    public void onMethodSelection(final Expression expression, final MethodNode target) {
+        for (TypeCheckingExtension handler : handlers) {
+            handler.onMethodSelection(expression, target);
+        }
+    }
+
+    @Override
+    public void setup() {
+        for (TypeCheckingExtension handler : handlers) {
+            handler.setup();
+        }
+    }
+
+    @Override
+    public void finish() {
+        for (TypeCheckingExtension handler : handlers) {
+            handler.finish();
+        }
     }
 }
