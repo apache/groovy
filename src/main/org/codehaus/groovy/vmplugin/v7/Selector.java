@@ -398,49 +398,29 @@ public abstract class Selector {
                 }
             } else if (method != null) {
                 if (LOG_ENABLED) LOG.info("meta method is dgm helper");
-                // dgm method helper path
+                // generic meta method invocation path
                 handle = META_METHOD_INVOKER;
                 handle = handle.bindTo(method);
-                if (LOG_ENABLED) LOG.info("bound method name to META_METHOD_INVOKER");
-
-                if (
-                        method.getNativeParameterTypes().length==1 && 
-                        args.length==1 
-                ) {
-                    // the method expects a parameter but we don't provide an 
-                    // argument for that. So we give in a Object[], containing 
-                    // a null value
-                    // since MethodHandles.insertArguments is a vargs method giving
-                    // only the array would be like just giving a null value, so
-                    // we need to wrap the array that represents our argument in
-                    // another one for the vargs call
-                    handle = MethodHandles.insertArguments(handle, 1, new Object[]{new Object[]{null}});
-                    if (LOG_ENABLED) LOG.info("null argument expansion");
-                } else if (method.isVargsMethod() && !spread) {
-                    // the method expects the arguments as Object[] in the target[]
-                    // in case of the methods given as single arguments we need to create
-                    // the target array, in case the array is given already we do not. The
-                    // creation of the target array we will leave to #correctParameterLength
-                    // Thus we create only the wrapping Object[] and use currentType to hint 
-                    // the signature we would like to have
-
-                    // create Object[] wrapper, set vargs to true and set override type
-                    handle = handle.asCollector(Object[].class, 1);
-                    isVargs = true;
-                    currentType = MethodType.methodType(method.getReturnType(), method.getNativeParameterTypes());
-                    currentType = currentType.insertParameterTypes(0, method.getDeclaringClass().getTheClass());
-                    if (LOG_ENABLED) LOG.info("wrapping vargs for dgm helper");
+                if (spread) {
+                    args = originalArguments;
+                    skipSpreadCollector = true;
                 } else {
+                    // wrap arguments from call site in Object[]
                     handle = handle.asCollector(Object[].class, targetType.parameterCount()-1);
-                    currentType = MethodType.methodType(method.getReturnType(), method.getNativeParameterTypes());
-                    currentType = currentType.insertParameterTypes(0, method.getDeclaringClass().getTheClass());
-                    if (spread) {
-                        args = originalArguments;
-                        skipSpreadCollector = true;
-                    }
-                    if (LOG_ENABLED) LOG.info("normal dgm helper wrapping");
+                }
+                currentType = removeWrapper(targetType);
+                if (LOG_ENABLED) LOG.info("bound method name to META_METHOD_INVOKER");
+            }
+        }
+
+        private MethodType removeWrapper(MethodType targetType) {
+            Class[] types = targetType.parameterArray();
+            for (int i=0; i<types.length; i++) {
+                if (types[i]==Wrapper.class) {
+                    targetType = targetType.changeParameterType(i, Object.class);
                 }
             }
+            return targetType;
         }
 
         /**
@@ -519,8 +499,9 @@ public abstract class Selector {
             Class[] params = handle.type().parameterArray();
             if (currentType!=null) params = currentType.parameterArray();
             if (!isVargs) {
-                if (params.length != args.length) {
-                  //TODO: add null argument
+                if (params.length==2 && args.length==1) {
+                    //TODO: this Object[] can be constant
+                    handle = MethodHandles.insertArguments(handle, 1, new Object[]{null});
                 }
                 return;
             }
@@ -529,7 +510,7 @@ public abstract class Selector {
             Object lastArg = unwrapIfWrapped(args[args.length-1]);
             if (params.length == args.length) {
                 // may need rewrap
-                if (lastParam == lastArg || lastArg == null) return;
+                if (lastArg == null) return;
                 if (lastParam.isInstance(lastArg)) return;
                 if (lastArg.getClass().isArray()) return;
                 // arg is not null and not assignment compatible
