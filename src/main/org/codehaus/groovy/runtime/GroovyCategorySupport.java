@@ -197,7 +197,7 @@ public class GroovyCategorySupport {
 
     private static final MyThreadLocal THREAD_INFO = new MyThreadLocal();
 
-    private static class CategoryMethod extends NewInstanceMetaMethod implements Comparable {
+    public static class CategoryMethod extends NewInstanceMetaMethod implements Comparable {
         private final Class metaClass;
 
         public CategoryMethod(CachedMethod metaMethod, Class metaClass) {

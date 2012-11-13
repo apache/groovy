@@ -42,6 +42,7 @@ import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.reflection.CachedField;
 import org.codehaus.groovy.reflection.CachedMethod;
 import org.codehaus.groovy.runtime.NullObject;
+import org.codehaus.groovy.runtime.GroovyCategorySupport.CategoryMethod;
 import org.codehaus.groovy.runtime.dgmimpl.NumberNumberMetaMethod;
 import org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl;
 import org.codehaus.groovy.runtime.metaclass.MethodMetaProperty;
@@ -257,6 +258,7 @@ public abstract class Selector {
 
     private static class MethodSelector extends Selector {
         protected MetaClass mc;
+        private boolean isCategoryMethod;
         public MethodSelector(MutableCallSite callSite, Class sender, String methodName, CALL_TYPES callType, Boolean safeNavigation, Boolean thisCall, Boolean spreadCall, Object[] arguments) {
             this.callType = callType;
             this.targetType = callSite.type();
@@ -343,6 +345,7 @@ public abstract class Selector {
          */
         public void setHandleForMetaMethod() {
             MetaMethod metaMethod = method;
+            isCategoryMethod = method instanceof CategoryMethod;
 
             if (metaMethod instanceof NumberNumberMetaMethod) {
                 if (LOG_ENABLED) LOG.info("meta method is number method");
@@ -626,7 +629,7 @@ public abstract class Selector {
                 if (LOG_ENABLED) LOG.info("added meta class equality check");
             }
 
-            if (!useMetaClass) {
+            if (!useMetaClass && isCategoryMethod) {
                 // category method needs Thread check
                 // cases:
                 // (1) method is a category method
