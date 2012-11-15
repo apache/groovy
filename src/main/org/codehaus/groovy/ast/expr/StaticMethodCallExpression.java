@@ -17,6 +17,7 @@ package org.codehaus.groovy.ast.expr;
 
 import groovy.lang.MetaMethod;
 
+import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
 
@@ -26,7 +27,7 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class StaticMethodCallExpression extends Expression {
+public class StaticMethodCallExpression extends Expression implements MethodCall {
 
     private ClassNode ownerType;
     private String method;
@@ -48,6 +49,14 @@ public class StaticMethodCallExpression extends Expression {
         ret.setSourcePosition(this);
         ret.copyNodeMetaData(this);
         return ret;
+    }
+
+    public ASTNode getReceiver() {
+        return ownerType;
+    }
+
+    public String getMethodAsString() {
+        return method;
     }
 
     public Expression getArguments() {

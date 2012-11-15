@@ -111,12 +111,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     protected final ReturnAdder returnAdder = new ReturnAdder(returnListener);
 
     protected TypeCheckingContext typeCheckingContext;
-    protected TypeCheckingExtension extension;
+    protected DefaultTypeCheckingExtension extension;
 
     public StaticTypeCheckingVisitor(SourceUnit source, ClassNode cn) {
         this.typeCheckingContext = new TypeCheckingContext(this);
-        DefaultTypeCheckingExtension handler = new DefaultTypeCheckingExtension(this);
-        this.extension = handler;
+        this.extension = new DefaultTypeCheckingExtension(this);
         this.typeCheckingContext.source = source;
         this.typeCheckingContext.pushEnclosingClassNode(cn);
         this.typeCheckingContext.errorCollector = source.getErrorCollector();
@@ -126,6 +125,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     //        @Override
     protected SourceUnit getSourceUnit() {
         return typeCheckingContext.source;
+    }
+
+    public void initialize() {
+        extension.setup();
     }
 
     /**
@@ -146,6 +149,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
      */
     public TypeCheckingContext getTypeCheckingContext() {
         return typeCheckingContext;
+    }
+
+    public void addTypeCheckingExtension(TypeCheckingExtension extension) {
+        this.extension.addHandler(extension);
     }
 
     @Override

@@ -80,7 +80,7 @@ public class DefaultTypeCheckingExtension extends TypeCheckingExtension {
         return false;
     }
 
-    public List<MethodNode> handleMissingMethod(final ClassNode receiver, final String name, final ArgumentListExpression argumentList, final ClassNode[] argumentTypes, final MethodCallExpression call) {
+    public List<MethodNode> handleMissingMethod(final ClassNode receiver, final String name, final ArgumentListExpression argumentList, final ClassNode[] argumentTypes, final MethodCall call) {
         List<MethodNode> result = new LinkedList<MethodNode>();
         for (TypeCheckingExtension handler : handlers) {
             result.addAll(handler.handleMissingMethod(receiver, name, argumentList, argumentTypes, call));
@@ -104,7 +104,7 @@ public class DefaultTypeCheckingExtension extends TypeCheckingExtension {
     }
 
     @Override
-    public void afterMethodCall(final Expression call) {
+    public void afterMethodCall(final MethodCall call) {
         for (TypeCheckingExtension handler : handlers) {
             handler.afterMethodCall(call);
         }
@@ -112,7 +112,7 @@ public class DefaultTypeCheckingExtension extends TypeCheckingExtension {
     }
 
     @Override
-    public boolean beforeMethodCall(final Expression call) {
+    public boolean beforeMethodCall(final MethodCall call) {
         for (TypeCheckingExtension handler : handlers) {
             if (handler.beforeMethodCall(call)) return true;
         }

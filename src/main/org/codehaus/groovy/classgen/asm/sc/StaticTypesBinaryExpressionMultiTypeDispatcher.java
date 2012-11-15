@@ -269,7 +269,7 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
             rhsValueLoader.visit(acg);
         } else {
             WriterController controller = getController();
-            StaticTypeCheckingVisitor visitor = new StaticCompilationVisitor(controller.getSourceUnit(), controller.getClassNode(), null);
+            StaticTypeCheckingVisitor visitor = new StaticCompilationVisitor(controller.getSourceUnit(), controller.getClassNode());
             // let's replace this assignment to a subscript operator with a
             // method call
             // e.g. x[5] = 10

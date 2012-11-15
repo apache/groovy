@@ -28,7 +28,6 @@ import org.codehaus.groovy.transform.GroovyASTTransformation;
 import org.codehaus.groovy.transform.StaticTypesTransformation;
 import org.codehaus.groovy.transform.sc.transformers.StaticCompilationTransformer;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor;
-import org.codehaus.groovy.transform.stc.TypeCheckerPluginFactory;
 
 import java.util.Collections;
 
@@ -52,14 +51,14 @@ public class StaticCompileTransformation extends StaticTypesTransformation {
         StaticTypeCheckingVisitor visitor = null;
         if (node instanceof ClassNode) {
             ClassNode classNode = (ClassNode) node;
-            visitor = newVisitor(source, classNode, null);
+            visitor = newVisitor(source, classNode);
             classNode.putNodeMetaData(WriterControllerFactory.class, factory);
             node.putNodeMetaData(STATIC_COMPILE_NODE, !visitor.isSkipMode(node));
             visitor.visitClass(classNode);
         } else if (node instanceof MethodNode) {
             MethodNode methodNode = (MethodNode) node;
             ClassNode declaringClass = methodNode.getDeclaringClass();
-            visitor = newVisitor(source, declaringClass, null);
+            visitor = newVisitor(source, declaringClass);
             methodNode.putNodeMetaData(STATIC_COMPILE_NODE, !visitor.isSkipMode(node));
             if (declaringClass.getNodeMetaData(WriterControllerFactory.class) == null) {
                 declaringClass.putNodeMetaData(WriterControllerFactory.class, factory);
@@ -81,8 +80,8 @@ public class StaticCompileTransformation extends StaticTypesTransformation {
     }
 
     @Override
-    protected StaticTypeCheckingVisitor newVisitor(final SourceUnit unit, final ClassNode node, final TypeCheckerPluginFactory pluginFactory) {
-        return new StaticCompilationVisitor(unit, node, pluginFactory);
+    protected StaticTypeCheckingVisitor newVisitor(final SourceUnit unit, final ClassNode node) {
+        return new StaticCompilationVisitor(unit, node);
     }
 
 }

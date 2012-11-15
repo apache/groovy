@@ -15,10 +15,7 @@
  */
 package org.codehaus.groovy.ast.expr;
 
-import org.codehaus.groovy.ast.ClassHelper;
-import org.codehaus.groovy.ast.GenericsType;
-import org.codehaus.groovy.ast.GroovyCodeVisitor;
-import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.*;
 
 /**
  * A method call on an object or class
@@ -26,7 +23,7 @@ import org.codehaus.groovy.ast.MethodNode;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class MethodCallExpression extends Expression {
+public class MethodCallExpression extends Expression implements MethodCall {
 
     private Expression objectExpression;
     private Expression method;
@@ -97,6 +94,10 @@ public class MethodCallExpression extends Expression {
 
     public void setMethod(Expression method) {
       this.method = method;
+    }
+
+    public ASTNode getReceiver() {
+        return getObjectExpression();
     }
 
     /**
