@@ -44,6 +44,7 @@ import org.codehaus.groovy.reflection.CachedMethod;
 import org.codehaus.groovy.runtime.NullObject;
 import org.codehaus.groovy.runtime.GroovyCategorySupport.CategoryMethod;
 import org.codehaus.groovy.runtime.dgmimpl.NumberNumberMetaMethod;
+import org.codehaus.groovy.runtime.metaclass.ClosureMetaClass;
 import org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl;
 import org.codehaus.groovy.runtime.metaclass.MethodMetaProperty;
 import org.codehaus.groovy.runtime.metaclass.NewInstanceMetaMethod;
@@ -159,14 +160,20 @@ public abstract class Selector {
         }
 
         @Override
-        public void setMetaClassCallHandleIfNedded() {
+        public void setMetaClassCallHandleIfNedded(boolean standardMetaClass) {
             if (handle!=null) return;
             useMetaClass = true;
             try {
                 if (LOG_ENABLED) LOG.info("set meta class invocation path for property get.");
                 handle = LOOKUP.findVirtual(MetaClass.class, "getProperty", MethodType.methodType(Object.class, Class.class, Object.class, String.class, boolean.class, boolean.class));
-                handle = MethodHandles.insertArguments(handle, 0, mc, selectionBase);
-                handle = MethodHandles.insertArguments(handle, 1, this.name, false, false);
+                handle = MethodHandles.insertArguments(handle, 3, this.name, false, false);
+                if (standardMetaClass) {
+                    handle = MethodHandles.insertArguments(handle, 0, mc, selectionBase);
+                } else {
+                    handle = MethodHandles.insertArguments(handle, 1, selectionBase);
+                    handle = MethodHandles.filterArguments(handle, 0, SLOW_META_CLASS_FIND);
+                    handle = MethodHandles.permuteArguments(handle, MethodType.methodType(Object.class,Object.class), 0,0);
+                }
             } catch (Exception e) {
                 throw new GroovyBugError(e);
             }
@@ -239,7 +246,7 @@ public abstract class Selector {
         }
         
         @Override
-        public void setMetaClassCallHandleIfNedded() {
+        public void setMetaClassCallHandleIfNedded(boolean standardMetaClass) {
             if (handle!=null) return;
             try {
                 useMetaClass = true;
@@ -432,7 +439,7 @@ public abstract class Selector {
          * This method is called only if no handle has been created before. This
          * is usually the case if the method selection failed.
          */
-        public void setMetaClassCallHandleIfNedded() {
+        public void setMetaClassCallHandleIfNedded(boolean standardMetaClass) {
             if (handle!=null) return;
             try {
                 useMetaClass = true;
@@ -729,7 +736,7 @@ public abstract class Selector {
                 MetaClassImpl mci = getMetaClassImpl(mc);
                 chooseMeta(mci);
                 setHandleForMetaMethod();
-                setMetaClassCallHandleIfNedded();
+                setMetaClassCallHandleIfNedded(mci!=null);
                 correctParameterLength();
                 correctCoerce();
                 correctWrapping();
@@ -783,11 +790,15 @@ public abstract class Selector {
     }
 
     private static MetaClassImpl getMetaClassImpl(MetaClass mc) {
-        if (!(mc instanceof MetaClassImpl) || mc instanceof AdaptingMetaClass) {
-            if (LOG_ENABLED) LOG.info("meta class is neither MetaClassImpl nor AdoptingMetaClass, normal method selection path disabled.");
+        Class mcc = mc.getClass();
+        boolean valid = mcc == MetaClassImpl.class ||
+                         mcc == AdaptingMetaClass.class ||
+                         mcc == ClosureMetaClass.class;
+        if (!valid) {
+            if (LOG_ENABLED) LOG.info("meta class is neither MetaClassImpl, nor AdoptingMetaClass, nor ClosureMetaClass, normal method selection path disabled.");
             return null;
         }
-        if (LOG_ENABLED) LOG.info("meta class is a MetaClassImpl");
+        if (LOG_ENABLED) LOG.info("meta class is a recognized MetaClassImpl");
         return (MetaClassImpl) mc;
     }
 

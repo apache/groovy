@@ -35,6 +35,7 @@ import java.util.logging.Logger;
 
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.runtime.GroovyCategorySupport;
+import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 import org.codehaus.groovy.runtime.metaclass.MissingMethodExecutionFailed;
 import org.codehaus.groovy.runtime.wrappers.Wrapper;
@@ -103,7 +104,8 @@ public class IndyInterface {
             META_METHOD_INVOKER,    GROOVY_OBJECT_INVOKER,
             HAS_CATEGORY_IN_CURRENT_THREAD_GUARD,
             BEAN_CONSTRUCTOR_PROPERTY_SETTER,
-            META_PROPERTY_GETTER, META_CLASS_GET;
+            META_PROPERTY_GETTER, META_CLASS_GET,
+            SLOW_META_CLASS_FIND;
         static {
             try {
                 UNWRAP_METHOD = LOOKUP.findStatic(IndyInterface.class, "unwrap", O2O);
@@ -117,6 +119,7 @@ public class IndyInterface {
                 BEAN_CONSTRUCTOR_PROPERTY_SETTER = LOOKUP.findStatic(IndyInterface.class, "setBeanProperties", MethodType.methodType(Object.class, MetaClass.class, Object.class, Map.class));
                 META_PROPERTY_GETTER = LOOKUP.findVirtual(MetaProperty.class, "getProperty", O2O);
                 META_CLASS_GET = LOOKUP.findVirtual(MetaObjectProtocol.class, "getProperty", MethodType.methodType(Object.class, Object.class, String.class));
+                SLOW_META_CLASS_FIND = LOOKUP.findStatic(InvokerHelper.class, "getMetaClass", MethodType.methodType(MetaClass.class, Object.class));
             } catch (Exception e) {
                 throw new GroovyBugError(e);
             }
