@@ -327,11 +327,12 @@ public abstract class Selector {
         public void chooseMeta(MetaClassImpl mci) {
             if (mci==null) return;
             Object receiver = getCorrectedReceiver();
+            Object[] newArgs = removeRealReceiver(args);
             if (receiver instanceof Class) {
                 if (LOG_ENABLED) LOG.info("receiver is a class");
-                method = mci.retrieveStaticMethod(name, removeRealReceiver(args));
+                method = mci.retrieveStaticMethod(name, newArgs);
             } else {
-                method = mci.getMethodWithCaching(selectionBase, name, removeRealReceiver(args), false);
+                method = mci.getMethodWithCaching(selectionBase, name, newArgs, false);
             }
             if (LOG_ENABLED) LOG.info("retrieved method from meta class: "+method);
         }
@@ -563,13 +564,23 @@ public abstract class Selector {
                 // to another primitive or of the wrappers, or a combination of 
                 // these. This is also handled already. What is left is the 
                 // GString conversion and the number conversions.
+                
                 if (arg==null) continue;
                 Class got = arg.getClass();
+                
+                // equal class, nothing to do
                 if (got==parameters[i]) continue;
+                
                 Class wrappedPara = TypeHelper.getWrapperClass(parameters[i]);
-                if (wrappedPara==got) continue;
+                // equal class with one maybe a primitive, the later explicitCastArguments will solve this case
+                if (wrappedPara==TypeHelper.getWrapperClass(got)) continue;
+                
+                // equal in terms of an assignment in Java. That means according to Java widening rules, or
+                // a subclass, interface, superclass relation, this case then handles also 
+                // primitive to primitive conversion. Those case are also solved by explicitCastArguments.
                 if (parameters[i].isAssignableFrom(got)) continue;
-                if (isPrimitiveOrWrapper(parameters[i]) && isPrimitiveOrWrapper(got)) continue;
+
+                // to aid explicitCastArguments we convert to the wrapper type to let is only unbox
                 handle = TypeTransformers.addTransformer(handle, i, arg, wrappedPara);
                 if (LOG_ENABLED) LOG.info("added transformer at pos "+i+" for type "+got+" to type "+wrappedPara);
             }

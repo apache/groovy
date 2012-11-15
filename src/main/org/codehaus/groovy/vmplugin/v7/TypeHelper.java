@@ -44,6 +44,12 @@ public class TypeHelper {
             c = Double.class;
         } else if (c == Float.TYPE) {
             c = Float.class;
+        } else if (c == Boolean.TYPE) {
+            c = Boolean.class;
+        } else if (c == Character.TYPE) {
+            c = Character.class;
+        } else if (c == Short.TYPE) {
+            c = Short.class;
         }
         return c;
     }
