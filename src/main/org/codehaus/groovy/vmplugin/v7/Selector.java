@@ -41,6 +41,7 @@ import java.lang.reflect.Modifier;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.reflection.CachedField;
 import org.codehaus.groovy.reflection.CachedMethod;
+import org.codehaus.groovy.reflection.ClassInfo;
 import org.codehaus.groovy.runtime.NullObject;
 import org.codehaus.groovy.runtime.GroovyCategorySupport.CategoryMethod;
 import org.codehaus.groovy.runtime.dgmimpl.NumberNumberMetaMethod;
@@ -61,7 +62,7 @@ public abstract class Selector {
     public MethodType targetType,currentType;
     public String name;
     public MethodHandle handle;
-    public boolean useMetaClass = false;
+    public boolean useMetaClass = false, cache = true;
     public MutableCallSite callSite;
     public Class sender;
     public boolean isVargs;
@@ -116,7 +117,7 @@ public abstract class Selector {
                 try {
                     reflectionMethod = aClass.getMethod("getProperty", String.class);
                     if (!reflectionMethod.isSynthetic()) {
-                        handle = LOOKUP.unreflect(reflectionMethod);
+                        handle = LOOKUP.findVirtual(GroovyObject.class, "getProperty", MethodType.methodType(Object.class,String.class));
                         handle = MethodHandles.insertArguments(handle, 1, name);
                         return;
                     }
@@ -278,6 +279,7 @@ public abstract class Selector {
             this.safeNavigation = safeNavigation && arguments[0]==null;
             this.thisCall = thisCall;
             this.spread = spreadCall;
+            this.cache = !spread;
 
             if (LOG_ENABLED) {
                 String msg =
@@ -320,9 +322,12 @@ public abstract class Selector {
             } else if (receiver instanceof GroovyObject) {
                 mc = ((GroovyObject) receiver).getMetaClass();
             } else if (receiver instanceof Class) {
-                mc = GroovySystem.getMetaClassRegistry().getMetaClass((Class)receiver);
+                Class c = (Class) receiver;
+                mc = GroovySystem.getMetaClassRegistry().getMetaClass(c);
+                this.cache &= !ClassInfo.getClassInfo(c).hasPerInstanceMetaClasses();
             } else {
                 mc = ((MetaClassRegistryImpl) GroovySystem.getMetaClassRegistry()).getMetaClass(receiver);
+                this.cache &= !ClassInfo.getClassInfo(receiver.getClass()).hasPerInstanceMetaClasses();
             }
         }
 
@@ -692,8 +697,8 @@ public abstract class Selector {
         }
 
         public void doCallSiteTargetSet() {
-            if (spread) {
-                if (LOG_ENABLED) LOG.info("call site target kept for spread call");
+            if (!cache) {
+                if (LOG_ENABLED) LOG.info("call site stays uncached");
             } else {
                 callSite.setTarget(handle);
                 if (LOG_ENABLED) LOG.info("call site target set, preparing outside invocation");
