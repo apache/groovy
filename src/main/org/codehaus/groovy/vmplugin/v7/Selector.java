@@ -220,8 +220,22 @@ public abstract class Selector {
 
         @Override
         public void setHandleForMetaMethod() {
-            super.setHandleForMetaMethod();
-            if (handle==null) return;
+            if (method==null) return;
+            if (method instanceof MetaConstructor) {
+                //TODO: move this to init selector
+                if (LOG_ENABLED) LOG.info("meta method is MetaConstructor instance");
+                MetaConstructor mc = (MetaConstructor) method;
+                isVargs = mc.isVargsMethod();
+                Constructor con = mc.getCachedConstrcutor().cachedConstructor;
+                try {
+                    handle = LOOKUP.unreflectConstructor(con);
+                    if (LOG_ENABLED) LOG.info("successfully unreflected constructor");
+                } catch (IllegalAccessException e) {
+                    throw new GroovyBugError(e);
+                }
+            } else {
+                super.setHandleForMetaMethod();
+            }
             if (beanConstructor) {
                 // we have handle that takes no arguments to create the bean, 
                 // we have to use its return value to call #setBeanProperties with it
@@ -229,7 +243,13 @@ public abstract class Selector {
 
                 // to do this we first bind the values to #setBeanProperties
                 MethodHandle con = BEAN_CONSTRUCTOR_PROPERTY_SETTER.bindTo(mc);
-                handle = MethodHandles.foldArguments(con, handle.asType(MethodType.methodType(Object.class)));
+                // inner class case
+                MethodType foldTargetType = MethodType.methodType(Object.class);
+                if (args.length==3) {
+                    con = MethodHandles.dropArguments(con, 1, targetType.parameterType(1));
+                    foldTargetType = foldTargetType.insertParameterTypes(0, targetType.parameterType(1));
+                }
+                handle = MethodHandles.foldArguments(con, handle.asType(foldTargetType));
             }
             handle = MethodHandles.dropArguments(handle, 0, Class.class);
         }
@@ -397,18 +417,6 @@ public abstract class Selector {
                         // Object.class handles both cases at once
                         handle = MethodHandles.dropArguments(handle, 0, Object.class);
                     } 
-                } catch (IllegalAccessException e) {
-                    throw new GroovyBugError(e);
-                }
-            } else if (metaMethod instanceof MetaConstructor) {
-                //TODO: move this to init selector
-                if (LOG_ENABLED) LOG.info("meta method is MetaConstructor instance");
-                MetaConstructor mc = (MetaConstructor) metaMethod;
-                isVargs = mc.isVargsMethod();
-                Constructor con = mc.getCachedConstrcutor().cachedConstructor;
-                try {
-                    handle = LOOKUP.unreflectConstructor(con);
-                    if (LOG_ENABLED) LOG.info("successfully unreflected constructor");
                 } catch (IllegalAccessException e) {
                     throw new GroovyBugError(e);
                 }

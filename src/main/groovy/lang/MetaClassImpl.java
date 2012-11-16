@@ -1503,10 +1503,17 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         if (constructor != null) return new MetaConstructor(constructor, false);
         if (arguments.length == 1 && arguments[0] instanceof Map) {
             res = chooseMethod("<init>", constructors, MetaClassHelper.EMPTY_TYPE_ARRAY);
-            if (res instanceof MetaMethod) return (MetaMethod) res;
-            constructor = (CachedConstructor) res;
-            if (constructor != null) return new MetaConstructor(constructor, true);
+        } else if (
+                arguments.length == 2 && arguments[1] instanceof Map && 
+                theClass.getEnclosingClass()!=null && 
+                theClass.getEnclosingClass().isAssignableFrom(argClasses[0])) 
+        {
+            res = chooseMethod("<init>", constructors, new Class[]{argClasses[0]});
         }
+        if (res instanceof MetaMethod) return (MetaMethod) res;
+        constructor = (CachedConstructor) res;
+        if (constructor != null) return new MetaConstructor(constructor, true);
+
         return null;
     }
     
