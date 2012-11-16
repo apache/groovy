@@ -203,7 +203,7 @@ dependencies {
     testCompile "ch.qos.logback:logback-classic:0.9.21"
     testCompile "log4j:log4j:1.2.16"
     testCompile "org.slf4j:jcl-over-slf4j:1.6.0"
-    testCompile "com.thoughtworks.qdox:qdox:1.12"
+    testCompile "com.thoughtworks.qdox:qdox:1.12.1"
 
     tools "com.googlecode.jarjar:jarjar:1.3"
     tools("checkstyle:checkstyle:4.4") {
@@ -216,7 +216,7 @@ dependencies {
         exclude(module: 'ant')
     }
     tools "org.ow2.asm:asm-all:4.0"
-    tools "com.thoughtworks.qdox:qdox:1.12"
+    tools "com.thoughtworks.qdox:qdox:1.12.1"
     tools "biz.aQute:bnd:0.0.401"
 
     examplesCompile "lucene:lucene:1.4.3"
