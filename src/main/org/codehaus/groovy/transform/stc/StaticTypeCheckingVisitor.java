@@ -1277,6 +1277,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     @Override
     public void visitConstructorCallExpression(ConstructorCallExpression call) {
         super.visitConstructorCallExpression(call);
+        if (extension.beforeMethodCall(call)) {
+            extension.afterMethodCall(call);
+            return;
+        }
         ClassNode receiver = call.isThisCall() ? typeCheckingContext.getEnclosingClassNode() :
                 call.isSuperCall() ? typeCheckingContext.getEnclosingClassNode().getSuperClass() : call.getType();
         Expression arguments = call.getArguments();
@@ -1292,6 +1296,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             node = typeCheckMapConstructor(call, receiver, arguments);
             if (node != null) {
                 storeTargetMethod(call, node);
+                extension.afterMethodCall(call);
                 return;
             }
         }
@@ -1302,6 +1307,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
             if (node != null) storeTargetMethod(call, node);
         }
+        extension.afterMethodCall(call);
     }
 
     protected MethodNode typeCheckMapConstructor(final ConstructorCallExpression call, final ClassNode receiver, final Expression arguments) {
@@ -1569,6 +1575,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     chosenReceiver = currentReceiver;
                     break;
                 }
+            }
+            if (mn.isEmpty()) {
+                mn = extension.handleMissingMethod(receiver, name, argumentList, args, call);
             }
             if (mn.isEmpty()) {
                 addNoMatchingMethodError(receiver, name, args, call);
