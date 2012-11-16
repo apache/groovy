@@ -515,6 +515,7 @@ public abstract class Selector {
             Class[] params = handle.type().parameterArray();
             if (currentType!=null) params = currentType.parameterArray();
             if (!isVargs) {
+                if (spread && useMetaClass) return;
                 if (params.length==2 && args.length==1) {
                     //TODO: this Object[] can be constant
                     handle = MethodHandles.insertArguments(handle, 1, new Object[]{null});
@@ -637,7 +638,7 @@ public abstract class Selector {
          */
         public void setGuards (Object receiver) {
             if (handle==null) return;
-            if (spread) return;
+            if (!cache) return;
 
             MethodHandle fallback = makeFallBack(callSite, sender, name, callType.ordinal(), targetType, safeNavigationOrig, thisCall, spread);
 
