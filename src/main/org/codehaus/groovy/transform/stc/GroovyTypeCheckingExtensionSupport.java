@@ -25,6 +25,7 @@ import org.codehaus.groovy.ast.stmt.EmptyStatement;
 import org.codehaus.groovy.classgen.asm.InvocationWriter;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilerConfiguration;
+import org.codehaus.groovy.control.customizers.ImportCustomizer;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.InvokerInvocationException;
@@ -61,7 +62,6 @@ public class GroovyTypeCheckingExtensionSupport extends TypeCheckingExtension {
     );
 
     private final Set<MethodNode> generatedMethods = new LinkedHashSet<MethodNode>();
-    private final LinkedList<Boolean> isActive = new LinkedList<Boolean>();
     private final LinkedList<TypeCheckingScope> scopeData = new LinkedList<TypeCheckingScope>();
 
     // the following fields are closures executed in event-based methods
@@ -82,7 +82,6 @@ public class GroovyTypeCheckingExtensionSupport extends TypeCheckingExtension {
             final StaticTypeCheckingVisitor typeCheckingVisitor,
             final String scriptPath) {
         super(typeCheckingVisitor);
-        isActive.push(Boolean.FALSE);
         this.scriptPath = scriptPath;
     }
 
@@ -90,6 +89,10 @@ public class GroovyTypeCheckingExtensionSupport extends TypeCheckingExtension {
     public void setup() {
         CompilerConfiguration config = new CompilerConfiguration();
         config.setScriptBaseClass("org.codehaus.groovy.transform.stc.GroovyTypeCheckingExtensionSupport.TypeCheckingDSL");
+        ImportCustomizer ic = new ImportCustomizer();
+        ic.addStarImports("org.codehaus.groovy.ast.expr");
+        ic.addStaticStars("org.codehaus.groovy.ast.ClassHelper");
+        config.addCompilationCustomizers(ic);
         GroovyShell shell = new GroovyShell(config);
 
         ClassLoader cl = typeCheckingVisitor.getSourceUnit().getClassLoader();
@@ -114,32 +117,6 @@ public class GroovyTypeCheckingExtensionSupport extends TypeCheckingExtension {
 
     public void setHandled(final boolean handled) {
         this.handled = handled;
-    }
-
-    public boolean isActive() {
-        return isActive.peek();
-    }
-
-    public void setActive(boolean active) {
-        isActive.set(0, active);
-    }
-
-    public void setActive(Closure code) {
-        Object result = code.call();
-        result = DefaultGroovyMethods.asType(result, Boolean.class);
-        if (result == null) {
-            setActive(false);
-        } else {
-            setActive((Boolean) result);
-        }
-    }
-
-    public void popActive() {
-        isActive.pop();
-    }
-
-    public void pushActive() {
-        isActive.push(isActive.peek());
     }
 
     public TypeCheckingScope newScope() {
@@ -471,6 +448,14 @@ public class GroovyTypeCheckingExtensionSupport extends TypeCheckingExtension {
         ArgumentListExpression argumentListExpression = InvocationWriter.makeArgumentList(call.getArguments());
         ClassNode[] argumentTypes = typeCheckingVisitor.getArgumentTypes(argumentListExpression);
         return argTypeMatches(argumentTypes, index, clazz);
+    }
+
+    @SuppressWarnings("unchecked")
+    public <R> R withTypeChecker(Closure<R> code) {
+        Closure<R> clone = (Closure<R>) code.clone();
+        clone.setDelegate(code);
+        clone.setResolveStrategy(Closure.DELEGATE_FIRST);
+        return clone.call();
     }
 
     private class TypeCheckingScope extends LinkedHashMap<String, Object> {

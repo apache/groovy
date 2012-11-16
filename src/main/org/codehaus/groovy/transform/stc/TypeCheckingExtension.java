@@ -15,10 +15,7 @@
  */
 package org.codehaus.groovy.transform.stc;
 
-import org.codehaus.groovy.ast.ASTNode;
-import org.codehaus.groovy.ast.ClassHelper;
-import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
 
 import java.util.Collections;
@@ -215,6 +212,18 @@ public class TypeCheckingExtension {
      */
     public void storeType(final Expression exp, final ClassNode cn) {
         typeCheckingVisitor.storeType(exp, cn);
+    }
+
+    public boolean existsProperty(final PropertyExpression pexp, final boolean checkForReadOnly) {
+        return typeCheckingVisitor.existsProperty(pexp, checkForReadOnly);
+    }
+
+    public boolean existsProperty(final PropertyExpression pexp, final boolean checkForReadOnly, final ClassCodeVisitorSupport visitor) {
+        return typeCheckingVisitor.existsProperty(pexp, checkForReadOnly, visitor);
+    }
+
+    public ClassNode[] getArgumentTypes(final ArgumentListExpression args) {
+        return typeCheckingVisitor.getArgumentTypes(args);
     }
 
     public MethodNode getTargetMethod(final Expression expression) {
