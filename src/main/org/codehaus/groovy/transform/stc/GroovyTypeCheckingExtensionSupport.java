@@ -68,6 +68,7 @@ public class GroovyTypeCheckingExtensionSupport extends TypeCheckingExtension {
     private final Map<String, List<Closure>> eventHandlers = new HashMap<String, List<Closure>>();
 
     private final String scriptPath;
+    private final TypeCheckingContext context;
 
     // this boolean is used through setHandled(boolean)
     private boolean handled = false;
@@ -83,6 +84,7 @@ public class GroovyTypeCheckingExtensionSupport extends TypeCheckingExtension {
             final String scriptPath) {
         super(typeCheckingVisitor);
         this.scriptPath = scriptPath;
+        this.context = typeCheckingVisitor.typeCheckingContext;
     }
 
     @Override
@@ -92,6 +94,7 @@ public class GroovyTypeCheckingExtensionSupport extends TypeCheckingExtension {
         ImportCustomizer ic = new ImportCustomizer();
         ic.addStarImports("org.codehaus.groovy.ast.expr");
         ic.addStaticStars("org.codehaus.groovy.ast.ClassHelper");
+        ic.addStaticStars("org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport");
         config.addCompilationCustomizers(ic);
         GroovyShell shell = new GroovyShell(config);
 
@@ -458,6 +461,102 @@ public class GroovyTypeCheckingExtensionSupport extends TypeCheckingExtension {
         return clone.call();
     }
 
+    // -------------------------------------
+    // delegate to the type checking context
+    // -------------------------------------
+
+    public BinaryExpression getEnclosingBinaryExpression() {
+        return context.getEnclosingBinaryExpression();
+    }
+
+    public void pushEnclosingBinaryExpression(final BinaryExpression binaryExpression) {
+        context.pushEnclosingBinaryExpression(binaryExpression);
+    }
+
+    public void pushEnclosingClosureExpression(final ClosureExpression closureExpression) {
+        context.pushEnclosingClosureExpression(closureExpression);
+    }
+
+    public Expression getEnclosingMethodCall() {
+        return context.getEnclosingMethodCall();
+    }
+
+    public Expression popEnclosingMethodCall() {
+        return context.popEnclosingMethodCall();
+    }
+
+    public MethodNode popEnclosingMethod() {
+        return context.popEnclosingMethod();
+    }
+
+    public ClassNode getEnclosingClassNode() {
+        return context.getEnclosingClassNode();
+    }
+
+    public List<MethodNode> getEnclosingMethods() {
+        return context.getEnclosingMethods();
+    }
+
+    public MethodNode getEnclosingMethod() {
+        return context.getEnclosingMethod();
+    }
+
+    public void popTemporaryTypeInfo() {
+        context.popTemporaryTypeInfo();
+    }
+
+    public void pushEnclosingClassNode(final ClassNode classNode) {
+        context.pushEnclosingClassNode(classNode);
+    }
+
+    public BinaryExpression popEnclosingBinaryExpression() {
+        return context.popEnclosingBinaryExpression();
+    }
+
+    public List<ClassNode> getEnclosingClassNodes() {
+        return context.getEnclosingClassNodes();
+    }
+
+    public List<TypeCheckingContext.EnclosingClosure> getEnclosingClosureStack() {
+        return context.getEnclosingClosureStack();
+    }
+
+    public ClassNode popEnclosingClassNode() {
+        return context.popEnclosingClassNode();
+    }
+
+    public void pushEnclosingMethod(final MethodNode methodNode) {
+        context.pushEnclosingMethod(methodNode);
+    }
+
+    public List<BinaryExpression> getEnclosingBinaryExpressionStack() {
+        return context.getEnclosingBinaryExpressionStack();
+    }
+
+    public TypeCheckingContext.EnclosingClosure getEnclosingClosure() {
+        return context.getEnclosingClosure();
+    }
+
+    public List<Expression> getEnclosingMethodCalls() {
+        return context.getEnclosingMethodCalls();
+    }
+
+    public void pushEnclosingMethodCall(final Expression call) {
+        context.pushEnclosingMethodCall(call);
+    }
+
+    public TypeCheckingContext.EnclosingClosure popEnclosingClosure() {
+        return context.popEnclosingClosure();
+    }
+
+    public void pushTemporaryTypeInfo() {
+        context.pushTemporaryTypeInfo();
+    }
+
+    // --------------------------------------------
+    // end of delegate to the type checking context
+    // --------------------------------------------
+
     private class TypeCheckingScope extends LinkedHashMap<String, Object> {
         private final TypeCheckingScope parent;
 
@@ -494,6 +593,17 @@ public class GroovyTypeCheckingExtensionSupport extends TypeCheckingExtension {
 
         @Override
         public Object invokeMethod(final String name, final Object args) {
+            if (name.startsWith("is") && name.endsWith("Expression") && args instanceof Object[] && ((Object[]) args).length == 1) {
+                String type = name.substring(2);
+                Object target = ((Object[]) args)[0];
+                if (target==null) return false;
+                try {
+                    Class typeClass = Class.forName("org.codehaus.groovy.ast.expr."+type);
+                    return typeClass.isAssignableFrom(target.getClass());
+                } catch (ClassNotFoundException e) {
+                    return false;
+                }
+            }
             if (args instanceof Object[] && ((Object[]) args).length == 1 && ((Object[]) args)[0] instanceof Closure) {
                 Object[] argsArray = (Object[]) args;
                 String methodName = METHOD_ALIASES.get(name);
