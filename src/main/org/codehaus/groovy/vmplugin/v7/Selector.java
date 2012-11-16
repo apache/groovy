@@ -52,6 +52,7 @@ import org.codehaus.groovy.runtime.metaclass.NewInstanceMetaMethod;
 import org.codehaus.groovy.runtime.metaclass.NewStaticMetaMethod;
 import org.codehaus.groovy.runtime.metaclass.ReflectionMetaMethod;
 import org.codehaus.groovy.runtime.wrappers.Wrapper;
+
 import org.codehaus.groovy.vmplugin.v7.IndyInterface.CALL_TYPES;
 
 import static org.codehaus.groovy.vmplugin.v7.IndyInterface.*;
@@ -142,7 +143,7 @@ public abstract class Selector {
                     if (Modifier.isStatic(f.getModifiers())) {
                         // normally we would do the following
                         // handle = MethodHandles.dropArguments(handle,0,Class.class);
-                        // but because there is a bug in invokedynamic in all jdk7 versions up to update 7
+                        // but because there is a bug in invokedynamic in all jdk7 versions 
                         // maybe use Unsafe.ensureClassInitialized
                         handle = META_PROPERTY_GETTER.bindTo(res);
                     }
@@ -343,6 +344,10 @@ public abstract class Selector {
                 mc = ((GroovyObject) receiver).getMetaClass();
             } else if (receiver instanceof Class) {
                 Class c = (Class) receiver;
+                ClassLoader cl = c.getClassLoader();
+                try {
+                    Class.forName(c.getName(), true, cl);
+                } catch (ClassNotFoundException e) {}
                 mc = GroovySystem.getMetaClassRegistry().getMetaClass(c);
                 this.cache &= !ClassInfo.getClassInfo(c).hasPerInstanceMetaClasses();
             } else {
