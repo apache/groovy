@@ -57,8 +57,7 @@ class XmlNodePrinterTest extends GroovyTestCase {
     def attributeExpectedOutputQuot = """<Field Text="&lt;html&gt;&quot;Some 'Text'&quot;&lt;/html&gt;"/>\n"""
     def attributeExpectedOutputApos = """<Field Text='&lt;html&gt;"Some &apos;Text&apos;"&lt;/html&gt;'/>\n"""
 
-    def tagWithSpecialCharsInput = """<Field>&lt;&amp;&gt;</Field>"""
-    def tagWithSpecialCharsOutput = """<Field>\n  &lt;&amp;&gt;\n</Field>\n"""
+    def tagWithSpecialChars = """<Field>\n  &lt;&amp;&gt;'"\n</Field>\n"""
 
     def attributeWithNewlineInput = "<Field Text=\"Some&#10;Text&#10;&#13;\"/>"
     def attributeWithNewlineExpectedOutput = "<Field Text=\"Some&#10;Text&#10;&#13;\"/>\n"
@@ -145,9 +144,14 @@ class XmlNodePrinterTest extends GroovyTestCase {
         checkRoundtrip attributeWithNewlineInput, attributeWithNewlineExpectedOutput
     }
 
-    void testContentWithSpecialSymbols() {
+    void testContentWithSpecialSymbolsApos() {
         printer = new XmlNodePrinter(pw, "  ", "'")
-        checkRoundtrip tagWithSpecialCharsOutput, tagWithSpecialCharsOutput
+        checkRoundtrip tagWithSpecialChars, tagWithSpecialChars
+    }
+
+    void testContentWithSpecialSymbolsQuot() {
+        printer = new XmlNodePrinter(pw, "  ", "\"")
+        checkRoundtrip tagWithSpecialChars, tagWithSpecialChars
     }
 
     void testAttributeWithNamespaceInput() {
