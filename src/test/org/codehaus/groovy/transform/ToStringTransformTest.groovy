@@ -220,4 +220,24 @@ class ToStringTransformTest extends GroovyShellTestCase {
 
         assertEquals("Person()", toString)
     }
+
+    void testSelfReference()  {
+
+        def toString = evaluate("""
+            import groovy.transform.*
+
+            @ToString(includeFields=true, includeNames=true) class Tree {
+                String val
+                Tree left
+                private Tree right
+            }
+
+            def self = new Tree(val:'foo', left:null, right:null)
+            self.left = self
+            self.right = self
+            self.toString()
+        """)
+
+        assert toString == 'Tree(val:foo, left:(this), right:(this))'
+    }
 }
