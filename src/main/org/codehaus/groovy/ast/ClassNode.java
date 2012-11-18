@@ -663,6 +663,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         for (ClassNode existing : interfaces) {
             if (type.equals(existing)) {
                 skip = true;
+                break;
             }
         }
         if (!skip) {
@@ -692,6 +693,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         for (MixinNode existing : mixins) {
             if (mixin.equals(existing)) {
                 skip = true;
+                break;
             }
         }
         if (!skip) {
