@@ -354,6 +354,7 @@ public abstract class Selector {
                 mc = ((MetaClassRegistryImpl) GroovySystem.getMetaClassRegistry()).getMetaClass(receiver);
                 this.cache &= !ClassInfo.getClassInfo(receiver.getClass()).hasPerInstanceMetaClasses();
             }
+            mc.initialize();
         }
 
         /**
