@@ -491,7 +491,7 @@ public abstract class Selector {
                     }
                 }
                 handle = MethodHandles.insertArguments(handle, 1, name);
-                handle = handle.asCollector(Object[].class, targetType.parameterCount()-1);
+                if (!spread) handle = handle.asCollector(Object[].class, targetType.parameterCount()-1);
                 if (LOG_ENABLED) LOG.info("bind method name and create collector for arguments");
             } catch (Exception e) {
                 throw new GroovyBugError(e);
