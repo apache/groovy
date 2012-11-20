@@ -755,5 +755,17 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
             assert foo() == null
         '''
     }
+
+    // GROOVY-5798
+    void testShouldNotThrowConversionError() {
+        assertScript '''
+            char m( int v ) {
+              char c = (char)v
+              c
+            }
+
+            println m( 65 )
+        '''
+    }
 }
 
