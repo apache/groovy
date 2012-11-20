@@ -210,7 +210,8 @@ public class StaticInvocationWriter extends InvocationWriter {
                 && ((argumentList.size() > para.length)
                 || ((argumentList.size() == (para.length - 1)) && !lastParaType.equals(lastArgType))
                 || ((argumentList.size() == para.length && lastArgType!=null && !lastArgType.isArray())
-                    && StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf(lastArgType,lastParaType.getComponentType())))
+                    && (StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf(lastArgType,lastParaType.getComponentType())))
+                        || ClassHelper.GSTRING_TYPE.equals(lastArgType) && ClassHelper.STRING_TYPE.equals(lastParaType.getComponentType()))
                 ) {
             int stackLen = operandStack.getStackLength() + argumentList.size();
             MethodVisitor mv = controller.getMethodVisitor();
