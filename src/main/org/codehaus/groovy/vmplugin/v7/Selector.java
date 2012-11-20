@@ -37,6 +37,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.Arrays;
 
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.reflection.CachedField;
@@ -159,6 +160,9 @@ public abstract class Selector {
         public void setHandleForMetaMethod() {
             if (handle!=null) return;
             super.setHandleForMetaMethod();
+            /*if (handle!=null && handle.type().parameterCount()==2) {
+                handle = MethodHandles.insertArguments(handle, 1, name);
+            }*/
         }
 
         @Override
