@@ -2208,7 +2208,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             // ex: short s = (short) 0
         } else if (sourceIsNull && !isPrimitiveType(targetType)) {
             // ex: (Date)null
-        } else if (sourceIsNull && isPrimitiveType(targetType)) {
+        } else if (char_TYPE == targetType && isPrimitiveType(expressionType) && isNumberType(expressionType)) {
+            // char c = (char) ...
+        }
+        else if (sourceIsNull && isPrimitiveType(targetType)) {
             return false;
         } else if (!isAssignableTo(targetType, expressionType) && !implementsInterfaceOrIsSubclassOf(expressionType, targetType)) {
             return false;
