@@ -15,7 +15,6 @@
  */
 package org.codehaus.groovy.transform.stc;
 
-import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovySystem;
 import groovy.lang.MetaClassRegistry;
 import org.codehaus.groovy.GroovyBugError;
@@ -25,7 +24,6 @@ import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.tools.GenericsUtils;
 import org.codehaus.groovy.ast.tools.WideningCategories;
 import org.codehaus.groovy.control.CompilationUnit;
-import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.DefaultGroovyStaticMethods;
 import org.codehaus.groovy.runtime.m12n.ExtensionModule;
@@ -551,13 +549,7 @@ public abstract class StaticTypeCheckingSupport {
 
         // anything can be assigned to an Object, String, boolean, Boolean
         // or Class typed variable
-        if (leftRedirect == OBJECT_TYPE ||
-                leftRedirect == STRING_TYPE ||
-                leftRedirect == boolean_TYPE ||
-                leftRedirect == Boolean_TYPE ||
-                leftRedirect == CLASS_Type) {
-            return true;
-        }
+        if (isWildcardLeftHandSide(leftRedirect)) return true;
 
         // char as left expression
         if (leftRedirect == char_TYPE && rightRedirect==STRING_TYPE) {
@@ -605,6 +597,23 @@ public abstract class StaticTypeCheckingSupport {
         }
 
         if (GROOVY_OBJECT_TYPE.equals(leftRedirect) && isBeingCompiled(right)) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Tells if a class is one of the "accept all" classes as the left hand side of an
+     * assignment.
+     * @param node the classnode to test
+     * @return true if it's an Object, String, boolean, Boolean or Class.
+     */
+    public static boolean isWildcardLeftHandSide(final ClassNode node) {
+        if (OBJECT_TYPE.equals(node) ||
+            STRING_TYPE.equals(node) ||
+            boolean_TYPE.equals(node) ||
+            Boolean_TYPE.equals(node) ||
+            CLASS_Type.equals(node)) {
             return true;
         }
         return false;

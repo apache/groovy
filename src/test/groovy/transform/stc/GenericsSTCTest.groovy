@@ -930,6 +930,16 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-5758
+    void testShouldNotForbidAssignmentToString() {
+        assertScript '''
+            class A {
+                public String foo
+            }
+            new A().foo = new ArrayList()
+        '''
+    }
+
     static class MyList extends LinkedList<String> {}
 
     public static class ClassA<T> {
