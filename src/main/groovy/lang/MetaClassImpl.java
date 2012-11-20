@@ -343,6 +343,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             }
 
             for (final MetaMethod method : getNewMetaMethods(c)) {
+                if (method.getName().equals("<init>") && !method.getDeclaringClass().equals(theCachedClass)) continue;
                 if (!newGroovyMethodsSet.contains(method)) {
                     newGroovyMethodsSet.add(method);
                     addMetaMethodToIndex(method, header);
