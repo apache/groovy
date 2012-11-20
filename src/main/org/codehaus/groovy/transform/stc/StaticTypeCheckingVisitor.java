@@ -1528,6 +1528,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         try {
             isInStaticContext = node.isStatic();
             super.visitMethod(node);
+            for (Parameter parameter : node.getParameters()) {
+                if (parameter.getInitialExpression()!=null) {
+                    parameter.getInitialExpression().visit(this);
+                }
+            }
             ClassNode rtype = (ClassNode) node.getNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE);
             if (rtype == null) {
                 node.putNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE, node.getReturnType());
@@ -1791,13 +1796,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     }
                 } else if (objectExpression instanceof VariableExpression) {
                     Variable variable = findTargetVariable((VariableExpression) objectExpression);
-                    if (variable instanceof Expression) {
-                        Object data = ((Expression) variable).getNodeMetaData(StaticTypesMarker.CLOSURE_ARGUMENTS);
+                    if (variable instanceof ASTNode) {
+                        Object data = ((ASTNode) variable).getNodeMetaData(StaticTypesMarker.CLOSURE_ARGUMENTS);
                         if (data != null) {
                             Parameter[] parameters = (Parameter[]) data;
                             typeCheckClosureCall(callArguments, args, parameters);
                         }
-                        Object type = ((Expression) variable).getNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE);
+                        Object type = ((ASTNode) variable).getNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE);
                         if (type == null) {
                             // if variable was declared as a closure and inferred type is unknown, we
                             // may face a recursive call. In that case, we will use the type of the
