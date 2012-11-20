@@ -461,5 +461,17 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
             array[0].length
         '''
     }
+
+    // GROOVY-5797
+    void testShouldAllowExpressionAsMapPropertyKey() {
+        assertScript '''
+        def m( Map param ) {
+          def map = [ tim:4 ]
+          map[ param.key ]
+        }
+
+        assert m( [ key: 'tim' ] ) == 4
+        '''
+    }
 }
 

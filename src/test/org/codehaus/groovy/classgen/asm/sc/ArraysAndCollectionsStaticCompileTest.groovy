@@ -64,10 +64,5 @@ class ArraysAndCollectionsStaticCompileTest extends ArraysAndCollectionsSTCTest 
             assert m.abcd == 1234
         '''
     }
-
-    @Override
-    void testListStarProperty() {
-        super.testListStarProperty()
-    }
 }
 
