@@ -16,6 +16,7 @@
 package groovy.transform.stc
 
 import org.codehaus.groovy.control.customizers.ImportCustomizer;
+import static org.codehaus.groovy.control.CompilerConfiguration.DEFAULT as config
 
 /**
  * Unit tests for static type checking : method calls.
@@ -766,6 +767,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     void testBoxingShouldCostMore() {
+        if (config.optimizationOptions.indy) return;
         assertScript '''
             int foo(int x) { 1 }
             int foo(Integer x) { 2 }
