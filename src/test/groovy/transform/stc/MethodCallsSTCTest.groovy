@@ -833,6 +833,27 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-5743
+    void testClosureAsParameter() {
+        assertScript '''
+        Integer a( String s, Closure<Integer> b ) {
+          b( s )
+        }
+
+        assert a( 'tim' ) { 0 } == 0
+        '''
+    }
+    // GROOVY-5743
+    void testClosureAsParameterWithDefaultValue() {
+        assertScript '''
+        Integer a( String s, Closure<Integer> b = {String it -> it.length()}) {
+          b( s )
+        }
+
+        assert a( 'tim' ) == 3
+        '''
+    }
+
     static class MyMethodCallTestClass {
 
         static int mul(int... args) { args.toList().inject(1) { x,y -> x*y } }
