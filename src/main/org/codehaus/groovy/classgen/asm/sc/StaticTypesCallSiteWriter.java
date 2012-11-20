@@ -36,6 +36,7 @@ import java.util.*;
 import static org.codehaus.groovy.ast.ClassHelper.*;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.chooseBestMethod;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.findDGMMethodsByNameAndArguments;
+import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf;
 
 /**
  * A call site writer which replaces call site caching with static calls. This means that the generated code
@@ -49,6 +50,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
     private static final MethodNode GROOVYOBJECT_GETPROPERTY_METHOD = GROOVY_OBJECT_TYPE.getMethod("getProperty", new Parameter[]{new Parameter(STRING_TYPE, "propertyName")});
     private static final ClassNode COLLECTION_TYPE = make(Collection.class);
     private static final MethodNode COLLECTION_SIZE_METHOD = COLLECTION_TYPE.getMethod("size", Parameter.EMPTY_ARRAY);
+    private static final MethodNode MAP_GET_METHOD = MAP_TYPE.getMethod("get", new Parameter[] { new Parameter(OBJECT_TYPE, "key")});
 
     private WriterController controller;
 
@@ -534,6 +536,19 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
             call.setSourcePosition(arguments);
             call.setImplicitThis(false);
             call.setMethodTarget(methodNode);
+            call.visit(controller.getAcg());
+            return;
+        }
+        if (implementsInterfaceOrIsSubclassOf(rType, MAP_TYPE)) {
+            // fallback to Map#get
+            MethodCallExpression call = new MethodCallExpression(
+                    receiver,
+                    "get",
+                    arguments
+            );
+            call.setMethodTarget(MAP_GET_METHOD);
+            call.setSourcePosition(arguments);
+            call.setImplicitThis(false);
             call.visit(controller.getAcg());
             return;
         }
