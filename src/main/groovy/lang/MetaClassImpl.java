@@ -3027,10 +3027,16 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     public CallSite createPogoCallSite(CallSite site, Object[] args) {
         if (!GroovyCategorySupport.hasCategoryInCurrentThread() && !(this instanceof AdaptingMetaClass)) {
             Class [] params = MetaClassHelper.convertToTypeArray(args);
+            CallSite tempSite = site;
             if (site.getName().equals("call") && GeneratedClosure.class.isAssignableFrom(theClass)) {
-                site = new AbstractCallSite(site.getArray(),site.getIndex(),"doCall");
+                // here, we want to point to a method named "doCall" instead of "call"
+                // but we don't want to replace the original call site name, otherwise
+                // we loose the fact that the original method name was "call" so instead
+                // we will point to a metamethod called "doCall"
+                // see GROOVY-5806 for details
+                tempSite = new AbstractCallSite(site.getArray(),site.getIndex(),"doCall");
             }
-            MetaMethod metaMethod = getMethodWithCachingInternal(theClass, site, params);
+            MetaMethod metaMethod = getMethodWithCachingInternal(theClass, tempSite, params);
             if (metaMethod != null)
                return PogoMetaMethodSite.createPogoMetaMethodSite(site, this, metaMethod, params, args);
         }
