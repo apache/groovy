@@ -409,7 +409,15 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     rType = UNKNOWN_PARAMETER_TYPE; // primitive types should be ignored as they will result in another failure
             }
             int op = expression.getOperation().getType();
-            ClassNode resultType = getResultType(lType, op, rType, expression);
+            BinaryExpression reversedBinaryExpression = new BinaryExpression(rightExpression, expression.getOperation(), leftExpression);
+            ClassNode resultType = op==KEYWORD_IN
+                    ?getResultType(rType,op,lType,reversedBinaryExpression)
+                    :getResultType(lType, op, rType, expression);
+            if (op==KEYWORD_IN) {
+                // in case of the "in" operator, the receiver and the arguments are reversed
+                // so we use the reversedExpression and get the target method from it
+                storeTargetMethod(expression, (MethodNode) reversedBinaryExpression.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET));
+            }
             if (resultType == null) {
                 resultType = lType;
             }
@@ -2294,6 +2302,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
         MethodNode method = findMethodOrFail(expr, left, operationName, right);
         if (method != null) {
+            storeTargetMethod(expr, method);
             typeCheckMethodsWithGenerics(left, new ClassNode[]{right}, method, expr);
             if (isAssignment(op)) return left;
             if (isCompareToBoolean(op)) return boolean_TYPE;

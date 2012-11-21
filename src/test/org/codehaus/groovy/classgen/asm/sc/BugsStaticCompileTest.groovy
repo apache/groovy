@@ -591,5 +591,20 @@ class BugsStaticCompileTest extends BugsSTCTest {
         assert execute() == 4
         '''
     }
+
+    // GROOVY-5800
+    void testInOperator() {
+        try {
+            assertScript '''
+            boolean m( Integer i ) {
+              i in [ 1, 2, 3 ]
+            }
+            assert m(1) == true
+            assert m(4) == false
+            '''
+        } finally {
+            println astTrees
+        }
+    }
 }
 

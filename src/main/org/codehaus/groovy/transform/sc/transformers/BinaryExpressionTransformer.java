@@ -66,6 +66,16 @@ public class BinaryExpressionTransformer {
                 compareToNullExpression.setSourcePosition(bin);
                 return compareToNullExpression;
             }
+        } else if (operationType==Types.KEYWORD_IN) {
+            MethodCallExpression call = new MethodCallExpression(
+                    bin.getRightExpression(),
+                    "isCase",
+                    bin.getLeftExpression()
+            );
+            call.setMethodTarget((MethodNode) bin.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET));
+            call.setSourcePosition(bin);
+            call.copyNodeMetaData(bin);
+            return staticCompilationTransformer.transform(call);
         }
         if (list != null) {
             if (operationType == Types.COMPARE_TO) {
