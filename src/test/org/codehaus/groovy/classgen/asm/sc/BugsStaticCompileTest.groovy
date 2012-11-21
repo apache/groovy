@@ -460,5 +460,136 @@ class BugsStaticCompileTest extends BugsSTCTest {
             new Subclass(0,0,0)
         '''
     }
+
+    void testIncrementOperatorOnInt() {
+        try {
+            assertScript '''
+                int incInt(int n) {
+                    def result = n
+                    ++result
+                    result++
+                    return result
+                }
+                assert  incInt(5) == 7'''
+        } finally {
+            //println astTrees
+        }
+    }
+
+    void testIncrementOperatorOnShort() {
+        try {
+            assertScript '''
+                short incInt(short n) {
+                    def result = n
+                    ++result
+                    result++
+                    return result
+                }
+                assert  incInt((short)5) == 7'''
+        } finally {
+            //println astTrees
+        }
+    }
+
+    void testIncrementOperatorOnByte() {
+        try {
+            assertScript '''
+                byte incInt(byte n) {
+                    def result = n
+                    ++result
+                    result++
+                    return result
+                }
+                assert  incInt((byte)5) == 7'''
+        } finally {
+            //println astTrees
+        }
+    }
+
+    void testIncrementOperatorOnLong() {
+        try {
+            assertScript '''
+                long incInt(long n) {
+                    def result = n
+                    ++result
+                    result++
+                    return result
+                }
+                assert  incInt(5) == 7'''
+        } finally {
+            println astTrees
+        }
+    }
+
+    void testIncrementOperatorOnFloat() {
+        try {
+            assertScript '''
+                float incInt(float n) {
+                    def result = n
+                    ++result
+                    result++
+                    return result
+                }
+                assert  incInt(5) == 7'''
+        } finally {
+            println astTrees
+        }
+    }
+
+    void testIncrementOperatorOnDouble() {
+        try {
+            assertScript '''
+                double incInt(double n) {
+                    def result = n
+                    ++result
+                    result++
+                    return result
+                }
+                assert  incInt(5) == 7'''
+        } finally {
+            println astTrees
+        }
+    }
+
+    void testIncrementOperatorOnChar() {
+        try {
+            assertScript '''
+                char incInt(char n) {
+                    def result = n
+                    ++result
+                    result++
+                    return result
+                }
+                assert  incInt((char)'a') == (char)('c')'''
+        } finally {
+            println astTrees
+        }
+    }
+
+    void testIncrementField() {
+        assertScript '''
+            class Foo {
+                int x
+            }
+            def f = new Foo()
+            f.x++
+            assert f.x == 1
+            assert f.x++ == 1
+            assert f.x == 2
+        '''
+    }
+
+    // GROOVY-5789
+    void testLoopWithIncrement() {
+        assertScript '''
+        int execute() {
+            // using a list, so that if the loop is endless, the test eventually fails with OOM
+            List<Integer> list = new LinkedList<Integer>()
+            for (def i = 0; i < 4; ++i) { println i; list << i }
+            list.size()
+        }
+        assert execute() == 4
+        '''
+    }
 }
 
