@@ -110,6 +110,7 @@ subprojects {
         into("main") {
             from('src/main/groovy')
             from('src/main/java')
+            from('src/resources')
             include('**/*.txt', '**/*.xml', '**/*.properties', '**/*.html')
             filter(rootProject.propertiesFilter, org.apache.tools.ant.filters.ReplaceTokens)
         }
@@ -199,13 +200,10 @@ dependencies {
     testCompile "jmock:jmock:1.2.0"
     testCompile "jmock:jmock-cglib:1.2.0"
     testCompile "xmlunit:xmlunit:1.3"
-    testCompile "hsqldb:hsqldb:1.8.0.10"
-//    testCompile group:"org.hsqldb", name:"hsqldb", version:"2.2.8", classifier:"jdk5"
-//    testCompile "com.h2database:h2:1.3.164"
     testCompile "ch.qos.logback:logback-classic:0.9.21"
     testCompile "log4j:log4j:1.2.16"
     testCompile "org.slf4j:jcl-over-slf4j:1.6.0"
-    testCompile "com.thoughtworks.qdox:qdox:1.12"
+    testCompile "com.thoughtworks.qdox:qdox:1.12.1"
 
     tools "com.googlecode.jarjar:jarjar:1.3"
     tools("checkstyle:checkstyle:4.4") {
@@ -218,7 +216,7 @@ dependencies {
         exclude(module: 'ant')
     }
     tools "org.ow2.asm:asm-all:4.0"
-    tools "com.thoughtworks.qdox:qdox:1.12"
+    tools "com.thoughtworks.qdox:qdox:1.12.1"
     tools "biz.aQute:bnd:0.0.401"
 
     examplesCompile "lucene:lucene:1.4.3"
@@ -298,13 +296,12 @@ sourceSets {
             }
         }
         resources {
-            srcDirs = ["src/main", "src/tools"]
+            srcDirs = ["src/main", "src/tools", "src/resources"]
             include "META-INF/services/*", "META-INF/groovy-release-info.properties",
                     "groovy/grape/*.xml", "groovy/ui/*.properties", "groovy/ui/**/*.png",
                     "groovy/inspect/swingui/AstBrowserProperties.groovy",
                     "org/codehaus/groovy/tools/shell/**/*.properties",
                     "org/codehaus/groovy/tools/shell/**/*.xml",
-                    "org/codehaus/groovy/antlib.xml",
                     "org/codehaus/groovy/tools/groovydoc/gstringTemplates/**/*.*",
                     "org/codehaus/groovy/tools/groovy.ico"
         }

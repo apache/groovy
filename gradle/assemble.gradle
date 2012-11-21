@@ -355,11 +355,11 @@ task distSrc(type: Zip) {
     appendix = 'src'
     into("groovy-$version")
     from(projectDir) {
-        exclude 'target', 'subprojects/*/target', buildDir.path, 'classes/**', 'cruise/**', '.clover/*', 'local.build.properties',
-                'cobertura.ser', 'junitvmwatcher*.properties',
+        exclude 'target', 'subprojects/*/target', 'buildSrc/target', buildDir.path, 'classes/**', 'cruise/**',
+                '.clover/*', 'local.build.properties', 'cobertura.ser', 'junitvmwatcher*.properties',
                 'out', '**/*.iml', '**/*.ipr', '**/*.iws', // used by Intellij IDEA
                 '.settings', // used by Eclipse
-                '.gradle' // used by Gradle
+                '.gradle', 'buildSrc/.gradle' // used by Gradle
     }
 }
 

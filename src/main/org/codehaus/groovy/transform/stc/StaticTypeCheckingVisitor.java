@@ -1258,8 +1258,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     && !(isNullConstant(expression))) {
                 addStaticTypeError("Cannot return value of type " + type.toString(false) + " on method returning type " + enclosingMethod.getReturnType().toString(false), expression);
             } else if (!enclosingMethod.isVoidMethod()) {
-                if (implementsInterfaceOrIsSubclassOf(type, enclosingMethod.getReturnType())) {
-                    if (missesGenericsTypes(type)) {
+                ClassNode previousType = (ClassNode) enclosingMethod.getNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE);
+                ClassNode inferred = previousType == null ? type : lowestUpperBound(type, previousType);
+                if (implementsInterfaceOrIsSubclassOf(inferred, enclosingMethod.getReturnType())) {
+                    if (missesGenericsTypes(inferred)) {
                         DeclarationExpression virtualDecl = new DeclarationExpression(
                                 new VariableExpression("{target}", enclosingMethod.getReturnType()),
                                 Token.newSymbol(EQUAL, -1, -1),
@@ -2200,11 +2202,17 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         // pop if-then-else temporary type info
         typeCheckingContext.popTemporaryTypeInfo();
         falseExpression.visit(this);
-        ClassNode resultType = OBJECT_TYPE;
+        ClassNode resultType;
         if (isNullConstant(trueExpression) || isNullConstant(falseExpression)) {
             BinaryExpression enclosingBinaryExpression = typeCheckingContext.getEnclosingBinaryExpression();
-            if (enclosingBinaryExpression != null) {
+            if (enclosingBinaryExpression != null && enclosingBinaryExpression.getRightExpression()==expression) {
                 resultType = getType(enclosingBinaryExpression.getLeftExpression());
+            } else if (isNullConstant(trueExpression) && isNullConstant(falseExpression)) {
+                resultType = OBJECT_TYPE;
+            } else if (isNullConstant(trueExpression)) {
+                resultType = wrapTypeIfNecessary(getType(falseExpression));
+            } else {
+                resultType = wrapTypeIfNecessary(getType(trueExpression));
             }
         } else {
             // store type information
