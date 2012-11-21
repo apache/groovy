@@ -171,15 +171,9 @@ public abstract class Selector {
             useMetaClass = true;
             try {
                 if (LOG_ENABLED) LOG.info("set meta class invocation path for property get.");
-                handle = LOOKUP.findVirtual(MetaClass.class, "getProperty", MethodType.methodType(Object.class, Class.class, Object.class, String.class, boolean.class, boolean.class));
-                handle = MethodHandles.insertArguments(handle, 3, this.name, false, false);
-                if (standardMetaClass) {
-                    handle = MethodHandles.insertArguments(handle, 0, mc, selectionBase);
-                } else {
-                    handle = MethodHandles.insertArguments(handle, 1, selectionBase);
-                    handle = MethodHandles.filterArguments(handle, 0, SLOW_META_CLASS_FIND);
-                    handle = MethodHandles.permuteArguments(handle, MethodType.methodType(Object.class,Object.class), 0,0);
-                }
+                handle = LOOKUP.findVirtual(MetaObjectProtocol.class, "getProperty", MethodType.methodType(Object.class, Object.class, String.class));
+                handle = MethodHandles.insertArguments(handle, 2, this.name);
+                handle = MethodHandles.insertArguments(handle, 0, mc);
             } catch (Exception e) {
                 throw new GroovyBugError(e);
             }
