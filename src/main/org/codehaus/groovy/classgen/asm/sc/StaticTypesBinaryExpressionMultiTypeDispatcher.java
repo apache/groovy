@@ -20,10 +20,14 @@ import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.stmt.EmptyStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.ForStatement;
+import org.codehaus.groovy.ast.tools.WideningCategories;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
+import org.codehaus.groovy.classgen.BytecodeExpression;
 import org.codehaus.groovy.classgen.asm.*;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.syntax.Token;
+import org.codehaus.groovy.syntax.Types;
+import org.codehaus.groovy.transform.sc.ListOfExpressionsExpression;
 import org.codehaus.groovy.transform.sc.StaticCompilationVisitor;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor;
@@ -34,7 +38,7 @@ import org.objectweb.asm.Opcodes;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.codehaus.groovy.ast.ClassHelper.int_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.*;
 import static org.codehaus.groovy.transform.sc.StaticCompilationVisitor.*;
 
 /**
@@ -52,12 +56,99 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
         super(wc);
     }
 
+    private int incValue(Token token) {
+        switch (token.getType()) {
+            case Types.PLUS_PLUS:
+                return 1;
+            case Types.MINUS_MINUS:
+                return -1;
+        }
+        return 0;
+    }
+
+ /*   @Override
+    public void evaluatePrefixMethod(final PrefixExpression expression) {
+        final Expression src = expression.getExpression();
+        ListOfExpressionsExpression list = new ListOfExpressionsExpression();
+        list.addExpression(new BinaryExpression(
+                src,
+                Token.newSymbol(Types.EQUAL, -1, -1),
+                new BinaryExpression(
+                        src,
+                        Token.newSymbol(Types.MINUS, -1, -1),
+                        new ConstantExpression(1)
+                )
+        ));
+        list.addExpression(src);
+        list.setSourcePosition(expression);
+        list.visit(getController().getAcg());
+        if (true) return;
+        if (src instanceof VariableExpression) {
+            final WriterController controller = getController();
+            final ClassNode type = controller.getTypeChooser().resolveType(src, controller.getClassNode());
+            if (ClassHelper.isPrimitiveType(type) && ClassHelper.isNumberType(type)) {
+                BytecodeExpression bytecode = new BytecodeExpression() {
+                    @Override
+                    public void visit(final MethodVisitor mv) {
+                        BytecodeVariable variable = controller.getCompileStack().getVariable(((VariableExpression) src).getName(), true);
+                        if (WideningCategories.isIntCategory(type)) {
+                            mv.visitIincInsn(variable.getIndex(), incValue(expression.getOperation()));
+                            mv.visitIntInsn(ILOAD, variable.getIndex());
+                        } else if (WideningCategories.isLongCategory(type)) {
+                            mv.visitIntInsn(LLOAD, variable.getIndex());
+                            mv.visitInsn(LCONST_1);
+                            mv.visitInsn(incValue(expression.getOperation())<0?LSUB:LADD);
+                            mv.visitVarInsn(LSTORE, variable.getIndex());
+                            mv.visitVarInsn(LLOAD, variable.getIndex());
+                        }
+                    }
+                };
+                bytecode.setType(type);
+                bytecode.visit(controller.getAcg());
+                return;
+            }
+        }
+        super.evaluatePrefixMethod(expression);
+    }
+
+    @Override
+    public void evaluatePostfixMethod(final PostfixExpression expression) {
+        final Expression src = expression.getExpression();
+        if (src instanceof VariableExpression) {
+            final WriterController controller = getController();
+            final ClassNode type = controller.getTypeChooser().resolveType(src, controller.getClassNode());
+            if (ClassHelper.isPrimitiveType(type) && ClassHelper.isNumberType(type)) {
+                BytecodeExpression bytecode = new BytecodeExpression() {
+                    @Override
+                    public void visit(final MethodVisitor mv) {
+                        BytecodeVariable variable = controller.getCompileStack().getVariable(((VariableExpression) src).getName(), true);
+                        if (WideningCategories.isIntCategory(type)) {
+                            mv.visitIntInsn(ILOAD, variable.getIndex());
+                            mv.visitIincInsn(variable.getIndex(), incValue(expression.getOperation()));
+                        } else if (WideningCategories.isLongCategory(type)) {
+                            mv.visitIntInsn(LLOAD, variable.getIndex());
+                            mv.visitInsn(DUP2);
+                            mv.visitInsn(LCONST_1);
+                            mv.visitInsn(incValue(expression.getOperation())<0?LSUB:LADD);
+                            mv.visitVarInsn(LSTORE, variable.getIndex());
+                        }
+                    }
+                };
+                bytecode.setType(type);
+                bytecode.visit(controller.getAcg());
+                return;
+            }
+        }
+        super.evaluatePostfixMethod(expression);
+    }
+*/
     @Override
     protected void writePostOrPrefixMethod(int op, String method, Expression expression, Expression orig) {
         MethodNode mn = (MethodNode) orig.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET);
+        WriterController controller = getController();
+        OperandStack operandStack = controller.getOperandStack();
         if (mn!=null) {
-            WriterController controller = getController();
-            controller.getOperandStack().pop();
+            operandStack.pop();
             MethodCallExpression call = new MethodCallExpression(
                     expression,
                     method,
@@ -65,9 +156,45 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
             );
             call.setMethodTarget(mn);
             call.visit(controller.getAcg());
-        } else {
-            super.writePostOrPrefixMethod(op, method, expression, orig);
+            return;
         }
+
+        ClassNode top = operandStack.getTopOperand();
+        if (ClassHelper.isPrimitiveType(top) && (ClassHelper.isNumberType(top)||char_TYPE.equals(top))) {
+            MethodVisitor mv = controller.getMethodVisitor();
+            if (WideningCategories.isIntCategory(top) || char_TYPE.equals(top)) {
+                mv.visitInsn(ICONST_1);
+            } else if (long_TYPE.equals(top)) {
+                mv.visitInsn(LCONST_1);
+            } else if (float_TYPE.equals(top)) {
+                mv.visitInsn(FCONST_1);
+            } else if (double_TYPE.equals(top)) {
+                mv.visitInsn(DCONST_1);
+            }
+            if ("next".equals(method)) {
+                if (WideningCategories.isIntCategory(top) || char_TYPE.equals(top)) {
+                    mv.visitInsn(IADD);
+                } else if (long_TYPE.equals(top)) {
+                    mv.visitInsn(LADD);
+                } else if (float_TYPE.equals(top)) {
+                    mv.visitInsn(FADD);
+                } else if (double_TYPE.equals(top)) {
+                    mv.visitInsn(DADD);
+                }
+            } else {
+                if (WideningCategories.isIntCategory(top) || char_TYPE.equals(top)) {
+                    mv.visitInsn(ISUB);
+                } else if (long_TYPE.equals(top)) {
+                    mv.visitInsn(LSUB);
+                } else if (float_TYPE.equals(top)) {
+                    mv.visitInsn(FSUB);
+                } else if (double_TYPE.equals(top)) {
+                    mv.visitInsn(DSUB);
+                }
+            }
+            return;
+        }
+        super.writePostOrPrefixMethod(op, method, expression, orig);
     }
 
     @Override
