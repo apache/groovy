@@ -34,14 +34,14 @@ public interface Range<T extends Comparable> extends List<T> {
      *
      * @return the lower value in the range.
      */
-    Comparable getFrom();
+    T getFrom();
 
     /**
      * The upper value in the range.
      *
      * @return the upper value in the range
      */
-    Comparable getTo();
+    T getTo();
 
     /**
      * Indicates whether this is a reverse range which iterates backwards

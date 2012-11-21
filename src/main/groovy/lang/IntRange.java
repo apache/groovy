@@ -184,14 +184,14 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer> {
     /**
      * {@inheritDoc}
      */
-    public Comparable getFrom() {
+    public Integer getFrom() {
         return Integer.valueOf(from);
     }
 
     /**
      * {@inheritDoc}
      */
-    public Comparable getTo() {
+    public Integer getTo() {
         return Integer.valueOf(to);
     }
 
