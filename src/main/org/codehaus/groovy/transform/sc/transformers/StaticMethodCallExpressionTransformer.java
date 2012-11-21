@@ -40,7 +40,7 @@ public class StaticMethodCallExpressionTransformer {
             call.setMethodTarget(target);
             call.setSourcePosition(orig);
             call.copyNodeMetaData(orig);
-            return call;
+            return transformer.transform(call);
         }
         return transformer.superTransform(orig);
     }
