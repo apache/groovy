@@ -1319,7 +1319,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     && !type.equals(VOID_TYPE)
                     && !checkCompatibleAssignmentTypes(methodNode.getReturnType(), type)
                     && !(isNullConstant(expression))) {
-                addStaticTypeError("Cannot return value of type " + type + " on method returning type " + methodNode.getReturnType(), expression);
+                addStaticTypeError("Cannot return value of type " + type.toString(false) + " on method returning type " + methodNode.getReturnType().toString(false), expression);
             } else if (!methodNode.isVoidMethod()) {
                 ClassNode previousType = (ClassNode) methodNode.getNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE);
                 ClassNode inferred = previousType == null ? type : lowestUpperBound(type, previousType);
@@ -2122,10 +2122,16 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         // pop if-then-else temporary type info
         temporaryIfBranchTypeInformation.pop();
         falseExpression.visit(this);
-        ClassNode resultType = OBJECT_TYPE;
+        ClassNode resultType;
         if (isNullConstant(trueExpression) || isNullConstant(falseExpression)) {
-            if (currentBinaryExpression != null) {
+            if (currentBinaryExpression != null && currentBinaryExpression.getRightExpression()==expression) {
                 resultType = getType(currentBinaryExpression.getLeftExpression());
+            } else if (isNullConstant(trueExpression) && isNullConstant(falseExpression)) {
+                resultType = OBJECT_TYPE;
+            } else if (isNullConstant(trueExpression)) {
+                resultType = wrapTypeIfNecessary(getType(falseExpression));
+            } else {
+                resultType = wrapTypeIfNecessary(getType(trueExpression));
             }
         } else {
             // store type information
