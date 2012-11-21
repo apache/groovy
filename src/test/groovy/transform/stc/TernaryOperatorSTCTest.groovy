@@ -166,5 +166,13 @@ class TernaryOperatorSTCTest extends StaticTypeCheckingTestCase {
         }
         '''
     }
+
+    // GROOVY-5734
+    void testNullInTernary() {
+        assertScript '''
+            Integer someMethod() { (false) ? null : 8 }
+            assert someMethod() == 8
+        '''
+    }
 }
 
