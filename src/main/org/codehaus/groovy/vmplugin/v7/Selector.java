@@ -467,18 +467,8 @@ public abstract class Selector {
                     handle = handle.bindTo(mc);
                     if (LOG_ENABLED) LOG.info("use invokeStaticMethod with bound meta class");
                 } else {
-                    boolean useShortForm = mc instanceof AdaptingMetaClass;
-                    if (useShortForm) {
-                        handle = LOOKUP.findVirtual(MetaObjectProtocol.class, "invokeMethod", MethodType.methodType(Object.class, Object.class, String.class, Object[].class));
-                    } else {
-                        handle = LOOKUP.findVirtual(MetaClass.class, "invokeMethod", INVOKE_METHOD_SIGNATURE);
-                        handle = MethodHandles.insertArguments(handle, handle.type().parameterCount()-2, false, true);
-                    }
-
+                    handle = LOOKUP.findVirtual(MetaObjectProtocol.class, "invokeMethod", MethodType.methodType(Object.class, Object.class, String.class, Object[].class));
                     handle = handle.bindTo(mc);
-                    if (!useShortForm) {
-                        handle = handle.bindTo(selectionBase);
-                    }
                     if (LOG_ENABLED) LOG.info("use invokeMethod with bound meta class");
 
                     if (receiver instanceof GroovyObject) {
