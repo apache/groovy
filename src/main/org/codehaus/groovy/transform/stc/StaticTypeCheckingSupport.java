@@ -1046,6 +1046,15 @@ public abstract class StaticTypeCheckingSupport {
                             } else if (twoRT.isDerivedFrom(oneRT) || twoRT.implementsInterface(oneRT)) {
                                 toBeRemoved.add(one);
                             }
+                        } else {
+                            // this is an imperfect solution to determining if two methods are
+                            // equivalent, for example String#compareTo(Object) and String#compareTo(String)
+                            // in that case, Java marks the Object version as synthetic
+                            if (one.isSynthetic() && !two.isSynthetic()) {
+                                toBeRemoved.add(one);
+                            } else if (two.isSynthetic() && !one.isSynthetic()) {
+                                toBeRemoved.add(two);
+                            }
                         }
                     }
                 }                
