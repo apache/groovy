@@ -854,6 +854,14 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-5712
+    void testClassForNameVsCharsetForName() {
+        assertScript '''import java.nio.charset.Charset
+            Charset charset = Charset.forName('UTF-8')
+            assert charset instanceof Charset
+        '''
+    }
+
     static class MyMethodCallTestClass {
 
         static int mul(int... args) { args.toList().inject(1) { x,y -> x*y } }
