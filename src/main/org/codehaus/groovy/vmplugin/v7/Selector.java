@@ -97,6 +97,7 @@ public abstract class Selector {
     }
 
     private static class PropertySelector extends MethodSelector {
+        private boolean insertName = false;
 
         public PropertySelector(MutableCallSite callSite, Class sender, String methodName, CALL_TYPES callType, boolean safeNavigation, boolean thisCall, boolean spreadCall, Object[] arguments) {
             super(callSite, sender, methodName, callType, safeNavigation, thisCall, spreadCall, arguments);
@@ -136,6 +137,7 @@ public abstract class Selector {
             if (res instanceof MethodMetaProperty) {
                 MethodMetaProperty mmp = (MethodMetaProperty) res;
                 method = mmp.getMetaMethod();
+                insertName = true;
             } else if (res instanceof CachedField) {
                 CachedField cf = (CachedField) res;
                 Field f = cf.field;
@@ -160,9 +162,10 @@ public abstract class Selector {
         public void setHandleForMetaMethod() {
             if (handle!=null) return;
             super.setHandleForMetaMethod();
-            /*if (handle!=null && handle.type().parameterCount()==2) {
+            if (handle != null && insertName && handle.type().parameterCount()==2) {
+                System.err.println("method="+method+" handle="+handle);
                 handle = MethodHandles.insertArguments(handle, 1, name);
-            }*/
+            }
         }
 
         @Override
