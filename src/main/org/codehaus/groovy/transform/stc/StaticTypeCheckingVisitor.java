@@ -842,7 +842,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         List<ClassNode> tests = new LinkedList<ClassNode>();
         tests.add(objectExpressionType);
         if (objectExpressionType.equals(CLASS_Type) && objectExpressionType.getGenericsTypes() != null) {
-            tests.add(objectExpressionType.getGenericsTypes()[0].getType());
+            tests.add(0,objectExpressionType.getGenericsTypes()[0].getType());
             staticProperty = true;
         }
         if (!temporaryIfBranchTypeInformation.empty()) {
@@ -1030,7 +1030,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         List<ClassNode> tests = new LinkedList<ClassNode>();
         tests.add(clazz);
         if (clazz.equals(CLASS_Type) && clazz.getGenericsTypes() != null) {
-            tests.add(clazz.getGenericsTypes()[0].getType());
+            tests.add(0,clazz.getGenericsTypes()[0].getType());
         }
         if (!temporaryIfBranchTypeInformation.empty()) {
             List<ClassNode> classNodes = getTemporaryTypesForExpression(objectExpression);
@@ -1862,7 +1862,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 receivers.add(receiver);
                 if (receiver.equals(CLASS_Type) && receiver.getGenericsTypes() != null) {
                     GenericsType clazzGT = receiver.getGenericsTypes()[0];
-                    receivers.add(clazzGT.getType());
+                    receivers.add(receivers.size()-1,clazzGT.getType());
                 }
                 if (receiver.isInterface()) {
                     // GROOVY-xxxx
