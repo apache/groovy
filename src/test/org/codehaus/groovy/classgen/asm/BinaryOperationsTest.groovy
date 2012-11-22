@@ -1,11 +1,14 @@
 package org.codehaus.groovy.classgen.asm
 
+import static org.codehaus.groovy.control.CompilerConfiguration.DEFAULT as config
+
 /**
  * @author Guillaume Laforge
  */
 class BinaryOperationsTest extends AbstractBytecodeTestCase {
     
     void testIntPlus() {
+        if (config.optimizationOptions.indy) return;
         assert compile("""\
             int i = 1
             int j = 2
@@ -18,6 +21,7 @@ class BinaryOperationsTest extends AbstractBytecodeTestCase {
     }
     
     void testIntCompareLessThan() {
+        if (config.optimizationOptions.indy) return;
         assert compile("""\
             int i = 0
             if (i < 100) println "true"
@@ -29,6 +33,7 @@ class BinaryOperationsTest extends AbstractBytecodeTestCase {
     }
     
     void testCompareLessThanInClosure() {
+        if (config.optimizationOptions.indy) return;
         // GROOVY-4741
         assert """
             int a = 0
@@ -40,6 +45,7 @@ class BinaryOperationsTest extends AbstractBytecodeTestCase {
     }
     
     void testLongLeftShift() {
+        if (config.optimizationOptions.indy) return;
         assert compile("""\
             long a = 1
             long b = a << 32
@@ -50,6 +56,7 @@ class BinaryOperationsTest extends AbstractBytecodeTestCase {
     }
 
     void testIntConstants() {
+        if (config.optimizationOptions.indy) return;
         (0..5).each {
             assert compile("""\
                 int a = $it

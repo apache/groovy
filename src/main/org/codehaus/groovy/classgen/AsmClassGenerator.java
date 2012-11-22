@@ -129,7 +129,7 @@ public class AsmClassGenerator extends ClassGenerator {
         }
         this.controller.init(this, context, cv, classNode);
 
-        if (controller.shouldOptimizeForInt()) {
+        if (controller.shouldOptimizeForInt() || factory!=null) {
             OptimizingStatementWriter.setNodeMeta(controller.getTypeChooser(),classNode);
         }
 
@@ -194,6 +194,8 @@ public class AsmClassGenerator extends ClassGenerator {
         } catch (GroovyRuntimeException e) {
             e.setModule(classNode.getModule());
             throw e;
+        } catch (NegativeArraySizeException nase) {
+            throw new GroovyRuntimeException("NegativeArraySizeException while processing "+sourceFile, nase);
         } catch (NullPointerException npe) {
             throw new GroovyRuntimeException("NPE while processing "+sourceFile, npe);
         }
