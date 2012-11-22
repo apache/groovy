@@ -473,5 +473,22 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         assert m( [ key: 'tim' ] ) == 4
         '''
     }
+
+    // GROOVY-5793
+    void testShouldNotForceAsTypeWhenListOfNullAssignedToArray() {
+        assertScript '''
+        Integer[] m() {
+          Integer[] arr = [ null, null ]
+        }
+        assert m().length == 2
+        '''
+    }
+    void testShouldNotForceAsTypeWhenListOfNullAssignedToArrayUnlessPrimitive() {
+        shouldFailWithMessages '''
+        int[] m() {
+          int[] arr = [ null, null ]
+        }
+        ''', 'into array of type'
+    }
 }
 
