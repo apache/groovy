@@ -54,7 +54,7 @@ public class TypeTransformers {
             // if the given number
             tmp = LOOKUP.findConstructor(BigInteger.class, MethodType.methodType(Void.TYPE, String.class));
             TO_BIG_INT  = MethodHandles.filterReturnValue(TO_STRING, tmp);
-            
+
             // generic array to array conversion
             AS_ARRAY = LOOKUP.findStatic(DefaultTypeTransformation.class, "asArray", MethodType.methodType(Object.class, Object.class, Class.class));
         } catch (Exception e) {
@@ -62,6 +62,11 @@ public class TypeTransformers {
         }
     }
 
+    /**
+     * Adds a type transformer applied at runtime.
+     * This method handles transformations to String from GString,
+     * array transformations and number based transformations
+     */
     protected static MethodHandle addTransformer(MethodHandle handle, int pos, Object arg, Class parameter) {
         MethodHandle transformer=null;
     	if (arg instanceof GString) {
@@ -74,7 +79,12 @@ public class TypeTransformers {
         if (transformer==null) throw new GroovyBugError("Unknown transformation for argument "+arg+" at position "+pos+" with "+arg.getClass()+" for parameter of type "+parameter);
         return applyUnsharpFilter(handle, pos, transformer);
     }
-    
+
+    /**
+     * Apply a transformer as filter.
+     * The filter may not match exactly in the types. In this case needed
+     * additional type transformations are done by {@link MethodHandle#asType(MethodType)} 
+     */
     public static MethodHandle applyUnsharpFilter(MethodHandle handle, int pos, MethodHandle transformer) {
         MethodType type = transformer.type();
         Class given = handle.type().parameterType(pos);
@@ -84,6 +94,10 @@ public class TypeTransformers {
         return MethodHandles.filterArguments(handle, pos, transformer);
     }
 
+    /**
+     * returns a transformer later applied as filter to transform one
+     * number into another
+     */
     private static MethodHandle selectNumberTransformer(Class param, Object arg) {
         param = TypeHelper.getWrapperClass(param);
         if (param == Byte.class) {

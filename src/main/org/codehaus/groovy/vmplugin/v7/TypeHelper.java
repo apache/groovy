@@ -53,8 +53,7 @@ public class TypeHelper {
         }
         return c;
     }
-    
-    
+
     /**
      * Realizes an unsharp equal for the class. 
      * In general we return true if the provided arguments are the same. But
@@ -67,7 +66,7 @@ public class TypeHelper {
         if (getWrapperClass(parameterClass) == argumentClass) return true;
         return false;
     }
-    
+
     /**
      * Replaces the types in the callSiteType parameter if more specific types
      * given through the arguments. This is in general the case, unless
@@ -83,31 +82,30 @@ public class TypeHelper {
         }
         return callSiteType;
     }
-    
+
     protected static boolean isIntCategory(Class x) {
         return  x==Integer.class    ||  x==int.class    ||
                 x==Byte.class       ||  x==byte.class   ||
                 x==Character.class  ||  x==char.class   ||
                 x==Short.class      ||  x==short.class;
     }
-    
+
     protected static boolean isLongCategory(Class x) {
         return  x==Long.class       ||  x==long.class   ||
                 isIntCategory(x);
     }
-    
+
     private static boolean isBigIntCategory(Class x) {
         return  x==BigInteger.class || isLongCategory(x);
     }
-    
+
     protected static boolean isBigDecCategory(Class x) {
         return  x==BigDecimal.class || isBigIntCategory(x);
     }
-    
+
     protected static boolean isDoubleCategory(Class x) {
         return  x==Float.class      ||  x==float.class  ||
                 x==Double.class     ||  x==double.class ||
                 isBigDecCategory(x);
     }
-    
 }

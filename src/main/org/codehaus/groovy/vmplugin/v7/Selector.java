@@ -23,7 +23,6 @@ import groovy.lang.GroovySystem;
 import groovy.lang.MetaClass;
 import groovy.lang.MetaClassImpl;
 import groovy.lang.MetaMethod;
-import groovy.lang.MetaObjectProtocol;
 import groovy.lang.MetaProperty;
 import groovy.lang.MissingMethodException;
 import groovy.lang.MetaClassImpl.MetaConstructor;
@@ -37,7 +36,6 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.Arrays;
 
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.reflection.CachedField;
@@ -57,6 +55,7 @@ import org.codehaus.groovy.runtime.wrappers.Wrapper;
 import org.codehaus.groovy.vmplugin.v7.IndyInterface.CALL_TYPES;
 
 import static org.codehaus.groovy.vmplugin.v7.IndyInterface.*;
+import static org.codehaus.groovy.vmplugin.v7.IndyGuardsFiltersAndSignatures.*;
 
 public abstract class Selector {
     public Object[] args, originalArguments;
@@ -74,19 +73,31 @@ public abstract class Selector {
     public Class selectionBase;
     public boolean catchException = true;
     public CALL_TYPES callType;
-    
+
+    /**
+     * Returns the Selector
+     */
     public static Selector getSelector(MutableCallSite callSite, Class sender, String methodName, int callID, boolean safeNavigation, boolean thisCall, boolean spreadCall, Object[] arguments) {
         CALL_TYPES callType = CALL_TYPES.values()[callID];
         switch (callType) {
             case INIT: return new InitSelector(callSite, sender, methodName, callType, safeNavigation, thisCall, spreadCall, arguments);
             case METHOD: return new MethodSelector(callSite, sender, methodName, callType, safeNavigation, thisCall, spreadCall, arguments);
-            case GET: case SET:
+            case GET: 
                 return new PropertySelector(callSite, sender, methodName, callType, safeNavigation, thisCall, spreadCall, arguments);
+            case SET:
+                throw new GroovyBugError("your call tried to do a property set, which is not supported.");
         }
         return null;
     }
     abstract void setCallSiteTarget();
 
+    /**
+     * Helper method to transform the given arguments, consisting of the receiver 
+     * and the actual arguments in an Object[], into a new Object[] consisting
+     * of the receiver and the arguments directly. Before the size of args was 
+     * always 2, the returned Object[] will have a size of 1+n, where n is the
+     * number arguments.
+     */
     private static Object[] spread(Object[] args, boolean spreadCall) {
         if (!spreadCall) return args;
         Object[] normalArguments = (Object[]) args[1];
@@ -103,6 +114,9 @@ public abstract class Selector {
             super(callSite, sender, methodName, callType, safeNavigation, thisCall, spreadCall, arguments);
         }
 
+        /**
+         * We never got the interceptor path with a property get
+         */
         @Override
         public boolean setInterceptor() {
             return false;
@@ -120,13 +134,12 @@ public abstract class Selector {
                 try {
                     reflectionMethod = aClass.getMethod("getProperty", String.class);
                     if (!reflectionMethod.isSynthetic()) {
-                        handle = LOOKUP.findVirtual(GroovyObject.class, "getProperty", MethodType.methodType(Object.class,String.class));
-                        handle = MethodHandles.insertArguments(handle, 1, name);
+                        handle = MethodHandles.insertArguments(GROOVY_OBJECT_GET_PROPERTY, 1, name);
                         return;
                     }
                 } catch (ReflectiveOperationException e)  {}
             } else if (receiver instanceof Class) {
-                handle = META_CLASS_GET;
+                handle = MOP_GET;
                 handle = MethodHandles.insertArguments(handle, 2, name);
                 handle = MethodHandles.insertArguments(handle, 0, this.mc);
                 return;
@@ -158,43 +171,53 @@ public abstract class Selector {
             } 
         }
 
+        /**
+         * Additionally to the normal {@link MethodSelector#setHandleForMetaMethod()}
+         * task we have to also take care of generic getter methods, that depend
+         * one the name.
+         */
         @Override
         public void setHandleForMetaMethod() {
             if (handle!=null) return;
             super.setHandleForMetaMethod();
             if (handle != null && insertName && handle.type().parameterCount()==2) {
-                System.err.println("method="+method+" handle="+handle);
                 handle = MethodHandles.insertArguments(handle, 1, name);
             }
         }
 
+        /**
+         * The MOP requires all get property operations to go through 
+         * {@link GroovyObject#getProperty(String)}. We do this in case 
+         * no property was found before.
+         */
         @Override
         public void setMetaClassCallHandleIfNedded(boolean standardMetaClass) {
             if (handle!=null) return;
             useMetaClass = true;
-            try {
-                if (LOG_ENABLED) LOG.info("set meta class invocation path for property get.");
-                handle = LOOKUP.findVirtual(MetaObjectProtocol.class, "getProperty", MethodType.methodType(Object.class, Object.class, String.class));
-                handle = MethodHandles.insertArguments(handle, 2, this.name);
-                handle = MethodHandles.insertArguments(handle, 0, mc);
-            } catch (Exception e) {
-                throw new GroovyBugError(e);
-            }
+            if (LOG_ENABLED) LOG.info("set meta class invocation path for property get.");
+            handle = MethodHandles.insertArguments(MOP_GET, 2, this.name);
+            handle = MethodHandles.insertArguments(handle, 0, mc);
         }
     }
 
     private static class InitSelector extends MethodSelector {
         private boolean beanConstructor;
-        
+
         public InitSelector(MutableCallSite callSite, Class sender, String methodName, CALL_TYPES callType, boolean safeNavigation, boolean thisCall, boolean spreadCall, Object[] arguments) {
             super(callSite, sender, methodName, callType, safeNavigation, thisCall, spreadCall, arguments);
         }
-        
+
+        /**
+         * Constructor calls are not intercepted, thus always returns false.
+         */
         @Override
         public boolean setInterceptor() {
             return false;
         }
 
+        /**
+         * For a constructor call we always use the static meta class from the registry
+         */
         @Override
         public void getMetaClass() {
             Object receiver = args[0];
@@ -202,7 +225,7 @@ public abstract class Selector {
         }
 
         /**
-         * this method chooses a constructor from the meta class
+         * This method chooses a constructor from the meta class.
          */
         @Override
         public void chooseMeta(MetaClassImpl mci) {
@@ -220,11 +243,13 @@ public abstract class Selector {
             }
         }
 
+        /**
+         * Adds {@link MetaConstructor} handling.
+         */
         @Override
         public void setHandleForMetaMethod() {
             if (method==null) return;
             if (method instanceof MetaConstructor) {
-                //TODO: move this to init selector
                 if (LOG_ENABLED) LOG.info("meta method is MetaConstructor instance");
                 MetaConstructor mc = (MetaConstructor) method;
                 isVargs = mc.isVargsMethod();
@@ -256,36 +281,47 @@ public abstract class Selector {
             handle = MethodHandles.dropArguments(handle, 0, Class.class);
         }
 
+        /**
+         * In case of a bean constructor we don't do any varags or implicit null argument 
+         * transformations. Otherwise we do the same as for {@link MethodSelector#correctParameterLength()}
+         */
         @Override
         public void correctParameterLength() {
             if (beanConstructor) return;
             super.correctParameterLength();
         }
 
+        /**
+         * In case of a bean constructor we don't do any coercion, otherwise
+         * we do the same as for {@link MethodSelector#correctCoerce()}
+         */
         @Override
         public void correctCoerce() {
             if (beanConstructor) return;
             super.correctCoerce();
         }
-        
+
+        /**
+         * Set MOP based constructor invocation path.
+         */
         @Override
         public void setMetaClassCallHandleIfNedded(boolean standardMetaClass) {
             if (handle!=null) return;
-            try {
-                useMetaClass = true;
-                if (LOG_ENABLED) LOG.info("set meta class invocation path");
-                handle = LOOKUP.findVirtual(MetaObjectProtocol.class, "invokeConstructor", MethodType.methodType(Object.class, Object[].class));
-                handle = handle.bindTo(mc);
-                handle = handle.asCollector(Object[].class, targetType.parameterCount()-1);
-                handle = MethodHandles.dropArguments(handle, 0, Class.class);
-                if (LOG_ENABLED) LOG.info("create collector for arguments");
-            } catch (Exception e) {
-                throw new GroovyBugError(e);
-            }
-
+            useMetaClass = true;
+            if (LOG_ENABLED) LOG.info("set meta class invocation path");
+            handle = MOP_INVOKE_CONSTRUCTOR.bindTo(mc);
+            handle = handle.asCollector(Object[].class, targetType.parameterCount()-1);
+            handle = MethodHandles.dropArguments(handle, 0, Class.class);
+            if (LOG_ENABLED) LOG.info("create collector for arguments");
         }
     }
 
+    /**
+     * Method invocation based {@link Selector}.
+     * This Selector is called for method invocations and is base for cosntructor
+     * calls as well as getProperty calls.
+     * @author <a href="mailto:blackdrag@gmx.org">Jochen "blackdrag" Theodorou</a>
+     */
     private static class MethodSelector extends Selector {
         protected MetaClass mc;
         private boolean isCategoryMethod;
@@ -444,6 +480,9 @@ public abstract class Selector {
             }
         }
 
+        /**
+         * Helper method to manipulate the given type to replace Wrapper with Object.
+         */
         private MethodType removeWrapper(MethodType targetType) {
             Class[] types = targetType.parameterArray();
             for (int i=0; i<types.length; i++) {
@@ -461,32 +500,26 @@ public abstract class Selector {
          */
         public void setMetaClassCallHandleIfNedded(boolean standardMetaClass) {
             if (handle!=null) return;
-            try {
-                useMetaClass = true;
-                if (LOG_ENABLED) LOG.info("set meta class invocation path");
-                Object receiver = getCorrectedReceiver();
-                if (receiver instanceof Class) {
-                    handle = LOOKUP.findVirtual(MetaClass.class, "invokeStaticMethod", MethodType.methodType(Object.class, Object.class, String.class, Object[].class));
-                    handle = handle.bindTo(mc);
-                    if (LOG_ENABLED) LOG.info("use invokeStaticMethod with bound meta class");
-                } else {
-                    handle = LOOKUP.findVirtual(MetaObjectProtocol.class, "invokeMethod", MethodType.methodType(Object.class, Object.class, String.class, Object[].class));
-                    handle = handle.bindTo(mc);
-                    if (LOG_ENABLED) LOG.info("use invokeMethod with bound meta class");
+            useMetaClass = true;
+            if (LOG_ENABLED) LOG.info("set meta class invocation path");
+            Object receiver = getCorrectedReceiver();
+            if (receiver instanceof Class) {
+                handle = META_CLASS_INVOKE_STATIC_METHOD.bindTo(mc);
+                if (LOG_ENABLED) LOG.info("use invokeStaticMethod with bound meta class");
+            } else {
+                handle = MOP_INVOKE_METHOD.bindTo(mc);
+                if (LOG_ENABLED) LOG.info("use invokeMethod with bound meta class");
 
-                    if (receiver instanceof GroovyObject) {
-                        // if the meta class call fails we may still want to fall back to call
-                        // GroovyObject#invokeMethod if the receiver is a GroovyObject
-                        if (LOG_ENABLED) LOG.info("add MissingMethod handler for GrooObject#invokeMethod fallback path");
-                        handle = MethodHandles.catchException(handle, MissingMethodException.class, GROOVY_OBJECT_INVOKER);
-                    }
+                if (receiver instanceof GroovyObject) {
+                    // if the meta class call fails we may still want to fall back to call
+                    // GroovyObject#invokeMethod if the receiver is a GroovyObject
+                    if (LOG_ENABLED) LOG.info("add MissingMethod handler for GrooObject#invokeMethod fallback path");
+                    handle = MethodHandles.catchException(handle, MissingMethodException.class, GROOVY_OBJECT_INVOKER);
                 }
-                handle = MethodHandles.insertArguments(handle, 1, name);
-                if (!spread) handle = handle.asCollector(Object[].class, targetType.parameterCount()-1);
-                if (LOG_ENABLED) LOG.info("bind method name and create collector for arguments");
-            } catch (Exception e) {
-                throw new GroovyBugError(e);
             }
+            handle = MethodHandles.insertArguments(handle, 1, name);
+            if (!spread) handle = handle.asCollector(Object[].class, targetType.parameterCount()-1);
+            if (LOG_ENABLED) LOG.info("bind method name and create collector for arguments");
         }
 
         /**
@@ -508,7 +541,7 @@ public abstract class Selector {
                 }
             }
         }
-        
+
         /**
          * Handles cases in which we have to correct the length of arguments
          * using the parameters. This might be needed for vargs and for one 
@@ -582,17 +615,17 @@ public abstract class Selector {
                 // to another primitive or of the wrappers, or a combination of 
                 // these. This is also handled already. What is left is the 
                 // GString conversion and the number conversions.
-                
+
                 if (arg==null) continue;
                 Class got = arg.getClass();
-                
+
                 // equal class, nothing to do
                 if (got==parameters[i]) continue;
-                
+
                 Class wrappedPara = TypeHelper.getWrapperClass(parameters[i]);
                 // equal class with one maybe a primitive, the later explicitCastArguments will solve this case
                 if (wrappedPara==TypeHelper.getWrapperClass(got)) continue;
-                
+
                 // equal in terms of an assignment in Java. That means according to Java widening rules, or
                 // a subclass, interface, superclass relation, this case then handles also 
                 // primitive to primitive conversion. Those case are also solved by explicitCastArguments.
@@ -702,6 +735,9 @@ public abstract class Selector {
             }
         }
 
+        /**
+         * do the actual call site target set, if the call is supposed to be cached
+         */
         public void doCallSiteTargetSet() {
             if (!cache) {
                 if (LOG_ENABLED) LOG.info("call site stays uncached");
@@ -724,20 +760,26 @@ public abstract class Selector {
             }
             if (LOG_ENABLED) LOG.info("selection base set to "+selectionBase);
         }
-        
+
+        /**
+         * Sets a handle to call {@link GroovyInterceptable#invokeMethod(String, Object)}
+         */
         public boolean setInterceptor() {
             if (!(this.args[0] instanceof GroovyInterceptable)) return false;
-            try {
-                handle = LOOKUP.findVirtual(GroovyInterceptable.class, "invokeMethod", MethodType.methodType(Object.class, String.class, Object.class));
-            } catch (ReflectiveOperationException e) {
-                throw new GroovyBugError(e);
-            }
-            handle = MethodHandles.insertArguments(handle, 1, this.name);
+            handle = MethodHandles.insertArguments(INTERCEPTABLE_INVOKER, 1, this.name);
             handle = handle.asCollector(Object[].class, targetType.parameterCount()-1); 
             handle = handle.asType(targetType);
             return true;
         }
 
+        /**
+         * setting a call site target consists of the following steps:
+         * # get the meta class
+         * # select a method/constructor/property from it, if it is a MetaClassImpl
+         * # make a handle out of the selection
+         * # if nothing could be selected select a path through the given MetaClass or the GroovyObject
+         * # apply transformations for vargs, implicit null argument, coercion, wrapping, null receiver and spreading
+         */
         @Override
         public void setCallSiteTarget() {
             if (!setNullForSafeNavigation() && !setInterceptor()) {
@@ -758,31 +800,26 @@ public abstract class Selector {
                 handle =  MethodHandles.explicitCastArguments(handle,targetType);
 
                 addExceptionHandler();
-            } 
+            }
             setGuards(args[0]);
             doCallSiteTargetSet();
         }
     }
 
     /**
-     * Return true if the given argument is either a primitive or
-     * one of its wrapper. 
+     * Unwraps the given object from a {@link Wrapper}. If not
+     * wrapped, the given object is returned.
      */
-    private static boolean isPrimitiveOrWrapper(Class c) {
-        return c == byte.class    || c == Byte.class      ||
-                c == int.class     || c == Integer.class   ||
-                c == long.class    || c == Long.class      ||
-                c == float.class   || c == Float.class     ||
-                c == double.class  || c == Double.class    ||
-                c == short.class   || c == Short.class     ||
-                c == boolean.class || c == Boolean.class   ||
-                c == char.class    || c == Character.class;
-    }
-
     private static Object unwrapIfWrapped(Object object) {
         if (object instanceof Wrapper) return unwrap(object);
         return object;
     }
+
+    /**
+     * Returns {@link NullObject#getNullObject()} if the receiver
+     * (args[0]) is null. If it is not null, the recevier itself
+     * is returned.
+     */
     public Object getCorrectedReceiver() {
         Object receiver = args[0];
         if (receiver==null) {
@@ -800,6 +837,11 @@ public abstract class Selector {
         return (mods & Modifier.STATIC) != 0;
     }
 
+    /**
+     * Returns the MetaClassImpl if the given MetaClass is one of
+     * MetaClassImpl, AdaptingMetaClass or ClosureMetaClass. If
+     * none of these cases matches, this method returns null.
+     */
     private static MetaClassImpl getMetaClassImpl(MetaClass mc) {
         Class mcc = mc.getClass();
         boolean valid = mcc == MetaClassImpl.class ||

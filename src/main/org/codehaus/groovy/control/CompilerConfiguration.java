@@ -219,8 +219,12 @@ public class CompilerConfiguration {
         } catch (Exception e) {
             // IGNORE
         }
-        
-        setOptimizationOptions(new HashMap<String,Boolean>(2));
+
+        Map options = new HashMap<String,Boolean>(3);
+        if (DEFAULT!=null && Boolean.TRUE.equals(DEFAULT.getOptimizationOptions().get("indy"))) {
+            options.put("indy", Boolean.TRUE);
+        }
+        setOptimizationOptions(options);
     }
 
     /**
