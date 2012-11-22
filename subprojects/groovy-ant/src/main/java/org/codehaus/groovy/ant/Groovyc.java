@@ -126,6 +126,8 @@ public class Groovyc extends MatchingTask {
     private File stubDir;
     private boolean keepStubs;
     private boolean useIndy;
+    
+    private String scriptBaseClass;
 
     private Set<String> scriptExtensions = new LinkedHashSet<String>();
 
@@ -850,6 +852,10 @@ public class Groovyc extends MatchingTask {
         if (useIndy) {
             commandLineList.add("-indy");
         }
+        if(scriptBaseClass != null){
+            commandLineList.add("-b");
+            commandLineList.add(scriptBaseClass);
+        }
     }
 
     private void addSourceFiles(List<String> commandLineList) {
@@ -1155,5 +1161,21 @@ public class Groovyc extends MatchingTask {
      */
     public boolean getIndy() {
         return this.useIndy;
+    }
+    
+    /**
+     * Set the base script class name for the scripts (must derive from Script)
+     * @param scriptBaseClass Base class name for scripts (must derive from Script)
+     */
+    public void setScriptBaseClass(String scriptBaseClass){
+        this.scriptBaseClass = scriptBaseClass;
+    }
+    
+    /**
+     * Get the base script class name for the scripts (must derive from Script)
+     * @returnBase class name for scripts (must derive from Script)
+     */
+    public String getScriptBaseClass(){
+        return this.scriptBaseClass;
     }
 }
