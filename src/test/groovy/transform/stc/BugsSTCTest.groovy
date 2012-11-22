@@ -266,4 +266,18 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
         new Bug4().test()
         '''
     }
+
+    // GROOVY-5793
+    void testByteAsParameter() {
+        assertScript '''
+        void testMethod(java.lang.Byte param){
+            println(param)
+        }
+
+        void execute(){
+            testMethod(java.lang.Byte.valueOf("123"))
+        }
+
+        execute()'''
+    }
 }

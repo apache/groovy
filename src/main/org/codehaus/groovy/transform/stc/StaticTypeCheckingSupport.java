@@ -295,28 +295,28 @@ public abstract class StaticTypeCheckingSupport {
             return type.isDerivedFrom(Number_TYPE);
         }
         if (ClassHelper.Float_TYPE==toBeAssignedTo) {
-            return type.isDerivedFrom(Number_TYPE) && ClassHelper.Double_TYPE!=type;
+            return type.isDerivedFrom(Number_TYPE) && ClassHelper.Double_TYPE!=type.redirect();
         }
         if (ClassHelper.Long_TYPE==toBeAssignedTo) {
             return type.isDerivedFrom(Number_TYPE)
-                    && ClassHelper.Double_TYPE!=type
-                    && ClassHelper.Float_TYPE!=type;
+                    && ClassHelper.Double_TYPE!=type.redirect()
+                    && ClassHelper.Float_TYPE!=type.redirect();
         }
         if (ClassHelper.Integer_TYPE==toBeAssignedTo) {
             return type.isDerivedFrom(Number_TYPE)
-                    && ClassHelper.Double_TYPE!=type
-                    && ClassHelper.Float_TYPE!=type
-                    && ClassHelper.Long_TYPE!=type;
+                    && ClassHelper.Double_TYPE!=type.redirect()
+                    && ClassHelper.Float_TYPE!=type.redirect()
+                    && ClassHelper.Long_TYPE!=type.redirect();
         }
         if (ClassHelper.Short_TYPE==toBeAssignedTo) {
             return type.isDerivedFrom(Number_TYPE)
-                    && ClassHelper.Double_TYPE!=type
-                    && ClassHelper.Float_TYPE!=type
-                    && ClassHelper.Long_TYPE!=type
-                    && ClassHelper.Integer_TYPE!=type;
+                    && ClassHelper.Double_TYPE!=type.redirect()
+                    && ClassHelper.Float_TYPE!=type.redirect()
+                    && ClassHelper.Long_TYPE!=type.redirect()
+                    && ClassHelper.Integer_TYPE!=type.redirect();
         }
         if (ClassHelper.Byte_TYPE==toBeAssignedTo) {
-            return type == ClassHelper.Byte_TYPE;
+            return type.redirect() == ClassHelper.Byte_TYPE;
         }
         if (type.isArray() && toBeAssignedTo.isArray()) {
             return isAssignableTo(type.getComponentType(),toBeAssignedTo.getComponentType());
