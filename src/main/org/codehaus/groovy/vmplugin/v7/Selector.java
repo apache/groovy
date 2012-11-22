@@ -449,7 +449,7 @@ public abstract class Selector {
                 isVargs = cm.isVargsMethod();
                 try {
                     Method m = cm.getCachedMethod();
-                    handle = LOOKUP.unreflect(m);
+                    handle = correctClassForNameAndUnReflectOtherwise(m);
                     if (LOG_ENABLED) LOG.info("successfully unreflected method");
                     if (isStaticCategoryTypeMethod) {
                         handle = MethodHandles.insertArguments(handle, 0, new Object[]{null});
@@ -477,6 +477,14 @@ public abstract class Selector {
                 }
                 currentType = removeWrapper(targetType);
                 if (LOG_ENABLED) LOG.info("bound method name to META_METHOD_INVOKER");
+            }
+        }
+
+        private MethodHandle correctClassForNameAndUnReflectOtherwise(Method m) throws IllegalAccessException {
+            if (m.getDeclaringClass()==Class.class && m.getName().equals("forName") && m.getParameterTypes().length==1) {
+                return MethodHandles.insertArguments(CLASS_FOR_NAME, 1, true, sender.getClassLoader());
+            } else {
+                return LOOKUP.unreflect(m);
             }
         }
 

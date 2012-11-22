@@ -72,7 +72,8 @@ public class IndyGuardsFiltersAndSignatures {
         META_PROPERTY_GETTER, 
         SLOW_META_CLASS_FIND, META_CLASS_INVOKE_STATIC_METHOD,
         MOP_GET, MOP_INVOKE_CONSTRUCTOR, MOP_INVOKE_METHOD,
-        INTERCEPTABLE_INVOKER
+        INTERCEPTABLE_INVOKER,
+        CLASS_FOR_NAME
         ;
 
     static {
@@ -88,7 +89,7 @@ public class IndyGuardsFiltersAndSignatures {
             HAS_CATEGORY_IN_CURRENT_THREAD_GUARD = LOOKUP.findStatic(GroovyCategorySupport.class, "hasCategoryInCurrentThread", ZERO_GUARD);
             GROOVY_OBJECT_GET_PROPERTY = LOOKUP.findVirtual(GroovyObject.class, "getProperty", GET_INVOKER);
             META_CLASS_INVOKE_STATIC_METHOD = LOOKUP.findVirtual(MetaClass.class, "invokeStaticMethod", INVOKER);
-            
+
             BEAN_CONSTRUCTOR_PROPERTY_SETTER = LOOKUP.findStatic(IndyGuardsFiltersAndSignatures.class, "setBeanProperties", MethodType.methodType(Object.class, MetaClass.class, Object.class, Map.class));
             META_PROPERTY_GETTER = LOOKUP.findVirtual(MetaProperty.class, "getProperty", OBJECT_FILTER);
             MOP_GET = LOOKUP.findVirtual(MetaObjectProtocol.class, "getProperty", MethodType.methodType(Object.class, Object.class, String.class));
@@ -96,6 +97,8 @@ public class IndyGuardsFiltersAndSignatures {
             MOP_INVOKE_METHOD = LOOKUP.findVirtual(MetaObjectProtocol.class, "invokeMethod", INVOKER);
             SLOW_META_CLASS_FIND = LOOKUP.findStatic(InvokerHelper.class, "getMetaClass", MethodType.methodType(MetaClass.class, Object.class));
             INTERCEPTABLE_INVOKER = LOOKUP.findVirtual(GroovyInterceptable.class, "invokeMethod", MethodType.methodType(Object.class, String.class, Object.class));
+
+            CLASS_FOR_NAME = LOOKUP.findStatic(Class.class, "forName", MethodType.methodType(Class.class, String.class, boolean.class, ClassLoader.class));
         } catch (Exception e) {
             throw new GroovyBugError(e);
         }
