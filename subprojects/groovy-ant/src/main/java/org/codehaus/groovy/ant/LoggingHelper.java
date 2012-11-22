@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,21 +22,22 @@ import org.apache.tools.ant.Task;
 /**
  * Helper to make logging from Ant easier.
  *
- * @version $Id$
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
-public class LoggingHelper
-{
+public class LoggingHelper {
     private Task owner;
 
     public LoggingHelper(final Task owner) {
         assert owner != null;
-
         this.owner = owner;
     }
 
     public void error(final String msg) {
         owner.log(msg, Project.MSG_ERR);
+    }
+
+    public void error(final String msg, final Throwable t) {
+        owner.log(msg, t, Project.MSG_ERR);
     }
 
     public void warn(final String msg) {
