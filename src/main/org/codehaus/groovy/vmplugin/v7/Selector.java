@@ -464,7 +464,7 @@ public abstract class Selector {
             try {
                 useMetaClass = true;
                 if (LOG_ENABLED) LOG.info("set meta class invocation path");
-                Object receiver = args[0];
+                Object receiver = getCorrectedReceiver();
                 if (receiver instanceof Class) {
                     handle = LOOKUP.findVirtual(MetaClass.class, "invokeStaticMethod", MethodType.methodType(Object.class, Object.class, String.class, Object[].class));
                     handle = handle.bindTo(mc);
