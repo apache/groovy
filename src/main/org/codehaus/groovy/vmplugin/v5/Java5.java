@@ -331,6 +331,7 @@ public class Java5 implements VMPlugin {
             Parameter[] params = makeParameters(compileUnit, m.getGenericParameterTypes(), m.getParameterTypes(), m.getParameterAnnotations());
             ClassNode[] exceptions = makeClassNodes(compileUnit, m.getGenericExceptionTypes(), m.getExceptionTypes());
             MethodNode mn = new MethodNode(m.getName(), m.getModifiers(), ret, params, exceptions, null);
+            mn.setSynthetic(m.isSynthetic());
             setMethodDefaultValue(mn, m);
             setAnnotationMetaData(m.getAnnotations(), mn);
             mn.setGenericsTypes(configureTypeVariable(m.getTypeParameters()));

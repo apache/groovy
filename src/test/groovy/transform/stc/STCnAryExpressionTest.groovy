@@ -140,5 +140,23 @@ class STCnAryExpressionTest extends StaticTypeCheckingTestCase {
             assert (x <=> y) == -1
         '''
     }
+
+    void testComparisonOperatorCheckWithIncompatibleTypesOkIfComparableNotImplemented() {
+        shouldFailWithMessages '''
+            [] < 1
+        ''', "Cannot find matching method java.util.List#compareTo(int)"
+    }
+
+    void testComparisonOperatorCheckWithIncompatibleTypesFailsIfComparableImplemented() {
+        shouldFailWithMessages '''
+           'abc' < 1
+        ''', "Cannot find matching method java.lang.String#compareTo(int)"
+    }
+
+    void testCompareToCallCheckWithIncompatibleTypesAlsoFailsIfComparableImplemented() {
+        shouldFailWithMessages '''
+           'abc'.compareTo(1)
+        ''', "Cannot find matching method java.lang.String#compareTo(int)"
+    }
 }
 
