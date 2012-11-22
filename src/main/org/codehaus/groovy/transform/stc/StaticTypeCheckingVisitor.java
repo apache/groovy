@@ -338,6 +338,14 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     storeType(vexp, node.getField(dynName).getType());
                     return;
                 }
+                Set<ClassNode> allInterfaces = node.getAllInterfaces();
+                for (ClassNode intf : allInterfaces) {
+                    FieldNode field = intf.getField(dynName);
+                    if (field!=null && field.isStatic() && field.isFinal()) {
+                        storeType(vexp, field.getOriginType());
+                        return;
+                    }
+                }
             }
 
             // lookup with plugin
