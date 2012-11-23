@@ -3118,14 +3118,40 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                                     // For example, if we have List<T> in the signature and List<String> as an argument
                                     // we want to align T with String
                                     // but first test is for Object<T> -> String which explains we don't use the generics types
-                                    ClassNode alignedType = parameterized;
-                                    if (parameterized.isUsingGenerics() && parameterized.getGenericsTypes()!=null) {
-                                        alignedType = parameterized.getGenericsTypes()[gtIndex].getType();
-                                    }
-                                    if (resolvedMethodGenerics.containsKey(placeholderName)) {
-                                        failure |= !resolvedMethodGenerics.get(placeholderName).equals(alignedType);
+
+                                    if (type.isGenericsPlaceHolder()) {
+                                        String name = type.getGenericsTypes()[0].getName();
+                                        if (name.equals(placeholderName)) {
+                                            if (resolvedMethodGenerics.containsKey(name)) {
+                                                failure |= !resolvedMethodGenerics.get(name).equals(parameterized);
+                                            } else {
+                                                resolvedMethodGenerics.put(name, parameterized);
+                                            }
+                                        }
                                     } else {
-                                        resolvedMethodGenerics.put(placeholderName, alignedType);
+                                        if (type.isUsingGenerics() && type.getGenericsTypes()!=null) {
+                                            // we have a method parameter type which is for example List<T>
+                                            // and an actual argument which is FooList
+                                            // which has been aligned to List<E> thanks to parameterizeType
+                                            // then in theory both the parameterized type and the method parameter type
+                                            // are the same type but with different type arguments
+                                            // that we need to align
+                                            GenericsType[] gtInParameter = type.getGenericsTypes();
+                                            GenericsType[] gtInArgument = parameterized.getGenericsTypes();
+                                            if (gtInArgument!=null && gtInArgument.length==gtInParameter.length) {
+                                                for (int j = 0; j < gtInParameter.length; j++) {
+                                                    GenericsType genericsType = gtInParameter[j];
+                                                    if (genericsType.getName().equals(placeholderName)) {
+                                                        ClassNode actualType = gtInArgument[j].getType();
+                                                        if (resolvedMethodGenerics.containsKey(placeholderName)) {
+                                                            failure |= !resolvedMethodGenerics.get(placeholderName).equals(actualType);
+                                                        } else {
+                                                            resolvedMethodGenerics.put(placeholderName, actualType);
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
                                     }
                                 }
                             }
