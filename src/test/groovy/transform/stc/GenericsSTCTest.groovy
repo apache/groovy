@@ -940,6 +940,20 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-5735
+    void testCorrespondingParameterType() {
+        assertScript '''
+        public <T> void someMethod (java.lang.Class<T> clazz, T object) {}
+
+        void method() {
+            List<String> list = null
+            someMethod(java.util.List.class, list)
+        }
+
+        method()
+        '''
+    }
+
     static class MyList extends LinkedList<String> {}
 
     public static class ClassA<T> {
