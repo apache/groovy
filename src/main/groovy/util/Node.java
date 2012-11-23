@@ -37,7 +37,6 @@ import java.util.*;
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @author Paul King
- * @version $Revision$
  */
 public class Node implements Serializable, Cloneable {
 
@@ -57,9 +56,8 @@ public class Node implements Serializable, Cloneable {
     private Object value;
 
     /**
-     * Creates a new Node with the same name, no parent, shallow
-     * cloned attributes and if the value is a NodeList, a (deep) clone
-     * of those nodes.
+     * Creates a new Node with the same name, no parent, shallow cloned attributes
+     * and if the value is a NodeList, a (deep) clone of those nodes.
      *
      * @return the clone
      */
@@ -259,7 +257,16 @@ public class Node implements Serializable, Cloneable {
         return newNode.children();
     }
 
+    /**
+     * Extension point for subclasses to override the metaclass. The default
+     * one supports the property and @ attribute notations.
+     *
+     * @param metaClass the original metaclass
+     * @param nodeClass the class whose metaclass we wish to override (this class or a subclass)
+     */
     protected static void setMetaClass(final MetaClass metaClass, Class nodeClass) {
+        // TODO Is protected static a bit of a smell?
+        // TODO perhaps set nodeClass to be Class<? extends Node>
         final MetaClass newMetaClass = new DelegatingMetaClass(metaClass) {
             @Override
             public Object getAttribute(final Object object, final String attribute) {
@@ -285,9 +292,7 @@ public class Node implements Serializable, Cloneable {
             @Override
             public void setProperty(Object object, String property, Object newValue) {
                 if (property.startsWith("@")) {
-                    String attribute = property.substring(1);
-                    Node n = (Node) object;
-                    n.attributes().put(attribute, newValue);
+                    setAttribute(object, property.substring(1), newValue);
                     return;
                 }
                 delegate.setProperty(object, property, newValue);
@@ -297,6 +302,11 @@ public class Node implements Serializable, Cloneable {
         GroovySystem.getMetaClassRegistry().setMetaClass(nodeClass, newMetaClass);
     }
 
+    /**
+     * Returns the textual representation of the current node and all its child nodes.
+     *
+     * @return the text value of the node including child text
+     */
     public String text() {
         if (value instanceof String) {
             return (String) value;
