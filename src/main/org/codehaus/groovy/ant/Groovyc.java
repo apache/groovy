@@ -125,6 +125,7 @@ public class Groovyc extends MatchingTask {
     private List<File> temporaryFiles = new ArrayList<File>(2);
     private File stubDir;
     private boolean keepStubs;
+    private String scriptBaseClass;
 
     private Set<String> scriptExtensions = new LinkedHashSet<String>();
 
@@ -602,6 +603,24 @@ public class Groovyc extends MatchingTask {
     }
 
     /**
+     * Set the base script class name for the scripts (must derive from Script)
+     *
+     * @param scriptBaseClass Base class name for scripts (must derive from Script)
+     */
+    public void setScriptBaseClass(String scriptBaseClass) {
+        this.scriptBaseClass = scriptBaseClass;
+    }
+
+    /**
+     * Get the base script class name for the scripts (must derive from Script)
+     *
+     * @return Base class name for scripts (must derive from Script)
+     */
+    public String getScriptBaseClass() {
+        return this.scriptBaseClass;
+    }
+
+    /**
      * Executes the task.
      *
      * @throws BuildException if an error occurs
@@ -843,6 +862,10 @@ public class Groovyc extends MatchingTask {
                 }
                 if (stacktrace) {
                     commandLineList.add("-e");
+                }
+                if (scriptBaseClass != null) {
+                    commandLineList.add("-b");
+                    commandLineList.add(scriptBaseClass);
                 }
 
                 // check to see if an external file is needed
