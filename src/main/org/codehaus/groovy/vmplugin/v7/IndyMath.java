@@ -23,6 +23,7 @@ import org.codehaus.groovy.GroovyBugError;
 
 import groovy.lang.MetaMethod;
 
+import static org.codehaus.groovy.vmplugin.v7.IndyInterface.*;
 import static org.codehaus.groovy.vmplugin.v7.TypeHelper.*;
 
 /**
@@ -45,8 +46,6 @@ public class IndyMath {
         GG  = MethodType.methodType(Void.TYPE, BigDecimal.class, BigDecimal.class),
         OO  = MethodType.methodType(Void.TYPE, Object.class, Object.class);
 
-    private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
-    
     private static void makeMapEntry(String method, MethodType[] keys, MethodType[] values) throws NoSuchMethodException, IllegalAccessException {
         Map<MethodType,MethodHandle> xMap = new HashMap();
         methods.put(method, xMap);
@@ -83,7 +82,7 @@ public class IndyMath {
      * Choose a method to replace the originally chosen metaMethod to have a
      * more efficient call path. 
      */
-    public static boolean chooseMathMethod(CallInfo info, MetaMethod metaMethod) {
+    public static boolean chooseMathMethod(Selector info, MetaMethod metaMethod) {
         Map<MethodType,MethodHandle> xmap = methods.get(info.name);
         if (xmap==null) return false;
 

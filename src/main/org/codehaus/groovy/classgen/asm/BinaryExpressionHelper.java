@@ -262,7 +262,9 @@ public class BinaryExpressionHelper {
         // -> (x, [], 5), =, 10
         // -> methodCall(x, "putAt", [5, 10])
         ArgumentListExpression ae = new ArgumentListExpression(index,rhsValueLoader);
-        controller.getCallSiteWriter().makeCallSite(receiver, "putAt", ae, false, false, false, false);
+        controller.getInvocationWriter().makeCall(
+                parent, receiver, new ConstantExpression("putAt"),
+                ae, InvocationWriter.invokeMethod, false, false, false);
         controller.getOperandStack().pop();
         // return value of assignment
         rhsValueLoader.visit(controller.getAcg());
@@ -505,75 +507,44 @@ public class BinaryExpressionHelper {
         compileStack.popLHS();        
     }
 
+    protected void evaluateArrayAssignmentWithOperator(String method, BinaryExpression expression, BinaryExpression leftBinExpr) {
+        CompileStack        compileStack    = getController().getCompileStack();
+        AsmClassGenerator   acg             = getController().getAcg();
+        OperandStack        os              = getController().getOperandStack();
+
+        // e.g. x[a] += b
+        // to avoid loading x and a twice we transform the expression to use
+        // ExpressionAsVariableSlot
+        // -> subscript=a, receiver=x, receiver[subscript]+b, =, receiver[subscript]
+        // -> subscript=a, receiver=x, receiver#getAt(subscript)#plus(b), =, receiver#putAt(subscript)
+        // -> subscript=a, receiver=x, receiver#putAt(subscript, receiver#getAt(subscript)#plus(b))
+        // the result of x[a] += b is x[a]+b, thus:
+        // -> subscript=a, receiver=x, receiver#putAt(subscript, ret=receiver#getAt(subscript)#plus(b)), ret
+        ExpressionAsVariableSlot subscript = new ExpressionAsVariableSlot(controller, leftBinExpr.getRightExpression(), "subscript");
+        ExpressionAsVariableSlot receiver  = new ExpressionAsVariableSlot(controller, leftBinExpr.getLeftExpression(), "receiver");
+        MethodCallExpression getAt = new MethodCallExpression(receiver, "getAt", new ArgumentListExpression(subscript));
+        MethodCallExpression operation = new MethodCallExpression(getAt, method, expression.getRightExpression());
+        ExpressionAsVariableSlot ret = new ExpressionAsVariableSlot(controller, operation, "ret");
+        MethodCallExpression putAt = new MethodCallExpression(receiver, "putAt", new ArgumentListExpression(subscript, ret));
+
+        putAt.visit(acg);
+        os.pop();
+        os.load(ret.getType(), ret.getIndex());
+
+        compileStack.removeVar(ret.getIndex());
+        compileStack.removeVar(subscript.getIndex());
+        compileStack.removeVar(receiver.getIndex());
+    }
+
     protected void evaluateBinaryExpressionWithAssignment(String method, BinaryExpression expression) {
         Expression leftExpression = expression.getLeftExpression();
-        MethodVisitor mv  = controller.getMethodVisitor();
         AsmClassGenerator acg = controller.getAcg();
         OperandStack operandStack = controller.getOperandStack();
-        CompileStack compileStack = controller.getCompileStack();
         
         if (leftExpression instanceof BinaryExpression) {
             BinaryExpression leftBinExpr = (BinaryExpression) leftExpression;
             if (leftBinExpr.getOperation().getType() == Types.LEFT_SQUARE_BRACKET) {
-                // e.g. x[a] += b
-                // -> subscript=a, x[subscript], =, x[subscript] + b
-                // -> subscript=a, methodCall_3(x, "putAt", [subscript, methodCall_2(methodCall_1(x, "getAt", [subscript]), "plus", b)])
-                
-                Expression subscriptExpression = leftBinExpr.getRightExpression(); 
-                subscriptExpression.visit(acg); // value(subscript)
-                operandStack.box();
-                int subscriptValueId = compileStack.defineTemporaryVariable("$subscript", ClassHelper.OBJECT_TYPE, true);
-
-                // method calls from outer to inner (most inner will be called first):
-                controller.getCallSiteWriter().prepareCallSite("putAt");
-                controller.getCallSiteWriter().prepareCallSite(method);
-                controller.getCallSiteWriter().prepareCallSite("getAt");
-                
-                // getAt call
-                //x = receiver
-                leftBinExpr.getLeftExpression().visit(acg);  
-                operandStack.box();
-                // we save that value for later
-                operandStack.dup();
-                int xValueId = compileStack.defineTemporaryVariable("$xValue", ClassHelper.OBJECT_TYPE, true);
-                // subscript = argument to getAt call
-                operandStack.load(ClassHelper.OBJECT_TYPE, subscriptValueId);
-                // invoke getAt
-                mv.visitMethodInsn(INVOKEINTERFACE, "org/codehaus/groovy/runtime/callsite/CallSite", "call","(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;");
-                operandStack.replace(ClassHelper.OBJECT_TYPE, 2); 
-                //x[subscript] with type Object now on stack
-
-                // call with method (e.g. "plus")
-                // receiver is the result from the getAt before
-                // load b
-                expression.getRightExpression().visit(acg);
-                operandStack.box();
-                // invoke "method"
-                mv.visitMethodInsn(INVOKEINTERFACE, "org/codehaus/groovy/runtime/callsite/CallSite", "call","(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;");
-                operandStack.replace(ClassHelper.OBJECT_TYPE, 2); 
-                //RHS with type Object now on stack
-                
-                // let us save that value for the return
-                int resultValueId = compileStack.defineTemporaryVariable("$result", ClassHelper.OBJECT_TYPE, true);               
-                
-                // call for putAt
-                // receiver for putAt is x, the arguments will be the subscript
-                // value and the value of the RHS.
-                // load receiver x
-                operandStack.load(ClassHelper.OBJECT_TYPE, xValueId);
-                operandStack.load(ClassHelper.OBJECT_TYPE, subscriptValueId);
-                operandStack.load(ClassHelper.OBJECT_TYPE, resultValueId);
-                // invoke putAt
-                mv.visitMethodInsn(INVOKEINTERFACE, "org/codehaus/groovy/runtime/callsite/CallSite", "call","(Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;");
-                operandStack.replace(ClassHelper.OBJECT_TYPE, 3);
-
-                // remove result of putAt and keep the result on stack
-                operandStack.pop();
-                operandStack.load(ClassHelper.OBJECT_TYPE, resultValueId);
-                
-                compileStack.removeVar(resultValueId);
-                compileStack.removeVar(xValueId);
-                compileStack.removeVar(subscriptValueId);
+                evaluateArrayAssignmentWithOperator(method, expression, leftBinExpr);
                 return;
             }
         } 

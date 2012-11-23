@@ -517,7 +517,7 @@ class BugsStaticCompileTest extends BugsSTCTest {
                 }
                 assert  incInt(5) == 7'''
         } finally {
-            println astTrees
+            //println astTrees
         }
     }
 
@@ -532,7 +532,7 @@ class BugsStaticCompileTest extends BugsSTCTest {
                 }
                 assert  incInt(5) == 7'''
         } finally {
-            println astTrees
+            //println astTrees
         }
     }
 
@@ -547,7 +547,7 @@ class BugsStaticCompileTest extends BugsSTCTest {
                 }
                 assert  incInt(5) == 7'''
         } finally {
-            println astTrees
+            //println astTrees
         }
     }
 
@@ -562,7 +562,7 @@ class BugsStaticCompileTest extends BugsSTCTest {
                 }
                 assert  incInt((char)'a') == (char)('c')'''
         } finally {
-            println astTrees
+            //println astTrees
         }
     }
 
@@ -603,7 +603,7 @@ class BugsStaticCompileTest extends BugsSTCTest {
             assert m(4) == false
             '''
         } finally {
-            println astTrees
+            //println astTrees
         }
     }
 }

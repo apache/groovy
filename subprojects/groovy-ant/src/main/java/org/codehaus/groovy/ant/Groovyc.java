@@ -63,18 +63,38 @@ import java.util.StringTokenizer;
  * Compiles Groovy source files. This task can take the following arguments:
  * <ul>
  * <li>srcdir</li>
+ * <li>scriptExtension</li>
+ * <li>targetBytecode</li>
  * <li>destdir</li>
+ * <li>sourcepath</li>
+ * <li>sourcepathRef</li>
  * <li>classpath</li>
- * <li>encoding</li>
- * <li>verbose</li>
+ * <li>classpathRef</li>
+ * <li>listfiles</li>
  * <li>failonerror</li>
- * <li>includeantruntime</li>
- * <li>includejavaruntime</li>
+ * <li>proceed</li>
  * <li>memoryInitialSize</li>
  * <li>memoryMaximumSize</li>
+ * <li>encoding</li>
+ * <li>verbose</li>
+ * <li>includeantruntime</li>
+ * <li>includejavaruntime</li>
  * <li>fork</li>
+ * <li>javaHome</li>
+ * <li>executable</li>
+ * <li>updatedProperty</li>
+ * <li>errorProperty</li>
+ * <li>includeDestClasses</li>
+ * <li>jointCompilationOptions</li>
  * <li>stacktrace</li>
+ * <li>indy</li>
+ * <li>scriptBaseClass</li>
  * <li>stubdir</li>
+ * <li>keepStubs</li>
+ * </ul>
+ * And these nested tasks:
+ * <ul>
+ * <li>javac</li>
  * </ul>
  * Of these arguments, the <b>srcdir</b> and <b>destdir</b> are required.
  * <p/>
@@ -114,8 +134,8 @@ public class Groovyc extends MatchingTask {
     protected File[] compileList = new File[0];
 
     private String updatedProperty;
-    private String errorProperty;
-    private boolean taskSuccess = true; // assume the best
+    private String errorProperty; // TODO support this
+    private boolean taskSuccess = true; // assume the best; TODO check this is working
     private boolean includeDestClasses = true;
 
     protected CompilerConfiguration configuration;
@@ -126,6 +146,7 @@ public class Groovyc extends MatchingTask {
     private File stubDir;
     private boolean keepStubs;
     private boolean useIndy;
+    private String scriptBaseClass;
 
     private Set<String> scriptExtensions = new LinkedHashSet<String>();
 
@@ -509,8 +530,8 @@ public class Groovyc extends MatchingTask {
      * Sets the name of the java executable to use when
      * invoking the compiler in forked mode, ignored otherwise.
      *
-     * @since Groovy 1.8.7
      * @param forkExecPath the name of the executable
+     * @since Groovy 1.8.7
      */
     public void setExecutable(String forkExecPath) {
         forkedExecutable = forkExecPath;
@@ -519,8 +540,8 @@ public class Groovyc extends MatchingTask {
     /**
      * The value of the executable attribute, if any.
      *
-     * @since Groovy 1.8.7
      * @return the name of the java executable
+     * @since Groovy 1.8.7
      */
     public String getExecutable() {
         return forkedExecutable;
@@ -579,13 +600,6 @@ public class Groovyc extends MatchingTask {
         return taskSuccess;
     }
 
-    /*
-      public void setJointCompilationOptions(String options) {
-          String[] args = StringHelper.tokenizeUnquoted(options);
-          evalCompilerFlags(args);
-      }
-    */
-
     /**
      * Add the configured nested javac task if present to initiate joint compilation.
      */
@@ -600,6 +614,84 @@ public class Groovyc extends MatchingTask {
      */
     public void setStacktrace(boolean stacktrace) {
         this.stacktrace = stacktrace;
+    }
+
+    /**
+     * Set the indy flag.
+     *
+     * @param useIndy the indy flag
+     */
+    public void setIndy(boolean useIndy) {
+        this.useIndy = useIndy;
+    }
+
+    /**
+     * Get the value of the indy flag.
+     *
+     * @return if to use indy
+     */
+    public boolean getIndy() {
+        return this.useIndy;
+    }
+
+    /**
+     * Set the base script class name for the scripts (must derive from Script)
+     *
+     * @param scriptBaseClass Base class name for scripts (must derive from Script)
+     */
+    public void setScriptBaseClass(String scriptBaseClass) {
+        this.scriptBaseClass = scriptBaseClass;
+    }
+
+    /**
+     * Get the base script class name for the scripts (must derive from Script)
+     *
+     * @return Base class name for scripts (must derive from Script)
+     */
+    public String getScriptBaseClass() {
+        return this.scriptBaseClass;
+    }
+
+    /**
+     * Set the stub directory into which the Java source stub
+     * files should be generated. The directory need not exist
+     * and will not be deleted automatically - though its contents
+     * will be cleared unless 'keepStubs' is true. Ignored when forked.
+     *
+     * @param stubDir the stub directory
+     */
+    public void setStubdir(File stubDir) {
+        jointCompilation = true;
+        this.stubDir = stubDir;
+    }
+
+    /**
+     * Gets the stub directory into which the Java source stub
+     * files should be generated
+     *
+     * @return the stub directory
+     */
+    public File getStubdir() {
+        return stubDir;
+    }
+
+    /**
+     * Set the keepStubs flag. Defaults to false. Set to true for debugging.
+     * Ignored when forked.
+     *
+     * @param keepStubs should stubs be retained
+     */
+    public void setKeepStubs(boolean keepStubs) {
+        this.keepStubs = keepStubs;
+    }
+
+    /**
+     * Gets the keepStubs flag.
+     *
+     * @return the keepStubs flag
+     */
+    public boolean getKeepStubs() {
+        return keepStubs;
     }
 
     /**
@@ -711,19 +803,19 @@ public class Groovyc extends MatchingTask {
     private void listFiles() {
         if (listFiles) {
             for (File srcFile : compileList) {
-                log(srcFile.getAbsolutePath());
+                log.info(srcFile.getAbsolutePath());
             }
         }
     }
-    
-    private List<String> extractJointOptions(Path classpath){
+
+    private List<String> extractJointOptions(Path classpath) {
         List<String> jointOptions = new ArrayList<String>();
         if (!jointCompilation) return jointOptions;
 
         // extract joint options, some get pushed up...
         RuntimeConfigurable rc = javac.getRuntimeConfigurableWrapper();
-        for (Iterator i = rc.getAttributeMap().entrySet().iterator(); i.hasNext();) {
-            final Map.Entry e = (Map.Entry) i.next();
+        for (Object o1 : rc.getAttributeMap().entrySet()) {
+            final Map.Entry e = (Map.Entry) o1;
             final String key = e.getKey().toString();
             final String value = getProject().replaceProperties(e.getValue().toString());
             if (key.contains("debug")) {
@@ -747,22 +839,22 @@ public class Groovyc extends MatchingTask {
                     || (key.contains("encoding"))
                     || (key.contains("source"))
                     || (key.contains("target"))
-                    || (key.contains("verbose"))) { // TODO remove extra verbose?
+                    || (key.contains("verbose"))) { // already handling verbose but pass on too
                 jointOptions.add("-J" + key + "=" + value);
             } else {
-                log("The option " + key + " cannot be set on the contained <javac> element. The option will be ignored", Project.MSG_WARN);
+                log.warn("The option " + key + " cannot be set on the contained <javac> element. The option will be ignored");
             }
-            // includes? excludes?
+            // TODO includes? excludes?
         }
-        
+
         // ant's <javac> supports nested <compilerarg value=""> elements (there can be multiple of them)
         // for additional options to be passed to javac.
         Enumeration children = rc.getChildren();
         while (children.hasMoreElements()) {
             RuntimeConfigurable childrc = (RuntimeConfigurable) children.nextElement();
             if (childrc.getElementTag().equals("compilerarg")) {
-                for (Iterator i = childrc.getAttributeMap().entrySet().iterator(); i.hasNext();) {
-                    final Map.Entry e = (Map.Entry) i.next();
+                for (Object o : childrc.getAttributeMap().entrySet()) {
+                    final Map.Entry e = (Map.Entry) o;
                     final String key = e.getKey().toString();
                     if (key.equals("value")) {
                         final String value = getProject().replaceProperties(e.getValue().toString());
@@ -770,7 +862,7 @@ public class Groovyc extends MatchingTask {
                         while (st.hasMoreTokens()) {
                             String optionStr = st.nextToken();
                             String replaced = optionStr.replace("-X", "-FX");
-                            if(optionStr == replaced) {
+                            if (optionStr.equals(replaced)) {
                                 replaced = optionStr.replace("-W", "-FW"); // GROOVY-5063
                             }
                             jointOptions.add(replaced);
@@ -779,10 +871,10 @@ public class Groovyc extends MatchingTask {
                 }
             }
         }
-        
+
         return jointOptions;
     }
-    
+
     private void doForkCommandLineList(List<String> commandLineList, Path classpath, String separator) {
         if (!fork) return;
 
@@ -823,12 +915,13 @@ public class Groovyc extends MatchingTask {
         }
         if (!"*.groovy".equals(getScriptExtension())) {
             String tmpExtension = getScriptExtension();
-            if (tmpExtension.startsWith("*.")) tmpExtension = tmpExtension.substring(1);
+            if (tmpExtension.startsWith("*."))
+                tmpExtension = tmpExtension.substring(1);
             commandLineList.add("-Dgroovy.default.scriptExtension=" + tmpExtension);
         }
         commandLineList.add(FileSystemCompilerFacade.class.getName());
     }
-    
+
     private void doNormalCommandLineList(List<String> commandLineList, List<String> jointOptions, Path classpath) {
         commandLineList.add("--classpath");
         commandLineList.add(classpath.toString());
@@ -849,6 +942,10 @@ public class Groovyc extends MatchingTask {
         }
         if (useIndy) {
             commandLineList.add("-indy");
+        }
+        if (scriptBaseClass != null) {
+            commandLineList.add("-b");
+            commandLineList.add(scriptBaseClass);
         }
     }
 
@@ -877,7 +974,7 @@ public class Groovyc extends MatchingTask {
                 pw.close();
                 commandLineList.add("@" + tempFile.getPath());
             } catch (IOException e) {
-                log("Error creating file list", e, Project.MSG_ERR);
+                log.error("Error creating file list", e);
             }
         } else {
             for (File srcFile : compileList) {
@@ -885,17 +982,17 @@ public class Groovyc extends MatchingTask {
             }
         }
     }
-    
+
     private String[] makeCommandLine(List<String> commandLineList) {
         final String[] commandLine = new String[commandLineList.size()];
         for (int i = 0; i < commandLine.length; ++i) {
             commandLine[i] = commandLineList.get(i);
         }
-        log("Compilation arguments:", Project.MSG_VERBOSE);
-        log(DefaultGroovyMethods.join(commandLine, "\n"), Project.MSG_VERBOSE);
+        log.verbose("Compilation arguments:");
+        log.verbose(DefaultGroovyMethods.join(commandLine, "\n"));
         return commandLine;
     }
-    
+
     private void runForked(String[] commandLine) {
         // use the main method in FileSystemCompiler
         final Execute executor = new Execute(); // new LogStreamHandler ( attributes , Project.MSG_INFO , Project.MSG_WARN ) ) ;
@@ -912,13 +1009,13 @@ public class Groovyc extends MatchingTask {
             if (failOnError) {
                 throw new BuildException("Forked groovyc returned error code: " + returnCode);
             } else {
-                log("Forked groovyc returned error code: " + returnCode, Project.MSG_ERR);
+                log.error("Forked groovyc returned error code: " + returnCode);
             }
         }
     }
-    
+
     private void runCompiler(String[] commandLine) {
-     // hand crank it so we can add our own compiler configuration
+        // hand crank it so we can add our own compiler configuration
         try {
             Options options = FileSystemCompiler.createCompilationOptions();
 
@@ -930,7 +1027,8 @@ public class Groovyc extends MatchingTask {
             configuration = FileSystemCompiler.generateCompilerConfigurationFromOptions(cli);
             configuration.setScriptExtensions(getScriptExtensions());
             String tmpExtension = getScriptExtension();
-            if (tmpExtension.startsWith("*.")) tmpExtension = tmpExtension.substring(1);
+            if (tmpExtension.startsWith("*."))
+                tmpExtension = tmpExtension.substring(1);
             configuration.setDefaultScriptExtension(tmpExtension);
 
             // Load the file name list
@@ -958,19 +1056,19 @@ public class Groovyc extends MatchingTask {
             String message = writer.toString();
 
             if (failOnError) {
-                log(message, Project.MSG_INFO);
+                log.info(message);
                 throw new BuildException("Compilation Failed", t, getLocation());
             } else {
-                log(message, Project.MSG_ERR);
+                log.error(message);
             }
         }
     }
-    
+
     protected void compile() {
         if (compileList.length == 0) return;
-        
+
         try {
-            log("Compiling " + compileList.length + " source file"
+            log.info("Compiling " + compileList.length + " source file"
                     + (compileList.length == 1 ? "" : "s")
                     + (destDir != null ? " to " + destDir : ""));
 
@@ -984,9 +1082,8 @@ public class Groovyc extends MatchingTask {
             doForkCommandLineList(commandLineList, classpath, separator);
             doNormalCommandLineList(commandLineList, jointOptions, classpath);
             addSourceFiles(commandLineList);
-            
-            String[] commandLine = makeCommandLine(commandLineList);
 
+            String[] commandLine = makeCommandLine(commandLineList);
 
             if (fork) {
                 runForked(commandLine);
@@ -1002,12 +1099,6 @@ public class Groovyc extends MatchingTask {
                 }
             }
         }
-    }
-
-    private String[] addClasspathToEnvironment(String[] oldEnvironment, String classpath) {
-        List<String> newEnvironmentList = (oldEnvironment == null) ? new ArrayList<String>() : Arrays.asList(oldEnvironment);
-        newEnvironmentList.add("CLASSPATH=" + classpath);
-        return newEnvironmentList.toArray(new String[newEnvironmentList.size()]);
     }
 
     protected CompilationUnit makeCompileUnit() {
@@ -1032,7 +1123,6 @@ public class Groovyc extends MatchingTask {
             return new CompilationUnit(configuration, null, buildClassLoaderFor());
         }
     }
-
 
     protected GroovyClassLoader buildClassLoaderFor() {
         // GROOVY-5044
@@ -1076,50 +1166,7 @@ public class Groovyc extends MatchingTask {
                 return null;
             }
         });
-
         return loader;
-    }
-
-    /**
-     * Set the stub directory into which the Java source stub
-     * files should be generated. The directory need not exist
-     * and will not be deleted automatically - though its contents
-     * will be cleared unless 'keepStubs' is true. Ignored when forked.
-     *
-     * @param stubDir the stub directory
-     */
-    public void setStubdir(File stubDir) {
-        jointCompilation = true;
-        this.stubDir = stubDir;
-    }
-
-    /**
-     * Gets the stub directory into which the Java source stub
-     * files should be generated
-     *
-     * @return the stub directory
-     */
-    public File getStubdir() {
-        return stubDir;
-    }
-
-    /**
-     * Set the keepStubs flag. Defaults to false. Set to true for debugging.
-     * Ignored when forked.
-     *
-     * @param keepStubs should stubs be retained
-     */
-    public void setKeepStubs(boolean keepStubs) {
-        this.keepStubs = keepStubs;
-    }
-
-    /**
-     * Gets the keepStubs flag.
-     *
-     * @return the keepStubs flag
-     */
-    public boolean getKeepStubs() {
-        return keepStubs;
     }
 
     private Set<String> getScriptExtensions() {
@@ -1139,21 +1186,5 @@ public class Groovyc extends MatchingTask {
             }
             scriptExtensions.addAll(SourceExtensionHandler.getRegisteredExtensions(loader));
         }
-    }
-    
-    /**
-     * Set the indy flag.
-     * @param useIndy the indy flag
-     */
-    public void setIndy(boolean useIndy){
-        this.useIndy = useIndy;
-    }
-    
-    /**
-     * Get the value of the indy flag.
-     * @return if to use indy
-     */
-    public boolean getIndy() {
-        return this.useIndy;
     }
 }

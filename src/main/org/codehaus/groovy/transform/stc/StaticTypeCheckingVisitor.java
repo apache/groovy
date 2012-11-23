@@ -339,6 +339,14 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     storeType(vexp, node.getField(dynName).getType());
                     return;
                 }
+                Set<ClassNode> allInterfaces = node.getAllInterfaces();
+                for (ClassNode intf : allInterfaces) {
+                    FieldNode field = intf.getField(dynName);
+                    if (field!=null && field.isStatic() && field.isFinal()) {
+                        storeType(vexp, field.getOriginType());
+                        return;
+                    }
+                }
             }
 
             // lookup with plugin
@@ -671,13 +679,14 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 if (rightRedirect.isArray()) {
                     ClassNode rightComponentType = rightRedirect.getComponentType();
                     if (!checkCompatibleAssignmentTypes(leftComponentType, rightComponentType)) {
-                        addStaticTypeError("Cannot assign value of type " + rightComponentType.getText() + " into array of type " + leftExpressionType.getText(), assignmentExpression.getRightExpression());
+                        addStaticTypeError("Cannot assign value of type " + rightComponentType.getText() + " into array of type " + leftExpressionType.toString(false), assignmentExpression.getRightExpression());
                     }
                 } else if (rightExpression instanceof ListExpression) {
                     for (Expression element : ((ListExpression) rightExpression).getExpressions()) {
                         ClassNode rightComponentType = element.getType().redirect();
-                        if (!checkCompatibleAssignmentTypes(leftComponentType, rightComponentType)) {
-                            addStaticTypeError("Cannot assign value of type " + rightComponentType.getText() + " into array of type " + leftExpressionType.getText(), assignmentExpression.getRightExpression());
+                        if (!checkCompatibleAssignmentTypes(leftComponentType, rightComponentType)
+                                && !(isNullConstant(element) && !isPrimitiveType(leftComponentType))) {
+                            addStaticTypeError("Cannot assign value of type " + rightComponentType.getText() + " into array of type " + leftExpressionType.toString(false), assignmentExpression.getRightExpression());
                         }
                     }
                 }
@@ -842,7 +851,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         List<ClassNode> tests = new LinkedList<ClassNode>();
         tests.add(objectExpressionType);
         if (objectExpressionType.equals(CLASS_Type) && objectExpressionType.getGenericsTypes() != null) {
-            tests.add(objectExpressionType.getGenericsTypes()[0].getType());
+            tests.add(0,objectExpressionType.getGenericsTypes()[0].getType());
             staticProperty = true;
         }
         if (!temporaryIfBranchTypeInformation.empty()) {
@@ -1030,7 +1039,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         List<ClassNode> tests = new LinkedList<ClassNode>();
         tests.add(clazz);
         if (clazz.equals(CLASS_Type) && clazz.getGenericsTypes() != null) {
-            tests.add(clazz.getGenericsTypes()[0].getType());
+            tests.add(0,clazz.getGenericsTypes()[0].getType());
         }
         if (!temporaryIfBranchTypeInformation.empty()) {
             List<ClassNode> classNodes = getTemporaryTypesForExpression(objectExpression);
@@ -1320,7 +1329,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     && !type.equals(VOID_TYPE)
                     && !checkCompatibleAssignmentTypes(methodNode.getReturnType(), type)
                     && !(isNullConstant(expression))) {
-                addStaticTypeError("Cannot return value of type " + type + " on method returning type " + methodNode.getReturnType(), expression);
+                addStaticTypeError("Cannot return value of type " + type.toString(false) + " on method returning type " + methodNode.getReturnType().toString(false), expression);
             } else if (!methodNode.isVoidMethod()) {
                 ClassNode previousType = (ClassNode) methodNode.getNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE);
                 ClassNode inferred = previousType == null ? type : lowestUpperBound(type, previousType);
@@ -2073,7 +2082,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         owners.add(Receiver.<String>make(receiver));
         if (receiver.equals(CLASS_Type) && receiver.getGenericsTypes() != null) {
             GenericsType clazzGT = receiver.getGenericsTypes()[0];
-            owners.add(Receiver.<String>make(clazzGT.getType()));
+            owners.add(0,Receiver.<String>make(clazzGT.getType()));
         }
         if (receiver.isInterface()) {
             // GROOVY-xxxx
@@ -2243,10 +2252,16 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         // pop if-then-else temporary type info
         temporaryIfBranchTypeInformation.pop();
         falseExpression.visit(this);
-        ClassNode resultType = OBJECT_TYPE;
+        ClassNode resultType;
         if (isNullConstant(trueExpression) || isNullConstant(falseExpression)) {
-            if (currentBinaryExpression != null) {
+            if (currentBinaryExpression != null && currentBinaryExpression.getRightExpression()==expression) {
                 resultType = getType(currentBinaryExpression.getLeftExpression());
+            } else if (isNullConstant(trueExpression) && isNullConstant(falseExpression)) {
+                resultType = OBJECT_TYPE;
+            } else if (isNullConstant(trueExpression)) {
+                resultType = wrapTypeIfNecessary(getType(falseExpression));
+            } else {
+                resultType = wrapTypeIfNecessary(getType(trueExpression));
             }
         } else {
             // store type information
@@ -3173,14 +3188,40 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                                     // For example, if we have List<T> in the signature and List<String> as an argument
                                     // we want to align T with String
                                     // but first test is for Object<T> -> String which explains we don't use the generics types
-                                    ClassNode alignedType = parameterized;
-                                    if (parameterized.isUsingGenerics() && parameterized.getGenericsTypes()!=null) {
-                                        alignedType = parameterized.getGenericsTypes()[gtIndex].getType();
-                                    }
-                                    if (resolvedMethodGenerics.containsKey(placeholderName)) {
-                                        failure |= !resolvedMethodGenerics.get(placeholderName).equals(alignedType);
+
+                                    if (type.isGenericsPlaceHolder()) {
+                                        String name = type.getGenericsTypes()[0].getName();
+                                        if (name.equals(placeholderName)) {
+                                            if (resolvedMethodGenerics.containsKey(name)) {
+                                                failure |= !resolvedMethodGenerics.get(name).equals(parameterized);
+                                            } else {
+                                                resolvedMethodGenerics.put(name, parameterized);
+                                            }
+                                        }
                                     } else {
-                                        resolvedMethodGenerics.put(placeholderName, alignedType);
+                                        if (type.isUsingGenerics() && type.getGenericsTypes()!=null) {
+                                            // we have a method parameter type which is for example List<T>
+                                            // and an actual argument which is FooList
+                                            // which has been aligned to List<E> thanks to parameterizeType
+                                            // then in theory both the parameterized type and the method parameter type
+                                            // are the same type but with different type arguments
+                                            // that we need to align
+                                            GenericsType[] gtInParameter = type.getGenericsTypes();
+                                            GenericsType[] gtInArgument = parameterized.getGenericsTypes();
+                                            if (gtInArgument!=null && gtInArgument.length==gtInParameter.length) {
+                                                for (int j = 0; j < gtInParameter.length; j++) {
+                                                    GenericsType genericsType = gtInParameter[j];
+                                                    if (genericsType.getName().equals(placeholderName)) {
+                                                        ClassNode actualType = gtInArgument[j].getType();
+                                                        if (resolvedMethodGenerics.containsKey(placeholderName)) {
+                                                            failure |= !resolvedMethodGenerics.get(placeholderName).equals(actualType);
+                                                        } else {
+                                                            resolvedMethodGenerics.put(placeholderName, actualType);
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
                                     }
                                 }
                             }

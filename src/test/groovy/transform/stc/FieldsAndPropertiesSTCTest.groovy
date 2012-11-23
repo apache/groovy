@@ -374,6 +374,22 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-5725
+    void testAccessFieldDefinedInInterface() {
+        assertScript '''
+            class Foo implements groovy.transform.stc.FieldsAndPropertiesSTCTest.InterfaceWithField {
+                void test() {
+                    assert boo == "I don't fancy fields in interfaces"
+                }
+            }
+            new Foo().test()
+        '''
+    }
+
+    public static interface InterfaceWithField {
+        String boo = "I don't fancy fields in interfaces"
+    }
+
     public static class BaseClass {
         int x
     }

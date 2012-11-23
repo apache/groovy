@@ -15,6 +15,7 @@
  */
 package org.codehaus.groovy.classgen.asm
 
+import static org.codehaus.groovy.control.CompilerConfiguration.DEFAULT as config
 /**
  * @author Jochen Theodorou
  */
@@ -23,6 +24,7 @@ class MethodPatternsTest extends AbstractBytecodeTestCase {
     // make a test for native compilation of the ackerman function
     // and ensure the nested call is optimized
     void testAckerman() {
+        if (config.optimizationOptions.indy) return;
         assert compile(method: 'A', '''
             int A(int x, int y) {
                 if (x == 0) return y+1
@@ -72,6 +74,7 @@ class MethodPatternsTest extends AbstractBytecodeTestCase {
     }
 
     void testForLoopSettingArray() {
+        if (config.optimizationOptions.indy) return;
         assert compile('''
             int n = 10
             int[] x = new int[n]
@@ -158,6 +161,7 @@ class MethodPatternsTest extends AbstractBytecodeTestCase {
     }
 
     void testForLoopSettingArrayWithOperatorUsedInAssignmentAndArrayRHS() {
+        if (config.optimizationOptions.indy) return;
         assert compile('''
             int n = 10
             int[] x = new int[n]
@@ -197,6 +201,7 @@ class MethodPatternsTest extends AbstractBytecodeTestCase {
     }
 
     void testRightShiftUnsignedWithLongArgument() {
+        if (config.optimizationOptions.indy) return;
         assert compile(method: "hashCode", '''
             class X{
                 long _tagReservationDate
@@ -226,6 +231,7 @@ class MethodPatternsTest extends AbstractBytecodeTestCase {
     }
 
     void testObjectArraySet() {
+        if (config.optimizationOptions.indy) return;
         assert compile(method: "foo", '''
             class X {
                 void foo() {
@@ -240,6 +246,7 @@ class MethodPatternsTest extends AbstractBytecodeTestCase {
     }
 
     void testBooleanArraySet() {
+        if (config.optimizationOptions.indy) return;
         assert compile(method: "foo", '''
             class X{
                 void foo() {
@@ -254,6 +261,7 @@ class MethodPatternsTest extends AbstractBytecodeTestCase {
     }
 
     void testArray() {
+        if (config.optimizationOptions.indy) return;
         def methods = [
             "short"     :   [1, "sArraySet ([SIS)V", "sArrayGet ([SI)S"],
             "int"       :   [1, "intArraySet ([III)V", "intArrayGet ([II)I"],
@@ -310,6 +318,7 @@ class MethodPatternsTest extends AbstractBytecodeTestCase {
     }
 
     void testFib() {
+        if (config.optimizationOptions.indy) return;
         assert compile(method: "fib", """
             int fib(int i) {
                 i < 2 ? 1 : fib(i - 2) + fib(i - 1)
@@ -340,6 +349,7 @@ class MethodPatternsTest extends AbstractBytecodeTestCase {
     }
 
     void testNoBoxUnbox() {
+        if (config.optimizationOptions.indy) return;
         assert compile(method: "someCode", """
             public boolean someCall() {
                 return true;
