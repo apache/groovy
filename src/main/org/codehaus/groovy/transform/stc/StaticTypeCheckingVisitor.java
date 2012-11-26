@@ -2775,7 +2775,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (method.isStatic() && CLASS_Type.equals(receiver) && receiver.isUsingGenerics() && receiver.getGenericsTypes().length>0) {
             GenericsUtils.extractPlaceholders(receiver.getGenericsTypes()[0].getType(), resolvedPlaceholders);
         } else {
-            GenericsUtils.extractPlaceholders(receiver, resolvedPlaceholders);
+            ClassNode current = receiver;
+            while (current!=null) {
+                GenericsUtils.extractPlaceholders(current, resolvedPlaceholders);
+                current = current.getUnresolvedSuperClass();
+            }
         }
         GenericsUtils.extractPlaceholders(method.getReturnType(), resolvedPlaceholders);
         if (resolvedPlaceholders.isEmpty()) return returnType;
