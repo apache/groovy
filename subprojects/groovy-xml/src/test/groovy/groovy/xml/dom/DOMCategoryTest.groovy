@@ -159,6 +159,17 @@ class DOMCategoryTest extends GroovyTestCase {
         }
     }
 
+    void testDomCategoryNameWithNodes() {
+        def reader = new StringReader('<a><b>B1</b><b>B2</b></a>')
+        def a = DOMBuilder.parse(reader).documentElement
+        use(DOMCategory) {
+            // TODO: rationalise this difference in a future version of Groovy
+            // e.g. implement both depthFirst() for elements as well as
+            // depthFirstNodes() and ditto for breadthFirst(), children() etc.
+            assert a.breadthFirst()*.name().join('->') == 'a->b->b->#text->#text'
+            assert a.depthFirst()*.name().join('->') == 'a->b->b'
+        }
+    }
 }
 
 class Foo {

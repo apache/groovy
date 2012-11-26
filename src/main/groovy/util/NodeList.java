@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,6 +49,27 @@ public class NodeList extends ArrayList {
 
     public NodeList(int size) {
         super(size);
+    }
+
+    /**
+     * Creates a new NodeList containing the same elements as the
+     * original (but cloned in the case of Nodes).
+     *
+     * @return the clone
+     */
+    @Override
+    public Object clone() {
+        NodeList result = new NodeList(size());
+        for (int i = 0; i < size(); i++) {
+            Object next = get(i);
+            if (next instanceof Node) {
+                Node n = (Node) next;
+                result.add(n.clone());
+            } else {
+                result.add(next);
+            }
+        }
+        return result;
     }
 
     protected static void setMetaClass(final Class nodelistClass, final MetaClass metaClass) {

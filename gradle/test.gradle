@@ -22,12 +22,23 @@ test {
     ignoreFailures = false
     ext.resultText = ''
     includes = getIncludePattern()
+    doLast {
+        ant.delete {
+            fileset(dir: '.', includes: '*.class')
+        }
+    }
 }
+
+boolean isRunningOnCI() {
+    new File('.').absolutePath.contains('ci.codehaus.org')
+}
+
+logger.lifecycle "Detected ${isRunningOnCI()?'Continuous Integration environment':'development environment'}"
 
 allprojects {
     test {
-        forkEvery = 50
-        maxParallelForks = Runtime.runtime.availableProcessors()
+        forkEvery = isRunningOnCI()?50:200
+        maxParallelForks = isRunningOnCI()?1:Runtime.runtime.availableProcessors()
     }
 }
 tasks.addRule("Pattern: testSingle<Name> will test **/<Name>.class") {String taskName ->

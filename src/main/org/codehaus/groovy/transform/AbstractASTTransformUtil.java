@@ -210,7 +210,7 @@ public abstract class AbstractASTTransformUtil implements Opcodes {
         return new BooleanExpression(new BinaryExpression(selfGetter, COMPARE_NOT_EQUAL, otherGetter));
     }
 
-    private static BooleanExpression identicalExpr(Expression self, Expression other) {
+    public static BooleanExpression identicalExpr(Expression self, Expression other) {
         return new BooleanExpression(new MethodCallExpression(self, "is", new ArgumentListExpression(other)));
     }
 

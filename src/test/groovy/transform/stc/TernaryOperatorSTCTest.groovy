@@ -128,5 +128,51 @@ class TernaryOperatorSTCTest extends StaticTypeCheckingTestCase {
             def y = true?new Double(1d):1f
         '''
     }
+
+    // GROOVY-5523
+    void testTernaryOperatorWithNull() {
+        assertScript '''File findFile() {
+            String str = ""
+            @ASTTest(phase=INSTRUCTION_SELECTION, value= {
+                assert node.getNodeMetaData(INFERRED_TYPE) == make(File)
+            })
+            File f = str ? new File(str) : null
+        }
+        '''
+        assertScript '''File findFile() {
+            String str = ""
+            @ASTTest(phase=INSTRUCTION_SELECTION, value= {
+                assert node.getNodeMetaData(INFERRED_TYPE) == make(File)
+            })
+            File f = str ? null : new File(str)
+        }
+        '''
+        assertScript '''File findFile() {
+            String str = ""
+            @ASTTest(phase=INSTRUCTION_SELECTION, value= {
+                assert node.getNodeMetaData(INFERRED_TYPE) == make(File)
+            })
+            File f = str ? null : null
+        }
+        '''
+    }
+    void testElvisOperatorWithNull() {
+        assertScript '''String findString() {
+            String str = ""
+            @ASTTest(phase=INSTRUCTION_SELECTION, value= {
+                assert node.getNodeMetaData(INFERRED_TYPE) == STRING_TYPE
+            })
+            String f = str ?: null
+        }
+        '''
+    }
+
+    // GROOVY-5734
+    void testNullInTernary() {
+        assertScript '''
+            Integer someMethod() { (false) ? null : 8 }
+            assert someMethod() == 8
+        '''
+    }
 }
 

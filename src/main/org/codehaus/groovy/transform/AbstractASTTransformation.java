@@ -82,10 +82,10 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
     }
 
     protected void addError(String msg, ASTNode expr) {
-        int line = expr.getLineNumber();
-        int col = expr.getColumnNumber();
-        sourceUnit.getErrorCollector().addErrorAndContinue(
-                new SyntaxErrorMessage(new SyntaxException(msg + '\n', line, col), sourceUnit)
+        sourceUnit.getErrorCollector().addErrorAndContinue(new SyntaxErrorMessage(
+                new SyntaxException(msg + '\n', expr.getLineNumber(), expr.getColumnNumber(),
+                        expr.getLastLineNumber(), expr.getLastColumnNumber()),
+                sourceUnit)
         );
     }
 

@@ -37,9 +37,8 @@ import java.util.*;
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @author Paul King
- * @version $Revision$
  */
-public class Node implements Serializable {
+public class Node implements Serializable, Cloneable {
 
     static {
         // wrap the standard MetaClass with the delegate
@@ -55,6 +54,22 @@ public class Node implements Serializable {
     private Map attributes;
 
     private Object value;
+
+    /**
+     * Creates a new Node with the same name, no parent, shallow cloned attributes
+     * and if the value is a NodeList, a (deep) clone of those nodes.
+     *
+     * @return the clone
+     */
+    @Override
+    public Object clone() {
+        Object newValue = value;
+        if (value != null && value instanceof NodeList) {
+            NodeList nodes = (NodeList) value;
+            newValue = nodes.clone();
+        }
+        return new Node(null, name, new HashMap(attributes), newValue);
+    }
 
     /**
      * Creates a new Node named <code>name</code> and if a parent is supplied, adds
@@ -126,28 +141,68 @@ public class Node implements Serializable {
         return parentList;
     }
 
+    /**
+     * Appends a child to the current node.
+     *
+     * @param child the child to append
+     * @return <code>true</code>
+     */
     public boolean append(Node child) {
         child.setParent(this);
         return getParentList(this).add(child);
     }
 
+    /**
+     * Removes a child of the current node.
+     *
+     * @param child the child to remove
+     * @return <code>true</code> if the param was a child of the current node
+     */
     public boolean remove(Node child) {
         child.setParent(null);
         return getParentList(this).remove(child);
     }
 
+    /**
+     * Creates a new node as a child of the current node.
+     *
+     * @param name the name of the new node
+     * @param attributes the attributes of the new node
+     * @return the newly created <code>Node</code>
+     */
     public Node appendNode(Object name, Map attributes) {
         return new Node(this, name, attributes);
     }
 
+    /**
+     * Creates a new node as a child of the current node.
+     *
+     * @param name the name of the new node
+     * @return the newly created <code>Node</code>
+     */
     public Node appendNode(Object name) {
         return new Node(this, name);
     }
 
+    /**
+     * Creates a new node as a child of the current node.
+     *
+     * @param name the name of the new node
+     * @param value the value of the new node
+     * @return the newly created <code>Node</code>
+     */
     public Node appendNode(Object name, Object value) {
         return new Node(this, name, value);
     }
 
+    /**
+     * Creates a new node as a child of the current node.
+     *
+     * @param name the name of the new node
+     * @param attributes the attributes of the new node
+     * @param value the value of the new node
+     * @return the newly created <code>Node</code>
+     */
     public Node appendNode(Object name, Map attributes, Object value) {
         return new Node(this, name, attributes, value);
     }
@@ -202,7 +257,16 @@ public class Node implements Serializable {
         return newNode.children();
     }
 
+    /**
+     * Extension point for subclasses to override the metaclass. The default
+     * one supports the property and @ attribute notations.
+     *
+     * @param metaClass the original metaclass
+     * @param nodeClass the class whose metaclass we wish to override (this class or a subclass)
+     */
     protected static void setMetaClass(final MetaClass metaClass, Class nodeClass) {
+        // TODO Is protected static a bit of a smell?
+        // TODO perhaps set nodeClass to be Class<? extends Node>
         final MetaClass newMetaClass = new DelegatingMetaClass(metaClass) {
             @Override
             public Object getAttribute(final Object object, final String attribute) {
@@ -228,9 +292,7 @@ public class Node implements Serializable {
             @Override
             public void setProperty(Object object, String property, Object newValue) {
                 if (property.startsWith("@")) {
-                    String attribute = property.substring(1);
-                    Node n = (Node) object;
-                    n.attributes().put(attribute, newValue);
+                    setAttribute(object, property.substring(1), newValue);
                     return;
                 }
                 delegate.setProperty(object, property, newValue);
@@ -240,6 +302,11 @@ public class Node implements Serializable {
         GroovySystem.getMetaClassRegistry().setMetaClass(nodeClass, newMetaClass);
     }
 
+    /**
+     * Returns the textual representation of the current node and all its child nodes.
+     *
+     * @return the text value of the node including child text
+     */
     public String text() {
         if (value instanceof String) {
             return (String) value;
@@ -274,10 +341,20 @@ public class Node implements Serializable {
         return "" + value;
     }
 
+    /**
+     * Returns an <code>Iterator</code> of the children of the node.
+     *
+     * @return the iterator of the nodes children
+     */
     public Iterator iterator() {
         return children().iterator();
     }
 
+    /**
+     * Returns a <code>List</code> of the nodes children.
+     *
+     * @return the nodes children
+     */
     public List children() {
         if (value == null) {
             return new NodeList();
@@ -291,30 +368,67 @@ public class Node implements Serializable {
         return result;
     }
 
+    /**
+     * Returns a <code>Map</code> of the attributes of the node or an empty <code>Map</code>
+     * if the node does not have any attributes.
+     *
+     * @return the attributes of the node
+     */
     public Map attributes() {
         return attributes;
     }
 
+    /**
+     * Provides lookup of attributes by key.
+     *
+     * @param key the key of interest
+     * @return the attribute matching the key or <code>null</code> if no match exists
+     */
     public Object attribute(Object key) {
         return (attributes != null) ? attributes.get(key) : null;
     }
 
+    /**
+     * Returns an <code>Object</code> representing the name of the node.
+     *
+     * @return the name or <code>null</code> if name is empty
+     */
     public Object name() {
         return name;
     }
 
+    /**
+     * Returns an <code>Object</code> representing the value of the node.
+     *
+     * @return the value or <code>null</code> if value is empty
+     */
     public Object value() {
         return value;
     }
 
+    /**
+     * Adds or replaces the value of the node.
+     *
+     * @param value the new value of the node
+     */
     public void setValue(Object value) {
         this.value = value;
     }
 
+    /**
+     * Returns the parent of the node.
+     *
+     * @return the parent or <code>null</code> for the root node
+     */
     public Node parent() {
         return parent;
     }
 
+    /**
+     * Adds or replaces the parent of the node.
+     *
+     * @param parent the new parent of the node
+     */
     protected void setParent(Node parent) {
         this.parent = parent;
     }
@@ -388,7 +502,7 @@ public class Node implements Serializable {
     }
 
     /**
-     * Provide a collection of all the nodes in the tree
+     * Provides a collection of all the nodes in the tree
      * using a depth first traversal.
      *
      * @return the list of (depth-first) ordered nodes
@@ -417,7 +531,7 @@ public class Node implements Serializable {
     }
 
     /**
-     * Provide a collection of all the nodes in the tree
+     * Provides a collection of all the nodes in the tree
      * using a breadth-first traversal.
      *
      * @return the list of (breadth-first) ordered nodes
@@ -465,6 +579,11 @@ public class Node implements Serializable {
         return name + "[attributes=" + attributes + "; value=" + value + "]";
     }
 
+    /**
+     * Writes the node to the specified <code>PrintWriter</code>.
+     *
+     * @param out the writer receiving the output
+     */
     public void print(PrintWriter out) {
         new NodePrinter(out).print(this);
     }

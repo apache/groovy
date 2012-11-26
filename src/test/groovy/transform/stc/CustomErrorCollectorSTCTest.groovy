@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,19 +15,16 @@
  */
 package groovy.transform.stc
 
-import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.ClassNode
-import org.codehaus.groovy.ast.MethodNode
 import org.codehaus.groovy.classgen.GeneratorContext
 import org.codehaus.groovy.control.CompilePhase
-import org.codehaus.groovy.control.SourceUnit
-import org.codehaus.groovy.control.customizers.CompilationCustomizer
-import org.codehaus.groovy.transform.stc.StaticTypesMarker
 import org.codehaus.groovy.control.CompilerConfiguration
-import org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor
 import org.codehaus.groovy.control.ErrorCollector
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
+import org.codehaus.groovy.control.SourceUnit
+import org.codehaus.groovy.control.customizers.CompilationCustomizer
 import org.codehaus.groovy.runtime.typehandling.GroovyCastException
+import org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor
 
 /**
  * Unit tests for static type checking : custom error collector.

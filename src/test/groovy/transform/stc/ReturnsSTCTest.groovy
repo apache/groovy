@@ -154,7 +154,7 @@ class ReturnsSTCTest extends StaticTypeCheckingTestCase {
             double greeting(String name) {
                 new Object()
             }
-        ''', 'Cannot return value of type java.lang.Object -> java.lang.Object on method returning type double'
+        ''', 'Cannot return value of type java.lang.Object on method returning type double'
     }
 
     void testReturnTypeInference() {

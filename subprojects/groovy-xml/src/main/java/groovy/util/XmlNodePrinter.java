@@ -383,13 +383,13 @@ public class XmlNodePrinter {
                     out.print("&amp;");
                     break;
                 case '\'':
-                    if (quote.equals("'"))
+                    if (isAttributeValue && quote.equals("'"))
                         out.print("&apos;");
                     else
                         out.print(c);
                     break;
                 case '"':
-                    if (quote.equals("\""))
+                    if (isAttributeValue && quote.equals("\""))
                         out.print("&quot;");
                     else
                         out.print(c);

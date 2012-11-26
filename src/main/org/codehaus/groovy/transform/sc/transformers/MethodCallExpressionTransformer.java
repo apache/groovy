@@ -42,6 +42,7 @@ public class MethodCallExpressionTransformer {
             notSafe.setSpreadSafe(expr.isSpreadSafe());
             notSafe.setSourcePosition(expr);
             notSafe.setMethodTarget(expr.getMethodTarget());
+            notSafe.setImplicitThis(expr.isImplicitThis());
             TernaryExpression texpr = new TernaryExpression(
                     new BooleanExpression(new BinaryExpression(
                             objectExpression,

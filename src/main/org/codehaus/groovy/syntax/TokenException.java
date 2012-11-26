@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.codehaus.groovy.syntax;
 
-
 public class TokenException extends SyntaxException {
     public TokenException(String message, Token token) {
         super(
@@ -31,11 +30,14 @@ public class TokenException extends SyntaxException {
         super(message, cause, line, column);
     }
 
+    public TokenException(String message, Throwable cause, int line, int column, int endLine, int endColumn) {
+        super(message, cause, line, column, endLine, endColumn);
+    }
+
     public int getEndColumn() {
         int length = 1;
         return getStartColumn() + length;
     }
-
 
     // Implementation methods
     // ----------------------------------------------------------------------

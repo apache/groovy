@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2011 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -331,6 +331,7 @@ public class Java5 implements VMPlugin {
             Parameter[] params = makeParameters(compileUnit, m.getGenericParameterTypes(), m.getParameterTypes(), m.getParameterAnnotations());
             ClassNode[] exceptions = makeClassNodes(compileUnit, m.getGenericExceptionTypes(), m.getExceptionTypes());
             MethodNode mn = new MethodNode(m.getName(), m.getModifiers(), ret, params, exceptions, null);
+            mn.setSynthetic(m.isSynthetic());
             setMethodDefaultValue(mn, m);
             setAnnotationMetaData(m.getAnnotations(), mn);
             mn.setGenericsTypes(configureTypeVariable(m.getTypeParameters()));
@@ -385,7 +386,7 @@ public class Java5 implements VMPlugin {
             front.setRedirect(back);
             return front;
         }
-        return back;
+        return back.getPlainNodeReference();
     }
 
     private Parameter[] makeParameters(CompileUnit cu, Type[] types, Class[] cls, Annotation[][] parameterAnnotations) {
@@ -405,5 +406,7 @@ public class Java5 implements VMPlugin {
         setAnnotationMetaData(annotations, parameter);
         return parameter;
     }
+
+    public void invalidateCallSites() {}
 }
 

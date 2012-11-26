@@ -20,6 +20,8 @@ import groovy.util.ResourceException;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.regex.Matcher;
@@ -166,8 +168,13 @@ public abstract class AbstractHttpServlet extends HttpServlet implements Resourc
      * Interface method for ResourceContainer. This is used by the GroovyScriptEngine.
      */
     public URLConnection getResourceConnection(String name) throws ResourceException {
-        String basePath = servletContext.getRealPath("/");
-        if (name.startsWith(basePath)) name = name.substring(basePath.length());
+        URI uri = new File(servletContext.getRealPath("/")).toURI();
+        try {
+            String basePath = uri.toURL().toExternalForm();
+            if (name.startsWith(basePath)) name = name.substring(basePath.length());
+        } catch (MalformedURLException e) {
+            throw new ResourceException("Malformed URL for base path '"+ uri + "'", e);
+        }
 
         name = name.replaceAll("\\\\", "/");
 

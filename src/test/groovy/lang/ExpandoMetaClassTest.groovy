@@ -20,6 +20,55 @@ package groovy.lang
  */
 class ExpandoMetaClassTest extends GroovyTestCase {
 
+    @Override
+    protected void setUp() {
+        super.setUp()
+        def reg = GroovySystem.metaClassRegistry
+        reg.removeMetaClass(EMCT_Another)
+        reg.removeMetaClass(EMCT_Child)
+        reg.removeMetaClass(EMCT_ChildClass)
+        reg.removeMetaClass(EMCT_Class)
+        reg.removeMetaClass(EMCT_GetProperty)
+        reg.removeMetaClass(EMCT_Implemented)
+        reg.removeMetaClass(EMCT_InterfaceWithFormat)
+        reg.removeMetaClass(EMCT_InvokeMethod)
+        reg.removeMetaClass(EMCT_Static)
+        reg.removeMetaClass(EMCT_Another)
+        reg.removeMetaClass(EMCT_SuperClass)
+    }
+
+    void testClosureCallDoCall() {
+        ExpandoMetaClass.enableGlobally()
+        def cl = {assert it.class == Object[]}
+        Object[] item = [1]
+        try {
+            cl(item)
+        } finally {
+            ExpandoMetaClass.disableGlobally()
+            def reg = GroovySystem.metaClassRegistry
+            reg.removeMetaClass(cl.class)
+        }   
+    }
+
+    void testFindAll() {
+        ExpandoMetaClass.enableGlobally()
+        try {
+            assertScript """
+                class A{}
+                class B extends A{}
+
+                def items = []
+                Object[] item = ["Fluff", new Date(), 11235813]
+                items << item
+                println items
+                assert !(items.findAll{it[0] == "Pelusa"})
+                assert items.findAll{it[0] == "Fluff"}
+            """
+        } finally {
+            ExpandoMetaClass.disableGlobally()
+        }   
+    }
+
     void testMethodsAfterAddingNewMethod() {
         EMCT_Class.metaClass.newMethod = {-> "foo" }
 

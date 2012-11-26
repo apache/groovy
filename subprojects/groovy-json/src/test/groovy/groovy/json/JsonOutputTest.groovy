@@ -306,6 +306,17 @@ class JsonOutputTest extends GroovyTestCase {
         m.a = 1
         assert toJson(m) == '{"a":1}'
     }
+
+	void testObjectWithDeclaredPropertiesField() {
+		def person = new JsonObject(name: "pillow", properties: [state: "fluffy", color: "white"])
+		def json = toJson(person)
+		assert json == '{"properties":{"state":"fluffy","color":"white"},"name":"pillow"}'
+	}
+	
+	void testGROOVY5494() {
+		def json = toJson(new JsonFoo(name: "foo"))
+		assert json == '{"properties":0,"name":"foo"}'
+	}
 }
 
 @Canonical
@@ -324,6 +335,16 @@ class JsonDistrict {
 class JsonStreet {
     String streetName
     JsonStreetKind kind
+}
+
+class JsonObject {
+	String name
+	Map properties
+}
+
+class JsonFoo {
+	String name
+	int getProperties() { return 0 }
 }
 
 enum JsonStreetKind {

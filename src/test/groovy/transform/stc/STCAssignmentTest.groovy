@@ -742,5 +742,30 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         ''', 'Inconvertible types: cannot cast [Ljava.lang.String; to [Ljava.util.Set;'
     }
 
+    // GROOVY-5535
+    void testAssignToNullInsideIf() {
+        assertScript '''
+            Date foo() {
+                Date result = new Date()
+                if (true) {
+                    result = null
+                }
+                return result
+            }
+            assert foo() == null
+        '''
+    }
+
+    // GROOVY-5798
+    void testShouldNotThrowConversionError() {
+        assertScript '''
+            char m( int v ) {
+              char c = (char)v
+              c
+            }
+
+            println m( 65 )
+        '''
+    }
 }
 

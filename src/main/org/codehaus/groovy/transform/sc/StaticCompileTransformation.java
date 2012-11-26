@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,21 +15,22 @@
  */
 package org.codehaus.groovy.transform.sc;
 
-import groovy.transform.CompileStatic;
-import org.codehaus.groovy.ast.*;
+import org.codehaus.groovy.ast.ASTNode;
+import org.codehaus.groovy.ast.AnnotatedNode;
+import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.classgen.asm.WriterControllerFactory;
 import org.codehaus.groovy.classgen.asm.sc.StaticTypesWriterControllerFactoryImpl;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
-import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 import org.codehaus.groovy.syntax.SyntaxException;
-import org.codehaus.groovy.syntax.Types;
 import org.codehaus.groovy.transform.GroovyASTTransformation;
 import org.codehaus.groovy.transform.StaticTypesTransformation;
 import org.codehaus.groovy.transform.sc.transformers.StaticCompilationTransformer;
-import org.codehaus.groovy.transform.stc.*;
+import org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor;
+import org.codehaus.groovy.transform.stc.TypeCheckerPluginFactory;
 
-import java.util.*;
+import java.util.Collections;
 
 import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.STATIC_COMPILE_NODE;
 
@@ -56,25 +57,26 @@ public class StaticCompileTransformation extends StaticTypesTransformation {
             node.putNodeMetaData(STATIC_COMPILE_NODE, !visitor.isSkipMode(node));
             visitor.visitClass(classNode);
         } else if (node instanceof MethodNode) {
-            MethodNode methodNode = (MethodNode)node;
+            MethodNode methodNode = (MethodNode) node;
             ClassNode declaringClass = methodNode.getDeclaringClass();
             visitor = newVisitor(source, declaringClass, null);
             methodNode.putNodeMetaData(STATIC_COMPILE_NODE, !visitor.isSkipMode(node));
-            if (declaringClass.getNodeMetaData(WriterControllerFactory.class)==null) {
+            if (declaringClass.getNodeMetaData(WriterControllerFactory.class) == null) {
                 declaringClass.putNodeMetaData(WriterControllerFactory.class, factory);
             }
             visitor.setMethodsToBeVisited(Collections.singleton(methodNode));
             visitor.visitMethod(methodNode);
         } else {
-            source.addError(new SyntaxException(STATIC_ERROR_PREFIX + "Unimplemented node type", node.getLineNumber(), node.getColumnNumber()));
+            source.addError(new SyntaxException(STATIC_ERROR_PREFIX + "Unimplemented node type",
+                    node.getLineNumber(), node.getColumnNumber(), node.getLastLineNumber(), node.getLastColumnNumber()));
         }
-        if (visitor!=null) {
+        if (visitor != null) {
             visitor.performSecondPass();
         }
         if (node instanceof ClassNode) {
-            transformer.visitClass((ClassNode)node);
+            transformer.visitClass((ClassNode) node);
         } else if (node instanceof MethodNode) {
-            transformer.visitMethod((MethodNode)node);
+            transformer.visitMethod((MethodNode) node);
         }
     }
 

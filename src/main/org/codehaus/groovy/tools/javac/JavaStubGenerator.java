@@ -541,7 +541,7 @@ public class JavaStubGenerator {
     private void printDefaultValue(PrintWriter out, ClassNode type) {
         if (type.redirect() != ClassHelper.OBJECT_TYPE && type.redirect() != ClassHelper.boolean_TYPE) {
             out.print("(");
-            printTypeWithoutBounds(out, type);
+            printType(out, type);
             out.print(")");
         }
 

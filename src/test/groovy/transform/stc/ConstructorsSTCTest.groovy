@@ -189,5 +189,119 @@ class ConstructorsSTCTest extends StaticTypeCheckingTestCase {
         Person.create()
         '''
     }
+
+    // GROOVY-5531
+    void testAccessToClosureVariableFromNamedParamConstructor() {
+        // test using "str" as name
+        assertScript '''
+            class Person { String name }
+            def cl = { String str ->
+                new Person(name: str)
+            }
+            assert cl('Cédric').name == 'Cédric'
+        '''
+
+        // test using "it" as name
+        assertScript '''
+            class Person { String name }
+            def cl = { String it ->
+                new Person(name: it)
+            }
+            assert cl('Cédric').name == 'Cédric'
+        '''
+
+    }
+
+    // GROOVY-5530
+    void testUseGStringInNamedParameter() {
+        assertScript '''class User {
+            String login
+            String username
+            String domain
+            String firstName
+            String lastName
+        }
+
+        class UserBase {
+            List<User> getUsers() {
+                [1, 2, 3].collect { Number num ->
+                     new User(
+                            login:      "login$num",
+                            username:   "username$num",
+                            domain:     "domain$num",
+                            firstName:  "first$num",
+                            lastName:   "last$num"
+                    )
+                }
+            }
+        }
+
+        def users = new UserBase().getUsers()
+        assert users.get(0).login == "login1"
+        '''
+    }
+
+    // GROOVY-5578
+    void testConstructJavaBeanFromMap() {
+        assertScript '''import groovy.transform.stc.MyBean
+
+        MyBean bean = new MyBean(name:'Cedric')
+        assert bean.name == 'Cedric'
+        '''
+    }
+    void testConstructJavaBeanFromMapAndSubclass() {
+        assertScript '''import groovy.transform.stc.MyBean
+        class MyBean2 extends MyBean {
+            int age
+        }
+        MyBean2 bean = new MyBean2(name:'Cedric', age:33)
+        assert bean.name == 'Cedric'
+        assert bean.age == 33
+        '''
+    }
+
+    // GROOVY-5698
+    void testMapConstructorWithInterface() {
+        assertScript '''class CustomServletOutputStream extends OutputStream {
+                OutputStream out
+
+                void write(int i) {
+                    out.write(i)
+                }
+
+                void write(byte[] bytes) {
+                    out.write(bytes)
+                }
+
+                void write(byte[] bytes, int offset, int length) {
+                    out.write(bytes, offset, length)
+                }
+
+                void flush() {
+                    out.flush()
+                }
+
+                void close() {
+                    out.close()
+                }
+            }
+
+            class Test {
+                static void test() {
+                    def csos = new CustomServletOutputStream(out: new ByteArrayOutputStream())
+                }
+            }
+            Test.test()
+        '''
+    }
+
+    void testMapConstructorShouldFail() {
+        shouldFailWithMessages '''
+            class Foo {
+                ByteArrayOutputStream out
+            }
+            void m(OutputStream o) { new Foo(out:o) }
+        ''', 'Cannot assign value of type java.io.OutputStream to variable of type java.io.ByteArrayOutputStream'
+    }
 }
 

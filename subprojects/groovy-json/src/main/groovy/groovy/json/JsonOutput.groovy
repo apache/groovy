@@ -18,6 +18,7 @@ package groovy.json
 import static JsonTokenType.*
 import java.text.SimpleDateFormat
 import java.text.DateFormat
+import org.codehaus.groovy.runtime.DefaultGroovyMethods
 
 /**
  * Class responsible for the actual String serialization of the possible values of a JSON structure.
@@ -34,10 +35,13 @@ class JsonOutput {
      * that can be parsed back from JavaScript with:
      * <code>Date.parse(stringRepresentation)</code>
      */
-    private static final DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ", Locale.US)
-
-    static {
-        dateFormat.timeZone = TimeZone.getTimeZone('GMT')
+    private static final ThreadLocal<SimpleDateFormat> dateFormatter = new ThreadLocal<SimpleDateFormat>() {
+        @Override
+        protected SimpleDateFormat initialValue() {
+            DateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ", Locale.US)
+            formatter.timeZone = TimeZone.getTimeZone('GMT')
+            formatter
+        }
     }
 
     /**
@@ -79,7 +83,7 @@ class JsonOutput {
      * @return a formatted date in the form of a string
      */
     static String toJson(Date date) {
-        "\"${dateFormat.format(date)}\""
+        "\"${dateFormatter.get().format(date)}\""
     }
 
     /**
@@ -89,7 +93,7 @@ class JsonOutput {
      * @return a formatted date in the form of a string
      */
     static String toJson(Calendar cal) {
-        "\"${dateFormat.format(cal.time)}\""
+        "\"${dateFormatter.get().format(cal.time)}\""
     }
 
     /**
@@ -127,7 +131,7 @@ class JsonOutput {
         } else if (object instanceof Enum) {
             '"' + object.name() + '"'
         } else {
-            def properties = object.properties
+            def properties = DefaultGroovyMethods.getProperties(object)
             properties.remove('class')
             properties.remove('declaringClass')
             properties.remove('metaClass')

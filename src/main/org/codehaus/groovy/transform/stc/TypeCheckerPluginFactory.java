@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2009 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,11 @@
 package org.codehaus.groovy.transform.stc;
 
 import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.control.CompilationUnit;
 
 /**
- *
  * A plugin factory is responsible for returning a type checker extension depending on
  * a compilation context.
- * 
+ *
  * @author Cedric Champeau
  */
 public interface TypeCheckerPluginFactory {

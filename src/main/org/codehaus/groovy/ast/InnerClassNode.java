@@ -15,6 +15,8 @@
  */
 package org.codehaus.groovy.ast;
 
+import org.codehaus.groovy.ast.stmt.Statement;
+
 import java.util.LinkedList;
 
 /**
@@ -77,5 +79,15 @@ public class InnerClassNode extends ClassNode {
 
     public void setAnonymous(boolean anonymous) {
         this.anonymous = anonymous;
+    }
+
+    @Override
+    public void addConstructor(final ConstructorNode node) {
+        super.addConstructor(node);
+    }
+
+    @Override
+    public ConstructorNode addConstructor(final int modifiers, final Parameter[] parameters, final ClassNode[] exceptions, final Statement code) {
+        return super.addConstructor(modifiers, parameters, exceptions, code);
     }
 }

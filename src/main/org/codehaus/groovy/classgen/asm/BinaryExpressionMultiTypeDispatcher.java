@@ -184,11 +184,7 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
                 rightExp.visit(acg);
                 os.doGroovyCast(int_TYPE);
                 bew.arrayGet(operation, false);
-                if(bew instanceof BinaryObjectExpressionHelper) {
-                    os.replace(ClassHelper.OBJECT_TYPE,2);
-                } else {
-                    os.replace(leftType,2);
-                }
+                os.replace(bew.getArrayGetResultType(),2);
             } else {
                 super.evaluateBinaryExpression(message, binExp);
             }
@@ -309,6 +305,7 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
         
         // load array: load x and DUP [load sub, call arrayGet, load b, call operation, load sub, call arraySet] 
         arrayWithSubscript.getLeftExpression().visit(acg);
+        operandStack.doGroovyCast(bew.getNormalOpResultType().makeArray());
         operandStack.dup();
         
         // array get: load sub, call arrayGet [load b, call operation, load sub, call arraySet]
@@ -318,11 +315,15 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
         
         // complete rhs: load b, call operation [load sub, call arraySet]
         binExp.getRightExpression().visit(acg);
+        if (! (bew instanceof BinaryObjectExpressionHelper)) {
+            // in primopts we convert to the left type for supported binary operations
+            operandStack.doGroovyCast(leftType);  
+        }
         bew.write(operation, false);
         
         // let us save that value for the return
         operandStack.dup();
-        int resultValueId = compileStack.defineTemporaryVariable("$result", rightType, true);               
+        int resultValueId = compileStack.defineTemporaryVariable("$result", rightType, true);
 
         // array set: load sub, call arraySet []
         operandStack.load(ClassHelper.int_TYPE, subscriptValueId);

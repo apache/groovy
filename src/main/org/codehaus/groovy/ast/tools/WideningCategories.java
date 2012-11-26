@@ -261,7 +261,7 @@ public class WideningCategories {
         if (type.isInterface()) {
             for (ClassNode interfaceNode : source.getAllInterfaces()) {
                 if (interfaceNode.equals(type)) {
-                    ClassNode parameterizedInterface = GenericsUtils.parameterizeInterfaceGenerics(source, interfaceNode);
+                    ClassNode parameterizedInterface = GenericsUtils.parameterizeType(source, interfaceNode);
                     return parameterizedInterface;
                 }
             }

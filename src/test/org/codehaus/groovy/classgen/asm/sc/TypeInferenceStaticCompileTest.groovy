@@ -30,5 +30,16 @@ class TypeInferenceStaticCompileTest extends TypeInferenceSTCTest {
         super.setUp()
         extraSetup()
     }
+
+    // GROOVY-5655
+    void testByteArrayInference() {
+        assertScript '''
+                @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                    assert node.getNodeMetaData(INFERRED_TYPE) == byte_TYPE.makeArray()
+                })
+                def b = "foo".bytes
+                new String(b)
+            '''
+    }
 }
 

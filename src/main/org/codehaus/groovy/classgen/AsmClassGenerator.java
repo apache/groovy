@@ -53,9 +53,9 @@ public class AsmClassGenerator extends ClassGenerator {
 
     // fields and properties
     static final MethodCallerMultiAdapter setField = MethodCallerMultiAdapter.newStatic(ScriptBytecodeAdapter.class, "setField", false, false);
-    static final MethodCallerMultiAdapter getField = MethodCallerMultiAdapter.newStatic(ScriptBytecodeAdapter.class, "getField", false, false);
+    public static final MethodCallerMultiAdapter getField = MethodCallerMultiAdapter.newStatic(ScriptBytecodeAdapter.class, "getField", false, false);
     static final MethodCallerMultiAdapter setGroovyObjectField = MethodCallerMultiAdapter.newStatic(ScriptBytecodeAdapter.class, "setGroovyObjectField", false, false);
-    static final MethodCallerMultiAdapter getGroovyObjectField = MethodCallerMultiAdapter.newStatic(ScriptBytecodeAdapter.class, "getGroovyObjectField", false, false);
+    public static final MethodCallerMultiAdapter getGroovyObjectField = MethodCallerMultiAdapter.newStatic(ScriptBytecodeAdapter.class, "getGroovyObjectField", false, false);
     static final MethodCallerMultiAdapter setFieldOnSuper = MethodCallerMultiAdapter.newStatic(ScriptBytecodeAdapter.class, "setFieldOnSuper", false, false);
     static final MethodCallerMultiAdapter getFieldOnSuper = MethodCallerMultiAdapter.newStatic(ScriptBytecodeAdapter.class, "getFieldOnSuper", false, false);
 
@@ -92,7 +92,6 @@ public class AsmClassGenerator extends ClassGenerator {
     public static final boolean CREATE_LINE_NUMBER_INFO = true;
     public static final boolean ASM_DEBUG = false; // add marker in the bytecode to show source-bytecode relationship
 
-    private int lineNumber = -1;
     private ASTNode currentASTNode = null;
     private Map genericParameterNames = null;
     private SourceUnit source;
@@ -130,7 +129,7 @@ public class AsmClassGenerator extends ClassGenerator {
         }
         this.controller.init(this, context, cv, classNode);
 
-        if (controller.shouldOptimizeForInt()) {
+        if (controller.shouldOptimizeForInt() || factory!=null) {
             OptimizingStatementWriter.setNodeMeta(controller.getTypeChooser(),classNode);
         }
 
@@ -195,6 +194,8 @@ public class AsmClassGenerator extends ClassGenerator {
         } catch (GroovyRuntimeException e) {
             e.setModule(classNode.getModule());
             throw e;
+        } catch (NegativeArraySizeException nase) {
+            throw new GroovyRuntimeException("NegativeArraySizeException while processing "+sourceFile, nase);
         } catch (NullPointerException npe) {
             throw new GroovyRuntimeException("NPE while processing "+sourceFile, npe);
         }
@@ -250,8 +251,8 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     protected void visitConstructorOrMethod(MethodNode node, boolean isConstructor) {
-        lineNumber = -1;
-        Parameter[] parameters = node.getParameters();
+        controller.resetLineNumber();
+    	Parameter[] parameters = node.getParameters();
         String methodType = BytecodeHelper.getMethodDescriptor(node.getReturnType(), parameters);
         String signature = BytecodeHelper.getGenericsMethodSignature(node);
         int modifiers = node.getModifiers();
@@ -1009,6 +1010,7 @@ public class AsmClassGenerator extends ClassGenerator {
             mv.visitVarInsn(ALOAD, 0);
             while (!iterType.equals(type)) {
                 String ownerName = BytecodeHelper.getClassInternalName(iterType);
+                if (iterType.getOuterClass()==null) break;
                 iterType = iterType.getOuterClass();
                 String typeName = BytecodeHelper.getTypeDescription(iterType);
                 mv.visitFieldInsn(GETFIELD, ownerName, "this$0", typeName);
@@ -2068,9 +2070,9 @@ public class AsmClassGenerator extends ClassGenerator {
         this.currentASTNode = statement;
 
         if (line < 0) return;
-        if (!ASM_DEBUG && line==lineNumber) return;
+        if (!ASM_DEBUG && line==controller.getLineNumber()) return;
 
-        lineNumber = line;
+        controller.setLineNumber(line);
         if (mv != null) {
             Label l = new Label();
             mv.visitLabel(l);

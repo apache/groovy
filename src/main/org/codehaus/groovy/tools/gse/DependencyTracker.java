@@ -15,6 +15,8 @@
  */
 package org.codehaus.groovy.tools.gse;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
 import org.codehaus.groovy.ast.AnnotatedNode;
@@ -34,17 +36,31 @@ import org.codehaus.groovy.control.SourceUnit;
 
 public class DependencyTracker extends ClassCodeVisitorSupport {
     private Set<String> current;
+    private Map<String, ?> precompiledDependencies;
     private SourceUnit source;
     private StringSetMap cache;
 
     public DependencyTracker(SourceUnit source, StringSetMap cache) {
+        this(source, cache, new HashMap());
+    }
+    
+    public DependencyTracker(SourceUnit source, StringSetMap cache, Map<String, ?> precompiledEntries) {
         this.source = source;
         this.cache = cache;
+        this.precompiledDependencies = precompiledEntries;
     }
 
     private void addToCache(ClassNode node){
-        if (!node.isPrimaryClassNode()) return;
+        if (node == null) return;
+        String name = node.getName();
+        if (!precompiledDependencies.containsKey(name)  &&
+            !node.isPrimaryClassNode())
+        {
+            return;
+        }
         current.add(node.getName());
+        addToCache(node.getSuperClass());
+        addToCache(node.getInterfaces());
     }
     
     private void addToCache(ClassNode[] nodes){
@@ -57,8 +73,6 @@ public class DependencyTracker extends ClassCodeVisitorSupport {
         Set<String> old = current;
         current = cache.get(node.getName());
         addToCache(node);
-        addToCache(node.getSuperClass());
-        addToCache(node.getInterfaces());
         super.visitClass(node);
         current =  old;
     }

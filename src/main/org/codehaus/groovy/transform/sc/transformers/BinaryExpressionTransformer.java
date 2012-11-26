@@ -52,17 +52,32 @@ public class BinaryExpressionTransformer {
 
     Expression transformBinaryExpression(final BinaryExpression bin) {
         Object[] list = (Object[]) bin.getNodeMetaData(BINARY_EXP_TARGET);
-        if (list != null) {
-            Token operation = bin.getOperation();
-            int operationType = operation.getType();
-            if (operationType==Types.COMPARE_EQUAL || operationType == Types.COMPARE_NOT_EQUAL) {
-                // let's check if one of the operands is the null constant
-                if (isNullConstant(bin.getLeftExpression())) {
-                    return new CompareToNullExpression(staticCompilationTransformer.transform(bin.getRightExpression()), operationType==Types.COMPARE_EQUAL);
-                } else if (isNullConstant(bin.getRightExpression())) {
-                    return new CompareToNullExpression(staticCompilationTransformer.transform(bin.getLeftExpression()), operationType==Types.COMPARE_EQUAL);
-                }
+        Token operation = bin.getOperation();
+        int operationType = operation.getType();
+        if (operationType==Types.COMPARE_EQUAL || operationType == Types.COMPARE_NOT_EQUAL) {
+            // let's check if one of the operands is the null constant
+            CompareToNullExpression compareToNullExpression = null;
+            if (isNullConstant(bin.getLeftExpression())) {
+                compareToNullExpression = new CompareToNullExpression(staticCompilationTransformer.transform(bin.getRightExpression()), operationType==Types.COMPARE_EQUAL);
+            } else if (isNullConstant(bin.getRightExpression())) {
+                compareToNullExpression = new CompareToNullExpression(staticCompilationTransformer.transform(bin.getLeftExpression()), operationType==Types.COMPARE_EQUAL);
             }
+            if (compareToNullExpression != null) {
+                compareToNullExpression.setSourcePosition(bin);
+                return compareToNullExpression;
+            }
+        } else if (operationType==Types.KEYWORD_IN) {
+            MethodCallExpression call = new MethodCallExpression(
+                    bin.getRightExpression(),
+                    "isCase",
+                    bin.getLeftExpression()
+            );
+            call.setMethodTarget((MethodNode) bin.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET));
+            call.setSourcePosition(bin);
+            call.copyNodeMetaData(bin);
+            return staticCompilationTransformer.transform(call);
+        }
+        if (list != null) {
             if (operationType == Types.COMPARE_TO) {
                 StaticTypesTypeChooser typeChooser = staticCompilationTransformer.getTypeChooser();
                 ClassNode classNode = staticCompilationTransformer.getClassNode();
@@ -73,6 +88,7 @@ public class BinaryExpressionTransformer {
                         Expression left = staticCompilationTransformer.transform(bin.getLeftExpression());
                         Expression right = staticCompilationTransformer.transform(bin.getRightExpression());
                         MethodCallExpression call = new MethodCallExpression(left, "compareTo", new ArgumentListExpression(right));
+                        call.setImplicitThis(false);
                         call.setMethodTarget(COMPARE_TO_METHOD);
 
                         CompareIdentityExpression compareIdentity = new CompareIdentityExpression(
@@ -112,6 +128,7 @@ public class BinaryExpressionTransformer {
                     name,
                     new ArgumentListExpression(right)
             );
+            call.setImplicitThis(false);
             call.setMethodTarget(node);
             MethodNode adapter = StaticCompilationTransformer.BYTECODE_BINARY_ADAPTERS.get(operationType);
             if (adapter != null) {
@@ -121,6 +138,7 @@ public class BinaryExpressionTransformer {
                         "compareEquals",
                         new ArgumentListExpression(left, right));
                 call.setMethodTarget(adapter);
+                call.setImplicitThis(false);
             }
             if (!isAssignment) return call;
             // case of +=, -=, /=, ...
@@ -151,7 +169,7 @@ public class BinaryExpressionTransformer {
         return staticCompilationTransformer.superTransform(bin);
     }
 
-    private static boolean isNullConstant(final Expression expression) {
+    protected static boolean isNullConstant(final Expression expression) {
         return expression instanceof ConstantExpression && ((ConstantExpression) expression).getValue()==null;
     }
 

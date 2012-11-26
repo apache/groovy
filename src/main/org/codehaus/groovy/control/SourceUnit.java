@@ -108,7 +108,7 @@ public class SourceUnit extends ProcessingUnit {
      * Initializes the SourceUnit from the specified URL.
      */
     public SourceUnit(URL source, CompilerConfiguration configuration, GroovyClassLoader loader, ErrorCollector er) {
-        this(source.getPath(), new URLReaderSource(source, configuration), configuration, loader, er);
+        this(source.toExternalForm(), new URLReaderSource(source, configuration), configuration, loader, er);
     }
 
     /**

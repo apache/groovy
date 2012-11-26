@@ -13,6 +13,60 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
             def bar() { foo { it / 2 } }
         ''', 'Cannot find matching method java.lang.Object#div(int)'
     }
+    void testShouldNotAllowDivBynUntypedVariable() {
+        shouldFailWithMessages '''
+            def foo(Closure cls) {}
+            def bar() { foo { 2 / it } }
+        ''', 'Cannot find matching method int#div(java.lang.Object)'
+    }
+    void testShouldNotAllowModOnUntypedVariable() {
+        shouldFailWithMessages '''
+            def foo(Closure cls) {}
+            def bar() { foo { it % 2 } }
+        ''', 'Cannot find matching method java.lang.Object#mod(int)'
+    }
+    void testShouldNotAllowModBynUntypedVariable() {
+        shouldFailWithMessages '''
+            def foo(Closure cls) {}
+            def bar() { foo { 2 % it } }
+        ''', 'Cannot find matching method int#mod(java.lang.Object)'
+    }
+    void testShouldNotAllowMulOnUntypedVariable() {
+        shouldFailWithMessages '''
+            def foo(Closure cls) {}
+            def bar() { foo { it * 2 } }
+        ''', 'Cannot find matching method java.lang.Object#multiply(int)'
+    }
+    void testShouldNotAllowMulBynUntypedVariable() {
+        shouldFailWithMessages '''
+            def foo(Closure cls) {}
+            def bar() { foo { 2 * it } }
+        ''', 'Cannot find matching method int#multiply(java.lang.Object)'
+    }
+    void testShouldNotAllowPlusOnUntypedVariable() {
+        shouldFailWithMessages '''
+            def foo(Closure cls) {}
+            def bar() { foo { it + 2 } }
+        ''', 'Cannot find matching method java.lang.Object#plus(int)'
+    }
+    void testShouldNotAllowPlusWithUntypedVariable() {
+        shouldFailWithMessages '''
+            def foo(Closure cls) {}
+            def bar() { foo { 2 + it } }
+        ''', 'Cannot find matching method int#plus(java.lang.Object)'
+    }
+    void testShouldNotAllowMinusOnUntypedVariable() {
+        shouldFailWithMessages '''
+            def foo(Closure cls) {}
+            def bar() { foo { it - 2 } }
+        ''', 'Cannot find matching method java.lang.Object#minus(int)'
+    }
+    void testShouldNotAllowMinusBynUntypedVariable() {
+        shouldFailWithMessages '''
+            def foo(Closure cls) {}
+            def bar() { foo { 2 - it } }
+        ''', 'Cannot find matching method int#minus(java.lang.Object)'
+    }
 
     void testGroovy5444() {
         assertScript '''
@@ -61,5 +115,169 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
         List getList() {
         }
         '''
+    }
+
+    void testGroovy5482ListsAndFlowTyping() {
+        assertScript '''
+        class StaticGroovy2 {
+            def bar() {
+
+                def foo = [new Date(), 1, new C()]
+                foo.add( 2 ) // Compiles
+                foo.add( new Date() )
+                foo.add( new C() )
+
+                foo = [new Date(), 1]
+                foo.add( 2 ) // Does not compile
+            }
+        }
+        class C{
+        }
+        new StaticGroovy2()'''
+    }
+
+    void testClosureDelegateThisOwner() {
+        assertScript '''
+            class A {
+                A that = this
+                void m() {
+                    def cl = {
+                        @ASTTest(phase=INSTRUCTION_SELECTION, value= {
+                            assert node.getNodeMetaData(INFERRED_TYPE)?.name == 'A'
+                        })
+                        def foo = this
+                        assert this == that
+                    }
+                    cl()
+                    cl = {
+                        @ASTTest(phase=INSTRUCTION_SELECTION, value= {
+                            assert node.getNodeMetaData(INFERRED_TYPE)?.name == 'A'
+                        })
+                        def foo = delegate
+                        assert delegate == that
+                    }
+                    cl()
+                    cl = {
+                        @ASTTest(phase=INSTRUCTION_SELECTION, value= {
+                            assert node.getNodeMetaData(INFERRED_TYPE)?.name == 'A'
+                        })
+                        def foo = owner
+                        assert owner == that
+                    }
+                }
+            }
+            new A().m()
+        '''
+    }
+    void testClosureDelegateThisOwnerUsingGetters() {
+        assertScript '''
+            class A {
+                A that = this
+                void m() {
+                    def cl = {
+                        @ASTTest(phase=INSTRUCTION_SELECTION, value= {
+                            assert node.getNodeMetaData(INFERRED_TYPE)?.name == 'A'
+                        })
+                        def foo = getThisObject()
+                        assert getThisObject() == that
+                    }
+                    cl()
+                    cl = {
+                        @ASTTest(phase=INSTRUCTION_SELECTION, value= {
+                            assert node.getNodeMetaData(INFERRED_TYPE)?.name == 'A'
+                        })
+                        def foo = getDelegate()
+                        assert getDelegate() == that
+                    }
+                    cl()
+                    cl = {
+                        @ASTTest(phase=INSTRUCTION_SELECTION, value= {
+                            assert node.getNodeMetaData(INFERRED_TYPE)?.name == 'A'
+                        })
+                        def foo = getOwner()
+                        assert getOwner() == that
+                    }
+                }
+            }
+            new A().m()
+        '''
+    }
+
+    // GROOVY-5616
+    void testAssignToGroovyObject() {
+        assertScript '''
+        class A {}
+        GroovyObject obj = new A()
+        '''
+    }
+
+    void testAssignJavaClassToGroovyObject() {
+        shouldFailWithMessages '''
+        GroovyObject obj = 'foo'
+        ''', 'Cannot assign value of type java.lang.String to variable of type groovy.lang.GroovyObject'
+    }
+
+    void testCastToGroovyObject() {
+        assertScript '''
+        class A {}
+        GroovyObject obj = new A()
+        '''
+    }
+
+    void testAssignInnerClassToGroovyObject() {
+        assertScript '''
+        class A { static class B {} }
+        GroovyObject obj = new A.B()
+        '''
+    }
+    void testCastInnerClassToGroovyObject() {
+        assertScript '''
+        class A { static class B {} }
+        GroovyObject obj = (GroovyObject)new A.B()
+        '''
+    }
+
+    void testGroovyObjectInGenerics() {
+        assertScript '''
+        class A {}
+        List<? extends GroovyObject> list = new LinkedList<? extends GroovyObject>()
+        list.add(new A())
+        '''
+    }
+
+    // GROOVY-5656
+    void testShouldNotThrowAmbiguousMethodError() {
+        assertScript '''import groovy.transform.*
+
+        class Expr {}
+        class VarExpr extends Expr {}
+
+        class ArgList {
+            ArgList(Expr e1) {  }
+            ArgList(Expr[] es) {  }
+        }
+
+        class Bug4 {
+            void test() {
+                new ArgList(new VarExpr())
+            }
+        }
+
+        new Bug4().test()
+        '''
+    }
+
+    // GROOVY-5793
+    void testByteAsParameter() {
+        assertScript '''
+        void testMethod(java.lang.Byte param){
+            println(param)
+        }
+
+        void execute(){
+            testMethod(java.lang.Byte.valueOf("123"))
+        }
+
+        execute()'''
     }
 }

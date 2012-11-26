@@ -28,6 +28,7 @@ import org.objectweb.asm.ClassReader
 import org.objectweb.asm.ClassWriter
 import org.objectweb.asm.util.CheckClassAdapter
 import org.codehaus.groovy.control.customizers.ImportCustomizer
+import org.codehaus.groovy.tools.GroovyClass
 
 /**
  * A mixin class which can be used to transform a static type checking test case into a
@@ -45,11 +46,10 @@ import org.codehaus.groovy.control.customizers.ImportCustomizer
  */
 class StaticCompilationTestSupport {
     Map<String, Object[]> astTrees
-    ClassVisitor currentClassVisitor
+    CustomCompilationUnit compilationUnit
 
     void extraSetup() {
         astTrees = [:]
-        currentClassVisitor = null
         def mixed = metaClass.owner
         mixed.config = new CompilerConfiguration()
         def imports = new ImportCustomizer()
@@ -68,7 +68,9 @@ class StaticCompilationTestSupport {
         mixed.shell.loader = new GroovyClassLoader(this.class.classLoader, mixed.config) {
             @Override
             protected CompilationUnit createCompilationUnit(final CompilerConfiguration config, final CodeSource source) {
-                return new CustomCompilationUnit(config, source, this)
+                def cu = new CustomCompilationUnit(config, source, this)
+                setCompilationUnit(cu)
+                return cu
             }
         }
     }
@@ -78,12 +80,6 @@ class StaticCompilationTestSupport {
             super(configuration, security, loader)
         }
 
-        @Override
-        protected ClassVisitor createClassVisitor() {
-            def visitor = super.createClassVisitor()
-            setCurrentClassVisitor(visitor)
-            return visitor
-        }
     }
 
     private class ASTTreeCollector extends CompilationCustomizer {
@@ -94,14 +90,20 @@ class StaticCompilationTestSupport {
 
         @Override
         void call(final org.codehaus.groovy.control.SourceUnit source, final org.codehaus.groovy.classgen.GeneratorContext context, final ClassNode classNode) {
-            StringWriter stringWriter = new StringWriter()
-            try {
-                ClassReader cr = new ClassReader(((ClassWriter)getCurrentClassVisitor()).toByteArray())
-                CheckClassAdapter.verify(cr, true, new PrintWriter(stringWriter))
-            } catch (Throwable e) {
-                // not a problem
+            def unit = getCompilationUnit()
+            if (!unit) return
+            List<GroovyClass> classes = unit.generatedClasses
+            classes.each { GroovyClass groovyClass ->
+                StringWriter stringWriter = new StringWriter()
+                try {
+                    ClassReader cr = new ClassReader(groovyClass.bytes)
+                    CheckClassAdapter.verify(cr, source.getClassLoader(), true, new PrintWriter(stringWriter))
+                } catch (Throwable e)  {
+                    // not a problem
+                    e.printStackTrace(new PrintWriter(stringWriter))
+                }
+                getAstTrees()[groovyClass.name] = [classNode, stringWriter.toString()] as Object[]
             }
-            getAstTrees()[classNode.name] = [classNode, stringWriter.toString()] as Object[]
         }
     }
 

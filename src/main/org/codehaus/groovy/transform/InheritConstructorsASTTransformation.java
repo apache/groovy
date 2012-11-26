@@ -119,10 +119,9 @@ public class InheritConstructorsASTTransformation implements ASTTransformation, 
     }
 
     private void addError(String msg, ASTNode expr, SourceUnit source) {
-        int line = expr.getLineNumber();
-        int col = expr.getColumnNumber();
         source.getErrorCollector().addErrorAndContinue(
-                new SyntaxErrorMessage(new SyntaxException(msg + '\n', line, col), source)
+                new SyntaxErrorMessage(new SyntaxException(msg + '\n', expr.getLineNumber(), expr.getColumnNumber(),
+                        expr.getLastLineNumber(), expr.getLastColumnNumber()), source)
         );
     }
 

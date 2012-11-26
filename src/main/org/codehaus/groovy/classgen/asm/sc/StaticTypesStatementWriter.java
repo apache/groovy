@@ -72,6 +72,7 @@ public class StaticTypesStatementWriter extends StatementWriter {
         if (collectionType.implementsInterface(ITERABLE_CLASSNODE)) {
             MethodCallExpression iterator = new MethodCallExpression(collectionExpression, "iterator", new ArgumentListExpression());
             iterator.setMethodTarget(collectionType.getMethod("iterator", Parameter.EMPTY_ARRAY));
+            iterator.setImplicitThis(false);
             iterator.visit(controller.getAcg());
         } else {
             collectionExpression.visit(controller.getAcg());

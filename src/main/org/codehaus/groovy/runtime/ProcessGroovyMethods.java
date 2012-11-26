@@ -61,6 +61,7 @@ public class ProcessGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Read the text of the output stream of the Process.
+     * Closes all the streams associated with the process after retrieving the text.
      *
      * @param self a Process instance
      * @return the text of the output
@@ -68,7 +69,11 @@ public class ProcessGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static String getText(Process self) throws IOException {
-        return IOGroovyMethods.getText(new BufferedReader(new InputStreamReader(self.getInputStream())));
+        String text = IOGroovyMethods.getText(new BufferedReader(new InputStreamReader(self.getInputStream())));
+        try { self.getErrorStream().close(); } catch (IOException ignore) {}
+        try { self.getInputStream().close(); } catch (IOException ignore) {}
+        try { self.getOutputStream().close(); } catch (IOException ignore) {}
+        return text;
     }
 
     /**
@@ -209,7 +214,7 @@ public class ProcessGroovyMethods extends DefaultGroovyMethodsSupport {
      * The processed stream data is appended to the supplied Appendable.
      * For this, two Threads are started, but join()ed, so we wait.
      * As implied by the waitFor... name, we also wait until we finish
-     * as well. Finally, the output and error streams are closed.
+     * as well. Finally, the input, output and error streams are closed.
      *
      * @param self a Process
      * @param output an Appendable to capture the process stdout
@@ -224,6 +229,7 @@ public class ProcessGroovyMethods extends DefaultGroovyMethodsSupport {
         try { self.waitFor(); } catch (InterruptedException ignore) {}
         try { self.getErrorStream().close(); } catch (IOException ignore) {}
         try { self.getInputStream().close(); } catch (IOException ignore) {}
+        try { self.getOutputStream().close(); } catch (IOException ignore) {}
     }
 
     /**
@@ -232,7 +238,7 @@ public class ProcessGroovyMethods extends DefaultGroovyMethodsSupport {
      * The processed stream data is appended to the supplied OutputStream.
      * For this, two Threads are started, but join()ed, so we wait.
      * As implied by the waitFor... name, we also wait until we finish
-     * as well. Finally, the output and error streams are closed.
+     * as well. Finally, the input, output and error streams are closed.
      *
      * @param self a Process
      * @param output an OutputStream to capture the process stdout
@@ -247,6 +253,7 @@ public class ProcessGroovyMethods extends DefaultGroovyMethodsSupport {
         try { self.waitFor(); } catch (InterruptedException ignore) {}
         try { self.getErrorStream().close(); } catch (IOException ignore) {}
         try { self.getInputStream().close(); } catch (IOException ignore) {}
+        try { self.getOutputStream().close(); } catch (IOException ignore) {}
     }
 
     /**

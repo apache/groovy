@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 the original author or authors.
+ * Copyright 2008-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,8 @@ import org.objectweb.asm.Opcodes;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -75,11 +77,13 @@ public class DelegateASTTransformation implements ASTTransformation, Opcodes {
                 fieldMethods.addAll(getAllMethods(next));
             }
             final Expression deprecatedElement = node.getMember("deprecated");
-            final boolean deprecated = hasBooleanValue(deprecatedElement, true);
+            final Expression interfacesElement = node.getMember("interfaces");
+            final boolean skipInterfaces = hasBooleanValue(interfacesElement, false);
+            final boolean includeDeprecated = hasBooleanValue(deprecatedElement, true) || (type.isInterface() && !skipInterfaces);
 
             final List<MethodNode> ownerMethods = getAllMethods(owner);
             for (MethodNode mn : fieldMethods) {
-                addDelegateMethod(fieldNode, owner, ownerMethods, mn, deprecated);
+                addDelegateMethod(fieldNode, owner, ownerMethods, mn, includeDeprecated);
             }
 
             for (PropertyNode prop : type.getProperties()) {
@@ -90,10 +94,9 @@ public class DelegateASTTransformation implements ASTTransformation, Opcodes {
                 addSetterIfNeeded(fieldNode, owner, prop, name);
             }
 
-            final Expression interfacesElement = node.getMember("interfaces");
-            if (hasBooleanValue(interfacesElement, false)) return;
+            if (skipInterfaces) return;
 
-            final Set<ClassNode> allInterfaces = type.getAllInterfaces();
+            final Set<ClassNode> allInterfaces = getInterfacesAndSuperInterfaces(type);
             final Set<ClassNode> ownerIfaces = owner.getAllInterfaces();
             for (ClassNode iface : allInterfaces) {
                 if (Modifier.isPublic(iface.getModifiers()) && !ownerIfaces.contains(iface)) {
@@ -105,6 +108,20 @@ public class DelegateASTTransformation implements ASTTransformation, Opcodes {
                 }
             }
         }
+    }
+
+    private Set<ClassNode> getInterfacesAndSuperInterfaces(ClassNode type) {
+        Set<ClassNode> res = new HashSet<ClassNode>();
+        if (type.isInterface()) {
+            res.add(type);
+            return res;
+        }
+        ClassNode next = type;
+        while (next != null) {
+            Collections.addAll(res, next.getInterfaces());
+            next = next.getSuperClass();
+        }
+        return res;
     }
 
     private List<MethodNode> getAllMethods(ClassNode type) {
@@ -154,11 +171,11 @@ public class DelegateASTTransformation implements ASTTransformation, Opcodes {
         }
     }
 
-    private void addDelegateMethod(FieldNode fieldNode, ClassNode owner, List<MethodNode> ownMethods, MethodNode candidate, boolean deprecated) {
+    private void addDelegateMethod(FieldNode fieldNode, ClassNode owner, List<MethodNode> ownMethods, MethodNode candidate, boolean includeDeprecated) {
         if (!candidate.isPublic() || candidate.isStatic() || 0 != (candidate.getModifiers () & Opcodes.ACC_SYNTHETIC))
             return;
 
-        if (!candidate.getAnnotations(DEPRECATED_TYPE).isEmpty() && !deprecated)
+        if (!candidate.getAnnotations(DEPRECATED_TYPE).isEmpty() && !includeDeprecated)
             return;
 
         // ignore methods from GroovyObject
@@ -224,10 +241,9 @@ public class DelegateASTTransformation implements ASTTransformation, Opcodes {
     }
 
     public void addError(String msg, ASTNode expr, SourceUnit source) {
-        int line = expr.getLineNumber();
-        int col = expr.getColumnNumber();
         source.getErrorCollector().addErrorAndContinue(
-                new SyntaxErrorMessage(new SyntaxException(msg + '\n', line, col), source)
+                new SyntaxErrorMessage(new SyntaxException(msg + '\n', expr.getLineNumber(), expr.getColumnNumber(),
+                        expr.getLastLineNumber(), expr.getLastColumnNumber()), source)
         );
     }
 }

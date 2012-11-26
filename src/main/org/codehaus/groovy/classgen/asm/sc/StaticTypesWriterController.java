@@ -19,6 +19,7 @@ import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.classgen.GeneratorContext;
 import org.codehaus.groovy.classgen.asm.*;
+import org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys;
 import org.codehaus.groovy.transform.sc.StaticCompilationVisitor;
 import org.objectweb.asm.ClassVisitor;
 
@@ -71,7 +72,9 @@ public class StaticTypesWriterController extends DelegatingController {
             node = classNode.getOuterClass();
         }
 
-        isInStaticallyCheckedMethod = mn != null && StaticCompilationVisitor.isStaticallyCompiled(node);
+        isInStaticallyCheckedMethod = mn != null && (
+                StaticCompilationVisitor.isStaticallyCompiled(node)
+                        || classNode.implementsInterface(ClassHelper.GENERATED_CLOSURE_Type)&&classNode.getNodeMetaData(StaticCompilationMetadataKeys.STATIC_COMPILE_NODE)!=null);
 
 /*      if (isInStaticallyCheckedMethod) {
             System.out.println("Entering statically compiled method: "+mn.getDeclaringClass()+"#"+mn);

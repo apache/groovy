@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,6 @@
 package org.codehaus.groovy.classgen.asm.sc
 
 import groovy.transform.stc.TypeCheckingModeTest
-import org.objectweb.asm.util.TraceClassVisitor
-import org.objectweb.asm.ClassReader
 
 /**
  * Unit tests for static type checking : type checking mode.
@@ -36,22 +34,22 @@ class TypeCheckingModeStaticCompileTest extends TypeCheckingModeTest {
     void testEnsureBytecodeIsDifferentWhenSkipped() {
         assertScript '''
             // transparent @CompileStatic
-            String foo() { 'foo' }
+            String foo() { 'foo'.toUpperCase() }
 
             @groovy.transform.CompileStatic(groovy.transform.TypeCheckingMode.SKIP)
-            String bar() { 'foo' }
+            String bar() { 'foo'.toUpperCase() }
         '''
 
         String bytecodeAsString = astTrees.values().iterator().next()[1]
         int st = bytecodeAsString.indexOf('foo()Ljava/lang/String;')
         int ed = bytecodeAsString.indexOf('ARETURN', st)
-        int linesOfCode = bytecodeAsString.substring(st, ed).count('\n')
-        assert linesOfCode == 2
+        String linesOfCode = bytecodeAsString.substring(st, ed)
+        assert linesOfCode.contains('INVOKEVIRTUAL')
 
         st = bytecodeAsString.indexOf('bar()Ljava/lang/String;')
         ed = bytecodeAsString.indexOf('ARETURN', st)
-        linesOfCode = bytecodeAsString.substring(st, ed).count('\n')
-        assert linesOfCode == 4
+        linesOfCode = bytecodeAsString.substring(st, ed)
+        assert !linesOfCode.contains('INVOKEVIRTUAL')
     }
 }
 

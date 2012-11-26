@@ -52,6 +52,9 @@ import groovy.lang.Tuple;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.syntax.SyntaxException;
+import org.codehaus.groovy.util.ManagedConcurrentMap;
+import org.codehaus.groovy.util.ManagedConcurrentValueMap;
+import org.codehaus.groovy.util.ReferenceBundle;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.runtime.MethodClosure;
@@ -76,9 +79,6 @@ import java.lang.String;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
-
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -94,10 +94,10 @@ public class GroovyScriptEngineImpl
     private static boolean debug = false;
 
     // script-string-to-generated Class map
-    private Map<String, Class> classMap = new ConcurrentHashMap<String, Class>();
+    private ManagedConcurrentMap<String, Class> classMap = new ManagedConcurrentMap<String, Class>(ReferenceBundle.getSoftBundle());
     // global closures map - this is used to simulate a single
     // global functions namespace 
-    private Map<String, Closure> globalClosures = new ConcurrentHashMap<String, Closure>();
+    private ManagedConcurrentValueMap<String, Closure> globalClosures = new ManagedConcurrentValueMap<String, Closure>(ReferenceBundle.getSoftBundle());
     // class loader for Groovy generated classes
     private GroovyClassLoader loader;
     // lazily initialized factory
@@ -280,16 +280,12 @@ public class GroovyScriptEngineImpl
                 Script scriptObject = (Script) scriptClass.newInstance();
                 scriptObject.setBinding(binding);
 
-                // create a Map of MethodClosures from this new script object
+                // save all current closures into global closures map
                 Method[] methods = scriptClass.getMethods();
-                Map<String, Closure> closures = new HashMap<String, Closure>();
                 for (Method m : methods) {
                     String name = m.getName();
-                    closures.put(name, new MethodClosure(scriptObject, name));
+                    globalClosures.put(name, new MethodClosure(scriptObject, name));
                 }
-
-                // save all current closures into global closures map
-                globalClosures.putAll(closures);
 
                 MetaClass oldMetaClass = scriptObject.getMetaClass();
 

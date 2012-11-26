@@ -132,5 +132,31 @@ class STCnAryExpressionTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-5644
+    void testSpaceshipOperatorShouldNotThrowAmbiguousError() {
+        assertScript '''
+            Integer x = 3
+            Integer y = 4
+            assert (x <=> y) == -1
+        '''
+    }
+
+    void testComparisonOperatorCheckWithIncompatibleTypesOkIfComparableNotImplemented() {
+        shouldFailWithMessages '''
+            [] < 1
+        ''', "Cannot find matching method java.util.List#compareTo(int)"
+    }
+
+    void testComparisonOperatorCheckWithIncompatibleTypesFailsIfComparableImplemented() {
+        shouldFailWithMessages '''
+           'abc' < 1
+        ''', "Cannot find matching method java.lang.String#compareTo(int)"
+    }
+
+    void testCompareToCallCheckWithIncompatibleTypesAlsoFailsIfComparableImplemented() {
+        shouldFailWithMessages '''
+           'abc'.compareTo(1)
+        ''', "Cannot find matching method java.lang.String#compareTo(int)"
+    }
 }
 

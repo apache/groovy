@@ -31,11 +31,13 @@ import org.codehaus.groovy.reflection.ReflectionCache;
 import org.codehaus.groovy.runtime.ConvertedClosure;
 import org.codehaus.groovy.runtime.CurriedClosure;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
+import org.codehaus.groovy.runtime.GeneratedClosure;
 import org.codehaus.groovy.runtime.GroovyCategorySupport;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.InvokerInvocationException;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.runtime.MethodClosure;
+import org.codehaus.groovy.runtime.callsite.AbstractCallSite;
 import org.codehaus.groovy.runtime.callsite.CallSite;
 import org.codehaus.groovy.runtime.callsite.ConstructorSite;
 import org.codehaus.groovy.runtime.callsite.MetaClassConstructorSite;
@@ -46,6 +48,8 @@ import org.codehaus.groovy.runtime.callsite.PojoMetaMethodSite;
 import org.codehaus.groovy.runtime.callsite.StaticMetaClassSite;
 import org.codehaus.groovy.runtime.callsite.StaticMetaMethodSite;
 import org.codehaus.groovy.runtime.metaclass.ClosureMetaMethod;
+import org.codehaus.groovy.runtime.metaclass.MethodMetaProperty.GetBeanMethodMetaProperty;
+import org.codehaus.groovy.runtime.metaclass.MethodMetaProperty.GetMethodMetaProperty;
 import org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl;
 import org.codehaus.groovy.runtime.metaclass.MetaMethodIndex;
 import org.codehaus.groovy.runtime.metaclass.MethodSelectionException;
@@ -140,7 +144,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     // we only need one of these that can be reused over and over.
     private final MetaProperty arrayLengthProperty = new MetaArrayLengthProperty();
     private static final MetaMethod AMBIGUOUS_LISTENER_METHOD = new DummyMetaMethod();
-    private static final Object[] EMPTY_ARGUMENTS = {};
+    public static final Object[] EMPTY_ARGUMENTS = {};
     private final Set<MetaMethod> newGroovyMethodsSet = new HashSet<MetaMethod>();
 
     private MetaMethod genericGetMethod;
@@ -341,6 +345,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             }
 
             for (final MetaMethod method : getNewMetaMethods(c)) {
+                if (method.getName().equals("<init>") && !method.getDeclaringClass().equals(theCachedClass)) continue;
                 if (!newGroovyMethodsSet.contains(method)) {
                     newGroovyMethodsSet.add(method);
                     addMetaMethodToIndex(method, header);
@@ -1452,7 +1457,69 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                             "before any invocation or field/property " +
                             "access can be done");
     }
+    
+    /**
+     * This is a helper class introduced in Groovy 2.1.0, which is used only by
+     * indy. This class is for internal use only.
+     * @author <a href="mailto:blackdrag@gmx.org">Jochen "blackdrag" Theodorou</a>
+     * @since Groovy 2.1.0
+     */
+    public final static class MetaConstructor extends MetaMethod {
+        private final CachedConstructor cc;
+        private final boolean beanConstructor;
+        private MetaConstructor(CachedConstructor cc, boolean bean) {
+            super(cc.getNativeParameterTypes());
+            this.setParametersTypes(cc.getParameterTypes());
+            this.cc = cc;
+            this.beanConstructor = bean;
+        }
+        @Override
+        public int getModifiers() { return cc.getModifiers(); }
+        @Override
+        public String getName() { return "<init>"; }
+        @Override
+        public Class getReturnType() { return cc.getCachedClass().getTheClass(); }
+        @Override
+        public CachedClass getDeclaringClass() { return cc.getCachedClass(); }
+        @Override
+        public Object invoke(Object object, Object[] arguments) {
+            return cc.doConstructorInvoke(arguments);
+        }
+        public CachedConstructor getCachedConstrcutor() { return cc; }
+        public boolean isBeanConstructor() { return beanConstructor; }
+    }
+    
+    /**
+     * This is a helper method added in Groovy 2.1.0, which is used only by indy.
+     * This method is for internal use only.
+     * @author <a href="mailto:blackdrag@gmx.org">Jochen "blackdrag" Theodorou</a> 
+     * @since Groovy 2.1.0
+     */
+    public final MetaMethod retrieveConstructor(Object[] arguments) {
+        checkInitalised();
+        if (arguments == null) arguments = EMPTY_ARGUMENTS;
+        Class[] argClasses = MetaClassHelper.convertToTypeArray(arguments);
+        MetaClassHelper.unwrap(arguments);
+        Object res = chooseMethod("<init>", constructors, argClasses);
+        if (res instanceof MetaMethod) return (MetaMethod) res;
+        CachedConstructor constructor = (CachedConstructor) res;
+        if (constructor != null) return new MetaConstructor(constructor, false);
+        if (arguments.length == 1 && arguments[0] instanceof Map) {
+            res = chooseMethod("<init>", constructors, MetaClassHelper.EMPTY_TYPE_ARRAY);
+        } else if (
+                arguments.length == 2 && arguments[1] instanceof Map && 
+                theClass.getEnclosingClass()!=null && 
+                theClass.getEnclosingClass().isAssignableFrom(argClasses[0])) 
+        {
+            res = chooseMethod("<init>", constructors, new Class[]{argClasses[0]});
+        }
+        if (res instanceof MetaMethod) return (MetaMethod) res;
+        constructor = (CachedConstructor) res;
+        if (constructor != null) return new MetaConstructor(constructor, true);
 
+        return null;
+    }
+    
     private Object invokeConstructor(Class at, Object[] arguments) {
         checkInitalised();
         if (arguments == null) arguments = EMPTY_ARGUMENTS;
@@ -3025,7 +3092,16 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     public CallSite createPogoCallSite(CallSite site, Object[] args) {
         if (!GroovyCategorySupport.hasCategoryInCurrentThread() && !(this instanceof AdaptingMetaClass)) {
             Class [] params = MetaClassHelper.convertToTypeArray(args);
-            MetaMethod metaMethod = getMethodWithCachingInternal(theClass, site, params);
+            CallSite tempSite = site;
+            if (site.getName().equals("call") && GeneratedClosure.class.isAssignableFrom(theClass)) {
+                // here, we want to point to a method named "doCall" instead of "call"
+                // but we don't want to replace the original call site name, otherwise
+                // we loose the fact that the original method name was "call" so instead
+                // we will point to a metamethod called "doCall"
+                // see GROOVY-5806 for details
+                tempSite = new AbstractCallSite(site.getArray(),site.getIndex(),"doCall");
+            }
+            MetaMethod metaMethod = getMethodWithCachingInternal(theClass, tempSite, params);
             if (metaMethod != null)
                return PogoMetaMethodSite.createPogoMetaMethodSite(site, this, metaMethod, params, args);
         }
@@ -3444,40 +3520,6 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
         public Object invoke(Object object, Object[] arguments) {
             return null;
-        }
-    }
-
-    private static class GetMethodMetaProperty extends MetaProperty {
-        private final MetaMethod theMethod;
-
-        public GetMethodMetaProperty(String name, MetaMethod theMethod) {
-            super(name, Object.class);
-            this.theMethod = theMethod;
-        }
-
-        public Object getProperty(Object object) {
-            return theMethod.doMethodInvoke(object, new Object[]{name});
-        }
-
-        public void setProperty(Object object, Object newValue) {
-            throw new UnsupportedOperationException();
-        }
-    }
-
-    private static class GetBeanMethodMetaProperty extends MetaProperty {
-        private final MetaMethod theMethod;
-
-        public GetBeanMethodMetaProperty(String name, MetaMethod theMethod) {
-            super(name, Object.class);
-            this.theMethod = theMethod;
-        }
-
-        public Object getProperty(Object object) {
-            return theMethod.doMethodInvoke(object, EMPTY_ARGUMENTS);
-        }
-
-        public void setProperty(Object object, Object newValue) {
-            throw new UnsupportedOperationException();
         }
     }
 }

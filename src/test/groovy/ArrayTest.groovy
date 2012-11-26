@@ -430,4 +430,15 @@ class ArrayTest extends GroovyTestCase {
         assert result == [ 1, 2, 3, 4, 5 ]
         assert result.class.isArray()
     }
+
+    void doSomething(long[] values){
+         values[1] += 5 
+    }
+
+    void testLongArrayIncrement() {
+        long[] l = [1l,0l]
+        doSomething(l)
+        assert l[0]==1
+        assert l[1]==5
+    }
 }

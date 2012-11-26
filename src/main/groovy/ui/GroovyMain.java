@@ -322,6 +322,7 @@ public class GroovyMain {
         }
         
         if (line.hasOption("indy")) {
+            CompilerConfiguration.DEFAULT.getOptimizationOptions().put("indy", true);
             main.conf.getOptimizationOptions().put("indy", true);
         }
         

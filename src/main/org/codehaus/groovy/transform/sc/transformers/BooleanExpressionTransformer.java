@@ -73,7 +73,8 @@ public class BooleanExpressionTransformer {
         public OptimizingBooleanExpression(final Expression expression, final ClassNode type) {
             super(expression);
             this.expression = expression;
-            this.type = type;
+            // we must use the redirect node, otherwise InnerClassNode would not have the "correct" type
+            this.type = type.redirect();
         }
 
         @Override
@@ -89,11 +90,12 @@ public class BooleanExpressionTransformer {
             if (visitor instanceof AsmClassGenerator) {
                 AsmClassGenerator acg = (AsmClassGenerator) visitor;
                 WriterController controller = acg.getController();
-                if (type == ClassHelper.boolean_TYPE) {
+                if (type.equals(ClassHelper.boolean_TYPE)) {
                     expression.visit(visitor);
+                    controller.getOperandStack().doGroovyCast(ClassHelper.boolean_TYPE);
                     return;
                 }
-                if (type == ClassHelper.Boolean_TYPE) {
+                if (type.equals(ClassHelper.Boolean_TYPE)) {
                     expression.visit(visitor);
                     // unbox
                     MethodVisitor mv = controller.getMethodVisitor();
@@ -101,24 +103,24 @@ public class BooleanExpressionTransformer {
                     controller.getOperandStack().replace(ClassHelper.boolean_TYPE);
                     return;
                 }
-                if (type == ClassHelper.int_TYPE || type == ClassHelper.byte_TYPE
-                        || type == ClassHelper.short_TYPE || type == ClassHelper.char_TYPE) {
+                if (type.equals(ClassHelper.int_TYPE) || type.equals(ClassHelper.byte_TYPE)
+                        || type.equals(ClassHelper.short_TYPE) || type.equals(ClassHelper.char_TYPE)) {
                     // int on stack
                     expression.visit(visitor);
                     return;
-                } else if (type == ClassHelper.long_TYPE) {
+                } else if (type.equals(ClassHelper.long_TYPE)) {
                     expression.visit(visitor);
                     MethodVisitor mv = controller.getMethodVisitor();
                     mv.visitInsn(L2I);
                     controller.getOperandStack().replace(ClassHelper.boolean_TYPE);
                     return;
-                } else if (type == ClassHelper.float_TYPE) {
+                } else if (type.equals(ClassHelper.float_TYPE)) {
                     expression.visit(visitor);
                     MethodVisitor mv = controller.getMethodVisitor();
                     mv.visitInsn(F2I);
                     controller.getOperandStack().replace(ClassHelper.boolean_TYPE);
                     return;
-                } else if (type == ClassHelper.double_TYPE) {
+                } else if (type.equals(ClassHelper.double_TYPE)) {
                     expression.visit(visitor);
                     MethodVisitor mv = controller.getMethodVisitor();
                     mv.visitInsn(D2I);
