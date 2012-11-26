@@ -954,6 +954,36 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-5721
+    void testExtractComponentTypeFromSubclass() {
+        assertScript '''
+        class MyList extends ArrayList<Double> {}
+
+        List<Double> list1 = new ArrayList<Double>()
+        list1 << 0.0d
+
+        // OK
+        Double d1 = list1.get(0)
+
+        //---------------------------
+
+        List<Double> list2 = new MyList<>()
+        list2 << 0.0d
+
+        //Groovyc: [Static type checking] - Cannot assign value of type java.lang.Object to variable of type java.lang.Double
+        Double d2 = list2.get(0)
+
+        //---------------------------
+
+        MyList list3 = new MyList()
+        list3 << 0.0d
+
+        //Groovyc: [Static type checking] - Cannot assign value of type java.lang.Object to variable of type java.lang.Double
+        Double d3 = list3.get(0)
+        '''
+
+    }
+
     static class MyList extends LinkedList<String> {}
 
     public static class ClassA<T> {
