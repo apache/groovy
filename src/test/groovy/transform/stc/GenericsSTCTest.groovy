@@ -984,6 +984,18 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
 
     }
 
+    // GROOVY-5724
+    void testJunitHamcrest() {
+        assertScript '''
+            public class Matcher<T> {}
+            public <T> void assertThat(T obj, Matcher<T> matcher) {}
+            public <T> Matcher<T> notNullValue() {}
+            String result = '12345'.substring(2)
+            // assert
+            assertThat(result, notNullValue())
+        '''
+    }
+
     static class MyList extends LinkedList<String> {}
 
     public static class ClassA<T> {
