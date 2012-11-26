@@ -3217,6 +3217,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                                                     GenericsType genericsType = gtInParameter[j];
                                                     if (genericsType.getName().equals(placeholderName)) {
                                                         ClassNode actualType = gtInArgument[j].getType();
+                                                       if (gtInArgument[j].isPlaceholder()
+                                                                && gtInArgument[j].getName().equals(placeholderName)
+                                                                && resolvedMethodGenerics.containsKey(placeholderName)) {
+                                                           // GROOVY-5724
+                                                           actualType = resolvedMethodGenerics.get(placeholderName);
+                                                        }
                                                         if (resolvedMethodGenerics.containsKey(placeholderName)) {
                                                             failure |= !resolvedMethodGenerics.get(placeholderName).equals(actualType);
                                                         } else {
