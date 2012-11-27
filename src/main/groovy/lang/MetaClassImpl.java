@@ -924,7 +924,13 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 //
 //        unwrap(arguments);
 
-        MetaMethod method = getMethodWithCaching(sender, methodName, arguments, isCallToSuper);
+        MetaMethod method = null;
+        if (CLOSURE_CALL_METHOD.equals(methodName) && object instanceof GeneratedClosure) {
+            method = getMethodWithCaching(sender, "doCall", arguments, isCallToSuper);
+        } 
+        if (method==null) {
+            method = getMethodWithCaching(sender, methodName, arguments, isCallToSuper);
+        }
         MetaClassHelper.unwrap(arguments);
 
         if (method == null)
