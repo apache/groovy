@@ -17,9 +17,7 @@ package groovy.lang;
 
 import org.codehaus.groovy.reflection.ReflectionCache;
 import org.codehaus.groovy.reflection.stdclasses.CachedClosureClass;
-import org.codehaus.groovy.runtime.ComposedClosure;
-import org.codehaus.groovy.runtime.CurriedClosure;
-import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.runtime.*;
 import org.codehaus.groovy.runtime.callsite.BooleanClosureWrapper;
 import org.codehaus.groovy.runtime.memoize.LRUCache;
 import org.codehaus.groovy.runtime.memoize.Memoize;
@@ -413,7 +411,10 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
     public V call(Object... args) {
         try {
             return (V) getMetaClass().invokeMethod(this,"doCall",args);
-        } catch (Exception e) {
+        } catch (InvokerInvocationException e) {
+            ExceptionUtils.sneakyThrow(e.getCause());
+            return null; // unreachable statement
+        }  catch (Exception e) {
             return (V) throwRuntimeException(e);
         }
     }
