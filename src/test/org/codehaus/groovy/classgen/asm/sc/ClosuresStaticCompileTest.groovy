@@ -42,5 +42,30 @@ class ClosuresStaticCompileTest extends ClosuresSTCTest {
                 test()'''
     }
 
+    // GROOVY-5811
+    void testClosureExceptionUnwrap() {
+        assertScript '''
+            @groovy.transform.InheritConstructors
+            public class MyException extends Exception {}
+
+            void foo() {
+                throw new MyException()
+            }
+
+            void bar() {
+                boolean caught = false
+                try {
+                    def cl = { foo() }
+                    cl()
+                } catch (MyException e) {
+                    caught = true
+                } finally {
+                    assert caught
+                }
+            }
+
+            bar()
+        '''
+    }
 }
 
