@@ -18,6 +18,7 @@
 package org.codehaus.groovy.control.customizers.builder
 
 import groovy.transform.CompileStatic
+import org.codehaus.groovy.control.CompilerConfiguration
 
 /**
  * <p>A builder which allows easy configuration of compilation customizers. Instead of creating
@@ -29,6 +30,13 @@ import groovy.transform.CompileStatic
 class CompilerCustomizationBuilder extends FactoryBuilderSupport {
     public CompilerCustomizationBuilder() {
         registerFactories()
+    }
+
+    public static CompilerConfiguration withConfig(CompilerConfiguration config, Closure code) {
+        CompilerCustomizationBuilder builder = new CompilerCustomizationBuilder()
+        config.invokeMethod('addCompilationCustomizers', builder.invokeMethod('customizers', code))
+
+        config
     }
 
     @Override

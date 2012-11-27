@@ -291,7 +291,7 @@ class CompilerCustomizationBuilderTest extends GroovyTestCase {
         println 'hello'
         def config = new CompilerConfiguration()
         // the "customizers" method is added through a custom metaclass
-        config.customizers {
+        CompilerCustomizationBuilder.withConfig(config) {
             ast(ToString)
         }
         def shell = new GroovyShell(config)

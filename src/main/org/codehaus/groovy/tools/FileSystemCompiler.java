@@ -23,6 +23,7 @@ import org.apache.commons.cli.*;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.ConfigurationException;
+import org.codehaus.groovy.control.customizers.ImportCustomizer;
 import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit;
 
 import groovy.lang.GroovySystem;
@@ -291,7 +292,11 @@ public class FileSystemCompiler {
             File groovyConfigurator = new File(path);
             Binding binding = new Binding();
             binding.setVariable("configuration", configuration);
-            GroovyShell shell = new GroovyShell(binding);
+
+            CompilerConfiguration configuratorConfig = new CompilerConfiguration();
+            ImportCustomizer customizer = new ImportCustomizer();
+            customizer.addStaticStars("org.codehaus.groovy.control.customizers.builder.CompilerCustomizationBuilder");
+            GroovyShell shell = new GroovyShell(binding, configuratorConfig);
             shell.evaluate(groovyConfigurator);
         }
         
