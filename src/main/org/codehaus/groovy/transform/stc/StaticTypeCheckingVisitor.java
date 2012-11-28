@@ -40,6 +40,7 @@ import org.codehaus.groovy.util.ListHashMap;
 import org.objectweb.asm.Opcodes;
 
 import java.io.*;
+import java.lang.reflect.Modifier;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -302,6 +303,38 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
     }
 
+    @SuppressWarnings("unchecked")
+    private void addPrivateFieldOrMethodAccess(ClassNode cn, StaticTypesMarker type, ASTNode accessedMember) {
+        Set<ASTNode> set = (Set<ASTNode>) cn.getNodeMetaData(type);
+        if (set==null) {
+            set = new LinkedHashSet<ASTNode>();
+            cn.putNodeMetaData(type, set);
+        }
+        set.add(accessedMember);
+    }
+
+    /**
+     * Given a field node, checks if we are calling a private field from an inner class.
+     */
+    private void checkOrMarkPrivateAccess(FieldNode fn) {
+        if (fn!=null && Modifier.isPrivate(fn.getModifiers()) &&
+            (fn.getDeclaringClass() != classNode || closureExpression!=null) &&
+            fn.getDeclaringClass().getModule() == classNode.getModule()) {
+            addPrivateFieldOrMethodAccess(fn.getDeclaringClass(), StaticTypesMarker.PV_FIELDS_ACCESS, fn);
+        }
+    }
+
+    /**
+     * Given a method node, checks if we are calling a private method from an inner class.
+     */
+    private void checkOrMarkPrivateAccess(MethodNode mn) {
+        if (mn!=null && Modifier.isPrivate(mn.getModifiers()) &&
+            (mn.getDeclaringClass() != classNode || closureExpression!=null) &&
+            mn.getDeclaringClass().getModule() == classNode.getModule()) {
+            addPrivateFieldOrMethodAccess(mn.getDeclaringClass(), StaticTypesMarker.PV_METHODS_ACCESS, mn);
+        }
+    }
+
     @Override
     public void visitVariableExpression(VariableExpression vexp) {
         super.visitVariableExpression(vexp);
@@ -337,6 +370,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 }
                 if (node.getField(dynName) != null) {
                     storeType(vexp, node.getField(dynName).getType());
+                    checkOrMarkPrivateAccess(node.getField(dynName));
                     return;
                 }
                 Set<ClassNode> allInterfaces = node.getAllInterfaces();
@@ -892,6 +926,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                             if (visitor != null) visitor.visitField(field);
                             storeInferredTypeForPropertyExpression(pexp, field.getOriginType());
                             storeType(pexp, field.getOriginType());
+                            checkOrMarkPrivateAccess(field);
                             return true;
                         }
                     }
@@ -913,6 +948,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                             if (visitor != null) visitor.visitField(field);
                             storeInferredTypeForPropertyExpression(pexp, field.getOriginType());
                             storeType(pexp, field.getOriginType());
+                            checkOrMarkPrivateAccess(field);
                             return true;
                         }
                     }
@@ -948,6 +984,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                                 if (visitor != null) visitor.visitField(field);
                                 storeInferredTypeForPropertyExpression(pexp, field.getOriginType());
                                 storeType(pexp, field.getOriginType());
+                                checkOrMarkPrivateAccess(field);
                                 return true;
                             }
                         }
@@ -2120,6 +2157,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     private void storeTargetMethod(final Expression call, final MethodNode directMethodCallCandidate) {
         call.putNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET, directMethodCallCandidate);
+        checkOrMarkPrivateAccess(directMethodCallCandidate);
     }
 
     private boolean isClosureCall(final String name, final Expression objectExpression, final Expression arguments) {
@@ -2704,6 +2742,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             if (vexp == VariableExpression.THIS_EXPRESSION) return classNode;
             if (vexp == VariableExpression.SUPER_EXPRESSION) return classNode.getSuperClass();
             final Variable variable = vexp.getAccessedVariable();
+            if (variable instanceof FieldNode) {
+                checkOrMarkPrivateAccess((FieldNode) variable);
+            }
             if (variable != null && variable != vexp && variable instanceof VariableExpression) {
                 return getType((Expression) variable);
             }

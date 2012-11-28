@@ -120,6 +120,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         if (receiver instanceof ClassExpression) {
             if (makeGetField(receiver, receiver.getType(), methodName, implicitThis, samePackages(receiver.getType().getPackageName(), classNode.getPackageName()))) return;
             if (makeGetPropertyWithGetter(receiver, receiver.getType(), methodName, safe, implicitThis)) return;
+            if (makeGetPrivateFieldWithBridgeMethod(receiver, receiver.getType(), methodName, safe, implicitThis)) return;
         }
         if (isClassReceiver) {
             // we are probably looking for a property of the class
