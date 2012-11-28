@@ -18,6 +18,7 @@ package groovy.swing.factory
 
 import javax.swing.JList
 import groovy.swing.binding.JListMetaMethods
+import groovy.swing.impl.ListWrapperListModel
 
 /**
  * Create a JList, and handle the optional items attribute.
@@ -30,26 +31,24 @@ public class ListFactory extends AbstractFactory {
         // FactoryBuilderSupport.checkValueIsType(value, name, JList)
 
         JList list
-        Object items = attributes.get("items")
+        Object items = attributes.remove("items")
 
-        if (items instanceof Vector) {
-            list = new JList(attributes.remove("items"))
-        } else if (items instanceof List) {
-            List l = (List) attributes.remove("items")
-            list = new JList(l.toArray())
-        } else if (items instanceof Object[]) {
-            list = new JList(attributes.remove("items"))
-        } else if (value instanceof JList) {
+        if (value instanceof JList) {
             list = value
-        } else if (value instanceof Vector) {
+        } else if (value instanceof Vector || value instanceof Object[]){
             list = new JList(value)
         } else if (value instanceof List) {
-            List l = (List) value
-            list = new JList(l.toArray())
-        } else if (value instanceof Object[]) {
-            list = new JList(value)
+            list = new JList(new ListWrapperListModel(items))
         } else {
             list = new JList()
+        }
+
+        if (items instanceof Vector) {
+            list.setListData((Vector) items)
+        } else if (items instanceof Object[]) {
+            list.setListData((Object[]) items)
+        } else if (items instanceof List) {
+            list.model = new ListWrapperListModel(items)
         }
 
         JListMetaMethods.enhanceMetaClass(list)
@@ -61,6 +60,8 @@ public class ListFactory extends AbstractFactory {
             def listData = attributes.remove("listData")
             if (listData instanceof Vector || listData instanceof Object[]) {
                 node.listData = listData
+            } else if (listData instanceof List) {
+                node.model = new ListWrapperListModel(listData)
             } else if (listData instanceof Collection) {
                 node.listData = listData.toArray()
             } else {
