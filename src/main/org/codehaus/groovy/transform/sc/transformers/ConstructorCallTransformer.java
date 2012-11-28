@@ -59,7 +59,8 @@ public class ConstructorCallTransformer {
                         MapStyleConstructorCall result = new MapStyleConstructorCall(
                                 staticCompilationTransformer,
                                 declaringClass,
-                                map
+                                map,
+                                expr
                         );
 
                         return result;
@@ -76,24 +77,30 @@ public class ConstructorCallTransformer {
         private AsmClassGenerator acg;
         private ClassNode declaringClass;
         private MapExpression map;
+        private ConstructorCallExpression orginalCall;
 
         public MapStyleConstructorCall(
                 final StaticCompilationTransformer transformer,
                 final ClassNode declaringClass,
-                final MapExpression map) {
+                final MapExpression map,
+                ConstructorCallExpression orginalCall) {
             this.staticCompilationTransformer = transformer;
             this.declaringClass = declaringClass;
             this.map = map;
+            this.orginalCall = orginalCall;
+            this.setSourcePosition(orginalCall);
+            this.copyNodeMetaData(orginalCall);
         }
 
         @Override
         public void visit(final GroovyCodeVisitor visitor) {
             if (visitor instanceof AsmClassGenerator) {
                 acg = (AsmClassGenerator) visitor;
-            }
+            } else {
+                orginalCall.visit(visitor);
+            } 
             super.visit(visitor);
         }
-
         @Override
         public ClassNode getType() {
             return declaringClass;
