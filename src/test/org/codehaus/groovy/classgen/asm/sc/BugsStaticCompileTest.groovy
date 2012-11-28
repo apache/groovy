@@ -606,5 +606,20 @@ class BugsStaticCompileTest extends BugsSTCTest {
             //println astTrees
         }
     }
+
+    // GROOVY-5814
+    void testCompileStaticImmutable() {
+        assertScript '''
+            import groovy.transform.*
+
+            @Immutable
+            class Test {
+              int a
+              String b
+            }
+
+            new Test( 1, 'tim' )
+        '''
+    }
 }
 

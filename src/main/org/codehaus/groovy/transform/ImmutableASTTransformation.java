@@ -19,15 +19,7 @@ import groovy.lang.MetaClass;
 import groovy.lang.MissingPropertyException;
 import groovy.lang.ReadOnlyPropertyException;
 import groovy.transform.Immutable;
-import org.codehaus.groovy.ast.ASTNode;
-import org.codehaus.groovy.ast.AnnotatedNode;
-import org.codehaus.groovy.ast.AnnotationNode;
-import org.codehaus.groovy.ast.ClassHelper;
-import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.ConstructorNode;
-import org.codehaus.groovy.ast.FieldNode;
-import org.codehaus.groovy.ast.Parameter;
-import org.codehaus.groovy.ast.PropertyNode;
+import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.EmptyStatement;
@@ -35,6 +27,7 @@ import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.IfStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.ast.stmt.ThrowStatement;
+import org.codehaus.groovy.classgen.VariableScopeVisitor;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
@@ -140,6 +133,36 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
         }
     }
 
+    private void doAddConstructor(final ClassNode cNode, final ConstructorNode constructorNode) {
+        cNode.addConstructor(constructorNode);
+        // GROOVY-5814: Immutable is not compatible with @CompileStatic
+        Parameter argsParam = null;
+        for (Parameter p : constructorNode.getParameters()) {
+            if ("args".equals(p.getName())) {
+                argsParam = p;
+                break;
+            }
+        }
+        if (argsParam!=null) {
+            final Parameter arg = argsParam;
+            ClassCodeVisitorSupport variableExpressionFix = new ClassCodeVisitorSupport() {
+                @Override
+                protected SourceUnit getSourceUnit() {
+                    return cNode.getModule().getContext();
+                }
+
+                @Override
+                public void visitVariableExpression(final VariableExpression expression) {
+                    super.visitVariableExpression(expression);
+                    if ("args".equals(expression.getName())) {
+                        expression.setAccessedVariable(arg);
+                    }
+                }
+            };
+            variableExpressionFix.visitConstructor(constructorNode);
+        }
+    }
+
     private List<String> getKnownImmutableClasses(AnnotationNode node) {
         final ArrayList<String> immutableClasses = new ArrayList<String>();
 
@@ -193,7 +216,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
         orderedBody.addStatement(new ExpressionStatement(
                 new ConstructorCallExpression(ClassNode.THIS, new ArgumentListExpression(new CastExpression(HASHMAP_TYPE, argMap)))
         ));
-        cNode.addConstructor(new ConstructorNode(ACC_PUBLIC, orderedParams, ClassNode.EMPTY_ARRAY, orderedBody));
+        doAddConstructor(cNode,new ConstructorNode(ACC_PUBLIC, orderedParams, ClassNode.EMPTY_ARRAY, orderedBody));
     }
 
     private Statement createGetterBodyDefault(FieldNode fNode) {
@@ -238,7 +261,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
             body.addStatement(createConstructorStatementDefault(fNode));
         }
         final Parameter[] params = new Parameter[]{new Parameter(HASHMAP_TYPE, "args")};
-        cNode.addConstructor(new ConstructorNode(ACC_PUBLIC, params, ClassNode.EMPTY_ARRAY, new IfStatement(
+        doAddConstructor(cNode,new ConstructorNode(ACC_PUBLIC, params, ClassNode.EMPTY_ARRAY, new IfStatement(
                 equalsNullExpr(new VariableExpression("args")),
                 new EmptyStatement(),
                 body)));
