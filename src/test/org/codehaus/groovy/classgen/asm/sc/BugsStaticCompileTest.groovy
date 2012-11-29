@@ -621,5 +621,46 @@ class BugsStaticCompileTest extends BugsSTCTest {
             new Test( 1, 'tim' )
         '''
     }
+
+    // GROOVY-5738
+    void testAccessFieldFromGStringAfterInstanceOf() {
+        new GroovyShell().evaluate '''
+            class Greeting { String who }
+
+            @groovy.transform.CompileStatic
+            class GreetingActor {
+
+              def receive = {
+                if(it instanceof Greeting) {
+                    println "Hello ${it.who}"
+                }
+              }
+
+            }
+            new GreetingActor().receive(new Greeting(who:'cedric'))
+        '''
+    }
+
+    // GROOVY-5738
+    void testAccessMethodFromGStringAfterInstanceOf() {
+        new GroovyShell().evaluate '''
+            class Greeting {
+                String who
+                String whoAmI() { who }
+            }
+
+            @groovy.transform.CompileStatic
+            class GreetingActor {
+
+              def receive = {
+                if(it instanceof Greeting) {
+                    println "Hello ${it.whoAmI()}"
+                }
+              }
+
+            }
+            new GreetingActor().receive(new Greeting(who:'cedric'))
+        '''
+    }
 }
 

@@ -15,6 +15,7 @@
  */
 package org.codehaus.groovy.transform.sc;
 
+import groovy.lang.Reference;
 import groovy.transform.CompileStatic;
 import groovy.transform.TypeChecked;
 import org.codehaus.groovy.ast.*;
@@ -276,10 +277,37 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
 
     @Override
     protected boolean existsProperty(final PropertyExpression pexp, final boolean checkForReadOnly, final ClassCodeVisitorSupport visitor) {
-        boolean exists = super.existsProperty(pexp, checkForReadOnly, visitor);
+        Expression objectExpression = pexp.getObjectExpression();
+        ClassNode objectExpressionType = getType(objectExpression);
+        final Reference<ClassNode> rType = new Reference<ClassNode>(objectExpressionType);
+        ClassCodeVisitorSupport receiverMemoizer = new ClassCodeVisitorSupport() {
+            @Override
+            protected SourceUnit getSourceUnit() {
+                return null;
+            }
+
+            public void visitField(final FieldNode node) {
+                if (visitor!=null) visitor.visitField(node);
+                ClassNode declaringClass = node.getDeclaringClass();
+                if (declaringClass!=null) rType.set(declaringClass);
+            }
+
+            public void visitMethod(final MethodNode node) {
+                if (visitor!=null) visitor.visitMethod(node);
+                ClassNode declaringClass = node.getDeclaringClass();
+                if (declaringClass!=null) rType.set(declaringClass);
+            }
+
+            @Override
+            public void visitProperty(final PropertyNode node) {
+                if (visitor!=null) visitor.visitProperty(node);
+                ClassNode declaringClass = node.getDeclaringClass();
+                if (declaringClass!=null) rType.set(declaringClass);
+            }
+        };
+        boolean exists = super.existsProperty(pexp, checkForReadOnly, receiverMemoizer);
         if (exists) {
-            Expression objectExpression = pexp.getObjectExpression();
-            ClassNode objectExpressionType = getType(objectExpression);
+            objectExpression.putNodeMetaData(StaticCompilationMetadataKeys.PROPERTY_OWNER, rType.get());
             if (StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf(objectExpressionType, ClassHelper.LIST_TYPE)) {
                 objectExpression.putNodeMetaData(COMPONENT_TYPE, inferComponentType(objectExpressionType, ClassHelper.int_TYPE));
             }
