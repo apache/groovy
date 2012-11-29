@@ -67,7 +67,10 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
     public void makeGetPropertySite(Expression receiver, final String methodName, final boolean safe, final boolean implicitThis) {
         TypeChooser typeChooser = controller.getTypeChooser();
         ClassNode classNode = controller.getClassNode();
-        ClassNode receiverType = typeChooser.resolveType(receiver, classNode);
+        ClassNode receiverType = (ClassNode) receiver.getNodeMetaData(StaticCompilationMetadataKeys.PROPERTY_OWNER);
+        if (receiverType==null) {
+            receiverType = typeChooser.resolveType(receiver, classNode);
+        }
         Object type = receiver.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
         if (type==null && receiver instanceof VariableExpression) {
             Variable variable = ((VariableExpression) receiver).getAccessedVariable();

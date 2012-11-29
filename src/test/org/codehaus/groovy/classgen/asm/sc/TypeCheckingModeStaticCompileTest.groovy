@@ -34,22 +34,22 @@ class TypeCheckingModeStaticCompileTest extends TypeCheckingModeTest {
     void testEnsureBytecodeIsDifferentWhenSkipped() {
         assertScript '''
             // transparent @CompileStatic
-            String foo() { 'foo' }
+            String foo() { 'foo'.toUpperCase() }
 
             @groovy.transform.CompileStatic(groovy.transform.TypeCheckingMode.SKIP)
-            String bar() { 'foo' }
+            String bar() { 'foo'.toUpperCase() }
         '''
 
         String bytecodeAsString = astTrees.values().iterator().next()[1]
         int st = bytecodeAsString.indexOf('foo()Ljava/lang/String;')
         int ed = bytecodeAsString.indexOf('ARETURN', st)
-        int linesOfCode = bytecodeAsString.substring(st, ed).count('\n')
-        assert linesOfCode == 2
+        String linesOfCode = bytecodeAsString.substring(st, ed)
+        assert linesOfCode.contains('INVOKEVIRTUAL')
 
         st = bytecodeAsString.indexOf('bar()Ljava/lang/String;')
         ed = bytecodeAsString.indexOf('ARETURN', st)
-        linesOfCode = bytecodeAsString.substring(st, ed).count('\n')
-        assert linesOfCode == 4
+        linesOfCode = bytecodeAsString.substring(st, ed)
+        assert !linesOfCode.contains('INVOKEVIRTUAL')
     }
 }
 

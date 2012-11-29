@@ -297,8 +297,12 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
     private ClosureStaticMetaMethod invokeStaticMethodMethod;
     private final Set<MixinInMetaClass> mixinClasses = new LinkedHashSet<MixinInMetaClass>();
 
-    private ExpandoMetaClass(Class theClass, boolean register, boolean allowChangesAfterInit, MetaMethod[] add) {
-        super(GroovySystem.getMetaClassRegistry(), theClass, add);
+    public ExpandoMetaClass(Class theClass, boolean register, boolean allowChangesAfterInit, MetaMethod[] add) {
+        this(GroovySystem.getMetaClassRegistry(), theClass, register, allowChangesAfterInit, add);
+    }
+    
+    public ExpandoMetaClass(MetaClassRegistry registry, Class theClass, boolean register, boolean allowChangesAfterInit, MetaMethod[] add) {
+        super(registry, theClass, add);
         this.myMetaClass = InvokerHelper.getMetaClass(getClass());
         this.inRegistry = register;
         this.allowChangesAfterInit = allowChangesAfterInit;

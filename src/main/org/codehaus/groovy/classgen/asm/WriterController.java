@@ -36,14 +36,21 @@ import org.objectweb.asm.Opcodes;
 
 public class WriterController {
 
-    private static Constructor indyWriter;
+    private static Constructor indyWriter, indyCallSiteWriter, indyBinHelper;
     static {
         try {
-            Class indyClass = WriterController.class.getClassLoader().loadClass("org.codehaus.groovy.classgen.asm.indy.InvokeDynamicWriter");
+            ClassLoader cl = WriterController.class.getClassLoader();
+            Class indyClass = cl.loadClass("org.codehaus.groovy.classgen.asm.indy.InvokeDynamicWriter");
             indyWriter = indyClass.getConstructor(WriterController.class);
+            indyClass = cl.loadClass("org.codehaus.groovy.classgen.asm.indy.IndyCallSiteWriter");
+            indyCallSiteWriter = indyClass.getConstructor(WriterController.class);
+            indyClass = cl.loadClass("org.codehaus.groovy.classgen.asm.indy.IndyBinHelper");
+            indyBinHelper = indyClass.getConstructor(WriterController.class);
         } catch (Exception e) {
             indyWriter = null;
-        }        
+            indyCallSiteWriter = null;
+            indyBinHelper = null;
+        }
     }
     private AsmClassGenerator acg;
     private MethodVisitor methodVisitor;
@@ -89,20 +96,22 @@ public class WriterController {
         this.classNode = cn;
         this.outermostClass = null;
         this.internalClassName = BytecodeHelper.getClassInternalName(classNode);
-        this.callSiteWriter = new CallSiteWriter(this);
         
         if (invokedynamic) {
             bytecodeVersion = Opcodes.V1_7;
             try {
                 this.invocationWriter = (InvocationWriter) indyWriter.newInstance(this);
+                this.callSiteWriter = (CallSiteWriter) indyCallSiteWriter.newInstance(this);
+                this.binaryExpHelper = (BinaryExpressionHelper) indyBinHelper.newInstance(this);
             } catch (Exception e) {
                 throw new GroovyRuntimeException("Cannot use invokedynamic, indy module was excluded from this build.");
             }
         } else {
+            this.callSiteWriter = new CallSiteWriter(this);
             this.invocationWriter = new InvocationWriter(this);
+            this.binaryExpHelper = new BinaryExpressionHelper(this);
         }
         
-        this.binaryExpHelper = new BinaryExpressionHelper(this);
         this.unaryExpressionHelper = new UnaryExpressionHelper(this);
         if (optimizeForInt) {
             this.fastPathBinaryExpHelper = new BinaryExpressionMultiTypeDispatcher(this);
