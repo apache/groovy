@@ -228,9 +228,11 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
         Expression method = transform(mce.getMethod());
         Expression object = transform(mce.getObjectExpression());
         boolean isExplicitThisOrSuper = false;
+        boolean isExplicitSuper = false;
         if (object instanceof VariableExpression) {
             VariableExpression ve = (VariableExpression) object;
-            isExplicitThisOrSuper = !mce.isImplicitThis() && (ve.getName().equals("this") || ve.getName().equals("super"));
+            isExplicitThisOrSuper = !mce.isImplicitThis() && (ve.isThisExpression() || ve.isSuperExpression());
+            isExplicitSuper = ve.isSuperExpression();
         }
 
         if (mce.isImplicitThis() || isExplicitThisOrSuper) {
@@ -250,6 +252,10 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
                         return ret;
                     }
                 }
+            } else if (currentMethod!=null && currentMethod.isStatic() && isExplicitSuper) {
+                MethodCallExpression ret = new MethodCallExpression(new ClassExpression(currentClass.getSuperClass()), method, args);
+                setSourcePosition(ret, mce);
+                return ret;
             }
 
             if (method instanceof ConstantExpression) {
@@ -313,6 +319,16 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
     }
 
     protected Expression transformPropertyExpression(PropertyExpression pe) {
+        if (currentMethod!=null && currentMethod.isStatic()
+                && pe.getObjectExpression() instanceof VariableExpression
+                && ((VariableExpression) pe.getObjectExpression()).isSuperExpression()) {
+            PropertyExpression pexp = new PropertyExpression(
+                    new ClassExpression(currentClass.getSuperClass()),
+                    transform(pe.getProperty())
+            );
+            pexp.setSourcePosition(pe);
+            return pexp;
+        }
         boolean oldInPropertyExpression = inPropertyExpression;
         Expression oldFoundArgs = foundArgs;
         Expression oldFoundConstant = foundConstant;

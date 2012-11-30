@@ -1,7 +1,5 @@
 package groovy.bugs
 
-import org.codehaus.groovy.control.MultipleCompilationErrorsException
-
 class Groovy3645Bug extends GroovyTestCase {
     void testMethodCallOnSuperInAStaticMethod() {
         try{
@@ -12,9 +10,8 @@ class Groovy3645Bug extends GroovyTestCase {
                     }
                 }
             """
-            fail("Script compilation should have failed saying that 'super' cannot be used in a static context.")
-        } catch(MultipleCompilationErrorsException ex) {
-            assertTrue ex.message.contains("'super' cannot be used in a static context")
+        } catch(MissingMethodException ex) {
+            assertTrue ex.message.contains("No signature of method: static java.lang.Object.bar()")
         }
     }
 }

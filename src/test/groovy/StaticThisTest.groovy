@@ -45,14 +45,19 @@ class StaticThisTest extends CompilableTestSupport {
     }
 
     void testSuperPropertyInStaticMethodShouldNotCompile() {
-        shouldNotCompile """
+        try {
+            assertScript """
             class A { def prop }
             class B extends A {
                 static method(){
                     super.prop
                 }
             }
+            B.method()
             """
+        } catch (MissingPropertyException mpe) {
+            assert mpe.message.contains('No such property: prop for class: A')
+        }
     }
 
     void testQualifiedThisShouldBeNested() {
