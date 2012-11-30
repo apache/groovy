@@ -621,5 +621,20 @@ class BugsStaticCompileTest extends BugsSTCTest {
             new Test( 1, 'tim' )
         '''
     }
+
+    // GROOVY-5804
+    void testNegateSharedBooleanInClosure() {
+        assertScript '''
+                boolean x = false
+                def cl = {
+                    if (!x) {
+                        assert true
+                    } else {
+                        assert false
+                    }
+                }
+                cl()
+            '''
+    }
 }
 
