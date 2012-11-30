@@ -2289,6 +2289,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     protected void storeType(Expression exp, ClassNode cn) {
+        if (exp instanceof VariableExpression && ((VariableExpression) exp).isClosureSharedVariable() && isPrimitiveType(cn)) {
+            cn = getWrapper(cn);
+        }
         if (cn == UNKNOWN_PARAMETER_TYPE) {
             // this can happen for example when "null" is used in an assignment or a method parameter.
             // In that case, instead of storing the virtual type, we must "reset" type information
