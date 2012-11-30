@@ -864,6 +864,27 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-5810
+    void testCallStaticSuperMethod() {
+        assertScript '''
+        class Top {
+            static boolean called = false
+            public static foo() {
+                called = true
+            }
+        }
+
+        class Bottom extends Top {
+            public static foo() {
+                super.foo() // compiles and creates StackOverFlow
+            }
+
+        }
+        Bottom.foo()
+        assert Top.called
+        '''
+    }
+
     static class MyMethodCallTestClass {
 
         static int mul(int... args) { args.toList().inject(1) { x,y -> x*y } }
