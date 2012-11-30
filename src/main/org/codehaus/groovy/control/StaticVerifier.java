@@ -75,16 +75,11 @@ public class StaticVerifier extends ClassCodeVisitorSupport {
 
     @Override
     public void visitMethodCallExpression(MethodCallExpression mce) {
-        checkSuperAccess(mce, mce.getObjectExpression());
         super.visitMethodCallExpression(mce);
     }
 
     @Override
     public void visitPropertyExpression(PropertyExpression pe) {
-        boolean oldInPropertyExpression = inPropertyExpression;
-        inPropertyExpression = true;
-        checkSuperAccess(pe, pe.getObjectExpression());
-        inPropertyExpression = oldInPropertyExpression;
         if (!inSpecialConstructorCall) checkStaticScope(pe);
     }
 
@@ -93,15 +88,6 @@ public class StaticVerifier extends ClassCodeVisitorSupport {
         return source;
     }
 
-    private void checkSuperAccess(Expression expr, Expression object) {
-        if (object instanceof VariableExpression) {
-            VariableExpression ve = (VariableExpression) object;
-            boolean isExplicitSuper = ve.getName().equals("super");
-            if (isExplicitSuper && currentMethod != null && currentMethod.isStatic()) {
-                addError("'super' cannot be used in a static context, use the explicit class instead.", expr);
-            }
-        }
-    }
 
     private void checkStaticScope(PropertyExpression pe) {
         if (inClosure) return;
