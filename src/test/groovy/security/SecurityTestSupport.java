@@ -210,6 +210,7 @@ public class SecurityTestSupport extends GroovyTestCase {
                         }
                     }
                     otherFailure = true;
+                    break;
                 }
                 if (otherFailure) {
                     new SecurityTestResultPrinter(System.out).print(result);

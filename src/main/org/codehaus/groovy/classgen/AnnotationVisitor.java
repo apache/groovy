@@ -87,6 +87,7 @@ public class AnnotationVisitor {
         Map<String, Expression> attributes = node.getMembers();
         for (Map.Entry<String, Expression> entry : attributes.entrySet()) {
             ok &= validateEnumConstant(entry.getValue());
+            if (!ok) break;
         }
         return ok;
     }
