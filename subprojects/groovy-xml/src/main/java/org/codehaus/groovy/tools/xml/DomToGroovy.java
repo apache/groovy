@@ -354,6 +354,7 @@ public class DomToGroovy {
                     hasText = true;
                 }
             }
+            if (hasText && hasElement) break;
         }
         return hasText && hasElement;
     }

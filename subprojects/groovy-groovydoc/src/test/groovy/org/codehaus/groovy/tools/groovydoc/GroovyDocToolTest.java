@@ -86,6 +86,7 @@ public class GroovyDocToolTest extends GroovyTestCase {
                 GroovyMethodDoc method = clazz.methods()[j];
                 if ("testPlainGroovyDocTool".equals(method.name())) {
                     seenThisMethod = true;
+                    break;
                 }
             }
             assertTrue(seenThisMethod);
