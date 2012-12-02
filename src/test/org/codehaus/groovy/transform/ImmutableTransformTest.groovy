@@ -526,4 +526,20 @@ class ImmutableTransformTest extends GroovyShellTestCase {
         assert msg.contains("doesn't know how to handle field 'address' of type 'Address'")
         assert msg.contains("@Immutable classes only support properties with effectively immutable types")
     }
+
+    // GROOVY-5828
+    void testKnownImmutableCollectionClass() {
+        assertScript '''
+            @groovy.transform.Immutable
+            class ItemsControl { List list }
+            def itemsControl = new ItemsControl(['Fee', 'Fi', 'Fo', 'Fum'])
+            assert itemsControl.list.class.name.contains('Unmodifiable')
+
+            // ok, Items not really immutable but pretend so for the purpose of this test
+            @groovy.transform.Immutable(knownImmutableClasses = [List])
+            class Items { List list }
+            def items = new Items(['Fee', 'Fi', 'Fo', 'Fum'])
+            assert !items.list.class.name.contains('Unmodifiable')
+        '''
+    }
 }

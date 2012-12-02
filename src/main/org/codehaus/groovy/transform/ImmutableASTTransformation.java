@@ -336,12 +336,12 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
         Statement statement = null;
         if (fieldType.isArray() || isOrImplements(fieldType, CLONEABLE_TYPE)) {
             statement = createConstructorStatementArrayOrCloneable(fNode);
+        } else if (isKnownImmutableClass(fieldType, knownImmutableClasses)) {
+            statement = createConstructorStatementDefault(fNode);
         } else if (fieldType.isDerivedFrom(DATE_TYPE)) {
             statement = createConstructorStatementDate(fNode);
         } else if (isOrImplements(fieldType, COLLECTION_TYPE) || fieldType.isDerivedFrom(COLLECTION_TYPE) || isOrImplements(fieldType, MAP_TYPE) || fieldType.isDerivedFrom(MAP_TYPE)) {
             statement = createConstructorStatementCollection(fNode);
-        } else if (isKnownImmutable(fieldType, knownImmutableClasses)) {
-            statement = createConstructorStatementDefault(fNode);
         } else if (fieldType.isResolved()) {
             addError(createErrorMessage(cNode.getName(), fNode.getName(), fieldType.getName(), "compiling"), fNode);
         } else {
@@ -386,7 +386,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
                         assignStatement(fieldExpr, cloneCollectionExpr(collection))));
     }
 
-    private boolean isKnownImmutable(ClassNode fieldType, List<String> knownImmutableClasses) {
+    private boolean isKnownImmutableClass(ClassNode fieldType, List<String> knownImmutableClasses) {
         if (!fieldType.isResolved()) return false;
         return fieldType.isEnum() ||
                 ClassHelper.isPrimitiveType(fieldType) ||
