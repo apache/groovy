@@ -27,7 +27,6 @@ import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.IfStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.ast.stmt.ThrowStatement;
-import org.codehaus.groovy.classgen.VariableScopeVisitor;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
@@ -85,6 +84,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
     static final ClassNode MY_TYPE = ClassHelper.make(MY_CLASS);
     static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
     static final String MEMBER_KNOWN_IMMUTABLE_CLASSES = "knownImmutableClasses";
+    static final String MEMBER_KNOWN_IMMUTABLES = "knownImmutables";
 
     private static final ClassNode DATE_TYPE = ClassHelper.make(Date.class);
     private static final ClassNode CLONEABLE_TYPE = ClassHelper.make(Cloneable.class);
@@ -106,6 +106,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
 
         if (parent instanceof ClassNode) {
             final List<String> knownImmutableClasses = getKnownImmutableClasses(node);
+            final List<String> knownImmutables = getKnownImmutables(node);
 
             ClassNode cNode = (ClassNode) parent;
             String cName = cNode.getName();
@@ -124,7 +125,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
             for (FieldNode fNode : fList) {
                 ensureNotPublic(cName, fNode);
             }
-            createConstructors(cNode, knownImmutableClasses);
+            createConstructors(cNode, knownImmutableClasses, knownImmutables);
             createHashCode(cNode, true, false, false, null, null);
             createEquals(cNode, false, false, false, null, null);
             if (!hasAnnotation(cNode, ToStringASTTransformation.MY_TYPE)) {
@@ -184,13 +185,34 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
         return immutableClasses;
     }
 
+    private List<String> getKnownImmutables(AnnotationNode node) {
+        final ArrayList<String> immutables = new ArrayList<String>();
+
+        final Expression expression = node.getMember(MEMBER_KNOWN_IMMUTABLES);
+        if (expression == null) return immutables;
+
+        if (!(expression instanceof ListExpression)) {
+            addError("Use the Groovy list notation [el1, el2] to specify known immutable property names via \"" + MEMBER_KNOWN_IMMUTABLES + "\"", node);
+            return immutables;
+        }
+
+        final ListExpression listExpression = (ListExpression) expression;
+        for (Expression listItemExpression : listExpression.getExpressions()) {
+            if (listItemExpression instanceof ConstantExpression) {
+                immutables.add((String) ((ConstantExpression) listItemExpression).getValue());
+            }
+        }
+
+        return immutables;
+    }
+
     private void makeClassFinal(ClassNode cNode) {
         if ((cNode.getModifiers() & ACC_FINAL) == 0) {
             cNode.setModifiers(cNode.getModifiers() | ACC_FINAL);
         }
     }
 
-    private void createConstructors(ClassNode cNode, List<String> knownImmutableClasses) {
+    private void createConstructors(ClassNode cNode, List<String> knownImmutableClasses, List<String> knownImmutables) {
         if (!validateConstructors(cNode)) return;
 
         List<PropertyNode> list = getInstanceProperties(cNode);
@@ -198,7 +220,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
         if (specialHashMapCase) {
             createConstructorMapSpecial(cNode, list);
         } else {
-            createConstructorMap(cNode, list, knownImmutableClasses);
+            createConstructorMap(cNode, list, knownImmutableClasses, knownImmutables);
             createConstructorOrdered(cNode, list);
         }
     }
@@ -238,10 +260,10 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
         createConstructorMapCommon(cNode, body);
     }
 
-    private void createConstructorMap(ClassNode cNode, List<PropertyNode> list, List<String> knownImmutableClasses) {
+    private void createConstructorMap(ClassNode cNode, List<PropertyNode> list, List<String> knownImmutableClasses, List<String> knownImmutables) {
         final BlockStatement body = new BlockStatement();
         for (PropertyNode pNode : list) {
-            body.addStatement(createConstructorStatement(cNode, pNode, knownImmutableClasses));
+            body.addStatement(createConstructorStatement(cNode, pNode, knownImmutableClasses, knownImmutables));
         }
         // check for missing properties
         Expression checkArgs = new ArgumentListExpression(new VariableExpression("this"), new VariableExpression("args"));
@@ -261,7 +283,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
             body.addStatement(createConstructorStatementDefault(fNode));
         }
         final Parameter[] params = new Parameter[]{new Parameter(HASHMAP_TYPE, "args")};
-        doAddConstructor(cNode,new ConstructorNode(ACC_PUBLIC, params, ClassNode.EMPTY_ARRAY, new IfStatement(
+        doAddConstructor(cNode, new ConstructorNode(ACC_PUBLIC, params, ClassNode.EMPTY_ARRAY, new IfStatement(
                 equalsNullExpr(new VariableExpression("args")),
                 new EmptyStatement(),
                 body)));
@@ -330,18 +352,18 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
         return true;
     }
 
-    private Statement createConstructorStatement(ClassNode cNode, PropertyNode pNode, List<String> knownImmutableClasses) {
+    private Statement createConstructorStatement(ClassNode cNode, PropertyNode pNode, List<String> knownImmutableClasses, List<String> knownImmutables) {
         FieldNode fNode = pNode.getField();
         final ClassNode fieldType = fNode.getType();
         Statement statement = null;
         if (fieldType.isArray() || isOrImplements(fieldType, CLONEABLE_TYPE)) {
             statement = createConstructorStatementArrayOrCloneable(fNode);
+        } else if (isKnownImmutableClass(fieldType, knownImmutableClasses) || isKnownImmutable(pNode.getName(), knownImmutables)) {
+            statement = createConstructorStatementDefault(fNode);
         } else if (fieldType.isDerivedFrom(DATE_TYPE)) {
             statement = createConstructorStatementDate(fNode);
         } else if (isOrImplements(fieldType, COLLECTION_TYPE) || fieldType.isDerivedFrom(COLLECTION_TYPE) || isOrImplements(fieldType, MAP_TYPE) || fieldType.isDerivedFrom(MAP_TYPE)) {
             statement = createConstructorStatementCollection(fNode);
-        } else if (isKnownImmutable(fieldType, knownImmutableClasses)) {
-            statement = createConstructorStatementDefault(fNode);
         } else if (fieldType.isResolved()) {
             addError(createErrorMessage(cNode.getName(), fNode.getName(), fieldType.getName(), "compiling"), fNode);
         } else {
@@ -386,13 +408,17 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
                         assignStatement(fieldExpr, cloneCollectionExpr(collection))));
     }
 
-    private boolean isKnownImmutable(ClassNode fieldType, List<String> knownImmutableClasses) {
+    private boolean isKnownImmutableClass(ClassNode fieldType, List<String> knownImmutableClasses) {
         if (!fieldType.isResolved()) return false;
         return fieldType.isEnum() ||
                 ClassHelper.isPrimitiveType(fieldType) ||
                 fieldType.getAnnotations(MY_TYPE).size() != 0 ||
                 inImmutableList(fieldType.getName()) ||
                 knownImmutableClasses.contains(fieldType.getName());
+    }
+
+    private boolean isKnownImmutable(String fieldName, List<String> knownImmutables) {
+        return knownImmutables.contains(fieldName);
     }
 
     private static boolean inImmutableList(String typeName) {

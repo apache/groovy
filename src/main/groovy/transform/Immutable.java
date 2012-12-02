@@ -150,4 +150,22 @@ public @interface Immutable {
      * @since 1.8.7
      */
     Class[] knownImmutableClasses() default {};
+
+    /**
+     * Allows you to provide {@code @Immutable} with a list of property names which
+     * are deemed immutable. By supplying a property's name in this list, you are vouching
+     * for its immutability and {@code @Immutable} will do no further checks.
+     * Example:
+     * <pre>
+     * {@code @groovy.transform.Immutable}(knownImmutables = ['address'])
+     * class Person {
+     *     String first, last
+     *     Address address
+     * }
+     * ...
+     * </pre>
+     *
+     * @since 2.0.6
+     */
+    String[] knownImmutables() default {};
 }
