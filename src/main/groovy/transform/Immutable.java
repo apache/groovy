@@ -165,7 +165,7 @@ public @interface Immutable {
      * ...
      * </pre>
      *
-     * @since 2.0.6
+     * @since 2.1.0
      */
     String[] knownImmutables() default {};
 }
