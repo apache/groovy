@@ -1199,9 +1199,15 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             resultType = PATTERN_TYPE;
         } else if (typeRe == ArrayList_TYPE) {
             resultType = ArrayList_TYPE;
+        } else if (typeRe.equals(PATTERN_TYPE)) {
+            resultType = PATTERN_TYPE;
         } else {
             MethodNode mn = findMethodOrFail(expression, type, "bitwiseNegate");
-            resultType = mn.getReturnType();
+            if (mn!=null) {
+                resultType = mn.getReturnType();
+            } else {
+                resultType = OBJECT_TYPE;
+            }
         }
         storeType(expression, resultType);
     }
