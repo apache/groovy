@@ -996,6 +996,21 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-5836
+    void testShouldFindMethodEvenIfUsingGenerics() {
+        assertScript '''
+            class Test<T> {
+                void transform(boolean passThroughNulls, Closure<T> mapper) {}
+                void transformAll(boolean passThroughNulls, Closure<T>... mappers) {
+                    for (m in mappers) {
+                        transform passThroughNulls, m
+                    }
+                }
+            }
+            new Test()
+        '''
+    }
+
     static class MyList extends LinkedList<String> {}
 
     public static class ClassA<T> {

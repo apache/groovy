@@ -344,16 +344,15 @@ public class GenericsType extends ASTNode {
                 GenericsType classNodeType = cnTypes[i];
                 // The following code has been commented out because it causes GROOVY-5415
                 // However, commenting doesn't make any test fail, which is curious...
- /*               if (classNodeType.isWildcard()) {
-                    for (ClassNode node : classNodeType.getUpperBounds()) {
-                        match = compareGenericsWithBound(node, bound);
-                        if (!match) return false;
-                    }
-                } else */if (classNodeType.isPlaceholder()) {
+                if (classNodeType.isPlaceholder()) {
+                    String name = classNodeType.getName();
                     if (redirectBoundType.isPlaceholder()) {
-                        match = classNodeType.getName().equals(redirectBoundType.getName());
+                        match = name.equals(redirectBoundType.getName());
+                        if (!match) {
+                            GenericsType genericsType = boundPlaceHolders.get(redirectBoundType.getName());
+                            match = (genericsType!=null && genericsType.getName().equals(name));
+                        }
                     } else {
-                        String name = classNodeType.getName();
                         if (classNodePlaceholders.containsKey(name)) classNodeType=classNodePlaceholders.get(name);
                         match = classNodeType.isCompatibleWith(redirectBoundType.getType());
                     }
