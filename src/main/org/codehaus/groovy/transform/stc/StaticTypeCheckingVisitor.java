@@ -152,7 +152,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         public void returnStatementAdded(final ReturnStatement returnStatement) {
             if (returnStatement.getExpression().equals(ConstantExpression.NULL)) return;
             ClassNode returnType = checkReturnType(returnStatement);
-            if (methodNode != null) {
+            if (methodNode != null && closureExpression==null) {
                 ClassNode mrt = methodNode.getReturnType();
                 if (!returnType.implementsInterface(mrt) && !returnType.isDerivedFrom(mrt)) {
                     // there's an implicit type conversion, like Object -> String
@@ -1328,7 +1328,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     private ClassNode checkReturnType(final ReturnStatement statement) {
         Expression expression = statement.getExpression();
         ClassNode type = getType(expression);
-        if (methodNode != null) {
+        if (methodNode != null && closureExpression==null) {
             if (!methodNode.isVoidMethod()
                     && !type.equals(void_WRAPPER_TYPE)
                     && !type.equals(VOID_TYPE)
