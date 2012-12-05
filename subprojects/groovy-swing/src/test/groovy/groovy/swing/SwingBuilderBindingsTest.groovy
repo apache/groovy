@@ -1172,6 +1172,70 @@ public class SwingBuilderBindingsTest extends GroovySwingTestCase {
             assert abean.text != bbean.vetoField
         }
     }
+
+    public void testGroovy4627_source_binding() {
+        testInEDT {
+            SwingBuilder swing = new SwingBuilder()
+
+            BindableBean model = new BindableBean(text: '0')
+
+            swing.actions {
+                bindGroup(id: 'formElements')
+                textField(id: 'txt1', text: bind(source: model, sourceProperty: 'text', group: formElements))
+                textField(id: 'txt2', text: bind(source: model, sourceProperty: 'text', group: formElements))
+            }
+
+            assert model.text == '0'
+            assert swing.txt1.text == '0'
+            assert swing.txt2.text == '0'
+
+            swing.formElements.unbind()
+            model.text = '1'
+            assert swing.txt1.text == '0'
+            assert swing.txt2.text == '0'
+
+            swing.formElements.rebind()
+            swing.formElements.update()
+            assert swing.txt1.text == '1'
+            assert swing.txt2.text == '1'
+
+            model.text = '2'
+            assert swing.txt1.text == '1'
+            assert swing.txt2.text == '1'
+            swing.formElements.update()
+            assert swing.txt1.text == '2'
+            assert swing.txt2.text == '2'
+        }
+    }
+
+    public void testGroovy4627_target_binding() {
+        testInEDT {
+            SwingBuilder swing = new SwingBuilder()
+
+            BindableBean model = new BindableBean()
+
+            swing.actions {
+                bindGroup(id: 'formElements')
+                textField(id: 'txt1', text: bind(target: model, targetProperty: 'text', group: formElements, value: '0'))
+            }
+
+            assert model.text == '0'
+            assert swing.txt1.text == '0'
+
+            swing.formElements.unbind()
+            swing.txt1.text = '1'
+            assert model.text == '0'
+
+            swing.formElements.rebind()
+            swing.formElements.update()
+            assert model.text == '1'
+
+            swing.txt1.text = '2'
+            assert model.text == '1'
+            swing.formElements.update()
+            assert model.text == '2'
+        }
+    }
 }
 
 @Bindable class BindableBean {
