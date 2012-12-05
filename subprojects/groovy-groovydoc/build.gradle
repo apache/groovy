@@ -7,7 +7,7 @@ dependencies {
     testCompile "org.apache.ant:ant-testutil:1.8.4"
 }
 
-sourceSets.main.resources.srcDir 'src/main/java'
+//sourceSets.main.resources.srcDir 'src/main/java'
 
 compileJava {
     doLast {
