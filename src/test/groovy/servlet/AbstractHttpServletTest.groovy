@@ -242,7 +242,7 @@ class AbstractHttpServletTest extends GroovyTestCase {
         def connection = servlet.getResourceConnection(servlet.getScriptUri(request))
         //expecting http://somebar/foo
         def actual = connection.getURL().toExternalForm()
-        def expected = new URL("file:realPath/somebar/foo").toExternalForm()
+        def expected = new URL("http:/somebar/foo").toExternalForm()
         assert actual == expected
     }
 
@@ -279,7 +279,7 @@ class AbstractHttpServletTest extends GroovyTestCase {
         def connection = servlet.getResourceConnection(servlet.getScriptUri(request))
         //expecting http://somebar/foo
         def actual = connection.getURL().toExternalForm()
-        def expected = new URL("file:realPath/somebar/bar").toExternalForm()
+        def expected = new URL("http:/somebar/bar").toExternalForm()
         assert actual == expected
     }
 }
