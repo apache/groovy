@@ -351,7 +351,12 @@ public class BindFactory extends AbstractFactory {
     private def finishContextualBinding(FullBinding fb, FactoryBuilderSupport builder, bindAttrs, id) {
         bindAttrs.remove('update')
         Object bindValue = bindAttrs.remove("bind")
-        bindAttrs.each {k, v -> fb."$k" = v}
+        List propertiesToBeSkipped = ['group']
+        bindAttrs.each {k, v -> if (!(k in propertiesToBeSkipped)) fb."$k" = v}
+
+        if ((bindAttrs.group instanceof AggregateBinding) && (fb instanceof BindingUpdatable)) {
+            bindAttrs.group.addBinding(fb)
+        }
 
         if ((bindValue == null)
                 || ((bindValue instanceof Boolean) && ((Boolean) bindValue).booleanValue())) {
