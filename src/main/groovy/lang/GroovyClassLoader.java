@@ -806,7 +806,14 @@ public class GroovyClassLoader extends URLClassLoader {
     }
 
     private File fileReallyExists(URL ret, String fileWithoutPackage) {
-        File path = new File(decodeFileName(ret.getFile())).getParentFile();
+        File path;
+        try {
+            /* fix for GROOVY-5809 */ 
+            path = new File(ret.toURI());
+        } catch(URISyntaxException e) {
+            path = new File(decodeFileName(ret.getFile()));
+        }
+        path = path.getParentFile();
         if (path.exists() && path.isDirectory()) {
             File file = new File(path, fileWithoutPackage);
             if (file.exists()) {
