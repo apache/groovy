@@ -601,6 +601,29 @@ public class SwingBuilderBindingsTest extends GroovySwingTestCase {
         }
     }
 
+    public void testBindNodeValue() {
+        testInEDT {
+            SwingBuilder swing = new SwingBuilder()
+
+            Map model = [
+                string: 'string',
+                bool  : true
+            ] as ObservableMap
+
+            shouldFail {
+                swing.actions {
+                    textField(id: 'error', text: bind(model.bool))
+                }
+            }
+
+            shouldFail {
+                swing.actions {
+                    textField(id: 'error', text: bind(model.string))
+                }
+            }
+        }
+    }
+
     public void testReversePropertyBinding() {
         testInEDT {
             SwingBuilder swing = new SwingBuilder()
@@ -753,7 +776,7 @@ public class SwingBuilderBindingsTest extends GroovySwingTestCase {
                         text: bind(
                                 validator: dateValidator,
                                 converter: dateConverter,
-                                target: model, targetProperty: 'birthday'
+                                target: model, targetProperty: 'date'
                         ))
                 tf2 = textField('01.01.1970', id: 'birthdayText', columns: 20)
                 binding = bind(
@@ -762,7 +785,7 @@ public class SwingBuilderBindingsTest extends GroovySwingTestCase {
                         validator: dateValidator,
                         converter: dateConverter,
                         target: model,
-                        targetProperty: 'birthday'
+                        targetProperty: 'date'
                 )
             }
         }
@@ -788,10 +811,10 @@ public class SwingBuilderBindingsTest extends GroovySwingTestCase {
                 slider(id: 's4', value: 8)
                 textArea(id: 't1', text: bind(target: s3, targetProperty: 'value',
                         id: 'binding3', value: '15',
-                        converter: {Integer.parseInt(it)}))
+                        converter: {Integer.parseInt(String.valueOf(it))}))
                 textArea(id: 't2', text: bind(source: s4, sourceProperty: 'value',
                         id: 'binding4', value: '16',
-                        converter: {Integer.parseInt(it)}))
+                        converter: {Integer.parseInt(String.valueOf(it))}))
             }
             // s1 is the source, so it's value should be reflected
             assert swing.s3.value == 15
