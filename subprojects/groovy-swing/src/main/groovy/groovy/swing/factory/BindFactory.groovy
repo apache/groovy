@@ -120,8 +120,12 @@ public class BindFactory extends AbstractFactory {
 
         TargetBinding tb = null
         if (target != null) {
-            String targetProperty = attributes.remove("targetProperty") ?: value
-            tb = new PropertyBinding(target, targetProperty, update)
+            Object targetProperty = attributes.remove("targetProperty") ?: value
+            if (! (targetProperty instanceof CharSequence)) {
+                throw new IllegalArgumentException("Invalid value for targetProperty: (or node value)." +
+                " Value for this attribute must be a String but it is "+ (targetProperty != null? targetProperty.getClass().getName() : null))
+            }
+            tb = new PropertyBinding(target, targetProperty.toString(), update)
             if (source == null) {
                 // if we have a target but no source assume the build context is the source and return
                 def result
@@ -152,8 +156,19 @@ public class BindFactory extends AbstractFactory {
             fb = etb.createBinding(csb, tb)
         } else if (spa && !(sea && sva)) {
             // partially property driven binding
-            String property = attributes.remove("sourceProperty") ?: value
-            PropertyBinding pb = new PropertyBinding(source, property, update)
+            Object property = attributes.remove("sourceProperty") ?: value
+            if (! (property instanceof CharSequence)) {
+                throw new IllegalArgumentException("Invalid value for sourceProperty: (or node value). " +
+                    "Value for this attribute must be a String but it is "+ (property != null? property.getClass().getName() : null))
+            }
+
+            if (source == null) {
+                // if we have a sourceProperty but no source then we're in trouble
+                throw new IllegalArgumentException("Missing value for source: even though sourceProperty: (or node value) "+
+                    "was specified. Please check you didn't write bind(model.someProperty) instead of bind{ model.someProperty }")
+            }
+
+            PropertyBinding pb = new PropertyBinding(source, property.toString(), update)
 
             TriggerBinding trigger
             if (sea) {
