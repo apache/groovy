@@ -5,7 +5,6 @@
 
     <path id="classpath">
         <fileset dir="target/classes/main" includes="**/*.*"/>
-        <fileset dir="target/resources/main" includes="**/*.*"/>
         <fileset dir="target/classes/test" includes="**/*.*"/>
     </path>
 
