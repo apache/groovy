@@ -1,3 +1,18 @@
+/*
+ * Copyright 2003-2012 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.codehaus.groovy.tools.xml
 
 import javax.xml.parsers.DocumentBuilder
@@ -9,9 +24,8 @@ import org.xml.sax.SAXException
 /**
  * @author James Strachan
  * @author paulk
- * @version $Revision: 4111 $
  */
-public class DomToGroovyTest extends GroovyTestCase {
+class DomToGroovyTest extends GroovyTestCase {
 
     private static final String TEST_XML_1 =
         "<a href='http://groovy.codehaus.org'>Groovy</a>"
@@ -72,13 +86,13 @@ public class DomToGroovyTest extends GroovyTestCase {
     protected DomToGroovy converter
     protected File dir = new File("target/generated-groovyxml")
 
-    public void testConversion() throws Exception {
+    void testConversion() throws Exception {
         convert("test1.xml", "test1.groovy")
         convert("po.xsd", "poSchema.groovy")
         convert("swing.xml", "swing.groovy")
     }
 
-    public void testConversionFormat() throws Exception {
+    void testConversionFormat() throws Exception {
         checkConversion(TEST_XML_1, EXPECTED_BUILDER_SCRIPT_1)
         checkConversion(TEST_XML_2, EXPECTED_BUILDER_SCRIPT_2)
         checkConversion(TEST_XML_3, EXPECTED_BUILDER_SCRIPT_3)

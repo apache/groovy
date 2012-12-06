@@ -27,7 +27,7 @@ import java.util.List;
  */
 public class GroovyDocTest extends BuildFileTest {
 
-    private static final String SRC_TESTFILES = "src/test-resources/groovydoc/";
+    private static final String SRC_TESTFILES = "src/test/resources/groovydoc/";
 
     private File tmpDir;
 

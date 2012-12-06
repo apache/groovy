@@ -8,6 +8,6 @@ dependencies {
     }
 }
 
-jar {
-    from(file('src/resources'))
-}
+//jar {
+//    from(file('src/main/resources'))
+//}
