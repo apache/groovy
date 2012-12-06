@@ -177,7 +177,7 @@ public class BSFTest extends TestCase {
     }
 
     public void testExecFile() throws Exception {
-        execScript("src/resources/groovy/script/MapFromList.groovy");
+        execScript("src/test/resources/groovy/script/MapFromList.groovy");
     }
 
     protected void execScript(String fileName) throws Exception {
