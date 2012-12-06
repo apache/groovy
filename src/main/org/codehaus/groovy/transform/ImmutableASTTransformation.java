@@ -281,7 +281,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
     private Statement createConstructorStatementMapSpecial(FieldNode fNode) {
         final Expression fieldExpr = new VariableExpression(fNode);
         Expression initExpr = fNode.getInitialValueExpression();
-        if (initExpr == null) initExpr = ConstantExpression.NULL;
+        if (initExpr == null) initExpr = new ConstantExpression(null);
         Expression namedArgs = findArg(fNode.getName());
         Expression baseArgs = new VariableExpression("args");
         return new IfStatement(
@@ -353,7 +353,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
     private Statement createConstructorStatementGuarded(ClassNode cNode, FieldNode fNode) {
         final Expression fieldExpr = new VariableExpression(fNode);
         Expression initExpr = fNode.getInitialValueExpression();
-        if (initExpr == null) initExpr = ConstantExpression.NULL;
+        if (initExpr == null) initExpr = new ConstantExpression(null);
         Expression unknown = findArg(fNode.getName());
         return new IfStatement(
                 equalsNullExpr(unknown),
@@ -365,14 +365,14 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
     }
 
     private Expression checkUnresolved(ClassNode cNode, FieldNode fNode, Expression value) {
-        Expression args = new TupleExpression(new MethodCallExpression(VariableExpression.THIS_EXPRESSION, "getClass", ArgumentListExpression.EMPTY_ARGUMENTS), new ConstantExpression(fNode.getName()), value);
+        Expression args = new TupleExpression(new MethodCallExpression(new VariableExpression("this"), "getClass", ArgumentListExpression.EMPTY_ARGUMENTS), new ConstantExpression(fNode.getName()), value);
         return new StaticMethodCallExpression(SELF_TYPE, "checkImmutable", args);
     }
 
     private Statement createConstructorStatementCollection(FieldNode fNode) {
         final Expression fieldExpr = new VariableExpression(fNode);
         Expression initExpr = fNode.getInitialValueExpression();
-        if (initExpr == null) initExpr = ConstantExpression.NULL;
+        if (initExpr == null) initExpr = new ConstantExpression(null);
         Expression collection = findArg(fNode.getName());
         return new IfStatement(
                 equalsNullExpr(collection),
@@ -402,13 +402,13 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
     private Statement createConstructorStatementArrayOrCloneable(FieldNode fNode) {
         final Expression fieldExpr = new VariableExpression(fNode);
         Expression initExpr = fNode.getInitialValueExpression();
-        if (initExpr == null) initExpr = ConstantExpression.NULL;
+        if (initExpr == null) initExpr = new ConstantExpression(null);
         final Expression array = findArg(fNode.getName());
         return new IfStatement(
                 equalsNullExpr(array),
                 new IfStatement(
                         equalsNullExpr(initExpr),
-                        assignStatement(fieldExpr, ConstantExpression.NULL),
+                        assignStatement(fieldExpr, new ConstantExpression(null)),
                         assignStatement(fieldExpr, cloneArrayOrCloneableExpr(initExpr))),
                 assignStatement(fieldExpr, cloneArrayOrCloneableExpr(array)));
     }
@@ -416,13 +416,13 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
     private Statement createConstructorStatementDate(FieldNode fNode) {
         final Expression fieldExpr = new VariableExpression(fNode);
         Expression initExpr = fNode.getInitialValueExpression();
-        if (initExpr == null) initExpr = ConstantExpression.NULL;
+        if (initExpr == null) initExpr = new ConstantExpression(null);
         final Expression date = findArg(fNode.getName());
         return new IfStatement(
                 equalsNullExpr(date),
                 new IfStatement(
                         equalsNullExpr(initExpr),
-                        assignStatement(fieldExpr, ConstantExpression.NULL),
+                        assignStatement(fieldExpr, new ConstantExpression(null)),
                         assignStatement(fieldExpr, cloneDateExpr(initExpr))),
                 assignStatement(fieldExpr, cloneDateExpr(date)));
     }
