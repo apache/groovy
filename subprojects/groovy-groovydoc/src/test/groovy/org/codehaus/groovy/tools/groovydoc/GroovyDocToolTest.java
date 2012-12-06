@@ -31,7 +31,7 @@ import java.util.Properties;
  */
 public class GroovyDocToolTest extends GroovyTestCase {
     private static final String MOCK_DIR = "mock/doc";
-    private static final String TEMPLATES_DIR = "main/java/org/codehaus/groovy/tools/groovydoc/gstringTemplates";
+    private static final String TEMPLATES_DIR = "resources/org/codehaus/groovy/tools/groovydoc/gstringTemplates";
 
     GroovyDocTool xmlTool;
     GroovyDocTool xmlToolForTests;
