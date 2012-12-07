@@ -7,7 +7,3 @@ dependencies {
         exclude(group: 'org.yaml', module: 'snakeyaml')
     }
 }
-
-//jar {
-//    from(file('src/main/resources'))
-//}

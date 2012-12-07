@@ -156,7 +156,7 @@ class SwingBuilderConsoleTest extends GroovySwingTestCase {
         testInEDT {
             def swing = new SwingBuilder()
             final String ICON_PATH = '/groovy/ui/ConsoleIcon.png'
-            String baseDir = new File("src/main/groovy").absolutePath
+            String baseDir = new File("src/main/resources").absolutePath
 
             String resource = ICON_PATH
             GString gresource = "${ICON_PATH}"
