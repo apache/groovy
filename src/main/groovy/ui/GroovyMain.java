@@ -388,7 +388,7 @@ public class GroovyMain {
     }
 
     private boolean isScriptUrl(String urlOrFilename) {
-        return urlOrFilename.startsWith("http://") || urlOrFilename.startsWith("https://") || urlOrFilename.startsWith("file:");
+        return urlOrFilename.startsWith("http://") || urlOrFilename.startsWith("https://") || urlOrFilename.startsWith("file:") || urlOrFilename.startsWith("jar:");
     }
 
     /**
