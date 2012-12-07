@@ -26,6 +26,8 @@ import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.messages.ExceptionMessage;
 import org.codehaus.groovy.control.messages.SimpleMessage;
+import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
+import org.codehaus.groovy.syntax.SyntaxException;
 
 import groovy.lang.GroovyClassLoader;
 import groovy.transform.AnnotationCollector;
@@ -95,7 +97,22 @@ public class ASTTransformationCollectorCodeVisitor extends ClassCodeVisitorSuppo
             addTransformsToClassNode(annotation, transformClassAnnotation);
         }
     }
-
+    
+    private void assertStringConstant(Expression exp) {
+        if (exp==null) return;
+        if (!(exp instanceof ConstantExpression)) {
+            source.getErrorCollector().addErrorAndContinue(new SyntaxErrorMessage(new SyntaxException(
+                    "Expected a String constant.", exp.getLineNumber(), exp.getColumnNumber()), 
+                    source));
+        }
+        ConstantExpression ce = (ConstantExpression) exp;
+        if (!(ce.getValue() instanceof String)) {
+            source.getErrorCollector().addErrorAndContinue(new SyntaxErrorMessage(new SyntaxException(
+                    "Expected a String constant.", exp.getLineNumber(), exp.getColumnNumber()), 
+                    source));
+        }
+    }
+    
     private boolean addCollectedAnnotations(List<AnnotationNode> collected, AnnotationNode aliasNode, AnnotatedNode origin) {
         ClassNode classNode = aliasNode.getClassNode();
         boolean ret = false;
@@ -103,7 +120,8 @@ public class ASTTransformationCollectorCodeVisitor extends ClassCodeVisitorSuppo
             if (annotation.getClassNode().getName().equals(AnnotationCollector.class.getName())) {
                 Expression processorExp = annotation.getMember("processor");
                 AnnotationCollectorTransform act = null;
-                if (processorExp!=null && processorExp instanceof ConstantExpression) {
+                assertStringConstant(processorExp);
+                if (processorExp!=null) {
                     String className = (String) ((ConstantExpression) processorExp).getValue();
                     Class klass = loadTransformClass(className, aliasNode);
                     if (klass!=null) {
