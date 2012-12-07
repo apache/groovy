@@ -15,6 +15,8 @@
  */
 package org.codehaus.groovy.transform;
 
+import groovy.transform.AnnotationCollector;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -32,14 +34,36 @@ import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
 import org.codehaus.groovy.syntax.SyntaxException;
 
+/**
+ * This class is the base for any annotation alias processor. 
+ * @see AnnotationCollector
+ * @see AnnotationCollectorTransform#visit(AnnotationNode, AnnotationNode, AnnotatedNode, SourceUnit)
+ * @author <a href="mailto:blackdrag@gmx.org">Jochen "blackdrag" Theodorou</a>
+ */
 public class AnnotationCollectorTransform {
 
+    /**
+     * Adds a new syntax error to the source unit and then continues.
+     * 
+     * @param message   the message
+     * @param node      the node for the error report
+     * @param source    the source unit for the error report
+     */
     protected void addError(String message, ASTNode node, SourceUnit source) {
         source.getErrorCollector().addErrorAndContinue(new SyntaxErrorMessage(new SyntaxException(
                 message,  node.getLineNumber(), node.getColumnNumber(), node.getLastLineNumber(), node.getLastColumnNumber()
                 ), source));
     }
-    
+
+    /**
+     * Returns a list of Expressions for the value attribute of the given 
+     * AnnotationNode. Should the node value not be a ListExpression of String 
+     * ConstantExpression, errors will be added to the source unit.
+     * 
+     * @param collector     the node containing the value member with the list
+     * @param source        the source unit for error reporting
+     * @return              a list of string constants
+     */
     protected List<Expression> getTargetAnnotationList(AnnotationNode collector, SourceUnit source) {
         Expression memberValue = collector.getMember("value");
         if (!(memberValue instanceof ListExpression)) {
@@ -51,7 +75,21 @@ public class AnnotationCollectorTransform {
         if (memberList.size()==0) return Collections.EMPTY_LIST;
         return memberList;
     }
-    
+
+    /**
+     * Implementation method of the alias annotation processor. This method will 
+     * get the list of annotations we aliased from collector and adds it to
+     * aliasAnnotationUsage. The method will also map all members from 
+     * aliasAnnotationUsage to the aliased nodes. Should a member stay unmapped,
+     * we will ad an error. Further processing of those members is done by the
+     * annotations.
+     * 
+     * @param collector                 reference to the annotation with {@link AnnotationCollector}
+     * @param aliasAnnotationUsage      reference to the place of usage of the alias
+     * @param aliasAnnotated            reference to the node that has been annotated by the alias
+     * @param source                    source unit for error reporting
+     * @return list of the new AnnotationNodes
+     */
     public List<AnnotationNode> visit(AnnotationNode collector, AnnotationNode aliasAnnotationUsage, AnnotatedNode aliasAnnotated, SourceUnit source) {
         List<Expression> targetAnnotationList = getTargetAnnotationList(collector, source);
         ArrayList<AnnotationNode> ret = new ArrayList(targetAnnotationList.size());
