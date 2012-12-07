@@ -4,6 +4,3 @@ dependencies {
     compile project(':groovy-console')
     testCompile project(':groovy-test')
 }
-
-// required for MessageSourceTest to load messages property file (TODO move to resources?)
-sourceSets.test.runtimeClasspath += files('src/test/groovy')
