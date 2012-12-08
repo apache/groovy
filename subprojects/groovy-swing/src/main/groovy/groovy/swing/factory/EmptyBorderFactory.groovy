@@ -1,5 +1,5 @@
 /*
- * Copyright 2007 the original author or authors.
+ * Copyright 2007-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ class EmptyBorderFactory extends SwingBorderFactory {
 
     public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) {
         builder.context.applyBorderToParent = attributes.remove('parent')
-        
+
         if (!attributes) {
             if (value instanceof Integer) {
                 return BorderFactory.createEmptyBorder(value, value, value, value)
@@ -38,20 +38,20 @@ class EmptyBorderFactory extends SwingBorderFactory {
                 boolean ints = true
                 value.each {ints = ints & it instanceof Integer}
                 if (ints) {
-                    return BorderFactory.createEmptyBorder(*value);
+                    return BorderFactory.createEmptyBorder(*value)
                 }
             }
-            throw new RuntimeException("$name only accepts a single integer or an array of four integers as a value argument");
+            throw new RuntimeException("$name only accepts a single integer or an array of four integers as a value argument")
         }
         if (value == null) {
             int top = attributes.remove("top")
             int left = attributes.remove("left")
             int bottom = attributes.remove("bottom")
             int right = attributes.remove("right")
-            if ((top == null) || (top == null) || (top == null) || (top == null) || attributes) {
+            if ((top == null) || (left == null) || (bottom == null) || (right == null) || attributes) {
                 throw new RuntimeException("When $name is called it must be call with top:, left:, bottom:, right:, and no other attributes")
             }
-            return BorderFactory.createEmptyBorder(top, left, bottom, right);
+            return BorderFactory.createEmptyBorder(top, left, bottom, right)
         }
         throw new RuntimeException("$name cannot be called with both an argulent value and attributes")
     }
