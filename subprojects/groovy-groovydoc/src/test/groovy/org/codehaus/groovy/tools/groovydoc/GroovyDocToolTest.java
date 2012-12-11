@@ -31,7 +31,7 @@ import java.util.Properties;
  */
 public class GroovyDocToolTest extends GroovyTestCase {
     private static final String MOCK_DIR = "mock/doc";
-    private static final String TEMPLATES_DIR = "main/java/org/codehaus/groovy/tools/groovydoc/gstringTemplates";
+    private static final String TEMPLATES_DIR = "main/resources/org/codehaus/groovy/tools/groovydoc/gstringTemplates";
 
     GroovyDocTool xmlTool;
     GroovyDocTool xmlToolForTests;
@@ -86,6 +86,7 @@ public class GroovyDocToolTest extends GroovyTestCase {
                 GroovyMethodDoc method = clazz.methods()[j];
                 if ("testPlainGroovyDocTool".equals(method.name())) {
                     seenThisMethod = true;
+                    break;
                 }
             }
             assertTrue(seenThisMethod);

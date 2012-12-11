@@ -323,6 +323,7 @@ public class GenericsType extends ASTNode {
                         ClassNode[] interfaces = bound.getInterfaces();
                         for (ClassNode anInterface : interfaces) {
                             success &= compareGenericsWithBound(classNode, anInterface);
+                            if (!success) break;
                         }
                     }
                     if (success) return true;
@@ -394,6 +395,7 @@ public class GenericsType extends ASTNode {
                                                 }
                                                 match = match &&
                                                         implementsInterfaceOrIsSubclassOf(classNodeType.getType(), gt.getType());
+                                                if (!match) break;
                                             }
                                         }
                                         return match;

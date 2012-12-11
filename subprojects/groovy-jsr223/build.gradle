@@ -23,7 +23,3 @@ task moduleDescriptor(type: org.codehaus.groovy.gradle.WriteExtensionDescriptorT
     staticExtensionClasses = 'org.codehaus.groovy.jsr223.ScriptStaticExtensions'
 }
 compileJava.dependsOn moduleDescriptor
-
-sourceSets.main.resources {
-    srcDirs = [ "src/resources" ]
-}

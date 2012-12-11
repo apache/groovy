@@ -311,6 +311,7 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
             } else {
                 hasPrivate = true;
             }
+            if (hasPrivate && hasPublic) break;
         }
         if (hasPrivate && hasPublic) {
             addError("Mixing private and public/protected methods of the same name causes multimethods to be disabled and is forbidden to avoid surprising behaviour. Renaming the private methods will solve the problem.", node);
@@ -334,6 +335,7 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
         boolean isEqual = true;
         for (int i = 0; i < p2.length; i++) {
             isEqual &= p1[i].getType().equals(p2[i].getType());
+            if (!isEqual) break;
         }
         isEqual &= node.getReturnType().equals(element.getReturnType());
         if (isEqual) {

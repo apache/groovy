@@ -289,5 +289,18 @@ class UnaryOperatorSTCTest extends StaticTypeCheckingTestCase {
             def y = -x
         '''
     }
+
+    // GROOVY-5834
+    void testCreatePatternInField() {
+        assertScript '''
+            class Sample {
+                def pattern = ~'foo|bar'
+                void test() {
+                    assert pattern instanceof java.util.regex.Pattern
+                }
+            }
+            new Sample().test()
+        '''
+    }
 }
 

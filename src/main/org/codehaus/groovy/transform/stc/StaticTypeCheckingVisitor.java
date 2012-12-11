@@ -1173,9 +1173,15 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             resultType = PATTERN_TYPE;
         } else if (typeRe == ArrayList_TYPE) {
             resultType = ArrayList_TYPE;
+        } else if (typeRe.equals(PATTERN_TYPE)) {
+            resultType = PATTERN_TYPE;
         } else {
             MethodNode mn = findMethodOrFail(expression, type, "bitwiseNegate");
-            resultType = mn.getReturnType();
+            if (mn!=null) {
+                resultType = mn.getReturnType();
+            } else {
+                resultType = OBJECT_TYPE;
+            }
         }
         storeType(expression, resultType);
     }
@@ -1296,7 +1302,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             return type;
         }
         MethodNode enclosingMethod = typeCheckingContext.getEnclosingMethod();
-        if (enclosingMethod != null) {
+        if (enclosingMethod != null && typeCheckingContext.getEnclosingClosure()==null) {
             if (!enclosingMethod.isVoidMethod()
                     && !type.equals(void_WRAPPER_TYPE)
                     && !type.equals(VOID_TYPE)
@@ -2531,6 +2537,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             for (MethodNode method : foundMethods) {
                 if (!(method instanceof ExtensionMethodNode) || !((ExtensionMethodNode) method).getExtensionMethodNode().getDeclaringClass().equals(DGM_CLASSNODE)) {
                     category = false;
+                    break;
                 }
             }
         }
