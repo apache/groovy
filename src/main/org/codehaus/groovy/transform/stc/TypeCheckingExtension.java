@@ -13,8 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.codehaus.groovy.transform.stc;
 
+import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
 
@@ -232,5 +234,26 @@ public class TypeCheckingExtension {
 
     public ClassNode classNodeFor(Class type) {
         return ClassHelper.make(type);
+    }
+
+    public ClassNode classNodeFor(String type) {
+        return ClassHelper.make(type);
+    }
+
+    public ClassNode parameterizedType(ClassNode baseType, ClassNode... genericsTypeArguments) {
+        ClassNode result = baseType.getPlainNodeReference();
+        if (result.isUsingGenerics()) {
+            GenericsType[] gts = new GenericsType[genericsTypeArguments.length];
+            int expectedLength = result.getGenericsTypes().length;
+            if (expectedLength!=genericsTypeArguments.length) {
+                throw new GroovyBugError("Expected number of generic type arguments for "+baseType.toString(false)+" is "+expectedLength
+                + " but you gave "+genericsTypeArguments.length);
+            }
+            for (int i = 0; i < gts.length; i++) {
+                gts[i] = new GenericsType(genericsTypeArguments[i]);
+            }
+            result.setGenericsTypes(gts);
+        }
+        return result;
     }
 }
