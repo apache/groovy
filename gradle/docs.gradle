@@ -81,6 +81,7 @@ task docProjectVersionInfo(type: Copy) {
             filter(rootProject.propertiesFilter, org.apache.tools.ant.filters.ReplaceTokens)
         }
     }
+    from('subprojects/groovy-docgenerator/src/main/resources')
 }
 
 task docGDK {
