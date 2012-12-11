@@ -88,7 +88,7 @@ public class TypeCheckingContext {
      * @param binaryExpression the binary expression to be pushed
      */
     public void pushEnclosingBinaryExpression(BinaryExpression binaryExpression) {
-        enclosingBinaryExpressions.push(binaryExpression);
+        enclosingBinaryExpressions.addFirst(binaryExpression);
     }
 
     /**
@@ -96,7 +96,7 @@ public class TypeCheckingContext {
      * @return the popped binary expression
      */
     public BinaryExpression popEnclosingBinaryExpression() {
-        return enclosingBinaryExpressions.pop();
+        return enclosingBinaryExpressions.removeFirst();
     }
 
     /**
@@ -105,7 +105,8 @@ public class TypeCheckingContext {
      * @return the binary expression on top of the stack, or null if no such element.
      */
     public BinaryExpression getEnclosingBinaryExpression() {
-        return enclosingBinaryExpressions.peekFirst();
+        if (enclosingBinaryExpressions.isEmpty()) return null;
+        return enclosingBinaryExpressions.getFirst();
     }
 
     /**
@@ -122,7 +123,7 @@ public class TypeCheckingContext {
      * @param closureExpression the binary expression to be pushed
      */
     public void pushEnclosingClosureExpression(ClosureExpression closureExpression) {
-        enclosingClosures.push(new EnclosingClosure(closureExpression));
+        enclosingClosures.addFirst(new EnclosingClosure(closureExpression));
     }
 
     /**
@@ -130,7 +131,7 @@ public class TypeCheckingContext {
      * @return the popped closure expression
      */
     public EnclosingClosure popEnclosingClosure() {
-        return enclosingClosures.pop();
+        return enclosingClosures.removeFirst();
     }
 
     /**
@@ -139,7 +140,8 @@ public class TypeCheckingContext {
      * @return the closure expression on top of the stack, or null if no such element.
      */
     public EnclosingClosure getEnclosingClosure() {
-        return enclosingClosures.peekFirst();
+        if (enclosingClosures.isEmpty()) return null;
+        return enclosingClosures.getFirst();
     }
 
     /**
@@ -156,7 +158,7 @@ public class TypeCheckingContext {
      * @param methodNode the binary expression to be pushed
      */
     public void pushEnclosingMethod(MethodNode methodNode) {
-        enclosingMethods.push(methodNode);
+        enclosingMethods.addFirst(methodNode);
     }
 
     /**
@@ -164,7 +166,7 @@ public class TypeCheckingContext {
      * @return the popped method
      */
     public MethodNode popEnclosingMethod() {
-        return enclosingMethods.pop();
+        return enclosingMethods.removeFirst();
     }
 
     /**
@@ -173,7 +175,8 @@ public class TypeCheckingContext {
      * @return the enclosing method on top of the stack, or null if no such element.
      */
     public MethodNode getEnclosingMethod() {
-        return enclosingMethods.peekFirst();
+        if (enclosingMethods.isEmpty()) return null;
+        return enclosingMethods.getFirst();
     }
 
     /**
@@ -190,7 +193,7 @@ public class TypeCheckingContext {
      * @param classNode the binary expression to be pushed
      */
     public void pushEnclosingClassNode(ClassNode classNode) {
-        enclosingClassNodes.push(classNode);
+        enclosingClassNodes.addFirst(classNode);
     }
 
     /**
@@ -198,7 +201,7 @@ public class TypeCheckingContext {
      * @return the popped class
      */
     public ClassNode popEnclosingClassNode() {
-        return enclosingClassNodes.pop();
+        return enclosingClassNodes.removeFirst();
     }
 
     /**
@@ -207,7 +210,8 @@ public class TypeCheckingContext {
      * @return the enclosing method on top of the stack, or null if no such element.
      */
     public ClassNode getEnclosingClassNode() {
-        return enclosingClassNodes.peekFirst();
+        if (enclosingClassNodes.isEmpty()) return null;
+        return enclosingClassNodes.getFirst();
     }
 
     /**
@@ -234,7 +238,7 @@ public class TypeCheckingContext {
      */
     public void pushEnclosingMethodCall(Expression call) {
         if (call instanceof MethodCallExpression || call instanceof StaticMethodCallExpression) {
-            enclosingMethodCalls.push(call);
+            enclosingMethodCalls.addFirst(call);
         } else {
             throw new IllegalArgumentException("Expression must be a method call or a static method call");
         }
@@ -245,7 +249,7 @@ public class TypeCheckingContext {
      * @return the popped call
      */
     public Expression popEnclosingMethodCall() {
-        return enclosingMethodCalls.pop();
+        return enclosingMethodCalls.removeFirst();
     }
 
     /**
@@ -254,7 +258,8 @@ public class TypeCheckingContext {
      * @return the enclosing method call on top of the stack, or null if no such element.
      */
     public Expression getEnclosingMethodCall() {
-        return enclosingMethodCalls.peekFirst();
+        if (enclosingMethodCalls.isEmpty()) return null;
+        return enclosingMethodCalls.getFirst();
     }
 
     /**

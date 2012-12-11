@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.codehaus.groovy.transform.stc;
 
 import groovy.lang.Closure;
@@ -124,7 +125,7 @@ public class GroovyTypeCheckingExtensionSupport extends TypeCheckingExtension {
 
     public TypeCheckingScope newScope() {
         TypeCheckingScope scope = new TypeCheckingScope(scopeData.peek());
-        scopeData.push(scope);
+        scopeData.addFirst(scope);
         return scope;
     }
 
@@ -136,7 +137,7 @@ public class GroovyTypeCheckingExtensionSupport extends TypeCheckingExtension {
     }
 
     public TypeCheckingScope scopeExit() {
-        return scopeData.pop();
+        return scopeData.removeFirst();
     }
 
     public TypeCheckingScope getCurrentScope() {
