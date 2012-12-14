@@ -154,7 +154,7 @@ public @interface ToString {
      * Don't display any fields or properties with value <tt>null</tt>.
      */
     boolean ignoreNulls() default false;
-    
+
     /**
      * Whether to include the fully-qualified class name (i.e. including
      * the package) or just the simple class name in the generated toString.
