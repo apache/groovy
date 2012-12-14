@@ -90,6 +90,25 @@ import java.lang.annotation.Target;
  * <pre>
  * NamedThing()
  * </pre>
+ * <p/>
+ * If you want to exclude package, you can use the includePackage flag:
+ * <pre>
+ * package my.company
+ * import groovy.transform.ToString
+ * {@code @ToString(includePackage = false)} class NamedThing {
+ *     String name
+ * }
+ * println new NamedThing(name: "Lassie")
+ * </pre>
+ * Which results in:
+ * <pre>
+ * NamedThing(name: Lassie)
+ * </pre>
+ * If you change the includePackage flag to {@code true}, then the output will be:
+ * <pre>
+ * my.company.NamedThing(name: Lassie)
+ * </pre> 
+ * By default the includePackage flag is {@code true}.
  *
  * @author Paul King
  * @author Andre Steingress
@@ -135,4 +154,9 @@ public @interface ToString {
      * Don't display any fields or properties with value <tt>null</tt>.
      */
     boolean ignoreNulls() default false;
+    
+    /**
+     * Whether to include of package in generated toString.
+     */
+    boolean includePackage() default true;
 }
