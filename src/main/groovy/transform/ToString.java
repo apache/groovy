@@ -91,7 +91,8 @@ import java.lang.annotation.Target;
  * NamedThing()
  * </pre>
  * <p/>
- * If you want to exclude package, you can use the includePackage flag:
+ * By default the fully-qualified class name is used as part of the generated toString.
+ * If you want to exclude the package, you can set the includePackage flag to false, e.g.:
  * <pre>
  * package my.company
  * import groovy.transform.ToString
@@ -104,11 +105,10 @@ import java.lang.annotation.Target;
  * <pre>
  * NamedThing(name: Lassie)
  * </pre>
- * If you change the includePackage flag to {@code true}, then the output will be:
+ * If the includePackage flag is {@code true} (the default), then the output will be:
  * <pre>
  * my.company.NamedThing(name: Lassie)
- * </pre> 
- * By default the includePackage flag is {@code true}.
+ * </pre>
  *
  * @author Paul King
  * @author Andre Steingress
@@ -156,7 +156,9 @@ public @interface ToString {
     boolean ignoreNulls() default false;
     
     /**
-     * Whether to include of package in generated toString.
+     * Whether to include the fully-qualified class name (i.e. including
+     * the package) or just the simple class name in the generated toString.
+     * @since 2.0.6
      */
     boolean includePackage() default true;
 }
