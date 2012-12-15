@@ -56,7 +56,7 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
     protected final Map<String, String> namespaceTagHints;
 
     /**
-     * Creates a new GPathResult named <code>name</code> with the parent <code>parent</code>
+     * Creates a new GPathResult named <code>name</code> with the parent <code>parent</code>,
      * the namespacePrefix <code>namespacePrefix</code> and the namespaceTagHints specified in
      * the <code>namespaceTagHints</code> Map.
      *
@@ -93,7 +93,7 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
             public Object getAttribute(final Object object, final String attribute) {
                 return GPathResult.this.getProperty("@" + attribute);
             }
-            
+
             @Override
             public void setAttribute(final Object object, final String attribute, final Object newValue) {
                 GPathResult.this.setProperty("@" + attribute, newValue);
@@ -138,7 +138,7 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
         }
     }
     /**
-     *  Replaces the specified property of this GPathResult with a new value.
+     * Replaces the specified property of this GPathResult with a new value.
      *
      * @param property the property of this GPathResult to replace
      * @param newValue the new value of the property
@@ -173,7 +173,8 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
     }
 
     /**
-     * Overloads the left shift operator to provide an easy way to append Objects to this GPathResult.
+     * Overloads the left shift operator to provide an easy way to
+     * lazily append Objects to this GPathResult.
      *
      * @param newValue the Object to append
      * @return <code>this</code>
@@ -184,7 +185,7 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
     }
 
     /**
-     * Adds the specified Object to this GPathResult.
+     * Lazily adds the specified Object to this GPathResult.
      *
      * @param newValue the Object to add
      * @return <code>this</code>
@@ -192,16 +193,14 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
     public Object plus(final Object newValue) {
         this.replaceNode(new Closure(this) {
             public void doCall(Object[] args) {
-            final GroovyObject delegate = (GroovyObject)getDelegate();
-             
+                final GroovyObject delegate = (GroovyObject) getDelegate();
                 delegate.getProperty("mkp");
                 delegate.invokeMethod("yield", args);
-                
                 delegate.getProperty("mkp");
                 delegate.invokeMethod("yield", new Object[]{newValue});
             }
         });
-        
+
         return this;
     }
 
@@ -387,7 +386,6 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
 
     public void putAt(final int index, final Object newValue) {
         final GPathResult result = (GPathResult)getAt(index);
-    
         if (newValue instanceof Closure) {
             result.replaceNode((Closure)newValue);
         } else {
@@ -396,7 +394,7 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
     }
 
     /**
-     * Provides a Iterator over all the nodes of this GPathResult using a depth-first traversal.
+     * Provides an Iterator over all the nodes of this GPathResult using a depth-first traversal.
      *
      * @return the <code>Iterator</code> of (depth-first) ordered GPathResults
      */
@@ -444,9 +442,9 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
     }
 
     /**
-     * Provides a Iterator over all the nodes of this GPathResult using a breath-first traversal.
+     * Provides an Iterator over all the nodes of this GPathResult using a breadth-first traversal.
      *
-     * @return the <code>Iterator</code> of (breath-first) ordered GPathResults
+     * @return the <code>Iterator</code> of (breadth-first) ordered GPathResults
      */
     public Iterator breadthFirst() {
         return new Iterator() {
@@ -505,7 +503,7 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
     }
 
     /**
-     *  Creates a list of objects representing this GPathResult.
+     * Creates a list of objects representing this GPathResult.
      *
      * @return a list representing of this GPathResult
      */
@@ -519,9 +517,9 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
     }
 
     /**
-     *  Returns true if, and only if, <code>size()</code> is 0.
+     * Returns true if the GPathResult is empty, i.e. if, and only if, <code>size()</code> is 0.
      *
-     * @return true if <code>size()</code> is 0, otherwise false
+     * @return true if the GPathResult is empty
      */
     public boolean isEmpty() {
         return size() == 0;
