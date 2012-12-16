@@ -18,12 +18,12 @@ package org.codehaus.groovy.ant;
 import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyResourceLoader;
 import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.GroovyPosixParser;
 import org.apache.commons.cli.Options;
-import org.apache.commons.cli.PosixParser;
 import org.apache.tools.ant.AntClassLoader;
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.DirectoryScanner;
-import org.apache.tools.ant.Project;
 import org.apache.tools.ant.RuntimeConfigurable;
 import org.apache.tools.ant.taskdefs.Execute;
 import org.apache.tools.ant.taskdefs.Javac;
@@ -50,9 +50,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Enumeration;
-import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -1019,7 +1017,7 @@ public class Groovyc extends MatchingTask {
         try {
             Options options = FileSystemCompiler.createCompilationOptions();
 
-            PosixParser cliParser = new PosixParser();
+            CommandLineParser cliParser = new GroovyPosixParser();
 
             CommandLine cli;
             cli = cliParser.parse(options, commandLine);

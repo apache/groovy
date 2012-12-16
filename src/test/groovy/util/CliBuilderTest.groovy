@@ -1,5 +1,5 @@
 /*
- *  Copyright 2003-2010 the original author or authors.
+ *  Copyright 2003-2012 the original author or authors.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  *  compliance with the License.  You may obtain a copy of the License at
@@ -14,6 +14,7 @@
 
 package groovy.util
 
+import org.apache.commons.cli.GroovyPosixParser
 import org.apache.commons.cli.GnuParser
 import org.apache.commons.cli.Option
 import org.apache.commons.cli.OptionBuilder
@@ -120,6 +121,10 @@ class CliBuilderTest extends GroovyTestCase {
         runSample(new PosixParser(), ['-h', '-c', expectedParameter])
     }
 
+    void testSampleShort_DefaultParser() {
+        runSample(new GroovyPosixParser(), ['-h', '-c', expectedParameter])
+    }
+
     void testSampleLong_BasicParser() {
         runSample(new BasicParser(), ['--help', '--encoding', expectedParameter])
     }
@@ -130,6 +135,10 @@ class CliBuilderTest extends GroovyTestCase {
 
     void testSampleLong_PosixParser() {
         runSample(new PosixParser(), ['--help', '--encoding', expectedParameter])
+    }
+
+    void testSampleLong_DefaultParser() {
+        runSample(new GroovyPosixParser(), ['--help', '--encoding', expectedParameter])
     }
 
     private void multipleArgs(parser) {
