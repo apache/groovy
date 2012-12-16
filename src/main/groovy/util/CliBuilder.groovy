@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -182,8 +182,10 @@ class CliBuilder {
 
     /**
      * To change from the default PosixParser to the GnuParser, set this to false. Ignored if the parser is explicitly set.
+     * @deprecated use the parser option instead with an instance of your preferred parser
      */
-    boolean posix = true
+    @Deprecated
+    Boolean posix = null
 
     /**
      * Whether arguments of the form '{@code @}<i>filename</i>' will be expanded into the arguments contained within the file named <i>filename</i> (default true).
@@ -248,13 +250,13 @@ class CliBuilder {
     }
 
     /**
-     * Make options accessible from command line args with parser (default: Posix).
+     * Make options accessible from command line args with parser.
      * Returns null on bad command lines after displaying usage message.
      */
     OptionAccessor parse(args) {
         if (expandArgumentFiles) args = expandArgumentFiles(args)
         if (!parser) {
-            parser = posix ? new PosixParser() : new GnuParser()
+            parser = posix == null ? new GroovyPosixParser() : posix == true ? new PosixParser() : new GnuParser()
         }
         try {
             return new OptionAccessor(parser.parse(options, args as String[], stopAtNonOption))
