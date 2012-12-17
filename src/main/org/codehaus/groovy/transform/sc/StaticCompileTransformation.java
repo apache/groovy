@@ -15,10 +15,8 @@
  */
 package org.codehaus.groovy.transform.sc;
 
-import org.codehaus.groovy.ast.ASTNode;
-import org.codehaus.groovy.ast.AnnotatedNode;
-import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.*;
+import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.classgen.asm.WriterControllerFactory;
 import org.codehaus.groovy.classgen.asm.sc.StaticTypesWriterControllerFactoryImpl;
 import org.codehaus.groovy.control.CompilePhase;
@@ -30,6 +28,7 @@ import org.codehaus.groovy.transform.sc.transformers.StaticCompilationTransforme
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor;
 
 import java.util.Collections;
+import java.util.Map;
 
 import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.STATIC_COMPILE_NODE;
 
@@ -46,12 +45,15 @@ public class StaticCompileTransformation extends StaticTypesTransformation {
     @Override
     public void visit(final ASTNode[] nodes, final SourceUnit source) {
         StaticCompilationTransformer transformer = new StaticCompilationTransformer(source);
-
+        AnnotationNode annotationInformation = (AnnotationNode) nodes[0];
         AnnotatedNode node = (AnnotatedNode) nodes[1];
         StaticTypeCheckingVisitor visitor = null;
+        Map<String,Expression> members = annotationInformation.getMembers();
+        Expression extensions = members.get("extensions");
         if (node instanceof ClassNode) {
             ClassNode classNode = (ClassNode) node;
             visitor = newVisitor(source, classNode);
+            addTypeCheckingExtensions(visitor, extensions);
             classNode.putNodeMetaData(WriterControllerFactory.class, factory);
             node.putNodeMetaData(STATIC_COMPILE_NODE, !visitor.isSkipMode(node));
             visitor.visitClass(classNode);
@@ -59,6 +61,7 @@ public class StaticCompileTransformation extends StaticTypesTransformation {
             MethodNode methodNode = (MethodNode) node;
             ClassNode declaringClass = methodNode.getDeclaringClass();
             visitor = newVisitor(source, declaringClass);
+            addTypeCheckingExtensions(visitor, extensions);
             methodNode.putNodeMetaData(STATIC_COMPILE_NODE, !visitor.isSkipMode(node));
             if (declaringClass.getNodeMetaData(WriterControllerFactory.class) == null) {
                 declaringClass.putNodeMetaData(WriterControllerFactory.class, factory);
