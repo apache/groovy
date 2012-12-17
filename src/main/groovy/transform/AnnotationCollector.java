@@ -51,7 +51,7 @@ import org.codehaus.groovy.transform.AnnotationCollectorTransform;
  */
 @java.lang.annotation.Documented
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ElementType.ANNOTATION_TYPE})
+@Target({ElementType.ANNOTATION_TYPE, ElementType.TYPE})
 public @interface AnnotationCollector {
     /**
      * Processor used for computing custom logic or the list of annotations, or 

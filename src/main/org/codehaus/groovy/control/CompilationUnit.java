@@ -30,6 +30,7 @@ import org.codehaus.groovy.control.messages.SimpleMessage;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.tools.GroovyClass;
 import org.codehaus.groovy.transform.ASTTransformationVisitor;
+import org.codehaus.groovy.transform.AnnotationCollectorTransform;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
 
@@ -184,6 +185,14 @@ public class CompilationUnit extends ProcessingUnit {
         addPhaseOperation(classgen, Phases.CLASS_GENERATION);
         addPhaseOperation(output);
 
+        addPhaseOperation(new PrimaryClassNodeOperation() {
+            @Override
+            public void call(SourceUnit source, GeneratorContext context,
+                             ClassNode classNode) throws CompilationFailedException {
+                AnnotationCollectorTransform.ClassChanger actt = new AnnotationCollectorTransform.ClassChanger();
+                actt.transformClass(classNode);
+            }
+        }, Phases.SEMANTIC_ANALYSIS);
         ASTTransformationVisitor.addPhaseOperations(this);
         addPhaseOperation(new PrimaryClassNodeOperation() {
             @Override

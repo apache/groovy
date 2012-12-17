@@ -17,22 +17,19 @@ package org.codehaus.groovy.transform;
 
 import groovy.transform.AnnotationCollector;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.lang.reflect.Method;
+import java.util.*;
 
-import org.codehaus.groovy.ast.ASTNode;
-import org.codehaus.groovy.ast.AnnotatedNode;
-import org.codehaus.groovy.ast.AnnotationNode;
-import org.codehaus.groovy.ast.Parameter;
-import org.codehaus.groovy.ast.expr.ClassExpression;
-import org.codehaus.groovy.ast.expr.Expression;
-import org.codehaus.groovy.ast.expr.ListExpression;
+import org.codehaus.groovy.GroovyBugError;
+import org.codehaus.groovy.ast.*;
+import org.codehaus.groovy.ast.expr.*;
+import org.codehaus.groovy.ast.stmt.ReturnStatement;
+import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
 import org.codehaus.groovy.syntax.SyntaxException;
+
+import static org.objectweb.asm.Opcodes.*;
 
 /**
  * This class is the base for any annotation alias processor. 
@@ -42,6 +39,71 @@ import org.codehaus.groovy.syntax.SyntaxException;
  */
 public class AnnotationCollectorTransform {
 
+    private static List<AnnotationNode> getMeta(ClassNode cn) {
+        List<AnnotationNode> meta = cn.getNodeMetaData(AnnotationCollector.class);
+        if (meta == null) {
+            if (cn.isPrimaryClassNode()) {
+                meta = getTargetListFromAnnotations(cn);
+            } else {
+                meta = getTargetListFromClass(cn);
+            }
+            cn.setNodeMetaData(AnnotationCollector.class, meta);
+        }
+        return meta;
+    }
+
+    public static class ClassChanger {
+        
+        public void transformClass(ClassNode cn) {
+            AnnotationNode collector = null;
+            for (ListIterator<AnnotationNode> it = cn.getAnnotations().listIterator(); it.hasNext();) {
+                AnnotationNode an = it.next();
+                if (an.getClassNode().getName().equals(AnnotationCollector.class.getName())) {
+                    collector = an;
+                    break;
+                };
+            }
+            if (collector==null) return;
+            
+            // force final class
+            cn.setModifiers((ACC_FINAL+cn.getModifiers()) & ~(ACC_INTERFACE|ACC_ANNOTATION));
+
+            // add static value():Object[][] method
+            List<AnnotationNode> meta = getMeta(cn); 
+            List<Expression> outer = new ArrayList(meta.size());
+            for (AnnotationNode an : meta) {
+                MapExpression map = new MapExpression();
+                for (String key : an.getMembers().keySet()) {
+                    Expression val = an.getMember(key);
+                    if (val instanceof ListExpression) {
+                        ListExpression le = (ListExpression) val;
+                        val = new ArrayExpression(ClassHelper.OBJECT_TYPE, le.getExpressions());
+                    }
+                    map.addMapEntryExpression(new ConstantExpression(key), an.getMember(key));
+                }
+                List<Expression> l = new ArrayList(2);
+                l.add(new ClassExpression(an.getClassNode()));
+                l.add(map);
+                ArrayExpression ae = new ArrayExpression(ClassHelper.OBJECT_TYPE, l);
+                outer.add(ae);
+            }
+
+            ArrayExpression ae = new ArrayExpression(ClassHelper.OBJECT_TYPE.makeArray(), outer);
+            Statement code = new ReturnStatement(ae);
+            cn.addMethod(   "value", ACC_PUBLIC+ACC_STATIC,
+                            ClassHelper.OBJECT_TYPE.makeArray().makeArray(), 
+                            Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY,
+                            code);
+
+            // remove annotations
+            for (ListIterator<AnnotationNode> it = cn.getAnnotations().listIterator(); it.hasNext();) {
+                AnnotationNode an = it.next();
+                if (an==collector) continue;
+                it.remove();
+            }
+        }
+    }
+    
     /**
      * Adds a new syntax error to the source unit and then continues.
      * 
@@ -55,6 +117,99 @@ public class AnnotationCollectorTransform {
                 ), source));
     }
 
+    private List<AnnotationNode> getTargetListFromValue(AnnotationNode collector, AnnotationNode aliasAnnotationUsage, SourceUnit source) {
+        Expression memberValue = collector.getMember("value");
+        if (memberValue == null) return Collections.EMPTY_LIST;
+        if (!(memberValue instanceof ListExpression)) {
+            addError("Annotation collector expected a list of classes, but got a "+memberValue.getClass(), collector, source);
+            return Collections.EMPTY_LIST;
+        }
+        ListExpression memberListExp = (ListExpression) memberValue;
+        List<Expression> memberList = memberListExp.getExpressions();
+        if (memberList.size()==0) return Collections.EMPTY_LIST;
+        ArrayList<AnnotationNode> ret = new ArrayList<>();
+        for (Expression e : memberList) {
+            AnnotationNode toAdd = new AnnotationNode(e.getType());
+            toAdd.setSourcePosition(aliasAnnotationUsage);
+            ret.add(toAdd);
+        }
+        return ret;
+    }
+
+    private List<AnnotationNode> getStoredTargetList(AnnotationNode aliasAnnotationUsage, SourceUnit source) {
+        ClassNode alias = aliasAnnotationUsage.getClassNode().redirect();
+        List<AnnotationNode> ret = getMeta(alias);
+        return copy(ret, aliasAnnotationUsage);
+    }
+
+    private List<AnnotationNode> copy(List<AnnotationNode> orig, AnnotationNode aliasAnnotationUsage) {
+        if (orig.isEmpty()) return orig;
+        List<AnnotationNode> ret = new ArrayList(orig.size());
+        for (AnnotationNode an : orig) {
+            AnnotationNode newAn = new AnnotationNode(an.getClassNode());
+            newAn.getMembers().putAll(an.getMembers());
+            newAn.setSourcePosition(aliasAnnotationUsage);
+            ret.add(newAn);
+        }
+        return ret;
+    }
+
+    private static List<AnnotationNode> getTargetListFromAnnotations(ClassNode alias) {
+        List<AnnotationNode> annotations = alias.getAnnotations();
+        if (annotations.size() < 2) return Collections.EMPTY_LIST;
+        
+        ArrayList<AnnotationNode> ret = new ArrayList(annotations.size());
+        for (AnnotationNode an : annotations) {
+            ClassNode type = an.getClassNode();
+            if (type.getName().equals(AnnotationCollector.class.getName())) continue;
+            AnnotationNode toAdd = new AnnotationNode(type);
+            toAdd.getMembers().putAll(an.getMembers());
+            ret.add(toAdd);
+        }
+        return ret;
+    }
+
+    private static List<AnnotationNode> getTargetListFromClass(ClassNode alias) {
+        Class c = alias.getTypeClass();
+        Object[][] data;
+        try {
+            Method m = c.getMethod("value");
+            data = (Object[][]) m.invoke(null);
+        } catch (Exception e) {
+            throw new GroovyBugError(e);
+        }
+        if (data.length==0) return Collections.EMPTY_LIST;
+
+        ArrayList<AnnotationNode> ret = new ArrayList(data.length);
+        for (Object[] inner : data) {
+            Class anno = (Class) inner[0];
+            AnnotationNode toAdd = new AnnotationNode(ClassHelper.make(anno));
+            ret.add(toAdd);
+
+            Map<String,Object> member = (Map) inner[1];
+            if (member.size()==0) continue;
+            Map<String, Expression> generated = new HashMap(member.size());
+            for (String name : member.keySet()) {
+                Object val = member.get(name);
+                generated.put(name, makeExpression(val));
+            }
+            toAdd.getMembers().putAll(generated);
+        }
+        return ret;
+    }
+    
+    private static Expression makeExpression(Object o) {
+        if (o instanceof Class) return new ClassExpression(ClassHelper.make((Class) o));
+        //TODO: value as Annotation here!
+        if (!(o instanceof List)) return new ConstantExpression(o,true);
+        ListExpression le = new ListExpression();
+        List values = (List) o;
+        for (Object val : values) {
+            le.addExpression(makeExpression(val));
+        }
+        return le;
+    }
+    
     /**
      * Returns a list of Expressions for the value attribute of the given 
      * AnnotationNode. Should the node value not be a ListExpression of String 
@@ -64,16 +219,16 @@ public class AnnotationCollectorTransform {
      * @param source        the source unit for error reporting
      * @return              a list of string constants
      */
-    protected List<Expression> getTargetAnnotationList(AnnotationNode collector, SourceUnit source) {
-        Expression memberValue = collector.getMember("value");
-        if (!(memberValue instanceof ListExpression)) {
-            addError("Annotation collector expected a list of classes, but got a "+memberValue.getClass(), collector, source);
-            return Collections.EMPTY_LIST;
-        }
-        ListExpression memberListExp = (ListExpression) memberValue;
-        List<Expression> memberList = memberListExp.getExpressions();
-        if (memberList.size()==0) return Collections.EMPTY_LIST;
-        return memberList;
+    protected List<AnnotationNode> getTargetAnnotationList(AnnotationNode collector, AnnotationNode aliasAnnotationUsage, SourceUnit source) {
+        List<AnnotationNode> stored     = getStoredTargetList(aliasAnnotationUsage, source);
+        List<AnnotationNode> targetList = getTargetListFromValue(collector, aliasAnnotationUsage, source);
+        int size = targetList.size()+stored.size();
+        if (size==0) return Collections.EMPTY_LIST;
+        ArrayList ret = new ArrayList(size);
+        ret.addAll(stored);
+        ret.addAll(targetList);
+
+        return ret;
     }
 
     /**
@@ -91,23 +246,14 @@ public class AnnotationCollectorTransform {
      * @return list of the new AnnotationNodes
      */
     public List<AnnotationNode> visit(AnnotationNode collector, AnnotationNode aliasAnnotationUsage, AnnotatedNode aliasAnnotated, SourceUnit source) {
-        List<Expression> targetAnnotationList = getTargetAnnotationList(collector, source);
-        ArrayList<AnnotationNode> ret = new ArrayList(targetAnnotationList.size());
+        List<AnnotationNode> ret =  getTargetAnnotationList(collector, aliasAnnotationUsage, source);
         Set<String> unusedNames = new HashSet(aliasAnnotationUsage.getMembers().keySet());
         
-        for (Expression e: targetAnnotationList) {
-            if (!(e instanceof ClassExpression)) {
-                addError("Annotation collector expected a ClassExpression, but got "+e.getClass(), collector, source);
-                continue;
-            }
-            AnnotationNode toAdd = new AnnotationNode(e.getType());
-            toAdd.setSourcePosition(aliasAnnotationUsage);
-            ret.add(toAdd);
-
+        for (AnnotationNode an: ret) {
             for (String name : aliasAnnotationUsage.getMembers().keySet()) {
-                if (e.getType().hasMethod(name, Parameter.EMPTY_ARRAY)) {
+                if (an.getClassNode().hasMethod(name, Parameter.EMPTY_ARRAY)) {
                     unusedNames.remove(name);
-                    toAdd.addMember(name, aliasAnnotationUsage.getMember(name));
+                    an.setMember(name, aliasAnnotationUsage.getMember(name));
                 }
             }
         }
