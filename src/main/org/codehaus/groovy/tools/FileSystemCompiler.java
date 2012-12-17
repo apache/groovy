@@ -287,8 +287,8 @@ public class FileSystemCompiler {
             configuration.getOptimizationOptions().put("indy", true);
         }
 
-        if (cli.hasOption("configurator")) {
-            String path = cli.getOptionValue("configurator");
+        if (cli.hasOption("configscript")) {
+            String path = cli.getOptionValue("configscript");
             File groovyConfigurator = new File(path);
             Binding binding = new Binding();
             binding.setVariable("configuration", configuration);
@@ -336,7 +336,7 @@ public class FileSystemCompiler {
                         .create("F"));
 
         options.addOption(OptionBuilder.withLongOpt("indy").withDescription("enables compilation using invokedynamic").create());
-        options.addOption(OptionBuilder.withLongOpt("configurator").hasArg().withDescription("A script for tweaking the configuration options").create());
+        options.addOption(OptionBuilder.withLongOpt("configscript").hasArg().withDescription("A script for tweaking the configuration options").create());
         return options;
     }
 
