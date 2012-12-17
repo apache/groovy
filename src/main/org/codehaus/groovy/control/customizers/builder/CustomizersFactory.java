@@ -31,7 +31,7 @@ import java.util.Map;
  * @since 2.1.0
  */
 public class CustomizersFactory extends AbstractFactory implements PostCompletionFactory {
-    @Override
+
     public Object newInstance(final FactoryBuilderSupport builder, final Object name, final Object value, final Map attributes) throws InstantiationException, IllegalAccessException {
         return new LinkedList();
     }
@@ -44,7 +44,7 @@ public class CustomizersFactory extends AbstractFactory implements PostCompletio
         }
     }
 
-    @Override
+
     @SuppressWarnings("unchecked")
     public Object postCompleteNode(final FactoryBuilderSupport factory, final Object parent, final Object node) {
         if (node instanceof List) {
