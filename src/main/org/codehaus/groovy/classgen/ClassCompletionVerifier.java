@@ -287,6 +287,7 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
     }
 
     private void checkMethodForWeakerAccessPrivileges(MethodNode mn, ClassNode cn) {
+        if (mn.isPublic()) return;
         Parameter[] params = mn.getParameters();
         for (MethodNode superMethod : cn.getSuperClass().getMethods(mn.getName())) {
             Parameter[] superParams = superMethod.getParameters();
