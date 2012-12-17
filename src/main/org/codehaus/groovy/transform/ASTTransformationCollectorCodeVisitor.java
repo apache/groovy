@@ -81,7 +81,7 @@ public class ASTTransformationCollectorCodeVisitor extends ClassCodeVisitorSuppo
     public void visitAnnotations(AnnotatedNode node) {
         super.visitAnnotations(node);
         
-        List<AnnotationNode> collected = new ArrayList();
+        List<AnnotationNode> collected = new ArrayList<AnnotationNode>();
         for (Iterator<AnnotationNode> it = node.getAnnotations().iterator(); it.hasNext();) {
             AnnotationNode annotation = it.next();
             if (addCollectedAnnotations(collected, annotation, node)) it.remove();
@@ -178,8 +178,8 @@ public class ASTTransformationCollectorCodeVisitor extends ClassCodeVisitorSuppo
         addTransform(annotation, klass);
     }
 
-    private void verifyCompilePhase(AnnotationNode annotation, Class klass) {
-        GroovyASTTransformation transformationClass = (GroovyASTTransformation) klass.getAnnotation(GroovyASTTransformation.class);
+    private void verifyCompilePhase(AnnotationNode annotation, Class<?> klass) {
+        GroovyASTTransformation transformationClass = klass.getAnnotation(GroovyASTTransformation.class);
         if (transformationClass != null)  {
             CompilePhase specifiedCompilePhase = transformationClass.phase();
             if (specifiedCompilePhase.getPhaseNumber() < CompilePhase.SEMANTIC_ANALYSIS.getPhaseNumber())  {
@@ -198,6 +198,7 @@ public class ASTTransformationCollectorCodeVisitor extends ClassCodeVisitorSuppo
         }
     }
 
+    @SuppressWarnings("unchecked")
     private void addTransform(AnnotationNode annotation, Class klass)  {
         classNode.addTransform(klass, annotation);
     }

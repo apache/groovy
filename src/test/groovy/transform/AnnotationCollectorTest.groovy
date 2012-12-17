@@ -225,6 +225,34 @@ class AnnotationCollectorTest extends GroovyTestCase {
             assert ex.message.contains("Could not find class for Transformation Processor MyProcessor declared by Alias")
         }
     }
+
+    void testAnnotationOnAnnotation() {
+        assertScript """
+            import groovy.transform.*
+
+            @PreCompiledAlias3
+            class Foo {
+                Integer a, b
+            }
+            assert Foo.class.annotations.size()==2
+            assert new Foo(1,2).toString() == "Foo(2)"
+        """
+
+        assertScript """
+            import groovy.transform.*
+            @Immutable
+            @ToString(excludes=["a"])
+            @AnnotationCollector()
+            class Alias {}
+
+            @Alias
+            class Foo {
+                Integer a, b
+            }
+            assert Foo.class.annotations.size()==2
+            assert new Foo(1,2).toString() == "Foo(2)"
+        """
+    }
 }
 
 @AnnotationCollector([ToString, EqualsAndHashCode, Immutable])
@@ -232,3 +260,8 @@ class AnnotationCollectorTest extends GroovyTestCase {
 
 @AnnotationCollector([ConditionalInterrupt])
 @interface OtherPreCompiledAlias {}
+
+@Immutable
+@ToString(excludes=["a"])
+@AnnotationCollector()
+class PreCompiledAlias3 {}
