@@ -41,5 +41,5 @@ public @interface CompileStatic {
      * as type checking extensions.
      * @return an array of paths to groovy scripts that must be on compile classpath
      */
-    String[] extensions();
+    String[] extensions() default {};
 }

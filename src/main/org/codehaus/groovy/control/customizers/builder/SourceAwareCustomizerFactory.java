@@ -69,7 +69,6 @@ import java.util.Map;
  */
 public class SourceAwareCustomizerFactory extends AbstractFactory implements PostCompletionFactory {
 
-    @Override
     public Object newInstance(final FactoryBuilderSupport builder, final Object name, final Object value, final Map attributes) throws InstantiationException, IllegalAccessException {
         SourceOptions data = new SourceOptions();
         if (value instanceof CompilationCustomizer) {
@@ -85,7 +84,6 @@ public class SourceAwareCustomizerFactory extends AbstractFactory implements Pos
         }
     }
 
-    @Override
     public Object postCompleteNode(final FactoryBuilderSupport factory, final Object parent, final Object node) {
         SourceOptions data = (SourceOptions) node;
         SourceAwareCustomizer sourceAwareCustomizer = new SourceAwareCustomizer(data.delegate);
