@@ -109,8 +109,8 @@ public class ASTNode {
      * @param key - the meta data key
      * @return the node meta data value for this key
      */
-    public Object getNodeMetaData(Object key) {
-        return metaDataMap.get(key);
+    public <T> T getNodeMetaData(Object key) {
+        return (T) metaDataMap.get(key);
     }
     
     /**
