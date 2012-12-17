@@ -63,14 +63,13 @@ import java.lang.String;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 /*
  * @author Mike Grogan
  * @author A. Sundararajan
  * @author Jim White
  * @author Guillaume Laforge
+ * @author Jochen Theodorou
  */
 public class GroovyScriptEngineImpl
         extends AbstractScriptEngine implements Compilable, Invocable {
@@ -81,7 +80,7 @@ public class GroovyScriptEngineImpl
     private ManagedConcurrentMap<String, Class> classMap = new ManagedConcurrentMap<String, Class>(ReferenceBundle.getSoftBundle());
     // global closures map - this is used to simulate a single
     // global functions namespace 
-    private ManagedConcurrentValueMap<String, Closure> globalClosures = new ManagedConcurrentValueMap<String, Closure>(ReferenceBundle.getSoftBundle());
+    private ManagedConcurrentValueMap<String, Closure> globalClosures = new ManagedConcurrentValueMap<String, Closure>(ReferenceBundle.getHardBundle());
     // class loader for Groovy generated classes
     private GroovyClassLoader loader;
     // lazily initialized factory
@@ -95,7 +94,7 @@ public class GroovyScriptEngineImpl
     }
 
     public GroovyScriptEngineImpl() {
-        this.loader = new GroovyClassLoader(getParentLoader(), new CompilerConfiguration());
+        this(new GroovyClassLoader(getParentLoader(), new CompilerConfiguration()));
     }
 
     public GroovyScriptEngineImpl(GroovyClassLoader classLoader) {
@@ -110,6 +109,21 @@ public class GroovyScriptEngineImpl
 
     public Object eval(String script, ScriptContext ctx)
             throws ScriptException {
+        try {
+            String val = (String) ctx.getAttribute("#jsr223.groovy.engine.keep.globals", ScriptContext.ENGINE_SCOPE);
+            ReferenceBundle bundle = ReferenceBundle.getHardBundle();
+            if (val!=null && val.length()>0) {
+                if (val.equalsIgnoreCase("soft")) {
+                    bundle = ReferenceBundle.getSoftBundle();
+                } else if (val.equalsIgnoreCase("weak")) {
+                    bundle = ReferenceBundle.getWeakBundle();
+                } else if (val.equalsIgnoreCase("phantom")) {
+                    bundle = ReferenceBundle.getPhantomBundle();
+                }
+            }
+            globalClosures.setBundle(bundle);
+        } catch (ClassCastException cce) { /*ignore.*/ }
+
         try {
             Class clazz = getScriptClass(script);
             if (clazz == null) throw new ScriptException("Script class is null");
@@ -413,7 +427,7 @@ public class GroovyScriptEngineImpl
 
     // determine appropriate class loader to serve as parent loader
     // for GroovyClassLoader instance
-    private ClassLoader getParentLoader() {
+    private static ClassLoader getParentLoader() {
         // check whether thread context loader can "see" Groovy Script class
         ClassLoader ctxtLoader = Thread.currentThread().getContextClassLoader();
         try {
