@@ -65,8 +65,12 @@ public class AnnotationCollectorTransform {
             }
             if (collector==null) return;
             
-            // force final class
-            cn.setModifiers((ACC_FINAL+cn.getModifiers()) & ~(ACC_INTERFACE|ACC_ANNOTATION));
+            // force final class, remove interface, annotation, enum and abstract modifiers
+            cn.setModifiers((ACC_FINAL+cn.getModifiers()) & ~(ACC_ENUM|ACC_INTERFACE|ACC_ANNOTATION|ACC_ABSTRACT));
+            // force Object super class
+            cn.setSuperClass(ClassHelper.OBJECT_TYPE);
+            // force no interfaces implemented
+            cn.setInterfaces(ClassNode.EMPTY_ARRAY);
 
             // add static value():Object[][] method
             List<AnnotationNode> meta = getMeta(cn); 
