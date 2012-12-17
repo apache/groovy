@@ -2917,6 +2917,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                                 if (anInterface.equals(type)) {
                                     intf = true;
                                     actualType = GenericsUtils.parameterizeType(actualType, anInterface);
+                                    break;
                                 }
                             }
                             if (!intf) actualType = actualType.getUnresolvedSuperClass();
