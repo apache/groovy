@@ -25,6 +25,7 @@ import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
+import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
 import org.codehaus.groovy.syntax.SyntaxException;
@@ -52,8 +53,22 @@ public class AnnotationCollectorTransform {
         return meta;
     }
 
+    /**
+     * Class used by {@link CompilationUnit} to transform the alias class
+     * into what is needed by the compiler. This means removing invalid
+     * modifiers, interfaces and superclasses, as well as adding a static
+     * value method returning our serialized version of the data for processing
+     * from a precompiled state. By doing this the old annotations will be
+     * removed as well 
+     * @author <a href="mailto:blackdrag@gmx.org">Jochen "blackdrag" Theodorou</a>
+     */
     public static class ClassChanger {
         
+        /**
+         * Method to transform the given ClassNode, if it is annotated with 
+         * {@link AnnotationCollector}. See class description for what the
+         * transformation includes.
+         */
         public void transformClass(ClassNode cn) {
             AnnotationNode collector = null;
             for (ListIterator<AnnotationNode> it = cn.getAnnotations().listIterator(); it.hasNext();) {
@@ -216,9 +231,8 @@ public class AnnotationCollectorTransform {
     }
     
     /**
-     * Returns a list of Expressions for the value attribute of the given 
-     * AnnotationNode. Should the node value not be a ListExpression of String 
-     * ConstantExpression, errors will be added to the source unit.
+     * Returns a list of AnnotationNodes for the value attribute of the given 
+     * AnnotationNode. 
      * 
      * @param collector     the node containing the value member with the list
      * @param source        the source unit for error reporting
@@ -238,7 +252,7 @@ public class AnnotationCollectorTransform {
 
     /**
      * Implementation method of the alias annotation processor. This method will 
-     * get the list of annotations we aliased from collector and adds it to
+     * get the list of annotations we aliased from the collector and adds it to
      * aliasAnnotationUsage. The method will also map all members from 
      * aliasAnnotationUsage to the aliased nodes. Should a member stay unmapped,
      * we will ad an error. Further processing of those members is done by the
