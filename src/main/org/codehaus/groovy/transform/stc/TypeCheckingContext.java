@@ -28,9 +28,9 @@ import java.util.*;
 public class TypeCheckingContext {
     protected SourceUnit source;
     protected Set<MethodNode> methodsToBeVisited = Collections.emptySet();
-    protected ErrorCollector errorCollector;
     protected boolean isInStaticContext = false;
 
+    protected final LinkedList<ErrorCollector> errorCollectors = new LinkedList<ErrorCollector>();
     protected final LinkedList<ClassNode> enclosingClassNodes = new LinkedList<ClassNode>();
     protected final LinkedList<MethodNode> enclosingMethods = new LinkedList<MethodNode>();
     protected final LinkedList<Expression> enclosingMethodCalls = new LinkedList<Expression>();
@@ -269,6 +269,31 @@ public class TypeCheckingContext {
      */
     public List<Expression> getEnclosingMethodCalls() {
         return Collections.unmodifiableList(enclosingMethodCalls);
+    }
+
+    public List<ErrorCollector> getErrorCollectors() {
+        return Collections.unmodifiableList(errorCollectors);
+    }
+
+    public ErrorCollector getErrorCollector() {
+        if (errorCollectors.isEmpty()) return null;
+        return errorCollectors.getFirst();
+    }
+
+
+    public void pushErrorCollector(ErrorCollector collector) {
+        errorCollectors.add(0, collector);
+    }
+
+    public ErrorCollector pushErrorCollector() {
+        ErrorCollector current = getErrorCollector();
+        ErrorCollector collector = new ErrorCollector(current.getConfiguration());
+        errorCollectors.add(0, collector);
+        return collector;
+    }
+
+    public ErrorCollector popErrorCollector() {
+        return errorCollectors.removeFirst();
     }
 
     /**

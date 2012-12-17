@@ -59,6 +59,8 @@ public class GroovyTypeCheckingExtensionSupport extends TypeCheckingExtension {
                 put("afterVisitMethod", "afterVisitMethod");
                 put("beforeVisitMethod", "beforeVisitMethod");
                 put("incompatibleAssignment", "handleIncompatibleAssignment");
+                put("setup","setup");
+                put("finish", "finish");
             }}
     );
 
@@ -112,10 +114,26 @@ public class GroovyTypeCheckingExtensionSupport extends TypeCheckingExtension {
             );
             parse.extension = this;
             parse.run();
+            List<Closure> list = eventHandlers.get("setup");
+            if (list != null) {
+                for (Closure closure : list) {
+                    safeCall(closure);
+                }
+            }
         } catch (CompilationFailedException e) {
             throw new GroovyBugError("An unexpected error was thrown during custom type checking", e);
         } catch (UnsupportedEncodingException e) {
             throw new GroovyBugError("Unsupported encoding found in compiler configuration", e);
+        }
+    }
+
+    @Override
+    public void finish() {
+        List<Closure> list = eventHandlers.get("finish");
+        if (list != null) {
+            for (Closure closure : list) {
+                safeCall(closure);
+            }
         }
     }
 

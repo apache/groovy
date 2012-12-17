@@ -53,7 +53,7 @@ class CustomErrorCollectorSTCTest extends StaticTypeCheckingTestCase {
             @Override
             void call(final SourceUnit source, final GeneratorContext context, final ClassNode classNode) {
                 def visitor = new StaticTypeCheckingVisitor(source, classNode)
-                visitor.errorCollector = new ErrorCollector(c)
+                visitor.typeCheckingContext.pushErrorCollector(new ErrorCollector(c))
                 visitor.visitClass(classNode)
             }
         })

@@ -25,7 +25,6 @@ import org.codehaus.groovy.ast.stmt.*;
 import org.codehaus.groovy.ast.tools.GenericsUtils;
 import org.codehaus.groovy.classgen.ReturnAdder;
 import org.codehaus.groovy.classgen.asm.InvocationWriter;
-import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.ErrorCollector;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
@@ -119,7 +118,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         this.extension = new DefaultTypeCheckingExtension(this);
         this.typeCheckingContext.source = source;
         this.typeCheckingContext.pushEnclosingClassNode(cn);
-        this.typeCheckingContext.errorCollector = source.getErrorCollector();
+        this.typeCheckingContext.pushErrorCollector(source.getErrorCollector());
         this.typeCheckingContext.pushTemporaryTypeInfo();
     }
 
@@ -130,16 +129,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     public void initialize() {
         extension.setup();
-    }
-
-    /**
-     * Sets an alternative error collector. This can be useful when you want to run static
-     * type checking "silently", for example, without failing if errors are found.
-     *
-     * @param errorCollector an error collector
-     */
-    public void setErrorCollector(final ErrorCollector errorCollector) {
-        this.typeCheckingContext.errorCollector = errorCollector;
     }
 
     /**
@@ -163,7 +152,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (type != null) {
             // transformation has already been run on this class node
             // so we'll use a silent collector in order not to duplicate errors
-            typeCheckingContext.errorCollector = new ErrorCollector(typeCheckingContext.errorCollector.getConfiguration());
+            typeCheckingContext.pushErrorCollector();
         }
         typeCheckingContext.pushEnclosingClassNode(node);
         Set<MethodNode> oldVisitedMethod = typeCheckingContext.alreadyVisitedMethods;
@@ -1516,9 +1505,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (!extension.beforeVisitMethod(node)) {
         ErrorCollector collector = (ErrorCollector) node.getNodeMetaData(ERROR_COLLECTOR);
         if (collector != null) {
-            typeCheckingContext.errorCollector.addCollectorContents(collector);
+            typeCheckingContext.getErrorCollector().addCollectorContents(collector);
         } else {
-            startMethodInference(node, typeCheckingContext.errorCollector);
+            startMethodInference(node, typeCheckingContext.getErrorCollector());
         }
         node.removeNodeMetaData(ERROR_COLLECTOR);
         }
@@ -1540,8 +1529,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (typeCheckingContext.alreadyVisitedMethods.contains(node)) return;
         typeCheckingContext.alreadyVisitedMethods.add(node);
 
-        ErrorCollector oldCollector = typeCheckingContext.errorCollector;
-        typeCheckingContext.errorCollector = collector;
+        typeCheckingContext.pushErrorCollector(collector);
 
         final boolean osc = typeCheckingContext.isInStaticContext;
         try {
@@ -1561,7 +1549,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             typeCheckingContext.isInStaticContext = osc;
         }
 
-        typeCheckingContext.errorCollector = oldCollector;
+        typeCheckingContext.popErrorCollector();
         node.putNodeMetaData(ERROR_COLLECTOR, collector);
     }
 
@@ -1721,7 +1709,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
      */
     protected void silentlyVisitMethodNode(final MethodNode directMethodCallCandidate) {
         // visit is authorized because the classnode belongs to the same source unit
-        ErrorCollector collector = new ErrorCollector(typeCheckingContext.errorCollector.getConfiguration());
+        ErrorCollector collector = new ErrorCollector(typeCheckingContext.getErrorCollector().getConfiguration());
         startMethodInference(directMethodCallCandidate, collector);
     }
 
@@ -2482,13 +2470,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (componentType == null) {
             // GROOVY-5521
             // try to identify a getAt method
-            ErrorCollector oldCollector = typeCheckingContext.errorCollector;
-            typeCheckingContext.errorCollector = new ErrorCollector(new CompilerConfiguration());
+            typeCheckingContext.pushErrorCollector();
             MethodCallExpression vcall = new MethodCallExpression(new VariableExpression("_hash_", containerType), "getAt", new VariableExpression("_index_", indexType));
             try {
                 visitMethodCallExpression(vcall);
             } finally {
-                typeCheckingContext.errorCollector = oldCollector;
+                typeCheckingContext.popErrorCollector();
             }
             return getType(vcall);
         } else {
@@ -3249,7 +3236,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     protected void addError(final String msg, final ASTNode expr) {
         Long err = ((long) expr.getLineNumber()) << 16 + expr.getColumnNumber();
         if (!typeCheckingContext.reportedErrors.contains(err)) {
-            typeCheckingContext.errorCollector.addErrorAndContinue(new SyntaxErrorMessage(
+            typeCheckingContext.getErrorCollector().addErrorAndContinue(new SyntaxErrorMessage(
                     new SyntaxException(msg + '\n', expr.getLineNumber(), expr.getColumnNumber(), expr.getLastLineNumber(), expr.getLastColumnNumber()),
                     typeCheckingContext.source)
             );
