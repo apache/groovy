@@ -91,20 +91,8 @@ public class AnnotationCollectorTransform {
             List<AnnotationNode> meta = getMeta(cn); 
             List<Expression> outer = new ArrayList<Expression>(meta.size());
             for (AnnotationNode an : meta) {
-                MapExpression map = new MapExpression();
-                for (String key : an.getMembers().keySet()) {
-                    Expression val = an.getMember(key);
-                    if (val instanceof ListExpression) {
-                        ListExpression le = (ListExpression) val;
-                        val = new ArrayExpression(ClassHelper.OBJECT_TYPE, le.getExpressions());
-                    }
-                    map.addMapEntryExpression(new ConstantExpression(key), an.getMember(key));
-                }
-                List<Expression> l = new ArrayList<Expression>(2);
-                l.add(new ClassExpression(an.getClassNode()));
-                l.add(map);
-                ArrayExpression ae = new ArrayExpression(ClassHelper.OBJECT_TYPE, l);
-                outer.add(ae);
+                Expression serialized = serialize(an);
+                outer.add(serialized);
             }
 
             ArrayExpression ae = new ArrayExpression(ClassHelper.OBJECT_TYPE.makeArray(), outer);
@@ -120,6 +108,34 @@ public class AnnotationCollectorTransform {
                 if (an==collector) continue;
                 it.remove();
             }
+        }
+
+        private Expression serialize(Expression e) {
+            if (e instanceof AnnotationConstantExpression) {
+                AnnotationConstantExpression ace = (AnnotationConstantExpression) e;
+                return serialize((AnnotationNode) ace.getValue());
+            } else if (e instanceof ListExpression) {
+                ListExpression le = (ListExpression) e;
+                List<Expression> list = le.getExpressions();
+                List<Expression> newList = new ArrayList<Expression>(list.size());
+                for (Expression exp: list) {
+                    newList.add(serialize(exp));
+                }
+                return new ArrayExpression(ClassHelper.OBJECT_TYPE.makeArray(), newList);
+            }
+            return e;
+        }
+
+        private Expression serialize(AnnotationNode an) {
+            MapExpression map = new MapExpression();
+            for (String key : an.getMembers().keySet()) {
+                map.addMapEntryExpression(new ConstantExpression(key), serialize(an.getMember(key)));
+            }
+            List<Expression> l = new ArrayList<Expression>(2);
+            l.add(new ClassExpression(an.getClassNode()));
+            l.add(map);
+            ArrayExpression ae = new ArrayExpression(ClassHelper.OBJECT_TYPE, l);
+            return ae;
         }
     }
     
@@ -197,6 +213,10 @@ public class AnnotationCollectorTransform {
         } catch (Exception e) {
             throw new GroovyBugError(e);
         }
+        return makeListOfAnnotations(data);
+    }
+    
+    private static List<AnnotationNode> makeListOfAnnotations(Object[][] data) {
         if (data.length==0) return Collections.EMPTY_LIST;
 
         ArrayList<AnnotationNode> ret = new ArrayList<AnnotationNode>(data.length);
@@ -221,13 +241,22 @@ public class AnnotationCollectorTransform {
     private static Expression makeExpression(Object o) {
         if (o instanceof Class) return new ClassExpression(ClassHelper.make((Class) o));
         //TODO: value as Annotation here!
-        if (!(o instanceof List)) return new ConstantExpression(o,true);
-        ListExpression le = new ListExpression();
-        List values = (List) o;
-        for (Object val : values) {
-            le.addExpression(makeExpression(val));
+        if (o instanceof Object[][]) {
+            List<AnnotationNode> annotations = makeListOfAnnotations((Object[][])o);
+            ListExpression le = new ListExpression();
+            for (AnnotationNode an : annotations) {
+                le.addExpression(new AnnotationConstantExpression(an));
+            }
+            return le;
+        } else if (o instanceof List) {
+            ListExpression le = new ListExpression();
+            List values = (List) o;
+            for (Object val : values) {
+                le.addExpression(makeExpression(val));
+            }
+            return le;
         }
-        return le;
+        return new ConstantExpression(o,true);
     }
     
     /**
