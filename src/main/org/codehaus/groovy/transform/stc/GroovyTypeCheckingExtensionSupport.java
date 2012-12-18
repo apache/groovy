@@ -225,59 +225,12 @@ public class GroovyTypeCheckingExtensionSupport extends TypeCheckingExtension {
         typeCheckingVisitor.typeCheckingContext.delegationMetadata = new DelegationMetadata(type, strategy, parent);
     }
 
-    /**
-     * Compares the value of an AST node property with an expected value. This method handles ClassNode instances
-     * differently, allowing the user to use a Class instead of a ClassNode (for improved readability).
-     *
-     * @param property property to be used as a reference
-     * @param value    value to compare with. May be a Class if the property is a ClassNode.
-     * @return true if both values are equal
-     */
-    private boolean nullSafeEqualsClassNodeAware(Object property, Object value) {
-        if (property == null) return value == null;
-        if (property instanceof ClassNode && value instanceof Class) {
-            return nullSafeEqualsClassNodeAware(property, ClassHelper.make((Class) value));
-        }
-        return property.equals(value);
+    public boolean isAnnotatedBy(ClassNode node, Class annotation) {
+        return !node.getAnnotations(ClassHelper.make(annotation)).isEmpty();
     }
 
-    /**
-     * This method is used to provide an easy syntax to check if an AST node matches some predicate.
-     *
-     * @param node       the target node
-     * @param predicates a map of predicates, for which the key is a property name and the value is either a value to
-     *                   compare with, or a predicate in the form of a closure
-     * @return <code>boolean</code> true if the node matches all predicates
-     */
-    public <R> R ifMatches(Map<String, ?> predicates, ASTNode node, Closure<R> code) {
-        boolean match = true;
-        Map properties = DefaultGroovyMethods.getProperties(node);
-        for (Map.Entry<String, ?> entry : predicates.entrySet()) {
-            String propertyName = entry.getKey();
-            if (!properties.containsKey(propertyName)) {
-                match = false;
-            } else {
-                Object value = properties.get(propertyName);
-                Object predicate = entry.getValue();
-                if (predicate instanceof Closure) {
-                    Closure clone = ((Closure) predicate).rehydrate(value, this, this);
-                    clone.setResolveStrategy(Closure.DELEGATE_FIRST);
-                    Object result = clone.call(value);
-                    if (result instanceof Boolean) {
-                        match = (Boolean) result;
-                    } else {
-                        match = result == null ? false : DefaultGroovyMethods.asType(result, Boolean.class);
-                    }
-                } else {
-                    match = nullSafeEqualsClassNodeAware(value, predicate);
-                }
-            }
-            if (!match) break;
-        }
-        if (match) {
-            return code.call();
-        }
-        return null;
+    public boolean isAnnotatedBy(ClassNode node, ClassNode annotation) {
+        return !node.getAnnotations(annotation).isEmpty();
     }
 
     public boolean isDynamic(VariableExpression var) {
@@ -475,7 +428,7 @@ public class GroovyTypeCheckingExtensionSupport extends TypeCheckingExtension {
     @SuppressWarnings("unchecked")
     public <R> R withTypeChecker(Closure<R> code) {
         Closure<R> clone = (Closure<R>) code.clone();
-        clone.setDelegate(code);
+        clone.setDelegate(typeCheckingVisitor);
         clone.setResolveStrategy(Closure.DELEGATE_FIRST);
         return clone.call();
     }
