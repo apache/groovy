@@ -121,7 +121,7 @@ public class AnnotationCollectorTransform {
                 for (Expression exp: list) {
                     newList.add(serialize(exp));
                 }
-                return new ArrayExpression(ClassHelper.OBJECT_TYPE.makeArray(), newList);
+                return new ArrayExpression(ClassHelper.OBJECT_TYPE, newList);
             }
             return e;
         }
@@ -248,9 +248,9 @@ public class AnnotationCollectorTransform {
                 le.addExpression(new AnnotationConstantExpression(an));
             }
             return le;
-        } else if (o instanceof List) {
+        } else if (o instanceof Object[]) {
             ListExpression le = new ListExpression();
-            List values = (List) o;
+            Object[] values = (Object[]) o;
             for (Object val : values) {
                 le.addExpression(makeExpression(val));
             }
