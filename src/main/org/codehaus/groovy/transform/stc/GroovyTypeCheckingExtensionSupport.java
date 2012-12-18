@@ -387,12 +387,24 @@ public class GroovyTypeCheckingExtensionSupport extends TypeCheckingExtension {
         if (argTypes.length != classes.length) return false;
         boolean match = true;
         for (int i = 0; i < argTypes.length && match; i++) {
-            match = argTypes[i].equals(ClassHelper.make(classes[i]));
+            match = matchWithOrWithourBoxing(argTypes[i], classes[i]);
         }
         return match;
     }
 
-    public boolean argTypeMatches(MethodCall call, Class... classes) {
+    private boolean matchWithOrWithourBoxing(final ClassNode argType, final Class aClass) {
+        final boolean match;
+        ClassNode type = ClassHelper.make(aClass);
+        if (ClassHelper.isPrimitiveType(type) && !ClassHelper.isPrimitiveType(argType)) {
+            type = ClassHelper.getWrapper(type);
+        } else if (ClassHelper.isPrimitiveType(argType) && !ClassHelper.isPrimitiveType(type)) {
+            type = ClassHelper.getUnwrapper(type);
+        }
+        match = argType.equals(type);
+        return match;
+    }
+
+    public boolean argTypesMatches(MethodCall call, Class... classes) {
         ArgumentListExpression argumentListExpression = InvocationWriter.makeArgumentList(call.getArguments());
         ClassNode[] argumentTypes = typeCheckingVisitor.getArgumentTypes(argumentListExpression);
         return argTypesMatches(argumentTypes, classes);
@@ -400,10 +412,10 @@ public class GroovyTypeCheckingExtensionSupport extends TypeCheckingExtension {
 
     public boolean firstArgTypesMatches(ClassNode[] argTypes, Class... classes) {
         if (classes == null) return argTypes == null || argTypes.length == 0;
+        if (argTypes.length<classes.length) return false;
         boolean match = true;
-        int minNumOfArgs = Math.min(argTypes.length, classes.length);
-        for (int i = 0; i < minNumOfArgs && match; i++) {
-            match = argTypes[i].equals(ClassHelper.make(classes[i]));
+        for (int i = 0; i < classes.length && match; i++) {
+            match = matchWithOrWithourBoxing(argTypes[i], classes[i]);
         }
         return match;
     }
@@ -416,7 +428,7 @@ public class GroovyTypeCheckingExtensionSupport extends TypeCheckingExtension {
 
     public boolean argTypeMatches(ClassNode[] argTypes, int index, Class clazz) {
         if (index >= argTypes.length) return false;
-        return argTypes[index].equals(ClassHelper.make(clazz));
+        return matchWithOrWithourBoxing(argTypes[index],clazz);
     }
 
     public boolean argTypeMatches(MethodCall call, int index, Class clazz) {

@@ -220,4 +220,65 @@ class TypeCheckingExtensionsTest extends StaticTypeCheckingTestCase {
             }
         '''
     }
+
+    void testScopeEnterScopeExit() {
+        extension = 'groovy/transform/stc/ScopeEnterExitTestExtension.groovy'
+        shouldFailWithMessages '''
+            class Support {
+                void foo(Closure c) { c() }
+            }
+            new Support().foo {
+                'a'.toUpperCase()
+            }
+        ''', 'Scope enter and exit behave correctly' // we're using shouldFail just to verify that the extension is ran
+    }
+
+    void testMatchingArguments() {
+        extension = 'groovy/transform/stc/ArgumentsTestingTestExtension.groovy'
+        shouldFailWithMessages '''
+            def zero() {}
+            def two(String a, Integer b) {}
+            def three(String a, int b, Date c) {}
+            'foo'.concat('bar')
+            zero()
+            two('foo', 1)
+            three('foo', 2, new Date())
+            three('foo', (Integer)2, new Date())
+        ''', 'Method [zero] with matching arguments found: 0',
+             'Method [concat] with matching arguments found: 1',
+                'Method [two] with matching arguments found: 2',
+                'Method [three] with matching arguments found: 3',
+                'Method [three] with matching arguments found: 3'
+    }
+
+    void testFirstArgsMatches() {
+        extension = 'groovy/transform/stc/FirstArgumentsTestingTestExtension.groovy'
+        shouldFailWithMessages '''
+            def two(String a, Integer b) {}
+            def three(String a, int b, Date c) {}
+            two('foo', 1)
+            three('foo', 2, new Date())
+            three('foo', (Integer)2, new Date())
+        ''', 'Method [two] with matching arguments found: 2',
+                'Method [three] with matching arguments found: 3',
+                'Method [three] with matching arguments found: 3'
+    }
+
+    void testNthArgMatches() {
+        extension = 'groovy/transform/stc/NthArgumentTestingTestExtension.groovy'
+        shouldFailWithMessages '''
+            def two(String a, Integer b) {}
+            def three(String a, int b, Date c) {}
+            two('foo', 1)
+            three('foo', 2, new Date())
+            three('foo', (Integer)2, new Date())
+        ''', 'Method [two] with matching argument found: [0, class java.lang.String]',
+             'Method [two] with matching argument found: [1, class java.lang.Integer]',
+             'Method [three] with matching argument found: [0, class java.lang.String]',
+             'Method [three] with matching argument found: [1, class java.lang.Integer]',
+             'Method [three] with matching argument found: [2, class java.util.Date]',
+             'Method [three] with matching argument found: [0, class java.lang.String]',
+             'Method [three] with matching argument found: [1, class java.lang.Integer]',
+             'Method [three] with matching argument found: [2, class java.util.Date]'
+    }
 }
