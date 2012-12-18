@@ -281,4 +281,18 @@ class TypeCheckingExtensionsTest extends StaticTypeCheckingTestCase {
              'Method [three] with matching argument found: [1, class java.lang.Integer]',
              'Method [three] with matching argument found: [2, class java.util.Date]'
     }
+
+    void testIncompatibleAssignment() {
+        extension = null
+        shouldFailWithMessages '''
+            int x = 'foo'
+        ''', 'Cannot assign value of type java.lang.String to variable of type int'
+
+        extension = 'groovy/transform/stc/IncompatibleAssignmentTestExtension.groovy'
+        assertScript '''
+            try {
+                int x = 'foo'
+            } catch (e) {}
+        '''
+    }
 }
