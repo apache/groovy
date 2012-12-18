@@ -17,9 +17,6 @@ package groovy.transform.stc
 
 import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
 
-import java.lang.annotation.Retention
-import java.lang.annotation.RetentionPolicy
-
 /**
  * Units tests for type checking extensions.
  *
@@ -66,6 +63,13 @@ class TypeCheckingExtensionsTest extends StaticTypeCheckingTestCase {
             class B {}
             new A()
         '''
+    }
+
+    void testNewMethodAndIsGenerated() {
+        extension = 'groovy/transform/stc/NewMethodAndIsGeneratedTestExtension.groovy'
+        shouldFailWithMessages '''
+            'foo'
+        ''', 'Extension was executed properly'
     }
 
     void testUndefinedVariable() {
