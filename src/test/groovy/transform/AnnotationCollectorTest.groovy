@@ -52,13 +52,18 @@ class AnnotationCollectorTest extends GroovyTestCase {
     }
 
     void testSimpleUsage() {
+        assert PreCompiledAlias.value().length == 0
+        assert PreCompiledAlias.value() instanceof Object[][]
         assertScript """
-            @groovy.transform.PreCompiledAlias
+            import groovy.transform.PreCompiledAlias 
+            @PreCompiledAlias
             class Foo {
                 Integer a, b
             }
             assert Foo.class.annotations.size()==3 
             assert new Foo(1,2).toString() == "Foo(1, 2)"
+            assert PreCompiledAlias.value().length == 0
+            assert PreCompiledAlias.value() instanceof Object[][]
         """
 
         assertScript """
@@ -72,6 +77,8 @@ class AnnotationCollectorTest extends GroovyTestCase {
             }
             assert Foo.class.annotations.size()==3
             assert new Foo(1,2).toString() == "Foo(1, 2)"
+            assert NotPreCompiledAlias.value().length == 0
+            assert NotPreCompiledAlias.value() instanceof Object[][]
         """
     }
 
@@ -85,6 +92,8 @@ class AnnotationCollectorTest extends GroovyTestCase {
             }
             assert Foo.class.annotations.size()==3 
             assert new Foo(1,2).toString() == "Foo(2)"
+            assert PreCompiledAlias.value().length == 0
+            assert PreCompiledAlias.value() instanceof Object[][]
         """
 
         assertScript """
@@ -98,6 +107,8 @@ class AnnotationCollectorTest extends GroovyTestCase {
             }
             assert Foo.class.annotations.size()==3 
             assert new Foo(1,2).toString() == "Foo(2)"
+            assert NotPreCompiledAlias.value().length == 0
+            assert NotPreCompiledAlias.value() instanceof Object[][]
         """
     }
     
@@ -121,6 +132,8 @@ class AnnotationCollectorTest extends GroovyTestCase {
             } catch (InterruptedException ie)  {
                 assert true
             }
+            assert NotPreCompiledAlias.value().length == 0
+            assert NotPreCompiledAlias.value() instanceof Object[][]
         """
         assertScript """
             import groovy.transform.*
@@ -139,6 +152,8 @@ class AnnotationCollectorTest extends GroovyTestCase {
             } catch (InterruptedException ie)  {
                 assert true
             }
+            assert OtherPreCompiledAlias.value().length == 0
+            assert OtherPreCompiledAlias.value() instanceof Object[][]
         """
     }
 
@@ -161,6 +176,8 @@ class AnnotationCollectorTest extends GroovyTestCase {
             }
             assert Foo.class.annotations.size() == 4
             assert new Foo(1,2).toString() == "Foo(2)"
+            assert Alias.value().length == 0
+            assert Alias.value() instanceof Object[][]
         """
     }
     
@@ -192,6 +209,8 @@ class AnnotationCollectorTest extends GroovyTestCase {
             }
             assert Foo.class.annotations.size()==3 
             assert new Foo(1,2).toString() == "Foo(2)"
+            assert Alias.value().length == 0
+            assert Alias.value() instanceof Object[][]
         """
     }
     
@@ -239,6 +258,19 @@ class AnnotationCollectorTest extends GroovyTestCase {
             }
             assert Foo.class.annotations.size()==2
             assert new Foo(1,2).toString() == "Foo(2)"
+
+            def data = PreCompiledAlias3.value()
+            assert data.length == 2
+            assert data instanceof Object[][]
+            assert data[0].length == 2
+            assert data[0][0] == groovy.transform.Immutable
+            assert data[0][1] instanceof Map
+            assert data[0][1].size() == 0
+            assert data[1][0] == groovy.transform.ToString
+            assert data[1][1] instanceof Map
+            assert data[1][1].size() == 1
+            assert data[1][1].excludes instanceof Object[]
+            assert data[1][1].excludes[0] == "a"
         """
 
         assertScript """
@@ -254,6 +286,19 @@ class AnnotationCollectorTest extends GroovyTestCase {
             }
             assert Foo.class.annotations.size()==2
             assert new Foo(1,2).toString() == "Foo(2)"
+
+            def data = Alias.value()
+            assert data.length == 2
+            assert data instanceof Object[][]
+            assert data[0].length == 2
+            assert data[0][0] == groovy.transform.Immutable
+            assert data[0][1] instanceof Map
+            assert data[0][1].size() == 0
+            assert data[1][0] == groovy.transform.ToString
+            assert data[1][1] instanceof Map
+            assert data[1][1].size() == 1
+            assert data[1][1].excludes instanceof Object[]
+            assert data[1][1].excludes[0] == "a"
         """
     }
 
@@ -268,6 +313,24 @@ class AnnotationCollectorTest extends GroovyTestCase {
             assert Team.class.annotations[0] instanceof GroovyCoreTeam
             assert Team.class.annotations[0].value().size() == 4
             assert Team.class.annotations[0].value().collect { it.value() } == ['Paul', 'Cedric', 'Jochen', 'Guillaume']
+
+            def data = TheSuperGroovyHeroes.value()
+            assert data.length == 1
+            assert data instanceof Object[][]
+            assert data[0].length == 2
+            assert data[0][0] == groovy.transform.GroovyCoreTeam
+            assert data[0][1] instanceof Map
+            assert data[0][1].size() == 1
+            data = data[0][1].value
+            assert data.length == 4
+            assert data[0][0] == GroovyDeveloper
+            assert data[0][1].value == "Paul"
+            assert data[1][0] == GroovyDeveloper
+            assert data[1][1].value == "Cedric"
+            assert data[2][0] == GroovyDeveloper
+            assert data[2][1].value == "Jochen"
+            assert data[3][0] == GroovyDeveloper
+            assert data[3][1].value == "Guillaume"
         """
 
         assertScript """
@@ -290,6 +353,23 @@ class AnnotationCollectorTest extends GroovyTestCase {
             assert Team.class.annotations[0].value().size() == 4
             assert Team.class.annotations[0].value().collect { it.value() } == ['Paul', 'Cedric', 'Jochen', 'Guillaume']
 
+            def data = SuperHeroes.value()
+            assert data.length == 1
+            assert data instanceof Object[][]
+            assert data[0].length == 2
+            assert data[0][0] == groovy.transform.GroovyCoreTeam
+            assert data[0][1] instanceof Map
+            assert data[0][1].size() == 1
+            data = data[0][1].value
+            assert data.length == 4
+            assert data[0][0] == GroovyDeveloper
+            assert data[0][1].value == "Paul"
+            assert data[1][0] == GroovyDeveloper
+            assert data[1][1].value == "Cedric"
+            assert data[2][0] == GroovyDeveloper
+            assert data[2][1].value == "Jochen"
+            assert data[3][0] == GroovyDeveloper
+            assert data[3][1].value == "Guillaume"
         """
     }
 }
