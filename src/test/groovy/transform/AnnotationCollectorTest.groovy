@@ -16,7 +16,10 @@
 package groovy.transform
 
 import org.codehaus.groovy.ast.*;
-import org.codehaus.groovy.control.SourceUnit;
+import org.codehaus.groovy.control.SourceUnit
+
+import java.lang.annotation.Retention
+import java.lang.annotation.RetentionPolicy;
 
 class AnnotationCollectorTest extends GroovyTestCase {
 
@@ -253,6 +256,42 @@ class AnnotationCollectorTest extends GroovyTestCase {
             assert new Foo(1,2).toString() == "Foo(2)"
         """
     }
+
+    void testAnnotationTakingAnnotationParams() {
+        assertScript """
+            import groovy.transform.*
+
+            @TheSuperGroovyHeroes
+            class Team {}
+
+            assert Team.class.annotations.size() == 1
+            assert Team.class.annotations[0] instanceof GroovyCoreTeam
+            assert Team.class.annotations[0].value().size() == 4
+            assert Team.class.annotations[0].value().collect { it.value() } == ['Paul', 'Cedric', 'Jochen', 'Guillaume']
+        """
+
+        assertScript """
+            import groovy.transform.*
+
+            @GroovyCoreTeam([
+                @GroovyDeveloper('Paul'),
+                @GroovyDeveloper('Cedric'),
+                @GroovyDeveloper('Jochen'),
+                @GroovyDeveloper('Guillaume')
+            ])
+            @AnnotationCollector
+            @interface SuperHeroes {}
+
+            @SuperHeroes
+            class Team {}
+
+            assert Team.class.annotations.size() == 1
+            assert Team.class.annotations[0] instanceof GroovyCoreTeam
+            assert Team.class.annotations[0].value().size() == 4
+            assert Team.class.annotations[0].value().collect { it.value() } == ['Paul', 'Cedric', 'Jochen', 'Guillaume']
+
+        """
+    }
 }
 
 @AnnotationCollector([ToString, EqualsAndHashCode, Immutable])
@@ -265,3 +304,22 @@ class AnnotationCollectorTest extends GroovyTestCase {
 @ToString(excludes=["a"])
 @AnnotationCollector()
 class PreCompiledAlias3 {}
+
+@Retention(RetentionPolicy.RUNTIME)
+@interface GroovyCoreTeam {
+    GroovyDeveloper[] value()
+}
+
+@Retention(RetentionPolicy.RUNTIME)
+@interface GroovyDeveloper {
+    String value() default "";
+}
+
+@GroovyCoreTeam([
+    @GroovyDeveloper('Paul'),
+    @GroovyDeveloper('Cedric'),
+    @GroovyDeveloper('Jochen'),
+    @GroovyDeveloper('Guillaume')
+])
+@AnnotationCollector
+@interface TheSuperGroovyHeroes {}
