@@ -214,23 +214,23 @@ public class GroovyTypeCheckingExtensionSupport extends TypeCheckingExtension {
     }
 
     public void delegatesTo(ClassNode type) {
-        typeCheckingVisitor.typeCheckingContext.delegationMetadata = new DelegationMetadata(type, Closure.OWNER_FIRST);
+        delegatesTo(type, Closure.OWNER_FIRST);
     }
 
     public void delegatesTo(ClassNode type, int strategy) {
-        typeCheckingVisitor.typeCheckingContext.delegationMetadata = new DelegationMetadata(type, strategy);
+        delegatesTo(type, strategy, typeCheckingVisitor.typeCheckingContext.delegationMetadata);
     }
 
     public void delegatesTo(ClassNode type, int strategy, DelegationMetadata parent) {
         typeCheckingVisitor.typeCheckingContext.delegationMetadata = new DelegationMetadata(type, strategy, parent);
     }
 
-    public boolean isAnnotatedBy(ClassNode node, Class annotation) {
-        return !node.getAnnotations(ClassHelper.make(annotation)).isEmpty();
+    public boolean isAnnotatedBy(ASTNode node, Class annotation) {
+        return isAnnotatedBy(node, ClassHelper.make(annotation));
     }
 
-    public boolean isAnnotatedBy(ClassNode node, ClassNode annotation) {
-        return !node.getAnnotations(annotation).isEmpty();
+    public boolean isAnnotatedBy(ASTNode node, ClassNode annotation) {
+        return node instanceof AnnotatedNode && !((AnnotatedNode)node).getAnnotations(annotation).isEmpty();
     }
 
     public boolean isDynamic(VariableExpression var) {

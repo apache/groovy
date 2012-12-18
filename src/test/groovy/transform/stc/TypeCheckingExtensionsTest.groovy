@@ -17,6 +17,9 @@ package groovy.transform.stc
 
 import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
 
+import java.lang.annotation.Retention
+import java.lang.annotation.RetentionPolicy
+
 /**
  * Units tests for type checking extensions.
  *
@@ -295,4 +298,51 @@ class TypeCheckingExtensionsTest extends StaticTypeCheckingTestCase {
             } catch (e) {}
         '''
     }
+
+    void testDelegatesTo() {
+        extension = null
+        shouldFailWithMessages '''
+        class Item { void pick(){} }
+        void build(Closure arg) {
+            arg.delegate = new Item()
+            arg()
+        }
+        build {
+            pick()
+        }
+        ''', 'Cannot find matching method'
+
+        extension = 'groovy/transform/stc/DelegatesToTestExtension.groovy'
+        assertScript '''
+        class Item { void pick(){} }
+        void build(Closure arg) {
+            arg.delegate = new Item()
+            arg()
+        }
+        build {
+            pick()
+        }
+        '''
+    }
+
+    void testIsAnnotatedBy() {
+        extension = null
+        assertScript '''
+        @groovy.transform.stc.MyType(String)
+        @ASTTest(phase=INSTRUCTION_SELECTION,value={
+            assert node.getNodeMetaData(INFERRED_RETURN_TYPE) == int_TYPE
+        })
+        int foo() { 1 }
+        '''
+
+        extension = 'groovy/transform/stc/AnnotatedByTestExtension.groovy'
+        assertScript '''
+        @groovy.transform.stc.MyType(String)
+        @ASTTest(phase=INSTRUCTION_SELECTION,value={
+            assert node.getNodeMetaData(INFERRED_RETURN_TYPE) == STRING_TYPE
+        })
+        int foo() { 1 }
+        '''
+    }
+
 }
