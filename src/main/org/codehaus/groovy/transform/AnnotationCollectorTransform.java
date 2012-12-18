@@ -115,13 +115,17 @@ public class AnnotationCollectorTransform {
                 AnnotationConstantExpression ace = (AnnotationConstantExpression) e;
                 return serialize((AnnotationNode) ace.getValue());
             } else if (e instanceof ListExpression) {
+                boolean annotationConstant = false;
                 ListExpression le = (ListExpression) e;
                 List<Expression> list = le.getExpressions();
                 List<Expression> newList = new ArrayList<Expression>(list.size());
                 for (Expression exp: list) {
+                    annotationConstant = annotationConstant || exp instanceof AnnotationConstantExpression;
                     newList.add(serialize(exp));
                 }
-                return new ArrayExpression(ClassHelper.OBJECT_TYPE, newList);
+                ClassNode type = ClassHelper.OBJECT_TYPE;
+                if (annotationConstant) type = type.makeArray();
+                return new ArrayExpression(type, newList);
             }
             return e;
         }
