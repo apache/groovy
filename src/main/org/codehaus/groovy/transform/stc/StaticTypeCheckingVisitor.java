@@ -148,6 +148,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     @Override
     public void visitClass(final ClassNode node) {
         if (shouldSkipClassNode(node)) return;
+        if (extension.beforeVisitClass(node)) {
+            extension.afterVisitClass(node);
+            return;
+        }
         Object type = node.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
         if (type != null) {
             // transformation has already been run on this class node
@@ -173,6 +177,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         for (ConstructorNode constructorNode : node.getDeclaredConstructors()) {
             constructorNode.putNodeMetaData(StaticTypeCheckingVisitor.class, Boolean.TRUE);
         }
+        extension.afterVisitClass(node);
     }
 
     protected boolean shouldSkipClassNode(final ClassNode node) {

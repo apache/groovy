@@ -104,6 +104,21 @@ public class DefaultTypeCheckingExtension extends TypeCheckingExtension {
     }
 
     @Override
+    public void afterVisitClass(final ClassNode node) {
+        for (TypeCheckingExtension handler : handlers) {
+            handler.afterVisitClass(node);
+        }
+    }
+
+    @Override
+    public boolean beforeVisitClass(final ClassNode node) {
+        for (TypeCheckingExtension handler : handlers) {
+            if (handler.beforeVisitClass(node)) return true;
+        }
+        return false;
+    }
+
+    @Override
     public void afterMethodCall(final MethodCall call) {
         for (TypeCheckingExtension handler : handlers) {
             handler.afterMethodCall(call);

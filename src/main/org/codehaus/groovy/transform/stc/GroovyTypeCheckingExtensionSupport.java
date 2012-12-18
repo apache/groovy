@@ -58,6 +58,8 @@ public class GroovyTypeCheckingExtensionSupport extends TypeCheckingExtension {
                 put("methodNotFound", "handleMissingMethod");
                 put("afterVisitMethod", "afterVisitMethod");
                 put("beforeVisitMethod", "beforeVisitMethod");
+                put("afterVisitClass", "afterVisitClass");
+                put("beforeVisitClass", "beforeVisitClass");
                 put("incompatibleAssignment", "handleIncompatibleAssignment");
                 put("setup","setup");
                 put("finish", "finish");
@@ -333,6 +335,28 @@ public class GroovyTypeCheckingExtensionSupport extends TypeCheckingExtension {
     }
 
     @Override
+    public boolean beforeVisitClass(final ClassNode node) {
+        setHandled(false);
+        List<Closure> list = eventHandlers.get("beforeVisitClass");
+        if (list != null) {
+            for (Closure closure : list) {
+                safeCall(closure, node);
+            }
+        }
+        return handled;
+    }
+
+    @Override
+    public void afterVisitClass(final ClassNode node) {
+        List<Closure> list = eventHandlers.get("afterVisitClass");
+        if (list != null) {
+            for (Closure closure : list) {
+                safeCall(closure, node);
+            }
+        }
+    }
+
+    @Override
     public boolean beforeVisitMethod(final MethodNode node) {
         setHandled(false);
         List<Closure> list = eventHandlers.get("beforeVisitMethod");
@@ -341,7 +365,7 @@ public class GroovyTypeCheckingExtensionSupport extends TypeCheckingExtension {
                 safeCall(closure, node);
             }
         }
-        return false;
+        return handled;
     }
 
     @Override
@@ -428,7 +452,7 @@ public class GroovyTypeCheckingExtensionSupport extends TypeCheckingExtension {
 
     public boolean argTypeMatches(ClassNode[] argTypes, int index, Class clazz) {
         if (index >= argTypes.length) return false;
-        return matchWithOrWithourBoxing(argTypes[index],clazz);
+        return matchWithOrWithourBoxing(argTypes[index], clazz);
     }
 
     public boolean argTypeMatches(MethodCall call, int index, Class clazz) {

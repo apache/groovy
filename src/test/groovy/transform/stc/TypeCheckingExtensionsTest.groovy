@@ -349,4 +349,24 @@ class TypeCheckingExtensionsTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    void testBeforeAfterClass() {
+        extension = 'groovy/transform/stc/BeforeAfterClassTestExtension.groovy'
+        assertScript '''
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                assert node.getNodeMetaData(INFERRED_TYPE)?.name == 'A'
+                assert node.getNodeMetaData('after') == true
+            })
+            class A {}
+
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                assert node.getNodeMetaData(INFERRED_TYPE) == null // disabled through beforeVisitClass
+                assert node.getNodeMetaData('after') == true
+            })
+            class B {
+                void hasTypeCheckingError() { int x = 'foo' }
+            }
+            new A()
+        '''
+    }
+
 }

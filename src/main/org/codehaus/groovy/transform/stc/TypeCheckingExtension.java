@@ -152,6 +152,29 @@ public class TypeCheckingExtension {
     }
 
     /**
+     * Allows the extension to perform additional tasks before the type checker actually visits a class node.
+     * Compared to a custom visitor, this method ensures that the node being visited is a node which would have
+     * been visited by the type checker. This is in particular important for nodes which are marked with
+     * {@link groovy.transform.TypeCheckingMode.SKIP}.
+     * @param node a class node
+     * @return false if the type checker should visit the node, or true if this extension replaces what the
+     * type checker would do with the class.
+     */
+    public boolean beforeVisitClass(ClassNode node) {
+        return false;
+    }
+
+    /**
+     * Allows the extension to perform additional tasks after the type checker actually visited a class node.
+     * Compared to a custom visitor, this method ensures that the node being visited is a node which would have
+     * been visited by the type checker. This is in particular important for nodes which are marked with
+     * {@link groovy.transform.TypeCheckingMode.SKIP}.
+     * @param node a class node
+     */
+    public void afterVisitClass(ClassNode node) {
+    }
+
+    /**
      * Allows the extension to perform additional tasks before the type checker actually visits a method call.
      * Compared to a custom visitor, this method ensures that the node being visited is a node which would have
      * been visited by the type checker. This is in particular important for nodes which are marked with
