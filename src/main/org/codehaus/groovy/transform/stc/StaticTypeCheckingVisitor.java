@@ -3231,7 +3231,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
      * return the same instance if the provided type is not a generic type.
      *
      * @param type
-     * @return
+     * @return the wrapped type
      */
     private static ClassNode wrapTypeIfNecessary(ClassNode type) {
         if (isPrimitiveType(type)) return getWrapper(type);

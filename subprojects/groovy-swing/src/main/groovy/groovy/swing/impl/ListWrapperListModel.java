@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.ListIterator;
 
 /**
- * A {@code ListModel} implementation that's backed by a live {@List}.
+ * A {@code ListModel} implementation that's backed by a live {@code List}.
  *
  * @author Andres Almiray
  */
