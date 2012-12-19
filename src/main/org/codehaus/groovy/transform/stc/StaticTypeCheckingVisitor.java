@@ -2646,6 +2646,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
         if (ClassHelper.GSTRING_TYPE.equals(receiver)) return findMethod(ClassHelper.STRING_TYPE, name, args);
 
+        if (isBeingCompiled(receiver)) {
+            chosen = findMethod(GROOVY_OBJECT_TYPE, name, args);
+            if (!chosen.isEmpty()) return chosen;
+        }
+
         return EMPTY_METHODNODE_LIST;
     }
 

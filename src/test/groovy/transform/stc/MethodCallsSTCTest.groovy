@@ -753,8 +753,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
 
             new SpreadInCtor(*['A', 'B'])
         ''',
-                'The spread operator cannot be used as argument of method or closure calls with static type checking because the number of arguments cannot be determined at compile time',
-                'Cannot find matching method'
+                'The spread operator cannot be used as argument of method or closure calls with static type checking because the number of arguments cannot be determined at compile time'
     }
 
     void testSpreadArgsForbiddenInClosureCall() {
@@ -882,6 +881,20 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         }
         Bottom.foo()
         assert Top.called
+        '''
+    }
+
+    void testShouldFindSetProperty() {
+        assertScript '''
+            class A {
+                int x
+                void foo() {
+                    this.setProperty('x', 1)
+                }
+            }
+            def a = new A()
+            a.foo()
+            assert a.x == 1
         '''
     }
 
