@@ -41,4 +41,8 @@ public class AnnotationConstantExpression extends ConstantExpression {
         }
         super.visit(visitor);
     }
+
+    public String toString() {
+        return "AnnotationConstantExpression[" + getValue() + "]";
+    }
 }
