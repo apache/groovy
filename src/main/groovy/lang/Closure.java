@@ -24,7 +24,6 @@ import org.codehaus.groovy.runtime.callsite.BooleanClosureWrapper;
 import org.codehaus.groovy.runtime.memoize.LRUCache;
 import org.codehaus.groovy.runtime.memoize.Memoize;
 import org.codehaus.groovy.runtime.memoize.UnlimitedConcurrentCache;
-import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -59,8 +58,6 @@ import java.io.Writer;
  * @author <a href="mailto:blackdrag@gmx.org">Jochen Theodorou</a>
  * @author Graeme Rocher
  * @author Paul King
- *
- * @version $Revision$
  */
 public abstract class Closure<V> extends GroovyObjectSupport implements Cloneable, Runnable, GroovyCallable<V>, Serializable {
 

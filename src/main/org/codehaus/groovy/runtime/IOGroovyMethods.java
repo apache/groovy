@@ -21,7 +21,6 @@ import groovy.lang.StringWriterIOException;
 import groovy.lang.Writable;
 
 import org.codehaus.groovy.runtime.callsite.BooleanClosureWrapper;
-import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 import java.io.*;
 import java.util.Arrays;
