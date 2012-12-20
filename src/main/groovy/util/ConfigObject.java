@@ -58,6 +58,14 @@ public class ConfigObject extends GroovyObjectSupport implements Writable, Map {
         this(null);
     }
 
+    public URL getConfigFile() {
+        return configFile;
+    }
+
+    public void setConfigFile(URL configFile) {
+        this.configFile = configFile;
+    }
+
     /**
      * Writes this config object into a String serialized representation which can later be parsed back using the parse()
      * method
