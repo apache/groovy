@@ -302,62 +302,50 @@ public class ConfigObject extends GroovyObjectSupport implements Writable, Map {
         }
     }
 
-    @Override
     public int size() {
         return delegateMap.size();
     }
 
-    @Override
     public boolean isEmpty() {
         return delegateMap.isEmpty();
     }
 
-    @Override
     public boolean containsKey(Object key) {
         return delegateMap.containsKey(key);
     }
 
-    @Override
     public boolean containsValue(Object value) {
         return delegateMap.containsValue(value);
     }
 
-    @Override
     public Object get(Object key) {
         return delegateMap.get(key);
     }
 
-    @Override
     public Object put(Object key, Object value) {
         return delegateMap.put(key, value);
     }
 
-    @Override
     public Object remove(Object key) {
         return delegateMap.remove(key);
     }
 
-    @Override
     public void putAll(Map m) {
         delegateMap.putAll(m);
     }
 
-    @Override
     public void clear() {
         delegateMap.clear();
     }
 
-    @Override
     public Set keySet() {
         return delegateMap.keySet();
     }
 
-    @Override
     public Collection values() {
         return delegateMap.values();
     }
 
-    @Override
     public Set entrySet() {
         return delegateMap.entrySet();
     }
