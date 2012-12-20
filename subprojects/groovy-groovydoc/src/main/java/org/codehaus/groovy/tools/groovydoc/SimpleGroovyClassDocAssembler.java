@@ -602,7 +602,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
             for (String name : importedClassesAndPackages) {
                 if (name.endsWith(slashName)) {
                     typeName = name;
-                    break;
+//                    break;
                 }
             }
         }
