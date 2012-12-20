@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2011 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package org.codehaus.groovy.control.customizers
 
 import org.codehaus.groovy.control.CompilerConfiguration
-import org.codehaus.groovy.control.CompilePhase
 
 /**
  * Tests the import customizer.

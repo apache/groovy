@@ -156,12 +156,14 @@ ruleset {
     ruleset('rulesets/grails.xml')
 
     ruleset('rulesets/imports.xml') {
-
         'UnnecessaryGroovyImport' {
             doNotApplyToFileNames='JListProperties.groovy,GridBagFactory.groovy,Groovy558_616_Bug.groovy'
         }
-        exclude 'DuplicateImport'   // too many to worry about, review later
+        'DuplicateImport' {
+            doNotApplyToFileNames='StaticImportTest.groovy,'
+        }
         exclude 'ImportFromSamePackage'   // too many to worry about, review later
+        exclude 'MisorderedStaticImports'   // too many to worry about, opposite to IDEA default
     }
 
     ruleset('rulesets/logging.xml') {
@@ -304,6 +306,7 @@ ruleset {
         exclude 'UnnecessaryStringInstantiation' // too many to worry about, review later
         exclude 'UnnecessaryOverridingMethod' // too many to worry about, review later
         exclude 'UnnecessaryCallForLastElement' // too many to worry about, review later
+        exclude 'UnnecessaryPackageReference' // failing for all scripts
     }
     ruleset('rulesets/dry.xml') {
         //exclude 'DuplicateNumberLiteral'    // BUG in CodeNarc 0.13. No way to exclude a float. 

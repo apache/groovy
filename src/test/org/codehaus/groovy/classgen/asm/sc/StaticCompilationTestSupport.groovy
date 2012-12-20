@@ -15,7 +15,6 @@
  */
 package org.codehaus.groovy.classgen.asm.sc
 
-import org.objectweb.asm.ClassVisitor
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
 import groovy.transform.CompileStatic
@@ -25,7 +24,6 @@ import org.codehaus.groovy.control.customizers.CompilationCustomizer
 import org.codehaus.groovy.control.CompilePhase
 import org.codehaus.groovy.ast.ClassNode
 import org.objectweb.asm.ClassReader
-import org.objectweb.asm.ClassWriter
 import org.objectweb.asm.util.CheckClassAdapter
 import org.codehaus.groovy.control.customizers.ImportCustomizer
 import org.codehaus.groovy.tools.GroovyClass
