@@ -19,7 +19,6 @@ import groovy.lang.GroovyObjectSupport;
 import groovy.lang.Writable;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.InvokerHelper;
-import org.codehaus.groovy.runtime.StringGroovyMethods;
 import org.codehaus.groovy.syntax.Types;
 
 import java.io.BufferedWriter;
@@ -189,7 +188,7 @@ public class ConfigObject extends GroovyObjectSupport implements Writable, Map {
     }
 
     private void writeConfig(String prefix, ConfigObject map, BufferedWriter out, int tab, boolean apply) throws IOException {
-        String space = apply ? StringGroovyMethods.multiply(TAB_CHARACTER, tab) : "";
+        String space = apply ? DefaultGroovyMethods.multiply(TAB_CHARACTER, tab) : "";
 
         for (Object o1 : map.keySet()) {
             String key = (String) o1;
@@ -255,7 +254,7 @@ public class ConfigObject extends GroovyObjectSupport implements Writable, Map {
         boolean isKeyword = KEYWORDS.contains(key);
         key = isKeyword ? InvokerHelper.inspect(key) : key;
 
-        if (!StringGroovyMethods.asBoolean(prefix) && isKeyword) prefix = "this.";
+        if (!DefaultGroovyMethods.asBoolean(prefix) && isKeyword) prefix = "this.";
         out.append(space).append(prefix).append(key).append('=').append(InvokerHelper.inspect(value));
         out.newLine();
     }
