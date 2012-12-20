@@ -15,8 +15,6 @@
  */
 package groovy.util;
 
-import groovy.lang.Closure;
-import groovy.lang.GroovyObject;
 import groovy.lang.GroovyObjectSupport;
 import groovy.lang.Writable;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
