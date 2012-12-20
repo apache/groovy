@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,6 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
  * (mainly used as a marker).
  *
  * @author <a href='mailto:the[dot]mindstorm[at]gmail[dot]com'>Alex Popescu</a>
- * @version $Revision: 3264 $
  */
 public class AnnotationConstantExpression extends ConstantExpression {
     public AnnotationConstantExpression(AnnotationNode node) {
