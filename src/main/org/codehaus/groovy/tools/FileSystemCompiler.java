@@ -296,6 +296,8 @@ public class FileSystemCompiler {
             CompilerConfiguration configuratorConfig = new CompilerConfiguration();
             ImportCustomizer customizer = new ImportCustomizer();
             customizer.addStaticStars("org.codehaus.groovy.control.customizers.builder.CompilerCustomizationBuilder");
+            configuratorConfig.addCompilationCustomizers(customizer);
+
             GroovyShell shell = new GroovyShell(binding, configuratorConfig);
             shell.evaluate(groovyConfigurator);
         }
