@@ -15,8 +15,6 @@
  */
 package groovy.xml;
 
-import java.io.IOException;
-import java.io.ObjectInputStream;
 import java.io.Serializable;
 
 /**
@@ -33,7 +31,7 @@ import java.io.Serializable;
 public class QName implements Serializable {
 
     /** comment/shared empty string */
-    private static final String EMPTY_STRING = "".intern();
+    private static final String EMPTY_STRING = "";
 
     /** Field namespaceURI */
     private String namespaceURI;
@@ -73,17 +71,17 @@ public class QName implements Serializable {
     public QName(String namespaceURI, String localPart, String prefix) {
         this.namespaceURI = (namespaceURI == null)
                 ? EMPTY_STRING
-                : namespaceURI.trim().intern();
+                : namespaceURI;
         if (localPart == null) {
             throw new IllegalArgumentException("invalid QName local part");
         } else {
-            this.localPart = localPart.trim().intern();
+            this.localPart = localPart;
         }
 
         if (prefix == null) {
             throw new IllegalArgumentException("invalid QName prefix");
         } else {
-            this.prefix = prefix.trim().intern();
+            this.prefix = prefix;
         }
     }
 
@@ -120,7 +118,6 @@ public class QName implements Serializable {
      * @return  a string representation of the QName
      */
     public String getQualifiedName() {
-
         return ((prefix.equals(EMPTY_STRING))
                 ? localPart
                 : prefix + ':' + localPart);
@@ -132,7 +129,6 @@ public class QName implements Serializable {
      * @return  a string representation of the QName
      */
     public String toString() {
-
         return ((namespaceURI.equals(EMPTY_STRING))
                 ? localPart
                 : '{' + namespaceURI + '}' + localPart);
@@ -285,18 +281,5 @@ public class QName implements Serializable {
         result = namespaceURI.hashCode();
         result = 29 * result + localPart.hashCode();
         return result;
-    }
-
-    /**
-     * Ensure that deserialization properly interns the results.
-     * @param in the ObjectInputStream to be read
-     */
-    private void readObject(ObjectInputStream in) throws
-            IOException, ClassNotFoundException {
-        in.defaultReadObject();
-
-        namespaceURI = namespaceURI.intern();
-        localPart = localPart.intern();
-        prefix = prefix.intern();
     }
 } 
