@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2011 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,6 +37,7 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
+import groovy.xml.QName;
 import org.xml.sax.Attributes;
 import org.xml.sax.DTDHandler;
 import org.xml.sax.EntityResolver;
@@ -342,8 +343,9 @@ public class XmlSlurper extends DefaultHandler {
             if (atts.getURI(i).length() == 0) {
                 attributes.put(atts.getQName(i), atts.getValue(i));
             } else {
-                attributes.put(atts.getLocalName(i), atts.getValue(i));
-                attributeNamespaces.put(atts.getLocalName(i), atts.getURI(i));
+                String key = new QName(atts.getURI(i), atts.getLocalName(i)).toString();
+                attributes.put(key, atts.getValue(i));
+                attributeNamespaces.put(key, atts.getURI(i));
             }
         }
 
@@ -387,12 +389,6 @@ public class XmlSlurper extends DefaultHandler {
     public void endDocument() throws SAXException {
     }
 
-    // Implementation methods
-    //-------------------------------------------------------------------------
-
-    /**
-     *
-     */
     private void addCdata() {
         if (charBuffer.length() != 0) {
             //
