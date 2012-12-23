@@ -499,7 +499,7 @@ class GroovyMethodsTest extends GroovySwingTestCase {
 
     void testCountForStringEdgeCases_GROOVY5858() {
         def blank6 = ' ' * 6
-        8.times { assert count(blank6, ' ' * it) == 7 - it }
+        8.times { assert blank6.count(' ' * it) == 7 - it }
     }
 
     void testJoinForIterator() {
