@@ -409,6 +409,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
             idx = self.indexOf(text, idx);
             if (idx >= 0) {
                 ++answer;
+                if (idx == self.length()) break;
             } else {
                 break;
             }
