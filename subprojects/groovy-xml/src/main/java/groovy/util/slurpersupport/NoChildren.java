@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,9 +27,13 @@ import java.util.Map;
 /**
  * Lazy evaluated representation of a GPath expression returning no children.
  *
+ * As this class represents a GPath expression with no results, all methods
+ * are either NOPs or return an empty result.
+ *
  * @author John Wilson
  */
 public class NoChildren extends GPathResult {
+
     /**
      * @param parent            the GPathResult prior to the application of the expression creating this GPathResult
      * @param name              if the GPathResult corresponds to something with a name, e.g. a node
@@ -39,38 +43,42 @@ public class NoChildren extends GPathResult {
         super(parent, name, "*", namespaceTagHints);
     }
 
-    /* (non-Javadoc)
-    * @see org.codehaus.groovy.sandbox.util.slurpersupport.GPathResult#size()
-    */
+    /**
+     * Returns <code>0</code>.
+     * @return <code>0</code>
+     */
     public int size() {
         return 0;
     }
 
-    /* (non-Javadoc)
-    * @see org.codehaus.groovy.sandbox.util.slurpersupport.GPathResult#text()
-    */
+    /**
+     * Returns an empty <code>String</code>.
+     * @return an empty <code>String</code>
+     */
     public String text() {
         return "";
     }
 
-    /* (non-Javadoc)
-    * @see org.codehaus.groovy.sandbox.util.slurpersupport.GPathResult#parents()
-    */
+    /**
+     * Throws a <code>GroovyRuntimeException</code>, because it is not implemented yet.
+     */
     public GPathResult parents() {
         // TODO Auto-generated method stub
         throw new GroovyRuntimeException("parents() not implemented yet");
     }
 
-    /* (non-Javadoc)
-    * @see org.codehaus.groovy.sandbox.util.slurpersupport.GPathResult#childNodes()
-    */
+    /**
+     * Returns an empty <code>Iterator</code>.
+     * @return an empty <code>Iterator</code>
+     */
     public Iterator childNodes() {
         return iterator();
     }
 
-    /* (non-Javadoc)
-    * @see org.codehaus.groovy.sandbox.util.slurpersupport.GPathResult#iterator()
-    */
+    /**
+     * Returns an empty <code>Iterator</code>.
+     * @return an empty <code>Iterator</code>
+     */
     public Iterator iterator() {
         return new Iterator() {
             public boolean hasNext() {
@@ -87,52 +95,70 @@ public class NoChildren extends GPathResult {
         };
     }
 
-    /* (non-Javadoc)
-    * @see org.codehaus.groovy.sandbox.util.slurpersupport.GPathResult#find(groovy.lang.Closure)
-    */
+    /**
+     * Returns <code>this</code>.
+     * @return <code>this</code>
+     */
     public GPathResult find(final Closure closure) {
         return this;
     }
 
-    /* (non-Javadoc)
-    * @see org.codehaus.groovy.sandbox.util.slurpersupport.GPathResult#findAll(groovy.lang.Closure)
-    */
+    /**
+     * Returns <code>this</code>.
+     * @return <code>this</code>
+     */
     public GPathResult findAll(final Closure closure) {
         return this;
     }
 
-    /* (non-Javadoc)
-    * @see org.codehaus.groovy.sandbox.util.slurpersupport.GPathResult#nodeIterator()
-    */
+    /**
+     * Returns an empty iterator.
+     * @return an empty iterator
+     */
     public Iterator nodeIterator() {
         return iterator();
     }
 
-    /* (non-Javadoc)
-    * @see groovy.lang.Writable#writeTo(java.io.Writer)
-    */
+    /**
+     * Does not write any output, just returns the writer.
+     *
+     * @return the <code>Writer</code> which was passed in
+     */
     public Writer writeTo(final Writer out) throws IOException {
         return out;
     }
 
-    /* (non-Javadoc)
-    * @see org.codehaus.groovy.sandbox.markup.Buildable#build(groovy.lang.GroovyObject)
-    */
+    /**
+     * NOP
+     */
     public void build(final GroovyObject builder) {
     }
 
+    /**
+     * NOP
+     */
     protected void replaceNode(final Closure newValue) {
         // No elements match GPath expression - do nothing
     }
 
+    /**
+     * NOP
+     */
     protected void replaceBody(final Object newValue) {
         // No elements match GPath expression - do nothing
     }
 
+    /**
+     * NOP
+     */
     protected void appendNode(final Object newValue) {
         // TODO consider creating an element for this
     }
 
+    /**
+     * Returns <code>false</code>.
+     * @return <code>false</code>
+     */
     public boolean asBoolean() {
         return false;
     }

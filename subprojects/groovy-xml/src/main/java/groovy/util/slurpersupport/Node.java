@@ -56,22 +56,42 @@ public class Node implements Writable {
         this.namespaceURI = namespaceURI;
     }
 
+    /**
+     * Returns the name of this Node.
+     * @return the name of this Node
+     */
     public String name() {
         return this.name;
     }
 
+    /**
+     * Returns the URI of the namespace of this Node.
+     * @return the namespace of this Node
+     */
     public String namespaceURI() {
         return this.namespaceURI;
     }
 
+    /**
+     * Returns a map of the attributes of this Node.
+     * @return a map of the attributes of this Node
+     */
     public Map attributes() {
         return this.attributes;
     }
 
+    /**
+     * Returns a list of the children of this Node.
+     * @return a list of the children of this Node
+     */
     public List children() {
         return this.children;
     }
 
+    /**
+     * Adds an object as a new child to this Node.
+     * @param child the object to add as a child
+     */
     public void addChild(final Object child) {
         this.children.add(child);
     }
@@ -88,6 +108,10 @@ public class Node implements Writable {
         });
     }
 
+    /**
+     * Replaces the current body of this Node with the passed object.
+     * @param newValue the new body
+     */
     protected void replaceBody(final Object newValue) {
         this.children.clear();
         this.children.add(newValue);
@@ -107,9 +131,10 @@ public class Node implements Writable {
         }
     }
 
-    /* (non-Javadoc)
-    * @see org.codehaus.groovy.sandbox.util.slurpersupport.Node#text()
-    */
+    /**
+     * Returns a string containing the text of the children of this Node.
+     * @return a string containing the text of the children of this Node
+     */
     public String text() {
         final StringBuilder sb = new StringBuilder();
         for (Object child : this.children) {
@@ -122,10 +147,10 @@ public class Node implements Writable {
         return sb.toString();
     }
 
-    /* (non-Javadoc)
-    * @see org.codehaus.groovy.sandbox.util.slurpersupport.Node#childNodes()
-    */
-
+    /**
+     * Returns an iterator over the child nodes of this Node.
+     * @return an iterator over the child nodes of this Node
+     */
     public Iterator childNodes() {
         return new Iterator() {
             private final Iterator iter = Node.this.children.iterator();
@@ -159,9 +184,6 @@ public class Node implements Writable {
         };
     }
 
-    /* (non-Javadoc)
-    * @see org.codehaus.groovy.sandbox.util.slurpersupport.Node#writeTo(java.io.Writer)
-    */
     public Writer writeTo(final Writer out) throws IOException {
         if (this.replacementNodeStack.empty()) {
             for (Object child : this.children) {
