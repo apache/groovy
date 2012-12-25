@@ -60,6 +60,9 @@ class Attributes extends NodeChildren {
         return this.name.substring(1);
     }
 
+    /**
+     * Throws a <code>GroovyRuntimeException</code>, because attributes can have no children.
+     */
     public Iterator childNodes() {
         throw new GroovyRuntimeException("Can't get the child nodes on a GPath expression selecting attributes: ...." + this.parent.name() + "." + name() + ".childNodes()");
     }
