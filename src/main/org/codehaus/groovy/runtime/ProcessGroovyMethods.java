@@ -70,9 +70,7 @@ public class ProcessGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static String getText(Process self) throws IOException {
         String text = IOGroovyMethods.getText(new BufferedReader(new InputStreamReader(self.getInputStream())));
-        try { self.getErrorStream().close(); } catch (IOException ignore) {}
-        try { self.getInputStream().close(); } catch (IOException ignore) {}
-        try { self.getOutputStream().close(); } catch (IOException ignore) {}
+        closeStreams(self);
         return text;
     }
 
@@ -140,6 +138,18 @@ public class ProcessGroovyMethods extends DefaultGroovyMethodsSupport {
         Thread thread = new Thread(runnable);
         thread.start();
         runnable.waitForOrKill(numberOfMillis);
+    }
+
+    /**
+     * Closes all the streams associated with the process (ignoring any IOExceptions).
+     *
+     * @param self a Process
+     * @since 2.1
+     */
+    public static void closeStreams(Process self) {
+        try { self.getErrorStream().close(); } catch (IOException ignore) {}
+        try { self.getInputStream().close(); } catch (IOException ignore) {}
+        try { self.getOutputStream().close(); } catch (IOException ignore) {}
     }
 
     /**
