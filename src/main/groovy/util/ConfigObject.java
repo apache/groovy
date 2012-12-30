@@ -25,6 +25,7 @@ import org.codehaus.groovy.syntax.Types;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.Writer;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.*;
 
@@ -37,7 +38,7 @@ import java.util.*;
  * @author Guillaume Laforge (rewrite in Java related to security constraints on Google App Engine)
  * @since 1.5
  */
-public class ConfigObject extends GroovyObjectSupport implements Writable, Map {
+public class ConfigObject extends GroovyObjectSupport implements Writable, Map, Cloneable {
 
     static final Collection<String> KEYWORDS = Types.getKeywords();
 
@@ -348,5 +349,27 @@ public class ConfigObject extends GroovyObjectSupport implements Writable, Map {
 
     public Set entrySet() {
         return delegateMap.entrySet();
+    }
+
+    /**
+     * Returns a shallow copy of this ConfigObject, keys and configuration entries are not cloned.
+     * @return a shallow copy of this ConfigObject
+     */
+    public ConfigObject clone() {
+        try {
+            ConfigObject clone = (ConfigObject) super.clone();
+            if (configFile != null){
+                try {
+                    clone.configFile = new URL(configFile.toString());
+                }
+                catch (MalformedURLException e) {
+                    throw new AssertionError();
+                }
+            }
+            clone.delegateMap = (LinkedHashMap) delegateMap.clone();
+            return clone;
+        } catch (CloneNotSupportedException e) {
+            throw new AssertionError();
+        }
     }
 }
