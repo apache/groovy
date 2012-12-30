@@ -237,9 +237,7 @@ public class ProcessGroovyMethods extends DefaultGroovyMethodsSupport {
         try { tout.join(); } catch (InterruptedException ignore) {}
         try { terr.join(); } catch (InterruptedException ignore) {}
         try { self.waitFor(); } catch (InterruptedException ignore) {}
-        try { self.getErrorStream().close(); } catch (IOException ignore) {}
-        try { self.getInputStream().close(); } catch (IOException ignore) {}
-        try { self.getOutputStream().close(); } catch (IOException ignore) {}
+        closeStreams(self);
     }
 
     /**
@@ -261,9 +259,7 @@ public class ProcessGroovyMethods extends DefaultGroovyMethodsSupport {
         try { tout.join(); } catch (InterruptedException ignore) {}
         try { terr.join(); } catch (InterruptedException ignore) {}
         try { self.waitFor(); } catch (InterruptedException ignore) {}
-        try { self.getErrorStream().close(); } catch (IOException ignore) {}
-        try { self.getInputStream().close(); } catch (IOException ignore) {}
-        try { self.getOutputStream().close(); } catch (IOException ignore) {}
+        closeStreams(self);
     }
 
     /**
