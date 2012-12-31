@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -249,5 +250,13 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
      */
     public Pattern negate() {
         return DefaultGroovyMethods.bitwiseNegate(toString());
+    }
+
+    public byte[] getBytes() {
+        return toString().getBytes();
+    }
+
+    public byte[] getBytes(String charset) throws UnsupportedEncodingException {
+       return toString().getBytes(charset);
     }
 }
