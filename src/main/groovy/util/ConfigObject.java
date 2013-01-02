@@ -358,14 +358,7 @@ public class ConfigObject extends GroovyObjectSupport implements Writable, Map, 
     public ConfigObject clone() {
         try {
             ConfigObject clone = (ConfigObject) super.clone();
-            if (configFile != null){
-                try {
-                    clone.configFile = new URL(configFile.toString());
-                }
-                catch (MalformedURLException e) {
-                    throw new AssertionError();
-                }
-            }
+            clone.configFile = configFile;
             clone.delegateMap = (LinkedHashMap) delegateMap.clone();
             return clone;
         } catch (CloneNotSupportedException e) {
