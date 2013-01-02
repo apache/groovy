@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -60,7 +60,8 @@ public class XmlGroovyMethods {
 
     /**
      * Transforms the element to its text equivalent.
-     * (The resulting string does not contain a xml declaration.)
+     * (The resulting string does not contain a xml declaration. Use {@code XmlUtil.serialize(element)} if you need the declaration.)
+     *
      * @param element the element to serialize
      * @return the string representation of the element
      * @since 2.1
