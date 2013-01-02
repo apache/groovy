@@ -25,7 +25,6 @@ import org.codehaus.groovy.syntax.Types;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.Writer;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.*;
 
