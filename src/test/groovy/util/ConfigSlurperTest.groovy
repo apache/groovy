@@ -460,6 +460,13 @@ log4j {
         assertEquals false, config.log4j.additivity.org.codehaus.groovy.grails
     }
 
+    void testCloneConfig() {
+        ConfigObject original = new ConfigSlurper().parse('foo { bar = "barValue" }')
+        ConfigObject clone = original.clone()
+
+        assert clone.foo.bar == "barValue"
+    }
+
     void testNotProperlyNestedPropertiesArePreserved() throws IOException {
         Properties props = new Properties()
         props.load(ConfigSlurperTest.class.getResourceAsStream("system.properties"))
