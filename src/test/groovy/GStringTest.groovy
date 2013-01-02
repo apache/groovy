@@ -555,4 +555,16 @@ class GStringTest extends GroovyTestCase {
         def b = "$a"
         assert foo(b) == 1 
     }
+
+    /**
+     * GROOVY-5761 - getBytes for GString
+     */
+    public void testGetBytes() {
+        String string = 'Hello world'
+        String world = 'world'
+        GString gstring = "Hello ${world}"
+
+        assert gstring.bytes == string.bytes
+        assert gstring.getBytes('UTF-8') ==  string.getBytes('UTF-8')
+    }
 }
