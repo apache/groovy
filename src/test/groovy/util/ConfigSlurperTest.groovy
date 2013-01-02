@@ -518,4 +518,46 @@ log4j {
         assert config.log4j.logger.foo.bar == "debug"
         assert config.log4j.logger.extraLogger == "info"
     }
+
+    /**
+     * Test for GROOVY-5370: ConfigSlurper - multiple environment blocks broken
+     */
+    void testMultipleToplevelEnvironmentBlocksForSameEnvironment() {
+        def config = new ConfigSlurper('development').parse("""
+            environments {
+                development {
+                    a = 1
+                }
+            }
+            environments {
+                development {
+                    b = 2
+                }
+            }
+        """)
+
+       assert config == [a:1, b:2]
+    }
+
+    /**
+     * Test for GROOVY-5370: ConfigSlurper - multiple environment blocks broken
+     */
+    void testMultipleEnvironmentBlocksOnDifferentLevelsForSameEnvironment() {
+        def config = new ConfigSlurper('development').parse("""
+            environments {
+                development {
+                    a = 1
+                }
+            }
+            blah {
+                environments {
+                    development {
+                        c = 3
+                    }
+                }
+            }
+        """)
+
+        assert config == [a:1, blah:[c: 3]]
+    }
 }
