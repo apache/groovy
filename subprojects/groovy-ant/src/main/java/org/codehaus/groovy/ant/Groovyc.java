@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -132,8 +132,8 @@ public class Groovyc extends MatchingTask {
     protected File[] compileList = new File[0];
 
     private String updatedProperty;
-    private String errorProperty; // TODO support this
-    private boolean taskSuccess = true; // assume the best; TODO check this is working
+    private String errorProperty;
+    private boolean taskSuccess = true;
     private boolean includeDestClasses = true;
 
     protected CompilerConfiguration configuration;
@@ -726,7 +726,7 @@ public class Groovyc extends MatchingTask {
     }
 
     /**
-     * Clear the list of files to be compiled and copied..
+     * Clear the list of files to be compiled and copied.
      */
     protected void resetFileLists() {
         compileList = new File[0];
@@ -828,7 +828,7 @@ public class Groovyc extends MatchingTask {
                     || (key.contains("verbose"))
                     || (key.contains("deprecation"))) {
                 // false is default, so something to do only in true case
-                if ("on".equalsIgnoreCase(value) || "true".equalsIgnoreCase(value) || "yes".equalsIgnoreCase("value"))
+                if ("on".equalsIgnoreCase(value) || "true".equalsIgnoreCase(value) || "yes".equalsIgnoreCase(value))
                     jointOptions.add("-F" + key);
             } else if (key.contains("classpath")) {
                 classpath.add(javac.getClasspath());
@@ -1004,6 +1004,10 @@ public class Groovyc extends MatchingTask {
         }
         final int returnCode = executor.getExitValue();
         if (returnCode != 0) {
+            taskSuccess = false;
+            if (errorProperty != null) {
+                getProject().setNewProperty(errorProperty, "true");
+            }
             if (failOnError) {
                 throw new BuildException("Forked groovyc returned error code: " + returnCode);
             } else {
@@ -1052,6 +1056,11 @@ public class Groovyc extends MatchingTask {
             StringWriter writer = new StringWriter();
             new ErrorReporter(t, false).write(new PrintWriter(writer));
             String message = writer.toString();
+
+            taskSuccess = false;
+            if (errorProperty != null) {
+                getProject().setNewProperty(errorProperty, "true");
+            }
 
             if (failOnError) {
                 log.info(message);
