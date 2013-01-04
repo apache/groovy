@@ -89,6 +89,7 @@ import java.util.StringTokenizer;
  * <li>scriptBaseClass</li>
  * <li>stubdir</li>
  * <li>keepStubs</li>
+ * <li>forceLookupUnnamedFiles</li>
  * </ul>
  * And these nested tasks:
  * <ul>
@@ -143,6 +144,7 @@ public class Groovyc extends MatchingTask {
     private List<File> temporaryFiles = new ArrayList<File>(2);
     private File stubDir;
     private boolean keepStubs;
+    private boolean forceLookupUnnamedFiles;
     private boolean useIndy;
     private String scriptBaseClass;
 
@@ -693,6 +695,32 @@ public class Groovyc extends MatchingTask {
     }
 
     /**
+     * Set the forceLookupUnnamedFiles flag. Defaults to false.
+     *
+     * The Groovyc Ant task is frequently used in the context of a build system
+     * that knows the complete list of source files to be compiled. In such a
+     * context, it is wasteful for the Groovy compiler to go searching the
+     * classpath when looking for source files and hence by default the
+     * Groovyc Ant task calls the compiler in a special mode with such searching
+     * turned off. If you wish the compiler to search for source files then
+     * you need to set this flag to {@code true}.
+     *
+     * @param forceLookupUnnamedFiles should unnamed source files be searched for on the classpath
+     */
+    public void setForceLookupUnnamedFiles(boolean forceLookupUnnamedFiles) {
+        this.forceLookupUnnamedFiles = forceLookupUnnamedFiles;
+    }
+
+    /**
+     * Gets the forceLookupUnnamedFiles flag.
+     *
+     * @return the forceLookupUnnamedFiles flag
+     */
+    public boolean getForceLookupUnnamedFiles() {
+        return forceLookupUnnamedFiles;
+    }
+
+    /**
      * Executes the task.
      *
      * @throws BuildException if an error occurs
@@ -918,6 +946,9 @@ public class Groovyc extends MatchingTask {
             commandLineList.add("-Dgroovy.default.scriptExtension=" + tmpExtension);
         }
         commandLineList.add(FileSystemCompilerFacade.class.getName());
+        if (forceLookupUnnamedFiles) {
+            commandLineList.add("--forceLookupUnnamedFiles");
+        }
     }
 
     private void doNormalCommandLineList(List<String> commandLineList, List<String> jointOptions, Path classpath) {
@@ -1044,7 +1075,7 @@ public class Groovyc extends MatchingTask {
             }
 
             if (!fileNameErrors) {
-                FileSystemCompiler.doCompilation(configuration, makeCompileUnit(), filenames, false);
+                FileSystemCompiler.doCompilation(configuration, makeCompileUnit(), filenames, forceLookupUnnamedFiles);
             }
 
         } catch (Exception re) {
@@ -1167,12 +1198,14 @@ public class Groovyc extends MatchingTask {
         }
 
         GroovyClassLoader loader = new GroovyClassLoader(parent, configuration);
-        // in command line we don't need to do script lookups
-        loader.setResourceLoader(new GroovyResourceLoader() {
-            public URL loadGroovySource(String filename) throws MalformedURLException {
-                return null;
-            }
-        });
+        if (!forceLookupUnnamedFiles) {
+            // in normal case we don't need to do script lookups
+            loader.setResourceLoader(new GroovyResourceLoader() {
+                public URL loadGroovySource(String filename) throws MalformedURLException {
+                    return null;
+                }
+            });
+        }
         return loader;
     }
 

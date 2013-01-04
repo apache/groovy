@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,13 +17,24 @@ package org.codehaus.groovy.ant;
 
 import org.codehaus.groovy.tools.FileSystemCompiler;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 /**
  * This is a helper class, to provide a controlled entry point for the groovyc
  * ant task forked mode.
+ *
  * @author <a href="mailto:blackdrag@gmx.org">Jochen "blackdrag" Theodorou</a>
  */
 public class FileSystemCompilerFacade {
     public static void main(String[] args) {
-        FileSystemCompiler.commandLineCompileWithErrorHandling(args,false);
+        List<String> argList = new ArrayList<String>(Arrays.asList(args));
+        boolean forceLookupUnnamedFiles = argList.contains("--forceLookupUnnamedFiles");
+        if (forceLookupUnnamedFiles) {
+            argList.remove("--forceLookupUnnamedFiles");
+        }
+        String[] newArgs = forceLookupUnnamedFiles ? argList.toArray(new String[argList.size()]) : args;
+        FileSystemCompiler.commandLineCompileWithErrorHandling(newArgs, forceLookupUnnamedFiles);
     }
 }
