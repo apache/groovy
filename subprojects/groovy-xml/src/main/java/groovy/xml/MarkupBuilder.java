@@ -407,6 +407,7 @@ public class MarkupBuilder extends BuilderSupport {
         return sb == null ? value : sb.toString();
     }
 
+    // TODO: re-write as a closure and consider using StringGroovyMethods.collectReplacements() above?
     private String checkForReplacement(boolean isAttrValue, char ch) {
         switch (ch) {
             case '&':
