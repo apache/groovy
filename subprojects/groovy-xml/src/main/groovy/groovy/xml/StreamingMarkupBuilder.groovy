@@ -124,11 +124,12 @@ class StreamingMarkupBuilder extends AbstractStreamingBuilder {
     }
     
     def tagClosure = {tag, doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, out ->
+        boolean pendingIsDefaultNamespace = pendingNamespaces.containsKey(prefix) && !pendingNamespaces[prefix]
         if (prefix != "") {
             if (!(namespaces.containsKey(prefix) || pendingNamespaces.containsKey(prefix))) {
                 throw new GroovyRuntimeException("Namespace prefix: ${prefix} is not bound to a URI")
             }
-            if (prefix != ":") tag = prefix + ":" + tag
+            if (prefix != ":" && !pendingIsDefaultNamespace) tag = prefix + ":" + tag
         }
 
         out = out.unescaped() << "<${tag}"
@@ -153,14 +154,16 @@ class StreamingMarkupBuilder extends AbstractStreamingBuilder {
 
         def hiddenNamespaces = [:]
 
-        pendingNamespaces.each {key, value ->
-            hiddenNamespaces[key] = namespaces[key]
-            namespaces[key] = value
-            out << ((key == ":") ? " xmlns=" + qt : " xmlns:${key}=" + qt)
-            out.writingAttribute = true
-            "${value}".build(doc)
-            out.writingAttribute = false
-            out << qt
+        pendingNamespaces.each { key, value ->
+            if (value) {
+                hiddenNamespaces[key] = namespaces[key]
+                namespaces[key] = value
+                out << ((key == ":") ? " xmlns=" + qt : " xmlns:${key}=" + qt)
+                out.writingAttribute = true
+                "${value}".build(doc)
+                out.writingAttribute = false
+                out << qt
+            }
         }
 
         if (body == null && !expandEmptyElements) {
