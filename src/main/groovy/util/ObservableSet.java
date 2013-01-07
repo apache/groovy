@@ -93,7 +93,7 @@ public class ObservableSet<E> implements Set<E> {
         return Collections.unmodifiableSet(delegate);
     }
 
-    protected Set<E> getDelegateList() {
+    protected Set<E> getDelegateSet() {
         return delegate;
     }
 
@@ -343,7 +343,7 @@ public class ObservableSet<E> implements Set<E> {
         private final ChangeType type;
 
         public ElementEvent(Object source, Object oldValue, Object newValue, ChangeType type) {
-            super(source, ObservableList.CONTENT_PROPERTY, oldValue, newValue);
+            super(source, ObservableSet.CONTENT_PROPERTY, oldValue, newValue);
             this.type = type;
         }
 
