@@ -239,7 +239,7 @@ public class IndyInterface {
                     info.handle = LOOKUP.unreflect(m);
                     if (LOG_ENABLED) LOG.info("successfully unreflected");
                     if (!isCategoryTypeMethod && isStatic(m)) {
-                        info.handle = MethodHandles.dropArguments(info.handle, 0, Class.class);
+                        info.handle = MethodHandles.dropArguments(info.handle, 0, Object.class);
                     }
                 } catch (IllegalAccessException e) {
                     throw new GroovyBugError(e);
