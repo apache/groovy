@@ -144,6 +144,12 @@ public class InvocationWriter {
         return true;
     }
 
+    private boolean lastIsArray(List<Expression> argumentList, int pos) {
+        Expression last = argumentList.get(pos);
+        ClassNode type = controller.getTypeChooser().resolveType(last, controller.getClassNode());
+        return type.isArray();
+    }
+    
     // load arguments
     protected void loadArguments(List<Expression> argumentList, Parameter[] para) {
         if (para.length==0) return;
@@ -151,7 +157,7 @@ public class InvocationWriter {
         AsmClassGenerator acg = controller.getAcg();
         OperandStack operandStack = controller.getOperandStack();
         if (lastParaType.isArray()
-                && (argumentList.size()>para.length || argumentList.size()==para.length-1 || !argumentList.get(para.length-1).getType().isArray())) {
+                && (argumentList.size()>para.length || argumentList.size()==para.length-1 || !lastIsArray(argumentList, para.length-1))) {
             int stackLen = operandStack.getStackLength()+argumentList.size();
             MethodVisitor mv = controller.getMethodVisitor();
             MethodVisitor orig = mv;

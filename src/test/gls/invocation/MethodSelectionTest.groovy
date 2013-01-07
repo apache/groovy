@@ -282,6 +282,23 @@ public class MethodSelectionTest extends CompilableTestSupport {
         foo(a, b)
       """
   }
+
+  // GROOVY-5812
+  void testDirectMethodCall() {
+      assertScript """
+          private String[] getStringArrayDirectly() { ["string_00", "string_01"] }   
+          private String[] getStringArrayIndirectlyWithType(String[] stringarray) { stringarray }    
+          private String[] getStringArrayIndirectlyWithoutType(stringarray) { stringarray }
+        
+          public int getStringArrayDirectly_Length() { getStringArrayDirectly().length }            
+          public int getStringArrayIndirectlyWithType_Length() { getStringArrayIndirectlyWithType(getStringArrayDirectly()).length }
+          public int getStringArrayIndirectlyWithoutType_Length() { getStringArrayIndirectlyWithoutType(getStringArrayDirectly()).length }
+
+          assert getStringArrayDirectly_Length() == getStringArrayIndirectlyWithoutType_Length()
+          assert getStringArrayDirectly_Length() == getStringArrayIndirectlyWithType_Length()
+          assert getStringArrayIndirectlyWithType_Length() == getStringArrayIndirectlyWithoutType_Length()
+      """
+  }
 }
 
 class Foo3977 {
