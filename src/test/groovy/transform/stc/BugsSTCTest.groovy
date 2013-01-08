@@ -280,4 +280,15 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
 
         execute()'''
     }
+
+    // GROOVY-5874-part-1
+    void testClosureSharedVariableInBinExp() {
+        shouldFailWithMessages '''
+            def sum = 0
+            def cl1 = { sum = sum + 1 }
+            def cl2 = { sum = new Date() }
+
+        ''', 'A closure shared variable [sum] has been assigned with various types'
+    }
+
 }

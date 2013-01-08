@@ -399,6 +399,16 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 resultType = lType;
             }
 
+            // if left expression is a closure shared variable, a second pass should be done
+            if (leftExpression instanceof VariableExpression) {
+                VariableExpression leftVar = (VariableExpression) leftExpression;
+                if (leftVar.isClosureSharedVariable()) {
+                    // if left expression is a closure shared variable, we should check it twice
+                    // see GROOVY-5874
+                    typeCheckingContext.secondPassExpressions.add(new SecondPassExpression<Void>(expression));
+                }
+            }
+
             if (lType.isUsingGenerics() && missesGenericsTypes(resultType) && isAssignment(op)) {
                 // unchecked assignment
                 // examples:
@@ -3297,7 +3307,32 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     public void performSecondPass() {
         for (SecondPassExpression wrapper : typeCheckingContext.secondPassExpressions) {
             Expression expression = wrapper.getExpression();
-            if (expression instanceof MethodCallExpression) {
+            if (expression instanceof BinaryExpression) {
+                Expression left = ((BinaryExpression) expression).getLeftExpression();
+                if (left instanceof VariableExpression) {
+                    // should always be the case
+                    // this should always be the case, but adding a test is safer
+                    Variable target = findTargetVariable((VariableExpression) left);
+                    if (target instanceof VariableExpression) {
+                        VariableExpression var = (VariableExpression) target;
+                        List<ClassNode> classNodes = typeCheckingContext.closureSharedVariablesAssignmentTypes.get(var);
+                        if (classNodes != null && classNodes.size() > 1) {
+                            ClassNode lub = lowestUpperBound(classNodes);
+                            String message = getOperationName(((BinaryExpression) expression).getOperation().getType());
+                            if (message!=null) {
+                                List<MethodNode> method = findMethod(lub, message, getType(((BinaryExpression) expression).getRightExpression()));
+                                if (method.isEmpty()) {
+                                    addStaticTypeError("A closure shared variable [" + target.getName() + "] has been assigned with various types and the method" +
+                                            " [" + toMethodParametersString(message, getType(((BinaryExpression) expression).getRightExpression())) + "]" +
+                                            " does not exist in the lowest upper bound of those types: [" +
+                                            lub.toString(false) + "]. In general, this is a bad practice (variable reuse) because the compiler cannot" +
+                                            " determine safely what is the type of the variable at the moment of the call in a multithreaded context.", expression);
+                                }
+                            }
+                        }
+                    }
+                }
+            } else if (expression instanceof MethodCallExpression) {
                 MethodCallExpression call = (MethodCallExpression) expression;
                 Expression objectExpression = call.getObjectExpression();
                 if (objectExpression instanceof VariableExpression) {
