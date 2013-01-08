@@ -637,5 +637,19 @@ class BugsStaticCompileTest extends BugsSTCTest {
                 cl()
             '''
     }
+
+    void testCallClosureInInnerClass() {
+        assertScript '''
+            class A {
+                static class B { // bug doesn't occur if not wrapped into an inner class
+                    static void foo() {
+                        def cl = { -> println 'ok' }
+                        cl()
+                    }
+                }
+            }
+            A.B.foo()
+        '''
+    }
 }
 
