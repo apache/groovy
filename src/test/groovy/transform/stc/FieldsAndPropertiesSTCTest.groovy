@@ -440,6 +440,17 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
             '''
     }
 
+    // GROOVY-5872
+    void testAssignNullToFieldWithGenericsShouldNotThrowError() {
+        assertScript '''
+            class Foo {
+                List<String> list = null // should not throw an error
+            }
+            new Foo()
+        '''
+    }
+
+
     public static interface InterfaceWithField {
         String boo = "I don't fancy fields in interfaces"
     }
