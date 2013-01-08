@@ -15,6 +15,7 @@
  */
 package org.codehaus.groovy.classgen.asm.sc
 
+import groovy.transform.NotYetImplemented
 import groovy.transform.stc.BugsSTCTest
 
 /**
