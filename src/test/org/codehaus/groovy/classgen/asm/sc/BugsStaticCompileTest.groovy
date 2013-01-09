@@ -658,5 +658,13 @@ class BugsStaticCompileTest extends BugsSTCTest {
             assert 'a' in String
         '''
     }
+
+    // GROOVY-5887
+    void testSpreadCallWithArray() {
+        assertScript '''
+            def list = 'a,b,c'.split(/,/)*.trim()
+            assert list == ['a','b','c']
+        '''
+    }
 }
 

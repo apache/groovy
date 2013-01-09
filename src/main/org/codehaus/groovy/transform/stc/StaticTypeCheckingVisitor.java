@@ -1744,8 +1744,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         // the call is made on a collection type
         if (call.isSpreadSafe()) {
             ClassNode expressionType = getType(objectExpression);
-            if (!(expressionType.equals(Collection_TYPE) || expressionType.implementsInterface(Collection_TYPE))) {
-                addStaticTypeError("Spread operator can only be used on collection types", expressionType);
+            if (!implementsInterfaceOrIsSubclassOf(expressionType, Collection_TYPE) && !expressionType.isArray()) {
+                addStaticTypeError("Spread operator can only be used on collection types", objectExpression);
                 return;
             } else {
                 // type check call as if it was made on component type
