@@ -1286,7 +1286,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     @Override
     protected void visitConstructorOrMethod(MethodNode node, boolean isConstructor) {
         typeCheckingContext.pushEnclosingMethod(node);
-        super.visitConstructorOrMethod(node, isConstructor);
+        if (!isSkipMode(node) && !shouldSkipMethodNode(node)) {
+            super.visitConstructorOrMethod(node, isConstructor);
+        }
         if (!isConstructor) {
             returnAdder.visitMethod(node);
         }
