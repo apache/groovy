@@ -89,4 +89,21 @@ class TypeCheckingModeTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-5884
+    void testShouldSkipTypeCheckingInConstructor() {
+        assertScript '''
+            class GenericsApocalypse {
+                @groovy.transform.TypeChecked(groovy.transform.TypeCheckingMode.SKIP)
+                GenericsApocalypse() {
+                    int x = 'string'
+                }
+            }
+            try {
+                new GenericsApocalypse()
+            } catch (org.codehaus.groovy.runtime.typehandling.GroovyCastException e) {
+                // catch a runtime exception instead of a compile-time one
+            }
+        '''
+    }
+
 }

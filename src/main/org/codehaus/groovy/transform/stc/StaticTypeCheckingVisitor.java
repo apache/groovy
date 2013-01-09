@@ -1319,7 +1319,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     protected void visitConstructorOrMethod(MethodNode node, boolean isConstructor) {
         MethodNode old = this.methodNode;
         this.methodNode = node;
-        super.visitConstructorOrMethod(node, isConstructor);
+        if (!isSkipMode(node) && !shouldSkipMethodNode(node)) {
+            super.visitConstructorOrMethod(node, isConstructor);
+        }
         if (!isConstructor) {
             returnAdder.visitMethod(node);
         }
