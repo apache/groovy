@@ -2577,7 +2577,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 // not in a closure
                 ClassNode parent = receiver;
                 while (parent instanceof InnerClassNode && !parent.isStaticClass()) {
-                    parent = receiver.getOuterClass();
+                    parent = parent.getOuterClass();
                     methods.addAll(parent.getMethods(name));
                 }
             }

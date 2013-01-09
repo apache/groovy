@@ -298,4 +298,17 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
             List other = (List) tmp // should not complain because source and target are interfaces
         '''
     }
+
+    // GROOVY-5889
+    void testShouldNotGoIntoInfiniteLoop() {
+        assertScript '''
+        class Enclosing {
+            static class FMessage {
+                static enum LogLevel { finest, finer, fine, config, info, warning, severe }
+                LogLevel logLevel
+            }
+        }
+        new Enclosing()
+        '''
+    }
 }
