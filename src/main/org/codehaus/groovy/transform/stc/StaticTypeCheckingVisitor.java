@@ -2131,6 +2131,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
         else if (sourceIsNull && isPrimitiveType(targetType)) {
             return false;
+        } else if (expressionType.isInterface() && targetType.isInterface()) {
+            return true;
         } else if (!isAssignableTo(targetType, expressionType) && !implementsInterfaceOrIsSubclassOf(expressionType, targetType)) {
             return false;
         }

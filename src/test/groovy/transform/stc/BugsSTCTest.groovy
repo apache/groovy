@@ -291,4 +291,11 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
         ''', 'A closure shared variable [sum] has been assigned with various types'
     }
 
+    // GROOVY-5870
+    void testShouldNotThrowErrorIfTryingToCastToInterface() {
+        assertScript '''
+            Set tmp = null
+            List other = (List) tmp // should not complain because source and target are interfaces
+        '''
+    }
 }
