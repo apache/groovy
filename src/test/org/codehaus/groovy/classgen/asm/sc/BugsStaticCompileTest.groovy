@@ -692,5 +692,12 @@ class BugsStaticCompileTest extends BugsSTCTest {
             A.B.foo()
         '''
     }
+
+    // GROOVY-5890
+    void testIsCaseWithClassLiteral() {
+        assertScript '''
+            assert 'a' in String
+        '''
+    }
 }
 

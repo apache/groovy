@@ -2442,6 +2442,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             return leftRedirect;
         }
 
+        // GROOVY-5890
+        // do not mix Class<Foo> with Foo
+        if (leftExpression instanceof ClassExpression) {
+            left = CLASS_Type.getPlainNodeReference();
+        }
+
         MethodNode method = findMethodOrFail(expr, left, operationName, right);
         if (method != null) {
             storeTargetMethod(expr, method);

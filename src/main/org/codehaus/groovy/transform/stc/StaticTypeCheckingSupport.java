@@ -1235,16 +1235,14 @@ public abstract class StaticTypeCheckingSupport {
                             && metaMethod.getAnnotations(Deprecated_TYPE).isEmpty()) {
                         Parameter[] parameters = new Parameter[types.length - 1];
                         System.arraycopy(types, 1, parameters, 0, parameters.length);
-                        MethodNode node = new ExtensionMethodNode(
+                        ExtensionMethodNode node = new ExtensionMethodNode(
                                 metaMethod,
                                 metaMethod.getName(),
                                 metaMethod.getModifiers(),
                                 metaMethod.getReturnType(),
                                 parameters,
-                                ClassNode.EMPTY_ARRAY, null);
-                        if (staticExtClasses.contains(dgmLikeClass)) {
-                            node.setModifiers(node.getModifiers() | Opcodes.ACC_STATIC);
-                        }
+                                ClassNode.EMPTY_ARRAY, null,
+                                staticExtClasses.contains(dgmLikeClass));
                         node.setGenericsTypes(metaMethod.getGenericsTypes());
                         ClassNode declaringClass = types[0].getType();
                         String declaringClassName = declaringClass.getName();
