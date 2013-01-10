@@ -896,6 +896,16 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-5888
+    void testStaticContextScoping() {
+        assertScript '''
+            class A {
+                static List foo = 'a,b,c'.split(/,/).toList()*.trim()
+            }
+            assert A.foo == ['a','b','c']
+        '''
+    }
+
     static class MyMethodCallTestClass {
 
         static int mul(int... args) { args.toList().inject(1) { x,y -> x*y } }
