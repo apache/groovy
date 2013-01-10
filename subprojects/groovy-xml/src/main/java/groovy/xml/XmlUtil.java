@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,12 +15,14 @@
  */
 package groovy.xml;
 
+import groovy.lang.Closure;
 import groovy.lang.GroovyRuntimeException;
 import groovy.lang.Writable;
 import groovy.util.Node;
 import groovy.util.XmlNodePrinter;
 import groovy.util.slurpersupport.GPathResult;
 import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.runtime.StringGroovyMethods;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
@@ -37,7 +39,7 @@ import java.io.*;
 import java.net.URL;
 
 /**
- * Used for pretty printing XML content.
+ * Used for pretty printing XML content and other XML related utilities.
  *
  * @author Paul King
  */
@@ -311,6 +313,67 @@ public class XmlUtil {
     public static SAXParser newSAXParser(String schemaLanguage, boolean namespaceAware, boolean validating, URL schema) throws SAXException, ParserConfigurationException {
         SchemaFactory schemaFactory = SchemaFactory.newInstance(schemaLanguage);
         return newSAXParser(namespaceAware, validating, schemaFactory.newSchema(schema));
+    }
+
+    /**
+     * Escape the following characters {@code " ' & < >} with their XML entities, e.g.
+     * {@code "bread" & "butter"} becomes {@code &quot;bread&quot; &amp; &quot;butter&quot}.
+     * Notes:<ul>
+     * <li>Supports only the five basic XML entities (gt, lt, quot, amp, apos)</li>
+     * <li>Does not escape control characters</li>
+     * <li>Does not support DTDs or external entities</li>
+     * <li>Does not treat surrogate pairs specially</li>
+     * <li>Does not perform Unicode validation on its input</li>
+     * </ul>
+     *
+     * @param orig the original String
+     * @return A new string in which all characters that require escaping
+     *         have been replaced with the corresponding XML entities.
+     * @see #escapeControlCharacters(String)
+     */
+    public static String escapeXml(String orig) {
+        return StringGroovyMethods.collectReplacements(orig, new Closure<String>(null) {
+            public String doCall(Character arg) {
+                switch (arg) {
+                    case '&':
+                        return "&amp;";
+                    case '<':
+                        return "&lt;";
+                    case '>':
+                        return "&gt;";
+                    case '"':
+                        return "&quot;";
+                    case '\'':
+                        return "&apos;";
+                }
+                return null;
+            }
+        });
+    }
+
+    /**
+     * Escape control characters (below 0x20) with their XML entities, e.g.
+     * carriage return ({@code Ctrl-M or \r}) becomes {@code &#13;}
+     * Notes:<ul>
+     * <li>Does not escape non-ascii characters above 0x7e</li>
+     * <li>Does not treat surrogate pairs specially</li>
+     * <li>Does not perform Unicode validation on its input</li>
+     * </ul>
+     *
+     * @param orig the original String
+     * @return A new string in which all characters that require escaping
+     *         have been replaced with the corresponding XML entities.
+     * @see #escapeXml(String)
+     */
+    public static String escapeControlCharacters(String orig) {
+        return StringGroovyMethods.collectReplacements(orig, new Closure<String>(null) {
+            public String doCall(Character arg) {
+                if (arg < 31) {
+                        return "&#" + (int) arg + ";";
+                }
+                return null;
+            }
+        });
     }
 
     private static SAXParser newSAXParser(boolean namespaceAware, boolean validating, Schema schema1) throws ParserConfigurationException, SAXException {

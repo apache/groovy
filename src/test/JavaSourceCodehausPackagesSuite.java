@@ -56,6 +56,7 @@ public class JavaSourceCodehausPackagesSuite {
         suite.addTestSuite(CompositeVisitorTest.class);
         suite.addTestSuite(ConstructorTest.class);
         suite.addTestSuite(DefaultGroovyMethodsTest.class);
+        suite.addTestSuite(ResourceGroovyMethodsTest.class);
         suite.addTestSuite(FileSystemCompilerTest.class);
         suite.addTestSuite(ForTest.class);
         suite.addTestSuite(GetPropertyTest.class);

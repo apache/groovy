@@ -15,9 +15,10 @@
  */
 package groovy.json
 
+import groovy.transform.CompileStatic
+
 import static JsonTokenType.*
 import java.text.SimpleDateFormat
-import java.text.DateFormat
 import org.codehaus.groovy.runtime.DefaultGroovyMethods
 
 /**
@@ -35,18 +36,12 @@ class JsonOutput {
      * that can be parsed back from JavaScript with:
      * <code>Date.parse(stringRepresentation)</code>
      */
-    private static final ThreadLocal<SimpleDateFormat> dateFormatter = new ThreadLocal<SimpleDateFormat>() {
-        @Override
-        protected SimpleDateFormat initialValue() {
-            DateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ", Locale.US)
-            formatter.timeZone = TimeZone.getTimeZone('GMT')
-            formatter
-        }
-    }
+    private static final ThreadLocal<SimpleDateFormat> dateFormatter = new DateFormatThreadLocal()
 
     /**
      * @return "true" or "false" for a boolean value
      */
+    @CompileStatic
     static String toJson(Boolean bool) {
         bool.toString()
     }
@@ -65,6 +60,7 @@ class JsonOutput {
     /**
      * @return a JSON string representation of the character
      */
+    @CompileStatic
     static String toJson(Character c) {
         "\"$c\""
     }
@@ -72,6 +68,7 @@ class JsonOutput {
     /**
      * @return a properly encoded string with escape sequences
      */
+    @CompileStatic
     static String toJson(String s) {
         "\"${StringEscapeUtils.escapeJava(s)}\""
     }
@@ -82,6 +79,7 @@ class JsonOutput {
      * @param date the date to format to a JSON string
      * @return a formatted date in the form of a string
      */
+    @CompileStatic
     static String toJson(Date date) {
         "\"${dateFormatter.get().format(date)}\""
     }
@@ -92,6 +90,7 @@ class JsonOutput {
      * @param cal the calendar to format to a JSON string
      * @return a formatted date in the form of a string
      */
+    @CompileStatic
     static String toJson(Calendar cal) {
         "\"${dateFormatter.get().format(cal.time)}\""
     }
@@ -99,6 +98,7 @@ class JsonOutput {
     /**
      * @return the string representation of an uuid
      */
+    @CompileStatic
     static String toJson(UUID uuid) {
         "\"${uuid.toString()}\""
     }
@@ -106,6 +106,7 @@ class JsonOutput {
     /**
      * @return the string representation of the URL
      */
+    @CompileStatic
     static String toJson(URL url) {
         "\"${url.toString()}\""
     }
@@ -157,6 +158,7 @@ class JsonOutput {
      * @param jsonPayload
      * @return
      */
+    @CompileStatic
     static String prettyPrint(String jsonPayload) {
         int indent = 0
         def output = new StringBuilder()

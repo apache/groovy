@@ -15,6 +15,7 @@
  */
 package org.codehaus.groovy.ast.expr;
 
+import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
 
@@ -25,7 +26,7 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
  * @author Jochen Theodorou
  * @version $Revision$
  */
-public class ConstructorCallExpression extends Expression {
+public class ConstructorCallExpression extends Expression implements MethodCall {
 
     private final Expression arguments;
     private boolean usesAnonymousInnerClass;
@@ -50,6 +51,14 @@ public class ConstructorCallExpression extends Expression {
         ret.setUsingAnonymousInnerClass(isUsingAnonymousInnerClass());
         ret.copyNodeMetaData(this);
         return ret;
+    }
+
+    public ASTNode getReceiver() {
+        return null;
+    }
+
+    public String getMethodAsString() {
+        return "<init>";
     }
 
     public Expression getArguments() {

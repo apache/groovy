@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,14 +17,11 @@ package groovy.lang;
 
 import org.codehaus.groovy.reflection.ReflectionCache;
 import org.codehaus.groovy.reflection.stdclasses.CachedClosureClass;
-import org.codehaus.groovy.runtime.ComposedClosure;
-import org.codehaus.groovy.runtime.CurriedClosure;
-import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.runtime.*;
 import org.codehaus.groovy.runtime.callsite.BooleanClosureWrapper;
 import org.codehaus.groovy.runtime.memoize.LRUCache;
 import org.codehaus.groovy.runtime.memoize.Memoize;
 import org.codehaus.groovy.runtime.memoize.UnlimitedConcurrentCache;
-import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -59,13 +56,11 @@ import java.io.Writer;
  * @author <a href="mailto:blackdrag@gmx.org">Jochen Theodorou</a>
  * @author Graeme Rocher
  * @author Paul King
- *
- * @version $Revision$
  */
 public abstract class Closure<V> extends GroovyObjectSupport implements Cloneable, Runnable, GroovyCallable<V>, Serializable {
 
     /**
-     * With this resolveStrategy set the closure will attempt to resolve property references to the
+     * With this resolveStrategy set the closure will attempt to resolve property references and methods to the
      * owner first, then the delegate (<b>this is the default strategy</b>).
      *
      * For example the following code :
@@ -99,7 +94,7 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
     public static final int OWNER_FIRST = 0;
 
     /**
-     * With this resolveStrategy set the closure will attempt to resolve property references to the
+     * With this resolveStrategy set the closure will attempt to resolve property references and methods to the
      * delegate first then the owner.
      *
      * For example the following code :
@@ -134,7 +129,7 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
     public static final int DELEGATE_FIRST = 1;
 
     /**
-     * With this resolveStrategy set the closure will resolve property references to the owner only
+     * With this resolveStrategy set the closure will resolve property references and methods to the owner only
      * and not call the delegate at all. For example the following code :
      *
      * <pre>
@@ -164,7 +159,7 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
     public static final int OWNER_ONLY = 2;
 
     /**
-     * With this resolveStrategy set the closure will resolve property references to the delegate
+     * With this resolveStrategy set the closure will resolve property references and methods to the delegate
      * only and entirely bypass the owner. For example the following code :
      *
      * <pre>
@@ -196,9 +191,9 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
 
     /**
      * With this resolveStrategy set the closure will resolve property references to itself and go
-     * through the usual MetaClass look-up process. This means that properties are neither resolved from
-     * the owner nor the delegate, but only on the closure object itself. This allows the developer to override
-     * getProperty using ExpandoMetaClass of the closure itself.<p>
+     * through the usual MetaClass look-up process. This means that properties and methods are neither resolved
+     * from the owner nor the delegate, but only on the closure object itself. This allows the developer to
+     * override getProperty using ExpandoMetaClass of the closure itself.<p>
      * <i>Note that local variables are always looked up first, independently of the resolution strategy.</i>
      */
     public static final int TO_SELF = 4;
@@ -242,7 +237,8 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
     }
 
     /**
-     * Sets the strategy which the closure uses to resolve property references. The default is Closure.OWNER_FIRST
+     * Sets the strategy which the closure uses to resolve property references and methods.
+     * The default is Closure.OWNER_FIRST
      *
      * @param resolveStrategy The resolve strategy to set
      *
@@ -413,7 +409,10 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
     public V call(Object... args) {
         try {
             return (V) getMetaClass().invokeMethod(this,"doCall",args);
-        } catch (Exception e) {
+        } catch (InvokerInvocationException e) {
+            ExceptionUtils.sneakyThrow(e.getCause());
+            return null; // unreachable statement
+        }  catch (Exception e) {
             return (V) throwRuntimeException(e);
         }
     }

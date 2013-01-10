@@ -112,6 +112,7 @@ class MethodPatternsTest extends AbstractBytecodeTestCase {
     }
 
     void testArrayIncrement() {
+        if (config.optimizationOptions.indy) return;
         assert compile('''
             int n = 10
             int[] x = new int[n]

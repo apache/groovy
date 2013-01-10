@@ -15,8 +15,6 @@
  */
 package groovy.sql
 
-import groovy.xml.MarkupBuilder
-
 /**
  * @author Brian McCallister
  */
@@ -33,4 +31,3 @@ class SqlWithBuilderTest extends SqlHelperTestCase {
          sql.close()
     }
 }
-

@@ -280,4 +280,35 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
 
         execute()'''
     }
+
+    // GROOVY-5874-part-1
+    void testClosureSharedVariableInBinExp() {
+        shouldFailWithMessages '''
+            def sum = 0
+            def cl1 = { sum = sum + 1 }
+            def cl2 = { sum = new Date() }
+
+        ''', 'A closure shared variable [sum] has been assigned with various types'
+    }
+
+    // GROOVY-5870
+    void testShouldNotThrowErrorIfTryingToCastToInterface() {
+        assertScript '''
+            Set tmp = null
+            List other = (List) tmp // should not complain because source and target are interfaces
+        '''
+    }
+
+    // GROOVY-5889
+    void testShouldNotGoIntoInfiniteLoop() {
+        assertScript '''
+        class Enclosing {
+            static class FMessage {
+                static enum LogLevel { finest, finer, fine, config, info, warning, severe }
+                LogLevel logLevel
+            }
+        }
+        new Enclosing()
+        '''
+    }
 }

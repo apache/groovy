@@ -75,6 +75,7 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
             List<String> excludes = getMemberList(anno, "excludes");
             List<String> includes = getMemberList(anno, "includes");
             boolean ignoreNulls = memberHasValue(anno, "ignoreNulls", true);
+            boolean includePackage = !memberHasValue(anno, "includePackage", false);
 
             if (hasAnnotation(cNode, CanonicalASTTransformation.MY_TYPE)) {
                 AnnotationNode canonical = cNode.getAnnotations(CanonicalASTTransformation.MY_TYPE).get(0);
@@ -84,7 +85,7 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
             if (includes != null && !includes.isEmpty() && excludes != null && !excludes.isEmpty()) {
                 addError("Error during " + MY_TYPE_NAME + " processing: Only one of 'includes' and 'excludes' should be supplied not both.", anno);
             }
-            createToString(cNode, includeSuper, includeFields, excludes, includes, includeNames, ignoreNulls);
+            createToString(cNode, includeSuper, includeFields, excludes, includes, includeNames, ignoreNulls, includePackage);
         }
     }
 
@@ -93,6 +94,10 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
     }
 
     public static void createToString(ClassNode cNode, boolean includeSuper, boolean includeFields, List<String> excludes, List<String> includes, boolean includeNames, boolean ignoreNulls) {
+        createToString(cNode, includeSuper, includeFields, excludes, includes, includeNames, ignoreNulls, true);
+    }
+    
+    public static void createToString(ClassNode cNode, boolean includeSuper, boolean includeFields, List<String> excludes, List<String> includes, boolean includeNames, boolean ignoreNulls, boolean includePackage) {
         // make a public method if none exists otherwise try a private method with leading underscore
         boolean hasExistingToString = hasDeclaredMethod(cNode, "toString", 0);
         if (hasExistingToString && hasDeclaredMethod(cNode, "_toString", 0)) return;
@@ -109,7 +114,8 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
         body.addStatement(declStatement(first, ConstantExpression.TRUE));
 
         // <class_name>(
-        body.addStatement(append(result, new ConstantExpression(cNode.getName() + "(")));
+        String className = (includePackage) ? cNode.getName() : cNode.getNameWithoutPackage();
+        body.addStatement(append(result, new ConstantExpression(className + "(")));
 
         // append properties
         List<PropertyNode> pList = getInstanceProperties(cNode);

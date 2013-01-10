@@ -220,8 +220,17 @@ public class CompilerConfiguration {
             // IGNORE
         }
 
-        Map options = new HashMap<String,Boolean>(3);
+        boolean indy = false;
+        try {
+            indy = Boolean.getBoolean("groovy.target.indy");
+        } catch (Exception e) {
+            // IGNORE
+        }
         if (DEFAULT!=null && Boolean.TRUE.equals(DEFAULT.getOptimizationOptions().get("indy"))) {
+            indy = true;
+        }
+        Map options = new HashMap<String,Boolean>(3);
+        if (indy) {
             options.put("indy", Boolean.TRUE);
         }
         setOptimizationOptions(options);

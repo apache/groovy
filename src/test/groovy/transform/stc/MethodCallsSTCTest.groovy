@@ -753,8 +753,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
 
             new SpreadInCtor(*['A', 'B'])
         ''',
-                'The spread operator cannot be used as argument of method or closure calls with static type checking because the number of arguments cannot be determined at compile time',
-                'Cannot find matching method'
+                'The spread operator cannot be used as argument of method or closure calls with static type checking because the number of arguments cannot be determined at compile time'
     }
 
     void testSpreadArgsForbiddenInClosureCall() {
@@ -861,6 +860,51 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         assertScript '''import java.nio.charset.Charset
             Charset charset = Charset.forName('UTF-8')
             assert charset instanceof Charset
+        '''
+    }
+
+    // GROOVY-5810
+    void testCallStaticSuperMethod() {
+        assertScript '''
+        class Top {
+            static boolean called = false
+            public static foo() {
+                called = true
+            }
+        }
+
+        class Bottom extends Top {
+            public static foo() {
+                super.foo() // compiles and creates StackOverFlow
+            }
+
+        }
+        Bottom.foo()
+        assert Top.called
+        '''
+    }
+
+    void testShouldFindSetProperty() {
+        assertScript '''
+            class A {
+                int x
+                void foo() {
+                    this.setProperty('x', 1)
+                }
+            }
+            def a = new A()
+            a.foo()
+            assert a.x == 1
+        '''
+    }
+
+    // GROOVY-5888
+    void testStaticContextScoping() {
+        assertScript '''
+            class A {
+                static List foo = 'a,b,c'.split(/,/).toList()*.trim()
+            }
+            assert A.foo == ['a','b','c']
         '''
     }
 

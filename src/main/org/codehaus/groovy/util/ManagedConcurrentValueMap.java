@@ -28,11 +28,20 @@ import java.util.concurrent.ConcurrentHashMap;
  * @param <V> the value type
  */
 public class ManagedConcurrentValueMap<K,V> {
-    private final ReferenceBundle bundle;
     private final ConcurrentHashMap<K,ManagedReference<V>> internalMap;
+    private ReferenceBundle bundle;
     public ManagedConcurrentValueMap(ReferenceBundle bundle){
         this.bundle = bundle;
-        internalMap = new ConcurrentHashMap();
+        internalMap = new ConcurrentHashMap<K, ManagedReference<V>>();
+    }
+    
+    /**
+     * Sets a new bundle used for reference creation. Be warned that
+     * older entries will not be changed by this
+     * @param bundle - the ReferenceBundle
+     */
+    public void setBundle(ReferenceBundle bundle) {
+        this.bundle = bundle;
     }
 
     /**
@@ -52,7 +61,7 @@ public class ManagedConcurrentValueMap<K,V> {
      * @param value the new value
      */
     public void put(final K key, V value) {
-        ManagedReference<V> ref = new ManagedReference(bundle, value) {
+        ManagedReference<V> ref = new ManagedReference<V>(bundle, value) {
             @Override
             public void finalizeReference() {
                 super.finalizeReference();

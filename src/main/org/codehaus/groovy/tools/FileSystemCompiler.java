@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,14 @@
 
 package org.codehaus.groovy.tools;
 
+import groovy.lang.Binding;
 import groovy.lang.GroovyResourceLoader;
+import groovy.lang.GroovyShell;
 import org.apache.commons.cli.*;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.ConfigurationException;
+import org.codehaus.groovy.control.customizers.ImportCustomizer;
 import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit;
 
 import groovy.lang.GroovySystem;
@@ -68,7 +71,7 @@ public class FileSystemCompiler {
     public static void displayVersion() {
         String version = GroovySystem.getVersion();
         System.err.println("Groovy compiler version " + version);
-        System.err.println("Copyright 2003-2012 The Codehaus. http://groovy.codehaus.org/");
+        System.err.println("Copyright 2003-2013 The Codehaus. http://groovy.codehaus.org/");
         System.err.println("");
     }
 
@@ -110,7 +113,7 @@ public class FileSystemCompiler {
     public static void commandLineCompile(String[] args, boolean lookupUnnamedFiles) throws Exception {
         Options options = createCompilationOptions();
 
-        PosixParser cliParser = new PosixParser();
+        CommandLineParser cliParser = new GroovyPosixParser();
 
         CommandLine cli;
         cli = cliParser.parse(options, args);
@@ -244,7 +247,7 @@ public class FileSystemCompiler {
         }
     }
 
-    public static CompilerConfiguration generateCompilerConfigurationFromOptions(CommandLine cli) {
+    public static CompilerConfiguration generateCompilerConfigurationFromOptions(CommandLine cli) throws IOException {
         //
         // Setup the configuration data
 
@@ -284,6 +287,21 @@ public class FileSystemCompiler {
             configuration.getOptimizationOptions().put("indy", true);
         }
 
+        if (cli.hasOption("configscript")) {
+            String path = cli.getOptionValue("configscript");
+            File groovyConfigurator = new File(path);
+            Binding binding = new Binding();
+            binding.setVariable("configuration", configuration);
+
+            CompilerConfiguration configuratorConfig = new CompilerConfiguration();
+            ImportCustomizer customizer = new ImportCustomizer();
+            customizer.addStaticStars("org.codehaus.groovy.control.customizers.builder.CompilerCustomizationBuilder");
+            configuratorConfig.addCompilationCustomizers(customizer);
+
+            GroovyShell shell = new GroovyShell(binding, configuratorConfig);
+            shell.evaluate(groovyConfigurator);
+        }
+        
         return configuration;
     }
 
@@ -320,7 +338,7 @@ public class FileSystemCompiler {
                         .create("F"));
 
         options.addOption(OptionBuilder.withLongOpt("indy").withDescription("enables compilation using invokedynamic").create());
-
+        options.addOption(OptionBuilder.withLongOpt("configscript").hasArg().withDescription("A script for tweaking the configuration options").create());
         return options;
     }
 

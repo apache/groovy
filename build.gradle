@@ -103,31 +103,6 @@ task sourceJar(type: Jar) {
 }
 
 subprojects {
-    // todo: use the conventional "resources" directory for classpath resources
-    task(copyResources, type: Copy) {
-        destinationDir = file("$buildDir/classes")
-        // text files requiring filtering
-        into("main") {
-            from('src/main/groovy')
-            from('src/main/java')
-            from('src/resources')
-            include('**/*.txt', '**/*.xml', '**/*.properties', '**/*.html')
-            filter(rootProject.propertiesFilter, org.apache.tools.ant.filters.ReplaceTokens)
-        }
-        // other resources
-        into("main") {
-            from 'src/main/groovy'
-            from 'src/main/java'
-            include('**/*.png', '**/*.gif', '**/*.ico', '**/*.css')
-        }
-    }
-    compileJava.dependsOn(copyResources)
-    task(copyTestResources, type: Copy)
-            .from('src/test/groovy')
-            .from('src/test/java')
-            .into("$buildDir/classes/test")
-            .include('**/*.txt', '**/*.xml', '**/*.properties', '**/*.png', '**/*.html', '**/*.gif', '**/*.ico', '**/*.css')
-    compileTestJava.dependsOn(copyTestResources)
     task sourceJar(type: Jar) {
         classifier = 'sources'
         from sourceSets.main.allSource
@@ -196,7 +171,7 @@ dependencies {
     compile("org.apache.ivy:ivy:2.2.0") {
         transitive = false
     }
-    runtime "org.codehaus.gpars:gpars:1.0-beta-3"
+    runtime "org.codehaus.gpars:gpars:1.0.0"
     testCompile "jmock:jmock:1.2.0"
     testCompile "jmock:jmock-cglib:1.2.0"
     testCompile "xmlunit:xmlunit:1.3"
@@ -471,7 +446,7 @@ apply from: "gradle/idea.gradle"
 apply from: "gradle/groovydoc.gradle"
 
 task wrapper(type: Wrapper) {
-    gradleVersion = '1.2'
+    gradleVersion = '1.3'
 }
 
 classes {

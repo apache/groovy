@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,6 @@
  */
 package groovy.util
 
-import java.beans.BeanInfo
 import org.codehaus.groovy.runtime.InvokerHelper
 
 /**
@@ -199,8 +198,8 @@ class ConfigSlurper {
                     }
                 } else if (envMode) {
                     if(name == environment) {
-                        def co = new ConfigObject()
-                        config[ENV_SETTINGS] = co
+                        def co = stack.last.config[ENV_SETTINGS] ?: new ConfigObject()
+                        stack.last.config[ENV_SETTINGS] = co
 
                         pushStack.call(co)
                         try {
@@ -254,12 +253,21 @@ class ConfigSlurper {
 
         script.run()
 
+        mergeEnvironmentSettings(config)
+
+        return config
+    }
+
+    private def mergeEnvironmentSettings(ConfigObject config) {
+        // recursively merge environments
+        config.each{k,v ->
+            if (v instanceof ConfigObject)
+                mergeEnvironmentSettings(v)
+        }
         def envSettings = config.remove(ENV_SETTINGS)
         if(envSettings) {
             config.merge(envSettings)
         }
-
-        return config
     }
 
 }

@@ -1,5 +1,5 @@
 task doc(dependsOn: ['javadocAll', 'groovydocAll', 'docGDK']) {
-    ext.footer = "Copyright &amp;copy; 2003-2012 The Codehaus. All rights reserved."
+    ext.footer = "Copyright &amp;copy; 2003-2013 The Codehaus. All rights reserved."
     ext.title = "Groovy ${groovyVersion}"
 }
 
@@ -81,6 +81,7 @@ task docProjectVersionInfo(type: Copy) {
             filter(rootProject.propertiesFilter, org.apache.tools.ant.filters.ReplaceTokens)
         }
     }
+    from('subprojects/groovy-docgenerator/src/main/resources')
 }
 
 task docGDK {

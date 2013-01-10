@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2011 the original author or authors.
+ * Copyright 2003-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,27 +17,48 @@
 package groovy.grape;
 
 import groovy.lang.Grab;
+import groovy.lang.GrabConfig;
+import groovy.lang.GrabExclude;
 import groovy.lang.GrabResolver;
 import groovy.lang.Grapes;
-import groovy.lang.GrabExclude;
-import groovy.lang.GrabConfig;
 import groovy.transform.CompilationUnitAware;
-import org.codehaus.groovy.ast.*;
-import org.codehaus.groovy.ast.expr.*;
+import org.codehaus.groovy.ast.ASTNode;
+import org.codehaus.groovy.ast.AnnotatedNode;
+import org.codehaus.groovy.ast.AnnotationNode;
+import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
+import org.codehaus.groovy.ast.ClassHelper;
+import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.ImportNode;
+import org.codehaus.groovy.ast.ModuleNode;
+import org.codehaus.groovy.ast.expr.ArgumentListExpression;
+import org.codehaus.groovy.ast.expr.ConstantExpression;
+import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.ListExpression;
+import org.codehaus.groovy.ast.expr.MapExpression;
+import org.codehaus.groovy.ast.expr.MethodCallExpression;
+import org.codehaus.groovy.ast.expr.StaticMethodCallExpression;
+import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
+import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.tools.GrapeUtil;
 import org.codehaus.groovy.transform.ASTTransformation;
 import org.codehaus.groovy.transform.ASTTransformationVisitor;
 import org.codehaus.groovy.transform.GroovyASTTransformation;
-import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 
-import java.util.*;
-import java.util.regex.Pattern;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Transformation for declarative dependency management.
@@ -61,12 +82,12 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
     private static final String GRAPES_SHORT_NAME = shortName(GRAPES_DOT_NAME);
 
     private static final String GRABRESOLVER_CLASS_NAME = GrabResolver.class.getName();
-    private static final String GRAPERESOLVER_DOT_NAME = dotName(GRABRESOLVER_CLASS_NAME);
-    private static final String GRABRESOLVER_SHORT_NAME = shortName(GRAPERESOLVER_DOT_NAME);
+    private static final String GRABRESOLVER_DOT_NAME = dotName(GRABRESOLVER_CLASS_NAME);
+    private static final String GRABRESOLVER_SHORT_NAME = shortName(GRABRESOLVER_DOT_NAME);
 
     private static final ClassNode THREAD_CLASSNODE = ClassHelper.make(Thread.class);
     private static final List<String> GRABEXCLUDE_REQUIRED = Arrays.asList("group", "module");
-    private static final List<String> GRAPERESOLVER_REQUIRED = Arrays.asList("name", "root");
+    private static final List<String> GRABRESOLVER_REQUIRED = Arrays.asList("name", "root");
     private static final List<String> GRAB_REQUIRED = Arrays.asList("group", "module", "version");
     private static final List<String> GRAB_OPTIONAL = Arrays.asList("classifier", "transitive", "conf", "ext", "type", "changing", "force", "initClass");
     private static final List<String> GRAB_BOOLEAN = Arrays.asList("transitive", "changing", "force", "initClass");
@@ -149,7 +170,7 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
             } else if (GRAPES_CLASS_NAME.equals(className)) {
                 grapesAliases.add(im.getAlias());
             }
-            if ((className.endsWith(GRAPERESOLVER_DOT_NAME) && ((alias == null) || (alias.length() == 0)))
+            if ((className.endsWith(GRABRESOLVER_DOT_NAME) && ((alias == null) || (alias.length() == 0)))
                 || (GRABRESOLVER_CLASS_NAME.equals(alias)))
             {
                 allowShortGrabResolver = false;
@@ -186,7 +207,7 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
                         sval = (String) ce.getValue();
                     }
                     if (sval != null && sval.length() > 0) {
-                        for (String s : GRAPERESOLVER_REQUIRED) {
+                        for (String s : GRABRESOLVER_REQUIRED) {
                             Expression member = node.getMember(s);
                             if (member != null) {
                                 addError("The attribute \"" + s + "\" conflicts with attribute 'value' in @" + node.getClassNode().getNameWithoutPackage() + " annotations", node);
@@ -196,7 +217,7 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
                         grapeResolverMap.put("name", sval);
                         grapeResolverMap.put("root", sval);
                     } else {
-                        for (String s : GRAPERESOLVER_REQUIRED) {
+                        for (String s : GRABRESOLVER_REQUIRED) {
                             Expression member = node.getMember(s);
                             if (member == null) {
                                 addError("The missing attribute \"" + s + "\" is required in @" + node.getClassNode().getNameWithoutPackage() + " annotations", node);

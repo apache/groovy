@@ -99,6 +99,29 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Calculates directory size as total size of all its files, recursively.
+     *
+     * @param self a file object
+     * @return directory size (length)
+     * @since 2.1
+     *
+     * @throws IOException if File object specified does not exist
+     * @throws IllegalArgumentException if the provided File object does not represent a directory
+     */
+    public static long directorySize(File self) throws IOException, IllegalArgumentException
+    {
+        final long[] size = {0L};
+
+        eachFileRecurse(self, FileType.FILES, new Closure<Void>(null) {
+            public void doCall(Object[] args) {
+                size[0] += ((File) args[0]).length();
+            }
+        });
+
+        return size[0];
+    }
+
+    /**
      * Create an object output stream for this file.
      *
      * @param file a file

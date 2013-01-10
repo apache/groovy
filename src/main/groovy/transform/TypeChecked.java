@@ -18,7 +18,6 @@ package groovy.transform;
 import java.lang.annotation.*;
 
 import org.codehaus.groovy.transform.GroovyASTTransformationClass;
-import org.codehaus.groovy.transform.stc.TypeCheckerPluginFactory;
 
 /**
  * This will let the Groovy compiler use compile time checks in the style of Java.
@@ -31,8 +30,14 @@ import org.codehaus.groovy.transform.stc.TypeCheckerPluginFactory;
 })
 @GroovyASTTransformationClass("org.codehaus.groovy.transform.StaticTypesTransformation")
 public @interface TypeChecked {
-    Class<? extends TypeCheckerPluginFactory> pluginFactory() default TypeCheckerPluginFactory.class;
     TypeCheckingMode value() default TypeCheckingMode.PASS;
+
+    /**
+     * The list of (classpath resources) paths to type checking DSL scripts, also known
+     * as type checking extensions.
+     * @return an array of paths to groovy scripts that must be on compile classpath
+     */
+    String[] extensions();
 
     /**
      * This annotation is added by @TypeChecked on methods which have type checking turned on.

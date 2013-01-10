@@ -125,4 +125,18 @@ class XmlSlurperTest extends GroovyTestCase {
         assertEquals("http://www.example.org/NS2", xml.children()[1].namespaceURI())
     }
 
+    // GROOVY-4637
+    void testNamespacedAttributes() {
+        def xml = """
+        <RootElement xmlns="http://www.ivan.com/ns1" xmlns:two="http://www.ivan.com/ns2">
+            <ChildElement ItemId="FirstItemId" two:ItemId="SecondItemId">Child element data</ChildElement>
+        </RootElement>"""
+        def root = new XmlSlurper().parseText(xml).declareNamespace(one:"http://www.ivan.com/ns1", two: "http://www.ivan.com/ns2")
+        assert root.ChildElement.@ItemId == 'FirstItemId'
+        assert root.ChildElement.@ItemId[0].namespaceURI() == 'http://www.ivan.com/ns1'
+        assert root.ChildElement.@'one:ItemId' == 'FirstItemId'
+        assert root.ChildElement.@'two:ItemId' == 'SecondItemId'
+        assert root.ChildElement.@'two:ItemId'[0].namespaceURI() == 'http://www.ivan.com/ns2'
+    }
+
 }

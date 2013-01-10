@@ -14,11 +14,9 @@
  * limitations under the License.
  */
 
-
 package org.codehaus.groovy.classgen.asm.sc
 
 import groovy.transform.stc.DelegatesToSTCTest
-import groovy.transform.NotYetImplemented
 
 /**
  * Units tests aimed at testing the behaviour of {@link DelegatesTo} in combination
@@ -36,4 +34,3 @@ class DelegatesToStaticCompileTest extends DelegatesToSTCTest {
     }
 
 }
-

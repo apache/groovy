@@ -15,6 +15,7 @@
  */
 package org.codehaus.groovy.classgen.asm.sc
 
+import groovy.transform.NotYetImplemented
 import groovy.transform.stc.BugsSTCTest
 
 /**
@@ -517,7 +518,7 @@ class BugsStaticCompileTest extends BugsSTCTest {
                 }
                 assert  incInt(5) == 7'''
         } finally {
-            //println astTrees
+            println astTrees
         }
     }
 
@@ -532,7 +533,7 @@ class BugsStaticCompileTest extends BugsSTCTest {
                 }
                 assert  incInt(5) == 7'''
         } finally {
-            //println astTrees
+            println astTrees
         }
     }
 
@@ -547,7 +548,7 @@ class BugsStaticCompileTest extends BugsSTCTest {
                 }
                 assert  incInt(5) == 7'''
         } finally {
-            //println astTrees
+            println astTrees
         }
     }
 
@@ -562,7 +563,7 @@ class BugsStaticCompileTest extends BugsSTCTest {
                 }
                 assert  incInt((char)'a') == (char)('c')'''
         } finally {
-            //println astTrees
+            println astTrees
         }
     }
 
@@ -603,8 +604,108 @@ class BugsStaticCompileTest extends BugsSTCTest {
             assert m(4) == false
             '''
         } finally {
-            //println astTrees
+            println astTrees
         }
+    }
+
+    // GROOVY-5814
+    void testCompileStaticImmutable() {
+        assertScript '''
+            import groovy.transform.*
+
+            @Immutable
+            class Test {
+              int a
+              String b
+            }
+
+            new Test( 1, 'tim' )
+        '''
+    }
+
+    // GROOVY-5738
+    void testAccessFieldFromGStringAfterInstanceOf() {
+        new GroovyShell().evaluate '''
+            class Greeting { String who }
+
+            @groovy.transform.CompileStatic
+            class GreetingActor {
+
+              def receive = {
+                if(it instanceof Greeting) {
+                    println "Hello ${it.who}"
+                }
+              }
+
+            }
+            new GreetingActor().receive(new Greeting(who:'cedric'))
+        '''
+    }
+
+    // GROOVY-5738
+    void testAccessMethodFromGStringAfterInstanceOf() {
+        new GroovyShell().evaluate '''
+            class Greeting {
+                String who
+                String whoAmI() { who }
+            }
+
+            @groovy.transform.CompileStatic
+            class GreetingActor {
+
+              def receive = {
+                if(it instanceof Greeting) {
+                    println "Hello ${it.whoAmI()}"
+                }
+              }
+
+            }
+            new GreetingActor().receive(new Greeting(who:'cedric'))
+        '''
+    }
+
+    // GROOVY-5804
+    void testNegateSharedBooleanInClosure() {
+        assertScript '''
+                boolean x = false
+                def cl = {
+                    if (!x) {
+                        assert true
+                    } else {
+                        assert false
+                    }
+                }
+                cl()
+            '''
+    }
+
+    void testCallClosureInInnerClass() {
+        assertScript '''
+            class A {
+                static class B { // bug doesn't occur if not wrapped into an inner class
+                    static void foo() {
+                        def cl = { -> println 'ok' }
+                        cl()
+                    }
+                }
+            }
+            A.B.foo()
+        '''
+    }
+
+    // GROOVY-5890
+    void testIsCaseWithClassLiteral() {
+        assertScript '''
+            assert 'a' in String
+        '''
+    }
+
+    // GROOVY-5887
+    void testSpreadCallWithArray() {
+        assertScript '''
+            def list = 'a,b,c'.split(/,/)*.trim()
+            assert list == ['a','b','c']
+        '''
     }
 }
 

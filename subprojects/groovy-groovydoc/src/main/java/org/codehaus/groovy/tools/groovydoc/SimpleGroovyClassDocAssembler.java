@@ -597,11 +597,14 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
     // preempt resolve as info is partially available here (star imports won't match here)
     private String extractName(GroovySourceAST typeNode) {
         String typeName = buildName(typeNode);
-        if (typeName.indexOf("/") == -1) {
+        if (!typeName.contains("/")) {
             String slashName = "/" + typeName;
-            for (String name : importedClassesAndPackages) {
+            // Groovy currently resolves this to last found so traverse in reverse order
+            for (int i = importedClassesAndPackages.size() - 1; i >= 0; i--) {
+                String name = importedClassesAndPackages.get(i);
                 if (name.endsWith(slashName)) {
                     typeName = name;
+                    break;
                 }
             }
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,12 +18,12 @@ package org.codehaus.groovy.ant;
 import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyResourceLoader;
 import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.GroovyPosixParser;
 import org.apache.commons.cli.Options;
-import org.apache.commons.cli.PosixParser;
 import org.apache.tools.ant.AntClassLoader;
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.DirectoryScanner;
-import org.apache.tools.ant.Project;
 import org.apache.tools.ant.RuntimeConfigurable;
 import org.apache.tools.ant.taskdefs.Execute;
 import org.apache.tools.ant.taskdefs.Javac;
@@ -50,9 +50,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Enumeration;
-import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -91,6 +89,7 @@ import java.util.StringTokenizer;
  * <li>scriptBaseClass</li>
  * <li>stubdir</li>
  * <li>keepStubs</li>
+ * <li>forceLookupUnnamedFiles</li>
  * </ul>
  * And these nested tasks:
  * <ul>
@@ -134,8 +133,8 @@ public class Groovyc extends MatchingTask {
     protected File[] compileList = new File[0];
 
     private String updatedProperty;
-    private String errorProperty; // TODO support this
-    private boolean taskSuccess = true; // assume the best; TODO check this is working
+    private String errorProperty;
+    private boolean taskSuccess = true;
     private boolean includeDestClasses = true;
 
     protected CompilerConfiguration configuration;
@@ -145,6 +144,7 @@ public class Groovyc extends MatchingTask {
     private List<File> temporaryFiles = new ArrayList<File>(2);
     private File stubDir;
     private boolean keepStubs;
+    private boolean forceLookupUnnamedFiles;
     private boolean useIndy;
     private String scriptBaseClass;
 
@@ -695,6 +695,32 @@ public class Groovyc extends MatchingTask {
     }
 
     /**
+     * Set the forceLookupUnnamedFiles flag. Defaults to false.
+     *
+     * The Groovyc Ant task is frequently used in the context of a build system
+     * that knows the complete list of source files to be compiled. In such a
+     * context, it is wasteful for the Groovy compiler to go searching the
+     * classpath when looking for source files and hence by default the
+     * Groovyc Ant task calls the compiler in a special mode with such searching
+     * turned off. If you wish the compiler to search for source files then
+     * you need to set this flag to {@code true}.
+     *
+     * @param forceLookupUnnamedFiles should unnamed source files be searched for on the classpath
+     */
+    public void setForceLookupUnnamedFiles(boolean forceLookupUnnamedFiles) {
+        this.forceLookupUnnamedFiles = forceLookupUnnamedFiles;
+    }
+
+    /**
+     * Gets the forceLookupUnnamedFiles flag.
+     *
+     * @return the forceLookupUnnamedFiles flag
+     */
+    public boolean getForceLookupUnnamedFiles() {
+        return forceLookupUnnamedFiles;
+    }
+
+    /**
      * Executes the task.
      *
      * @throws BuildException if an error occurs
@@ -728,7 +754,7 @@ public class Groovyc extends MatchingTask {
     }
 
     /**
-     * Clear the list of files to be compiled and copied..
+     * Clear the list of files to be compiled and copied.
      */
     protected void resetFileLists() {
         compileList = new File[0];
@@ -830,7 +856,7 @@ public class Groovyc extends MatchingTask {
                     || (key.contains("verbose"))
                     || (key.contains("deprecation"))) {
                 // false is default, so something to do only in true case
-                if ("on".equalsIgnoreCase(value) || "true".equalsIgnoreCase(value) || "yes".equalsIgnoreCase("value"))
+                if ("on".equalsIgnoreCase(value) || "true".equalsIgnoreCase(value) || "yes".equalsIgnoreCase(value))
                     jointOptions.add("-F" + key);
             } else if (key.contains("classpath")) {
                 classpath.add(javac.getClasspath());
@@ -920,6 +946,9 @@ public class Groovyc extends MatchingTask {
             commandLineList.add("-Dgroovy.default.scriptExtension=" + tmpExtension);
         }
         commandLineList.add(FileSystemCompilerFacade.class.getName());
+        if (forceLookupUnnamedFiles) {
+            commandLineList.add("--forceLookupUnnamedFiles");
+        }
     }
 
     private void doNormalCommandLineList(List<String> commandLineList, List<String> jointOptions, Path classpath) {
@@ -1006,6 +1035,10 @@ public class Groovyc extends MatchingTask {
         }
         final int returnCode = executor.getExitValue();
         if (returnCode != 0) {
+            taskSuccess = false;
+            if (errorProperty != null) {
+                getProject().setNewProperty(errorProperty, "true");
+            }
             if (failOnError) {
                 throw new BuildException("Forked groovyc returned error code: " + returnCode);
             } else {
@@ -1019,7 +1052,7 @@ public class Groovyc extends MatchingTask {
         try {
             Options options = FileSystemCompiler.createCompilationOptions();
 
-            PosixParser cliParser = new PosixParser();
+            CommandLineParser cliParser = new GroovyPosixParser();
 
             CommandLine cli;
             cli = cliParser.parse(options, commandLine);
@@ -1042,7 +1075,7 @@ public class Groovyc extends MatchingTask {
             }
 
             if (!fileNameErrors) {
-                FileSystemCompiler.doCompilation(configuration, makeCompileUnit(), filenames, false);
+                FileSystemCompiler.doCompilation(configuration, makeCompileUnit(), filenames, forceLookupUnnamedFiles);
             }
 
         } catch (Exception re) {
@@ -1054,6 +1087,11 @@ public class Groovyc extends MatchingTask {
             StringWriter writer = new StringWriter();
             new ErrorReporter(t, false).write(new PrintWriter(writer));
             String message = writer.toString();
+
+            taskSuccess = false;
+            if (errorProperty != null) {
+                getProject().setNewProperty(errorProperty, "true");
+            }
 
             if (failOnError) {
                 log.info(message);
@@ -1160,12 +1198,14 @@ public class Groovyc extends MatchingTask {
         }
 
         GroovyClassLoader loader = new GroovyClassLoader(parent, configuration);
-        // in command line we don't need to do script lookups
-        loader.setResourceLoader(new GroovyResourceLoader() {
-            public URL loadGroovySource(String filename) throws MalformedURLException {
-                return null;
-            }
-        });
+        if (!forceLookupUnnamedFiles) {
+            // in normal case we don't need to do script lookups
+            loader.setResourceLoader(new GroovyResourceLoader() {
+                public URL loadGroovySource(String filename) throws MalformedURLException {
+                    return null;
+                }
+            });
+        }
         return loader;
     }
 

@@ -31,20 +31,30 @@ public class ReferenceBundle{
         return manager;
     }      
     
-    private static final ReferenceBundle softReferences, weakReferences;
+    private static final ReferenceBundle softReferences, weakReferences, hardReferences, phantomReferences;
     static {
         ReferenceQueue queue = new ReferenceQueue();
         ReferenceManager callBack = ReferenceManager.createCallBackedManager(queue);
         ReferenceManager manager  = ReferenceManager.createThresholdedIdlingManager(queue, callBack, 5000);
         softReferences = new ReferenceBundle(manager, ReferenceType.SOFT);
         weakReferences = new ReferenceBundle(manager, ReferenceType.WEAK);
+        phantomReferences = new ReferenceBundle(manager, ReferenceType.PHANTOM);
+        hardReferences = new ReferenceBundle(ReferenceManager.createIdlingManager(null), ReferenceType.HARD);
     }
 
     public static ReferenceBundle getSoftBundle() {
         return softReferences;
     }
-    
+
     public static ReferenceBundle getWeakBundle() {
         return weakReferences;
+    }
+
+    public static ReferenceBundle getHardBundle() {
+        return hardReferences;
+    }
+
+    public static ReferenceBundle getPhantomBundle() {
+        return phantomReferences;
     }
 }

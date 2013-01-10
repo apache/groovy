@@ -10,6 +10,10 @@ test {
     }
     systemProperties 'apple.awt.UIElement': "true", "javadocAssertion.src.dir": './src/main'
     systemProperties "gradle.home": gradle.gradleHomeDir // this is needed by the security.policy
+    if (rootProject.hasProperty('indy') && (Boolean.valueOf(rootProject.indy))) {
+        println "adding indy target"
+        systemProperties "groovy.target.indy": true
+    }
     doFirst {
         // this is needed by the security.policy. We set it at execution time to avoid resolving a configuration when not needed.
 // temp hack
@@ -67,6 +71,12 @@ def getIncludePattern() {
         baseInclude += [
                 "UberTestCaseGroovySourceSubPackages_VM6.class",
                 "UberTestCaseGroovySourceCodehausPackages_VM6.class"
+        ]
+    }
+    if (rootProject.hasProperty('indy') && (Boolean.valueOf(rootProject.indy))) {
+        println "adding indy include"
+        baseInclude += [
+            "UberTestCaseIndy.class"
         ]
     }
     baseInclude

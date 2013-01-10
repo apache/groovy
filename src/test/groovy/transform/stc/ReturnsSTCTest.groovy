@@ -215,5 +215,15 @@ class ReturnsSTCTest extends StaticTypeCheckingTestCase {
         ''', 'No such property: years for class: java.lang.String'
     }
 
+    // GROOVY-5835
+    void testReturnInClosureShouldNotBeConsideredAsReturnOfEnclosingMethod() {
+        assertScript '''
+            int enclosingMethod() {
+                def cl = { return 'String' } // should not think it's a return for the enclosing method
+                1
+            }
+        '''
+    }
+
 }
 

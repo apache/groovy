@@ -4,10 +4,9 @@ dependencies {
     groovy project(':')
     compile project(':groovy-templates')
     testCompile project(':groovy-test')
+    testCompile project(':groovy-ant')
     testCompile "org.apache.ant:ant-testutil:1.8.4"
 }
-
-sourceSets.main.resources.srcDir 'src/main/java'
 
 compileJava {
     doLast {

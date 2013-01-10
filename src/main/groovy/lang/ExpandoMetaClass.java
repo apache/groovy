@@ -247,10 +247,6 @@ import org.codehaus.groovy.util.FastArray;
  * synchronized. Should this happen during a modification, then the method cannot be selected or called unless the
  * modification is completed.
  * <p/>
- * WARNING: This MetaClass uses a thread-bound ThreadLocal instance to store and retrieve properties.
- * In addition properties stored use soft references so they are both bound by the life of the Thread and by the soft
- * references. The implication here is you should NEVER use dynamic properties if you want their values to stick around
- * for long periods because as soon as the JVM is running low on memory or the thread dies they will be garbage collected.
  *
  * @author Graeme Rocher
  * @since 1.5
@@ -297,8 +293,12 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
     private ClosureStaticMetaMethod invokeStaticMethodMethod;
     private final Set<MixinInMetaClass> mixinClasses = new LinkedHashSet<MixinInMetaClass>();
 
-    private ExpandoMetaClass(Class theClass, boolean register, boolean allowChangesAfterInit, MetaMethod[] add) {
-        super(GroovySystem.getMetaClassRegistry(), theClass, add);
+    public ExpandoMetaClass(Class theClass, boolean register, boolean allowChangesAfterInit, MetaMethod[] add) {
+        this(GroovySystem.getMetaClassRegistry(), theClass, register, allowChangesAfterInit, add);
+    }
+    
+    public ExpandoMetaClass(MetaClassRegistry registry, Class theClass, boolean register, boolean allowChangesAfterInit, MetaMethod[] add) {
+        super(registry, theClass, add);
         this.myMetaClass = InvokerHelper.getMetaClass(getClass());
         this.inRegistry = register;
         this.allowChangesAfterInit = allowChangesAfterInit;

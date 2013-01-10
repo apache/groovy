@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2011 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -124,11 +124,12 @@ class StreamingMarkupBuilder extends AbstractStreamingBuilder {
     }
     
     def tagClosure = {tag, doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, out ->
+        boolean pendingIsDefaultNamespace = pendingNamespaces.containsKey(prefix) && !pendingNamespaces[prefix]
         if (prefix != "") {
             if (!(namespaces.containsKey(prefix) || pendingNamespaces.containsKey(prefix))) {
                 throw new GroovyRuntimeException("Namespace prefix: ${prefix} is not bound to a URI")
             }
-            if (prefix != ":") tag = prefix + ":" + tag
+            if (prefix != ":" && !pendingIsDefaultNamespace) tag = prefix + ":" + tag
         }
 
         out = out.unescaped() << "<${tag}"
@@ -136,9 +137,9 @@ class StreamingMarkupBuilder extends AbstractStreamingBuilder {
         attrs.each {key, value ->
             if (key.contains('$')) {
                 def parts = key.tokenize('$')
-
+                String localpart = parts[1].contains("}") ? parts[1].tokenize("}")[1] : parts[1]
                 if (namespaces.containsKey(parts[0]) || pendingNamespaces.containsKey(parts[0])) {
-                    key = parts[0] + ":" + parts[1]
+                    key = parts[0] + ":" + localpart
                 } else {
                     throw new GroovyRuntimeException("bad attribute namespace tag: ${parts[0]} in ${key}")
                 }
@@ -153,14 +154,16 @@ class StreamingMarkupBuilder extends AbstractStreamingBuilder {
 
         def hiddenNamespaces = [:]
 
-        pendingNamespaces.each {key, value ->
-            hiddenNamespaces[key] = namespaces[key]
-            namespaces[key] = value
-            out << ((key == ":") ? " xmlns=" + qt : " xmlns:${key}=" + qt)
-            out.writingAttribute = true
-            "${value}".build(doc)
-            out.writingAttribute = false
-            out << qt
+        pendingNamespaces.each { key, value ->
+            if (value) {
+                hiddenNamespaces[key] = namespaces[key]
+                namespaces[key] = value
+                out << ((key == ":") ? " xmlns=" + qt : " xmlns:${key}=" + qt)
+                out.writingAttribute = true
+                "${value}".build(doc)
+                out.writingAttribute = false
+                out << qt
+            }
         }
 
         if (body == null && !expandEmptyElements) {

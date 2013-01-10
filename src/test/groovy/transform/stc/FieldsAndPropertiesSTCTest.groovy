@@ -386,6 +386,71 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    void testPrivateFieldAccessInClosure() {
+        assertScript '''
+            class A {
+                private int x
+                void foo() {
+                    def cl = { x = 666 }
+                    cl()
+                }
+                void ensure() {
+                    assert x == 666
+                }
+            }
+            def a = new A()
+            a.foo()
+            a.ensure()
+        '''
+    }
+
+    void testPrivateFieldAccessInAIC() {
+        assertScript '''
+            class A {
+                private int x
+                void foo() {
+                    def aic = new Runnable() { void run() { x = 666 } }
+                    aic.run()
+                }
+                void ensure() {
+                    assert x == 666
+                }
+            }
+            def a = new A()
+            a.foo()
+            a.ensure()
+        '''
+    }
+
+    // GROOVY-5737
+    void testAccessGeneratedFieldFromClosure() {
+        assertScript '''
+            import groovy.transform.*
+            import groovy.util.logging.*
+
+            @Log
+            class GreetingActor {
+
+              def receive = {
+                log.info "test"
+              }
+
+            }
+            new GreetingActor()
+            '''
+    }
+
+    // GROOVY-5872
+    void testAssignNullToFieldWithGenericsShouldNotThrowError() {
+        assertScript '''
+            class Foo {
+                List<String> list = null // should not throw an error
+            }
+            new Foo()
+        '''
+    }
+
+
     public static interface InterfaceWithField {
         String boo = "I don't fancy fields in interfaces"
     }

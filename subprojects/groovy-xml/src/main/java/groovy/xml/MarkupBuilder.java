@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,10 @@
  */
 package groovy.xml;
 
+import groovy.lang.Closure;
 import groovy.util.BuilderSupport;
 import groovy.util.IndentPrinter;
+import org.codehaus.groovy.runtime.StringGroovyMethods;
 
 import java.io.PrintWriter;
 import java.io.Writer;
@@ -385,60 +387,52 @@ public class MarkupBuilder extends BuilderSupport {
     private String escapeXmlValue(String value, boolean isAttrValue) {
         if (value == null)
             throw new IllegalArgumentException();
-
-        StringBuilder sb = null; // lazy create for edge-case efficiency
-        for (int i = 0, len = value.length(); i < len; i++) {
-            final char ch = value.charAt(i);
-            final String replacement = checkForReplacement(isAttrValue, ch);
-
-            if (replacement != null) {
-                // output differs from input; we write to our local buffer
-                if (sb == null) {
-                    sb = new StringBuilder((int) (1.1 * len));
-                    sb.append(value.substring(0, i));
-                }
-                sb.append(replacement);
-            } else if (sb != null) {
-                // earlier output differs from input; we write to our local buffer
-                sb.append(ch);
-            }
-        }
-
-        return sb == null ? value : sb.toString();
+        return StringGroovyMethods.collectReplacements(value, new ReplacingClosure(isAttrValue, useDoubleQuotes));
     }
 
-    private String checkForReplacement(boolean isAttrValue, char ch) {
-        switch (ch) {
-            case '&':
-                return "&amp;";
-            case '<':
-                return "&lt;";
-            case '>':
-                return "&gt;";
-            case '\n':
-                if (isAttrValue) return "&#10;";
-                break;
-            case '\r':
-                if (isAttrValue) return "&#13;";
-                break;
-            case '\t':
-                if (isAttrValue) return "&#09;";
-                break;
-            case '"':
-                // The double quote is only escaped if the value is for
-                // an attribute and the builder is configured to output
-                // attribute values inside double quotes.
-                if (isAttrValue && useDoubleQuotes) return "&quot;";
-                break;
-            case '\'':
-                // The apostrophe is only escaped if the value is for an
-                // attribute, as opposed to element content, and if the
-                // builder is configured to surround attribute values with
-                // single quotes.
-                if (isAttrValue && !useDoubleQuotes) return "&apos;";
-                break;
+    private static class ReplacingClosure extends Closure<String> {
+        private final boolean isAttrValue;
+        private final boolean useDoubleQuotes;
+
+        public ReplacingClosure(boolean isAttrValue, boolean useDoubleQuotes) {
+            super(null);
+            this.isAttrValue = isAttrValue;
+            this.useDoubleQuotes = useDoubleQuotes;
         }
-        return null;
+
+        public String doCall(Character ch) {
+            switch (ch) {
+                case '&':
+                    return "&amp;";
+                case '<':
+                    return "&lt;";
+                case '>':
+                    return "&gt;";
+                case '\n':
+                    if (isAttrValue) return "&#10;";
+                    break;
+                case '\r':
+                    if (isAttrValue) return "&#13;";
+                    break;
+                case '\t':
+                    if (isAttrValue) return "&#09;";
+                    break;
+                case '"':
+                    // The double quote is only escaped if the value is for
+                    // an attribute and the builder is configured to output
+                    // attribute values inside double quotes.
+                    if (isAttrValue && useDoubleQuotes) return "&quot;";
+                    break;
+                case '\'':
+                    // The apostrophe is only escaped if the value is for an
+                    // attribute, as opposed to element content, and if the
+                    // builder is configured to surround attribute values with
+                    // single quotes.
+                    if (isAttrValue && !useDoubleQuotes) return "&apos;";
+                    break;
+            }
+            return null;
+        }
     }
 
     private void toState(int next, Object name) {

@@ -16,7 +16,6 @@
 package org.codehaus.groovy.classgen.asm.sc
 
 import groovy.transform.stc.FieldsAndPropertiesSTCTest
-import groovy.transform.NotYetImplemented
 
 @Mixin(StaticCompilationTestSupport)
 class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCTest {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -409,6 +409,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
             idx = self.indexOf(text, idx);
             if (idx >= 0) {
                 ++answer;
+                if (idx == self.length()) break;
             } else {
                 break;
             }
@@ -632,6 +633,46 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
             count++;
         }
         return result;
+    }
+
+    /**
+     * Iterate through this String a character at a time collecting either the
+     * original character or a transformed replacement String. The {@code transform}
+     * Closure should return {@code null} to indicate that no transformation is
+     * required for the given character.
+     * <p/>
+     * <pre class="groovyTestCase">
+     * assert "Groovy".collectReplacements{ it == 'o' ? '_O_' : null } == 'Gr_O__O_vy'
+     * assert "B&W".collectReplacements{ it == '&' ? '&amp;' : null } == 'B&amp;W'
+     * </pre>
+     *
+     * @param orig the original String
+     * @return A new string in which all characters that require escaping
+     *         have been replaced with the corresponding replacements
+     *         as determined by the {@code transform} Closure.
+     */
+    public static String collectReplacements(String orig, Closure<String> transform) {
+        if (orig == null) return orig;
+
+        StringBuilder sb = null; // lazy create for edge-case efficiency
+        for (int i = 0, len = orig.length(); i < len; i++) {
+            final char ch = orig.charAt(i);
+            final String replacement = transform.call(ch);
+
+            if (replacement != null) {
+                // output differs from input; we write to our local buffer
+                if (sb == null) {
+                    sb = new StringBuilder((int) (1.1 * len));
+                    sb.append(orig.substring(0, i));
+                }
+                sb.append(replacement);
+            } else if (sb != null) {
+                // earlier output differs from input; we write to our local buffer
+                sb.append(ch);
+            }
+        }
+
+        return sb == null ? orig : sb.toString();
     }
 
     /**

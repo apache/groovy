@@ -86,4 +86,13 @@ class BinaryOperationsTest extends AbstractBytecodeTestCase {
             ])
         }
     }
+
+    void testCharXor() {
+        if (config.optimizationOptions.indy) return;
+        assert compile("""
+            int i = ('a' as char) ^ ('b' as char) 
+        """).hasStrictSequence ([
+            "IXOR"
+        ])
+    }
 }

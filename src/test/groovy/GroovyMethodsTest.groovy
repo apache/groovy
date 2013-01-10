@@ -496,6 +496,11 @@ class GroovyMethodsTest extends GroovyTestCase {
         assert string.count('g') == 2
     }
 
+    void testCountForStringEdgeCase_GROOVY5858() {
+        def blank6 = ' ' * 6
+        8.times { assert blank6.count(' ' * it) == 7 - it }
+    }
+
     void testJoinForIterator() {
         assert ['a', 'b', 'c', 'a'].iterator().join('-') == 'a-b-c-a'
     }
