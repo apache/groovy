@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 the original author or authors.
+ * Copyright 2008-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ import java.lang.annotation.Target;
  * Class annotation used to assist in the creation of {@code Cloneable} classes.
  * The {@code @AutoClone} annotation instructs the compiler to execute an
  * AST transformation which adds a public {@code clone()} method and adds
- * {@code Cloneable} to the interfaces which the class implements.
+ * {@code Cloneable} to the list of interfaces which the class implements.
  * <p/>
  * Because the JVM doesn't have a one-size fits all cloning strategy, several
  * customizations exist for the cloning implementation. By default, the {@code clone()}
@@ -187,12 +187,30 @@ import java.lang.annotation.Target;
 @GroovyASTTransformationClass("org.codehaus.groovy.transform.AutoCloneASTTransformation")
 public @interface AutoClone {
     /**
-     * Comma separated list of property names to exclude from cloning
+     * <p>Comma separated list of property (and/or field) names to exclude from cloning.</p>
+     * <p>NOTE: When using the CLONE style, property (and/or field) copying might occur as part of
+     * calling {@code super.clone()} which will ignore this list. You can then use this list to
+     * streamline the provided {@code clone()} implementation by selecting which properties
+     * (and/or fields) will have a subsequent call to their {@code clone()} method. If you have
+     * immutable properties (and/or fields) this can be useful as the extra {@code clone()} will
+     * not be necessary and cloning will be more efficient.</p>
+     * <p>NOTE: This doesn't affect property (and/or field) copying that might occur as part
+     * of serialization when using the SERIALIZATION style, i.e. this flag is ignored;
+     * instead adjust your serialization code to include or exclude the desired
+     * properties (and/or fields) which should carry over during cloning.</p>
      */
     String excludes() default "";
 
     /**
-     * Include fields as well as properties when cloning
+     * <p>Include fields as well as properties when cloning.</p>
+     * <p>NOTE: When using the CLONE style, field copying might occur as part of
+     * calling {@code super.clone()} and might be all you require; if you turn on
+     * this flag, the provided {@code clone()} implementation will also
+     * subsequently call {@code clone()} for each field which can be useful if
+     * you have mutable fields.</p>
+     * <p>NOTE: This doesn't affect field copying that might occur as part of
+     * serialization when using the SERIALIZATION style, i.e. this flag is ignored;
+     * instead adjust your serialization code to include or exclude your fields.</p>
      */
     boolean includeFields() default false;
 
