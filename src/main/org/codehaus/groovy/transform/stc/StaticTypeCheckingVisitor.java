@@ -2468,19 +2468,91 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         return category;
     }
 
-    private List<MethodNode> findMethod(
+    /**
+     * This method returns the list of methods named against the supplied parameter that
+     * are defined on the specified receiver, but it will also add "non existing" methods
+     * that will be generated afterwards by the compiler, for example if a method is using
+     * default values and that the specified class node isn't compiled yet.
+     * @param receiver the receiver where to find methods
+     * @param name the name of the methods to return
+     * @return the methods that are defined on the receiver completed with stubs for future methods
+     */
+    protected List<MethodNode> findMethodsWithGenerated(ClassNode receiver, String name) {
+        List<MethodNode> methods = receiver.getMethods(name);
+        if (methods.isEmpty() || receiver.isResolved()) return methods;
+        List<MethodNode> result = addGeneratedMethods(receiver, methods);
+
+        return result;
+    }
+
+    private List<MethodNode> addGeneratedMethods(final ClassNode receiver, final List<MethodNode> methods) {
+        // using a comparator of parameters
+        List<MethodNode> result = new LinkedList<MethodNode>();
+        for (MethodNode method : methods) {
+            result.add(method);
+            Parameter[] parameters = method.getParameters();
+            int counter = 0;
+            int size = parameters.length;
+            for (int i = size - 1; i >= 0; i--) {
+                Parameter parameter = parameters[i];
+                if (parameter != null && parameter.hasInitialExpression()) {
+                    counter++;
+                }
+            }
+
+            for (int j = 1; j <= counter; j++) {
+                Parameter[] newParams = new Parameter[parameters.length - j];
+                int index = 0;
+                int k = 1;
+                for (int i = 0; i < parameters.length; i++) {
+                    if (k > counter - j && parameters[i] != null && parameters[i].hasInitialExpression()) {
+                        k++;
+                    } else if (parameters[i] != null && parameters[i].hasInitialExpression()) {
+                        newParams[index++] = parameters[i];
+                        k++;
+                    } else {
+                        newParams[index++] = parameters[i];
+                    }
+                }
+                MethodNode stubbed;
+                if ("<init>".equals(method.getName())) {
+                    stubbed= new ConstructorNode(
+                            method.getModifiers(),
+                            newParams,
+                            method.getExceptions(),
+                            EmptyStatement.INSTANCE
+                    );
+
+                } else {
+                    stubbed= new MethodNode(
+                            method.getName(),
+                            method.getModifiers(),
+                            method.getReturnType(),
+                            newParams,
+                            method.getExceptions(),
+                            EmptyStatement.INSTANCE
+                    );
+                }
+                stubbed.setDeclaringClass(receiver);
+                result.add(stubbed);
+            }
+        }
+        return result;
+    }
+
+    protected List<MethodNode> findMethod(
             ClassNode receiver, String name, ClassNode... args) {
         if (isPrimitiveType(receiver)) receiver = getWrapper(receiver);
         List<MethodNode> methods;
         if ("<init>".equals(name)) {
-            methods = new ArrayList<MethodNode>(receiver.getDeclaredConstructors());
+            methods = addGeneratedMethods(receiver,new ArrayList<MethodNode>(receiver.getDeclaredConstructors()));
             if (methods.isEmpty()) {
                 MethodNode node = new ConstructorNode(Opcodes.ACC_PUBLIC, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, EmptyStatement.INSTANCE);
                 node.setDeclaringClass(receiver);
                 return Collections.singletonList(node);
             }
         } else {
-            methods = receiver.getMethods(name);
+            methods = findMethodsWithGenerated(receiver,name);
             if (receiver.isInterface()) {
                 collectAllInterfaceMethodsByName(receiver, name, methods);
                 methods.addAll(OBJECT_TYPE.getMethods(name));
@@ -2490,7 +2562,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 ClassNode parent = receiver;
                 while (parent instanceof InnerClassNode && !parent.isStaticClass()) {
                     parent = parent.getOuterClass();
-                    methods.addAll(parent.getMethods(name));
+                    methods.addAll(findMethodsWithGenerated(parent,name));
                 }
             }
             if (methods.isEmpty() && (args == null || args.length == 0)) {
