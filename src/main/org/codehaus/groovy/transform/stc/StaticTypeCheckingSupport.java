@@ -940,18 +940,7 @@ public abstract class StaticTypeCheckingSupport {
              */
 
             Parameter[] params = parameterizeArguments(actualReceiver, m);
-            if (params.length > args.length && ! isVargs(params)) {
-                // GROOVY-5231
-                int dist = allParametersAndArgumentsMatchWithDefaultParams(params, args);
-                if (dist>=0 && !actualReceiver.equals(declaringClass)) dist+=getDistance(actualReceiver, declaringClass);
-                if (dist>=0 && dist<bestDist) {
-                    bestChoices.clear();
-                    bestChoices.add(m);
-                    bestDist = dist;
-                } else if (dist>=0 && dist==bestDist) {
-                    bestChoices.add(m);
-                }
-            } else if (params.length == args.length) {
+            if (params.length == args.length) {
                 int allPMatch = allParametersAndArgumentsMatch(params, args);
                 boolean firstParamMatches = true;
                 // check first parameters

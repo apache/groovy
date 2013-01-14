@@ -150,4 +150,28 @@ public class MethodCallsStaticCompilationTest extends MethodCallsSTCTest {
         '''
     }
 
+    void testMethodCallWithDefaultParams() {
+        try {
+            assertScript '''import groovy.transform.CompileStatic
+import groovy.transform.TypeCheckingMode//import org.codehaus.groovy.classgen.asm.sc.MethodCallsStaticCompilationTest.DefaultParamTestSupport as Support
+@CompileStatic(TypeCheckingMode.SKIP)
+ class Support {
+        Support(String name, String val, List arg=null, Set set = null, Date suffix = new Date()) {
+            "$name$val$suffix"
+        }
+    }
+                new Support(null, null, null, null)
+
+            '''
+        } finally {
+            println astTrees
+        }
+    }
+
+    static class DefaultParamTestSupport {
+        DefaultParamTestSupport(String name, String val, List arg=null, Set set = null, Date suffix = new Date()) {
+            "$name$val$suffix"
+        }
+    }
+
 }
