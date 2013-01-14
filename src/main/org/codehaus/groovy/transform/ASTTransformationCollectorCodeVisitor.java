@@ -188,6 +188,10 @@ public class ASTTransformationCollectorCodeVisitor extends ClassCodeVisitorSuppo
                                 annotation.getClassNode().getName() + " is defined to be run in compile phase " + specifiedCompilePhase + ". Local AST transformations must run in " + CompilePhase.SEMANTIC_ANALYSIS + " or later!",
                                 source));
             }
+
+        } else {
+            source.getErrorCollector().addError(
+                new SimpleMessage("AST transformation implementation classes must be annotated with " + GroovyASTTransformation.class.getName() + ". " + klass.getName() + " lacks this annotation.", source));
         }
     }
 
