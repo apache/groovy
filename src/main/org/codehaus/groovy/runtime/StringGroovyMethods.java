@@ -407,12 +407,10 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
         int answer = 0;
         for (int idx = 0; true; idx++) {
             idx = self.indexOf(text, idx);
-            if (idx >= 0) {
-                ++answer;
-                if (idx == self.length()) break;
-            } else {
-                break;
-            }
+            // break once idx goes to -1 or for case of empty string once
+            // we get to the end to avoid JDK library bug (see GROOVY-5858)
+            if (idx < answer) break;
+            ++answer;
         }
         return answer;
     }
