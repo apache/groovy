@@ -27,6 +27,8 @@ import org.codehaus.groovy.classgen.asm.InvocationWriter;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.customizers.ImportCustomizer;
+import org.codehaus.groovy.control.messages.ExceptionMessage;
+import org.codehaus.groovy.control.messages.SimpleMessage;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.InvokerInvocationException;
 import org.objectweb.asm.Opcodes;
@@ -104,10 +106,16 @@ public class GroovyTypeCheckingExtensionSupport extends TypeCheckingExtension {
 
         ClassLoader cl = typeCheckingVisitor.getSourceUnit().getClassLoader();
         InputStream is = cl.getResourceAsStream(scriptPath);
-        if (is==null) {
+        if (is == null) {
             // fallback to the compiler classloader
             cl = GroovyTypeCheckingExtensionSupport.class.getClassLoader();
             is = cl.getResourceAsStream(scriptPath);
+        }
+        if (is == null) {
+            // if the input stream is still null, we've not found the extension
+            context.getErrorCollector().addFatalError(
+                    new SimpleMessage("Static type checking extension '" + scriptPath + "' was not found on the classpath.",
+                            config.getDebug(), typeCheckingVisitor.getSourceUnit()));
         }
         try {
             TypeCheckingDSL parse = (TypeCheckingDSL) shell.parse(
