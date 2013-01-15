@@ -167,6 +167,13 @@ class SubscriptTest extends GroovyTestCase {
         assert sub == [101, 103, 120, 121, 122, 123, 124, 125, 133]
     }
 
+    // GROOVY-5865
+    void testListSubscriptWithListAndEmptyRange() {
+        def list = [0, 1, 2]
+
+        assert list[0, 1..<1] == [0]
+    }
+
     void testStringWithSubscriptList() {
 
         def text = "nice cheese gromit!"

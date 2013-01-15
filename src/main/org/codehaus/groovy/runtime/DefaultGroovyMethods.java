@@ -4856,6 +4856,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static <T> List<T> getAt(List<T> self, Range range) {
+        if (range instanceof EmptyRange) {
+            return getAt(self, (EmptyRange) range);
+        }
+
         RangeInfo info = subListBorders(self.size(), range);
         List<T> answer = self.subList(info.from, info.to);  // sublist is always exclusive, but Ranges are not
         if (info.reverse) {
