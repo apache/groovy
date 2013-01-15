@@ -3026,7 +3026,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 GenericsType[] copy = new GenericsType[gts.length];
                 for (int i = 0; i < gts.length; i++) {
                     GenericsType genericsType = gts[i];
-                    copy[i] = fullyResolve(genericsType, placeholders);
+                    if (genericsType.isPlaceholder() && placeholders.containsKey(genericsType.getName())) {
+                        copy[i] = placeholders.get(genericsType.getName());
+                    } else {
+                        copy[i] = fullyResolve(genericsType, placeholders);
+                    }
                 }
                 gts = copy;
             }

@@ -1024,6 +1024,17 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    void testShouldNotCreateStackOverflow() {
+        assertScript '''
+            class Element {
+              Iterator<List<Element>> multi() {
+                [ [ ] ].iterator()
+              }
+            }
+            new Element()
+'''
+    }
+
     static class MyList extends LinkedList<String> {}
 
     public static class ClassA<T> {
