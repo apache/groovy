@@ -16,7 +16,6 @@
 package org.codehaus.groovy.transform;
 
 import groovy.lang.GroovyObject;
-import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
@@ -24,9 +23,7 @@ import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.classgen.Verifier;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
-import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
 import org.codehaus.groovy.runtime.GeneratedClosure;
-import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.Types;
 import org.objectweb.asm.Opcodes;
@@ -253,7 +250,7 @@ public class DelegateASTTransformation extends AbstractASTTransformation impleme
             if (annotations.isEmpty()) continue;
 
             if (hasClosureMember(annotation)) {
-                addError("@Delegate does not support closures as annotation members.", annotation);
+                addError("@Delegate does not support keeping Closure annotation members.", annotation);
                 continue;
             }
 
