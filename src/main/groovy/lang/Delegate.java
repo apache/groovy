@@ -142,11 +142,19 @@ public @interface Delegate {
     boolean deprecated() default false;
 
     /**
+     * Whether to carry over annotations from the methods of the delegate
+     * to your delegating method. Currently Closure annotation members are
+     * not supported.
+     *
      * @return true if generated delegate methods should keep method annotations
      */
     boolean methodAnnotations() default false;
 
     /**
+     * Whether to carry over annotations from the parameters of delegate
+     * methods to your delegating method. Currently Closure annotation members are
+     * not supported.
+     *
      * @return true if generated delegate methods should keep parameter annotations
      */
     boolean parameterAnnotations() default false;

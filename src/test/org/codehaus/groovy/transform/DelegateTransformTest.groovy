@@ -285,141 +285,146 @@ class DelegateTransformTest extends CompilableTestSupport {
     // GROOVY-5446
     void testDelegateWithParameterAnnotations() {
         assertScript """
-                import java.lang.annotation.*
+            import java.lang.annotation.*
 
-                @Retention(RetentionPolicy.RUNTIME)
-                @Target([ElementType.PARAMETER])
-                public @interface SomeAnnotation {
-                }
+            @Retention(RetentionPolicy.RUNTIME)
+            @Target([ElementType.PARAMETER])
+            public @interface SomeAnnotation {
+            }
 
-                class A {
-                    def method(@SomeAnnotation def param) { "Test" }
-                }
+            class A {
+                def method(@SomeAnnotation def param) { "Test" }
+            }
 
-                class A_Delegate {
-                    @Delegate(parameterAnnotations = true)
-                    A a = new A()
-                }
+            class A_Delegate {
+                @Delegate(parameterAnnotations = true)
+                A a = new A()
+            }
 
-                def originalMethod = A.getMethod('method', [Object.class] as Class[])
-                def originalAnno = originalMethod.parameterAnnotations[0][0]
+            def originalMethod = A.getMethod('method', [Object.class] as Class[])
+            def originalAnno = originalMethod.parameterAnnotations[0][0]
 
-                def delegateMethod = A_Delegate.getMethod('method', [Object.class] as Class[])
-                def delegateAnno = delegateMethod.parameterAnnotations[0][0]
+            def delegateMethod = A_Delegate.getMethod('method', [Object.class] as Class[])
+            def delegateAnno = delegateMethod.parameterAnnotations[0][0]
 
-                assert delegateAnno == originalAnno
-                    """
+            assert delegateAnno == originalAnno
+        """
     }
 
     void testDelegateWithMethodAnnotations() {
         assertScript """
-                    import java.lang.annotation.*
+            import java.lang.annotation.*
 
-                    @Retention(RetentionPolicy.RUNTIME)
-                    @Target([ElementType.METHOD])
-                    public @interface SomeAnnotation {
-                        int value()
-                    }
+            @Retention(RetentionPolicy.RUNTIME)
+            @Target([ElementType.METHOD])
+            public @interface SomeAnnotation {
+                int value()
+            }
 
-                    class A {
-                        @SomeAnnotation(42)
-                        def method( def param) { "Test" }
-                    }
+            class A {
+                @SomeAnnotation(42)
+                def method( def param) { "Test" }
+            }
 
-                    class A_Delegate {
-                        @Delegate(methodAnnotations = true)
-                        A a = new A()
-                    }
+            class A_Delegate {
+                @Delegate(methodAnnotations = true)
+                A a = new A()
+            }
 
-                    def originalMethod = A.getMethod('method', [Object.class] as Class[])
-                    def originalAnno = originalMethod.declaredAnnotations[0]
+            def originalMethod = A.getMethod('method', [Object.class] as Class[])
+            def originalAnno = originalMethod.declaredAnnotations[0]
 
-                    def delegateMethod = A_Delegate.getMethod('method', [Object.class] as Class[])
-                    def delegateAnno = delegateMethod.declaredAnnotations[0]
+            def delegateMethod = A_Delegate.getMethod('method', [Object.class] as Class[])
+            def delegateAnno = delegateMethod.declaredAnnotations[0]
 
-                    assert delegateAnno == originalAnno
+            assert delegateAnno == originalAnno
 
-                    assert delegateAnno.value() == 42
-                    assert delegateAnno.value() == originalAnno.value()
-                        """
+            assert delegateAnno.value() == 42
+            assert delegateAnno.value() == originalAnno.value()
+        """
     }
 
     void testParameterAnnotationsShouldNotBeCarriedOverByDefault() {
         assertScript """
-                    import java.lang.annotation.*
+            import java.lang.annotation.*
 
-                    @Retention(RetentionPolicy.RUNTIME)
-                    @Target([ElementType.PARAMETER])
-                    public @interface SomeAnnotation {
-                    }
+            @Retention(RetentionPolicy.RUNTIME)
+            @Target([ElementType.PARAMETER])
+            public @interface SomeAnnotation {
+            }
 
-                    class A {
-                        def method(@SomeAnnotation def param) { "Test" }
-                    }
+            class A {
+                def method(@SomeAnnotation def param) { "Test" }
+            }
 
-                    class A_Delegate {
-                        @Delegate
-                        A a = new A()
-                    }
+            class A_Delegate {
+                @Delegate
+                A a = new A()
+            }
 
-                    def originalMethod = A.getMethod('method', [Object.class] as Class[])
-                    def originalAnno = originalMethod.parameterAnnotations[0][0]
+            def originalMethod = A.getMethod('method', [Object.class] as Class[])
+            def originalAnno = originalMethod.parameterAnnotations[0][0]
 
-                    def delegateMethod = A_Delegate.getMethod('method', [Object.class] as Class[])
-                    assert delegateMethod.parameterAnnotations[0].length == 0
-            """
+            def delegateMethod = A_Delegate.getMethod('method', [Object.class] as Class[])
+            assert delegateMethod.parameterAnnotations[0].length == 0
+        """
     }
 
+    // this test reflects that we currently don't support carrying over
+    // Closure Annotations rather than a desired design goal
+    // TODO: support Closure Annotations and then remove/change this test
     void testAnnotationWithClosureMemberIsNotSupported() {
         def message = shouldFail {
             assertScript """
-                        import java.lang.annotation.*
+                import java.lang.annotation.*
 
-                        @Retention(RetentionPolicy.RUNTIME)
-                        @Target([ElementType.METHOD])
-                        public @interface SomeAnnotation {
-                            Class value()
-                        }
+                @Retention(RetentionPolicy.RUNTIME)
+                @Target([ElementType.METHOD])
+                public @interface SomeAnnotation {
+                    Class value()
+                }
 
-                        class A {
-                            @SomeAnnotation({ param != null })
-                            def method(def param) { "Test" }
-                        }
+                class A {
+                    @SomeAnnotation({ param != null })
+                    def method(def param) { "Test" }
+                }
 
-                        class A_Delegate {
-                            @Delegate(methodAnnotations = true)
-                            A a = new A()
-                        }
-                """
+                class A_Delegate {
+                    @Delegate(methodAnnotations = true)
+                    A a = new A()
+                }
+            """
         }
 
-        assert message.contains('@Delegate does not support closures as annotation members.')
+        assert message.contains('@Delegate does not support keeping Closure annotation members.')
     }
 
+    // this test reflects that we currently don't support carrying over
+    // Closure Annotations rather than a desired design goal
+    // TODO: support Closure Annotations and then remove/change this test
     void testAnnotationWithClosureClassDescendantIsNotSupported() {
         def message = shouldFail {
             assertScript """
-                            import java.lang.annotation.*
+                import java.lang.annotation.*
 
-                            @Retention(RetentionPolicy.RUNTIME)
-                            @Target([ElementType.METHOD])
-                            public @interface SomeAnnotation {
-                                Class value()
-                            }
+                @Retention(RetentionPolicy.RUNTIME)
+                @Target([ElementType.METHOD])
+                public @interface SomeAnnotation {
+                    Class value()
+                }
 
-                            class A {
-                                @SomeAnnotation(org.codehaus.groovy.runtime.GeneratedClosure.class)
-                                def method(def param) { "Test" }
-                            }
+                class A {
+                    @SomeAnnotation(org.codehaus.groovy.runtime.GeneratedClosure.class)
+                    def method(def param) { "Test" }
+                }
 
-                            class A_Delegate {
-                                @Delegate(methodAnnotations = true)
-                                A a = new A()
-                            }
-                    """
+                class A_Delegate {
+                    @Delegate(methodAnnotations = true)
+                    A a = new A()
+                }
+            """
         }
-
-        assert message.contains('@Delegate does not support closures as annotation members.')
+        assert message.contains('@Delegate does not support keeping Closure annotation members.')
     }
 }
 
