@@ -15,6 +15,7 @@
  */
 package groovy.transform.stc
 
+import org.codehaus.groovy.control.MultipleCompilationErrorsException
 import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
 
 /**
@@ -48,6 +49,21 @@ class TypeCheckingExtensionsTest extends StaticTypeCheckingTestCase {
             class B {}
             new A()
         '''
+    }
+
+    void testNonExistentExtension() {
+        def extensionPath = 'groovy/transform/stc/NonExistentTestExtension.groovy'
+        extension = extensionPath
+
+        String errorMessage = "Static type checking extension '${extensionPath}' was not found on the classpath."
+
+        String message = shouldFail(MultipleCompilationErrorsException) {
+            assertScript '''
+                assert true
+            '''
+        }
+
+        assert message.contains(errorMessage)
     }
 
     void testFinishExtension() {
