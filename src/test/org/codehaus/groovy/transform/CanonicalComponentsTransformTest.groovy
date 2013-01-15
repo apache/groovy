@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2011 the original author or authors.
+ * Copyright 2008-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,7 @@ import groovy.transform.AutoClone
 import groovy.transform.AutoExternalize
 import groovy.transform.EqualsAndHashCode
 import groovy.transform.TupleConstructor
-import static groovy.transform.AutoCloneStyle.COPY_CONSTRUCTOR
-import static groovy.transform.AutoCloneStyle.SERIALIZATION
+import static groovy.transform.AutoCloneStyle.*
 import groovy.transform.ToString
 //import groovy.transform.InheritConstructors
 import groovy.transform.Canonical
@@ -197,6 +196,24 @@ class CanonicalComponentsTransformTest extends GroovyShellTestCase {
         assert p3.hasEqualXY(t1) && t1.hasEqualXY(p3)
     }
 
+    // GROOVY-5901
+    void testSimpleCloning() {
+      def p1 = new Person6(first:'John', last:'Smith', since:new Date())
+      def p2 = p1.clone()
+      def c1 = new Customer6(first:'John', last:'Smith', favItems:['ipod', 'shiraz'], since:new Date())
+      def c2 = c1.clone()
+
+      assert [p1, p1.since, c1, c1.favItems, c1.since].every{ it instanceof Cloneable }
+      assert !(p1.first instanceof Cloneable)
+      assert !p1.is(p2)
+      assert !c1.is(c2)
+      assert !c1.favItems.is(c2.favItems)
+      assert !p1.since.is(p2.since)
+      assert !c1.since.is(c2.since)
+      assert p1.first.is(p2.first)
+      assert c1.first.is(c2.first)
+    }
+
     // GROOVY-4849
     void testCanEqualDefined() {
         def p1 = new IntPair(1, 2)
@@ -255,6 +272,16 @@ class Customer5 {
     private int age
     int agePeek() { age }
 }
+
+@TupleConstructor
+@AutoClone(style=SIMPLE)
+@EqualsAndHashCode
+class Person6 { String first, last; Date since }
+
+@TupleConstructor(includeSuperProperties=true, callSuper=true)
+@AutoClone(style=SIMPLE)
+@EqualsAndHashCode
+class Customer6 extends Person6 { List favItems }
 
 // GROOVY-4786
 @EqualsAndHashCode(excludes="y")

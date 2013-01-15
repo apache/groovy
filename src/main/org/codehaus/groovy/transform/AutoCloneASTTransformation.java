@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2012 the original author or authors.
+ * Copyright 2008-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -84,16 +84,19 @@ public class AutoCloneASTTransformation extends AbstractASTTransformation {
                     createCloneCopyConstructor(cNode, list, excludes);
                     break;
                 case SERIALIZATION:
-                    createCloneSerialization(cNode, list, excludes);
+                    createCloneSerialization(cNode);
                     break;
                 case CLONE:
                     createClone(cNode, list, excludes);
+                    break;
+                case SIMPLE:
+                    createSimpleClone(cNode, list, excludes);
                     break;
             }
         }
     }
 
-    private void createCloneSerialization(ClassNode cNode, List<FieldNode> list, List<String> excludes) {
+    private void createCloneSerialization(ClassNode cNode) {
         final BlockStatement body = new BlockStatement();
         // def baos = new ByteArrayOutputStream()
         final Expression baos = new VariableExpression("baos");
@@ -155,6 +158,46 @@ public class AutoCloneASTTransformation extends AbstractASTTransformation {
         final BlockStatement cloneBody = new BlockStatement();
         cloneBody.addStatement(new ExpressionStatement(new ConstructorCallExpression(cNode, new ArgumentListExpression(VariableExpression.THIS_EXPRESSION))));
         cNode.addMethod("clone", ACC_PUBLIC, ClassHelper.OBJECT_TYPE, new Parameter[0], exceptions, cloneBody);
+    }
+
+    private void createSimpleClone(ClassNode cNode, List<FieldNode> list, List<String> excludes) {
+        if (cNode.getDeclaredConstructors().size() == 0) {
+            // add no-arg constructor
+            BlockStatement initBody = new BlockStatement();
+            initBody.addStatement(new EmptyStatement());
+            cNode.addConstructor(ACC_PUBLIC, new Parameter[0], ClassNode.EMPTY_ARRAY, initBody);
+        }
+        final BlockStatement cloneBody = new BlockStatement();
+        final Expression result = new VariableExpression("_result");
+        final Expression noarg = new ConstructorCallExpression(cNode, ArgumentListExpression.EMPTY_ARGUMENTS);
+        cloneBody.addStatement(new ExpressionStatement(new DeclarationExpression(result, ASSIGN, noarg)));
+        addSimpleCloneHelperMethod(cNode, list, excludes);
+        cloneBody.addStatement(new ExpressionStatement(new MethodCallExpression(VariableExpression.THIS_EXPRESSION, "cloneOrCopyMembers", new ArgumentListExpression(result))));
+        cloneBody.addStatement(new ReturnStatement(result));
+        ClassNode[] exceptions = {ClassHelper.make(CloneNotSupportedException.class)};
+        cNode.addMethod("clone", ACC_PUBLIC, ClassHelper.OBJECT_TYPE, new Parameter[0], exceptions, cloneBody);
+    }
+
+    private void addSimpleCloneHelperMethod(ClassNode cNode, List<FieldNode> list, List<String> excludes) {
+        Parameter methodParam = new Parameter(cNode, "other");
+        final Expression other = new VariableExpression(methodParam);
+        boolean hasParent = cNode.getSuperClass() != ClassHelper.OBJECT_TYPE;
+        BlockStatement methodBody = new BlockStatement();
+        if (hasParent) {
+            methodBody.addStatement(new ExpressionStatement(new MethodCallExpression(VariableExpression.SUPER_EXPRESSION, "cloneOrCopyMembers", new ArgumentListExpression(other))));
+        }
+        for (FieldNode fieldNode : list) {
+            String name = fieldNode.getName();
+            if (excludes.contains(name)) continue;
+            PropertyExpression direct = new PropertyExpression(VariableExpression.THIS_EXPRESSION, name);
+            Expression cloned = new MethodCallExpression(direct, "clone", MethodCallExpression.NO_ARGUMENTS);
+            Expression to = new PropertyExpression(other, name);
+            Statement assignCloned = assignStatement(to, cloned);
+            Statement assignDirect = assignStatement(to, direct);
+            methodBody.addStatement(new IfStatement(isInstanceOf(direct, CLONEABLE_TYPE), assignCloned, assignDirect));
+        }
+        ClassNode[] exceptions = {ClassHelper.make(CloneNotSupportedException.class)};
+        cNode.addMethod("cloneOrCopyMembers", ACC_PROTECTED, ClassHelper.VOID_TYPE, new Parameter[]{methodParam}, exceptions, methodBody);
     }
 
     private void createClone(ClassNode cNode, List<FieldNode> list, List<String> excludes) {

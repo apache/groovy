@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,11 @@ public enum AutoCloneStyle {
      * Uses only cloning.
      */
     CLONE,
+
+    /**
+     * Uses the no-arg constructor followed by property/field copying/cloning.
+     */
+    SIMPLE,
 
     /**
      * Uses the copy constructor pattern.

@@ -139,6 +139,57 @@ import java.lang.annotation.Target;
  * This approach can be slightly slower than the traditional cloning approach
  * but the {@code Cloneable} fields of your class can be final.
  * <p/>
+ * As a variation of the last two styles, if you set {@code style=SIMPLE}
+ * then the no-arg constructor will be called followed by setting the
+ * individual properties (and/or fields) calling {@code clone()} if the
+ * property/field implements {@code Cloneable}. Here is an example:
+ * <pre>
+ * import groovy.transform.AutoClone
+ * import static groovy.transform.AutoCloneStyle.*
+ * {@code @AutoClone(style=SIMPLE)}
+ * class Person {
+ *   final String first, last
+ *   final Date birthday
+ * }
+ * {@code @AutoClone(style=SIMPLE)}
+ * class Customer {
+ *   final List favItems
+ * }
+ * </pre>
+ * Which will create classes as follows:
+ * <pre>
+ * class Person implements Cloneable {
+ *   ...
+ *   public Object clone() throws CloneNotSupportedException {
+ *     def result = new Person()
+ *     copyOrCloneMembers(result)
+ *     return result
+ *   }
+ *   protected void copyOrCloneMembers(other) {
+ *     other.first = first
+ *     other.last = last
+ *     other.birthday = birthday.clone()
+ *   }
+ *   ...
+ * }
+ * class Customer extends Person {
+ *   ...
+ *   public Object clone() throws CloneNotSupportedException {
+ *     def result = new Customer()
+ *     copyOrCloneMembers(result)
+ *     return result
+ *   }
+ *   protected void copyOrCloneMembers(other) {
+ *     super.copyOrCloneMembers(other)
+ *     other.favItems = favItems.clone()
+ *   }
+ *   ...
+ * }
+ * </pre>
+ * You would typically use this style only for base classes where you didn't
+ * want the normal {@code Object} {@code clone()} method to be called and
+ * you would typically need to use the {@code SIMPLE} style for any child classes.
+ * <p/>
  * As a final example, if your class already implements the {@code Serializable}
  * or {@code Externalizable} interface, you can choose the following cloning style:
  * <pre>
@@ -190,14 +241,14 @@ public @interface AutoClone {
      * <p>Comma separated list of property (and/or field) names to exclude from cloning.
      * For convenience, a String with comma separated names can be used in addition
      * to an array (using Groovy's literal list notation) of String values.</p>
-     * <p>NOTE: When using the CLONE style, property (and/or field) copying might occur as part of
+     * <p>NOTE: When using the {@code CLONE} style, property (and/or field) copying might occur as part of
      * calling {@code super.clone()} which will ignore this list. You can then use this list to
-     * streamline the provided {@code clone()} implementation by selecting which properties
+     * streamline the provided {@code clone()} implementation by selecting which Cloneable properties
      * (and/or fields) will have a subsequent call to their {@code clone()} method. If you have
      * immutable properties (and/or fields) this can be useful as the extra {@code clone()} will
      * not be necessary and cloning will be more efficient.</p>
      * <p>NOTE: This doesn't affect property (and/or field) copying that might occur as part
-     * of serialization when using the SERIALIZATION style, i.e. this flag is ignored;
+     * of serialization when using the {@code SERIALIZATION} style, i.e. this flag is ignored;
      * instead adjust your serialization code to include or exclude the desired
      * properties (and/or fields) which should carry over during cloning.</p>
      */
@@ -205,13 +256,13 @@ public @interface AutoClone {
 
     /**
      * <p>Include fields as well as properties when cloning.</p>
-     * <p>NOTE: When using the CLONE style, field copying might occur as part of
+     * <p>NOTE: When using the {@code CLONE} style, field copying might occur as part of
      * calling {@code super.clone()} and might be all you require; if you turn on
      * this flag, the provided {@code clone()} implementation will also
-     * subsequently call {@code clone()} for each field which can be useful if
-     * you have mutable fields.</p>
+     * subsequently call {@code clone()} for each {@code Cloneable} field which can be
+     * useful if you have mutable fields.</p>
      * <p>NOTE: This doesn't affect field copying that might occur as part of
-     * serialization when using the SERIALIZATION style, i.e. this flag is ignored;
+     * serialization when using the {@code SERIALIZATION} style, i.e. this flag is ignored;
      * instead adjust your serialization code to include or exclude your fields.</p>
      */
     boolean includeFields() default false;
