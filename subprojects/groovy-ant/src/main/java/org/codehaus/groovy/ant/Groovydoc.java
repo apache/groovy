@@ -65,7 +65,9 @@ public class Groovydoc extends Task {
     private File styleSheetFile;
     // dev note: update javadoc comment for #setExtensions(String) if updating below
     private String extensions = ".java:.groovy:.gv:.gvy:.gsh";
+
     private String charset;
+    private String fileEncoding;
 
     public Groovydoc() {
         packageNames = new ArrayList<String>();
@@ -276,6 +278,17 @@ public class Groovydoc extends Task {
     }
 
     /**
+     * Specifies the file encoding to be used for generated files. If <em>fileEncoding</em> is missing,
+     * the <em>charset</em> encoding will be used for writing the files. If <em>fileEncoding</em> and
+     * <em>charset</em> are missing, the file encoding will default to <em>Charset.defaultCharset()</em>.
+     *
+     * @param fileEncoding the file encoding
+     */
+    public void setFileEncoding(String fileEncoding) {
+        this.fileEncoding = fileEncoding;
+    }
+
+    /**
      * Specifies a stylesheet file to use. If not specified,
      * a default one will be generated for you.
      *
@@ -409,6 +422,7 @@ public class Groovydoc extends Task {
         properties.setProperty("includeMainForScripts", includeMainForScripts.toString());
         properties.setProperty("overviewFile", overviewFile != null ? overviewFile.getAbsolutePath() : "");
         properties.setProperty("charset", charset != null ? charset : "");
+        properties.setProperty("fileEncoding", fileEncoding != null ? fileEncoding : "");
 
         if (sourcePath != null) {
             sourceDirs.addExisting(sourcePath);
