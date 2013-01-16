@@ -385,4 +385,20 @@ class TypeCheckingExtensionsTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    void testLookupClassNodeNotAvailableOnExtensionsClasspath() {
+        extension = 'groovy/transform/stc/RobotMove.groovy'
+        assertScript '''
+            class Robot {
+                void move(String dist) { println "Moved $dist" }
+            }
+
+            this.binding.setVariable('robot', new Robot())
+
+            void operate() {
+                robot.move "left"
+            }
+
+            operate()
+        '''
+    }
 }
