@@ -22,6 +22,7 @@ import org.codehaus.groovy.groovydoc.GroovyClassDoc;
 import org.codehaus.groovy.groovydoc.GroovyMethodDoc;
 import org.codehaus.groovy.groovydoc.GroovyRootDoc;
 
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -334,5 +335,58 @@ public class GroovyDocToolTest extends GroovyTestCase {
         xmlTool.renderToOutput(output, MOCK_DIR);
         String text = output.getText(MOCK_DIR + "/org/codehaus/groovy/tools/groovydoc/SimpleGroovyRootDoc.html");
         assertTrue(text.indexOf("<parameter type=\"org.codehaus.groovy.groovydoc.GroovyPackageDoc\"") > 0);
+    }
+
+    public void testFileEncodingFallbackToCharset() throws Exception {
+        String expectedCharset = "ISO-88591";
+
+        Properties props = new Properties();
+        props.setProperty("charset", expectedCharset);
+
+        GroovyDocTool tool = new GroovyDocTool(
+                new FileSystemResourceManager("src"),
+                new String[0],
+                new String[0],
+                new String[0],
+                new String[0],
+                new ArrayList<LinkArgument>(),
+                props);
+
+        assertEquals("'fileEncoding' falls back to 'charset' if not provided", expectedCharset, tool.properties.getProperty("fileEncoding"));
+    }
+
+    public void testCharsetFallbackToFileEncoding() throws Exception {
+        String expectedCharset = "ISO-88591";
+
+        Properties props = new Properties();
+        props.setProperty("fileEncoding", expectedCharset);
+
+        GroovyDocTool tool = new GroovyDocTool(
+                new FileSystemResourceManager("src"),
+                new String[0],
+                new String[0],
+                new String[0],
+                new String[0],
+                new ArrayList<LinkArgument>(),
+                props);
+
+        assertEquals("'charset' falls back to 'fileEncoding' if not provided", expectedCharset, tool.properties.getProperty("charset"));
+
+    }
+
+    public void testFileEncodingCharsetFallbackToDefaultCharset() throws Exception {
+        String expectedCharset = Charset.defaultCharset().name();
+
+        GroovyDocTool tool = new GroovyDocTool(
+                new FileSystemResourceManager("src"),
+                new String[0],
+                new String[0],
+                new String[0],
+                new String[0],
+                new ArrayList<LinkArgument>(),
+                new Properties());
+
+        assertEquals("'charset' falls back to the default charset", expectedCharset, tool.properties.getProperty("charset"));
+        assertEquals("'fileEncoding' falls back to the default charset", expectedCharset, tool.properties.getProperty("fileEncoding"));
     }
 }

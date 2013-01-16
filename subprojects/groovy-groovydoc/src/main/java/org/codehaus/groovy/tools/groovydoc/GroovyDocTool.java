@@ -34,7 +34,8 @@ public class GroovyDocTool {
     private final Logger log = Logger.create(GroovyDocTool.class);
     private final GroovyRootDocBuilder rootDocBuilder;
     private final GroovyDocTemplateEngine templateEngine;
-    private Properties properties;
+
+    protected Properties properties;
 
     /**
      * Constructor for use by people who only want to interact with the Groovy Doclet Tree (rootDoc)
@@ -51,10 +52,19 @@ public class GroovyDocTool {
 
     public GroovyDocTool(ResourceManager resourceManager, String[] sourcepaths, String[] docTemplates, String[] packageTemplates, String[] classTemplates, List<LinkArgument> links, Properties properties) {
         rootDocBuilder = new GroovyRootDocBuilder(this, sourcepaths, links, properties);
-        String charset = properties.getProperty("charset");
-        properties.setProperty("charset", charset != null && charset.length() != 0 ? charset : Charset.defaultCharset().name());
-        this.properties = properties;
 
+        String defaultCharset = Charset.defaultCharset().name();
+
+        String fileEncoding = properties.getProperty("fileEncoding");
+        String charset = properties.getProperty("charset");
+
+        if (fileEncoding == null || fileEncoding.length() == 0) fileEncoding = charset;
+        if (charset == null || charset.length() == 0) charset = fileEncoding;
+
+        properties.setProperty("fileEncoding", fileEncoding != null && fileEncoding.length() != 0 ? fileEncoding : defaultCharset);
+        properties.setProperty("charset", charset != null && charset.length() != 0 ? charset : defaultCharset);
+
+        this.properties = properties;
 
         if (resourceManager == null) {
             templateEngine = null;

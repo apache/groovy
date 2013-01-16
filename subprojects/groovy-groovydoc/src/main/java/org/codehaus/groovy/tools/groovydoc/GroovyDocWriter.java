@@ -54,7 +54,7 @@ public class GroovyDocWriter {
             String destFileName = destdir + FS + classDoc.getFullPathName() + ".html";
             log.debug("Generating " + destFileName);
             String renderedSrc = templateEngine.applyClassTemplates(classDoc);
-            output.writeToOutput(destFileName, renderedSrc);
+            output.writeToOutput(destFileName, renderedSrc, properties.getProperty("fileEncoding"));
         }
     }
 
@@ -71,7 +71,7 @@ public class GroovyDocWriter {
         }
         String destFileName = destdir + FS + "package-list";
         log.debug("Generating " + destFileName);
-        output.writeToOutput(destFileName, sb.toString());
+        output.writeToOutput(destFileName, sb.toString(), properties.getProperty("fileEncoding"));
     }
 
     public void writePackageToOutput(GroovyPackageDoc packageDoc, String destdir) throws Exception {
@@ -81,7 +81,7 @@ public class GroovyDocWriter {
             String renderedSrc = templateEngine.applyPackageTemplate(template, packageDoc);
             String destFileName = destdir + FS + packageDoc.name() + FS + tool.getFile(template);
             log.debug("Generating " + destFileName);
-            output.writeToOutput(destFileName, renderedSrc);
+            output.writeToOutput(destFileName, renderedSrc, properties.getProperty("fileEncoding"));
         }
     }
 
@@ -100,7 +100,7 @@ public class GroovyDocWriter {
                 templateEngine.copyBinaryResource(template, destFileName);
             } else {
                 String renderedSrc = templateEngine.applyRootDocTemplate(template, rootDoc);
-                output.writeToOutput(destFileName, renderedSrc);
+                output.writeToOutput(destFileName, renderedSrc, properties.getProperty("fileEncoding"));
             }
         }
     }
