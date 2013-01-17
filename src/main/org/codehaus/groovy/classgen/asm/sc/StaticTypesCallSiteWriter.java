@@ -294,7 +294,8 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
             if (accessors!=null) {
                 MethodNode methodNode = accessors.get(fieldName);
                 if (methodNode!=null) {
-                    MethodCallExpression mce = new MethodCallExpression(receiver, methodNode.getName(), ArgumentListExpression.EMPTY_ARGUMENTS);
+                    MethodCallExpression mce = new MethodCallExpression(receiver, methodNode.getName(),
+                            new ArgumentListExpression(field.isStatic()?new ConstantExpression(null):receiver));
                     mce.setMethodTarget(methodNode);
                     mce.setSafe(safe);
                     mce.setImplicitThis(implicitThis);

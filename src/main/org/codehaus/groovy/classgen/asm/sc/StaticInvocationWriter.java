@@ -180,7 +180,11 @@ public class StaticInvocationWriter extends InvocationWriter {
                     Map<MethodNode, MethodNode> bridges = (Map<MethodNode, MethodNode>) declaringClass.redirect().getNodeMetaData(PRIVATE_BRIDGE_METHODS);
                     MethodNode bridge = bridges.get(target);
                     if (bridge != null) {
-                        return writeDirectMethodCall(bridge, implicitThis, receiver, args);
+                        ArgumentListExpression newArgs = new ArgumentListExpression(target.isStatic()?new ConstantExpression(null):receiver);
+                        for (Expression expression : args.getExpressions()) {
+                            newArgs.addExpression(expression);
+                        }
+                        return writeDirectMethodCall(bridge, implicitThis, receiver, newArgs);
                     }
                 }
                 if (declaringClass != classNode) {
