@@ -666,5 +666,24 @@ class BugsStaticCompileTest extends BugsSTCTest {
             assert list == ['a','b','c']
         '''
     }
+
+    // GROOVY-5919
+    void testPrivateAccessorsWithSubClass() {
+        assertScript '''
+            class Top {
+                private int foo = 666
+                private class InnerTop {
+                    int foo() { foo }
+                }
+            }
+            class Bottom extends Top {
+                private int bar = 666
+                private class InnerBottom {
+                    int bar() { bar } // name clash for fpaccess$0
+                }
+            }
+            new Bottom()
+        '''
+    }
 }
 

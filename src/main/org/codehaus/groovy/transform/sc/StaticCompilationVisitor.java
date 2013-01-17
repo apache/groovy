@@ -129,6 +129,7 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
         }
         int acc = -1;
         privateConstantAccessors = new HashMap<String, MethodNode>();
+        final String seed = String.valueOf(System.currentTimeMillis());
         for (FieldNode fieldNode : node.getFields()) {
             int access = fieldNode.getModifiers();
             if (Modifier.isPrivate(fieldNode.getModifiers()) && (access& Opcodes.ACC_SYNTHETIC)==0) {
@@ -139,7 +140,7 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
                         receiver,
                         fieldNode.getName()
                 ));
-                MethodNode accessor = node.addMethod("pfaccess$"+acc, access, fieldNode.getOriginType(), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, stmt);
+                MethodNode accessor = node.addMethod("pfaccess$"+seed+acc, access, fieldNode.getOriginType(), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, stmt);
                 privateConstantAccessors.put(fieldNode.getName(), accessor);
             }
         }
@@ -161,6 +162,7 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
             return;
         }
         privateBridgeMethods = new HashMap<MethodNode, MethodNode>();
+        final String seed = String.valueOf(System.currentTimeMillis());
         int i=-1;
         for (MethodNode method : methods) {
             int access = method.getModifiers();
@@ -178,8 +180,10 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
                     arguments = new ArgumentListExpression(args);
                 }
                 Expression receiver = method.isStatic()?new ClassExpression(node):new VariableExpression("this", node);
-                ExpressionStatement returnStatement = new ExpressionStatement(new MethodCallExpression(receiver, method.getName(), arguments));
-                MethodNode bridge = node.addMethod("access$"+i, access, method.getReturnType(), method.getParameters(), method.getExceptions(), returnStatement);
+                MethodCallExpression mce = new MethodCallExpression(receiver, method.getName(), arguments);
+
+                ExpressionStatement returnStatement = new ExpressionStatement(mce);
+                MethodNode bridge = node.addMethod("access$"+seed+i, access, method.getReturnType(), method.getParameters(), method.getExceptions(), returnStatement);
                 privateBridgeMethods.put(method, bridge);
             }
         }
