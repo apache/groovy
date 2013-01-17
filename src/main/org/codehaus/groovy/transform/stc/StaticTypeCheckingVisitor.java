@@ -1964,7 +1964,17 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         }
                         pickInferredTypeFromMethodAnnotation(directMethodCallCandidate);
                         classNode = currentClassNode;
-                        ClassNode returnType = getType(directMethodCallCandidate);
+
+                        ClassNode returnType = null;
+
+                        if (isWithCall)  {
+                            returnType = getInferredReturnTypeFromWithClosureArgument(callArguments);
+                        }
+
+                        if (returnType == null) {
+                            returnType = getType(directMethodCallCandidate);
+                        }
+
                         if (isUsingGenericsOrIsArrayUsingGenerics(returnType)) {
                             ClassNode irtg = inferReturnTypeGenerics(chosenReceiver, directMethodCallCandidate, callArguments);
                             returnType = irtg != null && implementsInterfaceOrIsSubclassOf(irtg, returnType) ? irtg : returnType;
@@ -1997,7 +2007,57 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
     }
 
-    private void checkForbiddenSpreadArgument(ArgumentListExpression argumentList) {
+    /**
+     * In the case of a <em>Object.with { ... }</em> call, this method is supposed to retrieve
+     * the inferred closure return type.
+     *
+     * @param callArguments the argument list from the <em>Object#with(Closure)</em> call, ie. a single closure expression
+     * @return the inferred closure return type or <em>null</em>
+     */
+    protected ClassNode getInferredReturnTypeFromWithClosureArgument(Expression callArguments) {
+        if (!(callArguments instanceof ArgumentListExpression)) return null;
+
+        ArgumentListExpression argList = (ArgumentListExpression) callArguments;
+        ClosureExpression closure = (ClosureExpression) argList.getExpression(0);
+
+        visitClosureExpression(closure);
+
+        if (closure.getNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE) != null)  {
+            return (ClassNode) closure.getNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE);
+        }
+
+        return null;
+    }
+
+    /**
+     * Given an object expression (a receiver expression), generate the list of potential receiver types.
+     * @param objectExpression the receiver expression
+     * @return the list of types the receiver may be
+     */
+    protected List<Receiver<String>> makeOwnerList(final Expression objectExpression) {
+        final ClassNode receiver = getType(objectExpression);
+        List<Receiver<String>> owners = new LinkedList<Receiver<String>>();
+        owners.add(Receiver.<String>make(receiver));
+        if (receiver.equals(CLASS_Type) && receiver.getGenericsTypes() != null) {
+            GenericsType clazzGT = receiver.getGenericsTypes()[0];
+            owners.add(0,Receiver.<String>make(clazzGT.getType()));
+        }
+        if (receiver.isInterface()) {
+            // GROOVY-xxxx
+            owners.add(Receiver.<String>make(OBJECT_TYPE));
+        }
+        if (!temporaryIfBranchTypeInformation.empty()) {
+            List<ClassNode> potentialReceiverType = getTemporaryTypesForExpression(objectExpression);
+            if (potentialReceiverType != null) {
+                for (ClassNode node : potentialReceiverType) {
+                    owners.add(Receiver.<String>make(node));
+                }
+            }
+        }
+        return owners;
+    }
+
+    protected void checkForbiddenSpreadArgument(ArgumentListExpression argumentList) {
         for (Expression arg : argumentList.getExpressions()) {
             if (arg instanceof SpreadExpression) {
                 addStaticTypeError("The spread operator cannot be used as argument of method or closure calls with static type checking because the number of arguments cannot be determined at compile time", arg);
