@@ -47,12 +47,16 @@ public class MethodCallsStaticCompilationTest extends MethodCallsSTCTest {
     }
 
     void testCallToPrivateInnerClassMethod() {
+        try {
         assertScript '''
                 class A {
                     static class B { private static void foo() {} }
                    public static void main(args) { B.foo() }
                 }
             '''
+        } finally {
+            println astTrees
+        }
     }
 
     void testCallToPrivateOuterClassMethod() {
