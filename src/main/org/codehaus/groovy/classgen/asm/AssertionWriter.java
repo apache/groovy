@@ -76,6 +76,8 @@ public class AssertionWriter {
                 assertionTracker.recorderIndex = controller.getCompileStack().defineTemporaryVariable("recorder", true);
                 mv.visitLabel(tryStart);
             } catch (SourceTextNotAvailableException e) {
+                // set assertionTracker to null to deactivate AssertionWriter#record calls
+                assertionTracker = null;
                 // don't rewrite assertions w/o source text
                 rewriteAssert = false;
             }
