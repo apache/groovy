@@ -202,6 +202,12 @@ public @interface EqualsAndHashCode {
     String[] includes() default {};
 
     /**
+     * Whether to cache hashCode calculations. You should only set this to true if
+     * you know the object is immutable (or technically mutable but never changed).
+     */
+    boolean cache() default false;
+
+    /**
      * Whether to include super in equals and hashCode calculations.
      */
     boolean callSuper() default false;
