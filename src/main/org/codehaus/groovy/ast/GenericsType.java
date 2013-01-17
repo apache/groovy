@@ -325,8 +325,8 @@ public class GenericsType extends ASTNode {
                             success &= compareGenericsWithBound(classNode, anInterface);
                             if (!success) break;
                         }
+                        if (success) return true;
                     }
-                    if (success) return true;
                 }
                 return compareGenericsWithBound(getParameterizedSuperClass(classNode), bound);
             }
