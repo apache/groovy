@@ -134,6 +134,7 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
         }
         int acc = -1;
         privateConstantAccessors = new HashMap<String, MethodNode>();
+        final String seed = String.valueOf(System.currentTimeMillis());
         for (FieldNode fieldNode : node.getFields()) {
             int access = fieldNode.getModifiers();
             if (accessedFields.contains(fieldNode)) {
@@ -144,7 +145,7 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
                         receiver,
                         fieldNode.getName()
                 ));
-                MethodNode accessor = node.addMethod("pfaccess$"+acc, access, fieldNode.getOriginType(), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, stmt);
+                MethodNode accessor = node.addMethod("pfaccess$"+seed+acc, access, fieldNode.getOriginType(), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, stmt);
                 privateConstantAccessors.put(fieldNode.getName(), accessor);
             }
         }
@@ -169,6 +170,7 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
             return;
         }
         privateBridgeMethods = new HashMap<MethodNode, MethodNode>();
+        final String seed = String.valueOf(System.currentTimeMillis());
         int i=-1;
         for (MethodNode method : methods) {
             int access = method.getModifiers();
@@ -189,7 +191,7 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
                 MethodCallExpression mce = new MethodCallExpression(receiver, method.getName(), arguments);
 
                 ExpressionStatement returnStatement = new ExpressionStatement(mce);
-                MethodNode bridge = node.addMethod("access$"+i, access, method.getReturnType(), method.getParameters(), method.getExceptions(), returnStatement);
+                MethodNode bridge = node.addMethod("access$"+seed+i, access, method.getReturnType(), method.getParameters(), method.getExceptions(), returnStatement);
                 privateBridgeMethods.put(method, bridge);
                 mce.setMethodTarget(method);
                 bridge.addAnnotation(new AnnotationNode(COMPILESTATIC_CLASSNODE));
