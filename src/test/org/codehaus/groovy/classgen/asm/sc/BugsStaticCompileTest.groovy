@@ -726,5 +726,22 @@ class BugsStaticCompileTest extends BugsSTCTest {
             new Bottom()
         '''
     }
+
+    void testSuperMethodCallInSkippedSection() {
+        assertScript '''import groovy.transform.CompileStatic
+import groovy.transform.TypeCheckingMode
+            class Top {
+                public int foo() { 123 }
+            }
+            class Bottom extends Top {
+                @CompileStatic(TypeCheckingMode.SKIP)
+                public int bar() {
+                    foo()
+                }
+            }
+            def obj = new Bottom()
+            assert obj.bar() == 123
+        '''
+    }
 }
 

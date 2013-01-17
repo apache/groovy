@@ -60,6 +60,15 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
     }
 
     @Override
+    public void generateCallSiteArray() {
+        if (controller instanceof StaticTypesWriterController) {
+            ((StaticTypesWriterController)controller).getRegularCallSiteWriter().generateCallSiteArray();
+        } else {
+            super.generateCallSiteArray();
+        }
+    }
+
+    @Override
     public void makeCallSite(final Expression receiver, final String message, final Expression arguments, final boolean safe, final boolean implicitThis, final boolean callCurrent, final boolean callStatic) {
     }
 
