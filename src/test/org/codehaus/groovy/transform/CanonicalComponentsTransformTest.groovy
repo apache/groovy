@@ -196,6 +196,34 @@ class CanonicalComponentsTransformTest extends GroovyShellTestCase {
         assert p3.hasEqualXY(t1) && t1.hasEqualXY(p3)
     }
 
+    // GROOVY-4714
+    void testCachingOfHashCode() {
+        def (h1, h2, h3, h4) = new GroovyShell().evaluate("""
+        import groovy.transform.*
+        // DO NOT DO THIS AT HOME - cache should only be true for Immutable
+        // objects but we cheat here for testing purposes
+        @EqualsAndHashCode(cache = true) class ShouldBeImmutableIntPair {
+            /* final */ int x, y
+        }
+        // the control (hashCode should change when x or y changes)
+        @EqualsAndHashCode class MutableIntPair {
+            int x, y
+        }
+        def sbmip = new ShouldBeImmutableIntPair(x: 3, y: 4)
+        def h1 = sbmip.hashCode()
+        sbmip.x = 5
+        def h2 = sbmip.hashCode()
+        def mip = new MutableIntPair(x: 3, y: 4)
+        def h3 = mip.hashCode()
+        mip.x = 5
+        def h4 = mip.hashCode()
+        [h1, h2, h3, h4]
+        """)
+
+        assert h1 == h2 // since it is cached
+        assert h3 != h4 // no caching
+    }
+
     // GROOVY-5901
     void testSimpleCloning() {
       def p1 = new Person6(first:'John', last:'Smith', since:new Date())
