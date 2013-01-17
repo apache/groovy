@@ -9,12 +9,30 @@
     </path>
 
     <taskdef name="groovydoc" classpathref="classpath"
-            classname="org.codehaus.groovy.tools.groovydoc.CustomGroovyDoc"/>
+             classname="org.codehaus.groovy.tools.groovydoc.CustomGroovyDoc"/>
 
-    <target name="doc">
+    <target name="testCustomClassTemplate">
         <groovydoc destdir="${tmpdir}" sourcepath="${test}"
+                   packagenames="org/codehaus/groovy/tools/groovydoc/testfiles/**.*"
+                   use="true" windowtitle="GroovyDoc" private="false">
+            <link packages="java.,org.groovy.xml.,javax.,org.groovy.w3c." href="http://download.oracle.com/javase/6/docs/api"/>
+            <link packages="org.apache.tools.ant." href="http://evgeny-goldin.org/javadoc/ant/api"/>
+            <link packages="org.junit.,junit.framework." href="http://kentbeck.github.com/junit/javadoc/latest"/>
+            <link packages="groovy.,org.codehaus.groovy." href="http://groovy.codehaus.org/api/"/>
+            <link packages="org.codehaus.gmaven." href="http://evgeny-goldin.org/javadoc/gmaven"/>
+        </groovydoc>
+    </target>
+
+    <target name="testFileEncoding">
+        <groovydoc
+                destdir="${tmpdir}"
+                sourcepath="${test}"
                 packagenames="org/codehaus/groovy/tools/groovydoc/testfiles/**.*"
-                use="true" windowtitle="GroovyDoc" private="false">
+                use="true"
+                windowtitle="GroovyDoc"
+                private="false"
+                fileEncoding="UTF-16LE">
+
             <link packages="java.,org.groovy.xml.,javax.,org.groovy.w3c." href="http://download.oracle.com/javase/6/docs/api"/>
             <link packages="org.apache.tools.ant." href="http://evgeny-goldin.org/javadoc/ant/api"/>
             <link packages="org.junit.,junit.framework." href="http://kentbeck.github.com/junit/javadoc/latest"/>

@@ -25,9 +25,9 @@ public class FileOutputTool implements OutputTool {
         dir.mkdirs();
     }
 
-    public void writeToOutput(String fileName, String text) throws Exception {
+    public void writeToOutput(String fileName, String text, String charset) throws Exception {
         File file = new File(fileName);
         file.getParentFile().mkdirs();
-        ResourceGroovyMethods.write(file, text);
+        ResourceGroovyMethods.write(file, text, charset);
     }
 }
