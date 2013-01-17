@@ -25,7 +25,6 @@ class WithSTCTest extends StaticTypeCheckingTestCase {
     // GROOVY-5907
     void testGenericReturnType() {
         assertScript '''
-            @groovy.transform.CompileStatic
             class Test {
               static List<String> a( String s ) {
                 s.with { String it -> [ "$it" ] }
@@ -38,7 +37,6 @@ class WithSTCTest extends StaticTypeCheckingTestCase {
 
     void testStringReturnType() {
         assertScript '''
-            @groovy.transform.CompileStatic
             class Test {
               static String a( String s ) {
                 s.with { String it -> it.toLowerCase() }
