@@ -139,7 +139,7 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
             if (accessedFields.contains(fieldNode)) {
 
                 acc++;
-                Parameter param = new Parameter(node, "$that");
+                Parameter param = new Parameter(node.getPlainNodeReference(), "$that");
                 Expression receiver = fieldNode.isStatic()?new ClassExpression(node):new VariableExpression(param);
                 Statement stmt = new ExpressionStatement(new PropertyExpression(
                         receiver,
@@ -178,7 +178,7 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
                 Parameter[] methodParameters = method.getParameters();
                 Parameter[] newParams = new Parameter[methodParameters.length+1];
                 System.arraycopy(methodParameters, 0, newParams, 1, methodParameters.length);
-                newParams[0] = new Parameter(node, "$that");
+                newParams[0] = new Parameter(node.getPlainNodeReference(), "$that");
                 Expression arguments;
                 if (method.getParameters()==null || method.getParameters().length==0) {
                     arguments = ArgumentListExpression.EMPTY_ARGUMENTS;
