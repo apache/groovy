@@ -2029,34 +2029,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         return null;
     }
 
-    /**
-     * Given an object expression (a receiver expression), generate the list of potential receiver types.
-     * @param objectExpression the receiver expression
-     * @return the list of types the receiver may be
-     */
-    protected List<Receiver<String>> makeOwnerList(final Expression objectExpression) {
-        final ClassNode receiver = getType(objectExpression);
-        List<Receiver<String>> owners = new LinkedList<Receiver<String>>();
-        owners.add(Receiver.<String>make(receiver));
-        if (receiver.equals(CLASS_Type) && receiver.getGenericsTypes() != null) {
-            GenericsType clazzGT = receiver.getGenericsTypes()[0];
-            owners.add(0,Receiver.<String>make(clazzGT.getType()));
-        }
-        if (receiver.isInterface()) {
-            // GROOVY-xxxx
-            owners.add(Receiver.<String>make(OBJECT_TYPE));
-        }
-        if (!temporaryIfBranchTypeInformation.empty()) {
-            List<ClassNode> potentialReceiverType = getTemporaryTypesForExpression(objectExpression);
-            if (potentialReceiverType != null) {
-                for (ClassNode node : potentialReceiverType) {
-                    owners.add(Receiver.<String>make(node));
-                }
-            }
-        }
-        return owners;
-    }
-
     protected void checkForbiddenSpreadArgument(ArgumentListExpression argumentList) {
         for (Expression arg : argumentList.getExpressions()) {
             if (arg instanceof SpreadExpression) {
