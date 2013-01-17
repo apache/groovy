@@ -2036,7 +2036,17 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         }
                         pickInferredTypeFromMethodAnnotation(directMethodCallCandidate);
                         typeCheckingContext.popEnclosingClassNode();
-                        ClassNode returnType = getType(directMethodCallCandidate);
+
+                        ClassNode returnType = null;
+
+                        if (isWithCall)  {
+                            returnType = getInferredReturnTypeFromWithClosureArgument(callArguments);
+                        }
+
+                        if (returnType == null) {
+                            returnType = getType(directMethodCallCandidate);
+                        }
+
                         if (isUsingGenericsOrIsArrayUsingGenerics(returnType)) {
                             ClassNode irtg = inferReturnTypeGenerics(chosenReceiver.getType(), directMethodCallCandidate, callArguments);
                             returnType = irtg != null && implementsInterfaceOrIsSubclassOf(irtg, returnType) ? irtg : returnType;
@@ -2076,6 +2086,28 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             typeCheckingContext.popEnclosingMethodCall();
             extension.afterMethodCall(call);
         }
+    }
+
+    /**
+     * In the case of a <em>Object.with { ... }</em> call, this method is supposed to retrieve
+     * the inferred closure return type.
+     *
+     * @param callArguments the argument list from the <em>Object#with(Closure)</em> call, ie. a single closure expression
+     * @return the inferred closure return type or <em>null</em>
+     */
+    protected ClassNode getInferredReturnTypeFromWithClosureArgument(Expression callArguments) {
+        if (!(callArguments instanceof ArgumentListExpression)) return null;
+
+        ArgumentListExpression argList = (ArgumentListExpression) callArguments;
+        ClosureExpression closure = (ClosureExpression) argList.getExpression(0);
+
+        visitClosureExpression(closure);
+
+        if (closure.getNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE) != null)  {
+            return closure.getNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE);
+        }
+
+        return null;
     }
 
     /**
