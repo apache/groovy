@@ -107,6 +107,37 @@ class ProxyGeneratorAdapterTest extends GroovyTestCase {
         '''
     }
 
+    // GROOVY-5925
+    void testProxyForLongConstructor() {
+
+        def map =  [nextInt: { x -> return 0 }]
+        def gen = new ProxyGenerator()
+
+        // Random(long) is special as the long param has a register length == 2
+        def proxy = gen.instantiateAggregateFromBaseClass(map, Random)
+
+        assert proxy.nextInt() == 0
+    }
+
+    void testProxyForDoubleConstructor() {
+        assertScript '''
+        public class A {
+            A() {}
+            A(double d) {}
+
+            def test() {}
+        }
+
+        def map = [ test : { 42 } ]
+        def gen = new ProxyGenerator()
+
+        // A(double) is special as the double param has a register length == 2
+        def proxy = gen.instantiateAggregateFromBaseClass(map, A)
+
+        assert proxy.test() ==  42
+        '''
+    }
+
     abstract static class Foo {
         abstract String m()
     }
