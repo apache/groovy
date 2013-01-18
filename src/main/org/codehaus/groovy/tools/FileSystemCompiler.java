@@ -265,8 +265,8 @@ public class FileSystemCompiler {
             configuration.setSourceEncoding(cli.getOptionValue("encoding"));
         }
 
-        if (cli.hasOption("baseScript")) {
-            configuration.setScriptBaseClass(cli.getOptionValue("baseScript"));
+        if (cli.hasOption("basescript")) {
+            configuration.setScriptBaseClass(cli.getOptionValue("basescript"));
         }
 
         // joint compilation parameters
@@ -323,7 +323,7 @@ public class FileSystemCompiler {
         options.addOption(OptionBuilder.withLongOpt("version").withDescription("Print the version").create('v'));
         options.addOption(OptionBuilder.withLongOpt("exception").withDescription("Print stack trace on error").create('e'));
         options.addOption(OptionBuilder.withLongOpt("jointCompilation").withDescription("Attach javac compiler to compile .java files").create('j'));
-        options.addOption(OptionBuilder.withLongOpt("baseScript").hasArg().withArgName("class").withDescription("Base class name for scripts (must derive from Script)").create('b'));
+        options.addOption(OptionBuilder.withLongOpt("basescript").hasArg().withArgName("class").withDescription("Base class name for scripts (must derive from Script)").create('b'));
 
         options.addOption(
                 OptionBuilder.withArgName("property=value")
