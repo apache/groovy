@@ -1050,6 +1050,12 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
 '''
     }
 
+    void testRegressionInConstructorCheck() {
+        assertScript '''
+            new ArrayList(['a','b','c'].collect { String it -> it.toUpperCase()})
+        '''
+    }
+
     static class MyList extends LinkedList<String> {}
 
     public static class ClassA<T> {
