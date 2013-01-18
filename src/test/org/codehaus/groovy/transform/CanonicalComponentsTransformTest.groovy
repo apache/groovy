@@ -224,6 +224,34 @@ class CanonicalComponentsTransformTest extends GroovyShellTestCase {
         assert h3 != h4 // no caching
     }
 
+    // GROOVY-5928
+    void testCachingOfToString() {
+        def (ts1, ts2, ts3, ts4) = new GroovyShell().evaluate("""
+        import groovy.transform.*
+        // DO NOT DO THIS AT HOME - cache should only be true for Immutable
+        // objects but we cheat here for testing purposes
+        @ToString(cache = true) class ShouldBeImmutableIntPair {
+            /* final */ int x, y
+        }
+        // the control (toString should change when x or y changes)
+        @ToString class MutableIntPair {
+            int x, y
+        }
+        def sbmip = new ShouldBeImmutableIntPair(x: 3, y: 4)
+        def ts1 = sbmip.toString()
+        sbmip.x = 5
+        def ts2 = sbmip.toString()
+        def mip = new MutableIntPair(x: 3, y: 4)
+        def ts3 = mip.toString()
+        mip.x = 5
+        def ts4 = mip.toString()
+        [ts1, ts2, ts3, ts4]
+        """)
+
+        assert ts1 == ts2 // since it is cached
+        assert ts3 != ts4 // no caching
+    }
+
     // GROOVY-5901
     void testSimpleCloning() {
       def p1 = new Person6(first:'John', last:'Smith', since:new Date())

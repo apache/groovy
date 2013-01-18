@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2012 the original author or authors.
+ * Copyright 2008-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -129,7 +129,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation {
             createHashCode(cNode, true, false, false, null, null);
             createEquals(cNode, false, false, false, null, null);
             if (!hasAnnotation(cNode, ToStringASTTransformation.MY_TYPE)) {
-                createToString(cNode, false, false, null, null, false);
+                createToString(cNode, false, false, null, null, false, true);
             }
         }
     }

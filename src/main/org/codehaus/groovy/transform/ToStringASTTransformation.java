@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2012 the original author or authors.
+ * Copyright 2008-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -67,6 +67,7 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
             ClassNode cNode = (ClassNode) parent;
             checkNotInterface(cNode, MY_TYPE_NAME);
             boolean includeSuper = memberHasValue(anno, "includeSuper", true);
+            boolean cacheToString = memberHasValue(anno, "cache", true);
             if (includeSuper && cNode.getSuperClass().getName().equals("java.lang.Object")) {
                 addError("Error during " + MY_TYPE_NAME + " processing: includeSuper=true but '" + cNode.getName() + "' has no super class.", anno);
             }
@@ -85,7 +86,7 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
             if (includes != null && !includes.isEmpty() && excludes != null && !excludes.isEmpty()) {
                 addError("Error during " + MY_TYPE_NAME + " processing: Only one of 'includes' and 'excludes' should be supplied not both.", anno);
             }
-            createToString(cNode, includeSuper, includeFields, excludes, includes, includeNames, ignoreNulls, includePackage);
+            createToString(cNode, includeSuper, includeFields, excludes, includes, includeNames, ignoreNulls, includePackage, cacheToString);
         }
     }
 
@@ -98,12 +99,35 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
     }
     
     public static void createToString(ClassNode cNode, boolean includeSuper, boolean includeFields, List<String> excludes, List<String> includes, boolean includeNames, boolean ignoreNulls, boolean includePackage) {
+        createToString(cNode, includeSuper, includeFields, excludes, includes, includeNames, ignoreNulls, includePackage, false);
+    }
+
+    public static void createToString(ClassNode cNode, boolean includeSuper, boolean includeFields, List<String> excludes, List<String> includes, boolean includeNames, boolean ignoreNulls, boolean includePackage, boolean cache) {
         // make a public method if none exists otherwise try a private method with leading underscore
         boolean hasExistingToString = hasDeclaredMethod(cNode, "toString", 0);
         if (hasExistingToString && hasDeclaredMethod(cNode, "_toString", 0)) return;
 
         final BlockStatement body = new BlockStatement();
+        Expression tempToString;
+        if (cache) {
+            final FieldNode cacheField = cNode.addField("$to$string", ACC_PRIVATE | ACC_SYNTHETIC, ClassHelper.STRING_TYPE, null);
+            final Expression savedToString = new VariableExpression(cacheField);
+            body.addStatement(new IfStatement(
+                    equalsNullExpr(savedToString),
+                    assignStatement(savedToString, calculateToStringStatements(cNode, includeSuper, includeFields, excludes, includes, includeNames, ignoreNulls, includePackage, body)),
+                    new EmptyStatement()
+            ));
+            tempToString = savedToString;
+        } else {
+            tempToString = calculateToStringStatements(cNode, includeSuper, includeFields, excludes, includes, includeNames, ignoreNulls, includePackage, body);
+        }
+        body.addStatement(new ReturnStatement(tempToString));
 
+        cNode.addMethod(new MethodNode(hasExistingToString ? "_toString" : "toString", hasExistingToString ? ACC_PRIVATE : ACC_PUBLIC,
+                ClassHelper.STRING_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, body));
+    }
+
+    private static Expression calculateToStringStatements(ClassNode cNode, boolean includeSuper, boolean includeFields, List<String> excludes, List<String> includes, boolean includeNames, boolean ignoreNulls, boolean includePackage, BlockStatement body) {
         // def _result = new StringBuilder()
         final Expression result = new VariableExpression("_result");
         final Expression init = new ConstructorCallExpression(STRINGBUILDER_TYPE, MethodCallExpression.NO_ARGUMENTS);
@@ -148,9 +172,7 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
         body.addStatement(append(result, new ConstantExpression(")")));
         MethodCallExpression toString = new MethodCallExpression(result, "toString", MethodCallExpression.NO_ARGUMENTS);
         toString.setImplicitThis(false);
-        body.addStatement(new ReturnStatement(toString));
-        cNode.addMethod(new MethodNode(hasExistingToString ? "_toString" : "toString", hasExistingToString ? ACC_PRIVATE : ACC_PUBLIC,
-                ClassHelper.STRING_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, body));
+        return toString;
     }
 
     private static void appendValue(BlockStatement body, Expression result, VariableExpression first, Expression value, String name, boolean includeNames, boolean ignoreNulls) {
