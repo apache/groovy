@@ -236,11 +236,19 @@ class JsonOutputTest extends GroovyTestCase {
             }""".stripIndent()
     }
 
+    private stripWhiteSpace( String str ) {
+      return str.replaceAll( ~/\s/, '' )
+    }
+    void testPrettyPrintStringZeroLen() {
+      def tree = [ myStrings: [ str3:'abc', str0:'' ] ]
+      def result   = stripWhiteSpace( new JsonBuilder( tree ).toPrettyString() )
+      def expected = stripWhiteSpace( '{ "myStrings":{ "str3":"abc","str0":"" } }' )
+      assert result == expected
+    }
+
     void testPrettyPrintDoubleQuoteEscape() {
         def json = new JsonBuilder()
-
         json.text { content 'abc"def' }
-
         assert json.toPrettyString() == """\
             {
                 "text": {
