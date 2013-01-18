@@ -190,7 +190,12 @@ class JsonOutput {
             } else if (token.type == COLON) {
                 output.append(': ')
             } else if (token.type == STRING) {
-                output.append('"' + StringEscapeUtils.escapeJava(token.text[1..-2]) + '"')
+                // Cannot use a range (1..-2) here as it will reverse for a string of
+                // length 2 (i.e. textStr=/""/ ) and will not strip the leading/trailing
+                // quotes (just reverses them).
+                String textStr = token.text
+                String textWithoutQuotes = textStr.substring( 1, textStr.size()-1 )
+                output.append('"' + StringEscapeUtils.escapeJava( textWithoutQuotes ) + '"')
             } else {
                 output.append(token.text)
             }
