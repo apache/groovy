@@ -139,6 +139,19 @@ public class CovariantReturnTest extends CompilableTestSupport {
             // by the compiler
             assert conf.getProperty("a") == "b"
         """
+
+        assertScript """
+            class A {}
+            class B extends A {}
+            interface Contract {
+                A method()
+            }
+            abstract class AbstractContract implements Contract {}
+            class ContractImpl extends AbstractContract {
+                B method(String foo='default') { new B() }
+            }
+            assert new ContractImpl().method() instanceof B
+        """
     }
 
     void testImplementedInterfacesNotInfluencing() {

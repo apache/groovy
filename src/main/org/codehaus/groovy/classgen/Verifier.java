@@ -627,6 +627,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         Parameter[] parameters = method.getParameters();
         ClassNode methodReturnType = method.getReturnType();
         for (MethodNode node : abstractMethods) {
+            if (!node.getDeclaringClass().equals(classNode)) continue;
             if (node.getName().equals(methodName)
                     && node.getParameters().length==parameters.length) {
                 if (parameters.length==1) {
