@@ -7893,7 +7893,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.5.6
      */
     public static <T> Collection<T> intersect(Collection<T> left, Collection<T> right) {
-        if (left.isEmpty())
+        if (left.isEmpty() || right.isEmpty())
             return createSimilarCollection(left, 0);
 
         if (left.size() < right.size()) {
