@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1583,7 +1583,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     protected void addTypeCheckingInfoAnnotation(final MethodNode node) {
-        // TypeChecked$TypeCheckingInfo is only allowed on methods
+        // TypeChecked$TypeCheckingInfo can not be applied on constructors
         if (node instanceof ConstructorNode) return;
 
         // if a returned inferred type is available and no @TypeCheckingInfo is on node, then add an
