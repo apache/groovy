@@ -15,6 +15,8 @@
  */
 package groovy.transform.stc
 
+import groovy.transform.TypeChecked
+
 
 /**
  * Unit tests for static type checking : constructors.
@@ -302,6 +304,19 @@ class ConstructorsSTCTest extends StaticTypeCheckingTestCase {
             }
             void m(OutputStream o) { new Foo(out:o) }
         ''', 'Cannot assign value of type java.io.OutputStream to variable of type java.io.ByteArrayOutputStream'
+    }
+
+    void testTypeCheckingInfoShouldNotBeAddedToConstructor() {
+
+        Class fooClass = assertClass '''
+        class Foo {
+            @groovy.transform.TypeChecked
+            Foo() {}
+        }
+        '''
+
+        def constructor = fooClass.getDeclaredConstructor()
+        assert constructor.declaredAnnotations.size() == 0
     }
 }
 

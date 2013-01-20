@@ -1583,6 +1583,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     protected void addTypeCheckingInfoAnnotation(final MethodNode node) {
+        // TypeChecked$TypeCheckingInfo is only allowed on methods
+        if (node instanceof ConstructorNode) return;
+
         // if a returned inferred type is available and no @TypeCheckingInfo is on node, then add an
         // annotation to the method node
         ClassNode rtype = (ClassNode) node.getNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE);
