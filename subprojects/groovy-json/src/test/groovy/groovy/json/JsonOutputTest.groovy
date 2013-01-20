@@ -27,6 +27,7 @@ class JsonOutputTest extends GroovyTestCase {
     // Check for GROOVY-5918
     void testExpando() {
         assert toJson( new Expando( a:42 ) ) == '{"a":42}'
+        assert new JsonBuilder( new Expando( a:42 ) ).toString() == '{"a":42}'
     }
 
     void testBooleanValues() {
