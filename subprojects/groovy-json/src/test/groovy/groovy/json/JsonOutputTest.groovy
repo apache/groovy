@@ -24,6 +24,11 @@ import groovy.transform.Canonical
  */
 class JsonOutputTest extends GroovyTestCase {
     
+    // Check for GROOVY-5918
+    void testExpando() {
+        assert toJson( new Expando( a:42 ) ) == '{"a":42}'
+    }
+
     void testBooleanValues() {
         assert toJson(Boolean.TRUE) == "true"
         assert toJson(Boolean.FALSE) == "false"

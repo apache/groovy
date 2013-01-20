@@ -119,6 +119,13 @@ class JsonOutput {
     }
 
     /**
+     * @return an object representation of an Expando
+     */
+    static String toJson(Expando expando) {
+        toJson(expando.properties)
+    }
+
+    /**
      * @return "null" for a null value, or a JSON array representation for a collection, array, iterator or enumeration.
      */
     static String toJson(object) {
