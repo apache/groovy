@@ -138,6 +138,26 @@ class ProxyGeneratorAdapterTest extends GroovyTestCase {
         '''
     }
 
+    void testGetTypeArgsRegisterLength() {
+        def types = { list -> list as org.objectweb.asm.Type[] }
+        def proxyGeneratorAdapter = new ProxyGeneratorAdapter([:], Object, [] as Class[], null, false, Object)
+
+        assert 2 == proxyGeneratorAdapter.getTypeArgsRegisterLength(types([org.objectweb.asm.Type.LONG_TYPE]))
+        assert 2 == proxyGeneratorAdapter.getTypeArgsRegisterLength(types([org.objectweb.asm.Type.DOUBLE_TYPE]))
+
+        assert 1 == proxyGeneratorAdapter.getTypeArgsRegisterLength(types([org.objectweb.asm.Type.BYTE_TYPE]))
+        assert 1 == proxyGeneratorAdapter.getTypeArgsRegisterLength(types([org.objectweb.asm.Type.CHAR_TYPE]))
+        assert 1 == proxyGeneratorAdapter.getTypeArgsRegisterLength(types([org.objectweb.asm.Type.INT_TYPE]))
+        assert 1 == proxyGeneratorAdapter.getTypeArgsRegisterLength(types([org.objectweb.asm.Type.FLOAT_TYPE]))
+
+        assert 1 == proxyGeneratorAdapter.getTypeArgsRegisterLength(types([org.objectweb.asm.Type.BOOLEAN_TYPE]))
+
+        assert 5 == proxyGeneratorAdapter.getTypeArgsRegisterLength(types([
+                org.objectweb.asm.Type.LONG_TYPE,
+                org.objectweb.asm.Type.LONG_TYPE,
+                org.objectweb.asm.Type.INT_TYPE ] as org.objectweb.asm.Type[]))
+    }
+
     abstract static class Foo {
         abstract String m()
     }

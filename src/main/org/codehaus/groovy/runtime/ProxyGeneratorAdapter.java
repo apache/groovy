@@ -572,8 +572,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
     }
 
     private void initializeDelegateClosure(final MethodVisitor mv, Type[] args) {
-        int idx = 1;
-        for (Type type : args)  { idx += registerLen(type); }
+        int idx = 1 + getTypeArgsRegisterLength(args);
 
         mv.visitIntInsn(ALOAD, 0); // this
         mv.visitIntInsn(ALOAD, idx); // constructor arg n is the closure map
@@ -582,12 +581,17 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
     }
 
     private void initializeDelegateObject(final MethodVisitor mv, Type[] args) {
-        int idx = 2;
-        for (Type type : args)  { idx += registerLen(type); }
+        int idx = 2 + getTypeArgsRegisterLength(args);
 
         mv.visitIntInsn(ALOAD, 0); // this
         mv.visitIntInsn(ALOAD, idx); // constructor arg n is the closure map
         mv.visitFieldInsn(PUTFIELD, proxyName, DELEGATE_OBJECT_FIELD, BytecodeHelper.getTypeDescription(delegateClass));
+    }
+
+    private int getTypeArgsRegisterLength(Type[] args)  {
+        int length = 0;
+        for (Type type : args)  { length += registerLen(type); }
+        return length;
     }
 
     /**
