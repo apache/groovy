@@ -2520,7 +2520,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.8.7
      */
     public static <K, V> Map<K, V> collectEntries(Iterator<?> self, Closure<?> transform) {
-        return collectEntries(toList(self), transform);
+        return collectEntries(self, new LinkedHashMap<K, V>(), transform);
     }
 
     /**
@@ -2566,7 +2566,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.8.7
      */
     public static <K, V> Map<K, V> collectEntries(Iterator<?> self) {
-        return collectEntries(toList(self));
+        return collectEntries(self, Closure.IDENTITY);
     }
 
     /**
@@ -2619,7 +2619,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.8.7
      */
     public static <K, V> Map<K, V> collectEntries(Iterator<?> self, Map<K, V> collector, Closure<?> transform) {
-        return collectEntries(toList(self), collector, transform);
+        while (self.hasNext()) {
+            Object next = self.next();
+            addEntry(collector, transform.call(next));
+        }
+        return collector;
     }
 
     /**
@@ -2662,7 +2666,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.8.7
      */
     public static <K, V> Map<K, V> collectEntries(Iterator<?> self, Map<K, V> collector) {
-        return collectEntries(toList(self), collector);
+        return collectEntries(self, collector, Closure.IDENTITY);
     }
 
     /**
