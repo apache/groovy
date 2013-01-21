@@ -2415,6 +2415,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 if (isPrimitiveType(right) && initialType.isDerivedFrom(Number_TYPE)) {
                     return getWrapper(right);
                 }
+
+                if (isPrimitiveType(initialType) && rightRedirect.isDerivedFrom(Number_TYPE))  {
+                    return getUnwrapper(right);
+                }
+
                 // as anything can be assigned to a String, Class or boolean, return the left type instead
                 if (STRING_TYPE.equals(initialType)
                         || CLASS_Type.equals(initialType)
