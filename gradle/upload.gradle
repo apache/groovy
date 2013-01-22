@@ -60,12 +60,14 @@ allprojects {
 
 // the root project generates an alternate 'groovy-all' artifact
 [uploadArchives, install]*.with {
-    dependsOn([sourceAllJar, javadocAllJar, groovydocAllJar])
+    dependsOn([sourceAllJar, javadocAllJar, groovydocAllJar, distBin])
     doFirst {
         project.artifacts.add('archives', jarAll)
         project.artifacts.add('archives', sourceAllJar)
         project.artifacts.add('archives', javadocAllJar)
         project.artifacts.add('archives', groovydocAllJar)
+        project.artifacts.add('archives', distBin)
+
         def archive = jarAll.archivePath
         def indyJar = new File(archive.parent, archive.name[0..archive.name.lastIndexOf('.')-1]+'-indy.jar')
         if (indyJar.exists()) {
@@ -75,10 +77,13 @@ allprojects {
 }
 ext.pomAll = {
     addFilter('groovy') { artifact, file ->
-        !(artifact.name.contains('groovy-all'))
+        !(artifact.name.contains('groovy-all')) && !(artifact.name.contains('groovy-binary'))
     }
     addFilter('all') { artifact, file ->
         artifact.name.contains('groovy-all')
+    }
+    addFilter('binary') { artifact, file ->
+        artifact.name.contains('groovy-binary')
     }
 
     // regular pom
@@ -87,6 +92,10 @@ ext.pomAll = {
     // pom for 'all'
     def allpom = pom('all', pomConfigureClosure)
     allpom.artifactId = 'groovy-all'
+
+    // pom for binary zip
+    def binarypom = pom('binary', pomConfigureClosureWithoutTweaks)
+    binarypom.artifactId = 'groovy-binary'
 
     modules().each { sp ->
         sp.install.repositories.mavenInstaller.pom.whenConfigured { subpom ->
@@ -104,6 +113,10 @@ ext.pomAll = {
             it.groupId == 'org.codehaus.groovy' ||
                     (['asm', 'asm-util', 'asm-analysis', 'asm-tree', 'asm-commons', 'antlr', 'commons-cli'].contains(it.artifactId))
         })
+    }
+
+    binarypom.whenConfigured { p ->
+        p.dependencies.clear()
     }
 }
 
