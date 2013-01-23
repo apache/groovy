@@ -3008,8 +3008,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             if (firstGenericsType.isWildcard()) {
                 // ? extends Foo
                 // ? super Foo
+                // ?
                 if (firstGenericsType.getLowerBound() != null) return firstGenericsType.getLowerBound();
                 ClassNode[] upperBounds = firstGenericsType.getUpperBounds();
+                if (upperBounds==null) { // case "?"
+                    return OBJECT_TYPE;
+                }
                 if (upperBounds.length == 1) return upperBounds[0];
                 return new UnionTypeClassNode(upperBounds);
             }

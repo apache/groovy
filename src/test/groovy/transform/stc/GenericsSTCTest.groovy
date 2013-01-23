@@ -1035,6 +1035,13 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
 '''
     }
 
+    void testReturnTypeInferenceWithMethodUsingWildcard() {
+        assertScript '''
+            public Object createInstance(Class<?> projectComponentClass, String foo) { projectComponentClass.newInstance() }
+            createInstance(LinkedList, 'a')
+        '''
+    }
+
     static class MyList extends LinkedList<String> {}
 
     public static class ClassA<T> {
