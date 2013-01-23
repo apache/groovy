@@ -143,7 +143,7 @@ public class StaticInvocationWriter extends InvocationWriter {
             if (target != null
                     && classNode.isDerivedFrom(ClassHelper.CLOSURE_TYPE)
                     && controller.isInClosure()
-                    && !target.isPublic()
+                    && !(target.isPublic() || target.isProtected())
                     && target.getDeclaringClass() != classNode) {
                 // replace call with an invoker helper call
                 // todo: use MOP generated methods instead
