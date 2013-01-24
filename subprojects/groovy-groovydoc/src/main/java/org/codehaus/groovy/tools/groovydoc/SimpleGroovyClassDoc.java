@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -328,6 +328,20 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
                 } else {
                     GroovyClassDoc doc = resolveClass(rootDoc, paramTypeName);
                     if (doc != null) param.setType(doc);
+                }
+            }
+        }
+
+        // resolve property types
+        for (GroovyFieldDoc property : properties)  {
+            if (property instanceof SimpleGroovyFieldDoc)  {
+                SimpleGroovyFieldDoc simpleGroovyFieldDoc = (SimpleGroovyFieldDoc) property;
+                if (simpleGroovyFieldDoc.type() instanceof SimpleGroovyType)  {
+                    SimpleGroovyType simpleGroovyType = (SimpleGroovyType) simpleGroovyFieldDoc.type();
+                    GroovyClassDoc propertyTypeClassDoc = resolveClass(rootDoc, simpleGroovyType.qualifiedTypeName());
+                    if (propertyTypeClassDoc != null)  {
+                        simpleGroovyFieldDoc.setType(propertyTypeClassDoc);
+                    }
                 }
             }
         }
