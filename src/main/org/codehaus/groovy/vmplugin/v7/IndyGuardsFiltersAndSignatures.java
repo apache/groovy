@@ -15,7 +15,6 @@
  */
 package org.codehaus.groovy.vmplugin.v7;
 
-import groovy.lang.GroovyInterceptable;
 import groovy.lang.GroovyObject;
 import groovy.lang.GroovyRuntimeException;
 import groovy.lang.MetaClass;
@@ -88,7 +87,7 @@ public class IndyGuardsFiltersAndSignatures {
             META_METHOD_INVOKER = LOOKUP.findVirtual(MetaMethod.class, "doMethodInvoke", ANO_INVOKER);
             HAS_CATEGORY_IN_CURRENT_THREAD_GUARD = LOOKUP.findStatic(GroovyCategorySupport.class, "hasCategoryInCurrentThread", ZERO_GUARD);
             GROOVY_OBJECT_GET_PROPERTY = LOOKUP.findVirtual(GroovyObject.class, "getProperty", GET_INVOKER);
-            META_CLASS_INVOKE_STATIC_METHOD = LOOKUP.findVirtual(MetaClass.class, "invokeStaticMethod", INVOKER);
+            META_CLASS_INVOKE_STATIC_METHOD = LOOKUP.findVirtual(MetaObjectProtocol.class, "invokeStaticMethod", INVOKER);
 
             BEAN_CONSTRUCTOR_PROPERTY_SETTER = LOOKUP.findStatic(IndyGuardsFiltersAndSignatures.class, "setBeanProperties", MethodType.methodType(Object.class, MetaClass.class, Object.class, Map.class));
             META_PROPERTY_GETTER = LOOKUP.findVirtual(MetaProperty.class, "getProperty", OBJECT_FILTER);
@@ -96,7 +95,7 @@ public class IndyGuardsFiltersAndSignatures {
             MOP_INVOKE_CONSTRUCTOR = LOOKUP.findVirtual(MetaObjectProtocol.class, "invokeConstructor", BOUND_INVOKER);
             MOP_INVOKE_METHOD = LOOKUP.findVirtual(MetaObjectProtocol.class, "invokeMethod", INVOKER);
             SLOW_META_CLASS_FIND = LOOKUP.findStatic(InvokerHelper.class, "getMetaClass", MethodType.methodType(MetaClass.class, Object.class));
-            INTERCEPTABLE_INVOKER = LOOKUP.findVirtual(GroovyInterceptable.class, "invokeMethod", MethodType.methodType(Object.class, String.class, Object.class));
+            INTERCEPTABLE_INVOKER = LOOKUP.findVirtual(GroovyObject.class, "invokeMethod", MethodType.methodType(Object.class, String.class, Object.class));
 
             CLASS_FOR_NAME = LOOKUP.findStatic(Class.class, "forName", MethodType.methodType(Class.class, String.class, boolean.class, ClassLoader.class));
         } catch (Exception e) {
