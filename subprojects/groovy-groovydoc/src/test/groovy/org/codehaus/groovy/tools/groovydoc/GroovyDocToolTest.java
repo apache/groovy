@@ -69,13 +69,19 @@ public class GroovyDocToolTest extends GroovyTestCase {
                 new Properties()
         );
 
+        ArrayList<LinkArgument> links = new ArrayList<LinkArgument>();
+        LinkArgument link = new LinkArgument();
+        link.setHref("http://download.oracle.com/javase/7/docs/api");
+        link.setPackages("java.,org.xml.,javax.,org.xml.");
+        links.add(link);
+
         htmlTool = new GroovyDocTool(
                 new FileSystemResourceManager("src/main/resources"), // template storage
                 new String[] {"src/test/groovy", "../../src/test"}, // source file dirs
                 GroovyDocTemplateInfo.DEFAULT_DOC_TEMPLATES,
                 GroovyDocTemplateInfo.DEFAULT_PACKAGE_TEMPLATES,
                 GroovyDocTemplateInfo.DEFAULT_CLASS_TEMPLATES,
-                new ArrayList<LinkArgument>(),
+                links,
                 new Properties()
         );
     }
@@ -436,26 +442,38 @@ public class GroovyDocToolTest extends GroovyTestCase {
         assertEquals("There has to be at least a single reference to the ArrayPropertyLink[]", "ArrayPropertyLink", m.group(2));
     }
 
-    public void testArrayPropertyLinkWithEnumReference() throws Exception {
+    public void testInnerEnumReference() throws Exception {
         List<String> srcList = new ArrayList<String>();
 
-        srcList.add("org/codehaus/groovy/tools/groovydoc/testfiles/bar/Base.groovy");
-        srcList.add("org/codehaus/groovy/tools/groovydoc/testfiles/bar/Alias.groovy");
-        srcList.add("org/codehaus/groovy/tools/groovydoc/testfiles/bar/Deriv.groovy");
-
-        srcList.add("org/codehaus/groovy/tools/groovydoc/testfiles/foo/Base.groovy");
-        srcList.add("org/codehaus/groovy/tools/groovydoc/testfiles/foo/Deriv.groovy");
-        srcList.add("org/codehaus/groovy/tools/groovydoc/testfiles/foo/Snafu.groovy");
+        srcList.add("org/codehaus/groovy/tools/groovydoc/testfiles/InnerEnum.groovy");
+        srcList.add("org/codehaus/groovy/tools/groovydoc/testfiles/InnerClassProperty.groovy");
         htmlTool.add(srcList);
 
         MockOutputTool output = new MockOutputTool();
         htmlTool.renderToOutput(output, MOCK_DIR);
-        String derivDoc = output.getText(MOCK_DIR + "/org/codehaus/groovy/tools/groovydoc/testfiles/foo/Deriv.html");
+        String derivDoc = output.getText(MOCK_DIR + "/org/codehaus/groovy/tools/groovydoc/testfiles/InnerClassProperty.html");
 
-        Pattern p = Pattern.compile("<a(.+?)Snafu.html'>(.+?)</a>\\[\\]");
+        Pattern p = Pattern.compile("<a(.+?)testfiles/InnerEnum.Enum.html'>(.+?)</a>");
         Matcher m = p.matcher(derivDoc);
 
         assertTrue(m.find());
-        assertEquals("There has to be at least a single reference to the Snafu[]", "Snafu", m.group(2));
+        assertEquals("There has to be a reference to class Enum", "Enum", m.group(2));
+    }
+
+    public void testClassAliasing() throws Exception {
+
+        List<String> srcList = new ArrayList<String>();
+        srcList.add("org/codehaus/groovy/tools/groovydoc/testfiles/Alias.groovy");
+        htmlTool.add(srcList);
+
+        MockOutputTool output = new MockOutputTool();
+        htmlTool.renderToOutput(output, MOCK_DIR);
+        String derivDoc = output.getText(MOCK_DIR + "/org/codehaus/groovy/tools/groovydoc/testfiles/Alias.html");
+
+        Pattern p = Pattern.compile("<a(.+?)java/util/ArrayList.html' title='ArrayList'>(.+?)</a>");
+        Matcher m = p.matcher(derivDoc);
+
+        assertTrue(m.find());
+        assertEquals("There has to be a reference to class ArrayList", "ArrayList", m.group(2));
     }
 }

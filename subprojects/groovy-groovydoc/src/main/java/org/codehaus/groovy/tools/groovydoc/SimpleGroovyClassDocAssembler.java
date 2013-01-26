@@ -35,6 +35,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
     private final Stack<GroovySourceAST> stack;
     private Map<String, GroovyClassDoc> classDocs;
     private List<String> importedClassesAndPackages;
+    private Map<String, String> aliases;
     private List<LinkArgument> links;
     private Properties properties;
     private SimpleGroovyFieldDoc currentFieldDoc;
@@ -65,6 +66,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
 
         deferSetup = packagePath.equals("DefaultPackage");
         importedClassesAndPackages = new ArrayList<String>();
+        aliases = new HashMap<String, String>();
         if (!deferSetup) setUpImports(packagePath, links, isGroovy, className);
         lastLineCol = new LineColumn(1, 1);
     }
@@ -78,7 +80,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
         } else {
             importedClassesAndPackages.add("java/lang/*");
         }
-        SimpleGroovyClassDoc currentClassDoc = new SimpleGroovyClassDoc(importedClassesAndPackages, className, links);
+        SimpleGroovyClassDoc currentClassDoc = new SimpleGroovyClassDoc(importedClassesAndPackages, aliases, className, links);
         currentClassDoc.setFullPathName(packagePath + FS + className);
         currentClassDoc.setGroovy(isGroovy);
         classDocs.put(currentClassDoc.getFullPathName(), currentClassDoc);
@@ -121,7 +123,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
             }
             SimpleGroovyClassDoc current = (SimpleGroovyClassDoc) classDocs.get(packagePath + FS + className);
             if (current == null) {
-                current = new SimpleGroovyClassDoc(importedClassesAndPackages, className, links);
+                current = new SimpleGroovyClassDoc(importedClassesAndPackages, aliases, className, links);
                 current.setGroovy(isGroovy);
             }
             current.setRawCommentText(getJavaDocCommentsBeforeNode(t));
@@ -150,6 +152,17 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
     public void visitImport(GroovySourceAST t, int visit) {
         if (visit == OPENING_VISIT) {
             String importTextWithSlashesInsteadOfDots = extractImportPath(t);
+
+            GroovySourceAST child = t.childOfType(LITERAL_as);
+            if (child != null)  {
+                String alias = child.childOfType(DOT).getNextSibling().getText();
+
+                child = child.childOfType(DOT);
+                importTextWithSlashesInsteadOfDots = recurseDownImportBranch(child);
+
+                aliases.put(alias, importTextWithSlashesInsteadOfDots);
+            }
+
             importedClassesAndPackages.add(importTextWithSlashesInsteadOfDots);
         }
     }
@@ -221,7 +234,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
             if (currentClassDoc == null) {
                 // assume we have a script
                 if ("true".equals(properties.getProperty("processScripts", "true"))) {
-                    currentClassDoc = new SimpleGroovyClassDoc(importedClassesAndPackages, className, links);
+                    currentClassDoc = new SimpleGroovyClassDoc(importedClassesAndPackages, aliases, className, links);
                     currentClassDoc.setFullPathName(packagePath + FS + className);
                     currentClassDoc.setPublic(true);
                     currentClassDoc.setScript(true);
@@ -402,11 +415,15 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
     }
 
     private String extractImportPath(GroovySourceAST t) {
+        return recurseDownImportBranch(getImportPathDotType(t));
+    }
+
+    private GroovySourceAST getImportPathDotType(GroovySourceAST t) {
         GroovySourceAST child = t.childOfType(DOT);
         if (child == null) {
             child = t.childOfType(IDENT);
         }
-        return recurseDownImportBranch(child);
+        return child;
     }
 
     private String recurseDownImportBranch(GroovySourceAST t) {
