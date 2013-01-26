@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2012 the original author or authors.
+ * Copyright 2008-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 package org.codehaus.groovy.transform;
 
 import groovy.lang.GroovyObject;
-import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
@@ -24,19 +23,14 @@ import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.classgen.Verifier;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
-import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
-import org.codehaus.groovy.syntax.SyntaxException;
+import org.codehaus.groovy.runtime.GeneratedClosure;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.Types;
 import org.objectweb.asm.Opcodes;
 
+import java.lang.annotation.Retention;
 import java.lang.reflect.Modifier;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Handles generation of code for the <code>@Delegate</code> annotation
@@ -44,16 +38,21 @@ import java.util.Set;
  * @author Alex Tkachman
  * @author Guillaume Laforge
  * @author Paul King
+ * @author Andre Steingress
  */
 @GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
-public class DelegateASTTransformation implements ASTTransformation, Opcodes {
+public class DelegateASTTransformation extends AbstractASTTransformation implements ASTTransformation, Opcodes {
+
     private static final ClassNode DEPRECATED_TYPE = ClassHelper.make(Deprecated.class);
     private static final ClassNode GROOVYOBJECT_TYPE = ClassHelper.make(GroovyObject.class);
 
+    private static final String MEMBER_DEPRECATED = "deprecated";
+    private static final String MEMBER_INTERFACES = "interfaces";
+    private static final String MEMBER_PARAMETER_ANNOTATIONS = "parameterAnnotations";
+    private static final String MEMBER_METHOD_ANNOTATIONS = "methodAnnotations";
+
     public void visit(ASTNode[] nodes, SourceUnit source) {
-        if (nodes.length != 2 || !(nodes[0] instanceof AnnotationNode) || !(nodes[1] instanceof AnnotatedNode)) {
-            throw new GroovyBugError("Internal error: expecting [AnnotationNode, AnnotatedNode] but got: " + Arrays.asList(nodes));
-        }
+        init(nodes, source);
 
         AnnotatedNode parent = (AnnotatedNode) nodes[1];
         AnnotationNode node = (AnnotationNode) nodes[0];
@@ -64,26 +63,25 @@ public class DelegateASTTransformation implements ASTTransformation, Opcodes {
             final ClassNode owner = fieldNode.getOwner();
             if (type.equals(ClassHelper.OBJECT_TYPE) || type.equals(GROOVYOBJECT_TYPE)) {
                 addError("@Delegate field '" + fieldNode.getName() + "' has an inappropriate type: " + type.getName() +
-                        ". Please add an explicit type but not java.lang.Object or groovy.lang.GroovyObject.", parent, source);
+                        ". Please add an explicit type but not java.lang.Object or groovy.lang.GroovyObject.", parent);
                 return;
             }
             if (type.equals(owner)) {
                 addError("@Delegate field '" + fieldNode.getName() + "' has an inappropriate type: " + type.getName() +
-                        ". Delegation to own type not supported. Please use a different type.", parent, source);
+                        ". Delegation to own type not supported. Please use a different type.", parent);
                 return;
             }
             final List<MethodNode> fieldMethods = getAllMethods(type);
             for (ClassNode next : type.getAllInterfaces()) {
                 fieldMethods.addAll(getAllMethods(next));
             }
-            final Expression deprecatedElement = node.getMember("deprecated");
-            final Expression interfacesElement = node.getMember("interfaces");
-            final boolean skipInterfaces = hasBooleanValue(interfacesElement, false);
-            final boolean includeDeprecated = hasBooleanValue(deprecatedElement, true) || (type.isInterface() && !skipInterfaces);
+
+            final boolean skipInterfaces = hasBooleanValue(node.getMember(MEMBER_INTERFACES), false);
+            final boolean includeDeprecated = hasBooleanValue(node.getMember(MEMBER_DEPRECATED), true) || (type.isInterface() && !skipInterfaces);
 
             final List<MethodNode> ownerMethods = getAllMethods(owner);
             for (MethodNode mn : fieldMethods) {
-                addDelegateMethod(fieldNode, owner, ownerMethods, mn, includeDeprecated);
+                addDelegateMethod(node, fieldNode, owner, ownerMethods, mn, includeDeprecated);
             }
 
             for (PropertyNode prop : type.getProperties()) {
@@ -171,7 +169,7 @@ public class DelegateASTTransformation implements ASTTransformation, Opcodes {
         }
     }
 
-    private void addDelegateMethod(FieldNode fieldNode, ClassNode owner, List<MethodNode> ownMethods, MethodNode candidate, boolean includeDeprecated) {
+    private void addDelegateMethod(AnnotationNode node, FieldNode fieldNode, ClassNode owner, List<MethodNode> ownMethods, MethodNode candidate, boolean includeDeprecated) {
         if (!candidate.isPublic() || candidate.isStatic() || 0 != (candidate.getModifiers () & Opcodes.ACC_SYNTHETIC))
             return;
 
@@ -202,12 +200,18 @@ public class DelegateASTTransformation implements ASTTransformation, Opcodes {
             }
         }
         if (existingNode == null || existingNode.getCode() == null) {
+
+            final boolean includeParameterAnnotations = hasBooleanValue(node.getMember(MEMBER_PARAMETER_ANNOTATIONS), true);
+
             final ArgumentListExpression args = new ArgumentListExpression();
             final Parameter[] params = candidate.getParameters();
             final Parameter[] newParams = new Parameter[params.length];
             for (int i = 0; i < newParams.length; i++) {
                 Parameter newParam = new Parameter(nonGeneric(params[i].getType()), params[i].getName());
                 newParam.setInitialExpression(params[i].getInitialExpression());
+
+                if (includeParameterAnnotations) newParam.addAnnotations(copyAnnotatedNodeAnnotations(params[i].getAnnotations(), newParam));
+
                 newParams[i] = newParam;
                 args.addExpression(new VariableExpression(newParam));
             }
@@ -223,7 +227,72 @@ public class DelegateASTTransformation implements ASTTransformation, Opcodes {
                                     candidate.getName(),
                                     args)));
             newMethod.setGenericsTypes(candidate.getGenericsTypes());
+
+            if (hasBooleanValue(node.getMember(MEMBER_METHOD_ANNOTATIONS), true)) {
+                newMethod.addAnnotations(copyAnnotatedNodeAnnotations(candidate.getAnnotations(), newMethod));
+            }
         }
+    }
+
+    /**
+     * Copies all <tt>candidateAnnotations</tt> with retention policy {@link java.lang.annotation.RetentionPolicy#RUNTIME}
+     * and {@link java.lang.annotation.RetentionPolicy#CLASS}.<p/>
+     *
+     * Annotations with {@link GeneratedClosure} members are not supported by now.
+     */
+    private List<AnnotationNode> copyAnnotatedNodeAnnotations(final List<AnnotationNode> candidateAnnotations, final AnnotatedNode annotatedNode) {
+        final ArrayList<AnnotationNode> delegateAnnotations = new ArrayList<AnnotationNode>();
+        final ClassNode retentionClassNode = ClassHelper.makeWithoutCaching(Retention.class);
+
+        for (AnnotationNode annotation : candidateAnnotations)  {
+
+            List<AnnotationNode> annotations = annotation.getClassNode().getAnnotations(retentionClassNode);
+            if (annotations.isEmpty()) continue;
+
+            if (hasClosureMember(annotation)) {
+                addError("@Delegate does not support keeping Closure annotation members.", annotation);
+                continue;
+            }
+
+            AnnotationNode retentionPolicyAnnotation = annotations.get(0);
+            Expression valueExpression = retentionPolicyAnnotation.getMember("value");
+            if (!(valueExpression instanceof PropertyExpression)) continue;
+
+            PropertyExpression propertyExpression = (PropertyExpression) valueExpression;
+            boolean processAnnotation =
+                    propertyExpression.getProperty() instanceof ConstantExpression &&
+                            (
+                                    "RUNTIME".equals(((ConstantExpression) (propertyExpression.getProperty())).getValue()) ||
+                                    "CLASS".equals(((ConstantExpression) (propertyExpression.getProperty())).getValue())
+                            );
+
+            if (processAnnotation)  {
+                AnnotationNode newAnnotation = new AnnotationNode(annotation.getClassNode());
+                for (Map.Entry<String, Expression> member : annotation.getMembers().entrySet())  {
+                    newAnnotation.addMember(member.getKey(), member.getValue());
+                }
+                newAnnotation.setSourcePosition(annotatedNode);
+
+                delegateAnnotations.add(newAnnotation);
+            }
+        }
+        return delegateAnnotations;
+    }
+
+    private boolean hasClosureMember(AnnotationNode annotation) {
+
+        Map<String, Expression> members = annotation.getMembers();
+        for (Map.Entry<String, Expression> member : members.entrySet())  {
+            if (member.getValue() instanceof ClosureExpression) return true;
+
+            if (member.getValue() instanceof ClassExpression)  {
+                ClassExpression classExpression = (ClassExpression) member.getValue();
+                Class<?> typeClass = classExpression.getType().isResolved() ? classExpression.getType().redirect().getTypeClass() : null;
+                if (typeClass != null && GeneratedClosure.class.isAssignableFrom(typeClass)) return true;
+            }
+        }
+
+        return false;
     }
 
     private ClassNode nonGeneric(ClassNode type) {
@@ -238,12 +307,5 @@ public class DelegateASTTransformation implements ASTTransformation, Opcodes {
         } else {
             return type;
         }
-    }
-
-    public void addError(String msg, ASTNode expr, SourceUnit source) {
-        source.getErrorCollector().addErrorAndContinue(
-                new SyntaxErrorMessage(new SyntaxException(msg + '\n', expr.getLineNumber(), expr.getColumnNumber(),
-                        expr.getLastLineNumber(), expr.getLastColumnNumber()), source)
-        );
     }
 }

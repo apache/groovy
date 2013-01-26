@@ -2520,7 +2520,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.8.7
      */
     public static <K, V> Map<K, V> collectEntries(Iterator<?> self, Closure<?> transform) {
-        return collectEntries(toList(self), transform);
+        return collectEntries(self, new LinkedHashMap<K, V>(), transform);
     }
 
     /**
@@ -2566,7 +2566,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.8.7
      */
     public static <K, V> Map<K, V> collectEntries(Iterator<?> self) {
-        return collectEntries(toList(self));
+        return collectEntries(self, Closure.IDENTITY);
     }
 
     /**
@@ -2619,7 +2619,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.8.7
      */
     public static <K, V> Map<K, V> collectEntries(Iterator<?> self, Map<K, V> collector, Closure<?> transform) {
-        return collectEntries(toList(self), collector, transform);
+        while (self.hasNext()) {
+            Object next = self.next();
+            addEntry(collector, transform.call(next));
+        }
+        return collector;
     }
 
     /**
@@ -2662,7 +2666,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.8.7
      */
     public static <K, V> Map<K, V> collectEntries(Iterator<?> self, Map<K, V> collector) {
-        return collectEntries(toList(self), collector);
+        return collectEntries(self, collector, Closure.IDENTITY);
     }
 
     /**
@@ -4893,10 +4897,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static <T> List<T> getAt(List<T> self, Collection indices) {
         List<T> answer = new ArrayList<T>(indices.size());
         for (Object value : indices) {
-            if (value instanceof Range) {
-                answer.addAll(getAt(self, (Range) value));
-            } else if (value instanceof List) {
-                answer.addAll(getAt(self, (List) value));
+            if (value instanceof Range || value instanceof Collection) {
+                answer.addAll((List<T>)InvokerHelper.invokeMethod(self, "getAt", value));
             } else {
                 int idx = DefaultTypeTransformation.intUnbox(value);
                 answer.add(getAt(self, idx));
@@ -7895,7 +7897,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.5.6
      */
     public static <T> Collection<T> intersect(Collection<T> left, Collection<T> right) {
-        if (left.isEmpty())
+        if (left.isEmpty() || right.isEmpty())
             return createSimilarCollection(left, 0);
 
         if (left.size() < right.size()) {

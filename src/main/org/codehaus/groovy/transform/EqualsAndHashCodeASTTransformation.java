@@ -55,6 +55,7 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
             ClassNode cNode = (ClassNode) parent;
             checkNotInterface(cNode, MY_TYPE_NAME);
             boolean callSuper = memberHasValue(anno, "callSuper", true);
+            boolean cacheHashCode = memberHasValue(anno, "cache", true);
             boolean useCanEqual = !memberHasValue(anno, "useCanEqual", false);
             if (callSuper && cNode.getSuperClass().getName().equals("java.lang.Object")) {
                 addError("Error during " + MY_TYPE_NAME + " processing: callSuper=true but '" + cNode.getName() + "' has no super class.", anno);
@@ -70,7 +71,7 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
             if (includes != null && !includes.isEmpty() && excludes != null && !excludes.isEmpty()) {
                 addError("Error during " + MY_TYPE_NAME + " processing: Only one of 'includes' and 'excludes' should be supplied not both.", anno);
             }
-            createHashCode(cNode, false, includeFields, callSuper, excludes, includes);
+            createHashCode(cNode, cacheHashCode, includeFields, callSuper, excludes, includes);
             createEquals(cNode, includeFields, callSuper, useCanEqual, excludes, includes);
         }
     }

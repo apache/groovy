@@ -275,14 +275,7 @@ abstract class StubTestCase extends GroovyTestCase {
      * @throws IOException if a temporary directory could not be created
      */
     protected static File createTempDirectory() throws IOException {
-        File tempDirectory = File.createTempFile("stubgentests", Long.toString(System.currentTimeMillis()))
-        if (!(tempDirectory.delete())) {
-            throw new IOException("Impossible to delete temporary file: ${tempDirectory.absolutePath}")
-        }
-        if (!(tempDirectory.mkdir())) {
-            throw new IOException("Impossible to create temporary directory: ${tempDirectory.absolutePath}")
-        }
-        return tempDirectory
+        File.createTempDir("stubgentests", Long.toString(System.currentTimeMillis()))
     }
 
     /**

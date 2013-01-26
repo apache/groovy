@@ -40,6 +40,31 @@ ext.licenseSpec = copySpec {
     }
 }
 
+ext.srcSpec = copySpec {
+    from(projectDir) {
+        exclude 'target', 'subprojects/*/target', 'buildSrc/target', buildDir.path, 'classes/**', 'cruise/**',
+            '.clover/*', 'local.build.properties', 'cobertura.ser', 'junitvmwatcher*.properties',
+            'out', '**/*.iml', '**/*.ipr', '**/*.iws', // used by Intellij IDEA
+            '.settings', // used by Eclipse
+            '.gradle', 'buildSrc/.gradle' // used by Gradle
+    }
+}
+
+ext.docSpec = copySpec {
+    into("pdf") {
+        from 'src/wiki-snapshot.pdf'
+    }
+    into("html/api") {
+        from javadocAll.destinationDir
+    }
+    into("html/gapi") {
+        from groovydocAll.destinationDir
+    }
+    into("html/groovy-jdk") {
+        from docGDK.destinationDir
+    }
+}
+
 task copy(type: Copy) {
     into "$buildDir/meta"
     with licenseSpec
@@ -326,18 +351,7 @@ task distBin(type: Zip, dependsOn: [jar, jarAllAll]) {
 task distDoc(type: Zip, dependsOn: doc) {
     appendix = 'docs'
     into("groovy-$version")
-    into("pdf") {
-        from 'src/wiki-snapshot.pdf'
-    }
-    into("html/api") {
-        from javadocAll.destinationDir
-    }
-    into("html/gapi") {
-        from groovydocAll.destinationDir
-    }
-    into("html/groovy-jdk") {
-        from docGDK.destinationDir
-    }
+    with docSpec
 }
 
 task syncDoc(type: Copy, dependsOn: doc) {
@@ -354,13 +368,7 @@ task syncDoc(type: Copy, dependsOn: doc) {
 task distSrc(type: Zip) {
     appendix = 'src'
     into("groovy-$version")
-    from(projectDir) {
-        exclude 'target', 'subprojects/*/target', 'buildSrc/target', buildDir.path, 'classes/**', 'cruise/**',
-                '.clover/*', 'local.build.properties', 'cobertura.ser', 'junitvmwatcher*.properties',
-                'out', '**/*.iml', '**/*.ipr', '**/*.iws', // used by Intellij IDEA
-                '.settings', // used by Eclipse
-                '.gradle', 'buildSrc/.gradle' // used by Gradle
-    }
+    with srcSpec
 }
 
 def installDir = {
@@ -378,6 +386,15 @@ task installGroovy(type: Sync, dependsOn: distBin) {
     into installDir
 }
 
-task dist(dependsOn: [distBin, distSrc, distDoc, syncDoc]) {
-    description = 'Generates the binary, sources and documentation distributions'
+task dist(type: Zip, dependsOn: [distBin, distSrc, distDoc, syncDoc]) {
+    description = 'Generates the binary, sources, documentation and full distributions'
+    into("groovy-sdk-$version")
+    with distSpec
+    with licenseSpec
+    into('doc'){
+        with docSpec
+    }
+    into('src'){
+        with srcSpec
+    }
 }

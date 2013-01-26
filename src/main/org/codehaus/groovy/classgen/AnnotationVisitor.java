@@ -83,13 +83,12 @@ public class AnnotationVisitor {
     }
     
     private boolean checkIfValidEnumConstsAreUsed(AnnotationNode node) {
-        boolean ok = true;
         Map<String, Expression> attributes = node.getMembers();
         for (Map.Entry<String, Expression> entry : attributes.entrySet()) {
-            ok &= validateEnumConstant(entry.getValue());
-            if (!ok) break;
+            if (!validateEnumConstant(entry.getValue()))
+                return false;
         }
-        return ok;
+        return true;
     }
     
     private boolean validateEnumConstant(Expression exp) {

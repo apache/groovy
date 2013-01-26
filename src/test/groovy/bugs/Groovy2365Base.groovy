@@ -11,7 +11,8 @@ class Groovy2365Base extends GroovyTestCase {
 
     protected String createData () {
 
-        File dir = createTempDir("groovy-src-", "-src")
+        File dir = File.createTempDir("groovy-src-", "-src")
+        dir.deleteOnExit()
         assertNotNull dir
 
         def fileList =  [
@@ -41,14 +42,6 @@ class Groovy2365Base extends GroovyTestCase {
          }
 
          return dir.absolutePath
-    }
-
-    private File createTempDir (prefix, suffix) {
-        File tempFile = File.createTempFile(prefix, suffix);
-        tempFile.delete();
-        tempFile.mkdirs();
-        tempFile.deleteOnExit()
-        return tempFile;
     }
 
 }

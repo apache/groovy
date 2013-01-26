@@ -519,6 +519,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
                 call.setObjectExpression(object);
                 ConstantExpression method = new ConstantExpression("call");
                 method.setSourcePosition(methodNameConstant); // important for GROOVY-4344
+                call.setImplicitThis(false);
                 call.setMethod(method);
             }
 

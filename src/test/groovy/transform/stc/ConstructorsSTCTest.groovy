@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 package groovy.transform.stc
-
 
 /**
  * Unit tests for static type checking : constructors.
@@ -302,6 +301,19 @@ class ConstructorsSTCTest extends StaticTypeCheckingTestCase {
             }
             void m(OutputStream o) { new Foo(out:o) }
         ''', 'Cannot assign value of type java.io.OutputStream to variable of type java.io.ByteArrayOutputStream'
+    }
+
+    void testTypeCheckingInfoShouldNotBeAddedToConstructor() {
+
+        Class fooClass = assertClass '''
+        class Foo {
+            @groovy.transform.TypeChecked
+            Foo() {}
+        }
+        '''
+
+        def constructor = fooClass.getDeclaredConstructor()
+        assert constructor.declaredAnnotations.size() == 0
     }
 }
 

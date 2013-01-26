@@ -60,6 +60,15 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
     }
 
     @Override
+    public void generateCallSiteArray() {
+        if (controller instanceof StaticTypesWriterController) {
+            ((StaticTypesWriterController)controller).getRegularCallSiteWriter().generateCallSiteArray();
+        } else {
+            super.generateCallSiteArray();
+        }
+    }
+
+    @Override
     public void makeCallSite(final Expression receiver, final String message, final Expression arguments, final boolean safe, final boolean implicitThis, final boolean callCurrent, final boolean callStatic) {
     }
 
@@ -294,7 +303,8 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
             if (accessors!=null) {
                 MethodNode methodNode = accessors.get(fieldName);
                 if (methodNode!=null) {
-                    MethodCallExpression mce = new MethodCallExpression(receiver, methodNode.getName(), ArgumentListExpression.EMPTY_ARGUMENTS);
+                    MethodCallExpression mce = new MethodCallExpression(receiver, methodNode.getName(),
+                            new ArgumentListExpression(field.isStatic()?new ConstantExpression(null):receiver));
                     mce.setMethodTarget(methodNode);
                     mce.setSafe(safe);
                     mce.setImplicitThis(implicitThis);

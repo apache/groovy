@@ -639,6 +639,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         Parameter[] parameters = method.getParameters();
         ClassNode methodReturnType = method.getReturnType();
         for (MethodNode node : abstractMethods) {
+            if (!node.getDeclaringClass().equals(classNode)) continue;
             if (node.getName().equals(methodName)
                     && node.getParameters().length==parameters.length) {
                 if (parameters.length==1) {
@@ -674,17 +675,11 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         List methods = new ArrayList(node.getMethods());
         addDefaultParameters(methods, new DefaultArgsAction() {
             public void call(ArgumentListExpression arguments, Parameter[] newParams, MethodNode method) {
-                MethodCallExpression expression = new MethodCallExpression(VariableExpression.THIS_EXPRESSION, method.getName(), arguments);
-                expression.setMethodTarget(method);
-                expression.setImplicitThis(true);
-                Statement code = null;
-                if (method.isVoidMethod()) {
-                    code = new ExpressionStatement(expression);
-                } else {
-                    code = new ReturnStatement(expression);
-                }
+                final BlockStatement code = new BlockStatement();
+
                 MethodNode newMethod = new MethodNode(method.getName(), method.getModifiers(), method.getReturnType(), newParams, method.getExceptions(), code);
-                // GROOVY-5681
+
+                // GROOVY-5681 and GROOVY-5632
                 for (Expression argument : arguments.getExpressions()) {
                     if (argument instanceof CastExpression) {
                         argument = ((CastExpression) argument).getExpression();
@@ -695,7 +690,43 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                             type.setEnclosingMethod(newMethod);
                         }
                     }
+
+                    // check whether closure shared variables refer to params with default values (GROOVY-5632)
+                    if (argument instanceof ClosureExpression)  {
+                        final List<Parameter> newMethodNodeParameters = Arrays.asList(newParams);
+
+                        CodeVisitorSupport visitor = new CodeVisitorSupport() {
+                            @Override
+                            public void visitVariableExpression(VariableExpression expression) {
+                                Variable v = expression.getAccessedVariable();
+                                if (!(v instanceof Parameter)) return;
+
+                                Parameter param = (Parameter) v;
+                                if (param.hasInitialExpression() && code.getVariableScope().getDeclaredVariable(param.getName()) == null && !newMethodNodeParameters.contains(param))  {
+
+                                    VariableExpression localVariable = new VariableExpression(param.getName(), ClassHelper.makeReference());
+                                    DeclarationExpression declarationExpression = new DeclarationExpression(localVariable, Token.newSymbol(Types.EQUAL, -1, -1), new ConstructorCallExpression(ClassHelper.makeReference(), param.getInitialExpression()));
+
+                                    code.addStatement(new ExpressionStatement(declarationExpression));
+                                    code.getVariableScope().putDeclaredVariable(localVariable);
+                                }
+                            }
+                        };
+
+                        visitor.visitClosureExpression((ClosureExpression) argument);
+                    }
                 }
+
+                MethodCallExpression expression = new MethodCallExpression(VariableExpression.THIS_EXPRESSION, method.getName(), arguments);
+                expression.setMethodTarget(method);
+                expression.setImplicitThis(true);
+
+                if (method.isVoidMethod()) {
+                    code.addStatement(new ExpressionStatement(expression));
+                } else {
+                    code.addStatement(new ReturnStatement(expression));
+                }
+
                 List<AnnotationNode> annotations = method.getAnnotations();
                 if(annotations != null) {
                     newMethod.addAnnotations(annotations);

@@ -85,6 +85,7 @@ public class StaticTypesUnaryExpressionHelper extends UnaryExpressionHelper impl
         ClassNode classNode = controller.getClassNode();
         if (typeChooser.resolveType(subExpression, classNode) == boolean_TYPE) {
             subExpression.visit(controller.getAcg());
+            controller.getOperandStack().doGroovyCast(boolean_TYPE);
             BytecodeExpression bytecodeExpression = new BytecodeExpression() {
                 @Override
                 public void visit(final MethodVisitor mv) {

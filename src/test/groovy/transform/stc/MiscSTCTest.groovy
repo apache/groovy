@@ -218,6 +218,55 @@ class MiscSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-5922
+    void testUnwrapPrimitiveLongType() {
+
+        assertScript '''
+            long[] data = [0] as long[]
+
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                assert node.getNodeMetaData(INFERRED_TYPE) == long_TYPE
+            })
+            long mask = 0 | 0x1L
+        '''
+
+        assertScript '''
+            long[] data = [0] as long[]
+            data[0] = 0x1L
+
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                assert node.getNodeMetaData(INFERRED_TYPE) == long_TYPE
+            })
+            def value = data[0]
+        '''
+
+        assertScript '''
+            def c = { -> 42L }
+
+            long[] data = [0] as long[]
+
+            data[0] = c()
+
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                assert node.getNodeMetaData(INFERRED_TYPE) == long_TYPE
+            })
+            def value = data[0]
+        '''
+
+        assertScript '''
+            def c = { -> 42L }
+
+            Long[] data = [0] as Long[]
+
+            data[0] = c()
+
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                assert node.getNodeMetaData(INFERRED_TYPE) == Long_TYPE
+            })
+            def value = data[0]
+        '''
+    }
+
     public static class MiscSTCTestSupport {
         static def foo() { '123' }
     }

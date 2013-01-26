@@ -134,17 +134,18 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
         }
         int acc = -1;
         privateConstantAccessors = new HashMap<String, MethodNode>();
+        final int access = Opcodes.ACC_STATIC | Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNTHETIC;
         for (FieldNode fieldNode : node.getFields()) {
-            int access = fieldNode.getModifiers();
             if (accessedFields.contains(fieldNode)) {
+
                 acc++;
-                access = (access - Opcodes.ACC_PRIVATE + Opcodes.ACC_SYNTHETIC) + Opcodes.ACC_FINAL;
-                Expression receiver = fieldNode.isStatic()?new ClassExpression(node):new VariableExpression("this", node);
+                Parameter param = new Parameter(node.getPlainNodeReference(), "$that");
+                Expression receiver = fieldNode.isStatic()?new ClassExpression(node):new VariableExpression(param);
                 Statement stmt = new ExpressionStatement(new PropertyExpression(
                         receiver,
                         fieldNode.getName()
                 ));
-                MethodNode accessor = node.addMethod("pfaccess$"+acc, access, fieldNode.getOriginType(), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, stmt);
+                MethodNode accessor = node.addMethod("pfaccess$"+acc, access, fieldNode.getOriginType(), new Parameter[]{param}, ClassNode.EMPTY_ARRAY, stmt);
                 privateConstantAccessors.put(fieldNode.getName(), accessor);
             }
         }
@@ -170,28 +171,31 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
         }
         privateBridgeMethods = new HashMap<MethodNode, MethodNode>();
         int i=-1;
+        final int access = Opcodes.ACC_STATIC | Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNTHETIC;
         for (MethodNode method : methods) {
-            int access = method.getModifiers();
             if (accessedMethods.contains(method)) {
                 i++;
-                access = (access - Opcodes.ACC_PRIVATE + Opcodes.ACC_SYNTHETIC) + Opcodes.ACC_FINAL;
+                Parameter[] methodParameters = method.getParameters();
+                Parameter[] newParams = new Parameter[methodParameters.length+1];
+                System.arraycopy(methodParameters, 0, newParams, 1, methodParameters.length);
+                newParams[0] = new Parameter(node.getPlainNodeReference(), "$that");
                 Expression arguments;
                 if (method.getParameters()==null || method.getParameters().length==0) {
                     arguments = ArgumentListExpression.EMPTY_ARGUMENTS;
                 } else {
                     List<Expression> args = new LinkedList<Expression>();
-                    for (Parameter parameter : method.getParameters()) {
+                    for (Parameter parameter : methodParameters) {
                         args.add(new VariableExpression(parameter));
                     }
                     arguments = new ArgumentListExpression(args);
                 }
-                Expression receiver = method.isStatic()?new ClassExpression(node):new VariableExpression("this", node);
+                Expression receiver = method.isStatic()?new ClassExpression(node):new VariableExpression(newParams[0]);
                 MethodCallExpression mce = new MethodCallExpression(receiver, method.getName(), arguments);
+                mce.setMethodTarget(method);
 
                 ExpressionStatement returnStatement = new ExpressionStatement(mce);
-                MethodNode bridge = node.addMethod("access$"+i, access, method.getReturnType(), method.getParameters(), method.getExceptions(), returnStatement);
+                MethodNode bridge = node.addMethod("access$"+i, access, method.getReturnType(), newParams, method.getExceptions(), returnStatement);
                 privateBridgeMethods.put(method, bridge);
-                mce.setMethodTarget(method);
                 bridge.addAnnotation(new AnnotationNode(COMPILESTATIC_CLASSNODE));
             }
         }

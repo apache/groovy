@@ -263,6 +263,21 @@ public class TypeCheckingExtension {
         return ClassHelper.make(type);
     }
 
+    /**
+     * Lookup a ClassNode by its name from the source unit
+     *
+     * @param type the name of the class whose ClassNode we want to lookup
+     * @return a ClassNode representing the class
+     */
+    public ClassNode lookupClassNodeFor(String type) {
+        for (ClassNode cn : typeCheckingVisitor.getSourceUnit().getAST().getClasses()) {
+            if (cn.getName().equals(type))
+                return cn;
+        }
+
+        return null;
+    }
+
     public ClassNode parameterizedType(ClassNode baseType, ClassNode... genericsTypeArguments) {
         ClassNode result = baseType.getPlainNodeReference();
         if (result.isUsingGenerics()) {

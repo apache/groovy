@@ -87,13 +87,7 @@ class Groovy3464Bug extends GroovyTestCase {
     }
 
     static File createTempDir() {
-        File tempDirectory = File.createTempFile("Groovy3464Bug", Long.toString(System.currentTimeMillis()))
-        if (!(tempDirectory.delete())) {
-            throw new IOException("Impossible to delete temporary file: ${tempDirectory.absolutePath}")
-        }
-        if (!(tempDirectory.mkdir())) {
-            throw new IOException("Impossible to create temporary directory: ${tempDirectory.absolutePath}")
-        }
+        File tempDirectory = File.createTempDir("Groovy3464Bug", Long.toString(System.currentTimeMillis()))
         return tempDirectory
     }
 }

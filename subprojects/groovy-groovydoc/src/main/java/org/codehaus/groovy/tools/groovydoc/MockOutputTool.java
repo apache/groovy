@@ -33,10 +33,10 @@ public class MockOutputTool implements OutputTool {
         outputAreas.add(filename);
     }
 
-    public void writeToOutput(String fileName, String text) throws Exception {
+    public void writeToOutput(String fileName, String text, String charset) throws Exception {
         output.put(fileName, text);
     }
-    
+
     public boolean isValidOutputArea(String fileName) {
         return outputAreas.contains(fileName);
     }

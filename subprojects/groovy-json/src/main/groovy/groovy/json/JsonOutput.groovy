@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -119,6 +119,13 @@ class JsonOutput {
     }
 
     /**
+     * @return an object representation of an Expando
+     */
+    static String toJson(Expando expando) {
+        toJson(expando.properties)
+    }
+
+    /**
      * @return "null" for a null value, or a JSON array representation for a collection, array, iterator or enumeration.
      */
     static String toJson(object) {
@@ -190,7 +197,12 @@ class JsonOutput {
             } else if (token.type == COLON) {
                 output.append(': ')
             } else if (token.type == STRING) {
-                output.append('"' + StringEscapeUtils.escapeJava(token.text[1..-2]) + '"')
+                // Cannot use a range (1..-2) here as it will reverse for a string of
+                // length 2 (i.e. textStr=/""/ ) and will not strip the leading/trailing
+                // quotes (just reverses them).
+                String textStr = token.text
+                String textWithoutQuotes = textStr.substring( 1, textStr.size()-1 )
+                output.append('"' + StringEscapeUtils.escapeJava( textWithoutQuotes ) + '"')
             } else {
                 output.append(token.text)
             }

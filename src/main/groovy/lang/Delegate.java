@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2012 the original author or authors.
+ * Copyright 2008-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -140,4 +140,22 @@ public @interface Delegate {
      * @return true if owner class should delegate to methods annotated with @Deprecated
      */
     boolean deprecated() default false;
+
+    /**
+     * Whether to carry over annotations from the methods of the delegate
+     * to your delegating method. Currently Closure annotation members are
+     * not supported.
+     *
+     * @return true if generated delegate methods should keep method annotations
+     */
+    boolean methodAnnotations() default false;
+
+    /**
+     * Whether to carry over annotations from the parameters of delegate
+     * methods to your delegating method. Currently Closure annotation members are
+     * not supported.
+     *
+     * @return true if generated delegate methods should keep parameter annotations
+     */
+    boolean parameterAnnotations() default false;
 }

@@ -61,11 +61,12 @@ public class TimeCategory {
 
     /**
      * Retrieves the default TimeZone for a date by using the default Locale
-     * settings.
+     * settings. Recommended that you use {@code TimeZone.getDefault()} instead.
      *
      * @param self a Date
      * @return the TimeZone
      */
+    @Deprecated
     public static TimeZone getTimeZone(Date self) {
         Calendar calendar = Calendar.getInstance();
         calendar.setTime(self);

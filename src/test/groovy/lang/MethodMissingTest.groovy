@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2009 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -67,12 +67,10 @@ class MethodMissingTest extends GroovyTestCase {
         assertEquals "world", t2.hello()
         assertEquals "foo", t2.stuff()
         assertEquals "bar", t2.stuff()
-
     }
 
 
     void testStaticMethodMissingViaMetaClass() {
-
         assertEquals "world", MMTest3.hello()
         shouldFail(MissingMethodException) {
             MMTest3.stuff()            
@@ -80,7 +78,6 @@ class MethodMissingTest extends GroovyTestCase {
         MMTest3.metaClass.'static'.methodMissing = { String name, args->
              "foo"
         }
-
         assertEquals "world", MMTest3.hello()
         assertEquals "foo", MMTest3.stuff()
     }
@@ -99,6 +96,25 @@ class MethodMissingTest extends GroovyTestCase {
          }
     }
 
+    // GROOVY-4701
+    void testMethodMissingExceptionWithBrokenToString() {
+        def exception = new MissingMethodException("methodName", getClass(), new Broken())
+        def sw = new StringWriter()
+        sw.withPrintWriter { pw ->
+            exception.printStackTrace(pw)
+            assert sw.toString().contains("groovy.lang.MissingMethodException: No signature of method")
+            assert sw.toString().contains("is applicable for argument types: (groovy.lang.Broken) values: [<groovy.lang.Broken@????>]")
+            assert !sw.toString().contains("toString broken")
+        }
+        sw = new StringWriter()
+        exception = new MissingMethodException("methodName", getClass(), new Broken(hash:  9))
+        sw.withPrintWriter { pw ->
+            exception.printStackTrace(pw)
+            assert sw.toString().contains("groovy.lang.MissingMethodException: No signature of method")
+            assert sw.toString().contains("is applicable for argument types: (groovy.lang.Broken) values: [<groovy.lang.Broken@9>]")
+            assert !sw.toString().contains("toString broken")
+        }
+    }
 }
 
 class MMTest {
@@ -122,4 +138,17 @@ class MMTest5 {
 
 class MMTest6 extends MMTest5 {
     static goodbye() { "cruel world" }
+}
+
+class Broken {
+    int hash = -1
+    @Override
+    String toString() {
+        throw new RuntimeException("toString broken")
+    }
+    @Override
+    int hashCode() {
+        if (hash == -1) throw new RuntimeException("hashCode broken")
+        else hash
+    }
 }

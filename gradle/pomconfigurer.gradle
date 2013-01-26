@@ -6,7 +6,7 @@ project.ext.providedDeps = []
 project.ext.optional = { project.ext.optionalDeps << it }
 project.ext.provided = { project.ext.providedDeps << it }
 
-project.ext.pomConfigureClosure = {
+project.ext.pomConfigureClosureWithoutTweaks = {
     scopeMappings.addMapping(10, configurations.groovy, 'compile')
     project {
         name 'Groovy'
@@ -496,8 +496,11 @@ project.ext.pomConfigureClosure = {
             url 'git@github.com:groovy/groovy-core.git'
         }
     }
+}
 
-    // general pom tweaks
+project.ext.pomConfigureClosure = {
+    with pomConfigureClosureWithoutTweaks
+
     whenConfigured { pom ->
         project.ext.optionalDeps.each { dep ->
             pom.dependencies.find { it.artifactId == dep.name }?.optional = true

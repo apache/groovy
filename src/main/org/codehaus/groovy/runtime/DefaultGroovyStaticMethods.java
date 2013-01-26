@@ -17,6 +17,8 @@ package org.codehaus.groovy.runtime;
 
 import groovy.lang.Closure;
 
+import java.io.File;
+import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -229,6 +231,46 @@ public class DefaultGroovyStaticMethods {
         ClassLoader targetCL = c != null ? c.getClassLoader() : null;
         if (targetCL == null) targetCL = ClassLoader.getSystemClassLoader();
         return ResourceBundle.getBundle(bundleName, locale, targetCL);
+    }
+
+    public static File createTempDir(File self) throws IOException {
+        return createTempDir(self, "groovy-generated-", "-tmpdir");
+    }
+
+    public static File createTempDir(File self, final String prefix, final String suffix) throws IOException {
+        final int MAXTRIES = 3;
+        int accessDeniedCounter = 0;
+        File tempFile=null;
+        for (int i=0; i<MAXTRIES; i++) {
+            try {
+                tempFile = File.createTempFile(prefix, suffix);
+                tempFile.delete();
+                tempFile.mkdirs();
+                break;
+            } catch (IOException ioe) {
+                if (ioe.getMessage().startsWith("Access is denied")) {
+                    accessDeniedCounter++;
+                    try { Thread.sleep(100); } catch (InterruptedException e) {}
+                }
+                if (i==MAXTRIES-1) {
+                    if (accessDeniedCounter==MAXTRIES) {
+                        String msg =
+                                "Access is denied.\nWe tried " +
+                                        + accessDeniedCounter+
+                                        " times to create a temporary directory"+
+                                        " and failed each time. If you are on Windows"+
+                                        " you are possibly victim to"+
+                                        " http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6325169. "+
+                                        " this is no bug in Groovy.";
+                        throw new IOException(msg);
+                    } else {
+                        throw ioe;
+                    }
+                }
+                continue;
+            }
+        }
+        return tempFile;
     }
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2009 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -549,9 +549,9 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
         newDesc.append(")V");
         MethodVisitor mv = super.visitMethod(access, name, newDesc.toString(), signature, exceptions);
         mv.visitCode();
-        initializeDelegateClosure(mv, args.length);
+        initializeDelegateClosure(mv, args);
         if (generateDelegateField) {
-            initializeDelegateObject(mv, args.length+1);
+            initializeDelegateObject(mv, args);
         }
         mv.visitVarInsn(ALOAD, 0);
         int idx = 1;
@@ -571,18 +571,27 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
         return null;
     }
 
-    private void initializeDelegateClosure(final MethodVisitor mv, int argStart) {
-        int idx = argStart+1;
+    private void initializeDelegateClosure(final MethodVisitor mv, Type[] args) {
+        int idx = 1 + getTypeArgsRegisterLength(args);
+
         mv.visitIntInsn(ALOAD, 0); // this
         mv.visitIntInsn(ALOAD, idx); // constructor arg n is the closure map
+
         mv.visitFieldInsn(PUTFIELD, proxyName, CLOSURES_MAP_FIELD, "Ljava/util/Map;");
     }
 
-    private void initializeDelegateObject(final MethodVisitor mv, int argStart) {
-        int idx = argStart+1;
+    private void initializeDelegateObject(final MethodVisitor mv, Type[] args) {
+        int idx = 2 + getTypeArgsRegisterLength(args);
+
         mv.visitIntInsn(ALOAD, 0); // this
         mv.visitIntInsn(ALOAD, idx); // constructor arg n is the closure map
         mv.visitFieldInsn(PUTFIELD, proxyName, DELEGATE_OBJECT_FIELD, BytecodeHelper.getTypeDescription(delegateClass));
+    }
+
+    private int getTypeArgsRegisterLength(Type[] args)  {
+        int length = 0;
+        for (Type type : args)  { length += registerLen(type); }
+        return length;
     }
 
     /**

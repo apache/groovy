@@ -940,18 +940,7 @@ public abstract class StaticTypeCheckingSupport {
              */
 
             Parameter[] params = parameterizeArguments(actualReceiver, m);
-            if (params.length > args.length && ! isVargs(params)) {
-                // GROOVY-5231
-                int dist = allParametersAndArgumentsMatchWithDefaultParams(params, args);
-                if (dist>=0 && !actualReceiver.equals(declaringClass)) dist+=getDistance(actualReceiver, declaringClass);
-                if (dist>=0 && dist<bestDist) {
-                    bestChoices.clear();
-                    bestChoices.add(m);
-                    bestDist = dist;
-                } else if (dist>=0 && dist==bestDist) {
-                    bestChoices.add(m);
-                }
-            } else if (params.length == args.length) {
+            if (params.length == args.length) {
                 int allPMatch = allParametersAndArgumentsMatch(params, args);
                 boolean firstParamMatches = true;
                 // check first parameters
@@ -1235,16 +1224,14 @@ public abstract class StaticTypeCheckingSupport {
                             && metaMethod.getAnnotations(Deprecated_TYPE).isEmpty()) {
                         Parameter[] parameters = new Parameter[types.length - 1];
                         System.arraycopy(types, 1, parameters, 0, parameters.length);
-                        MethodNode node = new ExtensionMethodNode(
+                        ExtensionMethodNode node = new ExtensionMethodNode(
                                 metaMethod,
                                 metaMethod.getName(),
                                 metaMethod.getModifiers(),
                                 metaMethod.getReturnType(),
                                 parameters,
-                                ClassNode.EMPTY_ARRAY, null);
-                        if (staticExtClasses.contains(dgmLikeClass)) {
-                            node.setModifiers(node.getModifiers() | Opcodes.ACC_STATIC);
-                        }
+                                ClassNode.EMPTY_ARRAY, null,
+                                staticExtClasses.contains(dgmLikeClass));
                         node.setGenericsTypes(metaMethod.getGenericsTypes());
                         ClassNode declaringClass = types[0].getType();
                         String declaringClassName = declaringClass.getName();

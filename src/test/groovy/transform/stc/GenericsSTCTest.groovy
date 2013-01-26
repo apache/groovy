@@ -15,6 +15,8 @@
  */
 package groovy.transform.stc
 
+import groovy.transform.NotYetImplemented
+
 /**
  * Unit tests for static type checking : generics.
  *
@@ -1008,6 +1010,56 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
                 }
             }
             new Test()
+        '''
+    }
+
+    // GROOVY-5893
+    @NotYetImplemented
+    void testPlusInClosure() {
+        assertScript '''
+        def list = [1, 2, 3]
+
+        @ASTTest(phase=INSTRUCTION_SELECTION,value={
+            assert node.getNodeMetaData(INFERRED_TYPE) == int_TYPE
+        })
+        def sum = 0
+        list.each { int i -> sum = sum+i }
+        assert sum == 6
+
+        sum = 0
+        list.each { int i -> sum += i }
+        assert sum == 6
+
+        @ASTTest(phase=INSTRUCTION_SELECTION, value={
+            assert node.getNodeMetaData(INFERRED_TYPE) == Integer_TYPE
+        })
+        def sumWithInject = list.inject(0, { int x, int y -> x + y })
+        sum = sumWithInject
+        assert sum == 6
+        '''
+    }
+
+    void testShouldNotCreateStackOverflow() {
+        assertScript '''
+            class Element {
+              Iterator<List<Element>> multi() {
+                [ [ ] ].iterator()
+              }
+            }
+            new Element()
+'''
+    }
+
+    void testRegressionInConstructorCheck() {
+        assertScript '''
+            new ArrayList(['a','b','c'].collect { String it -> it.toUpperCase()})
+        '''
+    }
+
+    void testReturnTypeInferenceWithMethodUsingWildcard() {
+        assertScript '''
+            public Object createInstance(Class<?> projectComponentClass, String foo) { projectComponentClass.newInstance() }
+            createInstance(LinkedList, 'a')
         '''
     }
 

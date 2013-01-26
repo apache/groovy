@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2011 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,12 @@ import groovy.transform.Canonical
  */
 class JsonOutputTest extends GroovyTestCase {
     
+    // Check for GROOVY-5918
+    void testExpando() {
+        assert toJson( new Expando( a:42 ) ) == '{"a":42}'
+        assert new JsonBuilder( new Expando( a:42 ) ).toString() == '{"a":42}'
+    }
+
     void testBooleanValues() {
         assert toJson(Boolean.TRUE) == "true"
         assert toJson(Boolean.FALSE) == "false"
@@ -236,11 +242,19 @@ class JsonOutputTest extends GroovyTestCase {
             }""".stripIndent()
     }
 
+    private stripWhiteSpace( String str ) {
+      return str.replaceAll( ~/\s/, '' )
+    }
+    void testPrettyPrintStringZeroLen() {
+      def tree = [ myStrings: [ str3:'abc', str0:'' ] ]
+      def result   = stripWhiteSpace( new JsonBuilder( tree ).toPrettyString() )
+      def expected = stripWhiteSpace( '{ "myStrings":{ "str3":"abc","str0":"" } }' )
+      assert result == expected
+    }
+
     void testPrettyPrintDoubleQuoteEscape() {
         def json = new JsonBuilder()
-
         json.text { content 'abc"def' }
-
         assert json.toPrettyString() == """\
             {
                 "text": {

@@ -15,6 +15,7 @@
  */
 package groovy.ui;
 
+import groovy.lang.Binding;
 import groovy.lang.GroovyRuntimeException;
 import groovy.lang.GroovyShell;
 import groovy.lang.GroovySystem;
@@ -29,6 +30,7 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilerConfiguration;
+import org.codehaus.groovy.control.customizers.ImportCustomizer;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.InvokerInvocationException;
 import org.codehaus.groovy.runtime.ResourceGroovyMethods;
@@ -122,6 +124,8 @@ public class GroovyMain {
         } catch (ParseException pe) {
             out.println("error: " + pe.getMessage());
             printHelp(out, options);
+        } catch (IOException ioe) {
+            out.println("error: " + ioe.getMessage());
         }
     }
 
@@ -236,8 +240,16 @@ public class GroovyMain {
             OptionBuilder.withLongOpt("indy")
             .withDescription("enables compilation using invokedynamic")
             .create());
-
+        options.addOption(
+            OptionBuilder.withLongOpt("configscript")
+            .hasArg().withDescription("A script for tweaking the configuration options")
+            .create());
+        options.addOption(
+                OptionBuilder.withLongOpt("basescript")
+                .hasArg().withArgName("class").withDescription("Base class name for scripts (must derive from Script)")
+                .create('b'));
         return options;
+
     }
 
     private static void setSystemPropertyFrom(final String nameValue) {
@@ -265,7 +277,7 @@ public class GroovyMain {
      * @param line the parsed command line.
      * @throws ParseException if invalid options are chosen
      */
-    private static boolean process(CommandLine line) throws ParseException {
+     private static boolean process(CommandLine line) throws ParseException, IOException {
         List args = line.getArgList();
         
         if (line.hasOption('D')) {
@@ -324,8 +336,27 @@ public class GroovyMain {
             CompilerConfiguration.DEFAULT.getOptimizationOptions().put("indy", true);
             main.conf.getOptimizationOptions().put("indy", true);
         }
-        
-        main.args = args;
+
+         if (line.hasOption("basescript")) {
+             main.conf.setScriptBaseClass(line.getOptionValue("basescript"));
+         }
+
+         if (line.hasOption("configscript")) {
+             String path = line.getOptionValue("configscript");
+             File groovyConfigurator = new File(path);
+             Binding binding = new Binding();
+             binding.setVariable("configuration", main.conf);
+
+             CompilerConfiguration configuratorConfig = new CompilerConfiguration();
+             ImportCustomizer customizer = new ImportCustomizer();
+             customizer.addStaticStars("org.codehaus.groovy.control.customizers.builder.CompilerCustomizationBuilder");
+             configuratorConfig.addCompilationCustomizers(customizer);
+
+             GroovyShell shell = new GroovyShell(binding, configuratorConfig);
+             shell.evaluate(groovyConfigurator);
+         }
+
+         main.args = args;
 
         return main.run();
     }

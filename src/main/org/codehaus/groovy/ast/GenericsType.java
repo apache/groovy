@@ -325,8 +325,8 @@ public class GenericsType extends ASTNode {
                             success &= compareGenericsWithBound(classNode, anInterface);
                             if (!success) break;
                         }
+                        if (success) return true;
                     }
-                    if (success) return true;
                 }
                 return compareGenericsWithBound(getParameterizedSuperClass(classNode), bound);
             }
@@ -351,7 +351,21 @@ public class GenericsType extends ASTNode {
                         match = name.equals(redirectBoundType.getName());
                         if (!match) {
                             GenericsType genericsType = boundPlaceHolders.get(redirectBoundType.getName());
-                            match = (genericsType!=null && genericsType.getName().equals(name));
+                            match = false;
+                            if (genericsType!=null) {
+                                if (genericsType.isPlaceholder()) {
+                                    match = genericsType.getName().equals(name);
+                                } else if (genericsType.isWildcard()) {
+                                    if (genericsType.getUpperBounds()!=null) {
+                                        for (ClassNode up : genericsType.getUpperBounds()) {
+                                            match |= redirectBoundType.isCompatibleWith(up);
+                                        }
+                                        if (genericsType.getLowerBound()!=null) {
+                                            match |= redirectBoundType.isCompatibleWith(genericsType.getLowerBound());
+                                        }
+                                    }
+                                }
+                            }
                         }
                     } else {
                         if (classNodePlaceholders.containsKey(name)) classNodeType=classNodePlaceholders.get(name);

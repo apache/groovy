@@ -15,6 +15,7 @@
  */
 package org.codehaus.groovy.classgen.asm.sc
 
+import groovy.transform.NotYetImplemented
 import groovy.transform.stc.BugsSTCTest
 
 /**
@@ -676,6 +677,71 @@ class BugsStaticCompileTest extends BugsSTCTest {
                 }
                 cl()
             '''
+    }
+
+    void testCallClosureInInnerClass() {
+        assertScript '''
+            class A {
+                static class B { // bug doesn't occur if not wrapped into an inner class
+                    static void foo() {
+                        def cl = { -> println 'ok' }
+                        cl()
+                    }
+                }
+            }
+            A.B.foo()
+        '''
+    }
+
+    // GROOVY-5890
+    void testIsCaseWithClassLiteral() {
+        assertScript '''
+            assert 'a' in String
+        '''
+    }
+
+    // GROOVY-5887
+    void testSpreadCallWithArray() {
+        assertScript '''
+            def list = 'a,b,c'.split(/,/)*.trim()
+            assert list == ['a','b','c']
+        '''
+    }
+
+    // GROOVY-5919
+    void testPrivateAccessorsWithSubClass() {
+        assertScript '''
+            class Top {
+                private int foo = 666
+                private class InnerTop {
+                    int foo() { foo }
+                }
+            }
+            class Bottom extends Top {
+                private int bar = 666
+                private class InnerBottom {
+                    int bar() { bar } // name clash for fpaccess$0
+                }
+            }
+            new Bottom()
+        '''
+    }
+
+    void testSuperMethodCallInSkippedSection() {
+        assertScript '''import groovy.transform.CompileStatic
+import groovy.transform.TypeCheckingMode
+            class Top {
+                public int foo() { 123 }
+            }
+            class Bottom extends Top {
+                @CompileStatic(TypeCheckingMode.SKIP)
+                public int bar() {
+                    foo()
+                }
+            }
+            def obj = new Bottom()
+            assert obj.bar() == 123
+        '''
     }
 }
 

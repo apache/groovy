@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,6 @@ import org.codehaus.groovy.runtime.MethodRankHelper;
  * to avoid conflicts with JDK exceptions of the same name.
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 public class MissingMethodException extends GroovyRuntimeException {
 
@@ -60,7 +59,7 @@ public class MissingMethodException extends GroovyRuntimeException {
                 + "() is applicable for argument types: ("
                 + InvokerHelper.toTypeString(arguments)
                 + ") values: "
-                + InvokerHelper.format(arguments, false, 40)
+                + InvokerHelper.toArrayString(arguments, 60, true)
                 + MethodRankHelper.getMethodSuggestionString(method, type, arguments);
     }
 
