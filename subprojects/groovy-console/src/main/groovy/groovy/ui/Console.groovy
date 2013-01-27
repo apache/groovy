@@ -942,6 +942,9 @@ options:
         // Kick off a new thread to do the evaluation
         // Run in a thread outside of EDT, this method is usually called inside the EDT
         runThread = Thread.start {
+            //to allow loading classes dynamically when using @Grab (GROOVY-4877, GROOVY-5871)
+            Thread.currentThread().contextClassLoader = shell.classLoader
+
             try {
                 SwingUtilities.invokeLater { showExecutingMessage() }
                 String name = scriptFile?.name ?: (DEFAULT_SCRIPT_NAME_START + scriptNameCounter++)
