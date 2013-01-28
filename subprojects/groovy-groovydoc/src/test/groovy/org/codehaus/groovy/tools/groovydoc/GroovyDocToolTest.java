@@ -416,7 +416,6 @@ public class GroovyDocToolTest extends GroovyTestCase {
 
         // loop through classes in tree
         GroovyClassDoc classDocDescendantA = getGroovyClassDocByName(root, "DescendantA");
-        System.out.println(root.classNamed(classDocDescendantA, "Base").getFullPathName());
         assertTrue(fullPathBaseA.equals(root.classNamed(classDocDescendantA, "Base").getFullPathName()));
 
         GroovyClassDoc classDocDescendantB = getGroovyClassDocByName(root, "DescendantB");
