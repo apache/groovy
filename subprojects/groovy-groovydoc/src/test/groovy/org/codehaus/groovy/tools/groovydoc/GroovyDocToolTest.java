@@ -1,5 +1,5 @@
 /*
- * Copyright 2007-2012 the original author or authors.
+ * Copyright 2007-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import java.util.Properties;
 
 /**
  * @author Jeremy Rayner
+ * @author Andre Steingress
  */
 public class GroovyDocToolTest extends GroovyTestCase {
     private static final String MOCK_DIR = "mock/doc";
@@ -38,7 +39,7 @@ public class GroovyDocToolTest extends GroovyTestCase {
     GroovyDocTool plainTool;
 
     public void setUp() {
-        plainTool = new GroovyDocTool(new String[]{"src/test"});
+        plainTool = new GroovyDocTool(new String[]{"src/test/groovy"});
 
         // TODO messy coupling of subprojects for legacy reasons, refactor and remove
         xmlTool = new GroovyDocTool(
@@ -334,5 +335,60 @@ public class GroovyDocToolTest extends GroovyTestCase {
         xmlTool.renderToOutput(output, MOCK_DIR);
         String text = output.getText(MOCK_DIR + "/org/codehaus/groovy/tools/groovydoc/SimpleGroovyRootDoc.html");
         assertTrue(text.indexOf("<parameter type=\"org.codehaus.groovy.groovydoc.GroovyPackageDoc\"") > 0);
+    }
+
+    // GROOVY-5940
+    public void testWrongPackageNameInClassHierarchyWithPlainTool() throws Exception {
+        List<String> srcList = new ArrayList<String>();
+
+        String fullPathBaseA = "org/codehaus/groovy/tools/groovydoc/testfiles/a/Base";
+        srcList.add(fullPathBaseA + ".groovy");
+
+        String fullPathBaseB = "org/codehaus/groovy/tools/groovydoc/testfiles/b/Base";
+        srcList.add(fullPathBaseB + ".groovy");
+
+        String fullPathBaseC = "org/codehaus/groovy/tools/groovydoc/testfiles/c/Base";
+
+        srcList.add("org/codehaus/groovy/tools/groovydoc/testfiles/a/DescendantA.groovy");
+        srcList.add("org/codehaus/groovy/tools/groovydoc/testfiles/b/DescendantB.groovy");
+        srcList.add("org/codehaus/groovy/tools/groovydoc/testfiles/a/DescendantC.groovy");
+        srcList.add("org/codehaus/groovy/tools/groovydoc/testfiles/a/DescendantD.groovy");
+        srcList.add("org/codehaus/groovy/tools/groovydoc/testfiles/c/DescendantE.groovy");
+        srcList.add("org/codehaus/groovy/tools/groovydoc/testfiles/c/DescendantF.groovy");
+
+        plainTool.add(srcList);
+
+        GroovyRootDoc root = plainTool.getRootDoc();
+
+        // loop through classes in tree
+        GroovyClassDoc classDocDescendantA = getGroovyClassDocByName(root, "DescendantA");
+        assertTrue(fullPathBaseA.equals(root.classNamed(classDocDescendantA, "Base").getFullPathName()));
+
+        GroovyClassDoc classDocDescendantB = getGroovyClassDocByName(root, "DescendantB");
+        assertTrue(fullPathBaseB.equals(root.classNamed(classDocDescendantB, "Base").getFullPathName()));
+
+        GroovyClassDoc classDocDescendantC = getGroovyClassDocByName(root, "DescendantC");
+        assertTrue(fullPathBaseA.equals(root.classNamed(classDocDescendantC, "Base").getFullPathName()));
+
+        GroovyClassDoc classDocDescendantD = getGroovyClassDocByName(root, "DescendantD");
+        assertTrue(fullPathBaseA.equals(root.classNamed(classDocDescendantD, "Base").getFullPathName()));
+
+        GroovyClassDoc classDocDescendantE = getGroovyClassDocByName(root, "DescendantE");
+        assertTrue(fullPathBaseC.equals(root.classNamed(classDocDescendantE, "Base").getFullPathName()));
+
+        GroovyClassDoc classDocDescendantF = getGroovyClassDocByName(root, "DescendantF");
+        assertTrue(fullPathBaseC.equals(root.classNamed(classDocDescendantF, "Base").getFullPathName()));
+    }
+
+    private GroovyClassDoc getGroovyClassDocByName(GroovyRootDoc root, String name) {
+        GroovyClassDoc[] classes = root.classes();
+
+        for (GroovyClassDoc clazz : classes) {
+            if (clazz.getFullPathName().endsWith(name)) {
+                return clazz;
+            }
+        }
+
+        return null;
     }
 }
