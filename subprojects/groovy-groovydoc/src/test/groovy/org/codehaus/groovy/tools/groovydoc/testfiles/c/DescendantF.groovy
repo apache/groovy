@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,23 +14,13 @@
  * limitations under the License.
  */
 
-package org.codehaus.groovy.groovydoc;
 
-import java.util.List;
-import java.util.Map;
 
-public interface GroovyRootDoc extends GroovyDoc, GroovyDocErrorReporter {
-    GroovyClassDoc classNamed(GroovyClassDoc groovyClassDoc, String name);
+package org.codehaus.groovy.tools.groovydoc.testfiles.c
 
-    GroovyClassDoc[] classes();
+import org.codehaus.groovy.tools.groovydoc.testfiles.b.Base
 
-    String[][] options();
-
-    GroovyPackageDoc packageNamed(String arg0);
-
-    GroovyClassDoc[] specifiedClasses();
-
-    GroovyPackageDoc[] specifiedPackages();
-
-    Map<String, GroovyClassDoc> getVisibleClasses(List importedClassesAndPackages);
+class DescendantF extends Base {
 }
+
+class Base {}
