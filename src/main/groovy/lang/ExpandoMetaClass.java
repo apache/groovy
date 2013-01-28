@@ -1311,6 +1311,14 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
             return new PogoMetaClassSite(site, this);
         return super.createPogoCallCurrentSite(site, sender, args);
     }
+    
+    @Override
+    public MetaMethod retrieveConstructor(Object[] args) {
+        Class[] params = MetaClassHelper.convertToTypeArray(args);
+        MetaMethod method = pickMethod(GROOVY_CONSTRUCTOR, params);
+        if (method!=null) return method;
+        return super.retrieveConstructor(args);
+    }
 
     public CallSite createConstructorSite(CallSite site, Object[] args) {
         Class[] params = MetaClassHelper.convertToTypeArray(args);

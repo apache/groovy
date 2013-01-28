@@ -16,6 +16,7 @@
 package org.codehaus.groovy.vmplugin.v7;
 
 import groovy.lang.AdaptingMetaClass;
+import groovy.lang.ExpandoMetaClass;
 import groovy.lang.GroovyInterceptable;
 import groovy.lang.GroovyObject;
 import groovy.lang.GroovyRuntimeException;
@@ -41,6 +42,7 @@ import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.reflection.CachedField;
 import org.codehaus.groovy.reflection.CachedMethod;
 import org.codehaus.groovy.reflection.ClassInfo;
+import org.codehaus.groovy.runtime.GeneratedClosure;
 import org.codehaus.groovy.runtime.NullObject;
 import org.codehaus.groovy.runtime.GroovyCategorySupport.CategoryMethod;
 import org.codehaus.groovy.runtime.dgmimpl.NumberNumberMetaMethod;
@@ -231,7 +233,6 @@ public abstract class Selector {
         public void chooseMeta(MetaClassImpl mci) {
             if (mci==null) return;
             if (LOG_ENABLED) LOG.info("getting constructor");
-
             Object[] newArgs = removeRealReceiver(args);
             method = mci.retrieveConstructor(newArgs);
             if (method instanceof MetaConstructor) {
@@ -278,7 +279,9 @@ public abstract class Selector {
                 }
                 handle = MethodHandles.foldArguments(con, handle.asType(foldTargetType));
             }
-            handle = MethodHandles.dropArguments(handle, 0, Class.class);
+            if (method instanceof MetaConstructor) {
+                handle = MethodHandles.dropArguments(handle, 0, Class.class);
+            }
         }
 
         /**
@@ -407,7 +410,9 @@ public abstract class Selector {
                 if (LOG_ENABLED) LOG.info("receiver is a class");
                 method = mci.retrieveStaticMethod(name, newArgs);
             } else {
-                method = mci.getMethodWithCaching(selectionBase, name, newArgs, false);
+                String changedName = name;
+                if (receiver instanceof GeneratedClosure && changedName.equals("call")) {changedName = "doCall";}
+                method = mci.getMethodWithCaching(selectionBase, changedName, newArgs, false);
             }
             if (LOG_ENABLED) LOG.info("retrieved method from meta class: "+method);
         }
@@ -794,7 +799,7 @@ public abstract class Selector {
                 getMetaClass();
                 if (LOG_ENABLED) LOG.info("meta class is "+mc);
                 setSelectionBase();
-                MetaClassImpl mci = getMetaClassImpl(mc);
+                MetaClassImpl mci = getMetaClassImpl(mc, callType != CALL_TYPES.GET);
                 chooseMeta(mci);
                 setHandleForMetaMethod();
                 setMetaClassCallHandleIfNedded(mci!=null);
@@ -850,11 +855,12 @@ public abstract class Selector {
      * MetaClassImpl, AdaptingMetaClass or ClosureMetaClass. If
      * none of these cases matches, this method returns null.
      */
-    private static MetaClassImpl getMetaClassImpl(MetaClass mc) {
+    private static MetaClassImpl getMetaClassImpl(MetaClass mc, boolean includeEMC) {
         Class mcc = mc.getClass();
         boolean valid = mcc == MetaClassImpl.class ||
                          mcc == AdaptingMetaClass.class ||
-                         mcc == ClosureMetaClass.class;
+                         mcc == ClosureMetaClass.class ||
+                         (includeEMC && mcc == ExpandoMetaClass.class);
         if (!valid) {
             if (LOG_ENABLED) LOG.info("meta class is neither MetaClassImpl, nor AdoptingMetaClass, nor ClosureMetaClass, normal method selection path disabled.");
             return null;
