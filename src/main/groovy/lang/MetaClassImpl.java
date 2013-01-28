@@ -1501,7 +1501,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      * @author <a href="mailto:blackdrag@gmx.org">Jochen "blackdrag" Theodorou</a> 
      * @since Groovy 2.1.0
      */
-    public final MetaMethod retrieveConstructor(Object[] arguments) {
+    public MetaMethod retrieveConstructor(Object[] arguments) {
         checkInitalised();
         if (arguments == null) arguments = EMPTY_ARGUMENTS;
         Class[] argClasses = MetaClassHelper.convertToTypeArray(arguments);
