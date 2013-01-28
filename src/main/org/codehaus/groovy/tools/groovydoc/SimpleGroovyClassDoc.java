@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -419,7 +419,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
         // last chance lookup for classes within the current codebase
         if (rootDoc != null) {
             String slashedName = target[0].replaceAll("\\.", "/");
-            GroovyClassDoc doc = rootDoc.classNamed(slashedName);
+            GroovyClassDoc doc = rootDoc.classNamed(classDoc, slashedName);
             if (doc != null) {
                 return buildUrl(relativePath, target, label == null ? name : label);
             }
@@ -465,7 +465,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
                 if (nestedDoc.name().endsWith("." + name))
                     return nestedDoc;
             }
-            doc = rootDoc.classNamed(name);
+            doc = rootDoc.classNamed(this, name);
             if (doc != null) return doc;
         }
 
