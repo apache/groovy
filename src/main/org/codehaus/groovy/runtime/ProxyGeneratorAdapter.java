@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -22,8 +22,6 @@ import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 import org.objectweb.asm.*;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -64,7 +62,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
     private static final String DELEGATE_OBJECT_FIELD = "$delegate";
     private static List<Method> OBJECT_METHODS = getInheritedMethods(Object.class, new ArrayList<Method>());
     private static List<Method> GROOVYOBJECT_METHODS = getInheritedMethods(GroovyObject.class, new ArrayList<Method>());
-    
+
     private final static AtomicLong pxyCounter = new AtomicLong();
     private static final Set<String> GROOVYOBJECT_METHOD_NAMESS;
     private static final Object[] EMPTY_ARGS = new Object[0];
@@ -76,7 +74,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
         }
         GROOVYOBJECT_METHOD_NAMESS = new HashSet<String>(names);
     }
-    
+
     private final Class superClass;
     private final Class delegateClass;
     private final InnerLoader loader;
@@ -91,7 +89,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
     private final Set<String> objectDelegateMethods;
 
     private final Set<Object> visitedMethods;
-    
+
     // cached class
     private final Class cachedClass;
     private final Constructor cachedNoArgConstructor;
@@ -155,8 +153,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
 
         // generate bytecode
         ClassWriter writer = (ClassWriter) cv;
-        ClassReader cr = createClassVisitor(Object.class);
-        cr.accept(this, 0);
+        this.visit(Opcodes.V1_5, ACC_PUBLIC, proxyName, null, null, null);
         byte[] b = writer.toByteArray();
 //        CheckClassAdapter.verify(new ClassReader(b), true, new PrintWriter(System.err));
         cachedClass = loader.defineClass(proxyName.replace('/','.'), b);
@@ -203,7 +200,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
         }
         return selectedMethods;
     }
-    
+
     private static List<Method> getInheritedMethods(Class baseClass, List<Method> methods) {
         Collections.addAll(methods, baseClass.getMethods());
         Class currentClass = baseClass;
@@ -240,24 +237,6 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
         }
         return true;
     }
-    
-    /**
-     * Creates a visitor which will be used as a base class for initiating the visit.
-     * It is not necessary that the class is the superclass, any will do, as long as
-     * it can be loaded from a byte[].
-     * @param baseClass
-     * @return
-     */
-    private ClassReader createClassVisitor(final Class baseClass) {
-        try {
-            String name = baseClass.getName();
-            String path = name.replace('.', '/') + ".class";
-            InputStream in = loader.getResourceAsStream(path);
-            return new ClassReader(in);
-        } catch (IOException e) {
-            throw new GroovyRuntimeException("Unable to generate a proxy for " + baseClass +" from class loader "+loader,e);
-        }
-    }
 
     @Override
     public void visit(final int version, final int access, final String name, final String signature, final String superName, final String[] interfaces) {
@@ -269,6 +248,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
         final boolean addGroovyObjectSupport = !GroovyObject.class.isAssignableFrom(superClass);
         if (addGroovyObjectSupport) interfacesSet.add("groovy/lang/GroovyObject");
         super.visit(V1_5, ACC_PUBLIC, proxyName, signature, BytecodeHelper.getClassInternalName(superClass), interfacesSet.toArray(new String[interfacesSet.size()]));
+        visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
         addDelegateFields();
         if (addGroovyObjectSupport) {
             createGroovyObjectSupport();
@@ -296,7 +276,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
                     method.getName(),
                     BytecodeHelper.getMethodDescriptor(method.getReturnType(), method.getParameterTypes()),
                     null,
-                    exceptions);            
+                    exceptions);
         }
         Constructor[] constructors = clazz.getDeclaredConstructors();
         for (Constructor method : constructors) {
@@ -499,7 +479,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
                         case ILOAD: mv.visitInsn(ICONST_0);
                             break;
                         case LLOAD: mv.visitInsn(LCONST_0);
-                           break;
+                            break;
                         case FLOAD: mv.visitInsn(FCONST_0);
                             break;
                         case DLOAD: mv.visitInsn(DCONST_0);
@@ -623,7 +603,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
                         "(" + arg.getDescriptor() + ")L" + wrappedType + ";");
             } else {
                 mv.visitVarInsn(ALOAD, idx); // load argument i
-            }            
+            }
             size = Math.max(6, 5+registerLen(arg));
             idx += registerLen(arg);
             mv.visitInsn(AASTORE); // store value into array
@@ -634,7 +614,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
 
         return null;
     }
-    
+
     protected MethodVisitor makeDelegateToClosureCall(final String name, final String desc, final String signature, final String[] exceptions, final int accessFlags) {
         MethodVisitor mv = super.visitMethod(accessFlags, name, desc, signature, exceptions);
 //        TraceMethodVisitor tmv = new TraceMethodVisitor(mv);
@@ -825,7 +805,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
             return super.defineClass(name, data, 0, data.length);
         }
 
-    }    
+    }
 
     private static class ReturnValueWrappingClosure<V> extends Closure<V>{
         private final V value;
@@ -840,5 +820,5 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
             return value;
         }
     }
-    
+
 }
