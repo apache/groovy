@@ -12,6 +12,7 @@ class POJOCallSiteBug extends GroovyTestCase {
 
     void tearDown() {
         registry.setMetaClass(POJOCallSiteBugFoo, originalMetaClass)
+        org.codehaus.groovy.runtime.NullObject.getNullObject().setMetaClass(null)
     }
 
     void testPOJOCallSiteShouldBeUpdatedAfterMetaClassIsChanged() {
@@ -51,6 +52,23 @@ class POJOCallSiteBug extends GroovyTestCase {
 
         assert 'test' == foo.field
         assert 'test' == field(foo)
+    }
+
+    void testChangeFromNullToOther() {
+        def emc = new ExpandoMetaClass( org.codehaus.groovy.runtime.NullObject.getNullObject().getClass())
+        emc.plus = {b -> b}
+        emc.initialize()
+        org.codehaus.groovy.runtime.NullObject.getNullObject().setMetaClass(emc)
+
+
+        Double[][] a = new Double[10][10]
+        for (def i = 0; i <= 9; i++ ) {
+            for (def j = 0; j <= 9; j++ ) {
+                println("i=$i j=$j a[0][i]=$a[0][i]")
+                def o = a[0][i]
+                a[0][i] = o + 1
+            }
+        }
     }
 
 }

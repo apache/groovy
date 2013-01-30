@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2009 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,14 +38,19 @@ public class SimpleGroovyRootDoc extends SimpleGroovyDoc implements GroovyRootDo
         classDocs = new HashMap<String, GroovyClassDoc>();
     }
 
-    public GroovyClassDoc classNamed(String name) {
+    public GroovyClassDoc classNamed(GroovyClassDoc groovyClassDoc, String name) {
         // look for full match or match excluding package
         for (String key : classDocs.keySet()) {
             if (key.equals(name)) return classDocs.get(key);
             int lastSlashIdx = key.lastIndexOf('/');
             if (lastSlashIdx > 0) {
                 String shortKey = key.substring(lastSlashIdx + 1);
-                if (shortKey.equals(name)) {
+                String fullPathName = groovyClassDoc.getFullPathName();
+
+                boolean hasPackage = fullPathName.lastIndexOf('/') > 0;
+                if (hasPackage) fullPathName = fullPathName.substring(0, fullPathName.lastIndexOf('/'));
+
+                if (shortKey.equals(name) && (!hasPackage || key.startsWith(fullPathName))) {
                     return classDocs.get(key);
                 }
             }

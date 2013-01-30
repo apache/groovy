@@ -25,11 +25,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.net.URI;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
@@ -39,12 +35,12 @@ import java.util.Map;
 public class DefaultGroovyMethodsTest extends GroovyTestCase {
 
     public void testPrint() throws Exception {
-        Map<String, String> map = new HashMap<String, String>();
+        Map<String, String> map = new LinkedHashMap<String, String>();
         map.put("bob", "drools");
         map.put("james", "geronimo");
         List<Map<String, String>> list = new ArrayList<Map<String, String>>();
         list.add(map);
-        assertEquals("[[james:geronimo, bob:drools]]", InvokerHelper.toString(list));
+        assertEquals("[[bob:drools, james:geronimo]]", InvokerHelper.toString(list));
     }
 
     public void testIncrementString() throws Exception {

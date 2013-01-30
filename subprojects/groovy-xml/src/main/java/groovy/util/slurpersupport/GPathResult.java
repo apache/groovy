@@ -48,7 +48,7 @@ import java.util.Stack;
  *
  * @author John Wilson
  */
-public abstract class GPathResult extends GroovyObjectSupport implements Writable, Buildable {
+public abstract class GPathResult extends GroovyObjectSupport implements Writable, Buildable, Iterable {
     protected final GPathResult parent;
     protected final String name;
     protected final String namespacePrefix;
