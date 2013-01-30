@@ -28,29 +28,31 @@ class SwingBuilderConsoleTest extends GroovySwingTestCase {
 
     void testMacOSXMenuBarHasBasicMenuBarSubElements() {
 
-        def binding = new Binding()
-        binding.setVariable("controller", new Console())
+        testInEDT {
+            def binding = new Binding()
+            binding.setVariable("controller", new Console())
 
-        final basicMenuBarScript = new BasicMenuBar()
-        final macOSXMenuBarScript = new MacOSXMenuBar()
-        final consoleActions = new ConsoleActions()
+            final basicMenuBarScript = new BasicMenuBar()
+            final macOSXMenuBarScript = new MacOSXMenuBar()
+            final consoleActions = new ConsoleActions()
 
-        def swing = new SwingBuilder()
-        swing.controller = new Console()
+            def swing = new SwingBuilder()
+            swing.controller = new Console()
 
-        // we need to init the console actions - menu bar referes to them
-        swing.build(consoleActions)
+            // we need to init the console actions - menu bar referes to them
+            swing.build(consoleActions)
 
-        def basicMenuBar = swing.build(basicMenuBarScript)
-        def macOSXMenuBar = swing.build(macOSXMenuBarScript)
+            def basicMenuBar = swing.build(basicMenuBarScript)
+            def macOSXMenuBar = swing.build(macOSXMenuBarScript)
 
-        // check if we have to same main menu items
-        assert macOSXMenuBar.subElements*.text == basicMenuBar.subElements*.text - 'Help'
+            // check if we have to same main menu items
+            assert macOSXMenuBar.subElements*.text == basicMenuBar.subElements*.text - 'Help'
 
-        // check whether the amount of sub menu elements and their types complies to the basic menu bar
-        macOSXMenuBar.subElements.eachWithIndex { menu, i ->
-            assert menu.subElements.size() == basicMenuBar.subElements[i].subElements.size()
-            assert menu.subElements*.class == basicMenuBar.subElements[i].subElements*.class
+            // check whether the amount of sub menu elements and their types complies to the basic menu bar
+            macOSXMenuBar.subElements.eachWithIndex { menu, i ->
+                assert menu.subElements.size() == basicMenuBar.subElements[i].subElements.size()
+                assert menu.subElements*.class == basicMenuBar.subElements[i].subElements*.class
+            }
         }
     }
 
