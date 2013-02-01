@@ -145,7 +145,7 @@ dependencies {
         exclude(group: 'junit', module: 'junit')
     }
     compilerCompile "org.fusesource.jansi:jansi:1.6"
-    compilerCompile("org.apache.ivy:ivy:2.2.0") {
+    compilerCompile("org.apache.ivy:ivy:2.3.0") {
         transitive = false
     }
     compilerCompile files("$buildDir/classes/compiler")
@@ -168,7 +168,7 @@ dependencies {
         exclude(group: 'junit', module: 'junit')
     }
     compile "org.fusesource.jansi:jansi:1.6"
-    compile("org.apache.ivy:ivy:2.2.0") {
+    compile("org.apache.ivy:ivy:2.3.0") {
         transitive = false
     }
     runtime "org.codehaus.gpars:gpars:1.0.0"
