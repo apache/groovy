@@ -307,8 +307,8 @@ class GrapeIvy implements GrapeEngine {
                         }
                     }
                 }
-                catch(ZipException) {
-                    throw new RuntimeException("Grape could not load jar '$file'")
+                catch(ZipException zipException) {
+                    throw new RuntimeException("Grape could not load jar '$file'", zipException)
                 }
             }
         }
