@@ -19,7 +19,7 @@ import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyResourceLoader;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
-import org.apache.commons.cli.GroovyPosixParser;
+import org.apache.commons.cli.GroovyInternalPosixParser;
 import org.apache.commons.cli.Options;
 import org.apache.tools.ant.AntClassLoader;
 import org.apache.tools.ant.BuildException;
@@ -1053,7 +1053,7 @@ public class Groovyc extends MatchingTask {
         try {
             Options options = FileSystemCompiler.createCompilationOptions();
 
-            CommandLineParser cliParser = new GroovyPosixParser();
+            CommandLineParser cliParser = new GroovyInternalPosixParser();
 
             CommandLine cli;
             cli = cliParser.parse(options, commandLine);

@@ -14,7 +14,7 @@
 
 package groovy.util
 
-import org.apache.commons.cli.GroovyPosixParser
+import org.codehaus.groovy.cli.GroovyPosixParser
 import org.apache.commons.cli.GnuParser
 import org.apache.commons.cli.Option
 import org.apache.commons.cli.OptionBuilder

@@ -199,7 +199,7 @@ task jarAll(type: Jar, dependsOn: { modules()*.jar }) {
                 zipfileset(dir: "$ext.metaInfDir", prefix: 'META-INF')
                 zipfileset(
                         src: jar.archivePath,
-                        excludes: 'groovy/util/CliBuilder*.class,groovy/util/OptionAccessor*.class,org/codehaus/groovy/tools/shell/util/HelpFormatter*.class')
+                        excludes: 'org/codehaus/groovy/cli/GroovyPosixParser*.class,groovy/util/CliBuilder*.class,groovy/util/OptionAccessor*.class,org/codehaus/groovy/tools/shell/util/HelpFormatter*.class')
                 moduleJars().each {
                     zipfileset(src: it, excludes: '**/org.codehaus.groovy.runtime.ExtensionModule')
                 }
@@ -230,7 +230,7 @@ task jarAll(type: Jar, dependsOn: { modules()*.jar }) {
             jar(destfile: archivePath, update:true, filesonly:true, manifest: manifestPath) {
                 zipfileset(
                         src: jar.archivePath,
-                        includes: 'groovy/util/CliBuilder*.class,groovy/util/OptionAccessor*.class,org/codehaus/groovy/tools/shell/util/HelpFormatter*.class')
+                        includes: 'org/codehaus/groovy/cli/GroovyPosixParser*.class,groovy/util/CliBuilder*.class,groovy/util/OptionAccessor*.class,org/codehaus/groovy/tools/shell/util/HelpFormatter*.class')
             }
         }
     }

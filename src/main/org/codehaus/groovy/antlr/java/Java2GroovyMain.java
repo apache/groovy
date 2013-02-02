@@ -18,7 +18,7 @@ package org.codehaus.groovy.antlr.java;
 import antlr.collections.AST;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
-import org.apache.commons.cli.GroovyPosixParser;
+import org.apache.commons.cli.GroovyInternalPosixParser;
 import org.apache.commons.cli.Options;
 import org.codehaus.groovy.antlr.AntlrASTProcessor;
 import org.codehaus.groovy.antlr.SourceBuffer;
@@ -48,7 +48,7 @@ public class Java2GroovyMain {
     public static void main(String[] args) {
         try {
             Options options = new Options();
-            CommandLineParser cliParser = new GroovyPosixParser();
+            CommandLineParser cliParser = new GroovyInternalPosixParser();
             CommandLine cli = cliParser.parse(options, args);
             String[] filenames = cli.getArgs();
             if (filenames.length == 0) {
