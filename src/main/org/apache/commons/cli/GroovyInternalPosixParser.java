@@ -24,13 +24,15 @@ import java.util.List;
 
 /**
  * DO NOT USE. Hacked version until Commons CLI 1.3 is released.
+ * NOTE: this is a mirror copy of org.codehaus.groovy.cli.GroovyPosixParser
+ * DON'T MAKE CHANGES without keeping the other file in sync!
  * The class GroovyPosixParser provides an implementation of the
  * {@link Parser#flatten(Options,String[],boolean) flatten} method.
  *
  * @author John Keyes (john at integralsource.com)
  * @author Paul King (Groovy hacks/fixes)
  */
-public class GroovyPosixParser extends Parser
+public class GroovyInternalPosixParser extends Parser
 {
     /** holder for flattened tokens */
     private List tokens = new ArrayList();
@@ -80,7 +82,7 @@ public class GroovyPosixParser extends Parser
      *  characters in length and the first character is "<b>-</b>" then
      *  we need to burst the entry to determine its constituents.  For more
      *  information on the bursting algorithm see
-     *  {@link GroovyPosixParser#burstToken(String, boolean) burstToken}.</li>
+     *  {@link GroovyInternalPosixParser#burstToken(String, boolean) burstToken}.</li>
      *  <li>if the current <code>arguments</code> entry is not handled
      *  by any of the previous rules, then the entry is added to the list
      *  of processed tokens.</li>

@@ -128,7 +128,7 @@ resolve = {arg, cmd ->
                 .withLongOpt("ivy")
                 .create('i')
         );
-    CommandLine cmd2 = new GroovyPosixParser().parse(options, arg[1..-1] as String[], true);
+    CommandLine cmd2 = new GroovyInternalPosixParser().parse(options, arg[1..-1] as String[], true);
     arg = cmd2.args
 
     // set the instance so we can re-set the logger
@@ -273,7 +273,7 @@ options.addOption(
 );
 
 
-CommandLine cmd = new GroovyPosixParser().parse(options, args, true);
+CommandLine cmd = new GroovyInternalPosixParser().parse(options, args, true);
 
 grapeHelp = {
     int spacesLen = commands.keySet().max {it.length()}.length() + 3
