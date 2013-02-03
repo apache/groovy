@@ -2411,7 +2411,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Iterates through this Map transforming each map entry into a new value using the <code>transform</code> closure
-     * returning the <code>collector</code> with all transformed vakues added to it.
+     * returning the <code>collector</code> with all transformed values added to it.
      * <pre class="groovyTestCase">assert [a:1, b:2].collect( [] as HashSet ) { key, value -> key*value } == ["a", "bb"] as Set
      * assert [3:20, 2:30].collect( [] as HashSet ) { entry -> entry.key * entry.value } == [60] as Set</pre>
      *
