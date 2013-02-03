@@ -129,6 +129,7 @@ class ConfigSlurper {
 
     /**
      * Parse the given script into a configuration object (a Map)
+     * (This method creates a new class to parse the script each time it is called.)
      * @param script The script to parse
      * @return A Map of maps that can be navigating with dot de-referencing syntax to obtain configuration entries
      */
