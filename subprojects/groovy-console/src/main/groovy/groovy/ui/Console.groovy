@@ -116,6 +116,9 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
     boolean threadInterrupt = prefs.getBoolean('threadInterrupt', false)
     Action threadInterruptAction
 
+    //to allow loading classes dynamically when using @Grab (GROOVY-4877, GROOVY-5871)
+    boolean useScriptClassLoaderForScriptExecution = false
+
     // Maximum size of history
     int maxHistory = 10
 
@@ -194,9 +197,10 @@ options:
         java.util.logging.Logger.getLogger(StackTraceUtils.STACK_LOG_NAME).useParentHandlers = true
 
         //when starting via main set the look and feel to system
-        UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()); 
+        UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName())
 
         def console = new Console(Console.class.classLoader?.getRootLoader())
+        console.useScriptClassLoaderForScriptExecution = true
         console.run()
         if (args.length == 1) console.loadScriptFile(args[0] as File)
     }
@@ -942,16 +946,26 @@ options:
         // Kick off a new thread to do the evaluation
         // Run in a thread outside of EDT, this method is usually called inside the EDT
         runThread = Thread.start {
-            //to allow loading classes dynamically when using @Grab (GROOVY-4877, GROOVY-5871)
-            Thread.currentThread().contextClassLoader = shell.classLoader
-
             try {
                 SwingUtilities.invokeLater { showExecutingMessage() }
                 String name = scriptFile?.name ?: (DEFAULT_SCRIPT_NAME_START + scriptNameCounter++)
                 if(beforeExecution) {
                     beforeExecution()
                 }
-                def result = shell.run(record.getTextToRun(selected), name, [])
+                def result
+                if(useScriptClassLoaderForScriptExecution) {
+                    ClassLoader currentThreadContextClassLoader = Thread.currentThread().contextClassLoader
+                    try {
+                        Thread.currentThread().contextClassLoader = shell.classLoader
+                        result = shell.run(record.getTextToRun(selected), name, [])
+                    }
+                    finally {
+                        Thread.currentThread().contextClassLoader = currentThreadContextClassLoader
+                    }
+                }
+                else {
+                    result = shell.run(record.getTextToRun(selected), name, [])
+                }
                 if(afterExecution) {
                     afterExecution()
                 }
