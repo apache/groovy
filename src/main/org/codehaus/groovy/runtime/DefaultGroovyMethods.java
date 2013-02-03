@@ -2405,7 +2405,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #sum(Iterator, groovy.lang.Closure)
      * @since 1.8.1
      */
-    public static <T> List<T> collectMany(Iterator<Object> self, Closure<Collection<? extends T>> projection) {
+    public static <T> List<T> collectMany(Iterator<?> self, Closure<Collection<? extends T>> projection) {
         return collectMany(toList(self), projection);
     }
 
