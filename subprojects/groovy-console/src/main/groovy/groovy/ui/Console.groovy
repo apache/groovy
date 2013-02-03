@@ -954,13 +954,13 @@ options:
                 }
                 def result
                 if(useScriptClassLoaderForScriptExecution) {
-                    ClassLoader currentThreadContextClassLoader = Thread.currentThread().contextClassLoader
+                    ClassLoader savedThreadContextClassLoader = Thread.currentThread().contextClassLoader
                     try {
                         Thread.currentThread().contextClassLoader = shell.classLoader
                         result = shell.run(record.getTextToRun(selected), name, [])
                     }
                     finally {
-                        Thread.currentThread().contextClassLoader = currentThreadContextClassLoader
+                        Thread.currentThread().contextClassLoader = savedThreadContextClassLoader
                     }
                 }
                 else {
