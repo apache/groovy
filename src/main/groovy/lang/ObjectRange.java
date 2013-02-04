@@ -272,7 +272,8 @@ public class ObjectRange extends AbstractList implements Range {
                 char fromNum = (Character) from;
                 char toNum = (Character) to;
                 size = toNum - fromNum + 1;
-            } else if (from instanceof BigDecimal || to instanceof BigDecimal) {
+            } else if (from instanceof BigDecimal || to instanceof BigDecimal ||
+                       from instanceof BigInteger || to instanceof BigInteger) {
                 // let's fast calculate the size
                 BigDecimal fromNum = new BigDecimal("" + from);
                 BigDecimal toNum = new BigDecimal("" + to);
