@@ -88,19 +88,13 @@ public class Duration extends BaseDuration {
         cal.add(Calendar.MINUTE, -this.getMinutes());
         cal.add(Calendar.SECOND, -this.getSeconds());
         cal.add(Calendar.MILLISECOND, -this.getMillis());
-        
-        
-        //
-        // SqlDate should not really care about these values but it seems to "remember" them
-        // so we clear them.
-        // We do the adds first incase we get carry into the day field
-        //
+
         cal.set(Calendar.HOUR_OF_DAY, 0);
         cal.set(Calendar.MINUTE, 0);
         cal.set(Calendar.SECOND, 0);
         cal.set(Calendar.MILLISECOND, 0);
         
-        return new java.sql.Date(cal.getTimeInMillis());
+        return new Date(cal.getTimeInMillis());
     }
      
     public From getFrom() {
@@ -109,18 +103,13 @@ public class Duration extends BaseDuration {
             final Calendar cal = Calendar.getInstance();
 
                 cal.add(Calendar.DAY_OF_YEAR, Duration.this.getDays());
-                
-                //
-                // SqlDate should not really care about these values but it seems to "remember" them
-                // so we clear them.
-                // We do the adds first incase we get carry into the day field
-                //
+
                 cal.set(Calendar.HOUR_OF_DAY, 0);
                 cal.set(Calendar.MINUTE, 0);
                 cal.set(Calendar.SECOND, 0);
                 cal.set(Calendar.MILLISECOND, 0);
-                
-                return new java.sql.Date(cal.getTimeInMillis());
+
+                return new Date(cal.getTimeInMillis());
             }
         };
     }
