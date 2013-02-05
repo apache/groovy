@@ -16,27 +16,18 @@
 package groovy.bugs
 
 /**
- * Check Range.size finishes in a timely fashion
+ * Check Range.size finishes in a timely fashion. If we get a regression on this bug,
+ * the build will take 10 - 20 minutes longer than normal
  *
  * @author Tim Yates
  */
 class Groovy5425_Bug extends GroovyTestCase {
 
-   void testBigDecimalRangeSize() {
-     int size = 0
-     new Thread( { ->  size = (1.0G..2147483647.0G).size() } ).with { t ->
-       t.start()
-       t.join( 50 )
-       assert size == 2147483647
-     }
-   }
+  void testBigDecimalRangeSize() {
+    assert (1.0G..2147483647.0G).size() == 2147483647
+  }
 
-   void testBigIntegerRangeSize() {
-     int size = 0
-     new Thread( { ->  size = (1G..2147483647G).size() } ).with { t ->
-       t.start()
-       t.join( 50 )
-       assert size == 2147483647
-     }
-   }
+  void testBigIntegerRangeSize() {
+    assert (1G..2147483647G).size() == 2147483647
+  }
 }
