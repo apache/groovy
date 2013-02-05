@@ -268,17 +268,6 @@ class CompilerCustomizationBuilderTest extends GroovyTestCase {
 
     }
 
-// TODO can this be deleted?
-//    void testSourceAwareCustomizerBuilderDelegate() {
-//        def builder = new CompilerCustomizationBuilder()
-//        def cz = builder.source(basename:'Foo') {
-//            imports {
-//                staticStar 'java.lang.Math'
-//            }
-//        }
-//        cz.call(new SourceUnit(), null, null)
-//    }
-
     void testInlinedCustomizerFactory() {
         def builder = new CompilerCustomizationBuilder()
         def foo = 0
