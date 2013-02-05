@@ -135,7 +135,7 @@ public class DelegateASTTransformation extends AbstractASTTransformation impleme
         return res;
     }
 
-    private List<MethodNode> getAllMethods(ClassNode type) {
+    protected List<MethodNode> getAllMethods(ClassNode type) {
         ClassNode node = type;
         List<MethodNode> result = new ArrayList<MethodNode>();
         while (node != null) {
