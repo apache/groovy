@@ -32,6 +32,7 @@ import org.apache.tools.ant.types.Reference;
 import org.apache.tools.ant.util.FileUtils;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilerConfiguration;
+import org.codehaus.groovy.control.customizers.ImportCustomizer;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.ResourceGroovyMethods;
 import org.codehaus.groovy.tools.ErrorReporter;
@@ -92,6 +93,10 @@ public class Groovy extends Java {
     private boolean fork = false;
     private boolean includeAntRuntime = true;
     private boolean useGroovyShell = false;
+
+    private boolean indy = false;
+    private String scriptBaseClass;
+    private String configscript;
 
     /**
      * Compiler configuration.
@@ -235,6 +240,32 @@ public class Groovy extends Java {
     }
 
     /**
+     * Sets the configuration script for the groovy compiler configuration.
+     *
+     * @param configscript path to the configuration script
+     */
+    public void setConfigscript(final String configscript) {
+        this.configscript = configscript;
+    }
+
+    /**
+     * Sets the indy flag to enable or disable invokedynamic
+     *
+     * @param indy true means invokedynamic support is active
+     */
+    public void setIndy(final boolean indy) {
+        this.indy = indy;
+    }
+
+    /**
+     * Set the script base class name
+     * @param scriptBaseClass the name of the base class for scripts
+     */
+    public void setScriptBaseClass(final String scriptBaseClass) {
+        this.scriptBaseClass = scriptBaseClass;
+    }
+
+    /**
      * Load the file and then execute it
      */
     public void execute() throws BuildException {
@@ -363,6 +394,7 @@ public class Groovy extends Java {
                 createNewArgs(txt);
                 super.setFork(fork);
                 super.setClassname(useGroovyShell ? "groovy.lang.GroovyShell" : "org.codehaus.groovy.ant.Groovy");
+                configureCompiler();
                 super.execute();
             } catch (Exception e) {
                 StringWriter writer = new StringWriter();
@@ -408,7 +440,7 @@ public class Groovy extends Java {
         final String scriptName = computeScriptName();
         final GroovyClassLoader classLoader = new GroovyClassLoader(baseClassLoader);
         addClassPathes(classLoader);
-
+        configureCompiler();
         final GroovyShell groovy = new GroovyShell(classLoader, new Binding(), configuration);
         try {
             parseAndRunScript(groovy, txt, mavenPom, scriptName, null, new AntBuilder(this));
@@ -416,6 +448,33 @@ public class Groovy extends Java {
             groovy.resetLoadedClasses();
             groovy.getClassLoader().clearCache();
             if (contextClassLoader || maven) thread.setContextClassLoader(savedLoader);
+        }
+    }
+
+    private void configureCompiler() {
+        if (scriptBaseClass!=null) {
+            configuration.setScriptBaseClass(scriptBaseClass);
+        }
+        if (indy) {
+            configuration.getOptimizationOptions().put("indy", Boolean.TRUE);
+            configuration.getOptimizationOptions().put("int", Boolean.FALSE);
+        }
+        if (configscript!=null) {
+            Binding binding = new Binding();
+            binding.setVariable("configuration", configuration);
+
+            CompilerConfiguration configuratorConfig = new CompilerConfiguration();
+            ImportCustomizer customizer = new ImportCustomizer();
+            customizer.addStaticStars("org.codehaus.groovy.control.customizers.builder.CompilerCustomizationBuilder");
+            configuratorConfig.addCompilationCustomizers(customizer);
+
+            GroovyShell shell = new GroovyShell(binding, configuratorConfig);
+            File confSrc = new File(configscript);
+            try {
+                shell.evaluate(confSrc);
+            } catch (IOException e) {
+                throw new BuildException("Unable to configure compiler using configuration file: "+confSrc, e);
+            }
         }
     }
 
