@@ -91,6 +91,7 @@ import java.util.StringTokenizer;
  * <li>stubdir</li>
  * <li>keepStubs</li>
  * <li>forceLookupUnnamedFiles</li>
+ * <li>configscript</li>
  * </ul>
  * And these nested tasks:
  * <ul>
@@ -148,6 +149,7 @@ public class Groovyc extends MatchingTask {
     private boolean forceLookupUnnamedFiles;
     private boolean useIndy;
     private String scriptBaseClass;
+    private String configscript;
 
     private Set<String> scriptExtensions = new LinkedHashSet<String>();
 
@@ -654,6 +656,24 @@ public class Groovyc extends MatchingTask {
     }
 
     /**
+     * Get the configuration file used to customize the compilation configuration.
+     *
+     * @return a path to a configuration script
+     */
+    public String getConfigscript() {
+        return configscript;
+    }
+
+    /**
+     * Set the configuration file used to customize the compilation configuration.
+     *
+     * @param configscript a path to a configuration script
+     */
+    public void setConfigscript(final String configscript) {
+        this.configscript = configscript;
+    }
+
+    /**
      * Set the stub directory into which the Java source stub
      * files should be generated. The directory need not exist
      * and will not be deleted automatically - though its contents
@@ -971,11 +991,15 @@ public class Groovyc extends MatchingTask {
             commandLineList.add("-e");
         }
         if (useIndy) {
-            commandLineList.add("-indy");
+            commandLineList.add("--indy");
         }
         if (scriptBaseClass != null) {
             commandLineList.add("-b");
             commandLineList.add(scriptBaseClass);
+        }
+        if (configscript != null) {
+            commandLineList.add("--configscript");
+            commandLineList.add(configscript);
         }
     }
 
