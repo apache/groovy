@@ -64,7 +64,8 @@ public class AstBrowser {
         this.classLoader = new GeneratedBytecodeAwareGroovyClassLoader(classLoader)
     }
 
-    def swing, frame
+    SwingBuilder swing
+    def frame
 
     public static void main(args) {
 
@@ -137,6 +138,9 @@ public class AstBrowser {
                 phasePicker = comboBox(items: CompilePhaseAdapter.values(),
                         selectedItem: prefs.selectedPhase,
                         actionPerformed: {
+                            // reset text to the default as the phase change removes the focus from the class node
+                            bytecodeView.textEditor.text = '// Please select a class node in the tree view.'
+
                             decompile(phasePicker.selectedItem.phaseId, script())
                             compile(jTree, script(), phasePicker.selectedItem.phaseId)
                         },
@@ -176,6 +180,8 @@ public class AstBrowser {
             }
         }
 
+        bytecodeView.textEditor.text = '// Please select a class node in the tree view.'
+
         propertyTable.model.rows.clear() //for some reason this suppress an empty row
 
         jTree.cellRenderer.setLeafIcon(swing.imageIcon(groovy.ui.Console.NODE_ICON_PATH));
@@ -211,17 +217,22 @@ public class AstBrowser {
 
                 boolean classNode = node.properties.any { it[0]=='class' && it[1] in['class org.codehaus.groovy.ast.ClassNode', 'class org.codehaus.groovy.ast.InnerClassNode'] }
                 if (classNode) {
-                    def className = node.properties.find { it[0]=='name' }[1]
-                    def bytecode = classLoader.getBytecode(className)
-                    if (bytecode) {
-                        def writer = new StringWriter()
-                        def visitor = new TraceClassVisitor(new PrintWriter(writer));
-                        def reader = new ClassReader(bytecode)
-                        reader.accept(visitor, 0)
-                        bytecodeView.textEditor.text = writer.toString()
-                    } else {
-                        bytecodeView.textEditor.text = '// No bytecode available at this phase'
+                    bytecodeView.textEditor.text = '// Loading bytecode ...'
+
+                    swing.doOutside {
+                        def className = node.properties.find { it[0]=='name' }[1]
+                        def bytecode = classLoader.getBytecode(className)
+                        if (bytecode) {
+                            def writer = new StringWriter()
+                            def visitor = new TraceClassVisitor(new PrintWriter(writer));
+                            def reader = new ClassReader(bytecode)
+                            reader.accept(visitor, 0)
+                            swing.doLater { bytecodeView.textEditor.text = writer.toString() }
+                        } else {
+                            swing.doLater { bytecodeView.textEditor.text = '// No bytecode available at this phase' }
+                        }
                     }
+
                 } else {
                     bytecodeView.textEditor.text = ''
                 }
