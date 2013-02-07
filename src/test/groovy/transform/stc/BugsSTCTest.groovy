@@ -311,4 +311,26 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
         new Enclosing()
         '''
     }
+
+    // GROOVY-5959
+    void testSwitchCaseShouldNotRemoveBreakStatements() {
+        assertScript '''
+        int test(Map<String, String> token) {
+          switch(token.type) {
+            case 'case one':
+              1
+              break
+            case 'case two':
+              2
+              break
+            default:
+              3
+              break
+          }
+        }
+        assert test([type:'case one']) == 1
+        assert test([type:'case two']) == 2
+        assert test([type:'default']) == 3
+        '''
+    }
 }
