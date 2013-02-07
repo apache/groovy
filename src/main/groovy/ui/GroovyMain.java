@@ -23,7 +23,7 @@ import groovy.lang.MissingMethodException;
 import groovy.lang.Script;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
-import org.apache.commons.cli.GroovyPosixParser;
+import org.apache.commons.cli.GroovyInternalPosixParser;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.OptionBuilder;
 import org.apache.commons.cli.Options;
@@ -156,7 +156,7 @@ public class GroovyMain {
      * @throws ParseException if there was a problem.
      */
     private static CommandLine parseCommandLine(Options options, String[] args) throws ParseException {
-        CommandLineParser parser = new GroovyPosixParser();
+        CommandLineParser parser = new GroovyInternalPosixParser();
         return parser.parse(options, args, true);
     }
 

@@ -17,6 +17,7 @@
 package groovy.util
 
 import org.apache.commons.cli.*
+import org.codehaus.groovy.cli.GroovyPosixParser
 import org.codehaus.groovy.runtime.InvokerHelper
 
 /**

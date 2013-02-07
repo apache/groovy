@@ -208,8 +208,16 @@ public class ReturnAdder {
                 int idx = list.size() - 1;
                 Statement last = (Statement) list.get(idx);
                 if(last instanceof BreakStatement) {
-                    list.remove(idx);
-                    return addReturnsIfNeeded(statement, scope);
+                    if (doAdd) {
+                        list.remove(idx);
+                        return addReturnsIfNeeded(statement, scope);
+                    } else {
+                        BlockStatement newStmt = new BlockStatement();
+                        for (int i=0;i<idx; i++) {
+                            newStmt.addStatement((Statement) list.get(i));
+                        }
+                        return addReturnsIfNeeded(newStmt, scope);
+                    }
                 } else if(defaultCase) {
                     return addReturnsIfNeeded(statement, scope);
                 }

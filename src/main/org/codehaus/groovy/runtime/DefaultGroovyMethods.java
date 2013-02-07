@@ -2298,8 +2298,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #sum(java.util.Collection, groovy.lang.Closure)
      * @since 1.8.1
      */
+    @Deprecated
     public static <T> List<T> collectMany(Collection self, Closure<Collection<? extends T>> projection) {
-        return (List<T>) collectMany(self, new ArrayList<T>(), projection);
+        return collectMany((Iterable)self, projection);
     }
 
     /**
@@ -2322,7 +2323,60 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the collector with the projected collections concatenated (flattened) to it
      * @since 1.8.5
      */
+    @Deprecated
     public static <T> Collection<T> collectMany(Collection self, Collection<T> collector, Closure<Collection<? extends T>> projection) {
+        return collectMany((Iterable)self, collector, projection);
+    }
+
+    /**
+     * Projects each item from a source Iterable to a collection and concatenates (flattens) the resulting collections into a single list.
+     * <p/>
+     * <pre class="groovyTestCase">
+     * def nums = 1..10
+     * def squaresAndCubesOfEvens = nums.collectMany{ it % 2 ? [] : [it**2, it**3] }
+     * assert squaresAndCubesOfEvens == [4, 8, 16, 64, 36, 216, 64, 512, 100, 1000]
+     *
+     * def animals = ['CAT', 'DOG', 'ELEPHANT'] as Set
+     * def smallAnimals = animals.collectMany{ it.size() > 3 ? [] : [it.toLowerCase()] }
+     * assert smallAnimals == ['cat', 'dog']
+     *
+     * def orig = nums as Set
+     * def origPlusIncrements = orig.collectMany{ [it, it+1] }
+     * assert origPlusIncrements.size() == orig.size() * 2
+     * assert origPlusIncrements.unique().size() == orig.size() + 1
+     * </pre>
+     *
+     * @param self       an Iterable
+     * @param projection a projecting Closure returning a collection of items
+     * @return a list created from the projected collections concatenated (flattened) together
+     * @see #sum(java.util.Collection, groovy.lang.Closure)
+     * @since 2.2.0
+     */
+    public static <T> List<T> collectMany(Iterable self, Closure<Collection<? extends T>> projection) {
+        return (List<T>) collectMany(self, new ArrayList<T>(), projection);
+    }
+
+    /**
+     * Projects each item from a source collection to a result collection and concatenates (flattens) the resulting
+     * collections adding them into the <code>collector</code>.
+     * <p/>
+     * <pre class="groovyTestCase">
+     * def animals = ['CAT', 'DOG', 'ELEPHANT'] as Set
+     * def smallAnimals = animals.collectMany(['ant', 'bee']){ it.size() > 3 ? [] : [it.toLowerCase()] }
+     * assert smallAnimals == ['ant', 'bee', 'cat', 'dog']
+     *
+     * def nums = 1..5
+     * def origPlusIncrements = nums.collectMany([] as Set){ [it, it+1] }
+     * assert origPlusIncrements.size() == nums.size() + 1
+     * </pre>
+     *
+     * @param self       an Iterable
+     * @param collector  an initial collection to add the projected items to
+     * @param projection a projecting Closure returning a collection of items
+     * @return the collector with the projected collections concatenated (flattened) into it
+     * @since 2.2.0
+     */
+    public static <T> Collection<T> collectMany(Iterable self, Collection<T> collector, Closure<Collection<? extends T>> projection) {
         for (Object next : self) {
             collector.addAll(projection.call(next));
         }
@@ -2405,13 +2459,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #sum(Iterator, groovy.lang.Closure)
      * @since 1.8.1
      */
-    public static <T> List<T> collectMany(Iterator<Object> self, Closure<Collection<? extends T>> projection) {
+    public static <T> List<T> collectMany(Iterator<?> self, Closure<Collection<? extends T>> projection) {
         return collectMany(toList(self), projection);
     }
 
     /**
      * Iterates through this Map transforming each map entry into a new value using the <code>transform</code> closure
-     * returning the <code>collector</code> with all transformed vakues added to it.
+     * returning the <code>collector</code> with all transformed values added to it.
      * <pre class="groovyTestCase">assert [a:1, b:2].collect( [] as HashSet ) { key, value -> key*value } == ["a", "bb"] as Set
      * assert [3:20, 2:30].collect( [] as HashSet ) { entry -> entry.key * entry.value } == [60] as Set</pre>
      *

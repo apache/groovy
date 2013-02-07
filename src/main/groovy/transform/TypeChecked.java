@@ -37,7 +37,7 @@ public @interface TypeChecked {
      * as type checking extensions.
      * @return an array of paths to groovy scripts that must be on compile classpath
      */
-    String[] extensions();
+    String[] extensions() default {};
 
     /**
      * This annotation is added by @TypeChecked on methods which have type checking turned on.
