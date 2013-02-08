@@ -20,6 +20,8 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.classgen.GeneratorContext;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.SourceUnit;
+import org.codehaus.groovy.control.io.FileReaderSource;
+import org.codehaus.groovy.control.io.ReaderSource;
 
 /**
  * <p>A base class for customizers which only have to be applied on specific source units.
@@ -48,6 +50,11 @@ public class SourceAwareCustomizer extends DelegatingCustomizer {
     @Override
     public void call(final SourceUnit source, final GeneratorContext context, final ClassNode classNode) throws CompilationFailedException {
         String fileName = source.getName();
+        ReaderSource reader = source.getSource();
+        if (reader instanceof FileReaderSource) {
+            FileReaderSource file = (FileReaderSource) reader;
+            fileName = file.getFile().getName();
+        }
         if (acceptSource(source) && accept(fileName)) {
             delegate.call(source, context, classNode);
         }
