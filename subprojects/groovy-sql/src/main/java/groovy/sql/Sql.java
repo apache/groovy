@@ -2090,7 +2090,6 @@ public class Sql {
         return rows(sql, params, offset, maxRows, metaClosure);
     }
 
-
     /**
      * Performs the given SQL query and return the first row of the result set.
      * <p/>
@@ -2107,9 +2106,16 @@ public class Sql {
      * @throws SQLException if a database access error occurs
      */
     public GroovyRowResult firstRow(String sql) throws SQLException {
-        List<GroovyRowResult> rows = rows(sql);
+        List<GroovyRowResult> rows = null;
+        try {
+            rows = rows(sql, 1, 1, null);
+        }
+        //should be SQLFeatureNotSupportedException instead once we move to Java 1.6
+        catch (SQLException featureNotSupportedException) {
+            rows = rows(sql);
+        }
         if (rows.isEmpty()) return null;
-        return (rows.get(0));
+        return rows.get(0);
     }
 
     /**
@@ -2172,7 +2178,14 @@ public class Sql {
      * @throws SQLException if a database access error occurs
      */
     public GroovyRowResult firstRow(String sql, List<Object> params) throws SQLException {
-        List<GroovyRowResult> rows = rows(sql, params);
+        List<GroovyRowResult> rows = null;
+        try {
+            rows = rows(sql, params, 1, 1, null);
+        }
+        //should be SQLFeatureNotSupportedException instead once we move to Java 1.6
+        catch (SQLException featureNotSupportedException) {
+            rows = rows(sql, params);
+        }
         if (rows.isEmpty()) return null;
         return rows.get(0);
     }
