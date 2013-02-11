@@ -18,6 +18,8 @@ package groovy.inspect.swingui
 
 import groovy.text.GStringTemplateEngine
 import groovy.text.Template
+import org.codehaus.groovy.classgen.asm.BytecodeHelper
+
 import java.util.concurrent.atomic.AtomicBoolean
 import org.codehaus.groovy.GroovyBugError
 import org.codehaus.groovy.classgen.BytecodeExpression
@@ -119,6 +121,20 @@ class ScriptToTreeNodeAdapter {
 
     def make(node) {
         nodeMaker.makeNodeWithProperties(getStringForm(node), getPropertyTable(node))
+    }
+
+    def make(MethodNode node) {
+        def table = getPropertyTable(node)
+        extendMethodNodePropertyTable(table, node)
+
+        nodeMaker.makeNodeWithProperties(getStringForm(node), table)
+    }
+
+    /**
+     * Extends the method node property table by adding custom properties.
+     */
+    void extendMethodNodePropertyTable(List<List<String>> table, MethodNode node) {
+        table << ['descriptor', BytecodeHelper.getMethodDescriptor(node), 'String']
     }
 
     /**

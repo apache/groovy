@@ -64,6 +64,16 @@ public class BytecodeHelper implements Opcodes {
         buffer.append(getTypeDescription(returnType));
         return buffer.toString();
     }
+
+    /**
+     * Returns a method descriptor for the given {@link org.codehaus.groovy.ast.MethodNode}.
+     *
+     * @param methodNode the method node for which to create the descriptor
+     * @return a method descriptor as defined in section JVMS section 4.3.3
+     */
+    public static String getMethodDescriptor(MethodNode methodNode) {
+        return getMethodDescriptor(methodNode.getReturnType(), methodNode.getParameters());
+    }
     
     /**
      * @return the ASM method type descriptor
