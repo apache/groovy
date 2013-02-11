@@ -702,5 +702,26 @@ import groovy.transform.TypeCheckingMode
             assert obj.bar() == 123
         '''
     }
+
+    void testArrayGetOnObject() {
+        shouldFailWithMessages '''
+            def foo(Object o) {
+                o[0]
+            }
+        ''', 'Cannot find matching method java.lang.Object#getAt(int)'
+    }
+
+    void testStaticCompileWithPattern() {
+        shouldFailWithMessages '''
+            def fieldMatcher = '[x=1] [a=b] [foo=bar]' =~ ~"\\\\[([^=\\\\[]+)=([^\\\\]]+)\\\\]"
+            assert fieldMatcher instanceof java.util.regex.Matcher
+            @ASTTest(phase=INSTRUCTION_SELECTION, value = {
+                assert node.getNodeMetaData(INFERRED_TYPE) == OBJECT_TYPE
+            })
+            def value = fieldMatcher[0]
+            // should not pass
+            def str = value[0]
+        ''', 'Cannot find matching method java.lang.Object#getAt(int)'
+    }
 }
 

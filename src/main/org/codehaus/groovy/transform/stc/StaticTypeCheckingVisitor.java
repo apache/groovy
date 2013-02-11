@@ -2325,11 +2325,16 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         } else if (isBoolIntrinsicOp(op)) {
             return boolean_TYPE;
         } else if (isArrayOp(op)) {
-            if (ClassHelper.STRING_TYPE.equals(left)) {
-                // special case here
-                return ClassHelper.STRING_TYPE;
-            }
-            return inferComponentType(left, right);
+            // using getPNR() to ignore generics at this point
+            // and a different binary expression not to pollute the AST
+            BinaryExpression newExpr = new BinaryExpression(
+                    expr.getLeftExpression(),
+                    expr.getOperation(),
+                    expr.getRightExpression()
+            );
+            newExpr.setSourcePosition(expr);
+            MethodNode method = findMethodOrFail(newExpr, left.getPlainNodeReference(), "getAt", right.getPlainNodeReference());
+            return method!=null?inferComponentType(left, right):null;
         } else if (op == FIND_REGEX) {
             // this case always succeeds the result is a Matcher
             return Matcher_TYPE;
