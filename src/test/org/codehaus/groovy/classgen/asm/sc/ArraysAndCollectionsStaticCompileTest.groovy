@@ -64,5 +64,22 @@ class ArraysAndCollectionsStaticCompileTest extends ArraysAndCollectionsSTCTest 
             assert m.abcd == 1234
         '''
     }
+
+    // GROOVY-5988
+    void testMapArraySetPropertyAssignment() {
+        assertScript '''
+            Map<String, String> props(Object p) {
+                Map<String, Object> props = [:]
+
+                for(String property in p.properties.keySet()){
+                    props[property] = 'TEST'
+                    // I need to use calling put directy to make it work
+                    // props.put property, 'TEST'
+                }
+                props
+            }
+            assert props('SOME RANDOM STRING') == [class: 'TEST', bytes: 'TEST', empty: 'TEST']
+        '''
+    }
 }
 

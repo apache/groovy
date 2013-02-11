@@ -2737,7 +2737,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             if (variable instanceof Parameter) {
                 Parameter parameter = (Parameter) variable;
                 ClassNode type = controlStructureVariables.get(parameter);
-                if (type != null) return type;
+                if (type != null) {
+                    storeType((VariableExpression)exp, type);
+                    return type;
+                }
             }
         } else if (exp instanceof PropertyExpression) {
             PropertyExpression pexp = (PropertyExpression) exp;
