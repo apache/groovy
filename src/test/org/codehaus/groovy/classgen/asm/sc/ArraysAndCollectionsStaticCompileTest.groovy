@@ -78,7 +78,9 @@ class ArraysAndCollectionsStaticCompileTest extends ArraysAndCollectionsSTCTest 
                 }
                 props
             }
-            assert props('SOME RANDOM STRING') == [class: 'TEST', bytes: 'TEST', empty: 'TEST']
+            def map = props('SOME RANDOM STRING')
+            assert map['class'] == 'TEST'
+            assert map['bytes'] == 'TEST'
         '''
     }
 }
