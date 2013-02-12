@@ -1,6 +1,43 @@
 package groovy.lang
 
 class SyntheticReturnTest extends GroovyShellTestCase{
+
+    // GROOVY-5980
+    void testImplicitReturnWithFinallyBlockAndCastException() {
+        assertEquals( 'test', evaluate("""
+              s = ''
+              int f() {
+                 try { null } finally { s += 'test' }
+              }
+              try { f() } catch (ex) {}
+              s
+        """))
+    }
+
+    void testImplicitReturnWithFinallyBlockMultipleStmtsAndCastException() {
+        assertEquals( 'test', evaluate("""
+              i = 0
+              s = ''
+              int f() {
+                 try { def t = 41 + 1; i = t; null } finally { assert i == 42; s += 'test' }
+              }
+              try { f() } catch (ex) {}
+              s
+        """))
+    }
+
+    void testImplicitReturnWithFinallyBlockAndTypeCast() {
+        assertEquals( '42', evaluate("""
+              s = ''
+              String f() {
+                 try { 42 } finally { s += 'test' }
+              }
+              def result = f()
+              assert s == 'test'
+              result
+        """))
+    }
+
     void testExpt () {
         assertEquals( 5, evaluate("""
               5
