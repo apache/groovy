@@ -467,5 +467,21 @@ public class ScriptToTreeNodeAdapterTest extends GroovyTestCase {
                 )
         }
     }
+
+    public void testScriptWithAdapterThatAddsDescriptorToMethodNodeProperties() {
+        ScriptToTreeNodeAdapter adapter = createAdapter(true, false)
+        TreeNode root = adapter.compile('''
+            class Test {
+                void test() {}
+            }
+
+        ''', Phases.SEMANTIC_ANALYSIS) as TreeNode
+
+        def classNodeTest = root.children().find { it.toString() == 'ClassNode - Test' }
+        def methods = classNodeTest.children().find { it.toString() == 'Methods' }
+        def methodNodeTest = methods.children().find { it.toString() == 'MethodNode - test' }
+
+        assert methodNodeTest.properties.any { name, value, type -> name == 'descriptor' && value == '()V' && type == 'String' }
+    }
     
 }
