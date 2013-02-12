@@ -17,6 +17,7 @@
 package groovy.inspect.swingui
 
 import groovy.swing.SwingBuilder
+
 import java.awt.Cursor
 import java.awt.Font
 import java.awt.event.KeyEvent
@@ -32,6 +33,9 @@ import javax.swing.tree.DefaultTreeModel
 import javax.swing.tree.TreeNode
 import javax.swing.tree.TreeSelectionModel
 import org.codehaus.groovy.control.Phases
+
+import java.util.regex.Pattern
+
 import static java.awt.GridBagConstraints.*
 import org.codehaus.groovy.ast.ClassNode
 import groovy.lang.GroovyClassLoader.ClassCollector
@@ -215,19 +219,38 @@ public class AstBrowser {
                     }
                 }
 
-                boolean classNode = node.properties.any { it[0]=='class' && it[1] in['class org.codehaus.groovy.ast.ClassNode', 'class org.codehaus.groovy.ast.InnerClassNode'] }
-                if (classNode) {
+                if (node.classNode || node.methodNode) {
                     bytecodeView.textEditor.text = '// Loading bytecode ...'
+                    boolean showOnlyMethodCode = node.methodNode
 
                     swing.doOutside {
-                        def className = node.properties.find { it[0]=='name' }[1]
+                        def className = showOnlyMethodCode ? node.getPropertyValue('declaringClass') : node.getPropertyValue('name')
                         def bytecode = classLoader.getBytecode(className)
                         if (bytecode) {
                             def writer = new StringWriter()
                             def visitor = new TraceClassVisitor(new PrintWriter(writer));
                             def reader = new ClassReader(bytecode)
                             reader.accept(visitor, 0)
-                            swing.doLater { bytecodeView.textEditor.text = writer.toString() }
+
+                            def source = writer.toString()
+                            swing.doLater {
+                                bytecodeView.textEditor.text = source
+
+                                if (showOnlyMethodCode)  {
+                                    def methodName = node.getPropertyValue('name')
+                                    def methodDescriptor = node.getPropertyValue('descriptor')
+
+                                    if (methodName && methodDescriptor)  {
+                                        def pattern = Pattern.compile("^.*\\n.*${Pattern.quote(methodName + methodDescriptor)}[\\s\\S]*?\\n[}|\\n]", Pattern.MULTILINE)
+                                        def matcher = pattern.matcher(source)
+                                        if (matcher.find())  {
+                                            bytecodeView.textEditor.text = source.substring(matcher.start(0), matcher.end(0))
+                                        }
+                                    }
+                                }
+
+                                bytecodeView.textEditor.caretPosition = 0
+                            }
                         } else {
                             swing.doLater { bytecodeView.textEditor.text = '// No bytecode available at this phase' }
                         }
@@ -465,6 +488,19 @@ class TreeNodeWithProperties extends DefaultMutableTreeNode {
     def TreeNodeWithProperties(userObject, List<List<String>> properties) {
         super(userObject)
         this.properties = properties
+    }
+
+    String getPropertyValue(String name)  {
+        def match = properties.find { n, v, t -> name == n }
+        return match != null ? match[1] : null
+    }
+
+    boolean isClassNode() {
+        getPropertyValue('class') in ['class org.codehaus.groovy.ast.ClassNode', 'class org.codehaus.groovy.ast.InnerClassNode']
+    }
+
+    boolean isMethodNode() {
+        getPropertyValue('class') in ['class org.codehaus.groovy.ast.MethodNode', 'class org.codehaus.groovy.ast.ConstructorNode']
     }
 }
 
