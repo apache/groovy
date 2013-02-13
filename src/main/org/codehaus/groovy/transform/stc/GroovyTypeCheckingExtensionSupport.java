@@ -107,7 +107,7 @@ public class GroovyTypeCheckingExtensionSupport extends TypeCheckingExtension {
         ic.addStaticStars("org.codehaus.groovy.ast.ClassHelper");
         ic.addStaticStars("org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport");
         config.addCompilationCustomizers(ic);
-        final GroovyClassLoader transformLoader = compilationUnit.getTransformLoader();
+        final GroovyClassLoader transformLoader = compilationUnit!=null?compilationUnit.getTransformLoader():typeCheckingVisitor.getSourceUnit().getClassLoader();
 
         ClassLoader cl = typeCheckingVisitor.getSourceUnit().getClassLoader();
         // cast to prevent incorrect @since 1.7 warning

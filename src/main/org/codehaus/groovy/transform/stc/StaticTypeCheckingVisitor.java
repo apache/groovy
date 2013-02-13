@@ -2557,7 +2557,16 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     protected MethodNode findMethodOrFail(
             Expression expr,
             ClassNode receiver, String name, ClassNode... args) {
-        final List<MethodNode> methods = findMethod(receiver, name, args);
+        List<MethodNode> methods = findMethod(receiver, name, args);
+        if (methods.isEmpty() && (expr instanceof BinaryExpression)) {
+            BinaryExpression be = (BinaryExpression) expr;
+            MethodCallExpression call = new MethodCallExpression(
+                    be.getLeftExpression(),
+                    name,
+                    be.getRightExpression()
+            );
+            methods = extension.handleMissingMethod(receiver, name, new ArgumentListExpression(be.getLeftExpression()), args, call);
+        }
         if (methods.isEmpty()) {
             addNoMatchingMethodError(receiver, name, args, expr);
         } else {
