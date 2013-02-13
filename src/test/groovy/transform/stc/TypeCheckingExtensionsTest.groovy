@@ -319,6 +319,42 @@ class TypeCheckingExtensionsTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    void testBinaryOperatorNotFound() {
+        extension = null
+        shouldFailWithMessages '''
+            int x = 1
+            Date y = new Date()
+            x+y
+        ''', 'Cannot find matching method int#plus(java.util.Date)'
+
+        extension = 'groovy/transform/stc/BinaryOperatorTestExtension.groovy'
+        assertScript '''
+            try {
+                int x = 1
+                Date y = new Date()
+                x+y
+            } catch (e) {}
+        '''
+    }
+
+    void testBinaryOperatorNotFound2() {
+        extension = null
+        shouldFailWithMessages '''
+            int x = 1
+            Date y = new Date()
+            x << y
+        ''', 'Cannot find matching method int#leftShift(java.util.Date)'
+
+        extension = 'groovy/transform/stc/BinaryOperatorTestExtension.groovy'
+        assertScript '''
+            try {
+                int x = 1
+                Date y = new Date()
+                x+y
+            } catch (e) {}
+        '''
+    }
+
     void testDelegatesTo() {
         extension = null
         shouldFailWithMessages '''
