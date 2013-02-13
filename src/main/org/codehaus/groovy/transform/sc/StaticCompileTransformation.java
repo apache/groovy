@@ -56,6 +56,7 @@ public class StaticCompileTransformation extends StaticTypesTransformation {
             addTypeCheckingExtensions(visitor, extensions);
             classNode.putNodeMetaData(WriterControllerFactory.class, factory);
             node.putNodeMetaData(STATIC_COMPILE_NODE, !visitor.isSkipMode(node));
+            visitor.initialize();
             visitor.visitClass(classNode);
         } else if (node instanceof MethodNode) {
             MethodNode methodNode = (MethodNode) node;
@@ -67,6 +68,7 @@ public class StaticCompileTransformation extends StaticTypesTransformation {
                 declaringClass.putNodeMetaData(WriterControllerFactory.class, factory);
             }
             visitor.setMethodsToBeVisited(Collections.singleton(methodNode));
+            visitor.initialize();
             visitor.visitMethod(methodNode);
         } else {
             source.addError(new SyntaxException(STATIC_ERROR_PREFIX + "Unimplemented node type",
