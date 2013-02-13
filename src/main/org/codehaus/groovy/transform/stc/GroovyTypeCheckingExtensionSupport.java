@@ -16,16 +16,14 @@
 
 package org.codehaus.groovy.transform.stc;
 
-import groovy.lang.Closure;
-import groovy.lang.GroovyClassLoader;
-import groovy.lang.GroovyShell;
-import groovy.lang.Script;
+import groovy.lang.*;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.stmt.EmptyStatement;
 import org.codehaus.groovy.classgen.asm.InvocationWriter;
 import org.codehaus.groovy.control.CompilationFailedException;
+import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.customizers.ImportCustomizer;
 import org.codehaus.groovy.control.messages.ExceptionMessage;
@@ -82,19 +80,22 @@ public class GroovyTypeCheckingExtensionSupport extends TypeCheckingExtension {
 
     // this boolean is used through setHandled(boolean)
     private boolean handled = false;
+    private final CompilationUnit compilationUnit;
 
     /**
      * Builds a type checking extension relying on a Groovy script (type checking DSL).
      *
      * @param typeCheckingVisitor the type checking visitor
      * @param scriptPath the path to the type checking script (in classpath)
+     * @param compilationUnit
      */
     public GroovyTypeCheckingExtensionSupport(
             final StaticTypeCheckingVisitor typeCheckingVisitor,
-            final String scriptPath) {
+            final String scriptPath, final CompilationUnit compilationUnit) {
         super(typeCheckingVisitor);
         this.scriptPath = scriptPath;
         this.context = typeCheckingVisitor.typeCheckingContext;
+        this.compilationUnit = compilationUnit;
     }
 
     @Override
@@ -106,25 +107,15 @@ public class GroovyTypeCheckingExtensionSupport extends TypeCheckingExtension {
         ic.addStaticStars("org.codehaus.groovy.ast.ClassHelper");
         ic.addStaticStars("org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport");
         config.addCompilationCustomizers(ic);
+        final GroovyClassLoader transformLoader = compilationUnit.getTransformLoader();
 
         ClassLoader cl = typeCheckingVisitor.getSourceUnit().getClassLoader();
-        List<String> classpath = new LinkedList<String>();
-        while (cl instanceof URLClassLoader) {
-            URLClassLoader gcl = (URLClassLoader) cl;
-            for (URL url : gcl.getURLs()) {
-                try {
-                    classpath.add(new File(url.toURI()).getCanonicalPath());
-                } catch (IOException e) {
-                    // forget url
-                } catch (URISyntaxException e) {
-                    // forget url
-                }
-            }
-            cl = cl.getParent();
+        // cast to prevent incorrect @since 1.7 warning
+        InputStream is = ((ClassLoader)transformLoader).getResourceAsStream(scriptPath);
+        if (is == null) {
+            // fallback to the source unit classloader
+            is = cl.getResourceAsStream(scriptPath);
         }
-        cl = typeCheckingVisitor.getSourceUnit().getClassLoader();
-        config.setClasspathList(classpath);
-        InputStream is = cl.getResourceAsStream(scriptPath);
         if (is == null) {
             // fallback to the compiler classloader
             cl = GroovyTypeCheckingExtensionSupport.class.getClassLoader();
@@ -137,7 +128,7 @@ public class GroovyTypeCheckingExtensionSupport extends TypeCheckingExtension {
                             config.getDebug(), typeCheckingVisitor.getSourceUnit()));
         }
         try {
-            GroovyShell shell = new GroovyShell(config);
+            GroovyShell shell = new GroovyShell(transformLoader, new Binding(), config);
             TypeCheckingDSL parse = (TypeCheckingDSL) shell.parse(
                     new InputStreamReader(is, typeCheckingVisitor.getSourceUnit().getConfiguration().getSourceEncoding())
             );
