@@ -15,6 +15,7 @@
  */
 package org.codehaus.groovy.transform;
 
+import groovy.transform.CompilationUnitAware;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
@@ -23,6 +24,7 @@ import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.ListExpression;
+import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.syntax.SyntaxException;
@@ -40,9 +42,10 @@ import java.util.Map;
  * @author Guillaume Laforge
  */
 @GroovyASTTransformation(phase = CompilePhase.INSTRUCTION_SELECTION)
-public class StaticTypesTransformation implements ASTTransformation {
+public class StaticTypesTransformation implements ASTTransformation, CompilationUnitAware {
 
     public static final String STATIC_ERROR_PREFIX = "[Static type checking] - ";
+    private CompilationUnit compilationUnit;
 
     //    @Override
     public void visit(ASTNode[] nodes, SourceUnit source) {
@@ -77,7 +80,8 @@ public class StaticTypesTransformation implements ASTTransformation {
         if (extensions instanceof ConstantExpression) {
             visitor.addTypeCheckingExtension(new GroovyTypeCheckingExtensionSupport(
                     visitor,
-                    extensions.getText()
+                    extensions.getText(),
+                    compilationUnit
             ));
         } else if (extensions instanceof ListExpression) {
             ListExpression list = (ListExpression) extensions;
@@ -100,4 +104,7 @@ public class StaticTypesTransformation implements ASTTransformation {
         return new StaticTypeCheckingVisitor(unit, node);
     }
 
+    public void setCompilationUnit(final CompilationUnit unit) {
+        this.compilationUnit = unit;
+    }
 }
