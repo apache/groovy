@@ -17,6 +17,7 @@
 package org.codehaus.groovy.transform.stc;
 
 import groovy.lang.Closure;
+import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyShell;
 import groovy.lang.Script;
 import org.codehaus.groovy.GroovyBugError;
@@ -34,6 +35,9 @@ import org.codehaus.groovy.runtime.InvokerInvocationException;
 import org.objectweb.asm.Opcodes;
 
 import java.io.*;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.*;
 import java.util.concurrent.Callable;
 
@@ -102,9 +106,24 @@ public class GroovyTypeCheckingExtensionSupport extends TypeCheckingExtension {
         ic.addStaticStars("org.codehaus.groovy.ast.ClassHelper");
         ic.addStaticStars("org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport");
         config.addCompilationCustomizers(ic);
-        GroovyShell shell = new GroovyShell(config);
 
         ClassLoader cl = typeCheckingVisitor.getSourceUnit().getClassLoader();
+        List<String> classpath = new LinkedList<String>();
+        while (cl instanceof URLClassLoader) {
+            URLClassLoader gcl = (URLClassLoader) cl;
+            for (URL url : gcl.getURLs()) {
+                try {
+                    classpath.add(new File(url.toURI()).getCanonicalPath());
+                } catch (IOException e) {
+                    // forget url
+                } catch (URISyntaxException e) {
+                    // forget url
+                }
+            }
+            cl = cl.getParent();
+        }
+        cl = typeCheckingVisitor.getSourceUnit().getClassLoader();
+        config.setClasspathList(classpath);
         InputStream is = cl.getResourceAsStream(scriptPath);
         if (is == null) {
             // fallback to the compiler classloader
@@ -118,6 +137,7 @@ public class GroovyTypeCheckingExtensionSupport extends TypeCheckingExtension {
                             config.getDebug(), typeCheckingVisitor.getSourceUnit()));
         }
         try {
+            GroovyShell shell = new GroovyShell(config);
             TypeCheckingDSL parse = (TypeCheckingDSL) shell.parse(
                     new InputStreamReader(is, typeCheckingVisitor.getSourceUnit().getConfiguration().getSourceEncoding())
             );
