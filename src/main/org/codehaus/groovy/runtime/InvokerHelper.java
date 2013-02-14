@@ -417,14 +417,12 @@ public class InvokerHelper {
             };
         } else {
             try {
-                final GroovyObject object = (GroovyObject) scriptClass
-                        .newInstance();
+                final GroovyObject object = (GroovyObject) scriptClass.newInstance();
                 if (object instanceof Script) {
                     script = (Script) object;
                 } else {
-                    // it could just be a class, so lets wrap it in a Script
-                    // wrapper
-                    // though the bindings will be ignored
+                    // it could just be a class, so let's wrap it in a Script
+                    // wrapper; though the bindings will be ignored
                     script = new Script() {
                         public Object run() {
                             Object args = getBinding().getVariables().get("args");
@@ -436,7 +434,14 @@ public class InvokerHelper {
                             return null;
                         }
                     };
-                    setProperties(object, context.getVariables());
+                    Map variables = context.getVariables();
+                    MetaClass mc = getMetaClass(object);
+                    for (Object o : variables.entrySet()) {
+                        Map.Entry entry = (Map.Entry) o;
+                        String key = entry.getKey().toString();
+                        // assume underscore variables are for the wrapper script
+                        setPropertySafe(key.startsWith("_") ? script : object, mc, key, entry.getValue());
+                    }
                 }
             } catch (Exception e) {
                 throw new GroovyRuntimeException(
@@ -456,13 +461,20 @@ public class InvokerHelper {
         for (Object o : map.entrySet()) {
             Map.Entry entry = (Map.Entry) o;
             String key = entry.getKey().toString();
-
             Object value = entry.getValue();
-            try {
-                mc.setProperty(object, key, value);
-            } catch (MissingPropertyException mpe) {
-                // Ignore
-            }
+            setPropertySafe(object, mc, key, value);
+        }
+    }
+
+    private static void setPropertySafe(Object object, MetaClass mc, String key, Object value) {
+        try {
+            mc.setProperty(object, key, value);
+        } catch (MissingPropertyException mpe) {
+            // Ignore
+        } catch (InvokerInvocationException iie) {
+            // GROOVY-5802 IAE for missing properties with classes that extend List
+            Throwable cause = iie.getCause();
+            if (cause == null || !(cause instanceof IllegalArgumentException)) throw iie;
         }
     }
 
