@@ -322,6 +322,15 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         return;
                     }
                 }
+                // check if setter exists and in assignment
+                if (isLHSOfEnclosingAssignment(vexp)) {
+                    MethodNode mn = node.getSetterMethod("set"+MetaClassHelper.capitalize(vexp.getName()));
+                    if (mn!=null) {
+                        storeType(vexp, mn.getParameters()[0].getOriginType());
+                        putSetterInfo(vexp, new SetterInfo(node, mn));
+                        return;
+                    }
+                }
             }
 
             if (!extension.handleUnresolvedVariableExpression(vexp)) {
@@ -336,9 +345,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (!existsProperty(pexp, true)) {
             // if the property doesn't exist, we can do a last check, which is verifying if a setter exists
             // and that the expression is the left hand side of an assignment
-            BinaryExpression enclosingBinaryExpression = typeCheckingContext.getEnclosingBinaryExpression();
-            if (enclosingBinaryExpression != null && enclosingBinaryExpression.getLeftExpression() == pexp && isAssignment(enclosingBinaryExpression.getOperation().getType())) {
-                if (hasSetter(pexp)) return;
+            if (isLHSOfEnclosingAssignment(pexp)) {
+                SetterInfo info = hasSetter(pexp);
+                if (info!=null) {
+                    BinaryExpression enclosingBinaryExpression = typeCheckingContext.getEnclosingBinaryExpression();
+                    putSetterInfo(enclosingBinaryExpression.getLeftExpression(), info);
+                    return;
+                }
             }
 
             if (!extension.handleUnresolvedProperty(pexp)) {
@@ -347,6 +360,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         " for class: " + findCurrentInstanceOfClass(objectExpression, getType(objectExpression)).toString(false), pexp);
             }
         }
+    }
+
+    private boolean isLHSOfEnclosingAssignment(final Expression expression) {
+        final BinaryExpression ec = typeCheckingContext.getEnclosingBinaryExpression();
+        return ec != null && ec.getLeftExpression() == expression && isAssignment(ec.getOperation().getType());
     }
 
     @Override
@@ -376,16 +394,32 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         BinaryExpression enclosingBinaryExpression = typeCheckingContext.getEnclosingBinaryExpression();
         typeCheckingContext.pushEnclosingBinaryExpression(expression);
         try {
-            super.visitBinaryExpression(expression);
             final Expression leftExpression = expression.getLeftExpression();
-            ClassNode lType = getType(leftExpression);
             final Expression rightExpression = expression.getRightExpression();
+            int op = expression.getOperation().getType();
+            leftExpression.visit(this);
+            SetterInfo setterInfo = removeSetterInfo(leftExpression);
+            if (setterInfo!=null && rightExpression instanceof ClosureExpression) {
+                // for expressions like foo = { ... }
+                // we know that the RHS type is a closure
+                // but we must check if the binary expression is an assignment
+                // because we need to check if a setter uses @DelegatesTo
+                VariableExpression ve = new VariableExpression("%", setterInfo.receiverType);
+                MethodCallExpression call = new MethodCallExpression(
+                        ve,
+                        setterInfo.setter.getName(),
+                        rightExpression
+                );
+                visitMethodCallExpression(call);
+            } else {
+                rightExpression.visit(this);
+            }
+            ClassNode lType = getType(leftExpression);
             ClassNode rType = getType(rightExpression);
             if (isNullConstant(rightExpression)) {
                 if (!isPrimitiveType(lType))
                     rType = UNKNOWN_PARAMETER_TYPE; // primitive types should be ignored as they will result in another failure
             }
-            int op = expression.getOperation().getType();
             BinaryExpression reversedBinaryExpression = new BinaryExpression(rightExpression, expression.getOperation(), leftExpression);
             ClassNode resultType = op==KEYWORD_IN
                     ?getResultType(rType,op,lType,reversedBinaryExpression)
@@ -1010,7 +1044,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
     }
 
-    protected boolean hasSetter(final PropertyExpression pexp) {
+    protected SetterInfo hasSetter(final PropertyExpression pexp) {
         Expression objectExpression = pexp.getObjectExpression();
         ClassNode clazz = getType(objectExpression);
         List<ClassNode> tests = new LinkedList<ClassNode>();
@@ -1028,7 +1062,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             tests.add(typeCheckingContext.lastImplicitItType);
         }
         String propertyName = pexp.getPropertyAsString();
-        if (propertyName == null) return false;
+        if (propertyName == null) return null;
         String capName = MetaClassHelper.capitalize(propertyName);
         boolean isAttributeExpression = pexp instanceof AttributeExpression;
         if (clazz.isInterface()) tests.add(OBJECT_TYPE);
@@ -1045,14 +1079,14 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 MethodNode setterMethod = current.getSetterMethod("set" + capName, false);
                 if (setterMethod != null) {
                     storeType(pexp, setterMethod.getParameters()[0].getType());
-                    return true;
+                    return new SetterInfo(current, setterMethod);
                 }
                 if (!isAttributeExpression && current.getSuperClass() != null) {
                     queue.add(current.getSuperClass());
                 }
             }
         }
-        return false;
+        return null;
     }
 
     @Override
@@ -1752,7 +1786,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                             if (strategy!=null) {
                                 stInt = (Integer) evaluateExpression(new CastExpression(ClassHelper.Integer_TYPE,strategy));
                             }
-                            if (value instanceof ClassExpression) {
+                            if (value instanceof ClassExpression && !value.getType().equals(DELEGATES_TO_TARGET)) {
                                 // temporarily store the delegation strategy and the delegate type
                                 expression.putNodeMetaData(StaticTypesMarker.DELEGATION_METADATA, new DelegationMetadata(value.getType(), stInt, typeCheckingContext.delegationMetadata));
                             } else {
@@ -3401,6 +3435,19 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         return sb.toString();
     }
 
+    private void putSetterInfo(Expression exp, SetterInfo info) {
+        exp.putNodeMetaData(SetterInfo.class, info);
+    }
+
+    private SetterInfo removeSetterInfo(Expression exp) {
+        Object nodeMetaData = exp.getNodeMetaData(SetterInfo.class);
+        if (nodeMetaData!=null) {
+            exp.removeNodeMetaData(SetterInfo.class);
+            return (SetterInfo) nodeMetaData;
+        }
+        return null;
+    }
+
     @Override
     protected void addError(final String msg, final ASTNode expr) {
         Long err = ((long) expr.getLineNumber()) << 16 + expr.getColumnNumber();
@@ -3574,6 +3621,18 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 case 1:  return new SignatureCodecVersion1();
                 default: return null;
             }
+        }
+    }
+
+    // class only used to store setter information when an expression of type
+    // a.x = foo or x=foo is found and that it corresponds to a setter call
+    private static class SetterInfo {
+        final ClassNode receiverType;
+        final MethodNode setter;
+
+        private SetterInfo(final ClassNode receiverType, final MethodNode setter) {
+            this.receiverType = receiverType;
+            this.setter = setter;
         }
     }
 

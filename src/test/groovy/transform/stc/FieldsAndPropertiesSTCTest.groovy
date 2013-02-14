@@ -450,6 +450,53 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    void testSetterInWith() {
+        assertScript '''
+            class Builder {
+                private int y
+                void setFoo(int x) { y = x}
+                int value() { y }
+            }
+            def b = new Builder()
+            b.with {
+                setFoo(5)
+            }
+            assert b.value() == 5
+        '''
+    }
+
+    void testSetterInWithUsingPropertyNotation() {
+        assertScript '''
+            class Builder {
+                private int y
+                void setFoo(int x) { y = x}
+                int value() { y }
+            }
+            def b = new Builder()
+            b.with {
+                foo = 5
+            }
+            assert b.value() == 5
+        '''
+    }
+
+    void testSetterInWithUsingPropertyNotationAndClosureSharedVariable() {
+        assertScript '''
+            class Builder {
+                private int y
+                void setFoo(int x) { y = x}
+                int value() { y }
+            }
+            def b = new Builder()
+            def csv = 0
+            b.with {
+                foo = 5
+                csv = 10
+            }
+            assert b.value() == 5
+            assert csv == 10
+        '''
+    }
 
     public static interface InterfaceWithField {
         String boo = "I don't fancy fields in interfaces"

@@ -300,4 +300,98 @@ class DelegatesToSTCTest extends StaticTypeCheckingTestCase {
         ''', 'Not enough arguments found for a @DelegatesTo method call', 'Cannot find matching method'
     }
 
+    void testDelegatesToWithSetter() {
+        assertScript '''
+            class Item {
+                int x
+            }
+
+            class Builder {
+                private Item item = new Item()
+                void setConstraints(@DelegatesTo(Item) Closure cl) {
+                    def copy = cl.rehydrate(item, this, this)
+                    copy()
+                }
+                int value() { item.x }
+            }
+
+            def b = new Builder()
+            b.setConstraints {
+                x = 5
+            }
+            assert b.value() == 5
+        '''
+    }
+
+    void testDelegatesToWithSetterUsedAsProperty() {
+        assertScript '''
+            class Item {
+                int x
+            }
+
+            class Builder {
+                private Item item = new Item()
+                void setConstraints(@DelegatesTo(Item) Closure cl) {
+                    def copy = cl.rehydrate(item, this, this)
+                    copy()
+                }
+                int value() { item.x }
+            }
+
+            def b = new Builder()
+            b.constraints = {
+                x = 5
+            }
+            assert b.value() == 5
+        '''
+    }
+
+    void testDelegatesToWithSetterUsedAsPropertyAndErrorInPropertyName() {
+        shouldFailWithMessages '''
+            class Item {
+                int x
+            }
+
+            class Builder {
+                private Item item = new Item()
+                void setConstraints(@DelegatesTo(Item) Closure cl) {
+                    def copy = cl.rehydrate(item, this, this)
+                    copy()
+                }
+                int value() { item.x }
+            }
+
+            def b = new Builder()
+            b.constraints = {
+                y = 5
+            }
+            assert b.value() == 5
+        ''', '[Static type checking] - The variable [y] is undeclared.'
+    }
+
+    void testDelegatesToWithSetterUsedAsPropertyAndWith() {
+        assertScript '''
+            class Item {
+                int x
+            }
+
+            class Builder {
+                private Item item = new Item()
+                void setConstraints(@DelegatesTo(Item) Closure cl) {
+                    def copy = cl.rehydrate(item, this, this)
+                    copy()
+                }
+                int value() { item.x }
+            }
+
+            def b = new Builder()
+            b.with {
+                constraints = {
+                    x = 5
+                }
+            }
+            assert b.value() == 5
+        '''
+    }
+
 }
