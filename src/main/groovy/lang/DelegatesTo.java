@@ -43,7 +43,7 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.PARAMETER})
 public @interface DelegatesTo {
-    Class value();
+    Class value() default Target.class;
     int strategy() default Closure.OWNER_FIRST;
 
     String target() default "";
