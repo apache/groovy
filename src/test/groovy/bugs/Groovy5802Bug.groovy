@@ -42,5 +42,6 @@ class Groovy5802Bug extends GroovyTestCase {
         InvokerHelper.createScript(MyList5802, new Binding('x': []))
     }
 
-    class MyList5802 extends ArrayList {}
 }
+
+class MyList5802 extends ArrayList {}
