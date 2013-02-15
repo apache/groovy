@@ -280,6 +280,13 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
         }
     }
 
+    private void processAnnotationRefs(GroovyRootDoc rootDoc, GroovyAnnotationRef[] annotations) {
+        for (GroovyAnnotationRef annotation : annotations) {
+            SimpleGroovyAnnotationRef ref = (SimpleGroovyAnnotationRef) annotation;
+            ref.setType(resolveClass(rootDoc, ref.name()));
+        }
+    }
+
     void resolve(GroovyRootDoc rootDoc) {
         this.savedRootDoc = rootDoc;
         Map visibleClasses = rootDoc.getVisibleClasses(importedClassesAndPackages);
@@ -297,7 +304,9 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
                     GroovyClassDoc doc = resolveClass(rootDoc, paramTypeName);
                     if (doc != null) param.setType(doc);
                 }
+                processAnnotationRefs(rootDoc, param.annotations());
             }
+            processAnnotationRefs(rootDoc, constructor.annotations());
         }
 
         for (GroovyFieldDoc field : fields) {
@@ -310,6 +319,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
                 GroovyClassDoc doc = resolveClass(rootDoc, typeName);
                 if (doc != null) mutableField.setType(doc);
             }
+            processAnnotationRefs(rootDoc, field.annotations());
         }
 
         // resolve method return types and parameter types
@@ -335,7 +345,9 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
                     GroovyClassDoc doc = resolveClass(rootDoc, paramTypeName);
                     if (doc != null) param.setType(doc);
                 }
+                processAnnotationRefs(rootDoc, param.annotations());
             }
+            processAnnotationRefs(rootDoc, method.annotations());
         }
 
         // resolve property types
@@ -350,6 +362,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
                     }
                 }
             }
+            processAnnotationRefs(rootDoc, property.annotations());
         }
 
         if (superClassName != null && superClass == null) {
@@ -360,10 +373,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
             interfaceClasses.add(resolveClass(rootDoc, name));
         }
 
-        for (GroovyAnnotationRef annotation : annotations()) {
-            SimpleGroovyAnnotationRef ref = (SimpleGroovyAnnotationRef) annotation;
-            ref.setType(resolveClass(rootDoc, ref.name()));
-        }
+        processAnnotationRefs(rootDoc, annotations());
     }
 
     public String getDocUrl(String type) {
