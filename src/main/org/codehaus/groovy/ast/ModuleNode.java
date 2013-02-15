@@ -244,14 +244,17 @@ public class ModuleNode extends ASTNode implements Opcodes {
         scriptDummy = classNode;
         return classNode;
     }
-    
+
     private void setScriptBaseClassFromConfig(ClassNode cn) {
+        String baseClassName = null;
         if (unit != null) {
-            String baseClassName = unit.getConfig().getScriptBaseClass();
-            if(baseClassName != null) {
-                if(!cn.getSuperClass().getName().equals(baseClassName)) {
-                    cn.setSuperClass(ClassHelper.make(baseClassName));
-                }
+            baseClassName = unit.getConfig().getScriptBaseClass();
+        } else if (context != null) {
+            baseClassName = context.getConfiguration().getScriptBaseClass();
+        }
+        if (baseClassName != null) {
+            if (!cn.getSuperClass().getName().equals(baseClassName)) {
+                cn.setSuperClass(ClassHelper.make(baseClassName));
             }
         }
     }
