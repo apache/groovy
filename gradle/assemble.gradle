@@ -388,7 +388,8 @@ task installGroovy(type: Sync, dependsOn: distBin) {
 
 task dist(type: Zip, dependsOn: [distBin, distSrc, distDoc, syncDoc]) {
     description = 'Generates the binary, sources, documentation and full distributions'
-    into("groovy-sdk-$version")
+    appendix 'sdk'
+    into("groovy-$version")
     with distSpec
     with licenseSpec
     into('doc'){
