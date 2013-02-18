@@ -72,7 +72,7 @@ public class GroovyDocToolTest extends GroovyTestCase {
 
         ArrayList<LinkArgument> links = new ArrayList<LinkArgument>();
         LinkArgument link = new LinkArgument();
-        link.setHref("http://download.oracle.com/javase/7/docs/api");
+        link.setHref("http://docs.oracle.com/javase/7/docs/api/");
         link.setPackages("java.,org.xml.,javax.,org.xml.");
         links.add(link);
 
