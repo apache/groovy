@@ -265,6 +265,7 @@ public class MetaClassHelper {
         }
         // we do not add one for super classes, only for interfaces
         int superClassMax = getMaximumInterfaceDistance(c.getSuperclass(), interfaceClass);
+        if (superClassMax != -1) superClassMax++;
         return Math.max(max, superClassMax);
     }
 

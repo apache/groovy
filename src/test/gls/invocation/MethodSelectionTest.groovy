@@ -125,6 +125,59 @@ public class MethodSelectionTest extends CompilableTestSupport {
 
         assert ["super","sub"] == result
     """
+
+    // GROOVY-6001
+    assertScript """
+        class Mark {
+            static log = ""
+        }
+
+        interface PortletRequest {}
+        interface PortletResponse {}
+        interface HttpServletRequest {}
+        interface HttpServletResponse {}
+        class HttpServletRequestWrapper implements HttpServletRequest {}
+        class PortletRequestImpl extends HttpServletRequestWrapper implements PortletRequest {}
+        class ClientDataRequestImpl extends PortletRequestImpl {}
+        class ResourceRequestImpl extends ClientDataRequestImpl {}
+        class Application {}
+        interface HttpServletRequestListener {
+            void onRequestStart(HttpServletRequest request, HttpServletResponse response);
+            void onRequestEnd(HttpServletRequest request, HttpServletResponse response);    
+        }
+        interface PortletRequestListener {
+            void onRequestStart(PortletRequest request, PortletResponse response);
+            void onRequestEnd(PortletRequest request, PortletResponse response);    
+        }
+
+        class FooApplication extends Application implements HttpServletRequestListener, PortletRequestListener{
+            void onRequestStart(HttpServletRequest request, HttpServletResponse response) {
+                Mark.log += "FooApplication.onRequestStart(HttpServletRequest, HttpServletResponse)"
+            }
+            void onRequestEnd(HttpServletRequest request, HttpServletResponse response) {
+                Mark.log += "FooApplication.onRequestEnd(HttpServletRequest, HttpServletResponse)"
+            }
+            void onRequestStart(PortletRequest request, PortletResponse response) {
+                Mark.log += "FooApplication.onRequestStart(PortletRequest, PortletResponse)"
+            }
+            void onRequestEnd(PortletRequest request, PortletResponse response) {
+                Mark.log += "FooApplication.onRequestEnd(PortletRequest, PortletResponse)"
+            }
+        }
+
+        class BazApplication extends FooApplication {
+            void onRequestStart(PortletRequest request, PortletResponse response) {
+                Mark.log += 'BazApplication.onRequestStart(PortletRequest, PortletResponse)'
+                super.onRequestStart(request, response);
+            }
+        }
+
+        BazApplication application = new BazApplication()
+        Mark.log = ""
+        PortletRequest request = new ResourceRequestImpl()
+        application.onRequestStart(request, null)
+        assert Mark.log == "BazApplication.onRequestStart(PortletRequest, PortletResponse)FooApplication.onRequestStart(PortletRequest, PortletResponse)"
+    """
   }
   
   void testNullUsageForPrimtivesWithExplcitNull() {
