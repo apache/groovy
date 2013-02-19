@@ -49,7 +49,9 @@
         (t.isProtected()?"protected&nbsp;":"") +
         (t.isStatic()?"static&nbsp;":"")
     }
-    def annotations = { t, sepChar -> t.annotations() ? t.annotations()*.description().join(sepChar) + sepChar : '' }
+    def annotations = { t, sepChar ->
+        t.annotations() ? t.annotations().collect{it.isTypeAvailable()?'@'+linkable(it.type().name())+(it.description()-('@'+it.type().name())):it.description()}.join(sepChar) + sepChar : ''
+    }
     def elementTypes = [
         "required":"true",
         "optional":"false"
