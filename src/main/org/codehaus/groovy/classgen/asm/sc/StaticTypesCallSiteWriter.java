@@ -171,7 +171,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         }
 
         // GROOVY-5568, we would be facing a DGM call, but instead of foo.getText(), have foo.text
-        List<MethodNode> methods = findDGMMethodsByNameAndArguments(receiverType, getterName, ClassNode.EMPTY_ARRAY);
+        List<MethodNode> methods = findDGMMethodsByNameAndArguments(controller.getSourceUnit().getClassLoader(), receiverType, getterName, ClassNode.EMPTY_ARRAY);
         if (!methods.isEmpty()) {
             List<MethodNode> methodNodes = chooseBestMethod(receiverType, methods, ClassNode.EMPTY_ARRAY);
             if (methodNodes.size()==1) {
@@ -538,7 +538,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         boolean acceptAnyMethod =
                 MAP_TYPE.equals(rType) || rType.implementsInterface(MAP_TYPE)
                 || LIST_TYPE.equals(rType) || rType.implementsInterface(LIST_TYPE);
-        List<MethodNode> nodes = StaticTypeCheckingSupport.findDGMMethodsByNameAndArguments(rType, message, args);
+        List<MethodNode> nodes = StaticTypeCheckingSupport.findDGMMethodsByNameAndArguments(controller.getSourceUnit().getClassLoader(), rType, message, args);
         nodes = StaticTypeCheckingSupport.chooseBestMethod(rType, nodes, args);
         if (nodes.size()==1 || nodes.size()>1 && acceptAnyMethod) {
             MethodNode methodNode = nodes.get(0);
