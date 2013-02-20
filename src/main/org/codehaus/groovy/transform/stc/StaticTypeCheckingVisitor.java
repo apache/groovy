@@ -981,7 +981,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     }
                 }
                 // GROOVY-5568, the property may be defined by DGM
-                List<MethodNode> methods = findDGMMethodsByNameAndArguments(testClass, "get" + capName, ClassNode.EMPTY_ARRAY);
+                List<MethodNode> methods = findDGMMethodsByNameAndArguments(getSourceUnit().getClassLoader(), testClass, "get" + capName, ClassNode.EMPTY_ARRAY);
                 if (!methods.isEmpty()) {
                     List<MethodNode> methodNodes = chooseBestMethod(testClass, methods, ClassNode.EMPTY_ARRAY);
                     if (methodNodes.size() == 1) {
@@ -2820,7 +2820,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
         // perform a lookup in DGM methods
         methods.clear();
-        chosen = findDGMMethodsByNameAndArguments(receiver, name, args, methods);
+        chosen = findDGMMethodsByNameAndArguments(getSourceUnit().getClassLoader(), receiver, name, args, methods);
         if (!chosen.isEmpty()) {
             return chosen;
         }

@@ -127,7 +127,7 @@ public class BooleanExpressionTransformer {
                     controller.getOperandStack().replace(ClassHelper.boolean_TYPE);
                     return;
                 }
-                List<MethodNode> asBoolean = findDGMMethodsByNameAndArguments(type, "asBoolean", ClassNode.EMPTY_ARRAY);
+                List<MethodNode> asBoolean = findDGMMethodsByNameAndArguments(controller.getSourceUnit().getClassLoader(), type, "asBoolean", ClassNode.EMPTY_ARRAY);
                 if (asBoolean.size() == 1) {
                     MethodNode node = asBoolean.get(0);
                     if (node instanceof ExtensionMethodNode) {
