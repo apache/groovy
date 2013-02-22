@@ -45,9 +45,9 @@ public class SimpleGroovyRootDoc extends SimpleGroovyDoc implements GroovyRootDo
             int lastSlashIdx = key.lastIndexOf('/');
             if (lastSlashIdx > 0) {
                 String shortKey = key.substring(lastSlashIdx + 1);
-                String fullPathName = groovyClassDoc.getFullPathName();
+                String fullPathName = groovyClassDoc != null ? groovyClassDoc.getFullPathName() : null;
 
-                boolean hasPackage = fullPathName.lastIndexOf('/') > 0;
+                boolean hasPackage = (fullPathName != null && fullPathName.lastIndexOf('/') > 0);
                 if (hasPackage) fullPathName = fullPathName.substring(0, fullPathName.lastIndexOf('/'));
 
                 if (shortKey.equals(name) && (!hasPackage || key.startsWith(fullPathName))) {
