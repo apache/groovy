@@ -241,17 +241,16 @@ public class AnnotationVisitor {
     private ConstantExpression getConstantExpression(Expression exp, ClassNode attrType) {
         if (exp instanceof ConstantExpression) {
             return (ConstantExpression) exp;
-        } else {
-            String base = "expected '" + exp.getText() + "' to be an inline constant of type " + attrType.getName();
-            if (exp instanceof PropertyExpression) {
-                addError(base + " not a property expression", exp);
-            } else if (exp instanceof VariableExpression && ((VariableExpression)exp).getAccessedVariable() instanceof FieldNode) {
-                addError(base + " not a field expression", exp);
-            } else {
-                addError(base, exp);
-            }
-            return ConstantExpression.EMPTY_EXPRESSION;
         }
+        String base = "Expected '" + exp.getText() + "' to be an inline constant of type " + attrType.getName();
+        if (exp instanceof PropertyExpression) {
+            addError(base + " not a property expression", exp);
+        } else if (exp instanceof VariableExpression && ((VariableExpression)exp).getAccessedVariable() instanceof FieldNode) {
+            addError(base + " not a field expression", exp);
+        } else {
+            addError(base, exp);
+        }
+        return ConstantExpression.EMPTY_EXPRESSION;
     }
 
     /**
@@ -273,12 +272,16 @@ public class AnnotationVisitor {
     }
 
     protected void visitConstantExpression(String attrName, ConstantExpression constExpr, ClassNode attrType) {
-        ClassNode type = ClassHelper.getWrapper(constExpr.getType());
-        if (!type.isDerivedFrom(attrType)) {
-            addError("Attribute '" + attrName + "' should have type '" + attrType.getName() + "'; "
-                    + "but found type '" + constExpr.getType().getName() + "'",
-                    constExpr);
+        ClassNode constType = constExpr.getType();
+        ClassNode wrapperType = ClassHelper.getWrapper(constType);
+        if (!hasCompatibleType(attrType, wrapperType)) {
+            addError("Attribute '" + attrName + "' should have type '" + attrType.getName()
+                    + "'; but found type '" + constType.getName() + "'", constExpr);
         }
+    }
+
+    private boolean hasCompatibleType(ClassNode attrType, ClassNode wrapperType) {
+        return wrapperType.isDerivedFrom(ClassHelper.getWrapper(attrType));
     }
 
     protected void visitEnumExpression(String attrName, PropertyExpression propExpr, ClassNode attrType) {
