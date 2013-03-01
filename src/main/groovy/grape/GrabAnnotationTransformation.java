@@ -186,10 +186,12 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
 
             ClassNode grapeClassNode = ClassHelper.make(Grape.class);
 
-            Map<String, Object> grapeResolverMap = new HashMap<String, Object>();
+            List<Statement> grabResolverInitializers = new ArrayList<Statement>();
             if (!grabResolverAnnotations.isEmpty()) {
+
                 grabResolverAnnotationLoop:
                 for (AnnotationNode node : grabResolverAnnotations) {
+                    Map<String, Object> grabResolverMap = new HashMap<String, Object>();
                     Expression value = node.getMember("value");
                     ConstantExpression ce = null;
                     if (value != null && value instanceof ConstantExpression) {
@@ -207,8 +209,8 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
                                 continue grabResolverAnnotationLoop;
                             }
                         }
-                        grapeResolverMap.put("name", sval);
-                        grapeResolverMap.put("root", sval);
+                        grabResolverMap.put("name", sval);
+                        grabResolverMap.put("root", sval);
                     } else {
                         for (String s : GRABRESOLVER_REQUIRED) {
                             Expression member = node.getMember(s);
@@ -219,10 +221,11 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
                                 addError("Attribute \"" + s + "\" has value " + member.getText() + " but should be an inline constant in @" + node.getClassNode().getNameWithoutPackage() + " annotations", node);
                                 continue grabResolverAnnotationLoop;
                             }
-                            grapeResolverMap.put(s, ((ConstantExpression) member).getValue());
+                            grabResolverMap.put(s, ((ConstantExpression) member).getValue());
                         }
                     }
-                    Grape.addResolver(grapeResolverMap);
+                    Grape.addResolver(grabResolverMap);
+                    addGrabResolverAsStaticInitIfNeeded(classNode, grapeClassNode, node, grabResolverInitializers, grabResolverMap);
                 }
             }
 
@@ -293,9 +296,9 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
                     grabMaps.add(grabMap);
                     callGrabAsStaticInitIfNeeded(classNode, grapeClassNode, node, grabExcludeMaps);
                 }
-                for (AnnotationNode node : grabResolverAnnotations) {
-                    callGrabResolverAsStaticInitIfNeeded(classNode, grapeClassNode, node, grapeResolverMap);
-                }
+            }
+            if (!grabResolverInitializers.isEmpty()) {
+                classNode.addStaticInitializerStatements(grabResolverInitializers, true);
             }
         }
 
@@ -362,20 +365,17 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
         }
     }
 
-    private void callGrabResolverAsStaticInitIfNeeded(ClassNode classNode, ClassNode grapeClassNode, AnnotationNode node, Map<String, Object> grapeResolverMap) {
+    private void addGrabResolverAsStaticInitIfNeeded(ClassNode classNode, ClassNode grapeClassNode, AnnotationNode node,
+                                                      List<Statement> grabResolverInitializers, Map<String, Object> grabResolverMap) {
         if ((node.getMember("initClass") == null)
             || (node.getMember("initClass") == ConstantExpression.TRUE))
         {
-            List<Statement> grabInitializers = new ArrayList<Statement>();
             MapExpression resolverArgs = new MapExpression();
-            for (Map.Entry<String, Object> next : grapeResolverMap.entrySet()) {
+            for (Map.Entry<String, Object> next : grabResolverMap.entrySet()) {
                 resolverArgs.addMapEntryExpression(new ConstantExpression(next.getKey()), new ConstantExpression(next.getValue()));
             }
-            grabInitializers.add(new ExpressionStatement(
+            grabResolverInitializers.add(new ExpressionStatement(
                     new StaticMethodCallExpression(grapeClassNode, "addResolver", new ArgumentListExpression(resolverArgs))));
-
-            // insert at beginning so we have the classloader set up before the class is called
-            classNode.addStaticInitializerStatements(grabInitializers, true);
         }
     }
 
