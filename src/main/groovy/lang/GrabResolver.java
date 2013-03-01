@@ -55,4 +55,11 @@ public @interface GrabResolver {
     String name();
     String root();
     boolean m2Compatible() default true;
+
+    /**
+     * By default, when a {@code @GrabResolver} annotation is used, a {@code Grape.addResolver()} call is added
+     * to the static initializers of the class the annotatable node appears in.
+     * If you wish to disable this, add {@code initClass=false} to the annotation.
+     */
+    boolean initClass() default true;
 }
