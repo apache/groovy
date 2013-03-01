@@ -132,7 +132,7 @@ public @interface Grab {
     String value() default "";
 
     /**
-     * By default, when a {@code @Grab} annotation is used, the {@code grab()} call is added
+     * By default, when a {@code @Grab} annotation is used, a {@code Grape.grab()} call is added
      * to the static initializers of the class the annotatable node appears in.
      * If you wish to disable this, add {@code initClass=false} to the annotation.
      */

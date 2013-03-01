@@ -49,14 +49,7 @@ import org.codehaus.groovy.transform.ASTTransformation;
 import org.codehaus.groovy.transform.ASTTransformationVisitor;
 import org.codehaus.groovy.transform.GroovyASTTransformation;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -193,10 +186,10 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
 
             ClassNode grapeClassNode = ClassHelper.make(Grape.class);
 
+            Map<String, Object> grapeResolverMap = new HashMap<String, Object>();
             if (!grabResolverAnnotations.isEmpty()) {
                 grabResolverAnnotationLoop:
                 for (AnnotationNode node : grabResolverAnnotations) {
-                    Map<String, Object> grapeResolverMap = new HashMap<String, Object>();
                     Expression value = node.getMember("value");
                     ConstantExpression ce = null;
                     if (value != null && value instanceof ConstantExpression) {
@@ -300,6 +293,9 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
                     grabMaps.add(grabMap);
                     callGrabAsStaticInitIfNeeded(classNode, grapeClassNode, node, grabExcludeMaps);
                 }
+                for (AnnotationNode node : grabResolverAnnotations) {
+                    callGrabResolverAsStaticInitIfNeeded(classNode, grapeClassNode, node, grapeResolverMap);
+                }
             }
         }
 
@@ -360,6 +356,23 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
             }
             grabInitializers.add(new ExpressionStatement(
                     new StaticMethodCallExpression(grapeClassNode, "grab", grabArgs)));
+
+            // insert at beginning so we have the classloader set up before the class is called
+            classNode.addStaticInitializerStatements(grabInitializers, true);
+        }
+    }
+
+    private void callGrabResolverAsStaticInitIfNeeded(ClassNode classNode, ClassNode grapeClassNode, AnnotationNode node, Map<String, Object> grapeResolverMap) {
+        if ((node.getMember("initClass") == null)
+            || (node.getMember("initClass") == ConstantExpression.TRUE))
+        {
+            List<Statement> grabInitializers = new ArrayList<Statement>();
+            MapExpression resolverArgs = new MapExpression();
+            for (Map.Entry<String, Object> next : grapeResolverMap.entrySet()) {
+                resolverArgs.addMapEntryExpression(new ConstantExpression(next.getKey()), new ConstantExpression(next.getValue()));
+            }
+            grabInitializers.add(new ExpressionStatement(
+                    new StaticMethodCallExpression(grapeClassNode, "addResolver", new ArgumentListExpression(resolverArgs))));
 
             // insert at beginning so we have the classloader set up before the class is called
             classNode.addStaticInitializerStatements(grabInitializers, true);
