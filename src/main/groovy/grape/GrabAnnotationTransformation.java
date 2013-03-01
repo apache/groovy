@@ -225,7 +225,7 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
                         }
                     }
                     Grape.addResolver(grabResolverMap);
-                    addGrabResolverAsStaticInitIfNeeded(classNode, grapeClassNode, node, grabResolverInitializers, grabResolverMap);
+                    addGrabResolverAsStaticInitIfNeeded(grapeClassNode, node, grabResolverInitializers, grabResolverMap);
                 }
             }
 
@@ -365,7 +365,7 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
         }
     }
 
-    private void addGrabResolverAsStaticInitIfNeeded(ClassNode classNode, ClassNode grapeClassNode, AnnotationNode node,
+    private void addGrabResolverAsStaticInitIfNeeded(ClassNode grapeClassNode, AnnotationNode node,
                                                       List<Statement> grabResolverInitializers, Map<String, Object> grabResolverMap) {
         if ((node.getMember("initClass") == null)
             || (node.getMember("initClass") == ConstantExpression.TRUE))
