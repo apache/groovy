@@ -599,4 +599,38 @@ class AnnotationTest extends CompilableTestSupport {
             }
         """
     }
+
+    // GROOVY-6025
+    void testAnnotationDefinitionDefaultValues() {
+        assertScript '''
+            import java.lang.annotation.*
+
+            @Retention(RetentionPolicy.RUNTIME)
+            @Target([ElementType.TYPE, ElementType.METHOD])
+            public @interface Foo {
+                int i1() default 0
+                int i2() default (int)1
+                short s1() default 2
+                short s2() default (byte)3
+                short s3() default (Short)4
+                short s4() default (int)5
+                byte b() default 6
+                char c1() default 65
+                char c2() default 'B'
+                char c3() default 'C' as char
+                char c4() default (char)'D'
+                float f1() default 1.0
+                float f2() default 1.1f
+                float f3() default (float)1.2
+                float f4() default 1.3 as float
+                double d1() default 2.0
+                double d2() default 2.1d
+                double d3() default (double)2.2
+                double d4() default 2.3 as double
+            }
+            @Foo method() {}
+            assert getClass().getMethod('method').getAnnotation(Foo).toString()[5..-2].tokenize(', ').sort().join('|') ==
+                    'b=6|c1=A|c2=B|c3=C|c4=D|d1=2.0|d2=2.1|d3=2.2|d4=2.3|f1=1.0|f2=1.1|f3=1.2|f4=1.3|i1=0|i2=1|s1=2|s2=3|s3=4|s4=5'
+        '''
+    }
 }
