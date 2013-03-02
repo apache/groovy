@@ -187,8 +187,27 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
             ClassNode grapeClassNode = ClassHelper.make(Grape.class);
 
             List<Statement> grabResolverInitializers = new ArrayList<Statement>();
-            if (!grabResolverAnnotations.isEmpty()) {
 
+            if (!grapesAnnotations.isEmpty()) {
+                for (AnnotationNode node : grapesAnnotations) {
+                    Expression init = node.getMember("initClass");
+                    Expression value = node.getMember("value");
+                    if (value instanceof ListExpression) {
+                        for (Object o : ((ListExpression)value).getExpressions()) {
+                            if (o instanceof ConstantExpression) {
+                                extractGrab(init, (ConstantExpression) o);
+                            }
+                        }
+                    } else if (value instanceof ConstantExpression) {
+                        extractGrab(init, (ConstantExpression) value);
+                    }
+                    // don't worry if it's not a ListExpression, or AnnotationConstant, etc.
+                    // the rest of GroovyC will flag it as a syntax error later, so we don't
+                    // need to raise the error ourselves
+                }
+            }
+
+            if (!grabResolverAnnotations.isEmpty()) {
                 grabResolverAnnotationLoop:
                 for (AnnotationNode node : grabResolverAnnotations) {
                     Map<String, Object> grabResolverMap = new HashMap<String, Object>();
@@ -226,25 +245,6 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
                     }
                     Grape.addResolver(grabResolverMap);
                     addGrabResolverAsStaticInitIfNeeded(grapeClassNode, node, grabResolverInitializers, grabResolverMap);
-                }
-            }
-
-            if (!grapesAnnotations.isEmpty()) {
-                for (AnnotationNode node : grapesAnnotations) {
-                    Expression init = node.getMember("initClass");
-                    Expression value = node.getMember("value");
-                    if (value instanceof ListExpression) {
-                        for (Object o : ((ListExpression)value).getExpressions()) {
-                            if (o instanceof ConstantExpression) {
-                                extractGrab(init, (ConstantExpression) o);
-                            }
-                        }
-                    } else if (value instanceof ConstantExpression) {
-                        extractGrab(init, (ConstantExpression) value);
-                    }
-                    // don't worry if it's not a ListExpression, or AnnotationConstant, etc.
-                    // the rest of GroovyC will flag it as a syntax error later, so we don't
-                    // need to raise the error ourselves
                 }
             }
 
