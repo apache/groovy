@@ -13,13 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.codehaus.groovy.control;
 
-import org.codehaus.groovy.ast.*;
-import org.codehaus.groovy.ast.expr.*;
+import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
+import org.codehaus.groovy.ast.ClassHelper;
+import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.expr.CastExpression;
+import org.codehaus.groovy.ast.expr.ConstantExpression;
+import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.classgen.Verifier;
+
+import java.math.BigDecimal;
 
 /**
  * Visitor to resolve constants in annotation definitions.
@@ -85,13 +93,22 @@ public class AnnotationConstantsVisitor extends ClassCodeVisitorSupport {
         if (ClassHelper.Integer_TYPE.equals(valWrapperType)) {
             Integer i = (Integer) ce.getValue();
             if (ClassHelper.Character_TYPE.equals(returnWrapperType)) {
-                return configure(val, new ConstantExpression((char) i.intValue()));
+                return configure(val, new ConstantExpression((char) i.intValue(), true));
             }
             if (ClassHelper.Short_TYPE.equals(returnWrapperType)) {
-                return configure(val, new ConstantExpression(i.shortValue()));
+                return configure(val, new ConstantExpression(i.shortValue(), true));
             }
             if (ClassHelper.Byte_TYPE.equals(returnWrapperType)) {
-                return configure(val, new ConstantExpression(i.byteValue()));
+                return configure(val, new ConstantExpression(i.byteValue(), true));
+            }
+        }
+        if (ClassHelper.BigDecimal_TYPE.equals(valWrapperType)) {
+            BigDecimal bd = (BigDecimal) ce.getValue();
+            if (ClassHelper.Float_TYPE.equals(returnWrapperType)) {
+                return configure(val, new ConstantExpression(bd.floatValue(), true));
+            }
+            if (ClassHelper.Double_TYPE.equals(returnWrapperType)) {
+                return configure(val, new ConstantExpression(bd.doubleValue(), true));
             }
         }
         return null;
