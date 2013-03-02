@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package org.codehaus.groovy.classgen;
 
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
+import org.codehaus.groovy.control.AnnotationConstantsVisitor;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.ErrorCollector;
 import org.codehaus.groovy.control.SourceUnit;
@@ -44,6 +45,8 @@ public class ExtendedVerifier implements GroovyClassVisitor {
     }
 
     public void visitClass(ClassNode node) {
+        AnnotationConstantsVisitor acv = new AnnotationConstantsVisitor();
+        acv.visitClass(node, this.source);
         this.currentClass = node;
         if (node.isAnnotationDefinition()) {
             visitAnnotations(node, AnnotationNode.ANNOTATION_TARGET);
