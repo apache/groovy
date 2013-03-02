@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -338,7 +338,7 @@ public class JavaStubGenerator {
                     && valueExpr.getType().equals(fieldNode.getType())) {
                 // GROOVY-5150 : Initialize value with a dummy constant so that Java cross compiles correctly
                 if (ClassHelper.STRING_TYPE.equals(valueExpr.getType())) {
-                    out.print("\"" + escapeSpecialChars(valueExpr.getText()) + "\"");
+                    out.print(formatString(valueExpr.getText()));
                 } else if (ClassHelper.char_TYPE.equals(valueExpr.getType())) {
                     out.print("'"+valueExpr.getText()+"'");
                 } else {
@@ -357,6 +357,10 @@ public class JavaStubGenerator {
             }
         }
         out.println(";");
+    }
+
+    private String formatString(String s) {
+        return "\"" + escapeSpecialChars(s) + "\"";
     }
 
     private ConstructorCallExpression getConstructorCallExpression(ConstructorNode constructorNode) {
@@ -518,12 +522,64 @@ public class JavaStubGenerator {
         }
 
         if ((methodNode.getModifiers() & Opcodes.ACC_ABSTRACT) != 0) {
+            if (clazz.isAnnotationDefinition() && methodNode.hasAnnotationDefault()) {
+                Statement fs = methodNode.getFirstStatement();
+                if (fs instanceof ExpressionStatement) {
+                    ExpressionStatement es = (ExpressionStatement) fs;
+                    Expression re = es.getExpression();
+                    out.print(" default ");
+                    ClassNode rt = methodNode.getReturnType();
+                    boolean classReturn = ClassHelper.CLASS_Type.equals(rt) || (rt.isArray() && ClassHelper.CLASS_Type.equals(rt.getComponentType()));
+                    if (re instanceof ListExpression) {
+                        out.print("{ ");
+                        ListExpression le = (ListExpression) re;
+                        boolean first = true;
+                        for (Expression expression : le.getExpressions()) {
+                            if (first) first = false;
+                            else out.print(", ");
+                            printValue(out, expression, classReturn);
+                        }
+                        out.print(" }");
+                    } else {
+                        printValue(out, re, classReturn);
+                    }
+                }
+            }
             out.println(";");
         } else {
             out.print(" { ");
             ClassNode retType = methodNode.getReturnType();
             printReturn(out, retType);
             out.println("}");
+        }
+    }
+
+    private void printValue(PrintWriter out, Expression re, boolean assumeClass) {
+        if (assumeClass) {
+            String className = re.getText();
+            out.print(className);
+            if (!className.endsWith(".class")) {
+                out.print(".class");
+            }
+        } else {
+            if (re instanceof ConstantExpression) {
+                ConstantExpression ce = (ConstantExpression) re;
+                Object value = ce.getValue();
+                // TODO handle other primitive types (short, byte, char - supported?)
+                if (ClassHelper.STRING_TYPE.equals(ce.getType())) {
+                    out.print(formatString((String)value));
+                } else if (ClassHelper.long_TYPE.equals(ce.getType())) {
+                    out.print("" + value + "L");
+                } else if (ClassHelper.float_TYPE.equals(ce.getType())) {
+                    out.print("" + value + "f");
+                } else if (ClassHelper.double_TYPE.equals(ce.getType())) {
+                    out.print("" + value + "d");
+                } else {
+                    out.print(re.getText());
+                }
+            } else {
+                out.print(re.getText());
+            }
         }
     }
 
