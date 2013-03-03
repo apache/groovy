@@ -359,6 +359,10 @@ public class JavaStubGenerator {
         out.println(";");
     }
 
+    private String formatChar(String ch) {
+        return "'" + escapeSpecialChars("" + ch.charAt(0)) + "'";
+    }
+
     private String formatString(String s) {
         return "\"" + escapeSpecialChars(s) + "\"";
     }
@@ -565,9 +569,10 @@ public class JavaStubGenerator {
             if (re instanceof ConstantExpression) {
                 ConstantExpression ce = (ConstantExpression) re;
                 Object value = ce.getValue();
-                // TODO handle other primitive types (short, byte, char - supported?)
                 if (ClassHelper.STRING_TYPE.equals(ce.getType())) {
                     out.print(formatString((String)value));
+                } else if (ClassHelper.char_TYPE.equals(ce.getType()) || ClassHelper.Character_TYPE.equals(ce.getType())) {
+                    out.print(formatChar(value.toString()));
                 } else if (ClassHelper.long_TYPE.equals(ce.getType())) {
                     out.print("" + value + "L");
                 } else if (ClassHelper.float_TYPE.equals(ce.getType())) {

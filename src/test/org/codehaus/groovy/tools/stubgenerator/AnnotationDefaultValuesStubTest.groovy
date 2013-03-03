@@ -31,10 +31,15 @@ class AnnotationDefaultValuesStubTest extends StringSourcesStubTestCase {
                 @interface Tx {
                     String value() default 'def'
                     int i() default 3
-                    boolean b() default false
+                    boolean bool() default false
                     float f() default 3.0f
                     double d() default 3.0d
                     long l() default 3l
+                    byte me() default 3
+                    short s() default 3
+                    char c1() default 65
+                    char c2() default 'A' as char
+                    char c3() default (char)'A'
                     Class clazz() default String
                     Color color() default Color.RED
                     String[] values() default ['def']
@@ -63,10 +68,15 @@ class AnnotationDefaultValuesStubTest extends StringSourcesStubTestCase {
         def stubSource = stubJavaSourceFor('Tx')
         assert stubSource.contains('java.lang.String value() default "def";')
         assert stubSource.contains('int i() default 3;')
-        assert stubSource.contains('boolean b() default false;')
+        assert stubSource.contains('boolean bool() default false;')
         assert stubSource.contains('float f() default 3.0f;')
         assert stubSource.contains('double d() default 3.0d;')
         assert stubSource.contains('long l() default 3L;')
+        assert stubSource.contains('byte me() default 3;')
+        assert stubSource.contains('short s() default 3;')
+        assert stubSource.contains("char c1() default 'A';")
+        assert stubSource.contains("char c2() default 'A';")
+        assert stubSource.contains("char c3() default 'A';")
         assert stubSource.contains('java.lang.Class clazz() default String.class;')
         assert stubSource.contains('Color color() default Color.RED;')
         assert stubSource.contains('String[] values() default { "def" };')
