@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,27 +17,22 @@
 package org.codehaus.groovy.tools.javac;
 
 import groovy.lang.GroovyClassLoader;
-
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.io.File;
-import java.io.FileNotFoundException;
-
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ModuleNode;
 import org.codehaus.groovy.classgen.GeneratorContext;
 import org.codehaus.groovy.classgen.VariableScopeVisitor;
-import org.codehaus.groovy.control.CompilationFailedException;
-import org.codehaus.groovy.control.CompilationUnit;
-import org.codehaus.groovy.control.CompilerConfiguration;
-import org.codehaus.groovy.control.Phases;
-import org.codehaus.groovy.control.SourceUnit;
+import org.codehaus.groovy.control.*;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
 /**
- * Created by IntelliJ IDEA.
- * User: Alex.Tkachman
- * Date: May 31, 2007 Time: 6:48:28 PM
+ * Compilation Unit capable of compiling Java source files.
+ *
+ * @author Alex.Tkachman
  */
 public class JavaAwareCompilationUnit extends CompilationUnit {
     private List<String> javaSources;
@@ -47,21 +42,21 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
     private boolean keepStubs;
 
     public JavaAwareCompilationUnit(CompilerConfiguration configuration) {
-        this(configuration,null,null);
+        this(configuration, null, null);
     }
 
     public JavaAwareCompilationUnit(CompilerConfiguration configuration, GroovyClassLoader groovyClassLoader) {
-        this(configuration,groovyClassLoader,null);
+        this(configuration, groovyClassLoader, null);
     }
 
     public JavaAwareCompilationUnit(CompilerConfiguration configuration, GroovyClassLoader groovyClassLoader,
                                     GroovyClassLoader transformClassLoader) {
-        super(configuration,null,groovyClassLoader,transformClassLoader);
+        super(configuration, null, groovyClassLoader, transformClassLoader);
         javaSources = new LinkedList<String>();
         Map options = configuration.getJointCompilationOptions();
         generationGoal = (File) options.get("stubDir");
         boolean useJava5 = configuration.getTargetBytecode().equals(CompilerConfiguration.POST_JDK5);
-        stubGenerator = new JavaStubGenerator(generationGoal,false,useJava5);
+        stubGenerator = new JavaStubGenerator(generationGoal, false, useJava5);
         keepStubs = Boolean.TRUE.equals(options.get("keepStubs"));
 
         addPhaseOperation(new PrimaryClassNodeOperation() {
@@ -69,10 +64,10 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
                 if (javaSources.size() != 0) {
                     VariableScopeVisitor scopeVisitor = new VariableScopeVisitor(source);
                     scopeVisitor.visitClass(node);
-                    new JavaAwareResolveVisitor(JavaAwareCompilationUnit.this).startResolving(node,source);
+                    new JavaAwareResolveVisitor(JavaAwareCompilationUnit.this).startResolving(node, source);
                 }
             }
-        },Phases.CONVERSION);
+        }, Phases.CONVERSION);
 
         addPhaseOperation(new PrimaryClassNodeOperation() {
             public void call(SourceUnit source, GeneratorContext context, ClassNode classNode) throws CompilationFailedException {
@@ -82,7 +77,7 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
                     source.addException(fnfe);
                 }
             }
-        },Phases.CONVERSION);
+        }, Phases.CONVERSION);
     }
 
     public void gotoPhase(int phase) throws CompilationFailedException {
@@ -104,8 +99,7 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
 
     public void configure(CompilerConfiguration configuration) {
         super.configure(configuration);
-        // GroovyClassLoader should be able to find classes compiled from java
-        // sources
+        // GroovyClassLoader should be able to find classes compiled from java sources
         File targetDir = configuration.getTargetDirectory();
         if (targetDir != null) {
             final String classOutput = targetDir.getAbsolutePath();
