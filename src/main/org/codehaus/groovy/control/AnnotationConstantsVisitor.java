@@ -23,6 +23,7 @@ import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.expr.CastExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.classgen.Verifier;
@@ -53,8 +54,13 @@ public class AnnotationConstantsVisitor extends ClassCodeVisitorSupport {
 
     private void visitStatement(Statement statement, ClassNode returnType) {
         if (statement instanceof ReturnStatement) {
+            // normal path
             ReturnStatement rs = (ReturnStatement) statement;
             rs.setExpression(transformConstantExpression(rs.getExpression(), returnType));
+        } else if (statement instanceof ExpressionStatement) {
+            // path for JavaStubGenerator
+            ExpressionStatement es = (ExpressionStatement) statement;
+            es.setExpression(transformConstantExpression(es.getExpression(), returnType));
         }
     }
 
@@ -85,11 +91,11 @@ public class AnnotationConstantsVisitor extends ClassCodeVisitorSupport {
     }
 
     private Expression revertType(Expression val, ClassNode returnWrapperType) {
-        ClassNode valWrapperType = ClassHelper.getWrapper(val.getType());
         ConstantExpression ce = (ConstantExpression) val;
         if (ClassHelper.Character_TYPE.equals(returnWrapperType) && ClassHelper.STRING_TYPE.equals(val.getType())) {
             return configure(val, Verifier.transformToPrimitiveConstantIfPossible((ConstantExpression) val));
         }
+        ClassNode valWrapperType = ClassHelper.getWrapper(val.getType());
         if (ClassHelper.Integer_TYPE.equals(valWrapperType)) {
             Integer i = (Integer) ce.getValue();
             if (ClassHelper.Character_TYPE.equals(returnWrapperType)) {

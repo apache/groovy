@@ -65,6 +65,8 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
                     VariableScopeVisitor scopeVisitor = new VariableScopeVisitor(source);
                     scopeVisitor.visitClass(node);
                     new JavaAwareResolveVisitor(JavaAwareCompilationUnit.this).startResolving(node, source);
+                    AnnotationConstantsVisitor acv = new AnnotationConstantsVisitor();
+                    acv.visitClass(node, source);
                 }
             }
         }, Phases.CONVERSION);
