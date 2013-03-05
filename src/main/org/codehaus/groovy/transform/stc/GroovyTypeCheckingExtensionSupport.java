@@ -268,7 +268,7 @@ public class GroovyTypeCheckingExtensionSupport extends TypeCheckingExtension {
     private Object safeCall(Closure closure, Object... args) {
         try {
             return closure.call(args);
-        } catch (InvokerInvocationException err) {
+        } catch (Exception err) {
             typeCheckingVisitor.getSourceUnit().addException(err);
             return null;
         }
