@@ -129,6 +129,24 @@ public class TypeCheckingExtension {
     }
 
     /**
+     * This method is called by the type checker before throwing an "ambiguous method" error, giving the chance
+     * to the extension to select the method properly. This means that when this method is called, the "nodes"
+     * parameter contains at least two methods. If the returned list still contains at least two methods, then the
+     * type checker will throw an ambiguous method call error. If the returned method contains 1 element, then
+     * the type checker will not throw any error.
+     *
+     * It is invalid to return an empty list.
+     *
+     * @param nodes the list of ambiguous methods
+     * @param origin the expression which originated the method selection process
+     * @return a single element list of disambiguated selection, or more elements if still ambiguous. It is not allowed
+     * to return an empty list.
+     */
+    public List<MethodNode> handleAmbiguousMethods(final List<MethodNode> nodes, final Expression origin) {
+        return nodes;
+    }
+
+    /**
      * Allows the extension to perform additional tasks before the type checker actually visits a method node.
      * Compared to a custom visitor, this method ensures that the node being visited is a node which would have
      * been visited by the type checker. This is in particular important for nodes which are marked with

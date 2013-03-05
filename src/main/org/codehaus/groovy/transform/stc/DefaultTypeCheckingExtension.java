@@ -20,6 +20,7 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.expr.*;
 
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -78,6 +79,16 @@ public class DefaultTypeCheckingExtension extends TypeCheckingExtension {
             if (handler.handleIncompatibleAssignment(lhsType, rhsType, assignmentExpression)) return true;
         }
         return false;
+    }
+
+    @Override
+    public List<MethodNode> handleAmbiguousMethods(final List<MethodNode> nodes, final Expression origin) {
+        List<MethodNode> result = nodes;
+        Iterator<TypeCheckingExtension> it = handlers.iterator();
+        while (result.size()>1 && it.hasNext()) {
+            result = it.next().handleAmbiguousMethods(result, origin);
+        }
+        return result;
     }
 
     public List<MethodNode> handleMissingMethod(final ClassNode receiver, final String name, final ArgumentListExpression argumentList, final ClassNode[] argumentTypes, final MethodCall call) {

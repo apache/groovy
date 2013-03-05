@@ -1689,6 +1689,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             if (mn.isEmpty()) {
                 addNoMatchingMethodError(receiver, name, args, call);
             } else {
+                mn = disambiguateMethods(mn, call);
                 if (mn.size() == 1) {
                     MethodNode directMethodCallCandidate = mn.get(0);
                     // visit the method to obtain inferred return type
@@ -2060,6 +2061,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     if (areCategoryMethodCalls(mn, name, args)) {
                         addCategoryMethodCallError(call);
                     }
+                    mn = disambiguateMethods(mn, call);
                     if (mn.size() == 1) {
                         MethodNode directMethodCallCandidate = mn.get(0);
                         // visit the method to obtain inferred return type
@@ -2607,6 +2609,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             if (areCategoryMethodCalls(methods, name, args)) {
                 addCategoryMethodCallError(expr);
             }
+            methods = disambiguateMethods(methods, expr);
             if (methods.size() == 1) {
                 return methods.get(0);
             } else {
@@ -2614,6 +2617,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
         }
         return null;
+    }
+
+    private List<MethodNode> disambiguateMethods(List<MethodNode> methods, final Expression expr) {
+        if (methods.size()>1) {
+            methods = extension.handleAmbiguousMethods(methods, expr);
+        }
+        return methods;
     }
 
     protected static String prettyPrintMethodList(List<MethodNode> nodes) {

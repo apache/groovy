@@ -437,4 +437,20 @@ class TypeCheckingExtensionsTest extends StaticTypeCheckingTestCase {
             operate()
         '''
     }
+
+    void testAmbiguousMethodCall() {
+        extension = null
+        shouldFailWithMessages '''
+            int foo(Integer x) { 1 }
+            int foo(String s) { 2 }
+            assert foo(null) == 2
+        ''', 'Reference to method is ambiguous'
+        extension = 'groovy/transform/stc/AmbiguousMethods.groovy'
+        assertScript '''
+            int foo(Integer x) { 1 }
+            int foo(String s) { 2 }
+            int foo(Date d) { 3 }
+            assert foo(null) == 2
+        '''
+    }
 }

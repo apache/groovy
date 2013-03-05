@@ -58,6 +58,7 @@ public class GroovyTypeCheckingExtensionSupport extends TypeCheckingExtension {
                 put("unresolvedVariable", "handleUnresolvedVariableExpression");
                 put("unresolvedProperty", "handleUnresolvedProperty");
                 put("unresolvedAttribute", "handleUnresolvedAttribute");
+                put("ambiguousMethods", "handleAmbiguousMethods");
                 put("methodNotFound", "handleMissingMethod");
                 put("afterVisitMethod", "afterVisitMethod");
                 put("beforeVisitMethod", "beforeVisitMethod");
@@ -411,6 +412,30 @@ public class GroovyTypeCheckingExtensionSupport extends TypeCheckingExtension {
                         methodList.add((MethodNode) result);
                     } else if (result instanceof Collection) {
                         methodList.addAll((Collection<? extends MethodNode>) result);
+                    } else {
+                        throw new GroovyBugError("Type checking extension returned unexpected method list: " + result);
+                    }
+                }
+            }
+        }
+        return methodList;
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public List<MethodNode> handleAmbiguousMethods(final List<MethodNode> nodes, final Expression origin) {
+        List<Closure> onMethodSelection = eventHandlers.get("handleAmbiguousMethods");
+        List<MethodNode> methodList = nodes;
+        if (onMethodSelection != null) {
+            Iterator<Closure> iterator = onMethodSelection.iterator();
+            while (methodList.size()>1 && iterator.hasNext() ) {
+                final Closure closure = iterator.next();
+                Object result = safeCall(closure, methodList, origin);
+                if (result != null) {
+                    if (result instanceof MethodNode) {
+                        methodList = Collections.singletonList((MethodNode) result);
+                    } else if (result instanceof Collection) {
+                        methodList = new LinkedList<MethodNode>((Collection<? extends MethodNode>) result);
                     } else {
                         throw new GroovyBugError("Type checking extension returned unexpected method list: " + result);
                     }
