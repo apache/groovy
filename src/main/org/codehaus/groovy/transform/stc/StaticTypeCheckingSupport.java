@@ -564,9 +564,10 @@ public abstract class StaticTypeCheckingSupport {
 
         // on an assignment everything that can be done by a GroovyCast is allowed
 
-        // anything can be assigned to an Object, String, boolean, Boolean
+        // anything can be assigned to an Object, String, Boolean
         // or Class typed variable
-        if (isWildcardLeftHandSide(leftRedirect)) return true;
+        if (isWildcardLeftHandSide(leftRedirect)
+                && !(boolean_TYPE.equals(left) && rightExpressionIsNull)) return true;
 
         // char as left expression
         if (leftRedirect == char_TYPE && rightRedirect==STRING_TYPE) {
