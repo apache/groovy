@@ -2455,6 +2455,18 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Appends the String representation of the given operand to this string.
+     *
+     * @param left  a String
+     * @param value any CharSequence
+     * @return the new string with the object appended
+     * @since 2.2
+     */
+    public static String plus(String left, CharSequence value) {
+        return left+value;
+    }
+
+    /**
      * Appends a String to this StringBuffer.
      *
      * @param left  a StringBuffer
