@@ -35,6 +35,12 @@ import static org.codehaus.groovy.ast.ClassHelper.*;
  */
 public class SignatureCodecVersion1 implements SignatureCodec {
 
+    private final ClassLoader classLoader;
+
+    public SignatureCodecVersion1(final ClassLoader classLoader) {
+        this.classLoader = classLoader;
+    }
+
     private void doEncode(final ClassNode node, DataOutputStream dos) throws IOException {
         dos.writeUTF(node.getClass().getSimpleName());
         if (node instanceof UnionTypeClassNode) {
@@ -145,7 +151,7 @@ public class SignatureCodecVersion1 implements SignatureCodec {
             // object type
             String className = typedesc.replace('/', '.').substring(1, typedesc.length() - 1);
             try {
-                result = ClassHelper.make(Class.forName(className)).getPlainNodeReference();
+                result = ClassHelper.make(Class.forName(className, false, classLoader)).getPlainNodeReference();
             } catch (ClassNotFoundException e) {
                 result = ClassHelper.make(className);
             }

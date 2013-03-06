@@ -1614,7 +1614,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (rtype != null && node.getAnnotations(TYPECHECKING_INFO_NODE).isEmpty()) {
             AnnotationNode anno = new AnnotationNode(TYPECHECKING_INFO_NODE);
             anno.setMember("version", CURRENT_SIGNATURE_PROTOCOL);
-            SignatureCodec codec = SignatureCodecFactory.getCodec(CURRENT_SIGNATURE_PROTOCOL_VERSION);
+            SignatureCodec codec = SignatureCodecFactory.getCodec(CURRENT_SIGNATURE_PROTOCOL_VERSION, getSourceUnit().getClassLoader());
             String genericsSignature = codec.encode(rtype);
             if (genericsSignature != null) {
                 ConstantExpression signature = new ConstantExpression(genericsSignature);
@@ -1752,7 +1752,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             AnnotationNode head = annotations.get(0);
             int version = Integer.valueOf(head.getMember("version").getText());
             String signature = head.getMember("inferredType").getText();
-            SignatureCodec codec = SignatureCodecFactory.getCodec(version);
+            SignatureCodec codec = SignatureCodecFactory.getCodec(version, getSourceUnit().getClassLoader());
             ClassNode result = codec.decode(signature);
             node.putNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE, result);
         }
@@ -3626,9 +3626,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     // ------------------- codecs for method return type signatures ------------------------------
 
     public static class SignatureCodecFactory {
-        public static SignatureCodec getCodec(int version) {
+        public static SignatureCodec getCodec(int version, final ClassLoader classLoader) {
             switch (version) {
-                case 1:  return new SignatureCodecVersion1();
+                case 1:  return new SignatureCodecVersion1(classLoader);
                 default: return null;
             }
         }
