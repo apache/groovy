@@ -16,7 +16,7 @@ class SignatureCodecTest extends GroovyTestCase {
     @Override
     protected void setUp() {
         super.setUp()
-        codec = StaticTypeCheckingVisitor.SignatureCodecFactory.getCodec(1)
+        codec = StaticTypeCheckingVisitor.SignatureCodecFactory.getCodec(1,this.class.classLoader)
     }
 
     void testVariousSimpleClassNodes() {
