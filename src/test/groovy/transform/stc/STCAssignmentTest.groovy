@@ -334,6 +334,12 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         ''', 'Cannot assign value of type java.lang.Object to variable of type char'
     }
 
+    void testCastNullToBoolean() {
+        shouldFailWithMessages '''
+            boolean c = null
+        ''', 'Cannot assign value of type java.lang.Object to variable of type boolean'
+    }
+
     void testCastStringToCharacter() {
         assertScript '''
             Character c = 'a'
