@@ -28,16 +28,4 @@ class Groovy6045Bug extends GroovyTestCase {
             new Foo()
         '''
     }
-
-    void testCallingSafeSuperShouldNotThrowVerifyErrorUsingCompileStatic() {
-        assertScript '''import groovy.transform.CompileStatic
-            class Foo {
-                @CompileStatic
-                String toString() {
-                    super?.toString()
-                }
-            }
-            new Foo()
-        '''
-    }
 }
