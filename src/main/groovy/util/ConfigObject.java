@@ -166,7 +166,7 @@ public class ConfigObject extends GroovyObjectSupport implements Writable, Map, 
     private Map doMerge(Map config, Map other) {
         for (Object o : other.entrySet()) {
             Map.Entry next = (Map.Entry) o;
-            String key = (String) next.getKey();
+            Object key = next.getKey();
             Object value = next.getValue();
 
             Object configEntry = config.get(key);
@@ -274,7 +274,7 @@ public class ConfigObject extends GroovyObjectSupport implements Writable, Map, 
 
         for (Object o : props.entrySet()) {
             Map.Entry next = (Map.Entry) o;
-            String key = (String) next.getKey();
+            Object key = next.getKey();
             Object value = next.getValue();
 
             newProps.put(key, value != null ? value.toString() : null);
