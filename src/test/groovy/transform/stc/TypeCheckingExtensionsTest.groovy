@@ -17,6 +17,7 @@ package groovy.transform.stc
 
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
 import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
+import org.codehaus.groovy.transform.stc.GroovyTypeCheckingExtensionSupport
 
 /**
  * Units tests for type checking extensions.
@@ -464,5 +465,17 @@ class TypeCheckingExtensionsTest extends StaticTypeCheckingTestCase {
             int foo(Date d) { 3 }
             assert foo(null) == 2
         '''
+    }
+
+    void testPrecompiledExtension() {
+        extension = null
+        assertScript '''
+            println 'Everything is ok'
+        '''
+        extension = 'groovy.transform.stc.PrecompiledExtension'
+        shouldFailWithMessages '''
+            println 'Everything is ok'
+        ''', 'Error thrown from extension'
+
     }
 }

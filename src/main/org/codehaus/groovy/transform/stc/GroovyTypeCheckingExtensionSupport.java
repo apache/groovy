@@ -110,41 +110,63 @@ public class GroovyTypeCheckingExtensionSupport extends TypeCheckingExtension {
         config.addCompilationCustomizers(ic);
         final GroovyClassLoader transformLoader = compilationUnit!=null?compilationUnit.getTransformLoader():typeCheckingVisitor.getSourceUnit().getClassLoader();
 
-        ClassLoader cl = typeCheckingVisitor.getSourceUnit().getClassLoader();
-        // cast to prevent incorrect @since 1.7 warning
-        InputStream is = ((ClassLoader)transformLoader).getResourceAsStream(scriptPath);
-        if (is == null) {
-            // fallback to the source unit classloader
-            is = cl.getResourceAsStream(scriptPath);
-        }
-        if (is == null) {
-            // fallback to the compiler classloader
-            cl = GroovyTypeCheckingExtensionSupport.class.getClassLoader();
-            is = cl.getResourceAsStream(scriptPath);
-        }
-        if (is == null) {
-            // if the input stream is still null, we've not found the extension
+        // since Groovy 2.2, it is possible to use FQCN for type checking extension scripts
+        TypeCheckingDSL script = null;
+        try {
+            Class<?> clazz = transformLoader.loadClass(scriptPath, false, true);
+            if (TypeCheckingDSL.class.isAssignableFrom(clazz)) {
+                script = (TypeCheckingDSL) clazz.newInstance();
+            }
+        } catch (ClassNotFoundException e) {
+            // silent
+        } catch (InstantiationException e) {
             context.getErrorCollector().addFatalError(
-                    new SimpleMessage("Static type checking extension '" + scriptPath + "' was not found on the classpath.",
+                    new SimpleMessage("Static type checking extension '" + scriptPath + "' could not be loaded.",
+                            config.getDebug(), typeCheckingVisitor.getSourceUnit()));
+        } catch (IllegalAccessException e) {
+            context.getErrorCollector().addFatalError(
+                    new SimpleMessage("Static type checking extension '" + scriptPath + "' could not be loaded.",
                             config.getDebug(), typeCheckingVisitor.getSourceUnit()));
         }
-        try {
-            GroovyShell shell = new GroovyShell(transformLoader, new Binding(), config);
-            TypeCheckingDSL parse = (TypeCheckingDSL) shell.parse(
-                    new InputStreamReader(is, typeCheckingVisitor.getSourceUnit().getConfiguration().getSourceEncoding())
-            );
-            parse.extension = this;
-            parse.run();
+        if (script==null) {
+            ClassLoader cl = typeCheckingVisitor.getSourceUnit().getClassLoader();
+            // cast to prevent incorrect @since 1.7 warning
+            InputStream is = ((ClassLoader)transformLoader).getResourceAsStream(scriptPath);
+            if (is == null) {
+                // fallback to the source unit classloader
+                is = cl.getResourceAsStream(scriptPath);
+            }
+            if (is == null) {
+                // fallback to the compiler classloader
+                cl = GroovyTypeCheckingExtensionSupport.class.getClassLoader();
+                is = cl.getResourceAsStream(scriptPath);
+            }
+            if (is == null) {
+                // if the input stream is still null, we've not found the extension
+                context.getErrorCollector().addFatalError(
+                        new SimpleMessage("Static type checking extension '" + scriptPath + "' was not found on the classpath.",
+                                config.getDebug(), typeCheckingVisitor.getSourceUnit()));
+            }
+            try {
+                GroovyShell shell = new GroovyShell(transformLoader, new Binding(), config);
+                script = (TypeCheckingDSL) shell.parse(
+                        new InputStreamReader(is, typeCheckingVisitor.getSourceUnit().getConfiguration().getSourceEncoding())
+                );
+            } catch (CompilationFailedException e) {
+                throw new GroovyBugError("An unexpected error was thrown during custom type checking", e);
+            } catch (UnsupportedEncodingException e) {
+                throw new GroovyBugError("Unsupported encoding found in compiler configuration", e);
+            }
+        }
+        if (script!=null) {
+            script.extension = this;
+            script.run();
             List<Closure> list = eventHandlers.get("setup");
             if (list != null) {
                 for (Closure closure : list) {
                     safeCall(closure);
                 }
             }
-        } catch (CompilationFailedException e) {
-            throw new GroovyBugError("An unexpected error was thrown during custom type checking", e);
-        } catch (UnsupportedEncodingException e) {
-            throw new GroovyBugError("Unsupported encoding found in compiler configuration", e);
         }
     }
 
