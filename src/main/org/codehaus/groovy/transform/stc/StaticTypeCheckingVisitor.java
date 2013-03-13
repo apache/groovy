@@ -2064,6 +2064,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     mn = disambiguateMethods(mn, call);
                     if (mn.size() == 1) {
                         MethodNode directMethodCallCandidate = mn.get(0);
+                        if (chosenReceiver==null) {
+                            chosenReceiver = Receiver.make(directMethodCallCandidate.getDeclaringClass());
+                            if (chosenReceiver==null) {
+                                chosenReceiver = owners.get(0);
+                            }
+                        }
                         // visit the method to obtain inferred return type
                         typeCheckingContext.pushEnclosingClassNode(directMethodCallCandidate.getDeclaringClass());
                         for (ClassNode node : typeCheckingContext.source.getAST().getClasses()) {

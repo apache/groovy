@@ -438,6 +438,18 @@ class TypeCheckingExtensionsTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    void testShouldNotThrowNPE_Groovy6047() {
+        extension = 'groovy/transform/stc/Groovy6047Extension.groovy'
+        try {
+            assertScript '''
+                def b = new Vector()
+                b.elems()
+            '''
+        } catch (MissingMethodException e) {
+            // it's ok
+        }
+    }
+
     void testAmbiguousMethodCall() {
         extension = null
         shouldFailWithMessages '''
