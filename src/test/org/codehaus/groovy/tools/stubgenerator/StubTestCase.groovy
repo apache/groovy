@@ -154,33 +154,36 @@ abstract class StubTestCase extends GroovyTestCase {
             }
         }
 
-        compile(sources)
+        try {
+            compile(sources)
 
-        // use QDox for parsing the Java stubs and Java sources
-        qdox.addSourceTree sourceRootPath
-        qdox.addSourceTree stubDir
+            // use QDox for parsing the Java stubs and Java sources
+            qdox.addSourceTree sourceRootPath
+            qdox.addSourceTree stubDir
 
-        if (debug) {
-            println ">>> Stubs generated"
-            stubDir.eachFileRecurse(FILES) { File stubFile ->
-                if (stubFile.name ==~ /.*(\.groovy|\.java)/) {
-                    println " -> " + stubFile.name
-                    println stubFile.text
+            if (debug) {
+                println ">>> Stubs generated"
+                stubDir.eachFileRecurse(FILES) { File stubFile ->
+                    if (stubFile.name ==~ /.*(\.groovy|\.java)/) {
+                        println " -> " + stubFile.name
+                        println stubFile.text
+                    }
                 }
-            }
 
-            println ">>> QDox canonical sources"
-            qdox.classes.each { JavaClass jc ->
-                println " -> " + jc.fullyQualifiedName
-                println jc.source
-            }
+                println ">>> QDox canonical sources"
+                qdox.classes.each { JavaClass jc ->
+                    println " -> " + jc.fullyQualifiedName
+                    println jc.source
+                }
 
-            println "Verifying the stubs"
+                println "Verifying the stubs"
+            }
+        } finally {
+            use (QDoxCategory) {
+                verifyStubs()
+            }
         }
 
-        use (QDoxCategory) {
-            verifyStubs()
-        }
     }
 
     /**
