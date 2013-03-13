@@ -371,6 +371,11 @@ public class InvocationWriter {
         } else {
             boolean isSuperMethodCall = usesSuper(call);
             MethodCallerMultiAdapter adapter = invokeMethod;
+            if (isSuperMethodCall && call.isSafe()) {
+                // safe is not necessary here because "super" is always not null
+                // but keeping the flag would trigger a VerifyError (see GROOVY-6045)
+                call.setSafe(false);
+            }
             if (AsmClassGenerator.isThisExpression(call.getObjectExpression())) adapter = invokeMethodOnCurrent;
             if (isSuperMethodCall) adapter = invokeMethodOnSuper;
             if (isStaticInvocation(call)) adapter = invokeStaticMethod;
