@@ -369,4 +369,17 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
         whatthe(new Mylist())
         '''
     }
+
+    // GROOVY-6050
+    void testShouldAllowTypeConversion() {
+        assertScript '''
+            interface SomeInterface { void sayHello() }
+            void foo(Writer writer) {
+                if (writer instanceof SomeInterface) {
+                    ((SomeInterface)writer).sayHello()
+                }
+            }
+            foo(null)
+        '''
+    }
 }
