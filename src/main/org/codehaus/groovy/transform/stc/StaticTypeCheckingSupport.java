@@ -1,11 +1,11 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -539,6 +539,10 @@ public abstract class StaticTypeCheckingSupport {
     }
 
     public static boolean checkCompatibleAssignmentTypes(ClassNode left, ClassNode right, Expression rightExpression) {
+        return checkCompatibleAssignmentTypes(left, right, rightExpression, true);
+    }
+
+    public static boolean checkCompatibleAssignmentTypes(ClassNode left, ClassNode right, Expression rightExpression, boolean allowConstructorCoercion) {
         ClassNode leftRedirect = left.redirect();
         ClassNode rightRedirect = right.redirect();
 
@@ -588,11 +592,11 @@ public abstract class StaticTypeCheckingSupport {
 
         // if right is array, map or collection we try invoking the
         // constructor
-        if (rightRedirect.implementsInterface(MAP_TYPE) ||
+        if (allowConstructorCoercion && (rightRedirect.implementsInterface(MAP_TYPE) ||
                 rightRedirect.implementsInterface(Collection_TYPE) ||
                 rightRedirect.equals(MAP_TYPE) ||
                 rightRedirect.equals(Collection_TYPE) ||
-                rightRedirect.isArray()) {
+                rightRedirect.isArray())) {
             //TODO: in case of the array we could maybe make a partial check
             if (leftRedirect.isArray() && rightRedirect.isArray()) {
                 return checkCompatibleAssignmentTypes(leftRedirect.getComponentType(), rightRedirect.getComponentType());

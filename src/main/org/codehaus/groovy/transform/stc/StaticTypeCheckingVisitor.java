@@ -1346,7 +1346,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             if (!enclosingMethod.isVoidMethod()
                     && !type.equals(void_WRAPPER_TYPE)
                     && !type.equals(VOID_TYPE)
-                    && !checkCompatibleAssignmentTypes(enclosingMethod.getReturnType(), type)
+                    && !checkCompatibleAssignmentTypes(enclosingMethod.getReturnType(), type, null, false)
                     && !(isNullConstant(expression))) {
                 addStaticTypeError("Cannot return value of type " + type.toString(false) + " on method returning type " + enclosingMethod.getReturnType().toString(false), expression);
             } else if (!enclosingMethod.isVoidMethod()) {
@@ -3107,7 +3107,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                             resolvedPlaceholders.put(key, new GenericsType(actualType.isArray() ? actualType.getComponentType() : actualType));
                         }
                     } else {
-                        while (!actualType.equals(type)) {
+                        while (actualType!=null && !actualType.equals(type)) {
                             Set<ClassNode> interfaces = actualType.getAllInterfaces();
                             boolean intf = false;
                             for (ClassNode anInterface : interfaces) {
@@ -3119,13 +3119,15 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                             }
                             if (!intf) actualType = actualType.getUnresolvedSuperClass();
                         }
-                        Map<String, GenericsType> actualTypePlaceholders = GenericsUtils.extractPlaceholders(actualType);
-                        for (Map.Entry<String, GenericsType> typeEntry : actualTypePlaceholders.entrySet()) {
-                            String key = typeEntry.getKey();
-                            GenericsType value = typeEntry.getValue();
-                            GenericsType alias = typePlaceholders.get(key);
-                            if (alias != null && alias.isPlaceholder()) {
-                                resolvedPlaceholders.put(alias.getName(), value);
+                        if (actualType!=null) {
+                            Map<String, GenericsType> actualTypePlaceholders = GenericsUtils.extractPlaceholders(actualType);
+                            for (Map.Entry<String, GenericsType> typeEntry : actualTypePlaceholders.entrySet()) {
+                                String key = typeEntry.getKey();
+                                GenericsType value = typeEntry.getValue();
+                                GenericsType alias = typePlaceholders.get(key);
+                                if (alias != null && alias.isPlaceholder()) {
+                                    resolvedPlaceholders.put(alias.getName(), value);
+                                }
                             }
                         }
                     }

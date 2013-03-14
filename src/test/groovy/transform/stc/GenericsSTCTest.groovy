@@ -1,11 +1,11 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -1062,6 +1062,29 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             createInstance(LinkedList, 'a')
         '''
     }
+
+    // GROOVY-6051
+    void testGenericsReturnTypeInferenceShouldNotThrowNPE() {
+        assertScript '''
+        class Bar {
+          public static List<Date> bar(List<Date> dummy) {}
+        }
+        class Foo extends Bar {
+            static public Date genericItem() {
+                @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                    def inft = node.getNodeMetaData(INFERRED_TYPE)
+                    assert inft == make(List)
+                    assert inft.genericsTypes[0].type == make(Date)
+                })
+                def res = bar(null)
+
+                res[0]
+            }
+        }
+        new Foo()
+        '''
+    }
+
 
     static class MyList extends LinkedList<String> {}
 
