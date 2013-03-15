@@ -26,35 +26,34 @@ import java.util.Set;
  * @author <a href="mailto:blackdrag@gmx.org">Jochen "blackdrag" Theodorou</a>
  */
 public class ListHashMap<K,V> implements Map<K,V> {
-    private int listFill = 0;
-    private Object[] listKeys;
-    private Object[] listValues;
+    private final Object[] listKeys;
+    private final Object[] listValues;
     private int size = 0;
     private Map<K,V> innerMap;
     private final int maxListFill;
-    
+
     public ListHashMap() {
         this(3);
     }
-    
+
     public ListHashMap(int listSize){
         this.listKeys = new Object[listSize];
         this.listValues = new Object[listSize];
         maxListFill = listSize;
     }
-    
+
     public void clear() {
-        listFill = 0;
         innerMap = null;
         for (int i=0; i<maxListFill; i++) {
             listValues[i] = null;
             listKeys[i] = null;
         }
+        size = 0;
     }
 
     public boolean containsKey(Object key) {
         if (size<maxListFill) {
-            for (int i=0; i<listFill; i++) {
+            for (int i=0; i<size; i++) {
                 if (listKeys[i].equals(key)) return true;
             }
             return false;
@@ -65,7 +64,7 @@ public class ListHashMap<K,V> implements Map<K,V> {
 
     public boolean containsValue(Object value) {
         if (size<maxListFill) {
-            for (int i=0; i<listFill; i++) {
+            for (int i=0; i<size; i++) {
                 if (listValues[i].equals(value)) return true;
             }
             return false;
@@ -81,20 +80,16 @@ public class ListHashMap<K,V> implements Map<K,V> {
         }
         return m;
     }
-    
+
+    @SuppressWarnings("unchecked")
     public Set<java.util.Map.Entry<K, V>> entrySet() {
-        Map m;
-        if (size>=maxListFill) {
-            m = innerMap;
-        } else {
-            m = makeMap();
-        }
+        Map m = innerMap!=null?innerMap:makeMap();
         return m.entrySet();
     }
 
     public V get(Object key) {
         if(size==0) return null;
-        if (size<maxListFill) {
+        if (innerMap==null) {
             for (int i=0; i<size; i++) {
                 if (listKeys[i].equals(key)) return (V) listValues[i];
             }
@@ -109,75 +104,62 @@ public class ListHashMap<K,V> implements Map<K,V> {
     }
 
     public Set<K> keySet() {
-        Map m;
-        if (size>=maxListFill) {
-            m = innerMap;
-        } else {
-            m = makeMap();
-        }
+        Map m = innerMap!=null?innerMap:makeMap();
         return m.keySet();
     }
 
+    @SuppressWarnings("unchecked")
     public V put(K key, V value) {
-        if (size<maxListFill) {
-            for (int i=0; i<listFill; i++) {
+        if (innerMap==null) {
+            for (int i=0; i<size; i++) {
                 if (listKeys[i].equals(key)) {
                     V old = (V) listValues[i];
                     listValues[i] = value;
                     return old;
-                } 
+                }
             }
-            if (size<maxListFill-1) {
+            if (size<maxListFill) {
+                listKeys[size] = key;
+                listValues[size] = value;
                 size++;
-                listKeys[listFill] = key;
-                listValues[listFill] = value;
-                listFill++;
                 return null;
             } else {
                 innerMap = makeMap();
-                size++;
             }
-        } 
-        return innerMap.put(key,value);
+        }
+        V val = (V) innerMap.put(key, value);
+        size = innerMap.size();
+        return val;
     }
 
     public void putAll(Map<? extends K, ? extends V> m) {
-       if (size+m.size()<maxListFill) {
-           for (Entry<? extends K,? extends V> entry : m.entrySet()) {
-               listKeys[listFill] = entry.getKey();
-               listValues[listFill] = entry.getValue();
-               listFill++;
-           }
-           size += m.size();
-           return;
-       } 
-       if (size<maxListFill) innerMap = makeMap();
-       innerMap.putAll(m);
-       size += m.size();
+        for (Entry<? extends K, ? extends V> entry : m.entrySet()) {
+            put(entry.getKey(), entry.getValue());
+        }
     }
 
     public V remove(Object key) {
-        if (size<maxListFill) {
-            for (int i=0; i<listFill; i++) {
+        if (innerMap==null) {
+            for (int i=0; i<size; i++) {
                 if (listKeys[i].equals(key)) {
                     V old = (V) listValues[i];
-                    listFill--; size--;
-                    listValues[i] = listValues[listFill];
-                    listKeys[i] = listValues[listFill];
+                    size--;
+                    listValues[i] = listValues[size];
+                    listKeys[i] = listKeys[size];
                     return old;
                 }
             }
             return null;
         } else {
             V old = innerMap.remove(key);
-            if (old!=null) size--;
-            if (size<maxListFill) {
+            size = innerMap.size();
+            if (size<=maxListFill) {
                 mapToList();
             }
             return old;
         }
     }
-    
+
     private void mapToList() {
         int i = 0;
         for (Entry<? extends K,? extends V> entry : innerMap.entrySet()) {
@@ -185,7 +167,7 @@ public class ListHashMap<K,V> implements Map<K,V> {
             listValues[i] = entry.getValue();
             i++;
         }
-        listFill = innerMap.size();
+        size = innerMap.size();
         innerMap = null;
     }
 
@@ -194,9 +176,9 @@ public class ListHashMap<K,V> implements Map<K,V> {
     }
 
     public Collection<V> values() {
-        if (size<maxListFill) {
+        if (innerMap==null) {
             ArrayList<V> list = new ArrayList(size);
-            for (int i=0; i<listFill; i++) {
+            for (int i=0; i<size; i++) {
                 list.add((V) listValues[i]);
             }
             return list;
@@ -204,5 +186,5 @@ public class ListHashMap<K,V> implements Map<K,V> {
             return innerMap.values();
         }
     }
-    
+
 }
