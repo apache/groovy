@@ -3473,6 +3473,22 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Adds GroovyCollections#combinations(Collection, Closure) as a method on collections.
+     * <p>
+     * Example usage:
+     * <pre class="groovyTestCase">assert [[2, 3],[4, 5, 6]].combinations {x,y -> x*y } == [8, 12, 10, 15, 12, 18]</pre>
+     *
+     * @param self a Collection of lists
+     * @param action a closure to be called on each combination
+     * @return a List of the results of applying the closure to each combinations found
+     * @see groovy.util.GroovyCollections#combinations(java.util.Collection)
+     * @since 2.2.0
+     */
+    public static List combinations(Collection self, Closure<?> action) {
+        return collect(GroovyCollections.combinations(self), action);
+    }
+
+    /**
      * Finds all non-null subsequences of a list.
      * <p>
      * Example usage:

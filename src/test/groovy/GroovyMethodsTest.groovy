@@ -112,6 +112,12 @@ class GroovyMethodsTest extends GroovyTestCase {
         assert lists.combinations() as Set == [['a', 3], ['b', 3]] as Set
     }
 
+    void testCombinationsWithAction() {
+        def lists = [[2, 3],[4, 5, 6]]
+        def expected = [8, 12, 10, 15, 12, 18]
+        assert lists.combinations {x,y -> x*y } as Set == expected as Set
+    }
+
     void testTranspose() {
         def list1 = [['a', 'b'], [1, 2, 3]]
         def list2 = [['a', 'b', 'c'], [1, 2]]
