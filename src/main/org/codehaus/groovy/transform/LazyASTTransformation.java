@@ -81,9 +81,10 @@ public class LazyASTTransformation implements ASTTransformation, Opcodes {
 
             fieldNode.rename("$" + fieldNode.getName());
             fieldNode.setModifiers(ACC_PRIVATE | (fieldNode.getModifiers() & (~(ACC_PUBLIC | ACC_PROTECTED))));
-            
-            if (soft instanceof ConstantExpression && ((ConstantExpression) soft).getValue().equals(true))
+
+            if (soft instanceof ConstantExpression && ((ConstantExpression) soft).getValue().equals(true)) {
                 createSoft(fieldNode, init);
+            }
             else {
                 create(fieldNode, init);
                 // @Lazy not meaningful with primitive so convert to wrapper if needed
@@ -176,10 +177,13 @@ public class LazyASTTransformation implements ASTTransformation, Opcodes {
         final Statement mainIf = new IfStatement(notNullExpr(resExpr), new ExpressionStatement(resExpr), elseBlock);
 
         if (fieldNode.isVolatile()) {
+            final BlockStatement mainIfBlock = new BlockStatement();
+            mainIfBlock.addStatement( assignStatement(resExpr, callExpression) );
+            mainIfBlock.addStatement( mainIf );
             body.addStatement(new IfStatement(
                     notNullExpr(resExpr),
                     new ExpressionStatement(resExpr),
-                    new SynchronizedStatement(syncTarget(fieldNode), mainIf)
+                    new SynchronizedStatement(syncTarget(fieldNode), mainIfBlock)
             ));
         } else {
             body.addStatement(mainIf);
