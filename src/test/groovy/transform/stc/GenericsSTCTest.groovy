@@ -1085,6 +1085,45 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-6035
+    void testReturnTypeInferenceWithClosure() {
+        assertScript '''import org.codehaus.groovy.ast.expr.ClosureExpression
+        class CTypeTest {
+
+          public static void test1(String[] args) {
+
+            // Cannot assign value of type java.lang.Object to variable of type CTypeTest
+            @ASTTest(phase=INSTRUCTION_SELECTION,value={
+                def cl = node.rightExpression.arguments[0]
+                assert cl instanceof ClosureExpression
+                def type = cl.getNodeMetaData(INFERRED_TYPE)
+                assert type == make(Closure)
+                assert type.isUsingGenerics()
+                assert type.genericsTypes
+                assert type.genericsTypes[0].type.name == 'CTypeTest'
+
+                type = node.getNodeMetaData(INFERRED_TYPE)
+                assert type.name == 'CTypeTest'
+            })
+            def s1 = cache  {
+              return new CTypeTest();
+            }
+
+            CTypeTest s2 = cache {
+                new CTypeTest()
+            }
+
+          }
+
+
+          static <T> T cache(Closure<T> closure) {
+            return closure.call();
+          }
+
+        }
+        1
+        '''
+    }
 
     static class MyList extends LinkedList<String> {}
 

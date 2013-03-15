@@ -97,9 +97,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     // so we'll use the method return type instead
                     returnType = mrt;
                 }
-                ClassNode previousType = (ClassNode) enclosingMethod.getNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE);
+                ClassNode previousType = getInferredReturnType(enclosingMethod);
                 ClassNode inferred = previousType == null ? returnType : lowestUpperBound(returnType, previousType);
-                enclosingMethod.putNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE, inferred);
+                storeInferredReturnType(enclosingMethod, inferred);
             } else {
                 throw new GroovyBugError("Unexpected return statement at "
                         + returnStatement.getLineNumber()+":"+returnStatement.getColumnNumber()
@@ -673,9 +673,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         } else {
             // if closure expression on RHS, then copy the inferred closure return type
             if (rightExpression instanceof ClosureExpression) {
-                Object type = rightExpression.getNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE);
+                ClassNode type = getInferredReturnType(rightExpression);
                 if (type != null) {
-                    leftExpression.putNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE, type);
+                    storeInferredReturnType(leftExpression, type);
                 }
             }
 
@@ -1350,7 +1350,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     && !(isNullConstant(expression))) {
                 addStaticTypeError("Cannot return value of type " + type.toString(false) + " on method returning type " + enclosingMethod.getReturnType().toString(false), expression);
             } else if (!enclosingMethod.isVoidMethod()) {
-                ClassNode previousType = (ClassNode) enclosingMethod.getNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE);
+                ClassNode previousType = getInferredReturnType(enclosingMethod);
                 ClassNode inferred = previousType == null ? type : lowestUpperBound(type, previousType);
                 if (implementsInterfaceOrIsSubclassOf(inferred, enclosingMethod.getReturnType())) {
                     if (missesGenericsTypes(inferred)) {
@@ -1495,7 +1495,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
         TypeCheckingContext.EnclosingClosure enclosingClosure = typeCheckingContext.getEnclosingClosure();
         if (!enclosingClosure.getReturnTypes().isEmpty()) {
-            expression.putNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE, lowestUpperBound(enclosingClosure.getReturnTypes()));
+            ClassNode returnType = lowestUpperBound(enclosingClosure.getReturnTypes());
+            storeInferredReturnType(expression, returnType);
+            ClassNode inferredType = CLOSURE_TYPE.getPlainNodeReference();
+            inferredType.setGenericsTypes(new GenericsType[]{new GenericsType(wrapTypeIfNecessary(returnType))});
+            storeType(enclosingClosure.getClosureExpression(), inferredType);
         }
 
         typeCheckingContext.popEnclosingClosure();
@@ -1591,9 +1595,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     parameter.getInitialExpression().visit(this);
                 }
             }
-            ClassNode rtype = (ClassNode) node.getNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE);
+            ClassNode rtype = getInferredReturnType(node);
             if (rtype == null) {
-                node.putNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE, node.getReturnType());
+                storeInferredReturnType(node, node.getReturnType());
             }
             addTypeCheckingInfoAnnotation(node);
         } finally {
@@ -1610,7 +1614,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
         // if a returned inferred type is available and no @TypeCheckingInfo is on node, then add an
         // annotation to the method node
-        ClassNode rtype = (ClassNode) node.getNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE);
+        ClassNode rtype = getInferredReturnType(node);
         if (rtype != null && node.getAnnotations(TYPECHECKING_INFO_NODE).isEmpty()) {
             AnnotationNode anno = new AnnotationNode(TYPECHECKING_INFO_NODE);
             anno.setMember("version", CURRENT_SIGNATURE_PROTOCOL);
@@ -1686,13 +1690,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             if (mn.isEmpty()) {
                 mn = extension.handleMissingMethod(receiver, name, argumentList, args, call);
             }
+            boolean callArgsVisited = false;
             if (mn.isEmpty()) {
                 addNoMatchingMethodError(receiver, name, args, call);
             } else {
                 if (mn.size() == 1) {
                     MethodNode directMethodCallCandidate = mn.get(0);
                     // visit the method to obtain inferred return type
-                    ClassNode currentClassNode = typeCheckingContext.getEnclosingClassNode();
                     typeCheckingContext.pushEnclosingClassNode(directMethodCallCandidate.getDeclaringClass());
                     for (ClassNode node : typeCheckingContext.source.getAST().getClasses()) {
                         if (isClassInnerClassOrEqualTo(typeCheckingContext.getEnclosingClassNode(), node)) {
@@ -1704,8 +1708,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     typeCheckingContext.popEnclosingClassNode();
                     ClassNode returnType = getType(directMethodCallCandidate);
                     if (returnType.isUsingGenerics() && !returnType.isEnum()) {
+                        visitMethodCallArguments(argumentList, true, (MethodNode)call.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET));
                         ClassNode irtg = inferReturnTypeGenerics(chosenReceiver.getType(), directMethodCallCandidate, callArguments);
                         returnType = irtg != null && implementsInterfaceOrIsSubclassOf(irtg, returnType) ? irtg : returnType;
+                        callArgsVisited = true;
                     }
                     storeType(call, returnType);
                     storeTargetMethod(call, directMethodCallCandidate);
@@ -1713,7 +1719,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 } else {
                     addAmbiguousErrorMessage(mn, name, args, call);
                 }
-                visitMethodCallArguments(argumentList, true, (MethodNode)call.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET));
+                if (!callArgsVisited) {
+                    visitMethodCallArguments(argumentList, true, (MethodNode)call.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET));
+                }
             }
         } finally {
             if (isWithCall) {
@@ -1745,7 +1753,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     protected void pickInferredTypeFromMethodAnnotation(final MethodNode node) {
-        if (node.getNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE) == null
+        if (getInferredReturnType(node) == null
                 && !node.getAnnotations(TYPECHECKING_INFO_NODE).isEmpty()) {
             List<AnnotationNode> annotations = node.getAnnotations(TYPECHECKING_INFO_NODE);
             AnnotationNode head = annotations.get(0);
@@ -1753,7 +1761,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             String signature = head.getMember("inferredType").getText();
             SignatureCodec codec = SignatureCodecFactory.getCodec(version, getSourceUnit().getClassLoader());
             ClassNode result = codec.decode(signature);
-            node.putNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE, result);
+            storeInferredReturnType(node, result);
         }
     }
 
@@ -1935,6 +1943,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
 
         try {
+            boolean callArgsVisited = false;
             if (isCallOnClosure) {
                 // this is a closure.call() call
                 if (objectExpression == VariableExpression.THIS_EXPRESSION) {
@@ -1958,15 +1967,17 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                             Parameter[] parameters = (Parameter[]) data;
                             typeCheckClosureCall(callArguments, args, parameters);
                         }
-                        Object type = ((ASTNode) variable).getNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE);
+                        ClassNode type = getInferredReturnType(((ASTNode) variable));
                         if (type == null) {
                             // if variable was declared as a closure and inferred type is unknown, we
                             // may face a recursive call. In that case, we will use the type of the
                             // generic return type of the closure declaration
                             if (variable.getType().equals(CLOSURE_TYPE)) {
                                 GenericsType[] genericsTypes = variable.getType().getGenericsTypes();
-                                if (genericsTypes != null && !genericsTypes[0].isPlaceholder()) {
-                                    type = genericsTypes[0].getType();
+                                if (genericsTypes != null/* && !genericsTypes[0].isPlaceholder()*/) {
+                                    if (!genericsTypes[0].isPlaceholder()) {
+                                        type = genericsTypes[0].getType();
+                                    }
                                 } else {
                                     type = OBJECT_TYPE;
                                 }
@@ -1980,9 +1991,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     // we can get actual parameters directly
                     Parameter[] parameters = ((ClosureExpression) objectExpression).getParameters();
                     typeCheckClosureCall(callArguments, args, parameters);
-                    Object data = objectExpression.getNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE);
+                    ClassNode data = getInferredReturnType(objectExpression);
                     if (data != null) {
-                        storeType(call, (ClassNode) data);
+                        storeType(call, data);
                     }
                 }
                 int nbOfArgs = 0;
@@ -2091,8 +2102,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         }
 
                         if (isUsingGenericsOrIsArrayUsingGenerics(returnType)) {
+                            visitMethodCallArguments(argumentList, true, (MethodNode)call.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET));
                             ClassNode irtg = inferReturnTypeGenerics(chosenReceiver.getType(), directMethodCallCandidate, callArguments);
                             returnType = irtg != null && implementsInterfaceOrIsSubclassOf(irtg, returnType) ? irtg : returnType;
+                            callArgsVisited = true;
                         }
                         storeType(call, returnType);
                         storeTargetMethod(call, directMethodCallCandidate);
@@ -2121,7 +2134,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 }
             }
             // now that a method has been chosen, we are allowed to visit the closures
-            visitMethodCallArguments(argumentList, true, (MethodNode)call.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET));
+            if (!callArgsVisited) {
+                visitMethodCallArguments(argumentList, true, (MethodNode)call.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET));
+            }
         } finally {
             if (isWithCall) {
                 typeCheckingContext.lastImplicitItType = rememberLastItType;
@@ -2146,8 +2161,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
         visitClosureExpression(closure);
 
-        if (closure.getNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE) != null)  {
-            return closure.getNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE);
+        if (getInferredReturnType(closure) != null)  {
+            return getInferredReturnType(closure);
         }
 
         return null;
@@ -2921,15 +2936,18 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         } else if (exp instanceof MapExpression) {
             return inferMapExpressionType((MapExpression) exp);
         }
+        if (exp instanceof ConstructorCallExpression) {
+            return ((ConstructorCallExpression) exp).getType();
+        }
         if (exp instanceof MethodNode) {
             if ((exp == GET_DELEGATE || exp == GET_OWNER || exp == GET_THISOBJECT) && typeCheckingContext.getEnclosingClosure() != null) {
                 return typeCheckingContext.getEnclosingClassNode();
             }
-            ClassNode ret = (ClassNode) exp.getNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE);
+            ClassNode ret = getInferredReturnType(exp);
             return ret != null ? ret : ((MethodNode) exp).getReturnType();
         }
         if (exp instanceof ClosureExpression) {
-            ClassNode irt = (ClassNode) exp.getNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE);
+            ClassNode irt = getInferredReturnType(exp);
             if (irt != null) {
                 irt = wrapTypeIfNecessary(irt);
                 ClassNode result = CLOSURE_TYPE.getPlainNodeReference();
@@ -2962,7 +2980,36 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (exp instanceof BitwiseNegationExpression) {
             return getType(((BitwiseNegationExpression) exp).getExpression());
         }
+        if (exp instanceof MethodCall) {
+            MethodNode target = (MethodNode) exp.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET);
+            if (target!=null) {
+                return getType(target);
+            }
+        }
         return exp instanceof VariableExpression ? ((VariableExpression) exp).getOriginType() : ((Expression) exp).getType();
+    }
+
+    /**
+     * Stores the inferred return type of a closure or a method. We are using a separate key to store
+     * inferred return type because the inferred type of a closure is {@link Closure}, which is different
+     * from the inferred type of the code of the closure.
+     *
+     * @param node a {@link ClosureExpression} or a {@link MethodNode}
+     * @param type the inferred return type of the code
+     * @return the old value of the inferred type
+     */
+    protected ClassNode storeInferredReturnType(final ASTNode node, final ClassNode type) {
+        return (ClassNode) node.putNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE, type);
+    }
+
+    /**
+     * Returns the inferred return type of a closure or a method, if stored on the AST node. This method
+     * doesn't perform any type inference by itself.
+     * @param exp a {@link ClosureExpression} or {@link MethodNode}
+     * @return the inferred type, as stored on node metadata.
+     */
+    protected ClassNode getInferredReturnType(final ASTNode exp) {
+        return (ClassNode) exp.getNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE);
     }
 
     protected ClassNode inferListExpressionType(final ListExpression list) {
