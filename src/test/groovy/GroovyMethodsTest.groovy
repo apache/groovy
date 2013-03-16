@@ -118,6 +118,14 @@ class GroovyMethodsTest extends GroovyTestCase {
         assert lists.combinations {x,y -> x*y } as Set == expected as Set
     }
 
+    void testEachCombination() {
+        def lists = [[2, 3],[4, 5, 6]]
+        Set expected = [8, 12, 10, 15, 12, 18]
+        Set collector = []
+        lists.eachCombination {x,y -> collector << x*y }
+        assert collector == expected
+    }
+
     void testTranspose() {
         def list1 = [['a', 'b'], [1, 2, 3]]
         def list2 = [['a', 'b', 'c'], [1, 2]]
@@ -922,6 +930,11 @@ class GroovyMethodsTest extends GroovyTestCase {
                 ['g', 'f', 'r', 'o'],
                 ['g', 'f', 'o', 'r'],
         ] as Set
+    }
+
+    void testPermutationsWithAction() {
+            def items = [1, 2, 3]
+            assert items.permutations { it.collect { 2*it } } as Set == [[2, 4, 6], [2, 6, 4], [4, 2, 6], [4, 6, 2], [6, 2, 4], [6, 4, 2]] as Set
     }
 
     void testStringTranslate() {
