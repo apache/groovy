@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,13 +17,15 @@ package groovy.json;
 
 import static groovy.json.JsonTokenType.*;
 import groovy.io.LineColumnReader;
+import org.codehaus.groovy.runtime.DefaultGroovyMethodsSupport;
+import org.codehaus.groovy.runtime.ResourceGroovyMethods;
 
+import java.io.File;
+import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.net.URL;
+import java.util.*;
 
 /**
  * JSON slurper which parses text or reader content into a data structure of lists and maps.
@@ -78,14 +80,164 @@ public class JsonSlurper {
         } else {
             throw new JsonException(
                     "A JSON payload should start with " + OPEN_CURLY.getLabel() +
-                    " or " + OPEN_BRACKET.getLabel() + ".\n" +
-                    "Instead, '" + token.getText() + "' was found " +
-                    "on line: " + token.getStartLine() + ", " +
-                    "column: " + token.getStartColumn()
+                            " or " + OPEN_BRACKET.getLabel() + ".\n" +
+                            "Instead, '" + token.getText() + "' was found " +
+                            "on line: " + token.getStartLine() + ", " +
+                            "column: " + token.getStartColumn()
             );
         }
 
         return content;
+    }
+
+    /**
+     * Parse a JSON data structure from content within a given File.
+     *
+     * @param file File containing JSON content
+     * @return a data structure of lists and maps
+     * @since 2.2.0
+     */
+    public Object parse(File file) {
+        return parseFile(file, null);
+    }
+
+    /**
+     * Parse a JSON data structure from content within a given File.
+     *
+     * @param file File containing JSON content
+     * @param charset the charset for this File
+     * @return a data structure of lists and maps
+     * @since 2.2.0
+     */
+    public Object parse(File file, String charset) {
+        return parseFile(file, charset);
+    }
+
+    private Object parseFile(File file, String charset) {
+        Reader reader = null;
+        try {
+            if (charset == null || charset.length() == 0) {
+                reader = ResourceGroovyMethods.newReader(file);
+            } else {
+                reader = ResourceGroovyMethods.newReader(file, charset);
+            }
+            return parse(reader);
+        } catch(IOException ioe) {
+            throw new JsonException("Unable to process file: " + file.getPath(), ioe);
+        } finally {
+            if (reader != null) {
+                DefaultGroovyMethodsSupport.closeWithWarning(reader);
+            }
+        }
+    }
+
+    /**
+     * Parse a JSON data structure from content at a given URL.
+     *
+     * @param url URL containing JSON content
+     * @return a data structure of lists and maps
+     * @since 2.2.0
+     */
+    public Object parse(URL url) {
+        return parseURL(url, null);
+    }
+
+    /**
+     * Parse a JSON data structure from content at a given URL.
+     *
+     * @param url URL containing JSON content
+     * @param params connection parameters
+     * @return a data structure of lists and maps
+     * @since 2.2.0
+     */
+    public Object parse(URL url, Map params) {
+        return parseURL(url, params);
+    }
+
+    /**
+     * Parse a JSON data structure from content at a given URL. Convenience variant when using Groovy named parameters for the connection params.
+     *
+     * @param params connection parameters
+     * @param url URL containing JSON content
+     * @return a data structure of lists and maps
+     * @since 2.2.0
+     */
+    public Object parse(Map params, URL url) {
+        return parseURL(url, params);
+    }
+
+    private Object parseURL(URL url, Map params) {
+        Reader reader = null;
+        try {
+            if (params == null || params.isEmpty()) {
+                reader = ResourceGroovyMethods.newReader(url);
+            } else {
+                reader = ResourceGroovyMethods.newReader(url, params);
+            }
+            return parse(reader);
+        } catch(IOException ioe) {
+            throw new JsonException("Unable to process url: " + url.toString(), ioe);
+        } finally {
+            if (reader != null) {
+                DefaultGroovyMethodsSupport.closeWithWarning(reader);
+            }
+        }
+    }
+
+    /**
+     * Parse a JSON data structure from content at a given URL.
+     *
+     * @param url URL containing JSON content
+     * @param charset the charset for this File
+     * @return a data structure of lists and maps
+     * @since 2.2.0
+     */
+    public Object parse(URL url, String charset) {
+        return parseURL(url, null, charset);
+    }
+
+    /**
+     * Parse a JSON data structure from content at a given URL.
+     *
+     * @param url URL containing JSON content
+     * @param params connection parameters
+     * @param charset the charset for this File
+     * @return a data structure of lists and maps
+     * @since 2.2.0
+     */
+    public Object parse(URL url, Map params, String charset) {
+        return parseURL(url, params, charset);
+    }
+
+    /**
+     * Parse a JSON data structure from content at a given URL. Convenience variant when using Groovy named parameters for the connection params.
+     *
+     * @param params connection parameters
+     * @param url URL containing JSON content
+     * @param charset the charset for this File
+     * @return a data structure of lists and maps
+     * @since 2.2.0
+     */
+    public Object parse(Map params, URL url, String charset) {
+        return parseURL(url, params, charset);
+    }
+
+    private Object parseURL(URL url, Map params, String charset) {
+        Reader reader = null;
+        try {
+            if (params == null || params.isEmpty()) {
+                reader = ResourceGroovyMethods.newReader(url, charset);
+            } else {
+                reader = ResourceGroovyMethods.newReader(url, params, charset);
+            }
+            return parse(reader);
+        } catch(IOException ioe) {
+            throw new JsonException("Unable to process url: " + url.toString(), ioe);
+        } finally {
+            if (reader != null) {
+                DefaultGroovyMethodsSupport.closeWithWarning(reader);
+            }
+        }
     }
 
     /**
@@ -105,8 +257,8 @@ public class JsonSlurper {
             if (currentToken == null) {
                 throw new JsonException(
                         "Expected a value on line: " + lexer.getReader().getLine() + ", " +
-                        "column: " + lexer.getReader().getColumn() + ".\n" +
-                        "But got an unterminated array."
+                                "column: " + lexer.getReader().getColumn() + ".\n" +
+                                "But got an unterminated array."
                 );
             }
 
@@ -121,9 +273,9 @@ public class JsonSlurper {
             } else {
                 throw new JsonException(
                         "Expected a value, an array, or an object " +
-                        "on line: " + currentToken.getStartLine() + ", " +
-                        "column: " + currentToken.getStartColumn() + ".\n" +
-                        "But got '" + currentToken.getText() + "' instead."
+                                "on line: " + currentToken.getStartLine() + ", " +
+                                "column: " + currentToken.getStartColumn() + ".\n" +
+                                "But got '" + currentToken.getText() + "' instead."
                 );
             }
 
@@ -132,10 +284,10 @@ public class JsonSlurper {
             if (currentToken == null) {
                 throw new JsonException(
                         "Expected " + CLOSE_BRACKET.getLabel() + " " +
-                        "or " + COMMA.getLabel() + " " +
-                        "on line: " + lexer.getReader().getLine() + ", " +
-                        "column: " + lexer.getReader().getColumn() + ".\n" +
-                        "But got an unterminated array."
+                                "or " + COMMA.getLabel() + " " +
+                                "on line: " + lexer.getReader().getLine() + ", " +
+                                "column: " + lexer.getReader().getColumn() + ".\n" +
+                                "But got an unterminated array."
                 );
             }
 
@@ -146,9 +298,9 @@ public class JsonSlurper {
             } else if (currentToken.getType() != COMMA) {
                 throw new JsonException(
                         "Expected a value or " + CLOSE_BRACKET.getLabel() + " " +
-                        "on line: " + currentToken.getStartLine() + " " +
-                        "column: " + currentToken.getStartColumn() + ".\n" +
-                        "But got '" + currentToken.getText() + "' instead."
+                                "on line: " + currentToken.getStartLine() + " " +
+                                "column: " + currentToken.getStartColumn() + ".\n" +
+                                "But got '" + currentToken.getText() + "' instead."
                 );
             }
         }
@@ -174,8 +326,8 @@ public class JsonSlurper {
             if (currentToken == null) {
                 throw new JsonException(
                         "Expected a String key on line: " + lexer.getReader().getLine() + ", " +
-                        "column: " + lexer.getReader().getColumn() + ".\n" +
-                        "But got an unterminated object."
+                                "column: " + lexer.getReader().getColumn() + ".\n" +
+                                "But got an unterminated object."
                 );
             }
 
@@ -186,9 +338,9 @@ public class JsonSlurper {
             } else if (currentToken.getType() != STRING) {
                 throw new JsonException(
                         "Expected " + STRING.getLabel() + " key " +
-                        "on line: " + currentToken.getStartLine() + ", " +
-                        "column: " + currentToken.getStartColumn() + ".\n" +
-                        "But got '" + currentToken.getText() + "' instead."
+                                "on line: " + currentToken.getStartLine() + ", " +
+                                "column: " + currentToken.getStartColumn() + ".\n" +
+                                "But got '" + currentToken.getText() + "' instead."
                 );
             }
 
@@ -199,9 +351,9 @@ public class JsonSlurper {
             if (currentToken == null) {
                 throw new JsonException(
                         "Expected a " + COLON.getLabel() + " " +
-                        "on line: " + lexer.getReader().getLine() + ", " +
-                        "column: " + lexer.getReader().getColumn() + ".\n" +
-                        "But got an unterminated object."
+                                "on line: " + lexer.getReader().getLine() + ", " +
+                                "column: " + lexer.getReader().getColumn() + ".\n" +
+                                "But got an unterminated object."
                 );
             }
 
@@ -210,9 +362,9 @@ public class JsonSlurper {
             if (currentToken.getType() != COLON) {
                 throw new JsonException(
                         "Expected " + COLON.getLabel() + " " +
-                        "on line: " + currentToken.getStartLine() + ", " +
-                        "column: " + currentToken.getStartColumn() + ".\n" +
-                        "But got '" + currentToken.getText() +  "' instead."
+                                "on line: " + currentToken.getStartLine() + ", " +
+                                "column: " + currentToken.getStartColumn() + ".\n" +
+                                "But got '" + currentToken.getText() +  "' instead."
                 );
             }
 
@@ -220,10 +372,10 @@ public class JsonSlurper {
 
             if (currentToken == null) {
                 throw new JsonException(
-                        "Expected a value " + 
-                        "on line: " + lexer.getReader().getLine() + ", " +
-                        "column: " + lexer.getReader().getColumn() + ".\n" +
-                        "But got an unterminated object."
+                        "Expected a value " +
+                                "on line: " + lexer.getReader().getLine() + ", " +
+                                "column: " + lexer.getReader().getColumn() + ".\n" +
+                                "But got an unterminated object."
                 );
             }
 
@@ -238,9 +390,9 @@ public class JsonSlurper {
             } else {
                 throw new JsonException(
                         "Expected a value, an array, or an object " +
-                        "on line: " + currentToken.getStartLine() + ", " +
-                        "column: " + currentToken.getStartColumn() + ".\n" +
-                        "But got '" + currentToken.getText() + "' instead."
+                                "on line: " + currentToken.getStartLine() + ", " +
+                                "column: " + currentToken.getStartColumn() + ".\n" +
+                                "But got '" + currentToken.getText() + "' instead."
                 );
             }
 
@@ -252,9 +404,9 @@ public class JsonSlurper {
             if (currentToken == null) {
                 throw new JsonException(
                         "Expected " + CLOSE_CURLY.getLabel() + " or " + COMMA.getLabel() + " " +
-                        "on line: " + previousToken.getEndLine() + ", " +
-                        "column: " + previousToken.getEndColumn() + ".\n" +
-                        "But got an unterminated object."
+                                "on line: " + previousToken.getEndLine() + ", " +
+                                "column: " + previousToken.getEndColumn() + ".\n" +
+                                "But got an unterminated object."
                 );
             }
 
@@ -265,9 +417,9 @@ public class JsonSlurper {
             } else if (currentToken.getType() != COMMA) {
                 throw new JsonException(
                         "Expected a value or " + CLOSE_CURLY.getLabel() + " " +
-                        "on line: " + currentToken.getStartLine() + ", " +
-                        "column: " + currentToken.getStartColumn() + ".\n" +
-                        "But got '" + currentToken.getText() + "' instead."
+                                "on line: " + currentToken.getStartLine() + ", " +
+                                "column: " + currentToken.getStartColumn() + ".\n" +
+                                "But got '" + currentToken.getText() + "' instead."
                 );
             }
         }
