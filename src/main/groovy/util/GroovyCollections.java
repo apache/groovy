@@ -67,16 +67,8 @@ public class GroovyCollections {
     }
 
     /**
-     * Finds all combinations of items from the given collections.
-     * So, <code>combinations([[true, false], [true, false]])</code>
-     * is <code>[[true, true], [false, true], [true, false], [false, false]]</code>
-     * and <code>combinations([['a', 'b'],[1, 2, 3]])</code>
-     * is <code>[['a', 1], ['b', 1], ['a', 2], ['b', 2], ['a', 3], ['b', 3]]</code>.
-     * If a non-collection item is given, it is treated as a singleton collection,
-     * i.e. <code>combinations([[1, 2], 'x'])</code> is <code>[[1, 'x'], [2, 'x']]</code>.
-     *
      * @param collections the given collections
-     * @return a List of the combinations found
+     * @deprecated use combinations(Iterable)
      */
     @Deprecated
     public static List combinations(Collection collections) {
@@ -147,16 +139,16 @@ public class GroovyCollections {
         List result = new ArrayList();
         if (lists.isEmpty() || lists.size() == 0) return result;
         int minSize = Integer.MAX_VALUE;
-        for (Iterator outer = lists.iterator(); outer.hasNext();) {
-            List list = (List) DefaultTypeTransformation.castToType(outer.next(), List.class);
+        for (Object listLike : lists) {
+            List list = (List) DefaultTypeTransformation.castToType(listLike, List.class);
             if (list.size() < minSize) minSize = list.size();
         }
         if (minSize == 0) return result;
         for (int i = 0; i < minSize; i++) {
             result.add(new ArrayList());
         }
-        for (Iterator outer = lists.iterator(); outer.hasNext();) {
-            List list = (List) DefaultTypeTransformation.castToType(outer.next(), List.class);
+        for (Object listLike : lists) {
+            List list = (List) DefaultTypeTransformation.castToType(listLike, List.class);
             for (int i = 0; i < minSize; i++) {
                 List resultList = (List) result.get(i);
                 resultList.add(list.get(i));
@@ -173,14 +165,11 @@ public class GroovyCollections {
      * @return the minimum value
      */
     public static <T> T min(T[] items) {
-        return min(Arrays.asList(items));
+        return min((Iterable<T>)Arrays.asList(items));
     }
 
     /**
-     * Selects the minimum value found in a collection of items.
-     *
-     * @param items a Collection
-     * @return the minimum value
+     * @deprecated use min(Iterable)
      */
     @Deprecated
     public static <T> T min(Collection<T> items) {
@@ -214,14 +203,11 @@ public class GroovyCollections {
      * @return the maximum value
      */
     public static <T> T max(T[] items) {
-        return max(Arrays.asList(items));
+        return max((Iterable<T>)Arrays.asList(items));
     }
 
     /**
-     * Selects the maximum value found in a collection
-     *
-     * @param items a Collection
-     * @return the maximum value
+     * @deprecated use max(Iterable)
      */
     @Deprecated
     public static <T> T max(Collection<T> items) {
@@ -254,17 +240,15 @@ public class GroovyCollections {
      * @return the sum of the items
      */
     public static Object sum(Object[] items) {
-        return DefaultGroovyMethods.sum(Arrays.asList(items));
+        return sum((Iterable)Arrays.asList(items));
     }
 
     /**
-     * Sums all the items from a collection of items.
-     *
-     * @param items a collection of items
-     * @return the sum of the items
+     * @deprecated use sum(Iterable)
      */
+    @Deprecated
     public static Object sum(Collection items) {
-        return DefaultGroovyMethods.sum(items);
+        return sum((Iterable)items);
     }
 
     /**
