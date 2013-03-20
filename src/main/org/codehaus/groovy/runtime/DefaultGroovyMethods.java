@@ -2274,26 +2274,15 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Deprecated alias for collectNested
      *
      * @deprecated Use collectNested instead
-     * @see #collectNested(Collection, Collection, Closure)
+     * @see #collectNested(Iterable, Collection, Closure)
      */
     public static Collection collectAll(Collection self, Collection collector, Closure transform) {
-        return collectNested(self, collector, transform);
+        return collectNested((Iterable)self, collector, transform);
     }
 
     /**
-     * Recursively iterates through this collection transforming each non-Collection value
-     * into a new value using the <code>transform</code> closure. Returns a potentially nested
-     * collection of transformed values.
-     * <pre class="groovyTestCase">
-     * def x = [1,[2,3],[4],[]].collectNested(new Vector()) { it * 2 }
-     * assert x == [2,[4,6],[8],[]]
-     * assert x instanceof Vector
-     * </pre>
-     *
-     * @param self      a collection
-     * @param collector an initial Collection to which the transformed values are added
-     * @param transform the closure used to transform each element of the collection
-     * @return the collector with all transformed values added to it
+     * @deprecated Use the Iterable version of collectNested instead
+     * @see #collectNested(Iterable, Collection, Closure)
      * @since 1.8.1
      */
     @Deprecated
@@ -2333,27 +2322,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Projects each item from a source collection to a collection and concatenates (flattens) the resulting collections into a single list.
-     * <p/>
-     * <pre class="groovyTestCase">
-     * def nums = 1..10
-     * def squaresAndCubesOfEvens = nums.collectMany{ it % 2 ? [] : [it**2, it**3] }
-     * assert squaresAndCubesOfEvens == [4, 8, 16, 64, 36, 216, 64, 512, 100, 1000]
-     *
-     * def animals = ['CAT', 'DOG', 'ELEPHANT'] as Set
-     * def smallAnimals = animals.collectMany{ it.size() > 3 ? [] : [it.toLowerCase()] }
-     * assert smallAnimals == ['cat', 'dog']
-     *
-     * def orig = nums as Set
-     * def origPlusIncrements = orig.collectMany{ [it, it+1] }
-     * assert origPlusIncrements.size() == orig.size() * 2
-     * assert origPlusIncrements.unique().size() == orig.size() + 1
-     * </pre>
-     *
-     * @param self       a collection
-     * @param projection a projecting Closure returning a collection of items
-     * @return a list created from the projected collections concatenated (flattened) together
-     * @see #sum(java.util.Collection, groovy.lang.Closure)
+     * @deprecated Use the Iterable version of collectMany instead
+     * @see #collectMany(Iterable, Closure)
      * @since 1.8.1
      */
     @Deprecated
@@ -2362,23 +2332,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Projects each item from a source collection to a result collection and concatenates (flattens) the resulting
-     * collections adding them into the <code>collector</code>.
-     * <p/>
-     * <pre class="groovyTestCase">
-     * def animals = ['CAT', 'DOG', 'ELEPHANT'] as Set
-     * def smallAnimals = animals.collectMany(['ant', 'bee']){ it.size() > 3 ? [] : [it.toLowerCase()] }
-     * assert smallAnimals == ['ant', 'bee', 'cat', 'dog']
-     *
-     * def nums = 1..5
-     * def origPlusIncrements = nums.collectMany([] as Set){ [it, it+1] }
-     * assert origPlusIncrements.size() == nums.size() + 1
-     * </pre>
-     *
-     * @param self       a collection
-     * @param collector  an initial collection to add the projected items to
-     * @param projection a projecting Closure returning a collection of items
-     * @return the collector with the projected collections concatenated (flattened) to it
+     * @deprecated Use the Iterable version of collectMany instead
+     * @see #collectMany(Iterable, Collection, Closure)
      * @since 1.8.5
      */
     @Deprecated
@@ -2600,7 +2555,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * @deprecated use collectEntries(Iterable, Closure)
+     * @deprecated Use the Iterable version of collectEntries instead
+     * @see #collectEntries(Iterable, Closure)
      * @since 1.7.9
      */
     @Deprecated
@@ -2645,7 +2601,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * @deprecated use collectEntries(Iterable)
+     * @deprecated Use the Iterable version of collectEntries instead
+     * @see #collectEntries(Iterable)
      * @since 1.8.5
      */
     @Deprecated
@@ -2686,22 +2643,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Iterates through this Collection transforming each item using the closure
-     * as a transformer into a map entry, returning the supplied map with all of the transformed entries added to it.
-     * <pre class="groovyTestCase">
-     * def letters = "abc"
-     * // collect letters with index
-     * assert (0..2).collectEntries( [:] ) { index -> [index, letters[index]] } == [0:'a', 1:'b', 2:'c']
-     * assert (0..2).collectEntries( [4:'d'] ) { index ->
-     *     [(index+1): letters[index]] } == [1:'a', 2:'b', 3:'c', 4:'d']
-     * </pre>
-     *
-     * @param self      a Collection
-     * @param collector the Map into which the transformed entries are put
-     * @param transform the closure used for transforming, which has an item from self as the parameter and
-     *                  should return a Map.Entry, a Map or a two-element list containing the resulting key and value
-     * @return the collector with all transformed values added to it
-     * @see #collect(Map, Collection, Closure)
+     * @deprecated Use the Iterable version of collectEntries instead
+     * @see #collectEntries(Iterable, Map, Closure)
      * @since 1.7.9
      */
     @Deprecated
@@ -2751,7 +2694,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * @deprecated use collectEntries(Iterable, Closure)
+     * @deprecated Use the Iterable version of collectEntries instead
+     * @see #collectEntries(Iterable, Map)
      * @since 1.8.5
      */
     @Deprecated
@@ -3056,7 +3000,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * @deprecated use findResults(Iterable, Closure)
+     * @deprecated Use the Iterable version of findResults instead
+     * @see #findResults(Iterable, Closure)
      * @since 1.8.1
      */
     @Deprecated
@@ -3503,19 +3448,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Adds GroovyCollections#combinations(Collection) as a method on collections.
-     * <p>
-     * Example usage:
-     * <pre class="groovyTestCase">assert [['a', 'b'],[1, 2, 3]].combinations() == [['a', 1], ['b', 1], ['a', 2], ['b', 2], ['a', 3], ['b', 3]]</pre>
-     *
-     * @param self a Collection of lists
-     * @return a List of the combinations found
-     * @see groovy.util.GroovyCollections#combinations(java.util.Collection)
+     * @deprecated Use the Iterable version of combinations instead
+     * @see #combinations(Iterable)
      * @since 1.5.0
      */
     @Deprecated
     public static List combinations(Collection self) {
-        return GroovyCollections.combinations(self);
+        return combinations((Iterable)self);
     }
 
     /**
@@ -3645,18 +3584,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Sorts all collection members into groups determined by the
-     * supplied mapping closure.  The closure should return the key that this
-     * item should be grouped by.  The returned LinkedHashMap will have an entry for each
-     * distinct key returned from the closure, with each value being a list of
-     * items for that group.
-     * <p>
-     * Example usage:
-     * <pre class="groovyTestCase">assert [0:[2,4,6], 1:[1,3,5]] == [1,2,3,4,5,6].groupBy { it % 2 }</pre>
-     *
-     * @param self    a collection to group
-     * @param closure a closure mapping entries on keys
-     * @return a new Map grouped by keys
+     * @deprecated Use the Iterable version of groupBy instead
+     * @see #groupBy(Iterable, Closure)
      * @since 1.0
      */
     @Deprecated
@@ -3690,34 +3619,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Sorts all collection members into (sub)groups determined by the supplied
-     * mapping closures. Each closure should return the key that this item
-     * should be grouped by. The returned LinkedHashMap will have an entry for each
-     * distinct 'key path' returned from the closures, with each value being a list
-     * of items for that 'group path'. <p>
-     *
-     * Example usage:
-     * <pre class="groovyTestCase">def result = [1,2,3,4,5,6].groupBy({ it % 2 }, { it < 4 })
-     * assert result == [1:[(true):[1, 3], (false):[5]], 0:[(true):[2], (false):[4, 6]]]</pre>
-     *
-     * Another example:
-     * <pre>def sql = groovy.sql.Sql.newInstance(/&ast; ... &ast;/)
-     * def data = sql.rows("SELECT * FROM a_table").groupBy({ it.column1 }, { it.column2 }, { it.column3 })
-     * if (data.val1.val2.val3) {
-     *     // there exists a record where:
-     *     //   a_table.column1 == val1
-     *     //   a_table.column2 == val2, and
-     *     //   a_table.column3 == val3
-     * } else {
-     *     // there is no such record
-     * }</pre>
-     * If an empty array of closures is supplied the IDENTITY Closure will be used.
-     *
-     * @param self     a collection to group
-     * @param closures an array of closures, each mapping entries on keys
-     * @return a new Map grouped by keys on each criterion
+     * @deprecated Use the Iterable version of groupBy instead
+     * @see #groupBy(Iterable, Object...)
      * @since 1.8.1
-     * @see Closure#IDENTITY
      */
     @Deprecated
     public static Map groupBy(Collection self, Object... closures) {
@@ -3847,18 +3751,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Sorts all collection members into groups determined by the supplied mapping
-     * closure and counts the group size.  The closure should return the key that each
-     * item should be grouped by.  The returned Map will have an entry for each
-     * distinct key returned from the closure, with each value being the frequency of
-     * items occurring for that group.
-     * <p>
-     * Example usage:
-     * <pre class="groovyTestCase">assert [0:2, 1:3] == [1,2,3,4,5].countBy { it % 2 }</pre>
-     *
-     * @param self    a collection to group and count
-     * @param closure a closure mapping items to the frequency keys
-     * @return a new Map grouped by keys with frequency counts
+     * @deprecated Use the Iterable version of countBy instead
+     * @see #countBy(Iterable, Closure)
      * @since 1.8.0
      */
     @Deprecated
@@ -4357,12 +4251,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Sums the items in a collection.  This is equivalent to invoking the
-     * "plus" method on all items in the collection.
-     * <pre class="groovyTestCase">assert 1+2+3+4 == [1,2,3,4].sum()</pre>
-     *
-     * @param self Collection of values to add together
-     * @return The sum of all of the items
+     * @deprecated Use the Iterable version of sum instead
+     * @see #sum(Iterable)
      * @since 1.0
      */
     @Deprecated
@@ -4410,12 +4300,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Sums the items in a collection, adding the result to some initial value.
-     * <pre class="groovyTestCase">assert 5+1+2+3+4 == [1,2,3,4].sum(5)</pre>
-     *
-     * @param self         a collection of values to sum
-     * @param initialValue the items in the collection will be summed to this initial value
-     * @return The sum of all of the items.
+     * @deprecated Use the Iterable version of sum instead
+     * @see #sum(Iterable, Object)
      * @since 1.5.0
      */
     @Deprecated
@@ -4481,20 +4367,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Sums the result of apply a closure to each item of a collection.
-     * <code>coll.sum(closure)</code> is equivalent to:
-     * <code>coll.collect(closure).sum()</code>.
-     * <pre class="groovyTestCase">assert 4+6+10+12 == [2,3,5,6].sum() { it * 2 }</pre>
-     *
-     * @param self    a Collection
-     * @param closure a single parameter closure that returns a numeric value.
-     * @return The sum of the values returned by applying the closure to each
-     *         item of the collection.
+     * @deprecated Use the Iterable version of sum instead
+     * @see #sum(Iterable, Closure)
      * @since 1.0
      */
     @Deprecated
     public static Object sum(Collection self, Closure closure) {
-        return sum((Iterable)self, null, closure, true);
+        return sum((Iterable)self, closure);
     }
 
     /**
@@ -4545,21 +4424,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Sums the result of applying a closure to each item of a collection to some initial value.
-     * <code>coll.sum(initVal, closure)</code> is equivalent to:
-     * <code>coll.collect(closure).sum(initVal)</code>.
-     * <pre class="groovyTestCase">assert 50+4+6+10+12 == [2,3,5,6].sum(50) { it * 2 }</pre>
-     *
-     * @param self         a Collection
-     * @param closure      a single parameter closure that returns a numeric value.
-     * @param initialValue the closure results will be summed to this initial value
-     * @return The sum of the values returned by applying the closure to each
-     *         item of the collection.
+     * @deprecated Use the Iterable version of sum instead
+     * @see #sum(Iterable, Object, Closure)
      * @since 1.5.0
      */
     @Deprecated
     public static Object sum(Collection self, Object initialValue, Closure closure) {
-        return sum(self, initialValue, closure, false);
+        return sum((Iterable)self, initialValue, closure);
     }
 
     /**
@@ -4646,14 +4517,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Concatenates the <code>toString()</code> representation of each
-     * item in this collection, with the given String as a separator between
-     * each item.
-     * <pre class="groovyTestCase">assert "1, 2, 3" == [1,2,3].join(", ")</pre>
-     *
-     * @param self      a Collection of objects
-     * @param separator a String separator
-     * @return the joined String
+     * @deprecated Use the Iterable version of join instead
+     * @see #join(Iterable, String)
      * @since 1.0
      */
     @Deprecated
@@ -4768,12 +4633,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Selects the minimum value found in the collection using the given comparator.
-     * <pre class="groovyTestCase">assert "hi" == ["hello","hi","hey"].min( { a, b -> a.length() <=> b.length() } as Comparator )</pre>
-     *
-     * @param self       a Collection
-     * @param comparator a Comparator
-     * @return the minimum value
+     * @deprecated Use the Iterable version of min instead
+     * @see #min(Iterable, Comparator)
      * @since 1.0
      */
     @Deprecated
@@ -4827,35 +4688,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Selects an item in the collection having the minimum
-     * value as determined by the supplied closure.
-     * If more than one item has the minimum value,
-     * an arbitrary choice is made between the items having the minimum value.
-     * </p>
-     * If the closure has two parameters
-     * it is used like a traditional Comparator. I.e. it should compare
-     * its two parameters for order, returning a negative integer,
-     * zero, or a positive integer when the first parameter is less than,
-     * equal to, or greater than the second respectively. Otherwise,
-     * the Closure is assumed to take a single parameter and return a
-     * Comparable (typically an Integer) which is then used for
-     * further comparison.
-     * <pre class="groovyTestCase">
-     * assert "hi" == ["hello","hi","hey"].min { it.length() }
-     * </pre>
-     * <pre class="groovyTestCase">
-     * def lastDigit = { a, b -> a % 10 <=> b % 10 }
-     * assert [19, 55, 91].min(lastDigit) == 91
-     * </pre>
-     * <pre class="groovyTestCase">
-     * def pets = ['dog', 'cat', 'anaconda']
-     * def shortestName = pets.min{ it.size() } // one of 'dog' or 'cat'
-     * assert shortestName.size() == 3
-     * </pre>
-     *
-     * @param self    a Collection
-     * @param closure a 1 or 2 arg Closure used to determine the correct ordering
-     * @return the minimum value
+     * @deprecated Use the Iterable version of min instead
+     * @see #min(Iterable, Closure)
      * @since 1.0
      */
     @Deprecated
@@ -5037,12 +4871,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Adds max() method to Collection objects.
-     * <pre class="groovyTestCase">assert 5 == [2,3,1,5,4].max()</pre>
-     *
-     * @param self a Collection
-     * @return the maximum value
-     * @see groovy.util.GroovyCollections#max(java.util.Collection)
+     * @deprecated Use the Iterable version of max instead
+     * @see #max(Iterable)
      * @since 1.0
      */
     @Deprecated
@@ -5091,30 +4921,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Selects an item in the collection having the maximum
-     * value as determined by the supplied closure.
-     * If more than one item has the maximum value,
-     * an arbitrary choice is made between the items having the maximum value.
-     * </p>
-     * If the closure has two parameters
-     * it is used like a traditional Comparator. I.e. it should compare
-     * its two parameters for order, returning a negative integer,
-     * zero, or a positive integer when the first parameter is less than,
-     * equal to, or greater than the second respectively. Otherwise,
-     * the Closure is assumed to take a single parameter and return a
-     * Comparable (typically an Integer) which is then used for
-     * further comparison.
-     * <pre class="groovyTestCase">assert "hello" == ["hello","hi","hey"].max { it.length() }</pre>
-     * <pre class="groovyTestCase">assert "hello" == ["hello","hi","hey"].max { a, b -> a.length() <=> b.length() }</pre>
-     * <pre class="groovyTestCase">
-     * def pets = ['dog', 'elephant', 'anaconda']
-     * def longestName = pets.max{ it.size() } // one of 'elephant' or 'anaconda'
-     * assert longestName.size() == 8
-     * </pre>
-     *
-     * @param self    a Collection
-     * @param closure a 1 or 2 arg Closure used to determine the correct ordering
-     * @return the maximum value
+     * @deprecated Use the Iterable version of max instead
+     * @see #max(Iterable, Closure)
      * @since 1.0
      */
     @Deprecated
@@ -5214,12 +5022,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Selects the maximum value found in the collection using the given comparator.
-     * <pre class="groovyTestCase">assert "hello" == ["hello","hi","hey"].max( { a, b -> a.length() <=> b.length() } as Comparator )</pre>
-     *
-     * @param self       a Collection
-     * @param comparator a Comparator
-     * @return the maximum value
+     * @deprecated Use the Iterable version of max instead
+     * @see #max(Iterable, Comparator)
      * @since 1.0
      */
     @Deprecated
@@ -5868,7 +5672,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Support the subscript operator for Collection.
-     * <pre class="groovyTestCase">assert [String, Long, Integer] == ["a",5L,2]["class"]</pre>
+     * <pre class="groovyTestCase">
+     * assert [String, Long, Integer] == ["a",5L,2]["class"]
+     * </pre>
      *
      * @param coll     a Collection
      * @param property a String
@@ -5878,22 +5684,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static List getAt(Collection coll, String property) {
         List<Object> answer = new ArrayList<Object>(coll.size());
         return getAtIterable(coll, property, answer);
-    }
-
-    /**
-     * Support the subscript operator for Iterable.
-     * <pre class="groovyTestCase">
-     * assert [String, Long, Integer] == ["a",5L,2]["class"]
-     * </pre>
-     *
-     * @param items    an Iterable
-     * @param property a String
-     * @return a List
-     * @since 2.2.0
-     */
-    public static List getAt(Iterable items, String property) {
-        List<Object> answer = new ArrayList<Object>();
-        return getAtIterable(items, property, answer);
     }
 
     private static List getAtIterable(Iterable coll, String property, List<Object> answer) {
@@ -6266,16 +6056,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Sorts the Collection. Assumes that the collection items are comparable
-     * and uses their natural ordering to determine the resulting order.
-     * If the Collection is a List, it is sorted in place and returned.
-     * Otherwise, the elements are first placed into a new list which is then
-     * sorted and returned - leaving the original Collection unchanged.
-     * <pre class="groovyTestCase">assert [1,2,3] == [3,1,2].sort()</pre>
-     *
-     * @param self the collection to be sorted
-     * @return the sorted collection as a List
-     * @see #sort(Collection, boolean)
+     * @deprecated Use the Iterable version of sort instead
+     * @see #sort(Iterable)
      * @since 1.0
      */
     @Deprecated
@@ -6301,22 +6083,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Sorts the Collection. Assumes that the collection items are
-     * comparable and uses their natural ordering to determine the resulting order.
-     * If the Collection is a List and mutate is true,
-     * it is sorted in place and returned. Otherwise, the elements are first placed
-     * into a new list which is then sorted and returned - leaving the original Collection unchanged.
-     * <pre class="groovyTestCase">assert [1,2,3] == [3,1,2].sort()</pre>
-     * <pre class="groovyTestCase">
-     * def orig = [1, 3, 2]
-     * def sorted = orig.sort(false)
-     * assert orig == [1, 3, 2]
-     * assert sorted == [1, 2, 3]
-     * </pre>
-     *
-     * @param self   the collection to be sorted
-     * @param mutate false will always cause a new list to be created, true will mutate lists in place
-     * @return the sorted collection as a List
+     * @deprecated Use the Iterable version of sort instead
+     * @see #sort(Iterable, boolean)
      * @since 1.8.1
      */
     @Deprecated
@@ -6472,20 +6240,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Sorts the Collection using the given Comparator. If the Collection is a List,
-     * it is sorted in place and returned. Otherwise, the elements are first placed
-     * into a new list which is then sorted and returned - leaving the original Collection unchanged.
-     * <pre class="groovyTestCase">
-     * assert ["hi","hey","hello"] == ["hello","hi","hey"].sort( { a, b -> a.length() <=> b.length() } as Comparator )
-     * </pre>
-     * <pre class="groovyTestCase">
-     * assert ["hello","Hey","hi"] == ["hello","hi","Hey"].sort(String.CASE_INSENSITIVE_ORDER)
-     * </pre>
-     *
-     * @param self       a collection to be sorted
-     * @param comparator a Comparator used for the comparison
-     * @return a sorted List
-     * @see #sort(Collection, boolean, Comparator)
+     * @deprecated Use the Iterable version of sort instead
+     * @see #sort(Iterable, Comparator)
      * @since 1.0
      */
     @Deprecated
@@ -6515,23 +6271,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Sorts the Collection using the given Comparator. If the Collection is a List and mutate
-     * is true, it is sorted in place and returned. Otherwise, the elements are first placed
-     * into a new list which is then sorted and returned - leaving the original Collection unchanged.
-     * <pre class="groovyTestCase">
-     * assert ["hi","hey","hello"] == ["hello","hi","hey"].sort( { a, b -> a.length() <=> b.length() } as Comparator )
-     * </pre>
-     * <pre class="groovyTestCase">
-     * def orig = ["hello","hi","Hey"]
-     * def sorted = orig.sort(false, String.CASE_INSENSITIVE_ORDER)
-     * assert orig == ["hello","hi","Hey"]
-     * assert sorted == ["hello","Hey","hi"]
-     * </pre>
-     *
-     * @param self       a collection to be sorted
-     * @param mutate     false will always cause a new list to be created, true will mutate lists in place
-     * @param comparator a Comparator used for the comparison
-     * @return a sorted List
+     * @deprecated Use the Iterable version of sort instead
+     * @see #sort(Iterable, boolean, Comparator)
      * @since 1.8.1
      */
     @Deprecated
@@ -6729,31 +6470,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Sorts this Collection using the given Closure to determine the correct ordering. If the Collection is a List
-     * and mutate is true, it is sorted in place and returned. Otherwise, the elements are first placed
-     * into a new list which is then sorted and returned - leaving the original Collection unchanged.
-     * </p>
-     * If the closure has two parameters
-     * it is used like a traditional Comparator. I.e. it should compare
-     * its two parameters for order, returning a negative integer,
-     * zero, or a positive integer when the first parameter is less than,
-     * equal to, or greater than the second respectively. Otherwise,
-     * the Closure is assumed to take a single parameter and return a
-     * Comparable (typically an Integer) which is then used for
-     * further comparison.
-     * <pre class="groovyTestCase">assert ["hi","hey","hello"] == ["hello","hi","hey"].sort { it.length() }</pre>
-     * <pre class="groovyTestCase">assert ["hi","hey","hello"] == ["hello","hi","hey"].sort { a, b -> a.length() <=> b.length() }</pre>
-     * <pre class="groovyTestCase">
-     * def orig = ["hello","hi","Hey"]
-     * def sorted = orig.sort(false) { it.toUpperCase() }
-     * assert orig == ["hello","hi","Hey"]
-     * assert sorted == ["hello","Hey","hi"]
-     * </pre>
-     *
-     * @param self    a Collection to be sorted
-     * @param mutate  false will always cause a new list to be created, true will mutate lists in place
-     * @param closure a 1 or 2 arg Closure used to determine the correct ordering
-     * @return a newly created sorted List
+     * @deprecated Use the Iterable version of sort instead
+     * @see #sort(Iterable, boolean, Closure)
      * @since 1.8.1
      */
     @Deprecated
@@ -7793,14 +7511,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Converts this Collection to a List. Returns the original Collection
-     * if it is already a List.
-     * <p>
-     * Example usage:
-     * <pre class="groovyTestCase">assert new HashSet().asList() instanceof List</pre>
-     *
-     * @param self a collection to be converted into a List
-     * @return a newly created List if this collection is not already a List
+     * @deprecated Use the Iterable version of asList instead
+     * @see #asList(Iterable)
      * @since 1.0
      */
     @Deprecated
