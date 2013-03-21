@@ -517,7 +517,7 @@ project.ext.pomConfigureClosure = {
         if (project == rootProject) {
             // make dependencies optional
             def groovyConfDeps =
-                configurations.groovy.dependencies.collect { dep -> dep.name } - configurations.compile.dependencies.collect { dep -> dep.name }
+                project.configurations.groovy.dependencies.collect { dep -> dep.name } - project.configurations.compile.dependencies.collect { dep -> dep.name }
             pom.dependencies.each { dep ->  if (!groovyConfDeps.contains(dep.artifactId)) { dep.optional = true }}
         }
 
