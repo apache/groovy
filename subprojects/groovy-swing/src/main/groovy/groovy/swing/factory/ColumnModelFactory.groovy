@@ -45,9 +45,10 @@ class ColumnModelFactory extends AbstractFactory {
     }
 
     public void onNodeCompleted(FactoryBuilderSupport builder, Object parent, Object node) {
-        if (!(parent instanceof JTable)) {
+        if (parent instanceof JTable) {
+            parent.columnModel = node
+        } else {
             log.warning("ColumnModel must be a child of a table. Found: " + parent.getClass());
         }
-        parent.columnModel = node
     }
 }
