@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -693,7 +693,18 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
 
         if (element != null) {
             init = expression(element);
-            ClassNode innerClass = getAnonymousInnerClassNode(init);
+            ClassNode innerClass;
+            if (element.getNextSibling() == null) {
+                innerClass = getAnonymousInnerClassNode(init);
+                if (innerClass != null) {
+                    init = null;
+                }
+            } else {
+                element = element.getNextSibling();
+                Expression next = expression(element);
+                innerClass = getAnonymousInnerClassNode(next);
+                // TODO: assert innerClass != null
+            }
 
             if (innerClass != null) {
                 // we have to handle an enum that defines a class for a constant
@@ -701,8 +712,20 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
                 // to configure the inner class 
                 innerClass.setSuperClass(classNode.getPlainNodeReference());
                 innerClass.setModifiers(classNode.getModifiers() | Opcodes.ACC_FINAL);
-                // we use a ClassExpression for transportation o EnumVisitor
-                init = new ClassExpression(innerClass);
+                // we use a ClassExpression for transportation to EnumVisitor
+                Expression inner = new ClassExpression(innerClass);
+                if (init == null) {
+                    init = inner;
+                } else {
+                    if (init instanceof ListExpression) {
+                        ((ListExpression) init).addExpression(inner);
+                    } else {
+                        ListExpression le = new ListExpression();
+                        le.addExpression(init);
+                        le.addExpression(inner);
+                        init = le;
+                    }
+                }
                 // and remove the final modifier from classNode to allow the sub class
                 classNode.setModifiers(classNode.getModifiers() & ~Opcodes.ACC_FINAL);
             } else if (isType(ELIST, element)) {
