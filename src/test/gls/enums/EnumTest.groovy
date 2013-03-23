@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2009 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -408,7 +408,7 @@ class EnumTest extends CompilableTestSupport {
             assert foos[1].j == 2
         """
     }
-    
+
     void testNamedArguments() {
         // this test is a result of GROOVY-4219 and should be changed once
         // GROOVY-4582 is implemented.
@@ -426,8 +426,23 @@ class EnumTest extends CompilableTestSupport {
             }
         """
     }
-}
 
+    void testOverridingMethodsWithExplicitConstructor() {
+        // GROOVY-6065
+        assertScript """
+            enum Country {
+                Hungary(9_939_000), Italy(61_482_000), Poland(38_383_000) { String getCountryCode() { 'pl' } }
+                int population
+                Country(population) { this.population = population }
+                String getCountryCode() { name()[0..1].toLowerCase() }
+            }
+
+            assert Country.Hungary.countryCode == 'hu'
+            assert Country.Italy.countryCode == 'it'
+            assert Country.Poland.countryCode == 'pl'
+        """
+    }
+}
 
 enum UsCoin {
     penny(1), nickel(5), dime(10), quarter(25)
