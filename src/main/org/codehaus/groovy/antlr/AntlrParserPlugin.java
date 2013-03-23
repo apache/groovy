@@ -688,6 +688,8 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             element = element.getNextSibling();
         }
         String identifier = identifier(element);
+        int savedLine = element.getLine();
+        int savedColumn = element.getColumn();
         Expression init = null;
         element = element.getNextSibling();
 
@@ -736,7 +738,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
                 }
             }
         }
-        EnumHelper.addEnumConstant(classNode, identifier, init);
+        EnumHelper.addEnumConstant(classNode, identifier, init, savedLine, savedColumn);
         enumConstantBeingDef = false;
     }
 

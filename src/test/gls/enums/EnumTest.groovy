@@ -442,6 +442,42 @@ class EnumTest extends CompilableTestSupport {
             assert Country.Poland.countryCode == 'pl'
         """
     }
+
+    void testAbstractMethodOverriding() {
+        // GROOVY-4641
+        assertScript """
+            enum Day {
+               SUNDAY {
+                  String getAction() { 'Relax' }
+               },
+               MONDAY {
+                   String getAction() { 'Work' }
+               }
+               abstract String getAction()
+            }
+            assert 'Relax' ==  Day.SUNDAY.action
+        """
+        shouldNotCompile """
+            enum Day {
+               SUNDAY {
+                  String getAction() { 'Relax' }
+               },
+               MONDAY
+               abstract String getAction()
+            }
+            assert 'Relax' ==  Day.SUNDAY.action
+        """
+        shouldNotCompile """
+            enum Day {
+               SUNDAY {
+                  String getAction() { 'Relax' }
+               },
+               MONDAY {}
+               abstract String getAction()
+            }
+            assert 'Relax' ==  Day.SUNDAY.action
+        """
+    }
 }
 
 enum UsCoin {
