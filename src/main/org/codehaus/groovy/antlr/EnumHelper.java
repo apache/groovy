@@ -50,11 +50,7 @@ public class EnumHelper {
         return enumClass;
     }
 
-    public static void addEnumConstant(ClassNode enumClass, String name, Expression init) {
-        addEnumConstant(enumClass, name, init, -1, -1);
-    }
-
-    public static void addEnumConstant(ClassNode enumClass, String name, Expression init, int lineNumber, int colNumber) {
+    public static FieldNode addEnumConstant(ClassNode enumClass, String name, Expression init) {
         int modifiers = PUBLIC_FS | Opcodes.ACC_ENUM;
         if (init != null && !(init instanceof ListExpression)) {
             ListExpression list = new ListExpression();
@@ -62,8 +58,7 @@ public class EnumHelper {
             init = list;
         }
         FieldNode fn = new FieldNode(name, modifiers, enumClass.getPlainNodeReference(), enumClass, init);
-        fn.setLineNumber(lineNumber);
-        fn.setColumnNumber(colNumber);
         enumClass.addField(fn);
+        return fn;
     }
 }
