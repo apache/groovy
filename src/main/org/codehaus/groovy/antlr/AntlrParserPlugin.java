@@ -705,7 +705,6 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
                 element = element.getNextSibling();
                 Expression next = expression(element);
                 innerClass = getAnonymousInnerClassNode(next);
-                // TODO: assert innerClass != null
             }
 
             if (innerClass != null) {
@@ -717,7 +716,9 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
                 // we use a ClassExpression for transportation to EnumVisitor
                 Expression inner = new ClassExpression(innerClass);
                 if (init == null) {
-                    init = inner;
+                    ListExpression le = new ListExpression();
+                    le.addExpression(inner);
+                    init = le;
                 } else {
                     if (init instanceof ListExpression) {
                         ((ListExpression) init).addExpression(inner);
@@ -2571,6 +2572,17 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         }
         list.add(size);
         return list;
+    }
+
+    protected Expression enumArguments(AST elist) {
+        List<Expression> expressionList = new ArrayList<Expression>();
+        for (AST node = elist; node != null; node = node.getNextSibling()) {
+            Expression expression = expression(node);
+            expressionList.add(expression);
+        }
+        ArgumentListExpression argumentListExpression = new ArgumentListExpression(expressionList);
+        configureAST(argumentListExpression, elist);
+        return argumentListExpression;
     }
 
     protected Expression arguments(AST elist) {
