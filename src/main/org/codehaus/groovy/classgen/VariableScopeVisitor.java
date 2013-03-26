@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2011 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -456,11 +456,10 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
     // ------------------------------
 
     public void visitClass(ClassNode node) {
-        // AIC are already done, doing them here again will lead
-        // to wrong scopes
+        // AIC are already done, doing them here again will lead to wrong scopes
         if (node instanceof InnerClassNode) {
             InnerClassNode in = (InnerClassNode) node;
-            if (in.isAnonymous()) return;
+            if (in.isAnonymous() && !in.isEnum()) return;
         }
 
         pushState();

@@ -478,6 +478,24 @@ class EnumTest extends CompilableTestSupport {
             assert 'Relax' ==  Day.SUNDAY.action
         """
     }
+
+    void testInnerClosureDefinitions() {
+        // GROOVY-5756
+        assertScript """
+            enum MyEnum {
+                INSTANCE {
+                    String foo() {
+                        def clos1 = { "foo1" }; clos1.call()
+                    }
+                }, CONTROL
+                String foo() {
+                    def clos2 = { "foo2" }; clos2.call()
+                }
+            }
+            assert "foo2" == MyEnum.CONTROL.foo()
+            assert "foo1" == MyEnum.INSTANCE.foo()
+        """
+    }
 }
 
 enum UsCoin {
