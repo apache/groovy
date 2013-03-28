@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,15 +37,14 @@ import java.util.logging.Logger;
  * The files are assumed to be Groovy source files and be either a TestCase or a Script that can
  * be wrapped transparently into a TestCase.
  * The directory and the pattern can be set via System properties (see this classes' constants for details.)
- * <p/>
+ * <p>
  * When setting the loglevel of this class to FINEST, all file loading will be logged.
- * <p/>
+ * <p>
  * See also groovy.util.AllTestSuiteTest.groovy
  *
  * @author Andrew Glover
  * @author Dierk Koenig
  * @author Paul King
- *         todo: dk: make FileNameFinder injectable
  */
 public class AllTestSuite extends TestSuite {
 
@@ -84,6 +83,7 @@ public class AllTestSuite extends TestSuite {
 
     static { // this is only needed since the Groovy Build compiles *.groovy files after *.java files
         try {
+            // TODO: dk: make FileNameFinder injectable
             Class finderClass = Class.forName("groovy.util.FileNameFinder");
             finder = (IFileNameFinder) finderClass.newInstance();
         } catch (Exception e) {

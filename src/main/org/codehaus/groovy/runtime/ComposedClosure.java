@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import java.util.List;
  * A wrapper for Closure to support composition.
  * Normally used only internally through the <code>rightShift()</code> and
  * <code>leftShift()</code> methods on <code>Closure</code>.
- * <p/>
+ * <p>
  * Typical usages:
  * <pre>
  * def twice = { a -> a * 2 }
@@ -60,7 +60,7 @@ public final class ComposedClosure<V> extends Closure<V> {
     private Closure<V> second;
 
     public ComposedClosure(Closure first, Closure<V> second) {
-        super((Closure) first.clone());
+        super(first.clone());
         this.first = (Closure) getOwner();
         this.second = (Closure<V>) second.clone();
         maximumNumberOfParameters = first.getMaximumNumberOfParameters();

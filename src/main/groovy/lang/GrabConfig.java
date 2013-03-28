@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2011 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import java.lang.annotation.Target;
 
 /**
  * Used to modify the grape configuration for grab requests.
- * <p/>
+ * <p>
  * An example involving databases:
  * <pre>
  * {@code @Grab}('mysql:mysql-connector-java:5.1.6'),
@@ -63,7 +63,7 @@ import java.lang.annotation.Target;
  *
  * println john2.dump()
  * </pre>
- * <p/>
+ * <p>
  * Further information about customising grape behavior can be found on the Grape documentation page:
  * <a href="http://groovy.codehaus.org/Grape">http://groovy.codehaus.org/Grape</a>.
  */

@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 the original author or authors.
+ * Copyright 2008-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,22 +26,18 @@ import org.codehaus.groovy.transform.GroovyASTTransformationClass
 /**
  * Allows "interrupt-safe" executions of scripts by adding a custom check for interruption
  * on loops (for, while, do), the first statement of closures, and the first statement of methods.
- * <br/>
- * <br/>
+ * <p>
  * This is especially useful when executing foreign scripts that you do not have control over. Inject this
  * transformation into a script that you need to interrupt based on some custom criteria.
- * <br/>
- * <br/>
+ * <p>
  * Annotating anything in a script will cause for loops, while loops, methods, and closures to make a
  * check against the specified closure. If the closure yields true (according to GroovyTruth), then the script
  * will throw an InterruptedException. The annotation by default applies to any classes defined in the script
  * as well. Annotated a class will cause (by default) all classes in the entire file ('Compilation Unit') to be
  * enhanced. You can fine tune what is enhanced using the annotation parameters.
- * <br/>
- * <br/>
+ * <p>
  * Extensive usage examples can be found in the unit test for this class. A smaller example is presented here.
  * The following is sample usage of the annotation:
- * <br/>
  * <pre>
  * <code>@ConditionalInterrupt({ counter++> 10})</code>
  * import groovy.transform.ConditionalInterrupt
@@ -56,7 +52,6 @@ import org.codehaus.groovy.transform.GroovyASTTransformationClass
  * scriptMethod()
  * </pre>
  * Which results in the following code being generated. Notice the checks and exceptions:
- * <br/>
  * <pre>
  * public class script1291741477073 extends groovy.lang.Script {
  *
@@ -83,7 +78,6 @@ import org.codehaus.groovy.transform.GroovyASTTransformationClass
  *     }
  * }
  * </pre>
- * <br/>
  *
  * Note that when you're annotating scripts, the variable scoping semantics are unchanged. Therefore, you must be
  * careful about the variable scope you're using. Make sure that variables you reference in the closure parameter
@@ -107,10 +101,8 @@ import org.codehaus.groovy.transform.GroovyASTTransformationClass
  *
  * @see groovy.transform.TimedInterrupt
  * @see groovy.transform.ThreadInterrupt
- *
  * @author Cedric Champeau
  * @author Hamlet D'Arcy
- *
  * @since 1.8.0
  */
 @java.lang.annotation.Documented
@@ -124,18 +116,21 @@ public @interface ConditionalInterrupt {
      * scripts and Classes will be enhanced. If you want to change this behavior then set applyToAllClasses
      * to false. If you annotate a type then only that type will be augmented, not other types or the surrounding
      * script. If you annotate a script, then any enclosed types will not be augmented.
+     *
      * @return
      */
     boolean applyToAllClasses() default true;
     /**
      * By default an isInterrupted check is added to the start of all user-defined methods. To turn this off simply
      * set this parameter to false.
+     *
      * @return
      */
     boolean checkOnMethodStart() default true;
 
     /**
      * Sets the type of exception which is thrown.
+     *
      * @return
      */
     Class thrown() default InterruptedException;

@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ import java.util.*;
  * find the Class for a ClassExpression and prints an error if
  * it fails to do so. Constructions like C[], foo as C, (C) foo
  * will force creation of a ClassExpression for C
- * <p/>
+ * <p>
  * Note: the method to start the resolving is  startResolving(ClassNode, SourceUnit).
  *
  * @author Jochen Theodorou

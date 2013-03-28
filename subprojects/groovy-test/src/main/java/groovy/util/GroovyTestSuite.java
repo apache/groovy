@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,24 +28,20 @@ import java.io.File;
 /**
  * A TestSuite which will run a Groovy unit test case inside any Java IDE
  * either as a unit test case or as an application.
- * <p/>
+ * <p>
  * You can specify the GroovyUnitTest to run by running this class as an application
  * and specifying the script to run on the command line.
- * <p/>
  * <code>
  * java groovy.util.GroovyTestSuite src/test/Foo.groovy
  * </code>
- * <p/>
  * Or to run the test suite as a unit test suite in an IDE you can use
  * the 'test' system property to define the test script to run.
- * e.g. pass this into the JVM when the unit test plugin runs...
- * <p/>
+ * e.g.&#160;pass this into the JVM when the unit test plugin runs...
  * <code>
  * -Dtest=src/test/Foo.groovy
  * </code>
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 public class GroovyTestSuite extends TestSuite {
 

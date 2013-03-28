@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 the original author or authors.
+ * Copyright 2008-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,8 +27,8 @@ import javax.rmi.ssl.SslRMIServerSocketFactory
 /**
  * This is the server connector factory used for node JmxBuilder.connectorServer().  A call to this node
  * returns an instance of JMXConnectorServer interface (rmi default).
- *
- * <p> Possible syntax</p>
+ * <p>
+ * Possible syntax:
  * <pre>
  *    JmxBuilder.connectorServer(
  *        protocol:"rmi",

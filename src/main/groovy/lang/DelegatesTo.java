@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,23 +21,22 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * <p>This annotation can be used by API or DSL writers to document parameters which accept a closure.
+ * This annotation can be used by API or DSL writers to document parameters which accept a closure.
  * In that case, using this annotation, you can specify what the delegate type of the closure will
- * be. This is important for IDE support.</p>
- *
- * <p>This annotation can also be used to help the type checker ({@link groovy.transform.TypeChecked})
+ * be. This is important for IDE support.
+ * <p>
+ * This annotation can also be used to help the type checker ({@link groovy.transform.TypeChecked})
  * which would not report errors then if the delegate is of the documented type. Of course, it is
- * also compatible with {@link groovy.transform.CompileStatic}.</p>
- *
- * <p>Example:</p>
- * <pre><code>
- *     // Document the fact that the delegate of the closure will be an ExecSpec
- *     ExecResult exec(@DelegatesTo(ExecSpec) Closure closure) { ... }
- * </code></pre>
+ * also compatible with {@link groovy.transform.CompileStatic}.
+ * <p>
+ * Example:
+ * <pre>
+ * // Document the fact that the delegate of the closure will be an ExecSpec
+ * ExecResult exec(@DelegatesTo(ExecSpec) Closure closure) { ... }
+ * </pre>
  *
  * @author Cedric Champeau
  * @author Peter Niderwieser
- *
  * @since 2.1.0
  */
 @Retention(RetentionPolicy.RUNTIME)

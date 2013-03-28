@@ -17,7 +17,7 @@ import java.util.PropertyPermission;
  * behavior (e.g. ensuring that GroovyCodeSources may only be created for which proper permissions exist).
  * Other tests run .groovy scripts under a secure environment and ensure that the proper permissions
  * are required for success.
- * <p/>
+ * <p>
  * Todo: find out why the marked tests are environment specific and why security tests are not
  * running on the build server.
  *

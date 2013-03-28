@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@ import java.util.logging.Logger;
 /**
  * This class defines new groovy methods for Sockets which enhance
  * JDK classes inside the Groovy environment.
- * <p/>
+ * <p>
  * NOTE: While this class contains many 'public' static methods, it is
  * primarily regarded as an internal class (its internal package name
  * suggests this also). We value backwards compatibility of these

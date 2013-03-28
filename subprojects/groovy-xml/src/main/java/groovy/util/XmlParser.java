@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ import java.util.Map;
  * the XML into a Node for each element in the XML with attributes
  * and child Nodes and Strings. This simple model is sufficient for
  * most simple use cases of processing XML.
- * <p/>
+ * <p>
  * Example usage:
  * <pre>
  * def xml = '&lt;root&gt;&lt;one a1="uno!"/&gt;&lt;two&gt;Some text!&lt;/two&gt;&lt;/root&gt;'
@@ -49,7 +49,6 @@ import java.util.Map;
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @author Paul King
- * @version $Revision$
  */
 public class XmlParser implements ContentHandler {
 
@@ -138,7 +137,7 @@ public class XmlParser implements ContentHandler {
 
     /**
      * Parse the content of the specified input stream into a tree of Nodes.
-     * <p/>
+     * <p>
      * Note that using this method will not provide the parser with any URI
      * for which to find DTDs etc
      *
@@ -158,7 +157,7 @@ public class XmlParser implements ContentHandler {
 
     /**
      * Parse the content of the specified reader into a tree of Nodes.
-     * <p/>
+     * <p>
      * Note that using this method will not provide the parser with any URI
      * for which to find DTDs etc
      *

@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import groovy.lang.Closure;
 import java.util.Map;
 
 /**
- * @author Andres Almiray <aalmiray@users.sourceforge.com>
+ * @author <a href="mailto:aalmiray@users.sourceforge.com">Andres Almiray</a>
  * @author Danno Ferrin
  */
 public abstract class AbstractFactory implements Factory {

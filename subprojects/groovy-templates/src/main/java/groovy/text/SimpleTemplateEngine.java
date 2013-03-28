@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,11 +31,11 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 /**
  * Processes template source files substituting variables and expressions into
  * placeholders in a template source text to produce the desired output.
- * </P>
+ * <p>
  * The template engine uses JSP style &lt;% %&gt; script and &lt;%= %&gt; expression syntax
  * or GString style expressions. The variable '<code>out</code>' is bound to the writer that the template
  * is being written to.
- * </p>
+ * <p>
  * Frequently, the template source will be in a file but here is a simple
  * example providing the template as a string:
  * <pre>

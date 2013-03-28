@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ import java.util.List;
 /**
  * Represents a list of Integer objects from a specified int up (or down) to and including
  * a given to.<p>
- * <p/>
+ * <p>
  * This class is a copy of {@link ObjectRange} optimized for <code>int</code>.  If you make any
  * changes to this class, you might consider making parallel changes to {@link ObjectRange}.
  *
@@ -156,11 +156,10 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer> {
      * Determines if this object is equal to another object. Delegates to
      * {@link AbstractList#equals(Object)} if <code>that</code> is anything
      * other than an {@link IntRange}.
-     * <p/>
-     * <p/>
+     * <p>
      * It is not necessary to override <code>hashCode</code>, as
      * {@link AbstractList#hashCode()} provides a suitable hash code.<p>
-     * <p/>
+     * <p>
      * Note that equals is generally handled by {@link org.codehaus.groovy.runtime.DefaultGroovyMethods#equals(List,List)}
      * instead of this method.
      *

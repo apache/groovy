@@ -189,7 +189,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
      * Returns the list of type checking annotations class nodes. Subclasses may override this method
      * in order to provide additional classes which must be looked up when checking if a method or
      * a class node should be skipped.
-     * <p/>
+     * <p>
      * The default implementation returns {@link TypeChecked}.
      *
      * @return array of class nodes

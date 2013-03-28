@@ -98,11 +98,11 @@ import java.util.StringTokenizer;
  * <li>javac</li>
  * </ul>
  * Of these arguments, the <b>srcdir</b> and <b>destdir</b> are required.
- * <p/>
+ * <p>
  * <p>When this task executes, it will recursively scan srcdir and destdir looking for Groovy source files
- * to compile. This task makes its compile decision based on timestamp.</p>
- * <p/>
- * <p>Based heavily on the Javac implementation in Ant.</p>
+ * to compile. This task makes its compile decision based on timestamp.
+ * <p>
+ * Based heavily on the Javac implementation in Ant.
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @author Hein Meling

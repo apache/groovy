@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,9 +21,9 @@ import java.util.Date;
 /**
  * DatumDependentDuration represents durations whose length in milliseconds 
  * cannot be determined without knowing the datum point.
- * <p/>
+ * <p>
  * I don't know how many days in a year unless I know if it's a leap year or not.
- * <p/>
+ * <p>
  * I don't know how many days in a month unless I know the name of the month 
  * (and if it's a leap year if the month is February)
  *

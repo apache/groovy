@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,10 +35,9 @@ public class GStringImpl extends GString {
      * Each value is prefixed by a string, after the last value
      * an additional String might be used. This means
      * <code>strings.length == values.length  ||  strings.length == values.length + 1</code>.
-     * </p><p>
+     * <p>
      * <b>NOTE:</b> The lengths are <b>not</b> checked. Using different lengths might result
      * in unpredictable behaviour.
-     * </p>
      *
      * @param values  the value parts
      * @param strings the string parts
@@ -54,7 +53,6 @@ public class GStringImpl extends GString {
      * This methods returns the same array as used in the constructor. Changing
      * the values will result in changes of the GString. It is not recommended
      * to do so.
-     * </p>
      */
     public String[] getStrings() {
         return strings;

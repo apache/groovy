@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -259,7 +259,7 @@ public class CompileStack implements Opcodes {
 
     /**
      * Returns a normal variable.
-     * <p/>
+     * <p>
      * If <code>mustExist</code> is true and the normal variable doesn't exist,
      * then this method will throw a GroovyBugError. It is not the intention of
      * this method to let this happen! And the exception should not be used for

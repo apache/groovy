@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,11 +52,9 @@ import java.util.Vector;
 
 /**
  * Executes a series of Groovy statements.
- * <p/>
+ * <p>
  * <p>Statements can either be read in from a text file using
- * the <i>src</i> attribute or from between the enclosing groovy tags.</p>
- *
- * @version $Id$
+ * the <i>src</i> attribute or from between the enclosing groovy tags.
  */
 public class Groovy extends Java {
     private static final String PREFIX = "embedded_script_in_";
@@ -100,7 +98,7 @@ public class Groovy extends Java {
 
     /**
      * Compiler configuration.
-     * <p/>
+     * <p>
      * Used to specify the debug output to print stacktraces in case something fails.
      * TODO: Could probably be reused to specify the encoding of the files to load or other properties.
      */

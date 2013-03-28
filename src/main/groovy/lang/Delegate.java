@@ -24,11 +24,11 @@ import java.lang.annotation.Target;
 
 /**
  * Field annotation to automatically delegate part of the functionality of an owner class to the annotated field.
- * <p/>
+ * <p>
  * All public instance methods present in the type of the annotated field and not present in the owner class
  * will be added to owner class at compile time. The implementation of such automatically added
  * methods is code which calls through to the delegate as per the normal delegate pattern.
- * <p/>
+ * <p>
  * As an example, consider this code:
  * <pre>
  * class Event {
@@ -82,13 +82,13 @@ import java.lang.annotation.Target;
  * made to the first defined field having that signature. If this does occur,
  * it might be regarded as a smell (or at least poor style) and it might be
  * clearer to do the delegation by long hand.
- * <p/>
+ * <p>
  * By default, methods of the delegate type marked as {@code @Deprecated} are
  * not automatically added to the owner class (but see the technical note
  * about interfaces below). You can force these methods to
  * be added by setting the annotation's {@code deprecated} element to true,
  * i.e. {@code @Delegate(deprecated = true)}.
- * <p/>
+ * <p>
  * For example, in the example above if we change the delegate definition to:
  * <pre>
  *     {@code @Delegate}(deprecated = true) Date when

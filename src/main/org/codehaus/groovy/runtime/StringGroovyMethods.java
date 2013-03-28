@@ -154,10 +154,11 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * <p>Provides a method to perform custom 'dynamic' type conversion
-     * to the given class using the <code>as</code> operator.</p>
+     * Provides a method to perform custom 'dynamic' type conversion
+     * to the given class using the <code>as</code> operator.
      * <strong>Example:</strong> <code>'123' as Double</code>
-     * <p>By default, the following types are supported:
+     * <p>
+     * By default, the following types are supported:
      * <ul>
      * <li>List</li>
      * <li>BigDecimal</li>
@@ -532,7 +533,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * Create a suffix of the given CharSequence by dropping as many characters as possible from the
      * front of the original CharSequence such that calling the given closure condition evaluates to
      * true when passed each of the dropped characters.
-     * <p/>
+     * <p>
      * <pre class="groovyTestCase">
      * def text = "Groovy"
      * assert text.dropWhile{ false } == 'Groovy'
@@ -638,7 +639,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * original character or a transformed replacement String. The {@code transform}
      * Closure should return {@code null} to indicate that no transformation is
      * required for the given character.
-     * <p/>
+     * <p>
      * <pre class="groovyTestCase">
      * assert "Groovy".collectReplacements{ it == 'o' ? '_O_' : null } == 'Gr_O__O_vy'
      * assert "B&W".collectReplacements{ it == '&' ? '&amp;' : null } == 'B&amp;W'
@@ -885,7 +886,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the result of calling a closure with the first occurrence of a regular expression found within a
-     * CharSequence.&nbsp;If the regex doesn't match, the closure will not be called and find will return null.
+     * CharSequence.&#160;If the regex doesn't match, the closure will not be called and find will return null.
      *
      * @param self    a CharSequence
      * @param pattern the compiled regex Pattern
@@ -901,25 +902,24 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Finds the first occurrence of a compiled regular expression Pattern within a String.
      * If the pattern doesn't match, null will be returned.
-     * <p/>
-     * <p> For example, if the pattern doesn't match the result is null:
+     * <p>
+     * For example, if the pattern doesn't match the result is null:
      * <pre>
      *     assert null == "New York, NY".find(~/\d{5}/)
      * </pre>
-     * </p>
-     * <p> If it does match, we get the matching string back:
+     *
+     * If it does match, we get the matching string back:
      * <pre>
      *      assert "10292" == "New York, NY 10292-0098".find(~/\d{5}/)
      * </pre>
-     * </p>
-     * <p> If we have capture groups in our expression, the groups are ignored and
+     *
+     * If we have capture groups in our expression, the groups are ignored and
      * we get back the full match:
      * <pre>
      *      assert "10292-0098" == "New York, NY 10292-0098".find(~/(\d{5})-?(\d{4})/)
      * </pre>
      * If you need to work with capture groups, then use the closure version
      * of this method or use Groovy's matcher operators or use <tt>eachMatch</tt>.
-     * </p>
      *
      * @param self    a String
      * @param pattern the compiled regex Pattern
@@ -937,19 +937,19 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Returns the result of calling a closure with the first occurrence of a compiled regular expression found within a String.
      * If the regex doesn't match, the closure will not be called and find will return null.
-     * <p/>
-     * <p> For example, if the pattern doesn't match, the result is null:
+     * <p>
+     * For example, if the pattern doesn't match, the result is null:
      * <pre>
      *     assert null == "New York, NY".find(~/\d{5}/) { match -> return "-$match-"}
      * </pre>
-     * </p>
-     * <p> If it does match and we don't have any capture groups in our regex, there is a single parameter
+     *
+     * If it does match and we don't have any capture groups in our regex, there is a single parameter
      * on the closure that the match gets passed to:
      * <pre>
      *      assert "-10292-" == "New York, NY 10292-0098".find(~/\d{5}/) { match -> return "-$match-"}
      * </pre>
-     * </p>
-     * <p> If we have capture groups in our expression, our closure has one parameter for the match, followed by
+     *
+     * If we have capture groups in our expression, our closure has one parameter for the match, followed by
      * one for each of the capture groups:
      * <pre>
      *      assert "10292" == "New York, NY 10292-0098".find(~/(\d{5})-?(\d{4})/) { match, zip, plusFour ->
@@ -959,7 +959,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      *          return zip
      *      }
      * </pre>
-     * <p> If we have capture groups in our expression, and our closure has one parameter,
+     * If we have capture groups in our expression, and our closure has one parameter,
      * the closure will be passed an array with the first element corresponding to the whole match,
      * followed by an element for each of the capture groups:
      * <pre>
@@ -970,7 +970,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      *          return array[1]
      *      }
      * </pre>
-     * <p> If a capture group is optional, and doesn't match, then the corresponding value
+     * If a capture group is optional, and doesn't match, then the corresponding value
      * for that capture group passed to the closure will be null as illustrated here:
      * <pre>
      *      assert "2339999" == "adsf 233-9999 adsf".find(~/(\d{3})?-?(\d{3})-(\d{4})/) { match, areaCode, exchange, stationNumber ->
@@ -981,7 +981,6 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      *          return "$exchange$stationNumber"
      *      }
      * </pre>
-     * </p>
      *
      * @param self    a String
      * @param pattern the compiled regex Pattern
@@ -1009,22 +1008,21 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Finds the first occurrence of a regular expression String within a String.
      * If the regex doesn't match, null will be returned.
-     * <p/>
-     * <p> For example, if the regex doesn't match the result is null:
+     * <p>
+     * For example, if the regex doesn't match the result is null:
      * <pre>
      *     assert null == "New York, NY".find(/\d{5}/)
      * </pre>
-     * </p>
-     * <p> If it does match, we get the matching string back:
+     *
+     * If it does match, we get the matching string back:
      * <pre>
      *      assert "10292" == "New York, NY 10292-0098".find(/\d{5}/)
      * </pre>
-     * </p>
-     * <p> If we have capture groups in our expression, we still get back the full match
+     *
+     * If we have capture groups in our expression, we still get back the full match
      * <pre>
      *      assert "10292-0098" == "New York, NY 10292-0098".find(/(\d{5})-?(\d{4})/)
      * </pre>
-     * </p>
      *
      * @param self  a String
      * @param regex the capturing regex
@@ -1038,19 +1036,19 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Returns the result of calling a closure with the first occurrence of a regular expression found within a String.
      * If the regex doesn't match, the closure will not be called and find will return null.
-     * <p/>
-     * <p> For example, if the regex doesn't match, the result is null:
+     * <p>
+     * For example, if the regex doesn't match, the result is null:
      * <pre>
      *     assert null == "New York, NY".find(~/\d{5}/) { match -> return "-$match-"}
      * </pre>
-     * </p>
-     * <p> If it does match and we don't have any capture groups in our regex, there is a single parameter
+     *
+     * If it does match and we don't have any capture groups in our regex, there is a single parameter
      * on the closure that the match gets passed to:
      * <pre>
      *      assert "-10292-" == "New York, NY 10292-0098".find(~/\d{5}/) { match -> return "-$match-"}
      * </pre>
-     * </p>
-     * <p> If we have capture groups in our expression, our closure has one parameter for the match, followed by
+     *
+     * If we have capture groups in our expression, our closure has one parameter for the match, followed by
      * one for each of the capture groups:
      * <pre>
      *      assert "10292" == "New York, NY 10292-0098".find(~/(\d{5})-?(\d{4})/) { match, zip, plusFour ->
@@ -1060,7 +1058,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      *          return zip
      *      }
      * </pre>
-     * <p> If we have capture groups in our expression, and our closure has one parameter,
+     * If we have capture groups in our expression, and our closure has one parameter,
      * the closure will be passed an array with the first element corresponding to the whole match,
      * followed by an element for each of the capture groups:
      * <pre>
@@ -1071,7 +1069,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      *          return array[1]
      *      }
      * </pre>
-     * <p> If a capture group is optional, and doesn't match, then the corresponding value
+     * If a capture group is optional, and doesn't match, then the corresponding value
      * for that capture group passed to the closure will be null as illustrated here:
      * <pre>
      *      assert "2339999" == "adsf 233-9999 adsf".find(~/(\d{3})?-?(\d{3})-(\d{4})/) { match, areaCode, exchange, stationNumber ->
@@ -1082,7 +1080,6 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      *          return "$exchange$stationNumber"
      *      }
      * </pre>
-     * </p>
      *
      * @param self    a String
      * @param regex   the capturing regex string
@@ -1150,12 +1147,12 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns a (possibly empty) list of all occurrences of a regular expression (in Pattern format) found within a String.
-     * <p/>
-     * <p>For example, if the pattern doesn't match, it returns an empty list:
+     * <p>
+     * For example, if the pattern doesn't match, it returns an empty list:
      * <pre>
      * assert [] == "foo".findAll(~/(\w*) Fish/)
      * </pre>
-     * <p>Any regular expression matches are returned in a list, and all regex capture groupings are ignored, only the full match is returned:
+     * Any regular expression matches are returned in a list, and all regex capture groupings are ignored, only the full match is returned:
      * <pre>
      * def expected = ["One Fish", "Two Fish", "Red Fish", "Blue Fish"]
      * assert expected == "One Fish, Two Fish, Red Fish, Blue Fish".findAll(~/(\w*) Fish/)
@@ -1182,18 +1179,18 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Finds all occurrences of a compiled regular expression Pattern within a String.   Any matches are passed to the specified closure.  The closure
      * is expected to have the full match in the first parameter.  If there are any capture groups, they will be placed in subsequent parameters.
-     * <p/>
+     * <p>
      * If there are no matches, the closure will not be called, and an empty List will be returned.
-     * <p/>
-     * <p>For example, if the pattern doesn't match, it returns an empty list:
+     * <p>
+     * For example, if the pattern doesn't match, it returns an empty list:
      * <pre>
      * assert [] == "foo".findAll(~/(\w*) Fish/) { match, firstWord -> return firstWord }
      * </pre>
-     * <p>Any regular expression matches are passed to the closure, if there are no capture groups, there will be one parameter for the match:
+     * Any regular expression matches are passed to the closure, if there are no capture groups, there will be one parameter for the match:
      * <pre>
      * assert ["couldn't", "wouldn't"] == "I could not, would not, with a fox.".findAll(~/.ould/) { match -> "${match}n't"}
      * </pre>
-     * <p>If there are capture groups, the first parameter will be the match followed by one parameter for each capture group:
+     * If there are capture groups, the first parameter will be the match followed by one parameter for each capture group:
      * <pre>
      * def orig = "There's a Wocket in my Pocket"
      * assert ["W > Wocket", "P > Pocket"] == orig.findAll(~/(.)ocket/) { match, firstLetter -> "$firstLetter > $match" }
@@ -1212,19 +1209,18 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns a (possibly empty) list of all occurrences of a regular expression (in String format) found within a String.
-     * <p/>
-     * <p>For example, if the regex doesn't match, it returns an empty list:
+     * <p>
+     * For example, if the regex doesn't match, it returns an empty list:
      * <pre>
      * assert [] == "foo".findAll(/(\w*) Fish/)
      * </pre>
-     * <p>Any regular expression matches are returned in a list, and all regex capture groupings are ignored, only the full match is returned:
+     * Any regular expression matches are returned in a list, and all regex capture groupings are ignored, only the full match is returned:
      * <pre>
      * def expected = ["One Fish", "Two Fish", "Red Fish", "Blue Fish"]
      * assert expected == "One Fish, Two Fish, Red Fish, Blue Fish".findAll(/(\w*) Fish/)
      * </pre>
      * If you need to work with capture groups, then use the closure version
      * of this method or use Groovy's matcher operators or use <tt>eachMatch</tt>.
-     * </p>
      *
      * @param self  a String
      * @param regex the capturing regex String
@@ -1238,18 +1234,18 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Finds all occurrences of a regular expression string within a String.   Any matches are passed to the specified closure.  The closure
      * is expected to have the full match in the first parameter.  If there are any capture groups, they will be placed in subsequent parameters.
-     * <p/>
+     * <p>
      * If there are no matches, the closure will not be called, and an empty List will be returned.
-     * <p/>
-     * <p>For example, if the regex doesn't match, it returns an empty list:
+     * <p>
+     * For example, if the regex doesn't match, it returns an empty list:
      * <pre>
      * assert [] == "foo".findAll(/(\w*) Fish/) { match, firstWord -> return firstWord }
      * </pre>
-     * <p>Any regular expression matches are passed to the closure, if there are no capture groups, there will be one parameter for the match:
+     * Any regular expression matches are passed to the closure, if there are no capture groups, there will be one parameter for the match:
      * <pre>
      * assert ["couldn't", "wouldn't"] == "I could not, would not, with a fox.".findAll(/.ould/) { match -> "${match}n't"}
      * </pre>
-     * <p>If there are capture groups, the first parameter will be the match followed by one parameter for each capture group:
+     * If there are capture groups, the first parameter will be the match followed by one parameter for each capture group:
      * <pre>
      * def orig = "There's a Wocket in my Pocket"
      * assert ["W > Wocket", "P > Pocket"] == orig.findAll(/(.)ocket/) { match, firstLetter -> "$firstLetter > $match" }
@@ -1382,8 +1378,8 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Support the subscript operator, e.g.&nbsp;matcher[index], for a regex Matcher.
-     * <p/>
+     * Support the subscript operator, e.g.&#160;matcher[index], for a regex Matcher.
+     * <p>
      * For an example using no group match,
      * <pre>
      *    def p = /ab[d|f]/
@@ -1394,10 +1390,10 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      *    assert 0 == m.groupCount()
      *    def matches = ["abd", "abf"]
      *    for (i in 0..&lt;m.count) {
-     *    &nbsp;&nbsp;assert m[i] == matches[i]
+     *    &#160;&#160;assert m[i] == matches[i]
      *    }
      * </pre>
-     * <p/>
+     * <p>
      * For an example using group matches,
      * <pre>
      *    def p = /(?:ab([c|d|e|f]))/
@@ -1407,10 +1403,10 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      *    assert 1 == m.groupCount()
      *    def matches = [["abc", "c"], ["abd", "d"], ["abe", "e"], ["abf", "f"]]
      *    for (i in 0..&lt;m.count) {
-     *    &nbsp;&nbsp;assert m[i] == matches[i]
+     *    &#160;&#160;assert m[i] == matches[i]
      *    }
      * </pre>
-     * <p/>
+     * <p>
      * For another example using group matches,
      * <pre>
      *    def m = "abcabdabeabfabxyzabx" =~ /(?:ab([d|x-z]+))/
@@ -1419,7 +1415,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      *    assert 1 == m.groupCount()
      *    def matches = [["abd", "d"], ["abxyz", "xyz"], ["abx", "x"]]
      *    for (i in 0..&lt;m.count) {
-     *    &nbsp;&nbsp;assert m[i] == matches[i]
+     *    &#160;&#160;assert m[i] == matches[i]
      *    }
      * </pre>
      *
@@ -2615,37 +2611,35 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Replaces all occurrences of a captured group by the result of a closure call on that text.
-     * <p/>
-     * <p> For examples,
+     * <p>
+     * For examples,
      * <pre>
      *     assert "hellO wOrld" == "hello world".replaceAll(~"(o)") { it[0].toUpperCase() }
-     * <p/>
+     *
      *     assert "FOOBAR-FOOBAR-" == "foobar-FooBar-".replaceAll(~"(([fF][oO]{2})[bB]ar)", { it[0].toUpperCase() })
-     * <p/>
+     *
      *     Here,
      *          it[0] is the global string of the matched group
      *          it[1] is the first string in the matched group
      *          it[2] is the second string in the matched group
-     * <p/>
-     * <p/>
+     *
      *     assert "FOOBAR-FOOBAR-" == "foobar-FooBar-".replaceAll(~"(([fF][oO]{2})[bB]ar)", { Object[] it -> it[0].toUpperCase() })
-     * <p/>
+     *
      *     Here,
      *          it[0] is the global string of the matched group
      *          it[1] is the first string in the matched group
      *          it[2] is the second string in the matched group
-     * <p/>
-     * <p/>
+     *
      *     assert "FOO-FOO-" == "foobar-FooBar-".replaceAll("(([fF][oO]{2})[bB]ar)", { x, y, z -> z.toUpperCase() })
-     * <p/>
+     *
      *     Here,
      *          x is the global string of the matched group
      *          y is the first string in the matched group
      *          z is the second string in the matched group
      * </pre>
-     * <p>Note that unlike String.replaceAll(String regex, String replacement), where the replacement string
+     * Note that unlike String.replaceAll(String regex, String replacement), where the replacement string
      * treats '$' and '\' specially (for group substitution), the result of the closure is converted to a string
-     * and that value is used literally for the replacement.</p>
+     * and that value is used literally for the replacement.
      *
      * @param self    a String
      * @param pattern the capturing regex Pattern
@@ -2679,7 +2673,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * {@link java.util.regex.Matcher#replaceAll}.
      * Use {@link java.util.regex.Matcher#quoteReplacement} to suppress the special
      * meaning of these characters, if desired.
-     * <p/>
+     * <p>
      * <pre class="groovyTestCase">
      * assert "foo".replaceAll('o', 'X') == 'fXX'
      * </pre>
@@ -2697,29 +2691,28 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Replaces all occurrences of a captured group by the result of a closure on that text.
-     * <p/>
-     * <p> For examples,
+     * <p>
+     * For examples,
      * <pre>
      *     assert "hellO wOrld" == "hello world".replaceAll("(o)") { it[0].toUpperCase() }
-     * <p/>
+     *
      *     assert "FOOBAR-FOOBAR-" == "foobar-FooBar-".replaceAll("(([fF][oO]{2})[bB]ar)", { Object[] it -> it[0].toUpperCase() })
-     * <p/>
+     *
      *     Here,
      *          it[0] is the global string of the matched group
      *          it[1] is the first string in the matched group
      *          it[2] is the second string in the matched group
-     * <p/>
-     * <p/>
+     *
      *     assert "FOO-FOO-" == "foobar-FooBar-".replaceAll("(([fF][oO]{2})[bB]ar)", { x, y, z -> z.toUpperCase() })
-     * <p/>
+     *
      *     Here,
      *          x is the global string of the matched group
      *          y is the first string in the matched group
      *          z is the second string in the matched group
      * </pre>
-     * <p>Note that unlike String.replaceAll(String regex, String replacement), where the replacement string
+     * Note that unlike String.replaceAll(String regex, String replacement), where the replacement string
      * treats '$' and '\' specially (for group substitution), the result of the closure is converted to a string
-     * and that value is used literally for the replacement.</p>
+     * and that value is used literally for the replacement.
      *
      * @param self    a String
      * @param regex   the capturing regex
@@ -2796,12 +2789,12 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Replaces the first occurrence of a captured group by the result of a closure call on that text.
-     * <p/>
-     * <p> For example (with some replaceAll variants thrown in for comparison purposes),
+     * <p>
+     * For example (with some replaceAll variants thrown in for comparison purposes),
      * <pre>
      * assert "hellO world" == "hello world".replaceFirst(~"(o)") { it[0].toUpperCase() } // first match
      * assert "hellO wOrld" == "hello world".replaceAll(~"(o)") { it[0].toUpperCase() }   // all matches
-     * <p/>
+     *
      * assert '1-FISH, two fish' == "one fish, two fish".replaceFirst(~/([a-z]{3})\s([a-z]{4})/) { [one:1, two:2][it[1]] + '-' + it[2].toUpperCase() }
      * assert '1-FISH, 2-FISH' == "one fish, two fish".replaceAll(~/([a-z]{3})\s([a-z]{4})/) { [one:1, two:2][it[1]] + '-' + it[2].toUpperCase() }
      * </pre>
@@ -2829,14 +2822,14 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Replaces the first substring of a String that matches the given
      * compiled regular expression with the given replacement.
-     * <p/>
+     * <p>
      * Note that backslashes (<tt>\</tt>) and dollar signs (<tt>$</tt>) in the
      * replacement string may cause the results to be different than if it were
      * being treated as a literal replacement string; see
      * {@link java.util.regex.Matcher#replaceFirst}.
      * Use {@link java.util.regex.Matcher#quoteReplacement} to suppress the special
      * meaning of these characters, if desired.
-     * <p/>
+     * <p>
      * <pre class="groovyTestCase">
      * assert "foo".replaceFirst('o', 'X') == 'fXo'
      * </pre>
@@ -2854,12 +2847,12 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Replaces the first occurrence of a captured group by the result of a closure call on that text.
-     * <p/>
-     * <p> For example (with some replaceAll variants thrown in for comparison purposes),
+     * <p>
+     * For example (with some replaceAll variants thrown in for comparison purposes),
      * <pre>
      * assert "hellO world" == "hello world".replaceFirst("(o)") { it[0].toUpperCase() } // first match
      * assert "hellO wOrld" == "hello world".replaceAll("(o)") { it[0].toUpperCase() }   // all matches
-     * <p/>
+     *
      * assert '1-FISH, two fish' == "one fish, two fish".replaceFirst(/([a-z]{3})\s([a-z]{4})/) { [one:1, two:2][it[1]] + '-' + it[2].toUpperCase() }
      * assert '1-FISH, 2-FISH' == "one fish, two fish".replaceAll(/([a-z]{3})\s([a-z]{4})/) { [one:1, two:2][it[1]] + '-' + it[2].toUpperCase() }
      * </pre>
@@ -3092,10 +3085,10 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * <p>Strip leading spaces from every line in a CharSequence. The
+     * Strip leading spaces from every line in a CharSequence. The
      * line with the least number of leading spaces determines
      * the number to remove. Lines only containing whitespace are
-     * ignored when calculating the number of leading spaces to strip.</p>
+     * ignored when calculating the number of leading spaces to strip.
      *
      * @param self     The CharSequence to strip the leading spaces from
      * @return the stripped CharSequence
@@ -3107,8 +3100,8 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * <p>Strip <tt>numChar</tt> leading characters from
-     * every line in a CharSequence.</p>
+     * Strip <tt>numChar</tt> leading characters from
+     * every line in a CharSequence.
      *
      * @param self     The CharSequence to strip the characters from
      * @param numChars The number of characters to strip
@@ -3120,10 +3113,10 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * <p>Strip leading spaces from every line in a String. The
+     * Strip leading spaces from every line in a String. The
      * line with the least number of leading spaces determines
      * the number to remove. Lines only containing whitespace are
-     * ignored when calculating the number of leading spaces to strip.</p>
+     * ignored when calculating the number of leading spaces to strip.
      * <pre class="groovyTestCase">
      * assert '  A\n B\nC' == '   A\n  B\n C'.stripIndent()
      * </pre>
@@ -3151,8 +3144,8 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * <p>Strip <tt>numChar</tt> leading characters from
-     * every line in a String.</p>
+     * Strip <tt>numChar</tt> leading characters from
+     * every line in a String.
      * <pre class="groovyTestCase">
      * assert 'DEF\n456' == '''ABCDEF\n123456'''.stripIndent(3)
      * </pre>
@@ -3192,8 +3185,8 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * <p>Strip leading whitespace/control characters followed by '|' from
-     * every line in a CharSequence.</p>
+     * Strip leading whitespace/control characters followed by '|' from
+     * every line in a CharSequence.
      *
      * @param self The CharSequence to strip the margin from
      * @return the stripped CharSequence
@@ -3205,8 +3198,8 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * <p>Strip leading whitespace/control characters followed by <tt>marginChar</tt> from
-     * every line in a String.</p>
+     * Strip leading whitespace/control characters followed by <tt>marginChar</tt> from
+     * every line in a String.
      *
      * @param self       The CharSequence to strip the margin from
      * @param marginChar Any character that serves as margin delimiter
@@ -3219,8 +3212,8 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * <p>Strip leading whitespace/control characters followed by <tt>marginChar</tt> from
-     * every line in a CharSequence.</p>
+     * Strip leading whitespace/control characters followed by <tt>marginChar</tt> from
+     * every line in a CharSequence.
      *
      * @param self       The CharSequence to strip the margin from
      * @param marginChar Any character that serves as margin delimiter
@@ -3233,8 +3226,8 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * <p>Strip leading whitespace/control characters followed by '|' from
-     * every line in a String.</p>
+     * Strip leading whitespace/control characters followed by '|' from
+     * every line in a String.
      * <pre class="groovyTestCase">
      * assert 'ABC\n123\n456' == '''ABC
      *                             |123
@@ -3251,8 +3244,8 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * <p>Strip leading whitespace/control characters followed by <tt>marginChar</tt> from
-     * every line in a String.</p>
+     * Strip leading whitespace/control characters followed by <tt>marginChar</tt> from
+     * every line in a String.
      * <pre class="groovyTestCase">
      * assert 'ABC\n123\n456' == '''ABC
      *                             *123
@@ -3284,8 +3277,8 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * <p>Strip leading whitespace/control characters followed by <tt>marginChar</tt> from
-     * every line in a String.</p>
+     * Strip leading whitespace/control characters followed by <tt>marginChar</tt> from
+     * every line in a String.
      *
      * @param self       The String to strip the margin from
      * @param marginChar Any character that serves as margin delimiter
@@ -3335,7 +3328,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Returns the longest prefix of this CharSequence where each
      * element passed to the given closure evaluates to true.
-     * <p/>
+     * <p>
      * <pre class="groovyTestCase">
      * def text = "Groovy"
      * assert text.takeWhile{ it < 'A' } == ''
@@ -3345,8 +3338,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * </pre>
      *
      * @param self      the original CharSequence
-     * @param condition the closure that must evaluate to true to
-     *                  continue taking elements
+     * @param condition the closure that must evaluate to true to continue taking elements
      * @return a prefix of elements in the CharSequence where each
      *         element passed to the given closure evaluates to true
      * @since 2.0.0
@@ -3716,7 +3708,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * If the first character from sourceSet appears in the string, it will be replaced with the first character from replacementSet.
      * If the second character from sourceSet appears in the string, it will be replaced with the second character from replacementSet.
      * and so on for all provided replacement characters.
-     * <p/>
+     * <p>
      * Here is an example which converts the vowels in a word from lower to uppercase:
      * <pre>
      * assert 'hello'.tr('aeiou', 'AEIOU') == 'hEllO'
@@ -3729,7 +3721,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * considered to be part of a range specification. Similarly, a hyphen immediately after an earlier range
      * is treated as a normal hyphen. So, '-x', 'x-' have no ranges while 'a-c-e' has the range 'a-c' plus
      * the '-' character plus the 'e' character.
-     * <p/>
+     * <p>
      * Unlike the unix tr command, Groovy's tr command supports reverse ranges, e.g.:
      * <pre>
      * assert 'hello'.tr('z-a', 'Z-A') == 'HELLO'

@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,11 +31,11 @@ import org.codehaus.groovy.control.CompilationFailedException;
  * a streaming approach. This engine has equivalent functionality to the
  * {@link SimpleTemplateEngine} but creates the template using writable
  * closures making it potentially more scalable for large templates or in streaming scenarios.
- * </P>
+ * <p>
  * The template engine uses JSP style &lt;% %&gt; script and &lt;%= %&gt; expression syntax
  * or GString style expressions. The variable '<code>out</code>' is bound to the writer that the template
  * is being written to.
- * </p>
+ * <p>
  * Frequently, the template source will be in a file but here is a simple
  * example providing the template as a string:
  * <pre>
@@ -113,13 +113,13 @@ public class GStringTemplateEngine extends TemplateEngine {
          * When executed the closure evaluates all the code embedded in the
          * template and then writes a GString containing the fixed and variable items
          * to the writer passed as a parameter
-         * <p/>
+         * <p>
          * For example:
-         * <p/>
+         * <p>
          * '<%= "test" %> of expr and <% test = 1 %>${test} script.'
-         * <p/>
+         * <p>
          * would compile into:
-         * <p/>
+         * <p>
          * { out -> out << "${"test"} of expr and "; test = 1 ; out << "${test} script."}.asWritable()
          *
          * @param reader

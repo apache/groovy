@@ -58,10 +58,10 @@ public class GroovyInternalPosixParser extends Parser
     }
 
     /**
-     * <p>An implementation of {@link Parser}'s abstract
-     * {@link Parser#flatten(Options,String[],boolean) flatten} method.</p>
-     *
-     * <p>The following are the rules used by this flatten method.
+     * An implementation of {@link Parser}'s abstract
+     * {@link Parser#flatten(Options,String[],boolean) flatten} method.
+     * <p>
+     * The following are the rules used by this flatten method.
      * <ol>
      *  <li>if <code>stopAtNonOption</code> is <b>true</b> then do not
      *  burst anymore of <code>arguments</code> entries, just add each
@@ -87,16 +87,13 @@ public class GroovyInternalPosixParser extends Parser
      *  by any of the previous rules, then the entry is added to the list
      *  of processed tokens.</li>
      * </ol>
-     * </p>
      *
      * @param options The command line {@link Options}
      * @param arguments The command line arguments to be parsed
-     * @param stopAtNonOption Specifies whether to stop flattening
-     * when an non option is found.
+     * @param stopAtNonOption Specifies whether to stop flattening when an non option is found.
      * @return The flattened <code>arguments</code> String array.
      */
-    protected String[] flatten(Options options, String[] arguments, boolean stopAtNonOption)
-    {
+    protected String[] flatten(Options options, String[] arguments, boolean stopAtNonOption) {
         init();
         this.options = options;
 
@@ -195,16 +192,13 @@ public class GroovyInternalPosixParser extends Parser
     }
 
     /**
-     * <p>If an {@link Option} exists for <code>token</code> then
-     * add the token to the processed list.</p>
-     *
-     * <p>If an {@link Option} does not exist and <code>stopAtNonOption</code>
-     * is set then add the remaining tokens to the processed tokens list
-     * directly.</p>
+     * If an {@link Option} exists for <code>token</code> then add the token to the processed list.
+     * <p>
+     * If an {@link Option} does not exist and <code>stopAtNonOption</code>
+     * is set then add the remaining tokens to the processed tokens list directly.
      *
      * @param token The current option token
-     * @param stopAtNonOption Specifies whether flattening should halt
-     * at the first non option.
+     * @param stopAtNonOption Specifies whether flattening should halt at the first non option.
      */
     private void processOptionToken(String token, boolean stopAtNonOption)
     {
@@ -248,8 +242,7 @@ public class GroovyInternalPosixParser extends Parser
      * @param stopAtNonOption Specifies whether to stop processing
      * at the first non-Option encountered.
      */
-    protected void burstToken(String token, boolean stopAtNonOption)
-    {
+    protected void burstToken(String token, boolean stopAtNonOption) {
         for (int i = 1; i < token.length(); i++)
         {
             String ch = String.valueOf(token.charAt(i));

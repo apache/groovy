@@ -3,14 +3,13 @@
 package groovy.execute
 
 /**
- *  Test to ensure that the execute mechanism works fine on *nix-like systems.  For these OSs we
- *  can effectively guarantee the existance of some programs that we can run.  Assume the search
- *  path is partway reasonable so we can access sh and echo.
+ * Test to ensure that the execute mechanism works fine on *nix-like systems.  For these OSs we
+ * can effectively guarantee the existence of some programs that we can run.  Assume the search
+ * path is partway reasonable so we can access sh and echo.
+ * <p>
+ * These test are a bit trivial but at least they are here :-)
  *
- *  <p>These test are a bit trivial but at least they are here :-)</p>
- *
- *  @author Russel Winder
- *  @version $Revision$
+ * @author Russel Winder
  */
 class ExecuteTest_LinuxSolaris extends GroovyTestCase {
   void testShellEchoOneArray ( ) {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import org.codehaus.groovy.runtime.MethodRankHelper;
 
 /**
  * An exception occurred if a dynamic method dispatch fails with an unknown method.
- * <p/>
+ * <p>
  * Note that the Missing*Exception classes were named for consistency and
  * to avoid conflicts with JDK exceptions of the same name.
  *

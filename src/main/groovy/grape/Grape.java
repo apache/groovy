@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2009 the original author or authors.
+ * Copyright 2008-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,6 @@ public class Grape {
     /**
      * This is a static access kill-switch.  All of the static shortcut
      * methods in this class will not work if this property is set to false.
-     * <br />
      * By default it is set to true.
      */
     public static boolean getEnableGrapes() {
@@ -42,7 +41,6 @@ public class Grape {
     /**
      * This is a static access kill-switch.  All of the static shortcut
      * methods in this class will not work if this property is set to false.
-     * <br />
      * By default it is set to true.
      */
     public static void setEnableGrapes(boolean enableGrapes) {
@@ -51,20 +49,20 @@ public class Grape {
 
     /**
      * This is a static access auto download enabler.  It will set the
-     * 'autoDownload' value to the passed in arguments map if not already
-     * set.  If 'autoDownload' is set the value will not be adjusted. <br /> <br />
-     *
-     * This applies to the grab and resolve calls. <br /> <br />
-     *
+     * 'autoDownload' value to the passed in arguments map if not already set.
+     * If 'autoDownload' is set the value will not be adjusted.
+     * <p>
+     * This applies to the grab and resolve calls.
+     * <p>
      * If it is set to false, only previously downloaded grapes
      * will be used.  This may cause failure in the grape call
      * if the library has not yet been downloaded
-     *
+     * <p>
      * If it is set to true, then any jars not already downloaded will
      * automatically be downloaded.  Also, any versions expressed as a range
      * will be checked for new versions and downloaded (with dependencies)
-     * if found. <br/><br/>
-     *
+     * if found.
+     * <p>
      * By default it is set to false.
      */
     public static boolean getEnableAutoDownload() {
@@ -74,20 +72,18 @@ public class Grape {
     /**
      * This is a static access auto download enabler.  It will set the
      * 'autoDownload' value to the passed in arguments map if not already
-     * set.  If 'autoDownload' is set the value will not be adjusted.  <br/><br/>
-     *
-     * This applies to the grab and resolve calls. <br/> <br/>
-     *
+     * set.  If 'autoDownload' is set the value will not be adjusted.
+     * <p>
+     * This applies to the grab and resolve calls.
+     * <p>
      * If it is set to false, only previously downloaded grapes
      * will be used.  This may cause failure in the grape call
-     * if the library has not yet been downloaded <br/> <br/>
-     *
+     * if the library has not yet been downloaded.
+     * <p>
      * If it is set to true, then any jars not already downloaded will
      * automatically be downloaded.  Also, any versions expressed as a range
      * will be checked for new versions and downloaded (with dependencies)
-     * if found. <br/> <br/>
-     *
-     * By default it is set to false.
+     * if found. By default it is set to false.
      */
     public static void setEnableAutoDownload(boolean enableAutoDownload) {
         Grape.enableAutoDownload = enableAutoDownload;

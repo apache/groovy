@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,8 +22,8 @@ import groovy.lang.Binding;
 import groovy.lang.GroovyShell;
 
 /**
- * Allow easy integration from Groovy into Java through convenience methods. <br/><br/>
- * 
+ * Allow easy integration from Groovy into Java through convenience methods.
+ * <p>
  * This class is a simple helper on top of GroovyShell. You can use it to evaluate small
  * Groovy scripts that don't need large Binding objects. For example, this script 
  * executes with no errors: 
@@ -33,7 +33,6 @@ import groovy.lang.GroovyShell;
  * </pre>
  * 
  * @see GroovyShell
- * 
  * @author Dierk Koenig
  */
 

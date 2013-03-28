@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,11 @@
 package groovy
 
 /**
- * methods with specific parameters (e.g.&nbsp;primitives)
- * for use with groovy tests
+ * Methods with specific parameters (e.g.&#160;primitives)
+ * for use with groovy tests.
  *
  * @author <a href="mailto:jeremy.rayner@bigfoot.com">Jeremy Rayner</a>
- * @version $Revision$
+ *
  */
 class DummyMethodsGroovy {
     static void main(String[] args) {

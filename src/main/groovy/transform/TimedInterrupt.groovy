@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 the original author or authors.
+ * Copyright 2008-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,22 +27,19 @@ import java.util.concurrent.TimeoutException
 /**
  * Allows safe timed executions of scripts by adding elapsed time checks on loops (for, while, do), the first statement
  * of closures, and the first statement of methods.
- * <br/>
- * <br/>
+ * <p>
  * This is especially useful when executing foreign scripts that you do not have control over. Inject this
  * transformation into a script that you want to timeout after a specified amount of timet.
- * <br/>
- * <br/>
+ * <p>
  * Annotating anything in a script will cause for loops, while loops, methods, and closures to make an
  * elapsed time check and throw a TimeoutException if the check yields true. The annotation by default
  * will apply to any classes defined in the script as well. Annotated a class will cause (by default) all classes
  * in the entire file ('Compilation Unit') to be enhanced. You can fine tune what is enhanced using the annotation
  * parameters. Static methods and static fields are ignored.
- * <br/>
- * <br/>
+ * <p>
  * Extensive usage examples can be found in the unit test for this class. A smaller example is presented here.
  * The following is sample usage of the annotation forcing the script to timeout after 1000 seconds:
- * <br/>
+ *
  * <pre>
  * import groovy.transform.TimedInterrupt
  * import java.util.concurrent.TimeUnit
@@ -78,11 +75,10 @@ import java.util.concurrent.TimeoutException
  *     }
  * }
  * </pre>
- * @author Hamlet D'Arcy
  *
+ * @author Hamlet D'Arcy
  * @see groovy.transform.ThreadInterrupt
  * @see groovy.transform.ConditionalInterrupt
- *
  * @since 1.8.0
  */
 @java.lang.annotation.Documented

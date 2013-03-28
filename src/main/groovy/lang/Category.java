@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2009 the original author or authors.
+ * Copyright 2008-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ import java.lang.annotation.Target;
 /**
  * Transforms an instance-style Groovy class or interface to become a static-style
  * conventional Groovy category.
- * </p>
+ * <p>
  * Groovy categories are the original mechanism used
  * by Groovy when augmenting classes with new methods. Writing categories required
  * using a class writing style where all methods were static and an additional
@@ -35,7 +35,7 @@ import java.lang.annotation.Target;
  * the writing style as a little noisy. This transformation allows you to write
  * your categories without the "apparent noise" but adds it back in during
  * compilation so that the classes appear as normal categories.
- * </p>
+ * <p>
  * It might seem strange writing your class/object enhancements using a succinct
  * notation, then having "noise" added, then having the noise removed during
  * category application. If this worries you, then you may also like to consider
@@ -43,7 +43,7 @@ import java.lang.annotation.Target;
  * the category definition altogether. If you already have an investment in
  * categories or like some of the other features which categories currently give you,
  * then read on.
- * </p>
+ * <p>
  * The mechanics: during compilation, all methods are transformed to static ones with an additional
  * self parameter of the type you supply as the annotation parameter (the default type
  * for the self parameters is {@code Object} which might be more broad reaching than
@@ -53,11 +53,11 @@ import java.lang.annotation.Target;
  * the Category instance. (Remember that once the category is applied, the reverse
  * will occur and we will be back to conceptually having methods on the {@code this}
  * references again!)
- * </p>
+ * <p>
  * Classes conforming to the conventional Groovy category conventions can be used
  * within {@code use} statements or mixed in at compile time with the {@code @Mixin}
  * transformation or at runtime with the {@code mixin} method on classes.
- * </p>
+ * <p>
  * An example showing a {@code use} statement (allowing fine-grained application of
  * the category methods):
  * <pre>

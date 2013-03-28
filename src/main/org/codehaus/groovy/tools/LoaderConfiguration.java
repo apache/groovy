@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,10 +30,10 @@ import java.util.regex.Pattern;
 /**
  * Class used to configure a RootLoader from a stream or by using
  * it's methods.
- * <p/>
+ * <p>
  * The stream can be for example a FileInputStream from a file with
  * the following format:
- * <p/>
+ * <p>
  * <pre>
  * # comment
  * main is classname
@@ -60,7 +60,7 @@ import java.util.regex.Pattern;
  * <li>** is used to match zero or more directories.</li>
  * <li>Loading paths with <code>load ./*.jar</code> or <code>load *.jar</code> are not supported.</li>
  * </ul>
- * <p/>
+ * <p>
  * Defining the main class is required unless setRequireMain(boolean) is
  * called with false, before reading the configuration.
  * You can use the wildcard "*" to filter the path, but only for files, not

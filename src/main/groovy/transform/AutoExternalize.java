@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2012 the original author or authors.
+ * Copyright 2008-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import java.lang.annotation.Target;
 
 /**
  * Note: This annotation is currently experimental! Use at your own risk!
- * <p/>
+ * <p>
  * Class annotation used to assist in the creation of {@code Externalizable} classes.
  * The {@code @AutoExternalize} annotation instructs the compiler to execute an
  * AST transformation which adds {@code writeExternal()} and {@code readExternal()} methods
@@ -32,7 +32,7 @@ import java.lang.annotation.Target;
  * The {@code writeExternal()} method writes each property (or field) for the class while the
  * {@code readExternal()} method will read each one back in the same order. Properties or fields
  * marked as {@code transient} are ignored.
- * <p/>
+ * <p>
  * Example usage:
  * <pre>
  * import groovy.transform.*

@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,15 +24,15 @@ import org.codehaus.groovy.control.io.FileReaderSource;
 import org.codehaus.groovy.control.io.ReaderSource;
 
 /**
- * <p>A base class for customizers which only have to be applied on specific source units.
+ * A base class for customizers which only have to be applied on specific source units.
  * This is for example useful if you want a customizer to be applied only for files
  * matching some extensions.
- * </p>
- * <p>For convenience, this class implements several methods that you may extend to customize
+ * <p>
+ * For convenience, this class implements several methods that you may extend to customize
  * the behaviour of this utility. For example, if you want to apply a customizer only
  * for classes matching the '.foo' file extension, then you only have to override the
- * {@link #acceptExtension(String)} method:</p>
- * <p><pre><code>return "foo".equals(extension)</code></pre></p>
+ * {@link #acceptExtension(String)} method:
+ * <pre><code>return "foo".equals(extension)</code></pre>
  *
  * @since 2.1.0
  * @author Cedric Champeau

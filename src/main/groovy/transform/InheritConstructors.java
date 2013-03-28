@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2012 the original author or authors.
+ * Copyright 2008-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -94,14 +94,13 @@ import java.lang.annotation.Target;
  *     }
  * }
  * </pre>
- * <p>
+ *
  * <em>Advanced note:</em>If you create Groovy constructors with optional
  * arguments this leads to multiple constructors created in the byte code.
  * The expansion to multiple constructors occurs in a later phase to
  * this AST transformation. This means that you can't override (i.e. not
  * inherit) the constructors with signatures that Groovy adds later.
  * If you get it wrong you will get a compile-time error about the duplication.
- * </p>
  *
  * @author Paul King
  * @since 1.7.3

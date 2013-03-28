@@ -37,7 +37,7 @@ class XmlParserTest extends GroovyTestCase {
   </tr>
   <tr align="left">
     <td><dc:author>
-      <g:developer>Dierk König</g:developer>,
+      <g:developer>Dierk Kï¿½nig</g:developer>,
       <g:advocate>Andrew Glover</g:advocate>,
       <g:developer>Paul King</g:developer>,
       <g:projectmanager>Guillaume Laforge</g:projectmanager>,
@@ -48,14 +48,14 @@ class XmlParserTest extends GroovyTestCase {
     <td><dc:date>January, 2007</dc:date></td>
   </tr>
 </table>
-<p>Review: Great book!</p>
+<p>Review: Great book!
   </body>
 </html>
 """
 
     void testNodePrinter() {
         def text = """
-<p>Please read the <a href="index.html">Home</a> page</p>
+<p>Please read the <a href="index.html">Home</a> page
 """
         def node = new XmlParser().parseText(text)
         def StringWriter sw = new StringWriter()
@@ -75,7 +75,7 @@ p() {
 
     void testXmlNodePrinter() {
         def text = """
-<p>Please read the <a href="index.html">Home</a> page</p>
+<p>Please read the <a href="index.html">Home</a> page
 """
         def node = new XmlParser().parseText(text)
         def StringWriter sw = new StringWriter()
@@ -88,7 +88,7 @@ p() {
     Home
   </a>
   page
-</p>
+
 '''
         assert result == expected
     }
@@ -130,7 +130,7 @@ p() {
         <td>
           <dc:author xmlns:dc="http://purl.org/dc/elements/1.1/">
             <g:developer xmlns:g="http://groovy.codehaus.org/roles">
-              Dierk König
+              Dierk Kï¿½nig
             </g:developer>
             ,
             <g:advocate xmlns:g="http://groovy.codehaus.org/roles">
@@ -166,7 +166,7 @@ p() {
     </table>
     <p>
       Review: Great book!
-    </p>
+
   </body>
 </html>
 '''
