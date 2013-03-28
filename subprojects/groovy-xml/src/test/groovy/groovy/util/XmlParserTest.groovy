@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2012 the original author or authors.
+ * Copyright 2003-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,14 +48,14 @@ class XmlParserTest extends GroovyTestCase {
     <td><dc:date>January, 2007</dc:date></td>
   </tr>
 </table>
-<p>Review: Great book!
+<p>Review: Great book!</p>
   </body>
 </html>
 """
 
     void testNodePrinter() {
         def text = """
-<p>Please read the <a href="index.html">Home</a> page
+<p>Please read the <a href="index.html">Home</a> page</p>
 """
         def node = new XmlParser().parseText(text)
         def StringWriter sw = new StringWriter()
@@ -75,7 +75,7 @@ p() {
 
     void testXmlNodePrinter() {
         def text = """
-<p>Please read the <a href="index.html">Home</a> page
+<p>Please read the <a href="index.html">Home</a> page</p>
 """
         def node = new XmlParser().parseText(text)
         def StringWriter sw = new StringWriter()
@@ -88,7 +88,7 @@ p() {
     Home
   </a>
   page
-
+</p>
 '''
         assert result == expected
     }
@@ -166,7 +166,7 @@ p() {
     </table>
     <p>
       Review: Great book!
-
+    </p>
   </body>
 </html>
 '''
